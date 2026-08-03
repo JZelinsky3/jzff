@@ -628,35 +628,48 @@ function draftOpponent(
 const OPPONENT_NOISE = [7, 6, 5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1, 0.5, 0.25, 0]
 
 /**
- * How many teams each postseason round is the best of.
+ * How many teams each postseason game is the best of.
  *
- * The shape matters as much as the total. A postseason where every round is
- * equally hard is three coin flips in a row, and three coin flips is a wall
- * rather than a run — nobody feels themselves getting deeper into anything.
- * So the rounds are meant to get progressively harder: the quarter-final is a
- * side you should usually beat, and the final is the hardest team the dealer
- * can build out of this league.
+ * Two things are shaped here at once, and they pull against each other.
  *
- * Best-of is the whole mechanism. One draft is the best team on ONE board and
- * a board is a random deal; the best of eighty is near the top of what the
- * pool can produce. Nothing the player sees changes, and no number is faked —
- * these are all teams that could have been drafted.
+ * The ROUNDS get progressively harder. Three equally hard rounds is three
+ * coin flips, which is a wall rather than a run — nobody feels themselves
+ * getting deeper into anything.
  *
- * Measured on the demo pool over 800 dealt seasons, for a drafter taking the
- * best card against its position's average:
+ * The QUARTER-FINAL is what a regular season buys. Three are dealt and the
+ * record picks one (see openerFor): a big year opens against the softest,
+ * scraping in at eight wins puts the strongest of the three in front of you.
+ * Only the opener moves — the semi-final and the final are the same for
+ * everybody, because a seed should buy a kinder route in and not a smaller
+ * trophy.
  *
- *      make the postseason   40.8%
- *      win the quarter-final 55.2%   →  22.5% of all runs
- *      win the semi-final    28.9%   →   6.5%
- *      win the final         23.1%   →   1.5%,  a title every 67 runs
+ * The ladder is GENTLE on purpose, at 1 / 2 / 4. A record already decides
+ * most of this on its own: an eight-win team is a weak team, and in January
+ * everybody's cards cut to their best seasons and the field is the strongest
+ * the league can put out, so a weak team loses regardless of who it draws.
+ * At 1 / 5 / 20 that natural effect and the seeding compounded into a cliff —
+ * an eight-win side won its opener 6.4% of the time and every single title in
+ * the sample came from an eleven-win one. A seed is a nudge here.
  *
- * The final resists going much below that: best-of climbs with the log of the
- * field, so eighty to two hundred is worth about a point of paper. It is also
- * fighting a selection effect — a side that has won two knockouts is a good
- * side — which is why the last round reads easier than the arithmetic
- * suggests it should.
+ * Best-of fakes nothing: one draft is the best team on ONE board and a board
+ * is a random deal, so the best of forty-five is near the top of what this
+ * league can put out. Every one of them could have been drafted.
+ *
+ * Measured on the demo pool over 2,600 dealt seasons, for a drafter taking
+ * the best card against its position's average:
+ *
+ *   make the postseason  39.5%      by record:  8 wins    9-10     11+
+ *   win the quarter-final 46.2%     win R1      22.8%    46.7%   75.4%
+ *   win the semi-final    37.6%     take it      1.7%     3.2%    9.9%
+ *   win the final         24.7%
+ *   a title              1 in 59
+ *
+ * So the rounds climb, a big season is worth about three times a scraped one
+ * at the trophy, and an eight-win team still won five of them in the sample —
+ * which is the upset that has to stay possible.
  */
-const PLAYOFF_FIELD = [1, 12, 80]
+const PLAYOFF_OPENERS = [1, 2, 4]
+const PLAYOFF_LATER = [8, 45]
 
 export async function dealMultiverse(
   poolParam: string,
@@ -782,29 +795,13 @@ export async function dealMultiverse(
     playoffRolls.push(row)
   }
 
-  const playoffOpponents: MvOpponent[] = []
-  for (let r = 0; r < PLAYOFF_ROUNDS; r++) {
-    // The strongest team the league can put out, which is what the banner has
-    // always told the player it is.
-    //
-    // A single noise-0 bot is only the best team on ONE board, and a board is
-    // a random deal. Drafting several and keeping the best paper team is what
-    // "the field left" actually means: these are the sides that survived a
-    // fourteen-week season, so they should be the top of a distribution
-    // rather than one draw from it. The number climbs each round, so the
-    // final is the hardest team the dealer can build.
-    //
-    // This is also the balance lever for the title. A run that reaches
-    // January is already a strong team by selection, and against one draw it
-    // won every round about 61% of the time — three of those is a ring every
-    // twelve runs, which makes the one thing the game is played for routine.
-    // See PLAYOFF_FIELD.
-    const tries = PLAYOFF_FIELD[r] ?? 1
-    let roster = draftOpponent(byPosition, eligible, count, base, r === 0 ? 1.5 : 0, rng)
+  /** One postseason side, best of `tries` drafts, measured on the seasons it
+      will actually play. */
+  const buildOpponent = (tries: number, noise: number, week: number, label: string): MvOpponent => {
+    let roster = draftOpponent(byPosition, eligible, count, base, noise, rng)
     let bestPaper = roster.reduce((a, c) => a + meanOf(bestTimelines(c, keep)), 0)
     for (let t = 1; t < tries; t++) {
       const cand = draftOpponent(byPosition, eligible, count, base, 0, rng)
-      // Measured on the seasons they will actually play, not on all three.
       const paper = cand.reduce((a, c) => a + meanOf(bestTimelines(c, keep)), 0)
       if (paper > bestPaper) {
         bestPaper = paper
@@ -819,36 +816,33 @@ export async function dealMultiverse(
       fired.push(idx)
       score += kept[idx]?.ppg ?? 0
     }
-    playoffOpponents.push({
-      week: WEEKS + r + 1,
-      name: names.length > 0 ? names[(WEEKS + r) % names.length] : `Seed ${r + 1}`,
+    return {
+      week,
+      name: label,
       teamName: null,
       // Their paper number is also off their kept seasons, so the slate a
       // player reads in January is on the same footing as their own team.
-      ppg:
-        Math.round(
-          roster.reduce((a, c) => a + meanOf(bestTimelines(c, keep)), 0) * 10
-        ) / 10,
+      ppg: Math.round(bestPaper * 10) / 10,
       score: Math.round(score * 10) / 10,
       roster,
       fired,
-    })
+    }
   }
 
-  // Weakest first, so the bracket climbs.
-  //
-  // Best-of-6, best-of-14 and best-of-30 are three INDEPENDENT draws, and a
-  // best-of-14 lands under a best-of-6 often enough to be noticed — which put
-  // the softest team of the three in the final about a fifth of the time and
-  // made the bracket read as three arbitrary sides rather than a field
-  // narrowing. Sorting fixes the order without touching the teams; the round
-  // number and the manager's name are assigned after the sort, so the
-  // quarter-final is always the one you have the best chance against.
-  playoffOpponents.sort((a, b) => a.ppg - b.ppg)
-  playoffOpponents.forEach((opp, r) => {
-    opp.week = WEEKS + r + 1
-    opp.name = names.length > 0 ? names[(WEEKS + r) % names.length] : `Seed ${r + 1}`
-  })
+  const oppName = (r: number) =>
+    names.length > 0 ? names[(WEEKS + r) % names.length] : `Seed ${r + 1}`
+
+  // The three quarter-finals a record can draw. Sorted weakest first, because
+  // best-of-1 and best-of-20 are independent draws and the small one lands
+  // above the big one often enough to invert the ladder.
+  const openers = PLAYOFF_OPENERS.map((tries, i) =>
+    buildOpponent(tries, i === 0 ? 1.5 : 0, WEEKS + 1, oppName(0))
+  )
+  openers.sort((a, b) => a.ppg - b.ppg)
+
+  const later = PLAYOFF_LATER.map((tries, i) =>
+    buildOpponent(tries, 0, WEEKS + i + 2, oppName(i + 1))
+  )
 
   return {
     ok: true,
@@ -860,6 +854,6 @@ export async function dealMultiverse(
     rounds,
     rolls,
     schedule,
-    playoffs: { keep, rolls: playoffRolls, opponents: playoffOpponents },
+    playoffs: { keep, rolls: playoffRolls, openers, later },
   }
 }

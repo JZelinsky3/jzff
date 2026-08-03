@@ -26,6 +26,7 @@ import {
   PLAYOFF_ROUND_NAMES as MV_PLAYOFF_ROUND_NAMES,
   weekScore as mvWeekScore,
   playoffScore as mvPlayoffScore,
+  playoffField as mvPlayoffField,
   rankScore as mvRankScore,
   type MvCard,
 } from './multiverse'
@@ -234,11 +235,15 @@ async function verifyMultiverse(
   let poWins = 0
   let poGames = 0
   if (madeIt) {
+    // The same three the board played: which quarter-final a run drew is
+    // decided by its regular-season record, so the verifier has to read that
+    // rule rather than the first entry in a list. See playoffField.
+    const field = mvPlayoffField(deal.playoffs, wins)
     for (let r = 0; r < MV_PLAYOFF_ROUNDS; r++) {
       const mine = mvPlayoffScore(roster, deal.playoffs.rolls, r, deal.playoffs.keep)
       poGames++
       pointsFor += mine
-      if (mine <= deal.playoffs.opponents[r].score) break
+      if (mine <= field[r].score) break
       poWins++
     }
   }

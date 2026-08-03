@@ -207,8 +207,42 @@ export type MultiverseDeal = {
     keep: number
     /** `rolls[slotIndex][round]`, indexes into the kept seasons. */
     rolls: number[][]
-    opponents: MvOpponent[]
+    /**
+     * Three possible quarter-finals, weakest first. Which one you get is
+     * bought with your regular season — see openerFor. Dealt as three because
+     * the dealer builds January before anybody has drafted and cannot know
+     * what record will turn up to it.
+     */
+    openers: MvOpponent[]
+    /** The semi-final and the final. The same two for everybody: a seed
+        should buy you a kinder route in, not a smaller trophy. */
+    later: MvOpponent[]
   }
+}
+
+/**
+ * Which quarter-final a record earns.
+ *
+ * The reward for a big season is a soft opener and therefore a real edge on
+ * the whole thing, because the alternative — reordering one fixed set of three
+ * — gives a 12-2 team and an 8-6 team the same odds of winning it, and a
+ * regular season that buys nothing is fourteen weeks of nothing.
+ *
+ * Indexes into playoffs.openers, which is sorted weakest first.
+ */
+export function openerFor(wins: number): number {
+  if (wins >= 11) return 0
+  if (wins >= 9) return 1
+  return 2
+}
+
+/** The three rounds this record actually plays, in order. */
+export function playoffField(
+  playoffs: { openers: MvOpponent[]; later: MvOpponent[] },
+  wins: number
+): MvOpponent[] {
+  const opener = playoffs.openers[openerFor(wins)] ?? playoffs.openers[playoffs.openers.length - 1]
+  return [opener, ...playoffs.later]
 }
 
 export type MultiverseError = { ok: false; error: string; status: number }

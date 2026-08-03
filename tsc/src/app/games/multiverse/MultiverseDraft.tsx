@@ -28,6 +28,7 @@ import {
   PLAYOFF_ROUND_NAMES,
   weekScore,
   playoffScore,
+  playoffField,
   bestTimelines,
   realized,
   grade,
@@ -700,34 +701,26 @@ export function MultiverseDraft({
   /** The postseason, and how far it can possibly go: it stops at the first
       loss, because it is single elimination. */
   /**
-   * Where your record puts you in the bracket.
+   * The bracket your record earned.
    *
-   * The dealer hands back the three sides weakest-first and cannot do better
-   * than that: it builds the postseason before anybody has drafted, so it has
-   * no idea what record the player will bring to it. Seeding is therefore
-   * done here, at the point the season is over and the record is known.
+   * The dealer builds January before anybody has drafted, so it cannot know
+   * what record will turn up — it deals THREE possible quarter-finals and the
+   * choice is made here, once the season is over. A big year opens against
+   * the softest of them; scraping in at eight wins puts the strongest in
+   * front of you in round one.
    *
-   * The SAME three teams either way. Scraping in at eight wins puts the best
-   * side left in front of you immediately; a 12-2 season opens against the
-   * softest and climbs. So the field you have to beat to win it is identical
-   * whatever your seed — three opponents averaging the same — and all the
-   * record buys you is the order they arrive in, which is exactly what a seed
-   * is worth in a real bracket.
+   * An earlier version of this only reordered one fixed set of three, which
+   * looked like seeding and was not: you still had to beat all three to win
+   * it, so a 12-2 season and an 8-6 season had the same odds of a title and
+   * fourteen weeks bought nothing. The semi-final and the final are still the
+   * same for everybody — a seed should buy a kinder route in, not a smaller
+   * trophy.
    */
-  const poOrder = useMemo(() => {
-    if (finalWins >= 12) return [0, 1, 2]
-    if (finalWins >= 10) return [1, 0, 2]
-    return [2, 0, 1]
-  }, [finalWins])
-
   const poGames = useMemo<WeekLine[]>(() => {
     if (!deal) return []
-    return poOrder.map((oi, r) => {
-      const opp = deal.playoffs.opponents[oi]
+    return playoffField(deal.playoffs, finalWins).map((opp, r) => {
       const mine = playoffScore(roster, deal.playoffs.rolls, r, deal.playoffs.keep)
       return {
-        // The round decides the week, not the opponent: they have been
-        // reordered, and a quarter-final is week fifteen whoever is in it.
         week: WEEKS + r + 1,
         mine,
         theirs: opp.score,
@@ -736,7 +729,7 @@ export function MultiverseDraft({
         paper: opp.ppg,
       }
     })
-  }, [deal, roster, poOrder])
+  }, [deal, roster, finalWins])
 
   const poLimit = useMemo(() => {
     for (let i = 0; i < poGames.length; i++) if (!poGames[i].won) return i + 1
@@ -1239,11 +1232,11 @@ export function MultiverseDraft({
           {/* Why the draw looks the way it does. Same three teams at every
               seed, so this is about order and nothing else. */}
           <p className={styles.poSeed}>
-            {finalWins >= 12
-              ? 'Top seed. You open against the softest side left, and it hardens from there.'
-              : finalWins >= 10
-                ? 'Middle seed. You open in the middle of the field, and the best of it waits.'
-                : 'Low seed. The best team left is in front of you in round one.'}
+            {finalWins >= 11
+              ? `${finalWins} wins buys you the softest side left in round one.`
+              : finalWins >= 9
+                ? `${finalWins} wins draws the middle of the field in round one.`
+                : `${finalWins} wins is the last way in, so the best team left is waiting.`}
           </p>
         </div>
         {bracket}
