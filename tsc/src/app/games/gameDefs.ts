@@ -21,6 +21,13 @@ export type GameDef = {
   /** Masthead title, split so the second half can be set in italic. */
   title: string
   titleEm: string
+  /** One word, for the phone's dock.
+   *
+   * Seven destinations share 390px down there, so the label gets about six
+   * characters before it starts eating its neighbour. It's the word people
+   * actually use for the game rather than an abbreviation of the masthead —
+   * "Wheel", not "Roster R.". */
+  shortName: string
   /** The whole pitch, in a breath. ONE line, on every hub — the cards used
       to carry a three-clause version of this plus the three how-to-play
       beats, which at five games was a wall of identical prose nobody read.
@@ -65,6 +72,7 @@ export const ROSTER_ROULETTE: GameDef = {
   href: '/games/roulette/',
   title: 'Roster',
   titleEm: 'Roulette',
+  shortName: 'Wheel',
   // Ends on the question, not on a count of slots. "Seven slots" is a rule;
   // the card has one line to give somebody a reason to tap, and the reason is
   // the record. The mark above draws the wheel, so the line doesn't have to.
@@ -93,6 +101,7 @@ export const GUESS_THE_DRAFT: GameDef = {
   href: '/games/guess-the-draft/',
   title: 'Guess the',
   titleEm: 'Draft',
+  shortName: 'Guess',
   tagline: 'A draft with the name blacked out. Whose was it?',
   accessTag: 'Needs a league',
   // Terracotta against Roulette's brass. The two cards sit one above the
@@ -120,6 +129,7 @@ export const THE_GAUNTLET: GameDef = {
   href: '/games/gauntlet/',
   title: 'The',
   titleEm: 'Gauntlet',
+  shortName: 'Streak',
   tagline: 'Two teams. One week. Who won?',
   accessTag: 'Needs a league',
   // Steel blue against Roulette's brass and Guess the Draft's terracotta.
@@ -148,6 +158,7 @@ export const OVER_UNDER: GameDef = {
   href: '/games/over-under/',
   title: 'The',
   titleEm: 'Over/Under',
+  shortName: 'Line',
   tagline: 'Ten real weeks. Ten lines. Over or under?',
   accessTag: 'Needs a league',
   // Violet, to stay clear of the brass, the terracotta and the Gauntlet's
@@ -177,6 +188,7 @@ export const REDRAFT: GameDef = {
   href: '/games/redraft/',
   title: 'The',
   titleEm: 'Redraft',
+  shortName: 'Redraft',
   tagline: 'A real draft slot. Pick again, with hindsight.',
   accessTag: 'Needs a league',
   // Sage, and the last of the five that reads clearly against the others.
@@ -205,6 +217,7 @@ export const MULTIVERSE_DRAFT: GameDef = {
   href: '/games/multiverse/',
   title: 'The Multiverse',
   titleEm: 'Draft',
+  shortName: 'Multi',
   tagline: 'Every player is three players. Draft seven, play fourteen weeks.',
   accessTag: 'Needs a league',
   // Teal, and the last colour that reads clearly against the brass, the

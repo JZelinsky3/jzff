@@ -128,6 +128,10 @@ export function MobileSiteMenu({
         { href: '/account',   label: 'Account'   },
         { href: '/dashboard', label: 'Library'   },
         { href: '/hub',       label: 'Clubhouse' },
+        // The Games Page. It hides this menu on its own pages (see
+        // .msm-root in games/mobile.module.css), so on a phone it had no
+        // way in at all except the landing page.
+        { href: '/games',     label: 'Games'     },
         // Pricing is hidden inside league surfaces (both the commissioner
         // side and the public almanac) — users in either context aren't
         // shopping plans from there.
@@ -141,6 +145,7 @@ export function MobileSiteMenu({
         { href: '/pricing',   label: 'Pricing', hideOnPrefix: ['/league/', '/leagues/'] },
         { href: '/guides',    label: 'Guides',  hideOnPrefix: ['/leagues/'] },
         { href: '/hub',       label: 'Clubhouse' },
+        { href: '/games',     label: 'Games'     },
       ]
 
   // Hide the row whose href matches the page we're on. For /guides and

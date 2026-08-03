@@ -32,7 +32,17 @@ export function MobileGames({
 }) {
   return (
     <main className={s.root}>
-      <MobileGameBar left="home" kicker="The back page" title="The" titleEm="Games Page" signedIn={signedIn} />
+      {/* The one page in this tree that offers the Library: the shelf is where
+          leaving for the rest of the site is a reasonable thing to want. Every
+          game underneath it gets the profile button instead. */}
+      <MobileGameBar
+        left="home"
+        right="library"
+        kicker="The back page"
+        title="The"
+        titleEm="Games Page"
+        signedIn={signedIn}
+      />
 
       <section className={s.hero}>
         <div className={s.heroSup}>★ Est. 2026 ★</div>
