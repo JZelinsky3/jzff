@@ -857,6 +857,107 @@
     color: #121212;
 }
 
+/* ── The Back Page (games) — a navy card sitting between the near-black
+      clubhouse plaque and the pricing teaser, so the three cards down
+      here don't all read the same. The hairline along the top is the six
+      games' own accent colours, which is also how the games hub tells
+      them apart. ─────────────────────────────────────────────── */
+.games {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1.45rem 1.15rem 1.3rem;
+    background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
+    border: 1px solid var(--ink-line);
+    border-radius: 16px;
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--cream);
+}
+.games::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+        #e8c889, #e29278, #8fb3d6, #c9a9ea, #9ec8a8, #5fc9bd);
+    opacity: .8;
+}
+.games:active { transform: scale(.985); }
+.gamesKicker {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .54rem;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.gamesTitle {
+    margin-top: .4rem;
+    font-family: var(--serif);
+    font-size: 1.6rem;
+    line-height: 1.1;
+    letter-spacing: -.015em;
+    color: var(--cream);
+}
+.gamesTitle em { font-style: italic; color: var(--gold); }
+.gamesSub {
+    margin-top: .35rem;
+    font-size: .84rem;
+    line-height: 1.5;
+    color: var(--cream-soft);
+}
+.gamesChips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .38rem;
+    margin-top: .9rem;
+}
+.gamesChip {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .3rem .55rem;
+    border: 1px solid var(--ink-line);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .55rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--cream-soft);
+}
+.gamesChip i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+.gamesBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 300px;
+    margin-top: 1.05rem;
+    min-height: 46px;
+    border: 1px solid var(--gold);
+    border-radius: 999px;
+    background: rgba(232, 200, 137, .06);
+    color: var(--gold);
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .62rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+}
+.games:active .gamesBtn {
+    background: var(--gold);
+    color: var(--ink);
+}
+
 /* ── Pricing teaser ───────────────────────────────────────── */
 .priceCard {
     position: relative;

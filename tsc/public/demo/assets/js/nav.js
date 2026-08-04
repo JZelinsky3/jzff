@@ -614,7 +614,12 @@
             // Offset the sticky masthead + chapbar so they ride below the',
             // strip instead of stacking on top of it.',
             'nav.nav { top: var(--demo-strip-h) !important; }',
-            '.nav-chapbar { top: calc(var(--nav-h, 4.5rem) + var(--demo-strip-h)) !important; }'
+            '.nav-chapbar { top: calc(var(--nav-h, 4.5rem) + var(--demo-strip-h)) !important; }',
+            // The dropdown is position:fixed off --nav-h, which is only the
+            // masthead height, not its offset. With the strip pushing the
+            // masthead down, the menu opened 44px too high and sat over the
+            // hamburger. Add the strip height back.
+            '.nav-drop-menu { top: calc(var(--nav-h, 4.5rem) + var(--demo-strip-h) + 6px) !important; }'
         ].join('\n');
         document.head.appendChild(style);
     }

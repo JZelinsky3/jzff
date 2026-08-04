@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { GAMES } from '@/app/games/gameDefs'
 import s from './MobileHomeCover.module.css'
 import { MobileHomeDock } from './MobileHomeDock'
 
@@ -387,6 +388,34 @@ export function MobileHomeCover({ signedIn }: { signedIn: boolean }) {
         </Link>
       </section>
 
+      {/* ── The Back Page — one card into /games, dressed like the
+             Clubhouse plaque above it (whole card is the link, its own
+             kicker and title, no section head to repeat). The rule along
+             the top is the six games' own accent colours. ─────────── */}
+      <section className={s.section}>
+        <Link href="/games/" className={s.games}>
+          <span className={s.gamesKicker}>The back page · New</span>
+          <span className={s.gamesTitle}>
+            The <em>Games Page.</em>
+          </span>
+          <span className={s.gamesSub}>
+            Puzzles dealt from real league archives.
+          </span>
+          <span className={s.gamesChips}>
+            {GAMES.map((g) => (
+              <span key={g.id} className={s.gamesChip}>
+                <i style={{ background: g.accent }} aria-hidden="true" />
+                {/* The dock's shortName ("Wheel", "Line") only reads inside
+                    the games tree; here the masthead title does, minus a
+                    leading "The" that would start four chips the same. */}
+                {g.title === 'The' ? g.titleEm : `${g.title} ${g.titleEm}`}
+              </span>
+            ))}
+          </span>
+          <span className={s.gamesBtn}>Play a round</span>
+        </Link>
+      </section>
+
       {/* ── Pricing teaser ────────────────────────────────────── */}
       <section className={s.section}>
         <div className={s.priceCard}>
@@ -463,6 +492,7 @@ export function MobileHomeCover({ signedIn }: { signedIn: boolean }) {
       <footer className={s.footer}>
         <nav className={s.footLinks} aria-label="Site">
           <Link href="/about/">About</Link>
+          <Link href="/games/">Games</Link>
           <Link href="/pricing/">Pricing</Link>
           <Link href="/guides/">Guides</Link>
           <Link href="/privacy/">Privacy</Link>

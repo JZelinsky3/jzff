@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
+import { GAMES } from '@/app/games/gameDefs'
 import s from './new.module.css'
 
 // ---------------------------------------------------------------------------
@@ -188,10 +189,40 @@ export function NewLanding({ signedIn = false }: { signedIn?: boolean }) {
           </span>
         </Link>
         <nav className={s.navLinks}>
-          <Link href="/demo/">Demo</Link>
+          {/* Guides and About share one slot: a CSS-only panel (hover, or
+              focus for keyboards) so the row stays four items wide. It sits
+              first, before the destinations, the way a paper's contents
+              page comes before the sections. Labelled "Answers" rather than
+              "Help" or "More": everything behind it answers a question a
+              new reader has (how does it work, who runs it, what does a
+              finished one look like) without promising a support desk. */}
+          <div className={s.navMore}>
+            <button type="button" className={s.navMoreBtn} aria-haspopup="true">
+              Learn
+            </button>
+            <div className={s.navMenu}>
+              {signedIn && (
+                <Link href="/demo/">
+                  Demo league
+                  <i>A finished almanac, seven seasons deep</i>
+                </Link>
+              )}
+              <Link href="/guides">
+                Guides
+                <i>Importing, publishing, running the season</i>
+              </Link>
+              <Link href="/about">
+                About
+                <i>Who prints the paper, and why</i>
+              </Link>
+            </div>
+          </div>
+          {/* Signed-in readers already have their own leagues open in the
+              Clubhouse, so the demo drops out of the top row and into the
+              More menu rather than off the page. */}
+          {!signedIn && <Link href="/demo/">Demo</Link>}
+          <Link href="/games/">Games</Link>
           <Link href="/pricing">Pricing</Link>
-          <Link href="/guides">Guides</Link>
-          <Link href="/about">About</Link>
           {signedIn ? (
             <Link href="/hub" className={s.navLogin}>
               Clubhouse
@@ -568,6 +599,53 @@ export function NewLanding({ signedIn = false }: { signedIn?: boolean }) {
         </div>
       </section>
 
+      {/* --------------------------------------------------------- back page
+          Where a paper keeps its puzzles. One cream sheet with the corner
+          turned up, the games set as a ruled list, and a single door into
+          /games. Deliberately ONE sheet: the clubhouse above it is already
+          a wall of cards. */}
+      <section className={s.back}>
+        <div className={s.backSheet} data-reveal>
+          <span className={s.backFold} aria-hidden />
+          <div>
+            <p className={s.backKicker}>
+              The back page
+              <span className={s.backNew}>New</span>
+            </p>
+            <h2 className={s.backTitle}>
+              Games, <em>dealt from the archive.</em>
+            </h2>
+            <p className={s.backSub}>
+              Diversions built out of real league history: a lineup off teams
+              that actually existed, a draft with the name blacked out, a line
+              to beat. Play them on the whole site, on the demo league, or on
+              your own.
+            </p>
+            <Link href="/games/" className={s.backBtn}>
+              Turn to the games page.
+            </Link>
+          </div>
+
+          <ul className={s.backList}>
+            {GAMES.map((g) => (
+              <li key={g.id}>
+                <i className={s.backDot} style={{ background: g.accent }} aria-hidden />
+                <span className={s.backName}>
+                  {g.title} <em>{g.titleEm}</em>
+                </span>
+                <span className={s.backTag}>{g.tagline}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* The games sheet and the rate card are both bordered blocks on the
+            same ink; without a rule between them they read as one stack. */}
+        <div className={s.backRule} aria-hidden>
+          <span>✦</span>
+        </div>
+      </section>
+
       {/* -------------------------------------------------- subscription desk */}
       <section className={s.rates}>
         <div className={s.ratesHead} data-reveal>
@@ -646,6 +724,7 @@ export function NewLanding({ signedIn = false }: { signedIn?: boolean }) {
         </p>
         <nav className={s.footLinks}>
           <Link href="/demo/">Demo league</Link>
+          <Link href="/games/">Games</Link>
           <Link href="/pricing">Pricing</Link>
           <Link href="/pricing/plans">Plans</Link>
           <Link href="/guides">Guides</Link>

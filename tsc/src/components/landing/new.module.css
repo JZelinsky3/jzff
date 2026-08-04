@@ -257,12 +257,14 @@
   color: var(--cream-soft, #c9c0ad);
 }
 
-.navLinks a:not(.navCta) {
+/* Direct children only: the More panel's own links live inside .navLinks
+   but are styled as menu rows, not as top-row items. */
+.navLinks > a:not(.navCta) {
   position: relative;
   padding-bottom: 3px;
 }
 
-.navLinks a:not(.navCta)::after {
+.navLinks > a:not(.navCta)::after {
   content: '';
   position: absolute;
   left: 0;
@@ -273,12 +275,121 @@
   transition: right 0.25s ease;
 }
 
-.navLinks a:hover {
+.navLinks > a:hover {
   color: var(--gold, #e8c889);
 }
 
-.navLinks a:not(.navCta):hover::after {
+.navLinks > a:not(.navCta):hover::after {
   right: 0;
+}
+
+/* "More" slot: Guides and About behind one nav item. CSS-only — the panel
+   opens on hover and on :focus-within, so tab order still reaches both
+   links and no client state is needed. The button keeps the row's own
+   underline-wipe treatment (.navLinks a doesn't match a <button>). */
+
+.navMore {
+  position: relative;
+  padding-bottom: 3px;
+}
+
+.navMoreBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+/* No marker at all: it sits in the row looking exactly like the other
+   items and wipes gold the same way on hover, and the panel opening is
+   what tells you it holds a menu. The label ("Help") carries the meaning
+   instead of an icon. */
+.navMoreBtn::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -3px;
+  height: 1px;
+  background: var(--gold, #e8c889);
+  transition: right 0.25s ease;
+}
+
+.navMore:hover .navMoreBtn,
+.navMore:focus-within .navMoreBtn {
+  color: var(--gold, #e8c889);
+}
+
+.navMore:hover .navMoreBtn::after,
+.navMore:focus-within .navMoreBtn::after {
+  right: 0;
+}
+
+.navMenu {
+  position: absolute;
+  top: calc(100% + 16px);
+  left: -14px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  min-width: 268px;
+  padding: 6px;
+  background: #0a0f16;
+  border: 1px solid var(--ink-line, #2a3645);
+  outline: 1px solid rgba(168, 138, 74, 0.22);
+  outline-offset: -5px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+}
+
+/* Hover bridge over the 16px gap, so the panel survives the trip down. */
+.navMenu::before {
+  content: '';
+  position: absolute;
+  top: -18px;
+  left: 0;
+  right: 0;
+  height: 18px;
+}
+
+.navMore:hover .navMenu,
+.navMore:focus-within .navMenu {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+
+.root .navMenu a {
+  padding: 11px 12px;
+  color: var(--cream, #f4ebd8);
+  transition: background 0.2s, color 0.2s;
+}
+
+.root .navMenu a:hover {
+  background: rgba(232, 200, 137, 0.08);
+  color: var(--gold, #e8c889);
+}
+
+.navMenu a i {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  line-height: 1.45;
+  color: var(--cream-mute, #837b6a);
 }
 
 /* `.root`-prefixed so these win over the `.root a { color: inherit }` rule. */
@@ -1752,6 +1863,164 @@
   color: var(--cream-mute, #837b6a);
 }
 
+/* ------------------------------------------------------------ back page
+   The games section, sold the way a paper sells its back page: one cream
+   sheet on the dark wall, corner turned up, the games as a ruled list.
+   Same cream stock and tooled gold hairline as the clubhouse cards, but
+   a single sheet so it doesn't read as a second wall of clippings. */
+
+.back {
+  padding: clamp(64px, 7vw, 108px) var(--edge) 0;
+}
+
+/* Break between the games sheet and the subscription desk. Same double
+   hairline as the front page's .spreadRule, held to the sheet's width;
+   the space below it is the rates section's own top padding. */
+.backRule {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  max-width: 1180px;
+  margin: clamp(48px, 5vw, 78px) auto 0;
+  color: var(--gold-deep, #a88a4a);
+  font-size: 0.8rem;
+}
+
+.backRule::before,
+.backRule::after {
+  content: '';
+  flex: 1;
+  height: 3px;
+  border-top: 1px solid var(--ink-line, #2a3645);
+  border-bottom: 1px solid var(--ink-line, #2a3645);
+}
+
+/* `.root .backSheet` so the ink color beats `.root a { color: inherit }`
+   for the link inside it, same reason as .clubCard. */
+.root .backSheet {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: clamp(28px, 3.4vw, 64px);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(30px, 3.2vw, 46px);
+  background: linear-gradient(168deg, #f7efdc 0%, #efe3c9 100%);
+  color: var(--ink, #0e1620);
+  box-shadow:
+    10px 12px 0 rgba(0, 0, 0, 0.4),
+    inset 0 0 0 7px transparent,
+    inset 0 0 0 8px rgba(168, 138, 74, 0.5);
+}
+
+/* Dog-ear: the sheet's top-right corner cut away (page ink shows through)
+   with the flap's underside folded back over the cream. */
+.backFold {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(45deg, #dccfb0 0 50%, var(--ink, #0e1620) 50%);
+  box-shadow: -1px 1px 0 rgba(14, 22, 32, 0.12);
+}
+
+.backKicker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 16px;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(14, 22, 32, 0.5);
+}
+
+.backNew {
+  padding: 4px 8px 3px;
+  background: var(--ink, #0e1620);
+  color: var(--gold, #e8c889);
+  font-size: 0.54rem;
+  letter-spacing: 0.2em;
+}
+
+.backTitle {
+  margin: 0 0 16px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(2rem, 3.4vw, 3.1rem);
+  line-height: 1.03;
+}
+
+/* The page-level `em { color: gold }` is too pale on cream stock. */
+.root .backTitle em,
+.root .backName em {
+  color: var(--gold-deep, #a88a4a);
+}
+
+.backSub {
+  max-width: 44ch;
+  margin: 0 0 26px;
+  font-size: 0.94rem;
+  line-height: 1.7;
+  color: rgba(14, 22, 32, 0.68);
+}
+
+.root .backBtn {
+  display: inline-block;
+  padding-bottom: 4px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.3rem;
+  color: var(--ink, #0e1620);
+  border-bottom: 2px solid var(--gold-deep, #a88a4a);
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.root .backBtn:hover {
+  color: var(--gold-deep, #a88a4a);
+  border-bottom-color: var(--ink, #0e1620);
+}
+
+.backList {
+  display: grid;
+  align-content: start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid rgba(14, 22, 32, 0.16);
+}
+
+.backList li {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  column-gap: 12px;
+  padding: 11px 2px 12px;
+  border-bottom: 1px solid rgba(14, 22, 32, 0.12);
+}
+
+.backDot {
+  width: 8px;
+  height: 8px;
+  margin-top: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(14, 22, 32, 0.18);
+}
+
+.backName {
+  font-family: var(--serif);
+  font-size: 1.14rem;
+  line-height: 1.3;
+}
+
+.backTag {
+  grid-column: 2;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(14, 22, 32, 0.6);
+}
+
 /* ---------------------------------------------------- subscription desk */
 
 .rates {
@@ -2058,7 +2327,8 @@
     opacity: 0;
   }
 
-  .navLinks a:not(.navCta):not(.navLogin) {
+  .navLinks > a:not(.navCta):not(.navLogin),
+  .navMore {
     display: none;
   }
 
@@ -2066,6 +2336,13 @@
     grid-template-columns: repeat(2, 1fr);
     max-width: 620px;
     gap: 18px;
+  }
+
+  /* back page folds to one column: pitch, then the list */
+  .root .backSheet {
+    grid-template-columns: 1fr;
+    gap: 26px;
+    max-width: 620px;
   }
 }
 
