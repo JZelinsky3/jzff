@@ -222,11 +222,16 @@ async function verifyMultiverse(
 
   let wins = 0
   let pointsFor = 0
+  let pointsAgainst = 0
   for (let w = 0; w < MV_WEEKS; w++) {
     const mine = mvWeekScore(roster, deal.rolls, w)
     pointsFor += mine
+    pointsAgainst += deal.schedule[w].score
     if (mine > deal.schedule[w].score) wins++
   }
+  // Snapshotted before January, because the seeding rule is about the
+  // fourteen weeks and pointsFor keeps accumulating below.
+  const regularFor = pointsFor
 
   // The postseason is single elimination, so the number of games played is
   // derived rather than trusted: a run cannot claim to have played on after
@@ -236,9 +241,9 @@ async function verifyMultiverse(
   let poGames = 0
   if (madeIt) {
     // The same three the board played: which quarter-final a run drew is
-    // decided by its regular-season record, so the verifier has to read that
+    // decided by its record AND its scoring, so the verifier has to read that
     // rule rather than the first entry in a list. See playoffField.
-    const field = mvPlayoffField(deal.playoffs, wins)
+    const field = mvPlayoffField(deal.playoffs, wins, regularFor, pointsAgainst)
     for (let r = 0; r < MV_PLAYOFF_ROUNDS; r++) {
       const mine = mvPlayoffScore(roster, deal.playoffs.rolls, r, deal.playoffs.keep)
       poGames++

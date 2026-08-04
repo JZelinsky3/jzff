@@ -658,15 +658,21 @@ const OPPONENT_NOISE = [7, 6, 5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1, 0.5, 0.25, 0]
  * Measured on the demo pool over 2,600 dealt seasons, for a drafter taking
  * the best card against its position's average:
  *
- *   make the postseason  39.5%      by record:  8 wins    9-10     11+
- *   win the quarter-final 46.2%     win R1      22.8%    46.7%   75.4%
- *   win the semi-final    37.6%     take it      1.7%     3.2%    9.9%
- *   win the final         24.7%
- *   a title              1 in 59
+ *   make the postseason  40.8%      by record:  8 wins    9-10     11+
+ *   win the quarter-final 42.6%     win R1      15.7%    44.3%   79.9%
+ *   win the semi-final    33.9%     take it      1.2%     3.7%   10.3%
+ *   win the final         24.3%
+ *   a title              1 in 65
  *
  * So the rounds climb, a big season is worth about three times a scraped one
- * at the trophy, and an eight-win team still won five of them in the sample —
+ * at the trophy, and an eight-win team still won four of them in the sample —
  * which is the upset that has to stay possible.
+ *
+ * The scoring gate in openerFor is why the eight-win band reads harder than
+ * it did before it: about one playoff team in twelve is there on a record the
+ * room outscored, and those teams win the quarter-final 13% of the time
+ * against 45% for the ones that earned it. None of them won a title in the
+ * sample, which is the point.
  */
 const PLAYOFF_OPENERS = [1, 2, 4]
 const PLAYOFF_LATER = [8, 45]

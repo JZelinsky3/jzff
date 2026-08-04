@@ -730,9 +730,15 @@ export function MultiverseDraft({
    * same for everybody — a seed should buy a kinder route in, not a smaller
    * trophy.
    */
+  /** The fourteen weeks, totalled. The seeding rule reads both: a record the
+      scoring did not earn does not buy a soft draw. */
+  const regFor = useMemo(() => weekly.reduce((a, w) => a + w.mine, 0), [weekly])
+  const regAgainst = useMemo(() => weekly.reduce((a, w) => a + w.theirs, 0), [weekly])
+  const outscored = regFor >= regAgainst
+
   const poGames = useMemo<WeekLine[]>(() => {
     if (!deal) return []
-    return playoffField(deal.playoffs, finalWins).map((opp, r) => {
+    return playoffField(deal.playoffs, finalWins, regFor, regAgainst).map((opp, r) => {
       const mine = playoffScore(roster, deal.playoffs.rolls, r, deal.playoffs.keep)
       return {
         week: WEEKS + r + 1,
@@ -743,7 +749,7 @@ export function MultiverseDraft({
         paper: opp.ppg,
       }
     })
-  }, [deal, roster, finalWins])
+  }, [deal, roster, finalWins, regFor, regAgainst])
 
   const poLimit = useMemo(() => {
     for (let i = 0; i < poGames.length; i++) if (!poGames[i].won) return i + 1
@@ -1246,11 +1252,13 @@ export function MultiverseDraft({
           {/* Why the draw looks the way it does. Same three teams at every
               seed, so this is about order and nothing else. */}
           <p className={styles.poSeed}>
-            {finalWins >= 11
-              ? `${finalWins} wins buys you the softest side left in round one.`
-              : finalWins >= 9
-                ? `${finalWins} wins draws the middle of the field in round one.`
-                : `${finalWins} wins is the last way in, so the best team left is waiting.`}
+            {!outscored && finalWins >= 9
+              ? `${finalWins} wins, but the room outscored you across the season, so the draw does not soften.`
+              : finalWins >= 11
+                ? `${finalWins} wins and the points to match. The softest side left opens.`
+                : finalWins >= 9
+                  ? `${finalWins} wins draws the middle of the field in round one.`
+                  : `${finalWins} wins is the last way in, so the best team left is waiting.`}
           </p>
         </div>
         {bracket}

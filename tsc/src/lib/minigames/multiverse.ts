@@ -221,27 +221,36 @@ export type MultiverseDeal = {
 }
 
 /**
- * Which quarter-final a record earns.
+ * Which quarter-final a season earns.
  *
- * The reward for a big season is a soft opener and therefore a real edge on
- * the whole thing, because the alternative — reordering one fixed set of three
- * — gives a 12-2 team and an 8-6 team the same odds of winning it, and a
- * regular season that buys nothing is fourteen weeks of nothing.
+ * Wins first, and then the points, because a record on its own can be luck:
+ * fourteen weeks of narrow wins and heavy losses can put an eleven-win team
+ * on the board that the room outscored, and handing that team the softest
+ * draw rewards the dice rather than the draft. Being outscored across the
+ * season costs a tier. You need the wins AND to have earned them.
+ *
+ * Note that the openers are absolute, not scaled to the player: "soft" means
+ * a team built off one draft rather than the best of four, and in January
+ * every card cuts to its best seasons, so the gentlest side in the bracket is
+ * still comfortably better than a team that scraped in on 111 a week. Nothing
+ * here hands anybody an opponent they are supposed to beat.
  *
  * Indexes into playoffs.openers, which is sorted weakest first.
  */
-export function openerFor(wins: number): number {
-  if (wins >= 11) return 0
-  if (wins >= 9) return 1
-  return 2
+export function openerFor(wins: number, pointsFor: number, pointsAgainst: number): number {
+  const tier = wins >= 11 ? 0 : wins >= 9 ? 1 : 2
+  return pointsFor < pointsAgainst ? Math.min(2, tier + 1) : tier
 }
 
-/** The three rounds this record actually plays, in order. */
+/** The three rounds this season actually plays, in order. */
 export function playoffField(
   playoffs: { openers: MvOpponent[]; later: MvOpponent[] },
-  wins: number
+  wins: number,
+  pointsFor: number,
+  pointsAgainst: number
 ): MvOpponent[] {
-  const opener = playoffs.openers[openerFor(wins)] ?? playoffs.openers[playoffs.openers.length - 1]
+  const i = openerFor(wins, pointsFor, pointsAgainst)
+  const opener = playoffs.openers[i] ?? playoffs.openers[playoffs.openers.length - 1]
   return [opener, ...playoffs.later]
 }
 
