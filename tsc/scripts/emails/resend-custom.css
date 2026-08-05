@@ -1,0 +1,122 @@
+/* ===========================================================================
+   PASTE THIS WHOLE FILE INTO RESEND'S CUSTOM CSS BOX.
+
+   Resend's visual editor re-processes pasted HTML through react-email and
+   throws away the <style> block, the font @import, and the mobile media
+   query. This box is the only stylesheet that survives, so every rule that
+   has to reach the inbox lives here rather than in the HTML.
+
+   Verified against a real send 2026-08-05: the .tc-*, .wrap, .pad, .star,
+   .scale, .masthead, .hed and .subhed classes all survive the rewrite. The
+   editor also wraps every text node in <p> and strips colour from <strong>,
+   which is why the rules below reach descendants and not just the element
+   that carries the class.
+
+   ON GMAIL DARK MODE: nothing here fixes it, and nothing can. Gmail's mobile
+   apps transform colours with no CSS hook to target. The email now lets that
+   happen and instead uses near-neutral text colours (#f3f1ec / #e4e2dc) that
+   darken to grey rather than to gold. See the comment at the top of
+   testing-close.html for the full list of what was tried.
+   =========================================================================== */
+
+/* ── Fonts: system only, no webfonts ──────────────────────────────────────
+   DM Serif Display / Inter / JetBrains Mono are GONE from this email, and
+   deliberately so. Resend's editor strips the <link>, and Gmail strips
+   @import, so they never loaded in any send. Worse, a stack that leads with
+   a name the client cannot resolve appears to make Gmail discard the whole
+   declaration and fall back to its own sans, which is why the masthead was
+   rendering as Arial rather than as Georgia.
+
+   Georgia is the design serif now. It ships on iOS, macOS and Windows;
+   Android falls through to Noto Serif. Both are real newspaper-ish serifs,
+   and unlike the webfont they actually arrive.
+
+   Do not reintroduce a webfont here without testing a real send in Gmail
+   first. It has cost several rounds already. */
+
+/* The editor wraps every text node in <p>, so each selector has to name the
+   <p> as well or the rule lands on a wrapper whose child does the rendering.
+   Georgia is present on iOS and Windows but NOT on Android, where `serif`
+   resolves to Noto Serif. Either is fine; both are actual serifs. */
+.masthead, .masthead p,
+.hed, .hed p,
+.subhed, .subhed p {
+  font-family: Georgia, 'Times New Roman', Times, serif !important;
+  /* Bold, because the probe (2026-08-05) showed Gmail renders Georgia
+     correctly and the complaint was weight, not family: Georgia regular
+     reads thin beside DM Serif Display's heavy display cut. Georgia has a
+     real bold, so this is a drawn weight rather than a synthesised one. */
+  font-weight: 700 !important;
+}
+
+/* Body copy only. Deliberately NOT .tc-cream: that class sits on the
+   masthead and both headings, and a sans rule here would undo the serif
+   above. */
+.tc-soft, .tc-soft p, .tc-soft span {
+  font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif !important;
+}
+
+/* ── Mobile ───────────────────────────────────────────────────────────────
+   Rebuilt here because the editor dropped it from the HTML. Without this the
+   email renders at desktop widths on a phone. */
+@media only screen and (max-width: 620px) {
+  .wrap { width: 100% !important; }
+  .pad { padding-left: 20px !important; padding-right: 20px !important; }
+  .masthead { font-size: 29px !important; letter-spacing: 1px !important; }
+  .hed { font-size: 21px !important; }
+  .subhed { font-size: 19px !important; }
+  .star { font-size: 31px !important; padding: 0 5px !important; }
+  /* Keep the scale labels under the outer stars, not past them. */
+  .scale { max-width: 208px !important; }
+}
+
+/* ── Repair what the editor stripped ──────────────────────────────────────
+   <strong> lost its colour in the rewrite, so emphasised words inside body
+   copy fell back to the surrounding shade. */
+.tc-soft strong, .tc-soft p strong { color: #f3f1ec !important; }
+
+/* ── Outlook.com dark mode ────────────────────────────────────────────────
+   Outlook.com (not Gmail) stamps data-ogsc, "original good style colour", on
+   elements whose colour it rewrites, and the attribute can land on the
+   element or an ancestor. Because the editor wraps text in <p> and <span>,
+   these have to reach descendants too. Harmless in every other client, which
+   never sets the attribute. */
+[data-ogsc] .tc-cream, [data-ogsc] .tc-cream p, [data-ogsc] .tc-cream span,
+[data-ogsc] .tc-cream strong, .tc-cream[data-ogsc] { color: #f3f1ec !important; }
+
+[data-ogsc] .tc-soft, [data-ogsc] .tc-soft p, [data-ogsc] .tc-soft span,
+.tc-soft[data-ogsc] { color: #e4e2dc !important; }
+[data-ogsc] .tc-soft strong { color: #f3f1ec !important; }
+
+[data-ogsc] .tc-gold, [data-ogsc] .tc-gold p, [data-ogsc] .tc-gold span,
+[data-ogsc] .tc-gold a, [data-ogsc] .tc-gold em, .tc-gold[data-ogsc] { color: #e8c889 !important; }
+
+[data-ogsc] .tc-mute, [data-ogsc] .tc-mute p, [data-ogsc] .tc-mute span,
+.tc-mute[data-ogsc] { color: #8b9aab !important; }
+
+[data-ogsc] .tc-dim, [data-ogsc] .tc-dim p, [data-ogsc] .tc-dim span,
+.tc-dim[data-ogsc] { color: #6b7a8c !important; }
+
+[data-ogsc] .tc-red, [data-ogsc] .tc-red p, [data-ogsc] .tc-red span,
+.tc-red[data-ogsc] { color: #c14b36 !important; }
+
+[data-ogsc] .star a, .star a[data-ogsc] { color: #e8c889 !important; }
+[data-ogsc] .wrap, [data-ogsc] .pad { background-color: #0e1620 !important; }
+
+/* ── Apple Mail, iOS Mail, Outlook ────────────────────────────────────────
+   These honour the standard signal and never set data-ogsc, so the palette
+   is restated for them separately. The design is already dark; this exists
+   to stop any client "helping". Gmail's apps ignore this block. */
+@media (prefers-color-scheme: dark) {
+  .tc-cream, .tc-cream p, .tc-cream span, .tc-cream strong { color: #f3f1ec !important; }
+  .tc-soft, .tc-soft p, .tc-soft span { color: #e4e2dc !important; }
+  .tc-soft strong { color: #f3f1ec !important; }
+  .tc-gold, .tc-gold p, .tc-gold span, .tc-gold a, .tc-gold em { color: #e8c889 !important; }
+  .tc-mute, .tc-mute p, .tc-mute span { color: #8b9aab !important; }
+  .tc-dim, .tc-dim p, .tc-dim span { color: #6b7a8c !important; }
+  .tc-red, .tc-red p, .tc-red span { color: #c14b36 !important; }
+  .star a { color: #e8c889 !important; }
+
+  .wrap { background-color: #0e1620 !important; }
+  .pad { background-color: #0e1620 !important; }
+}

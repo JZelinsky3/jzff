@@ -147,18 +147,30 @@ export default async function AdminPage() {
           <h2 style={{ fontFamily: 'var(--mono)', fontSize: '.7rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', margin: '1.5rem 0 .75rem' }}>
             Profiles &amp; subscriptions
           </h2>
-          {/* Audience export for Resend broadcasts. Confirmed addresses only. */}
-          <a
-            href="/api/admin/audience"
-            download
-            style={{
-              fontFamily: 'var(--mono)', fontSize: '.65rem', letterSpacing: '.16em',
-              textTransform: 'uppercase', color: 'var(--gold)', textDecoration: 'none',
-              border: '1px solid var(--ink-line)', padding: '.45rem .9rem',
-            }}
-          >
-            Export audience CSV
-          </a>
+          <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
+            <Link
+              href="/admin/reviews"
+              style={{
+                fontFamily: 'var(--mono)', fontSize: '.65rem', letterSpacing: '.16em',
+                textTransform: 'uppercase', color: 'var(--gold)', textDecoration: 'none',
+                border: '1px solid var(--ink-line)', padding: '.45rem .9rem',
+              }}
+            >
+              Reviews
+            </Link>
+            {/* Audience export for Resend broadcasts. Confirmed addresses only. */}
+            <a
+              href="/api/admin/audience"
+              download
+              style={{
+                fontFamily: 'var(--mono)', fontSize: '.65rem', letterSpacing: '.16em',
+                textTransform: 'uppercase', color: 'var(--gold)', textDecoration: 'none',
+                border: '1px solid var(--ink-line)', padding: '.45rem .9rem',
+              }}
+            >
+              Export audience CSV
+            </a>
+          </div>
         </div>
         <div style={{ overflowX: 'auto', border: '1px solid var(--ink-line)', borderRadius: '2px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.8rem' }}>
