@@ -170,6 +170,18 @@ export default async function AdminPage() {
             >
               Export audience CSV
             </a>
+            {/* Top-up export: just whoever signed up since the last broadcast. */}
+            <a
+              href="/api/admin/audience?days=7"
+              download
+              style={{
+                fontFamily: 'var(--mono)', fontSize: '.65rem', letterSpacing: '.16em',
+                textTransform: 'uppercase', color: 'var(--gold)', textDecoration: 'none',
+                border: '1px solid var(--ink-line)', padding: '.45rem .9rem',
+              }}
+            >
+              New signups (7d)
+            </a>
           </div>
         </div>
         <div style={{ overflowX: 'auto', border: '1px solid var(--ink-line)', borderRadius: '2px' }}>

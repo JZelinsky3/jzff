@@ -5,6 +5,13 @@
 // bounces, and suppression are handled by the provider rather than by a
 // hand-rolled loop in this codebase.
 //
+// Filters, for topping up an audience after a broadcast has already gone out
+// instead of re-importing the whole site:
+//   ?days=7              registered in the last 7 days
+//   ?since=2026-08-01    registered on or after that date (or full ISO stamp)
+//   ?limit=2             newest N accounts only
+// Rows come back newest-first so the latest signups are at the top of the file.
+//
 // Columns match Resend's Contacts import format (email, first_name,
 // last_name, unsubscribed) plus a few extras Resend ignores on import but
 // which make the file useful to eyeball before sending.
@@ -39,7 +46,23 @@ function splitName(displayName: string | null, email: string): { first: string; 
   return { first: parts[0], last: parts.slice(1).join(' ') }
 }
 
-export async function GET(): Promise<Response> {
+// ?since= accepts a plain date or a full ISO stamp; ?days= is a convenience
+// wrapper on top of it. An unparseable value is ignored rather than silently
+// exporting zero contacts.
+function cutoffFrom(params: URLSearchParams): Date | null {
+  const since = params.get('since')
+  if (since) {
+    const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(since) ? `${since}T00:00:00Z` : since)
+    if (!Number.isNaN(d.getTime())) return d
+  }
+  const days = Number(params.get('days'))
+  if (Number.isFinite(days) && days > 0) {
+    return new Date(Date.now() - days * 86_400_000)
+  }
+  return null
+}
+
+export async function GET(request: Request): Promise<Response> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || !(await isSiteAdmin(user.id))) {
@@ -60,25 +83,42 @@ export async function GET(): Promise<Response> {
     (profilesRes.data ?? []).map((p) => [p.id as string, p as { display_name: string | null; created_at: string }]),
   )
 
-  const rows = [['email', 'first_name', 'last_name', 'unsubscribed', 'user_id', 'registered_at']
-    .map(csvCell).join(',')]
+  const params = new URL(request.url).searchParams
+  const cutoff = cutoffFrom(params)
+  const limitRaw = Number(params.get('limit'))
+  const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.floor(limitRaw) : null
 
   let skipped = 0
+  const contacts: { registered: string; cells: string }[] = []
   for (const u of authRes.data.users) {
     if (!u.email) { skipped++; continue }
     // Never mail an address that was never confirmed.
     if (!u.email_confirmed_at) { skipped++; continue }
     const profile = profileById.get(u.id)
+    const registered = profile?.created_at ?? u.created_at
+    if (cutoff && new Date(registered) < cutoff) continue
     const { first, last } = splitName(profile?.display_name ?? null, u.email)
-    rows.push([
-      csvCell(u.email),
-      csvCell(first),
-      csvCell(last),
-      csvCell('false'),
-      csvCell(u.id),
-      csvCell(profile?.created_at ?? u.created_at),
-    ].join(','))
+    contacts.push({
+      registered,
+      cells: [
+        csvCell(u.email),
+        csvCell(first),
+        csvCell(last),
+        csvCell('false'),
+        csvCell(u.id),
+        csvCell(registered),
+      ].join(','),
+    })
   }
+
+  // Newest first, so ?limit= takes the most recent signups and an unfiltered
+  // export still opens on whoever just joined.
+  contacts.sort((a, b) => b.registered.localeCompare(a.registered))
+  const kept = limit ? contacts.slice(0, limit) : contacts
+
+  const rows = [['email', 'first_name', 'last_name', 'unsubscribed', 'user_id', 'registered_at']
+    .map(csvCell).join(',')]
+  for (const c of kept) rows.push(c.cells)
 
   // 1000 is the listUsers page cap. Past that this needs pagination, and a
   // silently truncated audience is worse than a loud one.
@@ -86,10 +126,11 @@ export async function GET(): Promise<Response> {
   if (truncated) console.warn('[admin/audience] hit the 1000-user page cap; export is incomplete')
 
   const stamp = new Date().toISOString().slice(0, 10)
+  const suffix = cutoff || limit ? '-new' : ''
   return new NextResponse(rows.join('\n'), {
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': `attachment; filename="tsc-audience-${stamp}.csv"`,
+      'Content-Disposition': `attachment; filename="tsc-audience${suffix}-${stamp}.csv"`,
       'Cache-Control': 'no-store',
       'X-Contact-Count': String(rows.length - 1),
       'X-Skipped-Unconfirmed': String(skipped),

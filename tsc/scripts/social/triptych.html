@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TSC — pinned triptych</title>
+<link rel="stylesheet" href="brand.css">
+
+<!-- ============================================================
+     PINNED TRIPTYCH — three 1080x1350 posts that read as one
+     nameplate across the top row of the profile grid.
+
+     Everything is drawn once on a single 3240x1350 SHEET. A panel
+     export is that sheet viewed through a 1080-wide window at
+     offset -1080*(n-1). Slicing rather than re-laying-out is the
+     whole point: it is the only way the letterforms are guaranteed
+     to line up edge to edge once the three posts sit next to each
+     other. Never rebuild a panel independently.
+
+       triptych.html?sheet=1   full 3240x1350 spread (proofing)
+       triptych.html?panel=1   left post
+       triptych.html?panel=2   centre post
+       triptych.html?panel=3   right post
+
+     THE SPLIT. Joey asked for cuts that fall between letters
+     ("The S" / "unday" / ...) rather than through them. Those exact
+     fragments are geometrically impossible at one type size: "The S"
+     is 24% of the nameplate's width but would have to fill 33% of
+     it, so the line would have to be ~18% wider than the three tiles
+     put together and "T" and "e." would run off the ends.
+
+     What fit() does instead is honour the RULE behind the request.
+     It measures every glyph, then solves for the one scale and one
+     x-offset that put both tile boundaries exactly in the middle of
+     an inter-letter gap, picking whichever pair of gaps yields the
+     largest type with the most even outer margins. No glyph is ever
+     sliced. Which letters land where is an output, not an input.
+
+     If you would rather have the cuts land mid-letter (the sliced
+     billboard look, which signals "these three belong together"
+     more loudly at the cost of tidy single posts), set
+     FORCE_PLAIN_FIT to true below.
+     ============================================================ -->
+
+<style>
+  /* The export window. In panel mode this is the artboard; in sheet
+     mode it widens to the whole spread. */
+  .viewport {
+    position: relative;
+    width: 1080px;
+    height: 1350px;
+    overflow: hidden;
+    background: var(--ink);
+  }
+  .viewport.sheet-mode { width: 3240px; }
+
+  .sheet {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3240px;
+    height: 1350px;
+  }
+
+  /* Softer than the shared default: the vignette runs across all
+     three tiles, so at full strength the outer posts would read as
+     noticeably darker objects than the middle one. */
+  .sheet .l-vignette {
+    background-image: radial-gradient(
+      ellipse 74% 70% at 50% 50%,
+      transparent 0%,
+      rgba(4, 8, 13, .40) 100%
+    );
+  }
+
+  /* Full-bleed furniture. These cross the tile boundaries, which is
+     what makes the gutters in the profile grid read as deliberate
+     gaps in one object rather than as three unrelated squares. */
+  .bleed { position: absolute; left: 0; width: 3240px; z-index: 10; }
+
+  .mast {
+    position: absolute;
+    z-index: 15;
+    top: 0;                 /* both set by fitSliced() */
+    left: 0;
+    font-family: var(--serif);
+    color: var(--cream);
+    line-height: 1;
+    white-space: pre;
+  }
+
+  /* WORD MODE. One word per tile, centred in it, every one of them at
+     the same size so the row still reads as a single nameplate. Top is
+     set once by fitWords() so all three share a baseline. */
+  .word {
+    position: absolute;
+    z-index: 15;
+    left: 0;
+    width: 1080px;
+    text-align: center;
+    font-family: var(--serif);
+    color: var(--cream);
+    line-height: 1;
+    white-space: pre;
+  }
+
+  /* This block loads after brand.css, so .word's colour beats
+     .mast-gold's on equal specificity and "Chronicle." came out cream.
+     Restated here rather than dropping the colour off .word, which
+     would leave the other two inheriting from wherever. */
+  .word.mast-gold { color: var(--gold); }
+
+  /* Per-tile furniture, positioned inside a 1080-wide box that is
+     offset to its tile. Anything in here appears once per post. */
+  .tile {
+    position: absolute;
+    top: 0;
+    width: 1080px;
+    height: 1350px;
+    z-index: 20;
+  }
+  .tile-1 { left: 0; }
+  .tile-2 { left: 1080px; }
+  .tile-3 { left: 2160px; }
+
+  .tile .folio,
+  .tile .sub,
+  .tile .num {
+    position: absolute;
+    left: 0;
+    width: 1080px;
+    text-align: center;
+  }
+
+  .tile .folio { top: 148px; }
+  .tile .sub   { top: 946px; font-size: 34px; }
+  .tile .num   { top: 1112px; color: var(--gold-deep); }
+</style>
+</head>
+<body>
+
+<div class="viewport" id="viewport">
+  <div class="sheet" id="sheet">
+
+    <div class="l-ledger"></div>
+    <div class="l-glow"></div>
+    <div class="l-vignette"></div>
+
+    <div class="bleed rule-hair"   style="top:104px"></div>
+    <div class="bleed rule-double" style="top:286px"></div>
+    <div class="bleed rule-double" style="top:1064px"></div>
+    <div class="bleed rule-hair"   style="top:1246px"></div>
+
+    <!-- The nameplate. Spaces are deliberately NOT wrapped in spans:
+         fit() derives its candidate cut points from the gaps between
+         consecutive spans, so leaving the spaces as bare text nodes
+         makes each word gap a single wide candidate whose midpoint is
+         the middle of the space. Wrapping them would instead produce
+         two narrow candidates hard against the neighbouring glyphs. -->
+    <div class="mast" id="mast"></div>
+
+    <div class="word" id="word-1">The</div>
+    <div class="word" id="word-2">Sunday</div>
+    <div class="word mast-gold" id="word-3">Chronicle.</div>
+
+    <div class="tile tile-1">
+      <span class="crop tl"></span><span class="crop tr"></span>
+      <span class="crop bl"></span><span class="crop br"></span>
+      <div class="folio t-folio">An almanac, kept faithfully</div>
+      <div class="sub t-sub">Your league has a history.</div>
+      <div class="num t-imprint">&#8470; 01</div>
+    </div>
+
+    <div class="tile tile-2">
+      <span class="crop tl"></span><span class="crop tr"></span>
+      <span class="crop bl"></span><span class="crop br"></span>
+      <div class="folio t-folio">Est. 2025</div>
+      <div class="sub t-sub">Most of it is already lost.</div>
+      <div class="num t-imprint">&#8470; 02</div>
+    </div>
+
+    <div class="tile tile-3">
+      <span class="crop tl"></span><span class="crop tr"></span>
+      <span class="crop bl"></span><span class="crop br"></span>
+      <div class="folio t-folio">thesundaychronicle.app</div>
+      <div class="sub t-sub">This is where it survives.</div>
+      <div class="num t-imprint">&#8470; 03</div>
+    </div>
+
+    <div class="l-grain"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const SHEET_W = 3240;
+const TILE_W  = 1080;
+
+/* Cap-height centre line for the nameplate. Sits slightly above the
+   midpoint of the band between the two double rules (286..1064, mid
+   675) because the descender on "y" and the trailing period pull the
+   optical centre of the word down. */
+const CAP_CENTRE = 660;
+
+/* Measure at a round size, then scale. Any base works; 200 is large
+   enough that sub-pixel side bearings do not distort the ratios. */
+const BASE_SIZE = 200;
+
+/* ── HOW THE NAMEPLATE IS BROKEN UP ─────────────────────────────
+   'words'  one word per post, centred in its own tile, all three at
+            the same size. Nothing comes near a tile edge, so nothing
+            Instagram crops can take a letter with it.
+   'sliced' one continuous line cut by the tile boundaries.
+
+   'sliced' is kept because it is the more striking object when it
+   works, but it cannot be made safe. A continuous line has no margin
+   at the seams by definition, and shrinking the type shrinks the
+   letter gaps with it, so the fragments sit hard against the tile
+   edges at every size. On a grid that crops even slightly, the first
+   and last glyph of each tile lose a slice. That is what happened to
+   the r: solving for ink clearance moved which letter was at the
+   seam, it could not move the letter away from the seam.
+
+   Word mode gives every tile at least ~110px of clear margin. */
+const MODE = 'words';
+
+/* sliced mode only: skip gap-solving and just centre the line at the
+   largest size that fits, letting the boundaries fall mid-letter. */
+const FORCE_PLAIN_FIT = false;
+
+/* words mode: clear space each word keeps from its own tile's edges.
+   The widest word (Chronicle.) sets the size for all three. */
+const WORD_MARGIN = 110;
+
+/* Outer margin the nameplate must leave at both ends of the spread,
+   and the size window it must land in. A solution that violates any
+   of these is discarded rather than clamped.
+
+   MIN_MARGIN is deliberately small. These are the two OUTER ends of
+   the spread, not the seams: type running close to the left edge of
+   post 1 and the right edge of post 3 is what makes the row look
+   full. It was 130 and the nameplate came out small enough to look
+   lost inside the tile. */
+const MIN_MARGIN = 72;
+const MIN_SIZE   = 190;
+const MAX_SIZE   = 460;
+
+/* Painted clearance, in final pixels, that must survive on BOTH sides
+   of a tile boundary. This is the fix for the sliced italic r: the
+   solver used to work off each glyph's layout box, which is its
+   advance width, and in a display italic the ink happily overhangs
+   that box. The r's arm reached across a boundary its advance box
+   said was clear, so the tile edge cut the glyph in half. Cuts are
+   now placed in the gap between INK, with room to spare.
+
+   The floor is low on purpose. In a tight display serif the only gaps
+   wide enough for a generous margin are the word spaces, and those
+   cannot be used (see the note at the top of this file), so demanding
+   14px here rejected every candidate and dropped the whole thing into
+   the plain-fit fallback. Anything above zero already guarantees no
+   glyph is cut; 5px keeps it from looking shaved after Instagram's
+   encoder has been at it. Roomier gaps are then preferred by the
+   score rather than required. */
+const MIN_CLEARANCE = 5;
+
+/* "The Sunday " roman cream, "Chronicle." italic gold: the lockup
+   from public/tsc-logo.svg and the nav in NewLanding.tsx. */
+const WORDS = [
+  { text: 'The Sunday ', cls: '' },
+  { text: 'Chronicle.',  cls: 'mast-gold' },
+];
+
+const mast = document.getElementById('mast');
+
+/* Build one span per visible glyph, spaces left as text nodes. */
+const glyphs = [];
+for (const word of WORDS) {
+  for (const ch of word.text) {
+    if (ch === ' ') { mast.appendChild(document.createTextNode(' ')); continue; }
+    const el = document.createElement('span');
+    el.textContent = ch;
+    if (word.cls) el.className = word.cls;
+    mast.appendChild(el);
+    glyphs.push({ ch, el });
+  }
+}
+
+/* Ink extents of one glyph, measured on a canvas with the same font
+   the DOM is using. actualBoundingBoxLeft/Right are distances from the
+   pen origin to the edges of the painted pixels, which is exactly what
+   the layout box does not tell you. A span's border-box left edge is
+   the pen origin, so the two measurements compose. */
+const ctx = document.createElement('canvas').getContext('2d');
+
+function inkExtents(el, ch) {
+  const cs = getComputedStyle(el);
+  ctx.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+  const m = ctx.measureText(ch);
+  return { left: m.actualBoundingBoxLeft, right: m.actualBoundingBoxRight };
+}
+
+/* ── WORD MODE ────────────────────────────────────────────────
+   Size every word from the widest one, then centre each in its tile
+   and put them all on one baseline. "The" ends up with far more air
+   around it than "Chronicle." does; that is a property of the words,
+   not a mistake. Forcing all three to the same width would need about
+   1.8em of tracking on "The", which reads as T H E rather than as a
+   word. */
+function fitWords() {
+  const words = [
+    document.getElementById('word-1'),
+    document.getElementById('word-2'),
+    document.getElementById('word-3'),
+  ];
+
+  words.forEach((el, i) => {
+    el.style.left = (TILE_W * i) + 'px';
+    el.style.fontSize = BASE_SIZE + 'px';
+  });
+
+  /* Measure the natural width of each word by letting it shrink-wrap,
+     then put it back. The elements are 1080 wide and centred, so their
+     own boxes say nothing about how wide the type is. */
+  const widths = words.map(el => {
+    el.style.width = 'max-content';
+    const w = el.getBoundingClientRect().width;
+    el.style.width = '';
+    return w;
+  });
+
+  const size = BASE_SIZE * ((TILE_W - 2 * WORD_MARGIN) / Math.max(...widths));
+  words.forEach(el => { el.style.fontSize = size + 'px'; });
+
+  /* One baseline for all three. Same size and same top is enough:
+     with line-height 1 the box is the em box, so centring the box on
+     CAP_CENTRE puts the caps a few pixels above it, which is where
+     they want to be anyway once the descender in "Sunday" is in the
+     picture. */
+  const top = CAP_CENTRE - words[0].getBoundingClientRect().height / 2;
+  words.forEach(el => { el.style.top = top + 'px'; });
+
+  const final = widths.map(w => w * size / BASE_SIZE);
+  return {
+    size,
+    margins: final.map(w => (TILE_W - w) / 2),
+    words: ['The', 'Sunday', 'Chronicle.'],
+  };
+}
+
+function fitSliced() {
+  mast.style.fontSize = BASE_SIZE + 'px';
+  mast.style.left = '0px';
+
+  const origin = mast.getBoundingClientRect().left;
+  const box = glyphs.map(g => {
+    const r = g.el.getBoundingClientRect();
+    const ink = inkExtents(g.el, g.ch);
+    return {
+      ch: g.ch,
+      left: r.left - origin,
+      right: r.right - origin,
+      /* Painted edges, which may sit outside the advance box. */
+      inkLeft: (r.left - origin) - ink.left,
+      inkRight: (r.left - origin) + ink.right,
+    };
+  });
+
+  const total = Math.max(
+    box[box.length - 1].right,
+    box[box.length - 1].inkRight
+  );
+
+  /* Candidate cut points: the midpoint of every gap between the INK of
+     consecutive glyphs, carrying how much painted clearance that gap
+     offers on each side. In base-size units. */
+  const gaps = [];
+  for (let i = 0; i < box.length - 1; i++) {
+    const from = box[i].inkRight;
+    const to = box[i + 1].inkLeft;
+    if (to <= from) continue;              /* ink overlaps: unusable */
+    gaps.push({ after: i, x: (from + to) / 2, clearance: (to - from) / 2 });
+  }
+
+  let best = null;
+
+  if (!FORCE_PLAIN_FIT) {
+    /* Solve scale m and offset o from the two requirements
+         o + m * gaps[i].x = 1080
+         o + m * gaps[j].x = 2160
+       then keep the candidate with the largest nameplate, penalising
+       lopsided outer margins. */
+    for (let i = 0; i < gaps.length - 1; i++) {
+      for (let j = i + 1; j < gaps.length; j++) {
+        const m = TILE_W / (gaps[j].x - gaps[i].x);
+        const o = TILE_W - m * gaps[i].x;
+        const size = BASE_SIZE * m;
+        if (size < MIN_SIZE || size > MAX_SIZE) continue;
+
+        /* Clearance scales with the type, so it has to be checked at
+           the size this candidate would actually be set at. */
+        if (gaps[i].clearance * m < MIN_CLEARANCE) continue;
+        if (gaps[j].clearance * m < MIN_CLEARANCE) continue;
+
+        const width = m * total;
+        const leftMargin  = o;
+        const rightMargin = SHEET_W - (o + width);
+        if (leftMargin < MIN_MARGIN || rightMargin < MIN_MARGIN) continue;
+
+        /* Three things traded off against each other, all in pixels:
+           fill the spread, sit square on it, and keep the painted
+           edges well clear of both seams. The margin term is weighted
+           because the two outer margins are the only thing on the
+           sheet that would betray the solve; the clearance term is
+           weighted because a few pixels there are worth far more than
+           a few pixels of width. */
+        const clearance = Math.min(gaps[i].clearance, gaps[j].clearance) * m;
+        const score = width
+          - 8 * Math.abs(leftMargin - rightMargin)
+          + 25 * clearance;
+        if (!best || score > best.score) {
+          best = { score, m, o, size, width, leftMargin, rightMargin, i, j, clearance };
+        }
+      }
+    }
+  }
+
+  if (!best) {
+    /* Nothing solved (or plain fit requested): fill the spread minus
+       margins and centre it. */
+    const width = SHEET_W - 2 * 150;
+    const m = width / total;
+    best = {
+      m,
+      o: 150,
+      size: BASE_SIZE * m,
+      width,
+      leftMargin: 150,
+      rightMargin: 150,
+      i: -1,
+      j: -1,
+      clearance: 0,
+    };
+  }
+
+  mast.style.fontSize = best.size + 'px';
+  mast.style.left = best.o + 'px';
+
+  /* Vertical placement is done against a real capital rather than the
+     line box: DM Serif Display's ascent leaves a different amount of
+     space above the caps than the font-size implies, and that gap
+     changes with size, so any fixed top would drift. */
+  const capRect = glyphs[0].el.getBoundingClientRect();   // the "T"
+  const mastTop = mast.getBoundingClientRect().top;
+  const capOffsetInBox = capRect.top - mastTop;
+  mast.style.top = (CAP_CENTRE - capRect.height / 2 - capOffsetInBox) + 'px';
+
+  return best;
+}
+
+function report(fitted) {
+  /* Which glyphs land on which tile, written to the title so a
+     headless render can be checked with --dump-dom. Measured from the
+     sheet's left edge, not the nameplate's: tile membership is a
+     position on the spread, so the solved x-offset has to be in it. */
+  const origin = document.getElementById('sheet').getBoundingClientRect().left;
+  const tiles = ['', '', ''];
+  for (const g of glyphs) {
+    const r = g.el.getBoundingClientRect();
+    const centre = (r.left + r.right) / 2 - origin;
+    tiles[Math.min(2, Math.floor(centre / TILE_W))] += g.ch;
+  }
+  document.title =
+    'FIT size=' + Math.round(fitted.size) +
+    ' left=' + Math.round(fitted.leftMargin) +
+    ' right=' + Math.round(fitted.rightMargin) +
+    ' clearance=' + Math.round(fitted.clearance) +
+    ' | ' + tiles.map(t => '[' + t + ']').join(' ');
+}
+
+function layout() {
+  const params = new URLSearchParams(location.search);
+  const viewport = document.getElementById('viewport');
+  const sheet = document.getElementById('sheet');
+
+  if (params.get('sheet') === '1') {
+    viewport.classList.add('sheet-mode');
+    sheet.style.left = '0px';
+  } else {
+    const panel = Math.min(3, Math.max(1, parseInt(params.get('panel') || '1', 10)));
+    sheet.style.left = (-TILE_W * (panel - 1)) + 'px';
+  }
+
+  if (MODE === 'words') {
+    mast.style.display = 'none';
+    const fitted = fitWords();
+    document.title =
+      'WORDS size=' + Math.round(fitted.size) + ' | ' +
+      fitted.words.map((w, i) => w + ' (margin ' + Math.round(fitted.margins[i]) + ')').join('  ');
+  } else {
+    ['word-1', 'word-2', 'word-3'].forEach(id => {
+      document.getElementById(id).style.display = 'none';
+    });
+    report(fitSliced());
+  }
+
+  document.documentElement.setAttribute('data-ready', '1');
+}
+
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(layout);
+} else {
+  window.addEventListener('load', layout);
+}
+</script>
+</body>
+</html>

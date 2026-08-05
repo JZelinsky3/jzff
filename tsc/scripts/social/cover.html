@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TSC — post cover</title>
+<link rel="stylesheet" href="brand.css">
+
+<!-- ============================================================
+     UNIVERSAL POST COVER — one 1080x1350 artboard for every post.
+
+     The frame never changes: nameplate row at the top, printer's
+     corner marks, ruled foot, the same navy/ledger/grain surface as
+     the site. What changes per post is the section block in the
+     lower left and the accent colour that runs with it.
+
+       cover.html?label=The%20Clubhouse&accent=steel
+       cover.html?label=Leagues&kicker=Section&num=02&accent=rust
+       cover.html?label=Draft%20Grader&sub=Every%20pick%2C%20graded.
+
+     PARAMS
+       label   the big serif line. 1 to 3 words. Auto-fits, wrapping
+               to a second line when it has to.
+       kicker  small letterspaced line above it, in the accent colour.
+               Defaults to "The Sunday Chronicle".
+       sub     one sentence under the accent rule. Optional.
+       accent  gold | rust | steel | ivory, or any hex (%23e8c889).
+       num     section number for the top right, e.g. 02. Optional.
+       shot    path to a screenshot, laid in as an angled card.
+       phone   path to a screenshot, laid in as an angled phone.
+
+     ON THE SCREENSHOT LAYERS. They are off unless asked for, and
+     that is the recommended default. A cover whose only variable is
+     its label stays true forever; the moment a real screenshot is
+     baked in, the cover ages with the UI and has to be re-cut every
+     redesign. They also fare badly through Instagram's encoder: a
+     screenshot at the opacity needed to stay behind the type turns
+     to mush, and a screenshot legible enough to survive fights the
+     type for the same space.
+
+     Use them for one thing only: a post announcing a specific
+     feature, where showing a sliver of the actual interface earns
+     its keep. Anything else (a record, a stat, a quote, a link) is
+     better on the plain frame.
+     ============================================================ -->
+
+<style>
+  .board { width: 1080px; height: 1350px; }
+
+  /* Section colour bar. Full-bleed down the left edge: it is the one
+     element that changes with every post, so it wants to be the one
+     element you can identify from a thumbnail. */
+  .spine {
+    position: absolute;
+    top: 0; left: 0;
+    width: 12px; height: 1350px;
+    background: var(--accent);
+    z-index: 25;
+  }
+
+  .head {
+    position: absolute;
+    top: 92px; left: 110px; right: 96px;
+    height: 66px;
+    display: flex;
+    align-items: center;
+    z-index: 20;
+  }
+  .head .monogram { width: 66px; height: 66px; font-size: 30px; }
+  .head .nameplate {
+    margin-left: 24px;
+    font-family: var(--mono);
+    font-size: 19px;
+    letter-spacing: .32em;
+    text-transform: uppercase;
+    color: var(--cream-soft);
+  }
+  .head .num {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 19px;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .head-rule {
+    position: absolute;
+    top: 202px; left: 110px; right: 96px;
+    z-index: 20;
+  }
+
+  /* The section block is anchored to its BOTTOM edge, so a label that
+     wraps to two lines grows up into the empty middle of the board
+     instead of pushing the rule and the foot down. */
+  .block {
+    position: absolute;
+    left: 110px; right: 110px;
+    bottom: 236px;
+    z-index: 20;
+  }
+
+  .block .kicker { margin-bottom: 30px; }
+
+  .label {
+    font-family: var(--serif);
+    color: var(--cream);
+    line-height: 1.02;
+    letter-spacing: -.005em;
+    margin-bottom: 34px;
+  }
+
+  .block .rule-accent { width: 132px; margin-bottom: 34px; }
+  .block .sub { max-width: 780px; }
+  .block .sub:empty { display: none; }
+
+  .foot-rule {
+    position: absolute;
+    left: 110px; right: 96px;
+    top: 1186px;
+    z-index: 20;
+  }
+  .foot {
+    position: absolute;
+    left: 110px; right: 96px;
+    top: 1228px;
+    display: flex;
+    align-items: center;
+    z-index: 20;
+  }
+  .foot .accent { margin-left: auto; color: var(--accent); }
+
+  /* Blind-embossed C. bleeding off the top right, from the logo's
+     italic terminal. It fills the upper field, which is otherwise
+     bare navy on a one-word label, without adding anything that has
+     to be maintained or that dates. At 5% it is below the threshold
+     where it reads as a letter and above the one where it reads as
+     nothing: the eye takes it as a raised surface. Suppressed when a
+     screenshot layer is in use, since they occupy the same field. */
+  .watermark {
+    position: absolute;
+    top: -150px; right: -110px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 760px;
+    line-height: 1;
+    color: rgba(244, 235, 216, .05);
+    z-index: 5;
+    user-select: none;
+  }
+
+  /* ── OPTIONAL SCREENSHOT LAYERS ─────────────────────────────
+     Both sit above the surface layers and below the type, are cut
+     off at the artboard edge, and are masked so they dissolve
+     towards the lower left where the section block lives. */
+
+  .shot-card,
+  .phone-shot {
+    position: absolute;
+    z-index: 10;
+    overflow: hidden;
+    background: var(--ink-card);
+    border: 1px solid rgba(168, 138, 74, .45);
+    box-shadow: 0 40px 90px rgba(0, 0, 0, .55);
+  }
+  .shot-card img,
+  .phone-shot img { display: block; width: 100%; }
+
+  /* Both are parked in the upper right, clear of the section block,
+     and fade out towards the lower left so nothing competes with the
+     headline. The opacities look low written down; they are not. The
+     site's own surface is navy, so a screenshot of it sits only a few
+     values off the board it is laid on, and anything above roughly
+     .45 stops reading as a background and starts reading as a second
+     unrelated picture. */
+
+  .shot-card {
+    top: 208px; left: 356px;
+    width: 860px;
+    height: 560px;
+    border-radius: 22px;
+    transform: rotate(-7deg);
+    opacity: .26;
+    -webkit-mask-image: linear-gradient(205deg, #000 10%, rgba(0,0,0,.30) 58%, transparent 88%);
+  }
+
+  .phone-shot {
+    top: 150px; left: 700px;
+    width: 384px;
+    height: 810px;
+    border-radius: 52px;
+    border: 9px solid #17212d;
+    transform: rotate(7deg);
+    opacity: .40;
+    -webkit-mask-image: linear-gradient(200deg, #000 22%, rgba(0,0,0,.40) 66%, transparent 94%);
+  }
+</style>
+</head>
+<body>
+
+<div class="board" id="board">
+
+  <div class="l-ledger"></div>
+  <div class="l-glow"></div>
+  <div class="l-vignette"></div>
+
+  <div class="watermark" id="watermark">C.</div>
+
+  <div id="art"></div>
+
+  <div class="spine"></div>
+
+  <span class="crop tl"></span><span class="crop tr"></span>
+  <span class="crop bl"></span><span class="crop br"></span>
+
+  <div class="head">
+    <span class="monogram">TS<i>C.</i></span>
+    <span class="nameplate">The Sunday Chronicle</span>
+    <span class="num" id="num"></span>
+  </div>
+  <div class="head-rule rule-hair"></div>
+
+  <div class="block">
+    <div class="kicker t-kicker" id="kicker"></div>
+    <div class="label" id="label"></div>
+    <div class="rule-accent"></div>
+    <div class="sub t-sub" id="sub"></div>
+  </div>
+
+  <div class="foot-rule rule-double"></div>
+  <div class="foot">
+    <span class="t-imprint">thesundaychronicle.app</span>
+    <span class="t-imprint accent" id="foot-accent"></span>
+  </div>
+
+  <div class="l-grain"></div>
+</div>
+
+<script>
+'use strict';
+
+const params = new URLSearchParams(location.search);
+const get = (k, fallback) => {
+  const v = params.get(k);
+  return v === null || v === '' ? fallback : v;
+};
+
+/* Named accents are the site palette. Rust is the one adjustment:
+   --rust (#a04830) is a stamp colour meant to sit on cream, and on
+   navy at 19px it goes muddy, so the accent role uses the lifted
+   version the emails already use. */
+const ACCENTS = {
+  gold:  '#e8c889',
+  rust:  '#c14b36',
+  steel: '#8fb0cf',
+  ivory: '#f4ebd8',
+};
+
+const accent = get('accent', 'gold');
+document.documentElement.style.setProperty(
+  '--accent',
+  ACCENTS[accent.toLowerCase()] || accent
+);
+
+const label = get('label', 'Section');
+document.getElementById('label').textContent = label;
+document.getElementById('kicker').textContent = get('kicker', 'The Sunday Chronicle');
+document.getElementById('sub').textContent = get('sub', '');
+
+const num = get('num', '');
+document.getElementById('num').textContent = num ? '№ ' + num : '';
+document.getElementById('foot-accent').textContent = num ? '§ ' + num : '';
+
+/* Screenshot layers, only if asked for. */
+const art = document.getElementById('art');
+const shot = get('shot', '');
+const phone = get('phone', '');
+if (shot) {
+  art.insertAdjacentHTML('beforeend',
+    '<div class="shot-card"><img src="' + shot + '" alt=""></div>');
+}
+if (phone) {
+  art.insertAdjacentHTML('beforeend',
+    '<div class="phone-shot"><img src="' + phone + '" alt=""></div>');
+}
+if (shot || phone) {
+  document.getElementById('watermark').style.display = 'none';
+}
+
+/* Fit the label to the widest size that still leaves it inside its
+   box. Stepping down from the maximum rather than solving for it
+   because the wrap points move as the size changes, so the height is
+   not a continuous function of the font size. */
+function fitLabel() {
+  const el = document.getElementById('label');
+  const MAX_H = 420;          /* two lines at the largest size */
+  for (let size = 188; size >= 72; size -= 2) {
+    el.style.fontSize = size + 'px';
+    const fitsWidth = el.scrollWidth <= el.clientWidth + 1;
+    const fitsHeight = el.scrollHeight <= MAX_H;
+    if (fitsWidth && fitsHeight) return;
+  }
+}
+
+function layout() {
+  fitLabel();
+  document.documentElement.setAttribute('data-ready', '1');
+}
+
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(layout);
+} else {
+  window.addEventListener('load', layout);
+}
+</script>
+</body>
+</html>
