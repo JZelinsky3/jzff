@@ -122,15 +122,32 @@
   border-color: var(--gp-line);
 }
 
+/* The active tab takes --accent when the caller sets one, which the
+   league board does per game so the game row agrees with the colour the
+   game's own board wears. Falls back to the section gold everywhere
+   else, which is every per-game board under /games/. */
 .tabOn {
   color: var(--gp-ink);
-  background: var(--gp-gold);
-  border-color: var(--gp-gold);
+  background: var(--accent, var(--gp-gold));
+  border-color: var(--accent, var(--gp-gold));
 }
 
 .tabOn:hover {
   color: var(--gp-ink);
-  border-color: var(--gp-gold);
+  border-color: var(--accent, var(--gp-gold));
+}
+
+/* The quiet line under a board that isn't showing everything: which games
+   are playable but not ranked yet. Not a warning and not styled as one. */
+.note {
+  max-width: 46rem;
+  margin: 1.4rem auto 0;
+  padding: 0 1rem;
+  text-align: center;
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--gp-mute);
 }
 
 /* ── Rows ─────────────────────────────────────────────────── */

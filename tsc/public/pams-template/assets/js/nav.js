@@ -131,7 +131,13 @@
         { key: 'draft',       label: 'Drafts',    path: 'draft/' },
         { key: 'records',     label: 'Records',   path: 'records' },
         { key: 'rivalries',   label: 'Rivalries', path: 'rivalries/' },
-        { key: 'live', label: 'Live',      path: 'live/' }
+        { key: 'live', label: 'Live',      path: 'live/' },
+        // The games wing. It used to be unreachable from here on the grounds
+        // that the Games Page lived on the main site and a chapbar tab can
+        // only point inside the archive — true until the games were mounted
+        // at /leagues/<slug>/games/, which is where 'games/' resolves through
+        // the page's <base>.
+        { key: 'games', label: 'Games', path: 'games/' }
     ];
 
     // Live-mode chapbar. Replaces the history chapbar entirely when the
@@ -389,22 +395,19 @@
                 navLinks;
         }
 
-        // Games group. The Games Page lives on the main site rather than in
-        // the archive, so it can't be a chapbar tab — but a wheel spun on
-        // THIS league's history is the version worth offering from inside
-        // it, so the link carries the slug. Shown to everyone: if you can
-        // read the almanac you can play its squads.
+        // Games group. This used to be six links out to /games/<id>/?pool=
+        // <slug> plus an "All games" — the whole shelf spelled into a
+        // dropdown, pointing at another section of the site. The games are
+        // mounted inside the league now (/leagues/<slug>/games/), the pool is
+        // the league, and the shelf is one page, so this is the door to it
+        // and the board beside it. Shown to everyone: if you can read the
+        // almanac you can play its squads.
         var gamesGroup = '';
         if (ctx.slug) {
-            var poolQs = '/?pool=' + encodeURIComponent(ctx.slug);
             gamesGroup =
                 '<span class="nav-drop-label">Games</span>' +
-                '<a href="/games/roulette' + poolQs + '">Roster Roulette</a>' +
-                '<a href="/games/guess-the-draft' + poolQs + '">Guess the Draft</a>' +
-                '<a href="/games/gauntlet' + poolQs + '">The Gauntlet</a>' +
-                '<a href="/games/over-under' + poolQs + '">The Over/Under</a>' +
-                '<a href="/games/redraft' + poolQs + '">Redraft</a>' +
-                '<a href="/games/">All games</a>';
+                '<a href="/leagues/' + encodeURIComponent(ctx.slug) + '/games/">The Games Page</a>' +
+                '<a href="/leagues/' + encodeURIComponent(ctx.slug) + '/games/board/">The Board</a>';
         }
 
         // Theme picker: commish-only, on theme-eligible pages

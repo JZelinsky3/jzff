@@ -16,7 +16,6 @@ import { LeagueDeck, HouseDeck, type HousePool } from './LeagueDeck'
 import { ownLeagueHref } from './OwnLeagueCta'
 import { MobileGameBar } from './MobileGameBar'
 import { MobileGamesDock } from './MobileGamesDock'
-import { MobileGamesFoot } from './MobileGamesFoot'
 import { MAX_COMBINED_LEAGUES } from '@/lib/minigames/deal'
 import type { GameDef } from './gameDefs'
 import s from './mobile.module.css'
@@ -133,8 +132,7 @@ export async function MobileGameLobby({ game }: { game: GameDef }) {
         )}
       </section>
 
-      <MobileGamesFoot signedIn={signedIn} />
-      <MobileGamesDock />
+      <MobileGamesDock signedIn={signedIn} />
     </main>
   )
 }

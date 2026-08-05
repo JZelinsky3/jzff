@@ -3,7 +3,6 @@ import { GAMES } from './gameDefs'
 import type { GameDef } from './gameDefs'
 import { MobileGameBar, Chevron } from './MobileGameBar'
 import { MobileGamesDock } from './MobileGamesDock'
-import { MobileGamesFoot } from './MobileGamesFoot'
 import { GameMark } from './GameMark'
 import s from './mobile.module.css'
 
@@ -119,8 +118,10 @@ export function MobileGames({
         </div>
       </section>
 
-      <MobileGamesFoot signedIn={signedIn} />
-      <MobileGamesDock />
+      {/* No footer under this. It used to carry Home / Library / Clubhouse /
+          Desktop site directly above a dock that repeated most of them; those
+          four are rows in the bar's More sheet now. */}
+      <MobileGamesDock signedIn={signedIn} />
     </main>
   )
 }

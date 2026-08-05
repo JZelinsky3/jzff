@@ -2,27 +2,36 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 import { GAMES } from './gameDefs'
 import s from './mobile.module.css'
 
-// The section's whole map, at the thumb. Same pattern as the Clubhouse's
-// six-wing dock (HubMobileDock in app/hub/hub-chrome.tsx).
+// The section's nav at the thumb, in the almanac's grammar.
 //
-// It was a hand-written list of three — the shelf, Roulette, Guess the Draft
-// — and stayed three while four more games shipped, so the phone's only
-// persistent nav quietly became a list of the two oldest games on the site.
-// It is generated off GAMES now: a game is added in gameDefs.ts and it is in
-// the dock, which is the only version of this that survives the next one.
+// This was seven slots — the shelf plus one per shipped game — sized so that
+// GameDef.shortName got about six characters each at 390px, with a comment
+// admitting seven was the ceiling. It was the ceiling: a sixth game shipped,
+// the labels stopped being the words anyone uses for the games, and the tree
+// still carried a MobileGamesFoot repeating four of the same links directly
+// above it.
 //
-// Seven slots is the ceiling and we are at it. The labels are GameDef.shortName
-// because at 390px each slot gets ~54px, and the icons carry as much of the
-// identification as the words do. The active slot takes the game's own accent
-// rather than the section gold, so the dock agrees with the board above it.
+// The almanac solved this years earlier and the fix is to copy it. Its bar
+// (mobile-app.js, buildShell) never lists more than five destinations and
+// never lists a CHAPTER'S CONTENTS at all — History, Week and Desks are
+// buttons that open a sheet. So:
+//
+//   Shelf · Games · [Board] · More
+//
+// Games opens the six with their marks and taglines, which is more than the
+// dock ever showed and takes one more tap to reach. Board only appears where
+// a pool is known — inside a league, where it means that league's board —
+// because a leaderboard tab that can't name its pool has nowhere to go. More
+// absorbs the old MobileGamesFoot.
 //
 // NOT rendered on a board. Every board owns the bottom of the screen already
-// — Roulette's lineup HUD, Guess the Draft's answer bar, the Multiverse
-// Draft's card tray. A dock under any of them is a second fixed bar arguing
-// with the first over the same thumb.
+// (Roulette's lineup HUD, Guess the Draft's answer bar, the Multiverse
+// Draft's card tray), and a dock under any of them is a second fixed bar
+// arguing with the first over the same thumb.
 
 /** Keyed off GameDef.id. Drawn at 19px, so each is three or four strokes and
     no more: at that size a detailed glyph is a smudge. Where a game has a
@@ -84,64 +93,307 @@ const ICONS: Record<string, React.ReactNode> = {
   ),
 }
 
-const SHELF = {
-  href: '/games/',
-  label: 'All',
-  accent: '#e8c889',
-  icon: (
-    <>
-      <path d="M3.5 4.5h7v7h-7z" />
-      <path d="M13.5 4.5h7v7h-7z" />
-      <path d="M3.5 13.5h7v7h-7z" />
-      <path d="M13.5 13.5h7v7h-7z" />
-    </>
-  ),
+const SHELF_ICON = (
+  <>
+    <path d="M3.5 4.5h7v7h-7z" />
+    <path d="M13.5 4.5h7v7h-7z" />
+    <path d="M3.5 13.5h7v7h-7z" />
+    <path d="M13.5 13.5h7v7h-7z" />
+  </>
+)
+
+const ALMANAC_ICON = (
+  <>
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14z" />
+    <path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5" />
+  </>
+)
+
+const GAMES_ICON = (
+  <>
+    <rect x="2.5" y="7" width="19" height="10" rx="3" />
+    <path d="M7 10.5v3" />
+    <path d="M5.5 12h3" />
+    <circle cx="16" cy="11" r="1" />
+    <circle cx="18.4" cy="13.4" r="1" />
+  </>
+)
+
+const BOARD_ICON = (
+  <>
+    <path d="M9 4.5h6v15H9z" />
+    <path d="M3.5 10h5.5v9.5H3.5z" />
+    <path d="M15 8h5.5v11.5H15z" />
+  </>
+)
+
+const MORE_ICON = (
+  <>
+    <circle cx="5" cy="12" r="1.7" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none" />
+    <circle cx="19" cy="12" r="1.7" fill="currentColor" stroke="none" />
+  </>
+)
+
+function Glyph({ children, size = 19 }: { children: React.ReactNode; size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {children}
+    </svg>
+  )
 }
 
-const ITEMS = [
-  SHELF,
-  ...GAMES.map((g) => ({
-    href: g.href,
-    label: g.shortName,
-    accent: g.accent,
-    icon: ICONS[g.id] ?? SHELF.icon,
-  })),
-]
+/** Native <dialog>, same as the almanac's sheets: the top layer means it is
+    never trapped under the sticky bar or a board's own stacking context,
+    which is the trap documented in the pams .section z-index note. */
+function Sheet({
+  open,
+  onClose,
+  title,
+  children,
+}: {
+  open: boolean
+  onClose: () => void
+  title: React.ReactNode
+  children: React.ReactNode
+}) {
+  const ref = useRef<HTMLDialogElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    if (open && !el.open) el.showModal()
+    if (!open && el.open) el.close()
+  }, [open])
 
-export function MobileGamesDock() {
-  const pathname = usePathname()
   return (
-    <nav className={s.dock} aria-label="The Games Page">
-      {ITEMS.map((it) => {
-        const base = it.href.replace(/\/$/, '')
-        // The shelf matches only itself; a game matches its lobby, its board
-        // and its leaderboard, which all hang off the same route.
-        const active =
-          base === '/games' ? pathname === '/games' || pathname === '/games/' : pathname.startsWith(base)
-        return (
+    <dialog
+      ref={ref}
+      className={s.sheet}
+      onClose={onClose}
+      onClick={(e) => {
+        // Clicking the backdrop lands on the dialog itself, never on a child.
+        if (e.target === ref.current) onClose()
+      }}
+    >
+      <div className={s.sheetHandle} aria-hidden />
+      <div className={s.sheetTitle}>{title}</div>
+      {children}
+    </dialog>
+  )
+}
+
+export type GamesDockProps = {
+  /** Where this tree's game routes hang off: '/games/' on the public shelf,
+      '/leagues/<slug>/games/' inside a league. Every href below is built
+      from it, so one component serves both trees. */
+  base?: string
+  /** Left tab. Inside a league it goes back to the almanac hub, so the
+      section never reads as somewhere you left the league to get to. */
+  home?: { href: string; label: string; icon: 'shelf' | 'almanac' }
+  /** Present only when the pool is already known — inside a league. */
+  boardHref?: string
+  signedIn?: boolean
+  /** Slug of the league this tree belongs to, when it belongs to one. Adds
+      the almanac's own rows to the More sheet. */
+  leagueSlug?: string
+  leagueName?: string
+}
+
+export function MobileGamesDock({
+  base = '/games/',
+  home = { href: '/games/', label: 'Shelf', icon: 'shelf' },
+  boardHref,
+  signedIn = false,
+  leagueSlug,
+  leagueName,
+}: GamesDockProps) {
+  const pathname = usePathname()
+  const [sheet, setSheet] = useState<'games' | 'more' | null>(null)
+
+  // Every row in a sheet closes it on the way out, so the ordinary path needs
+  // nothing here. The back button is the exception: Next keeps this component
+  // mounted across a client-side route change, so a sheet opened by a tap
+  // would still be sitting over the page you went back to.
+  useEffect(() => {
+    const onPop = () => setSheet(null)
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
+  // GameDef.href is absolute under /games/. Inside a league the same game
+  // lives at <base><id>/, so the id is what travels, not the href.
+  const hrefFor = (id: string, fallback: string) =>
+    base === '/games/' ? fallback : `${base}${id}/`
+
+  const onShelf = pathname === base.replace(/\/$/, '') || pathname === base
+  const activeGame = GAMES.find((g) => {
+    const h = hrefFor(g.id, g.href).replace(/\/$/, '')
+    return pathname === h || pathname.startsWith(`${h}/`)
+  })
+  const onBoard = !!boardHref && pathname.replace(/\/$/, '') === boardHref.replace(/\/$/, '')
+
+  const cols = boardHref ? 4 : 3
+
+  return (
+    <>
+      <nav
+        className={s.dock}
+        style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+        aria-label="The Games Page"
+      >
+        <Link
+          href={home.href}
+          className={`${s.dockItem} ${onShelf ? s.dockOn : ''}`}
+          aria-current={onShelf ? 'page' : undefined}
+        >
+          <Glyph>{home.icon === 'almanac' ? ALMANAC_ICON : SHELF_ICON}</Glyph>
+          {home.label}
+        </Link>
+
+        <button
+          type="button"
+          className={`${s.dockItem} ${activeGame ? s.dockOn : ''}`}
+          style={activeGame ? ({ '--accent': activeGame.accent } as React.CSSProperties) : undefined}
+          aria-haspopup="dialog"
+          onClick={() => setSheet('games')}
+        >
+          <Glyph>{GAMES_ICON}</Glyph>
+          {activeGame ? activeGame.shortName : 'Games'}
+        </button>
+
+        {boardHref && (
           <Link
-            key={it.href}
-            href={it.href}
-            className={`${s.dockItem} ${active ? s.dockOn : ''}`}
-            style={{ '--accent': it.accent } as React.CSSProperties}
+            href={boardHref}
+            className={`${s.dockItem} ${onBoard ? s.dockOn : ''}`}
+            aria-current={onBoard ? 'page' : undefined}
           >
-            <svg
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              {it.icon}
-            </svg>
-            {it.label}
+            <Glyph>{BOARD_ICON}</Glyph>
+            Board
           </Link>
-        )
-      })}
-    </nav>
+        )}
+
+        <button
+          type="button"
+          className={s.dockItem}
+          aria-haspopup="dialog"
+          onClick={() => setSheet('more')}
+        >
+          <Glyph>{MORE_ICON}</Glyph>
+          More
+        </button>
+      </nav>
+
+      <Sheet
+        open={sheet === 'games'}
+        onClose={() => setSheet(null)}
+        title={
+          <>
+            Pick a <em>game</em>
+          </>
+        }
+      >
+        <div className={s.sheetGames}>
+          {GAMES.map((g) => {
+            const href = hrefFor(g.id, g.href)
+            const on = activeGame?.id === g.id
+            return (
+              <Link
+                key={g.id}
+                href={href}
+                className={`${s.sheetGame} ${on ? s.sheetGameOn : ''}`}
+                style={{ '--accent': g.accent } as React.CSSProperties}
+                onClick={() => setSheet(null)}
+              >
+                <span className={s.sheetGameIco} aria-hidden>
+                  <Glyph size={20}>{ICONS[g.id] ?? SHELF_ICON}</Glyph>
+                </span>
+                <span className={s.sheetGameBody}>
+                  <span className={s.sheetGameName}>
+                    {g.title} <em>{g.titleEm}</em>
+                  </span>
+                  <span className={s.sheetGameLine}>{g.tagline}</span>
+                </span>
+                {on && (
+                  <span className={s.sheetGameHere} aria-label="You are here">
+                    ★
+                  </span>
+                )}
+              </Link>
+            )
+          })}
+        </div>
+        <Link href={home.href} className={s.sheetLink} onClick={() => setSheet(null)}>
+          {base === '/games/' ? 'The whole shelf' : `Back to ${leagueName ?? 'the almanac'}`}
+        </Link>
+      </Sheet>
+
+      <Sheet open={sheet === 'more'} onClose={() => setSheet(null)} title="More">
+        {leagueSlug && (
+          <>
+            <span className={s.sheetLabel}>The almanac</span>
+            <Link
+              href={`/leagues/${leagueSlug}/`}
+              className={s.sheetRow}
+              onClick={() => setSheet(null)}
+            >
+              {leagueName ?? 'League home'}
+            </Link>
+            <Link
+              href={`/leagues/${leagueSlug}/standings`}
+              className={s.sheetRow}
+              onClick={() => setSheet(null)}
+            >
+              Standings
+            </Link>
+            <Link
+              href={`/leagues/${leagueSlug}/seasons/`}
+              className={s.sheetRow}
+              onClick={() => setSheet(null)}
+            >
+              Season archives
+            </Link>
+            <div className={s.sheetDivider} />
+          </>
+        )}
+
+        <span className={s.sheetLabel}>The Sunday Chronicle</span>
+        <Link href="/" className={s.sheetRow} onClick={() => setSheet(null)}>
+          Home
+        </Link>
+        {!leagueSlug && (
+          <Link href="/games/" className={s.sheetRow} onClick={() => setSheet(null)}>
+            The Games Page
+          </Link>
+        )}
+        <Link href="/hub" className={s.sheetRow} onClick={() => setSheet(null)}>
+          Clubhouse
+        </Link>
+        <Link
+          href={signedIn ? '/dashboard' : '/login'}
+          className={s.sheetRow}
+          onClick={() => setSheet(null)}
+        >
+          {signedIn ? 'Your library' : 'Sign in'}
+        </Link>
+
+        <div className={s.sheetDivider} />
+        <a
+          href={`/api/view/?mode=desktop&to=${encodeURIComponent(pathname)}`}
+          className={s.sheetRow}
+        >
+          Desktop site
+        </a>
+      </Sheet>
+    </>
   )
 }

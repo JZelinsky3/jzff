@@ -665,6 +665,24 @@
               sheetRow('managers/all-time', 'All-Time Team') +
               sheetRow('rivalries/', 'Rivalries');
 
+        // The league's own games wing. Relative, so <base> resolves it to
+        // /leagues/<slug>/games/ — deliberately NOT a link out to /games/.
+        // A home-screen install is scoped by the manifest, and every hop out
+        // of /leagues/<slug>/ used to open iOS's in-app browser overlay: a
+        // modal sheet with an X that dumps you back on the hub. The games are
+        // mounted inside the league now and the pool is the league, so there
+        // is no picker on the way in either. See
+        // src/app/leagues/[slug]/games/leagueGames.ts.
+        //
+        // Not on the demo: /demo is a static tree with no league row behind
+        // it, so it has no wing to open.
+        var games = (ctx.slug && !ctx.isDemo)
+            ? '<div class="m-sheet-divider"></div>' +
+              '<span class="m-sheet-label">The Games Page</span>' +
+              sheetRow('games/', 'Play the games') +
+              sheetRow('games/board/', 'The Board')
+            : '';
+
         var more = document.createElement('dialog');
         more.className = 'm-sheet';
         more.id = 'm-sheet-more';
@@ -706,6 +724,7 @@
             '<div class="m-sheet-handle" aria-hidden></div>' +
             '<div class="m-sheet-title">' + escapeHtml(ctx.name || 'The Almanac') + '</div>' +
             society +
+            games +
             '<div class="m-sheet-divider"></div>' +
             account +
             themePicker +

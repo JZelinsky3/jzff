@@ -47,7 +47,16 @@ export async function GET(
       name: league.name,
       short_name: shortName,
       start_url: startUrl,
-      scope: startUrl,
+      // Scope is the whole site, NOT startUrl. The installed app still OPENS
+      // on the league — that's start_url's job — but scope decides what
+      // counts as "inside the app", and a league-scoped one meant every link
+      // off the almanac (the Games Page, the Clubhouse, the Library) launched
+      // iOS's in-app browser overlay: a modal sheet with an X that dumps you
+      // back on the league hub when you close it. The league's own games now
+      // live under /leagues/<slug>/games/ so they'd stay in scope either way,
+      // but links shared before that move still point at /games/, and the
+      // rest of the site was breaking out regardless.
+      scope: '/',
       display: 'standalone',
       background_color: '#0e1620',
       theme_color: '#0e1620',

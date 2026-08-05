@@ -39,8 +39,8 @@
 
 .root {
   display: block;
-  /* Room for the fixed dock plus the home-indicator inset. */
-  padding-bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+  /* Room for the fixed tab bar plus the home-indicator inset. */
+  padding-bottom: calc(4.4rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* The hamburger sheet is the old site-wide nav and these pages replace it:
@@ -128,31 +128,35 @@
   color: var(--gp-gold);
 }
 
-/* ── Bottom dock ──────────────────────────────────────────── */
-/* Every destination in the section: the shelf and the games. Replaces
-   the hamburger outright — the whole map fits at the thumb, so a sheet
-   to hold it was always a sheet too many.
+/* ── Bottom tab bar ───────────────────────────────────────── */
+/* Three or four destinations, matching the almanac's .m-tabbar rather
+   than the old seven-slot dock. That dock listed the shelf plus one
+   slot per shipped game, which at 390px gave each label about six
+   characters of mono and made GameDef.shortName a list of nicknames
+   nobody uses. A sixth game shipped and it was full.
 
-   Sized for SEVEN, which is the shelf plus the six shipped games and
-   also the ceiling: 390px over seven slots is ~54px, enough for an 18px
-   glyph and about six characters of mono. GameDef.shortName supplies
-   those six; a seventh game means this becomes a scroller or the shelf
-   entry comes out, and there is no version of it that still fits eight
-   full labels. */
+   The almanac never puts a chapter's CONTENTS in the bar — History,
+   Week and Desks are buttons that open a sheet — so neither does this.
+   Column count is set inline by the component (3 without a board tab,
+   4 with one), so adding a seventh game changes nothing down here.
+
+   Type and metrics are the almanac's: .52rem mono at .14em, a 2px
+   active rule at the TOP edge of the slot, not floating above it. */
 
 .dock {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 50;
+  z-index: 220;
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  padding: 0.38rem 0.15rem calc(0.42rem + env(safe-area-inset-bottom, 0px));
+  grid-template-columns: repeat(4, 1fr);
+  padding: 0 0 env(safe-area-inset-bottom, 0px);
+  height: calc(3.4rem + env(safe-area-inset-bottom, 0px));
   background: rgba(9, 14, 20, 0.96);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border-top: 1px solid rgba(232, 200, 137, 0.28);
+  border-top: 1px solid var(--gp-line);
 }
 
 .dockItem {
@@ -160,21 +164,23 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.26rem;
-  padding: 0.34rem 0 0.2rem;
+  justify-content: center;
+  gap: 3px;
   min-width: 0;
-  color: #7d8a99;
+  color: var(--gp-mute);
   text-decoration: none;
+  background: none;
+  border: 0;
   font-family: var(--mono);
   font-weight: 700;
-  font-size: 0.42rem;
-  letter-spacing: 0.08em;
+  font-size: 0.52rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  /* Seven columns, and the longest label has to survive a 320px phone
-     without wrapping into the row below it. */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: clip;
+  -webkit-user-select: none;
+  user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -193,11 +199,196 @@
 .dockOn::before {
   content: '';
   position: absolute;
-  top: -0.42rem;
-  left: 22%;
-  right: 22%;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
   height: 2px;
   background: var(--accent, var(--gp-gold));
+}
+
+/* ── Sheets ───────────────────────────────────────────────── */
+/* Native <dialog>, so they sit in the top layer and can't be trapped
+   under the sticky bar or a board's own stacking context. Same shape
+   and metrics as the almanac's .m-sheet (mobile-app.css). */
+
+.sheet {
+  position: fixed;
+  inset: auto 0 0 0;
+  width: 100%;
+  max-width: 100%;
+  max-height: calc(100dvh - 4rem);
+  margin: 0;
+  padding: 0 0 calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
+  background: var(--gp-panel);
+  color: var(--gp-cream);
+  border: 1px solid var(--gp-line);
+  border-bottom: none;
+  border-radius: 16px 16px 0 0;
+  overflow-y: auto;
+}
+
+.sheet::backdrop {
+  background: rgba(6, 10, 16, 0.6);
+}
+
+.sheetHandle {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--gp-line);
+  margin: 0.6rem auto 0.25rem;
+}
+
+.sheetTitle {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.58rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  text-align: center;
+  padding: 0.35rem 1rem 0.6rem;
+}
+
+.sheetTitle em {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--gp-gold);
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 1.15rem;
+}
+
+.sheetLabel {
+  display: block;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.52rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--gp-gold);
+  opacity: 0.75;
+  padding: 0.8rem 1.25rem 0.25rem;
+}
+
+.sheetRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  color: var(--gp-cream);
+  background: none;
+  border: none;
+  text-align: left;
+  text-decoration: none;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.sheetRow:active {
+  background: var(--gp-panel-2);
+}
+
+.sheetDivider {
+  height: 1px;
+  background: var(--gp-line-soft);
+  margin: 0.5rem 1.25rem;
+}
+
+.sheetLink {
+  display: block;
+  padding: 0.9rem 1.25rem 0.4rem;
+  text-align: center;
+  color: var(--gp-mute);
+  text-decoration: none;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* The games sheet. Every game with its glyph and its one line — more
+   than the seven-slot dock ever showed, one tap further in. */
+
+.sheetGames {
+  padding: 0.15rem 0.75rem 0.35rem;
+}
+
+.sheetGame {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0.55rem;
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--gp-cream);
+  border-bottom: 1px solid var(--gp-line-soft);
+}
+
+.sheetGame:last-child {
+  border-bottom: 0;
+}
+
+.sheetGame:active {
+  background: var(--gp-panel-2);
+}
+
+.sheetGameOn {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.sheetGameIco {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  color: var(--accent);
+}
+
+.sheetGameBody {
+  min-width: 0;
+  display: block;
+}
+
+.sheetGameName {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.02rem;
+  line-height: 1.15;
+  color: var(--gp-cream);
+}
+
+.sheetGameName em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.sheetGameLine {
+  display: block;
+  margin-top: 0.15rem;
+  font-family: var(--sans);
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: var(--gp-soft);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.sheetGameHere {
+  margin-left: auto;
+  flex: none;
+  color: var(--accent);
+  font-size: 0.7rem;
 }
 
 /* ── Hero ─────────────────────────────────────────────────── */
@@ -509,40 +700,6 @@
   color: var(--gp-gold);
 }
 
-/* ── Footer ───────────────────────────────────────────────── */
-
-.foot {
-  margin-top: 2rem;
-  padding: 1.2rem 1.1rem 0.4rem;
-  border-top: 1px solid var(--gp-line);
-  text-align: center;
-}
-
-.footBrand {
-  font-family: var(--serif);
-  font-size: 0.8rem;
-  color: var(--gp-mute);
-}
-
-.footBrand em {
-  font-style: italic;
-  color: var(--gp-soft);
-}
-
-.footLinks {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.9rem;
-  margin-top: 0.6rem;
-  font-family: var(--mono);
-  font-weight: 700;
-  font-size: 0.5rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.footLinks a {
-  color: var(--gp-gold);
-  text-decoration: none;
-}
+/* The section footer (.foot / .footBrand / .footLinks) came out with
+   MobileGamesFoot: it sat directly above the bottom bar and repeated
+   most of its links. Those rows live in the bar's More sheet now. */

@@ -108,6 +108,8 @@ export function Chevron() {
 
 export function MobileGameBar({
   left,
+  backHref = '/games/',
+  backLabel = 'All games',
   right = 'profile',
   kicker,
   title,
@@ -116,6 +118,14 @@ export function MobileGameBar({
 }: {
   /** Home on the shelf itself, back to the shelf everywhere else. */
   left: 'home' | 'back'
+  /**
+   * Where back goes. Defaults to the public shelf, which is right for the
+   * /games/ tree. The league wing (/leagues/<slug>/games/) passes its own
+   * base so the arrow never walks somebody out of their league — the whole
+   * reason that wing exists is that leaving the league was the problem.
+   */
+  backHref?: string
+  backLabel?: string
   /**
    * The shelf offers the Library, a game offers the reader themselves.
    *
@@ -143,7 +153,7 @@ export function MobileGameBar({
           <HomeIcon />
         </Link>
       ) : (
-        <Link href="/games/" className={s.barIco} aria-label="All games">
+        <Link href={backHref} className={s.barIco} aria-label={backLabel}>
           <BackIcon />
         </Link>
       )}
