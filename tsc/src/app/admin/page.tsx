@@ -143,9 +143,23 @@ export default async function AdminPage() {
       </section>
 
       <section className="section" style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 1.25rem 2rem' }}>
-        <h2 style={{ fontFamily: 'var(--mono)', fontSize: '.7rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', margin: '1.5rem 0 .75rem' }}>
-          Profiles &amp; subscriptions
-        </h2>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+          <h2 style={{ fontFamily: 'var(--mono)', fontSize: '.7rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', margin: '1.5rem 0 .75rem' }}>
+            Profiles &amp; subscriptions
+          </h2>
+          {/* Audience export for Resend broadcasts. Confirmed addresses only. */}
+          <a
+            href="/api/admin/audience"
+            download
+            style={{
+              fontFamily: 'var(--mono)', fontSize: '.65rem', letterSpacing: '.16em',
+              textTransform: 'uppercase', color: 'var(--gold)', textDecoration: 'none',
+              border: '1px solid var(--ink-line)', padding: '.45rem .9rem',
+            }}
+          >
+            Export audience CSV
+          </a>
+        </div>
         <div style={{ overflowX: 'auto', border: '1px solid var(--ink-line)', borderRadius: '2px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.8rem' }}>
             <thead>

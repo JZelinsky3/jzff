@@ -163,6 +163,44 @@ export function testingModeEndsAt(): Date | null {
   return resolveTestingCutoff()
 }
 
+// ─── Tester free month ────────────────────────────────────────────────────
+// Everyone who registered during the free testing window was promised a
+// month on the house when it closed. That promise is honored server-side as
+// a longer Stripe trial rather than a coupon code, for two reasons: a code
+// can be lost or forwarded, and Stripe only accepts one promotion code per
+// checkout — spending that slot on the free month would block the separate
+// launch discount from ever applying.
+//
+// Eligibility is "signed up before the window closed", read from the profile
+// row (created by the on_auth_user_created trigger at signup, so it is the
+// registration timestamp). TESTER_FREE_MONTH_CUTOFF overrides the date; set
+// TESTER_TRIAL_DAYS to change the length.
+//
+// This does NOT bypass the one-trial-per-user rule in /api/stripe/checkout —
+// a user who already burned a trial gets billed immediately either way.
+const TESTER_CUTOFF_DEFAULT = '2026-08-17T03:59:59Z' // Aug 16 2026, 11:59pm ET
+const TESTER_TRIAL_DAYS = Number(process.env.TESTER_TRIAL_DAYS ?? '30')
+
+export async function isTesterAccount(userId: string): Promise<boolean> {
+  const cutoff = Date.parse(process.env.TESTER_FREE_MONTH_CUTOFF ?? TESTER_CUTOFF_DEFAULT)
+  if (Number.isNaN(cutoff)) return false
+  const db = createAdminClient()
+  const { data } = await db
+    .from('profiles')
+    .select('created_at')
+    .eq('id', userId)
+    .maybeSingle()
+  if (!data?.created_at) return false
+  return Date.parse(data.created_at as string) < cutoff
+}
+
+// Trial length for a user about to start their first subscription: the
+// standard window, or the tester month for anyone who was here during
+// testing. Callers still decide *whether* a trial applies at all.
+export async function trialDaysFor(userId: string, standardDays: number): Promise<number> {
+  return (await isTesterAccount(userId)) ? TESTER_TRIAL_DAYS : standardDays
+}
+
 // ─── Subscription state ───────────────────────────────────────────────────
 
 export type SubscriptionRow = {

@@ -10,7 +10,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
-import { getStripe, priceIdFor, getUserSubscription, isCompUser } from '@/lib/stripe'
+import { getStripe, priceIdFor, getUserSubscription, isCompUser, trialDaysFor } from '@/lib/stripe'
 
 const TRIAL_DAYS = Number(process.env.STRIPE_TRIAL_DAYS ?? '7')
 
@@ -69,6 +69,12 @@ export async function POST(req: Request) {
     // another on Veteran yearly, etc.
     const trialEligible = !existing
 
+    // Testers who signed up during the free window get the promised month
+    // instead of the standard trial — granted server-side off their signup
+    // date, so there is no code to enter and nothing to lose. Everyone else
+    // gets TRIAL_DAYS. See trialDaysFor() in lib/stripe.ts.
+    const trialDays = trialEligible ? await trialDaysFor(user.id, TRIAL_DAYS) : TRIAL_DAYS
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
@@ -77,7 +83,7 @@ export async function POST(req: Request) {
       // round-trip.
       client_reference_id: user.id,
       subscription_data: {
-        ...(trialEligible ? { trial_period_days: TRIAL_DAYS } : {}),
+        ...(trialEligible ? { trial_period_days: trialDays } : {}),
         metadata: { user_id: user.id },
       },
       // Allow promo codes — easy win, costs nothing if you never create one.
