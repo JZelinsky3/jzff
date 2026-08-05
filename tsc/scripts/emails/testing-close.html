@@ -13,11 +13,19 @@
      surface below: Gmail does not recolour an element that carries a
      background image.
 
-     That protection has to go on EVERY element that sets a colour, not just
-     the cells. Protecting the table cells alone kept the navy but let Gmail
-     repaint the cream text down to a muddy gold, because the text lives in
-     divs, spans and anchors that carry their own colour. So every one of
-     them now names the same shade it already sits on.
+     That covers BACKGROUNDS ONLY. It does not protect text colour, and the
+     background images sitting on the text elements are inherited belt-and-
+     braces, not the thing doing the work. Gmail decides background and
+     foreground as a pair: light surface, dark text. The images override the
+     surface half and leave the text half running, which is how you get navy
+     with the cream darkened to a muddy gold. Cream is a warm hue, so pulling
+     the lightness out of it lands almost exactly on --gold-deep.
+
+     The text half is handled by the [data-ogsc] rules in the <style> block.
+     Gmail and Outlook.com stamp that attribute on any element whose colour
+     they rewrite, so the .tc-* classes let us name the original shade back.
+     That is the only supported lever for text colour; there is no meta tag
+     or inline style that stops the rewrite.
 
      If images are blocked the bgcolor attribute still paints the surfaces
      and the inline colours still paint the text, so it degrades to exactly
@@ -64,6 +72,20 @@
     .scale { max-width: 208px !important; }
     .code { font-size: 25px !important; letter-spacing: 4px !important; }
   }
+
+  /* ── Gmail / Outlook.com dark-mode override ───────────────────────────
+     Both stamp data-ogsc ("original good style colour") onto elements whose
+     colour they rewrite. Targeting that attribute is the only supported way
+     to put the palette back. Without this, Gmail darkens the cream and,
+     because cream is a warm hue, it lands on a muddy gold. Harmless
+     everywhere else: no other client ever sets the attribute, so the rules
+     never match. */
+  [data-ogsc] .tc-cream, .tc-cream[data-ogsc] { color: #f4ebd8 !important; }
+  [data-ogsc] .tc-soft, .tc-soft[data-ogsc] { color: #d8cfba !important; }
+  [data-ogsc] .tc-gold, .tc-gold[data-ogsc] { color: #e8c889 !important; }
+  [data-ogsc] .tc-mute, .tc-mute[data-ogsc] { color: #8b9aab !important; }
+  [data-ogsc] .tc-dim, .tc-dim[data-ogsc] { color: #6b7a8c !important; }
+  [data-ogsc] .tc-red, .tc-red[data-ogsc] { color: #c14b36 !important; }
   a { text-decoration: none; }
 </style>
 </head>
@@ -90,13 +112,13 @@
     <!-- ═══ MASTHEAD ═══════════════════════════════════════════════ -->
     <tr>
       <td bgcolor="#0e1620" class="pad" align="center" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:32px 40px 24px; border-bottom:3px double #a88a4a;">
-        <div style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:#8b9aab; padding-bottom:12px;">
+        <div class="tc-mute" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:#8b9aab; padding-bottom:12px;">
           An almanac, kept faithfully
         </div>
-        <div class="masthead" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-size:38px; line-height:1.1; letter-spacing:1.5px; color:#f4ebd8;">
+        <div class="masthead tc-cream" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-size:38px; line-height:1.1; letter-spacing:1.5px; color:#f4ebd8;">
           The Sunday Chronicle
         </div>
-        <div style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:#e8c889; padding-top:12px;">
+        <div class="tc-gold" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:#e8c889; padding-top:12px;">
           Final Edition
         </div>
       </td>
@@ -105,14 +127,14 @@
     <!-- ═══ LEDE ═══════════════════════════════════════════════════ -->
     <tr>
       <td bgcolor="#0e1620" class="pad" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:32px 40px 0;">
-        <div style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:#c14b36; padding-bottom:14px;">
+        <div class="tc-red" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:#c14b36; padding-bottom:14px;">
           &#9733; Free testing ends August 16
         </div>
-        <div class="hed" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-size:32px; line-height:1.22; color:#f4ebd8; padding-bottom:18px;">
+        <div class="hed tc-cream" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-size:32px; line-height:1.22; color:#f4ebd8; padding-bottom:18px;">
           You were here for the rough draft.
         </div>
-        <div style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:15px; line-height:1.75; color:#d8cfba;">
-          {{{FIRST_NAME|Hey}}}, Sunday <strong style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#f4ebd8;">August 16</strong> is the last day of free
+        <div class="tc-soft" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:15px; line-height:1.75; color:#d8cfba;">
+          {{{FIRST_NAME|Hey}}}, Sunday <strong class="tc-cream" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#f4ebd8;">August 16</strong> is the last day of free
           testing.
           <br><br>
           You signed up while this thing was half-built, found bugs nobody was paid to find,
@@ -132,13 +154,13 @@
     <!-- ═══ § 01 — THE REVIEW ══════════════════════════════════════ -->
     <tr>
       <td bgcolor="#0e1620" class="pad" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:24px 40px 0;">
-        <div style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:#e8c889; padding-bottom:12px;">
+        <div class="tc-gold" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:#e8c889; padding-bottom:12px;">
           &sect; 01 · The ask
         </div>
-        <div class="subhed" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-size:23px; line-height:1.3; color:#f4ebd8; padding-bottom:12px;">
+        <div class="subhed tc-cream" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-size:23px; line-height:1.3; color:#f4ebd8; padding-bottom:12px;">
           Tell me how it went
         </div>
-        <div style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:15px; line-height:1.75; color:#d8cfba;">
+        <div class="tc-soft" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:15px; line-height:1.75; color:#d8cfba;">
           Tap a star below and that's it, no extra steps required. If you have a minute, you can
           add a note about what you liked or what broke, but it's not required. If something
           bugged you, that matters more to me than a good rating.
@@ -151,11 +173,11 @@
     <tr>
       <td bgcolor="#0e1620" align="center" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:20px 12px 8px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td class="star" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=1&amp;src=email" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#e8c889; text-decoration:none;">&#9733;</a></td>
-          <td class="star" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=2&amp;src=email" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#e8c889; text-decoration:none;">&#9733;</a></td>
-          <td class="star" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=3&amp;src=email" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#e8c889; text-decoration:none;">&#9733;</a></td>
-          <td class="star" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=4&amp;src=email" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#e8c889; text-decoration:none;">&#9733;</a></td>
-          <td class="star" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=5&amp;src=email" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#e8c889; text-decoration:none;">&#9733;</a></td>
+          <td class="star" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 7px; font-size:35px; line-height:1;"><a class="tc-gold" href="https://thesundaychronicle.app/review?r=1&amp;src=email" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#e8c889; text-decoration:none;">&#9733;</a></td>
+          <td class="star" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 7px; font-size:35px; line-height:1;"><a class="tc-gold" href="https://thesundaychronicle.app/review?r=2&amp;src=email" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#e8c889; text-decoration:none;">&#9733;</a></td>
+          <td class="star" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 7px; font-size:35px; line-height:1;"><a class="tc-gold" href="https://thesundaychronicle.app/review?r=3&amp;src=email" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#e8c889; text-decoration:none;">&#9733;</a></td>
+          <td class="star" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 7px; font-size:35px; line-height:1;"><a class="tc-gold" href="https://thesundaychronicle.app/review?r=4&amp;src=email" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#e8c889; text-decoration:none;">&#9733;</a></td>
+          <td class="star" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 7px; font-size:35px; line-height:1;"><a class="tc-gold" href="https://thesundaychronicle.app/review?r=5&amp;src=email" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#e8c889; text-decoration:none;">&#9733;</a></td>
         </tr></table>
       </td>
     </tr>
@@ -174,7 +196,7 @@
     </tr>
     <tr>
       <td bgcolor="#0e1620" class="pad" align="center" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:16px 40px 0;">
-        <div style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:13px; line-height:1.6; color:#8b9aab;">
+        <div class="tc-mute" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:13px; line-height:1.6; color:#8b9aab;">
           Or just hit reply. One line is fine.
         </div>
       </td>
@@ -187,8 +209,8 @@
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #2a3645;">
           <tr>
             <td align="center" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:16px 0 16px;">
-              <div style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:14px; line-height:1.7; color:#d8cfba;">
-                Everyone who leaves a review will receive a discount code.
+              <div class="tc-soft" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:14px; line-height:1.7; color:#d8cfba;">
+                Everyone who leaves a review will receive a promotional code.
               </div>
             </td>
           </tr>
@@ -206,20 +228,20 @@
     <!-- ═══ § 02 — THE FREE MONTH ══════════════════════════════════ -->
     <tr>
       <td bgcolor="#0e1620" class="pad" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:24px 40px 0;">
-        <div style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:#e8c889; padding-bottom:12px;">
+        <div class="tc-gold" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:#e8c889; padding-bottom:12px;">
           &sect; 02 · Your free month
         </div>
-        <div class="subhed" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-size:23px; line-height:1.3; color:#f4ebd8; padding-bottom:12px;">
+        <div class="subhed tc-cream" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-size:23px; line-height:1.3; color:#f4ebd8; padding-bottom:12px;">
           Your first month is free
         </div>
-        <div style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:15px; line-height:1.75; color:#d8cfba;">
+        <div class="tc-soft" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:15px; line-height:1.75; color:#d8cfba;">
           Since you had an account during testing, your first subscription gets 30 free days
           instead of the usual 7. It's automatic, nothing to enter or claim, it just shows up
           when you check out. Cancel anytime in that month and you won't be charged.
           <br><br>
-          <span style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#8b9aab;">You can subscribe today. The 30 days won't begin until August 17, so none of it
+          <span class="tc-mute" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#8b9aab;">You can subscribe today. The 30 days won't begin until August 17, so none of it
           gets spent while testing is still free. You have until
-          <strong style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#d8cfba;">August 31</strong> to claim it.</span>
+          <strong class="tc-soft" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#d8cfba;">August 31</strong> to claim it.</span>
         </div>
       </td>
     </tr>
@@ -237,9 +259,9 @@
          and give it padding:15px 38px with color:#0e1620. -->
     <tr>
       <td bgcolor="#0e1620" class="pad" align="center" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:22px 40px 0;">
-        <div style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:14px; line-height:1.7; color:#8b9aab;">
+        <div class="tc-mute" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:14px; line-height:1.7; color:#8b9aab;">
           Plans are at
-          <a href="https://thesundaychronicle.app/pricing?utm_source=email&amp;utm_campaign=testing-close" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#e8c889; text-decoration:underline;">thesundaychronicle.app/pricing</a>.
+          <a class="tc-gold" href="https://thesundaychronicle.app/pricing?utm_source=email&amp;utm_campaign=testing-close" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; color:#e8c889; text-decoration:underline;">thesundaychronicle.app/pricing</a>.
           They start at $3 a month.
         </div>
       </td>
@@ -253,10 +275,10 @@
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-left:2px solid #2a3645;">
           <tr>
             <td bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:4px 0 4px 18px;">
-              <div style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:#8b9aab; padding-bottom:12px;">
+              <div class="tc-mute" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:#8b9aab; padding-bottom:12px;">
                 Where things stand after the 16th
               </div>
-              <div style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:14px; line-height:1.85; color:#d8cfba;">
+              <div class="tc-soft" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:14px; line-height:1.85; color:#d8cfba;">
                 Nothing gets deleted.<br>
                 Your league archive stays free and stays online.<br>
                 Free accounts keep one league.
@@ -270,15 +292,15 @@
     <!-- ═══ SIGN-OFF ═══════════════════════════════════════════════ -->
     <tr>
       <td bgcolor="#0e1620" class="pad" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:30px 40px 34px;">
-        <div style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:15px; line-height:1.75; color:#d8cfba;">
+        <div class="tc-soft" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:15px; line-height:1.75; color:#d8cfba;">
           Football's back in a month. Thanks for putting up with a half-built site until then.
           <br><br>
           <!-- Matches .site-footer em in main.css: serif italic gold, bumped
                1.15x against the surrounding text because serif italic has a
                smaller x-height at the same computed size, with the letter
                spacing zeroed and the baseline nudged down. -->
-          <span style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-style:italic; font-size:16px; letter-spacing:0; vertical-align:-.05em; color:#e8c889;">JZFF</span><br>
-          <span style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:1.8px; text-transform:uppercase; color:#8b9aab;">The Sunday Chronicle</span>
+          <span class="tc-gold" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-style:italic; font-size:16px; letter-spacing:0; vertical-align:-.05em; color:#e8c889;">JZFF</span><br>
+          <span class="tc-mute" style="background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:1.8px; text-transform:uppercase; color:#8b9aab;">The Sunday Chronicle</span>
         </div>
       </td>
     </tr>
@@ -286,19 +308,19 @@
     <!-- ═══ FOOTER ═════════════════════════════════════════════════ -->
     <tr>
       <td class="pad" align="center" bgcolor="#0a1017" style="padding:22px 40px 28px; border-top:1px solid #2a3645; background:#0a1017; background-color:#0a1017; background-image:url('https://thesundaychronicle.app/email/bg-page.png'); background-repeat:repeat;">
-        <div style="background-image:url('https://thesundaychronicle.app/email/bg-page.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:2.4px; text-transform:uppercase; color:#6b7a8c; padding-bottom:12px;">
-          The Sunday Chronicle &nbsp;·&nbsp; Built by <span style="background-image:url('https://thesundaychronicle.app/email/bg-page.png'); background-repeat:repeat; font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-style:italic; font-size:11px; letter-spacing:0; vertical-align:-.05em; color:#e8c889;">JZFF</span>
+        <div class="tc-dim" style="background-image:url('https://thesundaychronicle.app/email/bg-page.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:2.4px; text-transform:uppercase; color:#6b7a8c; padding-bottom:12px;">
+          The Sunday Chronicle &nbsp;·&nbsp; Built by <span class="tc-gold" style="background-image:url('https://thesundaychronicle.app/email/bg-page.png'); background-repeat:repeat; font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-style:italic; font-size:11px; letter-spacing:0; vertical-align:-.05em; color:#e8c889;">JZFF</span>
         </div>
-        <div style="background-image:url('https://thesundaychronicle.app/email/bg-page.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:12px; line-height:1.7; color:#6b7a8c;">
+        <div class="tc-dim" style="background-image:url('https://thesundaychronicle.app/email/bg-page.png'); background-repeat:repeat; font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:12px; line-height:1.7; color:#6b7a8c;">
           You're getting this because you made an account at thesundaychronicle.app.
           <br>
           125 47th Street, Sea Isle City, NJ 08243
           <br><br>
-          <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="background-image:url('https://thesundaychronicle.app/email/bg-page.png'); background-repeat:repeat; color:#8b9aab; text-decoration:underline;">Unsubscribe</a>
+          <a class="tc-mute" href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="background-image:url('https://thesundaychronicle.app/email/bg-page.png'); background-repeat:repeat; color:#8b9aab; text-decoration:underline;">Unsubscribe</a>
           &nbsp;·&nbsp;
-          <a href="https://thesundaychronicle.app/privacy" style="background-image:url('https://thesundaychronicle.app/email/bg-page.png'); background-repeat:repeat; color:#8b9aab; text-decoration:underline;">Privacy</a>
+          <a class="tc-mute" href="https://thesundaychronicle.app/privacy" style="background-image:url('https://thesundaychronicle.app/email/bg-page.png'); background-repeat:repeat; color:#8b9aab; text-decoration:underline;">Privacy</a>
           &nbsp;·&nbsp;
-          <a href="https://thesundaychronicle.app/terms" style="background-image:url('https://thesundaychronicle.app/email/bg-page.png'); background-repeat:repeat; color:#8b9aab; text-decoration:underline;">Terms</a>
+          <a class="tc-mute" href="https://thesundaychronicle.app/terms" style="background-image:url('https://thesundaychronicle.app/email/bg-page.png'); background-repeat:repeat; color:#8b9aab; text-decoration:underline;">Terms</a>
         </div>
       </td>
     </tr>
