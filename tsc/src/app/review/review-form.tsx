@@ -71,6 +71,13 @@ export function ReviewForm({
 }) {
   const [rating, setRating] = useState<number | null>(initialRating)
   const [hover, setHover] = useState<number | null>(null)
+  // Has the user touched the stars on THIS page? A rating carried in from the
+  // email is a real choice, but it's one made in an inbox, where the 1-star
+  // link is the leftmost and easiest to hit by accident. Until they confirm
+  // it here, say out loud which rating is loaded so a mis-tap is visible
+  // before it's submitted rather than after.
+  const [touched, setTouched] = useState(false)
+  const carriedIn = initialRating !== null && !touched
   const [bestPart, setBestPart] = useState('')
   const [needsWork, setNeedsWork] = useState('')
   const [canQuote, setCanQuote] = useState(false)
@@ -205,7 +212,7 @@ export function ReviewForm({
                   onMouseEnter={() => setHover(val)}
                   onFocus={() => setHover(val)}
                   onBlur={() => setHover(null)}
-                  onClick={() => { setRating(val); setError(null) }}
+                  onClick={() => { setRating(val); setTouched(true); setError(null) }}
                   style={{
                     position: 'absolute',
                     top: 0,
@@ -238,6 +245,20 @@ export function ReviewForm({
       >
         {shown === null ? 'TAP A STAR' : `${shown.toFixed(1)} · ${LABELS[String(shown)] ?? ''}`.toUpperCase()}
       </div>
+      {carriedIn && (
+        <div
+          style={{
+            textAlign: 'center',
+            fontSize: '.8rem',
+            lineHeight: 1.5,
+            color: 'var(--cream-soft, #c9c0ad)',
+            opacity: 0.75,
+            marginTop: '.5rem',
+          }}
+        >
+          Carried over from your email. Tap a star to change it.
+        </div>
+      )}
 
       {/* ── Prose ─────────────────────────────────────────────────── */}
       <label style={label(compact)} htmlFor="best">What did you like?</label>
