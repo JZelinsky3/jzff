@@ -3,90 +3,105 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The testing season closes August 16</title>
+<title>Free testing ends August 16</title>
+
+<!-- Lock the palette. Without these, Gmail and Apple Mail "helpfully" invert
+     a dark email in dark mode, which washed the cream out toward white and
+     lifted the panels toward grey. Declaring a dark scheme tells them the
+     design is already dark and needs no help. -->
+<meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
+
 <!--
   END-OF-TESTING BROADCAST — paste this whole file into a Resend Broadcast
-  (Audience > Broadcasts > new > "Code" / HTML editor).
+  (Broadcasts > create > switch the editor to HTML / Code).
 
-  Merge tags below are Resend's, triple-braced with a fallback:
+  Merge tags are Resend's, triple-braced with a fallback:
     {{{FIRST_NAME|there}}}          → contact's first name
     {{{RESEND_UNSUBSCRIBE_URL}}}    → required, do not remove
 
-  Built for email clients, not browsers: tables for layout, inline styles
-  only, Georgia instead of the site's DM Serif (webfonts get stripped by
-  Gmail and Outlook), and ★ characters instead of images so the star row
-  still renders when images are blocked by default — which is most of the
-  time, on a first send from a new domain.
+  FONTS: matches the site's stack (DM Serif Display / Inter / JetBrains Mono)
+  and loads it from Google. Apple Mail, iOS Mail and Outlook for Mac honor
+  that link and render the real thing. Gmail and Outlook on Windows strip
+  webfonts no matter what you do, so every rule below still names a full
+  fallback chain: Georgia for the serif, Helvetica/Arial for the body. There
+  is no way to force the site's exact type in Gmail. This is as close as
+  email gets.
 
-  BEFORE SENDING, replace:
-    · FOUNDER50            → the promotion code you created in Stripe
-    · [MAILING ADDRESS]    → a real postal address (CAN-SPAM requires one)
+  The postal address in the footer is the CAN-SPAM requirement. It is filled
+  in. Do not remove it, and check the test send in case Resend appends an
+  account-level address of its own, which would print it twice.
 -->
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root { color-scheme: dark; supported-color-schemes: dark; }
   /* Progressive enhancement only. Anything essential is inlined below. */
   @media only screen and (max-width: 620px) {
     .wrap { width: 100% !important; }
-    .pad { padding-left: 22px !important; padding-right: 22px !important; }
-    .masthead { font-size: 30px !important; letter-spacing: 2px !important; }
-    .hed { font-size: 27px !important; }
-    .star { font-size: 30px !important; padding: 0 5px !important; }
-    .stack { display: block !important; width: 100% !important; }
+    .pad { padding-left: 20px !important; padding-right: 20px !important; }
+    .masthead { font-size: 29px !important; letter-spacing: 1px !important; }
+    .hed { font-size: 26px !important; }
+    .subhed { font-size: 21px !important; }
+    .star { font-size: 31px !important; padding: 0 5px !important; }
+    .code { font-size: 25px !important; letter-spacing: 4px !important; }
   }
   a { text-decoration: none; }
 </style>
 </head>
 <body style="margin:0; padding:0; background:#0a1017; -webkit-text-size-adjust:100%;">
 
-<!-- Preheader: the grey line after the subject in the inbox list. The
-     spacer characters stop the client from pulling body copy in after it. -->
+<!-- Preheader: the grey line after the subject in the inbox list. The spacer
+     characters stop the client from pulling body copy in after it. If you
+     fill in Resend's own "preview text" field, delete this block. -->
 <div style="display:none; max-height:0; overflow:hidden; opacity:0; color:transparent; height:0; width:0;">
   Free testing ends Aug 16. Your free month is already attached, plus 50% off inside.
   &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
 </div>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a1017;">
-<tr><td align="center" style="padding:28px 12px;">
+<tr><td align="center" style="padding:26px 12px;">
 
   <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px; background:#0e1620; border:1px solid #2a3645;">
 
     <!-- ═══ MASTHEAD ═══════════════════════════════════════════════ -->
     <tr>
-      <td class="pad" align="center" style="padding:34px 40px 26px; border-bottom:3px double #a88a4a;">
-        <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:3.5px; text-transform:uppercase; color:#8b9aab; padding-bottom:12px;">
-          Est. MMXXVI &nbsp;·&nbsp; An almanac, kept faithfully
+      <td class="pad" align="center" style="padding:32px 40px 24px; border-bottom:3px double #a88a4a;">
+        <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:#8b9aab; padding-bottom:12px;">
+          An almanac, kept faithfully
         </div>
-        <div class="masthead" style="font-family:Georgia,'Times New Roman',serif; font-size:38px; line-height:1.1; letter-spacing:3px; color:#f4ebd8;">
+        <div class="masthead" style="font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-size:38px; line-height:1.1; letter-spacing:1.5px; color:#f4ebd8;">
           The Sunday Chronicle
         </div>
-        <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:#e8c889; padding-top:13px;">
-          Vol. I &nbsp;·&nbsp; The Testing Season &nbsp;·&nbsp; Final Notice
+        <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:#e8c889; padding-top:12px;">
+          Final Edition
         </div>
       </td>
     </tr>
 
     <!-- ═══ LEDE ═══════════════════════════════════════════════════ -->
     <tr>
-      <td class="pad" style="padding:34px 40px 0;">
-        <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.4px; text-transform:uppercase; color:#c14b36; padding-bottom:14px;">
+      <td class="pad" style="padding:32px 40px 0;">
+        <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:#c14b36; padding-bottom:14px;">
           &#9733; Free testing ends August 16
         </div>
-        <div class="hed" style="font-family:Georgia,'Times New Roman',serif; font-size:33px; line-height:1.22; color:#f4ebd8; padding-bottom:20px;">
+        <div class="hed" style="font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-size:32px; line-height:1.22; color:#f4ebd8; padding-bottom:18px;">
           You were here for the rough draft.
         </div>
-        <div style="font-family:Georgia,'Times New Roman',serif; font-size:16px; line-height:1.72; color:#d8cfba;">
-          {{{FIRST_NAME|Hey}}}, on <strong style="color:#f4ebd8;">Sunday, August 16</strong> the free testing
-          window closes and The Sunday Chronicle starts behaving like a real product.
+        <div style="font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:15px; line-height:1.75; color:#d8cfba;">
+          {{{FIRST_NAME|Hey}}}, Sunday <strong style="color:#f4ebd8;">August 16</strong> is the last day of free
+          testing.
           <br><br>
-          You signed up while it was unfinished, which means you found bugs nobody
-          was paid to find and used pages that changed under you without warning.
-          That was genuinely useful. Two things below: one thing to ask you, and two
-          things owed to you.
+          You signed up while this thing was half-built, found bugs nobody was paid to find,
+          and used pages that changed under you without warning. That helped a lot. Two
+          things below: one I need from you, one you've already got.
         </div>
       </td>
     </tr>
 
     <!-- ═══ RULE ═══════════════════════════════════════════════════ -->
-    <tr><td class="pad" style="padding:30px 40px 0;">
+    <tr><td class="pad" style="padding:28px 40px 0;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
         <td style="border-top:1px solid #2a3645; font-size:0; line-height:0;">&nbsp;</td>
       </tr></table>
@@ -94,18 +109,17 @@
 
     <!-- ═══ § 01 — THE REVIEW ══════════════════════════════════════ -->
     <tr>
-      <td class="pad" style="padding:26px 40px 0;">
-        <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.4px; text-transform:uppercase; color:#e8c889; padding-bottom:12px;">
-          &sect; 01 &nbsp;·&nbsp; The ask
+      <td class="pad" style="padding:24px 40px 0;">
+        <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:#e8c889; padding-bottom:12px;">
+          &sect; 01 · The ask
         </div>
-        <div style="font-family:Georgia,'Times New Roman',serif; font-size:23px; line-height:1.3; color:#f4ebd8; padding-bottom:14px;">
-          How was it, honestly?
+        <div class="subhed" style="font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-size:23px; line-height:1.3; color:#f4ebd8; padding-bottom:12px;">
+          Tell me how it went
         </div>
-        <div style="font-family:Georgia,'Times New Roman',serif; font-size:16px; line-height:1.72; color:#d8cfba; padding-bottom:8px;">
-          Pick a star. That is the whole first step. One click from right here,
-          and you can adjust to a half star on the next screen. If you have thirty
-          more seconds after that, the two questions underneath are the ones that
-          actually change what gets built.
+        <div style="font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:15px; line-height:1.75; color:#d8cfba;">
+          Pick a star and that's it, no extra steps required. If you have a minute, you can
+          add a note about what you liked or what broke, but it's not required. If something
+          bugged you, that matters more to me than a good rating.
         </div>
       </td>
     </tr>
@@ -113,80 +127,46 @@
     <!-- Star row. Each ★ is its own link carrying its rating. Rendered as
          text so a blocked-images inbox still shows five gold stars. -->
     <tr>
-      <td align="center" style="padding:20px 20px 6px;">
+      <td align="center" style="padding:20px 12px 8px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td class="star" style="padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=1&amp;src=email" style="color:#e8c889; text-decoration:none;" aria-label="One star">&#9733;</a></td>
-          <td class="star" style="padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=2&amp;src=email" style="color:#e8c889; text-decoration:none;" aria-label="Two stars">&#9733;</a></td>
-          <td class="star" style="padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=3&amp;src=email" style="color:#e8c889; text-decoration:none;" aria-label="Three stars">&#9733;</a></td>
-          <td class="star" style="padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=4&amp;src=email" style="color:#e8c889; text-decoration:none;" aria-label="Four stars">&#9733;</a></td>
-          <td class="star" style="padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=5&amp;src=email" style="color:#e8c889; text-decoration:none;" aria-label="Five stars">&#9733;</a></td>
+          <td class="star" style="padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=1&amp;src=email" style="color:#e8c889; text-decoration:none;">&#9733;</a></td>
+          <td class="star" style="padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=2&amp;src=email" style="color:#e8c889; text-decoration:none;">&#9733;</a></td>
+          <td class="star" style="padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=3&amp;src=email" style="color:#e8c889; text-decoration:none;">&#9733;</a></td>
+          <td class="star" style="padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=4&amp;src=email" style="color:#e8c889; text-decoration:none;">&#9733;</a></td>
+          <td class="star" style="padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=5&amp;src=email" style="color:#e8c889; text-decoration:none;">&#9733;</a></td>
         </tr></table>
       </td>
     </tr>
+    <!-- Scale labels. Percentage cells inside a max-width table, not a fixed
+         290px one: the fixed width plus the outer 40px padding overflowed a
+         375px phone, which is what crushed "Rough" and "Perfect" together. -->
     <tr>
-      <td align="center" style="padding:0 40px 6px;">
-        <table role="presentation" width="290" cellpadding="0" cellspacing="0" border="0" style="width:290px;"><tr>
-          <td align="left" style="font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:1.6px; text-transform:uppercase; color:#8b9aab;">Rough</td>
-          <td align="right" style="font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:1.6px; text-transform:uppercase; color:#8b9aab;">Perfect</td>
-        </tr></table>
-      </td>
-    </tr>
-    <tr>
-      <td align="center" style="padding:14px 40px 0;">
-        <div style="font-family:Georgia,'Times New Roman',serif; font-size:13px; font-style:italic; color:#8b9aab;">
-          Or just hit reply. A one-line answer read on a phone is worth more than a form left unfinished.
-        </div>
-      </td>
-    </tr>
-
-    <!-- ═══ RULE ═══════════════════════════════════════════════════ -->
-    <tr><td class="pad" style="padding:30px 40px 0;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-        <td style="border-top:1px solid #2a3645; font-size:0; line-height:0;">&nbsp;</td>
-      </tr></table>
-    </td></tr>
-
-    <!-- ═══ § 02 — THE FREE MONTH ══════════════════════════════════ -->
-    <tr>
-      <td class="pad" style="padding:26px 40px 0;">
-        <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.4px; text-transform:uppercase; color:#e8c889; padding-bottom:12px;">
-          &sect; 02 &nbsp;·&nbsp; Owed to you
-        </div>
-        <div style="font-family:Georgia,'Times New Roman',serif; font-size:23px; line-height:1.3; color:#f4ebd8; padding-bottom:14px;">
-          A free month, already attached.
-        </div>
-        <div style="font-family:Georgia,'Times New Roman',serif; font-size:16px; line-height:1.72; color:#d8cfba;">
-          There is no code for this one and nothing to claim. Because your account
-          existed before August 16, your first subscription starts with
-          <strong style="color:#f4ebd8;">30 free days</strong> instead of the
-          standard 7. It is attached to your account, and it appears
-          automatically at checkout. Cancel any time inside the month and you are
-          charged nothing at all.
-        </div>
-      </td>
-    </tr>
-
-    <!-- ═══ § 03 — THE CODE ════════════════════════════════════════ -->
-    <tr>
-      <td class="pad" style="padding:30px 40px 0;">
-        <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.4px; text-transform:uppercase; color:#e8c889; padding-bottom:12px;">
-          &sect; 03 &nbsp;·&nbsp; And then half off
-        </div>
-      </td>
-    </tr>
-    <tr>
-      <td class="pad" style="padding:0 40px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#131f2c; border:1px dashed #a88a4a;">
+      <td align="center" style="padding:0 12px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:266px;">
           <tr>
-            <td align="center" style="padding:24px 20px;">
-              <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:2.6px; text-transform:uppercase; color:#8b9aab; padding-bottom:12px;">
-                Enter at checkout
-              </div>
-              <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:29px; letter-spacing:5px; color:#e8c889; padding-bottom:12px;">
-                FOUNDER50
-              </div>
-              <div style="font-family:Georgia,'Times New Roman',serif; font-size:14px; line-height:1.6; color:#d8cfba;">
-                50% off your first bill, the one that lands<br>after the free month runs out.
+            <td width="50%" align="left" style="font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:1.4px; text-transform:uppercase; color:#8b9aab;">Rough</td>
+            <td width="50%" align="right" style="font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:1.4px; text-transform:uppercase; color:#8b9aab;">Perfect</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td class="pad" align="center" style="padding:16px 40px 0;">
+        <div style="font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:13px; line-height:1.6; color:#8b9aab;">
+          Or just hit reply. One line is fine.
+        </div>
+      </td>
+    </tr>
+    <!-- The discount lives on the review page now, not in this email. Stated
+         plainly rather than teased: a coy "there's something waiting for you"
+         reads like a trick and costs more clicks than it wins. -->
+    <tr>
+      <td class="pad" align="center" style="padding:14px 40px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #2a3645;">
+          <tr>
+            <td align="center" style="padding:14px 0 0;">
+              <div style="font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:14px; line-height:1.7; color:#d8cfba;">
+                Everyone who leaves a review will receive a discount code.
               </div>
             </td>
           </tr>
@@ -194,38 +174,71 @@
       </td>
     </tr>
 
-    <!-- CTA -->
+    <!-- ═══ RULE ═══════════════════════════════════════════════════ -->
+    <tr><td class="pad" style="padding:28px 40px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td style="border-top:1px solid #2a3645; font-size:0; line-height:0;">&nbsp;</td>
+      </tr></table>
+    </td></tr>
+
+    <!-- ═══ § 02 — THE FREE MONTH ══════════════════════════════════ -->
     <tr>
-      <td align="center" style="padding:30px 40px 0;">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td align="center" style="background:#e8c889;">
-            <a href="https://thesundaychronicle.app/pricing?utm_source=email&amp;utm_campaign=testing-close"
-               style="display:inline-block; padding:15px 38px; font-family:'JetBrains Mono',Consolas,monospace; font-size:12px; letter-spacing:2.4px; text-transform:uppercase; color:#0e1620; text-decoration:none;">
-              See the plans
-            </a>
-          </td>
-        </tr></table>
-        <div style="font-family:Georgia,'Times New Roman',serif; font-size:13px; color:#8b9aab; padding-top:14px;">
-          Plans start at $3/month. Your archive stays where it is either way.
+      <td class="pad" style="padding:24px 40px 0;">
+        <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:#e8c889; padding-bottom:12px;">
+          &sect; 02 · Your free month
+        </div>
+        <div class="subhed" style="font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-size:23px; line-height:1.3; color:#f4ebd8; padding-bottom:12px;">
+          Your first month is free
+        </div>
+        <div style="font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:15px; line-height:1.75; color:#d8cfba;">
+          Since you had an account during testing, your first subscription gets 30 free days
+          instead of the usual 7. It's automatic, nothing to enter or claim, it just shows up
+          when you check out. Cancel anytime in that month and you won't be charged.
+          <br><br>
+          <span style="color:#8b9aab;">You can subscribe today. The 30 days won't begin until August 17, so none of it
+          gets spent while testing is still free. You have until
+          <strong style="color:#d8cfba;">August 31</strong> to claim it.</span>
         </div>
       </td>
     </tr>
 
-    <!-- ═══ WHAT HAPPENS AUG 16 ════════════════════════════════════ -->
+    <!-- § 03 (the FIRST50 coupon stub) used to sit here. The code moved to
+         the review page's thank-you screen, so the only mention left in this
+         email is the plain line under the star row. Nothing to restore. -->
+
+    <!-- CTA — deliberately a text link, not a filled button.
+         A large filled call-to-action plus a price is close to a textbook
+         Gmail Promotions signal, and this one is largely redundant: anyone
+         who taps a star lands on /review, whose thank-you screen already
+         ends with the code and its own "See the plans" button. To restore
+         the button, wrap the anchor in a <td style="background:#e8c889">
+         and give it padding:15px 38px with color:#0e1620. -->
     <tr>
-      <td class="pad" style="padding:34px 40px 0;">
+      <td class="pad" align="center" style="padding:22px 40px 0;">
+        <div style="font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:14px; line-height:1.7; color:#8b9aab;">
+          Plans are at
+          <a href="https://thesundaychronicle.app/pricing?utm_source=email&amp;utm_campaign=testing-close"
+             style="color:#e8c889; text-decoration:underline;">thesundaychronicle.app/pricing</a>.
+          They start at $3 a month.
+        </div>
+      </td>
+    </tr>
+
+    <!-- ═══ WHAT HAPPENS AFTER AUG 16 ══════════════════════════════ -->
+    <!-- PENDING: still needs Joey's call on what the 16th actually does.
+         The three lines below are the ones that are true today. -->
+    <tr>
+      <td class="pad" style="padding:32px 40px 0;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-left:2px solid #2a3645;">
           <tr>
             <td style="padding:4px 0 4px 18px;">
-              <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.4px; text-transform:uppercase; color:#8b9aab; padding-bottom:12px;">
-                What actually changes on the 16th
+              <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:#8b9aab; padding-bottom:12px;">
+                Where things stand after the 16th
               </div>
-              <div style="font-family:Georgia,'Times New Roman',serif; font-size:15px; line-height:1.8; color:#d8cfba;">
-                Nothing is deleted, and nothing you built goes away.<br>
+              <div style="font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:14px; line-height:1.85; color:#d8cfba;">
+                Nothing gets deleted.<br>
                 Your league archive stays free and stays online.<br>
-                The live-season tools (Pick&rsquo;ems, Power Rankings, the Live Hub and
-                Manager Hub) move behind a plan.<br>
-                Free accounts keep one archive league.
+                Free accounts keep one league.
               </div>
             </td>
           </tr>
@@ -235,27 +248,30 @@
 
     <!-- ═══ SIGN-OFF ═══════════════════════════════════════════════ -->
     <tr>
-      <td class="pad" style="padding:32px 40px 36px;">
-        <div style="font-family:Georgia,'Times New Roman',serif; font-size:16px; line-height:1.72; color:#d8cfba;">
-          Football starts in a month. Thanks for spending the quiet part of the
-          offseason on something half-built.
+      <td class="pad" style="padding:30px 40px 34px;">
+        <div style="font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:15px; line-height:1.75; color:#d8cfba;">
+          Football's back in a month. Thanks for putting up with a half-built site until then.
           <br><br>
-          <span style="color:#f4ebd8;">JZFF</span><br>
-          <span style="font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#8b9aab;">The Sunday Chronicle</span>
+          <!-- Matches .site-footer em in main.css: serif italic gold, bumped
+               1.15x against the surrounding text because serif italic has a
+               smaller x-height at the same computed size, with the letter
+               spacing zeroed and the baseline nudged down. -->
+          <span style="font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-style:italic; font-size:16px; letter-spacing:0; vertical-align:-.05em; color:#e8c889;">JZFF</span><br>
+          <span style="font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:1.8px; text-transform:uppercase; color:#8b9aab;">The Sunday Chronicle</span>
         </div>
       </td>
     </tr>
 
     <!-- ═══ FOOTER ═════════════════════════════════════════════════ -->
     <tr>
-      <td class="pad" align="center" style="padding:24px 40px 30px; border-top:1px solid #2a3645; background:#0a1017;">
-        <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:2.6px; text-transform:uppercase; color:#6b7a8c; padding-bottom:12px;">
-          The Sunday Chronicle &nbsp;·&nbsp; Built by jzFF
+      <td class="pad" align="center" style="padding:22px 40px 28px; border-top:1px solid #2a3645; background:#0a1017;">
+        <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:2.4px; text-transform:uppercase; color:#6b7a8c; padding-bottom:12px;">
+          The Sunday Chronicle &nbsp;·&nbsp; Built by <span style="font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-style:italic; font-size:11px; letter-spacing:0; vertical-align:-.05em; color:#e8c889;">JZFF</span>
         </div>
-        <div style="font-family:Georgia,'Times New Roman',serif; font-size:12px; line-height:1.7; color:#6b7a8c;">
-          You are getting this because you created an account at thesundaychronicle.app.
+        <div style="font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:12px; line-height:1.7; color:#6b7a8c;">
+          You're getting this because you made an account at thesundaychronicle.app.
           <br>
-          [MAILING ADDRESS]
+          The Sunday Chronicle &nbsp;·&nbsp; 125 47th Street, Sea Isle City, NJ 08243
           <br><br>
           <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#8b9aab; text-decoration:underline;">Unsubscribe</a>
           &nbsp;·&nbsp;

@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
+import { MobileReview } from '@/components/review/MobileReview'
 import { createClient } from '@/lib/supabase/server'
+import { getViewMode } from '@/lib/viewMode'
 import { ReviewForm } from './review-form'
 
 // Landing page for the end-of-testing review request. The email's five stars
@@ -36,6 +38,19 @@ export default async function ReviewPage({
   const { r, src } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const rating = parseRating(r)
+
+  // Phones get the dedicated mpg- tree rather than the desktop .nav grid.
+  if ((await getViewMode()) === 'mobile') {
+    return (
+      <MobileReview
+        initialRating={rating}
+        source={src ?? null}
+        signedInEmail={user?.email ?? null}
+        signedIn={!!user}
+      />
+    )
+  }
 
   return (
     <main>
@@ -65,14 +80,14 @@ export default async function ReviewPage({
           One minute, honestly.
         </h1>
         <p className="hero-sub">
-          You used this while it was free and unfinished. What you say here decides what gets
-          built next, and the harsh notes are worth more than the kind ones.
+          You used this while it was free and unfinished. The harsh notes are worth more
+          than the kind ones.
         </p>
       </section>
 
       <div className="section" style={{ paddingBottom: '4rem' }}>
         <ReviewForm
-          initialRating={parseRating(r)}
+          initialRating={rating}
           source={src ?? null}
           signedInEmail={user?.email ?? null}
         />

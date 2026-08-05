@@ -171,15 +171,36 @@ export function testingModeEndsAt(): Date | null {
 // checkout — spending that slot on the free month would block the separate
 // launch discount from ever applying.
 //
-// Eligibility is "signed up before the window closed", read from the profile
-// row (created by the on_auth_user_created trigger at signup, so it is the
-// registration timestamp). TESTER_FREE_MONTH_CUTOFF overrides the date; set
-// TESTER_TRIAL_DAYS to change the length.
+// Two dates bound the offer, and they do different jobs:
+//
+//   TESTER_FREE_MONTH_CUTOFF   — who qualifies. Signed up before this, read
+//                                from the profile row (created by the
+//                                on_auth_user_created trigger at signup, so
+//                                it is the registration timestamp).
+//   TESTER_FREE_MONTH_REDEEM_BY — how long they have to take it. Without
+//                                this the offer never expires and someone
+//                                could claim their free month two years
+//                                from now, which makes it impossible to
+//                                ever reason about revenue.
+//
+// TESTER_TRIAL_DAYS changes the length.
 //
 // This does NOT bypass the one-trial-per-user rule in /api/stripe/checkout —
 // a user who already burned a trial gets billed immediately either way.
-const TESTER_CUTOFF_DEFAULT = '2026-08-17T03:59:59Z' // Aug 16 2026, 11:59pm ET
+const TESTER_CUTOFF_DEFAULT = '2026-08-17T03:59:59Z'    // Aug 16 2026, 11:59pm ET
+const TESTER_REDEEM_BY_DEFAULT = '2026-09-01T03:59:59Z' // Aug 31 2026, 11:59pm ET
 const TESTER_TRIAL_DAYS = Number(process.env.TESTER_TRIAL_DAYS ?? '30')
+
+// Is the offer still open at all? Cheap synchronous check so the common
+// post-deadline path never touches the database.
+export function testerOfferOpen(): boolean {
+  const raw = process.env.TESTER_FREE_MONTH_REDEEM_BY ?? TESTER_REDEEM_BY_DEFAULT
+  const t = Date.parse(raw)
+  // An unparseable date closes the offer rather than opening it forever.
+  // Failing shut is the safe direction for something that gives away money.
+  if (Number.isNaN(t)) return false
+  return Date.now() < t
+}
 
 export async function isTesterAccount(userId: string): Promise<boolean> {
   const cutoff = Date.parse(process.env.TESTER_FREE_MONTH_CUTOFF ?? TESTER_CUTOFF_DEFAULT)
@@ -194,11 +215,34 @@ export async function isTesterAccount(userId: string): Promise<boolean> {
   return Date.parse(data.created_at as string) < cutoff
 }
 
-// Trial length for a user about to start their first subscription: the
-// standard window, or the tester month for anyone who was here during
-// testing. Callers still decide *whether* a trial applies at all.
-export async function trialDaysFor(userId: string, standardDays: number): Promise<number> {
-  return (await isTesterAccount(userId)) ? TESTER_TRIAL_DAYS : standardDays
+// Stripe takes a trial as either a length (`trial_period_days`) or an
+// absolute end (`trial_end`), never both, so the answer is a tagged union
+// rather than a number.
+export type TrialGrant =
+  | { kind: 'days'; days: number }
+  | { kind: 'end'; endsAt: number } // unix seconds, for Stripe
+
+// When the tester month is allowed to begin. Subscribing before this does
+// not start the clock: testing is still free until the 16th, and a free
+// month that burns down during an already-free period is not a free month.
+// Anyone who subscribes early gets their 30 days beginning here instead.
+const TESTER_TRIAL_STARTS_DEFAULT = '2026-08-17T04:00:00Z' // Aug 17 2026, 12:00am ET
+
+// What trial does this user get on their first subscription? Standard days
+// for everyone normal; a fixed 30-day window starting no earlier than the
+// 17th for testers claiming the offer before it closes. Callers still
+// decide *whether* a trial applies at all.
+export async function resolveTrial(userId: string, standardDays: number): Promise<TrialGrant> {
+  if (!testerOfferOpen()) return { kind: 'days', days: standardDays }
+  if (!(await isTesterAccount(userId))) return { kind: 'days', days: standardDays }
+
+  const startsRaw = Date.parse(process.env.TESTER_TRIAL_STARTS ?? TESTER_TRIAL_STARTS_DEFAULT)
+  // An unparseable start date degrades to "begins now" rather than throwing.
+  // The tester still gets their full 30 days; the only thing lost is the
+  // no-overlap guarantee.
+  const startMs = Number.isNaN(startsRaw) ? Date.now() : Math.max(Date.now(), startsRaw)
+  const endMs = startMs + TESTER_TRIAL_DAYS * 24 * 60 * 60 * 1000
+  return { kind: 'end', endsAt: Math.floor(endMs / 1000) }
 }
 
 // ─── Subscription state ───────────────────────────────────────────────────
