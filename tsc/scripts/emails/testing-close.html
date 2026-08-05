@@ -5,10 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Free testing ends August 16</title>
 
-<!-- Lock the palette. Without these, Gmail and Apple Mail "helpfully" invert
-     a dark email in dark mode, which washed the cream out toward white and
-     lifted the panels toward grey. Declaring a dark scheme tells them the
-     design is already dark and needs no help. -->
+<!-- Lock the palette against dark-mode "help".
+     Apple Mail and friends honour these meta tags and leave the design alone.
+     The Gmail mobile apps ignore them completely and run their own colour
+     transform, which inverts this dark email into a pale one. The defence
+     for that is the 1x1 solid-colour background images layered under every
+     surface below: Gmail does not recolour an element that carries a
+     background image. If images are blocked the bgcolor attribute still
+     paints the same shade, so it degrades to exactly what it was before.
+     Source PNGs live in public/email/ and are generated, not photographed. -->
 <meta name="color-scheme" content="dark">
 <meta name="supported-color-schemes" content="dark">
 
@@ -60,14 +65,19 @@
   &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
 </div>
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a1017;">
-<tr><td align="center" style="padding:26px 12px;">
+<!-- bgcolor attributes alongside the CSS on purpose. Gmail's mobile apps
+     routinely drop <body> styling and re-wrap the message in their own
+     container, which is what leaves white showing around a dark email. The
+     old presentational attribute survives that, so the dark field extends
+     to the edges. -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0a1017" style="background:#0a1017; background-color:#0a1017; background-image:url('https://thesundaychronicle.app/email/bg-page.png'); background-repeat:repeat;">
+<tr><td align="center" bgcolor="#0a1017" style="padding:26px 12px; background-color:#0a1017; background-image:url('https://thesundaychronicle.app/email/bg-page.png'); background-repeat:repeat;">
 
-  <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px; background:#0e1620; border:1px solid #2a3645;">
+  <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#0e1620" style="width:600px; max-width:600px; background:#0e1620; background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; border:1px solid #2a3645;">
 
     <!-- ═══ MASTHEAD ═══════════════════════════════════════════════ -->
     <tr>
-      <td class="pad" align="center" style="padding:32px 40px 24px; border-bottom:3px double #a88a4a;">
+      <td bgcolor="#0e1620" class="pad" align="center" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:32px 40px 24px; border-bottom:3px double #a88a4a;">
         <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:#8b9aab; padding-bottom:12px;">
           An almanac, kept faithfully
         </div>
@@ -82,7 +92,7 @@
 
     <!-- ═══ LEDE ═══════════════════════════════════════════════════ -->
     <tr>
-      <td class="pad" style="padding:32px 40px 0;">
+      <td bgcolor="#0e1620" class="pad" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:32px 40px 0;">
         <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:#c14b36; padding-bottom:14px;">
           &#9733; Free testing ends August 16
         </div>
@@ -101,15 +111,15 @@
     </tr>
 
     <!-- ═══ RULE ═══════════════════════════════════════════════════ -->
-    <tr><td class="pad" style="padding:28px 40px 0;">
+    <tr><td bgcolor="#0e1620" class="pad" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:28px 40px 0;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-        <td style="border-top:1px solid #2a3645; font-size:0; line-height:0;">&nbsp;</td>
+        <td bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; border-top:1px solid #2a3645; font-size:0; line-height:0;">&nbsp;</td>
       </tr></table>
     </td></tr>
 
     <!-- ═══ § 01 — THE REVIEW ══════════════════════════════════════ -->
     <tr>
-      <td class="pad" style="padding:24px 40px 0;">
+      <td bgcolor="#0e1620" class="pad" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:24px 40px 0;">
         <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:#e8c889; padding-bottom:12px;">
           &sect; 01 · The ask
         </div>
@@ -127,13 +137,13 @@
     <!-- Star row. Each ★ is its own link carrying its rating. Rendered as
          text so a blocked-images inbox still shows five gold stars. -->
     <tr>
-      <td align="center" style="padding:20px 12px 8px;">
+      <td bgcolor="#0e1620" align="center" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:20px 12px 8px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td class="star" style="padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=1&amp;src=email" style="color:#e8c889; text-decoration:none;">&#9733;</a></td>
-          <td class="star" style="padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=2&amp;src=email" style="color:#e8c889; text-decoration:none;">&#9733;</a></td>
-          <td class="star" style="padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=3&amp;src=email" style="color:#e8c889; text-decoration:none;">&#9733;</a></td>
-          <td class="star" style="padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=4&amp;src=email" style="color:#e8c889; text-decoration:none;">&#9733;</a></td>
-          <td class="star" style="padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=5&amp;src=email" style="color:#e8c889; text-decoration:none;">&#9733;</a></td>
+          <td class="star" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=1&amp;src=email" style="color:#e8c889; text-decoration:none;">&#9733;</a></td>
+          <td class="star" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=2&amp;src=email" style="color:#e8c889; text-decoration:none;">&#9733;</a></td>
+          <td class="star" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=3&amp;src=email" style="color:#e8c889; text-decoration:none;">&#9733;</a></td>
+          <td class="star" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=4&amp;src=email" style="color:#e8c889; text-decoration:none;">&#9733;</a></td>
+          <td class="star" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 7px; font-size:35px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=5&amp;src=email" style="color:#e8c889; text-decoration:none;">&#9733;</a></td>
         </tr></table>
       </td>
     </tr>
@@ -141,17 +151,17 @@
          290px one: the fixed width plus the outer 40px padding overflowed a
          375px phone, which is what crushed "Rough" and "Perfect" together. -->
     <tr>
-      <td align="center" style="padding:0 12px;">
+      <td bgcolor="#0e1620" align="center" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 12px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:266px;">
           <tr>
-            <td width="50%" align="left" style="font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:1.4px; text-transform:uppercase; color:#8b9aab;">Rough</td>
-            <td width="50%" align="right" style="font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:1.4px; text-transform:uppercase; color:#8b9aab;">Perfect</td>
+            <td width="50%" align="left" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:1.4px; text-transform:uppercase; color:#8b9aab;">Rough</td>
+            <td width="50%" align="right" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:1.4px; text-transform:uppercase; color:#8b9aab;">Perfect</td>
           </tr>
         </table>
       </td>
     </tr>
     <tr>
-      <td class="pad" align="center" style="padding:16px 40px 0;">
+      <td bgcolor="#0e1620" class="pad" align="center" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:16px 40px 0;">
         <div style="font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:13px; line-height:1.6; color:#8b9aab;">
           Or just hit reply. One line is fine.
         </div>
@@ -161,10 +171,10 @@
          plainly rather than teased: a coy "there's something waiting for you"
          reads like a trick and costs more clicks than it wins. -->
     <tr>
-      <td class="pad" align="center" style="padding:14px 40px 0;">
+      <td bgcolor="#0e1620" class="pad" align="center" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:14px 40px 0;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #2a3645;">
           <tr>
-            <td align="center" style="padding:14px 0 0;">
+            <td align="center" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:16px 0 16px;">
               <div style="font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:14px; line-height:1.7; color:#d8cfba;">
                 Everyone who leaves a review will receive a discount code.
               </div>
@@ -175,15 +185,15 @@
     </tr>
 
     <!-- ═══ RULE ═══════════════════════════════════════════════════ -->
-    <tr><td class="pad" style="padding:28px 40px 0;">
+    <tr><td bgcolor="#0e1620" class="pad" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 40px 0;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-        <td style="border-top:1px solid #2a3645; font-size:0; line-height:0;">&nbsp;</td>
+        <td bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; border-top:1px solid #2a3645; font-size:0; line-height:0;">&nbsp;</td>
       </tr></table>
     </td></tr>
 
     <!-- ═══ § 02 — THE FREE MONTH ══════════════════════════════════ -->
     <tr>
-      <td class="pad" style="padding:24px 40px 0;">
+      <td bgcolor="#0e1620" class="pad" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:24px 40px 0;">
         <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:#e8c889; padding-bottom:12px;">
           &sect; 02 · Your free month
         </div>
@@ -214,7 +224,7 @@
          the button, wrap the anchor in a <td style="background:#e8c889">
          and give it padding:15px 38px with color:#0e1620. -->
     <tr>
-      <td class="pad" align="center" style="padding:22px 40px 0;">
+      <td bgcolor="#0e1620" class="pad" align="center" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:22px 40px 0;">
         <div style="font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:14px; line-height:1.7; color:#8b9aab;">
           Plans are at
           <a href="https://thesundaychronicle.app/pricing?utm_source=email&amp;utm_campaign=testing-close"
@@ -228,10 +238,10 @@
     <!-- PENDING: still needs Joey's call on what the 16th actually does.
          The three lines below are the ones that are true today. -->
     <tr>
-      <td class="pad" style="padding:32px 40px 0;">
+      <td bgcolor="#0e1620" class="pad" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:32px 40px 0;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-left:2px solid #2a3645;">
           <tr>
-            <td style="padding:4px 0 4px 18px;">
+            <td bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:4px 0 4px 18px;">
               <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:#8b9aab; padding-bottom:12px;">
                 Where things stand after the 16th
               </div>
@@ -248,7 +258,7 @@
 
     <!-- ═══ SIGN-OFF ═══════════════════════════════════════════════ -->
     <tr>
-      <td class="pad" style="padding:30px 40px 34px;">
+      <td bgcolor="#0e1620" class="pad" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:30px 40px 34px;">
         <div style="font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:15px; line-height:1.75; color:#d8cfba;">
           Football's back in a month. Thanks for putting up with a half-built site until then.
           <br><br>
@@ -264,14 +274,14 @@
 
     <!-- ═══ FOOTER ═════════════════════════════════════════════════ -->
     <tr>
-      <td class="pad" align="center" style="padding:22px 40px 28px; border-top:1px solid #2a3645; background:#0a1017;">
+      <td class="pad" align="center" bgcolor="#0a1017" style="padding:22px 40px 28px; border-top:1px solid #2a3645; background:#0a1017; background-color:#0a1017; background-image:url('https://thesundaychronicle.app/email/bg-page.png'); background-repeat:repeat;">
         <div style="font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:2.4px; text-transform:uppercase; color:#6b7a8c; padding-bottom:12px;">
           The Sunday Chronicle &nbsp;·&nbsp; Built by <span style="font-family:'DM Serif Display',Georgia,'Times New Roman',serif; font-style:italic; font-size:11px; letter-spacing:0; vertical-align:-.05em; color:#e8c889;">JZFF</span>
         </div>
         <div style="font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:12px; line-height:1.7; color:#6b7a8c;">
           You're getting this because you made an account at thesundaychronicle.app.
           <br>
-          The Sunday Chronicle &nbsp;·&nbsp; 125 47th Street, Sea Isle City, NJ 08243
+          125 47th Street, Sea Isle City, NJ 08243
           <br><br>
           <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#8b9aab; text-decoration:underline;">Unsubscribe</a>
           &nbsp;·&nbsp;
