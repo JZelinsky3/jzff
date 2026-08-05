@@ -50,6 +50,9 @@
     .hed { font-size: 26px !important; }
     .subhed { font-size: 21px !important; }
     .star { font-size: 31px !important; padding: 0 5px !important; }
+    /* Track the narrower mobile star row so the scale labels sit under the
+       outer stars instead of past them. */
+    .scale { max-width: 208px !important; }
     .code { font-size: 25px !important; letter-spacing: 4px !important; }
   }
   a { text-decoration: none; }
@@ -127,7 +130,7 @@
           Tell me how it went
         </div>
         <div style="font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif; font-size:15px; line-height:1.75; color:#d8cfba;">
-          Pick a star and that's it, no extra steps required. If you have a minute, you can
+          Tap a star below and that's it, no extra steps required. If you have a minute, you can
           add a note about what you liked or what broke, but it's not required. If something
           bugged you, that matters more to me than a good rating.
         </div>
@@ -152,7 +155,7 @@
          375px phone, which is what crushed "Rough" and "Perfect" together. -->
     <tr>
       <td bgcolor="#0e1620" align="center" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; padding:0 12px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:266px;">
+        <table role="presentation" class="scale" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:248px;">
           <tr>
             <td width="50%" align="left" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:1.4px; text-transform:uppercase; color:#8b9aab;">Rough</td>
             <td width="50%" align="right" bgcolor="#0e1620" style="background-color:#0e1620; background-image:url('https://thesundaychronicle.app/email/bg-card.png'); background-repeat:repeat; font-family:'JetBrains Mono',Consolas,monospace; font-size:9px; letter-spacing:1.4px; text-transform:uppercase; color:#8b9aab;">Perfect</td>

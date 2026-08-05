@@ -15412,19 +15412,23 @@ option.wiz-used {
     transition: padding .25s ease;
 }
 body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
+/* Bare chevron, no circle and no border. A ring around a back arrow adds a
+   second shape to read and competes with the title, which is the thing the
+   bar is actually for. The box stays 36px so the tap target survives. */
 .mpg-bar-back {
     display: flex; align-items: center; justify-content: center;
-    width: 32px; height: 32px;
-    border-radius: 999px;
-    border: 1px solid var(--ink-line);
+    width: 36px; height: 36px;
+    margin-left: -8px; /* align the glyph to the gutter, not the box edge */
     color: var(--cream);
     text-decoration: none;
-    transition: border-color .2s, color .2s;
+    transition: color .2s;
 }
-.mpg-bar-back:hover { border-color: var(--gold); color: var(--gold); }
+.mpg-bar-back:hover { color: var(--gold); }
 .mpg-bar-title {
     font-family: var(--serif);
-    font-size: 1rem;
+    /* Larger than the back chevron on purpose: the page name should be the
+       loudest thing in the bar. */
+    font-size: 1.2rem;
     line-height: 1;
     color: var(--cream);
     text-align: center;
@@ -32056,19 +32060,23 @@ option.wiz-used {
     transition: padding .25s ease;
 }
 body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
+/* Bare chevron, no circle and no border. A ring around a back arrow adds a
+   second shape to read and competes with the title, which is the thing the
+   bar is actually for. The box stays 36px so the tap target survives. */
 .mpg-bar-back {
     display: flex; align-items: center; justify-content: center;
-    width: 32px; height: 32px;
-    border-radius: 999px;
-    border: 1px solid var(--ink-line);
+    width: 36px; height: 36px;
+    margin-left: -8px; /* align the glyph to the gutter, not the box edge */
     color: var(--cream);
     text-decoration: none;
-    transition: border-color .2s, color .2s;
+    transition: color .2s;
 }
-.mpg-bar-back:hover { border-color: var(--gold); color: var(--gold); }
+.mpg-bar-back:hover { color: var(--gold); }
 .mpg-bar-title {
     font-family: var(--serif);
-    font-size: 1rem;
+    /* Larger than the back chevron on purpose: the page name should be the
+       loudest thing in the bar. */
+    font-size: 1.2rem;
     line-height: 1;
     color: var(--cream);
     text-align: center;

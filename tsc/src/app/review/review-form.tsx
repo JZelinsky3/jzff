@@ -247,7 +247,7 @@ export function ReviewForm({
         onChange={(e) => setBestPart(e.target.value)}
         rows={3}
         maxLength={3000}
-        placeholder={compact ? 'Optional' : 'A page you kept going back to, a stat that surprised you.'}
+        placeholder={compact ? 'A page you kept going back to' : 'A page you kept going back to, a stat that surprised you.'}
         style={field}
       />
 
@@ -258,7 +258,7 @@ export function ReviewForm({
         onChange={(e) => setNeedsWork(e.target.value)}
         rows={3}
         maxLength={3000}
-        placeholder={compact ? 'Be blunt' : 'Be blunt. This is the part that changes what gets built.'}
+        placeholder={compact ? 'A bug, or something that confused you' : 'A bug, a page that confused you, something you expected and could not find.'}
         style={field}
       />
 
