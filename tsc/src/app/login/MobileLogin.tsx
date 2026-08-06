@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BackLink } from '@/components/BackLink'
 import { MobileLoginForm } from './mobile-login-form'
 
 // App-style mobile auth screen. Server component; the form itself is the
@@ -20,11 +21,11 @@ export function MobileLogin({
   return (
     <main className="mlogin">
       <header className="mlogin-bar">
-        <Link href={backHref} className="mlogin-bar-back" aria-label="Back">
+        <BackLink href={backHref} className="mlogin-bar-back">
           <svg viewBox="0 0 8 14" width="10" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="7 1 1 7 7 13" />
           </svg>
-        </Link>
+        </BackLink>
         <span className="mlogin-bar-title">The Sunday <em>Chronicle.</em></span>
         <span className="mlogin-bar-spacer" aria-hidden />
       </header>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BackLink } from '@/components/BackLink'
 
 // Shared mobile shell for the React-side content pages (about, guides,
 // legal trio, tools, manager) that don't need a bespoke mobile-native
@@ -39,11 +40,11 @@ export function MobilePageShell({
   return (
     <main className="mpg">
       <header className="mpg-bar">
-        <Link href={backHref} className="mpg-bar-back" aria-label={backLabel}>
+        <BackLink href={backHref} className="mpg-bar-back" ariaLabel={backLabel}>
           <svg viewBox="0 0 8 14" width="10" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="7 1 1 7 7 13" />
           </svg>
-        </Link>
+        </BackLink>
         <span className="mpg-bar-title">
           {barTitle}{barTitleEm ? <> <em>{barTitleEm}</em></> : null}
         </span>

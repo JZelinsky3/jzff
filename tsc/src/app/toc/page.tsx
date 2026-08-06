@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import Link from "next/link"
+import { BackButton } from "@/components/BackButton"
 import { SiteFooter } from "@/components/SiteFooter"
 import { MobilePageShell } from "@/components/mobile/MobilePageShell"
 import { createClient } from "@/lib/supabase/server"
@@ -35,11 +35,7 @@ export default async function TocPage() {
   return (
     <main>
       <nav className="nav">
-        <Link href="/" className="dc-nav-icon" aria-label="Back">
-          <svg viewBox="0 0 8 14" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="7 1 1 7 7 13" />
-          </svg>
-        </Link>
+        <BackButton fallbackHref="/" ariaLabel="Back" />
         <div className="nav-center">
           <div className="nav-kicker">Reference · Table of Contents</div>
           <div className="nav-title">Every <em>page.</em></div>
