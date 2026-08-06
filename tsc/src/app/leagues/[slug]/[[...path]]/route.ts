@@ -329,7 +329,7 @@ function injectBaseTag(html: string, meta: LeagueMeta, file: string, servedMobil
   // needs to match exactly (no scaling). Keep this list in sync with the
   // root layout's appleWebApp.startupImage and bump SPLASH_V if you
   // redesign the splash so iOS refetches.
-  const SPLASH_V = '3'
+  const SPLASH_V = '4'
   const leagueQ = encodeURIComponent(meta.name)
   const splash = (w: number, h: number) =>
     `/api/og/splash?w=${w}&h=${h}&league=${leagueQ}&v=${SPLASH_V}`

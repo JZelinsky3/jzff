@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { BackButton } from '@/components/BackButton'
@@ -9,11 +9,39 @@ import { PlayGame } from '@/app/games/PlayGame'
 import { MobileGameBar } from '@/app/games/MobileGameBar'
 import styles from '@/app/games/games.module.css'
 import mobileStyles from '@/app/games/mobile.module.css'
+import mv from '@/app/games/multiverse/multiverse.module.css'
 import { gameDefById, gamesBase, isPlayableGameId, loadLeagueGamesMeta } from '../leagueGames'
 
 // The deal is rolled per request (seeded off ?seed= or freshly rolled), so
 // this page can never be prerendered.
 export const dynamic = 'force-dynamic'
+
+// The Multiverse Draft is the one game that re-skins the whole page rather
+// than a board inside it: its --mv-*/--gp-* tokens live on a .theme class that
+// /games/multiverse/ puts on <main>. Without it every token here resolves to
+// nothing and the board renders as unstyled boxes, which is exactly what this
+// wing shipped with. Five games take the shared navy and need no class.
+function themeClass(game: string) {
+  return game === 'multiverse' ? mv.theme : ''
+}
+
+// Safari tints its toolbar from <meta name="theme-color">, so the phone's
+// chrome has to follow the board it's framing — navy for five games, the
+// Multiverse's teal ink for the sixth.
+export async function generateViewport({
+  params,
+}: {
+  params: Promise<{ slug: string; game: string }>
+}): Promise<Viewport> {
+  const { game } = await params
+  return {
+    themeColor: game === 'multiverse' ? '#061414' : undefined,
+    // Re-declared from the root layout on purpose — don't rely on viewport
+    // merge semantics for the field that keeps phones on a real viewport.
+    width: 'device-width',
+    initialScale: 1,
+  }
+}
 
 export async function generateMetadata({
   params,
@@ -81,7 +109,7 @@ export default async function LeagueGamePage({
     // No tab bar on a board: the game already owns the bottom of the screen
     // (Roulette's lineup HUD, the Gauntlet's call button, the Multiverse
     // Draft's card tray). `boardRoot` also takes the hamburger sheet off.
-    <main className={mobile ? mobileStyles.boardRoot : undefined}>
+    <main className={`${themeClass(game)} ${mobile ? mobileStyles.boardRoot : ''}`.trim() || undefined}>
       {mobile ? (
         <MobileGameBar
           left="back"

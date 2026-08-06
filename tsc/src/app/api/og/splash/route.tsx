@@ -124,42 +124,13 @@ export async function GET(req: Request) {
           }}
         />
 
-        {/* Cartouches, centred astride the top and bottom runs where the
-            frame is straight. (Four corner ornaments came first and the
-            display's own radius ate them.)
-
-            These were bare gold lozenges sitting ON the rule, and a rotated
-            square straddling a line reads as a stray mark rather than as a
-            device — two little stars nobody put there on purpose. Seating
-            the same lozenge in an ink plate with its own hairline turns it
-            into a jewel in a setting: the frame passes behind, the plate
-            masks it, and the ornament is obviously intentional. */}
-        {[
-          { top: `${px(200) - px(30)}px` },
-          { bottom: `${px(150) - px(30)}px` },
-        ].map((pos, i) => (
-          <div
-            key={i}
-            style={{
-              position: 'absolute',
-              ...pos,
-              left: `${Math.round(w / 2) - px(92)}px`,
-              width: px(184),
-              height: px(60),
-              background: INK,
-              border: `${px(1.5)}px solid ${GOLD_DEEP}`,
-              borderRadius: px(30),
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: px(16),
-            }}
-          >
-            <div style={{ width: px(7), height: px(7), background: GOLD_DEEP, transform: 'rotate(45deg)', display: 'flex' }} />
-            <div style={{ width: px(19), height: px(19), background: GOLD, transform: 'rotate(45deg)', display: 'flex' }} />
-            <div style={{ width: px(7), height: px(7), background: GOLD_DEEP, transform: 'rotate(45deg)', display: 'flex' }} />
-          </div>
-        ))}
+        {/* No ornaments on the frame runs. Two rounds of them lived here —
+            bare gold lozenges straddling the rule, then the same lozenges
+            seated in ink cartouches to make them look deliberate — and both
+            read as stray marks on the top and bottom borders. The double
+            rule does the ornamenting by itself, which was the argument for
+            shrinking them in the first place; taking them out finishes it.
+            Don't put a third version back. */}
 
         {/* Centered masthead column */}
         <div

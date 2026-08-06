@@ -104,31 +104,31 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     startupImage: [
       // iPhone 16 Pro Max
-      { url: "/api/og/splash?w=1320&h=2868&v=4", media: "(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
+      { url: "/api/og/splash?w=1320&h=2868&v=5", media: "(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
       // iPhone 16 Pro
-      { url: "/api/og/splash?w=1206&h=2622&v=4", media: "(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
+      { url: "/api/og/splash?w=1206&h=2622&v=5", media: "(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
       // iPhone 15/16 Plus / 14 Pro Max / 15 Pro Max
-      { url: "/api/og/splash?w=1290&h=2796&v=4", media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
+      { url: "/api/og/splash?w=1290&h=2796&v=5", media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
       // iPhone 14 Pro / 15 / 15 Pro / 16
-      { url: "/api/og/splash?w=1179&h=2556&v=4", media: "(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
+      { url: "/api/og/splash?w=1179&h=2556&v=5", media: "(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
       // iPhone 12/13 Pro Max / 14 Plus
-      { url: "/api/og/splash?w=1284&h=2778&v=4", media: "(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
+      { url: "/api/og/splash?w=1284&h=2778&v=5", media: "(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
       // iPhone 12/13/14
-      { url: "/api/og/splash?w=1170&h=2532&v=4", media: "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
+      { url: "/api/og/splash?w=1170&h=2532&v=5", media: "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
       // iPhone 12/13 mini
-      { url: "/api/og/splash?w=1080&h=2340&v=4", media: "(device-width: 360px) and (device-height: 780px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
+      { url: "/api/og/splash?w=1080&h=2340&v=5", media: "(device-width: 360px) and (device-height: 780px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
       // iPhone X / XS / 11 Pro
-      { url: "/api/og/splash?w=1125&h=2436&v=4", media: "(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
+      { url: "/api/og/splash?w=1125&h=2436&v=5", media: "(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
       // iPhone XS Max / 11 Pro Max
-      { url: "/api/og/splash?w=1242&h=2688&v=4", media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
+      { url: "/api/og/splash?w=1242&h=2688&v=5", media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
       // iPhone XR / 11
-      { url: "/api/og/splash?w=828&h=1792&v=4",  media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" },
+      { url: "/api/og/splash?w=828&h=1792&v=5",  media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" },
       // iPhone 6/7/8 Plus
-      { url: "/api/og/splash?w=1242&h=2208&v=4", media: "(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
+      { url: "/api/og/splash?w=1242&h=2208&v=5", media: "(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
       // iPhone 6/7/8 / SE 2/3
-      { url: "/api/og/splash?w=750&h=1334&v=4",  media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" },
+      { url: "/api/og/splash?w=750&h=1334&v=5",  media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" },
       // iPhone SE 1st gen / 5/5s
-      { url: "/api/og/splash?w=640&h=1136&v=4",  media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" },
+      { url: "/api/og/splash?w=640&h=1136&v=5",  media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" },
     ],
   },
   alternates: { canonical: "https://thesundaychronicle.app/" },
