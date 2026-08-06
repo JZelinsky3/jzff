@@ -639,7 +639,7 @@ async function ingestSeason(args: {
             status: 'completed',
             raw_payload: { team_ids: t.team_ids, players: t.players },
           },
-          { onConflict: 'league_id,platform,external_id' }
+          { onConflict: 'league_id,platform,season_id,external_id' }
         )
         .select('id')
         .single()

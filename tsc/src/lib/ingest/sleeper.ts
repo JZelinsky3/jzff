@@ -718,7 +718,7 @@ export async function ingestSleeperSource(
             status: 'completed',
             raw_payload: t,
           },
-          { onConflict: 'league_id,platform,external_id' }
+          { onConflict: 'league_id,platform,season_id,external_id' }
         )
         .select('id')
         .single()

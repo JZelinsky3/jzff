@@ -694,7 +694,7 @@ export async function ingestYahooSource(
             status: 'completed',
             raw_payload: t.raw,
           },
-          { onConflict: 'league_id,platform,external_id' }
+          { onConflict: 'league_id,platform,season_id,external_id' }
         )
         .select('id')
         .single()

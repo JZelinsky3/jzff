@@ -505,6 +505,26 @@ export type NflTrade = {
   players: NflTradePlayer[]
 }
 
+// "Nov 10, 5:08am" → ISO. NFL.com omits the year and writes a lowercase
+// meridiem with no space, which Date.parse rejects outright — so the old
+// `Date.parse(\`${dateText} ${season}\`)` always returned NaN and every NFL
+// trade landed on the Dec 31 fallback. Times are rendered ET but we have no
+// offset to work from, so they're read as UTC; the day is what matters here.
+function parseTransactionDate(dateText: string, season: number): string {
+  const m = dateText.match(/^([A-Za-z]{3,9})\s+(\d{1,2}),\s*(\d{1,2}):(\d{2})\s*([ap])m$/i)
+  if (m) {
+    const [, month, day, rawHour, minute, meridiem] = m
+    const hour = (Number(rawHour) % 12) + (meridiem!.toLowerCase() === 'p' ? 12 : 0)
+    // A season's Jan/Feb transactions belong to the following calendar year.
+    const year = /^(jan|feb)/i.test(month!) ? season + 1 : season
+    const parsed = Date.parse(
+      `${month} ${day} ${year} ${String(hour).padStart(2, '0')}:${minute}:00 UTC`
+    )
+    if (Number.isFinite(parsed)) return new Date(parsed).toISOString()
+  }
+  return new Date(`${season}-12-31T00:00:00Z`).toISOString()
+}
+
 export async function fetchTrades(leagueId: string, season: number): Promise<NflTrade[]> {
   // NFL.com's transactions page is a <table class="tableType-transaction">
   // where each trade SIDE is a <tr class="transaction-trade-{tradeId}-{n}">.
@@ -517,10 +537,12 @@ export async function fetchTrades(leagueId: string, season: number): Promise<Nfl
   //   .playerNameAndInfo → <ul><li><a class="playerName playerNameId-N">Name</a> <em>POS - TEAM</em></li>...</ul>
   //   .transactionFrom  → <a class="teamName teamId-N">Team A</a>
   //   .transactionTo    → <a class="teamName teamId-N">Team B</a>
-  const url = `${BASE}/league/${leagueId}/history/${season}/transactions?transactionType=trade`
-  const html = await fetchHtml(url)
-  const $ = cheerio.load(html)
-
+  //
+  // The page shows only the newest 20 TRADES and pages via &offset= (a 1-based
+  // trade index, not a row index), with no rendered pagination control to hint
+  // that more exist. Reading page 1 alone silently truncated every busy season:
+  // pams 2023 has 25 trades, so its 5 oldest were invisible. Walk pages until
+  // one adds nothing new.
   type SideRow = {
     side: number
     type: string
@@ -531,14 +553,29 @@ export async function fetchTrades(leagueId: string, season: number): Promise<Nfl
     players: Array<{ player_external_id: string; full_name: string; position: string | null; nfl_team: string | null }>
   }
   const byTradeId = new Map<string, SideRow[]>()
+  // (tradeId, side) already parsed. Guards the paging loop against a page that
+  // ignores the offset and re-serves rows we've read, which would otherwise
+  // push the same players onto a side twice.
+  const seenRows = new Set<string>()
 
-  $('tr[class*="transaction-trade-"]').each((_, el) => {
+  const PAGE_TRADES = 20
+  const MAX_PAGES = 25
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const offset = page * PAGE_TRADES + 1
+    const url = `${BASE}/league/${leagueId}/history/${season}/transactions?transactionType=trade&offset=${offset}`
+    const html = await fetchHtml(url)
+    const $ = cheerio.load(html)
+    const before = seenRows.size
+
+    $('tr[class*="transaction-trade-"]').each((_, el) => {
     const row = $(el)
     const cls = row.attr('class') || ''
     const idMatch = cls.match(/transaction-trade-(\d+)-(\d+)/)
     if (!idMatch) return
     const tradeId = idMatch[1]!
     const side = Number(idMatch[2])
+    if (seenRows.has(`${tradeId}-${side}`)) return
+    seenRows.add(`${tradeId}-${side}`)
 
     const type = row.find('td.transactionType').first().text().trim()
     const dateText = row.find('td.transactionDate').first().text().trim()
@@ -573,7 +610,12 @@ export async function fetchTrades(leagueId: string, season: number): Promise<Nfl
     const list = byTradeId.get(tradeId) ?? []
     list.push({ side, type, dateText, week, from_team_id, to_team_id, players })
     byTradeId.set(tradeId, list)
-  })
+    })
+
+    // A page that surfaced no row we hadn't already read is past the end (or a
+    // repeat of page 1) — stop rather than walk empty pages.
+    if (seenRows.size === before) break
+  }
 
   const out: NflTrade[] = []
   for (const [tradeId, sides] of byTradeId) {
@@ -584,12 +626,7 @@ export async function fetchTrades(leagueId: string, season: number): Promise<Nfl
     if (tradeSides.length === 0) continue
     tradeSides.sort((a, b) => a.side - b.side)
 
-    // NFL.com renders dates without the year. Append the season for parse.
-    const dateText = tradeSides[0].dateText
-    const parsed = Date.parse(`${dateText} ${season}`)
-    const executed_at = Number.isFinite(parsed)
-      ? new Date(parsed).toISOString()
-      : new Date(`${season}-12-31T00:00:00Z`).toISOString()
+    const executed_at = parseTransactionDate(tradeSides[0].dateText, season)
     const week = tradeSides[0].week
 
     const teamIds = new Set<number>()
