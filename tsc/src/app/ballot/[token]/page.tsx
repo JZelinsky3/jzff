@@ -1,9 +1,8 @@
 import { notFound } from 'next/navigation'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { PAMS_ROSTER } from '@/lib/winBallot'
-import { readBallotToken, submittedNames } from './actions'
-import { BallotClient } from './ballot-client'
-import './ballot.css'
+import { leagueForToken, submittedNames } from '../actions'
+import { BallotClient } from '../ballot-client'
+import '../ballot.css'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,29 +11,15 @@ export const metadata = {
   description: 'Twelve managers, one win total each. Call them all and the room sets the lines.',
 }
 
-// The ballot is open to whoever holds the link: no account, no sign-in. The
-// `k` token in the URL is the authorization, checked here for the render and
-// again in the server action on submit.
-export default async function BallotPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ slug: string }>
-  searchParams: Promise<{ k?: string }>
-}) {
-  const { slug } = await params
-  const { k } = await searchParams
+// Deliberately NOT under /league/[slug]: that layout redirects signed-out
+// visitors to /login, and the whole point of this link is that eleven people
+// can open it without an account. The token in the path is both the address
+// and the authorization.
+export default async function BallotPage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params
 
-  const admin = createAdminClient()
-  const { data: league } = await admin
-    .from('leagues')
-    .select('id, name, slug')
-    .eq('slug', slug)
-    .maybeSingle()
-  if (!league) notFound()
-
-  const token = await readBallotToken(league.id)
-  if (!token || !k || k !== token) {
+  const league = await leagueForToken(token)
+  if (!league) {
     return (
       <div className="wb">
         <div className="wb-shell">
@@ -47,8 +32,8 @@ export default async function BallotPage({
               </div>
               <div className="wb-brief">
                 <p>
-                  The ballot is open by invitation only, and the link you followed
-                  either expired or was never the current one.
+                  The ballot is open by invitation only, and this link either
+                  expired or was never the current one.
                 </p>
                 <p>Ask Joey for the link he sent the group and open that instead.</p>
               </div>
@@ -60,6 +45,7 @@ export default async function BallotPage({
     )
   }
 
+  if (!PAMS_ROSTER.length) notFound()
   const alreadyIn = await submittedNames(league.id)
 
   return (

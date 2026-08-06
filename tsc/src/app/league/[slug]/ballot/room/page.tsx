@@ -1,11 +1,12 @@
+import { headers } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 import { PAMS_ROSTER, SEASON, buildBoard, type Picks } from '@/lib/winBallot'
-import { readBallotToken } from '../actions'
+import { readBallotToken } from '@/app/ballot/actions'
 import { RoomView } from './room-view'
-import '../ballot.css'
+import '@/app/ballot/ballot.css'
 import './room.css'
 
 export const dynamic = 'force-dynamic'
@@ -59,10 +60,17 @@ export default async function BallotRoomPage({ params }: { params: Promise<{ slu
   const board = buildBoard(PAMS_ROSTER, ballots.map((b) => b.picks))
   const token = await readBallotToken(league.id)
 
+  // Build the shareable link server-side rather than reading
+  // window.location on the client, so the URL is in the HTML from the start.
+  const h = await headers()
+  const host = h.get('x-forwarded-host') ?? h.get('host') ?? ''
+  const proto = h.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https')
+  const origin = host ? `${proto}://${host}` : ''
+
   return (
     <RoomView
       leagueId={league.id}
-      slug={league.slug}
+      origin={origin}
       roster={PAMS_ROSTER}
       ballots={ballots}
       board={board}

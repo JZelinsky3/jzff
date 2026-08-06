@@ -6,6 +6,23 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 import { PAMS_ROSTER, SEASON, validatePicks, type Picks } from '@/lib/winBallot'
 
+/**
+ * Resolve a share token back to its league. The token is the whole address
+ * of the public ballot, so this is the lookup the page boots from; an
+ * unknown token simply has no league and gets the "wrong door" screen.
+ */
+export async function leagueForToken(token: string): Promise<{ id: string; slug: string; name: string } | null> {
+  if (!token || token.length < 8) return null
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('leagues')
+    .select('id, slug, name, settings')
+    .eq('settings->>ballot_token', token)
+    .maybeSingle()
+  if (!data) return null
+  return { id: data.id as string, slug: data.slug as string, name: data.name as string }
+}
+
 // The ballot is open to whoever holds the link, so the share token IS the
 // authorization. It lives on the league row (settings.ballot_token) and is
 // minted from the room, which is itself owner-gated.
@@ -128,6 +145,66 @@ export async function submittedNames(leagueId: string): Promise<string[]> {
     .eq('league_id', leagueId)
     .eq('season', SEASON)
   return (data ?? []).map((r) => r.manager_name as string)
+}
+
+/**
+ * File ballots from the code lines the old artifact produced, so anybody who
+ * already texted Joey a `PAMS26.NAME.7-8-...T84` doesn't have to fill the
+ * thing in twice. The artifact encoded by roster position in the same
+ * alphabetical order PAMS_ROSTER uses, so the positions line up; the trailing
+ * total is a checksum, and a line whose numbers don't add up to it was
+ * mangled in transit and is refused rather than guessed at.
+ */
+export async function importBallotLines(
+  leagueId: string,
+  text: string,
+): Promise<{ ok: false; error: string } | { ok: true; filed: string[]; skipped: string[] }> {
+  const access = await assertWriteAccess(leagueId)
+  if (!access.ok) return access
+
+  const filed: string[] = []
+  const skipped: string[] = []
+  const admin = createAdminClient()
+
+  for (const raw of text.split('\n').map((s) => s.trim()).filter(Boolean)) {
+    const parts = raw.split('.')
+    if (parts.length !== 4 || parts[0].toUpperCase() !== 'PAMS26') {
+      skipped.push(`not a ballot line: ${raw.slice(0, 22)}`)
+      continue
+    }
+    const manager = PAMS_ROSTER.find((m) => m.name.toUpperCase() === parts[1].toUpperCase())
+    if (!manager) { skipped.push(`unknown name "${parts[1]}"`); continue }
+
+    const nums = parts[2].split('-').map(Number)
+    if (nums.length !== PAMS_ROSTER.length || nums.some((n) => !Number.isInteger(n) || n < 0 || n > 14)) {
+      skipped.push(`${manager.name}: the twelve numbers are damaged`)
+      continue
+    }
+    const sum = nums.reduce((a, b) => a + b, 0)
+    if (sum !== Number(parts[3].replace(/^T/i, ''))) {
+      skipped.push(`${manager.name}: totals don't match, line was altered in transit`)
+      continue
+    }
+
+    const picks: Picks = {}
+    PAMS_ROSTER.forEach((m, i) => { picks[m.name] = nums[i] })
+
+    const { error } = await admin.from('win_ballots').insert({
+      league_id: leagueId,
+      season: SEASON,
+      manager_name: manager.name,
+      picks,
+      total: sum,
+    })
+    if (error) {
+      skipped.push(error.code === '23505' ? `${manager.name} already has a ballot in` : `${manager.name}: ${error.message}`)
+      continue
+    }
+    filed.push(manager.name)
+  }
+
+  revalidatePath(`/league/${access.slug}/ballot/room`)
+  return { ok: true, filed, skipped }
 }
 
 /** Delete one ballot, so a mis-filed name can be reopened from the room. */

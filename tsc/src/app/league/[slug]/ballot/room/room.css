@@ -40,6 +40,13 @@
   border: 1px solid var(--rule); padding: .5rem .6rem; margin-bottom: .6rem;
 }
 .wb-share-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.wb-paste {
+  width: 100%; min-height: 7rem; display: block;
+  font-family: var(--wb-mono); font-size: 16px; line-height: 1.65;
+  background: var(--field); color: var(--ink);
+  border: 1.5px solid var(--ink); border-radius: 0; padding: .6rem .7rem;
+  resize: vertical; -webkit-appearance: none; appearance: none;
+}
 
 /* ── Board ── */
 .wb-board { border-top: 1.5px solid var(--ink); }

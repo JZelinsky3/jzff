@@ -2,16 +2,16 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { ensureBallotToken, clearBallot } from '../actions'
+import { ensureBallotToken, clearBallot, importBallotLines } from '@/app/ballot/actions'
 import { GAMES, SPLIT_GAP, type BallotManager, type BoardLine, type Picks } from '@/lib/winBallot'
 
 type Ballot = { name: string; picks: Picks; total: number; at: string }
 
 export function RoomView({
-  leagueId, slug, roster, ballots, board, token,
+  leagueId, origin, roster, ballots, board, token,
 }: {
   leagueId: string
-  slug: string
+  origin: string
   roster: BallotManager[]
   ballots: Ballot[]
   board: BoardLine[]
@@ -22,11 +22,15 @@ export function RoomView({
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const [showBallots, setShowBallots] = useState(false)
+  const [showImport, setShowImport] = useState(false)
+  const [paste, setPaste] = useState('')
 
   const inNames = new Set(ballots.map((b) => b.name))
-  const link = token
-    ? `${typeof window === 'undefined' ? '' : window.location.origin}/league/${slug}/ballot?k=${token}`
-    : null
+  // The public ballot lives at /ballot/<token>, outside /league/, because
+  // the league layout bounces signed-out visitors to /login and the whole
+  // point of this link is that it needs no account. The origin is resolved
+  // server-side so the full link is right in the HTML, ready to copy.
+  const link = token ? `${origin}/ballot/${token}` : null
   const complete = ballots.length === roster.length
 
   async function makeLink(rotate: boolean) {
@@ -53,6 +57,19 @@ export function RoomView({
       '',
       ...board.map((l) => `${l.name.padEnd(width + 2)}${l.line.toFixed(1)}`),
     ].join('\n'), 'Board')
+  }
+
+  async function runImport() {
+    setBusy(true); setMsg(null)
+    const r = await importBallotLines(leagueId, paste)
+    setBusy(false)
+    if (!r.ok) { setMsg(r.error); return }
+    const bits: string[] = []
+    if (r.filed.length) bits.push(`Filed ${r.filed.join(', ')}.`)
+    if (r.skipped.length) bits.push(`Skipped: ${r.skipped.join(' · ')}`)
+    setMsg(bits.join(' ') || 'Nothing in that paste looked like a ballot line.')
+    if (r.filed.length) setPaste('')
+    router.refresh()
   }
 
   function reopen(name: string) {
@@ -109,6 +126,37 @@ export function RoomView({
             </div>
           )}
           {msg && <div className="wb-board-sub" style={{ marginTop: '.6rem' }}>{msg}</div>}
+        </div>
+
+        {/* Anybody who filled in the old artifact and texted a PAMS26 line
+            can be filed here instead of being asked to do it all again. */}
+        <div className="wb-share">
+          <div className="wb-share-label">Ballot lines people already texted you</div>
+          {showImport ? (
+            <>
+              <textarea
+                className="wb-paste"
+                value={paste}
+                onChange={(e) => setPaste(e.target.value)}
+                placeholder="PAMS26.JOEY.8-7-9-6-7-8-9-7-6-8-7-5.T89"
+                aria-label="Paste ballot lines, one per row"
+              />
+              <div className="wb-share-actions" style={{ marginTop: '.6rem' }}>
+                <button className="wb-btn" type="button" disabled={busy || !paste.trim()} onClick={runImport}>
+                  {busy ? 'Filing…' : 'File these'}
+                </button>
+                <button className="wb-btn wb-btn-quiet" type="button" onClick={() => setShowImport(false)}>
+                  Close
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="wb-share-actions">
+              <button className="wb-btn wb-btn-quiet" type="button" onClick={() => setShowImport(true)}>
+                Paste old ballot lines
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="wb-section">The board</div>
