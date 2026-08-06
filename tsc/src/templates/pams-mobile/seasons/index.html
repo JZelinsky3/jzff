@@ -29,18 +29,45 @@
     position: absolute; top: 0; left: 0; right: 0; height: 2px;
     background: linear-gradient(90deg, transparent, var(--gold), transparent);
 }
-.se-feature-year {
-    font-family: var(--serif);
-    font-size: 2.6rem; line-height: 1;
-    color: var(--gold);
+/* Two columns. The card used to be a single left-set stack, which left the
+   right half of a 390px card as empty gradient — so the seal moved in there
+   and took the year with it. Nothing is repeated between the columns: the
+   year is IN the seal now, not set twice. */
+.se-feature-row {
+    display: flex; align-items: center; gap: .8rem;
 }
+.se-feature-body { min-width: 0; flex: 1; }
 .se-feature-champ {
     font-family: var(--serif);
-    font-size: 1.15rem;
+    font-size: 1.08rem; line-height: 1.15;
     color: var(--cream);
-    margin-top: .35rem;
+    margin-top: .3rem;
 }
 .se-feature-champ em { font-style: italic; color: var(--gold); }
+
+/* ── Champion's seal ──
+   A struck seal, not a badge: double ring, the title's ordinal curved along
+   the top of the outer ring, the year struck in the middle, and the
+   champion's OTHER title years listed under it. First-timers get the year
+   alone and the ring says so, which is the whole point of the ordinal being
+   there — you can read "how many" and "which ones" off one mark. */
+.se-seal { flex: none; display: block; }
+.se-seal-ring {
+    font-family: var(--mono); font-weight: 700;
+    font-size: 7.2px; letter-spacing: 1.2px;
+    fill: var(--gold-deep);
+    text-transform: uppercase;
+}
+.se-seal-year {
+    font-family: var(--serif);
+    font-size: 25px;
+    fill: var(--gold);
+}
+.se-seal-prior {
+    font-family: var(--mono); font-weight: 700;
+    font-size: 7px; letter-spacing: .6px;
+    fill: var(--cream-mute);
+}
 
 /* Timeline rows */
 .se-year {
@@ -97,6 +124,67 @@
         });
     }
 
+    var ORDINALS = ['', 'First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
+    function ordinalTitle(n) {
+        if (n >= 1 && n < ORDINALS.length) return ORDINALS[n] + ' Title';
+        var v = n % 100;
+        var suffix = (v >= 11 && v <= 13) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th');
+        return n + suffix + ' Title';
+    }
+
+    /**
+     * The champion's seal, struck for the featured season.
+     *
+     * Matched on champion_user_id rather than on the display name: names are
+     * editable and two managers in a long league can share one, where the id
+     * is what every other join on this site uses.
+     *
+     * Three things on it, and none of them repeat the card beside it:
+     *   · the outer ring says WHICH title this is ("Third Title")
+     *   · the middle is struck with the year
+     *   · under it, the years they won before, oldest first
+     * A first title gets a clean centre and a ring that says First Title,
+     * which is the same information without a list of nothing.
+     */
+    function sealHTML(featured, seasons) {
+        var uid = featured.champion_user_id;
+        var prior = [];
+        if (uid) {
+            for (var i = 0; i < seasons.length; i++) {
+                var s = seasons[i];
+                if (s !== featured && s.champion_user_id === uid) prior.push(s.year);
+            }
+        }
+        prior.sort(function (a, b) { return a - b; });
+        var count = prior.length + 1;
+
+        // Three years is what fits across the inner field at 7px mono. Past
+        // that the oldest are dropped to a leading ellipsis, so the list
+        // always ends on the most recent one before this.
+        var shown = prior.length > 3 ? prior.slice(prior.length - 3) : prior;
+        var priorText = shown.join(' · ') + (prior.length > shown.length ? ' …' : '');
+
+        return '<svg class="se-seal" viewBox="0 0 100 100" width="92" height="92" aria-hidden>' +
+            '<defs><path id="seSealArc" d="M 50 50 m -38 0 a 38 38 0 0 1 76 0" fill="none"/></defs>' +
+            '<circle cx="50" cy="50" r="47" fill="none" stroke="var(--gold-deep)" stroke-width="1"/>' +
+            '<circle cx="50" cy="50" r="43.5" fill="none" stroke="var(--gold-deep)" stroke-width=".6" opacity=".55"/>' +
+            '<circle cx="50" cy="50" r="31" fill="none" stroke="var(--gold-deep)" stroke-width=".6" opacity=".4"/>' +
+            '<text class="se-seal-ring"><textPath href="#seSealArc" startOffset="50%" text-anchor="middle">' +
+                esc(ordinalTitle(count)) +
+            '</textPath></text>' +
+            '<text class="se-seal-year" x="50" y="' + (prior.length ? 52 : 57) + '" text-anchor="middle">' +
+                featured.year +
+            '</text>' +
+            (prior.length
+                ? '<text class="se-seal-prior" x="50" y="67" text-anchor="middle">' + esc(priorText) + '</text>'
+                : '') +
+            // The two flanking marks sit where the ring text stops, closing
+            // the arc the way a struck seal's would.
+            '<path d="M 15.5 56 l 2.6 2.6 l -2.6 2.6 l -2.6 -2.6 z" fill="var(--gold-deep)" opacity=".8"/>' +
+            '<path d="M 84.5 56 l 2.6 2.6 l -2.6 2.6 l -2.6 -2.6 z" fill="var(--gold-deep)" opacity=".8"/>' +
+        '</svg>';
+    }
+
     fetch('data/seasons_directory.json')
         .then(function (r) { return r.ok ? r.json() : null; })
         .catch(function () { return null; })
@@ -116,13 +204,17 @@
             if (featured) {
                 document.getElementById('feature').innerHTML =
                     '<a class="m-card se-feature" href="seasons/season?year=' + featured.year + '">' +
-                        '<div class="m-kicker">Latest Chronicle</div>' +
-                        '<div class="se-feature-year">' + featured.year + '</div>' +
-                        '<div class="se-feature-champ"><em>' + esc(featured.champion_name) + '</em> takes the crown</div>' +
-                        '<div class="m-mono" style="margin-top:.35rem">' +
-                            esc(featured.champion_team_name || '') +
-                            (featured.champion_record ? ' · ' + esc(featured.champion_record) : '') +
-                            ' · ' + featured.total_teams + ' teams' +
+                        '<div class="se-feature-row">' +
+                            '<div class="se-feature-body">' +
+                                '<div class="m-kicker">Latest Chronicle</div>' +
+                                '<div class="se-feature-champ"><em>' + esc(featured.champion_name) + '</em> takes the crown</div>' +
+                                '<div class="m-mono" style="margin-top:.35rem">' +
+                                    esc(featured.champion_team_name || '') +
+                                    (featured.champion_record ? ' · ' + esc(featured.champion_record) : '') +
+                                    ' · ' + featured.total_teams + ' teams' +
+                                '</div>' +
+                            '</div>' +
+                            sealHTML(featured, seasons) +
                         '</div>' +
                     '</a>';
             }

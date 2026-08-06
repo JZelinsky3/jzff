@@ -83,6 +83,8 @@
 }
 .sn-move.up { color: #7da87d; }
 .sn-move.down { color: var(--rust); }
+/* Seats the stroked arrow on the mono baseline beside its number. */
+.m-move-arrow { display: inline-block; vertical-align: -1px; margin-right: .12em; }
 .sn-name { min-width: 0; flex: 1; font-weight: 600; font-size: .92rem; }
 .sn-name small {
     display: block; font-weight: 400; font-size: .7rem; color: var(--cream-mute);
@@ -148,6 +150,22 @@
     }
     function mgrHref(uid) {
         return 'managers/manager?id=' + encodeURIComponent(uid);
+    }
+
+    // Movement arrow for the seeding column. Was ▲ / ▼, which are solid
+    // typographic triangles: they set at whatever weight the font decides,
+    // they don't share a stroke with anything else on the page, and at
+    // .58rem they read as two filled blobs. This is the site's own stroke
+    // idiom instead — a shaft with a head, drawn at the same 1.8 weight as
+    // every other glyph in the mobile shell, inheriting currentColor so the
+    // up/down classes still tint it.
+    function moveArrow(dir) {
+        var path = dir > 0
+            ? '<path d="M5 10.4V2.3"/><path d="M1.7 5.5 5 2.2l3.3 3.3"/>'
+            : '<path d="M5 2.2v8.1"/><path d="M1.7 7 5 10.3 8.3 7"/>';
+        return '<svg class="m-move-arrow" viewBox="0 0 10 12.5" width="7" height="9" fill="none"'
+            + ' stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"'
+            + ' aria-hidden>' + path + '</svg>';
     }
 
     var grab = function (path) {
@@ -230,8 +248,8 @@
                 var move = '';
                 if (t.reg_season_rank && t.final_rank) {
                     var diff = t.reg_season_rank - t.final_rank;
-                    if (diff > 0) move = '<span class="sn-move up">▲' + diff + '</span>';
-                    else if (diff < 0) move = '<span class="sn-move down">▼' + (-diff) + '</span>';
+                    if (diff > 0) move = '<span class="sn-move up">' + moveArrow(1) + diff + '</span>';
+                    else if (diff < 0) move = '<span class="sn-move down">' + moveArrow(-1) + (-diff) + '</span>';
                     else move = '<span class="sn-move">·</span>';
                 }
                 return '<a class="m-list-row" href="' + mgrHref(t.owner_user_id) + '">' +

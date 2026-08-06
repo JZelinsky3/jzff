@@ -190,6 +190,8 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
 }
 .fs-row.leader .fs-pos-num { color: #f4d9a4; }
 .fs-chg { font-size: .5rem; font-weight: 700; }
+/* Seats the stroked arrow on the mono baseline beside its number. */
+.m-move-arrow { display: inline-block; vertical-align: -1px; margin-right: .12em; }
 .fs-chg.up   { color: #6a9a6e; }
 .fs-chg.down { color: var(--ls-live); }
 .fs-chg.same { color: var(--ls-mute); }
@@ -379,9 +381,22 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
         });
     }
     function chg(n) {
-        if (n > 0) return '<span class="fs-chg up">▲' + n + '</span>';
-        if (n < 0) return '<span class="fs-chg down">▼' + Math.abs(n) + '</span>';
+        // Stroked arrow, not ▲ / ▼ — see the note on moveArrow below.
+        if (n > 0) return '<span class="fs-chg up">' + moveArrow(1) + n + '</span>';
+        if (n < 0) return '<span class="fs-chg down">' + moveArrow(-1) + Math.abs(n) + '</span>';
         return '<span class="fs-chg same">·</span>';
+    }
+    // Movement arrow. Was ▲ / ▼: solid typographic triangles that set at
+    // whatever weight the font decides, share a stroke with nothing else on
+    // the page, and at half-rem read as two filled blobs. Same stroked glyph
+    // the season standings use (seasons/season.html).
+    function moveArrow(dir) {
+        var path = dir > 0
+            ? '<path d="M5 10.4V2.3"/><path d="M1.7 5.5 5 2.2l3.3 3.3"/>'
+            : '<path d="M5 2.2v8.1"/><path d="M1.7 7 5 10.3 8.3 7"/>';
+        return '<svg class="m-move-arrow" viewBox="0 0 10 12.5" width="7" height="9" fill="none"'
+            + ' stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"'
+            + ' aria-hidden>' + path + '</svg>';
     }
     function pills(form) {
         // Always 5 slots; missing weeks render as dashed empties so an

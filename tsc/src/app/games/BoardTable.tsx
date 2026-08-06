@@ -114,18 +114,49 @@ export function BoardTable({
   // twice reads as a bug.
   const youShown = you != null && rows.some((r) => r.runId === you.runId)
 
+  // The top three come out of the agate column and onto plaques. A board
+  // where every row is the same height buries the only three entries most
+  // people open the page to read. Below three there is no podium to build,
+  // so a short board stays a list.
+  const podium = rows.length >= 3 ? rows.slice(0, 3) : []
+  const rest = rows.slice(podium.length)
+
   return (
     <>
-      <ol className={styles.rows}>
-        {rows.map((row) => (
-          <Row
-            key={row.runId}
-            row={row}
-            game={game}
-            mine={viewerId != null && row.userId === viewerId}
-          />
-        ))}
-      </ol>
+      {podium.length > 0 && (
+        <div className={styles.podium}>
+          {podium.map((row, i) => (
+            <Plaque
+              key={row.runId}
+              row={row}
+              game={game}
+              place={i + 1}
+              mine={viewerId != null && row.userId === viewerId}
+            />
+          ))}
+        </div>
+      )}
+
+      {rest.length > 0 && (
+        <>
+          <div className={styles.colhead} aria-hidden>
+            <span className={styles.colheadRank}>#</span>
+            <span />
+            <span>Manager</span>
+            <span className={styles.colheadStat}>Run</span>
+          </div>
+          <ol className={styles.rows}>
+            {rest.map((row) => (
+              <Row
+                key={row.runId}
+                row={row}
+                game={game}
+                mine={viewerId != null && row.userId === viewerId}
+              />
+            ))}
+          </ol>
+        </>
+      )}
 
       {you && !youShown && (
         <>
@@ -139,6 +170,57 @@ export function BoardTable({
         </>
       )}
     </>
+  )
+}
+
+/**
+ * One of the top three.
+ *
+ * The rank is set as an italic serif numeral at display size rather than as
+ * the row's mono figure: on a plaque the place IS the headline, and mono at
+ * 3rem reads as a timestamp. First takes the accent and the full width;
+ * second and third are the same object at plaque scale in the board's
+ * line colour, so the hierarchy is legible before a word is read.
+ */
+function Plaque({
+  row,
+  game,
+  place,
+  mine,
+}: {
+  row: BestRow
+  game: GameId
+  place: number
+  mine: boolean
+}) {
+  const stat = statFor(game, row)
+  const chip = game === 'multiverse' ? playoffChip(row.display.round as string | undefined) : null
+  return (
+    <div
+      className={`${styles.plaque} ${place === 1 ? styles.plaqueFirst : ''} ${mine ? styles.rowMine : ''}`}
+    >
+      <span className={styles.plaqueRank} aria-hidden>
+        {place}
+      </span>
+      <span className={styles.plaqueFace}>
+        <BoardFace name={row.name} avatar={row.avatar} />
+      </span>
+      <span className={styles.plaqueBody}>
+        <span className={styles.plaqueName}>{row.name}</span>
+        <span className={styles.plaqueMeta}>
+          <span className={styles.date}>{when(row.at)}</span>
+          {chip && (
+            <span className={styles.roundChip} data-won={chip.won ? 'yes' : undefined}>
+              {chip.label}
+            </span>
+          )}
+        </span>
+      </span>
+      <span className={styles.plaqueStat}>
+        <span className={styles.plaqueBig}>{stat.big}</span>
+        <span className={styles.statSmall}>{stat.small}</span>
+      </span>
+    </div>
   )
 }
 

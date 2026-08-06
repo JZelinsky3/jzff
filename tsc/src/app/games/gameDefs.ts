@@ -73,10 +73,12 @@ export const ROSTER_ROULETTE: GameDef = {
   title: 'Roster',
   titleEm: 'Roulette',
   shortName: 'Wheel',
-  // Ends on the question, not on a count of slots. "Seven slots" is a rule;
-  // the card has one line to give somebody a reason to tap, and the reason is
-  // the record. The mark above draws the wheel, so the line doesn't have to.
-  tagline: 'Eight real teams. One player off each. Can you go 17-0?',
+  // The question, and nothing else. This was three clauses — eight teams,
+  // one player off each, then the record — which on a 390px card wrapped to
+  // three lines and spent two of them on rules the game explains itself.
+  // The mark above draws the wheel and the title says Roulette; the line's
+  // only job is the reason to tap, and the reason is the record.
+  tagline: 'Can you go 17-0?',
   accessTag: 'No account',
   accent: '#e8c889',
   blurb:

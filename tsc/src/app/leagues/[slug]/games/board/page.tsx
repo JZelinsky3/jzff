@@ -22,6 +22,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { loadBoard, isGameId, type BoardKind } from '@/lib/minigames/leaderboard'
 import { BoardTable } from '@/app/games/BoardTable'
+import { GameRail, KindSeg } from '@/app/games/BoardNav'
 import { ClaimPrompt } from '@/app/games/ClaimPrompt'
 import { MobileGameBar } from '@/app/games/MobileGameBar'
 import { MobileGamesDock } from '@/app/games/MobileGamesDock'
@@ -135,32 +136,11 @@ export default async function LeagueGamesBoard({
           </p>
         </div>
 
-        {/* Which game. Above the best/career tabs deliberately: it changes
-            what is being ranked, where those two change how. */}
-        <nav className={styles.tabs} aria-label="Game">
-          {ranked.map((g) => (
-            <Link
-              key={g.id}
-              href={gameTab(g.id)}
-              className={`${styles.tab} ${g.id === def.id ? styles.tabOn : ''}`}
-              style={{ '--accent': g.accent } as React.CSSProperties}
-            >
-              {g.shortName}
-            </Link>
-          ))}
-        </nav>
-
-        <nav className={styles.tabs} aria-label="Ranking">
-          {KINDS.map((t) => (
-            <Link
-              key={t.kind}
-              href={kindTab(t.kind)}
-              className={`${styles.tab} ${t.kind === kind ? styles.tabOn : ''}`}
-            >
-              {t.label}
-            </Link>
-          ))}
-        </nav>
+        {/* Which game, above which ranking: the first changes what is being
+            ranked, the second only changes how. Two different shapes, for
+            the reasons argued in BoardNav. */}
+        <GameRail activeId={def.id} games={ranked} href={(g) => gameTab(g.id)} />
+        <KindSeg kinds={KINDS} active={kind} href={kindTab} />
 
         {/* One league's board is the only place a wrong name is visible, so
             it is where the name gets set or corrected. Signed out too: the

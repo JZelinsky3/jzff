@@ -236,11 +236,16 @@
 
 /* ── Seasons list ── */
 #seasonsList {
-    /* ~4.5 rows visible: the 5th season sits half-clipped on purpose so the
+    /* ~3.5 rows visible: the 4th season sits half-clipped on purpose so the
        card reads as scrollable (there's more history below) rather than a
        clean stop. Fewer seasons just make the card shorter (max-height only
-       caps — it never pads out). */
-    max-height: 240px;
+       caps — it never pads out).
+
+       Trimmed from 240px, which was cut for ~4.5 rows before each row grew a
+       second line (champion team name + "champion"). At the taller row this
+       is the same half-clipped shape at a height the last card on the page
+       can actually justify. */
+    max-height: 200px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
 }

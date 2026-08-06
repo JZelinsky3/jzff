@@ -171,6 +171,8 @@ body { background: #f0e5c8; color: var(--ink); }
 .pr-rank { display: flex; align-items: baseline; gap: .25rem; }
 .pr-rank-num { font-family: var(--serif); font-style: italic; font-size: 1.2rem; color: var(--ink); }
 .pr-delta { font-family: var(--mono); font-weight: 700; font-size: .52rem; }
+/* Seats the stroked arrow on the mono baseline beside its number. */
+.m-move-arrow { display: inline-block; vertical-align: -1px; margin-right: .12em; }
 .pr-delta.up { color: var(--pr-good); }
 .pr-delta.down { color: var(--pr-bad); }
 .pr-delta.same { color: var(--pr-mute); }
@@ -564,8 +566,19 @@ body { background: #f0e5c8; color: var(--ink); }
     function deltaHTML(delta) {
         if (!delta || delta === 0) return '<span class="pr-delta same">·</span>';
         var cls = delta > 0 ? 'up' : 'down';
-        var sym = delta > 0 ? '▲' : '▼';
-        return '<span class="pr-delta ' + cls + '">' + sym + Math.abs(delta) + '</span>';
+        return '<span class="pr-delta ' + cls + '">' + moveArrow(delta) + Math.abs(delta) + '</span>';
+    }
+    // Movement arrow. Was ▲ / ▼: solid typographic triangles that set at
+    // whatever weight the font decides, share a stroke with nothing else on
+    // the page, and at half-rem read as two filled blobs. Same stroked glyph
+    // the season standings and the live form sheet use.
+    function moveArrow(dir) {
+        var path = dir > 0
+            ? '<path d="M5 10.4V2.3"/><path d="M1.7 5.5 5 2.2l3.3 3.3"/>'
+            : '<path d="M5 2.2v8.1"/><path d="M1.7 7 5 10.3 8.3 7"/>';
+        return '<svg class="m-move-arrow" viewBox="0 0 10 12.5" width="7" height="9" fill="none"'
+            + ' stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"'
+            + ' aria-hidden>' + path + '</svg>';
     }
 
     function renderPodium(top3) {

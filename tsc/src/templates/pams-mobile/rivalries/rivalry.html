@@ -38,9 +38,11 @@
 
 /* Tale of the tape */
 .rd-tape { text-align: center; padding: 1.1rem 0 .4rem; }
+/* Bigger than the 1.45rem it was: it inherited the space the "A vs B" line
+   used to take, and it is now the only headline on the page. */
 .rd-name {
     font-family: var(--serif);
-    font-size: 1.45rem; line-height: 1.1;
+    font-size: 1.85rem; line-height: 1.08;
     color: var(--cream);
 }
 .rd-name em { font-style: italic; color: var(--riv); }
@@ -87,10 +89,29 @@
     text-align: center;
 }
 
-/* Meeting log */
-.rd-meet-when { flex: none; width: 4.6rem; }
-.rd-meet-when b { display: block; font-family: var(--mono); font-weight: 700; font-size: .68rem; color: var(--cream-soft); }
-.rd-meet-when small { font-family: var(--mono); font-size: .54rem; color: var(--cream-mute); }
+/* Meeting log.
+   The when-column carries two facts of very different weight: WHEN (year and
+   week, one unit, never wrapped) and WHAT KIND (regular or playoff). They
+   were left-set at nearly the same size, so the second line read as a
+   continuation of the first that had run out of room rather than as its own
+   label. Centred as a stack now, with the kind set smaller and tracked out
+   so it reads as a tag under the date. */
+.rd-meet-when { flex: none; width: 4.6rem; text-align: center; }
+.rd-meet-when b {
+    display: block;
+    font-family: var(--mono); font-weight: 700; font-size: .68rem;
+    color: var(--cream-soft);
+    white-space: nowrap;
+}
+.rd-meet-when small {
+    display: block;
+    margin-top: .1rem;
+    font-family: var(--mono); font-size: .46rem; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+/* Playoff meetings are the ones worth spotting in a scroll. */
+.rd-meet-when small.is-playoff { color: var(--riv); }
 .rd-meet-res { min-width: 0; flex: 1; font-weight: 600; font-size: .88rem; }
 .rd-meet-res small {
     display: block; font-weight: 400; font-size: .62rem;
@@ -108,8 +129,11 @@
 <script src="/pams-template/assets/js/mobile-app.js"></script>
 
 <main class="m-main">
+    <!-- The masthead used to run the rivalry's NAME as a small kicker, then
+         "A vs B" as the headline, then A / score / B underneath it. Two of
+         those three said the same thing, so the names come off the top and
+         the rivalry's name takes the headline it was already sitting above. -->
     <header class="rd-tape" id="tape" hidden>
-        <div class="m-kicker" style="color:var(--riv)" id="rdKicker"></div>
         <h1 class="rd-name" id="rdName"></h1>
         <div class="rd-vs">
             <span class="rd-side" id="sideA"><b></b></span>
@@ -172,9 +196,10 @@
         document.title = a.name + ' vs ' + b.name + ' · {{LEAGUE_NAME}}';
 
         document.getElementById('tape').hidden = false;
-        document.getElementById('rdKicker').textContent = r.name;
-        document.getElementById('rdName').innerHTML =
-            esc(a.name) + ' <em>vs</em> ' + esc(b.name);
+        // The rivalry's own name, set as the headline. The two managers are
+        // named directly underneath it on either side of the score, so
+        // spelling "A vs B" up here as well was the same row twice.
+        document.getElementById('rdName').textContent = r.name;
         document.getElementById('sideA').innerHTML = '<b>' + esc(a.name) + '</b>';
         document.getElementById('sideB').innerHTML = '<b>' + esc(b.name) + '</b>';
         document.getElementById('score').textContent =
@@ -184,23 +209,40 @@
             : r.leader_name + ' leads · since ' + r.first_meeting_year;
 
         // Tale of the tape comparison
+        // The fourth column is how to compare the two values: 'num' parses
+        // them as numbers, 'record' reads the wins off a "6-4" / "6-4-1"
+        // string. The record rows used to be flagged uncomparable and so
+        // never lit a leader — but 6-4 against 4-6 is exactly the split the
+        // gold is for, and it is the same fact as the row above it.
         var rows = [
-            ['Series wins', a.wins || 0, b.wins || 0, true],
-            ['Avg points', num(a.avg_ppg), num(b.avg_ppg), true],
-            ['High score', a.high_score ? num(a.high_score.score) : '·', b.high_score ? num(b.high_score.score) : '·', true],
-            ['Regular season', esc(a.reg_record || '·'), esc(b.reg_record || '·'), false],
-            ['Playoffs', esc(a.playoff_record || '·'), esc(b.playoff_record || '·'), false],
+            ['Series wins', a.wins || 0, b.wins || 0, 'num'],
+            ['Avg points', num(a.avg_ppg), num(b.avg_ppg), 'num'],
+            ['High score', a.high_score ? num(a.high_score.score) : '·', b.high_score ? num(b.high_score.score) : '·', 'num'],
+            ['Regular season', esc(a.reg_record || '·'), esc(b.reg_record || '·'), 'record'],
+            ['Playoffs', esc(a.playoff_record || '·'), esc(b.playoff_record || '·'), 'record'],
         ];
+        // Wins off "6-4" or "6-4-1". Null when the cell isn't a record at
+        // all, which is what "·" is for a pair who never met in the playoffs.
+        function recWins(v) {
+            var m = /^\s*(\d+)-(\d+)/.exec(String(v));
+            return m ? Number(m[1]) : null;
+        }
         document.getElementById('cmpSection').hidden = false;
         document.getElementById('cmp').innerHTML = rows.map(function (row) {
             var label = row[0], va = row[1], vb = row[2], compare = row[3];
             var aWin = '', bWin = '';
-            if (compare) {
-                var na = parseFloat(String(va).replace(/,/g, '')), nb = parseFloat(String(vb).replace(/,/g, ''));
-                if (!isNaN(na) && !isNaN(nb)) {
-                    if (na > nb) aWin = ' win';
-                    else if (nb > na) bWin = ' win';
-                }
+            var na, nb;
+            if (compare === 'record') {
+                na = recWins(va); nb = recWins(vb);
+            } else {
+                na = parseFloat(String(va).replace(/,/g, ''));
+                nb = parseFloat(String(vb).replace(/,/g, ''));
+                if (isNaN(na)) na = null;
+                if (isNaN(nb)) nb = null;
+            }
+            if (na != null && nb != null) {
+                if (na > nb) aWin = ' win';
+                else if (nb > na) bWin = ' win';
             }
             return '<div class="rd-cmp">' +
                 '<span class="rd-cmp-a' + aWin + '">' + va + '</span>' +
@@ -233,7 +275,9 @@
                 var winner = g.result === 'W' ? a.name : (g.result === 'L' ? b.name : null);
                 var line = winner ? esc(winner) + ' wins' : 'Tied';
                 return '<div class="m-list-row">' +
-                    '<span class="rd-meet-when"><b>' + g.year + ' · W' + g.week + '</b><small>' + (g.is_playoff ? 'Playoffs' : 'Regular') + '</small></span>' +
+                    '<span class="rd-meet-when"><b>' + g.year + ' · W' + g.week + '</b>' +
+                        '<small' + (g.is_playoff ? ' class="is-playoff"' : '') + '>' +
+                        (g.is_playoff ? 'Playoff' : 'Regular') + '</small></span>' +
                     '<span class="rd-meet-res">' + line + '<small>Series ' + esc(entry.after) + '</small></span>' +
                     (g.margin != null ? '<span class="rd-meet-margin">+' + num(g.margin) + '</span>' : '') +
                 '</div>';

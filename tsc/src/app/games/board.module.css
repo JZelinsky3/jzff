@@ -78,16 +78,130 @@
   color: var(--gp-gold);
 }
 
-/* ── Tabs ─────────────────────────────────────────────────── */
+/* ── Two navigations, two shapes ──────────────────────────────
+   The board used to stack two rows of identical mono pills: WHICH GAME
+   above, WHICH RANKING below, in the same box at the same size. Two
+   controls that look the same read as one control that has been split,
+   and neither of them looked like anything.
 
-/* Three boards measuring three different things, so they are TABS rather
-   than a filter: switching is switching question, not narrowing a list. */
-.tabs {
+   They are different questions and now they are different objects:
+
+     · the game rail is a RAIL — each game with its own mark and its own
+       colour, scrolling sideways on a phone, the active one struck through
+       with its accent. It is a place you browse.
+     · the ranking control is a SEGMENT — one connected switch with two
+       positions. It is a thing you flip.
+
+   Both boards use both controls, so the old .tabs / .tab / .tabOn came out
+   with them. If something needs a plain row of pills again, take it from
+   .segItem rather than reviving a third pill shape.
+   ───────────────────────────────────────────────────────────── */
+
+.rail {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.35rem;
+  margin-bottom: 1.1rem;
+  padding-bottom: 0.35rem;
+  /* Sideways on a phone rather than wrapping to a second row: a rail that
+     wraps stops reading as a rail. */
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.rail::-webkit-scrollbar {
+  display: none;
+}
+
+.railItem {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--gp-line-soft);
+  border-radius: 3px;
+  background: var(--gp-panel);
+  color: var(--gp-mute);
+  text-decoration: none;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.railItem svg {
+  display: block;
+  color: var(--accent);
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+
+.railItem:hover {
+  color: var(--gp-soft);
+  border-color: var(--gp-line);
+}
+
+.railItem:hover svg {
+  opacity: 1;
+}
+
+/* The active game wears its OWN colour, not the section gold: the board
+   below it is already in that colour, and a gold tab over a teal board read
+   as a piece of some other page. Same rule the phone's tab bar follows. */
+.railOn {
+  color: var(--gp-cream);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--gp-panel));
+}
+
+.railOn svg {
+  opacity: 1;
+}
+
+/* ── Ranking segment ──────────────────────────────────────── */
+
+.seg {
+  display: inline-flex;
+  margin: 0 auto 1.5rem;
+  border: 1px solid var(--gp-line);
+  border-radius: 999px;
+  padding: 2px;
+  background: var(--gp-panel);
+}
+
+.segWrap {
+  display: flex;
   justify-content: center;
-  margin-bottom: 1.6rem;
-  flex-wrap: wrap;
+}
+
+.segItem {
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  text-decoration: none;
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.segItem:hover {
+  color: var(--gp-soft);
+}
+
+.segOn {
+  color: var(--gp-ink);
+  background: var(--accent, var(--gp-gold));
+}
+
+.segOn:hover {
+  color: var(--gp-ink);
 }
 
 /* "Which manager are you?", between the tabs and the table. Centred on the
@@ -104,39 +218,6 @@
   display: none;
 }
 
-.tab {
-  font-family: var(--mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--gp-mute);
-  text-decoration: none;
-  padding: 0.5rem 0.85rem;
-  border: 1px solid var(--gp-line-soft);
-  border-radius: 4px;
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-}
-
-.tab:hover {
-  color: var(--gp-soft);
-  border-color: var(--gp-line);
-}
-
-/* The active tab takes --accent when the caller sets one, which the
-   league board does per game so the game row agrees with the colour the
-   game's own board wears. Falls back to the section gold everywhere
-   else, which is every per-game board under /games/. */
-.tabOn {
-  color: var(--gp-ink);
-  background: var(--accent, var(--gp-gold));
-  border-color: var(--accent, var(--gp-gold));
-}
-
-.tabOn:hover {
-  color: var(--gp-ink);
-  border-color: var(--accent, var(--gp-gold));
-}
-
 /* The quiet line under a board that isn't showing everything: which games
    are playable but not ranked yet. Not a warning and not styled as one. */
 .note {
@@ -150,7 +231,152 @@
   color: var(--gp-mute);
 }
 
+/* ── Podium ───────────────────────────────────────────────────
+   The top three, lifted out of the agate column.
+
+   A leaderboard where every row is the same height buries the only three
+   entries anybody opens the page to read. These are plaques: the rank set
+   as a serif numeral at display size, the face at double the row's plate,
+   and the score given the room to be the largest thing on the card.
+
+   Shape is deliberately asymmetric. First runs the full width because
+   first is not "one of three", it is the answer; second and third sit
+   two-up underneath at plaque size. Desktop keeps the same arrangement
+   rather than flattening to three equal columns, for the same reason.
+   ───────────────────────────────────────────────────────────── */
+
+.podium {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-bottom: 1.6rem;
+}
+
+.plaque {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 0.9rem;
+  background: linear-gradient(150deg, var(--gp-panel), var(--gp-panel-2));
+  border: 1px solid var(--gp-line-soft);
+  border-radius: 4px;
+  min-width: 0;
+}
+
+/* The winner's plaque: full width, a heavier field, and a struck rule
+   across the top in the board's accent. */
+.plaqueFirst {
+  grid-column: 1 / -1;
+  padding: 1.1rem 1.1rem;
+  border-color: color-mix(in srgb, var(--accent, var(--gp-gold)) 45%, var(--gp-line));
+}
+
+.plaqueFirst::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent, var(--gp-gold)), transparent);
+}
+
+.plaqueRank {
+  flex: none;
+  font-family: var(--serif);
+  font-style: italic;
+  line-height: 1;
+  color: var(--gp-line);
+  font-size: 1.9rem;
+}
+
+.plaqueFirst .plaqueRank {
+  font-size: 3.1rem;
+  color: var(--accent, var(--gp-gold));
+}
+
+.plaqueBody {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.plaqueName {
+  font-size: 0.86rem;
+  color: var(--gp-cream);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plaqueFirst .plaqueName {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+}
+
+.plaqueMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.plaqueStat {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.05rem;
+}
+
+.plaqueBig {
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--gp-bright);
+}
+
+.plaqueFirst .plaqueBig {
+  font-size: 1.7rem;
+  color: var(--accent, var(--gp-gold));
+}
+
+/* Second and third drop the face at 390px: three columns of content plus a
+   plate leaves the name about 60px, and the name is the point. */
+@media (max-width: 460px) {
+  .plaque:not(.plaqueFirst) .plaqueFace {
+    display: none;
+  }
+}
+
 /* ── Rows ─────────────────────────────────────────────────── */
+
+/* Column header over the agate list, so the two numbers on the right have
+   names. Mono caps at rule weight, the way a standings table's would be. */
+.colhead {
+  display: grid;
+  grid-template-columns: 2.2rem auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 0.75rem 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.colheadRank {
+  text-align: right;
+}
+
+.colheadStat {
+  text-align: right;
+}
 
 .rows {
   list-style: none;
@@ -337,42 +563,58 @@
   border-bottom: 1px solid var(--gp-line);
 }
 
-/* ── Footer actions ───────────────────────────────────────── */
+/* ── Footer actions ───────────────────────────────────────────
+   One button and one link, not two buttons.
+
+   These were a solid pill and a hollow pill of identical size sitting side
+   by side, which is the shape of a choice between two equal things. Only
+   one of them is what somebody who has just read a leaderboard wants, so
+   only one of them is a button: the other is set as a plain rule-underlined
+   link, the same way .headSwitch is. Nothing on this page now shares a
+   shape with something it doesn't share a job with.
+   ───────────────────────────────────────────────────────────── */
 
 .foot {
   display: flex;
-  gap: 0.6rem;
-  justify-content: center;
-  margin-top: 2rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2.4rem;
 }
 
 .btn {
   font-family: var(--mono);
   font-size: 0.62rem;
+  font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--gp-ink);
-  background: var(--gp-gold);
-  border: 1px solid var(--gp-gold);
-  border-radius: 4px;
-  padding: 0.72rem 1.3rem;
+  /* Takes the board's accent so the primary action on a teal board is teal.
+     Falls back to brass on the boards that set no accent. */
+  background: var(--accent, var(--gp-gold));
+  border: 1px solid var(--accent, var(--gp-gold));
+  border-radius: 999px;
+  padding: 0.8rem 2rem;
   text-decoration: none;
 }
 
 .btn:hover {
-  background: var(--gp-bright);
-  border-color: var(--gp-bright);
+  filter: brightness(1.08);
 }
 
 .btnGhost {
-  composes: btn;
-  color: var(--gp-soft);
-  background: transparent;
-  border-color: var(--gp-line);
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  text-decoration: none;
+  border-bottom: 1px solid var(--gp-line);
+  padding-bottom: 0.15rem;
 }
 
 .btnGhost:hover {
-  background: transparent;
   color: var(--gp-gold);
-  border-color: var(--gp-gold);
+  border-bottom-color: var(--gp-gold);
 }

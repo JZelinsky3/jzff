@@ -120,13 +120,18 @@ export default async function LeagueGamePage({
             </div>
           )}
           <h1 className={styles.title}>{league.name}</h1>
-          <p className={styles.headSub}>
-            {def.tagline}
-            {' · '}
-            <Link href={`${base}board/?game=${def.id}`} className={styles.headSwitch}>
-              The board
-            </Link>
-          </p>
+          {/* Two lines, not one. The tagline and the board link used to share
+              a row separated by a middot, which on a phone put a sentence and
+              a link into 390px and wrapped the link away from its own
+              separator. */}
+          <p className={styles.headSub}>{def.tagline}</p>
+          {def.hasBoard && (
+            <p className={styles.headSub}>
+              <Link href={`${base}board/?game=${def.id}`} className={styles.headSwitch}>
+                The board
+              </Link>
+            </p>
+          )}
         </div>
 
         {surface}

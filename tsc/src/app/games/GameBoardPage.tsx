@@ -19,6 +19,7 @@ import { loadBoard, type BoardKind, type GameId } from '@/lib/minigames/leaderbo
 import { soleLeagueSlug } from '@/lib/minigames/boardIdentity'
 import { DEMO_POOL_ID, DEMO_POOL_LABEL } from '@/lib/minigames/demoPool'
 import { BoardTable } from './BoardTable'
+import { GameRail, KindSeg } from './BoardNav'
 import { ClaimPrompt } from './ClaimPrompt'
 import { MobileGameBar } from './MobileGameBar'
 import type { GameDef } from './gameDefs'
@@ -117,7 +118,10 @@ export async function GameBoardPage({
         </nav>
       )}
 
-      <div className={styles.wrap}>
+      {/* The game's own colour, so the winner's plaque and the primary
+          button on a teal board are teal. Everything that reads --accent
+          falls back to brass when nobody sets one. */}
+      <div className={styles.wrap} style={{ '--accent': def.accent } as React.CSSProperties}>
       <div className={styles.head}>
         <div className={styles.kicker}>
           {def.title} {def.titleEm}
@@ -134,17 +138,14 @@ export async function GameBoardPage({
         </p>
       </div>
 
-      <nav className={styles.tabs}>
-        {TABS.map((t) => (
-          <Link
-            key={t.kind}
-            href={tabHref(t.kind)}
-            className={`${styles.tab} ${t.kind === kind ? styles.tabOn : ''}`}
-          >
-            {t.label}
-          </Link>
-        ))}
-      </nav>
+      {/* The rail carries the POOL across, so switching game from here keeps
+          the league you were reading instead of dropping you on a lobby to
+          choose it again. Only games with a run verifier are on it. */}
+      <GameRail
+        activeId={game}
+        href={(g) => `${g.href}board/?pool=${encodeURIComponent(poolId)}${kind === 'best' ? '' : `&kind=${kind}`}`}
+      />
+      <KindSeg kinds={TABS} active={kind} href={tabHref} />
 
       {/* The board is where a wrong name is actually visible, so it is also
           where the name gets set or corrected. Only on a single league's

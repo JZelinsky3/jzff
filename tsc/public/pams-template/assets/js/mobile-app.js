@@ -679,7 +679,7 @@
         var games = (ctx.slug && !ctx.isDemo)
             ? '<div class="m-sheet-divider"></div>' +
               '<span class="m-sheet-label">The Games Page</span>' +
-              sheetRow('games/', 'Play the games') +
+              sheetRow('games/', 'Games') +
               sheetRow('games/board/', 'The Board')
             : '';
 
