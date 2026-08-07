@@ -96,7 +96,15 @@
   font-size: 1.35rem; letter-spacing: -.01em;
 }
 
-.gt-pair { display: flex; flex-direction: column; gap: .55rem; }
+/* The trailing space is what lets the second card clear the sticky action
+   bar. Without it the bar parks over the bottom of team two and there is no
+   further scroll to get out from under it. Reset on wide screens, where the
+   bar goes back into normal flow. */
+.gt-pair {
+  display: flex; flex-direction: column; gap: .55rem;
+  padding-bottom: 4.5rem;
+}
+.gt-review, .gt-names { padding-bottom: 4.5rem; }
 
 /* ── A team card ──
    Built to read as a team sheet, not a list item: a banner across the top
@@ -376,7 +384,9 @@
 /* Wider than a phone: the two teams can sit side by side. */
 @media (min-width: 46rem) {
   .gt-shell { max-width: 44rem; }
-  .gt-pair { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; align-items: start; }
+  .gt-pair { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; align-items: start; padding-bottom: 0; }
+  .gt-review, .gt-names { padding-bottom: 0; }
   .gt-vs { grid-column: 1 / -1; order: -1; }
-  .gt-actions { position: static; }
+  .gt-actions { position: static; border-top: 0; }
+  .gt-actions::before { display: none; }
 }
