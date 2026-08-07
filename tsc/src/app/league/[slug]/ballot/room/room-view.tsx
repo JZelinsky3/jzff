@@ -7,7 +7,8 @@ import {
   lockBoard, unlockBoard, setRevealed, clearVote,
 } from '@/app/ballot/actions'
 import {
-  GAMES, PROPS, RIVALRIES, SPLIT_GAP, rivalryKey, tallyChoices, tallyLines,
+  GAMES, PROPS, RIVALRIES, SPLIT_GAP, TOTAL_WINS, boardTotals, rivalryKey,
+  tallyChoices, tallyLines,
   type BallotManager, type BoardBasis, type BoardLine, type LockedBoard,
   type Picks, type VoteRecord,
 } from '@/lib/winBallot'
@@ -60,6 +61,11 @@ export function RoomView({
   const other = basis === 'all' ? outsiderBoard : board
   const otherLine = (name: string) => other.find((l) => l.name === name)?.line ?? 0
   const moved = shown.filter((l) => l.line !== otherLine(l.name)).length
+
+  // A season holds exactly 84 wins. What the twelve averages add up to says
+  // whether the room likes everybody or nobody.
+  const totals = boardTotals(shown)
+  const drift = totals.mean - TOTAL_WINS
 
   async function makeLink(rotate: boolean) {
     setBusy(true); setMsg(null)
@@ -291,6 +297,21 @@ export function RoomView({
               {moved === 0
                 ? 'Both readings give the same twelve lines.'
                 : `${moved} line${moved === 1 ? '' : 's'} sit${moved === 1 ? 's' : ''} differently the other way.`}
+            </div>
+
+            <div className="wb-totals">
+              <div className="wb-total">
+                <b>{totals.mean.toFixed(1)}</b>
+                <span>averages added up</span>
+              </div>
+              <div className="wb-total" data-tone={Math.abs(drift) > 3 ? 'off' : ''}>
+                <b>{drift >= 0 ? '+' : ''}{drift.toFixed(1)}</b>
+                <span>off the {TOTAL_WINS} a season holds</span>
+              </div>
+              <div className="wb-total">
+                <b>{totals.line.toFixed(1)}</b>
+                <span>the twelve lines added up</span>
+              </div>
             </div>
 
             <div className="wb-board">

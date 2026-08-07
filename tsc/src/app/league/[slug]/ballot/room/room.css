@@ -48,6 +48,25 @@
   resize: vertical; -webkit-appearance: none; appearance: none;
 }
 
+/* ── What the twelve add up to ── */
+.wb-totals {
+  display: flex; gap: .4rem; margin-bottom: 1rem;
+}
+.wb-total {
+  flex: 1; display: flex; flex-direction: column; gap: .18rem;
+  background: var(--field); border: 1px solid var(--rule);
+  padding: .5rem .6rem;
+}
+.wb-total b {
+  font-family: var(--wb-mono); font-size: 1.25rem; font-weight: 700;
+  color: var(--carbon); font-variant-numeric: tabular-nums; line-height: 1;
+}
+.wb-total[data-tone="off"] b { color: var(--stamp); }
+.wb-total span {
+  font-family: var(--wb-mono); font-size: .5rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); line-height: 1.4;
+}
+
 /* ── Board ── */
 .wb-board { border-top: 1.5px solid var(--ink); }
 .wb-board-row {

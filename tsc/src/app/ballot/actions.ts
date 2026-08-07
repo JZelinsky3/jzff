@@ -247,7 +247,7 @@ export async function readBoard(leagueId: string): Promise<LockedBoard | null> {
   const admin = createAdminClient()
   const { data } = await admin
     .from('win_board')
-    .select('basis, lines, ballot_count, revealed, locked_at')
+    .select('basis, lines, spread, ballot_count, revealed, locked_at')
     .eq('league_id', leagueId)
     .eq('season', SEASON)
     .maybeSingle()
@@ -255,6 +255,9 @@ export async function readBoard(leagueId: string): Promise<LockedBoard | null> {
   return {
     basis: data.basis as BoardBasis,
     lines: data.lines as Record<string, number>,
+    // Absent on a board locked before migration 0055, which is a board with
+    // no range to show rather than a broken one.
+    spread: (data.spread ?? {}) as LockedBoard['spread'],
     ballotCount: data.ballot_count as number,
     lockedAt: data.locked_at as string,
     revealed: data.revealed as boolean,
@@ -283,7 +286,11 @@ export async function lockBoard(
   }
 
   const lines: Record<string, number> = {}
-  for (const l of board) lines[l.name] = l.line
+  const spread: LockedBoard['spread'] = {}
+  for (const l of board) {
+    lines[l.name] = l.line
+    spread[l.name] = { high: l.high, low: l.low }
+  }
 
   const admin = createAdminClient()
   const { error } = await admin.from('win_board').upsert({
@@ -291,6 +298,7 @@ export async function lockBoard(
     season: SEASON,
     basis,
     lines,
+    spread,
     ballot_count: ballots.length,
   }, { onConflict: 'league_id,season' })
   if (error) return { ok: false, error: error.message }

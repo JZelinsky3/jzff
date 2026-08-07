@@ -217,6 +217,7 @@ export function VoteDeck({
                     key={m.name}
                     manager={m}
                     line={board.lines[m.name] ?? 0}
+                    spread={board.spread?.[m.name]}
                     side={card.lines[m.name]}
                     onSide={(s) => setSide(m.name, s)}
                   />
@@ -455,10 +456,12 @@ function TitleSlide({
 }
 
 function LineRow({
-  manager, line, side, onSide,
+  manager, line, spread, side, onSide,
 }: {
   manager: BallotManager
   line: number
+  /** The high and low ballot the line was drawn from, once one is frozen. */
+  spread: { high: number; low: number } | undefined
   side: Side | undefined
   onSide: (s: Side) => void
 }) {
@@ -469,11 +472,21 @@ function LineRow({
           <div className="wb-line-name">{manager.name}</div>
           <div className="wb-line-sub">
             <span className="wb-conf-mark" data-conf={manager.conference}>{manager.conference}</span>
-            {' · '}avg {manager.avgWins.toFixed(1)}
+            {' · '}career avg {manager.avgWins.toFixed(1)}
             {' · '}last year {manager.lastRecord}
           </div>
         </div>
-        <div className="wb-line-no">{line.toFixed(1)}</div>
+        <div>
+          <div className="wb-line-no">{line.toFixed(1)}</div>
+          {/* What the room actually said, not just where it averaged out. */}
+          {spread && (
+            <div className="wb-line-range">
+              {spread.low === spread.high
+                ? `every ballot said ${spread.high}`
+                : `ballots ${spread.low} to ${spread.high}`}
+            </div>
+          )}
+        </div>
       </div>
       <div className="wb-sides">
         {(['over', 'under'] as const).map((s) => (

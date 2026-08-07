@@ -7,9 +7,53 @@ import '../ballot.css'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = {
-  title: 'Win totals · PA Milk Society',
-  description: 'Twelve managers, one win total each. The room sets the lines, then takes a side on every one of them.',
+/**
+ * The unfurl in the group chat. Title and card both follow the phase, so a
+ * link pasted twice a month apart says two different true things instead of
+ * one stale one. The token rides into the image route, which resolves it
+ * again itself rather than trusting a phase in a query string.
+ */
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params
+  const league = await leagueForToken(token)
+  const board = league ? await readBoard(league.id) : null
+
+  const copy = !league
+    ? { title: 'Wrong door', description: 'This ballot link is not the live one. Ask Joey for the one he sent the group.' }
+    : !board
+    ? {
+        title: 'Win-total ballot · PA Milk Society',
+        description: 'Twelve managers, fourteen games. Call every win total and the room turns the twelve ballots into the lines.',
+      }
+    : board.revealed
+    ? {
+        title: 'The board · PA Milk Society 2026',
+        description: 'Every line, every side the room took, and the props. Set before a snap was played.',
+      }
+    : {
+        title: 'Over/under · PA Milk Society 2026',
+        description: 'The lines are up. Take a side on all eleven, call four props, and pick rivalry week.',
+      }
+
+  const image = `/api/og/ballot/${encodeURIComponent(token)}`
+  return {
+    title: copy.title,
+    description: copy.description,
+    robots: { index: false, follow: false },
+    openGraph: {
+      type: 'website',
+      title: copy.title,
+      description: copy.description,
+      siteName: 'The Sunday Chronicle',
+      images: [{ url: image, width: 1200, height: 630, alt: copy.title }],
+    },
+    twitter: {
+      card: 'summary_large_image' as const,
+      title: copy.title,
+      description: copy.description,
+      images: [image],
+    },
+  }
 }
 
 // Deliberately NOT under /league/[slug]: that layout redirects signed-out

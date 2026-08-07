@@ -150,10 +150,27 @@ export type LockedBoard = {
   basis: BoardBasis
   /** manager name -> line. Always a half, never a whole number. */
   lines: Record<string, number>
+  /**
+   * manager name -> the ballot range behind that line. A 6.5 everybody
+   * agreed on is a different bet from a 6.5 drawn from 3s and 10s, so the
+   * card shows both. Empty on a board locked before the column existed.
+   */
+  spread: Record<string, { high: number; low: number }>
   ballotCount: number
   lockedAt: string
   /** The room's picks stay sealed until Joey opens them. */
   revealed: boolean
+}
+
+/**
+ * What the twelve projections add up to. A season holds exactly 84 wins, so
+ * a board that sums to 91 is a room that likes everybody.
+ */
+export function boardTotals(board: BoardLine[]): { mean: number; line: number } {
+  return {
+    mean: board.reduce((a, l) => a + l.mean, 0),
+    line: board.reduce((a, l) => a + l.line, 0),
+  }
 }
 
 export type Side = 'over' | 'under'

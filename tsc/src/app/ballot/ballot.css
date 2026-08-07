@@ -412,6 +412,12 @@
 .wb-line-no {
   font-family: var(--wb-mono); font-size: 1.5rem; font-weight: 700;
   color: var(--carbon); font-variant-numeric: tabular-nums; line-height: 1.1;
+  text-align: right;
+}
+.wb-line-range {
+  font-family: var(--wb-mono); font-size: .52rem; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--ink-3);
+  text-align: right; margin-top: .18rem; white-space: nowrap;
 }
 .wb-sides { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; margin-top: .5rem; }
 .wb-side {
