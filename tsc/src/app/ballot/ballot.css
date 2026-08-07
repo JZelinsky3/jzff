@@ -368,6 +368,165 @@
   text-transform: uppercase; color: var(--ink-3);
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   Phase two: the over/under card and the board it produces.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Shared with the commissioner's room, which loads this file first. */
+.wb-conf-mark[data-conf="Whole"] { color: var(--whole); }
+.wb-conf-mark[data-conf="Skim"] { color: var(--skim); }
+.wb-empty {
+  font-family: var(--wb-mono); font-size: .65rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3);
+  text-align: center; padding: 2.2rem 1rem; border: 1.5px dashed var(--rule);
+}
+
+.wb-stage-title { font-family: var(--wb-serif); font-size: 1.7rem; margin: .2rem 0 .35rem; }
+.wb-stage-note { color: var(--ink-2); font-size: .88rem; margin: 0 0 1.1rem; }
+
+/* The lines, peeked at on the title slide before a name is picked. */
+.wb-peek {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: .3rem .5rem;
+  margin-top: .5rem; padding: .6rem .7rem;
+  background: var(--field); border: 1px dotted var(--rule);
+}
+.wb-peek-cell {
+  font-family: var(--wb-mono); font-size: .68rem; color: var(--ink-2);
+  display: flex; justify-content: space-between; gap: .3rem;
+}
+.wb-peek-cell b { color: var(--carbon); font-variant-numeric: tabular-nums; }
+
+/* ── One line, over or under ── */
+.wb-lines { display: flex; flex-direction: column; gap: .55rem; }
+.wb-line {
+  border: 1.5px solid var(--rule); background: var(--paper-2);
+  padding: .6rem .7rem .55rem;
+}
+.wb-line[data-set="true"] { border-color: var(--ink); background: var(--field); }
+.wb-line-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .6rem; }
+.wb-line-name { font-family: var(--wb-serif); font-size: 1.25rem; line-height: 1.2; }
+.wb-line-sub {
+  font-family: var(--wb-mono); font-size: .6rem; color: var(--ink-3);
+  margin-top: .12rem; display: flex; align-items: center; gap: .3rem; flex-wrap: wrap;
+}
+.wb-line-no {
+  font-family: var(--wb-mono); font-size: 1.5rem; font-weight: 700;
+  color: var(--carbon); font-variant-numeric: tabular-nums; line-height: 1.1;
+}
+.wb-sides { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; margin-top: .5rem; }
+.wb-side {
+  min-height: 46px; padding: .3rem .4rem;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .1rem;
+  background: transparent; border: 1.5px solid var(--rule); color: var(--ink-2);
+  font-family: var(--wb-mono); font-size: .72rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+}
+.wb-side span {
+  font-size: .55rem; font-weight: 400; letter-spacing: .04em;
+  text-transform: none; color: var(--ink-3);
+}
+.wb-side:hover { border-color: var(--carbon); color: var(--carbon); }
+.wb-side[aria-pressed="true"] { background: var(--carbon); border-color: var(--carbon); color: var(--on-carbon); }
+.wb-side[aria-pressed="true"] span { color: rgba(255, 255, 255, .72); }
+.wb-side[data-side="under"][aria-pressed="true"] { background: var(--stamp); border-color: var(--stamp); }
+
+/* ── Props ── */
+.wb-prop { margin-bottom: 1.4rem; }
+.wb-prop-ask { font-family: var(--wb-serif); font-size: 1.25rem; }
+.wb-prop-note {
+  font-family: var(--wb-mono); font-size: .6rem; color: var(--ink-3);
+  margin: .05rem 0 .5rem; letter-spacing: .04em;
+}
+.wb-conf-pick { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; }
+.wb-conf-btn {
+  min-height: 52px; background: transparent; border: 1.5px solid var(--rule);
+  font-family: var(--wb-serif); font-size: 1.2rem; color: var(--ink-2);
+}
+.wb-conf-btn[data-conf="Whole"]:hover { border-color: var(--whole); color: var(--whole); }
+.wb-conf-btn[data-conf="Skim"]:hover { border-color: var(--skim); color: var(--skim); }
+.wb-conf-btn[data-conf="Whole"][aria-pressed="true"] { background: var(--whole); border-color: var(--whole); color: #fff; }
+.wb-conf-btn[data-conf="Skim"][aria-pressed="true"] { background: var(--skim); border-color: var(--skim); color: #fff; }
+
+/* ── Rivalry games ── */
+.wb-games { display: flex; flex-direction: column; gap: .5rem; }
+.wb-game {
+  position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: .4rem;
+}
+.wb-game-v {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  font-family: var(--wb-serif); font-style: italic; font-size: .8rem;
+  color: var(--ink-3); background: var(--paper); padding: 0 .25rem;
+  pointer-events: none; z-index: 1;
+}
+.wb-game-side {
+  min-height: 56px; padding: .35rem .5rem;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: transparent; border: 1.5px solid var(--rule); color: var(--ink-2);
+  font-family: var(--wb-serif); font-size: 1.15rem;
+}
+.wb-game-line {
+  font-family: var(--wb-mono); font-size: .58rem; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.wb-game-side:hover { border-color: var(--carbon); color: var(--carbon); }
+.wb-game-side[aria-pressed="true"] { background: var(--carbon); border-color: var(--carbon); color: var(--on-carbon); }
+.wb-game-side[aria-pressed="true"] .wb-game-line { color: rgba(255, 255, 255, .7); }
+.wb-game[data-mine="true"]::after {
+  content: "yours"; position: absolute; right: 0; top: -.62rem;
+  font-family: var(--wb-mono); font-size: .5rem; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--stamp);
+}
+
+/* ── Review extras ── */
+.wb-review-side { font-family: var(--wb-mono); }
+.wb-review-side[data-side="over"] { color: var(--carbon); }
+.wb-review-side[data-side="under"] { color: var(--stamp); }
+.wb-review-answer {
+  font-family: var(--wb-serif); font-size: 1rem; color: var(--ink-2);
+  margin-left: auto; text-align: right;
+}
+.wb-review-row[data-blank="true"] .wb-review-answer { font-family: var(--wb-mono); font-size: .7rem; }
+
+/* ── Results ── */
+.wb-results { display: flex; flex-direction: column; gap: .7rem; }
+.wb-result { border-bottom: 1px solid var(--rule-soft); padding-bottom: .6rem; }
+.wb-result-head { display: flex; align-items: baseline; gap: .45rem; }
+.wb-result-name { font-family: var(--wb-serif); font-size: 1.25rem; }
+.wb-result-head .wb-conf-mark {
+  font-family: var(--wb-mono); font-size: .52rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.wb-result-line {
+  margin-left: auto; font-family: var(--wb-mono); font-size: 1.15rem;
+  font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.wb-bar {
+  height: 10px; margin: .4rem 0 .3rem;
+  background: var(--stamp); border: 1px solid var(--ink); overflow: hidden;
+}
+.wb-bar-over { height: 100%; background: var(--carbon); }
+.wb-result-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: .4rem;
+  font-family: var(--wb-mono); font-size: .58rem; letter-spacing: .04em;
+}
+.wb-result-over { color: var(--carbon); }
+.wb-result-under { color: var(--stamp); }
+.wb-result-verdict { color: var(--ink-2); text-transform: uppercase; letter-spacing: .1em; }
+.wb-result[data-lean="split"] .wb-result-verdict { color: var(--ink-3); }
+
+.wb-prop-result { margin-bottom: 1.3rem; }
+.wb-tallies { display: flex; flex-direction: column; gap: .22rem; }
+.wb-tally-row { display: flex; align-items: center; gap: .5rem; }
+.wb-tally-name { font-family: var(--wb-serif); font-size: .98rem; width: 5.2rem; flex: none; }
+.wb-tally-bar { flex: 1; height: 8px; background: var(--paper-3); }
+.wb-tally-bar span { display: block; height: 100%; background: var(--ink-3); }
+.wb-tally-row[data-top="true"] .wb-tally-bar span { background: var(--carbon); }
+.wb-tally-no {
+  font-family: var(--wb-mono); font-size: .7rem; width: 1.4rem; text-align: right;
+  color: var(--ink-2); font-variant-numeric: tabular-nums;
+}
+.wb-tally-row[data-top="true"] .wb-tally-no { color: var(--carbon); font-weight: 700; }
+
 /* ── In-page dialog ── */
 .wb-sheet {
   position: fixed; inset: 0; z-index: 60;

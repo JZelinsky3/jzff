@@ -4,7 +4,10 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isSiteAdmin } from '@/lib/siteAdmin'
-import { PAMS_ROSTER, SEASON, validatePicks, type Picks } from '@/lib/winBallot'
+import {
+  PAMS_ROSTER, SEASON, buildBoard, validatePicks, validateVote,
+  type BallotRecord, type BoardBasis, type LockedBoard, type Picks, type VoteCard, type VoteRecord,
+} from '@/lib/winBallot'
 
 /**
  * Resolve a share token back to its league. The token is the whole address
@@ -214,6 +217,210 @@ export async function clearBallot(leagueId: string, managerName: string): Promis
   const admin = createAdminClient()
   const { error } = await admin
     .from('win_ballots')
+    .delete()
+    .eq('league_id', leagueId)
+    .eq('season', SEASON)
+    .eq('manager_name', managerName)
+  if (error) return { ok: false, error: error.message }
+  revalidatePath(`/league/${access.slug}/ballot/room`)
+  return { ok: true }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Phase two: the board, and the vote taken against it.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Read every filed ballot for the season, ballot order. */
+export async function readBallots(leagueId: string): Promise<BallotRecord[]> {
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('win_ballots')
+    .select('manager_name, picks')
+    .eq('league_id', leagueId)
+    .eq('season', SEASON)
+    .order('created_at', { ascending: true })
+  return (data ?? []).map((r) => ({ name: r.manager_name as string, picks: r.picks as Picks }))
+}
+
+/** The locked board, or null while the league is still filing ballots. */
+export async function readBoard(leagueId: string): Promise<LockedBoard | null> {
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('win_board')
+    .select('basis, lines, ballot_count, revealed, locked_at')
+    .eq('league_id', leagueId)
+    .eq('season', SEASON)
+    .maybeSingle()
+  if (!data) return null
+  return {
+    basis: data.basis as BoardBasis,
+    lines: data.lines as Record<string, number>,
+    ballotCount: data.ballot_count as number,
+    lockedAt: data.locked_at as string,
+    revealed: data.revealed as boolean,
+  }
+}
+
+/**
+ * Freeze the ballots into twelve lines and open the vote. This is the moment
+ * phase one ends: the numbers are copied out of the ballots, so a ballot
+ * filed afterwards changes nothing anybody has already voted against.
+ */
+export async function lockBoard(
+  leagueId: string,
+  basis: BoardBasis,
+): Promise<{ ok: false; error: string } | { ok: true }> {
+  const access = await assertWriteAccess(leagueId)
+  if (!access.ok) return access
+
+  const ballots = await readBallots(leagueId)
+  if (ballots.length < 2) return { ok: false, error: 'Not enough ballots to set a line yet.' }
+
+  const board = buildBoard(PAMS_ROSTER, ballots, basis)
+  const short = board.filter((l) => l.count === 0).map((l) => l.name)
+  if (short.length) {
+    return { ok: false, error: `No ballot has a number for ${short.join(', ')}, so there's no line to set.` }
+  }
+
+  const lines: Record<string, number> = {}
+  for (const l of board) lines[l.name] = l.line
+
+  const admin = createAdminClient()
+  const { error } = await admin.from('win_board').upsert({
+    league_id: leagueId,
+    season: SEASON,
+    basis,
+    lines,
+    ballot_count: ballots.length,
+  }, { onConflict: 'league_id,season' })
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath(`/league/${access.slug}/ballot/room`)
+  return { ok: true }
+}
+
+/**
+ * Tear the board down and put the league back on ballots. Votes already cast
+ * are deleted with it, since they were taken against numbers that no longer
+ * stand, and a vote silently re-pointed at a new line would be a lie.
+ */
+export async function unlockBoard(leagueId: string): Promise<{ ok: false; error: string } | { ok: true; votesDropped: number }> {
+  const access = await assertWriteAccess(leagueId)
+  if (!access.ok) return access
+  const admin = createAdminClient()
+
+  const { data: votes } = await admin
+    .from('win_votes')
+    .select('id')
+    .eq('league_id', leagueId)
+    .eq('season', SEASON)
+
+  await admin.from('win_votes').delete().eq('league_id', leagueId).eq('season', SEASON)
+  const { error } = await admin.from('win_board').delete().eq('league_id', leagueId).eq('season', SEASON)
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath(`/league/${access.slug}/ballot/room`)
+  return { ok: true, votesDropped: votes?.length ?? 0 }
+}
+
+/** Open the room's picks to everybody who voted, or seal them back up. */
+export async function setRevealed(leagueId: string, revealed: boolean): Promise<{ ok: false; error: string } | { ok: true }> {
+  const access = await assertWriteAccess(leagueId)
+  if (!access.ok) return access
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('win_board')
+    .update({ revealed })
+    .eq('league_id', leagueId)
+    .eq('season', SEASON)
+  if (error) return { ok: false, error: error.message }
+  revalidatePath(`/league/${access.slug}/ballot/room`)
+  return { ok: true }
+}
+
+/** Read every card cast against the board. */
+export async function readVotes(leagueId: string): Promise<VoteRecord[]> {
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('win_votes')
+    .select('manager_name, lines, props, rivalry')
+    .eq('league_id', leagueId)
+    .eq('season', SEASON)
+    .order('created_at', { ascending: true })
+  return (data ?? []).map((r) => ({
+    name: r.manager_name as string,
+    card: {
+      lines: r.lines as VoteCard['lines'],
+      props: (r.props ?? {}) as VoteCard['props'],
+      rivalry: (r.rivalry ?? {}) as VoteCard['rivalry'],
+    },
+  }))
+}
+
+/** Names that have already voted, so the card can grey them out. */
+export async function votedNames(leagueId: string): Promise<string[]> {
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('win_votes')
+    .select('manager_name')
+    .eq('league_id', leagueId)
+    .eq('season', SEASON)
+  return (data ?? []).map((r) => r.manager_name as string)
+}
+
+/**
+ * Cast one card. As with the ballot, the token is the authorization and the
+ * unique index is the integrity: a second card under a name already used is
+ * refused by the database, not by anything on the phone.
+ */
+export async function submitVote(input: {
+  leagueId: string
+  token: string
+  managerName: string
+  card: VoteCard
+}): Promise<{ ok: false; error: string } | { ok: true }> {
+  const token = await readBallotToken(input.leagueId)
+  if (!token || token !== input.token) {
+    return { ok: false, error: 'This link is no longer good. Ask Joey for the current one.' }
+  }
+
+  const board = await readBoard(input.leagueId)
+  if (!board) return { ok: false, error: 'The lines are not set yet.' }
+
+  if (!PAMS_ROSTER.some((m) => m.name === input.managerName)) {
+    return { ok: false, error: 'Pick your name from the list first.' }
+  }
+
+  const checked = validateVote(PAMS_ROSTER, input.managerName, input.card)
+  if (!checked.ok) return { ok: false, error: checked.error }
+
+  const admin = createAdminClient()
+  const { error } = await admin.from('win_votes').insert({
+    league_id: input.leagueId,
+    season: SEASON,
+    manager_name: input.managerName,
+    lines: checked.card.lines,
+    props: checked.card.props,
+    rivalry: checked.card.rivalry,
+  })
+
+  if (error) {
+    if (error.code === '23505') {
+      return { ok: false, error: `${input.managerName} has already voted. If that wasn't you, tell Joey.` }
+    }
+    return { ok: false, error: error.message }
+  }
+
+  return { ok: true }
+}
+
+/** Delete one card, so a mis-filed name can be reopened from the room. */
+export async function clearVote(leagueId: string, managerName: string): Promise<{ ok: false; error: string } | { ok: true }> {
+  const access = await assertWriteAccess(leagueId)
+  if (!access.ok) return access
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('win_votes')
     .delete()
     .eq('league_id', leagueId)
     .eq('season', SEASON)

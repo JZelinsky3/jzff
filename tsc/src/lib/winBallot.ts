@@ -63,6 +63,9 @@ export const PAMS_ROSTER: BallotManager[] = [
 
 export type Picks = Record<string, number>
 
+/** One filed ballot: who sent it, and what they called all twelve. */
+export type BallotRecord = { name: string; picks: Picks }
+
 /**
  * The line for one manager: the mean of every ballot, to the nearest half.
  * A whole number would let a season land exactly on the line, so push it a
@@ -75,6 +78,13 @@ export function toLine(mean: number): number {
   return mean >= half ? half + 0.5 : half - 0.5
 }
 
+/**
+ * Which ballots set a line. `all` counts everyone. `outsiders` throws out a
+ * manager's own projection of themselves, so nobody has a hand in their own
+ * number: eleven opinions per line instead of twelve.
+ */
+export type BoardBasis = 'all' | 'outsiders'
+
 export type BoardLine = {
   name: string
   conference: Conference
@@ -85,17 +95,26 @@ export type BoardLine = {
   gap: number
   count: number
   model: number
+  /** What this manager called their own season, if they filed. */
+  self: number | null
 }
 
 /** Turn every submitted ballot into the board, highest line first. */
-export function buildBoard(roster: BallotManager[], ballots: Picks[]): BoardLine[] {
+export function buildBoard(
+  roster: BallotManager[],
+  ballots: BallotRecord[],
+  basis: BoardBasis = 'all',
+): BoardLine[] {
   return roster
     .map((m) => {
-      const picks = ballots
-        .map((b) => b[m.name])
+      const own = ballots.find((b) => b.name === m.name)
+      const self = Number.isFinite(own?.picks[m.name]) ? (own!.picks[m.name] as number) : null
+      const counted = basis === 'outsiders' ? ballots.filter((b) => b.name !== m.name) : ballots
+      const picks = counted
+        .map((b) => b.picks[m.name])
         .filter((v): v is number => Number.isFinite(v))
       if (picks.length === 0) {
-        return { name: m.name, conference: m.conference, mean: 0, line: 0, high: 0, low: 0, gap: 0, count: 0, model: m.model }
+        return { name: m.name, conference: m.conference, mean: 0, line: 0, high: 0, low: 0, gap: 0, count: 0, model: m.model, self }
       }
       const mean = picks.reduce((a, b) => a + b, 0) / picks.length
       const high = Math.max(...picks)
@@ -110,9 +129,184 @@ export function buildBoard(roster: BallotManager[], ballots: Picks[]): BoardLine
         gap: high - low,
         count: picks.length,
         model: m.model,
+        self,
       }
     })
     .sort((a, b) => b.line - a.line)
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Phase two: the vote. The board gets locked, and then everybody comes back
+// and takes a side on every line but their own, calls four props, and picks
+// the rivalry games.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The lines as they were the moment the room locked them. Frozen rather than
+ * recomputed, because a ballot filed late must not slide a number somebody
+ * has already voted against.
+ */
+export type LockedBoard = {
+  basis: BoardBasis
+  /** manager name -> line. Always a half, never a whole number. */
+  lines: Record<string, number>
+  ballotCount: number
+  lockedAt: string
+  /** The room's picks stay sealed until Joey opens them. */
+  revealed: boolean
+}
+
+export type Side = 'over' | 'under'
+
+export const RIVALRIES: ReadonlyArray<readonly [string, string]> = [
+  ['Chris', 'Joey'],
+  ['Kyle', 'Sean'],
+  ['Cat', 'Isaac'],
+  ['Connie', 'Mason'],
+  ['Charlie', 'Luke'],
+  ['Evan', 'Ricci'],
+]
+
+/** Stable key for a rivalry game, so pair order can never flip on a re-render. */
+export function rivalryKey(pair: readonly [string, string]): string {
+  return [...pair].sort().join('|')
+}
+
+export type PropKind = 'manager' | 'conference'
+export type Prop = { key: string; ask: string; note: string; kind: PropKind }
+
+// Four calls that settle themselves off the finished season, so nobody has to
+// argue about who was right in January.
+export const PROPS: readonly Prop[] = [
+  { key: 'champion',   ask: 'Who wins it',            note: 'The 2026 champion', kind: 'manager' },
+  { key: 'last',       ask: 'Who finishes last',      note: 'Twelfth, all by themselves', kind: 'manager' },
+  { key: 'points',     ask: 'Who scores the most',    note: 'Most total points, title or not', kind: 'manager' },
+  { key: 'conference', ask: 'Which conference wins',  note: 'The head-to-head series between Whole and Skim', kind: 'conference' },
+]
+
+export type VoteCard = {
+  /** manager name -> side. Every manager but the voter. */
+  lines: Record<string, Side>
+  /** prop key -> a manager name, or a conference. */
+  props: Record<string, string>
+  /** rivalry key -> the name they have winning it. */
+  rivalry: Record<string, string>
+}
+
+export const VOTE_PIECES = ['lines', 'props', 'rivalry'] as const
+
+/** How many calls a voter owes: eleven lines, four props, six rivalry games. */
+export function voteSize(roster: BallotManager[]): number {
+  return roster.length - 1 + PROPS.length + RIVALRIES.length
+}
+
+/** Everything the voter still hasn't answered, in card order. */
+export function missingFromVote(roster: BallotManager[], who: string, card: VoteCard) {
+  return {
+    lines: roster.filter((m) => m.name !== who && card.lines[m.name] !== 'over' && card.lines[m.name] !== 'under').map((m) => m.name),
+    props: PROPS.filter((p) => !card.props[p.key]).map((p) => p.key),
+    rivalry: RIVALRIES.filter((r) => !card.rivalry[rivalryKey(r)]).map((r) => rivalryKey(r)),
+  }
+}
+
+/**
+ * Validate a whole card. A voter's own line is not merely optional, it is
+ * refused: the roster skips it on the way in, and a card that carries one
+ * anyway was not built by this page.
+ */
+export function validateVote(
+  roster: BallotManager[],
+  who: string,
+  card: unknown,
+): { ok: true; card: VoteCard } | { ok: false; error: string } {
+  if (!card || typeof card !== 'object') return { ok: false, error: 'Nothing was sent.' }
+  const raw = card as Partial<VoteCard>
+  const names = new Set(roster.map((m) => m.name))
+
+  const lines: Record<string, Side> = {}
+  for (const m of roster) {
+    if (m.name === who) continue
+    const v = raw.lines?.[m.name]
+    if (v !== 'over' && v !== 'under') return { ok: false, error: `No side on ${m.name}'s line yet.` }
+    lines[m.name] = v
+  }
+  if (raw.lines && Object.keys(raw.lines).some((n) => !names.has(n) || n === who)) {
+    return { ok: false, error: 'That card has a line on it that is not yours to call.' }
+  }
+
+  const props: Record<string, string> = {}
+  for (const p of PROPS) {
+    const v = raw.props?.[p.key]
+    if (typeof v !== 'string' || !v) return { ok: false, error: `The "${p.ask}" prop is still blank.` }
+    const good = p.kind === 'manager' ? names.has(v) : v === 'Whole' || v === 'Skim'
+    if (!good) return { ok: false, error: `"${v}" isn't an answer to "${p.ask}".` }
+    props[p.key] = v
+  }
+
+  const rivalry: Record<string, string> = {}
+  for (const pair of RIVALRIES) {
+    const key = rivalryKey(pair)
+    const v = raw.rivalry?.[key]
+    if (typeof v !== 'string' || !pair.includes(v)) {
+      return { ok: false, error: `Pick a winner in ${pair[0]} vs ${pair[1]}.` }
+    }
+    rivalry[key] = v
+  }
+
+  return { ok: true, card: { lines, props, rivalry } }
+}
+
+export type VoteRecord = { name: string; card: VoteCard }
+
+export type LineTally = {
+  name: string
+  conference: Conference
+  line: number
+  over: number
+  under: number
+  count: number
+  /** Who the room is on. A dead even split has no side. */
+  lean: Side | 'split'
+  /** Share on the leaning side, 0.5 to 1. Drives how loud a row reads. */
+  edge: number
+}
+
+/** The room's side on every line, most lopsided first. */
+export function tallyLines(
+  roster: BallotManager[],
+  board: LockedBoard,
+  votes: VoteRecord[],
+): LineTally[] {
+  return roster
+    .map((m) => {
+      const sides = votes.map((v) => v.card.lines[m.name]).filter((s): s is Side => s === 'over' || s === 'under')
+      const over = sides.filter((s) => s === 'over').length
+      const under = sides.length - over
+      const count = sides.length
+      return {
+        name: m.name,
+        conference: m.conference,
+        line: board.lines[m.name] ?? 0,
+        over,
+        under,
+        count,
+        lean: (over === under ? 'split' : over > under ? 'over' : 'under') as Side | 'split',
+        edge: count === 0 ? 0.5 : Math.max(over, under) / count,
+      }
+    })
+    .sort((a, b) => b.edge - a.edge || b.count - a.count)
+}
+
+/** Vote counts for one prop or rivalry game, most-picked first. */
+export function tallyChoices(votes: VoteRecord[], pick: (c: VoteCard) => string | undefined) {
+  const counts = new Map<string, number>()
+  for (const v of votes) {
+    const answer = pick(v.card)
+    if (answer) counts.set(answer, (counts.get(answer) ?? 0) + 1)
+  }
+  return [...counts.entries()]
+    .map(([answer, count]) => ({ answer, count }))
+    .sort((a, b) => b.count - a.count || a.answer.localeCompare(b.answer))
 }
 
 /** Validate a submitted set of picks against the roster. */

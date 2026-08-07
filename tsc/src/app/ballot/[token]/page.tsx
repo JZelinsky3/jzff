@@ -1,20 +1,27 @@
 import { notFound } from 'next/navigation'
 import { PAMS_ROSTER } from '@/lib/winBallot'
-import { leagueForToken, submittedNames } from '../actions'
-import { BallotClient } from '../ballot-client'
+import { leagueForToken, readBoard, readVotes, submittedNames, votedNames } from '../actions'
+import { BallotClient, VoteClient } from '../ballot-client'
+import { ResultsView } from '../results-view'
 import '../ballot.css'
 
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Win-total ballot · PA Milk Society',
-  description: 'Twelve managers, one win total each. Call them all and the room sets the lines.',
+  title: 'Win totals · PA Milk Society',
+  description: 'Twelve managers, one win total each. The room sets the lines, then takes a side on every one of them.',
 }
 
 // Deliberately NOT under /league/[slug]: that layout redirects signed-out
 // visitors to /login, and the whole point of this link is that eleven people
 // can open it without an account. The token in the path is both the address
 // and the authorization.
+//
+// One link, three phases, decided by the league's state rather than by the
+// URL, so nobody has to be sent a second address:
+//   no board            -> file a win-total ballot
+//   board, sealed       -> take a side on the lines
+//   board, opened       -> read what the room did
 export default async function BallotPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
 
@@ -46,14 +53,34 @@ export default async function BallotPage({ params }: { params: Promise<{ token: 
   }
 
   if (!PAMS_ROSTER.length) notFound()
-  const alreadyIn = await submittedNames(league.id)
 
+  const board = await readBoard(league.id)
+
+  if (!board) {
+    const alreadyIn = await submittedNames(league.id)
+    return (
+      <BallotClient
+        leagueId={league.id}
+        token={token}
+        roster={PAMS_ROSTER}
+        alreadyIn={alreadyIn}
+      />
+    )
+  }
+
+  if (board.revealed) {
+    const votes = await readVotes(league.id)
+    return <ResultsView roster={PAMS_ROSTER} board={board} votes={votes} />
+  }
+
+  const alreadyVoted = await votedNames(league.id)
   return (
-    <BallotClient
+    <VoteClient
       leagueId={league.id}
       token={token}
       roster={PAMS_ROSTER}
-      alreadyIn={alreadyIn}
+      board={board}
+      alreadyVoted={alreadyVoted}
     />
   )
 }

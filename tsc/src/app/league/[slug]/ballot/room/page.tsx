@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 import { PAMS_ROSTER, SEASON, buildBoard, type Picks } from '@/lib/winBallot'
-import { readBallotToken } from '@/app/ballot/actions'
+import { readBallotToken, readBoard, readVotes } from '@/app/ballot/actions'
 import { RoomView } from './room-view'
 import '@/app/ballot/ballot.css'
 import './room.css'
@@ -57,8 +57,15 @@ export default async function BallotRoomPage({ params }: { params: Promise<{ slu
     at: r.created_at as string,
   }))
 
-  const board = buildBoard(PAMS_ROSTER, ballots.map((b) => b.picks))
+  // Both readings of the same ballots, side by side: one that counts every
+  // ballot, one that throws out each manager's projection of themselves. The
+  // room picks which set becomes the line it locks.
+  const board = buildBoard(PAMS_ROSTER, ballots, 'all')
+  const outsiderBoard = buildBoard(PAMS_ROSTER, ballots, 'outsiders')
+
   const token = await readBallotToken(league.id)
+  const locked = await readBoard(league.id)
+  const votes = locked ? await readVotes(league.id) : []
 
   // Build the shareable link server-side rather than reading
   // window.location on the client, so the URL is in the HTML from the start.
@@ -74,6 +81,9 @@ export default async function BallotRoomPage({ params }: { params: Promise<{ slu
       roster={PAMS_ROSTER}
       ballots={ballots}
       board={board}
+      outsiderBoard={outsiderBoard}
+      locked={locked}
+      votes={votes}
       token={token}
     />
   )
