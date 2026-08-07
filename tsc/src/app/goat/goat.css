@@ -1,0 +1,262 @@
+/* ══════════════════════════════════════════════════════════════════
+   Greatest team in league history. Tournament programme: oxblood board,
+   brass rule, cream card stock. Scoped under .gt- so it can't collide
+   with the almanac (dc-/lo-/mhb-) or the win-total ballot (wb-).
+   ══════════════════════════════════════════════════════════════════ */
+
+.gt {
+  --board:     #2a1518;
+  --board-2:   #351b1f;
+  --board-3:   #46242a;
+  --card:      #f2ece0;
+  --card-2:    #e7dfd0;
+  --ink:       #23181a;
+  --ink-2:     #55474a;
+  --ink-3:     #8a7b7e;
+  --cream:     #efe6d6;
+  --cream-2:   #c9bda9;
+  --cream-3:   #9c9081;
+  --brass:     #c08a3e;
+  --brass-2:   #e0ab5c;
+  --brass-wash: rgba(192, 138, 62, .14);
+  --rule:      rgba(239, 230, 214, .18);
+  --rule-2:    rgba(239, 230, 214, .34);
+  --win:       #3f7d5c;
+  --out:       #8c3b3b;
+
+  --gt-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --gt-serif: "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --gt-sans: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", sans-serif;
+
+  background: var(--board);
+  color: var(--cream);
+  font-family: var(--gt-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gt * { box-sizing: border-box; }
+.gt button { cursor: pointer; font-family: inherit; -webkit-appearance: none; appearance: none; border: 0; background: none; color: inherit; }
+.gt :focus-visible { outline: 2px solid var(--brass-2); outline-offset: 2px; }
+
+.gt-shell {
+  flex: 1;
+  display: flex; flex-direction: column;
+  width: 100%; max-width: 36rem; margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* ── Header ── */
+.gt-head {
+  flex: none;
+  padding: calc(1.1rem + env(safe-area-inset-top)) 0 .9rem;
+  border-bottom: 1px solid var(--rule);
+  text-align: center;
+}
+.gt-kicker {
+  font-family: var(--gt-mono); font-size: .58rem; font-weight: 700;
+  letter-spacing: .22em; text-transform: uppercase; color: var(--brass);
+}
+.gt-head h1 {
+  margin: .5rem 0 .3rem;
+  font-family: var(--gt-serif); font-weight: 400;
+  font-size: clamp(1.6rem, 7vw, 2.15rem); line-height: 1.08;
+  letter-spacing: -.01em;
+}
+.gt-head h1 em { font-style: italic; color: var(--brass-2); }
+.gt-sub { font-size: .82rem; color: var(--cream-3); }
+
+/* ── Progress rail ── */
+.gt-rail { flex: none; display: flex; align-items: center; gap: .7rem; padding-top: .9rem; }
+.gt-rail-track { flex: 1; height: 3px; background: var(--rule); overflow: hidden; }
+.gt-rail-fill { height: 100%; background: var(--brass); transition: width .3s ease; }
+.gt-rail-count {
+  flex: none; font-family: var(--gt-mono); font-size: .58rem; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--cream-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.gt-stage { flex: 1; display: flex; flex-direction: column; padding: 1.1rem 0 0; }
+.gt-slide { flex: 1; display: flex; flex-direction: column; animation: gtRise .26s ease both; }
+@keyframes gtRise { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .gt-slide { animation: none; } }
+
+/* ── The two sides of a game ── */
+.gt-game-head { text-align: center; margin-bottom: .9rem; }
+.gt-game-head .gt-kicker { color: var(--cream-3); }
+.gt-game-head h2 {
+  margin: .35rem 0 0; font-family: var(--gt-serif); font-weight: 400;
+  font-size: 1.28rem; letter-spacing: -.01em;
+}
+
+.gt-pair { display: grid; gap: .7rem; }
+
+.gt-team {
+  display: block; width: 100%; text-align: left;
+  background: var(--card); color: var(--ink);
+  border: 1px solid rgba(35, 24, 26, .18);
+  padding: .85rem .95rem .9rem;
+  transition: transform .12s ease, box-shadow .12s ease;
+  position: relative;
+}
+.gt-team:active { transform: scale(.995); }
+.gt-team.is-picked {
+  box-shadow: 0 0 0 3px var(--brass);
+  background: #fff8ea;
+}
+.gt-team-top {
+  display: flex; align-items: baseline; justify-content: space-between; gap: .6rem;
+  font-family: var(--gt-mono); font-size: .56rem; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3);
+}
+.gt-seed {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.5rem; height: 1.5rem; padding: 0 .35rem;
+  background: var(--board); color: var(--brass-2);
+  font-family: var(--gt-mono); font-size: .68rem; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.gt-team h3 {
+  margin: .45rem 0 .1rem;
+  font-family: var(--gt-serif); font-weight: 400; font-size: 1.42rem; line-height: 1.1;
+}
+.gt-team-team {
+  font-size: .78rem; font-style: italic; color: var(--ink-2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gt-figs {
+  display: flex; flex-wrap: wrap; gap: .1rem 1rem;
+  margin: .6rem 0 .55rem; padding-top: .55rem;
+  border-top: 1px solid rgba(35, 24, 26, .12);
+}
+.gt-fig { display: flex; align-items: baseline; gap: .3rem; }
+.gt-fig b {
+  font-family: var(--gt-mono); font-size: .84rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--ink);
+}
+.gt-fig span {
+  font-family: var(--gt-mono); font-size: .53rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+}
+.gt-case { font-size: .84rem; line-height: 1.5; color: var(--ink-2); }
+.gt-ring {
+  display: inline-block; margin-top: .5rem;
+  font-family: var(--gt-mono); font-size: .53rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: #6b4a12; background: var(--brass-wash);
+  padding: .2rem .4rem;
+}
+
+.gt-vs {
+  text-align: center;
+  font-family: var(--gt-mono); font-size: .58rem; font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--cream-3);
+}
+
+/* ── Buttons ── */
+.gt-actions { flex: none; display: flex; gap: .6rem; padding: 1rem 0 calc(1rem + env(safe-area-inset-bottom)); }
+.gt-btn {
+  flex: 1; padding: .8rem 1rem;
+  font-family: var(--gt-mono); font-size: .66rem; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase;
+  background: var(--brass); color: #22140a;
+  transition: background .15s ease, opacity .15s ease;
+}
+.gt-btn:hover { background: var(--brass-2); }
+.gt-btn:disabled { opacity: .4; cursor: not-allowed; }
+.gt-btn.is-ghost { background: none; color: var(--cream-2); box-shadow: inset 0 0 0 1px var(--rule-2); flex: 0 0 auto; padding: .8rem 1.1rem; }
+.gt-btn.is-ghost:hover { background: rgba(239, 230, 214, .06); }
+
+/* ── Name picker ── */
+.gt-names { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; margin-top: .3rem; }
+.gt-name {
+  padding: .7rem .5rem; text-align: center;
+  background: rgba(239, 230, 214, .05);
+  box-shadow: inset 0 0 0 1px var(--rule-2);
+  font-family: var(--gt-serif); font-size: 1.02rem; color: var(--cream);
+}
+.gt-name.is-on { background: var(--brass); color: #22140a; box-shadow: none; font-weight: 600; }
+.gt-name:disabled { opacity: .32; cursor: not-allowed; text-decoration: line-through; }
+
+.gt-note {
+  font-size: .82rem; color: var(--cream-3); line-height: 1.55;
+}
+.gt-note + .gt-note { margin-top: .7rem; }
+.gt-err {
+  margin-top: .7rem; padding: .55rem .7rem;
+  background: rgba(140, 59, 59, .22); box-shadow: inset 0 0 0 1px rgba(224, 130, 130, .4);
+  font-size: .8rem; color: #ffd9d9;
+}
+
+/* ── Review list ── */
+.gt-review { display: grid; gap: 0; border-top: 1px solid var(--rule); }
+.gt-review-row {
+  display: flex; align-items: center; justify-content: space-between; gap: .7rem;
+  padding: .6rem .1rem; border-bottom: 1px solid var(--rule);
+  font-size: .88rem;
+}
+.gt-review-row b { font-family: var(--gt-serif); font-weight: 400; font-size: 1rem; }
+.gt-review-row s { color: var(--cream-3); text-decoration-color: var(--out); }
+.gt-review-edit {
+  font-family: var(--gt-mono); font-size: .55rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--brass-2);
+}
+
+/* ── The bracket, read-only ── */
+.gt-bracket { display: grid; gap: 1.4rem; padding: 1.2rem 0; }
+.gt-round-name {
+  font-family: var(--gt-mono); font-size: .58rem; font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--brass);
+  padding-bottom: .4rem; border-bottom: 1px solid var(--rule);
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.gt-round-name span { color: var(--cream-3); letter-spacing: .12em; }
+.gt-tie { display: grid; gap: .1rem; padding: .55rem 0; border-bottom: 1px solid var(--rule); }
+.gt-tie-side {
+  display: flex; align-items: baseline; gap: .5rem;
+  font-size: .92rem; color: var(--cream-2);
+}
+.gt-tie-side .gt-tie-seed {
+  font-family: var(--gt-mono); font-size: .6rem; font-weight: 700;
+  color: var(--cream-3); min-width: 1.4rem; font-variant-numeric: tabular-nums;
+}
+.gt-tie-side b { font-family: var(--gt-serif); font-weight: 400; font-size: 1.02rem; }
+.gt-tie-side.is-won { color: var(--cream); }
+.gt-tie-side.is-won b { color: var(--brass-2); }
+.gt-tie-side.is-lost { color: var(--cream-3); opacity: .6; }
+.gt-tie-count {
+  margin-left: auto; font-family: var(--gt-mono); font-size: .68rem;
+  font-variant-numeric: tabular-nums; color: var(--cream-3);
+}
+.gt-tie-side.is-won .gt-tie-count { color: var(--brass-2); }
+.gt-tbd { font-style: italic; color: var(--cream-3); opacity: .55; }
+
+/* ── Champion ── */
+.gt-champ {
+  text-align: center; padding: 1.6rem 1rem;
+  background: var(--board-2); box-shadow: inset 0 0 0 1px var(--brass);
+  margin: .6rem 0 1rem;
+}
+.gt-champ .gt-kicker { color: var(--brass); }
+.gt-champ h2 {
+  margin: .5rem 0 .2rem; font-family: var(--gt-serif); font-weight: 400;
+  font-size: clamp(1.7rem, 8vw, 2.4rem); line-height: 1.05; color: var(--brass-2);
+}
+.gt-champ p { margin: 0; font-size: .85rem; color: var(--cream-3); font-style: italic; }
+
+.gt-foot {
+  flex: none; text-align: center;
+  padding: 1.2rem 0 calc(1.4rem + env(safe-area-inset-bottom));
+  font-family: var(--gt-mono); font-size: .55rem; font-weight: 700;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--cream-3); opacity: .7;
+}
+
+@media (min-width: 34rem) {
+  .gt-pair { grid-template-columns: 1fr 1fr; align-items: start; }
+  .gt-vs { grid-column: 1 / -1; order: -1; }
+}
