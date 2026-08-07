@@ -98,111 +98,131 @@
 
 .gt-pair { display: flex; flex-direction: column; gap: .55rem; }
 
-/* ── A team card ── */
+/* ── A team card ──
+   Built to read as a team sheet, not a list item: a banner across the top
+   carrying the seed and how the year ended, the name below it, the season
+   figures, then the lineup. The whole thing is the button. */
 .gt-team {
   display: block; width: 100%; text-align: left;
   background: var(--field); color: var(--ink);
   border: 2px solid var(--ink);
-  box-shadow: 4px 4px 0 var(--paper-3);
-  padding: .8rem .9rem .85rem;
+  box-shadow: 5px 5px 0 var(--paper-3);
   transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
-  position: relative;
+  position: relative; overflow: hidden;
 }
-.gt-team:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--paper-3); }
+.gt-team:active { transform: translate(2px, 2px); box-shadow: 3px 3px 0 var(--paper-3); }
 .gt-team.is-picked {
-  background: #f2f7f3;
   border-color: var(--green);
-  box-shadow: 4px 4px 0 var(--green-wash);
-}
-/* A tick in the corner once this is the one that survives. */
-.gt-team.is-picked::after {
-  content: "";
-  position: absolute; top: .55rem; right: .6rem;
-  width: .95rem; height: .5rem;
-  border-left: 2.5px solid var(--green); border-bottom: 2.5px solid var(--green);
-  transform: rotate(-45deg);
+  box-shadow: 5px 5px 0 var(--green), 0 0 0 2px var(--green);
 }
 
-.gt-team-top {
-  display: flex; align-items: center; gap: .55rem;
-  font-family: var(--gt-mono); font-size: .54rem; font-weight: 700;
-  letter-spacing: .15em; text-transform: uppercase; color: var(--ink-3);
+/* Banner. Goes solid green the moment this is the one advancing. */
+.gt-team-band {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .42rem .55rem; background: var(--ink);
+  transition: background .12s ease;
 }
+.gt-team.is-picked .gt-team-band { background: var(--green); }
 .gt-seed {
   display: inline-flex; align-items: center; justify-content: center;
-  min-width: 1.6rem; height: 1.6rem; padding: 0 .35rem; flex: none;
-  background: var(--green); color: var(--on-green);
-  font-family: var(--gt-mono); font-size: .7rem; font-weight: 700;
+  min-width: 1.5rem; height: 1.5rem; padding: 0 .3rem; flex: none;
+  background: var(--field); color: var(--ink);
+  font-family: var(--gt-mono); font-size: .74rem; font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
-.gt-team h3 {
-  margin: .5rem 0 .08rem;
-  font-family: var(--gt-serif); font-weight: 400; font-size: 1.5rem; line-height: 1.06;
+.gt-team-finish {
+  font-family: var(--gt-mono); font-size: .52rem; font-weight: 700;
+  letter-spacing: .15em; text-transform: uppercase; color: var(--paper);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gt-team-ring {
+  margin-left: auto; flex: none;
+  font-family: var(--gt-mono); font-size: .46rem; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink); background: var(--paper-3); padding: .18rem .34rem;
+}
+/* The tick that says "this one survives". */
+.gt-team.is-picked::after {
+  content: ""; position: absolute; top: .62rem; right: .62rem;
+  width: .9rem; height: .46rem;
+  border-left: 2.5px solid #fff; border-bottom: 2.5px solid #fff;
+  transform: rotate(-45deg);
+}
+.gt-team.is-picked .gt-team-ring { visibility: hidden; }
+
+.gt-team-id { padding: .6rem .8rem .1rem; }
+.gt-team-id h3 {
+  margin: 0; font-family: var(--gt-serif); font-weight: 400;
+  font-size: 1.62rem; line-height: 1.02; letter-spacing: -.01em;
 }
 .gt-team-team {
-  font-size: .78rem; font-style: italic; color: var(--ink-2);
+  font-size: .76rem; font-style: italic; color: var(--ink-3);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-/* Figures strip: four numbers, evenly spread, tabular so they line up. */
+/* Figures strip: four numbers, tabular so the two cards line up column
+   for column when you scroll between them. */
 .gt-figs {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: .2rem;
-  margin: .6rem 0 .55rem; padding: .5rem 0;
-  border-top: 1px solid var(--rule-soft); border-bottom: 1px solid var(--rule-soft);
+  margin: .55rem .8rem; padding: .45rem 0;
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
 }
-.gt-fig { display: flex; flex-direction: column; align-items: flex-start; gap: .1rem; }
+.gt-fig { display: flex; flex-direction: column; gap: .06rem; }
 .gt-fig b {
-  font-family: var(--gt-mono); font-size: .88rem; font-weight: 700;
+  font-family: var(--gt-mono); font-size: .9rem; font-weight: 700;
   font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1;
 }
 .gt-fig span {
-  font-family: var(--gt-mono); font-size: .48rem; font-weight: 700;
-  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3);
+  font-family: var(--gt-mono); font-size: .45rem; font-weight: 700;
+  letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3);
 }
-/* ── Who they started ──
-   The six biggest scorers, because "whose team was better" is a question
-   about players and no amount of team-level averages answers it. */
-.gt-roster { margin: 0 0 .6rem; }
-.gt-roster-head {
-  display: flex; justify-content: space-between;
-  font-family: var(--gt-mono); font-size: .48rem; font-weight: 700;
-  letter-spacing: .13em; text-transform: uppercase; color: var(--ink-3);
-  padding-bottom: .25rem; border-bottom: 1px solid var(--rule-soft);
-}
-.gt-roster-row {
-  display: flex; align-items: baseline; gap: .45rem;
-  padding: .22rem 0; border-bottom: 1px solid var(--rule-soft);
-}
-.gt-roster-row:last-child { border-bottom: 0; }
-.gt-roster-row b {
-  font-weight: 500; font-size: .84rem; color: var(--ink);
-  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.gt-roster-row span {
-  margin-left: auto; flex: none;
-  font-family: var(--gt-mono); font-size: .74rem; font-weight: 700;
-  font-variant-numeric: tabular-nums; color: var(--ink-2);
-}
-.gt-pos {
-  flex: none; width: 1.75rem; text-align: center;
-  font-family: var(--gt-mono); font-style: normal;
-  font-size: .48rem; font-weight: 700; letter-spacing: .06em;
-  padding: .13rem 0; color: #fff;
-}
-.gt-pos-QB  { background: #8a3a4e; }
-.gt-pos-RB  { background: #2f6b8a; }
-.gt-pos-WR  { background: #a15a3c; }
-.gt-pos-TE  { background: #55519b; }
-.gt-pos-K   { background: #7c7f72; }
-.gt-pos-DEF { background: #4a4d43; }
 
-.gt-case { font-size: .84rem; line-height: 1.5; color: var(--ink-2); margin: 0; }
-.gt-ring {
-  display: inline-block; margin-top: .5rem;
-  font-family: var(--gt-mono); font-size: .5rem; font-weight: 700;
-  letter-spacing: .13em; text-transform: uppercase;
-  color: var(--green); background: var(--green-wash);
-  padding: .22rem .42rem;
+/* ── The lineup ── */
+.gt-lineup { margin: 0 .8rem .55rem; }
+.gt-lineup-head {
+  display: flex; justify-content: space-between;
+  font-family: var(--gt-mono); font-size: .46rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+  padding-bottom: .22rem;
+}
+.gt-lu-row {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .26rem 0; border-top: 1px solid var(--rule-soft);
+}
+.gt-lu-name { display: flex; flex-direction: column; min-width: 0; }
+.gt-lu-name b {
+  font-weight: 500; font-size: .86rem; line-height: 1.15; color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gt-lu-name em {
+  font-style: normal; font-family: var(--gt-mono);
+  font-size: .48rem; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.gt-lu-ppg {
+  margin-left: auto; flex: none;
+  font-family: var(--gt-mono); font-size: .92rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--ink);
+}
+/* Slot label, coloured by the position actually filling it, so a WR in the
+   flex still reads as a WR. */
+.gt-slot {
+  flex: none; width: 2.2rem; text-align: center;
+  font-family: var(--gt-mono); font-style: normal;
+  font-size: .46rem; font-weight: 700; letter-spacing: .05em;
+  padding: .2rem 0; color: #fff;
+}
+.gt-slot-QB  { background: #8a3a4e; }
+.gt-slot-RB  { background: #2f6b8a; }
+.gt-slot-WR  { background: #a15a3c; }
+.gt-slot-TE  { background: #55519b; }
+.gt-slot-K   { background: #7c7f72; }
+.gt-slot-DEF { background: #4a4d43; }
+
+.gt-case {
+  font-size: .82rem; line-height: 1.5; color: var(--ink-2);
+  margin: 0; padding: .55rem .8rem .75rem;
+  border-top: 1px solid var(--rule); font-style: italic;
 }
 
 .gt-vs {

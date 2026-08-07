@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import {
-  ROUNDS, buildBracket, finishLine, gamesInRound, label, record,
+  ROUNDS, buildBracket, finishLine, gamesInRound, label, pts, record,
   type Ballot, type GoatTeam, type ResolvedGame, type Results, type RoundId,
 } from '@/lib/greatestTeam'
 import { submitBallot } from './actions'
@@ -224,40 +224,60 @@ export function VoteDeck({
   )
 }
 
+/**
+ * One team, as a team sheet: a banner with the seed and how the year ended,
+ * the four season figures, then the starting lineup with each player's rate
+ * and where they finished at their position. The whole card is the button.
+ */
 function TeamCard({ team, picked, onPick }: { team: GoatTeam; picked: boolean; onPick: () => void }) {
   return (
-    <button type="button" className={`gt-team${picked ? ' is-picked' : ''}`} onClick={onPick}>
-      <div className="gt-team-top">
+    <button
+      type="button"
+      className={`gt-team${picked ? ' is-picked' : ''}`}
+      onClick={onPick}
+      aria-pressed={picked}
+    >
+      <div className="gt-team-band">
         <span className="gt-seed">{team.seed}</span>
-        <span>{finishLine(team)}</span>
+        <span className="gt-team-finish">{finishLine(team)}</span>
+        {team.autoBid && <span className="gt-team-ring">ring</span>}
       </div>
-      <h3>{label(team)}</h3>
-      <div className="gt-team-team">{team.team}</div>
+
+      <div className="gt-team-id">
+        <h3>{label(team)}</h3>
+        <div className="gt-team-team">&ldquo;{team.team}&rdquo;</div>
+      </div>
+
       <div className="gt-figs">
-        <div className="gt-fig"><b>{record(team)}</b><span>rec</span></div>
-        <div className="gt-fig"><b>{team.ppg}</b><span>a week</span></div>
+        <div className="gt-fig"><b>{record(team)}</b><span>record</span></div>
+        <div className="gt-fig"><b>{pts(team.ppg)}</b><span>a week</span></div>
         <div className="gt-fig"><b>{team.index.toFixed(2)}</b><span>vs era</span></div>
         <div className="gt-fig"><b>{team.high}</b><span>best wk</span></div>
       </div>
 
-      {/* The roster is the argument. Six biggest scorers this team actually
-          started, with what each banked over the season. */}
-      <div className="gt-roster">
-        <div className="gt-roster-head">
-          <span>Who they started</span>
-          <span>pts</span>
+      {/* The lineup is the argument: team averages don't tell you whether a
+          season was a QB1 carrying two WR40s or a roster deep everywhere. */}
+      <div className="gt-lineup">
+        <div className="gt-lineup-head">
+          <span>Starting lineup</span>
+          <span>ppg</span>
         </div>
-        {team.roster.map((p) => (
-          <div className="gt-roster-row" key={p.n}>
-            <i className={`gt-pos gt-pos-${p.p}`}>{p.p}</i>
-            <b>{p.n}</b>
-            <span>{p.pts}</span>
+        {team.lineup.map((p) => (
+          <div className="gt-lu-row" key={p.s + p.n}>
+            <i className={`gt-slot gt-slot-${p.p}`}>{p.s}</i>
+            <span className="gt-lu-name">
+              <b>{p.n}</b>
+              <em>{p.rk ? `${p.rk} · ` : ''}{p.g} starts</em>
+            </span>
+            {/* Always one decimal, so the column reads as a column: a bare
+                "19" next to a "12.2" breaks the alignment tabular-nums is
+                there to hold. */}
+            <span className="gt-lu-ppg">{pts(p.ppg)}</span>
           </div>
         ))}
       </div>
 
       <p className="gt-case">{team.case}</p>
-      {team.autoBid && <span className="gt-ring">Champion · automatic bid</span>}
     </button>
   )
 }

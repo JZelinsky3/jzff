@@ -1,5 +1,5 @@
 import {
-  ROUNDS, buildBracket, label, record, winnerOf, tallyRound,
+  ROUNDS, buildBracket, label, pts, record, winnerOf, tallyRound,
   type GoatTeam, type Results, type RoundId, type VoteRecord,
 } from '@/lib/greatestTeam'
 
@@ -32,7 +32,7 @@ export function BracketView({
           <div className="gt-kicker">The greatest team in league history</div>
           <h2>{label(champion)}</h2>
           <p>
-            {champion.team} · {record(champion)} · {champion.ppg} a week
+            {champion.team} · {record(champion)} · {pts(champion.ppg)} a week
           </p>
         </div>
       )}
@@ -101,7 +101,7 @@ function Side({
         <span className="gt-tie-name">
           <b>{label(team)}</b>
           <i>
-            {record(team)} · {team.ppg} a week · {team.team}
+            {record(team)} · {pts(team.ppg)} a week · {team.team}
           </i>
         </span>
       ) : (
