@@ -44,7 +44,7 @@ const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/g
 // bounce would defeat it. League pools are still gated — the deal handler
 // checks that the league published its almanac (or that the caller owns it)
 // before it hands over anyone's roster history.
-const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/demo-m/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/api/mock-board', '/api/support', '/hub/', '/api/hub/', '/see/', '/games/', '/api/games/', '/ballot/']
+const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/demo-m/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/api/mock-board', '/api/support', '/hub/', '/api/hub/', '/see/', '/games/', '/api/games/', '/ballot/', '/goat/']
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })

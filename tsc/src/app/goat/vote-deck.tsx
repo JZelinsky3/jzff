@@ -193,11 +193,10 @@ export function VoteDeck({
   // ── A game ──
   const game = games[at - 1]
   const pick = picks[game.id]
-  const choose = (seed: number) => {
-    setPicks((p) => ({ ...p, [game.id]: seed }))
-    // Move on by itself, so the whole round is one tap per game.
-    setTimeout(() => setStep(at + 1), 180)
-  }
+  // Selecting does NOT advance. These are two rosters to read side by side and
+  // change your mind about; a card that jumped forward on first tap took the
+  // decision away before it had been made.
+  const choose = (seed: number) => setPicks((p) => ({ ...p, [game.id]: seed }))
 
   return (
     <Shell round={roundName} rail={{ at, total }}>
@@ -217,7 +216,7 @@ export function VoteDeck({
         <div className="gt-actions">
           <button className="gt-btn is-ghost" onClick={() => setStep(at - 1)}>Back</button>
           <button className="gt-btn" disabled={!pick} onClick={() => setStep(at + 1)}>
-            {pick ? 'Next' : 'Pick one'}
+            {pick ? (at === games.length ? 'Review' : 'Next') : 'Pick one'}
           </button>
         </div>
       </div>
@@ -240,6 +239,23 @@ function TeamCard({ team, picked, onPick }: { team: GoatTeam; picked: boolean; o
         <div className="gt-fig"><b>{team.index.toFixed(2)}</b><span>vs era</span></div>
         <div className="gt-fig"><b>{team.high}</b><span>best wk</span></div>
       </div>
+
+      {/* The roster is the argument. Six biggest scorers this team actually
+          started, with what each banked over the season. */}
+      <div className="gt-roster">
+        <div className="gt-roster-head">
+          <span>Who they started</span>
+          <span>pts</span>
+        </div>
+        {team.roster.map((p) => (
+          <div className="gt-roster-row" key={p.n}>
+            <i className={`gt-pos gt-pos-${p.p}`}>{p.p}</i>
+            <b>{p.n}</b>
+            <span>{p.pts}</span>
+          </div>
+        ))}
+      </div>
+
       <p className="gt-case">{team.case}</p>
       {team.autoBid && <span className="gt-ring">Champion · automatic bid</span>}
     </button>
