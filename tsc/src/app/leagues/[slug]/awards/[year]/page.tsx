@@ -73,16 +73,17 @@ export default async function SeasonAwardsPage({
   return (
     <div className={styles.page}>
       <div className={styles.shell}>
+        {/* No site nav on purpose: this is a sheet somebody opens from a link
+            in the group chat, reads, and closes. */}
         <header className={styles.head}>
-          <BackButton fallbackHref={`/leagues/${slug}/`} />
           <div className={styles.kicker}>{league.name}</div>
           <h1>
             The {year} <em>awards</em>
           </h1>
           <p className={styles.lede}>
-            Nobody voted on any of this. Every trophy below falls straight out of
-            the weekly scores and the weekly lineups, regular season only, which
-            means the only thing left to argue about is whether it should count.
+            Nobody voted on any of this. Every trophy falls straight out of the
+            weekly scores and the weekly lineups, so the only thing left to
+            argue about is whether it should count.
           </p>
         </header>
 
@@ -132,7 +133,6 @@ export default async function SeasonAwardsPage({
           </>
         )}
       </div>
-      <SiteFooter />
     </div>
   )
 }

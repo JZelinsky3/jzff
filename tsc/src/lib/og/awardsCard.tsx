@@ -1,20 +1,19 @@
 // The picture the season-awards page unfurls into.
 //
-// The banquet programme of the page itself: cream stock, ink, one green seal.
-// Deliberately the light card of the offseason set, because the greatest-team
-// bracket running alongside it is the dark one, and a link dropped in a group
-// chat should say which of the two it is before anybody reads a word.
+// The banquet programme of the page itself: buff stock, ink, ledger green.
+// Same palette as the greatest-team bracket, so the two offseason pieces
+// unfurl as one set in the group chat.
 
 // Straight off awards.module.css, so the preview and the page are the same
 // object.
-const PAPER = '#f4f1e8'
-const PAPER_2 = '#eae5d8'
-const INK = '#1d1f1c'
-const INK_2 = '#4a4d47'
-const INK_3 = '#7f837b'
-const RULE = '#d3cfc0'
-const SEAL = '#2f6144'
-const GOLD = '#8a6a24'
+const PAPER = '#e6e3d5'
+const PAPER_2 = '#f5f3e9'
+const INK = '#1f221c'
+const INK_2 = '#4a4d43'
+const INK_3 = '#7c7f72'
+const RULE = '#c3c1af'
+const SEAL = '#2d6146'
+const GOLD = '#2d6146'
 
 export type AwardsCardProps = {
   leagueName: string
