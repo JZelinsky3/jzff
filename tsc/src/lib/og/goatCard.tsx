@@ -123,7 +123,9 @@ const COPY: Record<GoatPhase, { head: string; em: string; sub: string; foot: str
     foot: 'Seven champions · nine at large',
   },
   crowned: {
-    head: 'The room has', em: 'decided.',
+    // Short enough to hold two lines in a 470px column at 62px. "The room has
+    // decided" wraps to three and pushes the sub off its baseline.
+    head: 'It is', em: 'settled.',
     sub: 'The greatest team in league history',
     foot: 'Sixteen teams · four rounds · one winner',
   },

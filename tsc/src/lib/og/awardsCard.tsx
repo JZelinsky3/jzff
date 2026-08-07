@@ -86,7 +86,7 @@ export function AwardsCard({ leagueName, year, headline, count }: AwardsCardProp
       </div>
 
       {/* The three headline trophies */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '10px 0 18px' }}>
         {headline.map((a, i) => (
           <div
             key={i}
