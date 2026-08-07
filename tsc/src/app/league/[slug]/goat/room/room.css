@@ -1,51 +1,75 @@
-/* Commissioner's room for the greatest-team bracket. Rides on the .gt
-   programme palette (see /app/goat/goat.css) and only adds what a control
-   panel needs that a voting card does not. */
+/* Commissioner's room for the greatest-team bracket. Rides on the .gt buff
+   stock and ledger green (see /app/goat/goat.css) and only adds what a
+   control panel needs that a voting card does not. */
 
 .gtr-shell { max-width: 40rem; }
 
-.gtr-block { padding: 1.2rem 0 .2rem; }
-.gtr-block:first-of-type { padding-top: .4rem; }
+.gtr-block { padding: 1.1rem 0 .2rem; }
+.gtr-block:first-of-type { padding-top: .3rem; }
 
-.gtr-row { display: flex; flex-wrap: wrap; gap: .5rem; padding: .7rem 0; }
-.gtr-row-tight { padding: .5rem 0 .1rem; }
+.gtr-row { display: flex; flex-wrap: wrap; gap: .45rem; padding: .65rem 0; }
+.gtr-row-tight { padding: .45rem 0 .1rem; }
 .gtr-row .gt-btn { flex: 0 0 auto; }
+.gtr-row:empty { display: none; padding: 0; }
 
 .gtr-link {
-  display: block; margin-top: .6rem; padding: .55rem .7rem;
-  background: rgba(239, 230, 214, .06);
-  box-shadow: inset 0 0 0 1px var(--rule-2);
-  font-family: var(--gt-mono); font-size: .72rem; color: var(--cream);
+  display: block; margin-top: .55rem; padding: .55rem .65rem;
+  background: var(--field);
+  box-shadow: inset 0 0 0 2px var(--rule);
+  font-family: var(--gt-mono); font-size: .72rem; color: var(--ink);
   word-break: break-all;
 }
 
 .gtr-ok {
   margin-bottom: .7rem; padding: .55rem .7rem;
-  background: rgba(63, 125, 92, .2); box-shadow: inset 0 0 0 1px rgba(120, 200, 160, .34);
-  font-size: .8rem; color: #d7f2e3;
+  background: var(--green-wash); box-shadow: inset 0 0 0 1.5px var(--green);
+  font-size: .8rem; color: var(--green);
 }
 
-.gtr-tally {
-  padding: .6rem 0; border-bottom: 1px solid var(--rule);
+/* The one action that makes the public link do anything. Given its own slab
+   so it cannot be mistaken for another toggle. */
+.gtr-next {
+  background: var(--field);
+  border: 2px solid var(--green);
+  box-shadow: 5px 5px 0 var(--green-wash);
+  padding: .9rem 1rem 1rem;
+  margin: .8rem 0 .4rem;
 }
-.gtr-tally.is-tied { box-shadow: inset 3px 0 0 var(--brass); padding-left: .6rem; }
+.gtr-next h3 {
+  margin: .3rem 0 .35rem;
+  font-family: var(--gt-serif); font-weight: 400; font-size: 1.3rem;
+}
+.gtr-next p {
+  margin: 0 0 .8rem; font-size: .85rem; line-height: 1.5; color: var(--ink-2);
+}
+.gtr-next .gt-btn { width: 100%; }
+
+.gtr-tally {
+  padding: .55rem 0; border-bottom: 1px solid var(--rule-soft);
+}
+.gtr-tally.is-tied {
+  box-shadow: inset 3px 0 0 var(--stamp);
+  padding-left: .6rem; background: rgba(179, 58, 43, .05);
+}
 .gtr-tally-side {
   display: flex; align-items: baseline; justify-content: space-between; gap: .7rem;
-  font-size: .92rem; color: var(--cream-2);
 }
-.gtr-tally-side b { font-family: var(--gt-serif); font-weight: 400; font-size: 1.02rem; }
+.gtr-tally-side b {
+  font-family: var(--gt-serif); font-weight: 400; font-size: 1.04rem; color: var(--ink-2);
+}
 .gtr-tally-side span {
-  font-family: var(--gt-mono); font-size: .8rem; font-weight: 700;
-  font-variant-numeric: tabular-nums; color: var(--brass-2);
+  font-family: var(--gt-mono); font-size: .82rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--green); flex: none;
 }
 .gtr-tied-note {
-  font-family: var(--gt-mono); font-size: .55rem; font-weight: 700;
-  letter-spacing: .14em; text-transform: uppercase; color: var(--brass);
+  font-family: var(--gt-mono); font-size: .53rem; font-weight: 700;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--stamp);
   align-self: center;
 }
 
 .gtr-card-row {
   display: flex; align-items: center; justify-content: space-between; gap: .7rem;
-  padding: .5rem 0; border-bottom: 1px solid var(--rule);
+  padding: .45rem 0; border-bottom: 1px solid var(--rule-soft);
 }
-.gtr-card-row b { font-family: var(--gt-serif); font-weight: 400; font-size: 1rem; color: var(--cream); }
+.gtr-card-row b { font-family: var(--gt-serif); font-weight: 400; font-size: 1rem; color: var(--ink); }
+.gtr-card-row .gt-review-edit { margin-left: 0; }

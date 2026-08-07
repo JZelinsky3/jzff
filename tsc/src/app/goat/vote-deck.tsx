@@ -95,6 +95,7 @@ export function VoteDeck({
               return (
                 <div className="gt-review-row" key={g.id}>
                   <b>{winner ? label(winner) : ''}</b>
+                  <span className="gt-review-beat">over</span>
                   <s>{loser ? label(loser) : ''}</s>
                 </div>
               )
@@ -162,6 +163,7 @@ export function VoteDeck({
                   {winner ? (
                     <>
                       <b>{label(winner)}</b>
+                      <span className="gt-review-beat">over</span>
                       <s>{loser ? label(loser) : ''}</s>
                     </>
                   ) : (

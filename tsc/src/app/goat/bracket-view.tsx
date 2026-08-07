@@ -1,16 +1,18 @@
 import {
-  ROUNDS, buildBracket, label, record, winnerOf,
-  type Results, type RoundId, type Tally, type VoteRecord,
-  tallyRound,
+  ROUNDS, buildBracket, label, record, winnerOf, tallyRound,
+  type GoatTeam, type Results, type RoundId, type VoteRecord,
 } from '@/lib/greatestTeam'
 
 /**
  * The bracket as it stands, read-only. Shown to anybody who opens the link
  * between rounds, and to a voter once their card is in.
  *
- * Vote counts are only ever rendered for rounds that are already settled, or
- * when the room has opened the live ones: a running count on a live round is
- * a bandwagon, so it stays sealed by default.
+ * Every side carries its record and scoring average, not just a name: "2019
+ * Joey" means nothing to somebody scrolling in a group chat, and the whole
+ * argument is about the numbers underneath.
+ *
+ * Vote counts only render for rounds already settled, or when the room has
+ * opened the live ones: a running count on a live round is a bandwagon.
  */
 export function BracketView({
   results, votes, revealed, openRound,
@@ -38,7 +40,6 @@ export function BracketView({
       {ROUNDS.map((round) => {
         const games = bracket.filter((g) => g.round === round.id)
         const settled = games.filter((g) => g.winner !== null).length
-        // A live round's counts stay hidden unless the room opened them.
         const showCounts = revealed || round.id !== openRound
         const tallies = tallyRound(bracket, round.id, votes)
         const tallyFor = (id: string) => tallies.find((t) => t.game.id === id)
@@ -60,20 +61,19 @@ export function BracketView({
 
             {games.map((g) => {
               const t = tallyFor(g.id)
+              const decided = g.winner !== null
               return (
                 <div className="gt-tie" key={g.id}>
                   <Side
-                    seed={g.home?.seed ?? null}
-                    name={g.home ? label(g.home) : null}
-                    won={g.winner !== null && g.winner === g.home?.seed}
-                    lost={g.winner !== null && g.winner !== g.home?.seed}
+                    team={g.home}
+                    won={decided && g.winner === g.home?.seed}
+                    lost={decided && g.winner !== g.home?.seed}
                     count={showCounts ? t?.homeVotes ?? null : null}
                   />
                   <Side
-                    seed={g.away?.seed ?? null}
-                    name={g.away ? label(g.away) : null}
-                    won={g.winner !== null && g.winner === g.away?.seed}
-                    lost={g.winner !== null && g.winner !== g.away?.seed}
+                    team={g.away}
+                    won={decided && g.winner === g.away?.seed}
+                    lost={decided && g.winner !== g.away?.seed}
                     count={showCounts ? t?.awayVotes ?? null : null}
                   />
                 </div>
@@ -87,21 +87,29 @@ export function BracketView({
 }
 
 function Side({
-  seed, name, won, lost, count,
+  team, won, lost, count,
 }: {
-  seed: number | null
-  name: string | null
+  team: GoatTeam | null
   won: boolean
   lost: boolean
   count: number | null
 }) {
   return (
     <div className={`gt-tie-side${won ? ' is-won' : ''}${lost ? ' is-lost' : ''}`}>
-      <span className="gt-tie-seed">{seed ?? ''}</span>
-      {name ? <b>{name}</b> : <b className="gt-tbd">to be decided</b>}
-      {count !== null && name && <span className="gt-tie-count">{count}</span>}
+      <span className="gt-tie-seed">{team?.seed ?? ''}</span>
+      {team ? (
+        <span className="gt-tie-name">
+          <b>{label(team)}</b>
+          <i>
+            {record(team)} · {team.ppg} a week · {team.team}
+          </i>
+        </span>
+      ) : (
+        <span className="gt-tie-name">
+          <b className="gt-tbd">winner of the round before</b>
+        </span>
+      )}
+      {count !== null && team && <span className="gt-tie-count">{count}</span>}
     </div>
   )
 }
-
-export type { Tally }

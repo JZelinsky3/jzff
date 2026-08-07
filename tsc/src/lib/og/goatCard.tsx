@@ -3,22 +3,20 @@
 // Kept out of the route so the composition can be rendered and looked at
 // without standing up a league, a token and a live round first.
 //
-// Off the site's house card on purpose: this is the oxblood-and-brass
-// tournament programme of the bracket itself, so the preview looks like the
-// thing you are about to open, and never like the buff carbon-copy ballot
-// running in the same offseason.
+// Same buff stock as the win-total ballot's card, ledger green where that one
+// runs violet: the two events share an offseason and should unfurl as a set.
 
 // Straight off goat.css, so the preview and the page are the same object.
-const BOARD = '#2a1518'
-const BOARD_2 = '#351b1f'
-const CARD = '#f2ece0'
-const INK = '#23181a'
-const INK_3 = '#8a7b7e'
-const CREAM = '#efe6d6'
-const CREAM_3 = '#9c9081'
-const BRASS = '#c08a3e'
-const BRASS_2 = '#e0ab5c'
-const RULE = 'rgba(239, 230, 214, .28)'
+const PAPER = '#e6e3d5'
+const FIELD = '#f5f3e9'
+const PAPER_3 = '#d8d5c5'
+const INK = '#1f221c'
+const INK_2 = '#4a4d43'
+const INK_3 = '#7c7f72'
+const RULE = '#c3c1af'
+const GREEN = '#2d6146'
+const GREEN_WASH = 'rgba(45, 97, 70, .10)'
+const ON_GREEN = '#ffffff'
 
 /** Which of the link's lives the card is selling. */
 export type GoatPhase = 'gone' | 'open' | 'between' | 'crowned'
@@ -37,7 +35,7 @@ export type GoatCardProps = {
 }
 
 function Eyebrow({
-  children, color = CREAM_3, size = 17, track = 0.28,
+  children, color = INK_3, size = 17, track = 0.28,
 }: {
   children: React.ReactNode
   color?: string
@@ -62,7 +60,7 @@ function Eyebrow({
   )
 }
 
-/** A seed chip. Brass on board, the same object as .gt-seed on the page. */
+/** A seed chip. The same object as .gt-seed on the page. */
 function Seed({ n, dim }: { n: number; dim?: boolean }) {
   return (
     <div
@@ -72,9 +70,9 @@ function Seed({ n, dim }: { n: number; dim?: boolean }) {
         justifyContent: 'center',
         width: '38px',
         height: '38px',
-        background: dim ? 'transparent' : BOARD,
-        border: `2px solid ${dim ? RULE : BRASS}`,
-        color: dim ? CREAM_3 : BRASS_2,
+        background: dim ? 'transparent' : GREEN,
+        border: `2px solid ${dim ? RULE : GREEN}`,
+        color: dim ? INK_3 : ON_GREEN,
         fontFamily: 'JetBrains',
         fontSize: '19px',
         fontWeight: 700,
@@ -97,7 +95,7 @@ function Side({ seed, name, won, decided }: { seed: number; name: string; won?: 
           display: 'flex',
           fontFamily: 'DMSerif',
           fontSize: '30px',
-          color: lost ? CREAM_3 : won ? BRASS_2 : CREAM,
+          color: lost ? INK_3 : won ? GREEN : INK,
         }}
       >
         {name}
@@ -141,10 +139,7 @@ export function GoatCard({ phase, roundName, turnout, roomSize, ties, champion }
         width: '1200px',
         height: '630px',
         display: 'flex',
-        background: BOARD,
-        // A brass hairline inside the bleed, the same rule the page runs under
-        // its masthead.
-        padding: '0',
+        background: PAPER,
       }}
     >
       {/* Left: the masthead */}
@@ -155,11 +150,11 @@ export function GoatCard({ phase, roundName, turnout, roomSize, ties, champion }
           flexDirection: 'column',
           justifyContent: 'space-between',
           padding: '52px 40px 44px 56px',
-          borderRight: `2px solid ${BRASS}`,
+          borderRight: `2px solid ${INK}`,
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <Eyebrow color={BRASS} size={18}>PA Milk Society</Eyebrow>
+          <Eyebrow color={GREEN} size={18}>PA Milk Society</Eyebrow>
           <div
             style={{
               display: 'flex',
@@ -168,11 +163,11 @@ export function GoatCard({ phase, roundName, turnout, roomSize, ties, champion }
               fontFamily: 'DMSerif',
               fontSize: '62px',
               lineHeight: 1.04,
-              color: CREAM,
+              color: INK,
             }}
           >
             <div style={{ display: 'flex' }}>{copy.head}</div>
-            <div style={{ display: 'flex', fontStyle: 'italic', color: BRASS_2 }}>{copy.em}</div>
+            <div style={{ display: 'flex', fontStyle: 'italic', color: GREEN }}>{copy.em}</div>
           </div>
           <div
             style={{
@@ -180,7 +175,7 @@ export function GoatCard({ phase, roundName, turnout, roomSize, ties, champion }
               marginTop: '22px',
               fontFamily: 'DMSerif',
               fontSize: '25px',
-              color: CREAM_3,
+              color: INK_2,
             }}
           >
             {roundName && phase === 'open' ? roundName : copy.sub}
@@ -199,8 +194,8 @@ export function GoatCard({ phase, roundName, turnout, roomSize, ties, champion }
                       width: '22px',
                       height: '11px',
                       marginRight: '7px',
-                      background: i < turnout ? BRASS : 'transparent',
-                      border: `1.5px solid ${i < turnout ? BRASS : RULE}`,
+                      background: i < turnout ? GREEN : 'transparent',
+                      border: `1.5px solid ${i < turnout ? GREEN : RULE}`,
                     }}
                   />
                 ))}
@@ -229,12 +224,13 @@ export function GoatCard({ phase, roundName, turnout, roomSize, ties, champion }
             style={{
               display: 'flex',
               flexDirection: 'column',
-              background: BOARD_2,
-              border: `2px solid ${BRASS}`,
+              background: FIELD,
+              border: `2px solid ${GREEN}`,
+              boxShadow: `8px 8px 0 ${GREEN_WASH}`,
               padding: '44px 40px',
             }}
           >
-            <Eyebrow color={BRASS} size={16}>The greatest team in league history</Eyebrow>
+            <Eyebrow color={GREEN} size={16}>The greatest team in league history</Eyebrow>
             <div
               style={{
                 display: 'flex',
@@ -242,7 +238,7 @@ export function GoatCard({ phase, roundName, turnout, roomSize, ties, champion }
                 fontFamily: 'DMSerif',
                 fontSize: '78px',
                 lineHeight: 1,
-                color: BRASS_2,
+                color: INK,
               }}
             >
               {champion.name}
@@ -254,7 +250,7 @@ export function GoatCard({ phase, roundName, turnout, roomSize, ties, champion }
                 fontFamily: 'DMSerif',
                 fontSize: '27px',
                 fontStyle: 'italic',
-                color: CREAM_3,
+                color: INK_2,
               }}
             >
               {champion.team} · {champion.record}
@@ -270,7 +266,7 @@ export function GoatCard({ phase, roundName, turnout, roomSize, ties, champion }
                   flexDirection: 'column',
                   paddingBottom: '16px',
                   marginBottom: '16px',
-                  borderBottom: i < ties.length - 1 ? `1px solid ${RULE}` : 'none',
+                  borderBottom: i < ties.length - 1 ? `1px solid ${PAPER_3}` : 'none',
                 }}
               >
                 <Side seed={t.seedA} name={t.nameA} won={t.wonA} decided={decided && (t.wonA || t.wonB) === true} />
@@ -279,18 +275,12 @@ export function GoatCard({ phase, roundName, turnout, roomSize, ties, champion }
             ))}
           </div>
         ) : (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-            }}
-          >
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
             <div
               style={{
                 display: 'flex',
-                background: CARD,
-                color: INK,
+                background: INK,
+                color: PAPER,
                 fontFamily: 'DMSerif',
                 fontSize: '34px',
                 padding: '22px 30px',

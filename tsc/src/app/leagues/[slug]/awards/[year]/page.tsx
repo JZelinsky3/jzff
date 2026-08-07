@@ -2,8 +2,6 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { loadSeasonAwards } from '@/lib/seasonAwards'
-import { BackButton } from '@/components/BackButton'
-import { SiteFooter } from '@/components/SiteFooter'
 import styles from '../awards.module.css'
 
 export const dynamic = 'force-dynamic'

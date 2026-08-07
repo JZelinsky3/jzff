@@ -161,11 +161,18 @@ export function MobileSiteMenu({
     return true
   })
 
-  // The public share pages (/see/...) carry their own header with a nav
-  // button in the layout, so a second trigger floating over them would be
-  // two menus on one screen. Hooks above run unconditionally; only the
-  // render bails.
-  if (pathname.startsWith('/see')) return null
+  // Surfaces that carry no site navigation of their own. /see/... has its own
+  // header with a nav button, so a second trigger would be two menus on one
+  // screen. The offseason forms (the ballot, the bracket, the awards sheet)
+  // are single-purpose things somebody opens from a link in the group chat:
+  // there is nowhere to navigate to and the trigger is only ever a mis-tap
+  // waiting to happen. Hooks above run unconditionally; only the render bails.
+  const bare =
+    pathname.startsWith('/see') ||
+    pathname.startsWith('/goat') ||
+    pathname.startsWith('/ballot') ||
+    /^\/leagues\/[^/]+\/awards(\/|$)/.test(pathname)
+  if (bare) return null
 
   return (
     <div ref={rootRef} className={`msm-root${isLanding ? ' msm-root--landing' : ''}${open ? ' is-open' : ''}`}>

@@ -124,6 +124,7 @@ export default async function GoatPage({ params }: { params: Promise<{ token: st
   const votes = await readVotes(league.id)
   const next = currentRound(state.results)
   const nextName = next ? ROUNDS.find((r) => r.id === next)?.name : null
+  const started = Object.keys(state.results).length > 0
 
   return (
     <div className="gt">
@@ -136,18 +137,23 @@ export default async function GoatPage({ params }: { params: Promise<{ token: st
           </div>
         </div>
         <div className="gt-stage">
+          {nextName && (
+            <div className="gt-standby">
+              <div className="gt-kicker">Nothing to vote on yet</div>
+              <h2>{started ? `${nextName} hasn't opened.` : 'The bracket is set.'}</h2>
+              <p>
+                {started
+                  ? `Voting is closed between rounds. When Joey opens ${nextName.toLowerCase()}, this same link turns into the card. Nothing to do until then.`
+                  : `Sixteen team-seasons, seeded on resume. When Joey opens ${nextName.toLowerCase()}, this same link turns into the card and you call all eight games.`}
+              </p>
+            </div>
+          )}
           <BracketView
             results={state.results}
             votes={votes}
             revealed={state.revealed}
             openRound={null}
           />
-          {nextName && (
-            <p className="gt-note">
-              Voting is closed between rounds. Joey opens {nextName.toLowerCase()} when
-              the league has had a night to argue about the last one.
-            </p>
-          )}
         </div>
         <div className="gt-foot">PA Milk Society · sixteen teams · one winner</div>
       </div>

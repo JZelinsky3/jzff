@@ -106,16 +106,29 @@ export function RoomView({
               </div>
             )}
 
-            <div className="gtr-row">
-              {!champion && !live && next && (
+            {/* Nothing happens on the public link until a round is open, and
+                that was the one step easy to walk past. So it is spelled out
+                rather than sitting as one button among six. */}
+            {!champion && !live && next && (
+              <div className="gtr-next">
+                <div className="gt-kicker">Next step</div>
+                <h3>Open {ROUNDS.find((r) => r.id === next)?.name}</h3>
+                <p>
+                  The share link shows a read-only bracket until a round is
+                  open. Open one and the same link turns into the voting card
+                  for everybody holding it.
+                </p>
                 <button
                   className="gt-btn"
                   disabled={pending}
-                  onClick={() => run(() => openRound(leagueId, next), `${ROUNDS.find((r) => r.id === next)?.name} is open.`)}
+                  onClick={() => run(() => openRound(leagueId, next), `${ROUNDS.find((r) => r.id === next)?.name} is open. The link is live.`)}
                 >
-                  Open {ROUNDS.find((r) => r.id === next)?.name}
+                  Open {ROUNDS.find((r) => r.id === next)?.name} for voting
                 </button>
-              )}
+              </div>
+            )}
+
+            <div className="gtr-row">
               {live && (
                 <>
                   <button
