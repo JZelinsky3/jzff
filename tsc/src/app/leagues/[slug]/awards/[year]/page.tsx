@@ -32,11 +32,28 @@ export async function generateMetadata({
   const league = await loadLeague(slug)
   const title = `${year} awards · ${league.name}`
   const description = `Every ${year} trophy that settles itself: bench points left sitting, schedule luck, the closest game of the year, and the worst score that still won.`
+  const url = `https://thesundaychronicle.app/leagues/${slug}/awards/${year}/`
+  // Rendered from the same loader the page uses, so the card can never sell a
+  // winner the page does not show.
+  const image = `/api/og/awards/${slug}/${year}`
   return {
     title,
     description,
-    openGraph: { type: 'article', title, description, siteName: 'The Sunday Chronicle' },
-    twitter: { card: 'summary_large_image' as const, title, description },
+    alternates: { canonical: url },
+    openGraph: {
+      type: 'article',
+      url,
+      title,
+      description,
+      siteName: 'The Sunday Chronicle',
+      images: [{ url: image, width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image' as const,
+      title,
+      description,
+      images: [image],
+    },
   }
 }
 

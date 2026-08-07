@@ -347,13 +347,22 @@ export function computeAwards(input: AwardsInput): Award[] {
 
   const wasted = [...games].filter((g) => g.points < g.opponentPoints).sort((a, b) => b.points - a.points)[0]
   if (wasted) {
+    // Whether that score would have won any other game that week is a fact
+    // about the week, not something to assert: some seasons it is the best
+    // score on the board and some seasons it is third.
+    const sameWeek = games.filter((g) => g.week === wasted.week && g.managerId !== wasted.managerId)
+    const beatenBy = sameWeek.filter((g) => g.points > wasted.points).length
+    const detail =
+      beatenBy === 1
+        ? `Week ${wasted.week}. The second-best score in the whole league that week, and it drew the only team that beat it: ${nameOf(wasted.opponentId)}, ${one(wasted.opponentPoints)}.`
+        : `Week ${wasted.week}. ${one(wasted.points)} points, beaten by ${nameOf(wasted.opponentId)} scoring ${one(wasted.opponentPoints)}. ${beatenBy} other team${beatenBy === 1 ? '' : 's'} in the league scored higher that week.`
     awards.push({
       key: 'wasted',
       title: 'Wasted Effort',
       kicker: 'Best score that still lost',
       winner: nameOf(wasted.managerId),
       value: one(wasted.points),
-      detail: `Week ${wasted.week}. ${one(wasted.points)} points would have beaten every other team in the league that week, and it ran into ${nameOf(wasted.opponentId)} scoring ${one(wasted.opponentPoints)}.`,
+      detail,
       runners: [],
     })
   }

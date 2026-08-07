@@ -17,10 +17,15 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   const { token } = await params
   const league = await leagueForToken(token)
   if (!league) {
+    // Still carries a card: the image route renders a "wrong door" of its own,
+    // which beats a dead link unfurling into nothing at all.
+    const dead = `/api/og/goat/${encodeURIComponent(token)}`
     return {
       title: 'Wrong door',
       description: 'This bracket link is not the live one. Ask Joey for the one he sent the group.',
       robots: { index: false, follow: false },
+      openGraph: { type: 'website', title: 'Wrong door', images: [{ url: dead, width: 1200, height: 630 }] },
+      twitter: { card: 'summary_large_image' as const, title: 'Wrong door', images: [dead] },
     }
   }
 
@@ -43,12 +48,26 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
         description: 'Sixteen team-seasons since 2019, seeded by resume. The room decides the rest.',
       }
 
+  // The token rides into the image route, which resolves it again itself
+  // rather than trusting a phase in a query string.
+  const image = `/api/og/goat/${encodeURIComponent(token)}`
   return {
     title: copy.title,
     description: copy.description,
     robots: { index: false, follow: false },
-    openGraph: { type: 'website', title: copy.title, description: copy.description, siteName: 'The Sunday Chronicle' },
-    twitter: { card: 'summary_large_image' as const, title: copy.title, description: copy.description },
+    openGraph: {
+      type: 'website',
+      title: copy.title,
+      description: copy.description,
+      siteName: 'The Sunday Chronicle',
+      images: [{ url: image, width: 1200, height: 630, alt: copy.title }],
+    },
+    twitter: {
+      card: 'summary_large_image' as const,
+      title: copy.title,
+      description: copy.description,
+      images: [image],
+    },
   }
 }
 
