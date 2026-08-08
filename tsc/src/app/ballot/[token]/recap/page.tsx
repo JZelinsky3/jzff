@@ -1,13 +1,11 @@
 import Link from 'next/link'
 import { PAMS_ROSTER, SEASON, buildRecaps } from '@/lib/winBallot'
 import { leagueForToken, readBallots, readBoard, readVotes } from '../../actions'
-import { BoardCard, ManagerCard } from '../../recap-card'
+import { RecapClient } from '../../recap-client'
 import '../../ballot.css'
 import './recap.css'
 
 export const dynamic = 'force-dynamic'
-
-const anchor = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 
 export async function generateMetadata({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
@@ -46,9 +44,10 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
  * The recap, as a page rather than twelve screenshots.
  *
  * Same public token as the ballot, one level down, so the group chat gets a
- * second link and no second account. Sealed until the room is opened: the
- * cards carry who projected what, which is the whole point of the ballot
- * being sealed in the first place.
+ * second link and no second account. One card at a time, picked by name, with
+ * the name in the hash so a single card is still linkable. Sealed until the
+ * room is opened: the cards carry who projected what, which is the whole
+ * point of the ballot being sealed in the first place.
  */
 export default async function RecapPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
@@ -93,9 +92,9 @@ export default async function RecapPage({ params }: { params: Promise<{ token: s
   return (
     <div className="wb">
       <div className="wb-shell rp-shell">
-        <div className="wb-card" id="top" style={{ marginTop: '1.2rem' }}>
+        <div className="wb-card" style={{ marginTop: '1.2rem' }}>
           <div className="wb-card-top"><span>PA Milk Society</span><span>Recap · {SEASON}</span></div>
-          <h1>Twelve cards, <em>one page.</em></h1>
+          <h1>Twelve cards, <em>one at a time.</em></h1>
           <div className="wb-card-sub">
             {board.ballotCount} ballot{board.ballotCount === 1 ? '' : 's'} set the lines ·{' '}
             {votes.length} card{votes.length === 1 ? '' : 's'} took a side
@@ -106,34 +105,17 @@ export default async function RecapPage({ params }: { params: Promise<{ token: s
           <p>
             Every line came out of the preseason ballots
             {board.basis === 'outsiders' ? ', with nobody counted on their own season' : ''}.
-            Below is the board, then a card apiece: who projected what, where the line
-            landed against the model, and the side the room took once the number was up.
+            Pick a name for their card: who projected what, where the line landed
+            against the model, and the side the room took once the number was up. The
+            board is the other view, and its rows open a card too.
           </p>
           <p className="rp-order">
-            Ordered by the line. Same line, higher average goes first; same again, the
-            over/under settles it.
+            Names run in board order. Same line, higher average goes first; same again,
+            the over/under settles it.
           </p>
         </div>
 
-        <BoardCard recaps={recaps} ballotCount={board.ballotCount} href={(n) => `#${anchor(n)}`} />
-
-        <nav className="rp-jump" aria-label="Jump to a manager">
-          {recaps.map((r) => (
-            <a key={r.manager.name} href={`#${anchor(r.manager.name)}`}>{r.manager.name}</a>
-          ))}
-        </nav>
-
-        <div className="rp-stack">
-          {recaps.map((r, i) => (
-            <div className="rp-slot" key={r.manager.name}>
-              <div className="rp-no">
-                {i + 1} of {recaps.length}
-                <a href="#top" className="rp-top">back to the board</a>
-              </div>
-              <ManagerCard recap={r} id={anchor(r.manager.name)} />
-            </div>
-          ))}
-        </div>
+        <RecapClient recaps={recaps} ballotCount={board.ballotCount} />
 
         <div className="wb-foot" style={{ marginTop: '2rem' }}>
           <Link className="wb-linkish" href={`/ballot/${token}`}>The board and the props</Link>

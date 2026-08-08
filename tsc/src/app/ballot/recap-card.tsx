@@ -5,11 +5,11 @@ import { GAMES, asRecord, type ManagerRecap } from '@/lib/winBallot'
  *
  * Its own masthead and footer, fixed layout, nothing that needs the page
  * around it to make sense: the room screenshots these one at a time, and the
- * recap page stacks twelve of them. A ballot number means nothing on its own,
+ * recap page picks through them by name. A ballot number means nothing on its own,
  * so every card carries the projections behind the line, the side the room
  * took once the line was up, and the record it was all guessed against.
  */
-export function ManagerCard({ recap, id }: { recap: ManagerRecap; id?: string }) {
+export function ManagerCard({ recap }: { recap: ManagerRecap }) {
   const m = recap.manager
   // Ballots land on whole numbers, so the distribution is a column per win
   // total. A value sits at the middle of its column.
@@ -25,7 +25,7 @@ export function ManagerCard({ recap, id }: { recap: ManagerRecap; id?: string })
   const overPct = recap.cast ? (recap.over / recap.cast) * 100 : 50
 
   return (
-    <div className="mr" id={id}>
+    <div className="mr">
       <div className="mr-head">
         <div className="mr-head-main">
           <div className="mr-kicker">PA Milk Society · 2026 win totals</div>
