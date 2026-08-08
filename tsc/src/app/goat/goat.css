@@ -177,12 +177,19 @@
 
 /* Figures strip: four numbers, tabular so the two cards line up column
    for column when you scroll between them. */
+/* Two by two rather than four across: the two middle figures each carry a
+   line of rank context, and that does not fit in a quarter of a phone. */
 .gt-figs {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: .2rem;
-  margin: .55rem .8rem; padding: .45rem 0;
+  display: grid; grid-template-columns: 1fr 1fr; gap: .5rem .7rem;
+  margin: .55rem .8rem; padding: .5rem 0;
   border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
 }
-.gt-fig { display: flex; flex-direction: column; gap: .06rem; }
+.gt-fig { display: flex; flex-direction: column; gap: .04rem; min-width: 0; }
+.gt-fig i {
+  font-style: normal; font-family: var(--gt-mono);
+  font-size: .46rem; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--green);
+}
 .gt-fig b {
   font-family: var(--gt-mono); font-size: .9rem; font-weight: 700;
   font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1;
@@ -194,7 +201,6 @@
 }
 /* The scoring figure needs two words to mean anything, so it gets the room
    and the other three tighten up around it. */
-.gt-figs { grid-template-columns: .85fr .9fr 1.3fr .95fr; }
 
 /* ── Why it is this seed ──
    The lineup describes the roster; this says what actually put the team in the
@@ -450,6 +456,7 @@
 /* Wider than a phone: the two teams can sit side by side. */
 @media (min-width: 46rem) {
   .gt-shell { max-width: 44rem; }
+  .gt-figs { grid-template-columns: repeat(4, 1fr); }
   .gt-pair { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; align-items: start; padding-bottom: 0; }
   .gt-review, .gt-names { padding-bottom: 0; }
   .gt-vs { grid-column: 1 / -1; order: -1; }

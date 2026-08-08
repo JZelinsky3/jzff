@@ -7,6 +7,13 @@ import {
 } from '@/lib/greatestTeam'
 import { submitBallot } from './actions'
 
+/** 1 -> "1st". Used for the rank context under the figures. */
+function ordinal(n: number): string {
+  const t = n % 100
+  if (t >= 11 && t <= 13) return `${n}th`
+  return `${n}${['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`
+}
+
 /**
  * One round's card, one game per screen. The deck is client-only (see
  * ./vote-client) because it restores a saved draft from the device on first
@@ -312,11 +319,27 @@ function TeamCard({ team, picked, onPick }: { team: GoatTeam; picked: boolean; o
         <div className="gt-team-team">&ldquo;{team.team}&rdquo;</div>
       </div>
 
+      {/* Every number that isn't self-explaining carries its rank, because
+          "+17%" means nothing until you know whether that is good. */}
       <div className="gt-figs">
-        <div className="gt-fig"><b>{record(team)}</b><span>record</span></div>
-        <div className="gt-fig"><b>{pts(team.ppg)}</b><span>a week</span></div>
-        <div className="gt-fig gt-fig--wide"><b>{vsLeague(team.index)}</b><span>vs league avg<br />that season</span></div>
-        <div className="gt-fig"><b>{team.high}</b><span>best wk</span></div>
+        <div className="gt-fig">
+          <b>{record(team)}</b>
+          <span>record</span>
+        </div>
+        <div className="gt-fig">
+          <b>{pts(team.ppg)}</b>
+          <span>a week</span>
+          <i>{ordinal(team.ppgRank)} of {team.seasonTeams} that year</i>
+        </div>
+        <div className="gt-fig">
+          <b>{vsLeague(team.index)}</b>
+          <span>vs league avg</span>
+          <i>{ordinal(team.indexRank)} best of 86 ever</i>
+        </div>
+        <div className="gt-fig">
+          <b>{team.high}</b>
+          <span>best week</span>
+        </div>
       </div>
 
       {/* Why this team is this seed. The lineup below describes the roster; it
