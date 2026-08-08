@@ -809,3 +809,30 @@
   font-family: var(--wb-mono); font-size: .5rem; font-weight: 700;
   letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
 }
+
+/* ── Picking a card. Lives here, not with the room, because the public recap
+   page picks through the same twelve and never loads room.css. ── */
+.mr-hint {
+  margin-left: .5rem; color: var(--ink-3); opacity: .8;
+  letter-spacing: .12em; text-transform: none; font-weight: 400;
+}
+.mr-modes { display: flex; gap: .4rem; margin-bottom: .6rem; }
+.mr-picker { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .9rem; }
+.mr-pick {
+  /* A thumb has to land on these on a phone, so they carry a real tap target
+     rather than the chip height the room's read-only chips use. */
+  padding: .4rem .65rem; min-height: 40px;
+  background: transparent; border: 1px solid var(--rule); color: var(--ink-3);
+  font-family: var(--wb-mono); font-size: .62rem; font-weight: 700;
+  letter-spacing: .09em; text-transform: uppercase;
+}
+.mr-pick:hover { border-color: var(--carbon); color: var(--carbon); }
+.mr-pick.is-on { background: var(--carbon); border-color: var(--carbon); color: var(--on-carbon); }
+.mr-mode {
+  flex: 1; min-height: 38px; padding: .35rem .5rem;
+  background: transparent; border: 1.5px solid var(--rule); color: var(--ink-2);
+  font-family: var(--wb-mono); font-size: .6rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.mr-mode:hover { border-color: var(--carbon); color: var(--carbon); }
+.mr-mode.is-on { background: var(--carbon); border-color: var(--carbon); color: var(--on-carbon); }
