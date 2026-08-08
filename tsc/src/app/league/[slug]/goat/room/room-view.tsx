@@ -9,6 +9,7 @@ import {
   breakTie, clearVote, closeVoting, ensureGoatToken, openRound, reopenRound,
   setRevealed, settleOpenRound,
 } from '@/app/goat/actions'
+import { ResultsCard } from './results-card'
 
 type State = { results: Results; openRound: RoundId | null; revealed: boolean }
 
@@ -156,6 +157,9 @@ export function RoomView({
 
           {/* ── The open round, game by game ── */}
           {live && <RoundTallies bracket={bracket} round={live} votes={votes} pending={pending} leagueId={leagueId} run={run} />}
+
+          {/* ── The picture to send the group ── */}
+          <ResultsCard results={state.results} votes={votes} />
 
           {/* ── Cards in ── */}
           {live && <Cards leagueId={leagueId} round={live} votes={votes} pending={pending} run={run} />}

@@ -73,3 +73,112 @@
 }
 .gtr-card-row b { font-family: var(--gt-serif); font-weight: 400; font-size: 1rem; color: var(--ink); }
 .gtr-card-row .gt-review-edit { margin-left: 0; }
+
+/* ── Round picker for the shareable card ── */
+.gtr-picker { display: flex; flex-wrap: wrap; gap: .35rem; padding: .7rem 0 .2rem; }
+.gtr-pick {
+  padding: .4rem .6rem;
+  font-family: var(--gt-mono); font-size: .52rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink-2); background: var(--field);
+  box-shadow: inset 0 0 0 1.5px var(--rule);
+}
+.gtr-pick.is-on { background: var(--green); color: #fff; box-shadow: none; }
+.gtr-pick:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ══════════════════════════════════════════════════════════════════
+   The results card. This block is the thing that gets screenshotted, so
+   it carries its own masthead and footer and never relies on anything
+   around it. Sized to land cleanly in a phone screenshot.
+   ══════════════════════════════════════════════════════════════════ */
+.rc {
+  margin-top: .7rem;
+  background: var(--field);
+  border: 2px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--paper-3);
+}
+
+.rc-head {
+  text-align: center;
+  padding: .9rem .8rem .75rem;
+  border-bottom: 2px solid var(--ink);
+}
+.rc-kicker {
+  font-family: var(--gt-mono); font-size: .52rem; font-weight: 700;
+  letter-spacing: .22em; text-transform: uppercase; color: var(--green);
+}
+.rc-head h3 {
+  margin: .3rem 0 .18rem;
+  font-family: var(--gt-serif); font-weight: 400;
+  font-size: clamp(1.5rem, 7vw, 2rem); line-height: 1.04;
+}
+.rc-sub {
+  font-family: var(--gt-mono); font-size: .53rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+}
+
+.rc-games { list-style: none; margin: 0; padding: 0; }
+.rc-game {
+  padding: .5rem .7rem;
+  border-bottom: 1px solid var(--rule);
+}
+.rc-game:last-child { border-bottom: 0; }
+
+.rc-side {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .2rem 0;
+}
+.rc-seed {
+  flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.35rem; height: 1.35rem;
+  font-family: var(--gt-mono); font-size: .62rem; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--paper-3); color: var(--ink-2);
+}
+.rc-name { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.rc-name b {
+  font-family: var(--gt-serif); font-weight: 400; font-size: 1.06rem;
+  line-height: 1.15; color: var(--ink-2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rc-name em {
+  font-style: normal; font-family: var(--gt-mono);
+  font-size: .46rem; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Votes: a proportional bar with the count hard right, so the margin reads
+   before the number does. */
+.rc-votes {
+  flex: none; display: flex; align-items: center; gap: .4rem;
+  width: 4.6rem; justify-content: flex-end;
+}
+.rc-bar {
+  height: .5rem; background: var(--rule); min-width: 2px;
+  max-width: 3.2rem; flex: none;
+}
+.rc-votes b {
+  font-family: var(--gt-mono); font-size: .82rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--ink-3);
+  min-width: .9rem; text-align: right;
+}
+
+/* Advancing. */
+.rc-side.is-won .rc-seed { background: var(--green); color: #fff; }
+.rc-side.is-won .rc-name b { color: var(--ink); font-weight: 600; }
+.rc-side.is-won .rc-bar { background: var(--green); }
+.rc-side.is-won .rc-votes b { color: var(--green); }
+
+/* Out. */
+.rc-side.is-lost .rc-name b { text-decoration: line-through; text-decoration-color: var(--rule); opacity: .65; }
+.rc-side.is-lost .rc-name em,
+.rc-side.is-lost .rc-seed { opacity: .55; }
+
+.rc-foot {
+  text-align: center;
+  padding: .6rem .8rem .7rem;
+  border-top: 2px solid var(--ink);
+  font-family: var(--gt-mono); font-size: .53rem; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--green);
+}
