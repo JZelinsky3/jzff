@@ -44,8 +44,9 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
  * The recap, as a page rather than twelve screenshots.
  *
  * Same public token as the ballot, one level down, so the group chat gets a
- * second link and no second account. One card at a time, picked by name, with
- * the name in the hash so a single card is still linkable. Sealed until the
+ * second link and no second account. Opens on the board; a name opens that
+ * manager's card, one at a time, with the name in the hash so a single card
+ * is still linkable. Sealed until the
  * room is opened: the cards carry who projected what, which is the whole
  * point of the ballot being sealed in the first place.
  */
@@ -105,9 +106,9 @@ export default async function RecapPage({ params }: { params: Promise<{ token: s
           <p>
             Every line came out of the preseason ballots
             {board.basis === 'outsiders' ? ', with nobody counted on their own season' : ''}.
-            Pick a name for their card: who projected what, where the line landed
-            against the model, and the side the room took once the number was up. The
-            board is the other view, and its rows open a card too.
+            Here is the board. Tap a name on it, or pick one below it, for that
+            manager&rsquo;s card: who projected what, where the line landed against the
+            model, and the side the room took once the number was up.
           </p>
           <p className="rp-order">
             Names run in board order. Same line, higher average goes first; same again,

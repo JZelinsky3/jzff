@@ -10,8 +10,8 @@ const anchor = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
  * The recap, one card at a time.
  *
  * Twelve cards stacked is a scroll nobody finishes, so the page works the way
- * the room does: pick a name, read that card. The board is the other view,
- * and its rows are the other way in.
+ * the room does. It opens on the board, which is the thing everybody wants
+ * first, and a name on it opens that manager's card.
  *
  * The name rides in the hash, so a card can still be linked to on its own
  * (/ballot/<token>/recap#charlie) without the page being a list.
@@ -22,7 +22,9 @@ export function RecapClient({
   recaps: ManagerRecap[]
   ballotCount: number
 }) {
-  const [mode, setMode] = useState<'one' | 'all'>('one')
+  // Opens on the board. Landing on one manager's card picks a favourite the
+  // page has no business picking, and the board is what the league came for.
+  const [mode, setMode] = useState<'one' | 'all'>('all')
   const [who, setWho] = useState(recaps[0]?.manager.name ?? '')
 
   // The hash is read after mount rather than on the server, which never sees
@@ -57,17 +59,17 @@ export function RecapClient({
       <div className="mr-modes">
         <button
           type="button"
-          className={`mr-mode${mode === 'one' ? ' is-on' : ''}`}
-          onClick={() => setMode('one')}
-        >
-          One manager
-        </button>
-        <button
-          type="button"
           className={`mr-mode${mode === 'all' ? ' is-on' : ''}`}
           onClick={() => setMode('all')}
         >
           The board
+        </button>
+        <button
+          type="button"
+          className={`mr-mode${mode === 'one' ? ' is-on' : ''}`}
+          onClick={() => setMode('one')}
+        >
+          One manager
         </button>
       </div>
 
