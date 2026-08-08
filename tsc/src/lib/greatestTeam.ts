@@ -14,11 +14,26 @@ export const EDITION = 2026
 /** How many managers the room expects, so a round can report "9 of 12 in". */
 export const ROOM_SIZE = 12
 /**
- * Weeks a player must have been started to claim a lineup slot. Set at six of
- * a fourteen-game season: enough that the slot describes the year rather than
- * a hot month.
+ * Starts a player needs to claim one of the six fixed lineup slots. Enough that
+ * the slot describes the season rather than a hot month.
+ *
+ * Hard floor: a fixed slot with nobody above it renders EMPTY rather than
+ * reaching down for a three-game rental, because "never settled on a
+ * quarterback" is the true and more interesting statement. Two slots in the
+ * field come out empty that way. The flex is exempt, since a flex genuinely is
+ * a rotating spot.
  */
 export const MIN_STARTS = 6
+
+/**
+ * What an average STARTED player at each position puts up in a week in this
+ * league, across 2019-2025. Used to decide whether a bench player was worth
+ * mentioning: a flat points-per-game bar would fill every card with backup
+ * quarterbacks, who out-score skill positions by construction.
+ */
+export const POSITION_PAR: Readonly<Record<string, number>> = {
+  QB: 22, WR: 13.1, RB: 13, TE: 10, K: 8, DEF: 8,
+}
 
 export type Finish = 'champion' | 'runner-up' | 'rank'
 
@@ -77,6 +92,15 @@ export type GoatTeam = {
    * across the season. Counting only the weeks he was started undervalued exactly
    * the players worth mentioning (2019 Mason's Terry McLaurin scored 113 across
    * ten weeks but only 44 of them in a starting slot).
+   *
+   * Where a team HAS no depth, the line says so and may name the best cameo with
+   * its sample attached — 2019 Joey's two-week Davante Adams is more honest than
+   * promoting a four-week defence just because it cleared the floor.
+   *
+   * The line also has to match the seed. A thin bench in 2019 is a fact about a
+   * fourteen-team league, not a fault of the team that had it, and writing the
+   * top seed's card as a list of what it lacked argues the opposite of what the
+   * seeding says.
    */
   case: string
   /**
@@ -100,7 +124,7 @@ export type GoatTeam = {
    *       among every player rostered anywhere in the league that year under
    *       the league's own scoring. Null if they were never ranked.
    */
-  lineup: { s: string; n: string; p: string; ppg: number; g: number; rk: string | null }[]
+  lineup: { s: string; n: string | null; p: string; ppg: number; g: number; rk: string | null }[]
 }
 
 /**
@@ -133,180 +157,180 @@ export function resume(t: { wins: number; losses: number; ties: number; index: n
 
 export const FIELD: readonly GoatTeam[] = [
   { seed: 1, year: 2019, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'On Jah', wins: 9, losses: 4, ties: 0, ppg: 137.3, index: 1.184, resume: 80.7, finish: 'champion', finalRank: 1, regularRank: 2, high: 191.8, low: 78.6, streak: 5, ppgRank: 2, seasonTeams: 14, indexRank: 2, recRank: 11, scoRank: 2, postRank: 1,
-    case: 'The thinnest bench in the field: the Ravens defence at 14.3 a game was the only thing on it worth starting, and it only played four weeks. Started 2-2, then went 7-2 the rest of the way and closed on five straight.',
+    case: 'Picked up Davante Adams for the stretch and got 22.4 a game out of four starts, then added Terry McLaurin for the playoff run and started him in the final. Started 2-2, went 7-2 the rest of the way, then won both playoff games to take the first title there has ever been.',
     lineup: [
-      { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 31.6, g: 12, rk: 'QB1' },
-      { s: 'RB', n: 'Derrick Henry', p: 'RB', ppg: 18.6, g: 12, rk: 'RB5' },
-      { s: 'RB', n: 'Austin Ekeler', p: 'RB', ppg: 17.2, g: 10, rk: 'RB3' },
-      { s: 'WR', n: 'Sammy Watkins', p: 'WR', ppg: 12.9, g: 8, rk: 'WR41' },
-      { s: 'WR', n: 'JuJu Smith-Schuster', p: 'WR', ppg: 12.2, g: 8, rk: 'WR44' },
-      { s: 'TE', n: 'Darren Waller', p: 'TE', ppg: 12.4, g: 9, rk: 'TE2' },
-      { s: 'FLEX', n: 'D.J. Chark', p: 'WR', ppg: 13.2, g: 7, rk: 'WR19' },
+      { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 33, g: 14, rk: 'QB1' },
+      { s: 'RB', n: 'Derrick Henry', p: 'RB', ppg: 17.8, g: 13, rk: 'RB7' },
+      { s: 'RB', n: 'Austin Ekeler', p: 'RB', ppg: 16.4, g: 12, rk: 'RB4' },
+      { s: 'WR', n: 'Sammy Watkins', p: 'WR', ppg: 12.9, g: 8, rk: 'WR39' },
+      { s: 'WR', n: 'JuJu Smith-Schuster', p: 'WR', ppg: 12.2, g: 8, rk: 'WR49' },
+      { s: 'TE', n: 'Darren Waller', p: 'TE', ppg: 12.7, g: 11, rk: 'TE5' },
+      { s: 'FLEX', n: 'D.J. Chark', p: 'WR', ppg: 13.2, g: 7, rk: 'WR22' },
     ] },
   { seed: 2, year: 2019, managerId: 'eaeedefa-2711-4d93-b0ce-a795c5f4d55a', manager: 'Mason', team: 'Mdog346', wins: 11, losses: 2, ties: 0, ppg: 138.1, index: 1.19, resume: 79.8, finish: 'runner-up', finalRank: 2, regularRank: 1, high: 183.9, low: 111.4, streak: 5, ppgRank: 1, seasonTeams: 14, indexRank: 1, recRank: 2, scoRank: 1, postRank: 8,
-    case: 'Julio Jones at 15.6 a game and Terry McLaurin at 11.3 across ten weeks, neither of whom could get in, with Dede Westbrook and the Steelers defence behind them. Won eight of nine from week three and was never held under 111 all season.',
+    case: 'Ryan Tannehill averaged 27 a game as the backup quarterback and Aaron Jones 22.6 as a spare back, neither of them ever needed. Won eight of nine from week three and was never held under 111 all season.',
     lineup: [
       { s: 'QB', n: 'Dak Prescott', p: 'QB', ppg: 24.9, g: 8, rk: 'QB4' },
-      { s: 'RB', n: 'Nick Chubb', p: 'RB', ppg: 17.8, g: 9, rk: 'RB8' },
-      { s: 'RB', n: 'Saquon Barkley', p: 'RB', ppg: 15.5, g: 9, rk: 'RB17' },
-      { s: 'WR', n: 'Amari Cooper', p: 'WR', ppg: 16.9, g: 12, rk: 'WR7' },
-      { s: 'WR', n: 'D.J. Moore', p: 'WR', ppg: 17.5, g: 9, rk: 'WR8' },
-      { s: 'TE', n: 'Zach Ertz', p: 'TE', ppg: 13.5, g: 12, rk: 'TE4' },
-      { s: 'FLEX', n: 'Aaron Jones', p: 'RB', ppg: 22.6, g: 4, rk: 'RB6' },
+      { s: 'RB', n: 'Saquon Barkley', p: 'RB', ppg: 19.4, g: 11, rk: 'RB12' },
+      { s: 'RB', n: 'Nick Chubb', p: 'RB', ppg: 17.2, g: 11, rk: 'RB8' },
+      { s: 'WR', n: 'Amari Cooper', p: 'WR', ppg: 15.2, g: 14, rk: 'WR10' },
+      { s: 'WR', n: 'D.J. Moore', p: 'WR', ppg: 16.3, g: 11, rk: 'WR12' },
+      { s: 'TE', n: 'Zach Ertz', p: 'TE', ppg: 13.3, g: 14, rk: 'TE2' },
+      { s: 'FLEX', n: 'Julio Jones', p: 'WR', ppg: 20.4, g: 7, rk: 'WR4' },
     ] },
   { seed: 3, year: 2021, managerId: 'dca75bbf-9c3e-4576-b6c4-845e6dc20030', manager: 'Chris', team: 'Stafford University', wins: 10, losses: 4, ties: 0, ppg: 140.4, index: 1.153, resume: 78.7, finish: 'champion', finalRank: 1, regularRank: 1, high: 200.6, low: 81.2, streak: 5, ppgRank: 2, seasonTeams: 12, indexRank: 5, recRank: 4, scoRank: 5, postRank: 1,
-    case: 'James Conner averaged 17 a game as the third back and Damien Harris 12.2 behind him, with Ryan Tannehill also on 17 at backup quarterback. Lost its first two, then won seven of the next nine.',
+    case: 'Damien Harris gave 13.8 a game across fourteen weeks as the fourth back. Lost its first two, then won seven of the next nine.',
     lineup: [
-      { s: 'QB', n: 'Matthew Stafford', p: 'QB', ppg: 26.3, g: 13, rk: 'QB4' },
-      { s: 'RB', n: 'Ezekiel Elliott', p: 'RB', ppg: 15.7, g: 13, rk: 'RB7' },
-      { s: 'RB', n: 'D\'Andre Swift', p: 'RB', ppg: 17.1, g: 11, rk: 'RB10' },
-      { s: 'WR', n: 'Davante Adams', p: 'WR', ppg: 21, g: 12, rk: 'WR3' },
-      { s: 'WR', n: 'Diontae Johnson', p: 'WR', ppg: 18.4, g: 12, rk: 'WR8' },
-      { s: 'TE', n: 'Mark Andrews', p: 'TE', ppg: 16, g: 13, rk: 'TE1' },
-      { s: 'FLEX', n: 'Courtland Sutton', p: 'WR', ppg: 10.4, g: 9, rk: 'WR34' },
+      { s: 'QB', n: 'Matthew Stafford', p: 'QB', ppg: 24.6, g: 15, rk: 'QB6' },
+      { s: 'RB', n: 'Ezekiel Elliott', p: 'RB', ppg: 15.1, g: 15, rk: 'RB6' },
+      { s: 'RB', n: 'D\'Andre Swift', p: 'RB', ppg: 16.2, g: 12, rk: 'RB17' },
+      { s: 'WR', n: 'Davante Adams', p: 'WR', ppg: 22.6, g: 14, rk: 'WR2' },
+      { s: 'WR', n: 'Diontae Johnson', p: 'WR', ppg: 18, g: 14, rk: 'WR8' },
+      { s: 'TE', n: 'Mark Andrews', p: 'TE', ppg: 16.6, g: 15, rk: 'TE1' },
+      { s: 'FLEX', n: 'James Conner', p: 'RB', ppg: 20.3, g: 5, rk: 'RB7' },
     ] },
   { seed: 4, year: 2025, managerId: 'eaeedefa-2711-4d93-b0ce-a795c5f4d55a', manager: 'Mason', team: 'Rizzlers', wins: 10, losses: 4, ties: 0, ppg: 130.3, index: 1.081, resume: 72.1, finish: 'champion', finalRank: 1, regularRank: 2, high: 164.8, low: 95.4, streak: 7, ppgRank: 3, seasonTeams: 12, indexRank: 17, recRank: 4, scoRank: 9, postRank: 1,
-    case: 'Kenny Gainwell at 17.6 a game and Dallas Goedert at 11.5 across twelve weeks, both stuck behind starters. Won seven straight from week four and eight of nine overall.',
+    case: 'Kenny Gainwell averaged 16.8 a game and started three times, with Brandon Aubrey kicking every single week behind him. Won seven straight from week four and eight of nine overall.',
     lineup: [
-      { s: 'QB', n: 'Jalen Hurts', p: 'QB', ppg: 22, g: 13, rk: 'QB5' },
-      { s: 'RB', n: 'Ashton Jeanty', p: 'RB', ppg: 14.2, g: 13, rk: 'RB14' },
-      { s: 'RB', n: 'D\'Andre Swift', p: 'RB', ppg: 13.6, g: 10, rk: 'RB16' },
-      { s: 'WR', n: 'Puka Nacua', p: 'WR', ppg: 21.6, g: 12, rk: 'WR2' },
-      { s: 'WR', n: 'Stefon Diggs', p: 'WR', ppg: 12.5, g: 9, rk: 'WR26' },
-      { s: 'TE', n: 'George Kittle', p: 'TE', ppg: 13.3, g: 8, rk: 'TE16' },
-      { s: 'FLEX', n: 'Keenan Allen', p: 'WR', ppg: 10.2, g: 11, rk: 'WR27' },
+      { s: 'QB', n: 'Jalen Hurts', p: 'QB', ppg: 21.3, g: 15, rk: 'QB5' },
+      { s: 'RB', n: 'Ashton Jeanty', p: 'RB', ppg: 15.2, g: 15, rk: 'RB13' },
+      { s: 'RB', n: 'D\'Andre Swift', p: 'RB', ppg: 13.9, g: 12, rk: 'RB15' },
+      { s: 'WR', n: 'Puka Nacua', p: 'WR', ppg: 23, g: 14, rk: 'WR1' },
+      { s: 'WR', n: 'Stefon Diggs', p: 'WR', ppg: 14.3, g: 11, rk: 'WR14' },
+      { s: 'TE', n: 'George Kittle', p: 'TE', ppg: 14.5, g: 9, rk: 'TE10' },
+      { s: 'FLEX', n: 'Dallas Goedert', p: 'TE', ppg: 14.4, g: 8, rk: 'TE6' },
     ] },
   { seed: 5, year: 2021, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'Oreos', wins: 9, losses: 5, ties: 0, ppg: 142.2, index: 1.168, resume: 69.1, finish: 'runner-up', finalRank: 2, regularRank: 3, high: 189.6, low: 109.4, streak: 6, ppgRank: 1, seasonTeams: 12, indexRank: 3, recRank: 12, scoRank: 3, postRank: 8,
-    case: 'Jaylen Waddle averaged 15.3 a game for thirteen weeks and never cracked the lineup, with Elijah Mitchell on 17.3 behind him. Lost five in a row through the middle of the season and still won its last six.',
+    case: 'Jaylen Waddle at 15.5 a game across fifteen weeks and Terry McLaurin at 15.6, with Elijah Mitchell on 17.8 behind them. Lost five in a row through the middle of the season and still won its last six.',
     lineup: [
-      { s: 'QB', n: 'Kirk Cousins', p: 'QB', ppg: 20.9, g: 8, rk: 'QB13' },
-      { s: 'RB', n: 'Austin Ekeler', p: 'RB', ppg: 21.3, g: 13, rk: 'RB2' },
-      { s: 'RB', n: 'Cordarrelle Patterson', p: 'RB', ppg: 16.2, g: 8, rk: 'RB8' },
-      { s: 'WR', n: 'Cooper Kupp', p: 'WR', ppg: 25.8, g: 13, rk: 'WR1' },
-      { s: 'WR', n: 'Justin Jefferson', p: 'WR', ppg: 21.5, g: 7, rk: 'WR2' },
-      { s: 'TE', n: 'Travis Kelce', p: 'TE', ppg: 15, g: 13, rk: 'TE2' },
-      { s: 'FLEX', n: 'Tyler Lockett', p: 'WR', ppg: 13.8, g: 10, rk: 'WR15' },
+      { s: 'QB', n: 'Kirk Cousins', p: 'QB', ppg: 20, g: 10, rk: 'QB13' },
+      { s: 'RB', n: 'Austin Ekeler', p: 'RB', ppg: 21, g: 15, rk: 'RB2' },
+      { s: 'RB', n: 'Cordarrelle Patterson', p: 'RB', ppg: 13.5, g: 11, rk: 'RB9' },
+      { s: 'WR', n: 'Cooper Kupp', p: 'WR', ppg: 25.8, g: 16, rk: 'WR1' },
+      { s: 'WR', n: 'Justin Jefferson', p: 'WR', ppg: 19.7, g: 10, rk: 'WR4' },
+      { s: 'TE', n: 'Travis Kelce', p: 'TE', ppg: 16.6, g: 15, rk: 'TE2' },
+      { s: 'FLEX', n: 'Tyler Lockett', p: 'WR', ppg: 13.8, g: 10, rk: 'WR22' },
     ] },
   { seed: 6, year: 2023, managerId: 'f28186ad-c398-4bf5-a425-e387fa1e03a3', manager: 'Connie', team: 'Milk Man', wins: 8, losses: 6, ties: 0, ppg: 131.8, index: 1.086, resume: 66.4, finish: 'champion', finalRank: 1, regularRank: 3, high: 186, low: 80.1, streak: 4, ppgRank: 2, seasonTeams: 12, indexRank: 15, recRank: 13, scoRank: 8, postRank: 1,
-    case: 'Sam Howell put up 23.1 a game as the backup quarterback and Kyler Murray 19.3 behind him, with Calvin Ridley unused outside on 17.4. Lost five straight mid-season, then won four in a row to climb back in.',
+    case: 'Never settled on a quarterback: Dak Prescott and Sam Howell split the year at 23.7 and 23.1 a game and neither of them started six times. Lost five straight mid-season, then won four in a row to climb back in.',
     lineup: [
-      { s: 'QB', n: 'Dak Prescott', p: 'QB', ppg: 24, g: 5, rk: 'QB2' },
-      { s: 'RB', n: 'Travis Etienne', p: 'RB', ppg: 17.5, g: 13, rk: 'RB3' },
-      { s: 'RB', n: 'Derrick Henry', p: 'RB', ppg: 15.1, g: 13, rk: 'RB7' },
-      { s: 'WR', n: 'CeeDee Lamb', p: 'WR', ppg: 21.8, g: 13, rk: 'WR2' },
-      { s: 'WR', n: 'Deebo Samuel Sr.', p: 'WR', ppg: 17.3, g: 11, rk: 'WR15' },
-      { s: 'TE', n: 'George Kittle', p: 'TE', ppg: 13.2, g: 13, rk: 'TE3' },
-      { s: 'FLEX', n: 'Mike Williams', p: 'WR', ppg: 16.7, g: 3, rk: 'WR62' },
+      { s: 'QB', n: null, p: 'QB', ppg: 0, g: 0, rk: null },
+      { s: 'RB', n: 'Travis Etienne', p: 'RB', ppg: 17.4, g: 15, rk: 'RB2' },
+      { s: 'RB', n: 'Derrick Henry', p: 'RB', ppg: 15, g: 15, rk: 'RB10' },
+      { s: 'WR', n: 'CeeDee Lamb', p: 'WR', ppg: 23.4, g: 15, rk: 'WR1' },
+      { s: 'WR', n: 'Deebo Samuel Sr.', p: 'WR', ppg: 16.7, g: 13, rk: 'WR14' },
+      { s: 'TE', n: 'George Kittle', p: 'TE', ppg: 12.7, g: 14, rk: 'TE5' },
+      { s: 'FLEX', n: 'Calvin Ridley', p: 'WR', ppg: 22.1, g: 3, rk: 'WR25' },
     ] },
   { seed: 7, year: 2022, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'Space Mav', wins: 12, losses: 2, ties: 0, ppg: 125.9, index: 1.064, resume: 65.7, finish: 'rank', finalRank: 3, regularRank: 1, high: 170.3, low: 49.5, streak: 6, ppgRank: 3, seasonTeams: 12, indexRank: 21, recRank: 1, scoRank: 12, postRank: 12,
-    case: 'CeeDee Lamb averaged 18.8 a game and still could not get into this lineup, and Curtis Samuel gave 11.6 a week all season off the bench. Opened 8-1 and ripped off six straight from week five.',
+    case: 'Jared Goff averaged 27.8 a game across four appearances as the backup. Opened 8-1 and ripped off six straight from week five.',
     lineup: [
-      { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 24.4, g: 11, rk: 'QB6' },
-      { s: 'RB', n: 'Saquon Barkley', p: 'RB', ppg: 17.4, g: 13, rk: 'RB5' },
-      { s: 'RB', n: 'Kenneth Walker III', p: 'RB', ppg: 17.4, g: 7, rk: 'RB20' },
-      { s: 'WR', n: 'Justin Jefferson', p: 'WR', ppg: 22.1, g: 12, rk: 'WR1' },
-      { s: 'WR', n: 'Christian Kirk', p: 'WR', ppg: 15.5, g: 11, rk: 'WR10' },
-      { s: 'TE', n: 'Zach Ertz', p: 'TE', ppg: 10.4, g: 7, rk: 'TE5' },
-      { s: 'FLEX', n: 'David Montgomery', p: 'RB', ppg: 10.7, g: 6, rk: 'RB25' },
+      { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 24.4, g: 11, rk: 'QB9' },
+      { s: 'RB', n: 'Saquon Barkley', p: 'RB', ppg: 18.1, g: 14, rk: 'RB5' },
+      { s: 'RB', n: 'Kenneth Walker III', p: 'RB', ppg: 16.8, g: 8, rk: 'RB19' },
+      { s: 'WR', n: 'Justin Jefferson', p: 'WR', ppg: 22.9, g: 13, rk: 'WR1' },
+      { s: 'WR', n: 'Christian Kirk', p: 'WR', ppg: 14.7, g: 12, rk: 'WR13' },
+      { s: 'TE', n: 'Zach Ertz', p: 'TE', ppg: 10.4, g: 7, rk: 'TE11' },
+      { s: 'FLEX', n: 'CeeDee Lamb', p: 'WR', ppg: 21.3, g: 6, rk: 'WR6' },
     ] },
   { seed: 8, year: 2025, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'CHILD OF GOD', wins: 10, losses: 4, ties: 0, ppg: 139.9, index: 1.161, resume: 64.5, finish: 'rank', finalRank: 5, regularRank: 1, high: 171.3, low: 112.7, streak: 7, ppgRank: 1, seasonTeams: 12, indexRank: 4, recRank: 4, scoRank: 4, postRank: 16,
-    case: 'One useful spare all year: Jakobi Meyers at 13.9 a game across five weeks. Opened 7-2, then won seven in a row.',
+    case: 'Never settled a second back: De\'Von Achane and Jahmyr Gibbs both passed through at around 20 a game and neither started six times, with Matthew Stafford on 29.7 behind the starter. Opened 7-2, then won seven in a row.',
     lineup: [
-      { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 20.7, g: 10, rk: 'QB14' },
-      { s: 'RB', n: 'Jonathan Taylor', p: 'RB', ppg: 24, g: 13, rk: 'RB2' },
-      { s: 'RB', n: 'Christian McCaffrey', p: 'RB', ppg: 24.3, g: 4, rk: 'RB1' },
-      { s: 'WR', n: 'Jaxon Smith-Njigba', p: 'WR', ppg: 22.3, g: 13, rk: 'WR1' },
-      { s: 'WR', n: 'Rashee Rice', p: 'WR', ppg: 19.7, g: 7, rk: 'WR30' },
-      { s: 'TE', n: 'Harold Fannin Jr.', p: 'TE', ppg: 9.5, g: 6, rk: 'TE6' },
-      { s: 'FLEX', n: 'Oronde Gadsden II', p: 'TE', ppg: 7.7, g: 6, rk: 'TE18' },
+      { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 20.5, g: 11, rk: 'QB15' },
+      { s: 'RB', n: 'Jonathan Taylor', p: 'RB', ppg: 23.2, g: 14, rk: 'RB3' },
+      { s: 'RB', n: null, p: 'RB', ppg: 0, g: 0, rk: null },
+      { s: 'WR', n: 'Jaxon Smith-Njigba', p: 'WR', ppg: 22, g: 14, rk: 'WR2' },
+      { s: 'WR', n: 'Rashee Rice', p: 'WR', ppg: 18.8, g: 8, rk: 'WR35' },
+      { s: 'TE', n: 'Harold Fannin Jr.', p: 'TE', ppg: 9.5, g: 6, rk: 'TE5' },
+      { s: 'FLEX', n: 'Christian McCaffrey', p: 'RB', ppg: 22.6, g: 5, rk: 'RB1' },
     ] },
   { seed: 9, year: 2024, managerId: 'ca70f1bc-3bc8-4ab3-af35-3b3ee25c157f', manager: 'Ricci', team: 'OG CARHARTT', wins: 10, losses: 4, ties: 0, ppg: 132.4, index: 1.075, resume: 63.5, finish: 'runner-up', finalRank: 2, regularRank: 2, high: 163.7, low: 93.5, streak: 7, ppgRank: 4, seasonTeams: 12, indexRank: 18, recRank: 4, scoRank: 10, postRank: 8,
-    case: 'Tua Tagovailoa averaged 30.7 a game and was never once started. Jauan Jennings gave 15.9 a week across ten weeks behind him. Won seven straight from week five and eight of nine from week two.',
+    case: 'Tua Tagovailoa averaged 27.4 a game and was never once started. Jauan Jennings gave 15.1 across twelve weeks behind him. Won seven straight from week five and eight of nine from week two.',
     lineup: [
-      { s: 'QB', n: 'Jalen Hurts', p: 'QB', ppg: 24.2, g: 13, rk: 'QB5' },
-      { s: 'RB', n: 'Bijan Robinson', p: 'RB', ppg: 19, g: 13, rk: 'RB4' },
-      { s: 'RB', n: 'Chuba Hubbard', p: 'RB', ppg: 14.9, g: 7, rk: 'RB12' },
-      { s: 'WR', n: 'Drake London', p: 'WR', ppg: 15.2, g: 13, rk: 'WR8' },
-      { s: 'WR', n: 'Jaxon Smith-Njigba', p: 'WR', ppg: 15.9, g: 10, rk: 'WR7' },
-      { s: 'TE', n: 'George Kittle', p: 'TE', ppg: 16.7, g: 11, rk: 'TE2' },
-      { s: 'FLEX', n: 'Malik Nabers', p: 'WR', ppg: 17.4, g: 8, rk: 'WR12' },
+      { s: 'QB', n: 'Jalen Hurts', p: 'QB', ppg: 22.8, g: 14, rk: 'QB7' },
+      { s: 'RB', n: 'Bijan Robinson', p: 'RB', ppg: 19.7, g: 15, rk: 'RB3' },
+      { s: 'RB', n: 'Chuba Hubbard', p: 'RB', ppg: 17.1, g: 8, rk: 'RB12' },
+      { s: 'WR', n: 'Drake London', p: 'WR', ppg: 15.1, g: 15, rk: 'WR10' },
+      { s: 'WR', n: 'Jaxon Smith-Njigba', p: 'WR', ppg: 15.7, g: 12, rk: 'WR8' },
+      { s: 'TE', n: 'George Kittle', p: 'TE', ppg: 17.1, g: 13, rk: 'TE2' },
+      { s: 'FLEX', n: 'Malik Nabers', p: 'WR', ppg: 17.4, g: 8, rk: 'WR6' },
     ] },
   { seed: 10, year: 2020, managerId: 'ca70f1bc-3bc8-4ab3-af35-3b3ee25c157f', manager: 'Ricci', team: 'Huntingforkickers', wins: 7, losses: 6, ties: 0, ppg: 133, index: 1.067, resume: 63.2, finish: 'champion', finalRank: 1, regularRank: 4, high: 145.9, low: 90.8, streak: 2, ppgRank: 4, seasonTeams: 12, indexRank: 20, recRank: 15, scoRank: 11, postRank: 1,
-    case: 'Ben Roethlisberger averaged 23 a game for twelve weeks as the backup quarterback, with Antonio Gibson on 18.1 behind him. Never won more than two games in a row all season.',
+    case: 'Ben Roethlisberger sat on 22.2 a game for fifteen weeks, with Will Fuller at 18.3 and Antonio Gibson at 16.7 behind him. Never won more than two games in a row all season.',
     lineup: [
-      { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 23.2, g: 9, rk: 'QB11' },
-      { s: 'RB', n: 'David Johnson', p: 'RB', ppg: 12.2, g: 6, rk: 'RB26' },
-      { s: 'RB', n: 'Jerick McKinnon', p: 'RB', ppg: 9.3, g: 7, rk: 'RB29' },
-      { s: 'WR', n: 'Stefon Diggs', p: 'WR', ppg: 18.1, g: 12, rk: 'WR5' },
-      { s: 'WR', n: 'JuJu Smith-Schuster', p: 'WR', ppg: 13.9, g: 11, rk: 'WR20' },
-      { s: 'TE', n: 'Travis Kelce', p: 'TE', ppg: 20, g: 12, rk: 'TE1' },
-      { s: 'FLEX', n: 'Michael Gallup', p: 'WR', ppg: 11.8, g: 6, rk: 'WR37' },
+      { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 25.5, g: 11, rk: 'QB10' },
+      { s: 'RB', n: 'Kareem Hunt', p: 'RB', ppg: 12.3, g: 8, rk: 'RB8' },
+      { s: 'RB', n: 'David Johnson', p: 'RB', ppg: 12.2, g: 6, rk: 'RB23' },
+      { s: 'WR', n: 'Stefon Diggs', p: 'WR', ppg: 20.9, g: 15, rk: 'WR3' },
+      { s: 'WR', n: 'JuJu Smith-Schuster', p: 'WR', ppg: 14.1, g: 14, rk: 'WR17' },
+      { s: 'TE', n: 'Travis Kelce', p: 'TE', ppg: 20.9, g: 15, rk: 'TE1' },
+      { s: 'FLEX', n: 'Brandin Cooks', p: 'WR', ppg: 14.8, g: 7, rk: 'WR28' },
     ] },
   { seed: 11, year: 2023, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'Nathanael Bartholomew', wins: 11, losses: 3, ties: 0, ppg: 125.1, index: 1.031, resume: 62.5, finish: 'runner-up', finalRank: 2, regularRank: 1, high: 174, low: 87.4, streak: 4, ppgRank: 3, seasonTeams: 12, indexRank: 27, recRank: 3, scoRank: 15, postRank: 8,
-    case: 'Tony Pollard at 18.5 a game and Breece Hall at 16.8 both passed through without sticking, and the roster churned so hard that the Saints defence was the only thing on it all year. Opened 7-2 and closed on four straight.',
+    case: 'Lamar Jackson at 31.1 a game and C.J. Stroud at 24.5 both cycled through without sticking, with Nico Collins and DeVonta Smith behind them. Opened 7-2 and closed on four straight.',
     lineup: [
-      { s: 'QB', n: 'Justin Fields', p: 'QB', ppg: 21.3, g: 6, rk: 'QB15' },
-      { s: 'RB', n: 'Bijan Robinson', p: 'RB', ppg: 13.1, g: 10, rk: 'RB9' },
-      { s: 'RB', n: 'Brian Robinson', p: 'RB', ppg: 13.4, g: 7, rk: 'RB15' },
+      { s: 'QB', n: 'Justin Fields', p: 'QB', ppg: 21.3, g: 6, rk: 'QB14' },
+      { s: 'RB', n: 'Breece Hall', p: 'RB', ppg: 23, g: 6, rk: 'RB4' },
+      { s: 'RB', n: 'Bijan Robinson', p: 'RB', ppg: 13.1, g: 10, rk: 'RB12' },
       { s: 'WR', n: 'A.J. Brown', p: 'WR', ppg: 22.8, g: 8, rk: 'WR4' },
-      { s: 'WR', n: 'Jordan Addison', p: 'WR', ppg: 14.8, g: 9, rk: 'WR23' },
-      { s: 'TE', n: 'Mark Andrews', p: 'TE', ppg: 14.6, g: 9, rk: 'TE6' },
-      { s: 'FLEX', n: 'Nico Collins', p: 'WR', ppg: 13.8, g: 6, rk: 'WR12' },
+      { s: 'WR', n: 'Jordan Addison', p: 'WR', ppg: 14.8, g: 9, rk: 'WR22' },
+      { s: 'TE', n: 'Mark Andrews', p: 'TE', ppg: 14.6, g: 9, rk: 'TE10' },
+      { s: 'FLEX', n: 'Brian Robinson', p: 'RB', ppg: 13.4, g: 7, rk: 'RB21' },
     ] },
   { seed: 12, year: 2024, managerId: '6897f929-c070-4e0e-9633-d9e90794a1c0', manager: 'Sean', team: '3-Star REECHIE', wins: 10, losses: 4, ties: 0, ppg: 137.5, index: 1.117, resume: 62.4, finish: 'rank', finalRank: 4, regularRank: 1, high: 169.8, low: 102.6, streak: 5, ppgRank: 1, seasonTeams: 12, indexRank: 8, recRank: 4, scoRank: 6, postRank: 14,
-    case: 'Jordan Addison averaged 15.8 a game for ten weeks as the spare receiver, with Josh Downs on 14.9 behind him. Lost its first two, then went 8-1.',
+    case: 'Jordan Addison averaged 15.7 a game across eleven weeks and Malik Nabers 14.1, neither able to hold a slot. Lost its first two, then went 8-1.',
     lineup: [
-      { s: 'QB', n: 'Joe Burrow', p: 'QB', ppg: 27, g: 13, rk: 'QB2' },
-      { s: 'RB', n: 'De\'Von Achane', p: 'RB', ppg: 17.7, g: 13, rk: 'RB6' },
-      { s: 'RB', n: 'Joe Mixon', p: 'RB', ppg: 21.2, g: 10, rk: 'RB10' },
-      { s: 'WR', n: 'Ja\'Marr Chase', p: 'WR', ppg: 24.8, g: 13, rk: 'WR1' },
-      { s: 'WR', n: 'Chris Olave', p: 'WR', ppg: 8.3, g: 7, rk: 'WR55' },
-      { s: 'TE', n: 'Jake Ferguson', p: 'TE', ppg: 9.5, g: 8, rk: 'TE18' },
-      { s: 'FLEX', n: 'Kenneth Walker III', p: 'RB', ppg: 19.1, g: 6, rk: 'RB22' },
+      { s: 'QB', n: 'Joe Burrow', p: 'QB', ppg: 27.1, g: 14, rk: 'QB2' },
+      { s: 'RB', n: 'De\'Von Achane', p: 'RB', ppg: 18.7, g: 14, rk: 'RB5' },
+      { s: 'RB', n: 'Joe Mixon', p: 'RB', ppg: 20, g: 11, rk: 'RB13' },
+      { s: 'WR', n: 'Ja\'Marr Chase', p: 'WR', ppg: 24.6, g: 14, rk: 'WR1' },
+      { s: 'WR', n: 'Chris Olave', p: 'WR', ppg: 8.3, g: 7, rk: 'WR57' },
+      { s: 'TE', n: 'Jake Ferguson', p: 'TE', ppg: 9.5, g: 8, rk: 'TE15' },
+      { s: 'FLEX', n: 'Kenneth Walker III', p: 'RB', ppg: 19.1, g: 6, rk: 'RB24' },
     ] },
   { seed: 13, year: 2022, managerId: 'c8db587f-7936-4cd7-a4d7-a3efa9edbe4c', manager: 'Kyle', team: 'Wyle Wiverd', wins: 10, losses: 4, ties: 0, ppg: 131.5, index: 1.111, resume: 61.9, finish: 'rank', finalRank: 4, regularRank: 2, high: 170.9, low: 100.1, streak: 4, ppgRank: 1, seasonTeams: 12, indexRank: 11, recRank: 4, scoRank: 7, postRank: 14,
-    case: 'DK Metcalf sat on 16.2 a game as the fourth receiver and Darius Slayton on 12.5 behind him. Opened 7-2 and won four straight from week five.',
+    case: 'DK Metcalf averaged 16 a game and started six times and is still only the spare receiver here. Opened 7-2 and won four straight from week five.',
     lineup: [
-      { s: 'QB', n: 'Josh Allen', p: 'QB', ppg: 28.2, g: 13, rk: 'QB3' },
-      { s: 'RB', n: 'Derrick Henry', p: 'RB', ppg: 18.9, g: 13, rk: 'RB4' },
-      { s: 'RB', n: 'Josh Jacobs', p: 'RB', ppg: 21.2, g: 11, rk: 'RB2' },
-      { s: 'WR', n: 'A.J. Brown', p: 'WR', ppg: 16.9, g: 11, rk: 'WR5' },
-      { s: 'WR', n: 'Diontae Johnson', p: 'WR', ppg: 11, g: 9, rk: 'WR31' },
-      { s: 'TE', n: 'Pat Freiermuth', p: 'TE', ppg: 10.7, g: 12, rk: 'TE4' },
-      { s: 'FLEX', n: 'Dameon Pierce', p: 'RB', ppg: 15.1, g: 7, rk: 'RB15' },
+      { s: 'QB', n: 'Josh Allen', p: 'QB', ppg: 28.1, g: 14, rk: 'QB2' },
+      { s: 'RB', n: 'Derrick Henry', p: 'RB', ppg: 18.9, g: 14, rk: 'RB4' },
+      { s: 'RB', n: 'Josh Jacobs', p: 'RB', ppg: 20, g: 12, rk: 'RB3' },
+      { s: 'WR', n: 'A.J. Brown', p: 'WR', ppg: 16.8, g: 12, rk: 'WR5' },
+      { s: 'WR', n: 'Diontae Johnson', p: 'WR', ppg: 11, g: 10, rk: 'WR28' },
+      { s: 'TE', n: 'Pat Freiermuth', p: 'TE', ppg: 10.9, g: 13, rk: 'TE5' },
+      { s: 'FLEX', n: 'Dameon Pierce', p: 'RB', ppg: 15.1, g: 7, rk: 'RB24' },
     ] },
   { seed: 14, year: 2022, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'Pat Bateman', wins: 7, losses: 7, ties: 0, ppg: 125.7, index: 1.062, resume: 61.1, finish: 'champion', finalRank: 1, regularRank: 5, high: 166.4, low: 80.2, streak: 2, ppgRank: 4, seasonTeams: 12, indexRank: 22, recRank: 16, scoRank: 13, postRank: 1,
-    case: 'Keenan Allen averaged 17.6 a game off this bench and Evan Engram 15. Never won more than two in a row.',
+    case: 'Jalen Hurts averaged 27.3 a game across four starts as the backup quarterback, with Dalvin Cook and James Conner both around 13 behind the starters. Never won more than two in a row.',
     lineup: [
-      { s: 'QB', n: 'Patrick Mahomes', p: 'QB', ppg: 29.5, g: 6, rk: 'QB1' },
-      { s: 'RB', n: 'Christian McCaffrey', p: 'RB', ppg: 24.1, g: 6, rk: 'RB3' },
-      { s: 'RB', n: 'Travis Etienne', p: 'RB', ppg: 12.6, g: 9, rk: 'RB19' },
-      { s: 'WR', n: 'Chris Olave', p: 'WR', ppg: 14.5, g: 7, rk: 'WR20' },
-      { s: 'WR', n: 'Amari Cooper', p: 'WR', ppg: 15, g: 6, rk: 'WR13' },
+      { s: 'QB', n: 'Patrick Mahomes', p: 'QB', ppg: 30.3, g: 9, rk: 'QB1' },
+      { s: 'RB', n: 'Christian McCaffrey', p: 'RB', ppg: 23.9, g: 9, rk: 'RB2' },
+      { s: 'RB', n: 'Travis Etienne', p: 'RB', ppg: 13.6, g: 12, rk: 'RB18' },
+      { s: 'WR', n: 'Amari Cooper', p: 'WR', ppg: 15.4, g: 9, rk: 'WR10' },
+      { s: 'WR', n: 'Keenan Allen', p: 'WR', ppg: 17.2, g: 7, rk: 'WR42' },
       { s: 'TE', n: 'Travis Kelce', p: 'TE', ppg: 21, g: 7, rk: 'TE1' },
-      { s: 'FLEX', n: 'AJ Dillon', p: 'RB', ppg: 7.7, g: 7, rk: 'RB28' },
+      { s: 'FLEX', n: 'Chris Olave', p: 'WR', ppg: 14.5, g: 7, rk: 'WR24' },
     ] },
   { seed: 15, year: 2021, managerId: '6897f929-c070-4e0e-9633-d9e90794a1c0', manager: 'Sean', team: 'Dude Lipas', wins: 10, losses: 4, ties: 0, ppg: 127.4, index: 1.047, resume: 57.9, finish: 'rank', finalRank: 3, regularRank: 2, high: 187.5, low: 82.6, streak: 6, ppgRank: 3, seasonTeams: 12, indexRank: 25, recRank: 4, scoRank: 14, postRank: 12,
-    case: 'AJ Dillon at 17.3 a game, Brandon Aiyuk at 14.2 and Aaron Jones at 13.7, none of whom could hold a slot. Won six in a row from week three.',
+    case: 'Jonathan Taylor put up 16.9 a game across five starts and still never held the slot, with AJ Dillon, Brandon Aiyuk and Aaron Jones all above 13 behind him. Won six in a row from week three.',
     lineup: [
-      { s: 'QB', n: 'Dak Prescott', p: 'QB', ppg: 21.7, g: 11, rk: 'QB9' },
-      { s: 'RB', n: 'Najee Harris', p: 'RB', ppg: 18.5, g: 13, rk: 'RB4' },
-      { s: 'RB', n: 'Myles Gaskin', p: 'RB', ppg: 10.6, g: 12, rk: 'RB18' },
-      { s: 'WR', n: 'Ja\'Marr Chase', p: 'WR', ppg: 17.2, g: 13, rk: 'WR7' },
-      { s: 'WR', n: 'Hunter Renfrow', p: 'WR', ppg: 17.3, g: 6, rk: 'WR21' },
-      { s: 'TE', n: 'Dawson Knox', p: 'TE', ppg: 12.6, g: 8, rk: 'TE7' },
-      { s: 'FLEX', n: 'Antonio Brown', p: 'WR', ppg: 19.1, g: 5, rk: 'WR44' },
+      { s: 'QB', n: 'Dak Prescott', p: 'QB', ppg: 23.1, g: 12, rk: 'QB7' },
+      { s: 'RB', n: 'Najee Harris', p: 'RB', ppg: 18.4, g: 14, rk: 'RB3' },
+      { s: 'RB', n: 'Myles Gaskin', p: 'RB', ppg: 10.6, g: 12, rk: 'RB24' },
+      { s: 'WR', n: 'Ja\'Marr Chase', p: 'WR', ppg: 17.4, g: 14, rk: 'WR5' },
+      { s: 'WR', n: 'Hunter Renfrow', p: 'WR', ppg: 16.7, g: 7, rk: 'WR20' },
+      { s: 'TE', n: 'Dawson Knox', p: 'TE', ppg: 12.2, g: 9, rk: 'TE11' },
+      { s: 'FLEX', n: 'Antonio Brown', p: 'WR', ppg: 19.3, g: 6, rk: 'WR42' },
     ] },
   { seed: 16, year: 2024, managerId: '55ab525f-9fa0-4bdd-a842-a0dcc99577b1', manager: 'Luke', team: 'The GLIZZYS', wins: 8, losses: 6, ties: 0, ppg: 121.5, index: 0.987, resume: 57.2, finish: 'champion', finalRank: 1, regularRank: 6, high: 147.3, low: 96.6, streak: 4, ppgRank: 6, seasonTeams: 12, indexRank: 45, recRank: 13, scoRank: 16, postRank: 1,
-    case: 'Aaron Rodgers averaged 17.6 a game for thirteen weeks and started once. Jonnu Smith gave 19 a game behind an already-covered tight end. Started 1-4, then went 7-2 the rest of the way and won four straight into January.',
+    case: 'No skill depth at all: nothing behind the starters cleared what an average starter at its own position puts up, bar a rotating defence. Started 1-4, then went 7-2 the rest of the way and won four straight into January.',
     lineup: [
-      { s: 'QB', n: 'Kyler Murray', p: 'QB', ppg: 19.5, g: 13, rk: 'QB10' },
-      { s: 'RB', n: 'Jahmyr Gibbs', p: 'RB', ppg: 18.3, g: 13, rk: 'RB5' },
-      { s: 'RB', n: 'James Cook', p: 'RB', ppg: 14.9, g: 13, rk: 'RB13' },
-      { s: 'WR', n: 'Garrett Wilson', p: 'WR', ppg: 15.3, g: 13, rk: 'WR6' },
-      { s: 'WR', n: 'DeVonta Smith', p: 'WR', ppg: 13, g: 10, rk: 'WR38' },
-      { s: 'TE', n: 'Dalton Schultz', p: 'TE', ppg: 5.2, g: 7, rk: 'TE22' },
-      { s: 'FLEX', n: 'George Pickens', p: 'WR', ppg: 11.6, g: 7, rk: 'WR24' },
+      { s: 'QB', n: 'Kyler Murray', p: 'QB', ppg: 19, g: 16, rk: 'QB11' },
+      { s: 'RB', n: 'Jahmyr Gibbs', p: 'RB', ppg: 19.9, g: 16, rk: 'RB2' },
+      { s: 'RB', n: 'James Cook', p: 'RB', ppg: 16.2, g: 16, rk: 'RB9' },
+      { s: 'WR', n: 'Garrett Wilson', p: 'WR', ppg: 15.2, g: 16, rk: 'WR9' },
+      { s: 'WR', n: 'DeVonta Smith', p: 'WR', ppg: 15.3, g: 13, rk: 'WR24' },
+      { s: 'TE', n: 'Jonnu Smith', p: 'TE', ppg: 17.3, g: 8, rk: 'TE9' },
+      { s: 'FLEX', n: 'DeAndre Hopkins', p: 'WR', ppg: 10.3, g: 8, rk: 'WR41' },
     ] },
 ]
 

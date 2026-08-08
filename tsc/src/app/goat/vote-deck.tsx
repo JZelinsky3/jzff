@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import {
-  ROUNDS, breakdown, buildBracket, finishLine, gamesInRound, label, pts, record, vsLeague,
+  MIN_STARTS, ROUNDS, breakdown, buildBracket, finishLine, gamesInRound, label, pts, record, vsLeague,
   type Ballot, type GoatTeam, type ResolvedGame, type Results, type RoundId,
 } from '@/lib/greatestTeam'
 import { submitBallot } from './actions'
@@ -352,9 +352,10 @@ function TeamCard({ team, picked, onPick }: { team: GoatTeam; picked: boolean; o
           does not explain the seeding, and a WR41 next to a 1 seed reads as a
           mistake until you can see the score it was actually built from. */}
       <div className="gt-why">
+        {/* No rank under the total: the seed on the banner already is it. */}
         <span className="gt-why-total">
           <b>{team.resume.toFixed(1)}</b>
-          <i>{ordinal(team.seed)} of 16</i>
+          <em>score</em>
         </span>
         <span className="gt-why-parts">
           <span className="gt-why-part gt-why-rec">
@@ -382,17 +383,22 @@ function TeamCard({ team, picked, onPick }: { team: GoatTeam; picked: boolean; o
           <span>Best lineup they started</span>
           <span>ppg</span>
         </div>
-        {team.lineup.map((p) => (
-          <div className="gt-lu-row" key={p.s + p.n}>
+        {team.lineup.map((p, i) => (
+          <div className={`gt-lu-row${p.n ? '' : ' is-empty'}`} key={p.s + (p.n ?? i)}>
             <i className={`gt-slot gt-slot-${p.p}`}>{p.s}</i>
             <span className="gt-lu-name">
-              <b>{p.n}</b>
-              <em>{p.rk ? `${p.rk} · ` : ''}{p.g} starts</em>
+              {/* A fixed slot nobody started six times stays empty on purpose. */}
+              <b>{p.n ?? 'No settled starter'}</b>
+              <em>
+                {p.n
+                  ? `${p.rk ? `${p.rk} · ` : ''}${p.g} starts`
+                  : `nobody started ${MIN_STARTS}+ here`}
+              </em>
             </span>
             {/* Always one decimal, so the column reads as a column: a bare
                 "19" next to a "12.2" breaks the alignment tabular-nums is
                 there to hold. */}
-            <span className="gt-lu-ppg">{pts(p.ppg)}</span>
+            <span className="gt-lu-ppg">{p.n ? pts(p.ppg) : '\u2014'}</span>
           </div>
         ))}
       </div>

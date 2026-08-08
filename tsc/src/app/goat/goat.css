@@ -221,10 +221,10 @@
   font-family: var(--gt-mono); font-size: 1.15rem; font-weight: 700;
   font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1;
 }
-.gt-why-total i {
+.gt-why-total em {
   font-style: normal; font-family: var(--gt-mono);
-  font-size: .45rem; font-weight: 700; letter-spacing: .08em;
-  text-transform: uppercase; color: var(--green); margin-top: .12rem;
+  font-size: .43rem; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--ink-3); margin-top: .12rem;
 }
 .gt-why-parts { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: .3rem; min-width: 0; }
 .gt-why-part { display: flex; flex-direction: column; min-width: 0; }
@@ -258,6 +258,11 @@
   display: flex; align-items: center; gap: .5rem;
   padding: .26rem 0; border-top: 1px solid var(--rule-soft);
 }
+/* A slot no one held for six weeks. Muted rather than hidden: the gap is the
+   point. */
+.gt-lu-row.is-empty .gt-lu-name b { color: var(--ink-3); font-style: italic; font-weight: 400; }
+.gt-lu-row.is-empty .gt-slot { opacity: .4; }
+.gt-lu-row.is-empty .gt-lu-ppg { color: var(--ink-3); }
 .gt-lu-name { display: flex; flex-direction: column; min-width: 0; }
 .gt-lu-name b {
   font-weight: 500; font-size: .86rem; line-height: 1.15; color: var(--ink);
