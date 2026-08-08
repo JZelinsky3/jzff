@@ -240,7 +240,9 @@ function TeamCard({ team, picked, onPick }: { team: GoatTeam; picked: boolean; o
       <div className="gt-team-band">
         <span className="gt-seed">{team.seed}</span>
         <span className="gt-team-finish">{finishLine(team)}</span>
-        {team.autoBid && <span className="gt-team-ring">ring</span>}
+        {/* No automatic bids: a ring is a fact about the season, not a
+            reason this team is in the field. */}
+        {team.finish === 'champion' && <span className="gt-team-ring">ring</span>}
       </div>
 
       <div className="gt-team-id">

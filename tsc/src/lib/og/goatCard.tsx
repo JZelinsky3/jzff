@@ -118,7 +118,7 @@ const COPY: Record<GoatPhase, { head: string; em: string; sub: string; foot: str
   between: {
     head: 'The greatest', em: 'team we’ve had',
     sub: 'Sixteen team-seasons, seeded by resume',
-    foot: 'Seven champions · nine at large',
+    foot: 'The sixteen best seasons · no free passes',
   },
   crowned: {
     // Short enough to hold two lines in a 470px column at 62px. "The room has
