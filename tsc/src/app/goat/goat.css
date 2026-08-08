@@ -265,6 +265,39 @@
   letter-spacing: .2em; text-transform: uppercase; color: var(--ink-3);
 }
 
+/* ── Round ladder on the intro ── */
+.gt-ladder {
+  list-style: none; margin: 1rem 0 0; padding: 0;
+  display: flex; flex-direction: column; gap: 0;
+  border-top: 1px solid var(--rule-soft);
+}
+.gt-rung {
+  display: flex; align-items: baseline; gap: .6rem;
+  padding: .6rem .7rem;
+  border-bottom: 1px solid var(--rule-soft);
+  border-left: 4px solid transparent;
+  color: var(--ink-3);
+}
+.gt-rung-name {
+  font-family: var(--gt-serif); font-size: 1.05rem; color: inherit;
+}
+.gt-rung-games {
+  margin-left: auto; flex: none;
+  font-family: var(--gt-mono); font-size: .52rem; font-weight: 700;
+  letter-spacing: .13em; text-transform: uppercase;
+}
+/* Rounds already settled read as struck off the list. */
+.gt-rung.is-done { opacity: .5; }
+.gt-rung.is-done .gt-rung-name { text-decoration: line-through; text-decoration-color: var(--rule); }
+/* Tonight's round. */
+.gt-rung.is-now {
+  border-left-color: var(--green);
+  background: var(--green-wash);
+  color: var(--ink);
+}
+.gt-rung.is-now .gt-rung-name { font-weight: 600; }
+.gt-rung.is-now .gt-rung-games { color: var(--green); }
+
 /* ── Buttons ── */
 /* The action bar rides the bottom of the viewport on a phone, so a card that
    scrolls for two full screens still has Next in reach. It sits over the

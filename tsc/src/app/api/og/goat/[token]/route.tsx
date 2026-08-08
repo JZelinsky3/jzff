@@ -12,9 +12,7 @@
 import { ImageResponse } from 'next/og'
 import { readFile } from 'fs/promises'
 import path from 'path'
-import {
-  ROOM_SIZE, ROUNDS, buildBracket, gamesInRound, label, record, winnerOf,
-} from '@/lib/greatestTeam'
+import { ROOM_SIZE, buildBracket, label, record, winnerOf } from '@/lib/greatestTeam'
 import { leagueForToken, readBracket, votedNames } from '@/app/goat/actions'
 import { GoatCard, type GoatPhase } from '@/lib/og/goatCard'
 
@@ -47,45 +45,25 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
   // the holder cannot open.
   if (!league) {
     return new ImageResponse(
-      <GoatCard phase="gone" roundName={null} turnout={0} roomSize={ROOM_SIZE} ties={[]} champion={null} />,
+      <GoatCard phase="gone" round={null} turnout={0} roomSize={ROOM_SIZE} champion={null} />,
       { width: 1200, height: 630, fonts },
     )
   }
 
   const state = await readBracket(league.id)
-  const bracket = buildBracket(state.results)
-  const champ = winnerOf(bracket)
-
+  const champ = winnerOf(buildBracket(state.results))
   const phase: GoatPhase = champ ? 'crowned' : state.openRound ? 'open' : 'between'
-  const roundName = state.openRound ? ROUNDS.find((r) => r.id === state.openRound)?.name ?? null : null
 
   // Who has voted is already public on the page, which greys out a name the
   // moment it is used, so the card can show the same count.
   const turnout = state.openRound ? (await votedNames(league.id, state.openRound)).length : 0
 
-  // While a round is live the card shows its games with no winner marked: a
-  // running count on a live round is a bandwagon, and the page seals it too.
-  // Between rounds it shows the last round that actually settled.
-  const source = state.openRound
-    ? gamesInRound(bracket, state.openRound).filter((g) => g.ready)
-    : [...ROUNDS].reverse().map((r) => gamesInRound(bracket, r.id).filter((g) => g.winner !== null)).find((g) => g.length) ?? []
-
-  const ties = source.slice(0, 4).map((g) => ({
-    seedA: g.home?.seed ?? 0,
-    nameA: g.home ? label(g.home) : 'TBD',
-    seedB: g.away?.seed ?? 0,
-    nameB: g.away ? label(g.away) : 'TBD',
-    wonA: !state.openRound && g.winner !== null && g.winner === g.home?.seed,
-    wonB: !state.openRound && g.winner !== null && g.winner === g.away?.seed,
-  }))
-
   return new ImageResponse(
     <GoatCard
       phase={phase}
-      roundName={roundName}
+      round={state.openRound}
       turnout={turnout}
       roomSize={ROOM_SIZE}
-      ties={champ ? [] : ties}
       champion={champ ? { name: label(champ), team: champ.team, record: record(champ) } : null}
     />,
     { width: 1200, height: 630, fonts },

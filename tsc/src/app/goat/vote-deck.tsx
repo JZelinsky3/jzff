@@ -61,8 +61,8 @@ export function VoteDeck({
 
   const taken = new Set(alreadyVoted)
   const called = games.filter((g) => picks[g.id]).length
-  // Steps: name, then one per game, then review.
-  const total = games.length + 2
+  // Steps: intro, name, one per game, then review.
+  const total = games.length + 3
   const at = Math.min(step, total - 1)
 
   async function send() {
@@ -106,10 +106,40 @@ export function VoteDeck({
     )
   }
 
-  // ── Step 0: who is this ──
+  // ── Step 0: what this is ──
   if (at === 0) {
     return (
-      <Shell round={roundName} rail={{ at: 0, total }}>
+      <Shell round={roundName} rail={null}>
+        <div className="gt-slide">
+          <div className="gt-game-head">
+            <div className="gt-kicker">PA Milk Society</div>
+            <h2>Who had the best team ever?</h2>
+          </div>
+          <p className="gt-note">
+            Not the best manager and not the best season. The best single team
+            anybody has ever put on the field, out of every roster played since
+            2019. Sixteen of them, seeded on record, scoring and where the
+            season finished.
+          </p>
+          <p className="gt-note">
+            Four rounds. You get one card per round, and it stays sealed until
+            everybody is in.
+          </p>
+
+          <Ladder round={round} />
+
+          <div className="gt-actions">
+            <button className="gt-btn" onClick={() => setStep(1)}>Start</button>
+          </div>
+        </div>
+      </Shell>
+    )
+  }
+
+  // ── Step 1: who is this ──
+  if (at === 1) {
+    return (
+      <Shell round={roundName} rail={{ at: 1, total }}>
         <div className="gt-slide">
           <div className="gt-game-head">
             <div className="gt-kicker">{roundName}</div>
@@ -135,8 +165,9 @@ export function VoteDeck({
           </p>
           {error && <div className="gt-err">{error}</div>}
           <div className="gt-actions">
-            <button className="gt-btn" disabled={!who} onClick={() => setStep(1)}>
-              Start
+            <button className="gt-btn is-ghost" onClick={() => setStep(0)}>Back</button>
+            <button className="gt-btn" disabled={!who} onClick={() => setStep(2)}>
+              Next
             </button>
           </div>
         </div>
@@ -171,7 +202,7 @@ export function VoteDeck({
                       {g.home ? label(g.home) : ''} vs {g.away ? label(g.away) : ''}
                     </b>
                   )}
-                  <button className="gt-review-edit" onClick={() => setStep(i + 1)}>
+                  <button className="gt-review-edit" onClick={() => setStep(i + 2)}>
                     {winner ? 'change' : 'call it'}
                   </button>
                 </div>
@@ -191,7 +222,7 @@ export function VoteDeck({
   }
 
   // ── A game ──
-  const game = games[at - 1]
+  const game = games[at - 2]
   const pick = picks[game.id]
   // Selecting does NOT advance. These are two rosters to read side by side and
   // change your mind about; a card that jumped forward on first tap took the
@@ -202,7 +233,7 @@ export function VoteDeck({
     <Shell round={roundName} rail={{ at, total }}>
       <div className="gt-slide" key={game.id}>
         <div className="gt-game-head">
-          <div className="gt-kicker">{roundName} · game {at} of {games.length}</div>
+          <div className="gt-kicker">{roundName} · game {at - 1} of {games.length}</div>
           <h2>Which one wins?</h2>
         </div>
         <div className="gt-pair">
@@ -216,7 +247,7 @@ export function VoteDeck({
         <div className="gt-actions">
           <button className="gt-btn is-ghost" onClick={() => setStep(at - 1)}>Back</button>
           <button className="gt-btn" disabled={!pick} onClick={() => setStep(at + 1)}>
-            {pick ? (at === games.length ? 'Review' : 'Next') : 'Pick one'}
+            {pick ? (at - 1 === games.length ? 'Review' : 'Next') : 'Pick one'}
           </button>
         </div>
       </div>
@@ -229,6 +260,30 @@ export function VoteDeck({
  * the four season figures, then the starting lineup with each player's rate
  * and where they finished at their position. The whole card is the button.
  */
+/**
+ * The four rounds as a ladder, with the live one lit. No teams on it: at this
+ * point the voter wants to know how long the thing runs and where tonight sits
+ * in it, not who plays who.
+ */
+function Ladder({ round }: { round: RoundId }) {
+  const at = ROUNDS.findIndex((r) => r.id === round)
+  return (
+    <ol className="gt-ladder">
+      {ROUNDS.map((r, i) => (
+        <li
+          key={r.id}
+          className={`gt-rung${i === at ? ' is-now' : ''}${i < at ? ' is-done' : ''}`}
+        >
+          <span className="gt-rung-name">{r.name}</span>
+          <span className="gt-rung-games">
+            {r.games} {r.games === 1 ? 'game' : 'games'}
+          </span>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
 function TeamCard({ team, picked, onPick }: { team: GoatTeam; picked: boolean; onPick: () => void }) {
   return (
     <button

@@ -2,9 +2,9 @@
 //
 // Eighty-six team-seasons exist across 2019-2025. The sixteen best resumes get
 // in, and nothing else does: no automatic bids, no seat held for a title. Six
-// of the seven champions clear the bar on merit anyway. The one that does not
-// is 2024 Luke, the only champion in league history to score below league
-// average across a whole season, and it is the first team out.
+// of the seven champions clear the bar on merit anyway; the one that misses is
+// 2024 Luke, the only champion in league history to score below league average
+// across a whole season. First team out is 2024 Cat.
 //
 // The field is FROZEN here rather than computed at read time, and that is the
 // point. A bracket whose seeds could move after somebody has already voted in
@@ -80,33 +80,50 @@ export type GoatTeam = {
 }
 
 /**
- * The seeding number: forty-five parts record, thirty-five parts scoring
- * against the league that season, twenty parts what happened in January.
- * The scoring term is clamped to the 0.85-1.25 index band, which is where
- * every team-season in league history actually lands.
+ * What a finish is worth. Six teams make the playoffs, so the first six places
+ * are graded and everybody who missed gets nothing.
+ *
+ * Graded rather than flat because a flat "made the playoffs" bonus had third
+ * place and seventh place worth the same, which is not a thing anybody in the
+ * league believes. A title is still worth nearly double the next best finish.
  */
-export function resume(t: { wins: number; losses: number; ties: number; index: number; finish: Finish }): number {
+const PLACEMENT: readonly number[] = [0, 20, 12, 9, 7, 5, 4]
+
+export function placementPoints(finalRank: number): number {
+  return PLACEMENT[finalRank] ?? 0
+}
+
+/**
+ * The seeding number: forty parts record, forty parts scoring against the
+ * league that season, twenty parts where the season finished.
+ *
+ * Record and scoring are weighted evenly on purpose. Win rate alone rewards a
+ * team that kept drawing the right opponent, and in a twelve-team league a
+ * couple of wins is mostly schedule. The scoring term is clamped to the
+ * 0.85-1.25 index band, which is where every team-season in league history
+ * actually lands.
+ */
+export function resume(t: { wins: number; losses: number; ties: number; index: number; finalRank: number }): number {
   const games = t.wins + t.losses + t.ties
   const winRate = games ? (t.wins + 0.5 * t.ties) / games : 0
   const scoring = Math.max(0, Math.min(1, (t.index - 0.85) / 0.4))
-  const post = t.finish === 'champion' ? 20 : t.finish === 'runner-up' ? 12 : 6
-  return 45 * winRate + 35 * scoring + post
+  return 40 * winRate + 40 * scoring + placementPoints(t.finalRank)
 }
 
 export const FIELD: readonly GoatTeam[] = [
-  { seed: 1, year: 2019, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'On Jah', wins: 9, losses: 4, ties: 0, ppg: 135.4, index: 1.168, resume: 79.0, finish: 'champion', finalRank: 1, regularRank: 2, high: 191.8, low: 78.6, streak: 5,
-    case: 'Opened the league with a 191 in week one and won the first title there has ever been. Closed the regular season on five straight, then took the final by twelve.' ,
+  { seed: 1, year: 2019, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'On Jah', wins: 9, losses: 4, ties: 0, ppg: 135.4, index: 1.168, resume: 79.5, finish: 'champion', finalRank: 1, regularRank: 2, high: 191.8, low: 78.6, streak: 5,
+    case: 'Opened the league with a 191 in week one and won the first title there has ever been. Closed the regular season on five straight, then took the final by twelve.',
     lineup: [
-      { s: 'QB', n: 'Brock Purdy', p: 'QB', ppg: 20.1, g: 12, rk: 'QB11' },
-      { s: 'RB', n: 'Kyren Williams', p: 'RB', ppg: 17.1, g: 13, rk: 'RB8' },
-      { s: 'RB', n: 'David Montgomery', p: 'RB', ppg: 17.4, g: 9, rk: 'RB9' },
-      { s: 'WR', n: 'Justin Jefferson', p: 'WR', ppg: 18.2, g: 13, rk: 'WR2' },
-      { s: 'WR', n: 'DJ Moore', p: 'WR', ppg: 12.9, g: 10, rk: 'WR15' },
-      { s: 'TE', n: 'Travis Kelce', p: 'TE', ppg: 12.2, g: 13, rk: 'TE4' },
-      { s: 'FLEX', n: 'Chase Brown', p: 'RB', ppg: 21.3, g: 6, rk: 'RB11' },
+      { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 31.6, g: 12, rk: 'QB1' },
+      { s: 'RB', n: 'Derrick Henry', p: 'RB', ppg: 18.6, g: 12, rk: 'RB5' },
+      { s: 'RB', n: 'Austin Ekeler', p: 'RB', ppg: 17.2, g: 10, rk: 'RB3' },
+      { s: 'WR', n: 'Sammy Watkins', p: 'WR', ppg: 12.9, g: 8, rk: 'WR41' },
+      { s: 'WR', n: 'JuJu Smith-Schuster', p: 'WR', ppg: 12.2, g: 8, rk: 'WR44' },
+      { s: 'TE', n: 'Darren Waller', p: 'TE', ppg: 12.4, g: 9, rk: 'TE2' },
+      { s: 'FLEX', n: 'D.J. Chark', p: 'WR', ppg: 13.2, g: 7, rk: 'WR19' },
     ] },
-  { seed: 2, year: 2019, managerId: 'eaeedefa-2711-4d93-b0ce-a795c5f4d55a', manager: 'Mason', team: 'Mdog346', wins: 11, losses: 2, ties: 0, ppg: 136.0, index: 1.174, resume: 78.4, finish: 'runner-up', finalRank: 2, regularRank: 1, high: 183.9, low: 111.4, streak: 5,
-    case: 'Eleven and two, the highest-scoring team in the league that year, and never once held under 111 all season. Lost the final by twelve. No ring to show for any of it.' ,
+  { seed: 2, year: 2019, managerId: 'eaeedefa-2711-4d93-b0ce-a795c5f4d55a', manager: 'Mason', team: 'Mdog346', wins: 11, losses: 2, ties: 0, ppg: 136, index: 1.174, resume: 78.2, finish: 'runner-up', finalRank: 2, regularRank: 1, high: 183.9, low: 111.4, streak: 5,
+    case: 'Eleven and two, the highest-scoring team in the league that year, and never once held under 111 all season. Lost the final by twelve. No ring to show for any of it.',
     lineup: [
       { s: 'QB', n: 'Dak Prescott', p: 'QB', ppg: 24.9, g: 8, rk: 'QB4' },
       { s: 'RB', n: 'Nick Chubb', p: 'RB', ppg: 17.8, g: 9, rk: 'RB8' },
@@ -116,8 +133,8 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'Zach Ertz', p: 'TE', ppg: 13.5, g: 12, rk: 'TE4' },
       { s: 'FLEX', n: 'Aaron Jones', p: 'RB', ppg: 22.6, g: 4, rk: 'RB6' },
     ] },
-  { seed: 3, year: 2021, managerId: 'dca75bbf-9c3e-4576-b6c4-845e6dc20030', manager: 'Chris', team: 'Stafford University', wins: 10, losses: 4, ties: 0, ppg: 137.2, index: 1.129, resume: 76.6, finish: 'champion', finalRank: 1, regularRank: 1, high: 200.6, low: 81.2, streak: 5,
-    case: 'Owns the only 200-point week in league history. The only champion that also finished first in the regular season, and it won its two playoff games by sixty-two and forty.' ,
+  { seed: 3, year: 2021, managerId: 'dca75bbf-9c3e-4576-b6c4-845e6dc20030', manager: 'Chris', team: 'Stafford University', wins: 10, losses: 4, ties: 0, ppg: 137.2, index: 1.129, resume: 76.5, finish: 'champion', finalRank: 1, regularRank: 1, high: 200.6, low: 81.2, streak: 5,
+    case: 'Owns the only 200-point week in league history. The only champion that also finished first in the regular season, and it won its two playoff games by sixty-two and forty.',
     lineup: [
       { s: 'QB', n: 'Matthew Stafford', p: 'QB', ppg: 26.3, g: 13, rk: 'QB4' },
       { s: 'RB', n: 'Ezekiel Elliott', p: 'RB', ppg: 15.7, g: 13, rk: 'RB7' },
@@ -125,21 +142,10 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'WR', n: 'Davante Adams', p: 'WR', ppg: 21, g: 12, rk: 'WR3' },
       { s: 'WR', n: 'Diontae Johnson', p: 'WR', ppg: 18.4, g: 12, rk: 'WR8' },
       { s: 'TE', n: 'Mark Andrews', p: 'TE', ppg: 16, g: 13, rk: 'TE1' },
-      { s: 'FLEX', n: 'James Conner', p: 'RB', ppg: 20.3, g: 5, rk: 'RB6' },
+      { s: 'FLEX', n: 'Courtland Sutton', p: 'WR', ppg: 10.4, g: 9, rk: 'WR34' },
     ] },
-  { seed: 4, year: 2025, managerId: 'eaeedefa-2711-4d93-b0ce-a795c5f4d55a', manager: 'Mason', team: 'Rizzlers', wins: 10, losses: 4, ties: 0, ppg: 126.5, index: 1.054, resume: 70.0, finish: 'champion', finalRank: 1, regularRank: 2, high: 164.8, low: 95.4, streak: 7,
-    case: 'Ripped off seven straight through the middle of the year, then hung 193 on Kyle in the semifinal. The most recent ring, and the one the room still has to answer for.' ,
-    lineup: [
-      { s: 'QB', n: 'Jalen Hurts', p: 'QB', ppg: 22, g: 13, rk: 'QB5' },
-      { s: 'RB', n: 'Ashton Jeanty', p: 'RB', ppg: 14.2, g: 13, rk: 'RB14' },
-      { s: 'RB', n: 'D\'Andre Swift', p: 'RB', ppg: 13.6, g: 10, rk: 'RB16' },
-      { s: 'WR', n: 'Puka Nacua', p: 'WR', ppg: 21.6, g: 12, rk: 'WR2' },
-      { s: 'WR', n: 'Stefon Diggs', p: 'WR', ppg: 12.5, g: 9, rk: 'WR26' },
-      { s: 'TE', n: 'George Kittle', p: 'TE', ppg: 13.3, g: 8, rk: 'TE16' },
-      { s: 'FLEX', n: 'Keenan Allen', p: 'WR', ppg: 10.2, g: 11, rk: 'WR27' },
-    ] },
-  { seed: 5, year: 2021, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'Oreos', wins: 9, losses: 5, ties: 0, ppg: 142.0, index: 1.168, resume: 68.8, finish: 'runner-up', finalRank: 2, regularRank: 3, high: 189.6, low: 109.4, streak: 6,
-    case: 'The highest scoring average any team has ever posted, 142 a week, and it still only went 9-5. Won its last six, then ran into 2021 Chris in the final.' ,
+  { seed: 4, year: 2021, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'Oreos', wins: 9, losses: 5, ties: 0, ppg: 142, index: 1.168, resume: 69.5, finish: 'runner-up', finalRank: 2, regularRank: 3, high: 189.6, low: 109.4, streak: 6,
+    case: 'The highest scoring average any team has ever posted, 142 a week, and it still only went 9-5. Won its last six, then ran into 2021 Chris in the final.',
     lineup: [
       { s: 'QB', n: 'Kirk Cousins', p: 'QB', ppg: 20.9, g: 8, rk: 'QB13' },
       { s: 'RB', n: 'Austin Ekeler', p: 'RB', ppg: 21.3, g: 13, rk: 'RB2' },
@@ -149,8 +155,19 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'Travis Kelce', p: 'TE', ppg: 15, g: 13, rk: 'TE2' },
       { s: 'FLEX', n: 'Tyler Lockett', p: 'WR', ppg: 13.8, g: 10, rk: 'WR15' },
     ] },
-  { seed: 6, year: 2025, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'CHILD OF GOD', wins: 10, losses: 4, ties: 0, ppg: 141.9, index: 1.181, resume: 67.1, finish: 'rank', finalRank: 5, regularRank: 1, high: 171.3, low: 112.7, streak: 7,
-    case: 'The most dominant scoring season the league has ever seen against its own era, a floor of 112, first place in the regular season, and seven straight wins. Then lost its opening playoff game by three. Fifth place is a lie.' ,
+  { seed: 5, year: 2025, managerId: 'eaeedefa-2711-4d93-b0ce-a795c5f4d55a', manager: 'Mason', team: 'Rizzlers', wins: 10, losses: 4, ties: 0, ppg: 126.5, index: 1.054, resume: 69, finish: 'champion', finalRank: 1, regularRank: 2, high: 164.8, low: 95.4, streak: 7,
+    case: 'Ripped off seven straight through the middle of the year, then hung 193 on Kyle in the semifinal. The most recent ring, and the one the room still has to answer for.',
+    lineup: [
+      { s: 'QB', n: 'Jalen Hurts', p: 'QB', ppg: 22, g: 13, rk: 'QB5' },
+      { s: 'RB', n: 'Ashton Jeanty', p: 'RB', ppg: 14.2, g: 13, rk: 'RB14' },
+      { s: 'RB', n: 'D\'Andre Swift', p: 'RB', ppg: 13.6, g: 10, rk: 'RB16' },
+      { s: 'WR', n: 'Puka Nacua', p: 'WR', ppg: 21.6, g: 12, rk: 'WR2' },
+      { s: 'WR', n: 'Stefon Diggs', p: 'WR', ppg: 12.5, g: 9, rk: 'WR26' },
+      { s: 'TE', n: 'George Kittle', p: 'TE', ppg: 13.3, g: 8, rk: 'TE16' },
+      { s: 'FLEX', n: 'Keenan Allen', p: 'WR', ppg: 10.2, g: 11, rk: 'WR27' },
+    ] },
+  { seed: 6, year: 2025, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'CHILD OF GOD', wins: 10, losses: 4, ties: 0, ppg: 141.9, index: 1.181, resume: 66.7, finish: 'rank', finalRank: 5, regularRank: 1, high: 171.3, low: 112.7, streak: 7,
+    case: 'The most dominant scoring season the league has ever seen against its own era, a floor of 112, first place in the regular season, and seven straight wins. Then lost its opening playoff game by three. Fifth place is a lie.',
     lineup: [
       { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 20.7, g: 10, rk: 'QB14' },
       { s: 'RB', n: 'Jonathan Taylor', p: 'RB', ppg: 24, g: 13, rk: 'RB2' },
@@ -158,10 +175,10 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'WR', n: 'Jaxon Smith-Njigba', p: 'WR', ppg: 22.3, g: 13, rk: 'WR1' },
       { s: 'WR', n: 'Rashee Rice', p: 'WR', ppg: 19.7, g: 7, rk: 'WR30' },
       { s: 'TE', n: 'Harold Fannin Jr.', p: 'TE', ppg: 9.5, g: 6, rk: 'TE6' },
-      { s: 'FLEX', n: 'Jahmyr Gibbs', p: 'RB', ppg: 19.1, g: 5, rk: 'RB3' },
+      { s: 'FLEX', n: 'Oronde Gadsden II', p: 'TE', ppg: 7.7, g: 6, rk: 'TE18' },
     ] },
-  { seed: 7, year: 2023, managerId: 'f28186ad-c398-4bf5-a425-e387fa1e03a3', manager: 'Connie', team: 'Milk Man', wins: 8, losses: 6, ties: 0, ppg: 129.4, index: 1.066, resume: 64.6, finish: 'champion', finalRank: 1, regularRank: 3, high: 186.0, low: 80.1, streak: 4,
-    case: 'An 8-6 team that peaked at exactly the right moment and beat the 11-3 wagon by thirty-one in the final. Proof that the regular season is a suggestion.' ,
+  { seed: 7, year: 2023, managerId: 'f28186ad-c398-4bf5-a425-e387fa1e03a3', manager: 'Connie', team: 'Milk Man', wins: 8, losses: 6, ties: 0, ppg: 129.4, index: 1.066, resume: 64.5, finish: 'champion', finalRank: 1, regularRank: 3, high: 186, low: 80.1, streak: 4,
+    case: 'An 8-6 team that peaked at exactly the right moment and beat the 11-3 wagon by thirty-one in the final. Proof that the regular season is a suggestion.',
     lineup: [
       { s: 'QB', n: 'Dak Prescott', p: 'QB', ppg: 24, g: 5, rk: 'QB2' },
       { s: 'RB', n: 'Travis Etienne', p: 'RB', ppg: 17.5, g: 13, rk: 'RB3' },
@@ -171,30 +188,8 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'George Kittle', p: 'TE', ppg: 13.2, g: 13, rk: 'TE3' },
       { s: 'FLEX', n: 'Mike Williams', p: 'WR', ppg: 16.7, g: 3, rk: 'WR62' },
     ] },
-  { seed: 8, year: 2023, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'Nathanael Bartholomew', wins: 11, losses: 3, ties: 0, ppg: 125.5, index: 1.033, resume: 63.4, finish: 'runner-up', finalRank: 2, regularRank: 1, high: 174.0, low: 87.4, streak: 4,
-    case: 'Eleven and three, first in the league, four straight to close it out. Then lost the final by thirty-one to an 8-6 team. The third-best record ever posted, and nothing on the wall.' ,
-    lineup: [
-      { s: 'QB', n: 'Justin Fields', p: 'QB', ppg: 21.3, g: 6, rk: 'QB15' },
-      { s: 'RB', n: 'Bijan Robinson', p: 'RB', ppg: 13.1, g: 10, rk: 'RB9' },
-      { s: 'RB', n: 'Brian Robinson', p: 'RB', ppg: 13.4, g: 7, rk: 'RB15' },
-      { s: 'WR', n: 'A.J. Brown', p: 'WR', ppg: 22.8, g: 8, rk: 'WR4' },
-      { s: 'WR', n: 'Jordan Addison', p: 'WR', ppg: 14.8, g: 9, rk: 'WR23' },
-      { s: 'TE', n: 'Mark Andrews', p: 'TE', ppg: 14.6, g: 9, rk: 'TE6' },
-      { s: 'FLEX', n: 'Nico Collins', p: 'WR', ppg: 13.8, g: 6, rk: 'WR12' },
-    ] },
-  { seed: 9, year: 2024, managerId: 'ca70f1bc-3bc8-4ab3-af35-3b3ee25c157f', manager: 'Ricci', team: 'OG CARHARTT', wins: 10, losses: 4, ties: 0, ppg: 130.3, index: 1.063, resume: 62.8, finish: 'runner-up', finalRank: 2, regularRank: 2, high: 163.7, low: 93.5, streak: 7,
-    case: 'Ten wins, a seven-game streak, and a final it lost by eleven to a team that had finished sixth. The most conventional great team in the field.' ,
-    lineup: [
-      { s: 'QB', n: 'Jalen Hurts', p: 'QB', ppg: 24.2, g: 13, rk: 'QB5' },
-      { s: 'RB', n: 'Bijan Robinson', p: 'RB', ppg: 19, g: 13, rk: 'RB4' },
-      { s: 'RB', n: 'Chuba Hubbard', p: 'RB', ppg: 14.9, g: 7, rk: 'RB12' },
-      { s: 'WR', n: 'Drake London', p: 'WR', ppg: 15.2, g: 13, rk: 'WR8' },
-      { s: 'WR', n: 'Jaxon Smith-Njigba', p: 'WR', ppg: 15.9, g: 10, rk: 'WR7' },
-      { s: 'TE', n: 'George Kittle', p: 'TE', ppg: 16.7, g: 11, rk: 'TE2' },
-      { s: 'FLEX', n: 'Malik Nabers', p: 'WR', ppg: 17.4, g: 8, rk: 'WR12' },
-    ] },
-  { seed: 10, year: 2022, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'Space Mav', wins: 12, losses: 2, ties: 0, ppg: 124.2, index: 1.053, resume: 62.3, finish: 'rank', finalRank: 3, regularRank: 1, high: 170.3, low: 49.5, streak: 6,
-    case: 'Twelve and two, the best record in the history of the league. It also posted the lowest score anybody has ever put up, a 49.5, in the same season. Went out of the playoffs by seven.' ,
+  { seed: 8, year: 2022, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'Space Mav', wins: 12, losses: 2, ties: 0, ppg: 124.2, index: 1.053, resume: 63.6, finish: 'rank', finalRank: 3, regularRank: 1, high: 170.3, low: 49.5, streak: 6,
+    case: 'Twelve and two, the best record in the history of the league. It also posted the lowest score anybody has ever put up, a 49.5, in the same season. Went out of the playoffs by seven.',
     lineup: [
       { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 24.4, g: 11, rk: 'QB6' },
       { s: 'RB', n: 'Saquon Barkley', p: 'RB', ppg: 17.4, g: 13, rk: 'RB5' },
@@ -202,21 +197,21 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'WR', n: 'Justin Jefferson', p: 'WR', ppg: 22.1, g: 12, rk: 'WR1' },
       { s: 'WR', n: 'Christian Kirk', p: 'WR', ppg: 15.5, g: 11, rk: 'WR10' },
       { s: 'TE', n: 'Zach Ertz', p: 'TE', ppg: 10.4, g: 7, rk: 'TE5' },
-      { s: 'FLEX', n: 'CeeDee Lamb', p: 'WR', ppg: 18.8, g: 5, rk: 'WR7' },
+      { s: 'FLEX', n: 'David Montgomery', p: 'RB', ppg: 10.7, g: 6, rk: 'RB25' },
     ] },
-  { seed: 11, year: 2024, managerId: '6897f929-c070-4e0e-9633-d9e90794a1c0', manager: 'Sean', team: '3-Star REECHIE', wins: 10, losses: 4, ties: 0, ppg: 137.9, index: 1.126, resume: 62.3, finish: 'rank', finalRank: 4, regularRank: 1, high: 169.8, low: 102.6, streak: 5,
-    case: 'First in the league and first in scoring at 138 a week, then gone in two playoff games decided by a combined twenty-nine points. The best team to leave with nothing.' ,
+  { seed: 9, year: 2024, managerId: '6897f929-c070-4e0e-9633-d9e90794a1c0', manager: 'Sean', team: '3-Star REECHIE', wins: 10, losses: 4, ties: 0, ppg: 137.9, index: 1.126, resume: 63.2, finish: 'rank', finalRank: 4, regularRank: 1, high: 169.8, low: 102.6, streak: 5,
+    case: 'First in the league and first in scoring at 138 a week, then gone in two playoff games decided by a combined twenty-nine points. The best team to leave with nothing.',
     lineup: [
       { s: 'QB', n: 'Joe Burrow', p: 'QB', ppg: 27, g: 13, rk: 'QB2' },
       { s: 'RB', n: 'De\'Von Achane', p: 'RB', ppg: 17.7, g: 13, rk: 'RB6' },
       { s: 'RB', n: 'Joe Mixon', p: 'RB', ppg: 21.2, g: 10, rk: 'RB10' },
       { s: 'WR', n: 'Ja\'Marr Chase', p: 'WR', ppg: 24.8, g: 13, rk: 'WR1' },
-      { s: 'WR', n: 'Jordan Addison', p: 'WR', ppg: 12.1, g: 5, rk: 'WR18' },
+      { s: 'WR', n: 'Chris Olave', p: 'WR', ppg: 8.3, g: 7, rk: 'WR55' },
       { s: 'TE', n: 'Jake Ferguson', p: 'TE', ppg: 9.5, g: 8, rk: 'TE18' },
       { s: 'FLEX', n: 'Kenneth Walker III', p: 'RB', ppg: 19.1, g: 6, rk: 'RB22' },
     ] },
-  { seed: 12, year: 2022, managerId: 'c8db587f-7936-4cd7-a4d7-a3efa9edbe4c', manager: 'Kyle', team: 'Wyle Wiverd', wins: 10, losses: 4, ties: 0, ppg: 131.7, index: 1.116, resume: 61.4, finish: 'rank', finalRank: 4, regularRank: 2, high: 170.9, low: 100.1, streak: 4,
-    case: 'Ten and four while scoring 132 a week, and it drew the second-softest slate in league history to do it: 108 points against. Lost the semifinal by three to the team that won the whole thing.' ,
+  { seed: 10, year: 2022, managerId: 'c8db587f-7936-4cd7-a4d7-a3efa9edbe4c', manager: 'Kyle', team: 'Wyle Wiverd', wins: 10, losses: 4, ties: 0, ppg: 131.7, index: 1.116, resume: 62.2, finish: 'rank', finalRank: 4, regularRank: 2, high: 170.9, low: 100.1, streak: 4,
+    case: 'Ten and four while scoring 132 a week, and it drew the second-softest slate in league history to do it: 108 points against. Lost the semifinal by three to the team that won the whole thing.',
     lineup: [
       { s: 'QB', n: 'Josh Allen', p: 'QB', ppg: 28.2, g: 13, rk: 'QB3' },
       { s: 'RB', n: 'Derrick Henry', p: 'RB', ppg: 18.9, g: 13, rk: 'RB4' },
@@ -226,30 +221,41 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'Pat Freiermuth', p: 'TE', ppg: 10.7, g: 12, rk: 'TE4' },
       { s: 'FLEX', n: 'Dameon Pierce', p: 'RB', ppg: 15.1, g: 7, rk: 'RB15' },
     ] },
-  { seed: 13, year: 2020, managerId: 'ca70f1bc-3bc8-4ab3-af35-3b3ee25c157f', manager: 'Ricci', team: 'Huntingforkickers', wins: 7, losses: 6, ties: 0, ppg: 127.0, index: 1.024, resume: 59.5, finish: 'champion', finalRank: 1, regularRank: 4, high: 145.9, low: 90.8, streak: 2,
-    case: 'Squeaked in at 7-6 having never won more than two in a row, then won three straight in January and closed with a 179 in the final. The original proof that you only have to be good for three weeks.' ,
+  { seed: 11, year: 2024, managerId: 'ca70f1bc-3bc8-4ab3-af35-3b3ee25c157f', manager: 'Ricci', team: 'OG CARHARTT', wins: 10, losses: 4, ties: 0, ppg: 130.3, index: 1.063, resume: 61.9, finish: 'runner-up', finalRank: 2, regularRank: 2, high: 163.7, low: 93.5, streak: 7,
+    case: 'Ten wins, a seven-game streak, and a final it lost by eleven to a team that had finished sixth. The most conventional great team in the field.',
+    lineup: [
+      { s: 'QB', n: 'Jalen Hurts', p: 'QB', ppg: 24.2, g: 13, rk: 'QB5' },
+      { s: 'RB', n: 'Bijan Robinson', p: 'RB', ppg: 19, g: 13, rk: 'RB4' },
+      { s: 'RB', n: 'Chuba Hubbard', p: 'RB', ppg: 14.9, g: 7, rk: 'RB12' },
+      { s: 'WR', n: 'Drake London', p: 'WR', ppg: 15.2, g: 13, rk: 'WR8' },
+      { s: 'WR', n: 'Jaxon Smith-Njigba', p: 'WR', ppg: 15.9, g: 10, rk: 'WR7' },
+      { s: 'TE', n: 'George Kittle', p: 'TE', ppg: 16.7, g: 11, rk: 'TE2' },
+      { s: 'FLEX', n: 'Malik Nabers', p: 'WR', ppg: 17.4, g: 8, rk: 'WR12' },
+    ] },
+  { seed: 12, year: 2023, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'Nathanael Bartholomew', wins: 11, losses: 3, ties: 0, ppg: 125.5, index: 1.033, resume: 61.7, finish: 'runner-up', finalRank: 2, regularRank: 1, high: 174, low: 87.4, streak: 4,
+    case: 'Eleven and three, first in the league, four straight to close it out. Then lost the final by thirty-one to an 8-6 team. The third-best record ever posted, and nothing on the wall.',
+    lineup: [
+      { s: 'QB', n: 'Justin Fields', p: 'QB', ppg: 21.3, g: 6, rk: 'QB15' },
+      { s: 'RB', n: 'Bijan Robinson', p: 'RB', ppg: 13.1, g: 10, rk: 'RB9' },
+      { s: 'RB', n: 'Brian Robinson', p: 'RB', ppg: 13.4, g: 7, rk: 'RB15' },
+      { s: 'WR', n: 'A.J. Brown', p: 'WR', ppg: 22.8, g: 8, rk: 'WR4' },
+      { s: 'WR', n: 'Jordan Addison', p: 'WR', ppg: 14.8, g: 9, rk: 'WR23' },
+      { s: 'TE', n: 'Mark Andrews', p: 'TE', ppg: 14.6, g: 9, rk: 'TE6' },
+      { s: 'FLEX', n: 'Nico Collins', p: 'WR', ppg: 13.8, g: 6, rk: 'WR12' },
+    ] },
+  { seed: 13, year: 2020, managerId: 'ca70f1bc-3bc8-4ab3-af35-3b3ee25c157f', manager: 'Ricci', team: 'Huntingforkickers', wins: 7, losses: 6, ties: 0, ppg: 127, index: 1.024, resume: 58.9, finish: 'champion', finalRank: 1, regularRank: 4, high: 145.9, low: 90.8, streak: 2,
+    case: 'Squeaked in at 7-6 having never won more than two in a row, then won three straight in January and closed with a 179 in the final. The original proof that you only have to be good for three weeks.',
     lineup: [
       { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 23.2, g: 9, rk: 'QB11' },
       { s: 'RB', n: 'David Johnson', p: 'RB', ppg: 12.2, g: 6, rk: 'RB26' },
-      { s: 'RB', n: 'Antonio Gibson', p: 'RB', ppg: 17, g: 4, rk: 'RB6' },
+      { s: 'RB', n: 'Jerick McKinnon', p: 'RB', ppg: 9.3, g: 7, rk: 'RB29' },
       { s: 'WR', n: 'Stefon Diggs', p: 'WR', ppg: 18.1, g: 12, rk: 'WR5' },
       { s: 'WR', n: 'JuJu Smith-Schuster', p: 'WR', ppg: 13.9, g: 11, rk: 'WR20' },
       { s: 'TE', n: 'Travis Kelce', p: 'TE', ppg: 20, g: 12, rk: 'TE1' },
       { s: 'FLEX', n: 'Michael Gallup', p: 'WR', ppg: 11.8, g: 6, rk: 'WR37' },
     ] },
-  { seed: 14, year: 2020, managerId: 'eaeedefa-2711-4d93-b0ce-a795c5f4d55a', manager: 'Mason', team: 'Show Me your TDs', wins: 9, losses: 4, ties: 0, ppg: 136.6, index: 1.102, resume: 59.2, finish: 'rank', finalRank: 7, regularRank: 2, high: 193.9, low: 102.3, streak: 5,
-    case: 'Nine and four, second in the regular season, and a 194 on its record. Finished seventh. The widest gap in league history between how good a team was and where it ended up.' ,
-    lineup: [
-      { s: 'QB', n: 'Tom Brady', p: 'QB', ppg: 25.3, g: 8, rk: 'QB8' },
-      { s: 'RB', n: 'Kareem Hunt', p: 'RB', ppg: 17.1, g: 6, rk: 'RB9' },
-      { s: 'RB', n: 'Joe Mixon', p: 'RB', ppg: 28.8, g: 2, rk: 'RB31' },
-      { s: 'WR', n: 'Keenan Allen', p: 'WR', ppg: 18.5, g: 12, rk: 'WR4' },
-      { s: 'WR', n: 'DeAndre Hopkins', p: 'WR', ppg: 20.5, g: 7, rk: 'WR6' },
-      { s: 'TE', n: 'Noah Fant', p: 'TE', ppg: 9.9, g: 8, rk: 'TE10' },
-      { s: 'FLEX', n: 'Tyreek Hill', p: 'WR', ppg: 33.2, g: 4, rk: 'WR1' },
-    ] },
-  { seed: 15, year: 2022, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'Pat Bateman', wins: 7, losses: 7, ties: 0, ppg: 122.7, index: 1.039, resume: 59, finish: 'champion', finalRank: 1, regularRank: 5, high: 166.4, low: 80.2, streak: 2,
-    case: 'Went .500 on the nose, then won three straight in January and ended it with a 146-75 demolition in the final. The least likely champion the league has produced, and it is not close.' ,
+  { seed: 14, year: 2022, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'Pat Bateman', wins: 7, losses: 7, ties: 0, ppg: 122.7, index: 1.039, resume: 58.9, finish: 'champion', finalRank: 1, regularRank: 5, high: 166.4, low: 80.2, streak: 2,
+    case: 'Went .500 on the nose, then won three straight in January and ended it with a 146-75 demolition in the final. The least likely champion the league has produced, and it is not close.',
     lineup: [
       { s: 'QB', n: 'Patrick Mahomes', p: 'QB', ppg: 29.5, g: 6, rk: 'QB1' },
       { s: 'RB', n: 'Christian McCaffrey', p: 'RB', ppg: 24.1, g: 6, rk: 'RB3' },
@@ -257,18 +263,29 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'WR', n: 'Chris Olave', p: 'WR', ppg: 14.5, g: 7, rk: 'WR20' },
       { s: 'WR', n: 'Amari Cooper', p: 'WR', ppg: 15, g: 6, rk: 'WR13' },
       { s: 'TE', n: 'Travis Kelce', p: 'TE', ppg: 21, g: 7, rk: 'TE1' },
-      { s: 'FLEX', n: 'Keenan Allen', p: 'WR', ppg: 17.6, g: 4, rk: 'WR48' },
+      { s: 'FLEX', n: 'AJ Dillon', p: 'RB', ppg: 7.7, g: 7, rk: 'RB28' },
     ] },
-  { seed: 16, year: 2024, managerId: 'dca75bbf-9c3e-4576-b6c4-845e6dc20030', manager: 'Chris', team: 'Naz Reid', wins: 9, losses: 5, ties: 0, ppg: 134.7, index: 1.099, resume: 56.7, finish: 'rank', finalRank: 5, regularRank: 3, high: 161.1, low: 100.2, streak: 4,
-    case: 'Nine and five with the second-best scoring average in the league that year, 135 a week. Then lost its opening playoff game by forty-one and was gone. The last team into the field, in on the numbers rather than on anything it won.' ,
+  { seed: 15, year: 2019, managerId: 'c4e34f56-1c96-4453-ac45-e45d63b0673d', manager: 'Krish', team: 'Man tit', wins: 7, losses: 6, ties: 0, ppg: 130, index: 1.122, resume: 57.7, finish: 'rank', finalRank: 3, regularRank: 4, high: 192.4, low: 90.8, streak: 4,
+    case: 'Third in the league in scoring in a year nobody else\'s numbers survive, and a 192 in week five that is still the fourth-biggest week anybody has ever posted. Went 7-6, then won two of three in January to finish third. The only manager in the field who is no longer in the league.',
     lineup: [
-      { s: 'QB', n: 'Brock Purdy', p: 'QB', ppg: 20.1, g: 12, rk: 'QB11' },
-      { s: 'RB', n: 'Kyren Williams', p: 'RB', ppg: 17.1, g: 13, rk: 'RB8' },
-      { s: 'RB', n: 'David Montgomery', p: 'RB', ppg: 17.4, g: 9, rk: 'RB9' },
-      { s: 'WR', n: 'Justin Jefferson', p: 'WR', ppg: 18.2, g: 13, rk: 'WR2' },
-      { s: 'WR', n: 'DJ Moore', p: 'WR', ppg: 12.9, g: 10, rk: 'WR15' },
-      { s: 'TE', n: 'Travis Kelce', p: 'TE', ppg: 12.2, g: 13, rk: 'TE4' },
-      { s: 'FLEX', n: 'Chase Brown', p: 'RB', ppg: 21.3, g: 6, rk: 'RB11' },
+      { s: 'QB', n: 'Deshaun Watson', p: 'QB', ppg: 26.1, g: 12, rk: 'QB3' },
+      { s: 'RB', n: 'Dalvin Cook', p: 'RB', ppg: 22.5, g: 12, rk: 'RB2' },
+      { s: 'RB', n: 'Mark Ingram', p: 'RB', ppg: 14.1, g: 10, rk: 'RB9' },
+      { s: 'WR', n: 'Michael Thomas', p: 'WR', ppg: 22.8, g: 12, rk: 'WR1' },
+      { s: 'WR', n: 'Allen Robinson', p: 'WR', ppg: 15.5, g: 12, rk: 'WR14' },
+      { s: 'TE', n: 'Hunter Henry', p: 'TE', ppg: 11.5, g: 7, rk: 'TE8' },
+      { s: 'FLEX', n: 'Royce Freeman', p: 'RB', ppg: 9.4, g: 8, rk: 'RB35' },
+    ] },
+  { seed: 16, year: 2020, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'Deshaun Dotson', wins: 7, losses: 6, ties: 0, ppg: 137.9, index: 1.112, resume: 56.7, finish: 'rank', finalRank: 3, regularRank: 3, high: 199.8, low: 86.3, streak: 2,
+    case: 'The highest-scoring team in the league that year and the owner of a 199.8, the second-biggest week in league history. Still only 7-6, because it also drew more points against than any other team in this field: 131 a week. Won two of three in January to finish third.',
+    lineup: [
+      { s: 'QB', n: 'Deshaun Watson', p: 'QB', ppg: 29.9, g: 8, rk: 'QB6' },
+      { s: 'RB', n: 'Aaron Jones', p: 'RB', ppg: 19.3, g: 10, rk: 'RB5' },
+      { s: 'RB', n: 'Austin Ekeler', p: 'RB', ppg: 16.2, g: 6, rk: 'RB32' },
+      { s: 'WR', n: 'Davante Adams', p: 'WR', ppg: 26.8, g: 8, rk: 'WR2' },
+      { s: 'WR', n: 'Tyler Lockett', p: 'WR', ppg: 18.1, g: 11, rk: 'WR7' },
+      { s: 'TE', n: 'Mike Gesicki', p: 'TE', ppg: 14.5, g: 3, rk: 'TE7' },
+      { s: 'FLEX', n: 'Jonathan Taylor', p: 'RB', ppg: 12.8, g: 5, rk: 'RB15' },
     ] },
 ]
 
@@ -309,9 +326,9 @@ export function breakdown(t: GoatTeam): { record: number; scoring: number; post:
   const games = t.wins + t.losses + t.ties
   const winRate = games ? (t.wins + 0.5 * t.ties) / games : 0
   return {
-    record: +(45 * winRate).toFixed(1),
-    scoring: +(35 * Math.max(0, Math.min(1, (t.index - 0.85) / 0.4))).toFixed(1),
-    post: t.finish === 'champion' ? 20 : t.finish === 'runner-up' ? 12 : 6,
+    record: +(40 * winRate).toFixed(1),
+    scoring: +(40 * Math.max(0, Math.min(1, (t.index - 0.85) / 0.4))).toFixed(1),
+    post: placementPoints(t.finalRank),
     total: t.resume,
   }
 }
