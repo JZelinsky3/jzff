@@ -232,7 +232,7 @@
 /* ── Where the ballots landed ──
    A column per win total, so a 6.5 everybody agreed on reads differently
    from a 6.5 pulled out of 3s and 10s. */
-.mr-dist { position: relative; padding-top: 1.05rem; }
+.mr-dist { position: relative; padding-top: 1.95rem; }
 .mr-bins { display: flex; align-items: flex-end; height: 62px; border-bottom: 1.5px solid var(--ink); }
 .mr-bin {
   flex: 1; height: 100%; position: relative;
@@ -250,7 +250,7 @@
 }
 
 /* The line and the model, drawn over the distribution. */
-.mr-mark { position: absolute; top: 1.05rem; bottom: 0; width: 0; }
+.mr-mark { position: absolute; top: 1.95rem; bottom: 0; width: 0; }
 .mr-mark span {
   position: absolute; left: 0; bottom: 100%; transform: translateX(-50%);
   margin-bottom: .12rem; padding: 0 .22rem; background: var(--field);
@@ -260,7 +260,8 @@
 .mr-mark-line { border-left: 2px solid var(--stamp); }
 .mr-mark-line span { color: var(--stamp); }
 .mr-mark-model { border-left: 1.5px dashed var(--ink-3); }
-.mr-mark-model span { color: var(--ink-3); }
+/* Line and model can sit a tenth apart, so the labels get their own rows. */
+.mr-mark-model span { color: var(--ink-3); bottom: calc(100% + .82rem); }
 
 /* ── Four figures under the distribution ── */
 .mr-figs { display: flex; gap: .35rem; margin-top: 1.5rem; }
