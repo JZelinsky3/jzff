@@ -135,6 +135,9 @@
 }
 .gt-team-band.is-champ { background: var(--gold); }
 .gt-team-band.is-champ .gt-team-finish { color: #2a2109; }
+/* Picked wins over champion: the band is green now, so the label goes light. */
+.gt-team.is-picked .gt-team-band.is-champ .gt-team-finish { color: #fff; }
+.gt-team.is-picked .gt-team-band.is-champ .gt-seed { background: var(--field); color: var(--green); }
 .gt-team-band.is-champ .gt-seed { background: #2a2109; color: var(--field); }
 .gt-team-band.is-champ .gt-team-ring { color: #2a2109; background: rgba(255, 255, 255, .5); }
 .gt-team.is-picked .gt-team-band { background: var(--green); }
@@ -206,23 +209,42 @@
    The lineup describes the roster; this says what actually put the team in the
    field, so a 1 seed with two WR40s doesn't read as a bug. */
 .gt-why {
-  display: flex; align-items: center; gap: .55rem;
-  margin: 0 .8rem .55rem; padding: .4rem .5rem;
+  display: flex; align-items: stretch; gap: .6rem;
+  margin: 0 .8rem .55rem; padding: .45rem .55rem;
   background: var(--paper-2); border: 1px solid var(--rule-soft);
 }
 .gt-why-total {
-  flex: none; font-family: var(--gt-mono); font-size: 1rem; font-weight: 700;
-  font-variant-numeric: tabular-nums; color: var(--ink);
+  flex: none; display: flex; flex-direction: column; justify-content: center;
+  padding-right: .6rem; border-right: 1px solid var(--rule);
 }
-.gt-why-parts { display: flex; flex-wrap: wrap; gap: .1rem .5rem; min-width: 0; }
-.gt-why-parts i {
+.gt-why-total b {
+  font-family: var(--gt-mono); font-size: 1.15rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1;
+}
+.gt-why-total i {
   font-style: normal; font-family: var(--gt-mono);
-  font-size: .48rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
-  white-space: nowrap;
+  font-size: .45rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--green); margin-top: .12rem;
 }
-.gt-why-rec  { color: #2d6146; }
-.gt-why-sco  { color: #2f6b8a; }
-.gt-why-post { color: #8a3a4e; }
+.gt-why-parts { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: .3rem; min-width: 0; }
+.gt-why-part { display: flex; flex-direction: column; min-width: 0; }
+.gt-why-part b {
+  font-family: var(--gt-mono); font-size: .8rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; line-height: 1;
+}
+.gt-why-part em {
+  font-style: normal; font-family: var(--gt-mono);
+  font-size: .43rem; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.gt-why-part i {
+  font-style: normal; font-family: var(--gt-mono);
+  font-size: .43rem; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; opacity: .85;
+}
+.gt-why-rec  b, .gt-why-rec  i { color: #2d6146; }
+.gt-why-sco  b, .gt-why-sco  i { color: #2f6b8a; }
+.gt-why-post b, .gt-why-post i { color: #8a3a4e; }
 
 /* ── The lineup ── */
 .gt-lineup { margin: 0 .8rem .55rem; }

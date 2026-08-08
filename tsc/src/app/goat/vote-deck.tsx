@@ -139,6 +139,12 @@ export function VoteDeck({
             than everybody else did that year. The league has never scored the
             same way twice, so raw points can&apos;t compare across eras.
           </p>
+          <p className="gt-note">
+            Both that and the weekly average count the regular season{' '}
+            <b>and</b> the real playoff games. Consolation and placement games
+            are thrown out, so nothing a team did after it was eliminated
+            counts for anything.
+          </p>
 
           <Ladder round={round} />
 
@@ -346,11 +352,26 @@ function TeamCard({ team, picked, onPick }: { team: GoatTeam; picked: boolean; o
           does not explain the seeding, and a WR41 next to a 1 seed reads as a
           mistake until you can see the score it was actually built from. */}
       <div className="gt-why">
-        <span className="gt-why-total">{team.resume.toFixed(1)}</span>
+        <span className="gt-why-total">
+          <b>{team.resume.toFixed(1)}</b>
+          <i>{ordinal(team.seed)} of 16</i>
+        </span>
         <span className="gt-why-parts">
-          <i className="gt-why-rec">{breakdown(team).record.toFixed(1)} record</i>
-          <i className="gt-why-sco">{breakdown(team).scoring.toFixed(1)} scoring</i>
-          <i className="gt-why-post">{breakdown(team).post.toFixed(1)} placement</i>
+          <span className="gt-why-part gt-why-rec">
+            <b>{breakdown(team).record.toFixed(1)}</b>
+            <em>record</em>
+            <i>{ordinal(team.recRank)}</i>
+          </span>
+          <span className="gt-why-part gt-why-sco">
+            <b>{breakdown(team).scoring.toFixed(1)}</b>
+            <em>scoring</em>
+            <i>{ordinal(team.scoRank)}</i>
+          </span>
+          <span className="gt-why-part gt-why-post">
+            <b>{breakdown(team).post.toFixed(1)}</b>
+            <em>placement</em>
+            <i>{ordinal(team.postRank)}</i>
+          </span>
         </span>
       </div>
 
