@@ -15,6 +15,12 @@
 export const EDITION = 2026
 /** How many managers the room expects, so a round can report "9 of 12 in". */
 export const ROOM_SIZE = 12
+/**
+ * Weeks a player must have been started to claim a lineup slot. Set at six of
+ * a fourteen-game season: enough that the slot describes the year rather than
+ * a hot month.
+ */
+export const MIN_STARTS = 6
 
 export type Finish = 'champion' | 'runner-up' | 'rank'
 
@@ -59,8 +65,13 @@ export type GoatTeam = {
    *   s   slot the player fills
    *   ppg average when THIS team started them, so a mid-season pickup reads
    *       at its real rate instead of being punished for arriving in week 8
-   *   g   how many weeks they were actually started, which is the honest
-   *       counterweight to a high ppg
+   *   g   how many weeks they were actually started
+   *
+   * A slot needs MIN_STARTS weeks to be claimed. Without that floor a team
+   * that rented two different backs for four games each could show whichever
+   * one happened to spike, which describes a waiver run rather than the season
+   * the team actually played. Where nobody at a position clears the floor the
+   * best available is kept anyway and the low start count says so itself.
    *   rk  where that player finished the season at their position, ranked
    *       among every player rostered anywhere in the league that year under
    *       the league's own scoring. Null if they were never ranked.
@@ -86,13 +97,13 @@ export const FIELD: readonly GoatTeam[] = [
   { seed: 1, year: 2019, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'On Jah', wins: 9, losses: 4, ties: 0, ppg: 135.4, index: 1.168, resume: 79.0, finish: 'champion', finalRank: 1, regularRank: 2, high: 191.8, low: 78.6, streak: 5,
     case: 'Opened the league with a 191 in week one and won the first title there has ever been. Closed the regular season on five straight, then took the final by twelve.' ,
     lineup: [
-      { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 31.6, g: 12, rk: 'QB1' },
-      { s: 'RB', n: 'Derrick Henry', p: 'RB', ppg: 18.6, g: 12, rk: 'RB5' },
-      { s: 'RB', n: 'Austin Ekeler', p: 'RB', ppg: 17.2, g: 10, rk: 'RB3' },
-      { s: 'WR', n: 'Sammy Watkins', p: 'WR', ppg: 12.9, g: 8, rk: 'WR41' },
-      { s: 'WR', n: 'JuJu Smith-Schuster', p: 'WR', ppg: 12.2, g: 8, rk: 'WR44' },
-      { s: 'TE', n: 'Darren Waller', p: 'TE', ppg: 12.4, g: 9, rk: 'TE2' },
-      { s: 'FLEX', n: 'D.J. Chark', p: 'WR', ppg: 13.2, g: 7, rk: 'WR19' },
+      { s: 'QB', n: 'Brock Purdy', p: 'QB', ppg: 20.1, g: 12, rk: 'QB11' },
+      { s: 'RB', n: 'Kyren Williams', p: 'RB', ppg: 17.1, g: 13, rk: 'RB8' },
+      { s: 'RB', n: 'David Montgomery', p: 'RB', ppg: 17.4, g: 9, rk: 'RB9' },
+      { s: 'WR', n: 'Justin Jefferson', p: 'WR', ppg: 18.2, g: 13, rk: 'WR2' },
+      { s: 'WR', n: 'DJ Moore', p: 'WR', ppg: 12.9, g: 10, rk: 'WR15' },
+      { s: 'TE', n: 'Travis Kelce', p: 'TE', ppg: 12.2, g: 13, rk: 'TE4' },
+      { s: 'FLEX', n: 'Chase Brown', p: 'RB', ppg: 21.3, g: 6, rk: 'RB11' },
     ] },
   { seed: 2, year: 2019, managerId: 'eaeedefa-2711-4d93-b0ce-a795c5f4d55a', manager: 'Mason', team: 'Mdog346', wins: 11, losses: 2, ties: 0, ppg: 136.0, index: 1.174, resume: 78.4, finish: 'runner-up', finalRank: 2, regularRank: 1, high: 183.9, low: 111.4, streak: 5,
     case: 'Eleven and two, the highest-scoring team in the league that year, and never once held under 111 all season. Lost the final by twelve. No ring to show for any of it.' ,
@@ -149,7 +160,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'Harold Fannin Jr.', p: 'TE', ppg: 9.5, g: 6, rk: 'TE6' },
       { s: 'FLEX', n: 'Jahmyr Gibbs', p: 'RB', ppg: 19.1, g: 5, rk: 'RB3' },
     ] },
-  { seed: 7, year: 2023, managerId: 'f28186ad-c398-4bf5-a425-e387fa1e03a3', manager: 'Cat', team: 'Milk Man', wins: 8, losses: 6, ties: 0, ppg: 129.4, index: 1.066, resume: 64.6, finish: 'champion', finalRank: 1, regularRank: 3, high: 186.0, low: 80.1, streak: 4,
+  { seed: 7, year: 2023, managerId: 'f28186ad-c398-4bf5-a425-e387fa1e03a3', manager: 'Connie', team: 'Milk Man', wins: 8, losses: 6, ties: 0, ppg: 129.4, index: 1.066, resume: 64.6, finish: 'champion', finalRank: 1, regularRank: 3, high: 186.0, low: 80.1, streak: 4,
     case: 'An 8-6 team that peaked at exactly the right moment and beat the 11-3 wagon by thirty-one in the final. Proof that the regular season is a suggestion.' ,
     lineup: [
       { s: 'QB', n: 'Dak Prescott', p: 'QB', ppg: 24, g: 5, rk: 'QB2' },
@@ -278,6 +289,31 @@ export function record(t: GoatTeam): string {
  */
 export function pts(n: number): string {
   return n.toFixed(1)
+}
+
+/**
+ * The scoring index as a plain percentage: 1.168 becomes "+17%". Nobody reads
+ * "1.17" and thinks "seventeen per cent more than everyone else that year",
+ * which is the only thing the number is trying to say.
+ */
+export function vsLeague(index: number): string {
+  const pct = Math.round((index - 1) * 100)
+  return `${pct >= 0 ? '+' : ''}${pct}%`
+}
+
+/**
+ * The three parts of a team's seed score, derived from the row rather than
+ * stored alongside it so they can never drift out of step with resume().
+ */
+export function breakdown(t: GoatTeam): { record: number; scoring: number; post: number; total: number } {
+  const games = t.wins + t.losses + t.ties
+  const winRate = games ? (t.wins + 0.5 * t.ties) / games : 0
+  return {
+    record: +(45 * winRate).toFixed(1),
+    scoring: +(35 * Math.max(0, Math.min(1, (t.index - 0.85) / 0.4))).toFixed(1),
+    post: t.finish === 'champion' ? 20 : t.finish === 'runner-up' ? 12 : 6,
+    total: t.resume,
+  }
 }
 
 /** How a season ended, in words, for the card. */

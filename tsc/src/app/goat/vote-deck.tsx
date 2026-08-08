@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import {
-  ROUNDS, buildBracket, finishLine, gamesInRound, label, pts, record,
+  ROUNDS, breakdown, buildBracket, finishLine, gamesInRound, label, pts, record, vsLeague,
   type Ballot, type GoatTeam, type ResolvedGame, type Results, type RoundId,
 } from '@/lib/greatestTeam'
 import { submitBallot } from './actions'
@@ -237,7 +237,7 @@ function TeamCard({ team, picked, onPick }: { team: GoatTeam; picked: boolean; o
       onClick={onPick}
       aria-pressed={picked}
     >
-      <div className="gt-team-band">
+      <div className={`gt-team-band${team.finish === 'champion' ? ' is-champ' : ''}`}>
         <span className="gt-seed">{team.seed}</span>
         <span className="gt-team-finish">{finishLine(team)}</span>
         {/* No automatic bids: a ring is a fact about the season, not a
@@ -253,15 +253,27 @@ function TeamCard({ team, picked, onPick }: { team: GoatTeam; picked: boolean; o
       <div className="gt-figs">
         <div className="gt-fig"><b>{record(team)}</b><span>record</span></div>
         <div className="gt-fig"><b>{pts(team.ppg)}</b><span>a week</span></div>
-        <div className="gt-fig"><b>{team.index.toFixed(2)}</b><span>vs era</span></div>
+        <div className="gt-fig"><b>{vsLeague(team.index)}</b><span>vs league</span></div>
         <div className="gt-fig"><b>{team.high}</b><span>best wk</span></div>
+      </div>
+
+      {/* Why this team is this seed. The lineup below describes the roster; it
+          does not explain the seeding, and a WR41 next to a 1 seed reads as a
+          mistake until you can see the score it was actually built from. */}
+      <div className="gt-why">
+        <span className="gt-why-total">{team.resume.toFixed(1)}</span>
+        <span className="gt-why-parts">
+          <i className="gt-why-rec">{breakdown(team).record.toFixed(1)} record</i>
+          <i className="gt-why-sco">{breakdown(team).scoring.toFixed(1)} scoring</i>
+          <i className="gt-why-post">{breakdown(team).post.toFixed(1)} postseason</i>
+        </span>
       </div>
 
       {/* The lineup is the argument: team averages don't tell you whether a
           season was a QB1 carrying two WR40s or a roster deep everywhere. */}
       <div className="gt-lineup">
         <div className="gt-lineup-head">
-          <span>Starting lineup</span>
+          <span>Best lineup they started</span>
           <span>ppg</span>
         </div>
         {team.lineup.map((p) => (

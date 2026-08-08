@@ -20,6 +20,7 @@
   --green-2:    #3f8560;
   --green-wash: rgba(45, 97, 70, .10);
   --stamp:      #b33a2b;
+  --gold:       #8a6a24;
   --shadow:     rgba(31, 34, 28, .13);
   --on-green:   #fff;
 
@@ -124,12 +125,15 @@
   box-shadow: 5px 5px 0 var(--green), 0 0 0 2px var(--green);
 }
 
-/* Banner. Goes solid green the moment this is the one advancing. */
+/* Banner. Ink for everybody, antique gold if that season ended in a title, and
+   solid green the moment this is the one advancing. The gold is the tell you
+   can read from across the card without hunting for the ring badge. */
 .gt-team-band {
   display: flex; align-items: center; gap: .5rem;
   padding: .42rem .55rem; background: var(--ink);
   transition: background .12s ease;
 }
+.gt-team-band.is-champ { background: var(--gold); }
 .gt-team.is-picked .gt-team-band { background: var(--green); }
 .gt-seed {
   display: inline-flex; align-items: center; justify-content: center;
@@ -147,7 +151,7 @@
   margin-left: auto; flex: none;
   font-family: var(--gt-mono); font-size: .46rem; font-weight: 700;
   letter-spacing: .16em; text-transform: uppercase;
-  color: var(--ink); background: var(--paper-3); padding: .18rem .34rem;
+  color: var(--gold); background: var(--field); padding: .18rem .34rem;
 }
 /* The tick that says "this one survives". */
 .gt-team.is-picked::after {
@@ -184,6 +188,28 @@
   font-family: var(--gt-mono); font-size: .45rem; font-weight: 700;
   letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3);
 }
+
+/* ── Why it is this seed ──
+   The lineup describes the roster; this says what actually put the team in the
+   field, so a 1 seed with two WR40s doesn't read as a bug. */
+.gt-why {
+  display: flex; align-items: center; gap: .55rem;
+  margin: 0 .8rem .55rem; padding: .4rem .5rem;
+  background: var(--paper-2); border: 1px solid var(--rule-soft);
+}
+.gt-why-total {
+  flex: none; font-family: var(--gt-mono); font-size: 1rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--ink);
+}
+.gt-why-parts { display: flex; flex-wrap: wrap; gap: .1rem .5rem; min-width: 0; }
+.gt-why-parts i {
+  font-style: normal; font-family: var(--gt-mono);
+  font-size: .48rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.gt-why-rec  { color: #2d6146; }
+.gt-why-sco  { color: #2f6b8a; }
+.gt-why-post { color: #8a3a4e; }
 
 /* ── The lineup ── */
 .gt-lineup { margin: 0 .8rem .55rem; }
