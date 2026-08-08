@@ -135,7 +135,7 @@ export function VoteDeck({
           <p className="gt-note">
             One number on the cards is worth knowing: <b>vs league avg</b> is how
             far above or below the average team that team scored in its own
-            season. <b>+17%</b> means it put up seventeen per cent more a week
+            season.{' '}<b>+17%</b>{' '}means it put up seventeen per cent more a week
             than everybody else did that year. The league has never scored the
             same way twice, so raw points can&apos;t compare across eras.
           </p>

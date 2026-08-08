@@ -135,7 +135,7 @@
 }
 .gt-team-band.is-champ { background: var(--gold); }
 .gt-team-band.is-champ .gt-team-finish { color: #2a2109; }
-.gt-team-band.is-champ .gt-seed { background: #2a2109; color: var(--gold); }
+.gt-team-band.is-champ .gt-seed { background: #2a2109; color: var(--field); }
 .gt-team-band.is-champ .gt-team-ring { color: #2a2109; background: rgba(255, 255, 255, .5); }
 .gt-team.is-picked .gt-team-band { background: var(--green); }
 .gt-seed {

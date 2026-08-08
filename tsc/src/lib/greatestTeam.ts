@@ -119,7 +119,7 @@ export function resume(t: { wins: number; losses: number; ties: number; index: n
 
 export const FIELD: readonly GoatTeam[] = [
   { seed: 1, year: 2019, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'On Jah', wins: 9, losses: 4, ties: 0, ppg: 137.3, index: 1.184, resume: 80.7, finish: 'champion', finalRank: 1, regularRank: 2, high: 191.8, low: 78.6, streak: 5, ppgRank: 2, seasonTeams: 14, indexRank: 2,
-    case: 'Lamar Jackson\'s MVP season, with Derrick Henry and Austin Ekeler behind him and a bench that never had to do much. Started 2-2, then went 7-2 the rest of the way and closed on five straight.',
+    case: 'Almost nothing behind the starters: a hurt Davante Adams, for 44 points, was the best thing on this bench all year. Started 2-2, then went 7-2 the rest of the way and closed on five straight.',
     lineup: [
       { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 31.6, g: 12, rk: 'QB1' },
       { s: 'RB', n: 'Derrick Henry', p: 'RB', ppg: 18.6, g: 12, rk: 'RB5' },
@@ -130,7 +130,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'FLEX', n: 'D.J. Chark', p: 'WR', ppg: 13.2, g: 7, rk: 'WR19' },
     ] },
   { seed: 2, year: 2019, managerId: 'eaeedefa-2711-4d93-b0ce-a795c5f4d55a', manager: 'Mason', team: 'Mdog346', wins: 11, losses: 2, ties: 0, ppg: 138.1, index: 1.19, resume: 79.8, finish: 'runner-up', finalRank: 2, regularRank: 1, high: 183.9, low: 111.4, streak: 5, ppgRank: 1, seasonTeams: 14, indexRank: 1,
-    case: 'Amari Cooper, Dak Prescott, Nick Chubb, Saquon Barkley and Zach Ertz all on one roster, with Julio Jones and the league\'s best kicker sitting behind them. Won eight of nine from week three and was never held under 111 all year.',
+    case: 'Off the card: Greg Zuerlein kicked 103, the Steelers defence added 64, and Julio Jones and Terry McLaurin both sat as spare receivers. Won eight of nine from week three and was never held under 111 all season.',
     lineup: [
       { s: 'QB', n: 'Dak Prescott', p: 'QB', ppg: 24.9, g: 8, rk: 'QB4' },
       { s: 'RB', n: 'Nick Chubb', p: 'RB', ppg: 17.8, g: 9, rk: 'RB8' },
@@ -141,7 +141,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'FLEX', n: 'Aaron Jones', p: 'RB', ppg: 22.6, g: 4, rk: 'RB6' },
     ] },
   { seed: 3, year: 2021, managerId: 'dca75bbf-9c3e-4576-b6c4-845e6dc20030', manager: 'Chris', team: 'Stafford University', wins: 10, losses: 4, ties: 0, ppg: 140.4, index: 1.153, resume: 78.7, finish: 'champion', finalRank: 1, regularRank: 1, high: 200.6, low: 81.2, streak: 5, ppgRank: 2, seasonTeams: 12, indexRank: 5,
-    case: 'Stafford throwing to Davante Adams and Diontae Johnson, Mark Andrews at tight end, James Conner spare. Lost its first two, then won seven of the next nine and never really slowed down.',
+    case: 'James Conner scored 101 as the third running back and Ryan Succop nearly matched him from the kicker slot. Lost its first two, then won seven of the next nine.',
     lineup: [
       { s: 'QB', n: 'Matthew Stafford', p: 'QB', ppg: 26.3, g: 13, rk: 'QB4' },
       { s: 'RB', n: 'Ezekiel Elliott', p: 'RB', ppg: 15.7, g: 13, rk: 'RB7' },
@@ -152,7 +152,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'FLEX', n: 'Courtland Sutton', p: 'WR', ppg: 10.4, g: 9, rk: 'WR34' },
     ] },
   { seed: 4, year: 2025, managerId: 'eaeedefa-2711-4d93-b0ce-a795c5f4d55a', manager: 'Mason', team: 'Rizzlers', wins: 10, losses: 4, ties: 0, ppg: 130.3, index: 1.081, resume: 72.1, finish: 'champion', finalRank: 1, regularRank: 2, high: 164.8, low: 95.4, streak: 7, ppgRank: 3, seasonTeams: 12, indexRank: 17,
-    case: 'Jalen Hurts and Puka Nacua carrying it, Brandon Aubrey kicking 137 points, Dallas Goedert a second tight end nobody needed. Won seven straight from week four and eight of nine overall.',
+    case: 'Brandon Aubrey kicked 137 points off the card and Dallas Goedert added 105 at a position already covered. Won seven straight from week four, eight of nine overall.',
     lineup: [
       { s: 'QB', n: 'Jalen Hurts', p: 'QB', ppg: 22, g: 13, rk: 'QB5' },
       { s: 'RB', n: 'Ashton Jeanty', p: 'RB', ppg: 14.2, g: 13, rk: 'RB14' },
@@ -163,7 +163,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'FLEX', n: 'Keenan Allen', p: 'WR', ppg: 10.2, g: 11, rk: 'WR27' },
     ] },
   { seed: 5, year: 2021, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'Oreos', wins: 9, losses: 5, ties: 0, ppg: 142.2, index: 1.168, resume: 69.1, finish: 'runner-up', finalRank: 2, regularRank: 3, high: 189.6, low: 109.4, streak: 6, ppgRank: 1, seasonTeams: 12, indexRank: 3,
-    case: 'Cooper Kupp\'s triple-crown year next to Ekeler, Kelce and Justin Jefferson, with Cordarrelle Patterson in the flex. Lost five in a row through the middle of the season and still won its last six.',
+    case: 'Jaylen Waddle put up 83 and never once cracked the lineup. Lost five in a row through the middle of the season and still won its last six.',
     lineup: [
       { s: 'QB', n: 'Kirk Cousins', p: 'QB', ppg: 20.9, g: 8, rk: 'QB13' },
       { s: 'RB', n: 'Austin Ekeler', p: 'RB', ppg: 21.3, g: 13, rk: 'RB2' },
@@ -174,7 +174,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'FLEX', n: 'Tyler Lockett', p: 'WR', ppg: 13.8, g: 10, rk: 'WR15' },
     ] },
   { seed: 6, year: 2023, managerId: 'f28186ad-c398-4bf5-a425-e387fa1e03a3', manager: 'Connie', team: 'Milk Man', wins: 8, losses: 6, ties: 0, ppg: 131.8, index: 1.086, resume: 66.4, finish: 'champion', finalRank: 1, regularRank: 3, high: 186, low: 80.1, streak: 4, ppgRank: 2, seasonTeams: 12, indexRank: 15,
-    case: 'CeeDee Lamb with Travis Etienne and Derrick Henry behind him, Deebo Samuel and George Kittle beside. Lost five straight in the middle of the year, then won four in a row to climb back in.',
+    case: 'Jason Myers and the Eagles defence quietly banked 203 points between them where you can\'t see them. Lost five straight mid-season, then won four in a row to climb back in.',
     lineup: [
       { s: 'QB', n: 'Dak Prescott', p: 'QB', ppg: 24, g: 5, rk: 'QB2' },
       { s: 'RB', n: 'Travis Etienne', p: 'RB', ppg: 17.5, g: 13, rk: 'RB3' },
@@ -185,7 +185,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'FLEX', n: 'Mike Williams', p: 'WR', ppg: 16.7, g: 3, rk: 'WR62' },
     ] },
   { seed: 7, year: 2022, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'Space Mav', wins: 12, losses: 2, ties: 0, ppg: 125.9, index: 1.064, resume: 65.7, finish: 'rank', finalRank: 3, regularRank: 1, high: 170.3, low: 49.5, streak: 6, ppgRank: 3, seasonTeams: 12, indexRank: 21,
-    case: 'Lamar Jackson and Justin Jefferson at the top, Saquon Barkley behind them, and CeeDee Lamb spending most of the season on the bench. Opened 8-1 and ripped off six straight from week five.',
+    case: 'CeeDee Lamb scored 94 points and still could not get into this lineup, and Jared Goff spent the whole year backing up a starter he was never going to beat. Opened 8-1 and ripped off six straight from week five.',
     lineup: [
       { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 24.4, g: 11, rk: 'QB6' },
       { s: 'RB', n: 'Saquon Barkley', p: 'RB', ppg: 17.4, g: 13, rk: 'RB5' },
@@ -196,7 +196,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'FLEX', n: 'David Montgomery', p: 'RB', ppg: 10.7, g: 6, rk: 'RB25' },
     ] },
   { seed: 8, year: 2025, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'CHILD OF GOD', wins: 10, losses: 4, ties: 0, ppg: 139.9, index: 1.161, resume: 64.5, finish: 'rank', finalRank: 5, regularRank: 1, high: 171.3, low: 112.7, streak: 7, ppgRank: 1, seasonTeams: 12, indexRank: 4,
-    case: 'Jonathan Taylor and Jaxon Smith-Njigba both going supernova, Lamar Jackson at quarterback, Christian McCaffrey turning up late. Opened 7-2, then won seven in a row.',
+    case: 'Thin behind the top four: Jakobi Meyers at 70 was the best of the rest, and the kicker managed 16 points all season. Opened 7-2, then won seven in a row.',
     lineup: [
       { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 20.7, g: 10, rk: 'QB14' },
       { s: 'RB', n: 'Jonathan Taylor', p: 'RB', ppg: 24, g: 13, rk: 'RB2' },
@@ -207,7 +207,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'FLEX', n: 'Oronde Gadsden II', p: 'TE', ppg: 7.7, g: 6, rk: 'TE18' },
     ] },
   { seed: 9, year: 2024, managerId: 'ca70f1bc-3bc8-4ab3-af35-3b3ee25c157f', manager: 'Ricci', team: 'OG CARHARTT', wins: 10, losses: 4, ties: 0, ppg: 132.4, index: 1.075, resume: 63.5, finish: 'runner-up', finalRank: 2, regularRank: 2, high: 163.7, low: 93.5, streak: 7, ppgRank: 4, seasonTeams: 12, indexRank: 18,
-    case: 'Jalen Hurts and Bijan Robinson, Drake London and George Kittle either side, Chuba Hubbard as insurance. Won seven straight from week five and eight of nine from week two.',
+    case: 'Jauan Jennings put up 93 off the bench and the Steelers defence chipped in another 60. Won seven straight from week five and eight of nine from week two.',
     lineup: [
       { s: 'QB', n: 'Jalen Hurts', p: 'QB', ppg: 24.2, g: 13, rk: 'QB5' },
       { s: 'RB', n: 'Bijan Robinson', p: 'RB', ppg: 19, g: 13, rk: 'RB4' },
@@ -218,7 +218,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'FLEX', n: 'Malik Nabers', p: 'WR', ppg: 17.4, g: 8, rk: 'WR12' },
     ] },
   { seed: 10, year: 2020, managerId: 'ca70f1bc-3bc8-4ab3-af35-3b3ee25c157f', manager: 'Ricci', team: 'Huntingforkickers', wins: 7, losses: 6, ties: 0, ppg: 133, index: 1.067, resume: 63.2, finish: 'champion', finalRank: 1, regularRank: 4, high: 145.9, low: 90.8, streak: 2, ppgRank: 4, seasonTeams: 12, indexRank: 20,
-    case: 'Travis Kelce and Stefon Diggs at their peak, Lamar Jackson at quarterback, and the best defence and kicker in the league behind them. Never won more than two games in a row all season.',
+    case: 'The parts you can\'t see did the work: the Steelers defence scored 127 and Justin Tucker 100, with Brandin Cooks and Antonio Gibson behind them. Never won more than two games in a row all season.',
     lineup: [
       { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 23.2, g: 9, rk: 'QB11' },
       { s: 'RB', n: 'David Johnson', p: 'RB', ppg: 12.2, g: 6, rk: 'RB26' },
@@ -229,7 +229,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'FLEX', n: 'Michael Gallup', p: 'WR', ppg: 11.8, g: 6, rk: 'WR37' },
     ] },
   { seed: 11, year: 2023, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'Nathanael Bartholomew', wins: 11, losses: 3, ties: 0, ppg: 125.1, index: 1.031, resume: 62.5, finish: 'runner-up', finalRank: 2, regularRank: 1, high: 174, low: 87.4, streak: 4, ppgRank: 3, seasonTeams: 12, indexRank: 27,
-    case: 'A roster that churned all year: by week fourteen the biggest scorer still on it was the Saints defence. Opened 7-2 anyway and closed on four straight.',
+    case: 'The deepest bench in the field, and none of it stuck. Lamar Jackson, Breece Hall, Tony Pollard, Stefon Diggs and Sam LaPorta all cycled through, and by week fourteen the biggest scorer left on the roster was the Saints defence. Opened 7-2 and closed on four straight.',
     lineup: [
       { s: 'QB', n: 'Justin Fields', p: 'QB', ppg: 21.3, g: 6, rk: 'QB15' },
       { s: 'RB', n: 'Bijan Robinson', p: 'RB', ppg: 13.1, g: 10, rk: 'RB9' },
@@ -240,7 +240,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'FLEX', n: 'Nico Collins', p: 'WR', ppg: 13.8, g: 6, rk: 'WR12' },
     ] },
   { seed: 12, year: 2024, managerId: '6897f929-c070-4e0e-9633-d9e90794a1c0', manager: 'Sean', team: '3-Star REECHIE', wins: 10, losses: 4, ties: 0, ppg: 137.5, index: 1.117, resume: 62.4, finish: 'rank', finalRank: 4, regularRank: 1, high: 169.8, low: 102.6, streak: 5, ppgRank: 1, seasonTeams: 12, indexRank: 8,
-    case: 'Joe Burrow and Ja\'Marr Chase together, De\'Von Achane and Joe Mixon splitting the backfield. Lost its first two, then went 8-1.',
+    case: 'Almost nothing in reserve: Jordan Addison at 61 was the best bench piece and a rookie Malik Nabers never got going. Lost its first two, then went 8-1.',
     lineup: [
       { s: 'QB', n: 'Joe Burrow', p: 'QB', ppg: 27, g: 13, rk: 'QB2' },
       { s: 'RB', n: 'De\'Von Achane', p: 'RB', ppg: 17.7, g: 13, rk: 'RB6' },
@@ -251,7 +251,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'FLEX', n: 'Kenneth Walker III', p: 'RB', ppg: 19.1, g: 6, rk: 'RB22' },
     ] },
   { seed: 13, year: 2022, managerId: 'c8db587f-7936-4cd7-a4d7-a3efa9edbe4c', manager: 'Kyle', team: 'Wyle Wiverd', wins: 10, losses: 4, ties: 0, ppg: 131.5, index: 1.111, resume: 61.9, finish: 'rank', finalRank: 4, regularRank: 2, high: 170.9, low: 100.1, streak: 4, ppgRank: 1, seasonTeams: 12, indexRank: 11,
-    case: 'Josh Allen with Derrick Henry and Josh Jacobs behind him, A.J. Brown outside and DK Metcalf spare. Opened 7-2 and gave up fewer points than anybody else in the field.',
+    case: 'DK Metcalf spent the season as the fourth receiver, worth 81 points nobody ever started. Opened 7-2 and won four straight from week five.',
     lineup: [
       { s: 'QB', n: 'Josh Allen', p: 'QB', ppg: 28.2, g: 13, rk: 'QB3' },
       { s: 'RB', n: 'Derrick Henry', p: 'RB', ppg: 18.9, g: 13, rk: 'RB4' },
@@ -262,7 +262,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'FLEX', n: 'Dameon Pierce', p: 'RB', ppg: 15.1, g: 7, rk: 'RB15' },
     ] },
   { seed: 14, year: 2022, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'Pat Bateman', wins: 7, losses: 7, ties: 0, ppg: 125.7, index: 1.062, resume: 61.1, finish: 'champion', finalRank: 1, regularRank: 5, high: 166.4, low: 80.2, streak: 2, ppgRank: 4, seasonTeams: 12, indexRank: 22,
-    case: 'Patrick Mahomes and Christian McCaffrey, and after that not much: Amari Cooper and Keenan Allen were the next best things on the roster. Never won more than two in a row.',
+    case: 'The Dallas defence scored 133, more than every skill player on the roster except two. Keenan Allen and Dalvin Cook were the depth and neither did anything. Never won more than two in a row.',
     lineup: [
       { s: 'QB', n: 'Patrick Mahomes', p: 'QB', ppg: 29.5, g: 6, rk: 'QB1' },
       { s: 'RB', n: 'Christian McCaffrey', p: 'RB', ppg: 24.1, g: 6, rk: 'RB3' },
@@ -273,7 +273,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'FLEX', n: 'AJ Dillon', p: 'RB', ppg: 7.7, g: 7, rk: 'RB28' },
     ] },
   { seed: 15, year: 2021, managerId: '6897f929-c070-4e0e-9633-d9e90794a1c0', manager: 'Sean', team: 'Dude Lipas', wins: 10, losses: 4, ties: 0, ppg: 127.4, index: 1.047, resume: 57.9, finish: 'rank', finalRank: 3, regularRank: 2, high: 187.5, low: 82.6, streak: 6, ppgRank: 3, seasonTeams: 12, indexRank: 25,
-    case: 'Ja\'Marr Chase\'s rookie year next to Najee Harris and Dak Prescott, with Hunter Renfrow and Antonio Brown for depth. Won six in a row from week three.',
+    case: 'The Tampa defence scored 107 and Aaron Jones sat on 72 without ever forcing his way in. Won six in a row from week three.',
     lineup: [
       { s: 'QB', n: 'Dak Prescott', p: 'QB', ppg: 21.7, g: 11, rk: 'QB9' },
       { s: 'RB', n: 'Najee Harris', p: 'RB', ppg: 18.5, g: 13, rk: 'RB4' },
@@ -284,7 +284,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'FLEX', n: 'Antonio Brown', p: 'WR', ppg: 19.1, g: 5, rk: 'WR44' },
     ] },
   { seed: 16, year: 2024, managerId: '55ab525f-9fa0-4bdd-a842-a0dcc99577b1', manager: 'Luke', team: 'The GLIZZYS', wins: 8, losses: 6, ties: 0, ppg: 121.5, index: 0.987, resume: 57.2, finish: 'champion', finalRank: 1, regularRank: 6, high: 147.3, low: 96.6, streak: 4, ppgRank: 6, seasonTeams: 12, indexRank: 45,
-    case: 'Kyler Murray with Jahmyr Gibbs and James Cook, Garrett Wilson outside, DeAndre Hopkins on the bench. Started 1-4, then went 7-2 the rest of the way and won four straight into January.',
+    case: 'Justin Tucker kicked 107 and Jonnu Smith added 95 from a tight end slot already spoken for, with DeAndre Hopkins behind them. Started 1-4, then went 7-2 the rest of the way and won four straight into January.',
     lineup: [
       { s: 'QB', n: 'Kyler Murray', p: 'QB', ppg: 19.5, g: 13, rk: 'QB10' },
       { s: 'RB', n: 'Jahmyr Gibbs', p: 'RB', ppg: 18.3, g: 13, rk: 'RB5' },
