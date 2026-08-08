@@ -447,6 +447,33 @@ export function buildRecap(
   }
 }
 
+/**
+ * Board order. Most wins first, which is the only thing anybody reads it for.
+ * A tie breaks on the average behind the line, so an 8.5 built out of 8.9s
+ * outranks an 8.5 built out of 8.4s: same line, but the room thinks more of
+ * the first one. Still tied, the side the room took settles it, most overs
+ * first, and the name last so the order never wobbles between renders.
+ */
+export function byBoardOrder(a: ManagerRecap, b: ManagerRecap): number {
+  return b.line - a.line
+    || b.mean - a.mean
+    || (b.over - b.under) - (a.over - a.under)
+    || a.manager.name.localeCompare(b.manager.name)
+}
+
+/** Every manager's recap, in board order. */
+export function buildRecaps(
+  roster: BallotManager[],
+  ballots: BallotRecord[],
+  board: LockedBoard,
+  votes: VoteRecord[],
+): ManagerRecap[] {
+  return roster
+    .map((m) => buildRecap(roster, ballots, board, votes, m.name))
+    .filter((r): r is ManagerRecap => r !== null)
+    .sort(byBoardOrder)
+}
+
 /** Vote counts for one prop or rivalry game, most-picked first. */
 export function tallyChoices(votes: VoteRecord[], pick: (c: VoteCard) => string | undefined) {
   const counts = new Map<string, number>()

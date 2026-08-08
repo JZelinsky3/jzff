@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
-import { PAMS_ROSTER } from '@/lib/winBallot'
-import { leagueForToken, readBoard, readVotes, submittedNames, votedNames } from '../actions'
+import { PAMS_ROSTER, buildRecaps } from '@/lib/winBallot'
+import { leagueForToken, readBallots, readBoard, readVotes, submittedNames, votedNames } from '../actions'
 import { BallotClient, VoteClient } from '../ballot-client'
 import { ResultsView } from '../results-view'
 import '../ballot.css'
@@ -113,8 +113,11 @@ export default async function BallotPage({ params }: { params: Promise<{ token: 
   }
 
   if (board.revealed) {
-    const votes = await readVotes(league.id)
-    return <ResultsView roster={PAMS_ROSTER} board={board} votes={votes} />
+    const [ballots, votes] = await Promise.all([readBallots(league.id), readVotes(league.id)])
+    // The recaps are built here only for their order, so this board and the
+    // recap page can never seat the same two managers differently.
+    const order = buildRecaps(PAMS_ROSTER, ballots, board, votes).map((r) => r.manager.name)
+    return <ResultsView roster={PAMS_ROSTER} board={board} votes={votes} token={token} order={order} />
   }
 
   const alreadyVoted = await votedNames(league.id)

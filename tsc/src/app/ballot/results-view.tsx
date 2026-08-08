@@ -9,16 +9,23 @@ import {
  * and there is nothing left to interact with.
  */
 export function ResultsView({
-  roster, board, votes,
+  roster, board, votes, token, order,
 }: {
   roster: BallotManager[]
   board: LockedBoard
   votes: VoteRecord[]
+  token: string
+  /** Board order, worked out once from the recaps so both pages agree. */
+  order: string[]
 }) {
   // tallyLines ranks by how lopsided the room was; a board reads better in
   // line order, so put it back that way and let the row say how one-sided it
-  // went.
-  const lines = tallyLines(roster, board, votes).sort((a, b) => b.line - a.line)
+  // went. Ties are settled by the recap order, which knows the averages.
+  const seat = (name: string) => {
+    const i = order.indexOf(name)
+    return i === -1 ? order.length : i
+  }
+  const lines = tallyLines(roster, board, votes).sort((a, b) => seat(a.name) - seat(b.name))
   const unanimous = lines.filter((l) => l.count > 0 && l.edge === 1)
   const split = lines.filter((l) => l.count > 0 && l.lean === 'split')
 
@@ -50,6 +57,13 @@ export function ResultsView({
               )}
             </div>
           )}
+        </div>
+
+        <div className="wb-recap-link">
+          <a href={`/ballot/${token}/recap`}>
+            Read the twelve recap cards
+          </a>
+          <span>every ballot behind every line, one card each</span>
         </div>
 
         <div className="wb-eyebrow">The board</div>

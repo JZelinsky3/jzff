@@ -20,6 +20,7 @@
   --field:      #f4f2e8;
   --shadow:     rgba(33, 34, 28, .13);
   --on-carbon:  #fff;
+  --own:        #c8871d;
   --whole:      #2f6187;
   --whole-wash: rgba(47, 97, 135, .13);
   --skim:       #8a6520;
@@ -552,3 +553,259 @@
 .wb-sheet-msg { margin: 0 0 1rem; font-size: .92rem; line-height: 1.6; color: var(--ink); white-space: pre-line; }
 .wb-sheet-actions { display: flex; gap: .5rem; }
 .wb-sheet-actions .wb-btn { flex: 1; min-height: 46px; }
+
+/* ══════════════════════════════════════════════════════════════════
+   Recap cards. One manager per card: its own masthead and footer, fixed
+   layout, nothing that needs the page around it to read. Screenshotted out
+   of the room one at a time, and stacked twelve deep on the recap page.
+   ══════════════════════════════════════════════════════════════════ */
+
+.mr {
+  background: var(--field);
+  border: 2px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--paper-3);
+}
+
+/* ── Masthead ── */
+.mr-head {
+  display: flex; align-items: flex-end; gap: 1rem;
+  padding: .9rem .85rem .8rem;
+  border-bottom: 2px solid var(--ink);
+}
+.mr-head-main { flex: 1; min-width: 0; }
+.mr-kicker {
+  font-family: var(--wb-mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--carbon);
+}
+.mr-head h3 {
+  margin: .18rem 0 .12rem;
+  font-family: var(--wb-serif); font-weight: 400;
+  font-size: clamp(1.7rem, 8vw, 2.2rem); line-height: 1;
+  letter-spacing: -.02em;
+}
+.mr-sub {
+  font-family: var(--wb-mono); font-size: .52rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+}
+.mr-line { flex: none; text-align: right; }
+.mr-line b {
+  display: block;
+  font-family: var(--wb-mono); font-size: 2.3rem; font-weight: 700; line-height: .9;
+  letter-spacing: -.03em; color: var(--carbon); font-variant-numeric: tabular-nums lining-nums;
+}
+.mr-line span {
+  display: block; margin-top: .25rem;
+  font-family: var(--wb-mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3);
+}
+
+/* ── Blocks ── */
+.mr-block { padding: .8rem .85rem .85rem; border-bottom: 1px solid var(--rule); }
+.mr-block:last-of-type { border-bottom: 0; }
+.mr-label {
+  font-family: var(--wb-mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--ink-3);
+  margin-bottom: .6rem;
+}
+.mr-none {
+  font-family: var(--wb-mono); font-size: .58rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+
+/* ── Where the ballots landed ──
+   A column per win total, so a 6.5 everybody agreed on reads differently
+   from a 6.5 pulled out of 3s and 10s. */
+.mr-dist { position: relative; padding-top: 1.95rem; }
+.mr-bins { display: flex; align-items: flex-end; height: 62px; border-bottom: 1.5px solid var(--ink); }
+.mr-bin {
+  flex: 1; height: 100%; position: relative;
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+}
+.mr-bin-col {
+  position: relative;
+  width: 68%; background: var(--carbon); border: 1px solid var(--ink); border-bottom: 0;
+  min-height: 3px;
+}
+.mr-bin-col[data-empty="true"] { background: transparent; border: 0; min-height: 0; }
+/* The manager's own ballot, drawn as its own block at the top of whatever
+   column it landed in. A lone call is the whole column; a number four other
+   people also picked is a fifth of it. */
+.mr-bin-self {
+  position: absolute; top: 0; left: 0; right: 0;
+  background: var(--own); border-bottom: 1px solid var(--ink);
+}
+
+.mr-key {
+  display: flex; gap: .9rem; margin-top: 1.35rem;
+  font-family: var(--wb-mono); font-size: .46rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3);
+}
+.mr-key span::before {
+  content: ""; display: inline-block; width: 9px; height: 9px;
+  border: 1px solid var(--ink); margin-right: .3rem; vertical-align: -1px;
+}
+.mr-key-self::before { background: var(--own); }
+.mr-key-room::before { background: var(--carbon); }
+.mr-bin-no {
+  position: absolute; top: 100%; margin-top: .2rem;
+  font-family: var(--wb-mono); font-size: .48rem; font-weight: 700;
+  color: var(--ink-3); font-variant-numeric: tabular-nums;
+}
+
+/* The line and the model, drawn over the distribution. */
+.mr-mark { position: absolute; top: 1.95rem; bottom: 0; width: 0; }
+.mr-mark span {
+  position: absolute; left: 0; bottom: 100%; transform: translateX(-50%);
+  margin-bottom: .12rem; padding: 0 .22rem; background: var(--field);
+  font-family: var(--wb-mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .06em; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.mr-mark-line { border-left: 2px solid var(--stamp); }
+.mr-mark-line span { color: var(--stamp); }
+.mr-mark-model { border-left: 1.5px dashed var(--ink-3); }
+/* Line and model can sit a tenth apart, so the labels get their own rows. */
+.mr-mark-model span { color: var(--ink-3); bottom: calc(100% + .82rem); }
+
+/* ── Four figures under the distribution ── */
+.mr-figs { display: flex; gap: .35rem; margin-top: 1.5rem; }
+.mr-key + .mr-figs { margin-top: .8rem; }
+.mr-fig {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .15rem;
+  border-left: 1.5px solid var(--rule); padding-left: .45rem;
+}
+.mr-fig b {
+  font-family: var(--wb-mono); font-size: 1.05rem; font-weight: 700; line-height: 1;
+  color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.mr-fig[data-tone="off"] b { color: var(--stamp); }
+.mr-fig span {
+  font-family: var(--wb-mono); font-size: .46rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); line-height: 1.35;
+}
+
+/* ── Who said what ── */
+.mr-chips { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .9rem; }
+.mr-chip {
+  font-family: var(--wb-mono); font-size: .55rem; letter-spacing: .04em;
+  color: var(--ink-3); border: 1px solid var(--rule); padding: .15rem .35rem;
+  font-variant-numeric: tabular-nums;
+}
+.mr-chip b { color: var(--ink); font-weight: 700; }
+/* Their own ballot, in the same amber the chart gives it. */
+.mr-chip[data-self="true"] { border-color: var(--own); color: var(--own); background: rgba(200, 135, 29, .1); }
+.mr-chip[data-self="true"] b { color: var(--own); }
+/* A ballot that had no hand in the line still gets shown, just quieter. */
+.mr-chip[data-out="true"] { border-style: dashed; opacity: .75; }
+
+/* ── The side the room took ── */
+.mr-ou { display: flex; align-items: center; gap: .5rem; }
+.mr-ou-side {
+  flex: none; font-family: var(--wb-mono); font-size: .58rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.mr-ou-side[data-on="true"] { color: var(--ink); }
+.mr-ou-bar {
+  flex: 1; height: 12px; background: var(--stamp); border: 1.5px solid var(--ink);
+  display: block; overflow: hidden;
+}
+.mr-ou-bar span { display: block; height: 100%; background: var(--carbon); }
+.mr-verdict {
+  margin-top: .5rem;
+  font-family: var(--wb-serif); font-size: .92rem; line-height: 1.45; color: var(--ink-2);
+}
+
+/* ── Props they got named in ── */
+.mr-props { display: flex; gap: .35rem; }
+.mr-prop {
+  flex: 1; display: flex; flex-direction: column; gap: .15rem;
+  border: 1px solid var(--rule); padding: .4rem .5rem; background: var(--paper-2);
+}
+.mr-prop b {
+  font-family: var(--wb-mono); font-size: 1.15rem; font-weight: 700; line-height: 1;
+  color: var(--ink-3); font-variant-numeric: tabular-nums;
+}
+.mr-prop[data-hit="true"] { border-color: var(--carbon); background: var(--carbon-wash); }
+.mr-prop[data-hit="true"] b { color: var(--carbon); }
+.mr-prop span {
+  font-family: var(--wb-mono); font-size: .46rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); line-height: 1.35;
+}
+
+/* ── Plain fact rows ── */
+.mr-lines { margin-top: .55rem; }
+.mr-row {
+  display: flex; align-items: baseline; gap: .6rem;
+  padding: .3rem 0; border-bottom: 1px dotted var(--rule-soft);
+}
+.mr-row:last-child { border-bottom: 0; }
+.mr-row span {
+  flex: 1; min-width: 0;
+  font-family: var(--wb-mono); font-size: .55rem; font-weight: 700;
+  letter-spacing: .11em; text-transform: uppercase; color: var(--ink-3);
+}
+.mr-row b {
+  flex: none; font-family: var(--wb-mono); font-size: .78rem; font-weight: 700;
+  color: var(--ink); font-variant-numeric: tabular-nums;
+}
+
+.mr-foot {
+  text-align: center; padding: .55rem .8rem .6rem;
+  border-top: 2px solid var(--ink);
+  font-family: var(--wb-mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--carbon);
+}
+
+
+/* ── The board card ── */
+.mr-board { padding: .2rem 0; }
+.mr-brow {
+  display: flex; align-items: center; gap: .7rem;
+  padding: .38rem .85rem; border-bottom: 1px solid var(--rule-soft);
+}
+.mr-brow:last-child { border-bottom: 0; }
+.mr-bname { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mr-bname b {
+  font-family: var(--wb-serif); font-weight: 400; font-size: 1.08rem; line-height: 1.15;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mr-bname em {
+  font-style: normal; font-family: var(--wb-mono); font-size: .46rem;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.mr-bline {
+  flex: none; font-family: var(--wb-mono); font-size: 1.1rem; font-weight: 700;
+  color: var(--carbon); font-variant-numeric: tabular-nums;
+}
+.mr-bou {
+  flex: none; width: 3.4rem; display: flex; flex-direction: column; align-items: flex-end;
+  font-family: var(--wb-mono); font-size: .82rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--ink);
+}
+.mr-bou em {
+  font-style: normal; font-size: .44rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3);
+}
+.mr-bou[data-lean="over"] { color: var(--carbon); }
+.mr-bou[data-lean="over"] em { color: var(--carbon); }
+.mr-bou[data-lean="under"] { color: var(--stamp); }
+.mr-bou[data-lean="under"] em { color: var(--stamp); }
+.mr-bou[data-none="true"], .mr-bou[data-none="true"] em { color: var(--ink-3); }
+
+/* The way through from the results to the twelve cards behind them. */
+.wb-recap-link {
+  display: flex; flex-direction: column; gap: .25rem;
+  margin: 0 0 1.4rem; padding: .7rem .8rem;
+  border: 1.5px solid var(--ink); background: var(--paper-2);
+  box-shadow: 3px 3px 0 var(--shadow);
+}
+.wb-recap-link a {
+  font-family: var(--wb-serif); font-size: 1.1rem; color: var(--carbon);
+  text-decoration: none; border-bottom: 1px solid var(--carbon-2); align-self: flex-start;
+}
+.wb-recap-link a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+.wb-recap-link span {
+  font-family: var(--wb-mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+}

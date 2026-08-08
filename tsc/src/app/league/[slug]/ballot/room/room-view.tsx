@@ -512,7 +512,13 @@ export function RoomView({
         {/* The picture the league actually wants: one manager, everything
             said about them, sized to be screenshotted and sent. */}
         {locked && ballots.length > 0 && (
-          <RecapCard roster={roster} ballots={ballots} board={locked} votes={votes} />
+          <RecapCard
+            roster={roster}
+            ballots={ballots}
+            board={locked}
+            votes={votes}
+            link={link ? `${link}/recap` : null}
+          />
         )}
 
         {showCards && votes.length > 0 && (
