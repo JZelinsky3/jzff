@@ -12,8 +12,9 @@ import {
   type BallotManager, type BoardBasis, type BoardLine, type LockedBoard,
   type Picks, type VoteRecord,
 } from '@/lib/winBallot'
+import { RecapCard } from './recap-card'
 
-type Ballot = { name: string; picks: Picks; total: number; at: string }
+type Ballot ={ name: string; picks: Picks; total: number; at: string }
 
 const BASIS_LABEL: Record<BoardBasis, string> = {
   all: 'Every ballot',
@@ -506,6 +507,12 @@ export function RoomView({
               </>
             )}
           </>
+        )}
+
+        {/* The picture the league actually wants: one manager, everything
+            said about them, sized to be screenshotted and sent. */}
+        {locked && ballots.length > 0 && (
+          <RecapCard roster={roster} ballots={ballots} board={locked} votes={votes} />
         )}
 
         {showCards && votes.length > 0 && (

@@ -314,6 +314,139 @@ export function tallyLines(
     .sort((a, b) => b.edge - a.edge || b.count - a.count)
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// The recap: everything the league said about one manager, gathered into a
+// single card. Ballots, the line they made, the side the room took on it,
+// the props they got named in, their rivalry game, and the record behind it.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** A win total as a record, for a season of GAMES games. */
+export function asRecord(wins: number): string {
+  const w = Math.round(wins)
+  return `${w}-${GAMES - w}`
+}
+
+/** Wins out of a "10-4" string. */
+function winsOf(record: string): number {
+  return Number.parseInt(record, 10) || 0
+}
+
+export type RecapPick = { from: string; wins: number; self: boolean; counted: boolean }
+export type RecapProp = { key: string; ask: string; count: number }
+
+export type ManagerRecap = {
+  manager: BallotManager
+  /** The line as locked, never recomputed. */
+  line: number
+  /** Where the ballots sit now. Can drift off the line if one filed late. */
+  mean: number
+  high: number
+  low: number
+  gap: number
+  /** Ballots behind the mean, on the board's basis. */
+  count: number
+  self: number | null
+  /** Every ballot's number on them, highest first. */
+  picks: RecapPick[]
+  over: number
+  under: number
+  cast: number
+  lean: Side | 'split'
+  /** The three manager props, and how many named this manager in each. */
+  props: RecapProp[]
+  /** How the room called their conference's series. */
+  conference: { took: number; cast: number } | null
+  rivalry: { opponent: string; mine: number; theirs: number } | null
+  modelRecord: string
+  /** Line minus the model. Positive means the room likes them more than the math does. */
+  vsModel: number
+  /** Line minus what they actually won last season. */
+  vsLast: number
+}
+
+/** Everything the league said about one manager. */
+export function buildRecap(
+  roster: BallotManager[],
+  ballots: BallotRecord[],
+  board: LockedBoard,
+  votes: VoteRecord[],
+  name: string,
+): ManagerRecap | null {
+  const manager = roster.find((m) => m.name === name)
+  if (!manager) return null
+
+  // Every ballot's number on them, self included and flagged. `counted` is
+  // whether that ballot had a hand in the line, which on an outsiders board
+  // is everybody but the manager themselves.
+  const picks: RecapPick[] = ballots
+    .filter((b) => Number.isFinite(b.picks[name]))
+    .map((b) => ({
+      from: b.name,
+      wins: b.picks[name],
+      self: b.name === name,
+      counted: board.basis === 'all' || b.name !== name,
+    }))
+    .sort((a, b) => b.wins - a.wins || a.from.localeCompare(b.from))
+
+  const counted = picks.filter((p) => p.counted).map((p) => p.wins)
+  const mean = counted.length ? counted.reduce((a, b) => a + b, 0) / counted.length : 0
+  const frozen = board.spread?.[name]
+  const high = counted.length ? Math.max(...counted) : frozen?.high ?? 0
+  const low = counted.length ? Math.min(...counted) : frozen?.low ?? 0
+
+  const sides = votes.map((v) => v.card.lines[name]).filter((s): s is Side => s === 'over' || s === 'under')
+  const over = sides.filter((s) => s === 'over').length
+  const under = sides.length - over
+
+  const props = PROPS.filter((p) => p.kind === 'manager').map((p) => ({
+    key: p.key,
+    ask: p.ask,
+    count: votes.filter((v) => v.card.props[p.key] === name).length,
+  }))
+
+  const confVotes = votes.filter((v) => v.card.props.conference)
+  const conference = confVotes.length
+    ? { took: confVotes.filter((v) => v.card.props.conference === manager.conference).length, cast: confVotes.length }
+    : null
+
+  const pair = RIVALRIES.find((r) => r.includes(name))
+  let rivalry: ManagerRecap['rivalry'] = null
+  if (pair) {
+    const opponent = pair[0] === name ? pair[1] : pair[0]
+    const key = rivalryKey(pair)
+    const called = votes.map((v) => v.card.rivalry[key]).filter(Boolean)
+    rivalry = {
+      opponent,
+      mine: called.filter((c) => c === name).length,
+      theirs: called.filter((c) => c === opponent).length,
+    }
+  }
+
+  const line = board.lines[name] ?? 0
+
+  return {
+    manager,
+    line,
+    mean,
+    high,
+    low,
+    gap: high - low,
+    count: counted.length,
+    self: picks.find((p) => p.self)?.wins ?? null,
+    picks,
+    over,
+    under,
+    cast: sides.length,
+    lean: over === under ? 'split' : over > under ? 'over' : 'under',
+    props,
+    conference,
+    rivalry,
+    modelRecord: asRecord(manager.model),
+    vsModel: line - manager.model,
+    vsLast: line - winsOf(manager.lastRecord),
+  }
+}
+
 /** Vote counts for one prop or rivalry game, most-picked first. */
 export function tallyChoices(votes: VoteRecord[], pick: (c: VoteCard) => string | undefined) {
   const counts = new Map<string, number>()
