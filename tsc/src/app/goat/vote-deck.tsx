@@ -112,7 +112,7 @@ export function VoteDeck({
       <Shell round={roundName} rail={null}>
         <div className="gt-slide">
           <div className="gt-game-head">
-            <div className="gt-kicker">PA Milk Society</div>
+            <div className="gt-kicker">How this works</div>
             <h2>Who had the best team ever?</h2>
           </div>
           <p className="gt-note">
@@ -124,6 +124,13 @@ export function VoteDeck({
           <p className="gt-note">
             Four rounds. You get one card per round, and it stays sealed until
             everybody is in.
+          </p>
+          <p className="gt-note">
+            One number on the cards is worth knowing: <b>vs league avg</b> is how
+            far above or below the average team that team scored in its own
+            season. <b>+17%</b> means it put up seventeen per cent more a week
+            than everybody else did that year. The league has never scored the
+            same way twice, so raw points can&apos;t compare across eras.
           </p>
 
           <Ladder round={round} />
@@ -308,7 +315,7 @@ function TeamCard({ team, picked, onPick }: { team: GoatTeam; picked: boolean; o
       <div className="gt-figs">
         <div className="gt-fig"><b>{record(team)}</b><span>record</span></div>
         <div className="gt-fig"><b>{pts(team.ppg)}</b><span>a week</span></div>
-        <div className="gt-fig"><b>{vsLeague(team.index)}</b><span>vs league</span></div>
+        <div className="gt-fig gt-fig--wide"><b>{vsLeague(team.index)}</b><span>vs league avg<br />that season</span></div>
         <div className="gt-fig"><b>{team.high}</b><span>best wk</span></div>
       </div>
 
@@ -320,7 +327,7 @@ function TeamCard({ team, picked, onPick }: { team: GoatTeam; picked: boolean; o
         <span className="gt-why-parts">
           <i className="gt-why-rec">{breakdown(team).record.toFixed(1)} record</i>
           <i className="gt-why-sco">{breakdown(team).scoring.toFixed(1)} scoring</i>
-          <i className="gt-why-post">{breakdown(team).post.toFixed(1)} postseason</i>
+          <i className="gt-why-post">{breakdown(team).post.toFixed(1)} placement</i>
         </span>
       </div>
 

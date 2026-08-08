@@ -20,7 +20,7 @@
   --green-2:    #3f8560;
   --green-wash: rgba(45, 97, 70, .10);
   --stamp:      #b33a2b;
-  --gold:       #8a6a24;
+  --gold:       #d4a72c;
   --shadow:     rgba(31, 34, 28, .13);
   --on-green:   #fff;
 
@@ -134,6 +134,9 @@
   transition: background .12s ease;
 }
 .gt-team-band.is-champ { background: var(--gold); }
+.gt-team-band.is-champ .gt-team-finish { color: #2a2109; }
+.gt-team-band.is-champ .gt-seed { background: #2a2109; color: var(--gold); }
+.gt-team-band.is-champ .gt-team-ring { color: #2a2109; background: rgba(255, 255, 255, .5); }
 .gt-team.is-picked .gt-team-band { background: var(--green); }
 .gt-seed {
   display: inline-flex; align-items: center; justify-content: center;
@@ -151,7 +154,7 @@
   margin-left: auto; flex: none;
   font-family: var(--gt-mono); font-size: .46rem; font-weight: 700;
   letter-spacing: .16em; text-transform: uppercase;
-  color: var(--gold); background: var(--field); padding: .18rem .34rem;
+  color: #2a2109; background: var(--field); padding: .18rem .34rem;
 }
 /* The tick that says "this one survives". */
 .gt-team.is-picked::after {
@@ -187,7 +190,11 @@
 .gt-fig span {
   font-family: var(--gt-mono); font-size: .45rem; font-weight: 700;
   letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3);
+  line-height: 1.25;
 }
+/* The scoring figure needs two words to mean anything, so it gets the room
+   and the other three tighten up around it. */
+.gt-figs { grid-template-columns: .85fr .9fr 1.3fr .95fr; }
 
 /* ── Why it is this seed ──
    The lineup describes the roster; this says what actually put the team in the
