@@ -768,14 +768,28 @@
 .gt-tape-head span:nth-child(2) { color: var(--gold, var(--green)); }
 /* The tape is long, so it is banded: the year, then the run. Without the
    break it reads as one undifferentiated column of numbers and the postseason
-   rows, which are the interesting half, get lost in it. */
+   rows, which are the interesting half, get lost in it.
+
+   The bands are titled rather than labelled. A mono caption the size of the
+   row labels sat inside the table and read as one more row; a serif title in
+   gold with the rule running through it stops the table instead, which is
+   what a section break is for. */
 .gt-tape-caption {
-  text-align: center; padding: .5rem 0 .3rem;
-  font-family: var(--gt-mono); font-size: .44rem; font-weight: 700;
-  letter-spacing: .2em; text-transform: uppercase; color: var(--ink-3);
+  display: flex; align-items: center; gap: .8rem;
+  padding: 1.5rem 0 .85rem;
+  font-family: var(--gt-serif); font-style: italic; font-weight: 400;
+  font-size: 1.22rem; line-height: 1; letter-spacing: .01em;
+  color: var(--gold, var(--green));
   border-bottom: 1px solid var(--rule-soft);
-  background: rgba(0, 0, 0, .12);
+  white-space: nowrap;
 }
+.gt-tape-caption::before, .gt-tape-caption::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold-2, var(--rule)), transparent);
+}
+/* The first band opens the table rather than breaking it, so it needs the
+   air below but not the gap above. */
+.gt-tape-head + .gt-tape-caption { padding-top: .9rem; }
 .gt-tape-row {
   display: grid; grid-template-columns: 1fr auto 1fr; gap: .5rem;
   align-items: center; padding: .42rem 0;
