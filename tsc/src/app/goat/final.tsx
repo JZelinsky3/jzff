@@ -76,7 +76,14 @@ export function Tape({ home, away }: { home: GoatTeam; away: GoatTeam }) {
   ]
 
   const january: Row[] = [
-    { label: 'Playoff record', home: dash(postRecord(home)), away: dash(postRecord(away)), edge: edgeOf(home.postWins, away.postWins) },
+    // Wins first, then losses: two teams both 2-0 and 2-1 are not level, and
+    // ranking on wins alone had a runner-up tying the champion it lost to.
+    {
+      label: 'Playoff record',
+      home: dash(postRecord(home)),
+      away: dash(postRecord(away)),
+      edge: edgeOf(home.postWins * 10 - home.postLosses, away.postWins * 10 - away.postLosses),
+    },
     {
       label: 'Points a week',
       home: home.postPpg === null ? '—' : pts(home.postPpg),
