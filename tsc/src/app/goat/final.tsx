@@ -7,7 +7,7 @@
 // looking like two different events.
 
 import {
-  allPlay, allPlayRate, finishLine, label, pathTo, postLift, postRecord, pts, record, signed, vsLeague,
+  allPlayPct, allPlayRate, finishLine, label, pathTo, postLift, postRecord, pts, record, signed, vsLeague,
   type GameScore, type GoatTeam, type ResolvedGame, type RoundId,
 } from '@/lib/greatestTeam'
 
@@ -64,7 +64,7 @@ export function Tape({ home, away }: { home: GoatTeam; away: GoatTeam }) {
     { label: 'Record', home: record(home), away: record(away), edge: edgeOf(winRate(home), winRate(away)) },
     // The record everybody would have had against everybody. Sits directly
     // under the real one so the gap between them is unmissable.
-    { label: 'Vs the whole league', home: allPlay(home), away: allPlay(away), edge: edgeOf(allPlayRate(home), allPlayRate(away)) },
+    { label: 'Beat, week to week', home: allPlayPct(home), away: allPlayPct(away), edge: edgeOf(allPlayRate(home), allPlayRate(away)) },
     { label: 'Points a week', home: pts(home.regPpg), away: pts(away.regPpg), edge: edgeOf(home.regPpg, away.regPpg) },
     // The row that actually compares two different eras.
     { label: 'Vs league avg', home: vsLeague(home.index), away: vsLeague(away.index), edge: edgeOf(home.index, away.index) },

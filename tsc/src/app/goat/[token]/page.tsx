@@ -130,7 +130,11 @@ export default async function GoatPage({ params }: { params: Promise<{ token: st
     const already = await votedNames(league.id, state.openRound)
     // Only settled games carry a score, so the live round stays sealed even
     // though every card the room has ever cast passes through here.
-    const settled = settledScores(buildBracket(state.results), await readVotes(league.id))
+    const settled = settledScores(
+      buildBracket(state.results),
+      await readVotes(league.id),
+      state.openRound,
+    )
     return (
       <VoteClient
         leagueId={league.id}

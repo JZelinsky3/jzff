@@ -153,6 +153,16 @@ export function VoteDeck({
             greatest team anybody in this league has ever put on the field, and
             it stays that way until somebody builds a better one.
           </p>
+          {/* Two rows on the tape are built rather than recorded, and neither
+              means anything until somebody says what it is. */}
+          <p className="gt-note">
+            Two lines on the tape are worth a sentence.{' '}
+            <b>Beat, week to week</b> is what their record would have been
+            against the whole league every week instead of the one team the
+            schedule gave them, so it is the season with the luck taken out.{' '}
+            <b>Up on the regular season</b> is how many more points a week they
+            scored once the bracket started.
+          </p>
           {backAgain && <SeenIt name={me} loading={loadingCard} onOpen={() => loadCard(me)} />}
           <div className="gt-actions">
             <button className="gt-btn" onClick={() => setStep(1)}>Make the call</button>

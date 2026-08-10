@@ -410,15 +410,20 @@ export function postRecord(t: GoatTeam): string | null {
   return t.postPpg === null ? null : `${t.postWins}-${t.postLosses}`
 }
 
-/** All-play record, which is long enough that it needs its own formatter. */
-export function allPlay(t: GoatTeam): string {
-  return `${t.apWins}-${t.apLosses}`
-}
-
-/** All-play win rate, 0 to 1, for deciding which side of a tape row is ahead. */
+/** All-play win rate, 0 to 1. */
 export function allPlayRate(t: GoatTeam): number {
   const n = t.apWins + t.apLosses
   return n ? t.apWins / n : 0
+}
+
+/**
+ * The all-play as a percentage rather than the raw 118-51, and deliberately so:
+ * 2019 was a fourteen-team league playing thirteen weeks and 2021 was twelve
+ * playing fourteen, so the raw counts are on different scales and the bigger
+ * number is regularly the worse season. A rate compares.
+ */
+export function allPlayPct(t: GoatTeam): string {
+  return `${Math.round(allPlayRate(t) * 100)}%`
 }
 
 /**
@@ -647,9 +652,19 @@ export type Tally = {
  */
 export type GameScore = { won: number; lost: number }
 
-export function settledScores(bracket: ResolvedGame[], votes: VoteRecord[]): Record<string, GameScore> {
+export function settledScores(
+  bracket: ResolvedGame[],
+  votes: VoteRecord[],
+  /**
+   * The live round, skipped whole. A game in it can carry a winner already if
+   * the commissioner broke a tie by hand, and that game's running count is not
+   * public while the rest of the round is still taking cards.
+   */
+  openRound: RoundId | null = null,
+): Record<string, GameScore> {
   const out: Record<string, GameScore> = {}
   for (const round of ROUND_ORDER) {
+    if (round === openRound) continue
     for (const t of tallyRound(bracket, round, votes)) {
       if (t.game.winner === null) continue
       const winnerIsHome = t.game.winner === t.game.home?.seed
