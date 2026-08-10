@@ -7,8 +7,8 @@
 // looking like two different events.
 
 import {
-  finishLine, label, pathTo, pts, record, vsLeague,
-  type GoatTeam, type ResolvedGame, type RoundId,
+  allPlay, allPlayRate, finishLine, label, pathTo, postLift, postRecord, pts, record, signed, vsLeague,
+  type GameScore, type GoatTeam, type ResolvedGame, type RoundId,
 } from '@/lib/greatestTeam'
 
 /**
@@ -40,23 +40,55 @@ function Billing({ team }: { team: GoatTeam }) {
   )
 }
 
+type Row = { label: string; home: string; away: string; edge: 'home' | 'away' | null }
+
 /**
  * The tale of the tape. Every row that HAS a better side marks it, because the
  * whole point of putting the two seasons in one column is to see at a glance
  * how few of these rows actually agree with each other.
+ *
+ * Split into the year and the run on purpose. The team cards carry the season
+ * figures; what they cannot show, and what the final actually turns on, is
+ * whether a team was the same team in January.
+ *
+ * Rows deliberately NOT marked with an edge: points against and the schedule
+ * it describes are context, not merit, and a gold tick next to the team that
+ * happened to draw softer opponents argues something nobody meant.
  */
 export function Tape({ home, away }: { home: GoatTeam; away: GoatTeam }) {
   const games = (t: GoatTeam) => t.wins + t.losses + t.ties
   const winRate = (t: GoatTeam) => (games(t) ? (t.wins + 0.5 * t.ties) / games(t) : 0)
+  const dash = (s: string | null) => s ?? '—'
 
-  const rows: { label: string; home: string; away: string; edge: 'home' | 'away' | null }[] = [
+  const season: Row[] = [
     { label: 'Record', home: record(home), away: record(away), edge: edgeOf(winRate(home), winRate(away)) },
-    { label: 'Points a week', home: pts(home.ppg), away: pts(away.ppg), edge: edgeOf(home.ppg, away.ppg) },
-    // The row that actually compares two different eras, which is why it is
-    // third and not buried under the raw scoring above it.
+    // The record everybody would have had against everybody. Sits directly
+    // under the real one so the gap between them is unmissable.
+    { label: 'Vs the whole league', home: allPlay(home), away: allPlay(away), edge: edgeOf(allPlayRate(home), allPlayRate(away)) },
+    { label: 'Points a week', home: pts(home.regPpg), away: pts(away.regPpg), edge: edgeOf(home.regPpg, away.regPpg) },
+    // The row that actually compares two different eras.
     { label: 'Vs league avg', home: vsLeague(home.index), away: vsLeague(away.index), edge: edgeOf(home.index, away.index) },
+    { label: 'Weeks as league high', home: `${home.topWeeks}`, away: `${away.topWeeks}`, edge: edgeOf(home.topWeeks, away.topWeeks) },
     { label: 'Best week', home: pts(home.high), away: pts(away.high), edge: edgeOf(home.high, away.high) },
+    { label: 'Worst week', home: pts(home.low), away: pts(away.low), edge: edgeOf(home.low, away.low) },
     { label: 'Longest streak', home: `${home.streak}`, away: `${away.streak}`, edge: edgeOf(home.streak, away.streak) },
+    { label: 'Points allowed a week', home: pts(home.paPpg), away: pts(away.paPpg), edge: null },
+  ]
+
+  const january: Row[] = [
+    { label: 'Playoff record', home: dash(postRecord(home)), away: dash(postRecord(away)), edge: edgeOf(home.postWins, away.postWins) },
+    {
+      label: 'Points a week',
+      home: home.postPpg === null ? '—' : pts(home.postPpg),
+      away: away.postPpg === null ? '—' : pts(away.postPpg),
+      edge: edgeOf(home.postPpg ?? -1, away.postPpg ?? -1),
+    },
+    {
+      label: 'Up on the regular season',
+      home: postLift(home) === null ? '—' : signed(postLift(home)!),
+      away: postLift(away) === null ? '—' : signed(postLift(away)!),
+      edge: edgeOf(postLift(home) ?? -99, postLift(away) ?? -99),
+    },
     { label: 'Seed score', home: home.resume.toFixed(1), away: away.resume.toFixed(1), edge: edgeOf(home.resume, away.resume) },
   ]
 
@@ -67,14 +99,24 @@ export function Tape({ home, away }: { home: GoatTeam; away: GoatTeam }) {
         <span>Tale of the tape</span>
         <span>{label(away)}</span>
       </div>
+      <Block rows={season} caption="The season" />
+      <Block rows={january} caption="When it counted" />
+    </div>
+  )
+}
+
+function Block({ rows, caption }: { rows: Row[]; caption: string }) {
+  return (
+    <>
+      <div className="gt-tape-caption">{caption}</div>
       {rows.map((r) => (
-        <div className="gt-tape-row" key={r.label}>
+        <div className="gt-tape-row" key={caption + r.label}>
           <b className={r.edge === 'home' ? 'is-edge' : ''}>{r.home}</b>
           <span>{r.label}</span>
           <b className={r.edge === 'away' ? 'is-edge' : ''}>{r.away}</b>
         </div>
       ))}
-    </div>
+    </>
   )
 }
 
@@ -89,22 +131,42 @@ const SHORT: Record<RoundId, string> = { r16: 'R16', qf: 'QF', sf: 'SF', final: 
 /**
  * How each side got here. A three-line resume, and the only place the bracket
  * behind the final is visible without scrolling all the way down to it.
+ *
+ * Each line reads as a result: the seat the beaten team held, its name, and how
+ * the room split on it. The scores are only ever for settled games, and those
+ * counts are already public on the bracket below.
  */
-export function Roads({ bracket, home, away }: { bracket: ResolvedGame[]; home: GoatTeam; away: GoatTeam }) {
+export function Roads({
+  bracket, home, away, scores,
+}: {
+  bracket: ResolvedGame[]
+  home: GoatTeam
+  away: GoatTeam
+  scores?: Record<string, GameScore>
+}) {
   return (
     <div className="gt-roads">
       {[home, away].map((team) => (
         <div className="gt-road" key={team.seed}>
           <div className="gt-road-head">{label(team)}</div>
-          {pathTo(bracket, team.seed).map((step) => (
-            <div className="gt-road-step" key={step.round}>
-              <i>{SHORT[step.round]}</i>
-              <span>
-                beat <b>{label(step.beat)}</b>
-              </span>
-              <em>{step.beat.seed}</em>
-            </div>
-          ))}
+          {pathTo(bracket, team.seed).map((step) => {
+            const s = scores?.[step.game]
+            return (
+              <div className="gt-road-step" key={step.round}>
+                <i>{SHORT[step.round]}</i>
+                <span className="gt-road-beat">
+                  beat <em>{step.beat.seed}</em> <b>{label(step.beat)}</b>
+                </span>
+                {/* A game the room never actually split on (a tie the
+                    commissioner called by hand) has no score to show. */}
+                {s && s.won + s.lost > 0 && (
+                  <span className="gt-road-score">
+                    {s.won}<i>-</i>{s.lost}
+                  </span>
+                )}
+              </div>
+            )
+          })}
         </div>
       ))}
     </div>
@@ -116,13 +178,19 @@ export function Roads({ bracket, home, away }: { bracket: ResolvedGame[]; home: 
  * opening screen and by the page anybody hits between the semifinals closing
  * and the final opening.
  */
-export function FinalPreview({ bracket, game }: { bracket: ResolvedGame[]; game: ResolvedGame }) {
+export function FinalPreview({
+  bracket, game, scores,
+}: {
+  bracket: ResolvedGame[]
+  game: ResolvedGame
+  scores?: Record<string, GameScore>
+}) {
   if (!game.home || !game.away) return null
   return (
     <>
       <Marquee home={game.home} away={game.away} />
       <Tape home={game.home} away={game.away} />
-      <Roads bracket={bracket} home={game.home} away={game.away} />
+      <Roads bracket={bracket} home={game.home} away={game.away} scores={scores} />
     </>
   )
 }

@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   MIN_STARTS, ROUNDS, breakdown, buildBracket, finishLine, gamesInRound, label, pts, record, vsLeague,
-  type Ballot, type GoatTeam, type ResolvedGame, type Results, type RoundId, type VoteRecord,
+  type Ballot, type GameScore, type GoatTeam, type ResolvedGame, type Results, type RoundId,
+  type VoteRecord,
 } from '@/lib/greatestTeam'
 import { readMyCard, submitBallot } from './actions'
 import { FinalPreview, Tape } from './final'
@@ -22,7 +23,7 @@ function ordinal(n: number): string {
  * render, which the server cannot do without guaranteeing a mismatch.
  */
 export function VoteDeck({
-  leagueId, token, round, results, roster, alreadyVoted,
+  leagueId, token, round, results, roster, alreadyVoted, scores,
 }: {
   leagueId: string
   token: string
@@ -30,6 +31,7 @@ export function VoteDeck({
   results: Results
   roster: readonly string[]
   alreadyVoted: string[]
+  scores: Record<string, GameScore>
 }) {
   const bracket = useMemo(() => buildBracket(results), [results])
   const games = useMemo(
@@ -145,7 +147,7 @@ export function VoteDeck({
             <div className="gt-kicker">Two left</div>
             <h2>One game decides it.</h2>
           </div>
-          {game && <FinalPreview bracket={bracket} game={game} />}
+          {game && <FinalPreview bracket={bracket} game={game} scores={scores} />}
           <p className="gt-note">
             Fourteen teams are out. Whichever of these two the room calls is the
             greatest team anybody in this league has ever put on the field, and
@@ -316,14 +318,12 @@ export function VoteDeck({
             are the argument, and making somebody scroll back to the opening
             screen for them is how a card gets filled in from memory. */}
         {isFinal && game.home && game.away && <Tape home={game.home} away={game.away} />}
-        <div className="gt-pair">
-          <div className="gt-vs">{isFinal ? 'tap the greatest team we have had' : 'tap the one that survives'}</div>
-          {[game.home, game.away].map((t) =>
-            t ? (
-              <TeamCard key={t.seed} team={t} picked={pick === t.seed} onPick={() => choose(t.seed)} />
-            ) : null,
-          )}
-        </div>
+        <Pair
+          game={game}
+          pick={pick}
+          onPick={choose}
+          hint={isFinal ? 'tap the greatest team we have had' : 'tap the one that survives'}
+        />
         <div className="gt-actions">
           <button className="gt-btn is-ghost" onClick={() => setStep(at - 1)}>Back</button>
           <button className="gt-btn" disabled={!pick} onClick={() => setStep(at + 1)}>
@@ -332,6 +332,80 @@ export function VoteDeck({
         </div>
       </div>
     </Shell>
+  )
+}
+
+/**
+ * The two teams, as one card at a time.
+ *
+ * They used to sit stacked, which meant comparing them was a long scroll down
+ * and a longer scroll back, and by the time you reached the second lineup you
+ * were remembering the first rather than reading it. Now they are a deck you
+ * swipe: one card fills the screen, the other is a thumb away, and the tabs
+ * above stay put so you always know which one you are looking at and can jump
+ * straight to the other.
+ *
+ * Wide screens skip all of it and go back to two columns, where side by side
+ * is genuinely side by side.
+ */
+function Pair({
+  game, pick, onPick, hint,
+}: {
+  game: ResolvedGame
+  pick: number | undefined
+  onPick: (seed: number) => void
+  hint: string
+}) {
+  const teams = [game.home, game.away].filter((t): t is GoatTeam => !!t)
+  const track = useRef<HTMLDivElement>(null)
+  const [at, setAt] = useState(0)
+
+  // Which card is under the thumb. Read off the scroller rather than held as
+  // the source of truth, so a flick and a tab tap can never disagree.
+  function onScroll() {
+    const el = track.current
+    if (!el) return
+    const i = Math.round(el.scrollLeft / el.clientWidth)
+    setAt(Math.max(0, Math.min(teams.length - 1, i)))
+  }
+
+  function go(i: number) {
+    const el = track.current
+    if (!el) return
+    el.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' })
+  }
+
+  return (
+    <div className="gt-swipe">
+      <div className="gt-swipe-tabs">
+        {teams.map((t, i) => (
+          <button
+            key={t.seed}
+            type="button"
+            className={`gt-swipe-tab${i === at ? ' is-on' : ''}${pick === t.seed ? ' is-picked' : ''}`}
+            onClick={() => go(i)}
+            aria-current={i === at}
+          >
+            {/* The chevron points at the card you are not on, which is the
+                whole instruction this control needs to give. */}
+            {i === 0 && at !== 0 && <em aria-hidden>‹</em>}
+            <span>{label(t)}</span>
+            {i === 1 && at !== 1 && <em aria-hidden>›</em>}
+          </button>
+        ))}
+      </div>
+
+      <div className="gt-vs">
+        <span className="gt-vs-swipe">swipe to compare</span>
+        <span className="gt-vs-tap">{hint}</span>
+      </div>
+
+      <div className="gt-pair" ref={track} onScroll={onScroll}>
+        {teams.map((t) => (
+          <TeamCard key={t.seed} team={t} picked={pick === t.seed} onPick={() => onPick(t.seed)} />
+        ))}
+      </div>
+    </div>
   )
 }
 

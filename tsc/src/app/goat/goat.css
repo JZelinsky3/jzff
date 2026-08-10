@@ -101,9 +101,29 @@
    bar. Without it the bar parks over the bottom of team two and there is no
    further scroll to get out from under it. Reset on wide screens, where the
    bar goes back into normal flow. */
+/* A deck rather than a stack: one card fills the column, the other is one
+   swipe away, and snapping means you always land on a card rather than
+   between two. Scrolling vertically inside it still scrolls the page, since
+   the track never overflows vertically. */
 .gt-pair {
-  display: flex; flex-direction: column; gap: .55rem;
+  display: flex; flex-direction: row; align-items: start;
+  gap: 0;
+  overflow-x: auto; overflow-y: visible;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
   padding-bottom: 4.5rem;
+}
+.gt-pair::-webkit-scrollbar { display: none; }
+/* The card is a gutter narrower than the track and makes the difference up in
+   margin, so the pitch stays exactly one screen (which is what the index maths
+   in Pair assumes) and the offset block shadow has somewhere to fall that
+   isn't the next card. */
+.gt-pair > .gt-team {
+  flex: 0 0 calc(100% - 9px); width: calc(100% - 9px);
+  margin-right: 9px;
+  scroll-snap-align: start; scroll-snap-stop: always;
 }
 .gt-review, .gt-names { padding-bottom: 4.5rem; }
 
@@ -300,10 +320,58 @@
 }
 
 .gt-vs {
-  text-align: center; padding: .15rem 0;
+  text-align: center; padding: .15rem 0 .45rem;
   font-family: var(--gt-mono); font-size: .56rem; font-weight: 700;
   letter-spacing: .2em; text-transform: uppercase; color: var(--ink-3);
+  display: flex; flex-direction: column; gap: .18rem;
 }
+/* On a phone the deck is swiped, so that is the instruction that leads. The
+   wide layout puts both cards on screen at once and the line is nonsense
+   there, so it swaps back to the tap hint below. */
+.gt-vs-swipe::after {
+  content: " \203A\203A"; letter-spacing: 0;
+}
+.gt-vs-tap { font-size: .5rem; opacity: .75; }
+
+/* ── The two teams, one at a time ── */
+.gt-swipe { display: flex; flex-direction: column; }
+/* Sticky, because a team sheet is two screens tall and the answer to "which
+   one am I reading" has to stay on screen the whole way down it. */
+.gt-swipe-tabs {
+  position: sticky; top: 0; z-index: 3;
+  display: grid; grid-template-columns: 1fr 1fr; gap: .3rem;
+  padding: .5rem 0 .45rem;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+}
+.gt .gt-swipe-tab {
+  display: flex; align-items: center; justify-content: center; gap: .3rem;
+  padding: .5rem .35rem; min-width: 0;
+  font-family: var(--gt-serif); font-size: .95rem; color: var(--ink-3);
+  border-bottom: 2px solid transparent;
+  transition: color .12s ease, border-color .12s ease;
+}
+.gt .gt-swipe-tab span {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gt .gt-swipe-tab em {
+  font-style: normal; flex: none;
+  font-size: 1.05rem; line-height: 1; color: var(--green);
+}
+.gt .gt-swipe-tab.is-on { color: var(--ink); border-bottom-color: var(--ink); }
+/* A tab whose card is the one you picked carries the pick, so the choice is
+   visible from either side of the deck. */
+.gt .gt-swipe-tab.is-picked { color: var(--green); }
+.gt .gt-swipe-tab.is-picked.is-on { border-bottom-color: var(--green); }
+.gt .gt-swipe-tab.is-picked::before {
+  content: ""; flex: none;
+  width: .75rem; height: .38rem; margin-right: .1rem;
+  border-left: 2px solid var(--green); border-bottom: 2px solid var(--green);
+  transform: rotate(-45deg) translateY(-2px);
+}
+.gt.is-final .gt-swipe-tabs { background: var(--paper); border-bottom-color: var(--gold-2); }
+.gt.is-final .gt-swipe-tab.is-on { color: var(--silver); border-bottom-color: var(--gold); }
+.gt.is-final .gt-swipe-tab em { color: var(--gold); }
 
 /* ── Round ladder on the intro ── */
 .gt-ladder {
@@ -690,6 +758,16 @@
 .gt-tape-head span:first-child { text-align: left; }
 .gt-tape-head span:last-child { text-align: right; }
 .gt-tape-head span:nth-child(2) { color: var(--gold, var(--green)); }
+/* The tape is long, so it is banded: the year, then the run. Without the
+   break it reads as one undifferentiated column of numbers and the postseason
+   rows, which are the interesting half, get lost in it. */
+.gt-tape-caption {
+  text-align: center; padding: .5rem 0 .3rem;
+  font-family: var(--gt-mono); font-size: .44rem; font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--ink-3);
+  border-bottom: 1px solid var(--rule-soft);
+  background: rgba(0, 0, 0, .12);
+}
 .gt-tape-row {
   display: grid; grid-template-columns: 1fr auto 1fr; gap: .5rem;
   align-items: center; padding: .42rem 0;
@@ -727,7 +805,7 @@
   padding-bottom: .3rem; border-bottom: 1px solid var(--rule-soft);
 }
 .gt-road-step {
-  display: flex; align-items: baseline; gap: .5rem;
+  display: flex; align-items: baseline; gap: .45rem;
   padding: .32rem 0; font-size: .8rem; color: var(--ink-2);
 }
 .gt-road-step i {
@@ -735,12 +813,28 @@
   font-family: var(--gt-mono); font-size: .45rem; font-weight: 700;
   letter-spacing: .1em; color: var(--ink-3);
 }
+.gt-road-beat { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gt-road-step b { font-family: var(--gt-serif); font-weight: 400; font-size: .95rem; color: var(--ink); }
+/* The seat the beaten team held, kept against its name rather than parked at
+   the far end: "beat the 5 seed" is one fact, and splitting it across the row
+   made the number look like a score. */
 .gt-road-step em {
-  margin-left: auto; flex: none; font-style: normal;
-  font-family: var(--gt-mono); font-size: .55rem; font-weight: 700;
+  font-style: normal;
+  font-family: var(--gt-mono); font-size: .5rem; font-weight: 700;
   font-variant-numeric: tabular-nums; color: var(--ink-3);
+  padding: .1rem .22rem; margin-right: .05rem;
+  background: var(--rule-soft);
 }
+/* How the room split. This is the score of the game, so it gets the right
+   end of the line, where a score goes. */
+.gt-road-score {
+  margin-left: auto; flex: none;
+  font-family: var(--gt-mono); font-size: .68rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--ink);
+}
+.gt-road-score i { font-style: normal; color: var(--ink-3); margin: 0 .06em; }
+.gt.is-final .gt-road-score { color: var(--gold); }
+.gt.is-final .gt-road-step em { background: rgba(255, 255, 255, .07); color: var(--silver); }
 
 /* ── The coronation ── */
 .gt-crown { text-align: center; margin-bottom: 1.4rem; }
@@ -927,9 +1021,18 @@
 @media (min-width: 46rem) {
   .gt-shell { max-width: 44rem; }
   .gt-figs { grid-template-columns: repeat(4, 1fr); }
-  .gt-pair { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; align-items: start; padding-bottom: 0; }
+  /* Both teams on screen at once, so the deck goes away entirely: no swiping,
+     no tabs, no snap. */
+  .gt-pair {
+    display: grid; grid-template-columns: 1fr 1fr; gap: .7rem;
+    align-items: start; padding-bottom: 0;
+    overflow: visible; scroll-snap-type: none;
+  }
+  .gt-pair > .gt-team { width: auto; margin-right: 0; }
+  .gt-swipe-tabs { display: none; }
+  .gt-vs-swipe { display: none; }
+  .gt-vs-tap { font-size: inherit; opacity: 1; }
   .gt-review, .gt-names { padding-bottom: 0; }
-  .gt-vs { grid-column: 1 / -1; order: -1; }
   .gt-actions { position: static; border-top: 0; }
   .gt-actions::before { display: none; }
   .gt-roads { grid-template-columns: 1fr 1fr; }

@@ -1,5 +1,6 @@
 import {
-  ROUNDS, currentRound, winnerOf, buildBracket, finalGame, finishLine, label, pathTo, pts, record, vsLeague,
+  ROUNDS, currentRound, winnerOf, buildBracket, finalGame, finishLine, label, pathTo, pts, record,
+  settledScores, vsLeague,
   type GoatTeam, type ResolvedGame,
 } from '@/lib/greatestTeam'
 import { PAMS_ROSTER } from '@/lib/winBallot'
@@ -127,6 +128,9 @@ export default async function GoatPage({ params }: { params: Promise<{ token: st
 
   if (state.openRound) {
     const already = await votedNames(league.id, state.openRound)
+    // Only settled games carry a score, so the live round stays sealed even
+    // though every card the room has ever cast passes through here.
+    const settled = settledScores(buildBracket(state.results), await readVotes(league.id))
     return (
       <VoteClient
         leagueId={league.id}
@@ -135,6 +139,7 @@ export default async function GoatPage({ params }: { params: Promise<{ token: st
         results={state.results}
         roster={ROSTER}
         alreadyVoted={already}
+        scores={settled}
       />
     )
   }
@@ -181,7 +186,11 @@ export default async function GoatPage({ params }: { params: Promise<{ token: st
                   game on it. Fourteen teams are already out.
                 </p>
               </div>
-              <FinalPreview bracket={bracket} game={final} />
+              <FinalPreview
+                bracket={bracket}
+                game={final}
+                scores={settledScores(bracket, votes)}
+              />
             </>
           )}
 

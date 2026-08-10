@@ -73,6 +73,33 @@ export type GoatTeam = {
   low: number
   /** Longest regular-season win streak. */
   streak: number
+
+  // ── The split ──
+  // Everything above counts the regular season and the real bracket games
+  // together, which is right for seeding and useless for the argument two
+  // teams have with each other in the final. These take it apart.
+  /** Points a week in the regular season alone. */
+  regPpg: number
+  /** What their opponents put up on them, per regular-season game. */
+  paPpg: number
+  /**
+   * Points a week in the real bracket games only, and the record there.
+   * Null for a team that never played one, though every team in this field
+   * did.
+   */
+  postPpg: number | null
+  postWins: number
+  postLosses: number
+  /**
+   * Record against the WHOLE league every week: each regular-season week
+   * scored against all eleven (or thirteen) other teams rather than the one
+   * the schedule happened to hand them. The honest measure of a season, and
+   * the one that most often disagrees with the record.
+   */
+  apWins: number
+  apLosses: number
+  /** Regular-season weeks they were the highest scorer in the league. */
+  topWeeks: number
   /** Where this team finished that season in points, and out of how many. */
   ppgRank: number
   seasonTeams: number
@@ -156,7 +183,7 @@ export function resume(t: { wins: number; losses: number; ties: number; index: n
 }
 
 export const FIELD: readonly GoatTeam[] = [
-  { seed: 1, year: 2019, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'On Jah', wins: 9, losses: 4, ties: 0, ppg: 137.3, index: 1.184, resume: 80.7, finish: 'champion', finalRank: 1, regularRank: 2, high: 191.8, low: 78.6, streak: 5, ppgRank: 2, seasonTeams: 14, indexRank: 2, recRank: 11, scoRank: 2, postRank: 1,
+  { seed: 1, year: 2019, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'On Jah', wins: 9, losses: 4, ties: 0, ppg: 137.3, index: 1.184, resume: 80.7, finish: 'champion', finalRank: 1, regularRank: 2, high: 191.8, low: 78.6, streak: 5, regPpg: 135.4, paPpg: 113.8, postPpg: 150.1, postWins: 2, postLosses: 0, apWins: 118, apLosses: 51, topWeeks: 4, ppgRank: 2, seasonTeams: 14, indexRank: 2, recRank: 11, scoRank: 2, postRank: 1,
     case: 'Picked up Davante Adams for the stretch and got 22.4 a game out of four starts, then added Terry McLaurin for the playoff run and started him in the final. Started 2-2, went 7-2 the rest of the way, then won both playoff games to take the first title there has ever been.',
     lineup: [
       { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 33, g: 14, rk: 'QB1' },
@@ -167,7 +194,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'Darren Waller', p: 'TE', ppg: 12.7, g: 11, rk: 'TE5' },
       { s: 'FLEX', n: 'D.J. Chark', p: 'WR', ppg: 13.2, g: 7, rk: 'WR22' },
     ] },
-  { seed: 2, year: 2019, managerId: 'eaeedefa-2711-4d93-b0ce-a795c5f4d55a', manager: 'Mason', team: 'Mdog346', wins: 11, losses: 2, ties: 0, ppg: 138.1, index: 1.19, resume: 79.8, finish: 'runner-up', finalRank: 2, regularRank: 1, high: 183.9, low: 111.4, streak: 5, ppgRank: 1, seasonTeams: 14, indexRank: 1, recRank: 2, scoRank: 1, postRank: 8,
+  { seed: 2, year: 2019, managerId: 'eaeedefa-2711-4d93-b0ce-a795c5f4d55a', manager: 'Mason', team: 'Mdog346', wins: 11, losses: 2, ties: 0, ppg: 138.1, index: 1.19, resume: 79.8, finish: 'runner-up', finalRank: 2, regularRank: 1, high: 183.9, low: 111.4, streak: 5, regPpg: 136, paPpg: 112.2, postPpg: 151.5, postWins: 1, postLosses: 1, apWins: 126, apLosses: 43, topWeeks: 1, ppgRank: 1, seasonTeams: 14, indexRank: 1, recRank: 2, scoRank: 1, postRank: 8,
     case: 'Ryan Tannehill averaged 27 a game as the backup quarterback and Aaron Jones 22.6 as a spare back, neither of them ever needed. Won eight of nine from week three and was never held under 111 all season.',
     lineup: [
       { s: 'QB', n: 'Dak Prescott', p: 'QB', ppg: 24.9, g: 8, rk: 'QB4' },
@@ -178,7 +205,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'Zach Ertz', p: 'TE', ppg: 13.3, g: 14, rk: 'TE2' },
       { s: 'FLEX', n: 'Julio Jones', p: 'WR', ppg: 20.4, g: 7, rk: 'WR4' },
     ] },
-  { seed: 3, year: 2021, managerId: 'dca75bbf-9c3e-4576-b6c4-845e6dc20030', manager: 'Chris', team: 'Stafford University', wins: 10, losses: 4, ties: 0, ppg: 140.4, index: 1.153, resume: 78.7, finish: 'champion', finalRank: 1, regularRank: 1, high: 200.6, low: 81.2, streak: 5, ppgRank: 2, seasonTeams: 12, indexRank: 5, recRank: 4, scoRank: 5, postRank: 1,
+  { seed: 3, year: 2021, managerId: 'dca75bbf-9c3e-4576-b6c4-845e6dc20030', manager: 'Chris', team: 'Stafford University', wins: 10, losses: 4, ties: 0, ppg: 140.4, index: 1.153, resume: 78.7, finish: 'champion', finalRank: 1, regularRank: 1, high: 200.6, low: 81.2, streak: 5, regPpg: 137.2, paPpg: 114, postPpg: 162.2, postWins: 2, postLosses: 0, apWins: 106, apLosses: 48, topWeeks: 4, ppgRank: 2, seasonTeams: 12, indexRank: 5, recRank: 4, scoRank: 5, postRank: 1,
     case: 'Damien Harris gave 13.8 a game across fourteen weeks as the fourth back. Lost its first two, then won seven of the next nine.',
     lineup: [
       { s: 'QB', n: 'Matthew Stafford', p: 'QB', ppg: 24.6, g: 15, rk: 'QB6' },
@@ -189,7 +216,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'Mark Andrews', p: 'TE', ppg: 16.6, g: 15, rk: 'TE1' },
       { s: 'FLEX', n: 'James Conner', p: 'RB', ppg: 20.3, g: 5, rk: 'RB7' },
     ] },
-  { seed: 4, year: 2025, managerId: 'eaeedefa-2711-4d93-b0ce-a795c5f4d55a', manager: 'Mason', team: 'Rizzlers', wins: 10, losses: 4, ties: 0, ppg: 130.3, index: 1.081, resume: 72.1, finish: 'champion', finalRank: 1, regularRank: 2, high: 164.8, low: 95.4, streak: 7, ppgRank: 3, seasonTeams: 12, indexRank: 17, recRank: 4, scoRank: 9, postRank: 1,
+  { seed: 4, year: 2025, managerId: 'eaeedefa-2711-4d93-b0ce-a795c5f4d55a', manager: 'Mason', team: 'Rizzlers', wins: 10, losses: 4, ties: 0, ppg: 130.3, index: 1.081, resume: 72.1, finish: 'champion', finalRank: 1, regularRank: 2, high: 164.8, low: 95.4, streak: 7, regPpg: 126.5, paPpg: 120.3, postPpg: 156.7, postWins: 2, postLosses: 0, apWins: 94, apLosses: 60, topWeeks: 0, ppgRank: 3, seasonTeams: 12, indexRank: 17, recRank: 4, scoRank: 9, postRank: 1,
     case: 'Kenny Gainwell averaged 16.8 a game and started three times, with Brandon Aubrey kicking every single week behind him. Won seven straight from week four and eight of nine overall.',
     lineup: [
       { s: 'QB', n: 'Jalen Hurts', p: 'QB', ppg: 21.3, g: 15, rk: 'QB5' },
@@ -200,7 +227,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'George Kittle', p: 'TE', ppg: 14.5, g: 9, rk: 'TE10' },
       { s: 'FLEX', n: 'Dallas Goedert', p: 'TE', ppg: 14.4, g: 8, rk: 'TE6' },
     ] },
-  { seed: 5, year: 2021, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'Oreos', wins: 9, losses: 5, ties: 0, ppg: 142.2, index: 1.168, resume: 69.1, finish: 'runner-up', finalRank: 2, regularRank: 3, high: 189.6, low: 109.4, streak: 6, ppgRank: 1, seasonTeams: 12, indexRank: 3, recRank: 12, scoRank: 3, postRank: 8,
+  { seed: 5, year: 2021, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'Oreos', wins: 9, losses: 5, ties: 0, ppg: 142.2, index: 1.168, resume: 69.1, finish: 'runner-up', finalRank: 2, regularRank: 3, high: 189.6, low: 109.4, streak: 6, regPpg: 142, paPpg: 129, postPpg: 142.9, postWins: 2, postLosses: 1, apWins: 113, apLosses: 41, topWeeks: 4, ppgRank: 1, seasonTeams: 12, indexRank: 3, recRank: 12, scoRank: 3, postRank: 8,
     case: 'Jaylen Waddle at 15.5 a game across fifteen weeks and Terry McLaurin at 15.6, with Elijah Mitchell on 17.8 behind them. Lost five in a row through the middle of the season and still won its last six.',
     lineup: [
       { s: 'QB', n: 'Kirk Cousins', p: 'QB', ppg: 20, g: 10, rk: 'QB13' },
@@ -211,7 +238,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'Travis Kelce', p: 'TE', ppg: 16.6, g: 15, rk: 'TE2' },
       { s: 'FLEX', n: 'Tyler Lockett', p: 'WR', ppg: 13.8, g: 10, rk: 'WR22' },
     ] },
-  { seed: 6, year: 2023, managerId: 'f28186ad-c398-4bf5-a425-e387fa1e03a3', manager: 'Connie', team: 'Milk Man', wins: 8, losses: 6, ties: 0, ppg: 131.8, index: 1.086, resume: 66.4, finish: 'champion', finalRank: 1, regularRank: 3, high: 186, low: 80.1, streak: 4, ppgRank: 2, seasonTeams: 12, indexRank: 15, recRank: 13, scoRank: 8, postRank: 1,
+  { seed: 6, year: 2023, managerId: 'f28186ad-c398-4bf5-a425-e387fa1e03a3', manager: 'Connie', team: 'Milk Man', wins: 8, losses: 6, ties: 0, ppg: 131.8, index: 1.086, resume: 66.4, finish: 'champion', finalRank: 1, regularRank: 3, high: 186, low: 80.1, streak: 4, regPpg: 129.4, paPpg: 121.5, postPpg: 148.5, postWins: 2, postLosses: 0, apWins: 95, apLosses: 59, topWeeks: 3, ppgRank: 2, seasonTeams: 12, indexRank: 15, recRank: 13, scoRank: 8, postRank: 1,
     case: 'Never settled on a quarterback: Dak Prescott and Sam Howell split the year at 23.7 and 23.1 a game and neither of them started six times. Lost five straight mid-season, then won four in a row to climb back in.',
     lineup: [
       { s: 'QB', n: null, p: 'QB', ppg: 0, g: 0, rk: null },
@@ -222,7 +249,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'George Kittle', p: 'TE', ppg: 12.7, g: 14, rk: 'TE5' },
       { s: 'FLEX', n: 'Calvin Ridley', p: 'WR', ppg: 22.1, g: 3, rk: 'WR25' },
     ] },
-  { seed: 7, year: 2022, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'Space Mav', wins: 12, losses: 2, ties: 0, ppg: 125.9, index: 1.064, resume: 65.7, finish: 'rank', finalRank: 3, regularRank: 1, high: 170.3, low: 49.5, streak: 6, ppgRank: 3, seasonTeams: 12, indexRank: 21, recRank: 1, scoRank: 12, postRank: 12,
+  { seed: 7, year: 2022, managerId: '196e3501-8cec-49b4-a09b-17771bc997f1', manager: 'Joey', team: 'Space Mav', wins: 12, losses: 2, ties: 0, ppg: 125.9, index: 1.064, resume: 65.7, finish: 'rank', finalRank: 3, regularRank: 1, high: 170.3, low: 49.5, streak: 6, regPpg: 124.2, paPpg: 116.2, postPpg: 149.4, postWins: 0, postLosses: 1, apWins: 98, apLosses: 56, topWeeks: 1, ppgRank: 3, seasonTeams: 12, indexRank: 21, recRank: 1, scoRank: 12, postRank: 12,
     case: 'Jared Goff averaged 27.8 a game across four appearances as the backup. Opened 8-1 and ripped off six straight from week five.',
     lineup: [
       { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 24.4, g: 11, rk: 'QB9' },
@@ -233,7 +260,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'Zach Ertz', p: 'TE', ppg: 10.4, g: 7, rk: 'TE11' },
       { s: 'FLEX', n: 'CeeDee Lamb', p: 'WR', ppg: 21.3, g: 6, rk: 'WR6' },
     ] },
-  { seed: 8, year: 2025, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'CHILD OF GOD', wins: 10, losses: 4, ties: 0, ppg: 139.9, index: 1.161, resume: 64.5, finish: 'rank', finalRank: 5, regularRank: 1, high: 171.3, low: 112.7, streak: 7, ppgRank: 1, seasonTeams: 12, indexRank: 4, recRank: 4, scoRank: 4, postRank: 16,
+  { seed: 8, year: 2025, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'CHILD OF GOD', wins: 10, losses: 4, ties: 0, ppg: 139.9, index: 1.161, resume: 64.5, finish: 'rank', finalRank: 5, regularRank: 1, high: 171.3, low: 112.7, streak: 7, regPpg: 141.9, paPpg: 128.4, postPpg: 112.3, postWins: 0, postLosses: 1, apWins: 123, apLosses: 31, topWeeks: 3, ppgRank: 1, seasonTeams: 12, indexRank: 4, recRank: 4, scoRank: 4, postRank: 16,
     case: 'Never settled a second back: De\'Von Achane and Jahmyr Gibbs both passed through at around 20 a game and neither started six times, with Matthew Stafford on 29.7 behind the starter. Opened 7-2, then won seven in a row.',
     lineup: [
       { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 20.5, g: 11, rk: 'QB15' },
@@ -244,7 +271,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'Harold Fannin Jr.', p: 'TE', ppg: 9.5, g: 6, rk: 'TE5' },
       { s: 'FLEX', n: 'Christian McCaffrey', p: 'RB', ppg: 22.6, g: 5, rk: 'RB1' },
     ] },
-  { seed: 9, year: 2024, managerId: 'ca70f1bc-3bc8-4ab3-af35-3b3ee25c157f', manager: 'Ricci', team: 'OG CARHARTT', wins: 10, losses: 4, ties: 0, ppg: 132.4, index: 1.075, resume: 63.5, finish: 'runner-up', finalRank: 2, regularRank: 2, high: 163.7, low: 93.5, streak: 7, ppgRank: 4, seasonTeams: 12, indexRank: 18, recRank: 4, scoRank: 10, postRank: 8,
+  { seed: 9, year: 2024, managerId: 'ca70f1bc-3bc8-4ab3-af35-3b3ee25c157f', manager: 'Ricci', team: 'OG CARHARTT', wins: 10, losses: 4, ties: 0, ppg: 132.4, index: 1.075, resume: 63.5, finish: 'runner-up', finalRank: 2, regularRank: 2, high: 163.7, low: 93.5, streak: 7, regPpg: 130.3, paPpg: 115.4, postPpg: 147.1, postWins: 1, postLosses: 1, apWins: 93, apLosses: 61, topWeeks: 3, ppgRank: 4, seasonTeams: 12, indexRank: 18, recRank: 4, scoRank: 10, postRank: 8,
     case: 'Tua Tagovailoa averaged 27.4 a game and was never once started. Jauan Jennings gave 15.1 across twelve weeks behind him. Won seven straight from week five and eight of nine from week two.',
     lineup: [
       { s: 'QB', n: 'Jalen Hurts', p: 'QB', ppg: 22.8, g: 14, rk: 'QB7' },
@@ -255,7 +282,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'George Kittle', p: 'TE', ppg: 17.1, g: 13, rk: 'TE2' },
       { s: 'FLEX', n: 'Malik Nabers', p: 'WR', ppg: 17.4, g: 8, rk: 'WR6' },
     ] },
-  { seed: 10, year: 2020, managerId: 'ca70f1bc-3bc8-4ab3-af35-3b3ee25c157f', manager: 'Ricci', team: 'Huntingforkickers', wins: 7, losses: 6, ties: 0, ppg: 133, index: 1.067, resume: 63.2, finish: 'champion', finalRank: 1, regularRank: 4, high: 145.9, low: 90.8, streak: 2, ppgRank: 4, seasonTeams: 12, indexRank: 20, recRank: 15, scoRank: 11, postRank: 1,
+  { seed: 10, year: 2020, managerId: 'ca70f1bc-3bc8-4ab3-af35-3b3ee25c157f', manager: 'Ricci', team: 'Huntingforkickers', wins: 7, losses: 6, ties: 0, ppg: 133, index: 1.067, resume: 63.2, finish: 'champion', finalRank: 1, regularRank: 4, high: 145.9, low: 90.8, streak: 2, regPpg: 127, paPpg: 124.9, postPpg: 159.1, postWins: 3, postLosses: 0, apWins: 81, apLosses: 62, topWeeks: 0, ppgRank: 4, seasonTeams: 12, indexRank: 20, recRank: 15, scoRank: 11, postRank: 1,
     case: 'Ben Roethlisberger sat on 22.2 a game for fifteen weeks, with Will Fuller at 18.3 and Antonio Gibson at 16.7 behind him. Never won more than two games in a row all season.',
     lineup: [
       { s: 'QB', n: 'Lamar Jackson', p: 'QB', ppg: 25.5, g: 11, rk: 'QB10' },
@@ -266,7 +293,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'Travis Kelce', p: 'TE', ppg: 20.9, g: 15, rk: 'TE1' },
       { s: 'FLEX', n: 'Brandin Cooks', p: 'WR', ppg: 14.8, g: 7, rk: 'WR28' },
     ] },
-  { seed: 11, year: 2023, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'Nathanael Bartholomew', wins: 11, losses: 3, ties: 0, ppg: 125.1, index: 1.031, resume: 62.5, finish: 'runner-up', finalRank: 2, regularRank: 1, high: 174, low: 87.4, streak: 4, ppgRank: 3, seasonTeams: 12, indexRank: 27, recRank: 3, scoRank: 15, postRank: 8,
+  { seed: 11, year: 2023, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'Nathanael Bartholomew', wins: 11, losses: 3, ties: 0, ppg: 125.1, index: 1.031, resume: 62.5, finish: 'runner-up', finalRank: 2, regularRank: 1, high: 174, low: 87.4, streak: 4, regPpg: 125.5, paPpg: 113.5, postPpg: 122.9, postWins: 1, postLosses: 1, apWins: 85, apLosses: 69, topWeeks: 1, ppgRank: 3, seasonTeams: 12, indexRank: 27, recRank: 3, scoRank: 15, postRank: 8,
     case: 'Lamar Jackson at 31.1 a game and C.J. Stroud at 24.5 both cycled through without sticking, with Nico Collins and DeVonta Smith behind them. Opened 7-2 and closed on four straight.',
     lineup: [
       { s: 'QB', n: 'Justin Fields', p: 'QB', ppg: 21.3, g: 6, rk: 'QB14' },
@@ -277,7 +304,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'Mark Andrews', p: 'TE', ppg: 14.6, g: 9, rk: 'TE10' },
       { s: 'FLEX', n: 'Brian Robinson', p: 'RB', ppg: 13.4, g: 7, rk: 'RB21' },
     ] },
-  { seed: 12, year: 2024, managerId: '6897f929-c070-4e0e-9633-d9e90794a1c0', manager: 'Sean', team: '3-Star REECHIE', wins: 10, losses: 4, ties: 0, ppg: 137.5, index: 1.117, resume: 62.4, finish: 'rank', finalRank: 4, regularRank: 1, high: 169.8, low: 102.6, streak: 5, ppgRank: 1, seasonTeams: 12, indexRank: 8, recRank: 4, scoRank: 6, postRank: 14,
+  { seed: 12, year: 2024, managerId: '6897f929-c070-4e0e-9633-d9e90794a1c0', manager: 'Sean', team: '3-Star REECHIE', wins: 10, losses: 4, ties: 0, ppg: 137.5, index: 1.117, resume: 62.4, finish: 'rank', finalRank: 4, regularRank: 1, high: 169.8, low: 102.6, streak: 5, regPpg: 137.9, paPpg: 116.6, postPpg: 131.6, postWins: 0, postLosses: 1, apWins: 109, apLosses: 45, topWeeks: 5, ppgRank: 1, seasonTeams: 12, indexRank: 8, recRank: 4, scoRank: 6, postRank: 14,
     case: 'Jordan Addison averaged 15.7 a game across eleven weeks and Malik Nabers 14.1, neither able to hold a slot. Lost its first two, then went 8-1.',
     lineup: [
       { s: 'QB', n: 'Joe Burrow', p: 'QB', ppg: 27.1, g: 14, rk: 'QB2' },
@@ -288,7 +315,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'Jake Ferguson', p: 'TE', ppg: 9.5, g: 8, rk: 'TE15' },
       { s: 'FLEX', n: 'Kenneth Walker III', p: 'RB', ppg: 19.1, g: 6, rk: 'RB24' },
     ] },
-  { seed: 13, year: 2022, managerId: 'c8db587f-7936-4cd7-a4d7-a3efa9edbe4c', manager: 'Kyle', team: 'Wyle Wiverd', wins: 10, losses: 4, ties: 0, ppg: 131.5, index: 1.111, resume: 61.9, finish: 'rank', finalRank: 4, regularRank: 2, high: 170.9, low: 100.1, streak: 4, ppgRank: 1, seasonTeams: 12, indexRank: 11, recRank: 4, scoRank: 7, postRank: 14,
+  { seed: 13, year: 2022, managerId: 'c8db587f-7936-4cd7-a4d7-a3efa9edbe4c', manager: 'Kyle', team: 'Wyle Wiverd', wins: 10, losses: 4, ties: 0, ppg: 131.5, index: 1.111, resume: 61.9, finish: 'rank', finalRank: 4, regularRank: 2, high: 170.9, low: 100.1, streak: 4, regPpg: 131.7, paPpg: 107.6, postPpg: 129, postWins: 0, postLosses: 1, apWins: 111, apLosses: 43, topWeeks: 3, ppgRank: 1, seasonTeams: 12, indexRank: 11, recRank: 4, scoRank: 7, postRank: 14,
     case: 'DK Metcalf averaged 16 a game and started six times and is still only the spare receiver here. Opened 7-2 and won four straight from week five.',
     lineup: [
       { s: 'QB', n: 'Josh Allen', p: 'QB', ppg: 28.1, g: 14, rk: 'QB2' },
@@ -299,7 +326,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'Pat Freiermuth', p: 'TE', ppg: 10.9, g: 13, rk: 'TE5' },
       { s: 'FLEX', n: 'Dameon Pierce', p: 'RB', ppg: 15.1, g: 7, rk: 'RB24' },
     ] },
-  { seed: 14, year: 2022, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'Pat Bateman', wins: 7, losses: 7, ties: 0, ppg: 125.7, index: 1.062, resume: 61.1, finish: 'champion', finalRank: 1, regularRank: 5, high: 166.4, low: 80.2, streak: 2, ppgRank: 4, seasonTeams: 12, indexRank: 22, recRank: 16, scoRank: 13, postRank: 1,
+  { seed: 14, year: 2022, managerId: '6f92aba6-b4b6-4321-bd61-e8af54e54cef', manager: 'Isaac', team: 'Pat Bateman', wins: 7, losses: 7, ties: 0, ppg: 125.7, index: 1.062, resume: 61.1, finish: 'champion', finalRank: 1, regularRank: 5, high: 166.4, low: 80.2, streak: 2, regPpg: 122.7, paPpg: 122.4, postPpg: 139.8, postWins: 3, postLosses: 0, apWins: 93, apLosses: 61, topWeeks: 3, ppgRank: 4, seasonTeams: 12, indexRank: 22, recRank: 16, scoRank: 13, postRank: 1,
     case: 'Jalen Hurts averaged 27.3 a game across four starts as the backup quarterback, with Dalvin Cook and James Conner both around 13 behind the starters. Never won more than two in a row.',
     lineup: [
       { s: 'QB', n: 'Patrick Mahomes', p: 'QB', ppg: 30.3, g: 9, rk: 'QB1' },
@@ -310,7 +337,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'Travis Kelce', p: 'TE', ppg: 21, g: 7, rk: 'TE1' },
       { s: 'FLEX', n: 'Chris Olave', p: 'WR', ppg: 14.5, g: 7, rk: 'WR24' },
     ] },
-  { seed: 15, year: 2021, managerId: '6897f929-c070-4e0e-9633-d9e90794a1c0', manager: 'Sean', team: 'Dude Lipas', wins: 10, losses: 4, ties: 0, ppg: 127.4, index: 1.047, resume: 57.9, finish: 'rank', finalRank: 3, regularRank: 2, high: 187.5, low: 82.6, streak: 6, ppgRank: 3, seasonTeams: 12, indexRank: 25, recRank: 4, scoRank: 14, postRank: 12,
+  { seed: 15, year: 2021, managerId: '6897f929-c070-4e0e-9633-d9e90794a1c0', manager: 'Sean', team: 'Dude Lipas', wins: 10, losses: 4, ties: 0, ppg: 127.4, index: 1.047, resume: 57.9, finish: 'rank', finalRank: 3, regularRank: 2, high: 187.5, low: 82.6, streak: 6, regPpg: 125.8, paPpg: 124.2, postPpg: 149.7, postWins: 0, postLosses: 1, apWins: 82, apLosses: 72, topWeeks: 2, ppgRank: 3, seasonTeams: 12, indexRank: 25, recRank: 4, scoRank: 14, postRank: 12,
     case: 'Jonathan Taylor put up 16.9 a game across five starts and still never held the slot, with AJ Dillon, Brandon Aiyuk and Aaron Jones all above 13 behind him. Won six in a row from week three.',
     lineup: [
       { s: 'QB', n: 'Dak Prescott', p: 'QB', ppg: 23.1, g: 12, rk: 'QB7' },
@@ -321,7 +348,7 @@ export const FIELD: readonly GoatTeam[] = [
       { s: 'TE', n: 'Dawson Knox', p: 'TE', ppg: 12.2, g: 9, rk: 'TE11' },
       { s: 'FLEX', n: 'Antonio Brown', p: 'WR', ppg: 19.3, g: 6, rk: 'WR42' },
     ] },
-  { seed: 16, year: 2024, managerId: '55ab525f-9fa0-4bdd-a842-a0dcc99577b1', manager: 'Luke', team: 'The GLIZZYS', wins: 8, losses: 6, ties: 0, ppg: 121.5, index: 0.987, resume: 57.2, finish: 'champion', finalRank: 1, regularRank: 6, high: 147.3, low: 96.6, streak: 4, ppgRank: 6, seasonTeams: 12, indexRank: 45, recRank: 13, scoRank: 16, postRank: 1,
+  { seed: 16, year: 2024, managerId: '55ab525f-9fa0-4bdd-a842-a0dcc99577b1', manager: 'Luke', team: 'The GLIZZYS', wins: 8, losses: 6, ties: 0, ppg: 121.5, index: 0.987, resume: 57.2, finish: 'champion', finalRank: 1, regularRank: 6, high: 147.3, low: 96.6, streak: 4, regPpg: 116.5, paPpg: 117.6, postPpg: 145, postWins: 3, postLosses: 0, apWins: 65, apLosses: 89, topWeeks: 0, ppgRank: 6, seasonTeams: 12, indexRank: 45, recRank: 13, scoRank: 16, postRank: 1,
     case: 'No skill depth at all: nothing behind the starters cleared what an average starter at its own position puts up, bar a rotating defence. Started 1-4, then went 7-2 the rest of the way and won four straight into January.',
     lineup: [
       { s: 'QB', n: 'Kyler Murray', p: 'QB', ppg: 19, g: 16, rk: 'QB11' },
@@ -376,6 +403,37 @@ export function breakdown(t: GoatTeam): { record: number; scoring: number; post:
     post: placementPoints(t.finalRank),
     total: t.resume,
   }
+}
+
+/** Playoff record, as a record. Null for a team that never played one. */
+export function postRecord(t: GoatTeam): string | null {
+  return t.postPpg === null ? null : `${t.postWins}-${t.postLosses}`
+}
+
+/** All-play record, which is long enough that it needs its own formatter. */
+export function allPlay(t: GoatTeam): string {
+  return `${t.apWins}-${t.apLosses}`
+}
+
+/** All-play win rate, 0 to 1, for deciding which side of a tape row is ahead. */
+export function allPlayRate(t: GoatTeam): number {
+  const n = t.apWins + t.apLosses
+  return n ? t.apWins / n : 0
+}
+
+/**
+ * What the postseason added to a team's weekly scoring, in points. The single
+ * most argued-about number on a resume: a team that scored the same all year
+ * and a team that found another twenty points in January are not the same
+ * team, and nothing else on the card can tell them apart.
+ */
+export function postLift(t: GoatTeam): number | null {
+  return t.postPpg === null ? null : +(t.postPpg - t.regPpg).toFixed(1)
+}
+
+/** A signed number, so a lift of zero and a drop of two read differently. */
+export function signed(n: number): string {
+  return `${n > 0 ? '+' : ''}${n.toFixed(1)}`
 }
 
 /** How a season ended, in words, for the card. */
@@ -503,12 +561,15 @@ export function finalGame(bracket: ResolvedGame[]): ResolvedGame | null {
  * the final: by the time two teams are left, how each of them got there is
  * most of the argument for which one is better.
  */
-export function pathTo(bracket: ResolvedGame[], seed: number): { round: RoundId; beat: GoatTeam }[] {
-  const out: { round: RoundId; beat: GoatTeam }[] = []
+export function pathTo(
+  bracket: ResolvedGame[],
+  seed: number,
+): { round: RoundId; game: string; beat: GoatTeam }[] {
+  const out: { round: RoundId; game: string; beat: GoatTeam }[] = []
   for (const g of bracket) {
     if (g.winner !== seed) continue
     const beat = g.home?.seed === seed ? g.away : g.home
-    if (beat) out.push({ round: g.round, beat })
+    if (beat) out.push({ round: g.round, game: g.id, beat })
   }
   return out
 }
@@ -577,6 +638,28 @@ export type Tally = {
   leader: number | null
   /** Share held by the leader, 0.5 to 1. Drives how lopsided a row reads. */
   edge: number
+}
+
+/**
+ * How the room split on each game it has already settled, winner's votes
+ * first. Only settled games appear, so this can never leak a live round: the
+ * same counts are already on the public bracket once a round is in.
+ */
+export type GameScore = { won: number; lost: number }
+
+export function settledScores(bracket: ResolvedGame[], votes: VoteRecord[]): Record<string, GameScore> {
+  const out: Record<string, GameScore> = {}
+  for (const round of ROUND_ORDER) {
+    for (const t of tallyRound(bracket, round, votes)) {
+      if (t.game.winner === null) continue
+      const winnerIsHome = t.game.winner === t.game.home?.seed
+      out[t.game.id] = {
+        won: winnerIsHome ? t.homeVotes : t.awayVotes,
+        lost: winnerIsHome ? t.awayVotes : t.homeVotes,
+      }
+    }
+  }
+  return out
 }
 
 /** Count one round's votes, game by game, in bracket order. */

@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import type { Ballot, Results, RoundId } from '@/lib/greatestTeam'
+import type { Ballot, GameScore, Results, RoundId } from '@/lib/greatestTeam'
 
 // The deck restores a saved draft from the device during its first render, so
 // server-rendering it would guarantee a hydration mismatch. There is nothing
@@ -28,6 +28,8 @@ export function VoteClient(props: {
   results: Results
   roster: readonly string[]
   alreadyVoted: string[]
+  /** How the room split on the rounds already settled. Never the live one. */
+  scores: Record<string, GameScore>
 }) {
   return <VoteDeck {...props} />
 }
