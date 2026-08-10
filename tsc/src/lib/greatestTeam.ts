@@ -493,6 +493,26 @@ export function winnerOf(bracket: ResolvedGame[]): GoatTeam | null {
   return f?.winner ? (BY_SEED.get(f.winner) ?? null) : null
 }
 
+/** The final itself, teams attached once both semifinals are settled. */
+export function finalGame(bracket: ResolvedGame[]): ResolvedGame | null {
+  return bracket.find((g) => g.round === 'final') ?? null
+}
+
+/**
+ * Everybody a seed has already beaten, in bracket order. This is the road to
+ * the final: by the time two teams are left, how each of them got there is
+ * most of the argument for which one is better.
+ */
+export function pathTo(bracket: ResolvedGame[], seed: number): { round: RoundId; beat: GoatTeam }[] {
+  const out: { round: RoundId; beat: GoatTeam }[] = []
+  for (const g of bracket) {
+    if (g.winner !== seed) continue
+    const beat = g.home?.seed === seed ? g.away : g.home
+    if (beat) out.push({ round: g.round, beat })
+  }
+  return out
+}
+
 /**
  * The earliest round that is not fully settled. This is what the room opens
  * next, and what the public bracket highlights.
@@ -609,4 +629,65 @@ export function settleRound(
   const results: Results = {}
   for (const t of tallies) results[t.game.id] = t.leader!
   return { ok: true, results }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// One person's card, back to them
+// ─────────────────────────────────────────────────────────────────────────
+
+/** One call on somebody's card, against what the room went on to decide. */
+export type CardLine = {
+  game: ResolvedGame
+  pick: GoatTeam | null
+  /** The side they left for dead. */
+  against: GoatTeam | null
+  /** Null while the round is still sealed: no result to be right or wrong about. */
+  right: boolean | null
+}
+
+export type CardRound = { id: RoundId; name: string; lines: CardLine[] }
+
+/**
+ * Somebody's whole tournament, round by round, graded where the room has
+ * settled and left open where it hasn't.
+ *
+ * Only rounds they actually filed a card in appear: a voter who missed the
+ * quarterfinals should see a card with a hole in it rather than four rows of
+ * blanks pretending to be picks.
+ */
+export function scoreCard(
+  bracket: ResolvedGame[],
+  votes: VoteRecord[],
+): { rounds: CardRound[]; right: number; graded: number } {
+  const rounds: CardRound[] = []
+  let right = 0
+  let graded = 0
+
+  for (const round of ROUNDS) {
+    const card = votes.find((v) => v.round === round.id)
+    if (!card) continue
+    const lines: CardLine[] = []
+    for (const game of gamesInRound(bracket, round.id)) {
+      const seed = card.picks[game.id]
+      if (typeof seed !== 'number') continue
+      const pick = BY_SEED.get(seed) ?? null
+      const against = game.home?.seed === seed ? game.away : game.home
+      const hit = game.winner === null ? null : game.winner === seed
+      if (hit !== null) {
+        graded++
+        if (hit) right++
+      }
+      lines.push({ game, pick, against, right: hit })
+    }
+    if (lines.length) rounds.push({ id: round.id, name: round.name, lines })
+  }
+
+  return { rounds, right, graded }
+}
+
+/** Every pick on somebody's card, flattened to game id -> seed. */
+export function flattenCard(votes: VoteRecord[]): Ballot {
+  const out: Ballot = {}
+  for (const v of votes) Object.assign(out, v.picks)
+  return out
 }

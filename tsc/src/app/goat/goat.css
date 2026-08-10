@@ -480,6 +480,449 @@
   letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3);
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   THE FINAL
+   ─────────────────────────────────────────────────────────────────
+   The last round, and the result it produces, run in a different room:
+   the lights go down, the paper becomes felt, and the ledger green is
+   joined by silver and gold.
+
+   Almost all of it is a variable swap, on purpose. Every earlier round
+   is built out of these same custom properties, so the final inherits
+   four rounds of layout work and only argues about the ink. What is
+   written out longhand below is the handful of places that hardcoded a
+   light-paper value, plus the furniture that only the final has.
+   ══════════════════════════════════════════════════════════════════ */
+
+.gt.is-final {
+  --paper:      #0c0f0d;
+  --paper-2:    #141a16;
+  --paper-3:    #050706;
+  --ink:        #ece9db;
+  --ink-2:      #b3b1a2;
+  --ink-3:      #83857a;
+  --rule:       #3a4139;
+  --rule-soft:  #242a25;
+  --field:      #151b17;
+  /* Emerald survives the move: it is what the whole bracket has been
+     scored in, and a final in a colour the tournament never used reads
+     as a different event rather than the end of this one. */
+  --green:      #1f8059;
+  --green-2:    #27996a;
+  --green-wash: rgba(31, 128, 89, .16);
+  --stamp:      #c8553f;
+  --gold:       #d8b662;
+  --gold-2:     #a3833c;
+  --gold-dim:   rgba(216, 182, 98, .3);
+  --silver:     #c9c6b8;
+  --shadow:     rgba(0, 0, 0, .55);
+  --on-green:   #fff;
+
+  color-scheme: dark;
+  /* Felt: a pool of light at the top of the page falling off to black, so the
+     masthead sits under a lamp rather than on a flat swatch.
+     Sized in pixels rather than percentages, and deliberately NOT fixed: a
+     percentage-height radial stretches with the page, so the same lamp would
+     wash the whole of a long card and none of a short one, and
+     background-attachment: fixed is a known jank on iOS. */
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(120% 100% at 50% 0%, rgba(31, 128, 89, .15), transparent 64%),
+    radial-gradient(85% 100% at 50% 0%, rgba(216, 182, 98, .10), transparent 70%);
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-size: 100% 720px;
+}
+
+.gt.is-final :focus-visible { outline-color: var(--gold); }
+
+/* ── Masthead ── */
+.gt.is-final .gt-head {
+  border-bottom: 1px solid var(--gold-2);
+  box-shadow: 0 2px 0 rgba(216, 182, 98, .16);
+  padding-bottom: 1rem;
+}
+.gt.is-final .gt-kicker { color: var(--gold); }
+.gt.is-final .gt-head h1 {
+  font-size: clamp(2rem, 11vw, 3rem);
+  letter-spacing: .01em;
+  color: var(--silver);
+}
+.gt.is-final .gt-head h1 em {
+  color: var(--gold);
+  /* Foil: a highlight running across the word rather than a flat fill. */
+  background: linear-gradient(100deg, #a3833c 0%, #f0dda1 38%, #d8b662 56%, #a3833c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.gt.is-final .gt-sub { color: var(--ink-3); letter-spacing: .2em; }
+.gt.is-final .gt-foot { color: var(--ink-3); letter-spacing: .18em; }
+
+.gt.is-final .gt-rail-fill { background: var(--gold); }
+
+/* ── Team cards ──
+   The offset block shadow is a paper trick and dies on black, so the cards
+   are lifted with depth and edged in gold instead. */
+.gt.is-final .gt-team {
+  border-color: var(--rule);
+  box-shadow: 0 0 0 1px rgba(216, 182, 98, .17), 0 16px 34px rgba(0, 0, 0, .55);
+  background: linear-gradient(180deg, #1a211c 0%, var(--field) 42%);
+}
+.gt.is-final .gt-team:active { transform: translateY(1px); box-shadow: 0 0 0 1px var(--gold-dim), 0 8px 18px rgba(0, 0, 0, .5); }
+.gt.is-final .gt-team.is-picked {
+  border-color: var(--green);
+  box-shadow: 0 0 0 2px var(--green), 0 0 34px rgba(31, 128, 89, .35), 0 16px 34px rgba(0, 0, 0, .55);
+}
+/* The band is var(--ink) by default, which on this stock is a pale silver
+   plate. Left that way on purpose: it reads as an engraved nameplate. */
+.gt.is-final .gt-team-band { background: linear-gradient(180deg, #ded9c6, #b9b4a1); }
+.gt.is-final .gt-team-finish { color: #23261f; }
+.gt.is-final .gt-team-band.is-champ {
+  background: linear-gradient(180deg, #e6cd85, var(--gold-2));
+}
+.gt.is-final .gt-seed { background: #23261f; color: var(--silver); }
+.gt.is-final .gt-team.is-picked .gt-team-band { background: var(--green); }
+.gt.is-final .gt-team.is-picked .gt-team-finish { color: #fff; }
+.gt.is-final .gt-team.is-picked .gt-seed { background: rgba(0, 0, 0, .3); color: #fff; }
+.gt.is-final .gt-team-id h3 { color: var(--silver); }
+.gt.is-final .gt-fig b, .gt.is-final .gt-lu-ppg, .gt.is-final .gt-lu-name b { color: var(--ink); }
+.gt.is-final .gt-fig i { color: var(--gold); }
+.gt.is-final .gt-why { background: rgba(0, 0, 0, .28); border-color: var(--rule-soft); }
+.gt.is-final .gt-why-total b { color: var(--gold); }
+.gt.is-final .gt-why-rec  b, .gt.is-final .gt-why-rec  i { color: #4fa87c; }
+.gt.is-final .gt-why-sco  b, .gt.is-final .gt-why-sco  i { color: #6ba8c6; }
+.gt.is-final .gt-why-post b, .gt.is-final .gt-why-post i { color: #cc7f92; }
+.gt.is-final .gt-case { color: var(--ink-2); }
+
+/* ── Buttons ── */
+/* Gold for the call, because on the final the primary button is the whole
+   point of the page. Emerald stays on the cards, where it marks the pick. */
+.gt.is-final .gt-btn {
+  background: linear-gradient(180deg, #e2c477, var(--gold-2));
+  color: #17130a;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .25) inset;
+}
+.gt.is-final .gt-btn:hover { background: linear-gradient(180deg, #eed596, #b8944a); }
+.gt.is-final .gt-btn.is-ghost {
+  background: none; color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+.gt.is-final .gt-btn.is-ghost:hover { background: rgba(255, 255, 255, .04); }
+.gt.is-final .gt-actions {
+  background: var(--paper);
+  border-top: 1px solid var(--gold-2);
+}
+/* The fade above the sticky bar is a hardcoded paper colour upstairs. */
+.gt.is-final .gt-actions::before {
+  background: linear-gradient(to bottom, rgba(12, 15, 13, 0), var(--paper));
+}
+.gt.is-final .gt-name { background: var(--field); box-shadow: inset 0 0 0 1px var(--rule); color: var(--silver); }
+.gt.is-final .gt-name.is-on { background: var(--green); color: #fff; }
+.gt.is-final .gt-err { background: rgba(200, 85, 63, .14); color: #f0b3a4; }
+.gt.is-final .gt-standby {
+  background: rgba(255, 255, 255, .03);
+  border: 1px solid var(--gold-2);
+  box-shadow: none;
+}
+.gt.is-final .gt-standby h2 { color: var(--silver); }
+.gt.is-final .gt-round-name { border-bottom-color: var(--gold-2); color: var(--gold); }
+.gt.is-final .gt-tie-side.is-won b { color: #5cbb8d; }
+.gt.is-final .gt-champ { background: rgba(255, 255, 255, .03); border-color: var(--gold-2); box-shadow: none; }
+.gt.is-final .gt-review { border-top-color: var(--gold-2); }
+.gt.is-final .gt-review-edit { color: var(--gold); }
+.gt.is-final .gt-ladder .gt-rung.is-now { border-left-color: var(--gold); }
+.gt.is-final .gt-rung.is-now .gt-rung-games { color: var(--gold); }
+
+/* ── The billing ── */
+.gt-marquee { margin: .2rem 0 1rem; }
+.gt-marquee-rule {
+  display: flex; align-items: center; gap: .7rem;
+  color: var(--gold);
+  font-size: .6rem;
+}
+.gt-marquee-rule::before, .gt-marquee-rule::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold-2), transparent);
+}
+.gt-marquee-pair {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  gap: .5rem; padding: 1rem 0;
+}
+.gt-billing { text-align: center; min-width: 0; }
+.gt-billing-seed {
+  font-family: var(--gt-mono); font-size: .48rem; font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--gold);
+}
+.gt-billing h3 {
+  margin: .3rem 0 .12rem;
+  font-family: var(--gt-serif); font-weight: 400;
+  font-size: clamp(1.25rem, 6.5vw, 1.9rem); line-height: 1.02;
+  color: var(--silver, var(--ink));
+}
+.gt-billing-team {
+  font-size: .72rem; font-style: italic; color: var(--ink-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gt-billing-finish {
+  margin-top: .3rem;
+  font-family: var(--gt-mono); font-size: .45rem; font-weight: 700;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--ink-3);
+}
+.gt-marquee-vs {
+  font-family: var(--gt-serif); font-style: italic; font-size: 1.05rem;
+  color: var(--gold); opacity: .8;
+}
+
+/* ── Tale of the tape ── */
+.gt-tape {
+  margin: 0 0 1rem;
+  border-top: 1px solid var(--gold-2, var(--rule));
+  border-bottom: 1px solid var(--gold-2, var(--rule));
+}
+.gt-tape-head {
+  display: grid; grid-template-columns: 1fr auto 1fr; gap: .5rem;
+  padding: .45rem 0; align-items: baseline;
+  border-bottom: 1px solid var(--rule-soft);
+  font-family: var(--gt-mono); font-size: .45rem; font-weight: 700;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--ink-3);
+}
+.gt-tape-head span:first-child { text-align: left; }
+.gt-tape-head span:last-child { text-align: right; }
+.gt-tape-head span:nth-child(2) { color: var(--gold, var(--green)); }
+.gt-tape-row {
+  display: grid; grid-template-columns: 1fr auto 1fr; gap: .5rem;
+  align-items: center; padding: .42rem 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.gt-tape-row:last-child { border-bottom: 0; }
+.gt-tape-row b {
+  font-family: var(--gt-mono); font-size: .92rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--ink-3);
+  transition: color .12s ease;
+}
+.gt-tape-row b:first-child { text-align: left; }
+.gt-tape-row b:last-child { text-align: right; }
+/* The better side of each row, and only where "better" is a fact. */
+.gt-tape-row b.is-edge { color: var(--gold, var(--green)); }
+.gt-tape-row span {
+  font-family: var(--gt-mono); font-size: .45rem; font-weight: 700;
+  letter-spacing: .11em; text-transform: uppercase; color: var(--ink-3);
+  text-align: center; white-space: nowrap;
+}
+
+/* ── How each side got here ── */
+.gt-roads {
+  display: grid; grid-template-columns: 1fr; gap: .7rem;
+  margin-bottom: 1rem;
+}
+.gt-road {
+  background: rgba(255, 255, 255, .03);
+  border: 1px solid var(--rule-soft);
+  padding: .55rem .65rem;
+}
+.gt-road-head {
+  font-family: var(--gt-mono); font-size: .48rem; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--gold, var(--green));
+  padding-bottom: .3rem; border-bottom: 1px solid var(--rule-soft);
+}
+.gt-road-step {
+  display: flex; align-items: baseline; gap: .5rem;
+  padding: .32rem 0; font-size: .8rem; color: var(--ink-2);
+}
+.gt-road-step i {
+  font-style: normal; flex: none; width: 1.7rem;
+  font-family: var(--gt-mono); font-size: .45rem; font-weight: 700;
+  letter-spacing: .1em; color: var(--ink-3);
+}
+.gt-road-step b { font-family: var(--gt-serif); font-weight: 400; font-size: .95rem; color: var(--ink); }
+.gt-road-step em {
+  margin-left: auto; flex: none; font-style: normal;
+  font-family: var(--gt-mono); font-size: .55rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--ink-3);
+}
+
+/* ── The coronation ── */
+.gt-crown { text-align: center; margin-bottom: 1.4rem; }
+.gt-crown-rule {
+  display: flex; align-items: center; gap: .7rem;
+  color: var(--gold); font-size: .6rem;
+}
+.gt-crown-rule::before, .gt-crown-rule::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold-2), transparent);
+}
+.gt-crown .gt-kicker { margin-top: 1.3rem; color: var(--gold); }
+.gt-crown h2 {
+  margin: .5rem 0 .2rem;
+  font-family: var(--gt-serif); font-weight: 400;
+  font-size: clamp(2.1rem, 12vw, 3.4rem); line-height: 1;
+  background: linear-gradient(100deg, #a3833c 0%, #f4e3b0 40%, #d8b662 58%, #a3833c 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.gt-crown-team { font-family: var(--gt-serif); font-style: italic; font-size: .95rem; color: var(--ink-2); }
+.gt-crown-figs {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: .4rem;
+  margin: 1rem 0 .8rem; padding: .7rem 0;
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+}
+.gt-crown-figs span { display: flex; flex-direction: column; gap: .12rem; }
+.gt-crown-figs b {
+  font-family: var(--gt-mono); font-size: .92rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--silver);
+}
+.gt-crown-figs em {
+  font-style: normal; font-family: var(--gt-mono);
+  font-size: .42rem; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.gt-crown-road {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: .3rem .55rem;
+  font-family: var(--gt-mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3);
+}
+.gt-crown-road span::after { content: " ✦"; color: var(--gold-2); }
+.gt-crown-road span:last-child::after { content: ""; }
+.gt-crown-note {
+  margin: .9rem 0 1.3rem; font-size: .84rem; font-style: italic;
+  color: var(--ink-2); line-height: 1.5;
+}
+
+/* ── Your card, back to you ── */
+.gt-mychamp {
+  text-align: center; margin: .4rem 0 1rem; padding: 1rem .8rem;
+  background: rgba(255, 255, 255, .03);
+  border: 1px solid var(--gold-2, var(--rule));
+}
+.gt-mychamp .gt-kicker { color: var(--gold, var(--green)); }
+.gt-mychamp h3 {
+  margin: .5rem 0 .15rem; font-family: var(--gt-serif); font-weight: 400;
+  font-size: clamp(1.6rem, 8vw, 2.2rem); line-height: 1.02; color: var(--ink);
+}
+.gt-mychamp p { margin: 0; font-size: .78rem; font-style: italic; color: var(--ink-2); }
+.gt-mychamp-road {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: .25rem .5rem;
+  margin-top: .7rem; padding-top: .6rem; border-top: 1px solid var(--rule-soft);
+  font-family: var(--gt-mono); font-size: .46rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3);
+}
+.gt-mychamp-last { color: var(--gold, var(--green)); }
+
+.gt-score {
+  display: flex; align-items: center; gap: .8rem;
+  margin: 1rem 0 .2rem; padding: .7rem .8rem;
+  background: var(--paper-2); border-left: 3px solid var(--green);
+}
+.gt-score b {
+  flex: none; font-family: var(--gt-mono); font-size: 1.5rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1;
+}
+.gt-score b i { font-style: normal; color: var(--ink-3); margin: 0 .05em; }
+.gt-score span {
+  display: flex; flex-direction: column; gap: .12rem;
+  font-family: var(--gt-mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .11em; text-transform: uppercase; color: var(--ink-3);
+  line-height: 1.35;
+}
+.gt-score em { font-style: normal; color: var(--green); }
+
+.gt-card { margin-top: 1.1rem; display: grid; gap: 1.1rem; }
+.gt-card-round {
+  display: flex; justify-content: space-between; align-items: baseline; gap: .6rem;
+  margin: 0 0 .1rem; padding-bottom: .3rem;
+  border-bottom: 2px solid var(--ink);
+  font-family: var(--gt-mono); font-size: .53rem; font-weight: 700;
+  letter-spacing: .17em; text-transform: uppercase; color: var(--green);
+}
+.gt.is-final .gt-card-round { border-bottom: 1px solid var(--gold-2); color: var(--gold); }
+.gt-card-round span { color: var(--ink-3); letter-spacing: .11em; }
+.gt-card-line {
+  display: flex; align-items: baseline; gap: .55rem;
+  padding: .45rem .1rem; border-bottom: 1px solid var(--rule-soft);
+}
+.gt-card-mark {
+  flex: none; width: 1rem; text-align: center; font-style: normal;
+  font-size: .8rem; font-weight: 700; color: var(--ink-3);
+}
+.gt-card-line.is-hit .gt-card-mark { color: var(--green); }
+.gt-card-line.is-miss .gt-card-mark { color: var(--stamp); }
+.gt-card-line.is-sealed { opacity: .8; }
+.gt-card-call { display: flex; flex-direction: column; min-width: 0; }
+.gt-card-call b {
+  font-family: var(--gt-serif); font-weight: 400; font-size: 1.02rem;
+  line-height: 1.2; color: var(--ink);
+}
+.gt-card-line.is-miss .gt-card-call b { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--stamp); }
+.gt-card-call em {
+  font-style: normal; font-family: var(--gt-mono);
+  font-size: .46rem; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3);
+}
+.gt-card-actual {
+  margin-left: auto; flex: none; text-align: right;
+  font-family: var(--gt-mono); font-size: .44rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--stamp);
+  max-width: 40%;
+}
+.gt-card-bracket { margin-top: 1.4rem; }
+.gt-card-bracket .gt-kicker { padding-bottom: .5rem; }
+
+/* Their own pick, marked down the whole board. A dot rather than a colour on
+   the name: the name already carries won/lost, and stacking a third state on
+   it made a settled row unreadable. */
+.gt-tie-side.is-mine::before {
+  content: ""; flex: none;
+  width: .34rem; height: .34rem; border-radius: 50%;
+  background: var(--green); align-self: center;
+  margin-left: -.18rem;
+}
+.gt.is-final .gt-tie-side.is-mine::before { background: var(--gold); }
+.gt-tie-side.is-mine .gt-tie-name b { font-weight: 600; }
+
+/* ── The way back into a card already filed ── */
+.gt-seenit {
+  display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
+  margin-top: 1rem; padding: .6rem .7rem;
+  background: var(--green-wash);
+  box-shadow: inset 0 0 0 1px var(--green);
+  font-size: .78rem; color: var(--ink-2);
+}
+.gt-seenit b { color: var(--ink); font-weight: 600; }
+.gt .gt-seenit button {
+  margin-left: auto; flex: none;
+  font-family: var(--gt-mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--green);
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.gt.is-final .gt-seenit { background: rgba(216, 182, 98, .08); box-shadow: inset 0 0 0 1px var(--gold-2); }
+.gt.is-final .gt-seenit button { color: var(--gold); }
+
+/* ── The handoff to the season ── */
+.gt-next {
+  margin-top: 1.6rem; padding: 1.1rem .9rem 0;
+  text-align: center;
+}
+.gt-next .gt-kicker { color: var(--green); }
+.gt.is-final .gt-next .gt-kicker { color: var(--gold); }
+.gt-next h3 {
+  margin: .4rem 0 .35rem; font-family: var(--gt-serif); font-weight: 400;
+  font-size: clamp(1.4rem, 7vw, 1.9rem); line-height: 1.05; color: var(--ink);
+}
+.gt-next p {
+  margin: 0 auto; max-width: 26rem;
+  font-size: .84rem; line-height: 1.55; color: var(--ink-2);
+}
+.gt-next-rule {
+  display: flex; align-items: center; gap: .7rem;
+  margin-top: 1.1rem; color: var(--green); font-size: .55rem;
+}
+.gt.is-final .gt-next-rule { color: var(--gold); }
+.gt-next-rule::before, .gt-next-rule::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(to right, transparent, currentColor, transparent);
+  opacity: .5;
+}
+
 /* Wider than a phone: the two teams can sit side by side. */
 @media (min-width: 46rem) {
   .gt-shell { max-width: 44rem; }
@@ -489,4 +932,5 @@
   .gt-vs { grid-column: 1 / -1; order: -1; }
   .gt-actions { position: static; border-top: 0; }
   .gt-actions::before { display: none; }
+  .gt-roads { grid-template-columns: 1fr 1fr; }
 }

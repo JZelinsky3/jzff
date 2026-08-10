@@ -1,7 +1,12 @@
-import { ROUNDS, currentRound, winnerOf, buildBracket, label } from '@/lib/greatestTeam'
+import {
+  ROUNDS, currentRound, winnerOf, buildBracket, finalGame, finishLine, label, pathTo, pts, record, vsLeague,
+  type GoatTeam, type ResolvedGame,
+} from '@/lib/greatestTeam'
 import { PAMS_ROSTER } from '@/lib/winBallot'
 import { leagueForToken, readBracket, readVotes, votedNames } from '../actions'
 import { BracketView } from '../bracket-view'
+import { FinalPreview } from '../final'
+import { Next2026 } from '../recap'
 import { VoteClient } from '../vote-client'
 import '../goat.css'
 
@@ -30,13 +35,26 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   }
 
   const state = await readBracket(league.id)
-  const champion = winnerOf(buildBracket(state.results))
+  const metaBracket = buildBracket(state.results)
+  const champion = winnerOf(metaBracket)
   const roundName = state.openRound ? ROUNDS.find((r) => r.id === state.openRound)?.name : null
+  const metaFinal = finalGame(metaBracket)
+  const tie = !champion && metaFinal?.home && metaFinal?.away
+    ? `${label(metaFinal.home)} vs ${label(metaFinal.away)}`
+    : null
 
   const copy = champion
     ? {
         title: `${label(champion)} · greatest team in PA Milk Society history`,
         description: 'Sixteen team-seasons, four rounds, and the room settled it.',
+      }
+    : tie
+    ? {
+        title: `The Final · ${tie}`,
+        description:
+          state.openRound === 'final'
+            ? 'One game left for the greatest team in league history. Voting is open.'
+            : 'Fourteen teams are out. One call decides the greatest team in league history.',
       }
     : roundName
     ? {
@@ -122,22 +140,52 @@ export default async function GoatPage({ params }: { params: Promise<{ token: st
   }
 
   const votes = await readVotes(league.id)
+  const bracket = buildBracket(state.results)
   const next = currentRound(state.results)
   const nextName = next ? ROUNDS.find((r) => r.id === next)?.name : null
   const started = Object.keys(state.results).length > 0
+  const champion = winnerOf(bracket)
+  const final = finalGame(bracket)
+
+  // The last round and the result it produced both get the dark room. Once
+  // the semifinals are settled this link stops being a bracket tracker and
+  // becomes a fight poster, and it should not look like the earlier rounds.
+  const dressed = next === 'final' || !!champion
 
   return (
-    <div className="gt">
+    <div className={`gt${dressed ? ' is-final' : ''}`}>
       <div className="gt-shell">
         <div className="gt-head">
-          <div className="gt-kicker">PA Milk Society</div>
-          <h1>The <em>greatest</em> team we&apos;ve had</h1>
+          <div className="gt-kicker">
+            {dressed ? 'PA Milk Society · the championship' : 'PA Milk Society'}
+          </div>
+          {dressed ? (
+            <h1>The <em>Final</em></h1>
+          ) : (
+            <h1>The <em>greatest</em> team we&apos;ve had</h1>
+          )}
           <div className="gt-sub">
-            {nextName ? `${nextName} opens next` : 'Settled'}
+            {champion ? 'Settled' : nextName ? `${nextName} opens next` : 'Settled'}
           </div>
         </div>
         <div className="gt-stage">
-          {nextName && (
+          {champion && <Coronation champion={champion} bracket={bracket} />}
+
+          {!champion && next === 'final' && final?.home && final?.away && (
+            <>
+              <div className="gt-standby">
+                <div className="gt-kicker">The field is down to two</div>
+                <h2>The final is set.</h2>
+                <p>
+                  When Joey opens it, this same link turns into one card with one
+                  game on it. Fourteen teams are already out.
+                </p>
+              </div>
+              <FinalPreview bracket={bracket} game={final} />
+            </>
+          )}
+
+          {!champion && next !== 'final' && nextName && (
             <div className="gt-standby">
               <div className="gt-kicker">Nothing to vote on yet</div>
               <h2>{started ? `${nextName} hasn't opened.` : 'The bracket is set.'}</h2>
@@ -148,15 +196,55 @@ export default async function GoatPage({ params }: { params: Promise<{ token: st
               </p>
             </div>
           )}
+
           <BracketView
             results={state.results}
             votes={votes}
             revealed={state.revealed}
             openRound={null}
           />
+
+          {/* The bracket is the offseason's last act, so the page hands off to
+              what comes after it rather than just ending. */}
+          {(dressed || champion) && <Next2026 />}
         </div>
-        <div className="gt-foot">PA Milk Society · sixteen teams · one winner</div>
+        <div className="gt-foot">
+          {dressed ? 'Sixteen went in · two are left · one is the answer' : 'PA Milk Society · sixteen teams · one winner'}
+        </div>
       </div>
+    </div>
+  )
+}
+
+/**
+ * The result, given the room it earned. Not the compact `gt-champ` strip the
+ * bracket carries below: that reads as a row in a table, and this is the only
+ * answer the league is ever going to give to the question.
+ */
+function Coronation({ champion, bracket }: { champion: GoatTeam; bracket: ResolvedGame[] }) {
+  const road = pathTo(bracket, champion.seed)
+  return (
+    <div className="gt-crown">
+      <div className="gt-crown-rule"><span>✦</span></div>
+      <div className="gt-kicker">The greatest team in league history</div>
+      <h2>{label(champion)}</h2>
+      <div className="gt-crown-team">&ldquo;{champion.team}&rdquo;</div>
+      <div className="gt-crown-figs">
+        <span><b>{record(champion)}</b><em>record</em></span>
+        <span><b>{pts(champion.ppg)}</b><em>a week</em></span>
+        <span><b>{vsLeague(champion.index)}</b><em>vs league avg</em></span>
+        <span><b>{champion.seed}</b><em>seed</em></span>
+      </div>
+      <div className="gt-crown-road">
+        {road.map((step) => (
+          <span key={step.round}>{label(step.beat)}</span>
+        ))}
+      </div>
+      <p className="gt-crown-note">
+        {finishLine(champion)}. Four rounds put to the room, and it came through
+        all four.
+      </p>
+      <div className="gt-crown-rule"><span>✦</span></div>
     </div>
   )
 }

@@ -191,6 +191,46 @@ export async function submitBallot(input: {
   return { ok: true }
 }
 
+/**
+ * One voter's own cards, every round they have filed. The receipt, and the
+ * only way a card comes back out of the seal before the room settles.
+ *
+ * Deliberately takes a name and returns only that name: the token is a
+ * league-wide address, so this cannot be the door to reading somebody else's
+ * live picks. The page only ever asks for the name that submitted from this
+ * device, and nothing in the UI offers to ask for another.
+ */
+export async function readMyCard(input: {
+  leagueId: string
+  token: string
+  name: string
+}): Promise<{ ok: false; error: string } | { ok: true; votes: VoteRecord[] }> {
+  const token = await readGoatToken(input.leagueId)
+  if (!token || token !== input.token) {
+    return { ok: false, error: 'This link is no longer good. Ask Joey for the current one.' }
+  }
+  const name = input.name?.trim()
+  if (!name) return { ok: false, error: 'No name on that.' }
+
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('goat_votes')
+    .select('manager_name, round, picks')
+    .eq('league_id', input.leagueId)
+    .eq('edition', EDITION)
+    .eq('manager_name', name)
+  if (error) return { ok: false, error: error.message }
+
+  return {
+    ok: true,
+    votes: (data ?? []).map((r) => ({
+      name: r.manager_name as string,
+      round: r.round as RoundId,
+      picks: (r.picks ?? {}) as Ballot,
+    })),
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // The room
 // ─────────────────────────────────────────────────────────────────────────

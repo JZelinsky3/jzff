@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   MIN_STARTS, ROUNDS, breakdown, buildBracket, finishLine, gamesInRound, label, pts, record, vsLeague,
-  type Ballot, type GoatTeam, type ResolvedGame, type Results, type RoundId,
+  type Ballot, type GoatTeam, type ResolvedGame, type Results, type RoundId, type VoteRecord,
 } from '@/lib/greatestTeam'
-import { submitBallot } from './actions'
+import { readMyCard, submitBallot } from './actions'
+import { FinalPreview, Tape } from './final'
+import { Recap } from './recap'
 
 /** 1 -> "1st". Used for the rank context under the figures. */
 function ordinal(n: number): string {
@@ -29,13 +31,20 @@ export function VoteDeck({
   roster: readonly string[]
   alreadyVoted: string[]
 }) {
+  const bracket = useMemo(() => buildBracket(results), [results])
   const games = useMemo(
-    () => gamesInRound(buildBracket(results), round).filter((g) => g.ready && g.winner === null),
-    [results, round],
+    () => gamesInRound(bracket, round).filter((g) => g.ready && g.winner === null),
+    [bracket, round],
   )
   const roundName = ROUNDS.find((r) => r.id === round)?.name ?? 'The bracket'
+  // The last round is dressed as the last round. Everything downstream of this
+  // flag is presentation: same bracket, same rules, different room.
+  const isFinal = round === 'final'
   // Draft is keyed by round, so last round's answers can't bleed into this one.
   const draftKey = `gt-draft-${round}`
+  // Who this device is. Survives the round, so a phone that voted in the
+  // semifinals is offered its own card back without having to claim a name.
+  const meKey = 'gt-me'
 
   const [who, setWho] = useState('')
   const [picks, setPicks] = useState<Ballot>({})
@@ -43,6 +52,10 @@ export function VoteDeck({
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
+  const [me, setMe] = useState('')
+  /** Their own cards, every round, once fetched. Null until then. */
+  const [card, setCard] = useState<VoteRecord[] | null>(null)
+  const [loadingCard, setLoadingCard] = useState(false)
 
   // Restore whatever this device had in progress.
   useEffect(() => {
@@ -52,6 +65,8 @@ export function VoteDeck({
         if (typeof saved.who === 'string') setWho(saved.who)
         if (saved.picks && typeof saved.picks === 'object') setPicks(saved.picks)
       }
+      const mine = localStorage.getItem(meKey)
+      if (mine) setMe(mine)
     } catch {
       // A corrupt draft is a draft that never was. Start clean.
     }
@@ -72,51 +87,82 @@ export function VoteDeck({
   const total = games.length + 3
   const at = Math.min(step, total - 1)
 
+  /** Pull this device's own cards back out for the receipt. */
+  async function loadCard(name: string) {
+    setLoadingCard(true)
+    const res = await readMyCard({ leagueId, token, name })
+    setLoadingCard(false)
+    // A receipt that failed to load is not worth an error screen: the card is
+    // filed either way, and the fallback below still shows the round just cast.
+    setCard(res.ok ? res.votes : [])
+  }
+
   async function send() {
     setSending(true)
     setError('')
     const res = await submitBallot({ leagueId, token, managerName: who, picks })
     setSending(false)
     if (!res.ok) { setError(res.error); return }
-    try { localStorage.removeItem(draftKey) } catch { /* nothing to clean up */ }
+    try {
+      localStorage.removeItem(draftKey)
+      localStorage.setItem(meKey, who)
+    } catch { /* nothing to clean up */ }
+    setMe(who)
     setDone(true)
+    void loadCard(who)
   }
 
-  if (done) {
+  if (done || (card && card.length)) {
+    const name = done ? who : me
+    // The receipt reads from the server so it can grade every earlier round.
+    // Until it lands, the round just filed stands in, so nothing flashes empty.
+    const fallback: VoteRecord[] = [{ name, round, picks }]
     return (
-      <Shell round={roundName} rail={null}>
+      <Shell round={roundName} rail={null} isFinal={isFinal}>
+        <Recap
+          name={name}
+          filedRound={round}
+          results={results}
+          votes={card && card.length ? card : fallback}
+        />
+      </Shell>
+    )
+  }
+
+  // Somebody who already filed, coming back to the same link. Offered their own
+  // card, never anybody else's.
+  const backAgain = !!me && taken.has(me)
+
+  // ── Step 0: what this is ──
+  // The final gets its own opening: by now nobody needs the rules explained,
+  // and what they want on the screen is the two teams left.
+  if (at === 0 && isFinal) {
+    const game = games[0] ?? gamesInRound(bracket, 'final')[0]
+    return (
+      <Shell round={roundName} rail={null} isFinal>
         <div className="gt-slide">
           <div className="gt-game-head">
-            <div className="gt-kicker">Card filed</div>
-            <h2>That&apos;s in, {who}.</h2>
+            <div className="gt-kicker">Two left</div>
+            <h2>One game decides it.</h2>
           </div>
+          {game && <FinalPreview bracket={bracket} game={game} />}
           <p className="gt-note">
-            Your {roundName.toLowerCase()} picks are sealed until Joey closes the
-            round. Come back then for the winners and the next set.
+            Fourteen teams are out. Whichever of these two the room calls is the
+            greatest team anybody in this league has ever put on the field, and
+            it stays that way until somebody builds a better one.
           </p>
-          <div className="gt-review">
-            {games.map((g) => {
-              const pick = picks[g.id]
-              const winner = pick === g.home?.seed ? g.home : g.away
-              const loser = pick === g.home?.seed ? g.away : g.home
-              return (
-                <div className="gt-review-row" key={g.id}>
-                  <b>{winner ? label(winner) : ''}</b>
-                  <span className="gt-review-beat">over</span>
-                  <s>{loser ? label(loser) : ''}</s>
-                </div>
-              )
-            })}
+          {backAgain && <SeenIt name={me} loading={loadingCard} onOpen={() => loadCard(me)} />}
+          <div className="gt-actions">
+            <button className="gt-btn" onClick={() => setStep(1)}>Make the call</button>
           </div>
         </div>
       </Shell>
     )
   }
 
-  // ── Step 0: what this is ──
   if (at === 0) {
     return (
-      <Shell round={roundName} rail={null}>
+      <Shell round={roundName} rail={null} isFinal={isFinal}>
         <div className="gt-slide">
           <div className="gt-game-head">
             <div className="gt-kicker">How this works</div>
@@ -148,6 +194,8 @@ export function VoteDeck({
 
           <Ladder round={round} />
 
+          {backAgain && <SeenIt name={me} loading={loadingCard} onOpen={() => loadCard(me)} />}
+
           <div className="gt-actions">
             <button className="gt-btn" onClick={() => setStep(1)}>Start</button>
           </div>
@@ -159,7 +207,7 @@ export function VoteDeck({
   // ── Step 1: who is this ──
   if (at === 1) {
     return (
-      <Shell round={roundName} rail={{ at: 1, total }}>
+      <Shell round={roundName} rail={{ at: 1, total }} isFinal={isFinal}>
         <div className="gt-slide">
           <div className="gt-game-head">
             <div className="gt-kicker">{roundName}</div>
@@ -198,11 +246,11 @@ export function VoteDeck({
   // ── Last step: review ──
   if (at === total - 1) {
     return (
-      <Shell round={roundName} rail={{ at: total - 1, total }}>
+      <Shell round={roundName} rail={{ at: total - 1, total }} isFinal={isFinal}>
         <div className="gt-slide">
           <div className="gt-game-head">
             <div className="gt-kicker">Last look</div>
-            <h2>{called} of {games.length} called</h2>
+            <h2>{isFinal ? 'One call, and that’s the league’s answer' : `${called} of ${games.length} called`}</h2>
           </div>
           <div className="gt-review">
             {games.map((g, i) => {
@@ -233,7 +281,13 @@ export function VoteDeck({
           <div className="gt-actions">
             <button className="gt-btn is-ghost" onClick={() => setStep(total - 2)}>Back</button>
             <button className="gt-btn" disabled={called < games.length || sending} onClick={send}>
-              {sending ? 'Sending' : called < games.length ? `${games.length - called} left` : 'Send it'}
+              {sending
+                ? 'Sending'
+                : called < games.length
+                ? `${games.length - called} left`
+                : isFinal
+                ? 'Seal it'
+                : 'Send it'}
             </button>
           </div>
         </div>
@@ -250,14 +304,20 @@ export function VoteDeck({
   const choose = (seed: number) => setPicks((p) => ({ ...p, [game.id]: seed }))
 
   return (
-    <Shell round={roundName} rail={{ at, total }}>
+    <Shell round={roundName} rail={{ at, total }} isFinal={isFinal}>
       <div className="gt-slide" key={game.id}>
         <div className="gt-game-head">
-          <div className="gt-kicker">{roundName} · game {at - 1} of {games.length}</div>
-          <h2>Which one wins?</h2>
+          <div className="gt-kicker">
+            {isFinal ? 'For the whole thing' : `${roundName} · game ${at - 1} of ${games.length}`}
+          </div>
+          <h2>{isFinal ? 'Which one is the greatest?' : 'Which one wins?'}</h2>
         </div>
+        {/* The tape again, right above the two cards. On the final the numbers
+            are the argument, and making somebody scroll back to the opening
+            screen for them is how a card gets filled in from memory. */}
+        {isFinal && game.home && game.away && <Tape home={game.home} away={game.away} />}
         <div className="gt-pair">
-          <div className="gt-vs">tap the one that survives</div>
+          <div className="gt-vs">{isFinal ? 'tap the greatest team we have had' : 'tap the one that survives'}</div>
           {[game.home, game.away].map((t) =>
             t ? (
               <TeamCard key={t.seed} team={t} picked={pick === t.seed} onPick={() => choose(t.seed)} />
@@ -408,20 +468,45 @@ function TeamCard({ team, picked, onPick }: { team: GoatTeam; picked: boolean; o
   )
 }
 
+/**
+ * The way back into a card already filed. Only ever offers the name this
+ * device submitted with: the tallies stay sealed, and a link that let you read
+ * somebody else's live picks would not be a sealed vote at all.
+ */
+function SeenIt({ name, loading, onOpen }: { name: string; loading: boolean; onOpen: () => void }) {
+  return (
+    <div className="gt-seenit">
+      <span>
+        You&apos;re already in this round, <b>{name}</b>.
+      </span>
+      <button type="button" onClick={onOpen} disabled={loading}>
+        {loading ? 'Opening' : 'See your card'}
+      </button>
+    </div>
+  )
+}
+
 function Shell({
-  round, rail, children,
+  round, rail, isFinal, children,
 }: {
   round: string
   rail: { at: number; total: number } | null
+  isFinal?: boolean
   children: React.ReactNode
 }) {
   return (
-    <div className="gt">
+    <div className={`gt${isFinal ? ' is-final' : ''}`}>
       <div className="gt-shell">
         <div className="gt-head">
-          <div className="gt-kicker">PA Milk Society</div>
-          <h1>The <em>greatest</em> team we&apos;ve had</h1>
-          <div className="gt-sub">{round}</div>
+          <div className="gt-kicker">
+            {isFinal ? 'PA Milk Society · the championship' : 'PA Milk Society'}
+          </div>
+          {isFinal ? (
+            <h1>The <em>Final</em></h1>
+          ) : (
+            <h1>The <em>greatest</em> team we&apos;ve had</h1>
+          )}
+          <div className="gt-sub">{isFinal ? 'Greatest team in league history' : round}</div>
         </div>
         {rail && (
           <div className="gt-rail">
@@ -432,7 +517,9 @@ function Shell({
           </div>
         )}
         <div className="gt-stage">{children}</div>
-        <div className="gt-foot">PA Milk Society · sixteen teams · one winner</div>
+        <div className="gt-foot">
+          {isFinal ? 'Sixteen went in · two are left · one is the answer' : 'PA Milk Society · sixteen teams · one winner'}
+        </div>
       </div>
     </div>
   )

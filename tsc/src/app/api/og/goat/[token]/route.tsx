@@ -12,7 +12,10 @@
 import { ImageResponse } from 'next/og'
 import { readFile } from 'fs/promises'
 import path from 'path'
-import { ROOM_SIZE, buildBracket, label, record, winnerOf } from '@/lib/greatestTeam'
+import {
+  ROOM_SIZE, buildBracket, finalGame, label, pts, record, vsLeague, winnerOf,
+  type GoatTeam,
+} from '@/lib/greatestTeam'
 import { leagueForToken, readBracket, votedNames } from '@/app/goat/actions'
 import { GoatCard, type GoatPhase } from '@/lib/og/goatCard'
 
@@ -51,8 +54,16 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
   }
 
   const state = await readBracket(league.id)
-  const champ = winnerOf(buildBracket(state.results))
+  const bracket = buildBracket(state.results)
+  const champ = winnerOf(bracket)
   const phase: GoatPhase = champ ? 'crowned' : state.openRound ? 'open' : 'between'
+
+  // Once both semifinals are settled the card becomes the fight poster, whether
+  // the final is open yet or not: the matchup is the news either way.
+  const f = finalGame(bracket)
+  const finalists = !champ && f?.home && f?.away
+    ? { home: sideOf(f.home), away: sideOf(f.away) }
+    : null
 
   // Who has voted is already public on the page, which greys out a name the
   // moment it is used, so the card can show the same count.
@@ -65,7 +76,19 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
       turnout={turnout}
       roomSize={ROOM_SIZE}
       champion={champ ? { name: label(champ), team: champ.team, record: record(champ) } : null}
+      finalists={finalists}
     />,
     { width: 1200, height: 630, fonts },
   )
+}
+
+/** A finalist, cut down to what fits on a poster. */
+function sideOf(t: GoatTeam) {
+  return {
+    name: label(t),
+    seed: t.seed,
+    record: record(t),
+    ppg: pts(t.ppg),
+    index: vsLeague(t.index),
+  }
 }
