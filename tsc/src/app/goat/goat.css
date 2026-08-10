@@ -369,7 +369,15 @@
   border-left: 2px solid var(--green); border-bottom: 2px solid var(--green);
   transform: rotate(-45deg) translateY(-2px);
 }
-.gt.is-final .gt-swipe-tabs { background: var(--paper); border-bottom-color: var(--gold-2); }
+/* Not a flat fill on the final: the page carries a gradient up top, and an
+   opaque bar pinned over it prints as a visible rectangle. Translucent plus a
+   blur reads as a bar sitting on the page instead of a hole cut in it. */
+.gt.is-final .gt-swipe-tabs {
+  background: rgba(12, 15, 13, .9);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  border-bottom-color: var(--gold-2);
+}
 .gt.is-final .gt-swipe-tab.is-on { color: var(--silver); border-bottom-color: var(--gold); }
 .gt.is-final .gt-swipe-tab em { color: var(--gold); }
 
