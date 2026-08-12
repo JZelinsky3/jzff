@@ -112,25 +112,39 @@
 .stage {
   perspective: 1600px;
   cursor: pointer;
-  min-height: 24rem;
   -webkit-user-select: none;
   user-select: none;
 }
 
 .inner {
   display: grid;
-  min-height: inherit;
   transform-style: preserve-3d;
-  transition: transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition:
+    transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1),
+    height 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 .inner[data-flipped='true'] {
   transform: rotateY(180deg);
 }
 
-/* Both faces sit in the same grid cell, so the card is as tall as the longer
-   of the two and never changes height mid-flip. */
+/* Once the script has measured both faces the card is given the height of the
+   face that is showing, so a short verdict is a short card. Until then the
+   faces share a grid cell and the taller one sets the height. */
+.measured {
+  position: relative;
+}
+.measured .face {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
 .face {
   grid-area: 1 / 1;
+  /* Not stretched to the row, so each face measures at its own height the
+     first time the script asks. */
+  align-self: start;
   display: flex;
   flex-direction: column;
   background: var(--field);
@@ -410,9 +424,6 @@
   }
   .deck {
     padding-top: 1.4rem;
-  }
-  .stage {
-    min-height: 26rem;
   }
   .face {
     padding: 1.2rem 1.35rem 1.1rem;

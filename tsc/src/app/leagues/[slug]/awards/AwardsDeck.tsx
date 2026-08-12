@@ -7,7 +7,7 @@
 // number was arrived at. Tap the card to turn it over, Next to hand out the
 // next one.
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Award } from '@/lib/seasonAwards'
 import styles from './awards.module.css'
 
@@ -17,6 +17,15 @@ export function AwardsDeck({ awards }: { awards: Award[] }) {
   const [index, setIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const touch = useRef<{ x: number; y: number } | null>(null)
+
+  // The two faces are rarely the same length: a verdict is short, the field
+  // behind it is long. Rather than pad the front out to the height of the
+  // back, the card is measured and takes the height of whichever face is
+  // showing. Before that measurement lands the faces stack in normal flow,
+  // so the server-rendered card is never a collapsed sliver.
+  const frontRef = useRef<HTMLElement>(null)
+  const backRef = useRef<HTMLElement>(null)
+  const [faceHeights, setFaceHeights] = useState<[number, number] | null>(null)
 
   const award = awards[index]
   const atStart = index === 0
@@ -48,6 +57,21 @@ export function AwardsDeck({ awards }: { awards: Award[] }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [go])
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      const front = frontRef.current?.offsetHeight ?? 0
+      const back = backRef.current?.offsetHeight ?? 0
+      if (!front || !back) return
+      setFaceHeights((prev) => (prev && prev[0] === front && prev[1] === back ? prev : [front, back]))
+    }
+    measure()
+    // Fonts landing and the window changing width both change the answer.
+    const observer = new ResizeObserver(measure)
+    if (frontRef.current) observer.observe(frontRef.current)
+    if (backRef.current) observer.observe(backRef.current)
+    return () => observer.disconnect()
+  }, [index])
 
   if (!award) return null
 
@@ -90,11 +114,15 @@ export function AwardsDeck({ awards }: { awards: Award[] }) {
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        <div className={styles.inner} data-flipped={flipped}>
+        <div
+          className={`${styles.inner} ${faceHeights ? styles.measured : ''}`}
+          data-flipped={flipped}
+          style={faceHeights ? { height: faceHeights[flipped ? 1 : 0] } : undefined}
+        >
           {/* Front: the verdict */}
           {/* inert rather than hidden: the face that is turned away must not
               be readable or focusable while it is turned away. */}
-          <article className={`${styles.face} ${styles.front}`} inert={flipped}>
+          <article ref={frontRef} className={`${styles.face} ${styles.front}`} inert={flipped}>
             <div className={styles.faceTop}>
               <span className={styles.count}>
                 No. {index + 1} of {awards.length}
@@ -126,7 +154,7 @@ export function AwardsDeck({ awards }: { awards: Award[] }) {
           </article>
 
           {/* Back: the field it beat */}
-          <article className={`${styles.face} ${styles.back}`} inert={!flipped}>
+          <article ref={backRef} className={`${styles.face} ${styles.back}`} inert={!flipped}>
             <div className={styles.faceTop}>
               <span className={styles.count}>{award.title}</span>
               <span className={styles.awardKicker}>The field</span>
