@@ -42,6 +42,9 @@ export type AwardsInput = {
 
 export type Runner = { name: string; value: string }
 
+/** One line of the ranked field printed on the back of a card. */
+export type FieldEntry = { name: string; value: string; note?: string }
+
 export type Award = {
   key: string
   /** The trophy. */
@@ -55,6 +58,10 @@ export type Award = {
   detail: string
   /** Second and third place, where the award has a field. */
   runners: Runner[]
+  /** The chasing pack, winner first. Up to five deep. */
+  field: FieldEntry[]
+  /** How the number is arrived at, in one line. */
+  method: string
 }
 
 // The nine slots PA Milk Society starts. Used to rebuild the best lineup each
@@ -179,18 +186,35 @@ function buildRows(input: AwardsInput): Row[] {
 const one = (n: number) => n.toFixed(1)
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`
 
-/** Rank a field and turn the top three into an award. */
+/** How deep the back of a card goes. */
+const FIELD_DEPTH = 5
+
+/**
+ * Rank a field, highest score by `by` first, and keep the top few as the
+ * chasing pack. The card front uses the winner, the card back uses the field.
+ */
 function leaderboard(
   rows: Row[],
   by: (r: Row) => number,
-  format: (r: Row) => string,
-): { winner: Row; runners: Runner[] } | null {
+  entry: (r: Row) => FieldEntry,
+): { winner: Row; runners: Runner[]; field: FieldEntry[] } | null {
   const sorted = [...rows].sort((a, b) => by(b) - by(a))
   if (!sorted.length) return null
+  const field = sorted.slice(0, FIELD_DEPTH).map(entry)
   return {
     winner: sorted[0],
-    runners: sorted.slice(1, 3).map((r) => ({ name: r.name, value: format(r) })),
+    runners: field.slice(1, 3).map((f) => ({ name: f.name, value: f.value })),
+    field,
   }
+}
+
+/** The same thing for single games rather than whole seasons. */
+function gameField(
+  games: WeekLine[],
+  by: (g: WeekLine) => number,
+  entry: (g: WeekLine) => FieldEntry,
+): FieldEntry[] {
+  return [...games].sort((a, b) => by(b) - by(a)).slice(0, FIELD_DEPTH).map(entry)
 }
 
 /**
@@ -209,7 +233,13 @@ export function computeAwards(input: AwardsInput): Award[] {
 
   // ── Bench management ──
   if (hasLineups) {
-    const bench = leaderboard(rows.filter((r) => r.optimal > 0), (r) => r.left, (r) => `${one(r.left)} pts`)
+    const coached = rows.filter((r) => r.optimal > 0)
+
+    const bench = leaderboard(coached, (r) => r.left, (r) => ({
+      name: r.name,
+      value: `${one(r.left)} pts`,
+      note: `${one(r.left / input.regularWeeks)} a week · started ${pct(r.efficiency)}`,
+    }))
     if (bench) {
       awards.push({
         key: 'bench-coat',
@@ -219,10 +249,16 @@ export function computeAwards(input: AwardsInput): Award[] {
         value: `${one(bench.winner.left)} pts`,
         detail: `Started ${pct(bench.winner.efficiency)} of what was on the roster. Over fourteen weeks that is ${one(bench.winner.left / input.regularWeeks)} points a week thrown in the bin, which is more than most games are decided by.`,
         runners: bench.runners,
+        field: bench.field,
+        method: 'Best nine startable players each week, minus the nine actually started. Injured reserve excluded.',
       })
     }
 
-    const steady = leaderboard(rows.filter((r) => r.optimal > 0), (r) => r.efficiency, (r) => pct(r.efficiency))
+    const steady = leaderboard(coached, (r) => r.efficiency, (r) => ({
+      name: r.name,
+      value: pct(r.efficiency),
+      note: `${one(r.left)} pts left behind`,
+    }))
     if (steady) {
       awards.push({
         key: 'steady-hand',
@@ -232,13 +268,22 @@ export function computeAwards(input: AwardsInput): Award[] {
         value: pct(steady.winner.efficiency),
         detail: `Only ${one(steady.winner.left)} points left on the bench all year. Nobody in the league got closer to starting the right nine.`,
         runners: steady.runners,
+        field: steady.field,
+        method: 'Points started as a share of the best nine that were available to start.',
       })
     }
   }
 
   // ── Schedule luck ──
-  const unlucky = [...rows].sort((a, b) => (a.wins - a.allPlayWins) - (b.wins - b.allPlayWins))[0]
-  if (unlucky && unlucky.wins - unlucky.allPlayWins < 0) {
+  const record = (r: Row) => `${r.wins}-${r.losses} · all-play ${r.allPlayWins}-${input.regularWeeks - r.allPlayWins}`
+
+  const hardLuck = leaderboard(rows, (r) => r.allPlayWins - r.wins, (r) => ({
+    name: r.name,
+    value: `${r.allPlayWins - r.wins} short`,
+    note: record(r),
+  }))
+  if (hardLuck && hardLuck.winner.wins - hardLuck.winner.allPlayWins < 0) {
+    const unlucky = hardLuck.winner
     const gap = unlucky.allPlayWins - unlucky.wins
     awards.push({
       key: 'hard-luck',
@@ -247,15 +292,19 @@ export function computeAwards(input: AwardsInput): Award[] {
       winner: unlucky.name,
       value: `${gap} win${gap > 1 ? 's' : ''} short`,
       detail: `Finished ${unlucky.wins}-${unlucky.losses}, but against the whole league every week it would have been ${unlucky.allPlayWins}-${input.regularWeeks - unlucky.allPlayWins}. Scored plenty and kept drawing the wrong opponent.`,
-      runners: [...rows]
-        .sort((a, b) => (a.wins - a.allPlayWins) - (b.wins - b.allPlayWins))
-        .slice(1, 3)
-        .map((r) => ({ name: r.name, value: `${r.allPlayWins - r.wins} short` })),
+      runners: hardLuck.runners,
+      field: hardLuck.field,
+      method: 'Actual wins against the wins the same scores would have earned playing every manager every week.',
     })
   }
 
-  const lucky = [...rows].sort((a, b) => (b.wins - b.allPlayWins) - (a.wins - a.allPlayWins))[0]
-  if (lucky && lucky.wins - lucky.allPlayWins > 0) {
+  const horseshoe = leaderboard(rows, (r) => r.wins - r.allPlayWins, (r) => ({
+    name: r.name,
+    value: `+${r.wins - r.allPlayWins}`,
+    note: record(r),
+  }))
+  if (horseshoe && horseshoe.winner.wins - horseshoe.winner.allPlayWins > 0) {
+    const lucky = horseshoe.winner
     const gap = lucky.wins - lucky.allPlayWins
     awards.push({
       key: 'horseshoe',
@@ -264,15 +313,18 @@ export function computeAwards(input: AwardsInput): Award[] {
       winner: lucky.name,
       value: `${gap} win${gap > 1 ? 's' : ''} clear`,
       detail: `Went ${lucky.wins}-${lucky.losses} on scores that were worth ${lucky.allPlayWins}-${input.regularWeeks - lucky.allPlayWins} against the field. Every week, the right opponent.`,
-      runners: [...rows]
-        .sort((a, b) => (b.wins - b.allPlayWins) - (a.wins - a.allPlayWins))
-        .slice(1, 3)
-        .map((r) => ({ name: r.name, value: `+${r.wins - r.allPlayWins}` })),
+      runners: horseshoe.runners,
+      field: horseshoe.field,
+      method: 'Actual wins against the wins the same scores would have earned playing every manager every week.',
     })
   }
 
   // ── The anvil ──
-  const anvil = leaderboard(rows, (r) => r.pointsAgainst, (r) => one(r.pointsAgainst))
+  const anvil = leaderboard(rows, (r) => r.pointsAgainst, (r) => ({
+    name: r.name,
+    value: one(r.pointsAgainst),
+    note: `${one(r.pointsAgainst / input.regularWeeks)} a week · ${r.wins}-${r.losses}`,
+  }))
   if (anvil) {
     awards.push({
       key: 'anvil',
@@ -282,11 +334,20 @@ export function computeAwards(input: AwardsInput): Award[] {
       value: one(anvil.winner.pointsAgainst),
       detail: `Everybody who lined up against ${anvil.winner.name} played their best football of the year: ${one(anvil.winner.pointsAgainst / input.regularWeeks)} a week, and still went ${anvil.winner.wins}-${anvil.winner.losses}.`,
       runners: anvil.runners,
+      field: anvil.field,
+      method: `Every point an opponent scored in weeks 1 to ${input.regularWeeks}.`,
     })
   }
 
   // ── Volatility ──
-  const wild = leaderboard(rows, (r) => r.volatility, (r) => `±${one(r.volatility)}`)
+  const swing = (r: Row) =>
+    `${one(Math.min(...r.games.map((g) => g.points)))} to ${one(Math.max(...r.games.map((g) => g.points)))}`
+
+  const wild = leaderboard(rows, (r) => r.volatility, (r) => ({
+    name: r.name,
+    value: `±${one(r.volatility)}`,
+    note: swing(r),
+  }))
   if (wild) {
     awards.push({
       key: 'whiplash',
@@ -294,13 +355,20 @@ export function computeAwards(input: AwardsInput): Award[] {
       kicker: 'Most week-to-week swing',
       winner: wild.winner.name,
       value: `±${one(wild.winner.volatility)}`,
-      detail: `Nobody in the league was harder to predict. Ranged from ${one(Math.min(...wild.winner.games.map((g) => g.points)))} to ${one(Math.max(...wild.winner.games.map((g) => g.points)))} depending on the week.`,
+      detail: `Nobody in the league was harder to predict. Ranged from ${swing(wild.winner)} depending on the week.`,
       runners: wild.runners,
+      field: wild.field,
+      method: 'Standard deviation of the weekly score. The bigger the number, the wilder the ride.',
     })
   }
 
-  const metronome = [...rows].sort((a, b) => a.volatility - b.volatility)[0]
-  if (metronome) {
+  const steadiest = leaderboard(rows, (r) => -r.volatility, (r) => ({
+    name: r.name,
+    value: `±${one(r.volatility)}`,
+    note: `${one(r.pointsFor / input.regularWeeks)} a week`,
+  }))
+  if (steadiest) {
+    const metronome = steadiest.winner
     awards.push({
       key: 'metronome',
       title: 'The Metronome',
@@ -308,44 +376,60 @@ export function computeAwards(input: AwardsInput): Award[] {
       winner: metronome.name,
       value: `±${one(metronome.volatility)}`,
       detail: `Put up roughly ${one(metronome.pointsFor / input.regularWeeks)} every single week, whatever happened. The most boring and most reliable team in the league.`,
-      runners: [...rows]
-        .sort((a, b) => a.volatility - b.volatility)
-        .slice(1, 3)
-        .map((r) => ({ name: r.name, value: `±${one(r.volatility)}` })),
+      runners: steadiest.runners,
+      field: steadiest.field,
+      method: 'Standard deviation of the weekly score, smallest first.',
     })
   }
 
   // ── Single games. Each game shows up twice in `weeks`, once from each side,
   // so these are deduplicated by only taking the higher-scoring view. ──
   const decided = games.filter((g) => g.points > g.opponentPoints)
+  const margin = (g: WeekLine) => g.points - g.opponentPoints
+  /** One game, written the way a result line reads. */
+  const result = (g: WeekLine) => `${one(g.points)} to ${one(g.opponentPoints)}`
 
-  const closest = [...decided].sort((a, b) => (a.points - a.opponentPoints) - (b.points - b.opponentPoints))[0]
+  const closestField = gameField(decided, (g) => -margin(g), (g) => ({
+    name: `${nameOf(g.managerId)} over ${nameOf(g.opponentId)}`,
+    value: `by ${margin(g).toFixed(2)}`,
+    note: `Week ${g.week} · ${result(g)}`,
+  }))
+  const closest = [...decided].sort((a, b) => margin(a) - margin(b))[0]
   if (closest) {
     awards.push({
       key: 'photo-finish',
       title: 'The Photo Finish',
       kicker: 'Closest game of the year',
       winner: nameOf(closest.managerId),
-      value: `by ${(closest.points - closest.opponentPoints).toFixed(2)}`,
+      value: `by ${margin(closest).toFixed(2)}`,
       detail: `Week ${closest.week}: ${nameOf(closest.managerId)} ${one(closest.points)}, ${nameOf(closest.opponentId)} ${one(closest.opponentPoints)}. A tenth of a point either way and the season looks different.`,
       runners: [],
+      field: closestField,
+      method: 'Every decided regular season game, tightest margin first.',
     })
   }
 
-  const blowout = [...decided].sort((a, b) => (b.points - b.opponentPoints) - (a.points - a.opponentPoints))[0]
+  const blowout = [...decided].sort((a, b) => margin(b) - margin(a))[0]
   if (blowout) {
     awards.push({
       key: 'woodshed',
       title: 'The Woodshed',
       kicker: 'Biggest beating of the year',
       winner: nameOf(blowout.managerId),
-      value: `by ${one(blowout.points - blowout.opponentPoints)}`,
+      value: `by ${one(margin(blowout))}`,
       detail: `Week ${blowout.week}: ${nameOf(blowout.managerId)} ${one(blowout.points)}, ${nameOf(blowout.opponentId)} ${one(blowout.opponentPoints)}. Not a game so much as an errand.`,
       runners: [],
+      field: gameField(decided, margin, (g) => ({
+        name: `${nameOf(g.managerId)} over ${nameOf(g.opponentId)}`,
+        value: `by ${one(margin(g))}`,
+        note: `Week ${g.week} · ${result(g)}`,
+      })),
+      method: 'Every decided regular season game, widest margin first.',
     })
   }
 
-  const wasted = [...games].filter((g) => g.points < g.opponentPoints).sort((a, b) => b.points - a.points)[0]
+  const losses = games.filter((g) => g.points < g.opponentPoints)
+  const wasted = [...losses].sort((a, b) => b.points - a.points)[0]
   if (wasted) {
     // Whether that score would have won any other game that week is a fact
     // about the week, not something to assert: some seasons it is the best
@@ -364,6 +448,12 @@ export function computeAwards(input: AwardsInput): Award[] {
       value: one(wasted.points),
       detail,
       runners: [],
+      field: gameField(losses, (g) => g.points, (g) => ({
+        name: nameOf(g.managerId),
+        value: one(g.points),
+        note: `Week ${g.week} · lost to ${nameOf(g.opponentId)}, ${one(g.opponentPoints)}`,
+      })),
+      method: 'Every losing score of the regular season, highest first.',
     })
   }
 
@@ -377,6 +467,12 @@ export function computeAwards(input: AwardsInput): Award[] {
       value: one(robbery.points),
       detail: `Week ${robbery.week}: ${one(robbery.points)} points, and a win anyway, because ${nameOf(robbery.opponentId)} managed ${one(robbery.opponentPoints)}. A win is a win.`,
       runners: [],
+      field: gameField(decided, (g) => -g.points, (g) => ({
+        name: nameOf(g.managerId),
+        value: one(g.points),
+        note: `Week ${g.week} · beat ${nameOf(g.opponentId)}, ${one(g.opponentPoints)}`,
+      })),
+      method: 'Every winning score of the regular season, lowest first.',
     })
   }
 
@@ -390,6 +486,12 @@ export function computeAwards(input: AwardsInput): Award[] {
       value: one(ceiling.points),
       detail: `Week ${ceiling.week}. The best any team managed all season.`,
       runners: [],
+      field: gameField(games, (g) => g.points, (g) => ({
+        name: nameOf(g.managerId),
+        value: one(g.points),
+        note: `Week ${g.week} · ${g.points > g.opponentPoints ? 'beat' : 'lost to'} ${nameOf(g.opponentId)}`,
+      })),
+      method: 'Every team week of the regular season, highest first.',
     })
   }
 
@@ -403,6 +505,12 @@ export function computeAwards(input: AwardsInput): Award[] {
       value: one(cellar.points),
       detail: `Week ${cellar.week}. Nine starters, ${one(cellar.points)} points between them.`,
       runners: [],
+      field: gameField(games, (g) => -g.points, (g) => ({
+        name: nameOf(g.managerId),
+        value: one(g.points),
+        note: `Week ${g.week} · ${g.points > g.opponentPoints ? 'beat' : 'lost to'} ${nameOf(g.opponentId)}`,
+      })),
+      method: 'Every team week of the regular season, lowest first.',
     })
   }
 

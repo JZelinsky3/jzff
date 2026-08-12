@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { loadSeasonAwards } from '@/lib/seasonAwards'
+import { AwardsDeck } from '../AwardsDeck'
 import styles from '../awards.module.css'
 
 export const dynamic = 'force-dynamic'
@@ -93,35 +94,9 @@ export default async function SeasonAwardsPage({
           </p>
         ) : (
           <>
-            <div className={styles.grid}>
-              {result.awards.map((award) => (
-                <section className={styles.award} key={award.key}>
-                  <div className={styles.awardTop}>
-                    <h2 className={styles.awardTitle}>{award.title}</h2>
-                    <span className={styles.awardKicker}>{award.kicker}</span>
-                  </div>
-
-                  <div className={styles.winnerRow}>
-                    <span className={styles.winnerName}>{award.winner}</span>
-                    <span className={styles.winnerValue}>{award.value}</span>
-                  </div>
-
-                  <p className={styles.detail}>{award.detail}</p>
-
-                  {award.runners.length > 0 && (
-                    <div className={styles.runners}>
-                      <span className={styles.runnersLabel}>Next</span>
-                      {award.runners.map((r) => (
-                        <span className={styles.runner} key={r.name}>
-                          <b>{r.name}</b>
-                          <span>{r.value}</span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </section>
-              ))}
-            </div>
+            {/* One trophy at a time. The deck is a client island; everything
+                around it stays server-rendered. */}
+            <AwardsDeck awards={result.awards} />
 
             <p className={styles.note}>
               Weeks 1 to {result.regularWeeks}. Bench figures compare what each

@@ -1,6 +1,7 @@
 /* Season awards. Built for a phone first, because that is where every one of
-   these gets read: one trophy per screenful, big name, big number, and the
-   reasoning underneath in a size you can actually read one-handed.
+   these gets read: one trophy per screen, big name, big number, and the
+   reasoning underneath in a size you can actually read one-handed. The card
+   turns over to show the field it beat.
 
    Same buff stock and ledger green as the greatest-team bracket, so the two
    offseason pieces read as one set. */
@@ -78,40 +79,108 @@
   color: var(--ink-2);
 }
 
-/* ── One trophy ── */
-.grid {
-  display: grid;
-  gap: 0.7rem;
+/* ── The deck ── */
+.deck {
   padding-top: 0.9rem;
 }
 
-.award {
+/* One pip per trophy, filling in as the deck is dealt. Decorative: the tally
+   under the card says the same thing in words. */
+.rail {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3rem;
+  margin-bottom: 0.75rem;
+}
+.pip {
+  width: 1.05rem;
+  height: 0.28rem;
+  padding: 0;
+  border: 0;
+  background: var(--rule);
+  cursor: pointer;
+}
+.pipDone {
+  background: var(--ink-3);
+}
+.pipOn {
+  background: var(--green);
+}
+
+/* ── The card ── */
+.stage {
+  perspective: 1600px;
+  cursor: pointer;
+  min-height: 24rem;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.inner {
+  display: grid;
+  min-height: inherit;
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.inner[data-flipped='true'] {
+  transform: rotateY(180deg);
+}
+
+/* Both faces sit in the same grid cell, so the card is as tall as the longer
+   of the two and never changes height mid-flip. */
+.face {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
   background: var(--field);
   border: 2px solid var(--ink);
   box-shadow: 4px 4px 0 var(--paper-3);
-  padding: 0.85rem 0.9rem 0.9rem;
+  padding: 0.9rem 0.95rem 0.85rem;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.back {
+  transform: rotateY(180deg);
+  /* Mirrored by the flip, so the drop shadow has to be mirrored back. */
+  box-shadow: -4px 4px 0 var(--paper-3);
 }
 
-/* Title row: trophy name, and what it measures, stacked on a phone so
-   neither has to shrink or truncate. */
-.awardTop {
+.faceTop {
   display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.7rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--rule-soft);
 }
-.awardTitle {
-  margin: 0;
-  font-family: var(--aw-serif);
-  font-weight: 400;
-  font-size: 1.4rem;
-  line-height: 1.1;
-}
-.awardKicker {
+.count {
   font-family: var(--aw-mono);
   font-size: 0.52rem;
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
+  color: var(--green);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.awardTitle {
+  margin: 0.7rem 0 0;
+  font-family: var(--aw-serif);
+  font-weight: 400;
+  font-size: clamp(1.6rem, 8vw, 2.1rem);
+  line-height: 1.05;
+}
+.awardKicker {
+  flex: none;
+  font-family: var(--aw-mono);
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-align: right;
   color: var(--ink-3);
 }
 
@@ -121,14 +190,14 @@
   display: flex;
   align-items: baseline;
   gap: 0.6rem;
-  margin: 0.65rem 0 0.6rem;
-  padding: 0.5rem 0.7rem;
+  margin: 0.8rem 0 0.75rem;
+  padding: 0.6rem 0.75rem;
   background: var(--green-wash);
   box-shadow: inset 3px 0 0 var(--green);
 }
 .winnerName {
   font-family: var(--aw-serif);
-  font-size: 1.85rem;
+  font-size: clamp(1.9rem, 9vw, 2.4rem);
   line-height: 1;
   min-width: 0;
   overflow: hidden;
@@ -138,7 +207,7 @@
   margin-left: auto;
   flex: none;
   font-family: var(--aw-mono);
-  font-size: 0.94rem;
+  font-size: 1rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--green);
@@ -146,46 +215,169 @@
 
 .detail {
   margin: 0;
-  font-size: 0.87rem;
-  line-height: 1.58;
+  font-size: 0.9rem;
+  line-height: 1.6;
   color: var(--ink-2);
 }
 
-.runners {
+/* ── The back: the field it beat ── */
+.field {
+  flex: 1;
+  list-style: none;
+  margin: 0.7rem 0 0;
+  padding: 0;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.25rem 1rem;
-  margin-top: 0.65rem;
-  padding-top: 0.55rem;
-  border-top: 1px solid var(--rule-soft);
+  flex-direction: column;
+  gap: 0.3rem;
 }
-.runner {
-  display: flex;
+.fieldRow {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr auto;
   align-items: baseline;
-  gap: 0.35rem;
-  font-size: 0.78rem;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.fieldRow:last-child {
+  border-bottom: 0;
+}
+.fieldWon {
+  background: var(--green-wash);
+  box-shadow: inset 3px 0 0 var(--green);
+  border-bottom-color: transparent;
+}
+.fieldRank {
+  font-family: var(--aw-mono);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--ink-3);
 }
-.runner b {
-  font-weight: 600;
-  color: var(--ink-2);
+.fieldWon .fieldRank {
+  color: var(--green);
 }
-.runner span {
-  font-family: var(--aw-mono);
-  font-variant-numeric: tabular-nums;
+.fieldBody {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
 }
-.runnersLabel {
+.fieldBody b {
+  font-family: var(--aw-serif);
+  font-weight: 400;
+  font-size: 1.05rem;
+  line-height: 1.15;
+}
+.fieldBody em {
+  font-style: normal;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  color: var(--ink-3);
+}
+.fieldValue {
   font-family: var(--aw-mono);
-  font-size: 0.5rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  letter-spacing: 0.15em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.fieldWon .fieldValue {
+  color: var(--green);
+}
+
+.method {
+  margin: 0.8rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--rule-soft);
+  font-size: 0.76rem;
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+
+/* The flip affordance. The whole card is clickable; this is the part that
+   says so, and the part a keyboard can reach. */
+.faceFoot {
+  margin-top: auto;
+  padding-top: 0.85rem;
+}
+.flipBtn {
+  font-family: var(--aw-mono);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  padding: 0 0 0.2rem;
+  cursor: pointer;
+}
+.flipBtn:hover {
+  color: var(--green);
+  border-bottom-color: var(--green);
+}
+
+/* ── Dealing the next one ── */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+.nav {
+  flex: 1;
+  padding: 0.7rem 0.6rem;
+  font-family: var(--aw-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 2px solid var(--ink);
+  cursor: pointer;
+}
+.nav:hover:not(:disabled) {
+  background: var(--paper-3);
+}
+.nav:disabled {
+  color: var(--ink-3);
+  border-color: var(--rule);
+  background: transparent;
+  cursor: default;
+}
+.navNext {
+  color: var(--on-green);
+  background: var(--green);
+  border-color: var(--green);
+}
+.navNext:hover:not(:disabled) {
+  background: var(--green-2);
+}
+.tally {
+  flex: none;
+  font-family: var(--aw-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+.hint {
+  margin: 0.6rem 0 0;
+  text-align: center;
+  font-family: var(--aw-mono);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-3);
 }
 
 .note {
-  margin: 1.4rem 0 0;
+  margin: 1.6rem 0 0;
   padding-top: 1rem;
   border-top: 2px solid var(--ink);
   font-size: 0.78rem;
@@ -201,11 +393,11 @@
   color: var(--ink-2);
 }
 
-/* Tablet and up: two columns, and the trophy name can share a line with what
-   it measures now that there is room for both. */
+/* Tablet and up: the card gets room to breathe, but it is still one card. A
+   trophy handed out on its own is the whole point. */
 @media (min-width: 44rem) {
   .shell {
-    max-width: 54rem;
+    max-width: 40rem;
     padding-bottom: 3rem;
   }
   .head {
@@ -216,26 +408,31 @@
     margin: 0 auto;
     font-size: 0.92rem;
   }
-  .grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 0.9rem;
-    padding-top: 1.2rem;
+  .deck {
+    padding-top: 1.4rem;
   }
-  .award {
-    display: flex;
-    flex-direction: column;
+  .stage {
+    min-height: 26rem;
   }
-  .awardTop {
-    flex-direction: row;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.7rem;
-  }
-  .awardKicker {
-    text-align: right;
-    flex: none;
+  .face {
+    padding: 1.2rem 1.35rem 1.1rem;
   }
   .detail {
-    flex: 1;
+    font-size: 0.95rem;
+  }
+  .nav {
+    flex: none;
+    min-width: 9rem;
+  }
+  .tally {
+    margin: 0 auto;
+  }
+}
+
+/* Somebody who has asked the system to stop moving things gets the same card,
+   without the turn. */
+@media (prefers-reduced-motion: reduce) {
+  .inner {
+    transition: none;
   }
 }
