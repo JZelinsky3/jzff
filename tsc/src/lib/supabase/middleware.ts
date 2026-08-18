@@ -44,7 +44,12 @@ const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/g
 // bounce would defeat it. League pools are still gated — the deal handler
 // checks that the league published its almanac (or that the caller owns it)
 // before it hands over anyone's roster history.
-const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/demo-m/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/api/mock-board', '/api/support', '/hub/', '/api/hub/', '/see/', '/games/', '/api/games/', '/ballot/', '/goat/']
+// `/ballot/`, `/goat/` and `/exam/` are the offseason link-outs. Each is
+// addressed by a share token and handed to eleven people who have no account,
+// so a /login bounce is not a hardening, it is the feature failing. Anything
+// new of that shape has to be added here or the link dies silently: the build
+// succeeds, the route exists, and every visitor lands on the login page.
+const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/demo-m/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/api/mock-board', '/api/support', '/hub/', '/api/hub/', '/see/', '/games/', '/api/games/', '/ballot/', '/goat/', '/exam/']
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
