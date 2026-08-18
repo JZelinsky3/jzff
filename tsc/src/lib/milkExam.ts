@@ -49,6 +49,11 @@ export const ROSTER = [
  * Ch. These are hand-picked to be unique at a uniform two characters rather
  * than computed and left to break the day somebody joins named Colin.
  */
+/** The face chip's image, cropped from the countdown's own cutouts. */
+export function faceSrc(name: string): string {
+  return `/exam/faces/${name.toLowerCase()}.png`
+}
+
 export const INITIALS: Record<string, string> = {
   Cat: 'CT', Charlie: 'CH', Chris: 'CS', Connie: 'CN',
   Evan: 'EV', Isaac: 'IS', Joey: 'JO', Kyle: 'KY',

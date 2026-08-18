@@ -1,6 +1,7 @@
 import type { Viewport } from 'next'
+import Image from 'next/image'
 import {
-  INITIALS, QUESTIONS, isMulti, pickCount, roomSplit, standings, tally, veinLabel,
+  INITIALS, QUESTIONS, faceSrc, isMulti, pickCount, roomSplit, standings, tally, veinLabel,
 } from '@/lib/milkExam'
 import { leagueForToken, readRuns } from '../../actions'
 import '../../exam.css'
@@ -135,7 +136,13 @@ export default async function ExamResultsPage({ params }: { params: Promise<{ to
                           <span className="mx-bar-name">{r.option}</span>
                           <span className="mx-chips">
                             {r.voters.map((v) => (
-                              <span key={v} className="mx-chip" title={v}>{INITIALS[v] ?? v.slice(0, 2).toUpperCase()}</span>
+                              <span key={v} className="mx-chip" title={v}>
+                                <Image src={faceSrc(v)} alt={v} width={84} height={84} />
+                                {/* Kept in the markup under the art: it is the
+                                    alt text if the image ever fails, and it is
+                                    what a screen reader reads. */}
+                                <span className="mx-chip-i">{INITIALS[v] ?? v.slice(0, 2).toUpperCase()}</span>
+                              </span>
                             ))}
                           </span>
                           <span className="mx-bar-pct">{r.pct}%</span>

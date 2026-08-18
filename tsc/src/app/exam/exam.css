@@ -838,8 +838,18 @@ body:has(.mx) .site-grain { display: none; }
    One block per question: the four names, the share of the room that took
    each, and who they were. Built to be scrolled and screenshotted.
    ============================================================ */
-.mx-qs { display: flex; flex-direction: column; gap: 30px; }
-.mx-qblock { display: flex; flex-direction: column; gap: 12px; }
+.mx-qs { display: flex; flex-direction: column; gap: 0; }
+.mx-qblock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 30px 0;
+}
+/* A drawn break, not just air. Twenty-five blocks of question-then-bars run
+   together on a long scroll, and gap alone leaves it ambiguous where one
+   question stops and the next starts. */
+.mx-qblock + .mx-qblock { border-top: 2px solid var(--mx-gold2); }
+.mx-qblock:first-child { padding-top: 6px; }
 
 .mx-qhd { display: flex; align-items: center; gap: 11px; }
 .mx-qhd-n {
@@ -916,21 +926,34 @@ body:has(.mx) .site-grain { display: none; }
 }
 .mx-bar.is-right .mx-bar-pct { color: var(--mx-gold); }
 
-/* Who took it. Two letters because four of the twelve start with C and the
-   first two letters still collide on two of those. */
+/* Who took it: the same faces the countdown cards use, cropped to the head.
+   The two-letter code stays in the markup underneath as the fallback and as
+   what a screen reader reads. */
 .mx-chips { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
 .mx-chip {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--mx-track);
+  box-shadow: 0 0 0 1px var(--mx-hair);
+  display: block;
+}
+.mx-chip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Behind the art, so it shows only if the image never arrives. */
+.mx-chip .mx-chip-i {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: grid;
+  place-items: center;
   font-family: var(--mx-mono);
   font-size: 9px;
-  letter-spacing: 0.06em;
   color: var(--mx-ink2);
-  background: rgba(242, 236, 224, 0.06);
-  border: 1px solid var(--mx-hair);
-  border-radius: 2px;
-  padding: 3px 5px;
-  line-height: 1;
 }
-.mx-bar.is-right .mx-chip { color: var(--mx-ink); border-color: var(--mx-gold2); }
+.mx-bar.is-right .mx-chip { box-shadow: 0 0 0 1px var(--mx-gold); }
 
 .mx-qfoot { font-size: 14px; line-height: 1.5; color: var(--mx-ink3); }
 .mx-qfoot b { color: var(--mx-lab); font-weight: 700; }
