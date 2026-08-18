@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { ensureExamToken } from '@/app/exam/actions'
+import { ensureExamToken, reopenRun } from '@/app/exam/actions'
 import {
   QUESTIONS, ROSTER, VEINS, isMulti, pickCount, roomSplit, standings, veinLabel,
   type RunRecord,
@@ -21,6 +21,7 @@ export function RoomView({
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const [confirmRotate, setConfirmRotate] = useState(false)
+  const [confirmReopen, setConfirmReopen] = useState<string | null>(null)
 
   // The public game lives at /exam/<token>, outside /league/, because the
   // league layout bounces signed-out visitors to /login and the whole point of
@@ -47,6 +48,16 @@ export function RoomView({
     setConfirmRotate(false)
     if (!res.ok) { setMsg(res.error); return }
     setMsg(rotate ? 'New link minted. The old one is dead.' : 'Link ready.')
+    startTransition(() => router.refresh())
+  }
+
+  async function reopen(who: string) {
+    setBusy(true)
+    setMsg(null)
+    const res = await reopenRun(leagueId, who)
+    setBusy(false)
+    setConfirmReopen(null)
+    setMsg(res.ok ? `${who} can sit it again.` : res.error)
     startTransition(() => router.refresh())
   }
 
@@ -119,6 +130,33 @@ export function RoomView({
                 <div key={r.name} className="mx-brow">
                   <span className="mx-pos">{r.pos}</span>
                   <span className="mx-nm">{r.name}</span>
+                  {confirmReopen === r.name ? (
+                    <>
+                      <button
+                        type="button"
+                        className="mxr-danger mxr-tiny"
+                        disabled={busy}
+                        onClick={() => reopen(r.name)}
+                      >
+                        Wipe this run
+                      </button>
+                      <button
+                        type="button"
+                        className="mxr-reopen"
+                        onClick={() => setConfirmReopen(null)}
+                      >
+                        Keep
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="mxr-reopen"
+                      onClick={() => setConfirmReopen(r.name)}
+                    >
+                      Reopen
+                    </button>
+                  )}
                   <span className="mx-sc">{r.score}</span>
                 </div>
               ))

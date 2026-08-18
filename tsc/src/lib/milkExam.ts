@@ -20,7 +20,19 @@
 // manager finished last season. That is the single fact everybody in a league
 // already knows, which makes it an answer rather than a question.
 
-export const EDITION = 'pams-2026'
+/**
+ * Bump this whenever the QUESTION SET changes, not just when the wording does.
+ *
+ * A score only means something against the set it was answered on, and a run
+ * is filed as one row per (league, edition, manager): a new edition frees
+ * everybody to sit it again and leaves the old rows in the table as history
+ * rather than deleting them. Reads are edition-scoped, so nothing from a
+ * previous set shows on the board.
+ *
+ * pams-2026    the original twenty, answers keyed by question position
+ * pams-2026.2  twenty-five, five of them pick-N, answers keyed by question id
+ */
+export const EDITION = 'pams-2026.2'
 
 /** The twelve, so a player claims a name before seeing a single answer. */
 export const ROSTER = [

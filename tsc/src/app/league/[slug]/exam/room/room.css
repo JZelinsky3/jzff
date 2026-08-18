@@ -52,3 +52,19 @@
   transition: border-color 0.15s ease;
 }
 .mxr-danger:hover { border-color: var(--mx-miss); }
+
+/* Per-manager reopen. Quiet until hovered: it sits on every board row and is
+   destructive, so it must not compete with the score for attention. */
+.mxr-reopen {
+  font-family: var(--mx-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mx-ink3);
+  padding: 5px 9px;
+  border: 1px solid var(--mx-hair);
+  border-radius: 2px;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.mxr-reopen:hover { border-color: var(--mx-edge); color: var(--mx-lab); }
+.mxr-tiny { font-size: 9px; padding: 5px 9px; letter-spacing: 0.14em; }

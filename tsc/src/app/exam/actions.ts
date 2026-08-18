@@ -119,6 +119,35 @@ export async function playedNames(leagueId: string): Promise<string[]> {
 }
 
 /**
+ * Let one manager sit it again.
+ *
+ * The run is deleted rather than flagged: one row per manager per edition is
+ * the whole integrity model, and a "superseded" column would mean every read
+ * downstream has to remember to filter on it. Owner-gated, and scoped to this
+ * edition so it cannot reach into a previous set's history.
+ *
+ * Use this for a misclick or a genuine do-over. When the QUESTION SET itself
+ * changes, bump EDITION instead: that frees everybody at once and keeps the
+ * old scores intact.
+ */
+export async function reopenRun(
+  leagueId: string,
+  name: string,
+): Promise<{ ok: false; error: string } | { ok: true }> {
+  const access = await assertWriteAccess(leagueId)
+  if (!access.ok) return access
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('exam_runs')
+    .delete()
+    .eq('league_id', leagueId)
+    .eq('edition', EDITION)
+    .eq('manager_name', name)
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
+/**
  * File a run.
  *
  * The client sends the names it picked and never a score: the total is
