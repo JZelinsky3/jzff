@@ -105,23 +105,30 @@ export function GameDeck({
         </div>
         <div className="mx-stack" style={{ gap: 12 }}>
           <span className="mx-k is-dim">Who are you</span>
-          <div className="mx-names">
-            {ROSTER.map((n) => {
-              const gone = played.includes(n)
-              return (
-                <button
-                  key={n}
-                  type="button"
-                  className="mx-name"
-                  aria-pressed={name === n}
-                  disabled={gone}
-                  title={gone ? `${n} has already played` : undefined}
-                  onClick={() => setName(n)}
-                >
-                  {n}
-                </button>
-              )
-            })}
+          <div className="mx-sheet">
+            <div className="mx-sheet-hd">
+              <span>Twelve managers</span>
+              <span>{ROSTER.length - played.length} still to sit it</span>
+            </div>
+            <div className="mx-names">
+              {ROSTER.map((n) => {
+                const gone = played.includes(n)
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    className="mx-name"
+                    aria-pressed={name === n}
+                    disabled={gone}
+                    onClick={() => setName(n)}
+                  >
+                    <span className="mx-box">{name === n && <Tick />}</span>
+                    <span className="mx-nm-txt">{n}</span>
+                    {gone && <span className="mx-done">in</span>}
+                  </button>
+                )
+              })}
+            </div>
           </div>
           <span className="mx-err">
             {played.length === ROSTER.length ? 'Everyone has played.' : ''}
@@ -343,10 +350,21 @@ function Twelve({ index, you }: { index: number; you: string | null }) {
 
   return (
     <>
-      <button type="button" className="mx-more" onClick={() => setOpen(!open)}>
-        <span className="mx-caret">{open ? '\u25B2' : '\u25BC'}</span>
-        <span>{open ? 'Hide all twelve' : 'All twelve'}</span>
-        {mine && !open && <span className="mx-mine">You {mine[1]}</span>}
+      <button
+        type="button"
+        className={`mx-more${open ? ' is-open' : ''}`}
+        onClick={() => setOpen(!open)}
+      >
+        <span className="mx-more-l">
+          <span className="mx-more-k">{open ? 'Hide all twelve' : 'All twelve'}</span>
+          <span className="mx-more-sub">{t.label}</span>
+        </span>
+        {mine && (
+          <span className="mx-more-r">
+            <span className="mx-more-you">You</span>
+            <span className="mx-more-v">{mine[1]}</span>
+          </span>
+        )}
       </button>
       {open && <TwelveTable table={t} rows={rows} you={you} index={index} />}
     </>

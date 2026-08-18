@@ -173,7 +173,14 @@ body:has(.mx) .site-grain { display: none; }
 .mx-stack { display: flex; flex-direction: column; gap: 16px; }
 
 /* ---- controls ---- */
-.mx button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+/* Wrapped in :where() so the reset carries ZERO specificity.
+   As `.mx button` it was a class plus an element (0,1,1), which outranks every
+   component class that styles a button (`.mx-name`, `.mx-opt`, `.mx-back`, all
+   0,1,0). The result was `border: 0` winning everywhere: not one box on the
+   page, while `.mx-name[aria-pressed='true']` (0,2,0) still beat it, so a
+   selected name highlighted and an unselected one had no edge at all.
+   :where() keeps the reset as a floor that any class can override. */
+:where(.mx button) { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
 .mx :focus-visible { outline: 2px solid var(--mx-gold); outline-offset: 3px; }
 .mx-go {
   align-self: flex-start;
@@ -205,30 +212,87 @@ body:has(.mx) .site-grain { display: none; }
 }
 .mx-ghost:hover { border-color: var(--mx-gold2); color: var(--mx-ink); }
 
-/* ---- claiming a name ----
-   Before a single answer, deliberately: the answers are revealed as you go,
-   so a run that picked its name at the end could be played once to read them
-   and filed again as somebody else. */
-.mx-names { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-@media (max-width: 460px) { .mx-names { grid-template-columns: repeat(2, 1fr); } }
-.mx-name {
-  padding: 14px 10px;
+/* ---- claiming a name: an answer sheet ----
+   Names go first, deliberately: the answers are revealed as you go, so a run
+   that picked its name at the end could be played once to read them and filed
+   again as somebody else.
+
+   Built as a real grid of CELLS rather than twelve floating buttons. The 1px
+   gaps are the background showing through, which draws one continuous set of
+   rules across the whole block the way a form does, instead of twelve separate
+   outlines with dead space between them. Each cell carries a checkbox, so an
+   untouched sheet still reads as something with twelve choices on it. */
+.mx-sheet {
   border: 1px solid var(--mx-edge);
   border-radius: 2px;
-  background: rgba(242, 236, 224, 0.02);
+  overflow: hidden;
+}
+.mx-sheet-hd {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 13px;
+  background: rgba(242, 236, 224, 0.05);
+  border-bottom: 1px solid var(--mx-edge);
+  font-family: var(--mx-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mx-lab);
+}
+.mx-names {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  /* The rules ARE the gaps: 1px of the block's own background between cells. */
+  gap: 1px;
+  background: var(--mx-edge);
+}
+@media (max-width: 460px) { .mx-names { grid-template-columns: repeat(2, 1fr); } }
+.mx-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 13px 12px;
+  /* Opaque, so the 1px gap reads as a drawn rule and not as a shadow. */
+  background: var(--mx-bg);
   font-family: var(--mx-disp);
   font-stretch: condensed;
   font-weight: 800;
-  font-size: 21px;
-  transition: border-color 0.14s ease, background 0.14s ease;
+  font-size: 20px;
+  color: var(--mx-ink);
+  transition: background 0.14s ease, color 0.14s ease;
 }
-.mx-name:hover:not(:disabled) { border-color: var(--mx-gold2); background: rgba(242, 236, 224, 0.05); }
-.mx-name[aria-pressed='true'] { border-color: var(--mx-gold); background: var(--mx-goldwash); }
+/* A resting state that exists on its own, before any pointer goes near it. */
+.mx-name .mx-box {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  border: 1px solid var(--mx-edge);
+  border-radius: 1px;
+  display: grid;
+  place-items: center;
+}
+.mx-name .mx-box svg { display: block; width: 9px; height: 9px; stroke: #141210; }
+.mx-name:hover:not(:disabled) { background: rgba(242, 236, 224, 0.07); }
+.mx-name:hover:not(:disabled) .mx-box { border-color: var(--mx-gold); }
+.mx-name[aria-pressed='true'] { background: var(--mx-goldwash); color: var(--mx-ink); }
+.mx-name[aria-pressed='true'] .mx-box { border-color: var(--mx-gold); background: var(--mx-gold); }
 .mx-name:disabled {
   cursor: default;
   color: var(--mx-ink3);
-  text-decoration: line-through;
-  text-decoration-color: var(--mx-hair);
+  background: var(--mx-bg);
+}
+.mx-name:disabled .mx-nm-txt { text-decoration: line-through; text-decoration-color: var(--mx-edge); }
+.mx-name:disabled .mx-box { border-color: var(--mx-hair); }
+.mx-name .mx-nm-txt { flex: 1; }
+.mx-name .mx-done {
+  font-family: var(--mx-mono);
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mx-ink3);
 }
 
 /* ---- a question ---- */
@@ -514,43 +578,86 @@ body:has(.mx) .site-grain { display: none; }
 }
 
 /* ---- the full twelve, per stat ----
-   Most people care about their own number more than they care about the answer,
-   so every result row opens into the whole league on that measure. */
+   Most people care about their own number more than they care about the answer.
+
+   Built as a BAR split into two cells by a rule, not a small button with an
+   arrow on it: the label sits in the display face on the left, the reader's own
+   figure in its own cell on the right, so "All twelve" and "You 13" are two
+   things rather than one run-on line. The bar is also the table's top edge when
+   it is open, which is why its corners square off then. */
 .mx-more {
-  align-self: flex-start;
   display: flex;
-  align-items: center;
-  gap: 9px;
-  font-family: var(--mx-mono);
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--mx-gold);
-  padding: 10px 15px;
+  align-items: stretch;
+  width: 100%;
+  margin-top: 8px;
   border: 1px solid var(--mx-gold2);
   border-radius: 2px;
   background: var(--mx-goldwash);
-  margin-top: 6px;
+  overflow: hidden;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
-.mx-more:hover { border-color: var(--mx-gold); background: rgba(207, 165, 75, 0.16); }
-/* Your own number, pulled out of the label so the button says something
-   specific before it is even pressed. */
-.mx-more .mx-mine {
+.mx-more:hover { border-color: var(--mx-gold); background: rgba(207, 165, 75, 0.15); }
+.mx-more.is-open { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom-color: transparent; }
+.mx-more .mx-more-l {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+  padding: 11px 14px;
+  text-align: left;
+}
+.mx-more .mx-more-k {
   font-family: var(--mx-disp);
   font-stretch: condensed;
   font-weight: 800;
-  font-size: 16px;
-  letter-spacing: 0;
-  color: var(--mx-ink);
+  font-size: 17px;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--mx-gold);
 }
-.mx-more .mx-caret { color: var(--mx-gold2); font-size: 9px; }
+.mx-more .mx-more-sub {
+  font-family: var(--mx-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mx-lab);
+}
+/* Own cell, own rule. This is the break. */
+.mx-more .mx-more-r {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1px;
+  padding: 9px 14px;
+  border-left: 1px solid var(--mx-gold2);
+  background: rgba(207, 165, 75, 0.07);
+}
+.mx-more .mx-more-you {
+  font-family: var(--mx-mono);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mx-lab);
+}
+.mx-more .mx-more-v {
+  font-family: var(--mx-disp);
+  font-stretch: condensed;
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--mx-ink);
+  font-variant-numeric: tabular-nums;
+}
+
 .mx-table {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--mx-hair);
-  border-radius: 2px;
-  margin-top: 4px;
+  border: 1px solid var(--mx-gold2);
+  border-top: 0;
+  border-radius: 0 0 2px 2px;
   overflow: hidden;
 }
 .mx-table .mx-thead {
@@ -574,7 +681,10 @@ body:has(.mx) .site-grain { display: none; }
   gap: 10px;
   padding: 9px 13px;
 }
-.mx-trow + .mx-trow { border-top: 1px solid rgba(43, 40, 36, 0.7); }
+.mx-trow + .mx-trow { border-top: 1px solid var(--mx-hair); }
+/* Alternating rows. Twelve near-identical lines of name-and-number is where a
+   reader loses their place, and a rule every row is not enough on a phone. */
+.mx-trow:nth-child(even) { background: rgba(242, 236, 224, 0.03); }
 .mx-trow .mx-tn {
   flex: 1;
   font-family: var(--mx-disp);

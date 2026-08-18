@@ -16,7 +16,10 @@
   overflow-wrap: anywhere;
 }
 
-.mxr-note {
+/* `.mx p.mxr-note`, not `.mxr-note`: `.mx p` in exam.css is a class plus an
+   element and wins against a bare class, which had this note rendering at the
+   body size and colour instead of its own. */
+.mx p.mxr-note {
   font-size: 14px;
   line-height: 1.5;
   color: var(--mx-ink3);
