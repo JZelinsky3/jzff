@@ -10,6 +10,26 @@
    carries no site chrome, so these rules own the whole viewport.
    ============================================================ */
 
+/* ---- the document, not just the wrapper ----
+   Painting `.mx` is not enough for two reasons, and both show on a phone.
+   iOS Safari tints its top and bottom bars from the DOCUMENT background near
+   the viewport edges, and `body` carries the almanac's navy from
+   src/styles/main.css, so the page came out warm near-black with two navy
+   stripes bracketing it. Overscroll rubber-banding showed the same navy.
+   `theme-color` is set on the route as well and is not sufficient on its own.
+
+   `.site-glow` and `.site-grain` are fixed full-viewport layers the root
+   layout mounts on every page: a gold-and-rust radial wash and a paper grain
+   built for the navy house. On this stock they are somebody else's atmosphere.
+
+   Scoped with `:has()` rather than a bare `body` rule so it cannot leak if
+   this sheet is ever bundled into a shared chunk: it only applies on a page
+   that actually contains a `.mx` element. Anything too old for `:has()` just
+   keeps the navy bars, which is where this started. */
+body:has(.mx) { background: #0e0d0c; }
+body:has(.mx) .site-glow,
+body:has(.mx) .site-grain { display: none; }
+
 .mx {
   --mx-bg: #0e0d0c;
   --mx-ink: #f2ece0;
