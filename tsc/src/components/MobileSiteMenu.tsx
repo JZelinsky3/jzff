@@ -171,7 +171,7 @@ export function MobileSiteMenu({
     pathname.startsWith('/see') ||
     pathname.startsWith('/goat') ||
     pathname.startsWith('/ballot') ||
-    pathname.startsWith('/leftovers') ||
+    pathname.startsWith('/exam') ||
     /^\/leagues\/[^/]+\/awards(\/|$)/.test(pathname)
   if (bare) return null
 

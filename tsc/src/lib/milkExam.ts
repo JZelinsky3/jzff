@@ -1,14 +1,17 @@
-// The Leftovers: the questions, the roster, and the scoring.
+// THE MILK EXAM: the questions, the roster, and the scoring.
 //
-// A spin-off of THE MILK ORDER, the twelve-day 2026 power ranking countdown.
-// Each day of that countdown ends on a tease card carrying one statistic that
-// belongs to exactly one manager. Six of those got spent. This is everything
-// that was mined and did not fit: twenty questions, four names each.
+// Twenty questions on seven years of one league, four names each.
+//
+// Internal note, and it matters until the countdown has finished: these came
+// out of the same stat mining as THE MILK ORDER's daily tease cards, and are
+// the ones that did not get used. NONE of that goes on the page. While the
+// countdown is still running, saying so would tell the league which numbers
+// are not coming, and it is production trivia either way.
 //
 // Like src/lib/winBallot.ts, the roster is a fixed list rather than a
 // managers-table read, because the game is played by whoever holds the link
 // with no account and so no identity to resolve. Names here are exactly what
-// lands in leftovers_runs.manager_name.
+// lands in exam_runs.manager_name.
 //
 // Every number below is computed off the league's own history: seven seasons
 // of weekly matchups (2019-2025), all seven drafts graded against where each

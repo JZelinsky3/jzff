@@ -1,19 +1,19 @@
-// OG card for The Leftovers link.
-// URL: /api/og/leftovers/<token>
+// OG card for THE MILK EXAM link.
+// URL: /api/og/exam/<token>
 //
 // The card resolves the token itself rather than taking turnout as a param,
 // so a preview scraped on day one and re-read a week later reports what is
 // actually true then. A dead token gets a card that says so rather than one
 // selling a game the holder cannot open.
 //
-// The composition lives in @/lib/og/leftoversCard.
+// The composition lives in @/lib/og/examCard.
 
 import { ImageResponse } from 'next/og'
 import { readFile } from 'fs/promises'
 import path from 'path'
-import { QUESTIONS, ROSTER, standings } from '@/lib/leftovers'
-import { leagueForToken, readRuns } from '@/app/leftovers/actions'
-import { LeftoversCard, type LeftoversPhase } from '@/lib/og/leftoversCard'
+import { QUESTIONS, ROSTER, standings } from '@/lib/milkExam'
+import { leagueForToken, readRuns } from '@/app/exam/actions'
+import { ExamCard, type ExamPhase } from '@/lib/og/examCard'
 
 export const runtime = 'nodejs'
 
@@ -44,7 +44,7 @@ export async function GET(
   const league = await leagueForToken(token)
   const runs = league ? await readRuns(league.id) : []
 
-  const phase: LeftoversPhase = !league
+  const phase: ExamPhase = !league
     ? 'gone'
     : runs.length === 0
     ? 'fresh'
@@ -57,7 +57,7 @@ export async function GET(
   const top = standings(runs).map((r) => ({ name: r.name, score: r.score }))
 
   return new ImageResponse(
-    <LeftoversCard
+    <ExamCard
       phase={phase}
       count={QUESTIONS.length}
       turnout={runs.length}

@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isSiteAdmin } from '@/lib/siteAdmin'
-import { EDITION, ROSTER, scorePicks, validatePicks, type RunRecord } from '@/lib/leftovers'
+import { EDITION, ROSTER, scorePicks, validatePicks, type RunRecord } from '@/lib/milkExam'
 
 /**
  * Resolve a share token back to its league. The token is the whole address of
@@ -16,25 +16,25 @@ export async function leagueForToken(token: string): Promise<{ id: string; slug:
   const { data } = await admin
     .from('leagues')
     .select('id, slug, name')
-    .eq('settings->>leftovers_token', token)
+    .eq('settings->>exam_token', token)
     .maybeSingle()
   if (!data) return null
   return { id: data.id as string, slug: data.slug as string, name: data.name as string }
 }
 
 // The game is open to whoever holds the link, so the share token IS the
-// authorization. It lives on the league row (settings.leftovers_token) and is
+// authorization. It lives on the league row (settings.exam_token) and is
 // minted from the room, which is itself owner-gated. Same shape as the ballot.
-export async function readLeftoversToken(leagueId: string): Promise<string | null> {
+export async function readExamToken(leagueId: string): Promise<string | null> {
   const admin = createAdminClient()
   const { data } = await admin
     .from('leagues')
     .select('settings')
     .eq('id', leagueId)
     .maybeSingle()
-  const settings = (data?.settings ?? {}) as { leftovers_token?: unknown }
-  return typeof settings.leftovers_token === 'string' && settings.leftovers_token.length > 0
-    ? settings.leftovers_token
+  const settings = (data?.settings ?? {}) as { exam_token?: unknown }
+  return typeof settings.exam_token === 'string' && settings.exam_token.length > 0
+    ? settings.exam_token
     : null
 }
 
@@ -67,14 +67,14 @@ async function assertWriteAccess(leagueId: string) {
  * link to paste in the group chat. Rotating it invalidates the old link, which
  * is how you shut the game down or recover from a link that leaked.
  */
-export async function ensureLeftoversToken(
+export async function ensureExamToken(
   leagueId: string,
   rotate = false,
 ): Promise<{ ok: false; error: string } | { ok: true; token: string }> {
   const access = await assertWriteAccess(leagueId)
   if (!access.ok) return access
 
-  const existing = await readLeftoversToken(leagueId)
+  const existing = await readExamToken(leagueId)
   if (existing && !rotate) return { ok: true, token: existing }
 
   const token = Array.from(crypto.getRandomValues(new Uint8Array(12)))
@@ -84,7 +84,7 @@ export async function ensureLeftoversToken(
 
   const admin = createAdminClient()
   const { data: row } = await admin.from('leagues').select('settings').eq('id', leagueId).maybeSingle()
-  const settings = { ...((row?.settings ?? {}) as Record<string, unknown>), leftovers_token: token }
+  const settings = { ...((row?.settings ?? {}) as Record<string, unknown>), exam_token: token }
   const { error } = await admin.from('leagues').update({ settings }).eq('id', leagueId)
   if (error) return { ok: false, error: error.message }
   return { ok: true, token }
@@ -94,7 +94,7 @@ export async function ensureLeftoversToken(
 export async function readRuns(leagueId: string): Promise<RunRecord[]> {
   const admin = createAdminClient()
   const { data } = await admin
-    .from('leftovers_runs')
+    .from('exam_runs')
     .select('manager_name, picks, score, created_at')
     .eq('league_id', leagueId)
     .eq('edition', EDITION)
@@ -111,7 +111,7 @@ export async function readRuns(leagueId: string): Promise<RunRecord[]> {
 export async function playedNames(leagueId: string): Promise<string[]> {
   const admin = createAdminClient()
   const { data } = await admin
-    .from('leftovers_runs')
+    .from('exam_runs')
     .select('manager_name')
     .eq('league_id', leagueId)
     .eq('edition', EDITION)
@@ -141,7 +141,7 @@ export async function submitRun(
 
   const score = scorePicks(checked.picks)
   const admin = createAdminClient()
-  const { error } = await admin.from('leftovers_runs').insert({
+  const { error } = await admin.from('exam_runs').insert({
     league_id: league.id,
     edition: EDITION,
     manager_name: name,

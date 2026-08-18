@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import {
   QUESTIONS, ROSTER, VEINS, bandFor, roomSplit, sortedRows, standings, tableFor, veinLabel,
   type RunRecord, type StatTable,
-} from '@/lib/leftovers'
+} from '@/lib/milkExam'
 import { readRuns, submitRun } from './actions'
 
 const Tick = () => (
@@ -95,30 +95,24 @@ export function GameDeck({
   /* ---------------------------------------------------------- claim a name */
   if (phase === 'claim') {
     return (
-      <div className="lo-shell">
+      <div className="mx-shell">
         <Top right="Twenty questions" />
-        <div className="lo-stack">
-          <span className="lo-k">Twenty questions, four names each</span>
-          <h1>The<br />Leftovers</h1>
-          <p>
-            Every number the countdown never used. None of it is about where
-            anyone finished last year, and some of it will annoy you.
-          </p>
-          <p>
-            You find out straight away on each one, you get <b>one run</b>, and
-            the whole league sees what you scored.
-          </p>
+        {/* One line. The masthead already says how many questions there are,
+            so an eyebrow saying it again is the third place on one screen. */}
+        <div className="mx-stack">
+          <h1>The<br />Milk Exam</h1>
+          <p>Seven years of this league, and none of it is about last season.</p>
         </div>
-        <div className="lo-stack" style={{ gap: 12 }}>
-          <span className="lo-k is-dim">Who are you</span>
-          <div className="lo-names">
+        <div className="mx-stack" style={{ gap: 12 }}>
+          <span className="mx-k is-dim">Who are you</span>
+          <div className="mx-names">
             {ROSTER.map((n) => {
               const gone = played.includes(n)
               return (
                 <button
                   key={n}
                   type="button"
-                  className="lo-name"
+                  className="mx-name"
                   aria-pressed={name === n}
                   disabled={gone}
                   title={gone ? `${n} has already played` : undefined}
@@ -129,12 +123,12 @@ export function GameDeck({
               )
             })}
           </div>
-          <span className="lo-err">
+          <span className="mx-err">
             {played.length === ROSTER.length ? 'Everyone has played.' : ''}
           </span>
           <button
             type="button"
-            className="lo-go"
+            className="mx-go"
             disabled={!name}
             onClick={() => { setPhase('play'); window.scrollTo({ top: 0, behavior: 'instant' }) }}
           >
@@ -142,8 +136,8 @@ export function GameDeck({
           </button>
         </div>
         {board.length > 0 && (
-          <div className="lo-stack" style={{ gap: 10 }}>
-            <span className="lo-k is-dim">Already in</span>
+          <div className="mx-stack" style={{ gap: 10 }}>
+            <span className="mx-k is-dim">Already in</span>
             <Board board={board} me={name} />
           </div>
         )}
@@ -155,38 +149,38 @@ export function GameDeck({
   if (phase === 'done') {
     const band = bandFor(score)
     return (
-      <div className="lo-shell">
+      <div className="mx-shell">
         <Top right={`${leagueName} · ${name}`} />
-        <div className="lo-stack" style={{ gap: 14 }}>
-          <span className="lo-k">{band.name}</span>
-          <div className="lo-score">
-            <span className="lo-big">{score}</span>
-            <span className="lo-of">of {QUESTIONS.length}</span>
+        <div className="mx-stack" style={{ gap: 14 }}>
+          <span className="mx-k">{band.name}</span>
+          <div className="mx-score">
+            <span className="mx-big">{score}</span>
+            <span className="mx-of">of {QUESTIONS.length}</span>
           </div>
           <p>{band.line}</p>
         </div>
 
-        <div className="lo-splits">
+        <div className="mx-splits">
           {VEINS.map((v) => {
             const idx = QUESTIONS.map((qq, n) => (qq.vein === v ? n : -1)).filter((n) => n >= 0)
             const got = idx.filter((n) => picks[String(n)] === QUESTIONS[n].answer).length
             return (
               <div key={v}>
-                <span className="lo-v">{got}<span>/{idx.length}</span></span>
-                <span className="lo-l">{veinLabel(v)}</span>
+                <span className="mx-v">{got}<span>/{idx.length}</span></span>
+                <span className="mx-l">{veinLabel(v)}</span>
               </div>
             )
           })}
         </div>
 
-        <div className="lo-stack" style={{ gap: 10 }}>
-          <span className="lo-k is-dim">The league</span>
+        <div className="mx-stack" style={{ gap: 10 }}>
+          <span className="mx-k is-dim">The league</span>
           <Board board={board} me={name} />
         </div>
 
-        <div className="lo-stack" style={{ gap: 10 }}>
-          <span className="lo-k is-dim">Every answer</span>
-          <div className="lo-review">
+        <div className="mx-stack" style={{ gap: 10 }}>
+          <span className="mx-k is-dim">Every answer</span>
+          <div className="mx-review">
             {QUESTIONS.map((qq, n) => (
               <ReviewRow
                 key={n}
@@ -199,9 +193,9 @@ export function GameDeck({
           </div>
         </div>
 
-        <div className="lo-foot">
-          <button type="button" className="lo-ghost" onClick={copyScore}>Copy my score</button>
-          {copied && <span className="lo-said">Copied</span>}
+        <div className="mx-foot">
+          <button type="button" className="mx-ghost" onClick={copyScore}>Copy my score</button>
+          {copied && <span className="mx-said">Copied</span>}
         </div>
       </div>
     )
@@ -209,36 +203,36 @@ export function GameDeck({
 
   /* ----------------------------------------------------------- playing it */
   return (
-    <div className="lo-shell">
+    <div className="mx-shell">
       <Top right={`Question ${i + 1} of ${QUESTIONS.length}`} />
 
-      <div className="lo-rail">
+      <div className="mx-rail">
         {QUESTIONS.map((qq, n) => {
           const done = picks[String(n)] !== undefined
           const hit = picks[String(n)] === QUESTIONS[n].answer
           const cls = n === i && !done ? 'is-now' : done ? (hit ? 'is-hit' : 'is-miss') : ''
           return (
-            <span key={n} className={`lo-seg${n < i ? ' is-done' : ''}`}>
+            <span key={n} className={`mx-seg${n < i ? ' is-done' : ''}`}>
               <i className={cls} />
-              {n < QUESTIONS.length - 1 && <span className="lo-rl" />}
+              {n < QUESTIONS.length - 1 && <span className="mx-rl" />}
             </span>
           )
         })}
       </div>
 
-      <div className="lo-stage lo-stack">
-        <span className="lo-ghostnum" aria-hidden>{String(i + 1).padStart(2, '0')}</span>
-        <div className="lo-qhead">
-          <span className="lo-n">{String(i + 1).padStart(2, '0')}</span>
-          <span className="lo-tag">{veinLabel(q.vein)}</span>
+      <div className="mx-stage mx-stack">
+        <span className="mx-ghostnum" aria-hidden>{String(i + 1).padStart(2, '0')}</span>
+        <div className="mx-qhead">
+          <span className="mx-n">{String(i + 1).padStart(2, '0')}</span>
+          <span className="mx-tag">{veinLabel(q.vein)}</span>
         </div>
         <h2>{q.q}</h2>
-        <span className="lo-source">{q.source}</span>
+        <span className="mx-source">{q.source}</span>
       </div>
 
-      <div className="lo-opts">
+      <div className="mx-opts">
         {q.options.map((opt) => {
-          let cls = 'lo-opt'
+          let cls = 'mx-opt'
           if (answered) {
             if (opt === q.answer) cls += ' is-right'
             else if (opt === committed) cls += ' is-wrong'
@@ -255,7 +249,7 @@ export function GameDeck({
               aria-pressed={!answered && opt === pending}
               onClick={() => setPending(opt)}
             >
-              <span className="lo-mk">
+              <span className="mx-mk">
                 {answered && opt === q.answer && <Tick />}
                 {answered && opt === committed && opt !== q.answer && <Cross />}
               </span>
@@ -268,19 +262,19 @@ export function GameDeck({
       {/* Nothing is committed until this is pressed. A mis-tap on a phone used
           to score the question instantly, which is a bad way to lose one. */}
       {!answered && (
-        <div className="lo-nav">
-          <button type="button" className="lo-go" disabled={!pending} onClick={lockIn}>
+        <div className="mx-nav">
+          <button type="button" className="mx-go" disabled={!pending} onClick={lockIn}>
             {pending ? `Lock in ${pending}` : 'Pick a name'}
           </button>
           {i > 0 && (
-            <button type="button" className="lo-back" onClick={() => goto(i - 1)}>Back</button>
+            <button type="button" className="mx-back" onClick={() => goto(i - 1)}>Back</button>
           )}
         </div>
       )}
 
       {answered && (
-        <div className="lo-ans">
-          <span className={`lo-verdict ${committed === q.answer ? 'is-y' : 'is-n'}`}>
+        <div className="mx-ans">
+          <span className={`mx-verdict ${committed === q.answer ? 'is-y' : 'is-n'}`}>
             {committed === q.answer ? 'Correct' : 'Not him'}
           </span>
           <p>
@@ -288,17 +282,17 @@ export function GameDeck({
             <span dangerouslySetInnerHTML={{ __html: q.why }} />
           </p>
           <Twelve index={i} you={name} />
-          <span className="lo-err">{err}</span>
-          <div className="lo-nav">
+          <span className="mx-err">{err}</span>
+          <div className="mx-nav">
             {last ? (
-              <button type="button" className="lo-go" disabled={busy || !allAnswered} onClick={file}>
+              <button type="button" className="mx-go" disabled={busy || !allAnswered} onClick={file}>
                 {busy ? 'Filing' : 'See the score'}
               </button>
             ) : (
-              <button type="button" className="lo-go" onClick={() => goto(i + 1)}>Next</button>
+              <button type="button" className="mx-go" onClick={() => goto(i + 1)}>Next</button>
             )}
             {i > 0 && (
-              <button type="button" className="lo-back" onClick={() => goto(i - 1)}>Back</button>
+              <button type="button" className="mx-back" onClick={() => goto(i - 1)}>Back</button>
             )}
           </div>
         </div>
@@ -309,9 +303,9 @@ export function GameDeck({
 
 function Top({ right }: { right: string }) {
   return (
-    <div className="lo-top">
-      <span className="lo-lg">PA Milk Society</span>
-      <span className="lo-rt">{right}</span>
+    <div className="mx-top">
+      <span className="mx-lg">PA Milk Society</span>
+      <span className="mx-rt">{right}</span>
     </div>
   )
 }
@@ -323,15 +317,15 @@ function Board({
   me: string | null
 }) {
   return (
-    <div className="lo-board">
+    <div className="mx-board">
       {board.length === 0 ? (
-        <div className="lo-waiting">Nobody has played yet</div>
+        <div className="mx-waiting">Nobody has played yet</div>
       ) : (
         board.map((r) => (
-          <div key={r.name} className={`lo-brow${r.name === me ? ' is-me' : ''}`}>
-            <span className="lo-pos">{r.pos}</span>
-            <span className="lo-nm">{r.name}</span>
-            <span className="lo-sc">{r.score}</span>
+          <div key={r.name} className={`mx-brow${r.name === me ? ' is-me' : ''}`}>
+            <span className="mx-pos">{r.pos}</span>
+            <span className="mx-nm">{r.name}</span>
+            <span className="mx-sc">{r.score}</span>
           </div>
         ))
       )}
@@ -349,7 +343,7 @@ function Twelve({ index, you }: { index: number; you: string | null }) {
 
   return (
     <>
-      <button type="button" className="lo-more" onClick={() => setOpen(!open)}>
+      <button type="button" className="mx-more" onClick={() => setOpen(!open)}>
         {open ? 'Hide the twelve' : mine ? `All twelve · you ${mine[1]}` : 'All twelve'}
       </button>
       {open && <TwelveTable table={t} rows={rows} you={you} index={index} />}
@@ -367,8 +361,8 @@ function TwelveTable({
 }) {
   const answer = QUESTIONS[index].answer
   return (
-    <div className="lo-table">
-      <div className="lo-thead">
+    <div className="mx-table">
+      <div className="mx-thead">
         <span>{table.label}</span>
         <span>{rows.length} shown</span>
       </div>
@@ -384,12 +378,12 @@ function TwelveTable({
         return (
           <div
             key={r[0]}
-            className={`lo-trow${r[0] === answer ? ' is-answer' : ''}${r[0] === you ? ' is-you' : ''}`}
+            className={`mx-trow${r[0] === answer ? ' is-answer' : ''}${r[0] === you ? ' is-you' : ''}`}
           >
-            <span className="lo-tn">{r[0]}</span>
-            {r[0] === you && <span className="lo-you">you</span>}
-            {tag && <span className="lo-tt">{tag}</span>}
-            <span className="lo-tv">{r[1]}</span>
+            <span className="mx-tn">{r[0]}</span>
+            {r[0] === you && <span className="mx-you">you</span>}
+            {tag && <span className="mx-tt">{tag}</span>}
+            <span className="mx-tv">{r[1]}</span>
           </div>
         )
       })}
@@ -409,16 +403,16 @@ function ReviewRow({
   const q = QUESTIONS[index]
   const ok = mine === q.answer
   return (
-    <div className={`lo-row${ok ? '' : ' is-no'}`}>
-      <span className="lo-st">{ok ? <Tick /> : <Cross />}</span>
-      <span className="lo-bd">
-        <span className="lo-q">{q.q}</span>
-        <span className="lo-a">
+    <div className={`mx-row${ok ? '' : ' is-no'}`}>
+      <span className="mx-st">{ok ? <Tick /> : <Cross />}</span>
+      <span className="mx-bd">
+        <span className="mx-q">{q.q}</span>
+        <span className="mx-a">
           {q.answer}
           {!ok && <em> you said {mine}</em>}
         </span>
-        <span className="lo-why" dangerouslySetInnerHTML={{ __html: q.why }} />
-        {room && <span className="lo-room">{room.got} of {room.of} got it</span>}
+        <span className="mx-why" dangerouslySetInnerHTML={{ __html: q.why }} />
+        {room && <span className="mx-room">{room.got} of {room.of} got it</span>}
         <Twelve index={index} you={you} />
       </span>
     </div>

@@ -2,10 +2,10 @@
 
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { ensureLeftoversToken } from '@/app/leftovers/actions'
+import { ensureExamToken } from '@/app/exam/actions'
 import {
   QUESTIONS, ROSTER, VEINS, roomSplit, standings, veinLabel, type RunRecord,
-} from '@/lib/leftovers'
+} from '@/lib/milkExam'
 
 export function RoomView({
   leagueId, origin, runs, token,
@@ -21,10 +21,10 @@ export function RoomView({
   const [msg, setMsg] = useState<string | null>(null)
   const [confirmRotate, setConfirmRotate] = useState(false)
 
-  // The public game lives at /leftovers/<token>, outside /league/, because the
+  // The public game lives at /exam/<token>, outside /league/, because the
   // league layout bounces signed-out visitors to /login and the whole point of
   // this link is that it needs no account.
-  const link = token ? `${origin}/leftovers/${token}` : null
+  const link = token ? `${origin}/exam/${token}` : null
   const board = useMemo(() => standings(runs), [runs])
   const waiting = ROSTER.filter((n) => !runs.some((r) => r.name === n))
 
@@ -41,7 +41,7 @@ export function RoomView({
   async function mint(rotate: boolean) {
     setBusy(true)
     setMsg(null)
-    const res = await ensureLeftoversToken(leagueId, rotate)
+    const res = await ensureExamToken(leagueId, rotate)
     setBusy(false)
     setConfirmRotate(false)
     if (!res.ok) { setMsg(res.error); return }
@@ -56,37 +56,37 @@ export function RoomView({
   }
 
   return (
-    <div className="lo lor">
-      <div className="lo-shell">
-        <div className="lo-top">
-          <span className="lo-lg">Leftovers room</span>
-          <span className="lo-rt">{runs.length} of {ROSTER.length} in</span>
+    <div className="mx mxr">
+      <div className="mx-shell">
+        <div className="mx-top">
+          <span className="mx-lg">Exam room</span>
+          <span className="mx-rt">{runs.length} of {ROSTER.length} in</span>
         </div>
 
         {/* ---- the link ---- */}
-        <div className="lo-stack" style={{ gap: 12 }}>
-          <span className="lo-k">The link you hand out</span>
+        <div className="mx-stack" style={{ gap: 12 }}>
+          <span className="mx-k">The link you hand out</span>
           {link ? (
             <>
-              <div className="lor-link">{link}</div>
-              <div className="lo-foot">
-                <button type="button" className="lo-go" onClick={copy}>Copy link</button>
+              <div className="mxr-link">{link}</div>
+              <div className="mx-foot">
+                <button type="button" className="mx-go" onClick={copy}>Copy link</button>
                 {confirmRotate ? (
                   <>
-                    <button type="button" className="lo-ghost" disabled={busy} onClick={() => mint(true)}>
+                    <button type="button" className="mx-ghost" disabled={busy} onClick={() => mint(true)}>
                       Yes, kill the old one
                     </button>
-                    <button type="button" className="lo-ghost" onClick={() => setConfirmRotate(false)}>
+                    <button type="button" className="mx-ghost" onClick={() => setConfirmRotate(false)}>
                       Keep it
                     </button>
                   </>
                 ) : (
-                  <button type="button" className="lo-ghost" onClick={() => setConfirmRotate(true)}>
+                  <button type="button" className="mx-ghost" onClick={() => setConfirmRotate(true)}>
                     Mint a new link
                   </button>
                 )}
               </div>
-              <p className="lor-note">
+              <p className="mxr-note">
                 Anybody holding this can play once, under a name nobody has used
                 yet. Minting a new one kills this link and every run already
                 filed stays exactly where it is.
@@ -94,41 +94,41 @@ export function RoomView({
             </>
           ) : (
             <>
-              <p className="lor-note">No link yet. Mint one and paste it in the group chat.</p>
-              <button type="button" className="lo-go" disabled={busy} onClick={() => mint(false)}>
+              <p className="mxr-note">No link yet. Mint one and paste it in the group chat.</p>
+              <button type="button" className="mx-go" disabled={busy} onClick={() => mint(false)}>
                 {busy ? 'Minting' : 'Mint the link'}
               </button>
             </>
           )}
-          {msg && <span className="lo-said">{pending ? 'Refreshing' : msg}</span>}
+          {msg && <span className="mx-said">{pending ? 'Refreshing' : msg}</span>}
         </div>
 
         {/* ---- the board ---- */}
-        <div className="lo-stack" style={{ gap: 10 }}>
-          <span className="lo-k is-dim">The board</span>
-          <div className="lo-board">
+        <div className="mx-stack" style={{ gap: 10 }}>
+          <span className="mx-k is-dim">The board</span>
+          <div className="mx-board">
             {board.length === 0 ? (
-              <div className="lo-waiting">Nobody has played yet</div>
+              <div className="mx-waiting">Nobody has played yet</div>
             ) : (
               board.map((r) => (
-                <div key={r.name} className="lo-brow">
-                  <span className="lo-pos">{r.pos}</span>
-                  <span className="lo-nm">{r.name}</span>
-                  <span className="lo-sc">{r.score}</span>
+                <div key={r.name} className="mx-brow">
+                  <span className="mx-pos">{r.pos}</span>
+                  <span className="mx-nm">{r.name}</span>
+                  <span className="mx-sc">{r.score}</span>
                 </div>
               ))
             )}
           </div>
           {waiting.length > 0 && (
-            <p className="lor-note">Still to play: {waiting.join(', ')}.</p>
+            <p className="mxr-note">Still to play: {waiting.join(', ')}.</p>
           )}
         </div>
 
         {/* ---- how each vein played ---- */}
         {runs.length > 0 && (
-          <div className="lo-stack" style={{ gap: 10 }}>
-            <span className="lo-k is-dim">By vein</span>
-            <div className="lo-splits">
+          <div className="mx-stack" style={{ gap: 10 }}>
+            <span className="mx-k is-dim">By vein</span>
+            <div className="mx-splits">
               {VEINS.map((v) => {
                 const idx = QUESTIONS.map((q, n) => (q.vein === v ? n : -1)).filter((n) => n >= 0)
                 let got = 0
@@ -139,10 +139,10 @@ export function RoomView({
                 })
                 return (
                   <div key={v}>
-                    <span className="lo-v">
+                    <span className="mx-v">
                       {of ? Math.round((got / of) * 100) : 0}<span>%</span>
                     </span>
-                    <span className="lo-l">{veinLabel(v)}</span>
+                    <span className="mx-l">{veinLabel(v)}</span>
                   </div>
                 )
               })}
@@ -152,16 +152,16 @@ export function RoomView({
 
         {/* ---- what the room is getting wrong ---- */}
         {byHardest.length > 0 && (
-          <div className="lo-stack" style={{ gap: 10 }}>
-            <span className="lo-k is-dim">Hardest first</span>
-            <div className="lo-review">
+          <div className="mx-stack" style={{ gap: 10 }}>
+            <span className="mx-k is-dim">Hardest first</span>
+            <div className="mx-review">
               {byHardest.map(({ i, q, split }) => (
-                <div key={i} className="lo-row">
-                  <span className="lor-pct">{split!.got}/{split!.of}</span>
-                  <span className="lo-bd">
-                    <span className="lo-q">{q.q}</span>
-                    <span className="lo-a">{q.answer}</span>
-                    <span className="lo-room">
+                <div key={i} className="mx-row">
+                  <span className="mxr-pct">{split!.got}/{split!.of}</span>
+                  <span className="mx-bd">
+                    <span className="mx-q">{q.q}</span>
+                    <span className="mx-a">{q.answer}</span>
+                    <span className="mx-room">
                       {split!.got === 0
                         ? 'Nobody has got this'
                         : `${split!.got} of ${split!.of} got it`}

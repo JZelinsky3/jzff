@@ -1,11 +1,10 @@
-// The picture The Leftovers link unfurls into.
+// The picture THE MILK EXAM link unfurls into.
 //
 // Kept out of the route so the composition can be rendered and looked at
 // without standing up a league and a token first.
 //
-// This one is off the MILK ORDER stock rather than the site's house card,
-// because the game is a spin-off of that countdown and the preview should
-// look like the thing you are about to open: warm near-black, cream ink, and
+// Off the MILK ORDER stock rather than the site's house card, so the preview
+// looks like the thing you are about to open: warm near-black, cream ink, and
 // gold on nothing but the number and the one lit answer.
 //
 // Satori rules that bite here: every container needs an explicit
@@ -25,10 +24,10 @@ const GOLD_2 = '#7d642c'
 const GOLDWASH = 'rgba(207,165,75,0.10)'
 
 /** Which of the link's lives the card is selling. */
-export type LeftoversPhase = 'gone' | 'fresh' | 'running' | 'full'
+export type ExamPhase = 'gone' | 'fresh' | 'running' | 'full'
 
-export type LeftoversCardProps = {
-  phase: LeftoversPhase
+export type ExamCardProps = {
+  phase: ExamPhase
   /** Questions in the edition, so the card never hardcodes twenty. */
   count: number
   /** How many have filed a run. */
@@ -39,7 +38,7 @@ export type LeftoversCardProps = {
   top: { name: string; score: number }[]
 }
 
-const COPY: Record<LeftoversPhase, { head: string; em: string; sub: string; foot: string }> = {
+const COPY: Record<ExamPhase, { head: string; em: string; sub: string; foot: string }> = {
   gone: {
     head: 'Wrong',
     em: 'door.',
@@ -47,16 +46,16 @@ const COPY: Record<LeftoversPhase, { head: string; em: string; sub: string; foot
     foot: 'Open by invitation only',
   },
   fresh: {
-    head: 'The',
-    em: 'Leftovers.',
-    sub: 'Every number the countdown never used',
-    foot: 'Four names a question · one run each',
+    head: 'The Milk',
+    em: 'Exam.',
+    sub: 'Seven years of this league, in twenty questions',
+    foot: 'Four names a question',
   },
   running: {
-    head: 'The',
-    em: 'Leftovers.',
+    head: 'The Milk',
+    em: 'Exam.',
     sub: 'The board is filling up',
-    foot: 'Four names a question · one run each',
+    foot: 'Four names a question',
   },
   full: {
     head: 'Everybody',
@@ -92,7 +91,7 @@ function Eyebrow({
   )
 }
 
-export function LeftoversCard({ phase, count, turnout, seats, top }: LeftoversCardProps) {
+export function ExamCard({ phase, count, turnout, seats, top }: ExamCardProps) {
   const copy = COPY[phase]
   const showBoard = phase !== 'gone' && top.length > 0
 

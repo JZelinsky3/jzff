@@ -1,7 +1,7 @@
-import { QUESTIONS } from '@/lib/leftovers'
+import { QUESTIONS } from '@/lib/milkExam'
 import { leagueForToken, playedNames, readRuns } from '../actions'
 import { GameDeck } from '../game-deck'
-import '../leftovers.css'
+import '../exam.css'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,19 +19,19 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   const copy = !league
     ? {
         title: 'Wrong door',
-        description: 'This Leftovers link is not the live one. Ask Joey for the one he sent the group.',
+        description: 'This link is not the live one. Ask Joey for the one he sent the group.',
       }
     : played.length === 0
     ? {
-        title: 'The Leftovers · PA Milk Society',
-        description: `${QUESTIONS.length} questions from the numbers the countdown never used. Four names each, one run, and the whole league sees your score.`,
+        title: 'The Milk Exam · PA Milk Society',
+        description: `Seven years of this league, in ${QUESTIONS.length} questions.`,
       }
     : {
-        title: 'The Leftovers · PA Milk Society',
-        description: `${played.length} ${played.length === 1 ? 'manager has' : 'managers have'} played. ${QUESTIONS.length} questions, four names each, one run.`,
+        title: 'The Milk Exam · PA Milk Society',
+        description: `${played.length} ${played.length === 1 ? 'manager has' : 'managers have'} sat it. ${QUESTIONS.length} questions on seven years of this league.`,
       }
 
-  const image = `/api/og/leftovers/${encodeURIComponent(token)}`
+  const image = `/api/og/exam/${encodeURIComponent(token)}`
   return {
     title: copy.title,
     description: copy.description,
@@ -57,20 +57,20 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
 // Deliberately NOT under /league/[slug]: that layout sends signed-out visitors
 // to /login, and the whole point of this link is that eleven people who have
 // no account can open it and play.
-export default async function LeftoversPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function ExamPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
   const league = await leagueForToken(token)
 
   if (!league) {
     return (
-      <div className="lo">
-        <div className="lo-shell">
-          <div className="lo-top">
-            <span className="lo-lg">PA Milk Society</span>
-            <span className="lo-rt">Wrong door</span>
+      <div className="mx">
+        <div className="mx-shell">
+          <div className="mx-top">
+            <span className="mx-lg">PA Milk Society</span>
+            <span className="mx-rt">Wrong door</span>
           </div>
-          <div className="lo-stack">
-            <span className="lo-k">Not the live link</span>
+          <div className="mx-stack">
+            <span className="mx-k">Not the live link</span>
             <h1>Wrong<br />door</h1>
             <p>
               This link has been retired or was mistyped. Ask Joey for the one
@@ -85,7 +85,7 @@ export default async function LeftoversPage({ params }: { params: Promise<{ toke
   const [played, runs] = await Promise.all([playedNames(league.id), readRuns(league.id)])
 
   return (
-    <div className="lo">
+    <div className="mx">
       <GameDeck
         token={token}
         leagueId={league.id}

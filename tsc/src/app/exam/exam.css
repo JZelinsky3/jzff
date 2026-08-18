@@ -6,48 +6,48 @@
    stock, warm near-black, cream ink, and gold reserved for whatever is
    being revealed so it never becomes a second body colour.
 
-   Everything is namespaced `lo-`. The page sits outside /league/[slug] and
+   Everything is namespaced `mx-`. The page sits outside /league/[slug] and
    carries no site chrome, so these rules own the whole viewport.
    ============================================================ */
 
-.lo {
-  --lo-bg: #0e0d0c;
-  --lo-ink: #f2ece0;
-  --lo-ink2: #9c9486;
-  --lo-ink3: #6b645b;
-  --lo-lab: #bdb2a1;
+.mx {
+  --mx-bg: #0e0d0c;
+  --mx-ink: #f2ece0;
+  --mx-ink2: #9c9486;
+  --mx-ink3: #6b645b;
+  --mx-lab: #bdb2a1;
   /* Two different edges, and the distinction matters on a real screen. The
      countdown cards are read as 2160px images where #2b2824 on near-black is a
      clean hairline; on a phone at actual size it disappears, and a row of
      names with invisible borders reads as bare text nobody knows is tappable.
-     So --lo-hair stays the STRUCTURAL rule (dividers, block borders) and
-     --lo-edge is for anything you can press. */
-  --lo-hair: #2b2824;
-  --lo-edge: #4c453c;
-  --lo-gold: #cfa54b;
-  --lo-gold2: #7d642c;
-  --lo-goldwash: rgba(207, 165, 75, 0.10);
-  --lo-track: #221f1c;
-  --lo-wash: rgba(242, 236, 224, 0.055);
-  --lo-miss: #c98b6b;
-  --lo-misswash: rgba(201, 139, 107, 0.10);
+     So --mx-hair stays the STRUCTURAL rule (dividers, block borders) and
+     --mx-edge is for anything you can press. */
+  --mx-hair: #2b2824;
+  --mx-edge: #4c453c;
+  --mx-gold: #cfa54b;
+  --mx-gold2: #7d642c;
+  --mx-goldwash: rgba(207, 165, 75, 0.10);
+  --mx-track: #221f1c;
+  --mx-wash: rgba(242, 236, 224, 0.055);
+  --mx-miss: #c98b6b;
+  --mx-misswash: rgba(201, 139, 107, 0.10);
 
-  --lo-disp: "Helvetica Neue", "HelveticaNeue", "Arial Narrow", sans-serif;
-  --lo-serif: Charter, "PT Serif", Georgia, serif;
-  --lo-mono: "PT Mono", ui-monospace, Menlo, monospace;
+  --mx-disp: "Helvetica Neue", "HelveticaNeue", "Arial Narrow", sans-serif;
+  --mx-serif: Charter, "PT Serif", Georgia, serif;
+  --mx-mono: "PT Mono", ui-monospace, Menlo, monospace;
 
   min-height: 100vh;
-  background: var(--lo-bg);
+  background: var(--mx-bg);
   background-image:
-    linear-gradient(158deg, var(--lo-wash) 0%, transparent 46%),
-    radial-gradient(70% 40% at 100% 100%, var(--lo-goldwash) 0%, transparent 70%);
+    linear-gradient(158deg, var(--mx-wash) 0%, transparent 46%),
+    radial-gradient(70% 40% at 100% 100%, var(--mx-goldwash) 0%, transparent 70%);
   background-attachment: fixed;
-  color: var(--lo-ink);
-  font-family: var(--lo-serif);
+  color: var(--mx-ink);
+  font-family: var(--mx-serif);
   -webkit-font-smoothing: antialiased;
 }
 
-.lo-shell {
+.mx-shell {
   max-width: 660px;
   margin: 0 auto;
   padding: 26px 22px 72px;
@@ -57,72 +57,72 @@
 }
 
 /* ---- masthead ---- */
-.lo-top {
+.mx-top {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--lo-gold2);
+  border-bottom: 1px solid var(--mx-gold2);
 }
-.lo-top .lo-lg {
-  font-family: var(--lo-disp);
+.mx-top .mx-lg {
+  font-family: var(--mx-disp);
   font-stretch: condensed;
   font-weight: 800;
   font-size: 21px;
   letter-spacing: 0.01em;
   text-transform: uppercase;
 }
-.lo-top .lo-rt {
-  font-family: var(--lo-mono);
+.mx-top .mx-rt {
+  font-family: var(--mx-mono);
   font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--lo-ink3);
+  color: var(--mx-ink3);
   font-variant-numeric: tabular-nums;
 }
 
 /* ---- the route rail, the countdown's own motif as progress ---- */
-.lo-rail { display: flex; align-items: center; height: 14px; }
-.lo-rail .lo-seg { flex: 1; display: flex; align-items: center; }
+.mx-rail { display: flex; align-items: center; height: 14px; }
+.mx-rail .mx-seg { flex: 1; display: flex; align-items: center; }
 /* The last stop carries no connector, so it must not hold a flex share
    either, or the strip ends in a gap where the line should have stopped. */
-.lo-rail .lo-seg:last-child { flex: none; }
-.lo-rail .lo-rl { flex: 1; height: 1px; background: var(--lo-hair); }
-.lo-rail .lo-seg.is-done .lo-rl { background: var(--lo-gold2); }
-.lo-rail i {
+.mx-rail .mx-seg:last-child { flex: none; }
+.mx-rail .mx-rl { flex: 1; height: 1px; background: var(--mx-hair); }
+.mx-rail .mx-seg.is-done .mx-rl { background: var(--mx-gold2); }
+.mx-rail i {
   display: block;
   width: 6px;
   height: 6px;
   border-radius: 50%;
   flex: none;
-  background: var(--lo-track);
-  box-shadow: 0 0 0 1px var(--lo-hair);
+  background: var(--mx-track);
+  box-shadow: 0 0 0 1px var(--mx-hair);
 }
-.lo-rail i.is-hit { background: var(--lo-gold); box-shadow: 0 0 0 1px var(--lo-gold); }
-.lo-rail i.is-miss { background: var(--lo-miss); box-shadow: 0 0 0 1px var(--lo-miss); }
-.lo-rail i.is-now {
+.mx-rail i.is-hit { background: var(--mx-gold); box-shadow: 0 0 0 1px var(--mx-gold); }
+.mx-rail i.is-miss { background: var(--mx-miss); box-shadow: 0 0 0 1px var(--mx-miss); }
+.mx-rail i.is-now {
   width: 10px;
   height: 10px;
-  background: var(--lo-gold);
+  background: var(--mx-gold);
   box-shadow:
-    0 0 0 1px var(--lo-gold),
+    0 0 0 1px var(--mx-gold),
     0 0 0 4px rgba(207, 165, 75, 0.16),
     0 0 12px rgba(207, 165, 75, 0.5);
 }
 
 /* ---- type ---- */
-.lo-k {
-  font-family: var(--lo-mono);
+.mx-k {
+  font-family: var(--mx-mono);
   font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--lo-gold);
+  color: var(--mx-gold);
 }
-.lo-k.is-dim { color: var(--lo-lab); }
+.mx-k.is-dim { color: var(--mx-lab); }
 .lo h1 {
   margin: 0;
-  font-family: var(--lo-disp);
+  font-family: var(--mx-disp);
   font-stretch: condensed;
   font-weight: 800;
   font-size: clamp(54px, 15vw, 92px);
@@ -133,7 +133,7 @@
 }
 .lo h2 {
   margin: 0;
-  font-family: var(--lo-disp);
+  font-family: var(--mx-disp);
   font-stretch: condensed;
   font-weight: 800;
   font-size: clamp(25px, 5.4vw, 33px);
@@ -145,166 +145,166 @@
   margin: 0;
   font-size: 17px;
   line-height: 1.5;
-  color: var(--lo-ink2);
+  color: var(--mx-ink2);
 }
-.lo p b { color: var(--lo-ink); font-weight: 700; }
-.lo-stack { display: flex; flex-direction: column; gap: 16px; }
+.lo p b { color: var(--mx-ink); font-weight: 700; }
+.mx-stack { display: flex; flex-direction: column; gap: 16px; }
 
 /* ---- controls ---- */
 .lo button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
-.lo :focus-visible { outline: 2px solid var(--lo-gold); outline-offset: 3px; }
-.lo-go {
+.lo :focus-visible { outline: 2px solid var(--mx-gold); outline-offset: 3px; }
+.mx-go {
   align-self: flex-start;
-  font-family: var(--lo-disp);
+  font-family: var(--mx-disp);
   font-stretch: condensed;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.02em;
   font-size: 19px;
   padding: 13px 30px;
-  background: var(--lo-gold);
+  background: var(--mx-gold);
   color: #141210;
   border-radius: 2px;
   transition: filter 0.15s ease;
 }
-.lo-go:hover { filter: brightness(1.09); }
-.lo-go:disabled { opacity: 0.4; cursor: default; filter: none; }
-.lo-ghost {
+.mx-go:hover { filter: brightness(1.09); }
+.mx-go:disabled { opacity: 0.4; cursor: default; filter: none; }
+.mx-ghost {
   align-self: flex-start;
-  font-family: var(--lo-mono);
+  font-family: var(--mx-mono);
   font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--lo-lab);
+  color: var(--mx-lab);
   padding: 11px 20px;
-  border: 1px solid var(--lo-hair);
+  border: 1px solid var(--mx-hair);
   border-radius: 2px;
   transition: border-color 0.15s ease, color 0.15s ease;
 }
-.lo-ghost:hover { border-color: var(--lo-gold2); color: var(--lo-ink); }
+.mx-ghost:hover { border-color: var(--mx-gold2); color: var(--mx-ink); }
 
 /* ---- claiming a name ----
    Before a single answer, deliberately: the answers are revealed as you go,
    so a run that picked its name at the end could be played once to read them
    and filed again as somebody else. */
-.lo-names { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-@media (max-width: 460px) { .lo-names { grid-template-columns: repeat(2, 1fr); } }
-.lo-name {
+.mx-names { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+@media (max-width: 460px) { .mx-names { grid-template-columns: repeat(2, 1fr); } }
+.mx-name {
   padding: 14px 10px;
-  border: 1px solid var(--lo-edge);
+  border: 1px solid var(--mx-edge);
   border-radius: 2px;
   background: rgba(242, 236, 224, 0.02);
-  font-family: var(--lo-disp);
+  font-family: var(--mx-disp);
   font-stretch: condensed;
   font-weight: 800;
   font-size: 21px;
   transition: border-color 0.14s ease, background 0.14s ease;
 }
-.lo-name:hover:not(:disabled) { border-color: var(--lo-gold2); background: rgba(242, 236, 224, 0.05); }
-.lo-name[aria-pressed='true'] { border-color: var(--lo-gold); background: var(--lo-goldwash); }
-.lo-name:disabled {
+.mx-name:hover:not(:disabled) { border-color: var(--mx-gold2); background: rgba(242, 236, 224, 0.05); }
+.mx-name[aria-pressed='true'] { border-color: var(--mx-gold); background: var(--mx-goldwash); }
+.mx-name:disabled {
   cursor: default;
-  color: var(--lo-ink3);
+  color: var(--mx-ink3);
   text-decoration: line-through;
-  text-decoration-color: var(--lo-hair);
+  text-decoration-color: var(--mx-hair);
 }
 
 /* ---- a question ---- */
-.lo-qhead { display: flex; align-items: center; gap: 14px; }
-.lo-qhead .lo-n {
-  font-family: var(--lo-disp);
+.mx-qhead { display: flex; align-items: center; gap: 14px; }
+.mx-qhead .mx-n {
+  font-family: var(--mx-disp);
   font-stretch: condensed;
   font-weight: 800;
   font-size: 44px;
   line-height: 0.8;
-  color: var(--lo-gold);
+  color: var(--mx-gold);
   font-variant-numeric: tabular-nums;
   /* Condensed 800 leaves a sliver of space above the digits, so centring on
      the box hangs the chip low. Nudge to the numeral's optical centre. */
   margin-bottom: 2px;
 }
-.lo-qhead .lo-tag {
-  font-family: var(--lo-mono);
+.mx-qhead .mx-tag {
+  font-family: var(--mx-mono);
   font-size: 10px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--lo-lab);
-  border: 1px solid var(--lo-hair);
+  color: var(--mx-lab);
+  border: 1px solid var(--mx-hair);
   padding: 4px 9px;
   border-radius: 2px;
 }
-.lo-opts { display: flex; flex-direction: column; gap: 9px; }
-.lo-opt {
+.mx-opts { display: flex; flex-direction: column; gap: 9px; }
+.mx-opt {
   display: flex;
   align-items: center;
   gap: 14px;
   width: 100%;
   text-align: left;
   padding: 15px 18px;
-  border: 1px solid var(--lo-edge);
+  border: 1px solid var(--mx-edge);
   border-radius: 2px;
   background: rgba(242, 236, 224, 0.02);
-  font-family: var(--lo-disp);
+  font-family: var(--mx-disp);
   font-stretch: condensed;
   font-weight: 800;
   font-size: 23px;
   transition: border-color 0.14s ease, background 0.14s ease;
 }
-.lo-opt:hover:not(:disabled) { border-color: var(--lo-gold2); background: rgba(242, 236, 224, 0.05); }
-.lo-opt:disabled { cursor: default; }
-.lo-opt .lo-mk {
+.mx-opt:hover:not(:disabled) { border-color: var(--mx-gold2); background: rgba(242, 236, 224, 0.05); }
+.mx-opt:disabled { cursor: default; }
+.mx-opt .mx-mk {
   width: 20px;
   height: 20px;
   flex: none;
   border-radius: 50%;
-  border: 1px solid var(--lo-edge);
+  border: 1px solid var(--mx-edge);
   display: grid;
   place-items: center;
 }
 /* `display: block` is the whole fix for a glyph that sits low in its circle:
    an inline svg is aligned on the text baseline, which leaves descender room
    under it that grid centring then splits evenly. */
-.lo-opt .lo-mk svg { display: block; width: 11px; height: 11px; }
-.lo-opt.is-right { border-color: var(--lo-gold); background: var(--lo-goldwash); }
-.lo-opt.is-right .lo-mk { border-color: var(--lo-gold); background: var(--lo-gold); }
-.lo-opt.is-right .lo-mk svg { stroke: #141210; }
-.lo-opt.is-wrong { border-color: var(--lo-miss); background: var(--lo-misswash); color: var(--lo-miss); }
-.lo-opt.is-wrong .lo-mk { border-color: var(--lo-miss); }
-.lo-opt.is-wrong .lo-mk svg { stroke: var(--lo-miss); }
-.lo-opt.is-faded { opacity: 0.42; }
+.mx-opt .mx-mk svg { display: block; width: 11px; height: 11px; }
+.mx-opt.is-right { border-color: var(--mx-gold); background: var(--mx-goldwash); }
+.mx-opt.is-right .mx-mk { border-color: var(--mx-gold); background: var(--mx-gold); }
+.mx-opt.is-right .mx-mk svg { stroke: #141210; }
+.mx-opt.is-wrong { border-color: var(--mx-miss); background: var(--mx-misswash); color: var(--mx-miss); }
+.mx-opt.is-wrong .mx-mk { border-color: var(--mx-miss); }
+.mx-opt.is-wrong .mx-mk svg { stroke: var(--mx-miss); }
+.mx-opt.is-faded { opacity: 0.42; }
 /* Picked but not committed. Nothing is scored until the button is pressed, so
    this state has to look chosen without looking graded: the gold edge and a
    filled ring, but no tick, because a tick would read as "correct". */
-.lo-opt.is-pick { border-color: var(--lo-gold); background: var(--lo-goldwash); }
-.lo-opt.is-pick .lo-mk { border-color: var(--lo-gold); }
-.lo-opt.is-pick .lo-mk::after {
+.mx-opt.is-pick { border-color: var(--mx-gold); background: var(--mx-goldwash); }
+.mx-opt.is-pick .mx-mk { border-color: var(--mx-gold); }
+.mx-opt.is-pick .mx-mk::after {
   content: '';
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--lo-gold);
+  background: var(--mx-gold);
 }
 
 /* ---- while they are choosing ----
    The selection step was the bland one: a question, four names, nothing else
    on screen. This says which corner of seven years the number came out of,
    which gives somebody something to reason from without narrowing the four. */
-.lo-source {
-  font-family: var(--lo-mono);
+.mx-source {
+  font-family: var(--mx-mono);
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--lo-gold2);
+  color: var(--mx-gold2);
 }
 /* The countdown's own giant ghosted numeral, bled off the right edge. Same
    motif, so a screenshot of this page is placeable in the series. */
-.lo-stage { position: relative; }
-.lo-ghostnum {
+.mx-stage { position: relative; }
+.mx-ghostnum {
   position: absolute;
   right: -26px;
   top: -74px;
   z-index: 0;
-  font-family: var(--lo-disp);
+  font-family: var(--mx-disp);
   font-stretch: condensed;
   font-weight: 800;
   font-size: 260px;
@@ -314,276 +314,276 @@
   pointer-events: none;
   user-select: none;
 }
-.lo-stage > *:not(.lo-ghostnum) { position: relative; z-index: 1; }
+.mx-stage > *:not(.mx-ghostnum) { position: relative; z-index: 1; }
 
 /* ---- back and next ---- */
-.lo-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.lo-back {
-  font-family: var(--lo-mono);
+.mx-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mx-back {
+  font-family: var(--mx-mono);
   font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--lo-lab);
+  color: var(--mx-lab);
   padding: 11px 18px;
-  border: 1px solid var(--lo-edge);
+  border: 1px solid var(--mx-edge);
   border-radius: 2px;
   transition: border-color 0.15s ease, color 0.15s ease;
 }
-.lo-back:hover { border-color: var(--lo-gold2); color: var(--lo-ink); }
-.lo-back:disabled { opacity: 0.35; cursor: default; }
+.mx-back:hover { border-color: var(--mx-gold2); color: var(--mx-ink); }
+.mx-back:disabled { opacity: 0.35; cursor: default; }
 
 /* ---- the answer ---- */
-.lo-ans {
+.mx-ans {
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding-top: 20px;
-  border-top: 1px solid var(--lo-hair);
+  border-top: 1px solid var(--mx-hair);
 }
-.lo-verdict {
-  font-family: var(--lo-mono);
+.mx-verdict {
+  font-family: var(--mx-mono);
   font-size: 12px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
 }
-.lo-verdict.is-y { color: var(--lo-gold); }
-.lo-verdict.is-n { color: var(--lo-miss); }
+.mx-verdict.is-y { color: var(--mx-gold); }
+.mx-verdict.is-n { color: var(--mx-miss); }
 @media (prefers-reduced-motion: no-preference) {
-  .lo-ans { animation: lo-rise 0.3s ease both; }
-  @keyframes lo-rise {
+  .mx-ans { animation: mx-rise 0.3s ease both; }
+  @keyframes mx-rise {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: none; }
   }
 }
 
 /* ---- the result ---- */
-.lo-score { display: flex; align-items: baseline; gap: 16px; }
-.lo-score .lo-big {
-  font-family: var(--lo-disp);
+.mx-score { display: flex; align-items: baseline; gap: 16px; }
+.mx-score .mx-big {
+  font-family: var(--mx-disp);
   font-stretch: condensed;
   font-weight: 800;
   font-size: clamp(92px, 25vw, 146px);
   line-height: 0.78;
   letter-spacing: -0.045em;
-  color: var(--lo-gold);
+  color: var(--mx-gold);
   font-variant-numeric: tabular-nums;
 }
-.lo-score .lo-of {
-  font-family: var(--lo-disp);
+.mx-score .mx-of {
+  font-family: var(--mx-disp);
   font-stretch: condensed;
   font-weight: 800;
   font-size: 30px;
-  color: var(--lo-ink3);
+  color: var(--mx-ink3);
 }
-.lo-splits {
+.mx-splits {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1px;
-  background: var(--lo-hair);
-  border: 1px solid var(--lo-hair);
+  background: var(--mx-hair);
+  border: 1px solid var(--mx-hair);
   border-radius: 2px;
   overflow: hidden;
 }
-.lo-splits > div {
-  background: var(--lo-bg);
+.mx-splits > div {
+  background: var(--mx-bg);
   padding: 15px 16px;
   display: flex;
   flex-direction: column;
   gap: 7px;
 }
-.lo-splits .lo-v {
-  font-family: var(--lo-disp);
+.mx-splits .mx-v {
+  font-family: var(--mx-disp);
   font-stretch: condensed;
   font-weight: 800;
   font-size: 30px;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
-.lo-splits .lo-v span { color: var(--lo-ink3); font-size: 19px; }
-.lo-splits .lo-l {
-  font-family: var(--lo-mono);
+.mx-splits .mx-v span { color: var(--mx-ink3); font-size: 19px; }
+.mx-splits .mx-l {
+  font-family: var(--mx-mono);
   font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--lo-lab);
+  color: var(--mx-lab);
 }
 
 /* ---- the board ---- */
-.lo-board { display: flex; flex-direction: column; border-top: 1px solid var(--lo-hair); }
-.lo-brow {
+.mx-board { display: flex; flex-direction: column; border-top: 1px solid var(--mx-hair); }
+.mx-brow {
   display: flex;
   align-items: baseline;
   gap: 14px;
   padding: 13px 0;
-  border-bottom: 1px solid var(--lo-hair);
+  border-bottom: 1px solid var(--mx-hair);
 }
-.lo-brow .lo-pos {
-  font-family: var(--lo-mono);
+.mx-brow .mx-pos {
+  font-family: var(--mx-mono);
   font-size: 12px;
-  color: var(--lo-ink3);
+  color: var(--mx-ink3);
   width: 24px;
   flex: none;
   font-variant-numeric: tabular-nums;
 }
-.lo-brow .lo-nm {
-  font-family: var(--lo-disp);
+.mx-brow .mx-nm {
+  font-family: var(--mx-disp);
   font-stretch: condensed;
   font-weight: 800;
   font-size: 22px;
   flex: 1;
 }
-.lo-brow .lo-sc {
-  font-family: var(--lo-disp);
+.mx-brow .mx-sc {
+  font-family: var(--mx-disp);
   font-stretch: condensed;
   font-weight: 800;
   font-size: 22px;
-  color: var(--lo-gold);
+  color: var(--mx-gold);
   font-variant-numeric: tabular-nums;
 }
-.lo-brow.is-me {
-  background: var(--lo-goldwash);
+.mx-brow.is-me {
+  background: var(--mx-goldwash);
   margin: 0 -12px;
   padding-left: 12px;
   padding-right: 12px;
 }
-.lo-waiting {
-  font-family: var(--lo-mono);
+.mx-waiting {
+  font-family: var(--mx-mono);
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--lo-ink3);
+  color: var(--mx-ink3);
   padding: 14px 0;
 }
 
 /* ---- every answer, afterwards ---- */
-.lo-review { display: flex; flex-direction: column; border-top: 1px solid var(--lo-hair); }
-.lo-row { display: flex; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--lo-hair); }
-.lo-row .lo-st { width: 22px; flex: none; padding-top: 3px; color: var(--lo-gold); }
-.lo-row.is-no .lo-st { color: var(--lo-miss); }
-.lo-row .lo-st svg { width: 13px; height: 13px; }
-.lo-row .lo-bd { display: flex; flex-direction: column; gap: 7px; }
-.lo-row .lo-q { font-size: 15px; color: var(--lo-ink2); line-height: 1.45; }
-.lo-row .lo-a {
-  font-family: var(--lo-disp);
+.mx-review { display: flex; flex-direction: column; border-top: 1px solid var(--mx-hair); }
+.mx-row { display: flex; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--mx-hair); }
+.mx-row .mx-st { width: 22px; flex: none; padding-top: 3px; color: var(--mx-gold); }
+.mx-row.is-no .mx-st { color: var(--mx-miss); }
+.mx-row .mx-st svg { width: 13px; height: 13px; }
+.mx-row .mx-bd { display: flex; flex-direction: column; gap: 7px; }
+.mx-row .mx-q { font-size: 15px; color: var(--mx-ink2); line-height: 1.45; }
+.mx-row .mx-a {
+  font-family: var(--mx-disp);
   font-stretch: condensed;
   font-weight: 800;
   font-size: 20px;
-  color: var(--lo-ink);
+  color: var(--mx-ink);
 }
-.lo-row.is-no .lo-a { color: var(--lo-miss); }
-.lo-row .lo-a em {
-  color: var(--lo-ink3);
+.mx-row.is-no .mx-a { color: var(--mx-miss); }
+.mx-row .mx-a em {
+  color: var(--mx-ink3);
   font-weight: 400;
   font-style: normal;
-  font-family: var(--lo-serif);
+  font-family: var(--mx-serif);
   font-size: 15px;
 }
-.lo-row .lo-why { font-size: 14px; line-height: 1.5; color: var(--lo-ink3); }
-.lo-row .lo-why b { color: var(--lo-lab); font-weight: 700; }
-.lo-row .lo-room {
-  font-family: var(--lo-mono);
+.mx-row .mx-why { font-size: 14px; line-height: 1.5; color: var(--mx-ink3); }
+.mx-row .mx-why b { color: var(--mx-lab); font-weight: 700; }
+.mx-row .mx-room {
+  font-family: var(--mx-mono);
   font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--lo-gold2);
+  color: var(--mx-gold2);
 }
 
 /* ---- the full twelve, per stat ----
    Most people care about their own number more than they care about the answer,
    so every result row opens into the whole league on that measure. */
-.lo-more {
+.mx-more {
   align-self: flex-start;
-  font-family: var(--lo-mono);
+  font-family: var(--mx-mono);
   font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--lo-lab);
+  color: var(--mx-lab);
   padding: 7px 12px;
-  border: 1px solid var(--lo-edge);
+  border: 1px solid var(--mx-edge);
   border-radius: 2px;
   margin-top: 2px;
 }
-.lo-more:hover { border-color: var(--lo-gold2); color: var(--lo-ink); }
-.lo-table {
+.mx-more:hover { border-color: var(--mx-gold2); color: var(--mx-ink); }
+.mx-table {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--lo-hair);
+  border: 1px solid var(--mx-hair);
   border-radius: 2px;
   margin-top: 4px;
   overflow: hidden;
 }
-.lo-table .lo-thead {
+.mx-table .mx-thead {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 10px;
   padding: 11px 13px;
-  border-bottom: 1px solid var(--lo-hair);
+  border-bottom: 1px solid var(--mx-hair);
   background: rgba(242, 236, 224, 0.02);
 }
-.lo-table .lo-thead span {
-  font-family: var(--lo-mono);
+.mx-table .mx-thead span {
+  font-family: var(--mx-mono);
   font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--lo-lab);
+  color: var(--mx-lab);
 }
-.lo-trow {
+.mx-trow {
   display: flex;
   align-items: baseline;
   gap: 10px;
   padding: 9px 13px;
 }
-.lo-trow + .lo-trow { border-top: 1px solid rgba(43, 40, 36, 0.7); }
-.lo-trow .lo-tn {
+.mx-trow + .mx-trow { border-top: 1px solid rgba(43, 40, 36, 0.7); }
+.mx-trow .mx-tn {
   flex: 1;
-  font-family: var(--lo-disp);
+  font-family: var(--mx-disp);
   font-stretch: condensed;
   font-weight: 800;
   font-size: 18px;
-  color: var(--lo-ink2);
+  color: var(--mx-ink2);
 }
-.lo-trow .lo-tv {
-  font-family: var(--lo-mono);
+.mx-trow .mx-tv {
+  font-family: var(--mx-mono);
   font-size: 13px;
-  color: var(--lo-ink2);
+  color: var(--mx-ink2);
   font-variant-numeric: tabular-nums;
 }
-.lo-trow .lo-tt {
-  font-family: var(--lo-mono);
+.mx-trow .mx-tt {
+  font-family: var(--mx-mono);
   font-size: 9px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--lo-gold2);
+  color: var(--mx-gold2);
 }
 /* The answer's own line, and the reader's. Both get called out, and when they
    are the same line it just reads as one. */
-.lo-trow.is-answer .lo-tn,
-.lo-trow.is-answer .lo-tv { color: var(--lo-gold); }
-.lo-trow.is-you { background: var(--lo-goldwash); }
-.lo-trow.is-you .lo-tn,
-.lo-trow.is-you .lo-tv { color: var(--lo-ink); }
-.lo-trow .lo-you {
-  font-family: var(--lo-mono);
+.mx-trow.is-answer .mx-tn,
+.mx-trow.is-answer .mx-tv { color: var(--mx-gold); }
+.mx-trow.is-you { background: var(--mx-goldwash); }
+.mx-trow.is-you .mx-tn,
+.mx-trow.is-you .mx-tv { color: var(--mx-ink); }
+.mx-trow .mx-you {
+  font-family: var(--mx-mono);
   font-size: 9px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--lo-gold);
+  color: var(--mx-gold);
 }
 
-.lo-foot { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-.lo-said {
-  font-family: var(--lo-mono);
+.mx-foot { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.mx-said {
+  font-family: var(--mx-mono);
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--lo-gold);
+  color: var(--mx-gold);
 }
-.lo-err {
-  font-family: var(--lo-mono);
+.mx-err {
+  font-family: var(--mx-mono);
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--lo-miss);
+  color: var(--mx-miss);
   min-height: 14px;
 }

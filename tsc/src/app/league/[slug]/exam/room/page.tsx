@@ -2,21 +2,21 @@ import { headers } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
-import { readLeftoversToken, readRuns } from '@/app/leftovers/actions'
+import { readExamToken, readRuns } from '@/app/exam/actions'
 import { RoomView } from './room-view'
-import '@/app/leftovers/leftovers.css'
+import '@/app/exam/exam.css'
 import './room.css'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = { title: 'Leftovers room · PA Milk Society' }
+export const metadata = { title: 'Exam room · PA Milk Society' }
 
-export default async function LeftoversRoomPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ExamRoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect(`/signin?next=/league/${slug}/leftovers/room`)
+  if (!user) redirect(`/signin?next=/league/${slug}/exam/room`)
 
   const { data: league } = await supabase
     .from('leagues')
@@ -40,7 +40,7 @@ export default async function LeftoversRoomPage({ params }: { params: Promise<{ 
   if (!allowed) allowed = await isSiteAdmin(user.id)
   if (!allowed) notFound()
 
-  const [token, runs] = await Promise.all([readLeftoversToken(league.id), readRuns(league.id)])
+  const [token, runs] = await Promise.all([readExamToken(league.id), readRuns(league.id)])
 
   // Build the shareable link server-side rather than reading window.location
   // on the client, so the URL is in the HTML from the start and copies clean.
