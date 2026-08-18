@@ -474,12 +474,15 @@ function ReviewRow({
   const ok = isCorrect(q, mine)
   return (
     <div className={`mx-row${ok ? '' : ' is-no'}`}>
-      <span className="mx-st">{ok ? <Tick /> : <Cross />}</span>
+      {/* The left column carries the number and the mark, stacked. It was a
+          22px sliver holding one icon, with the number squeezed inline ahead
+          of the question text where it read as part of the sentence. */}
+      <span className="mx-idx">
+        <span className="mx-qn">{String(index + 1).padStart(2, '0')}</span>
+        <span className="mx-st">{ok ? <Tick /> : <Cross />}</span>
+      </span>
       <span className="mx-bd">
-        <span className="mx-q">
-          <span className="mx-qn">{String(index + 1).padStart(2, '0')}</span>
-          {q.q}
-        </span>
+        <span className="mx-q">{q.q}</span>
         <span className="mx-a">
           {q.answers.join(', ')}
           {!ok && <em> you said {mine.length ? mine.join(', ') : 'nothing'}</em>}

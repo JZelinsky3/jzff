@@ -586,19 +586,33 @@ body:has(.mx) .site-grain { display: none; }
 /* ---- every answer, afterwards ---- */
 .mx-review { display: flex; flex-direction: column; border-top: 1px solid var(--mx-hair); }
 .mx-row { display: flex; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--mx-hair); }
-.mx-row .mx-st { width: 22px; flex: none; padding-top: 3px; color: var(--mx-gold); }
+/* A real left column: the question's number over its mark, on the rule the
+   body text starts from. */
+.mx-row .mx-idx {
+  width: 42px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding-top: 1px;
+}
+.mx-row .mx-st { color: var(--mx-gold); display: flex; }
 .mx-row.is-no .mx-st { color: var(--mx-miss); }
-.mx-row .mx-st svg { width: 13px; height: 13px; }
+.mx-row .mx-st svg { display: block; width: 13px; height: 13px; }
 .mx-row .mx-bd { display: flex; flex-direction: column; gap: 7px; }
 .mx-row .mx-q { font-size: 15px; color: var(--mx-ink2); line-height: 1.45; }
-/* The question's own number, so a row read halfway down the results still
-   says which of the twenty it is. */
+/* Set in the display face at a size that can be scanned down the page, and
+   left neutral: the mark under it already says right or wrong, so colouring
+   the number would say it twice. */
 .mx-row .mx-qn {
-  font-family: var(--mx-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  color: var(--mx-gold2);
-  margin-right: 8px;
+  font-family: var(--mx-disp);
+  font-stretch: condensed;
+  font-weight: 800;
+  font-size: 27px;
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+  color: var(--mx-ink3);
   font-variant-numeric: tabular-nums;
 }
 .mx-row .mx-a {
