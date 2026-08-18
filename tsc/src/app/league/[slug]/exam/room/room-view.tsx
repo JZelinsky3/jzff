@@ -81,15 +81,19 @@ export function RoomView({
                     </button>
                   </>
                 ) : (
-                  <button type="button" className="mx-ghost" onClick={() => setConfirmRotate(true)}>
-                    Mint a new link
+                  // "Mint a new link" reads like "show me the link" when the
+                  // link is what you came for, and pressing it rotates the
+                  // token and kills the URL already sitting in the group chat.
+                  // The label now says what it does to the old one.
+                  <button type="button" className="mxr-danger" onClick={() => setConfirmRotate(true)}>
+                    Replace this link
                   </button>
                 )}
               </div>
               <p className="mxr-note">
-                Anybody holding this can play once, under a name nobody has used
-                yet. Minting a new one kills this link and every run already
-                filed stays exactly where it is.
+                Anybody holding this link can play once, under a name nobody has
+                used yet. Replacing it breaks the link you have already sent and
+                cannot be undone; runs already filed are untouched.
               </p>
             </>
           ) : (

@@ -321,19 +321,24 @@ export function standings(runs: RunRecord[]): { pos: number; name: string; score
 // Each definition matches the claim its question makes. Career splits count
 // every game; anything about a week's standing in the league is regular season
 // only, because a playoff week has a different field in it.
+//
+// The ROWS are generated. The `label`, `topTag` and `botTag` strings are COPY
+// and are edited here by hand: regenerating rewrites the numbers, not the
+// words. Keep them plain and specific enough to stand alone under a table,
+// because that is the only context they get.
 export const TABLES: Record<number, StatTable> = {
   0: {
-    label: "Wins out of the bottom half", sort: 'desc',
+    label: "Wins from the bottom half", sort: 'desc',
     topTag: "most", botTag: "fewest",
     rows: [['Cat', "10", 10], ['Charlie', "21", 21], ['Chris', "9", 9], ['Connie', "13", 13], ['Evan', "4", 4], ['Isaac', "10", 10], ['Joey', "7", 7], ['Kyle', "7", 7], ['Luke', "11", 11], ['Mason', "10", 10], ['Ricci', "10", 10], ['Sean', "9", 9]],
   },
   1: {
-    label: "Men with a winning record on him", sort: 'desc',
+    label: "Opponents who own him", sort: 'desc',
     topTag: "most", botTag: "fewest",
     rows: [['Cat', "6", 6], ['Charlie', "6", 6], ['Chris', "2", 2], ['Connie', "4", 4], ['Evan', "6", 6], ['Isaac', "1", 1], ['Joey', "4", 4], ['Kyle', "5", 5], ['Luke', "9", 9], ['Mason', "2", 2], ['Ricci', "5", 5], ['Sean', "3", 3]],
   },
   2: {
-    label: "Kickers and defences before rd 13", sort: 'desc',
+    label: "Kickers and defences before round 13", sort: 'desc',
     topTag: "most", botTag: "none at all",
     rows: [['Cat', "5", 5], ['Charlie', "7", 7], ['Chris', "1", 1], ['Connie', "7", 7], ['Evan', "3", 3], ['Isaac', "3", 3], ['Joey', "0", 0], ['Kyle', "5", 5], ['Luke', "7", 7], ['Mason', "3", 3], ['Ricci', "4", 4], ['Sean', "3", 3]],
   },
@@ -348,7 +353,7 @@ export const TABLES: Record<number, StatTable> = {
     rows: [['Cat', "16-20", 0.4444], ['Charlie', "18-16", 0.5294], ['Chris', "21-20", 0.5122], ['Connie', "24-18", 0.5714], ['Evan', "8-12", 0.4], ['Isaac', "28-18", 0.6087], ['Joey', "23-20", 0.5349], ['Kyle', "12-19", 0.3871], ['Luke', "19-19", 0.5], ['Mason', "22-25", 0.4681], ['Ricci', "23-20", 0.5349], ['Sean', "25-12", 0.6757]],
   },
   5: {
-    label: "First six rounds startable", sort: 'desc',
+    label: "First six rounds, startable", sort: 'desc',
     topTag: "best", botTag: "worst",
     rows: [['Cat', "50%", 50], ['Charlie', "55%", 55], ['Chris', "69%", 69], ['Connie', "52%", 52], ['Evan', "61%", 61], ['Isaac', "43%", 43], ['Joey', "55%", 55], ['Kyle', "46%", 46], ['Luke', "53%", 53], ['Mason', "55%", 55], ['Ricci', "71%", 71], ['Sean', "43%", 43]],
   },
@@ -363,7 +368,7 @@ export const TABLES: Record<number, StatTable> = {
     rows: [['Cat', "16-33", 0.3265], ['Charlie', "14-33", 0.2979], ['Chris', "26-27", 0.4906], ['Connie', "19-32", 0.3725], ['Evan', "7-18", 0.28], ['Isaac', "23-22", 0.5111], ['Joey', "27-28", 0.4909], ['Kyle', "23-31", 0.4259], ['Luke', "17-32", 0.3469], ['Mason', "21-28", 0.4286], ['Ricci', "17-30", 0.3617], ['Sean', "22-26", 0.4583]],
   },
   8: {
-    label: "Every pick he has made, startable", sort: 'desc',
+    label: "Every pick, startable", sort: 'desc',
     topTag: "best", botTag: "worst",
     rows: [['Cat', "30%", 30], ['Charlie', "28%", 28], ['Chris', "39%", 39], ['Connie', "30%", 30], ['Evan', "33%", 33], ['Isaac', "23%", 23], ['Joey', "34%", 34], ['Kyle', "31%", 31], ['Luke', "30%", 30], ['Mason', "34%", 34], ['Ricci', "33%", 33], ['Sean', "29%", 29]],
   },
@@ -388,12 +393,12 @@ export const TABLES: Record<number, StatTable> = {
     rows: [['Cat', "22-3", 0.88], ['Charlie', "22-3", 0.88], ['Chris', "23-2", 0.92], ['Connie', "21-4", 0.84], ['Evan', "5-0", 1.0], ['Isaac', "16-1", 0.9412], ['Joey', "12-0", 1.0], ['Kyle', "17-3", 0.85], ['Luke', "16-1", 0.9412], ['Mason', "23-3", 0.8846], ['Ricci', "20-1", 0.9524], ['Sean', "20-3", 0.8696]],
   },
   13: {
-    label: "Most times he drafted one player", sort: 'desc',
+    label: "Most times he took the same player", sort: 'desc',
     topTag: "most", botTag: "fewest",
     rows: [['Cat', "2", 2], ['Charlie', "3", 3], ['Chris', "3", 3], ['Connie', "3", 3], ['Evan', "2", 2], ['Isaac', "3", 3], ['Joey', "3", 3], ['Kyle', "3", 3], ['Luke', "3", 3], ['Mason', "4", 4], ['Ricci', "2", 2], ['Sean', "3", 3]],
   },
   14: {
-    label: "Times he has been the 1 seed", sort: 'desc',
+    label: "Times he was the 1 seed", sort: 'desc',
     topTag: "most", botTag: "never",
     rows: [['Cat', "0", 0], ['Charlie', "0", 0], ['Chris', "0", 0], ['Connie', "0", 0], ['Evan', "0", 0], ['Isaac', "1", 1], ['Joey', "1", 1], ['Kyle', "0", 0], ['Luke', "0", 0], ['Mason', "2", 2], ['Ricci', "0", 0], ['Sean', "2", 2]],
   },

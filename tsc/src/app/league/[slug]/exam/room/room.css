@@ -33,3 +33,19 @@
   color: var(--mx-gold2);
   font-variant-numeric: tabular-nums;
 }
+
+/* Replacing the link is destructive and irreversible, so it does not get to
+   look like the other ghost buttons. It reads as the exit it is. */
+.mxr-danger {
+  font-family: var(--mx-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mx-miss);
+  padding: 10px 16px;
+  border: 1px solid rgba(201, 139, 107, 0.4);
+  border-radius: 2px;
+  background: var(--mx-misswash);
+  transition: border-color 0.15s ease;
+}
+.mxr-danger:hover { border-color: var(--mx-miss); }

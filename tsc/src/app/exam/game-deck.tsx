@@ -263,12 +263,12 @@ export function GameDeck({
           to score the question instantly, which is a bad way to lose one. */}
       {!answered && (
         <div className="mx-nav">
-          <button type="button" className="mx-go" disabled={!pending} onClick={commit}>
-            {pending ? 'Confirm' : 'Pick a name'}
-          </button>
           {i > 0 && (
             <button type="button" className="mx-back" onClick={() => goto(i - 1)}>Back</button>
           )}
+          <button type="button" className="mx-go" disabled={!pending} onClick={commit}>
+            {pending ? 'Confirm' : 'Pick a name'}
+          </button>
         </div>
       )}
 
@@ -284,15 +284,15 @@ export function GameDeck({
           <Twelve index={i} you={name} />
           <span className="mx-err">{err}</span>
           <div className="mx-nav">
+            {i > 0 && (
+              <button type="button" className="mx-back" onClick={() => goto(i - 1)}>Back</button>
+            )}
             {last ? (
               <button type="button" className="mx-go" disabled={busy || !allAnswered} onClick={file}>
                 {busy ? 'Filing' : 'See the score'}
               </button>
             ) : (
               <button type="button" className="mx-go" onClick={() => goto(i + 1)}>Next</button>
-            )}
-            {i > 0 && (
-              <button type="button" className="mx-back" onClick={() => goto(i - 1)}>Back</button>
             )}
           </div>
         </div>
@@ -344,7 +344,9 @@ function Twelve({ index, you }: { index: number; you: string | null }) {
   return (
     <>
       <button type="button" className="mx-more" onClick={() => setOpen(!open)}>
-        {open ? 'Hide the twelve' : mine ? `All twelve · you ${mine[1]}` : 'All twelve'}
+        <span className="mx-caret">{open ? '\u25B2' : '\u25BC'}</span>
+        <span>{open ? 'Hide all twelve' : 'All twelve'}</span>
+        {mine && !open && <span className="mx-mine">You {mine[1]}</span>}
       </button>
       {open && <TwelveTable table={t} rows={rows} you={you} index={index} />}
     </>
@@ -364,7 +366,6 @@ function TwelveTable({
     <div className="mx-table">
       <div className="mx-thead">
         <span>{table.label}</span>
-        <span>{rows.length} shown</span>
       </div>
       {rows.map((r, n) => {
         // Only tag an end when it is genuinely on its own out there. Two men
