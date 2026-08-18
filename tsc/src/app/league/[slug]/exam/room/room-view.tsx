@@ -1,10 +1,12 @@
 'use client'
 
 import { useMemo, useState, useTransition } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { ensureExamToken, reopenRun } from '@/app/exam/actions'
 import {
-  QUESTIONS, ROSTER, VEINS, isMulti, pickCount, roomSplit, standings, veinLabel,
+  INITIALS, QUESTIONS, ROSTER, VEINS, faceSrc, isMulti, pickCount, roomSplit,
+  standings, veinLabel,
   type RunRecord,
 } from '@/lib/milkExam'
 
@@ -222,6 +224,26 @@ export function RoomView({
             </div>
           </div>
         )}
+
+        {/* ---- the twelve faces ---- */}
+        {/* The results page only ever shows the faces of whoever voted for a
+            given option, a few at a time and never all twelve together. This
+            is the whole set at the size they actually render, so a bad crop
+            can be caught on a phone before the link goes out. */}
+        <div className="mx-stack" style={{ gap: 10 }}>
+          <span className="mx-k is-dim">The faces</span>
+          <div className="mxr-faces">
+            {ROSTER.map((n) => (
+              <span key={n} className="mxr-face">
+                <span className="mx-chip" title={n}>
+                  <Image src={faceSrc(n)} alt={n} width={84} height={84} />
+                  <span className="mx-chip-i">{INITIALS[n] ?? n.slice(0, 2).toUpperCase()}</span>
+                </span>
+                <span className="mxr-face-n">{n}</span>
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )

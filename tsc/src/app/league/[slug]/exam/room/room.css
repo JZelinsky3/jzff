@@ -68,3 +68,18 @@
 }
 .mxr-reopen:hover { border-color: var(--mx-edge); color: var(--mx-lab); }
 .mxr-tiny { font-size: 9px; padding: 5px 9px; letter-spacing: 0.14em; }
+
+/* The full set of face chips. The chip itself is `.mx-chip` from exam.css at
+   the exact size the results page draws it, untouched: the point of this block
+   is to see the real thing, so anything here that resized it would be a lie. */
+.mxr-faces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 14px;
+}
+.mxr-face { display: flex; align-items: center; gap: 7px; }
+.mxr-face-n {
+  font-family: var(--mx-mono);
+  font-size: 11px;
+  color: var(--mx-ink3);
+}
