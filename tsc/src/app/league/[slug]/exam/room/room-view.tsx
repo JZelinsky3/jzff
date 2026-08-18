@@ -4,7 +4,8 @@ import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { ensureExamToken } from '@/app/exam/actions'
 import {
-  QUESTIONS, ROSTER, VEINS, roomSplit, standings, veinLabel, type RunRecord,
+  QUESTIONS, ROSTER, VEINS, isMulti, pickCount, roomSplit, standings, veinLabel,
+  type RunRecord,
 } from '@/lib/milkExam'
 
 export function RoomView({
@@ -33,7 +34,7 @@ export function RoomView({
   // says more than any single score does.
   const byHardest = useMemo(() => {
     return QUESTIONS
-      .map((q, i) => ({ i, q, split: roomSplit(runs, i) }))
+      .map((q, i) => ({ i, q, split: roomSplit(runs, q) }))
       .filter((r) => r.split !== null)
       .sort((a, b) => (a.split!.got / a.split!.of) - (b.split!.got / b.split!.of))
   }, [runs])
@@ -138,7 +139,7 @@ export function RoomView({
                 let got = 0
                 let of = 0
                 idx.forEach((n) => {
-                  const s = roomSplit(runs, n)
+                  const s = roomSplit(runs, QUESTIONS[n])
                   if (s) { got += s.got; of += s.of }
                 })
                 return (
@@ -164,7 +165,7 @@ export function RoomView({
                   <span className="mxr-pct">{split!.got}/{split!.of}</span>
                   <span className="mx-bd">
                     <span className="mx-q">{q.q}</span>
-                    <span className="mx-a">{q.answer}</span>
+                    <span className="mx-a">{q.answers.join(', ')}{isMulti(q) && <em> pick {pickCount(q)}</em>}</span>
                     <span className="mx-room">
                       {split!.got === 0
                         ? 'Nobody has got this'

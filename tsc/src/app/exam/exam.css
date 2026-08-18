@@ -319,6 +319,27 @@ body:has(.mx) .site-grain { display: none; }
   padding: 4px 9px;
   border-radius: 2px;
 }
+/* ---- a pick-N question ----
+   Says how many are wanted and how many are down, because a four-name question
+   and a pick-three look identical until you have tapped one and it does not
+   advance. The count is the thing that explains the difference. */
+.mx-pickn {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 13px;
+  border: 1px solid var(--mx-gold2);
+  border-radius: 2px;
+  background: var(--mx-goldwash);
+  font-family: var(--mx-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mx-gold);
+}
+.mx-pickn .mx-pickn-c { color: var(--mx-lab); letter-spacing: 0.12em; }
+
 .mx-opts { display: flex; flex-direction: column; gap: 9px; }
 .mx-opt {
   display: flex;

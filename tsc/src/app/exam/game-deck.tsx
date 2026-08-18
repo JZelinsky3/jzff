@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from 'react'
 import {
-  QUESTIONS, ROSTER, VEINS, bandFor, roomSplit, sortedRows, standings, tableFor, veinLabel,
-  type RunRecord, type StatTable,
+  QUESTIONS, ROSTER, VEINS, bandFor, isCorrect, isMulti, pickCount, roomSplit,
+  sortedRows, standings, tableFor, veinLabel,
+  type Question, type RunRecord, type StatTable,
 } from '@/lib/milkExam'
 import { readRuns, submitRun } from './actions'
 
@@ -37,10 +38,11 @@ export function GameDeck({
   // Committed answers, one per question index. Nothing here is a score: the
   // total comes back from the server on submit, which is the only place
   // allowed to decide it.
-  const [picks, setPicks] = useState<Record<string, string>>({})
+  const [picks, setPicks] = useState<Record<string, string[]>>({})
   // Highlighted but not yet committed. Kept separate from `picks` so a tap can
-  // be changed, which is the whole point of the confirm step.
-  const [pending, setPending] = useState<string | null>(null)
+  // be changed, which is the whole point of the confirm step. A list, because a
+  // pick-three question is several taps before anything is committed.
+  const [pending, setPending] = useState<string[]>([])
   const [runs, setRuns] = useState<RunRecord[]>(initialRuns)
   const [score, setScore] = useState(0)
   const [busy, setBusy] = useState(false)
@@ -48,24 +50,37 @@ export function GameDeck({
   const [copied, setCopied] = useState(false)
 
   const q = QUESTIONS[i]
-  const committed = picks[String(i)]
+  const committed = picks[q.id]
   const answered = committed !== undefined
+  const want = pickCount(q)
   const last = i === QUESTIONS.length - 1
-  const allAnswered = QUESTIONS.every((_, n) => picks[String(n)] !== undefined)
+  const allAnswered = QUESTIONS.every((qq) => picks[qq.id] !== undefined)
+  const gotIt = answered && isCorrect(q, committed)
 
   const board = useMemo(() => standings(runs), [runs])
 
   function goto(n: number) {
     setI(n)
-    setPending(null)
+    setPending([])
     setErr('')
     window.scrollTo({ top: 0, behavior: 'instant' })
   }
 
+  /** Tapping a name adds or removes it. On a pick-one it just replaces. */
+  function toggle(name: string) {
+    if (answered) return
+    setPending((cur) => {
+      if (want === 1) return [name]
+      if (cur.includes(name)) return cur.filter((x) => x !== name)
+      if (cur.length >= want) return cur          // full; drop one first
+      return [...cur, name]
+    })
+  }
+
   function commit() {
-    if (!pending || answered) return
-    setPicks((p) => ({ ...p, [String(i)]: pending }))
-    setPending(null)
+    if (answered || pending.length !== want) return
+    setPicks((p) => ({ ...p, [q.id]: pending }))
+    setPending([])
   }
 
   async function file() {
@@ -83,7 +98,7 @@ export function GameDeck({
 
   async function copyScore() {
     const band = bandFor(score)
-    const grid = QUESTIONS.map((qq, n) => (picks[String(n)] === qq.answer ? 'O' : 'X')).join('')
+    const grid = QUESTIONS.map((qq) => (isCorrect(qq, picks[qq.id] ?? []) ? 'O' : 'X')).join('')
     const text = `THE MILK EXAM\n${score}/${QUESTIONS.length}  ${band.name}\n${grid.slice(0, 10)}\n${grid.slice(10)}`
     try { await navigator.clipboard.writeText(text) } catch { /* blocked; the label still confirms */ }
     setCopied(true)
@@ -168,7 +183,7 @@ export function GameDeck({
         <div className="mx-splits">
           {VEINS.map((v) => {
             const idx = QUESTIONS.map((qq, n) => (qq.vein === v ? n : -1)).filter((n) => n >= 0)
-            const got = idx.filter((n) => picks[String(n)] === QUESTIONS[n].answer).length
+            const got = idx.filter((n) => isCorrect(QUESTIONS[n], picks[QUESTIONS[n].id] ?? [])).length
             return (
               <div key={v}>
                 <span className="mx-v">{got}<span>/{idx.length}</span></span>
@@ -188,10 +203,10 @@ export function GameDeck({
           <div className="mx-review">
             {QUESTIONS.map((qq, n) => (
               <ReviewRow
-                key={n}
+                key={qq.id}
                 index={n}
-                mine={picks[String(n)]}
-                room={roomSplit(runs, n)}
+                mine={picks[qq.id] ?? []}
+                room={roomSplit(runs, qq)}
                 you={name}
               />
             ))}
@@ -213,8 +228,8 @@ export function GameDeck({
 
       <div className="mx-rail">
         {QUESTIONS.map((qq, n) => {
-          const done = picks[String(n)] !== undefined
-          const hit = picks[String(n)] === QUESTIONS[n].answer
+          const done = picks[QUESTIONS[n].id] !== undefined
+          const hit = isCorrect(QUESTIONS[n], picks[QUESTIONS[n].id] ?? [])
           const cls = n === i && !done ? 'is-now' : done ? (hit ? 'is-hit' : 'is-miss') : ''
           return (
             <span key={n} className={`mx-seg${n < i ? ' is-done' : ''}`}>
@@ -235,14 +250,23 @@ export function GameDeck({
         <span className="mx-source">{q.source}</span>
       </div>
 
+      {isMulti(q) && (
+        <div className="mx-pickn">
+          <span>Pick {want}</span>
+          <span className="mx-pickn-c">{(answered ? committed : pending).length} of {want} chosen</span>
+        </div>
+      )}
+
       <div className="mx-opts">
         {q.options.map((opt) => {
+          const right = q.answers.includes(opt)
+          const mine = (answered ? committed : pending).includes(opt)
           let cls = 'mx-opt'
           if (answered) {
-            if (opt === q.answer) cls += ' is-right'
-            else if (opt === committed) cls += ' is-wrong'
+            if (right) cls += ' is-right'
+            else if (mine) cls += ' is-wrong'
             else cls += ' is-faded'
-          } else if (opt === pending) {
+          } else if (mine) {
             cls += ' is-pick'
           }
           return (
@@ -251,12 +275,12 @@ export function GameDeck({
               type="button"
               className={cls}
               disabled={answered}
-              aria-pressed={!answered && opt === pending}
-              onClick={() => setPending(opt)}
+              aria-pressed={!answered && mine}
+              onClick={() => toggle(opt)}
             >
               <span className="mx-mk">
-                {answered && opt === q.answer && <Tick />}
-                {answered && opt === committed && opt !== q.answer && <Cross />}
+                {answered && right && <Tick />}
+                {answered && mine && !right && <Cross />}
               </span>
               <span>{opt}</span>
             </button>
@@ -271,25 +295,25 @@ export function GameDeck({
           {i > 0 && (
             <button type="button" className="mx-back" onClick={() => goto(i - 1)}>Back</button>
           )}
-          <button type="button" className="mx-go" disabled={!pending} onClick={commit}>
-            {pending ? 'Confirm' : 'Pick a name'}
+          <button type="button" className="mx-go" disabled={pending.length !== want} onClick={commit}>
+            {pending.length === want ? 'Confirm' : want > 1 ? `Pick ${want - pending.length} more` : 'Pick a name'}
           </button>
         </div>
       )}
 
       {answered && (
         <div className="mx-ans">
-          <span className={`mx-verdict ${committed === q.answer ? 'is-y' : 'is-n'}`}>
-            {committed === q.answer ? 'Correct' : 'Not him'}
+          <span className={`mx-verdict ${gotIt ? 'is-y' : 'is-n'}`}>
+            {gotIt ? 'Correct' : isMulti(q) ? 'Not the three' : 'Not him'}
           </span>
           <p>
-            <b>{q.answer}.</b>{' '}
+            <b>{q.answers.join(', ')}.</b>{' '}
             <span dangerouslySetInnerHTML={{ __html: q.why }} />
           </p>
           <Twelve
-            index={i}
+            q={q}
             you={name}
-            mask={q.pairedWith !== undefined && picks[String(q.pairedWith)] === undefined ? q.mask : undefined}
+            mask={q.pairedWith !== undefined && picks[q.pairedWith] === undefined ? q.mask : undefined}
           />
           <span className="mx-err">{err}</span>
           <div className="mx-nav">
@@ -344,15 +368,15 @@ function Board({
 
 /** The whole league on one question's measure, opened on request. */
 function Twelve({
-  index, you, mask,
+  q, you, mask,
 }: {
-  index: number
+  q: Question
   you: string | null
   /** Names held back because a later question is the other end of this stat. */
   mask?: string[]
 }) {
   const [open, setOpen] = useState(false)
-  const t = tableFor(index)
+  const t = tableFor(q.id)
   if (!t) return null
   const rows = sortedRows(t)
   const held = mask ?? []
@@ -380,21 +404,20 @@ function Twelve({
           </span>
         )}
       </button>
-      {open && <TwelveTable table={t} rows={rows} you={you} index={index} held={held} />}
+      {open && <TwelveTable table={t} rows={rows} you={you} q={q} held={held} />}
     </div>
   )
 }
 
 function TwelveTable({
-  table, rows, you, index, held,
+  table, rows, you, q, held,
 }: {
   table: StatTable
   rows: [string, string, number][]
   you: string | null
-  index: number
+  q: Question
   held: string[]
 }) {
-  const answer = QUESTIONS[index].answer
   return (
     <div className="mx-table">
       <div className="mx-thead">
@@ -414,7 +437,7 @@ function TwelveTable({
         return (
           <div
             key={r[0]}
-            className={`mx-trow${r[0] === answer ? ' is-answer' : ''}${r[0] === you ? ' is-you' : ''}${hidden ? ' is-held' : ''}`}
+            className={`mx-trow${q.answers.includes(r[0]) ? ' is-answer' : ''}${r[0] === you ? ' is-you' : ''}${hidden ? ' is-held' : ''}`}
           >
             <span className="mx-tn">{r[0]}</span>
             {r[0] === you && <span className="mx-you">you</span>}
@@ -443,12 +466,12 @@ function ReviewRow({
   index, mine, room, you,
 }: {
   index: number
-  mine: string | undefined
+  mine: string[]
   room: { got: number; of: number } | null
   you: string | null
 }) {
   const q = QUESTIONS[index]
-  const ok = mine === q.answer
+  const ok = isCorrect(q, mine)
   return (
     <div className={`mx-row${ok ? '' : ' is-no'}`}>
       <span className="mx-st">{ok ? <Tick /> : <Cross />}</span>
@@ -458,12 +481,12 @@ function ReviewRow({
           {q.q}
         </span>
         <span className="mx-a">
-          {q.answer}
-          {!ok && <em> you said {mine}</em>}
+          {q.answers.join(', ')}
+          {!ok && <em> you said {mine.length ? mine.join(', ') : 'nothing'}</em>}
         </span>
         <span className="mx-why" dangerouslySetInnerHTML={{ __html: q.why }} />
         {room && <span className="mx-room">{room.got} of {room.of} got it</span>}
-        <Twelve index={index} you={you} />
+        <Twelve q={q} you={you} />
       </span>
     </div>
   )

@@ -102,7 +102,7 @@ export async function readRuns(leagueId: string): Promise<RunRecord[]> {
     .order('created_at', { ascending: true })
   return (data ?? []).map((r) => ({
     name: r.manager_name as string,
-    picks: (r.picks ?? {}) as Record<string, string>,
+    picks: (r.picks ?? {}) as Record<string, string[]>,
     score: (r.score ?? 0) as number,
   }))
 }
@@ -130,7 +130,7 @@ export async function playedNames(leagueId: string): Promise<string[]> {
 export async function submitRun(
   token: string,
   name: string,
-  picks: Record<string, string>,
+  picks: Record<string, string[]>,
 ): Promise<{ ok: false; error: string } | { ok: true; score: number }> {
   const league = await leagueForToken(token)
   if (!league) return { ok: false, error: 'This link is not the live one.' }
