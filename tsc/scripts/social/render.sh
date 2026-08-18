@@ -131,6 +131,22 @@ case "${1:-}" in
     shot "file://$HERE/cover.html?$Q" "$NAME" 1080 1350
     ;;
 
+  # ./render.sh carousel [slide-number ...]
+  #
+  # The offseason carousel. With no arguments it renders all ten
+  # slides; with numbers it renders only those, which is what you want
+  # while iterating on one panel.
+  carousel)
+    shift
+    SLIDES=("$@")
+    [ ${#SLIDES[@]} -eq 0 ] && SLIDES=(1 2 3 4 5 6 7 8 9 10)
+    echo "Rendering offseason carousel:"
+    for i in "${SLIDES[@]}"; do
+      shot "file://$HERE/offseason.html?slide=$i" \
+           "offseason-$(printf '%02d' "$i")" 1080 1350
+    done
+    ;;
+
   # ./render.sh grab <url> <name> [width] [height]
   #
   # Captures a page into shots/ so it can be fed to cover.html's

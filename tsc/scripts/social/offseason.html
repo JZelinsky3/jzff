@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TSC — offseason carousel</title>
+<link rel="stylesheet" href="brand.css">
+
+<!-- ============================================================
+     THE OFFSEASON PLAYBOOK — a ten slide Instagram carousel.
+
+       offseason.html?slide=1   the cover
+       offseason.html?slide=2   .. 9   one idea each
+       offseason.html?slide=10  the closer
+
+     Same board, surface layers, corner marks and foot as cover.html,
+     so the carousel sits in the same family as every other post. What
+     each idea slide adds is a MOCK: a small piece of made-up league
+     furniture under the headline, because "run a win total vote"
+     lands as an instruction and a ballot with a line on it lands as a
+     thing you can picture doing.
+
+     EVERY NAME IN HERE IS INVENTED. No real league, manager or team
+     name appears on a public post. The demo cast lives in CAST below;
+     if a name ever has to change, change it there and every slide
+     follows.
+     ============================================================ -->
+
+<style>
+  .board { width: 1080px; height: 1350px; }
+
+  .spine { position:absolute; top:0; left:0; width:12px; height:1350px;
+           background:var(--accent); z-index:25; }
+
+  .head { position:absolute; top:92px; left:110px; right:96px; height:66px;
+          display:flex; align-items:center; z-index:20; }
+  .head .monogram { width:66px; height:66px; font-size:30px; }
+  .head .nameplate { margin-left:24px; font-family:var(--mono); font-size:19px;
+                     letter-spacing:.32em; text-transform:uppercase;
+                     color:var(--cream-soft); }
+  .head .num { margin-left:auto; font-family:var(--mono); font-size:19px;
+               letter-spacing:.28em; text-transform:uppercase; color:var(--accent); }
+  .head-rule { position:absolute; top:202px; left:110px; right:96px; z-index:20; }
+
+  .foot-rule { position:absolute; left:110px; right:96px; top:1186px; z-index:20; }
+  .foot { position:absolute; left:110px; right:96px; top:1228px; display:flex;
+          align-items:center; z-index:20; }
+  .foot .accent { margin-left:auto; color:var(--accent); }
+
+  /* ── the cover ───────────────────────────────────────────────
+     Anchored to the bottom like cover.html's section block, so the
+     headline grows up into the empty field instead of pushing the
+     foot down. */
+  .cover-block { position:absolute; left:110px; right:110px; bottom:250px; z-index:20; }
+  .cover-block .kicker { margin-bottom:34px; }
+  .cover-block h1 { font-family:var(--serif); font-size:118px; line-height:.98;
+                    letter-spacing:-.01em; color:var(--cream); margin-bottom:38px; }
+  .cover-block h1 em { font-style:italic; color:var(--gold); }
+  .cover-block .rule-accent { width:132px; margin-bottom:34px; }
+  .cover-block .sub { max-width:800px; }
+
+  /* The swipe cue is the one piece of interface language allowed on a
+     cover: it tells the reader there are nine more panels behind this
+     one, which the artwork cannot. */
+  /* Clear of the double rule at 1186. At bottom:150 it sat on the rule and
+     read as struck through. */
+  .swipe { position:absolute; left:110px; bottom:212px; z-index:20;
+           display:flex; align-items:center; gap:16px;
+           font-family:var(--mono); font-size:18px; letter-spacing:.30em;
+           text-transform:uppercase; color:var(--cream-mute); }
+  .swipe .arrow { width:52px; height:1px; background:var(--gold-deep); position:relative; }
+  .swipe .arrow::after { content:''; position:absolute; right:0; top:-4px;
+           width:9px; height:9px; border-top:1px solid var(--gold-deep);
+           border-right:1px solid var(--gold-deep); transform:rotate(45deg); }
+
+  /* Blind-embossed numeral bleeding off the top right, the counterpart
+     to cover.html's C. It reads as a raised surface, not a number, and
+     it gives the upper field something to hold. */
+  .ghost { position:absolute; top:-118px; right:-40px; font-family:var(--serif);
+           font-size:640px; line-height:1; color:rgba(244,235,216,.05);
+           z-index:5; user-select:none; }
+
+  /* ── idea slides ─────────────────────────────────────────────── */
+  .block { position:absolute; left:110px; right:110px; top:268px; z-index:20; }
+  .block .kicker { margin-bottom:26px; }
+  .block h2 { font-family:var(--serif); font-size:82px; line-height:1.0;
+              letter-spacing:-.005em; color:var(--cream); margin-bottom:30px; }
+  .block .rule-accent { width:110px; margin-bottom:28px; }
+  .block .sub { max-width:840px; font-size:29px; line-height:1.42; }
+
+  /* The mock sits on its own baseline on every slide, whatever the
+     headline above it did, so the carousel does not jitter as it is
+     swiped. Anchored bottom for the same reason the blocks are. */
+  .mock { position:absolute; left:110px; right:110px; bottom:230px; height:430px;
+          z-index:20; display:flex; flex-direction:column; justify-content:flex-end; }
+  .mock .cap { font-family:var(--mono); font-size:17px; letter-spacing:.26em;
+               text-transform:uppercase; color:var(--cream-mute); margin-bottom:20px; }
+
+  .panel { background:var(--ink-card); border:1px solid rgba(168,138,74,.30);
+           border-radius:8px; padding:26px 30px; }
+
+  /* rows: name on the left, a figure on the right, ruled between */
+  .rows { display:flex; flex-direction:column; }
+  .rows .r { display:flex; align-items:center; gap:18px; padding:17px 0;
+             border-bottom:1px solid var(--ink-line); }
+  .rows .r:last-child { border-bottom:0; }
+  .rows .nm { font-family:var(--sans); font-size:31px; color:var(--cream);
+              font-weight:500; }
+  .rows .tag { font-family:var(--mono); font-size:16px; letter-spacing:.2em;
+               text-transform:uppercase; color:var(--cream-mute); }
+  .rows .val { margin-left:auto; font-family:var(--mono); font-size:29px;
+               color:var(--accent); letter-spacing:.04em; }
+  .rows .val.dim { color:var(--cream-mute); }
+
+  /* small uppercase mono chip, used for weeks, seeds, votes */
+  .chip { display:inline-flex; align-items:center; justify-content:center;
+          font-family:var(--mono); font-size:18px; letter-spacing:.14em;
+          text-transform:uppercase; color:var(--cream-soft);
+          border:1px solid var(--ink-line); border-radius:4px; padding:11px 0; }
+  .chip.on { border-color:var(--accent); color:var(--accent); }
+  .chip.solid { background:var(--accent); border-color:var(--accent); color:var(--ink); }
+  .chip.blank { color:transparent; background:rgba(244,235,216,.05);
+                border-color:transparent; }
+
+  .grid7 { display:grid; grid-template-columns:repeat(7,1fr); gap:10px; }
+  .grid5 { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+
+  /* two teams facing each other, the schedule's unit */
+  .fixture { display:flex; align-items:center; gap:22px; padding:20px 0;
+             border-bottom:1px solid var(--ink-line); }
+  .fixture:last-child { border-bottom:0; }
+  .fixture .wk { font-family:var(--mono); font-size:16px; letter-spacing:.2em;
+                 text-transform:uppercase; color:var(--cream-mute); width:64px; }
+  .fixture .t { font-family:var(--sans); font-size:29px; color:var(--cream); flex:1; }
+  .fixture .t.r { text-align:right; }
+  .fixture .v { font-family:var(--serif); font-size:24px; color:var(--gold-deep);
+                font-style:italic; }
+
+  /* ballot: a line with two buttons, one of them taken */
+  .ballot { display:flex; align-items:center; gap:20px; padding:18px 0;
+            border-bottom:1px solid var(--ink-line); }
+  .ballot:last-child { border-bottom:0; }
+  .ballot .nm { font-family:var(--sans); font-size:29px; color:var(--cream); flex:1; }
+  .ballot .line { font-family:var(--mono); font-size:28px; color:var(--cream-soft);
+                  width:92px; text-align:right; }
+  .ballot .btn { font-family:var(--mono); font-size:17px; letter-spacing:.16em;
+                 text-transform:uppercase; border:1px solid var(--ink-line);
+                 border-radius:4px; padding:12px 20px; color:var(--cream-mute); }
+  .ballot .btn.take { border-color:var(--accent); color:var(--accent); }
+
+  /* the hot seat gauge, a three row extract */
+  .seat { display:flex; gap:22px; }
+  .seat .gauge { width:6px; border-radius:3px;
+                 background:linear-gradient(180deg,#FF3B0A 0 25%,#E08A32 25% 50%,
+                            #C9A25A 50% 75%,#4E82B2 75% 100%); }
+  .seat .list { flex:1; display:flex; flex-direction:column; }
+  .seat .s { display:flex; align-items:center; gap:20px; padding:16px 0;
+             border-bottom:1px solid var(--ink-line); }
+  .seat .s:last-child { border-bottom:0; }
+  .seat .s .n { font-family:var(--serif); font-size:40px; line-height:1;
+                width:52px; color:var(--c); }
+  .seat .s .nm { font-family:var(--sans); font-size:29px; color:var(--cream); }
+  .seat .s .why { margin-left:auto; font-family:var(--mono); font-size:17px;
+                  letter-spacing:.12em; text-transform:uppercase;
+                  color:var(--cream-mute); }
+
+  /* bracket: two rounds and a winner's plate */
+  .bracket { display:flex; align-items:center; gap:26px; }
+  .bracket .col { flex:1; display:flex; flex-direction:column; gap:14px; }
+  .bracket .m { display:flex; flex-direction:column; gap:1px; }
+  .bracket .e { display:flex; align-items:center; gap:14px; background:rgba(244,235,216,.04);
+                border-left:2px solid var(--ink-line); padding:13px 16px; }
+  .bracket .e.won { border-left-color:var(--accent); }
+  .bracket .e .sd { font-family:var(--mono); font-size:15px; color:var(--cream-mute);
+                    width:26px; }
+  .bracket .e .tm { font-family:var(--sans); font-size:24px; color:var(--cream-soft); }
+  .bracket .e.won .tm { color:var(--cream); }
+  .bracket .final { flex:0 0 232px; text-align:center; border:1px solid var(--gold-deep);
+                    border-radius:8px; padding:26px 14px; }
+  .bracket .final .lb { font-family:var(--mono); font-size:15px; letter-spacing:.22em;
+                        text-transform:uppercase; color:var(--cream-mute); }
+  .bracket .final .tm { margin-top:12px; font-family:var(--serif); font-size:32px;
+                        color:var(--gold); font-style:italic; }
+
+  /* draft board: rounds down, picks across */
+  .dboard { display:grid; grid-template-columns:70px repeat(5,1fr); gap:9px; }
+  .dboard .h { font-family:var(--mono); font-size:15px; letter-spacing:.16em;
+               text-transform:uppercase; color:var(--cream-mute);
+               display:flex; align-items:center; }
+  .dboard .p { background:rgba(244,235,216,.04); border-radius:4px; padding:13px 12px; }
+  .dboard .p .pk { font-family:var(--mono); font-size:14px; color:var(--cream-mute); }
+  .dboard .p .tm { margin-top:6px; font-family:var(--sans); font-size:21px;
+                   color:var(--cream-soft); white-space:nowrap; overflow:hidden;
+                   text-overflow:ellipsis; }
+  .dboard .p.hot { background:rgba(232,200,137,.13); }
+  .dboard .p.hot .tm { color:var(--gold-bright); }
+
+  /* lineup card for the all time team */
+  .lineup { display:grid; grid-template-columns:1fr 1fr; gap:0 34px; }
+  .lineup .s { display:flex; align-items:baseline; gap:16px; padding:14px 0;
+               border-bottom:1px solid var(--ink-line); }
+  .lineup .s .pos { font-family:var(--mono); font-size:17px; letter-spacing:.18em;
+                    color:var(--accent); width:56px; }
+  .lineup .s .yr { font-family:var(--sans); font-size:26px; color:var(--cream); }
+  .lineup .s .pt { margin-left:auto; font-family:var(--mono); font-size:22px;
+                   color:var(--cream-mute); }
+
+  /* award plates for the superlatives slide */
+  .awards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .awards .a { background:var(--ink-card); border:1px solid rgba(168,138,74,.30);
+               border-radius:8px; padding:22px 20px 24px; text-align:center; }
+  .awards .a .ttl { font-family:var(--mono); font-size:15px; letter-spacing:.18em;
+                    text-transform:uppercase; color:var(--cream-mute);
+                    min-height:38px; line-height:1.3; }
+  .awards .a .who { margin-top:14px; font-family:var(--serif); font-size:34px;
+                    color:var(--cream); }
+  .awards .a .fig { margin-top:8px; font-family:var(--mono); font-size:18px;
+                    color:var(--accent); }
+
+  /* ── the closer ─────────────────────────────────────────────── */
+  .close-block { position:absolute; left:110px; right:110px; bottom:330px; z-index:20; }
+  .close-block h2 { font-family:var(--serif); font-size:96px; line-height:1.02;
+                    color:var(--cream); margin-bottom:34px; }
+  .close-block h2 em { font-style:italic; color:var(--gold); }
+  .close-block .rule-accent { width:132px; margin-bottom:32px; }
+  .close-block .sub { max-width:800px; }
+  /* Two rows of chips at bottom:150 ran straight through the double rule.
+     They stop clear of it now. */
+  .ticks { position:absolute; left:110px; right:110px; bottom:214px; z-index:20;
+           display:flex; flex-wrap:wrap; gap:10px 12px; }
+  .ticks span { font-family:var(--mono); font-size:17px; letter-spacing:.16em;
+                text-transform:uppercase; color:var(--cream-mute);
+                border:1px solid var(--ink-line); border-radius:4px; padding:10px 16px; }
+</style>
+</head>
+<body>
+
+<div class="board" id="board">
+  <div class="l-ledger"></div>
+  <div class="l-glow"></div>
+  <div class="l-vignette"></div>
+  <div id="art"></div>
+  <div class="spine"></div>
+  <span class="crop tl"></span><span class="crop tr"></span>
+  <span class="crop bl"></span><span class="crop br"></span>
+  <div class="head">
+    <span class="monogram">TS<i>C.</i></span>
+    <span class="nameplate">The Sunday Chronicle</span>
+    <span class="num" id="num"></span>
+  </div>
+  <div class="head-rule rule-hair"></div>
+  <div id="body"></div>
+  <div class="foot-rule rule-double"></div>
+  <div class="foot">
+    <span class="t-imprint">thesundaychronicle.app</span>
+    <span class="t-imprint accent" id="foot-accent"></span>
+  </div>
+  <div class="l-grain"></div>
+</div>
+
+<script>
+'use strict';
+
+/* Invented cast. Nothing here belongs to a real league. */
+const CAST = {
+  teams: ['Night Shift', 'Gravy Train', 'Bell Cows', 'Sunday Scaries',
+          'Couch Kings', 'Iron Lungs', 'Salt Dogs', 'Cold Brew',
+          'Red Zone Rats', 'The Ferrymen', 'Downhill', 'Blue Hens'],
+  people: ['Riley', 'Dev', 'Marcus', 'Jonah', 'Priya', 'Wes',
+           'Colton', 'Nia', 'Gabe', 'Theo', 'Sam', 'Ruben'],
+};
+
+const ACCENTS = { gold:'#e8c889', rust:'#c14b36', steel:'#8fb0cf', ivory:'#f4ebd8' };
+
+const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+/* ── the mocks ────────────────────────────────────────────────
+   Each returns the innards of .mock: a caption and one panel. They
+   are deliberately small extracts, three or four rows, not whole
+   pages: the slide has to read at thumbnail size on a phone. */
+
+const mock = {
+  schedule: () => `
+    <div class="cap">Week 1, released one week at a time</div>
+    <div class="panel">
+      <div class="fixture"><span class="wk">Wk 1</span>
+        <span class="t">Night Shift</span><span class="v">vs</span>
+        <span class="t r">Salt Dogs</span></div>
+      <div class="fixture"><span class="wk">Wk 1</span>
+        <span class="t">Bell Cows</span><span class="v">vs</span>
+        <span class="t r">Cold Brew</span></div>
+      <div class="fixture"><span class="wk">Wk 1</span>
+        <span class="t">Iron Lungs</span><span class="v">vs</span>
+        <span class="t r">Gravy Train</span></div>
+    </div>
+    <div class="grid7" style="margin-top:18px">
+      ${[1,2,3].map(n => `<div class="chip on">W${n}</div>`).join('')}
+      ${[4,5,6,7].map(n => `<div class="chip blank">W${n}</div>`).join('')}
+    </div>`,
+
+  ballot: () => `
+    <div class="cap">Sealed until everyone has voted</div>
+    <div class="panel">
+      <div class="ballot"><span class="nm">Night Shift</span>
+        <span class="line">8.5</span>
+        <span class="btn take">Over</span><span class="btn">Under</span></div>
+      <div class="ballot"><span class="nm">Salt Dogs</span>
+        <span class="line">6.5</span>
+        <span class="btn">Over</span><span class="btn take">Under</span></div>
+      <div class="ballot"><span class="nm">Couch Kings</span>
+        <span class="line">7.5</span>
+        <span class="btn take">Over</span><span class="btn">Under</span></div>
+    </div>`,
+
+  power: () => `
+    <div class="cap">One name a day, twelve down to one</div>
+    <div class="panel">
+      <div class="rows">
+        <div class="r"><span class="nm">12 &nbsp; Blue Hens</span>
+          <span class="val dim">Delivered</span></div>
+        <div class="r"><span class="nm">11 &nbsp; Cold Brew</span>
+          <span class="val dim">Delivered</span></div>
+        <div class="r"><span class="nm">10 &nbsp; Downhill</span>
+          <span class="val">Today</span></div>
+        <div class="r"><span class="nm" style="color:var(--cream-mute)">09
+          &nbsp; &mdash;</span><span class="val dim">Tomorrow</span></div>
+      </div>
+    </div>`,
+
+  allTime: () => `
+    <div class="cap">The best season anyone ever got from each slot</div>
+    <div class="panel">
+      <div class="lineup">
+        <div class="s"><span class="pos">QB</span><span class="yr">Riley '21</span>
+          <span class="pt">417.8</span></div>
+        <div class="s"><span class="pos">WR</span><span class="yr">Nia '20</span>
+          <span class="pt">301.4</span></div>
+        <div class="s"><span class="pos">RB</span><span class="yr">Marcus '19</span>
+          <span class="pt">368.2</span></div>
+        <div class="s"><span class="pos">WR</span><span class="yr">Gabe '24</span>
+          <span class="pt">288.9</span></div>
+        <div class="s"><span class="pos">RB</span><span class="yr">Dev '23</span>
+          <span class="pt">332.5</span></div>
+        <div class="s"><span class="pos">TE</span><span class="yr">Wes '22</span>
+          <span class="pt">247.1</span></div>
+      </div>
+    </div>`,
+
+  awards: () => `
+    <div class="cap">Voted by the league, settled in one night</div>
+    <div class="awards">
+      <div class="a"><div class="ttl">Manager of the year</div>
+        <div class="who">Priya</div><div class="fig">7 of 12 votes</div></div>
+      <div class="a"><div class="ttl">Trade of the year</div>
+        <div class="who">Wes</div><div class="fig">Week 6</div></div>
+      <div class="a"><div class="ttl">Worst beat</div>
+        <div class="who">Theo</div><div class="fig">Lost by 0.4</div></div>
+    </div>`,
+
+  seat: () => `
+    <div class="cap">Ranked by how long it has been</div>
+    <div class="panel">
+      <div class="seat"><div class="gauge"></div>
+        <div class="list">
+          <div class="s" style="--c:#FF6A18"><span class="n">1</span>
+            <span class="nm">Gravy Train</span>
+            <span class="why">No title, 7 years</span></div>
+          <div class="s" style="--c:#C79449"><span class="n">2</span>
+            <span class="nm">Red Zone Rats</span>
+            <span class="why">Last won 2019</span></div>
+          <div class="s" style="--c:#C9A25A"><span class="n">3</span>
+            <span class="nm">The Ferrymen</span>
+            <span class="why">Runner up, twice</span></div>
+          <div class="s" style="--c:#4E82B2"><span class="n">12</span>
+            <span class="nm">Cold Brew</span>
+            <span class="why">Defending champion</span></div>
+        </div>
+      </div>
+    </div>`,
+
+  bracket: () => `
+    <div class="cap">Sixteen teams, one vote a round</div>
+    <div class="panel">
+      <div class="bracket">
+        <div class="col">
+          <div class="m">
+            <div class="e won"><span class="sd">1</span><span class="tm">Bell Cows '21</span></div>
+            <div class="e"><span class="sd">8</span><span class="tm">Downhill '23</span></div>
+          </div>
+          <div class="m">
+            <div class="e"><span class="sd">4</span><span class="tm">Cold Brew '22</span></div>
+            <div class="e won"><span class="sd">5</span><span class="tm">Iron Lungs '19</span></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="m">
+            <div class="e won"><span class="sd">1</span><span class="tm">Bell Cows '21</span></div>
+            <div class="e"><span class="sd">5</span><span class="tm">Iron Lungs '19</span></div>
+          </div>
+        </div>
+        <div class="final"><div class="lb">Best ever</div>
+          <div class="tm">Bell Cows '21</div></div>
+      </div>
+    </div>`,
+
+  draft: () => {
+    // Round 2 opens with the back of the order, round 3 repeats round 1: a
+    // twelve team snake, of which these are the first five picks of each round.
+    const picks = [
+      ['Night Shift','Salt Dogs','Bell Cows','Couch Kings','Cold Brew'],
+      ['Blue Hens','Downhill','The Ferrymen','Red Zone Rats','Iron Lungs'],
+      ['Night Shift','Salt Dogs','Bell Cows','Couch Kings','Cold Brew'],
+    ];
+    let cells = '';
+    picks.forEach((round, ri) => {
+      cells += `<div class="h">Rd ${ri + 1}</div>`;
+      round.forEach((tm, pi) => {
+        const hot = ri === 0 && pi === 0 ? ' hot' : '';
+        cells += `<div class="p${hot}"><div class="pk">${ri + 1}.${String(pi + 1).padStart(2,'0')}</div>
+                  <div class="tm">${esc(tm)}</div></div>`;
+      });
+    });
+    return `<div class="cap">Run it before the real one, grade it after</div>
+      <div class="panel"><div class="dboard">${cells}</div></div>`;
+  },
+};
+
+/* ── the ten slides ───────────────────────────────────────────
+   Accent rotates so the carousel has a colour rhythm as it is swiped,
+   rather than ten gold spines in a row. */
+
+const SLIDES = [
+  { kind:'cover', accent:'gold' },
+
+  { kicker:'No. 01', title:'The schedule\nreveal', accent:'gold',
+    sub:'Do not post a table. Release it a week at a time and let everyone find their own rivalry games.',
+    mock:'schedule', foot:'Schedule' },
+
+  { kicker:'No. 02', title:'Win total\nvotes', accent:'steel',
+    sub:'Set a line for every team, make everyone pick over or under, then seal it until the last ballot is in.',
+    mock:'ballot', foot:'Ballot' },
+
+  { kicker:'No. 03', title:'Preseason\npower rankings', accent:'rust',
+    sub:'Twelve days, one name a day, counting down. Nobody argues about a list they have to wait for.',
+    mock:'power', foot:'Rankings' },
+
+  { kicker:'No. 04', title:'The all-time\nteam', accent:'gold',
+    sub:'Every slot filled by the best season anyone in the league ever got out of it.',
+    mock:'allTime', foot:'All-time' },
+
+  { kicker:'No. 05', title:'Season\nsuperlatives', accent:'steel',
+    sub:'Manager of the year, trade of the year, worst beat. Put them to a vote and read the results out.',
+    mock:'awards', foot:'Awards' },
+
+  { kicker:'No. 06', title:'The hot seat', accent:'rust',
+    sub:'Rank everyone by how much they have left to prove. The people at the top will tell you they disagree.',
+    mock:'seat', foot:'Hot seat' },
+
+  { kicker:'No. 07', title:'Greatest team\nbracket', accent:'gold',
+    sub:'Seed the best sixteen teams in league history and let the group vote a round at a time.',
+    mock:'bracket', foot:'Bracket' },
+
+  { kicker:'No. 08', title:'Mock draft\nnight', accent:'steel',
+    sub:'A full mock in August is the cheapest way to get twelve people in the same room again.',
+    mock:'draft', foot:'Mock draft' },
+
+  { kind:'close', accent:'gold' },
+];
+
+const params = new URLSearchParams(location.search);
+const n = Math.min(Math.max(parseInt(params.get('slide') || '1', 10), 1), SLIDES.length);
+const s = SLIDES[n - 1];
+
+document.documentElement.style.setProperty('--accent',
+  ACCENTS[s.accent] || s.accent || ACCENTS.gold);
+
+const num = document.getElementById('num');
+const footAccent = document.getElementById('foot-accent');
+const body = document.getElementById('body');
+
+if (s.kind === 'cover') {
+  num.textContent = 'Offseason';
+  footAccent.textContent = 'Nine ideas';
+  body.innerHTML = `
+    <div class="ghost">9</div>
+    <div class="cover-block">
+      <div class="kicker t-kicker">The offseason</div>
+      <h1>Nine things<br>to run before<br><em>Week 1</em></h1>
+      <div class="rule-accent"></div>
+      <div class="sub t-sub">Keeping a league loud in the seven months
+        nobody is playing.</div>
+    </div>
+    <div class="swipe"><span>Swipe</span><span class="arrow"></span></div>`;
+} else if (s.kind === 'close') {
+  num.textContent = 'Offseason';
+  footAccent.textContent = 'Run one a week';
+  body.innerHTML = `
+    <div class="close-block">
+      <div class="kicker t-kicker">One a week</div>
+      <h2>The league<br>that keeps<br><em>talking</em></h2>
+      <div class="rule-accent"></div>
+      <div class="sub t-sub">Every one of these runs off history you already
+        have. The Sunday Chronicle builds them from your league.</div>
+    </div>
+    <div class="ticks">
+      ${SLIDES.filter(x => x.foot).map(x => `<span>${esc(x.foot)}</span>`).join('')}
+    </div>`;
+} else {
+  num.textContent = `${String(n - 1).padStart(2, '0')} / 08`;
+  footAccent.textContent = s.foot;
+  body.innerHTML = `
+    <div class="ghost">${n - 1}</div>
+    <div class="block">
+      <div class="kicker t-kicker">${esc(s.kicker)}</div>
+      <h2>${esc(s.title).replace(/\n/g, '<br>')}</h2>
+      <div class="rule-accent"></div>
+      <div class="sub t-sub">${esc(s.sub)}</div>
+    </div>
+    <div class="mock">${mock[s.mock]()}</div>`;
+}
+</script>
+</body>
+</html>
