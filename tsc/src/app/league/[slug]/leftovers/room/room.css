@@ -1,0 +1,35 @@
+/* The commissioner's side of The Leftovers.
+   Inherits the whole `lo-` house from ../../../../leftovers/leftovers.css and
+   only adds what the room needs that the game does not. */
+
+.lor-link {
+  font-family: var(--lo-mono);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--lo-gold);
+  padding: 14px 16px;
+  border: 1px solid var(--lo-hair);
+  border-radius: 2px;
+  background: rgba(242, 236, 224, 0.02);
+  /* A twenty-character token on a phone has to break somewhere, and it must
+     break rather than push the room's layout sideways. */
+  overflow-wrap: anywhere;
+}
+
+.lor-note {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--lo-ink3);
+}
+
+/* The room's review rows lead with the count rather than a tick, because
+   nobody is being graded here: the question is how the league did. */
+.lor-pct {
+  width: 46px;
+  flex: none;
+  padding-top: 2px;
+  font-family: var(--lo-mono);
+  font-size: 13px;
+  color: var(--lo-gold2);
+  font-variant-numeric: tabular-nums;
+}
