@@ -64,7 +64,7 @@ export function GameDeck({
     window.scrollTo({ top: 0, behavior: 'instant' })
   }
 
-  function lockIn() {
+  function commit() {
     if (!pending || answered) return
     setPicks((p) => ({ ...p, [String(i)]: pending }))
     setPending(null)
@@ -86,7 +86,7 @@ export function GameDeck({
   async function copyScore() {
     const band = bandFor(score)
     const grid = QUESTIONS.map((qq, n) => (picks[String(n)] === qq.answer ? 'O' : 'X')).join('')
-    const text = `THE LEFTOVERS\n${score}/${QUESTIONS.length}  ${band.name}\n${grid.slice(0, 10)}\n${grid.slice(10)}`
+    const text = `THE MILK EXAM\n${score}/${QUESTIONS.length}  ${band.name}\n${grid.slice(0, 10)}\n${grid.slice(10)}`
     try { await navigator.clipboard.writeText(text) } catch { /* blocked; the label still confirms */ }
     setCopied(true)
     setTimeout(() => setCopied(false), 1600)
@@ -263,8 +263,8 @@ export function GameDeck({
           to score the question instantly, which is a bad way to lose one. */}
       {!answered && (
         <div className="mx-nav">
-          <button type="button" className="mx-go" disabled={!pending} onClick={lockIn}>
-            {pending ? `Lock in ${pending}` : 'Pick a name'}
+          <button type="button" className="mx-go" disabled={!pending} onClick={commit}>
+            {pending ? 'Confirm' : 'Pick a name'}
           </button>
           {i > 0 && (
             <button type="button" className="mx-back" onClick={() => goto(i - 1)}>Back</button>

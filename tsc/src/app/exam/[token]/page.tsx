@@ -1,9 +1,24 @@
+import type { Viewport } from 'next'
 import { QUESTIONS } from '@/lib/milkExam'
 import { leagueForToken, playedNames, readRuns } from '../actions'
 import { GameDeck } from '../game-deck'
 import '../exam.css'
 
 export const dynamic = 'force-dynamic'
+
+/**
+ * The root layout ships `themeColor: "#0e1620"`, the almanac's navy, which
+ * Safari paints into the top and bottom bars. On a page that is warm
+ * near-black end to end that reads as two navy stripes bracketing the
+ * design, so this route declares its own. The layout's own comment invites
+ * the override; width and scale are restated because this replaces the
+ * inherited object rather than merging into it.
+ */
+export const viewport: Viewport = {
+  themeColor: '#0e0d0c',
+  width: 'device-width',
+  initialScale: 1,
+}
 
 /**
  * The unfurl in the group chat. The description follows turnout, so a link

@@ -1,5 +1,5 @@
 /* ============================================================
-   THE LEFTOVERS
+   THE MILK EXAM
 
    The MILK ORDER house, not the site's, because this is a spin-off of that
    countdown and a link into it should look like one of those cards: one
@@ -120,7 +120,7 @@
   color: var(--mx-gold);
 }
 .mx-k.is-dim { color: var(--mx-lab); }
-.lo h1 {
+.mx h1 {
   margin: 0;
   font-family: var(--mx-disp);
   font-stretch: condensed;
@@ -131,7 +131,7 @@
   text-transform: uppercase;
   text-wrap: balance;
 }
-.lo h2 {
+.mx h2 {
   margin: 0;
   font-family: var(--mx-disp);
   font-stretch: condensed;
@@ -141,18 +141,18 @@
   letter-spacing: -0.015em;
   text-wrap: balance;
 }
-.lo p {
+.mx p {
   margin: 0;
   font-size: 17px;
   line-height: 1.5;
   color: var(--mx-ink2);
 }
-.lo p b { color: var(--mx-ink); font-weight: 700; }
+.mx p b { color: var(--mx-ink); font-weight: 700; }
 .mx-stack { display: flex; flex-direction: column; gap: 16px; }
 
 /* ---- controls ---- */
-.lo button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
-.lo :focus-visible { outline: 2px solid var(--mx-gold); outline-offset: 3px; }
+.mx button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+.mx :focus-visible { outline: 2px solid var(--mx-gold); outline-offset: 3px; }
 .mx-go {
   align-self: flex-start;
   font-family: var(--mx-disp);

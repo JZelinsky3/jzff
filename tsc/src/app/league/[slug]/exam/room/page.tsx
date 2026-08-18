@@ -1,3 +1,4 @@
+import type { Viewport } from 'next'
 import { headers } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -8,6 +9,14 @@ import '@/app/exam/exam.css'
 import './room.css'
 
 export const dynamic = 'force-dynamic'
+
+// Same reason as the public page: the inherited navy theme-color paints
+// Safari's bars, and this room is the same warm near-black end to end.
+export const viewport: Viewport = {
+  themeColor: '#0e0d0c',
+  width: 'device-width',
+  initialScale: 1,
+}
 
 export const metadata = { title: 'Exam room · PA Milk Society' }
 
