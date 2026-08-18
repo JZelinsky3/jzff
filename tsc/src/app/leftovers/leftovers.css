@@ -16,7 +16,14 @@
   --lo-ink2: #9c9486;
   --lo-ink3: #6b645b;
   --lo-lab: #bdb2a1;
+  /* Two different edges, and the distinction matters on a real screen. The
+     countdown cards are read as 2160px images where #2b2824 on near-black is a
+     clean hairline; on a phone at actual size it disappears, and a row of
+     names with invisible borders reads as bare text nobody knows is tappable.
+     So --lo-hair stays the STRUCTURAL rule (dividers, block borders) and
+     --lo-edge is for anything you can press. */
   --lo-hair: #2b2824;
+  --lo-edge: #4c453c;
   --lo-gold: #cfa54b;
   --lo-gold2: #7d642c;
   --lo-goldwash: rgba(207, 165, 75, 0.10);
@@ -184,7 +191,7 @@
 @media (max-width: 460px) { .lo-names { grid-template-columns: repeat(2, 1fr); } }
 .lo-name {
   padding: 14px 10px;
-  border: 1px solid var(--lo-hair);
+  border: 1px solid var(--lo-edge);
   border-radius: 2px;
   background: rgba(242, 236, 224, 0.02);
   font-family: var(--lo-disp);
@@ -203,7 +210,7 @@
 }
 
 /* ---- a question ---- */
-.lo-qhead { display: flex; align-items: baseline; gap: 14px; }
+.lo-qhead { display: flex; align-items: center; gap: 14px; }
 .lo-qhead .lo-n {
   font-family: var(--lo-disp);
   font-stretch: condensed;
@@ -212,6 +219,9 @@
   line-height: 0.8;
   color: var(--lo-gold);
   font-variant-numeric: tabular-nums;
+  /* Condensed 800 leaves a sliver of space above the digits, so centring on
+     the box hangs the chip low. Nudge to the numeral's optical centre. */
+  margin-bottom: 2px;
 }
 .lo-qhead .lo-tag {
   font-family: var(--lo-mono);
@@ -231,7 +241,7 @@
   width: 100%;
   text-align: left;
   padding: 15px 18px;
-  border: 1px solid var(--lo-hair);
+  border: 1px solid var(--lo-edge);
   border-radius: 2px;
   background: rgba(242, 236, 224, 0.02);
   font-family: var(--lo-disp);
@@ -247,11 +257,14 @@
   height: 20px;
   flex: none;
   border-radius: 50%;
-  border: 1px solid var(--lo-hair);
+  border: 1px solid var(--lo-edge);
   display: grid;
   place-items: center;
 }
-.lo-opt .lo-mk svg { width: 11px; height: 11px; }
+/* `display: block` is the whole fix for a glyph that sits low in its circle:
+   an inline svg is aligned on the text baseline, which leaves descender room
+   under it that grid centring then splits evenly. */
+.lo-opt .lo-mk svg { display: block; width: 11px; height: 11px; }
 .lo-opt.is-right { border-color: var(--lo-gold); background: var(--lo-goldwash); }
 .lo-opt.is-right .lo-mk { border-color: var(--lo-gold); background: var(--lo-gold); }
 .lo-opt.is-right .lo-mk svg { stroke: #141210; }
@@ -259,6 +272,65 @@
 .lo-opt.is-wrong .lo-mk { border-color: var(--lo-miss); }
 .lo-opt.is-wrong .lo-mk svg { stroke: var(--lo-miss); }
 .lo-opt.is-faded { opacity: 0.42; }
+/* Picked but not committed. Nothing is scored until the button is pressed, so
+   this state has to look chosen without looking graded: the gold edge and a
+   filled ring, but no tick, because a tick would read as "correct". */
+.lo-opt.is-pick { border-color: var(--lo-gold); background: var(--lo-goldwash); }
+.lo-opt.is-pick .lo-mk { border-color: var(--lo-gold); }
+.lo-opt.is-pick .lo-mk::after {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--lo-gold);
+}
+
+/* ---- while they are choosing ----
+   The selection step was the bland one: a question, four names, nothing else
+   on screen. This says which corner of seven years the number came out of,
+   which gives somebody something to reason from without narrowing the four. */
+.lo-source {
+  font-family: var(--lo-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lo-gold2);
+}
+/* The countdown's own giant ghosted numeral, bled off the right edge. Same
+   motif, so a screenshot of this page is placeable in the series. */
+.lo-stage { position: relative; }
+.lo-ghostnum {
+  position: absolute;
+  right: -26px;
+  top: -74px;
+  z-index: 0;
+  font-family: var(--lo-disp);
+  font-stretch: condensed;
+  font-weight: 800;
+  font-size: 260px;
+  line-height: 0.72;
+  letter-spacing: -0.06em;
+  color: rgba(242, 236, 224, 0.045);
+  pointer-events: none;
+  user-select: none;
+}
+.lo-stage > *:not(.lo-ghostnum) { position: relative; z-index: 1; }
+
+/* ---- back and next ---- */
+.lo-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.lo-back {
+  font-family: var(--lo-mono);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lo-lab);
+  padding: 11px 18px;
+  border: 1px solid var(--lo-edge);
+  border-radius: 2px;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.lo-back:hover { border-color: var(--lo-gold2); color: var(--lo-ink); }
+.lo-back:disabled { opacity: 0.35; cursor: default; }
 
 /* ---- the answer ---- */
 .lo-ans {
@@ -414,6 +486,89 @@
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--lo-gold2);
+}
+
+/* ---- the full twelve, per stat ----
+   Most people care about their own number more than they care about the answer,
+   so every result row opens into the whole league on that measure. */
+.lo-more {
+  align-self: flex-start;
+  font-family: var(--lo-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lo-lab);
+  padding: 7px 12px;
+  border: 1px solid var(--lo-edge);
+  border-radius: 2px;
+  margin-top: 2px;
+}
+.lo-more:hover { border-color: var(--lo-gold2); color: var(--lo-ink); }
+.lo-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--lo-hair);
+  border-radius: 2px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+.lo-table .lo-thead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--lo-hair);
+  background: rgba(242, 236, 224, 0.02);
+}
+.lo-table .lo-thead span {
+  font-family: var(--lo-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lo-lab);
+}
+.lo-trow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 13px;
+}
+.lo-trow + .lo-trow { border-top: 1px solid rgba(43, 40, 36, 0.7); }
+.lo-trow .lo-tn {
+  flex: 1;
+  font-family: var(--lo-disp);
+  font-stretch: condensed;
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--lo-ink2);
+}
+.lo-trow .lo-tv {
+  font-family: var(--lo-mono);
+  font-size: 13px;
+  color: var(--lo-ink2);
+  font-variant-numeric: tabular-nums;
+}
+.lo-trow .lo-tt {
+  font-family: var(--lo-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lo-gold2);
+}
+/* The answer's own line, and the reader's. Both get called out, and when they
+   are the same line it just reads as one. */
+.lo-trow.is-answer .lo-tn,
+.lo-trow.is-answer .lo-tv { color: var(--lo-gold); }
+.lo-trow.is-you { background: var(--lo-goldwash); }
+.lo-trow.is-you .lo-tn,
+.lo-trow.is-you .lo-tv { color: var(--lo-ink); }
+.lo-trow .lo-you {
+  font-family: var(--lo-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lo-gold);
 }
 
 .lo-foot { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
