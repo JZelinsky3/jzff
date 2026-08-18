@@ -403,7 +403,25 @@ body:has(.mx) .site-grain { display: none; }
 .mx-stage > *:not(.mx-ghostnum) { position: relative; z-index: 1; }
 
 /* ---- back and next ---- */
-.mx-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* ---- the nav, pinned ----
+   Twenty questions on a phone means twenty scrolls to the bottom to press the
+   only button that matters. It sticks instead, sitting on the page's own
+   background with a rule above it so content passes under a hard edge rather
+   than fading into a blur. The negative margins let it span the shell's
+   padding, so the bar reads as full width. */
+.mx-nav {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 -22px -72px;
+  padding: 14px 22px calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--mx-hair);
+  background: var(--mx-bg);
+}
 .mx-back {
   font-family: var(--mx-mono);
   font-size: 11px;
@@ -552,6 +570,16 @@ body:has(.mx) .site-grain { display: none; }
 .mx-row .mx-st svg { width: 13px; height: 13px; }
 .mx-row .mx-bd { display: flex; flex-direction: column; gap: 7px; }
 .mx-row .mx-q { font-size: 15px; color: var(--mx-ink2); line-height: 1.45; }
+/* The question's own number, so a row read halfway down the results still
+   says which of the twenty it is. */
+.mx-row .mx-qn {
+  font-family: var(--mx-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--mx-gold2);
+  margin-right: 8px;
+  font-variant-numeric: tabular-nums;
+}
 .mx-row .mx-a {
   font-family: var(--mx-disp);
   font-stretch: condensed;
@@ -585,11 +613,11 @@ body:has(.mx) .site-grain { display: none; }
    figure in its own cell on the right, so "All twelve" and "You 13" are two
    things rather than one run-on line. The bar is also the table's top edge when
    it is open, which is why its corners square off then. */
+.mx-twelve { display: flex; flex-direction: column; margin-top: 8px; }
 .mx-more {
   display: flex;
   align-items: stretch;
   width: 100%;
-  margin-top: 8px;
   border: 1px solid var(--mx-gold2);
   border-radius: 2px;
   background: var(--mx-goldwash);
@@ -597,7 +625,7 @@ body:has(.mx) .site-grain { display: none; }
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 .mx-more:hover { border-color: var(--mx-gold); background: rgba(207, 165, 75, 0.15); }
-.mx-more.is-open { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom-color: transparent; }
+.mx-more.is-open { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 .mx-more .mx-more-l {
   flex: 1;
   display: flex;
@@ -693,6 +721,38 @@ body:has(.mx) .site-grain { display: none; }
   font-size: 18px;
   color: var(--mx-ink2);
 }
+/* A held-back row. The name and the shape stay, the figure does not: an
+   omitted row would make the table lie about how many managers are on it. */
+.mx-trow.is-held .mx-tn { color: var(--mx-ink3); }
+.mx-trow .mx-hold {
+  width: 46px;
+  height: 11px;
+  border-radius: 1px;
+  background: repeating-linear-gradient(
+    -45deg, var(--mx-track) 0 4px, rgba(242, 236, 224, 0.06) 4px 8px);
+}
+.mx-trow .mx-sub {
+  font-family: var(--mx-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--mx-ink3);
+}
+.mx-held-note {
+  padding: 9px 13px;
+  border-top: 1px solid var(--mx-hair);
+  font-family: var(--mx-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mx-ink3);
+}
+.mx-trow .mx-tp {
+  font-family: var(--mx-mono);
+  font-size: 10px;
+  color: var(--mx-ink3);
+  font-variant-numeric: tabular-nums;
+}
+.mx-trow.is-you .mx-tp { color: var(--mx-lab); }
 .mx-trow .mx-tv {
   font-family: var(--mx-mono);
   font-size: 13px;

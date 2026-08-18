@@ -23,13 +23,11 @@ type Phase = 'claim' | 'play' | 'done'
 export function GameDeck({
   token,
   leagueId,
-  leagueName,
   played,
   runs: initialRuns,
 }: {
   token: string
   leagueId: string
-  leagueName: string
   played: string[]
   runs: RunRecord[]
 }) {
@@ -157,7 +155,7 @@ export function GameDeck({
     const band = bandFor(score)
     return (
       <div className="mx-shell">
-        <Top right={`${leagueName} · ${name}`} />
+        <Top right={name ?? ''} />
         <div className="mx-stack" style={{ gap: 14 }}>
           <span className="mx-k">{band.name}</span>
           <div className="mx-score">
@@ -288,7 +286,11 @@ export function GameDeck({
             <b>{q.answer}.</b>{' '}
             <span dangerouslySetInnerHTML={{ __html: q.why }} />
           </p>
-          <Twelve index={i} you={name} />
+          <Twelve
+            index={i}
+            you={name}
+            mask={q.pairedWith !== undefined && picks[String(q.pairedWith)] === undefined ? q.mask : undefined}
+          />
           <span className="mx-err">{err}</span>
           <div className="mx-nav">
             {i > 0 && (
@@ -341,15 +343,25 @@ function Board({
 }
 
 /** The whole league on one question's measure, opened on request. */
-function Twelve({ index, you }: { index: number; you: string | null }) {
+function Twelve({
+  index, you, mask,
+}: {
+  index: number
+  you: string | null
+  /** Names held back because a later question is the other end of this stat. */
+  mask?: string[]
+}) {
   const [open, setOpen] = useState(false)
   const t = tableFor(index)
   if (!t) return null
   const rows = sortedRows(t)
-  const mine = you ? rows.find((r) => r[0] === you) : undefined
+  const held = mask ?? []
+  // Your own figure is never held back: it is your number, and you are not the
+  // answer to anything.
+  const mine = you && !held.includes(you) ? rows.find((r) => r[0] === you) : undefined
 
   return (
-    <>
+    <div className="mx-twelve">
       <button
         type="button"
         className={`mx-more${open ? ' is-open' : ''}`}
@@ -357,7 +369,9 @@ function Twelve({ index, you }: { index: number; you: string | null }) {
       >
         <span className="mx-more-l">
           <span className="mx-more-k">{open ? 'Hide all twelve' : 'All twelve'}</span>
-          <span className="mx-more-sub">{t.label}</span>
+          <span className="mx-more-sub">
+            {t.label}{t.sort === 'rec' ? ' · by win rate' : ''}
+          </span>
         </span>
         {mine && (
           <span className="mx-more-r">
@@ -366,18 +380,19 @@ function Twelve({ index, you }: { index: number; you: string | null }) {
           </span>
         )}
       </button>
-      {open && <TwelveTable table={t} rows={rows} you={you} index={index} />}
-    </>
+      {open && <TwelveTable table={t} rows={rows} you={you} index={index} held={held} />}
+    </div>
   )
 }
 
 function TwelveTable({
-  table, rows, you, index,
+  table, rows, you, index, held,
 }: {
   table: StatTable
   rows: [string, string, number][]
   you: string | null
   index: number
+  held: string[]
 }) {
   const answer = QUESTIONS[index].answer
   return (
@@ -391,21 +406,34 @@ function TwelveTable({
         const tiedTop = rows.length > 1 && r[2] === rows[0][2] && rows[1][2] === rows[0][2]
         const tiedBot = rows.length > 1 && r[2] === rows[rows.length - 1][2]
           && rows[rows.length - 2][2] === rows[rows.length - 1][2]
-        const tag = n === 0 && !tiedTop ? table.topTag
+        const hidden = held.includes(r[0])
+        const tag = hidden ? ''
+          : n === 0 && !tiedTop ? table.topTag
           : n === rows.length - 1 && !tiedBot ? table.botTag
           : ''
         return (
           <div
             key={r[0]}
-            className={`mx-trow${r[0] === answer ? ' is-answer' : ''}${r[0] === you ? ' is-you' : ''}`}
+            className={`mx-trow${r[0] === answer ? ' is-answer' : ''}${r[0] === you ? ' is-you' : ''}${hidden ? ' is-held' : ''}`}
           >
             <span className="mx-tn">{r[0]}</span>
             {r[0] === you && <span className="mx-you">you</span>}
             {tag && <span className="mx-tt">{tag}</span>}
-            <span className="mx-tv">{r[1]}</span>
+            {table.subs?.[r[0]] && <span className="mx-sub">{table.subs[r[0]]}</span>}
+            {/* A record table is ordered on win rate, not on wins and not on
+                losses, and "21-4 above 17-3" is only obvious once the rate is
+                on the row. Kept subtle: the record is the fact, the rate is
+                why it sits where it does. */}
+            {!hidden && table.sort === 'rec' && <span className="mx-tp">{Math.round(r[2] * 100)}%</span>}
+            {hidden ? <span className="mx-hold" aria-label="held back" /> : <span className="mx-tv">{r[1]}</span>}
           </div>
         )
       })}
+      {held.length > 0 && (
+        <div className="mx-held-note">
+          {held.length === 1 ? 'One figure is' : `${held.length} figures are`} held back until a later question
+        </div>
+      )}
     </div>
   )
 }
@@ -425,7 +453,10 @@ function ReviewRow({
     <div className={`mx-row${ok ? '' : ' is-no'}`}>
       <span className="mx-st">{ok ? <Tick /> : <Cross />}</span>
       <span className="mx-bd">
-        <span className="mx-q">{q.q}</span>
+        <span className="mx-q">
+          <span className="mx-qn">{String(index + 1).padStart(2, '0')}</span>
+          {q.q}
+        </span>
         <span className="mx-a">
           {q.answer}
           {!ok && <em> you said {mine}</em>}

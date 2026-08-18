@@ -101,13 +101,7 @@ export default async function ExamPage({ params }: { params: Promise<{ token: st
 
   return (
     <div className="mx">
-      <GameDeck
-        token={token}
-        leagueId={league.id}
-        leagueName={league.name}
-        played={played}
-        runs={runs}
-      />
+      <GameDeck token={token} leagueId={league.id} played={played} runs={runs} />
     </div>
   )
 }

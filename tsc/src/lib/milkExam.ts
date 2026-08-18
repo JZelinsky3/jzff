@@ -50,6 +50,11 @@ export type StatTable = {
   topTag: string
   botTag: string
   rows: [string, string, number][]
+  /** A small qualifier per row, for stats where the sample is not the same
+   *  size for everybody. Twenty-four points a game across eight weeks is not
+   *  the same claim as across seventeen, and a table that hides that is
+   *  quietly misleading. */
+  subs?: Record<string, string>
 }
 
 export type Question = {
@@ -68,6 +73,18 @@ export type Question = {
    *  product: the score is a reason to read these. */
   why: string
   vein: Vein
+  /**
+   * Managers whose row is held back in this question's table until the
+   * question named in `pairedWith` has also been answered.
+   *
+   * Two questions can be the two ends of one measure: the worst rate when the
+   * opponent misses 100, and the only unbeaten record on the same split. The
+   * table is ordered best to worst, so answering either one hands over the
+   * other eight questions early. The row stays in place and is redacted, so
+   * the shape of the table is honest about there being something there.
+   */
+  mask?: string[]
+  pairedWith?: number
 }
 
 export const QUESTIONS: Question[] = [
@@ -77,7 +94,7 @@ export const QUESTIONS: Question[] = [
     source: 'Every week scored against all eleven others',
     options: ['Charlie', 'Luke', 'Connie', 'Cat'],
     answer: 'Charlie',
-    why: 'Twenty-one times he was in the bottom six for the week and won anyway. Connie is next on 13, Kyle has 7. Charlie is also the luckiest man in league history overall, <b>five and a half wins</b> above what his scores earned him.',
+    why: 'Twenty-one times he was in the bottom six for the week and won anyway. Connie is next on 13, Kyle has 7. Charlie is also the luckiest manager in league history overall, <b>five and a half wins</b> above what his scores earned him.',
   },
   {
     vein: 'Records',
@@ -85,12 +102,12 @@ export const QUESTIONS: Question[] = [
     source: 'All-time head to head, the current twelve',
     options: ['Luke', 'Charlie', 'Cat', 'Evan'],
     answer: 'Luke',
-    why: 'Nine of the eleven are above water against him. Isaac is the far end of the same measure: <b>one</b> man in this league holds a winning record over Isaac.',
+    why: 'Nine of the eleven are above water against him. Isaac is the far end of the same measure: <b>one</b> manager in this league holds a winning record over Isaac.',
   },
   {
     vein: 'Draft',
     q: 'Who has never taken a kicker or a defence before round 13, in seven drafts?',
-    source: 'Seven drafts, 105 picks a man',
+    source: 'Seven drafts, 105 picks each',
     options: ['Joey', 'Chris', 'Sean', 'Isaac'],
     answer: 'Joey',
     why: 'Zero, in 105 picks. Connie, Charlie and Luke have <b>seven each</b>.',
@@ -101,11 +118,13 @@ export const QUESTIONS: Question[] = [
     source: 'Every game the other side missed 100 in',
     options: ['Connie', 'Kyle', 'Cat', 'Charlie'],
     answer: 'Connie',
-    why: 'Four times he has lost a game in which the other team could not reach 100. Joey has never lost one, at <b>12-0</b>.',
+    why: 'Four times he has lost a game in which the other team could not reach 100. Nobody else in the league has lost more than three.',
+    mask: ['Joey', 'Evan'],
+    pairedWith: 12,
   },
   {
     vein: 'Records',
-    q: 'Who is 12-19 against the five men who have never won a ring?',
+    q: 'Who is 12-19 against the five managers who have never won a ring?',
     source: 'Career, against the five with no ring',
     options: ['Kyle', 'Cat', 'Luke', 'Charlie'],
     answer: 'Kyle',
@@ -117,7 +136,7 @@ export const QUESTIONS: Question[] = [
     source: 'Every pick graded against where the player finished',
     options: ['Ricci', 'Chris', 'Isaac', 'Mason'],
     answer: 'Ricci',
-    why: 'The best early drafter here and the worst late one. Kyle is the exact reverse: worst first five picks in the league, best late-round rate at <b>18%</b>.',
+    why: 'The best early drafter here and the worst late one: <b>6%</b> of his rounds nine to fifteen produce a starter, the lowest of the twelve.',
   },
   {
     vein: 'Luck',
@@ -129,8 +148,8 @@ export const QUESTIONS: Question[] = [
   },
   {
     vein: 'Records',
-    q: 'Who has the only winning record in the league against teams that made the bracket?',
-    source: 'Career, against teams that reached the bracket',
+    q: 'Who has the only winning record in the league against teams that made the playoffs?',
+    source: 'Career, against playoff teams',
     options: ['Isaac', 'Joey', 'Sean', 'Mason'],
     answer: 'Isaac',
     why: '<b>23-22</b>. Charlie is 14-33 against the same teams and Evan is 7-18.',
@@ -173,7 +192,7 @@ export const QUESTIONS: Question[] = [
     source: 'Every game the other side missed 100 in',
     options: ['Joey', 'Sean', 'Mason', 'Chris'],
     answer: 'Joey',
-    why: '<b>12-0</b>. Evan is 5-0 on a third of the sample; every other man in the league has dropped at least one, and Connie has dropped four.',
+    why: '<b>12-0</b>. Evan is 5-0 on a third of the sample; every other manager in the league has dropped at least one, and Connie has dropped four.',
   },
   {
     vein: 'Draft',
@@ -225,11 +244,11 @@ export const QUESTIONS: Question[] = [
   },
   {
     vein: 'Records',
-    q: 'Who scores 24 points a game more in the last three weeks of a season than he does in the rest of it?',
-    source: 'The closing weeks against the rest of the year',
+    q: 'Who averages 24 points a game more in the playoff weeks than he does in the regular season?',
+    source: 'Playoff weeks against the regular season',
     options: ['Evan', 'Joey', 'Ricci', 'Mason'],
     answer: 'Evan',
-    why: '115.5 a week through the season, <b>139.5</b> once it gets to the closing weeks. Joey is next at plus 8.2, and Cat drops 14.3.',
+    why: '115.5 a week in the regular season, <b>139.5</b> in playoff weeks. Joey is next at plus 8.2 and Cat drops 14.3. Worth knowing on this one: three seasons is only eight of those weeks for him, against seventeen for most of the league.',
   },
 ]
 
@@ -363,7 +382,7 @@ export const TABLES: Record<number, StatTable> = {
     rows: [['Cat', "6", 6], ['Charlie', "8", 8], ['Chris', "5", 5], ['Connie', "8", 8], ['Evan', "5", 5], ['Isaac', "8", 8], ['Joey', "5", 5], ['Kyle', "5", 5], ['Luke', "7", 7], ['Mason', "10", 10], ['Ricci', "7", 7], ['Sean', "5", 5]],
   },
   7: {
-    label: "Against teams that made the bracket", sort: 'rec',
+    label: "Against teams that made the playoffs", sort: 'rec',
     topTag: "best", botTag: "worst",
     rows: [['Cat', "16-33", 0.3265], ['Charlie', "14-33", 0.2979], ['Chris', "26-27", 0.4906], ['Connie', "19-32", 0.3725], ['Evan', "7-18", 0.28], ['Isaac', "23-22", 0.5111], ['Joey', "27-28", 0.4909], ['Kyle', "23-31", 0.4259], ['Luke', "17-32", 0.3469], ['Mason', "21-28", 0.4286], ['Ricci', "17-30", 0.3617], ['Sean', "22-26", 0.4583]],
   },
@@ -423,9 +442,11 @@ export const TABLES: Record<number, StatTable> = {
     rows: [['Cat', "2023  -92", -92], ['Charlie', "2019  -310", -310], ['Chris', "2021  +0", 0], ['Connie', "2020  -18", -18], ['Evan', "2023  -276", -276], ['Isaac', "2022  -153", -153], ['Joey', "2021  +73", 73], ['Kyle', "2023  -144", -144], ['Luke', "2024  -124", -124], ['Mason', "2024  -395", -395], ['Ricci', "2020  -263", -263], ['Sean', "2021  -178", -178]],
   },
   19: {
-    label: "Closing weeks against the rest", sort: 'desc',
+    label: "Playoff weeks vs the regular season", sort: 'desc',
     topTag: "biggest lift", botTag: "biggest drop",
     rows: [['Cat', "-14.3", -14.3], ['Charlie', "-4.7", -4.7], ['Chris', "+2.2", 2.2], ['Connie', "+2.4", 2.4], ['Evan', "+24.0", 24.0], ['Isaac', "-4.1", -4.1], ['Joey', "+8.2", 8.2], ['Kyle', "-2.2", -2.2], ['Luke', "-9.4", -9.4], ['Mason', "-0.5", -0.5], ['Ricci', "+4.0", 4.0], ['Sean', "-11.8", -11.8]],
+    // Playoff weeks each has actually played. Evan's +24.0 rests on eight.
+    subs: { Cat: '15 wks', Charlie: '17 wks', Chris: '17 wks', Connie: '17 wks', Evan: '8 wks', Isaac: '13 wks', Joey: '17 wks', Kyle: '17 wks', Luke: '14 wks', Mason: '15 wks', Ricci: '16 wks', Sean: '15 wks' },
   },
 }
 
