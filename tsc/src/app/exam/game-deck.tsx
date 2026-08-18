@@ -215,6 +215,7 @@ export function GameDeck({
 
         <div className="mx-foot">
           <button type="button" className="mx-ghost" onClick={copyScore}>Copy my score</button>
+          <a className="mx-ghost" href={`/exam/${token}/results`}>How the league answered</a>
           {copied && <span className="mx-said">Copied</span>}
         </div>
       </div>

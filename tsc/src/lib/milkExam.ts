@@ -40,6 +40,21 @@ export const ROSTER = [
   'Joey', 'Kyle', 'Luke', 'Mason', 'Ricci', 'Sean',
 ] as const
 
+/**
+ * Two-letter chips for the share page, where twelve names have to sit under a
+ * row of options without becoming the row.
+ *
+ * First initials do not work here: Cat, Charlie, Chris and Connie are all C,
+ * and the first TWO letters still collide, since Charlie and Chris are both
+ * Ch. These are hand-picked to be unique at a uniform two characters rather
+ * than computed and left to break the day somebody joins named Colin.
+ */
+export const INITIALS: Record<string, string> = {
+  Cat: 'CT', Charlie: 'CH', Chris: 'CS', Connie: 'CN',
+  Evan: 'EV', Isaac: 'IS', Joey: 'JO', Kyle: 'KY',
+  Luke: 'LU', Mason: 'MA', Ricci: 'RI', Sean: 'SE',
+}
+
 /** Which vein a question came out of, for the three-way split on the result. */
 export type Vein = 'Luck' | 'Records' | 'Draft'
 
@@ -407,6 +422,29 @@ export function roomSplit(runs: RunRecord[], q: Question): { got: number; of: nu
   const done = runs.filter((r) => Array.isArray(r.picks[q.id]))
   if (!done.length) return null
   return { got: done.filter((r) => isCorrect(q, r.picks[q.id])).length, of: done.length }
+}
+
+/** Who picked each option, and what share of the room that is. */
+export type OptionTally = { option: string; voters: string[]; pct: number; correct: boolean }
+
+/**
+ * How the room answered one question, option by option.
+ *
+ * The denominator is runs FILED, not votes cast: on a pick-three every run
+ * contributes three names, so dividing by votes would put all four options at
+ * a third of their real support and read as though nobody agreed on anything.
+ */
+export function tally(q: Question, runs: RunRecord[]): OptionTally[] {
+  const filed = runs.filter((r) => Array.isArray(r.picks[q.id]))
+  return q.options.map((option) => {
+    const voters = filed.filter((r) => r.picks[q.id].includes(option)).map((r) => r.name)
+    return {
+      option,
+      voters,
+      pct: filed.length ? Math.round((voters.length / filed.length) * 100) : 0,
+      correct: q.answers.includes(option),
+    }
+  })
 }
 
 /** Score bands. Milk, because everything in this series is. */

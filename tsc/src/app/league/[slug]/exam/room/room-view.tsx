@@ -107,6 +107,13 @@ export function RoomView({
                 used yet. Replacing it breaks the link you have already sent and
                 cannot be undone; runs already filed are untouched.
               </p>
+              {/* The share page gives away every answer, so it is a second
+                  link to send when the room is done, never the first one. */}
+              <div className="mxr-link">{link}/results</div>
+              <p className="mxr-note">
+                The results page: every question, who took which name, and the
+                percentages. Send it once everyone has sat it.
+              </p>
             </>
           ) : (
             <>
