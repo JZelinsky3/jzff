@@ -51,15 +51,55 @@ await C.loadData();
 C.refreshLateJoiners().then(() => renderAll());
 setInterval(() => C.refreshLateJoiners().then(ch => ch && renderAll()), 60000);
 
+/**
+ * Nothing on this board should be waiting on a network fetch while it is on
+ * screen.
+ *
+ * Player photographs and team crests come off sleepercdn, and the first time
+ * either one is asked for is the frame the selection graphic is painted in —
+ * so the biggest beat of the night opened on an empty card and filled in
+ * afterward, which is most of what "a slight pause" was. The pick is announced
+ * on the phone before it is revealed, so `pending` is known for as long as THE
+ * PICK IS IN is up: that is the window, and it is seconds wide.
+ *
+ * The 32 crests are pulled once at boot instead. They are small, they never
+ * change, and every one of them will be wanted before the night is out.
+ */
+const warmed = new Set();
+function warm(url) {
+  if (!url || warmed.has(url)) return;
+  warmed.add(url);
+  const img = new Image();
+  img.decoding = "async";
+  img.src = url;
+}
+
+for (const abbr of C.TEAM_ABBRS) warm(C.teamLogo(abbr));
+
+function warmPending() {
+  const p = STATE.pending;
+  if (!p) return;
+  warm(C.headshot(C.DATA.byId.get(p.id) || p));
+  warm(C.teamLogo(p.team));
+}
+
 C.watchState(s => {
   const prev = STATE;
   STATE = s;
+  // Before anything is drawn: the pick is known on the phone well before it is
+  // revealed, so the photograph is in cache by the time the graphic wants it.
+  warmPending();
   applyPhase(prev.status, s.status);
   renderAll();
 });
 
+// Bumped on every picks snapshot, and used in the paint keys below instead of
+// a pick count: undoing a pick and entering a different player at the same
+// slot leaves the count where it was, and a count is what the keys used to be.
+let picksRev = 0;
+
 C.watchPicks(p => {
-  PICKS = p; lastPickCount = p.length;
+  PICKS = p; lastPickCount = p.length; picksRev++;
   renderAll();
 });
 
@@ -127,18 +167,85 @@ document.addEventListener("visibilitychange", () => {
 // doesn't play a round-four card at whoever is watching.
 let lastRound = null;
 
+/**
+ * The overlap that keeps the live board from showing between two screens.
+ *
+ * Every full-screen beat here fades in from transparent, and the screen it is
+ * replacing used to be switched off in the same frame the fade started — so
+ * for a third of a second you were looking straight through the incoming card
+ * at the resting board. That is the half-second "pause" between THE PICK IS IN
+ * and the selection graphic, and the break between the round card and the man
+ * on the clock: not a pause at all, a hole.
+ *
+ * `handoff` holds the outgoing screen up (see the display rules in the CSS)
+ * for exactly as long as the incoming one takes to become opaque. Nothing is
+ * timed against the network and nothing waits on a load; it is one class and
+ * one timer.
+ */
+const HANDOFF_MS = 440;
+let handoff = false;
+let handoffTimer = null;
+
+function setBodyClass(cls) {
+  body.className = cls + (handoff ? " handoff" : "");
+}
+
+/**
+ * The two and a half seconds before the next man's countdown appears.
+ *
+ * His clock has in fact been running since the pick was revealed — the console
+ * starts it there on purpose — but the card in the corner used to simply have
+ * a countdown on it one frame and a different countdown the next, which is the
+ * only handover in the whole draft that happened without anybody saying so.
+ * The card says whose clock it is first, in words, and the numbers arrive
+ * after. Nothing is held up by it: this is what is drawn, not what is true.
+ */
+const NEXT_CUE_MS = 2600;
+let cueTimer = null;
+
+function cueNextOnClock() {
+  const el = document.querySelector(".bb-next");
+  clearTimeout(cueTimer);
+  if (!el) return;
+  // Not at the turn of a round: that card is about the round, and there is no
+  // clock on it to introduce — it does not start until the console advances.
+  if (el.classList.contains("turning")) { el.classList.remove("cue", "ready"); return; }
+  el.classList.remove("ready");
+  el.classList.add("cue");
+  cueTimer = setTimeout(() => {
+    el.classList.remove("cue");
+    el.classList.add("ready");
+  }, NEXT_CUE_MS);
+}
+
+function clearCue() {
+  clearTimeout(cueTimer);
+  document.querySelector(".bb-next")?.classList.remove("cue", "ready");
+}
+
+function beginHandoff() {
+  handoff = true;
+  clearTimeout(handoffTimer);
+  handoffTimer = setTimeout(() => {
+    handoff = false;
+    body.classList.remove("handoff");
+  }, HANDOFF_MS);
+}
+
 function applyPhase(prevStatus, nextStatus) {
   clearTimeout(phaseTimer);
 
   if (nextStatus !== "revealed") {
     phase = null;
-    body.className = `board state-${nextStatus}`;
+    clearCue();
 
     const round = C.roundOf(STATE.current || 1);
     // Only the formal advance — Next Pick, revealed to clock — earns a card.
     // Not idle to clock at the very start: the resting state already makes an
     // entrance of its own there.
     if (nextStatus === "clock" && prevStatus === "revealed") {
+      // The detail screen stays up under the card that is fading in over it.
+      beginHandoff();
       // A new round leads, then the manager who opens it. showAnnounce()
       // queues them so they play in that order rather than on top of us.
       if (lastRound !== null && round > lastRound) announceRound(round);
@@ -146,6 +253,7 @@ function applyPhase(prevStatus, nextStatus) {
     } else if (nextStatus === "idle" || nextStatus === "pick_in") {
       clearAnnounce();
     }
+    setBodyClass(`board state-${nextStatus}`);
     lastRound = round;
     return;
   }
@@ -155,13 +263,18 @@ function applyPhase(prevStatus, nextStatus) {
   if (prevStatus !== "revealed") {
     phase = "selection";
     sting();
+    // THE PICK IS IN stays up under the selection graphic's fade.
+    if (prevStatus === "pick_in") beginHandoff();
     phaseTimer = setTimeout(() => {
       phase = "details";
-      body.className = "board state-revealed phase-details";
+      setBodyClass("board state-revealed phase-details");
       renderAll();
+      // After renderAll, which is what decides whether this card is a clock
+      // or the turn of a round.
+      cueNextOnClock();
     }, SELECTION_MS);
   }
-  body.className = `board state-revealed phase-${phase || "details"}`;
+  setBodyClass(`board state-revealed phase-${phase || "details"}`);
 }
 
 // ── the full-screen announcements ─────────────────────────────────────────
@@ -173,9 +286,13 @@ function applyPhase(prevStatus, nextStatus) {
 
 const ONCARD_MS = 5200;
 const ROUNDCARD_MS = 4600;
+// How long a card's own fade takes, in both directions. Matches the `dim` and
+// `undim` animations on .announce.
+const ANN_FADE_MS = 360;
 
 let annQueue = [];
 let annTimer = null;
+let annOutTimer = null;
 let annShowing = null;
 
 function showAnnounce(el, ms) {
@@ -183,26 +300,59 @@ function showAnnounce(el, ms) {
   if (!annShowing) runAnnounce();
 }
 
+/**
+ * One card at a time, but never a frame with neither of them up.
+ *
+ * The round card used to be switched off and the on-the-clock card started a
+ * quarter second later, on top of which the incoming card faded in from
+ * nothing — so the two announcements had most of a second of live board
+ * between them. The incoming card is lifted over the outgoing one instead and
+ * the outgoing one is dropped once the new one is opaque, so the cut happens
+ * behind a screen that is already covering it.
+ */
 function runAnnounce() {
   const next = annQueue.shift();
-  if (!next) { annShowing = null; return; }
+  const out = annShowing;
+
+  if (!next) {
+    annShowing = null;
+    if (out) fadeOutAnnounce(out);
+    return;
+  }
+
   const [el, ms] = next;
   annShowing = el;
+  clearTimeout(annOutTimer);
+  el.classList.remove("out");
   el.classList.add("show");
-  annTimer = setTimeout(() => {
-    el.classList.remove("show");
-    // Let the card clear before the next one paints over the same space.
-    annTimer = setTimeout(runAnnounce, 260);
-  }, ms);
+
+  if (out && out !== el) {
+    el.classList.add("over");
+    annOutTimer = setTimeout(() => {
+      out.classList.remove("show", "over", "out");
+      el.classList.remove("over");
+    }, ANN_FADE_MS);
+  }
+
+  annTimer = setTimeout(runAnnounce, ms);
+}
+
+/** The last card of a run: fades back to the board rather than cutting to it. */
+function fadeOutAnnounce(el) {
+  el.classList.add("out");
+  clearTimeout(annOutTimer);
+  annOutTimer = setTimeout(() => el.classList.remove("show", "over", "out"), ANN_FADE_MS);
 }
 
 /** Drop everything queued or showing — a state jump shouldn't leave a card up. */
 function clearAnnounce() {
   clearTimeout(annTimer);
+  clearTimeout(annOutTimer);
   annQueue = [];
   annShowing = null;
-  $("onCard").classList.remove("show");
-  $("roundCard").classList.remove("show");
+  for (const id of ["onCard", "roundCard"]) {
+    $(id).classList.remove("show", "over", "out");
+  }
 }
 
 /** "X is now on the clock", full screen, the way the pick reveal is. */
@@ -291,6 +441,20 @@ function announceRound(round) {
 /** How long a pick gets: whatever the console set, else the league default. */
 const pickMs = () => STATE.pickMs || (C.DATA.meta.pick_seconds || 120) * 1000;
 
+/**
+ * Five times a second, four countdowns. Both writes are guarded because both
+ * are more expensive than they look: assigning `className` invalidates style
+ * for the element whether or not the string differs, and assigning
+ * `textContent` tears down the text node and builds another. At 5Hz across
+ * four elements that is 40 needless invalidations a second, all of them on
+ * elements sitting inside cards the compositor would otherwise leave alone.
+ */
+function put(el, text, cls) {
+  if (!el) return;
+  if (el.textContent !== text) el.textContent = text;
+  if (cls != null && el.className !== cls) el.className = cls;
+}
+
 setInterval(tickClock, 200);
 function tickClock() {
   const el = $("clkTimer");
@@ -305,47 +469,30 @@ function tickClock() {
   // The showcase covers the board's own timer, so it carries one of its own.
   const sc = $("scClock");
   if (!live) {
-    el.className = "timer";
-    if (sc) { sc.textContent = C.mmss(pickMs()); sc.className = "sc-clock held"; }
-    if (wall) wall.textContent = "ON THE CLOCK";
-    if (next) {
-      next.textContent = C.mmss(pickMs());
-      next.className = "next-clock held";
-      $("nextNote").textContent = "";
-    }
+    if (el.className !== "timer") el.className = "timer";
+    put(sc, C.mmss(pickMs()), "sc-clock held");
+    put(wall, "ON THE CLOCK", null);
+    put(next, C.mmss(pickMs()), "next-clock held");
+    put($("nextNote"), "", null);
     return;
   }
   const left = STATE.paused
     ? (STATE.pausedLeft ?? 0)
     : (STATE.clockEnds ? STATE.clockEnds - Date.now() : pickMs());
-  el.textContent = C.mmss(left);
-  el.className = "timer"
-    + (STATE.paused ? " paused" : left <= 10000 ? " panic" : left <= 30000 ? " warn" : "");
-  if (sc) {
-    sc.textContent = STATE.clockEnds || STATE.paused ? C.mmss(left) : C.mmss(pickMs());
-    sc.className = "sc-clock" + (!STATE.clockEnds && !STATE.paused ? " held"
-      : STATE.paused ? " paused"
-      : left <= 10000 ? " panic" : left <= 30000 ? " warn" : "");
-  }
-  if (wall) {
-    wall.textContent = STATE.paused ? "PAUSED" : C.mmss(left);
-    wall.className = "wc"
-      + (STATE.paused ? " paused" : left <= 10000 ? " panic" : left <= 30000 ? " warn" : "");
-  }
-  if (next) {
-    // At the turn of a round there is no clock yet — it starts when the
-    // commissioner advances — so this shows the full pick length, greyed, and
-    // says so. A held 2:00 and a 2:00 that started a second ago are the same
-    // picture otherwise, which is no way to know which one you are looking at.
-    const started = !!STATE.clockEnds;
-    next.textContent = C.mmss(started ? left : pickMs());
-    next.className = "next-clock"
-      + (!started ? " held" : STATE.paused ? " paused"
-        : left <= 10000 ? " panic" : left <= 30000 ? " warn" : "");
-    $("nextNote").textContent = started
-      ? (STATE.paused ? "clock paused" : "")
-      : "starts on next pick";
-  }
+  const heat = STATE.paused ? " paused" : left <= 10000 ? " panic" : left <= 30000 ? " warn" : "";
+  put(el, C.mmss(left), "timer" + heat);
+  put(sc,
+    STATE.clockEnds || STATE.paused ? C.mmss(left) : C.mmss(pickMs()),
+    "sc-clock" + (!STATE.clockEnds && !STATE.paused ? " held" : heat));
+  put(wall, STATE.paused ? "PAUSED" : C.mmss(left), "wc" + heat);
+  // At the turn of a round there is no clock yet — it starts when the
+  // commissioner advances — so this shows the full pick length, greyed, and
+  // says so. A held 2:00 and a 2:00 that started a second ago are the same
+  // picture otherwise, which is no way to know which one you are looking at.
+  const started = !!STATE.clockEnds;
+  put(next, C.mmss(started ? left : pickMs()), "next-clock" + (started ? heat : " held"));
+  put($("nextNote"),
+    started ? (STATE.paused ? "clock paused" : "") : "starts on next pick", null);
 }
 
 const DRAFT_AT = new Date("2026-08-28T19:15:00-04:00").getTime();
@@ -360,6 +507,27 @@ setInterval(() => {
 }, 500);
 
 // ── render ────────────────────────────────────────────────────────────────
+
+/**
+ * Only rebuild a panel when what it would say has actually changed.
+ *
+ * renderAll runs on every write to the state document and every pick that
+ * lands — pause, resume, adjust the clock, absorb a pick off Sleeper — and
+ * every one of those used to re-`innerHTML` the whole board: seven lists, and
+ * upward of thirty <img> elements thrown away and made again, each one a fresh
+ * cache lookup and a fresh decode. That is the lag: not the work of drawing
+ * the board once, but the work of drawing it again for no reason.
+ *
+ * Each panel now declares what its content depends on. If that has not moved,
+ * the panel is left alone — which also means its entrance animations are not
+ * restarted, which is the other half of what made the board feel twitchy.
+ */
+const paintKeys = new Map();
+function changed(id, key) {
+  if (paintKeys.get(id) === key) return false;
+  paintKeys.set(id, key);
+  return true;
+}
 
 function renderAll() {
   renderHeader(); renderClock(); renderLineup(); renderPickIn();
@@ -415,6 +583,8 @@ function portrait(m) {
 
 function renderClock() {
   const o = STATE.current || 1;
+  // The note and the facts read the board, so the pick count is in the key.
+  if (!changed("clock", `${o}|${picksRev}`)) return;
   const m = C.managerOf(o);
   $("clkPortrait").innerHTML = portrait(m);
 
@@ -484,11 +654,12 @@ function pickLabel(p) {
 
 function renderLineup() {
   const o = STATE.current || 1;
+  const justNow = (STATE.status === "revealed" && STATE.pending) ? STATE.pending.id : null;
+  if (!changed("lineup", `${o}|${picksRev}|${justNow || ""}`)) return;
   const m = C.managerOf(o);
   if (!m) { $("luGrid").innerHTML = ""; $("luCount").textContent = ""; return; }
 
   const mine = PICKS.filter(p => p.slot === m.slot);
-  const justNow = (STATE.status === "revealed" && STATE.pending) ? STATE.pending.id : null;
   // Kickers and defenses don't earn a row on a broadcast panel this size —
   // nobody's watching to see if the K slot is open in round six.
   const pool = mine.filter(p => p.pos !== "K" && p.pos !== "DEF");
@@ -526,6 +697,7 @@ function renderLineup() {
 
 function renderPickIn() {
   const o = STATE.current || 1;
+  if (!changed("pickin", String(o))) return;
   const m = C.managerOf(o);
 
   // The big outlined numeral is the overall pick; round and pick cross its
@@ -550,6 +722,8 @@ function renderPickIn() {
 function renderSelection() {
   if (STATE.status !== "revealed" || !STATE.pending) return;
   const p = STATE.pending, o = STATE.current;
+  // The tagline reads the board, so the pick count belongs in the key.
+  if (!changed("selection", `${o}|${p.id}|${picksRev}`)) return;
   const player = C.DATA.byId.get(p.id) || p;
   const m = C.managerOf(o);
 
@@ -579,6 +753,8 @@ function renderSelection() {
 function renderReveal() {
   if (STATE.status !== "revealed" || !STATE.pending) return;
   const p = STATE.pending, o = STATE.current;
+  // Who is left at his position moves with the board, so it is in the key.
+  if (!changed("reveal", `${o}|${p.id}|${picksRev}`)) return;
   const player = C.DATA.byId.get(p.id) || p;
   const m = C.managerOf(o);
 
@@ -670,6 +846,7 @@ function renderReveal() {
  */
 function renderNextUp() {
   const o = (STATE.current || 1) + 1;
+  if (!changed("nextup", String(o))) return;
   const m = o <= C.TOTAL ? C.managerOf(o) : null;
   const label = m ? `PICK ${o} · ${C.roundOf(o)}.${String(C.roundPickOf(o)).padStart(2, "0")}` : "";
 
@@ -710,7 +887,10 @@ function renderBestAvailable() {
   const rows = Math.max(BA_ROWS, lineupRows);
   // Both cards in the band divide their height into exactly this many rows,
   // so they fill rather than stopping short, and stay level with each other.
+  // Outside the guard: it is a custom property, not markup, and the lineup
+  // beside it can grow on a render that leaves this list untouched.
   document.querySelector(".bottom-band")?.style.setProperty("--band-rows", rows);
+  if (!changed("bestavail", `${picksRev}|${rows}`)) return;
   $("baList").innerHTML = C.bestAvailable(PICKS, null, rows).map(p => `
     <div class="ba">
       <span class="rk">${p.board}</span>
@@ -757,6 +937,7 @@ function boardPick() {
 
 function renderRoundBoard() {
   const o = boardPick();
+  if (!changed("wall", `${o}|${picksRev}`)) return;
   const round = C.roundOf(o);
   const start = (round - 1) * C.TEAMS + 1;
   const made = new Map(PICKS.map(p => [p.overall, p]));
@@ -844,7 +1025,7 @@ function renderShowcase() {
   const o = STATE.current || 1;
   // The clock is not in the key: it is written straight into #scClock by
   // tickClock, five times a second, and has nothing to do with the markup.
-  const key = `${slot}|${PICKS.length}|${o}`;
+  const key = `${slot}|${picksRev}|${o}`;
   if (key === showcaseKey) return;
   showcaseKey = key;
 
@@ -871,7 +1052,7 @@ function renderShowcase() {
   renderShowcaseCareer(m);
   renderShowcaseSched(m, o);
   renderShowcaseSeasons(m);
-  renderShowcaseTendencies(m);
+  renderShowcaseTendencies(m, C.roundOf(o));
   renderShowcaseBoard(m, o);
   renderShowcaseRounds(m, C.roundOf(o));
   renderShowcaseFoot(o);
@@ -995,7 +1176,13 @@ function firstRoundFor(m, pos) {
   };
 }
 
-const POS_ONE = { QB: "Quarterback", RB: "Running Back", WR: "Receiver", TE: "Tight End" };
+// K and DEF are in here only because the round cell follows the draft: by the
+// fourteenth round what most of this league does is take a kicker, and this
+// line is set at 2.45u — "K" on its own is not a sentence.
+const POS_ONE = {
+  QB: "Quarterback", RB: "Running Back", WR: "Receiver", TE: "Tight End",
+  K: "Kicker", DEF: "Defense",
+};
 const POS_MANY = { QB: "Quarterbacks", RB: "Running Backs", WR: "Receivers", TE: "Tight Ends" };
 
 /** The whole room's average first round at a position, for comparison. */
@@ -1035,7 +1222,31 @@ function hisGuy(m) {
   return best && best.n > 1 ? best : null;
 }
 
-function renderShowcaseTendencies(m) {
+/**
+ * What he does with the round the draft is actually in.
+ *
+ * Counted in drafts, not in picks: a man who owned two ninth rounders one
+ * year and took a receiver with both did not do it twice, he did it once. So
+ * a position is credited with the years it appeared in that round, and the
+ * denominator is the years he had a pick in that round at all — which is not
+ * always his whole career, since picks get traded.
+ */
+function roundHabit(m, round) {
+  const list = (m.round_picks || {})[String(round)] || [];
+  if (!list.length) return null;
+  const years = new Set();
+  const byPos = new Map();
+  for (const p of list) {
+    years.add(p.y);
+    if (!byPos.has(p.pos)) byPos.set(p.pos, new Set());
+    byPos.get(p.pos).add(p.y);
+  }
+  let best = null;
+  for (const [pos, ys] of byPos) if (!best || ys.size > best.n) best = { pos, n: ys.size };
+  return best && { ...best, of: years.size };
+}
+
+function renderShowcaseTendencies(m, round) {
   const t = m.draft_tendency || {};
   const drafts = t.drafts || 0;
   const cells = [];
@@ -1047,13 +1258,20 @@ function renderShowcaseTendencies(m) {
       <span class="rng">${guy.n} of ${drafts} drafts</span></div>`);
   }
 
-  // What he opens with, and how often. `round1` is already counted by
-  // position in the build.
-  const r1 = Object.entries(t.round1 || {}).sort((a, b) => b[1] - a[1])[0];
-  if (r1) {
-    cells.push(`<div class="v"><span class="k">Round one</span>
-      <b class="pos-${r1[0]}">${POS_ONE[r1[0]] || r1[0]}</b>
-      <span class="rng">${r1[1]} of ${drafts} drafts</span></div>`);
+  // What he does with the round he is sitting in, the way the round band
+  // underneath already follows the draft. It said ROUND ONE all night, which
+  // is the least useful version of it after the first twelve picks: what a man
+  // opens a draft with is not the question while he is on a ninth rounder.
+  // Falls back to the build's own round-one count if a round has no history —
+  // a manager who has never owned a pick that deep.
+  const hab = roundHabit(m, round);
+  const r1 = hab ? null : Object.entries(t.round1 || {}).sort((a, b) => b[1] - a[1])[0];
+  const word = CARD_WORD[hab ? round : 1];
+  if (hab || r1) {
+    const pos = hab ? hab.pos : r1[0];
+    cells.push(`<div class="v"><span class="k">Round ${word || (hab ? round : 1)}</span>
+      <b class="pos-${pos}">${POS_ONE[pos] || pos}</b>
+      <span class="rng">${hab ? hab.n : r1[1]} of ${hab ? hab.of : drafts} drafts</span></div>`);
   }
 
   // Where he sits against everybody else. The position he is furthest from
@@ -1148,6 +1366,11 @@ function renderShowcaseBoard(m, current) {
 const ORD_WORD = ["", "first", "second", "third", "fourth", "fifth", "sixth",
   "seventh", "eighth", "ninth", "tenth", "eleventh", "twelfth", "thirteenth",
   "fourteenth", "fifteenth"];
+
+// The same list said the other way, for a heading that names the round rather
+// than counting into it: "Round nine", not "Round ninth".
+const CARD_WORD = ["", "one", "two", "three", "four", "five", "six", "seven",
+  "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen"];
 
 /**
  * The same round he is picking in, every year he has picked in it.
@@ -1351,7 +1574,7 @@ function renderTicker() {
   // change that could alter a strip) — leaving STATE.current in this key
   // used to mean hitting Next Pick, which doesn't touch PICKS, would still
   // restart whatever strip was mid-scroll for no visible reason.
-  const key = `${viewIndex}|${which}|${strip.tag}|${strip.html.length}|${PICKS.length}`;
+  const key = `${viewIndex}|${which}|${strip.tag}|${strip.html.length}|${picksRev}`;
   if (key === tickerKey) return;
   tickerKey = key;
 

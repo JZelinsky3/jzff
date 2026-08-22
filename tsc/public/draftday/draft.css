@@ -460,8 +460,10 @@ body.board::after {
   gap: calc(3 * var(--u));
   /* More room on the left than the other three sides: the headline and the
      manager's card both hang off it, and on this set they want to sit inside
-     the LED wall rather than out over the pillar and the crowd. */
-  padding: calc(8 * var(--u)) calc(8 * var(--u)) calc(8 * var(--u)) calc(12 * var(--u));
+     the LED wall rather than out over the pillar and the crowd. Pushed in
+     again since — at 12 the block sat on the seam where the wall meets the
+     pillar, and the headline wants the flat of the wall behind it. */
+  padding: calc(8 * var(--u)) calc(8 * var(--u)) calc(8 * var(--u)) calc(15.5 * var(--u));
   background: var(--night);
   animation: dim .5s ease-out both;
 }
@@ -474,13 +476,18 @@ body.board::after {
    compensate turned the pillars and the crowd orange. */
 .pickin::before {
   content: ""; position: absolute; inset: 0; z-index: 0;
-  background: url("bg/stage.webp") center center / cover no-repeat;
   /* Graded, not dimmed. The photograph's stadium lights are a cyan blue that
-     reads as daylight through a window; the hue-rotate walks that back toward
-     navy, the saturate takes the last of the cyan out of it and the contrast
-     drops the floor and the ceiling away into the dark. Nothing here lowers the
-     midtones, so the set is no less visible than it was. */
-  filter: hue-rotate(-14deg) saturate(.82) contrast(1.14);
+     reads as daylight through a window; the hue-rotate walked that back toward
+     navy, the saturate took the last of the cyan out of it and the contrast
+     dropped the floor and the ceiling away into the dark. Nothing in it lowers
+     the midtones, so the set is no less visible than it was.
+
+     It is not a filter any more. That exact chain — hue-rotate(-14deg)
+     saturate(.82) contrast(1.14) — is baked into bg/stage-graded.webp at the
+     canvas's own 1920x1080, because three full-screen filtered layers each had
+     to be re-rasterised in the frame they were switched on, and that is a
+     hitch you can see at the top of a beat. */
+  background: url("bg/stage-graded.webp") center center / cover no-repeat;
 }
 /* The one exception: a soft pool of shade under the bottom left corner, where
    the manager's card sits over the lit floor and its reflections. It is a
@@ -539,29 +546,86 @@ body.board::after {
     #7d5f24 0%, #c99a43 18%, #f0d49a 38%, #fffaf0 48%,
     #f0d49a 58%, #c99a43 78%, #8a6a2a 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
-  animation: piLine .55s cubic-bezier(.2,.9,.3,1) both;
+  /* Two animations on one element: the line wipes on, then the light travels
+     across the leaf it is painted in. */
+  animation:
+    piLine .6s cubic-bezier(.16,.84,.3,1) both,
+    piSheen 1.15s .3s cubic-bezier(.35,.6,.35,1) both;
 }
-.pi-head span:nth-child(2) { animation-delay: .1s; }
-@keyframes piLine { from { opacity: 0; transform: translateX(calc(-2.4 * var(--u))); } }
+.pi-head span:nth-child(2) { animation-delay: .16s, .46s; }
+/* A wipe, not a slide. The line is uncovered left to right the way a title
+   card is built rather than moved into place, which is the whole difference
+   between the beat arriving and the beat appearing.
+
+   polygon(), not inset(). The headline is `nowrap` in a `minmax(0, 1fr)`
+   column, so it is wider than its own box by design, and it leans out of the
+   top and bottom of it as well — a clip that finishes at inset(0) shears the
+   overhang off and leaves THE PICK reading as THE PIC. A negative inset does
+   not fix that, because negative inset offsets are clamped to zero; polygon
+   co-ordinates are not, so the resting frame is a box well outside the
+   element on every side and clips nothing. */
+@keyframes piLine {
+  from { opacity: 0;
+         clip-path: polygon(-30% -40%, -30% -40%, -30% 140%, -30% 140%);
+         transform: translateX(calc(-1.1 * var(--u))); }
+  55%  { opacity: 1; }
+  to   { opacity: 1;
+         clip-path: polygon(-30% -40%, 240% -40%, 240% 140%, -30% 140%);
+         transform: none; }
+}
+/* The light crossing the gold leaf. The gradient is the fill, so travelling
+   its position is the same thing as a bar of light moving over metal — and it
+   lands back on 0, which is exactly the resting picture, so the sweep costs
+   the design nothing. Repeat is on (the default), so there is never bare
+   background under the glyphs mid-travel. */
+@keyframes piSheen {
+  from { background-position-x: -170%; }
+  to   { background-position-x: 0%; }
+}
 /* The light bar. It runs warm at both ends and cools to near-white in the
    middle, which is how a real bar of light across gold leaf behaves: the
    centre is the specular hit, the falloff either side of it is the metal's
    own colour. A single gold all the way across just looked like a smear. */
 
-/* who locked it, on the gold rail the rest of the board uses for a name */
+/* Who locked it. No gold rail down the side of it any more — the rest of the
+   board hangs a name off one, but this is the one screen with the set showing
+   through behind it rather than a panel, and a floating vertical bar over a
+   photograph of a room reads as a graphic that has come loose. The cut-out and
+   the name carry it on their own here. */
 .pi-locked {
+  position: relative;
   display: flex; align-items: flex-end; gap: calc(2 * var(--u));
-  padding-left: calc(1.8 * var(--u)); border-left: 5px solid var(--gold);
-  animation: selUp .5s .3s ease-out both;
 }
 /* The manager's cut-out, bottom aligned so swapping in alternate art of the
-   same shape drops straight in. Any portrait trimmed to the subject works. */
+   same shape drops straight in. Any portrait trimmed to the subject works.
+   He rises off the bottom edge on his own beat, after the rail has drawn —
+   he is the last thing on the screen to arrive and the one the room is
+   looking for. */
 .pi-face {
   flex: none; height: calc(23 * var(--u)); width: auto;
   object-fit: contain; object-position: bottom center;
   filter: drop-shadow(0 calc(1 * var(--u)) calc(2.2 * var(--u)) rgba(0,0,0,.7));
+  animation: piFace .72s .86s cubic-bezier(.18,.88,.3,1) both;
+}
+@keyframes piFace {
+  from { opacity: 0; transform: translateY(calc(5 * var(--u))) scale(.97); }
 }
 .pi-who { min-width: 0; padding-bottom: calc(.4 * var(--u)); }
+/* The three lines of the card come in behind the rail, one after the other,
+   rather than as a block. */
+.pi-eyebrow, .pi-sub { animation: selUp .5s ease-out both; }
+.pi-eyebrow { animation-delay: .94s; }
+.pi-sub     { animation-delay: 1.16s; }
+/* The name carries a resting skew, so it gets a keyframe of its own with the
+   same function list in both frames — selUp's bare translateY would make the
+   browser decompose two mismatched matrices and stand the lean up mid-entry. */
+.pi-name { animation: piName .52s 1.04s ease-out both; }
+@keyframes piName {
+  from { opacity: 0;
+         transform: translate(calc(-.55 * var(--u)), calc(2.4 * var(--u))) skewX(-6deg); }
+  to   { opacity: 1;
+         transform: translate(calc(-.55 * var(--u)), 0) skewX(-6deg); }
+}
 .pi-eyebrow {
   font-family: var(--mono); font-weight: 600; font-size: calc(1.75 * var(--u));
   letter-spacing: .3em; text-transform: uppercase; color: var(--gold-hi);
@@ -604,6 +668,24 @@ body.board::after {
      hanging over them reads better than one racked dead centre. */
   margin-bottom: calc(13 * var(--u));
 }
+/* The bloom the numeral lands in. A soft pool of gold that opens up under it
+   and then settles back to almost nothing — it is what gives the numeral
+   something to arrive against, and it is a radial on one element, so it costs
+   an opacity and a scale and nothing else. */
+.pi-right::before {
+  content: ""; position: absolute; z-index: 0; left: 50%; top: 50%;
+  width: calc(56 * var(--u)); height: calc(56 * var(--u));
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(201,154,67,.34) 0%,
+    rgba(201,154,67,.14) 38%, transparent 68%);
+  pointer-events: none;
+  animation: piBloom 1.1s .18s cubic-bezier(.2,.8,.3,1) both;
+}
+@keyframes piBloom {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(.55); }
+  38%  { opacity: 1; }
+  to   { opacity: .38; transform: translate(-50%, -50%) scale(1.12); }
+}
 /* Straight across the middle of the numeral, not stacked above it: the line
    crosses the waist of the 12 and the outline runs behind it. Centred on the
    numeral's ink rather than its box — letter-spacing puts a tracking gap after
@@ -627,10 +709,16 @@ body.board::after {
     0 0 calc(.9 * var(--u)) rgba(5,10,18,.95),
     0 0 calc(2.2 * var(--u)) rgba(5,10,18,.85),
     0 0 calc(4 * var(--u)) rgba(5,10,18,.7);
-  animation: piRp .5s .2s ease-out both;
+  animation: piRp .6s .58s ease-out both;
 }
-/* selUp's translateY would fight the one holding this on the numeral's middle */
-@keyframes piRp { from { opacity: 0; } }
+/* selUp's translateY would fight the one holding this on the numeral's middle,
+   so this one opens out of its own tracking instead: the words start set tight
+   and spread to where they rest. It is one short absolutely-positioned line,
+   so the relayout it costs is contained to itself. */
+@keyframes piRp {
+  from { opacity: 0; letter-spacing: .04em; }
+  to   { opacity: 1; letter-spacing: .26em; }
+}
 /* Stroke only, no fill, so the set shows through it. -webkit-text-stroke
    rather than a paint-order outline: this is Chrome on a television and the
    stroke needs to sit inside the glyph, not straddle its edge and thicken it. */
@@ -659,32 +747,58 @@ body.board::after {
      digits themselves rather than their line box, and top: 50% on the
      round-and-pick line lands across their middle. */
   margin: calc(2.9 * var(--u)) 0 calc(2.1 * var(--u));
-  animation: piNum .7s .06s cubic-bezier(.2,.9,.3,1) both;
+  animation: piNum .8s .26s cubic-bezier(.14,.86,.26,1) both;
 }
-/* three digits, from pick 100 on: same column, one size down, so the numeral
+/* Three digits, from pick 100 on: same column, two sizes down, so the numeral
    does not reach back across the gap into the headline. The margins scale with
-   it because they are the overhang of this line height. */
+   it because they are the overhang of this line height.
+
+   45, not 50, and the number is not arbitrary. A three-digit numeral makes its
+   own column wide enough that the 1fr beside it drops under what THE PICK
+   needs, and the headline is `nowrap` — so it kept its size and simply ran out
+   the side of its box. That is not just an overlap: the gold leaf is a
+   background clipped to the glyphs, and a background tiles, so everything past
+   the box edge came out painted in the dark end of the gradient. The K went
+   black against a black wall from pick 100 to the end of the draft. At 45 the
+   column is narrow enough that the headline fits its box and the question does
+   not arise. */
 .pi-num.wide {
-  font-size: calc(50 * var(--u));
-  margin: calc(2.33 * var(--u)) 0 calc(1.7 * var(--u));
+  font-size: calc(45 * var(--u));
+  margin: calc(2.1 * var(--u)) 0 calc(1.52 * var(--u));
 }
 /* letter-spacing is 0 on purpose: a negative value leaves the last glyph
    overhanging its own box, which walks the numeral off centre under the
    round-and-pick line sitting over it. */
 /* The `from` carries the skew as well: an animated transform replaces the
    resting one outright, so leaving it out of the keyframe stands the numeral
-   up straight for the length of the animation and then snaps it over. */
-@keyframes piNum { from { opacity: 0; transform: skewX(-6deg) scaleY(1.05) scale(1.07); } }
+   up straight for the length of the animation and then snaps it over. It
+   comes in from further out and takes longer over it than it used to, so it
+   settles into the bloom rather than blinking on at size. */
+@keyframes piNum {
+  from { opacity: 0; transform: skewX(-6deg) scaleY(1.05) scale(1.16); }
+  to   { opacity: 1; transform: skewX(-6deg) scaleY(1.05) scale(1); }
+}
 @keyframes dim { from { opacity: 0; } }
 body.state-pick_in .pickin { display: grid; }
+/* Held up under the selection graphic while that fades in over it — see
+   beginHandoff() in board.js. Without this the pick-in screen switches off in
+   the same frame the selection starts fading up from transparent, and the
+   resting board shows through the gap for a third of a second. */
+body.handoff .pickin { display: grid; }
 /* ── the selection graphic (the ~7.5 second hold) ──────────────────────── */
 /* A direct child of #frame (not .main), so inset:0 covers the full
    1920x1080 canvas — header and ticker included. This is the brief, all-in
    beat; the static detail screen it collapses into deliberately does not
    do this (see .reveal below). */
+/* Above THE PICK IS IN, not below it: this screen replaces that one and has
+   to be able to fade in over it rather than out from behind it. */
 .selection {
-  position: absolute; inset: 0; z-index: 9; display: none;
-  grid-template-columns: 30% 1fr; align-items: stretch;
+  position: absolute; inset: 0; z-index: 12; display: none;
+  /* 33, not 30. The photograph grew and the column did not, so a 50u cut-out
+     was centred in 53u of panel and came out jammed against the left bezel
+     with 18px either side of it. The extra column plus the padding on
+     .sel-shot below moves the player in off the edge, and the body with him. */
+  grid-template-columns: 33% 1fr; align-items: stretch;
   background:
     linear-gradient(180deg, rgba(5,10,18,.78), rgba(5,10,18,.88)),
     url("bg/stage.webp") center center / cover no-repeat;
@@ -700,6 +814,9 @@ body.phase-selection .selection { display: grid; }
 .sel-shot {
   position: relative; overflow: hidden;
   display: flex; align-items: center; justify-content: center;
+  /* Padded on the leading edge only, so the flex centring lands the player
+     off the bezel rather than on it. */
+  padding-left: calc(3.5 * var(--u));
   border-right: 1px solid var(--gold-lo);
   background:
     radial-gradient(65% 55% at 50% 40%, var(--tc, rgba(201,154,67,.16)), transparent 72%),
@@ -715,8 +832,8 @@ body.phase-selection .selection { display: grid; }
    it, rather than behind the chest, where it's opaque and would cover it. */
 .sel-shot .team-bg {
   position: absolute; top: 50%; left: 50%; z-index: 0;
-  width: calc(29 * var(--u)); height: calc(29 * var(--u));
-  transform: translate(-50%, calc(-50% - 7 * var(--u)));
+  width: calc(34 * var(--u)); height: calc(34 * var(--u));
+  transform: translate(-50%, calc(-50% - 8 * var(--u)));
   object-fit: contain; opacity: .3;
 }
 /* `contain`, uncropped: these cutouts are landscape (350x254) and a square
@@ -732,7 +849,7 @@ body.phase-selection .selection { display: grid; }
    frame under it, just open panel, so it fades out instead. */
 .sel-shot .sel-photo {
   position: relative; z-index: 1;
-  width: calc(44 * var(--u)); height: calc(32 * var(--u));
+  width: calc(50 * var(--u)); height: calc(37 * var(--u));
   object-fit: contain; object-position: bottom center;
   filter: drop-shadow(0 calc(1.2 * var(--u)) calc(2.2 * var(--u)) rgba(0,0,0,.6));
   -webkit-mask-image: linear-gradient(180deg, #000 76%, transparent 99%);
@@ -811,6 +928,9 @@ body.phase-selection .selection { display: grid; }
     url("bg/stage.webp") center center / cover no-repeat;
 }
 body.phase-details .reveal { display: flex; }
+/* And held under the announcement fading in over it, the same way the pick-in
+   screen is held under the selection graphic. */
+body.handoff .reveal { display: flex; }
 
 /* One card, three layers: team-colour glow, the crest, the player. The wrap
    itself is the card now — it owns the hairline, the corners and the drop
@@ -827,7 +947,7 @@ body.phase-details .reveal { display: flex; }
    the crest reads in the space either side of it, which is the whole idea. */
 .reveal-shot-wrap {
   position: relative; flex: none; overflow: hidden;
-  width: calc(26 * var(--u)); height: calc(24 * var(--u));
+  width: calc(31 * var(--u)); height: calc(28.5 * var(--u));
   border-radius: 8px; border: 1px solid var(--gold-lo);
   background: linear-gradient(180deg, #0d1930, #060c16);
   box-shadow: 0 calc(1 * var(--u)) calc(2.4 * var(--u)) rgba(0,0,0,.55);
@@ -845,7 +965,7 @@ body.phase-details .reveal { display: flex; }
    150x150 source starts to show even at this opacity. */
 .reveal-shot-wrap .team-bg {
   position: absolute; z-index: 0; left: 50%; top: 47%;
-  width: calc(25 * var(--u)); height: calc(25 * var(--u));
+  width: calc(30 * var(--u)); height: calc(30 * var(--u));
   transform: translate(-50%, -50%);
   object-fit: contain; opacity: .34;
 }
@@ -989,6 +1109,7 @@ body.phase-details .reveal { display: flex; }
    every tile taller than either version before it. */
 .rail {
   position: relative; min-height: 0; overflow: hidden;
+  contain: layout style paint;
   display: flex; flex-direction: column; gap: calc(.9 * var(--u));
   padding: calc(1.1 * var(--u)) calc(1.3 * var(--u)) calc(1.4 * var(--u));
   background: var(--glass); border: 1px solid var(--line); border-radius: 4px;
@@ -1103,12 +1224,20 @@ body.phase-details .reveal { display: flex; }
 /* rgba(...,.58) let the stage art behind it fight with the text for
    attention — barely readable. Near-opaque now, with more blur to kill
    whatever ghosts through the edges. */
+/* No backdrop-filter. There was a blur(6px) here doing nothing you could see —
+   the fill above it is 93% opaque — and costing a great deal: a backdrop
+   filter makes the element a backdrop root, and everything behind it is
+   re-blurred whenever anything in front of it moves. Three of these sit under
+   a countdown that ticks five times a second. */
 .bb-sec {
   flex: 1; min-width: 0; min-height: 0; overflow: hidden;
   display: flex; flex-direction: column;
   background: rgba(6,11,20,.93); border: 1px solid var(--line); border-radius: 4px;
   box-shadow: 0 calc(1.2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.42);
-  backdrop-filter: blur(6px);
+  /* Self-contained panels: a list rebuilding inside one of them has no bearing
+     on the layout of anything outside it, and saying so keeps the browser from
+     checking. */
+  contain: layout style paint;
 }
 
 /* A fixed height on both, not vertical padding. The two cards in the band have
@@ -1164,62 +1293,33 @@ body.phase-details .reveal { display: flex; }
 .bb-next { display: none; }
 body.phase-details .bb-ba { display: none; }
 body.phase-details .bb-next { display: flex; }
-/* The card had nothing behind it and read as a form. Three layers now, all
-   cheap: a pool of light under the cut-out the way the on-the-clock card lights
-   its alcove, a gold floor line, and the overall pick as a ghosted numeral
-   bleeding off the right edge behind the countdown — the same face and lean as
-   the numeral on THE PICK IS IN, at a tenth of the alpha. */
+/* The plate this card is set on. It used to be built in CSS — angled planes
+   over a gold dot field, a hairline along the top, a vignette — seven gradient
+   layers plus a masked pseudo-element to approximate a piece of art, and it
+   came out looking like an approximation of a piece of art. It is the art now:
+   one image, one layer, and it happens to be within four percent of this
+   card's own aspect ratio, so `100% 100%` fills it without cropping the gold
+   border off the edges or distorting the diagonals enough to see. */
+/* Padded harder on the right than the left. The plate carries its own gold
+   border about 3% in, and the type on this side — the countdown, and the cue
+   that stands in for it — was sitting almost on it. The cut-out on the left is
+   a cut-out: it can run to the edge and should. */
 .next-body {
   position: relative; flex: 1; min-height: 0; display: flex; align-items: center;
-  gap: calc(1.8 * var(--u)); padding: 0 calc(1.8 * var(--u));
+  gap: calc(1.8 * var(--u));
+  padding: 0 calc(4.2 * var(--u)) 0 calc(2.2 * var(--u));
   overflow: hidden;
-  background:
-    radial-gradient(46% 74% at 13% 88%, rgba(201,154,67,.16), transparent 70%),
-    linear-gradient(105deg, rgba(15,27,46,.92) 0%, rgba(8,15,26,.84) 46%, rgba(5,9,17,.5) 100%);
-}
-/* Angled planes across the left half, a gold hairline along the top, and a
-   vignette that pulls the corners down. The planes stop before the middle on
-   purpose: the name sits there and wants flat dark behind it. */
-.next-body::before {
-  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background:
-    /* a lit edge down the leading side of two of the planes */
-    linear-gradient(104deg, transparent 11.9%, rgba(201,154,67,.4) 12%, rgba(201,154,67,.4) 12.3%, transparent 12.4%),
-    linear-gradient(104deg, transparent 27.9%, rgba(201,154,67,.18) 28%, rgba(201,154,67,.18) 28.25%, transparent 28.35%),
-    /* The planes themselves, widest at the left and thinning out, all of them
-       finished before the name starts — the middle of this card is reserved
-       for type and wants flat dark behind it. The last one has no edge at all,
-       it just fades, so the structure ends rather than stopping. */
-    linear-gradient(104deg, transparent 3%, rgba(30,49,78,.6) 3.1%, rgba(30,49,78,.6) 12%, transparent 12.1%),
-    linear-gradient(104deg, transparent 14%, rgba(21,36,58,.58) 14.1%, rgba(21,36,58,.58) 24%, transparent 24.1%),
-    linear-gradient(104deg, transparent 28%, rgba(15,26,43,.5) 28.1%, rgba(12,21,35,.3) 40%, transparent 47%),
-    /* the gold hairline along the top, brightest in the middle */
-    linear-gradient(90deg, transparent, rgba(201,154,67,.4) 24%, rgba(255,214,140,.7) 52%, rgba(201,154,67,.24) 76%, transparent),
-    radial-gradient(120% 150% at 44% 46%, transparent 48%, rgba(2,5,10,.5) 100%);
-  background-repeat: no-repeat;
-  background-size:
-    100% 100%, 100% 100%, 100% 100%,
-    100% 100%, 100% 100%, 100% 2px, 100% 100%;
-}
-/* The dot field under the planes. Masked rather than sized to the left third
-   so it dissolves instead of ending on a line. */
-.next-art {
-  position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: .5;
-  background-image: radial-gradient(circle, rgba(201,154,67,.75) .9px, transparent 1px);
-  background-size: calc(1.15 * var(--u)) calc(1.15 * var(--u));
-  -webkit-mask-image: linear-gradient(104deg, #000 0 30%, transparent 52%);
-          mask-image: linear-gradient(104deg, #000 0 30%, transparent 52%);
-}
-.next-body::after {
-  content: ""; position: absolute; left: calc(1.4 * var(--u)); right: calc(1.4 * var(--u));
-  bottom: 0; height: 2px;
-  background: linear-gradient(90deg, var(--gold), rgba(201,154,67,.12) 72%, transparent);
+  /* Nothing over it. There was a scrim here — a wash down the left, a corner
+     vignette — from when this card was a CSS construction that needed help
+     seating its type. The plate is a photograph of a plate and it is already
+     dark where the type sits, so it is shown as delivered. */
+  background: url("bg/smallclock.webp") center center / 100% 100% no-repeat;
 }
 /* Inside the card, not bleeding off its right edge — it used to run off and
    read as a crop rather than a numeral. The skew throws the top of it right,
    so the inset has to cover that as well. */
 .next-ghost {
-  position: absolute; right: calc(2.2 * var(--u)); top: 50%; z-index: 0;
+  position: absolute; right: calc(3.4 * var(--u)); top: 50%; z-index: 0;
   transform: translateY(-50%) skewX(-6deg);
   font-family: "Anton", var(--display); font-weight: 400;
   font-size: calc(26 * var(--u)); line-height: .9;
@@ -1264,6 +1364,41 @@ body.phase-details .bb-next { display: flex; }
    written bare — `.idle { position:absolute; display:none }` — so any element
    that borrows the word disappears. */
 .next-clock.paused, .next-clock.held { color: var(--mute); }
+
+/* The beat before the countdown.
+   A clock that simply materialises the instant a reveal lands says nothing —
+   it is the one piece of furniture on this screen that changes hands every
+   pick, and it changed hands silently. So for the first two and a half
+   seconds the card says whose clock it is, in words, and the countdown
+   arrives after. See cueNextOnClock() in board.js. */
+.next-cue { display: none; }
+.bb-next.cue .next-cue { display: block; animation: cueIn .46s .14s cubic-bezier(.2,.9,.3,1) both; }
+.bb-next.cue .next-clock, .bb-next.cue .next-note { display: none; }
+.next-cue span {
+  display: block; font-family: var(--mono); font-weight: 600;
+  font-size: calc(1.5 * var(--u)); line-height: 1; letter-spacing: .26em;
+  text-transform: uppercase; color: var(--gold);
+}
+/* Wrapped, and capped. The countdown it stands in for is four characters
+   wide; ON THE CLOCK on one line is three times that, and this card sizes its
+   name column off whatever is left — so the cue was squeezing MASON down to
+   MA… for the two and a half seconds it was up. */
+.next-cue b {
+  display: block; margin: calc(.7 * var(--u)) 0 0 auto;
+  max-width: calc(14 * var(--u));
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(3.9 * var(--u)); line-height: .95; text-transform: uppercase;
+  color: var(--gold-hi); white-space: normal; text-align: right;
+}
+@keyframes cueIn {
+  from { opacity: 0; transform: translateY(calc(1.4 * var(--u))); }
+}
+/* And when the words clear, the countdown lands rather than blinking on. */
+.bb-next.ready .next-clock { animation: clkIn .5s cubic-bezier(.18,.88,.3,1) both; }
+@keyframes clkIn {
+  from { opacity: 0; transform: scale(1.14); }
+  to   { opacity: 1; transform: scale(1); }
+}
 
 /* The same card at the turn of a round. No clock to run, so the round is the
    whole point of it: the numeral in the face and the lean the round card and
@@ -1476,8 +1611,7 @@ body.phase-details .bb-next { display: flex; }
 }
 .announce::before {
   content: ""; position: absolute; inset: 0; z-index: 0;
-  background: url("bg/stage.webp") center center / cover no-repeat;
-  filter: hue-rotate(-14deg) saturate(.82) contrast(1.14);
+  background: url("bg/stage-graded.webp") center center / cover no-repeat;
 }
 .announce::after {
   content: ""; position: absolute; inset: 0; z-index: 0;
@@ -1486,7 +1620,14 @@ body.phase-details .bb-next { display: flex; }
     radial-gradient(118% 96% at 50% 44%,
       transparent 50%, rgba(3,7,14,.34) 78%, rgba(3,7,14,.62) 100%);
 }
-.announce.show { display: grid; animation: dim .35s ease-out both; }
+.announce.show { display: grid; animation: dim .36s ease-out both; }
+/* The card fading in over the one it replaces. Two announcements can be on
+   screen at once for the length of that fade, which is the point: the board
+   underneath is never uncovered between them. */
+.announce.over { z-index: 17; }
+/* The last card of a run goes back to the board rather than cutting to it. */
+.announce.out { animation: undim .36s ease-in both; }
+@keyframes undim { to { opacity: 0; } }
 
 /* whoever is on the clock */
 .oncard { grid-template-columns: 34% 1fr; align-items: stretch; }
@@ -1563,15 +1704,28 @@ body.phase-details .bb-next { display: flex; }
   /* Both columns sized to their content and the pair centred, rather than the
      order stretched across whatever is left of a 1920 canvas: at full width
      the twelve slots sat in two columns half a screen apart with nothing
-     between them. */
+     between them.
+
+     Everything on this card is set a size up from where it started. Sized to
+     read on a laptop it left a quarter of a 1920x1080 television empty on
+     three sides, which on the one card in the draft that is nothing but a
+     number and a list is the whole design. */
   grid-template-columns: auto auto; justify-content: center; align-items: center;
-  gap: calc(7 * var(--u)); padding: calc(8 * var(--u)) calc(9 * var(--u));
+  gap: calc(8 * var(--u)); padding: calc(6.5 * var(--u)) calc(6 * var(--u));
 }
 .roundcard .rc-left, .roundcard .rc-right { position: relative; z-index: 1; }
 .rc-left { text-align: center; }
+/* Centred over the numeral rather than over its own box, which is not the same
+   thing twice over: letter-spacing hangs a tracking gap off the last letter,
+   which walks the word left of its own middle, and the numeral under it leans,
+   which puts the top of the digits — the part this word sits against — to the
+   right of where they start. The text-indent hands the tracking back and the
+   `left` covers the lean. */
 .rc-word {
+  position: relative; left: calc(.6 * var(--u)); text-indent: .04em;
+  margin-bottom: calc(2.4 * var(--u));
   font-family: var(--display); font-weight: 900; font-stretch: 62%;
-  font-style: italic; font-size: calc(7 * var(--u)); line-height: 1;
+  font-style: italic; font-size: calc(9 * var(--u)); line-height: 1;
   letter-spacing: .04em; text-transform: uppercase;
   background: linear-gradient(102deg,
     #7d5f24 0%, #c99a43 22%, #f0d49a 44%, #fffaf0 54%, #d8a94e 78%, #8a6a2a 100%);
@@ -1588,8 +1742,8 @@ body.phase-details .bb-next { display: flex; }
    a numeral inside its box; below that the tops go missing. */
 .rc-num {
   font-family: "Anton", var(--display); font-weight: 400; font-stretch: normal;
-  font-size: calc(52 * var(--u)); line-height: .9; letter-spacing: 0;
-  margin: calc(-.6 * var(--u)) 0 calc(-2.4 * var(--u));
+  font-size: calc(60 * var(--u)); line-height: .9; letter-spacing: 0;
+  margin: 0 0 calc(-2.2 * var(--u));
   transform-origin: center center; transform: skewX(-6deg);
   background: linear-gradient(168deg,
     #f7ead0 0%, #e8cf9a 26%, #c99a43 62%, #8a6a2a 100%);
@@ -1598,23 +1752,24 @@ body.phase-details .bb-next { display: flex; }
 }
 @keyframes rcNum { from { opacity: 0; transform: skewX(-6deg) scale(1.18); } }
 .rc-of {
-  font-family: var(--mono); font-weight: 600; font-size: calc(1.9 * var(--u));
+  margin-top: calc(1.4 * var(--u));
+  font-family: var(--mono); font-weight: 600; font-size: calc(2.3 * var(--u));
   letter-spacing: .3em; text-transform: uppercase; color: var(--mute);
   animation: selUp .45s .3s ease-out both;
 }
-.rc-right { width: calc(78 * var(--u)); min-width: 0; }
+.rc-right { width: calc(92 * var(--u)); min-width: 0; }
 .rc-hd {
   display: flex; align-items: baseline; justify-content: space-between;
-  gap: calc(2 * var(--u)); padding-bottom: calc(1.4 * var(--u));
+  gap: calc(2 * var(--u)); padding-bottom: calc(1.7 * var(--u));
   border-bottom: 1px solid rgba(201,154,67,.42);
   animation: selUp .5s .3s ease-out both;
 }
 .rc-sub {
-  font-family: var(--cond); font-weight: 700; font-size: calc(3.4 * var(--u));
+  font-family: var(--cond); font-weight: 700; font-size: calc(4.2 * var(--u));
   letter-spacing: .04em; text-transform: uppercase; color: var(--milk);
 }
 .rc-turn {
-  font-family: var(--mono); font-weight: 600; font-size: calc(1.7 * var(--u));
+  font-family: var(--mono); font-weight: 600; font-size: calc(2.1 * var(--u));
   letter-spacing: .24em; text-transform: uppercase; color: var(--gold);
 }
 /* Six rows of two, reading down each column, so the shape of the list matches
@@ -1622,13 +1777,13 @@ body.phase-details .bb-next { display: flex; }
 .rc-order {
   display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: column;
   grid-template-rows: repeat(6, auto);
-  gap: calc(.9 * var(--u)) calc(2.2 * var(--u)); margin-top: calc(2.2 * var(--u));
+  gap: calc(1.2 * var(--u)) calc(3 * var(--u)); margin-top: calc(2.6 * var(--u));
 }
 .rc-slot {
-  position: relative; display: flex; align-items: center; gap: calc(1.1 * var(--u));
-  min-width: 0; padding: calc(.7 * var(--u)) calc(1.4 * var(--u));
-  border-left: 2px solid var(--line);
-  font-family: var(--cond); font-weight: 700; font-size: calc(2.4 * var(--u));
+  position: relative; display: flex; align-items: center; gap: calc(1.3 * var(--u));
+  min-width: 0; padding: calc(1.15 * var(--u)) calc(1.8 * var(--u));
+  border-left: 3px solid var(--line);
+  font-family: var(--cond); font-weight: 700; font-size: calc(3 * var(--u));
   color: var(--chalk); text-transform: uppercase;
   animation: selUp .4s ease-out both;
 }
@@ -1648,7 +1803,7 @@ body.phase-details .bb-next { display: flex; }
 .rc-slot:nth-child(12) { animation-delay: .93s; }
 .rc-slot i {
   font-family: var(--mono); font-style: normal; font-weight: 400;
-  font-size: calc(1.5 * var(--u)); letter-spacing: .06em; color: var(--mute);
+  font-size: calc(1.85 * var(--u)); letter-spacing: .06em; color: var(--mute);
 }
 .rc-slot b { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* whoever leads the round off */
@@ -1658,8 +1813,8 @@ body.phase-details .bb-next { display: flex; }
 }
 .rc-slot.first i { color: var(--gold); }
 .rc-face {
-  height: calc(9 * var(--u)); width: auto; object-fit: contain; object-position: bottom center;
-  margin: calc(-3 * var(--u)) 0 calc(-1.4 * var(--u));
+  height: calc(11 * var(--u)); width: auto; object-fit: contain; object-position: bottom center;
+  margin: calc(-3.4 * var(--u)) 0 calc(-1.7 * var(--u));
   filter: drop-shadow(0 calc(.6 * var(--u)) calc(1.4 * var(--u)) rgba(0,0,0,.7));
 }
 
@@ -1689,8 +1844,7 @@ body.phase-details .bb-next { display: flex; }
 }
 .showcase::before {
   content: ""; position: absolute; inset: 0; z-index: 0;
-  background: url("bg/stage.webp") center center / cover no-repeat;
-  filter: hue-rotate(-14deg) saturate(.82) contrast(1.14);
+  background: url("bg/stage-graded.webp") center center / cover no-repeat;
 }
 .showcase::after {
   content: ""; position: absolute; inset: 0; z-index: 0;
@@ -1849,7 +2003,7 @@ body.phase-details .bb-next { display: flex; }
 .sc-left {
   min-width: 0; min-height: 0; display: grid;
   grid-template-rows: calc(21 * var(--u)) minmax(0, 1fr);
-  gap: calc(1.3 * var(--u));
+  gap: calc(1 * var(--u));
 }
 .sc-panel {
   min-width: 0; min-height: 0; overflow: hidden;
@@ -1968,8 +2122,8 @@ body.phase-details .bb-next { display: flex; }
 .sc-tend {
   flex: 1; min-height: 0; display: grid;
   grid-template-rows: minmax(0, 1fr) auto auto;
-  gap: calc(.9 * var(--u));
-  padding: calc(1.1 * var(--u)) calc(1.4 * var(--u)) calc(1.3 * var(--u));
+  gap: calc(.8 * var(--u));
+  padding: calc(1 * var(--u)) calc(1.4 * var(--u)) calc(1 * var(--u));
 }
 .sc-tend .verdicts, .sc-tend .firsts {
   display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
@@ -1979,8 +2133,8 @@ body.phase-details .bb-next { display: flex; }
    space under the number — stacked from the top they came out bottom-heavy. */
 .sc-tend .v {
   min-width: 0; display: flex; flex-direction: column; justify-content: center;
-  gap: calc(.45 * var(--u)); text-align: center;
-  padding: calc(.8 * var(--u)) calc(1 * var(--u));
+  gap: calc(.36 * var(--u)); text-align: center;
+  padding: calc(.6 * var(--u)) calc(1 * var(--u));
   background: rgba(18, 32, 54, .5);
   border: 1px solid var(--line-soft); border-top: 2px solid var(--gold-lo);
   border-radius: 3px;
@@ -1999,7 +2153,7 @@ body.phase-details .bb-next { display: flex; }
   font-family: var(--cond); font-weight: 700; line-height: 1.05; color: var(--milk);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.sc-tend .v b { font-size: calc(2.6 * var(--u)); }
+.sc-tend .v b { font-size: calc(2.45 * var(--u)); }
 .sc-tend .rng {
   font-family: var(--mono); font-size: calc(1.2 * var(--u)); line-height: 1;
   color: var(--chalk-dim);
@@ -2021,7 +2175,7 @@ body.phase-details .bb-next { display: flex; }
 .sc-tend .f {
   min-width: 0; display: flex; align-items: baseline; justify-content: center;
   gap: calc(.8 * var(--u));
-  padding: calc(.75 * var(--u)) calc(.8 * var(--u));
+  padding: calc(.62 * var(--u)) calc(.8 * var(--u));
   background: rgba(18, 32, 54, .5);
   border: 1px solid var(--line-soft); border-left: 3px solid var(--line-2);
   border-radius: 3px;
@@ -2034,7 +2188,7 @@ body.phase-details .bb-next { display: flex; }
   font-family: var(--mono); font-weight: 600; font-size: calc(1.5 * var(--u));
   line-height: 1; letter-spacing: .1em;
 }
-.sc-tend .f b { font-size: calc(2.6 * var(--u)); }
+.sc-tend .f b { font-size: calc(2.45 * var(--u)); }
 /* Two numbers side by side rather than a sentence about them. "rd 6.4 to
    their 5.6" is a thing nobody says out loud; his name over one number and
    the room over the other is the comparison itself. */

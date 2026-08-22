@@ -38,6 +38,26 @@ const startNextClock = () => ({
  * than left stale so every screen shows a full clock rather than the last
  * one's remains.
  */
+/**
+ * Whether there is a clock on the board to act on.
+ *
+ * `revealed` counts, and leaving it out was a bug you would only have found on
+ * the night: the next man's clock starts the moment a pick is revealed, not
+ * when Next Pick is pressed, so from the reveal until the advance there is a
+ * countdown running in the corner of the board that these three buttons all
+ * silently refused to touch. Reset in particular is written up in the README
+ * as the way to hand a man back the time a long reveal cost him, which it was
+ * not doing.
+ *
+ * The `clockEnds || paused` half keeps the turn of a round alone. There is
+ * deliberately no clock between the last pick of a round and the advance (see
+ * holdNextClock), and pausing a clock that has not started would have written
+ * a paused 0:00 onto all three screens.
+ */
+const clockLive = () =>
+  (STATE.status === "clock" || STATE.status === "revealed") &&
+  (!!STATE.clockEnds || STATE.paused);
+
 const holdNextClock = () => ({ clockEnds: null, paused: false, pausedLeft: null });
 
 /**
@@ -166,7 +186,10 @@ function render() {
     ? "Picks flow straight from Sleeper onto the board. No holding, no announce. Use this once you speed up."
     : "Pick is held on THE PICK IS IN until you hit announce. Use this for the early rounds.";
 
+  // Lit or dead according to whether there is actually a clock to act on, so
+  // a dead button reads as "there is no clock" rather than as a broken tap.
   $("btnPause").textContent = STATE.paused ? "Resume" : "Pause";
+  for (const id of ["btnPause", "btnPlus", "btnReset"]) $(id).disabled = !clockLive();
 
   const btn = $("mainBtn"), hint = $("mainHint");
   btn.classList.remove("danger");
@@ -397,7 +420,7 @@ document.addEventListener("visibilitychange", () => {
 // ── clock controls ────────────────────────────────────────────────────────
 
 $("btnPause").onclick = async () => {
-  if (STATE.status !== "clock") return;
+  if (!clockLive()) return;
   if (STATE.paused) {
     await C.setState({
       paused: false,
@@ -413,13 +436,13 @@ $("btnPause").onclick = async () => {
 };
 
 $("btnPlus").onclick = async () => {
-  if (STATE.status !== "clock") return;
+  if (!clockLive()) return;
   if (STATE.paused) await C.setState({ pausedLeft: (STATE.pausedLeft ?? 0) + 30000 });
   else await C.setState({ clockEnds: (STATE.clockEnds || Date.now()) + 30000 });
 };
 
 $("btnReset").onclick = async () => {
-  if (STATE.status !== "clock") return;
+  if (!clockLive()) return;
   await C.setState({ clockEnds: Date.now() + PICK_MS(), paused: false, pausedLeft: null });
 };
 
@@ -437,7 +460,7 @@ $("lenSeg").onclick = async e => {
   const ms = Number(b.dataset.ms);
   await C.setState({
     pickMs: ms,
-    ...(STATE.status === "clock"
+    ...(clockLive()
       ? { clockEnds: Date.now() + ms, paused: false, pausedLeft: null }
       : {}),
   });

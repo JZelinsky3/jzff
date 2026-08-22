@@ -26,17 +26,61 @@ Draft: **Friday August 28, 2026, 7:15pm** — 14 rounds, snake, 12 teams,
    - the stage takes over on **THE PICK IS IN**, covering the whole canvas:
      headline top left in gold leaf, the overall pick as a huge outlined
      numeral right with the round and pick crossing its middle, and who locked
-     it on the gold rail bottom left with his cut-out. The set is lifted rather
+     it bottom left with his cut-out. The set is lifted rather
      than dimmed here — it is the one beat with nothing else on the screen.
      `.pickin` is a child of `#frame`, not `.main`, so it reaches the edges,
      and the two headline lines are `white-space: nowrap` because left to
      itself it re-wraps to three the moment the type outgrows the column
    - the **selection graphic** holds for six seconds: portrait, owner,
-     the name at 12.5vh, the pick badge, an oversized pick number behind it
+     the name at 12.5vh, the pick badge, an oversized pick number behind it.
+     The photo column is 33% with `padding-left` on `.sel-shot`, not 30% flush:
+     once the cut-out grew to 50u it was centred in 53u of panel and came out
+     jammed against the left bezel with 18px either side of it
    - it collapses into the **detail screen**: the portrait shrinks in, the
      board and the manager's roster slide back, tags and history appear
    Retime the hold with `?sel=8000`, or park on it with a huge number.
 4. The manager enters it in Sleeper. Joey hits **Next Pick**.
+
+**No screen ever uncovers the board on its way out.** Every full-screen beat
+here fades in from transparent, and the one it replaces used to be switched
+off in the same frame that fade started — so for a third of a second you were
+looking through the incoming card at the resting board. That is the reported
+"half-second pause" between THE PICK IS IN and the selection graphic, and the
+"break" between the round card and the man on the clock: not a pause, a hole.
+
+`beginHandoff()` in board.js sets `handoff` on the body for 440ms and the CSS
+holds the outgoing screen up underneath (`body.handoff .pickin`,
+`body.handoff .reveal`), with `.selection` moved above `.pickin` in the z
+order so it has something to cross. The two announcements do the same thing
+between themselves: `runAnnounce()` lifts the incoming card over the outgoing
+one (`.announce.over`) and drops the old one once the new one is opaque,
+rather than clearing it and waiting 260ms as it used to. The last card of a
+run fades back to the board (`.announce.out`) instead of cutting to it.
+
+Nothing in the handoff waits on the network or on a load. It is one class and
+one timer, so it cannot be the thing that goes wrong on the night.
+
+**THE PICK IS IN is built, not switched on.** It runs about 1.7 seconds and
+every step of it is transform, opacity or clip-path: the set fades up, the two
+headline lines are *wiped* left to right rather than slid into place, a bar of
+light then travels across the gold leaf (the leaf is a gradient clipped to the
+glyphs, so animating its position is literally light moving over metal, and it
+lands back where it rests), the numeral settles down into a gold bloom that
+opens under it, the round-and-pick line opens out of its own tracking, and the
+manager rises off the bottom edge with his three lines coming in behind him.
+
+The wipe is `polygon()`, not `inset()`. The headline is `nowrap` in a
+`minmax(0, 1fr)` column and leans out of its own box on every side; negative
+`inset()` offsets are clamped to zero, so a clip meant to finish clear of the
+type finished flush with the box and sheared THE PICK down to THE PIC.
+
+**And the pick numeral steps down to 45 from pick 100.** Related trap, same
+column: a three-digit numeral makes its own column wide enough that the 1fr
+beside it drops under what the headline needs, and the headline does not
+shrink. It overflowed — and because the gold leaf is a *background* clipped to
+the glyphs, and backgrounds tile, everything past the box edge came out painted
+in the dark end of the gradient. The K went black against a black wall for the
+back half of the draft.
 
 **The next man's clock starts at the reveal, not at Next Pick.** The board says
 he is up the moment a pick lands — his slot lights on the wall, the ticker
@@ -45,6 +89,17 @@ is true from that moment too. Next Pick carries that clock forward rather than
 restarting it, so sitting on a reveal to talk about it costs the draft real
 time instead of quietly banking it. If a reveal ran long and the next man
 deserves it back, **Reset** in the console is one tap.
+
+**The clock controls work during a reveal, not just on the clock.** Pause,
++30s and Reset were gated on `status === "clock"` and the next man's clock
+starts at the *reveal* — so from the moment a pick landed until Next Pick was
+pressed there was a countdown running in the corner of the board that all three
+buttons silently refused to touch. `clockLive()` in control.js is the gate now,
+and it also covers the turn of a round: there is deliberately no clock between
+the last pick of a round and the advance, and pausing one that has not started
+would have written a paused 0:00 onto all three screens. The buttons render
+disabled when there is nothing to act on, so a dead button reads as "no clock"
+rather than as a broken tap.
 
 **Except at the turn of a round.** The last pick of a round is followed by the
 round card and then the on-the-clock card before anyone is really up, and the
@@ -124,7 +179,12 @@ anybody can use while he is on the clock. Four things now, all counted:
   same defense three years running is not a personality, and a tie goes to
   whoever he takes earliest: two men taken twice each is common, and the one
   he spends a first rounder on is the one he is actually about.
-- **Round one** — what he opens with and how often.
+- **Round N** — what he does with the round the draft is actually in, and in
+  how many of his drafts, the way the round band along the bottom already
+  follows the draft. It said ROUND ONE all night, which is the least useful
+  version of it after the first twelve picks. Counted in drafts rather than
+  picks — two ninth rounders spent on receivers in one year is one year — and
+  the denominator is the years he owned a pick that deep, since picks move.
 - **Against the room** — the position he is furthest from the league average
   on, and which way. Three quarters of a round is the bar for calling it, and
   every manager in this league clears it somewhere.
@@ -233,6 +293,63 @@ never the answer. Null means the league default in `meta.json`.
 Rounds 1-4 are worth that ceremony. After that flip the console to **Live
 Feed**: everyone drafts in Sleeper as normal and the board keeps itself current
 off the Sleeper API with nobody pressing anything.
+
+## Why it runs smoothly
+
+Written down because every one of these is the kind of thing that gets quietly
+undone by a later edit that looks harmless.
+
+**Panels only rebuild when what they say has changed.** `renderAll()` runs on
+every write to the state document and every pick that lands — pause, resume,
+adjust the clock, absorb a pick off Sleeper — and every one of those used to
+re-`innerHTML` the whole board: seven lists, and upward of thirty `<img>`
+elements thrown away and made again, each one a fresh cache lookup and a fresh
+decode. That is the lag: not drawing the board once, but drawing it again for
+no reason. `changed(id, key)` in board.js guards each panel with a key
+describing what its content depends on. It also stops the panels' entrance
+animations restarting on every state write, which is the other half of what
+made the board feel twitchy.
+
+The keys use `picksRev`, a counter bumped on every picks snapshot, not
+`PICKS.length` — undoing a pick and entering a different player in the same
+slot leaves the count exactly where it was.
+
+**The clock writes are guarded too.** `put()` compares before assigning:
+`className` invalidates style whether or not the string differs, and
+`textContent` tears down a text node and builds another. Five times a second
+across four countdowns, that was 40 needless invalidations a second inside
+cards the compositor would otherwise never touch.
+
+**The graded set is baked, not filtered.** THE PICK IS IN, the two
+announcements and the showcase all sat on `bg/stage.webp` under
+`hue-rotate(-14deg) saturate(.82) contrast(1.14)` — three full-screen filtered
+layers, each of which had to be re-rasterised in the frame it was switched on,
+which is a hitch you can see at the top of a beat. That exact chain is baked
+into `bg/stage-graded.webp` offline (see the numpy in the commit that added
+it), verified against Chrome's own output at a mean difference of 0.26%.
+
+**Both backdrops are 1920x1080 now**, the canvas's own size, so `cover` is not
+resampling on every paint, and re-encoded: `bg/stage.webp` went from 1.4MB to
+102KB at a mean difference of 0.38%, which is nothing on a television. The
+1.4MB master is kept at `source/stage-master.webp` — regrade or re-encode from
+that, not from the shipped file.
+
+**Nothing waits on the network while it is on screen.** Player photographs and
+crests come off sleepercdn, and the first time either was asked for was the
+frame the selection graphic was painted in. `warmPending()` pulls the pending
+player's photo and crest the moment `pending` appears in state — which is
+while THE PICK IS IN is still up, seconds ahead of when it is wanted — and all
+32 crests are fetched once at boot.
+
+**No `backdrop-filter` anywhere.** There was a `blur(6px)` on the three bottom
+band cards doing nothing you could see (the fill above it is 93% opaque) and
+costing a great deal: a backdrop filter makes the element a backdrop root, and
+everything behind it is re-blurred whenever anything in front of it moves.
+Three of them sat under a countdown that ticks five times a second.
+
+**The band cards and the rail are `contain: layout style paint`.** A list
+rebuilding inside one has no bearing on the layout of anything outside it, and
+saying so keeps the browser from checking.
 
 ## Why it can't get out of sync
 
@@ -459,6 +576,36 @@ reveal itself picks up what the band gave away: `.reveal-also` lists who is
 left **at the drafted player's position**, beside the history box that used to
 sit alone with half the screen empty next to it.
 
+**That card says whose clock it is before it shows the clock.** For the first
+2.6 seconds of a reveal it reads `IS NOW / ON THE CLOCK` where the countdown
+goes, and the numbers land after (`cueNextOnClock()`, `.bb-next.cue` and
+`.bb-next.ready` in the CSS). The clock has in fact been running since the pick
+was revealed — this is what is drawn, not what is true, and nothing is held up
+by it. It is the one handover in the draft that used to happen silently: a
+countdown on the card one frame and a different countdown the next. No cue at
+the turn of a round, because there is no clock there to introduce.
+
+The cue wraps to two lines and is capped at 14u for a reason: the countdown it
+stands in for is four characters wide, ON THE CLOCK on one line is three times
+that, and this card sizes its name column off whatever is left — so the cue was
+squeezing MASON down to `MA…` for as long as it was up.
+
+**The plate behind it is art, not CSS.** `bg/smallclock.webp`. It used to be
+seven gradient layers plus a masked pseudo-element approximating angled planes
+over a gold dot field, and it looked like an approximation. The image happens
+to land within four percent of this card's own aspect ratio, so
+`background-size: 100% 100%` fills it without cropping the gold border off the
+edges or distorting the diagonals enough to see.
+
+**Nothing is laid over it.** There was a scrim on it briefly — a wash down the
+left, a corner vignette — carried over from when this card was a CSS
+construction that needed help seating its type. It is a photograph of a plate
+and it is already dark where the type sits, so it runs at the brightness it was
+delivered at. If type ever stops reading on it, move the type, don't dim the
+plate. The card is also padded harder on the right (4.2u) than the left (2.2u):
+the plate's own gold border sits about 3% in and the countdown was almost on
+it, while the cut-out on the left is a cut-out and can run to the edge.
+
 **Two nudges on the conference chip are optical, not geometric.** The row
 centres the chip's box on the team name's line box, and a line box carries
 descender space the capitals never fill — so a chip centred in it hangs below
@@ -540,6 +687,16 @@ will actually run, six down each column, the leadoff slot lit with his cut-out.
 Both columns are sized to their content and the pair centred; at full canvas
 width the two columns of names sat half a screen apart.
 
+Everything on it is set a size up from where it started (2026-08-22): sized to
+read on a laptop, it left a quarter of a 1920x1080 television empty on three
+sides, which on the one card in the draft that is nothing but a number and a
+list is the whole design. ROUND is also centred over the numeral rather than
+over its own box, which is not the same thing twice over — `letter-spacing`
+hangs a tracking gap off the last letter, which walks the word left of its own
+middle, and the numeral under it leans, which puts the top of the digits (the
+part the word sits against) right of where they start. `text-indent` hands the
+tracking back and `left` covers the lean.
+
 **The wall and the ticker hold the old round through the last reveal of it.**
 Both point at `boardPick()`, not `nextOpenPick()` directly: normally the next
 open pick, so a slot lights the moment one lands, but while a reveal is up and
@@ -547,6 +704,12 @@ the next open pick belongs to a new round they stay on the round that just
 finished. Otherwise the twelfth pick of round one is still on screen while the
 wall and the ticker have both moved to round two — announcing the new round
 before the round card gets to.
+
+**No gold rail on the manager's card there.** The rest of the board hangs a
+name off one, and this card had one too — drawn top to bottom as part of the
+build. THE PICK IS IN is the one screen with the set showing through behind it
+rather than a panel, and a floating vertical bar over a photograph of a room
+reads as a graphic that has come loose. The cut-out and the name carry it.
 
 **THE PICK IS IN hides the chrome.** `.pickin` is a direct child of `#frame`,
 beside `.selection`, so `inset: 0` covers the whole 1920x1080 canvas, header and

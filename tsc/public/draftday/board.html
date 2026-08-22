@@ -104,17 +104,17 @@
       <div class="bb-sec bb-next">
         <div class="rail-hd"><span id="nextHd">NEXT ON THE CLOCK</span><span class="ct" id="nextPk"></span></div>
         <div class="next-body">
-          <!-- the built-up left side: angled planes over a gold dot field.
-               Its own element rather than another background layer on
-               .next-body because the dots need a mask of their own. -->
-          <div class="next-art" aria-hidden="true"></div>
           <div class="next-ghost" id="nextGhost"></div>
           <img class="next-face" id="nextFace" alt="">
           <div class="next-who">
             <div class="next-name" id="nextName">&nbsp;</div>
             <div class="next-team" id="nextTeam">&nbsp;</div>
           </div>
+          <!-- The clock does not simply appear here. For the first two and a
+               half seconds of a reveal the card says he is on it, and only
+               then does the countdown arrive — see cueNextOnClock(). -->
           <div class="next-time">
+            <div class="next-cue"><span>Is now</span><b>On the clock</b></div>
             <div class="next-clock" id="nextClk">&mdash;</div>
             <div class="next-note" id="nextNote"></div>
           </div>

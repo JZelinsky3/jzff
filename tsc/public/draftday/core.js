@@ -452,6 +452,10 @@ export function teamColor(abbr) {
   return TEAM_COLOR[abbr] || null;
 }
 
+/** All 32, so the board can pull their crests once at boot instead of one at
+    a time in the frame each is first needed. */
+export const TEAM_ABBRS = Object.keys(TEAM_COLOR);
+
 export function ordinal(n) {
   const s = ["th", "st", "nd", "rd"], v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
