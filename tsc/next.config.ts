@@ -30,6 +30,18 @@ const nextConfig: NextConfig = {
   // through each one. The headers below are the no-regret subset.
   async headers() {
     return [
+      // Draft day must never serve a stale file. The three pages are opened on
+      // twelve phones and a laptop on one night and are edited right up to it;
+      // a console still running yesterday's control.js is a bug that presents
+      // as "the button does nothing" with no way to tell from the outside.
+      // Nothing under /draftday is hashed or versioned, so revalidation is the
+      // only thing standing between an edit and the room.
+      {
+        source: '/draftday/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
+        ],
+      },
       {
         source: '/:path*',
         headers: [

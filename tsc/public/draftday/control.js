@@ -30,6 +30,36 @@ const startNextClock = () => ({
 });
 
 /**
+ * Whether there is a clock to act on, for Pause / +30s / Reset.
+ *
+ * It asks the clock, not the status. That is the whole fix: these three were
+ * gated on `status === "clock"`, and the next man's clock starts at the
+ * *reveal*, so from the moment a pick landed until Next Pick was pressed there
+ * was a countdown running in the corner of the board that all three buttons
+ * silently refused to touch. Adding "or revealed" to the list was the obvious
+ * repair and it is still a list — the states this console can be in are not
+ * the thing being asked about. A clock exists exactly when `clockEnds` is set
+ * or the thing is already stopped, in any status, and that is the question.
+ *
+ * It also answers the turn of a round correctly for free: there is
+ * deliberately no clock between the last pick of a round and the advance (see
+ * holdNextClock), `clockEnds` is null there, and pausing a clock that has not
+ * started would have written a paused 0:00 onto all three screens.
+ */
+const clockLive = () => !!STATE.clockEnds || !!STATE.paused;
+
+/** In words, for the line under the buttons. Never leave the console guessing
+    why a tap did nothing — on the night there is no time to work it out. */
+function clockState() {
+  if (STATE.paused) return "Paused. Resume puts it back where it stopped.";
+  if (STATE.clockEnds) return STATE.status === "revealed"
+    ? "Running — this is the next man's clock, started at the reveal."
+    : "Running.";
+  if (STATE.status === "idle") return "No clock until the draft starts.";
+  return "Held for the turn of the round. It starts when you hit Next Pick.";
+}
+
+/**
  * Except at the turn of a round. The last pick of a round is followed by the
  * round card and then the on-the-clock card before anyone is really up, and
  * the man leading off the next round is usually the one who just picked at
@@ -38,26 +68,6 @@ const startNextClock = () => ({
  * than left stale so every screen shows a full clock rather than the last
  * one's remains.
  */
-/**
- * Whether there is a clock on the board to act on.
- *
- * `revealed` counts, and leaving it out was a bug you would only have found on
- * the night: the next man's clock starts the moment a pick is revealed, not
- * when Next Pick is pressed, so from the reveal until the advance there is a
- * countdown running in the corner of the board that these three buttons all
- * silently refused to touch. Reset in particular is written up in the README
- * as the way to hand a man back the time a long reveal cost him, which it was
- * not doing.
- *
- * The `clockEnds || paused` half keeps the turn of a round alone. There is
- * deliberately no clock between the last pick of a round and the advance (see
- * holdNextClock), and pausing a clock that has not started would have written
- * a paused 0:00 onto all three screens.
- */
-const clockLive = () =>
-  (STATE.status === "clock" || STATE.status === "revealed") &&
-  (!!STATE.clockEnds || STATE.paused);
-
 const holdNextClock = () => ({ clockEnds: null, paused: false, pausedLeft: null });
 
 /**
@@ -186,10 +196,13 @@ function render() {
     ? "Picks flow straight from Sleeper onto the board. No holding, no announce. Use this once you speed up."
     : "Pick is held on THE PICK IS IN until you hit announce. Use this for the early rounds.";
 
-  // Lit or dead according to whether there is actually a clock to act on, so
-  // a dead button reads as "there is no clock" rather than as a broken tap.
+  // Lit or dead according to whether there is actually a clock to act on, with
+  // the reason spelled out underneath — a dead button on its own is
+  // indistinguishable from a broken one.
   $("btnPause").textContent = STATE.paused ? "Resume" : "Pause";
-  for (const id of ["btnPause", "btnPlus", "btnReset"]) $(id).disabled = !clockLive();
+  const live = clockLive();
+  for (const id of ["btnPause", "btnPlus", "btnReset"]) $(id).disabled = !live;
+  $("clockWhat").textContent = clockState();
 
   const btn = $("mainBtn"), hint = $("mainHint");
   btn.classList.remove("danger");
@@ -290,8 +303,12 @@ function renderClock() {
   const left = STATE.paused
     ? (STATE.pausedLeft ?? 0)
     : (STATE.clockEnds ? STATE.clockEnds - Date.now() : PICK_MS());
-  el.textContent = C.mmss(left);
-  el.style.color = left <= 10000 ? "var(--qb)"
+  // Says so when it is stopped. A frozen number and a running one are the same
+  // picture for the first second you look at them, which is exactly long enough
+  // to conclude the button did nothing and tap it again.
+  el.textContent = C.mmss(left) + (STATE.paused ? " paused" : "");
+  el.style.color = STATE.paused ? "var(--brass)"
+                 : left <= 10000 ? "var(--qb)"
                  : left <= 30000 ? "var(--brass)" : "var(--milk)";
 }
 

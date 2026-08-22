@@ -56,6 +56,18 @@
 @font-face { font-family: "Anton"; font-weight: 400;
   font-display: swap; src: url("fonts/anton-digits.woff2") format("woff2"); }
 
+/* The countdown, and only the countdown. Teko is drawn for scoreboards: tall,
+   narrow, square-shouldered, and it sets a 2:00 in about three-quarters of the
+   room IBM Plex Mono needed — which is not just a look, it is what stops the
+   next-up card in the bottom band from crushing a long name to make space for
+   the clock beside it.
+   Digits and the colon only, 1.3kb. Everything is declared `"Teko", var(--mono)`
+   so the one clock that also carries words — the round wall tile says ON THE
+   CLOCK when nothing is running — falls through per glyph and sets those in
+   the mono it always used. */
+@font-face { font-family: "Teko"; font-weight: 600;
+  font-display: swap; src: url("fonts/teko-digits.woff2") format("woff2"); }
+
 :root {
   --night:   #050a12;
   --panel:   #0b1422;
@@ -111,6 +123,8 @@
   --serif:   "DM Serif Display", Georgia, serif;
   --cond:    "Barlow Condensed", "PT Sans Narrow", sans-serif;
   --mono:    "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  /* every countdown on the board, and nothing else */
+  --clock:   "Teko", "IBM Plex Mono", ui-monospace, monospace;
 }
 
 * { box-sizing: border-box; }
@@ -379,8 +393,8 @@ body.board::after {
   border-top: 1px solid rgba(32,48,71,.85); padding-top: calc(1.2 * var(--u));
 }
 .timer {
-  font-family: var(--mono); font-weight: 600; font-size: calc(9.6 * var(--u));
-  line-height: .88; letter-spacing: -.02em;
+  font-family: var(--clock); font-weight: 600; font-size: calc(10.8 * var(--u));
+  line-height: .78; letter-spacing: 0;
   font-variant-numeric: tabular-nums; color: var(--milk);
 }
 .timer.warn  { color: var(--gold-hi); }
@@ -1200,7 +1214,7 @@ body.handoff .reveal { display: flex; }
    tickClock(). It is the only clock on screen while a reveal is up, and the
    clock is running then — the next man's time starts when a pick lands, not
    when the commissioner presses Next Pick. */
-.wc { font-family: var(--mono); font-weight: 600; letter-spacing: .06em; }
+.wc { font-family: var(--clock); font-weight: 600; letter-spacing: .04em; }
 .wc.warn   { color: var(--gold); }
 .wc.panic  { color: var(--bad); }
 .wc.paused { color: var(--mute); letter-spacing: .16em; }
@@ -1303,11 +1317,17 @@ body.phase-details .bb-next { display: flex; }
 /* Padded harder on the right than the left. The plate carries its own gold
    border about 3% in, and the type on this side — the countdown, and the cue
    that stands in for it — was sitting almost on it. The cut-out on the left is
-   a cut-out: it can run to the edge and should. */
+   a cut-out: it can run to the edge and should.
+
+   Everything on this card is a negotiation over one card's width. The name
+   column is what gives when the other three do not fit, so the cut-out came
+   down a size and the gaps came in: CHARLIE was arriving as CHARL… while the
+   clock beside him sat in a monospace wide enough for a terminal. Teko on the
+   countdown is the other half of that fix and worth more than either. */
 .next-body {
   position: relative; flex: 1; min-height: 0; display: flex; align-items: center;
-  gap: calc(1.8 * var(--u));
-  padding: 0 calc(4.2 * var(--u)) 0 calc(2.2 * var(--u));
+  gap: calc(1.2 * var(--u));
+  padding: 0 calc(4.2 * var(--u)) 0 calc(1.8 * var(--u));
   overflow: hidden;
   /* Nothing over it. There was a scrim here — a wash down the left, a corner
      vignette — from when this card was a CSS construction that needed help
@@ -1328,7 +1348,12 @@ body.phase-details .bb-next { display: flex; }
 }
 .next-face {
   position: relative; z-index: 1;
-  flex: none; height: calc(22.5 * var(--u)); width: auto; align-self: flex-end;
+  /* A cap on the width as well as the height. The cut-outs are all 620 tall
+     but between 383 and 476 wide, so at a fixed height Mason took 25% more of
+     this card's width than Evan did and the name column paid for it. Capped,
+     the widest man is trimmed to the same footprint as the rest. */
+  flex: none; height: calc(19.5 * var(--u)); width: auto; align-self: flex-end;
+  max-width: calc(13.5 * var(--u));
   object-fit: contain; object-position: bottom center;
   filter: drop-shadow(0 calc(.8 * var(--u)) calc(1.8 * var(--u)) rgba(0,0,0,.6));
 }
@@ -1352,8 +1377,8 @@ body.phase-details .bb-next { display: flex; }
 .next-note:empty { display: none; }
 .next-clock {
   position: relative; z-index: 1;
-  flex: none; font-family: var(--mono); font-weight: 600;
-  font-size: calc(7.4 * var(--u)); line-height: 1; letter-spacing: .02em;
+  flex: none; font-family: var(--clock); font-weight: 600;
+  font-size: calc(8.4 * var(--u)); line-height: .82; letter-spacing: 0;
   color: var(--milk); font-variant-numeric: tabular-nums;
   /* it crosses the ghosted numeral behind it */
   text-shadow: 0 0 calc(1.6 * var(--u)) rgba(5,10,18,.9);
@@ -2343,8 +2368,8 @@ body.phase-details .bb-next { display: flex; }
 /* The board's own timer is behind this screen, so this is the clock. Set at
    the size the resting screen sets its own — it is doing that job now. */
 .sc-clock {
-  font-family: var(--mono); font-weight: 600; font-size: calc(7.4 * var(--u));
-  line-height: .9; letter-spacing: .02em; color: var(--milk);
+  font-family: var(--clock); font-weight: 600; font-size: calc(8.4 * var(--u));
+  line-height: .8; letter-spacing: 0; color: var(--milk);
   font-variant-numeric: tabular-nums;
 }
 .sc-clock.warn  { color: var(--gold-hi); }

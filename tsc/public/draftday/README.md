@@ -90,16 +90,23 @@ restarting it, so sitting on a reveal to talk about it costs the draft real
 time instead of quietly banking it. If a reveal ran long and the next man
 deserves it back, **Reset** in the console is one tap.
 
-**The clock controls work during a reveal, not just on the clock.** Pause,
-+30s and Reset were gated on `status === "clock"` and the next man's clock
-starts at the *reveal* — so from the moment a pick landed until Next Pick was
-pressed there was a countdown running in the corner of the board that all three
-buttons silently refused to touch. `clockLive()` in control.js is the gate now,
-and it also covers the turn of a round: there is deliberately no clock between
-the last pick of a round and the advance, and pausing one that has not started
-would have written a paused 0:00 onto all three screens. The buttons render
-disabled when there is nothing to act on, so a dead button reads as "no clock"
-rather than as a broken tap.
+**The clock controls ask the clock, not the status.** Pause, +30s and Reset
+were gated on `status === "clock"`, and the next man's clock starts at the
+*reveal* — so from the moment a pick landed until Next Pick was pressed there
+was a countdown running in the corner of the board that all three buttons
+silently refused to touch. Adding "or revealed" to that list was the obvious
+repair and it was still a list of statuses, which is not the question.
+`clockLive()` is `!!STATE.clockEnds || !!STATE.paused` now: a clock exists when
+it exists, in any status. That answers the turn of a round for free — there is
+deliberately no clock between the last pick of a round and the advance, and
+pausing one that has not started would have written a paused 0:00 onto all
+three screens.
+
+Under the three buttons, `clockState()` says what the clock is doing in words:
+running, running as the next man's, paused, held for the turn of the round, or
+not started yet. `.btn[disabled]` in phone.css is 35% opacity with
+`pointer-events: none`, so a gated button is visibly gated — but on the night
+"why is this dead" needs an answer on the screen, not a guess.
 
 **Except at the turn of a round.** The last pick of a round is followed by the
 round card and then the on-the-clock card before anyone is really up, and the
@@ -293,6 +300,14 @@ never the answer. Null means the league default in `meta.json`.
 Rounds 1-4 are worth that ceremony. After that flip the console to **Live
 Feed**: everyone drafts in Sleeper as normal and the board keeps itself current
 off the Sleeper API with nobody pressing anything.
+
+**Nothing under /draftday is allowed to come out of cache.** `next.config.ts`
+sends `Cache-Control: public, max-age=0, must-revalidate` for `/draftday/:path*`.
+None of these files is hashed or versioned, they are edited right up to the
+night, and they are opened on twelve phones and a laptop — a console still
+running yesterday's `control.js` is a bug that presents as "the button does
+nothing" with no way to tell from the outside. If a change ever seems not to
+have landed, that is the first thing to rule out: hard-reload the page.
 
 ## Why it runs smoothly
 
@@ -596,6 +611,22 @@ over a gold dot field, and it looked like an approximation. The image happens
 to land within four percent of this card's own aspect ratio, so
 `background-size: 100% 100%` fills it without cropping the gold border off the
 edges or distorting the diagonals enough to see.
+
+**The countdown is Teko, not the board's mono.** `fonts/teko-digits.woff2`,
+1.3kb, digits and the colon only, declared as `--clock: "Teko", "IBM Plex Mono"`.
+IBM Plex Mono is a typewriter face — wide, engineered, a terminal readout
+rather than a scoreboard — and the width was not only a look: the next-up card
+divides one card's width between a cut-out, a name and a clock, the name column
+is what gives, and a monospace clock was eating enough of it to deliver CHARLIE
+as CHARL…. Teko sets the same 1:47 in about three-quarters of the room. The one
+clock that also carries words — the wall tile says ON THE CLOCK when nothing is
+running — falls through per glyph to the mono it always used, which is why the
+subset is digits only.
+
+**The cut-out on that card is capped in width as well as height.** They are all
+620 tall but between 383 and 476 wide, so at a fixed height Mason took 25% more
+of the card than Evan did and the name column paid for it. `max-width: 13.5u`
+trims the widest man to the same footprint as the rest.
 
 **Nothing is laid over it.** There was a scrim on it briefly — a wash down the
 left, a corner vignette — carried over from when this card was a CSS
