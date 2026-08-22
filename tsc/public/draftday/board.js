@@ -426,7 +426,7 @@ function announceRound(round) {
     // The cut-out on the leadoff slot only. Twelve of them would be a team
     // photo; one is a face to put to the name that is about to be called.
     const face = i === 0 && m && m.cutout
-      ? `<img class="rc-face" src="${m.cutout}" alt="" onerror="this.remove()">` : "";
+      ? `<img class="rc-face" src="${m.cutout}" alt="" decoding="async" onerror="this.remove()">` : "";
     cells.push(`<span class="rc-slot${i === 0 ? " first" : ""}">
       ${face}<i>${round}.${String(i + 1).padStart(2, "0")}</i>
       <b>${m ? C.escapeHtml(m.name) : ""}</b></span>`);
@@ -548,7 +548,7 @@ function renderIdleLineup() {
   const el = $("idleLineup");
   if (el.childElementCount) return;
   el.innerHTML = C.DATA.managers.filter(m => m.cutout).slice(0, 12)
-    .map(m => `<img src="${m.cutout}" alt="" onerror="this.remove()">`).join("");
+    .map(m => `<img src="${m.cutout}" alt="" decoding="async" onerror="this.remove()">`).join("");
 }
 
 /**
@@ -576,8 +576,8 @@ function teamLine(m) {
 
 function portrait(m) {
   if (!m) return `<div class="mgr-av fallback">?</div>`;
-  if (m.cutout) return `<img class="mgr-cut" src="${m.cutout}" alt="" onerror="this.remove()">`;
-  if (m.avatar) return `<img class="mgr-av" src="${m.avatar}" alt="">`;
+  if (m.cutout) return `<img class="mgr-cut" src="${m.cutout}" alt="" decoding="async" onerror="this.remove()">`;
+  if (m.avatar) return `<img class="mgr-av" src="${m.avatar}" alt="" decoding="async">`;
   return `<div class="mgr-av fallback">${C.escapeHtml(m.name[0])}</div>`;
 }
 
@@ -807,14 +807,17 @@ function renderReveal() {
   // Who is left at his position, which is the question the room asks out loud
   // the second a name is called — and best available has just been swapped out
   // of the band for the next man's clock, so this is the only place it lives
-  // while a reveal is up.
-  const left = C.bestAvailable(PICKS, p.pos, 4);
+  // while a reveal is up. Five, not four: it is a five-row card either way now
+  // that it has a five-row card beside it.
+  const left = C.bestAvailable(PICKS, p.pos, 5);
   $("revAlso").innerHTML = left.length
-    ? `<span class="k">${p.pos}s still on the board</span><ul>` +
+    ? `<span class="k">${p.pos} still available</span><ul>` +
       left.map(x => `<li><span class="pr pos-${x.pos}">${x.pos}${x.posrank}</span>` +
         `<span class="nm">${C.escapeHtml(x.name)}</span>` +
         `<span class="tm">${C.escapeHtml(x.team || "")}</span></li>`).join("") + `</ul>`
     : "";
+
+  renderRevealGone(p, o);
 
   const box = $("revHist");
   if (!hist.length) {
@@ -837,6 +840,38 @@ function renderReveal() {
       (extra > 0 ? `<li class="more">+${extra} more</li>` : "") +
       `</ul>`;
   }
+}
+
+/**
+ * The other half of "who is left": who has already gone at this position
+ * tonight, newest first, this pick at the top of it.
+ *
+ * It is the natural partner to the still-available list beside it and the
+ * thing the room says out loud next — that is the fourth back off the board
+ * and the second in six picks. Counted off PICKS, so it needs nothing that
+ * was not already in hand, and it fills the half of the foot the man's PAMS
+ * record used to take before that moved under his photograph.
+ */
+function renderRevealGone(p, o) {
+  const gone = PICKS
+    .filter(x => x.pos === p.pos)
+    .sort((a, b) => b.overall - a.overall)
+    .slice(0, 5);
+  const el = $("revGone");
+  if (!gone.length) { el.innerHTML = ""; return; }
+  // Where each one sits in the run on his own position, so the top row reads
+  // "RB4" for the fourth back taken rather than repeating his preseason rank.
+  const order = new Map();
+  let n = 0;
+  for (const x of PICKS.slice().sort((a, b) => a.overall - b.overall)) {
+    if (x.pos === p.pos) order.set(x.overall, ++n);
+  }
+  el.innerHTML = `<span class="k">${p.pos} off the board</span><ul>` +
+    gone.map(x => `<li${x.overall === o ? ` class="now"` : ""}>` +
+      `<span class="pr pos-${x.pos}">${x.pos}${order.get(x.overall) || ""}</span>` +
+      `<span class="nm">${C.escapeHtml(x.name)}</span>` +
+      `<span class="tm">${C.escapeHtml(x.manager || "")}</span></li>`).join("") +
+    `</ul>`;
 }
 
 /**
@@ -967,10 +1002,10 @@ function renderRoundBoard() {
       ? (p.overall === newest ? "filled just" : "filled")
       : n === o ? "onclock" : "empty";
     const face = m && m.cutout
-      ? `<img class="face" src="${m.cutout}" alt="" onerror="this.remove()">` : "";
+      ? `<img class="face" src="${m.cutout}" alt="" decoding="async" onerror="this.remove()">` : "";
     const avatarRow = p
       ? `<div class="ar">
-          <img class="pav" src="${C.headshot({ id: p.playerId, pos: p.pos })}" alt="" onerror="this.remove()">
+          <img class="pav" src="${C.headshot({ id: p.playerId, pos: p.pos })}" alt="" decoding="async" onerror="this.remove()">
           <span class="pos pos-${p.pos}">${p.pos}${posOrder.get(p.overall) || ""}</span>
         </div>`
       : "";
@@ -1037,6 +1072,7 @@ function renderShowcase() {
   } else face.style.display = "none";
 
   $("scName").textContent = m.name.toUpperCase();
+  $("scIntroName").textContent = m.name.toUpperCase();
   $("scTeam").innerHTML = teamLine(m);
 
   const rank = $("scRank");
@@ -1160,7 +1196,25 @@ function renderShowcaseSeasons(m) {
  * is on the clock — whether he is the one who waits on a quarterback — and
  * nothing else on the board answered it.
  */
+/**
+ * Everything on this card is computed off `round_picks`, which is a file
+ * written at build time and does not change while the draft runs — so none of
+ * it needs computing twice.
+ *
+ * It was: for each of four positions, walk every round of every draft this
+ * manager has made, and then do the same for all twelve managers to get the
+ * room's average to compare him against. Forty-eight walks of the whole
+ * league's draft history, every time the showcase was rebuilt, for four
+ * numbers that are the same every time. Now they are worked out once each and
+ * kept.
+ */
+const firstRoundCache = new Map();
+const hisGuyCache = new Map();
+const roomFirstRound = new Map();
+
 function firstRoundFor(m, pos) {
+  const key = `${m.slot}|${pos}`;
+  if (firstRoundCache.has(key)) return firstRoundCache.get(key);
   const rp = m.round_picks || {};
   const byYear = {};
   for (const r of Object.keys(rp).map(Number).sort((a, b) => a - b)) {
@@ -1169,11 +1223,12 @@ function firstRoundFor(m, pos) {
     }
   }
   const rounds = Object.values(byYear);
-  if (!rounds.length) return null;
-  return {
+  const out = rounds.length ? {
     avg: rounds.reduce((a, b) => a + b, 0) / rounds.length,
     lo: Math.min(...rounds), hi: Math.max(...rounds), n: rounds.length,
-  };
+  } : null;
+  firstRoundCache.set(key, out);
+  return out;
 }
 
 // K and DEF are in here only because the round cell follows the draft: by the
@@ -1187,14 +1242,15 @@ const POS_MANY = { QB: "Quarterbacks", RB: "Running Backs", WR: "Receivers", TE:
 
 /** The whole room's average first round at a position, for comparison. */
 function leagueFirstRound(pos) {
-  const all = [];
+  if (roomFirstRound.has(pos)) return roomFirstRound.get(pos);
+  let sum = 0, n = 0;
   for (const x of C.DATA.managers) {
     const f = firstRoundFor(x, pos);
-    if (f) all.push(f.avg * f.n, f.n);
+    if (f) { sum += f.avg * f.n; n += f.n; }
   }
-  let sum = 0, n = 0;
-  for (let i = 0; i < all.length; i += 2) { sum += all[i]; n += all[i + 1]; }
-  return n ? sum / n : null;
+  const out = n ? sum / n : null;
+  roomFirstRound.set(pos, out);
+  return out;
 }
 
 /**
@@ -1205,6 +1261,7 @@ function leagueFirstRound(pos) {
  * Averaged over his own picks of that player, earliest wins.
  */
 function hisGuy(m) {
+  if (hisGuyCache.has(m.slot)) return hisGuyCache.get(m.slot);
   const seen = new Map();
   for (const list of Object.values(m.round_picks || {})) {
     for (const p of list) {
@@ -1219,7 +1276,9 @@ function hisGuy(m) {
     e.avg = e.sum / e.n;
     if (!best || e.n > best.n || (e.n === best.n && e.avg < best.avg)) best = e;
   }
-  return best && best.n > 1 ? best : null;
+  const out = best && best.n > 1 ? best : null;
+  hisGuyCache.set(m.slot, out);
+  return out;
 }
 
 /**
@@ -1404,7 +1463,7 @@ function renderShowcaseSched(m, o) {
   const faceOf = name => {
     const x = C.DATA.managers.find(z => z.name === name);
     const src = x && (x.cutout || x.avatar);
-    return src ? `<img src="${src}" alt="" onerror="this.remove()">` : "";
+    return src ? `<img src="${src}" alt="" decoding="async" onerror="this.remove()">` : "";
   };
   const cells = [];
   const wk1 = C.week1For(m.name);

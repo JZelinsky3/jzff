@@ -252,6 +252,10 @@ export function startSleeperSync(getPicks, onAbsorb, everyMs = 4000) {
 
 /** Ask Sleeper whether Luke (or anyone) has joined since the data was built. */
 export async function refreshLateJoiners() {
+  // Before the network, not after it. Once every manager has a Sleeper id
+  // there is nothing this can find, and it used to fetch a league and a draft
+  // every sixty seconds all night to reach a `return false` two lines later.
+  if (DATA.managers.every(m => m.sleeper_id)) return false;
   try {
     const [users, draft] = await Promise.all([
       fetch(`https://api.sleeper.app/v1/league/${SLEEPER_LEAGUE}/users`).then(r => r.json()),

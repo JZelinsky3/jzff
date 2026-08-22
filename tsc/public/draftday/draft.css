@@ -946,6 +946,16 @@ body.phase-details .reveal { display: flex; }
    screen is held under the selection graphic. */
 body.handoff .reveal { display: flex; }
 
+/* The photograph and the man's record, one column. The record was in the foot
+   taking half the width of the screen to say a thing three narrow columns
+   wide; under the photo it is the caption to it, and the foot gets both halves
+   of the position question instead. */
+.reveal-side {
+  flex: none; min-height: 0; display: flex; flex-direction: column;
+  gap: calc(1.2 * var(--u)); width: calc(31 * var(--u));
+  animation: shrinkIn .55s cubic-bezier(.3,.8,.3,1) both;
+}
+
 /* One card, three layers: team-colour glow, the crest, the player. The wrap
    itself is the card now — it owns the hairline, the corners and the drop
    shadow, which the photo used to own. That was the thing that read wrong:
@@ -961,11 +971,10 @@ body.handoff .reveal { display: flex; }
    the crest reads in the space either side of it, which is the whole idea. */
 .reveal-shot-wrap {
   position: relative; flex: none; overflow: hidden;
-  width: calc(31 * var(--u)); height: calc(28.5 * var(--u));
+  width: 100%; height: calc(28.5 * var(--u));
   border-radius: 8px; border: 1px solid var(--gold-lo);
   background: linear-gradient(180deg, #0d1930, #060c16);
   box-shadow: 0 calc(1 * var(--u)) calc(2.4 * var(--u)) rgba(0,0,0,.55);
-  animation: shrinkIn .55s cubic-bezier(.3,.8,.3,1) both;
 }
 .reveal-shot-wrap::before {
   content: ""; position: absolute; z-index: 0; inset: 0;
@@ -1047,41 +1056,55 @@ body.handoff .reveal { display: flex; }
 /* flex-start, not stretch: these two modules hold different amounts and there
    is no reason for the shorter one to grow a tail of empty box to match the
    taller one. */
+/* Two cards of the same size: what has gone at this position and what is
+   left. They are a pair and they are read as a pair, so they are set as one. */
 .reveal-foot {
-  display: flex; align-items: flex-start; gap: calc(1.6 * var(--u));
+  display: flex; align-items: stretch; gap: calc(1.6 * var(--u));
   margin-top: calc(1.4 * var(--u));
 }
-.reveal-also {
-  /* Sized to what is in it. As a 1fr of the writeup's width the name column
-     stretched and every row ran a lane of empty space down its middle. */
+.reveal-also, .reveal-gone {
   flex: none; width: calc(31 * var(--u));
   padding: .9vh calc(1.2 * var(--u));
   border: 1px solid var(--line-soft); background: var(--glass-2); border-radius: 3px;
 }
-.reveal-also:empty { display: none; }
-.reveal-also .k {
+.reveal-also:empty, .reveal-gone:empty { display: none; }
+.reveal-also .k, .reveal-gone .k {
   display: block; padding-bottom: .5vh; margin-bottom: .5vh;
   border-bottom: 1px solid var(--line-soft);
   font-family: var(--mono); font-weight: 600; font-size: calc(1.25 * var(--u));
   letter-spacing: .18em; color: var(--gold); text-transform: uppercase;
 }
-.reveal-also ul { margin: .6vh 0 0; padding: 0; list-style: none; display: grid; gap: 0; }
-.reveal-also li {
-  display: grid; grid-template-columns: calc(4.4 * var(--u)) minmax(0, 1fr) calc(3.6 * var(--u));
+.reveal-also ul, .reveal-gone ul {
+  margin: .6vh 0 0; padding: 0; list-style: none; display: grid; gap: 0;
+}
+.reveal-also li, .reveal-gone li {
+  display: grid; grid-template-columns: calc(4.4 * var(--u)) minmax(0, 1fr) calc(6.4 * var(--u));
   gap: calc(1 * var(--u)); align-items: baseline; padding: .2vh 0;
   font-family: var(--mono); font-size: calc(1.35 * var(--u)); color: var(--chalk-dim);
 }
-.reveal-also li .nm {
+.reveal-also li .nm, .reveal-gone li .nm {
   font-family: var(--cond); font-weight: 600; font-size: calc(1.75 * var(--u));
   color: var(--milk); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.reveal-also li .tm { color: var(--mute); text-align: right; }
+.reveal-also li .tm, .reveal-gone li .tm {
+  color: var(--mute); text-align: right;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Who took each one. Not --mute: this column is the point of the card. */
+.reveal-gone li .tm { color: var(--chalk-dim); }
+/* The pick that just landed, at the top of its own list. */
+.reveal-gone li.now .nm { color: var(--gold-hi); }
+.reveal-gone li.now .tm { color: var(--gold); }
 
 /* career history as its own compact module. Sized to its own content now —
    three narrow columns (year, pick, manager) were stretching to a 44uw box
    built for the wider prose modules above it, leaving most of the box empty. */
+/* Under the photograph now, and the width of it. Smaller than it was — it is
+   a caption, not a panel — and lifted a long way out of the greys it was set
+   in, because "smaller" and "fainter" together is how a module disappears. */
 .reveal-hist {
-  flex: none; padding: .9vh calc(1.2 * var(--u)); width: calc(26 * var(--u));
+  flex: 1; min-height: 0; overflow: hidden;
+  padding: calc(.7 * var(--u)) calc(1.2 * var(--u));
   border: 1px solid var(--line-soft); background: var(--glass-2); border-radius: 3px;
 }
 /* The module's own heading, and it was set like a footnote: mute grey, 1.05u,
@@ -1098,12 +1121,13 @@ body.handoff .reveal { display: flex; }
    of drifting with name length) that this one had never actually followed. */
 .reveal-hist ul { margin: .6vh 0 0; padding: 0; list-style: none; display: grid; gap: 0; }
 .reveal-hist li {
-  display: grid; grid-template-columns: calc(3.4 * var(--u)) calc(5 * var(--u)) calc(12 * var(--u));
-  gap: calc(1 * var(--u)); align-items: baseline; padding: .2vh 0;
-  font-family: var(--mono); font-size: calc(1.35 * var(--u)); color: var(--chalk-dim);
+  display: grid;
+  grid-template-columns: calc(3.4 * var(--u)) calc(4.4 * var(--u)) minmax(0, 1fr);
+  gap: calc(1 * var(--u)); align-items: baseline; padding: calc(.14 * var(--u)) 0;
+  font-family: var(--mono); font-size: calc(1.25 * var(--u)); color: var(--chalk);
 }
 .reveal-hist li b { color: var(--milk); font-weight: 600; }
-.reveal-hist li .pk { color: var(--mute); }
+.reveal-hist li .pk { color: var(--chalk-dim); }
 .reveal-hist li .mgr {
   color: var(--chalk); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
@@ -1131,8 +1155,9 @@ body.handoff .reveal { display: flex; }
 }
 .wall-hd {
   flex: none; display: flex; align-items: baseline; gap: calc(1.2 * var(--u));
-  font-family: var(--mono); font-size: calc(1.3 * var(--u)); letter-spacing: .22em;
-  color: var(--mute); text-transform: uppercase;
+  font-family: var(--mono); font-weight: 600;
+  font-size: calc(1.5 * var(--u)); letter-spacing: .2em;
+  color: var(--chalk); text-transform: uppercase;
 }
 .wall-hd #roundHd { color: var(--milk); font-weight: 600; letter-spacing: .1em; }
 
@@ -1231,9 +1256,15 @@ body.handoff .reveal { display: flex; }
    so the rows grow to fill instead of stopping at their natural height and
    leaving the rest of the card empty, and the two cards stay line-for-line
    level with each other. */
+/* The gutter between the cards was the same 1.3u used everywhere else on the
+   board, and everywhere else on the board the things either side of it are
+   different shapes. These two are not: best available and the lineup are both
+   a rank, a name and a team abbreviation, in rows of the same height, and at a
+   hairline's distance they read as one twelve-row table with a seam down it.
+   Set is what tells you it is two cards, so it gets set. */
 .bottom-band {
   --band-rows: 7;
-  display: flex; gap: calc(1.3 * var(--u)); min-height: 0;
+  display: flex; gap: calc(2.8 * var(--u)); min-height: 0;
 }
 /* rgba(...,.58) let the stage art behind it fight with the text for
    attention — barely readable. Near-opaque now, with more blur to kill
@@ -1259,11 +1290,19 @@ body.handoff .reveal { display: flex; }
    grew to fit whatever was in it: the run alert made the BEST AVAILABLE header
    five pixels taller than LINEUP beside it, which pushed its whole list down.
    Same height whether the alert is up or not, and the same height on both. */
+/* These name the two biggest panels on the board and they were the faintest
+   type on it: 1.05u of --mute (#5b687a) tracked out to a quarter of an em,
+   which is a caption on a laptop and a smudge on a television. Bigger,
+   brighter, and on a rule the panel's own colour rather than a hairline —
+   the point of a card header at ten feet is that you know which card you are
+   looking at before you read a word of it. */
 .rail-hd, .lineup-hd {
-  flex: none; display: flex; align-items: center; height: calc(3.5 * var(--u));
+  flex: none; display: flex; align-items: center; height: calc(3.8 * var(--u));
   padding: 0 calc(1.4 * var(--u));
-  font-family: var(--mono); font-size: calc(1.05 * var(--u)); letter-spacing: .24em;
-  color: var(--mute); text-transform: uppercase; border-bottom: 1px solid var(--line-soft);
+  font-family: var(--mono); font-weight: 600;
+  font-size: calc(1.45 * var(--u)); letter-spacing: .2em;
+  color: var(--chalk); text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
 }
 .rail-hd .ct, .lineup-hd .ct { margin-left: auto; color: var(--gold); }
 /* The run alert. It used to be a third item in the round wall's header, in
@@ -1602,15 +1641,30 @@ body.phase-details .bb-next { display: flex; }
   display: inline-flex; align-items: center; white-space: nowrap;
   height: 100%; will-change: transform;
 }
+/* The gap here was `.7vh` — about 7px, and the only length left in the whole
+   stylesheet still measured against the viewport rather than the canvas. Five
+   things ran past in a row (pick, manager, player, position, team) with a
+   hairline of air between each, so a strip of the round read as one continuous
+   word from across a room. The gap between items is now what a word space
+   ought to be at this size, and the padding either side of a pick is nearly
+   double it again, so the eye can find where one pick stops and the next
+   starts before it reads either of them. */
 .tk {
-  display: inline-flex; align-items: center; gap: .7vh; padding: 0 calc(1.6 * var(--u));
+  display: inline-flex; align-items: center; gap: calc(1.5 * var(--u));
+  padding: 0 calc(2.8 * var(--u));
   font-family: var(--cond); font-weight: 600; font-size: calc(2.1 * var(--u));
   color: var(--chalk); border-right: 1px solid var(--line-soft);
 }
-.tk .pk { font-family: var(--mono); font-size: calc(1.2 * var(--u)); color: var(--gold); }
+.tk .pk {
+  font-family: var(--mono); font-size: calc(1.35 * var(--u));
+  letter-spacing: .08em; color: var(--gold);
+}
 .tk .mg { color: var(--chalk-dim); }
-.tk .pp { font-family: var(--mono); font-weight: 600; font-size: calc(1.2 * var(--u)); }
-.tk .tm { font-family: var(--mono); font-size: calc(1.1 * var(--u)); color: var(--mute); }
+.tk .pp { font-family: var(--mono); font-weight: 600; font-size: calc(1.35 * var(--u)); }
+.tk .tm {
+  font-family: var(--mono); font-size: calc(1.25 * var(--u));
+  letter-spacing: .06em; color: var(--mute);
+}
 .tk.onclock { color: var(--gold-hi); }
 .tk.onclock .pk { color: var(--gold-hi); }
 .tk.pending { color: var(--mute); }
@@ -1645,7 +1699,10 @@ body.phase-details .bb-next { display: flex; }
     radial-gradient(118% 96% at 50% 44%,
       transparent 50%, rgba(3,7,14,.34) 78%, rgba(3,7,14,.62) 100%);
 }
-.announce.show { display: grid; animation: dim .36s ease-out both; }
+/* Promoted only while it is up. These are full-screen opacity fades and the
+   layer is worth having for the length of one; at rest the card is display:none
+   so the class does not match and nothing is held. */
+.announce.show { display: grid; animation: dim .36s ease-out both; will-change: opacity; }
 /* The card fading in over the one it replaces. Two announcements can be on
    screen at once for the length of that fade, which is the point: the board
    underneath is never uncovered between them. */
@@ -1859,12 +1916,22 @@ body.phase-details .bb-next { display: flex; }
    type on it is small; the room should still be visible behind it, but it
    cannot be doing any work up front. */
 .showcase {
+  /* How long the title card owns the screen. Every panel's entrance below is
+     `calc(var(--sc-in) + its own beat)`, so they arrive as the card lifts. */
+  --sc-in: 1.15s;
+  /* Named so the title card can cancel them: an absolutely positioned child of
+     a grid container is laid against the container's *padding* box, so a plain
+     inset:0 on it stops short of the canvas edge on all four sides and leaves a
+     frame of the screen underneath showing around it. */
+  --sc-pad-t: calc(2.4 * var(--u));
+  --sc-pad-x: calc(4 * var(--uw));
+  --sc-pad-b: calc(2.2 * var(--u));
   position: absolute; inset: 0; z-index: 14; display: none;
   /* head, career strip, the 2026 strip, the two panels, the round band, the
      bottom band. Only the panels flex; everything else is its own content. */
   grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
   gap: calc(1.6 * var(--u));
-  padding: calc(2.4 * var(--u)) calc(4 * var(--uw)) calc(2.2 * var(--u));
+  padding: var(--sc-pad-t) var(--sc-pad-x) var(--sc-pad-b);
   background: var(--night);
 }
 .showcase::before {
@@ -1879,6 +1946,75 @@ body.phase-details .bb-next { display: flex; }
       transparent 46%, rgba(3,7,14,.4) 76%, rgba(3,7,14,.66) 100%);
 }
 .showcase.show { display: grid; animation: dim .35s ease-out both; }
+
+/* ── the title card ───────────────────────────────────────────────────── */
+/* An opaque layer over the whole screen for the first second and a quarter,
+   carrying the label, a rule that opens out of the middle, and the man's name.
+   Then it lifts and the screen is already there behind it — every panel's own
+   entrance is delayed by --sc-in so they arrive as this leaves rather than
+   having played out unseen underneath it.
+   No JavaScript anywhere in this: the showcase goes from display:none to
+   display:grid when the console puts it up, which restarts every animation
+   inside it, and this one ends hidden and stays hidden. */
+.sc-intro {
+  position: absolute; z-index: 5; pointer-events: none;
+  inset: calc(-1 * var(--sc-pad-t)) calc(-1 * var(--sc-pad-x)) calc(-1 * var(--sc-pad-b));
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: calc(2.2 * var(--u));
+  /* A veil over the screen's own set, not a second copy of it. The showcase
+     already paints the graded backdrop underneath; repeating the image here
+     would be a second full-screen decode and paint for the one second this is
+     up, and it would look identical. */
+  background: linear-gradient(180deg, rgba(5,10,18,.88), rgba(5,10,18,.95));
+  will-change: opacity, transform;
+  animation: scIntro 1.5s ease-out both;
+}
+/* Opaque, hold, then lift away. The `visibility` step is what keeps it from
+   sitting invisibly over the screen for the rest of the night. */
+@keyframes scIntro {
+  0%   { opacity: 0; transform: scale(1.015); visibility: visible; }
+  22%  { opacity: 1; transform: scale(1); }
+  70%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.035) translateY(calc(-1.6 * var(--u)));
+         visibility: hidden; }
+}
+.sc-intro-k {
+  font-family: var(--mono); font-weight: 600; font-size: calc(2.4 * var(--u));
+  letter-spacing: .5em; text-indent: .5em; text-transform: uppercase;
+  color: var(--gold);
+  animation: scIntroK .5s .18s ease-out both;
+}
+@keyframes scIntroK {
+  from { opacity: 0; letter-spacing: .22em; }
+  to   { opacity: 1; letter-spacing: .5em; }
+}
+/* Drawn out of the middle rather than faded in: it is the only moving line on
+   the card and it is what makes it read as being built. */
+.sc-intro-rule {
+  width: calc(34 * var(--u)); height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold) 22%, var(--gold-hi) 50%,
+    var(--gold) 78%, transparent);
+  transform: scaleX(0);
+  animation: scIntroRule .55s .32s cubic-bezier(.2,.85,.3,1) both;
+}
+@keyframes scIntroRule { to { transform: scaleX(1); } }
+/* The name in gold leaf, the same fill the pick-is-in headline uses, with the
+   same bar of light travelling across it. */
+.sc-intro-n {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(11 * var(--u)); line-height: .9; text-transform: uppercase;
+  text-align: center; letter-spacing: .01em; padding: 0 calc(6 * var(--uw));
+  background: linear-gradient(102deg,
+    #7d5f24 0%, #c99a43 18%, #f0d49a 38%, #fffaf0 48%,
+    #f0d49a 58%, #c99a43 78%, #8a6a2a 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation:
+    scIntroN .6s .46s cubic-bezier(.16,.84,.3,1) both,
+    piSheen 1.05s .5s cubic-bezier(.35,.6,.35,1) both;
+}
+@keyframes scIntroN {
+  from { opacity: 0; transform: translateY(calc(1.8 * var(--u))); }
+}
 /* Every child rides above the two background layers. Named individually, not
    `.showcase > *`: a blanket child rule outranks the position on the ::before
    pair's own class and has thrown a full-screen layer into the flow here
@@ -1892,7 +2028,7 @@ body.phase-details .bb-next { display: flex; }
   display: flex; align-items: flex-end; gap: calc(2.6 * var(--u));
   padding-bottom: calc(1.6 * var(--u));
   border-bottom: 1px solid rgba(201,154,67,.42);
-  animation: selUp .45s .04s ease-out both;
+  animation: selUp .45s calc(var(--sc-in) + .04s) ease-out both;
 }
 .sc-face {
   flex: none; height: calc(17.5 * var(--u)); width: auto;
@@ -1943,7 +2079,7 @@ body.phase-details .bb-next { display: flex; }
 .sc-career {
   display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
   margin: calc(-.5 * var(--u)) 0;
-  animation: selUp .45s .12s ease-out both;
+  animation: selUp .45s calc(var(--sc-in) + .12s) ease-out both;
 }
 .sc-career > div { min-width: 0; }
 .sc-career .k {
@@ -1973,7 +2109,7 @@ body.phase-details .bb-next { display: flex; }
   display: flex; align-items: center; gap: calc(1.4 * var(--u));
   padding: calc(1.1 * var(--u)) 0;
   border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft);
-  animation: selUp .45s .16s ease-out both;
+  animation: selUp .45s calc(var(--sc-in) + .16s) ease-out both;
 }
 .sc-sched:empty { display: none; }
 .sc-sched .k {
@@ -2017,7 +2153,7 @@ body.phase-details .bb-next { display: flex; }
 /* the two panels */
 .sc-cols {
   display: grid; grid-template-columns: 1fr 1fr; gap: calc(1.6 * var(--uw));
-  min-height: 0; animation: selUp .5s .2s ease-out both;
+  min-height: 0; animation: selUp .5s calc(var(--sc-in) + .2s) ease-out both;
 }
 /* the career strip over his tendencies, in the column the seasons table used
    to have to itself */
@@ -2032,6 +2168,7 @@ body.phase-details .bb-next { display: flex; }
 }
 .sc-panel {
   min-width: 0; min-height: 0; overflow: hidden;
+  contain: layout style paint;
   display: flex; flex-direction: column;
   background: rgba(6,11,20,.9); border: 1px solid var(--line); border-radius: 4px;
   box-shadow: 0 calc(1.2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.42);
@@ -2039,9 +2176,10 @@ body.phase-details .bb-next { display: flex; }
 .sc-hd {
   flex: none; display: flex; align-items: center; height: calc(3.4 * var(--u));
   padding: 0 calc(1.6 * var(--u));
-  font-family: var(--mono); font-size: calc(1.15 * var(--u)); letter-spacing: .24em;
-  color: var(--mute); text-transform: uppercase;
-  border-bottom: 1px solid var(--line-soft);
+  font-family: var(--mono); font-weight: 600;
+  font-size: calc(1.35 * var(--u)); letter-spacing: .2em;
+  color: var(--chalk); text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
 }
 .sc-hd .ct { margin-left: auto; color: var(--gold); }
 
@@ -2283,7 +2421,7 @@ body.phase-details .bb-next { display: flex; }
 .sc-r1 {
   display: flex; align-items: center; gap: calc(2.6 * var(--u)); overflow: hidden;
   padding-top: calc(1.4 * var(--u)); border-top: 1px solid var(--line-soft);
-  animation: selUp .5s .28s ease-out both;
+  animation: selUp .5s calc(var(--sc-in) + .28s) ease-out both;
 }
 .sc-r1:empty { display: none; }
 .sc-r1 .k {
@@ -2330,7 +2468,7 @@ body.phase-details .bb-next { display: flex; }
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   gap: calc(2 * var(--uw));
   padding-top: calc(1.6 * var(--u)); border-top: 1px solid rgba(201,154,67,.42);
-  animation: selUp .5s .34s ease-out both;
+  animation: selUp .5s calc(var(--sc-in) + .34s) ease-out both;
 }
 .sc-side { min-width: 0; }
 .sc-side.right { text-align: right; }

@@ -42,9 +42,16 @@
          bottom band on purpose: that and the wall in the rail stay up the
          whole time this is showing. -->
     <div class="reveal">
-      <div class="reveal-shot-wrap">
-        <img class="team-bg" id="revTeamBg" alt="">
-        <img class="reveal-shot" id="revShot" alt="">
+      <!-- The photograph and the man's PAMS record, in one column. The record
+           used to sit in the foot beside what is left at his position, where
+           it took half the width of the screen to say a thing that is three
+           narrow columns wide. Under the photo it is the caption to it. -->
+      <div class="reveal-side">
+        <div class="reveal-shot-wrap">
+          <img class="team-bg" id="revTeamBg" alt="">
+          <img class="reveal-shot" id="revShot" alt="">
+        </div>
+        <div class="reveal-hist" id="revHist"></div>
       </div>
       <div class="reveal-body">
         <div class="reveal-eyebrow" id="revEyebrow">&nbsp;</div>
@@ -54,8 +61,10 @@
         </div>
         <div class="reveal-tags" id="revTags"></div>
         <div class="reveal-note" id="revNote"></div>
+        <!-- What has gone at this position tonight, and what is left. The two
+             halves of the question the room asks the second a name is called. -->
         <div class="reveal-foot">
-          <div class="reveal-hist" id="revHist"></div>
+          <div class="reveal-gone" id="revGone"></div>
           <div class="reveal-also" id="revAlso"></div>
         </div>
       </div>
@@ -214,6 +223,18 @@
      along its own bottom edge: nothing else on the board is left showing to
      do that job. -->
 <div class="showcase" id="showcase">
+  <!-- The title card. It runs for about a second and a quarter over the top of
+       the screen and then lifts off it, which is the whole reason it exists:
+       this used to arrive as a finished page of small type with no warning,
+       and the room needs a beat to look up. Pure CSS, no timer — the animation
+       runs once because .showcase goes display:none to grid when it opens,
+       and the screen underneath is held back by --sc-in until it clears. -->
+  <div class="sc-intro" aria-hidden="true">
+    <div class="sc-intro-k">Manager Showcase</div>
+    <div class="sc-intro-rule"></div>
+    <div class="sc-intro-n" id="scIntroName">&nbsp;</div>
+  </div>
+
   <div class="sc-head">
     <img class="sc-face" id="scFace" alt="">
     <div class="sc-id">

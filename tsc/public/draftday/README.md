@@ -246,6 +246,23 @@ one — `tickClock()` writes it the same way it writes the wall and the next-up
 card — so a two minute pick spent looking at a career table still costs two
 minutes.
 
+**It opens on a title card.** About a second and a quarter of label, a gold
+rule opening out of the middle, and the man's name in the same gold leaf THE
+PICK IS IN uses, and then it lifts off a screen that is already there behind
+it. This used to arrive as a finished page of small type with no warning, and
+the room needs a beat to look up.
+
+There is no JavaScript in it and no timer. `.showcase` goes from `display: none`
+to `display: grid` when the console puts it up, which restarts every animation
+inside it; the card runs once and ends `visibility: hidden`. Every panel's own
+entrance is `calc(var(--sc-in) + its own beat)`, so they arrive as the card
+leaves rather than having played out unseen underneath it. One trap paid for:
+an absolutely positioned child of a grid container is laid against the
+container's **padding** box, so a plain `inset: 0` on the card stopped short of
+the canvas on all four sides and left a frame of the screen showing around it.
+The showcase's padding is named in three custom properties now and the card
+cancels them.
+
 **It is a clock-time screen and it closes itself.** The board only draws it
 while `status === "clock"`, and every state change that moves the draft on
 spreads `CLOSED` (`showcase: null`) into its patch, `submitPick` in core.js
@@ -361,6 +378,22 @@ band cards doing nothing you could see (the fill above it is 93% opaque) and
 costing a great deal: a backdrop filter makes the element a backdrop root, and
 everything behind it is re-blurred whenever anything in front of it moves.
 Three of them sat under a countdown that ticks five times a second.
+
+**The showcase's draft maths is worked out once, not every time.** For each of
+four positions, `firstRoundFor` walks every round of every draft a manager has
+made — and `leagueFirstRound` did the same for all twelve to get the room's
+average to compare him against. Forty-eight walks of the league's whole draft
+history on every showcase render, for four numbers that are identical every
+time: `round_picks` is written at build time and does not change while the
+draft runs. Cached, along with `hisGuy`.
+
+**`refreshLateJoiners` checks before it fetches.** Once every manager has a
+Sleeper id there is nothing it can find, and it was fetching a league and a
+draft every sixty seconds all night to reach a `return false` two lines later.
+
+**Every image the board builds carries `decoding="async"`.** The round wall
+alone makes twenty-four of them, and a synchronous decode of that batch lands
+squarely on the frame the wall rebuilds in.
 
 **The band cards and the rail are `contain: layout style paint`.** A list
 rebuilding inside one has no bearing on the layout of anything outside it, and
@@ -587,9 +620,7 @@ under STARTING SHORTLY, with the man who leads it off small beside it.
 reveal is on screen — name, pick number and a clock the size of the one a
 broadcast puts under the pick that just happened. The board's own timer is
 behind the reveal at that moment, which is the whole reason it is there. The
-reveal itself picks up what the band gave away: `.reveal-also` lists who is
-left **at the drafted player's position**, beside the history box that used to
-sit alone with half the screen empty next to it.
+reveal itself picks up what the band gave away.
 
 **That card says whose clock it is before it shows the clock.** For the first
 2.6 seconds of a reveal it reads `IS NOW / ON THE CLOCK` where the countdown
@@ -636,6 +667,38 @@ delivered at. If type ever stops reading on it, move the type, don't dim the
 plate. The card is also padded harder on the right (4.2u) than the left (2.2u):
 the plate's own gold border sits about 3% in and the countdown was almost on
 it, while the cut-out on the left is a cut-out and can run to the edge.
+
+**The reveal is a photo column and a body, and the foot is a matched pair.**
+The man's PAMS record used to sit in the foot beside what was left at his
+position — three narrow columns of year, pick and manager taking half the width
+of a television to say it. It lives under his photograph now, at the width of
+the photograph, smaller and a good deal brighter (smaller *and* fainter is how
+a module disappears). The foot took the room it gave up and answers the
+position in both directions: `{POS} OFF THE BOARD`, newest first with this pick
+lit gold at the top of it and who took each one, beside `{POS} STILL AVAILABLE`,
+five deep each. That is the pair of things the room says out loud the second a
+name is called, and both are counted off PICKS, so neither needs anything that
+was not already in hand.
+
+**Card headers are set to be read from a couch, not a desk.** BEST AVAILABLE,
+LINEUP, the round wall and the showcase panels were all 1.05–1.3u of `--mute`
+tracked out to a quarter of an em, which is a caption on a laptop and a smudge
+on a television. All of them are a size up, at `--chalk`, on a rule the panel's
+own colour. The point of a card header at ten feet is that you know which card
+you are looking at before you read a word of it.
+
+**The ticker had one `.7vh` left in it.** The gap between the five things in a
+tick — pick, manager, player, position, team — was the only length in the
+stylesheet still measured against the viewport rather than the canvas, and at
+about seven pixels a strip of the round read as one continuous word. It is a
+word space now, with nearly double that again either side of each pick.
+
+**And the two band cards are two cards.** The gutter between best available and
+the lineup was the same 1.3u used everywhere else, and everywhere else the
+things either side of it are different shapes. These two are not — both are a
+rank, a name and a team abbreviation in rows of the same height — so at a
+hairline's distance they read as one twelve-row table with a seam down it. Set
+is what tells you it is two cards, so it gets set.
 
 **Two nudges on the conference chip are optical, not geometric.** The row
 centres the chip's box on the team name's line box, and a line box carries
