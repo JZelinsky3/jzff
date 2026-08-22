@@ -133,13 +133,13 @@ case "${1:-}" in
 
   # ./render.sh carousel [slide-number ...]
   #
-  # The offseason carousel. With no arguments it renders all ten
+  # The offseason carousel. With no arguments it renders all eight
   # slides; with numbers it renders only those, which is what you want
   # while iterating on one panel.
   carousel)
     shift
     SLIDES=("$@")
-    [ ${#SLIDES[@]} -eq 0 ] && SLIDES=(1 2 3 4 5 6 7 8 9 10)
+    [ ${#SLIDES[@]} -eq 0 ] && SLIDES=(1 2 3 4 5 6 7 8)
     echo "Rendering offseason carousel:"
     for i in "${SLIDES[@]}"; do
       shot "file://$HERE/offseason.html?slide=$i" \

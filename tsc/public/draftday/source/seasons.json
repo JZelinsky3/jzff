@@ -1,0 +1,968 @@
+{
+ "built": "2026-08-21",
+ "source": "TSC database, league pams, seasons 2019-2025",
+ "managers": {
+  "Connor": {
+   "ledger": [
+    {
+     "y": 2019,
+     "rec": "7-6",
+     "fin": 6,
+     "ppg": 119.9,
+     "pfr": 4,
+     "seed": 5,
+     "br": true,
+     "teams": 14
+    },
+    {
+     "y": 2020,
+     "rec": "5-8",
+     "fin": 10,
+     "ppg": 115.8,
+     "pfr": 9,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2021,
+     "rec": "6-8",
+     "fin": 9,
+     "ppg": 116.5,
+     "pfr": 9,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2022,
+     "rec": "2-12",
+     "fin": 12,
+     "ppg": 106.4,
+     "pfr": 11,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2023,
+     "rec": "7-7",
+     "fin": 7,
+     "ppg": 123.9,
+     "pfr": 6,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2024,
+     "rec": "8-6",
+     "fin": 3,
+     "ppg": 134.4,
+     "pfr": 3,
+     "seed": 5,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2025,
+     "rec": "7-7",
+     "fin": 7,
+     "ppg": 135.9,
+     "pfr": 2,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    }
+   ],
+   "seasons": 7,
+   "record": "43-56",
+   "regular_record": "42-54",
+   "playoff_record": "1-2",
+   "win_pct": 0.4343,
+   "ppg": 121.9,
+   "titles": 0,
+   "title_years": [],
+   "top3": 1,
+   "playoffs": 2
+  },
+  "Joey": {
+   "ledger": [
+    {
+     "y": 2019,
+     "rec": "9-4",
+     "fin": 1,
+     "ppg": 135.4,
+     "pfr": 2,
+     "seed": 2,
+     "br": true,
+     "teams": 14
+    },
+    {
+     "y": 2020,
+     "rec": "7-6",
+     "fin": 3,
+     "ppg": 137.9,
+     "pfr": 1,
+     "seed": 3,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2021,
+     "rec": "9-5",
+     "fin": 2,
+     "ppg": 142,
+     "pfr": 1,
+     "seed": 3,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2022,
+     "rec": "12-2",
+     "fin": 3,
+     "ppg": 124.2,
+     "pfr": 4,
+     "seed": 1,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2023,
+     "rec": "4-10",
+     "fin": 12,
+     "ppg": 112.7,
+     "pfr": 10,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2024,
+     "rec": "5-9",
+     "fin": 8,
+     "ppg": 120.1,
+     "pfr": 7,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2025,
+     "rec": "7-7",
+     "fin": 8,
+     "ppg": 119,
+     "pfr": 6,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    }
+   ],
+   "seasons": 7,
+   "record": "58-46",
+   "regular_record": "53-43",
+   "playoff_record": "5-3",
+   "win_pct": 0.5577,
+   "ppg": 127.14,
+   "titles": 1,
+   "title_years": [
+    2019
+   ],
+   "top3": 4,
+   "playoffs": 4
+  },
+  "Mason": {
+   "ledger": [
+    {
+     "y": 2019,
+     "rec": "11-2",
+     "fin": 2,
+     "ppg": 136,
+     "pfr": 1,
+     "seed": 1,
+     "br": true,
+     "teams": 14
+    },
+    {
+     "y": 2020,
+     "rec": "9-4",
+     "fin": 7,
+     "ppg": 136.6,
+     "pfr": 2,
+     "seed": 2,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2021,
+     "rec": "8-6",
+     "fin": 7,
+     "ppg": 124,
+     "pfr": 5,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2022,
+     "rec": "7-7",
+     "fin": 9,
+     "ppg": 112,
+     "pfr": 9,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2023,
+     "rec": "7-7",
+     "fin": 8,
+     "ppg": 121.9,
+     "pfr": 7,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2024,
+     "rec": "4-10",
+     "fin": 12,
+     "ppg": 107.8,
+     "pfr": 12,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2025,
+     "rec": "10-4",
+     "fin": 1,
+     "ppg": 126.5,
+     "pfr": 4,
+     "seed": 2,
+     "br": true,
+     "teams": 12
+    }
+   ],
+   "seasons": 7,
+   "record": "59-42",
+   "regular_record": "56-40",
+   "playoff_record": "3-2",
+   "win_pct": 0.5842,
+   "ppg": 123.28,
+   "titles": 1,
+   "title_years": [
+    2025
+   ],
+   "top3": 2,
+   "playoffs": 3
+  },
+  "Sean": {
+   "ledger": [
+    {
+     "y": 2019,
+     "rec": "7-6",
+     "fin": 9,
+     "ppg": 110.9,
+     "pfr": 10,
+     "seed": null,
+     "br": false,
+     "teams": 14
+    },
+    {
+     "y": 2020,
+     "rec": "6-7",
+     "fin": 9,
+     "ppg": 121.3,
+     "pfr": 8,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2021,
+     "rec": "10-4",
+     "fin": 3,
+     "ppg": 125.8,
+     "pfr": 4,
+     "seed": 2,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2022,
+     "rec": "9-5",
+     "fin": 6,
+     "ppg": 125.2,
+     "pfr": 3,
+     "seed": 3,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2023,
+     "rec": "8-6",
+     "fin": 3,
+     "ppg": 121.6,
+     "pfr": 8,
+     "seed": 5,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2024,
+     "rec": "10-4",
+     "fin": 4,
+     "ppg": 137.9,
+     "pfr": 1,
+     "seed": 1,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2025,
+     "rec": "6-8",
+     "fin": 10,
+     "ppg": 121.7,
+     "pfr": 5,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    }
+   ],
+   "seasons": 7,
+   "record": "57-44",
+   "regular_record": "56-40",
+   "playoff_record": "1-4",
+   "win_pct": 0.5644,
+   "ppg": 123.63,
+   "titles": 0,
+   "title_years": [],
+   "top3": 2,
+   "playoffs": 4
+  },
+  "Chris": {
+   "ledger": [
+    {
+     "y": 2019,
+     "rec": "7-6",
+     "fin": 8,
+     "ppg": 111.5,
+     "pfr": 9,
+     "seed": null,
+     "br": false,
+     "teams": 14
+    },
+    {
+     "y": 2020,
+     "rec": "6-7",
+     "fin": 6,
+     "ppg": 125.9,
+     "pfr": 7,
+     "seed": 8,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2021,
+     "rec": "10-4",
+     "fin": 1,
+     "ppg": 137.2,
+     "pfr": 2,
+     "seed": 1,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2022,
+     "rec": "7-7",
+     "fin": 2,
+     "ppg": 118.4,
+     "pfr": 6,
+     "seed": 6,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2023,
+     "rec": "6-8",
+     "fin": 9,
+     "ppg": 114.5,
+     "pfr": 9,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2024,
+     "rec": "9-5",
+     "fin": 5,
+     "ppg": 134.7,
+     "pfr": 2,
+     "seed": 3,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2025,
+     "rec": "6-8",
+     "fin": 9,
+     "ppg": 127.5,
+     "pfr": 3,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    }
+   ],
+   "seasons": 7,
+   "record": "55-48",
+   "regular_record": "51-45",
+   "playoff_record": "4-3",
+   "win_pct": 0.534,
+   "ppg": 124.37,
+   "titles": 1,
+   "title_years": [
+    2021
+   ],
+   "top3": 2,
+   "playoffs": 4
+  },
+  "Kyle": {
+   "ledger": [
+    {
+     "y": 2019,
+     "rec": "3-10",
+     "fin": 13,
+     "ppg": 104.8,
+     "pfr": 13,
+     "seed": null,
+     "br": false,
+     "teams": 14
+    },
+    {
+     "y": 2020,
+     "rec": "6-7",
+     "fin": 5,
+     "ppg": 126.4,
+     "pfr": 6,
+     "seed": 7,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2021,
+     "rec": "9-5",
+     "fin": 4,
+     "ppg": 128.4,
+     "pfr": 3,
+     "seed": 4,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2022,
+     "rec": "10-4",
+     "fin": 4,
+     "ppg": 131.7,
+     "pfr": 1,
+     "seed": 2,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2023,
+     "rec": "5-9",
+     "fin": 10,
+     "ppg": 112.6,
+     "pfr": 11,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2024,
+     "rec": "5-9",
+     "fin": 9,
+     "ppg": 115.4,
+     "pfr": 10,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2025,
+     "rec": "8-6",
+     "fin": 4,
+     "ppg": 118.2,
+     "pfr": 7,
+     "seed": 3,
+     "br": true,
+     "teams": 12
+    }
+   ],
+   "seasons": 7,
+   "record": "48-54",
+   "regular_record": "46-50",
+   "playoff_record": "2-4",
+   "win_pct": 0.4706,
+   "ppg": 119.72,
+   "titles": 0,
+   "title_years": [],
+   "top3": 0,
+   "playoffs": 4
+  },
+  "Connie": {
+   "ledger": [
+    {
+     "y": 2019,
+     "rec": "6-7",
+     "fin": 10,
+     "ppg": 110.1,
+     "pfr": 11,
+     "seed": null,
+     "br": false,
+     "teams": 14
+    },
+    {
+     "y": 2020,
+     "rec": "6-7",
+     "fin": 2,
+     "ppg": 134,
+     "pfr": 3,
+     "seed": 6,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2021,
+     "rec": "3-11",
+     "fin": 11,
+     "ppg": 121.1,
+     "pfr": 6,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2022,
+     "rec": "7-7",
+     "fin": 7,
+     "ppg": 117.6,
+     "pfr": 7,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2023,
+     "rec": "8-6",
+     "fin": 1,
+     "ppg": 129.4,
+     "pfr": 2,
+     "seed": 3,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2024,
+     "rec": "9-5",
+     "fin": 6,
+     "ppg": 124.5,
+     "pfr": 5,
+     "seed": 4,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2025,
+     "rec": "7-7",
+     "fin": 2,
+     "ppg": 107.2,
+     "pfr": 11,
+     "seed": 6,
+     "br": true,
+     "teams": 12
+    }
+   ],
+   "seasons": 7,
+   "record": "52-53",
+   "regular_record": "46-50",
+   "playoff_record": "6-3",
+   "win_pct": 0.4952,
+   "ppg": 120.54,
+   "titles": 1,
+   "title_years": [
+    2023
+   ],
+   "top3": 3,
+   "playoffs": 4
+  },
+  "Charlie": {
+   "ledger": [
+    {
+     "y": 2019,
+     "rec": "7-6",
+     "fin": 7,
+     "ppg": 111.9,
+     "pfr": 8,
+     "seed": null,
+     "br": false,
+     "teams": 14
+    },
+    {
+     "y": 2020,
+     "rec": "4-9",
+     "fin": 12,
+     "ppg": 108.1,
+     "pfr": 12,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2021,
+     "rec": "6-8",
+     "fin": 10,
+     "ppg": 114,
+     "pfr": 10,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2022,
+     "rec": "7-7",
+     "fin": 8,
+     "ppg": 113.1,
+     "pfr": 8,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2023,
+     "rec": "8-6",
+     "fin": 4,
+     "ppg": 134.8,
+     "pfr": 1,
+     "seed": 2,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2024,
+     "rec": "7-7",
+     "fin": 7,
+     "ppg": 121,
+     "pfr": 6,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2025,
+     "rec": "7-7",
+     "fin": 6,
+     "ppg": 109.2,
+     "pfr": 10,
+     "seed": 5,
+     "br": true,
+     "teams": 12
+    }
+   ],
+   "seasons": 7,
+   "record": "47-52",
+   "regular_record": "46-50",
+   "playoff_record": "1-2",
+   "win_pct": 0.4747,
+   "ppg": 116.16,
+   "titles": 0,
+   "title_years": [],
+   "top3": 0,
+   "playoffs": 2
+  },
+  "Ricci": {
+   "ledger": [
+    {
+     "y": 2019,
+     "rec": "4-9",
+     "fin": 12,
+     "ppg": 109.1,
+     "pfr": 12,
+     "seed": null,
+     "br": false,
+     "teams": 14
+    },
+    {
+     "y": 2020,
+     "rec": "7-6",
+     "fin": 1,
+     "ppg": 127,
+     "pfr": 4,
+     "seed": 4,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2021,
+     "rec": "5-9",
+     "fin": 5,
+     "ppg": 112.5,
+     "pfr": 11,
+     "seed": 6,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2022,
+     "rec": "8-6",
+     "fin": 5,
+     "ppg": 129.7,
+     "pfr": 2,
+     "seed": 4,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2023,
+     "rec": "5-9",
+     "fin": 11,
+     "ppg": 110.5,
+     "pfr": 12,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2024,
+     "rec": "10-4",
+     "fin": 2,
+     "ppg": 130.3,
+     "pfr": 4,
+     "seed": 2,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2025,
+     "rec": "7-7",
+     "fin": 3,
+     "ppg": 117.6,
+     "pfr": 8,
+     "seed": 4,
+     "br": true,
+     "teams": 12
+    }
+   ],
+   "seasons": 7,
+   "record": "50-54",
+   "regular_record": "46-50",
+   "playoff_record": "4-4",
+   "win_pct": 0.4808,
+   "ppg": 119.55,
+   "titles": 1,
+   "title_years": [
+    2020
+   ],
+   "top3": 3,
+   "playoffs": 5
+  },
+  "Isaac": {
+   "ledger": [
+    {
+     "y": 2020,
+     "rec": "5-8",
+     "fin": 11,
+     "ppg": 112.2,
+     "pfr": 11,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2021,
+     "rec": "9-5",
+     "fin": 6,
+     "ppg": 118.4,
+     "pfr": 7,
+     "seed": 5,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2022,
+     "rec": "7-7",
+     "fin": 1,
+     "ppg": 122.7,
+     "pfr": 5,
+     "seed": 5,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2023,
+     "rec": "11-3",
+     "fin": 2,
+     "ppg": 125.5,
+     "pfr": 3,
+     "seed": 1,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2024,
+     "rec": "4-10",
+     "fin": 11,
+     "ppg": 119.8,
+     "pfr": 8,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2025,
+     "rec": "10-4",
+     "fin": 5,
+     "ppg": 141.9,
+     "pfr": 1,
+     "seed": 1,
+     "br": true,
+     "teams": 12
+    }
+   ],
+   "seasons": 6,
+   "record": "50-40",
+   "regular_record": "46-37",
+   "playoff_record": "4-3",
+   "win_pct": 0.5556,
+   "ppg": 123.53,
+   "titles": 1,
+   "title_years": [
+    2022
+   ],
+   "top3": 2,
+   "playoffs": 4
+  },
+  "Luke": {
+   "ledger": [
+    {
+     "y": 2020,
+     "rec": "7-6",
+     "fin": 8,
+     "ppg": 115.7,
+     "pfr": 10,
+     "seed": 5,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2021,
+     "rec": "7-7",
+     "fin": 8,
+     "ppg": 117.3,
+     "pfr": 8,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2022,
+     "rec": "4-10",
+     "fin": 10,
+     "ppg": 109.6,
+     "pfr": 10,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2023,
+     "rec": "8-6",
+     "fin": 6,
+     "ppg": 124.9,
+     "pfr": 4,
+     "seed": 4,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2024,
+     "rec": "8-6",
+     "fin": 1,
+     "ppg": 116.5,
+     "pfr": 9,
+     "seed": 6,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2025,
+     "rec": "4-10",
+     "fin": 12,
+     "ppg": 102.7,
+     "pfr": 12,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    }
+   ],
+   "seasons": 6,
+   "record": "41-47",
+   "regular_record": "38-45",
+   "playoff_record": "3-2",
+   "win_pct": 0.4659,
+   "ppg": 114.43,
+   "titles": 1,
+   "title_years": [
+    2024
+   ],
+   "top3": 1,
+   "playoffs": 3
+  },
+  "Evan": {
+   "ledger": [
+    {
+     "y": 2023,
+     "rec": "7-7",
+     "fin": 5,
+     "ppg": 124.9,
+     "pfr": 5,
+     "seed": 6,
+     "br": true,
+     "teams": 12
+    },
+    {
+     "y": 2024,
+     "rec": "5-9",
+     "fin": 10,
+     "ppg": 107.8,
+     "pfr": 11,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    },
+    {
+     "y": 2025,
+     "rec": "5-9",
+     "fin": 11,
+     "ppg": 113.7,
+     "pfr": 9,
+     "seed": null,
+     "br": false,
+     "teams": 12
+    }
+   ],
+   "seasons": 3,
+   "record": "17-26",
+   "regular_record": "17-25",
+   "playoff_record": "0-1",
+   "win_pct": 0.3953,
+   "ppg": 115.49,
+   "titles": 0,
+   "title_years": [],
+   "top3": 0,
+   "playoffs": 1
+  }
+ }
+}

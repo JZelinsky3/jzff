@@ -1,0 +1,1351 @@
+{
+ "Sean": {
+  "conf": "Whole",
+  "rank": 1,
+  "lo_rank": 1,
+  "hi_rank": 7,
+  "room": 1,
+  "mgr": 7,
+  "win": 4,
+  "seasons": 7,
+  "rec": "56-40",
+  "ppg": 122.03,
+  "marg": 5.44,
+  "rings": 0,
+  "top3": 2,
+  "po_apps": 4,
+  "po": "3-5",
+  "ledger": [
+   {
+    "y": 2019,
+    "fin": 9,
+    "rec": "7-6",
+    "pfr": 6,
+    "br": false,
+    "seed": 9
+   },
+   {
+    "y": 2020,
+    "fin": 9,
+    "rec": "6-7",
+    "pfr": 7,
+    "br": false,
+    "seed": 9
+   },
+   {
+    "y": 2021,
+    "fin": 3,
+    "rec": "10-4",
+    "pfr": 4,
+    "br": true,
+    "seed": 1
+   },
+   {
+    "y": 2022,
+    "fin": 6,
+    "rec": "9-5",
+    "pfr": 3,
+    "br": true,
+    "seed": 3
+   },
+   {
+    "y": 2023,
+    "fin": 3,
+    "rec": "8-6",
+    "pfr": 8,
+    "br": true,
+    "seed": 5
+   },
+   {
+    "y": 2024,
+    "fin": 4,
+    "rec": "10-4",
+    "pfr": 1,
+    "br": true,
+    "seed": 1
+   },
+   {
+    "y": 2025,
+    "fin": 10,
+    "rec": "6-8",
+    "pfr": 5,
+    "br": false,
+    "seed": 10
+   }
+  ],
+  "pts3": 4.2,
+  "fin3": 6.8,
+  "line": 8.5,
+  "lo_b": 7,
+  "hi_b": 11,
+  "over": 4,
+  "under": 4,
+  "champ_votes": 5,
+  "last_votes": 0,
+  "pts_votes": 0,
+  "doubles": [
+   [
+    "Connie",
+    "3-5",
+    [
+     1,
+     13
+    ]
+   ],
+   [
+    "Kyle",
+    "7-2",
+    [
+     3,
+     11
+    ]
+   ],
+   [
+    "Cat",
+    "8-4",
+    [
+     7,
+     14
+    ]
+   ]
+  ],
+  "entries": [
+   "10-4 at 1",
+   "9-5 at 3",
+   "8-6 at 5",
+   "10-4 at 1"
+  ]
+ },
+ "Cat": {
+  "conf": "Whole",
+  "rank": 2,
+  "lo_rank": 2,
+  "hi_rank": 8,
+  "room": 6,
+  "mgr": 8,
+  "win": 2,
+  "seasons": 7,
+  "rec": "42-54",
+  "ppg": 119.96,
+  "marg": 0.45,
+  "rings": 0,
+  "top3": 1,
+  "po_apps": 2,
+  "po": "2-2",
+  "ledger": [
+   {
+    "y": 2019,
+    "fin": 6,
+    "rec": "7-6",
+    "pfr": 3,
+    "br": true,
+    "seed": 5
+   },
+   {
+    "y": 2020,
+    "fin": 10,
+    "rec": "5-8",
+    "pfr": 8,
+    "br": false,
+    "seed": 10
+   },
+   {
+    "y": 2021,
+    "fin": 11,
+    "rec": "6-8",
+    "pfr": 9,
+    "br": false,
+    "seed": 8
+   },
+   {
+    "y": 2022,
+    "fin": 12,
+    "rec": "2-12",
+    "pfr": 11,
+    "br": false,
+    "seed": 12
+   },
+   {
+    "y": 2023,
+    "fin": 7,
+    "rec": "7-7",
+    "pfr": 6,
+    "br": false,
+    "seed": 7
+   },
+   {
+    "y": 2024,
+    "fin": 3,
+    "rec": "8-6",
+    "pfr": 3,
+    "br": true,
+    "seed": 6
+   },
+   {
+    "y": 2025,
+    "fin": 7,
+    "rec": "7-7",
+    "pfr": 2,
+    "br": false,
+    "seed": 5
+   }
+  ],
+  "pts3": 3.0,
+  "fin3": 5.7,
+  "line": 7.5,
+  "lo_b": 4,
+  "hi_b": 11,
+  "over": 1,
+  "under": 7,
+  "champ_votes": 0,
+  "last_votes": 1,
+  "pts_votes": 1,
+  "doubles": [
+   [
+    "Joey",
+    "5-2",
+    [
+     1,
+     12
+    ]
+   ],
+   [
+    "Sean",
+    "4-8",
+    [
+     7,
+     14
+    ]
+   ],
+   [
+    "Kyle",
+    "5-5",
+    [
+     10,
+     13
+    ]
+   ]
+  ],
+  "entries": [
+   "7-6 at 5",
+   "8-6 at 6"
+  ]
+ },
+ "Isaac": {
+  "conf": "Skim",
+  "rank": 3,
+  "lo_rank": 1,
+  "hi_rank": 5,
+  "room": 5,
+  "mgr": 2,
+  "win": 1,
+  "seasons": 6,
+  "rec": "46-37",
+  "ppg": 122.97,
+  "marg": 1.57,
+  "rings": 1,
+  "top3": 2,
+  "po_apps": 4,
+  "po": "4-3",
+  "ledger": [
+   {
+    "y": 2020,
+    "fin": 11,
+    "rec": "5-8",
+    "pfr": 10,
+    "br": false,
+    "seed": 11
+   },
+   {
+    "y": 2021,
+    "fin": 6,
+    "rec": "9-5",
+    "pfr": 7,
+    "br": true,
+    "seed": 4
+   },
+   {
+    "y": 2022,
+    "fin": 1,
+    "rec": "7-7",
+    "pfr": 5,
+    "br": true,
+    "seed": 6
+   },
+   {
+    "y": 2023,
+    "fin": 2,
+    "rec": "11-3",
+    "pfr": 3,
+    "br": true,
+    "seed": 1
+   },
+   {
+    "y": 2024,
+    "fin": 11,
+    "rec": "4-10",
+    "pfr": 8,
+    "br": false,
+    "seed": 11
+   },
+   {
+    "y": 2025,
+    "fin": 5,
+    "rec": "10-4",
+    "pfr": 1,
+    "br": true,
+    "seed": 2
+   }
+  ],
+  "pts3": 3.7,
+  "fin3": 6.5,
+  "line": 7.5,
+  "lo_b": 3,
+  "hi_b": 10,
+  "over": 2,
+  "under": 6,
+  "champ_votes": 1,
+  "last_votes": 2,
+  "pts_votes": 1,
+  "doubles": [
+   [
+    "Ricci",
+    "4-3",
+    [
+     1,
+     14
+    ]
+   ],
+   [
+    "Chris",
+    "5-3",
+    [
+     3,
+     12
+    ]
+   ],
+   [
+    "Luke",
+    "4-3",
+    [
+     9,
+     13
+    ]
+   ]
+  ],
+  "entries": [
+   "9-5 at 4",
+   "7-7 at 6",
+   "11-3 at 1",
+   "10-4 at 2"
+  ]
+ },
+ "Mason": {
+  "conf": "Skim",
+  "rank": 4,
+  "lo_rank": 2,
+  "hi_rank": 5,
+  "room": 2,
+  "mgr": 3,
+  "win": 5,
+  "seasons": 7,
+  "rec": "56-40",
+  "ppg": 123.22,
+  "marg": 5.78,
+  "rings": 1,
+  "top3": 2,
+  "po_apps": 4,
+  "po": "3-4",
+  "ledger": [
+   {
+    "y": 2019,
+    "fin": 2,
+    "rec": "11-2",
+    "pfr": 1,
+    "br": true,
+    "seed": 1
+   },
+   {
+    "y": 2020,
+    "fin": 7,
+    "rec": "9-4",
+    "pfr": 2,
+    "br": true,
+    "seed": 2
+   },
+   {
+    "y": 2021,
+    "fin": 10,
+    "rec": "8-6",
+    "pfr": 5,
+    "br": true,
+    "seed": 6
+   },
+   {
+    "y": 2022,
+    "fin": 8,
+    "rec": "7-7",
+    "pfr": 9,
+    "br": false,
+    "seed": 8
+   },
+   {
+    "y": 2023,
+    "fin": 8,
+    "rec": "7-7",
+    "pfr": 7,
+    "br": false,
+    "seed": 8
+   },
+   {
+    "y": 2024,
+    "fin": 12,
+    "rec": "4-10",
+    "pfr": 12,
+    "br": false,
+    "seed": 12
+   },
+   {
+    "y": 2025,
+    "fin": 1,
+    "rec": "10-4",
+    "pfr": 4,
+    "br": true,
+    "seed": 1
+   }
+  ],
+  "pts3": 7.2,
+  "fin3": 5.8,
+  "line": 8.5,
+  "lo_b": 7,
+  "hi_b": 10,
+  "over": 2,
+  "under": 6,
+  "champ_votes": 0,
+  "last_votes": 1,
+  "pts_votes": 1,
+  "doubles": [
+   [
+    "Charlie",
+    "5-4",
+    [
+     1,
+     14
+    ]
+   ],
+   [
+    "Chris",
+    "4-4",
+    [
+     5,
+     13
+    ]
+   ],
+   [
+    "Ricci",
+    "7-2",
+    [
+     7,
+     12
+    ]
+   ]
+  ],
+  "entries": [
+   "11-2 at 1",
+   "9-4 at 2",
+   "8-6 at 6",
+   "10-4 at 1"
+  ]
+ },
+ "Chris": {
+  "conf": "Skim",
+  "rank": 5,
+  "lo_rank": 3,
+  "hi_rank": 6,
+  "room": 4,
+  "mgr": 6,
+  "win": 3,
+  "seasons": 7,
+  "rec": "51-45",
+  "ppg": 124.7,
+  "marg": 5.14,
+  "rings": 1,
+  "top3": 2,
+  "po_apps": 4,
+  "po": "4-3",
+  "ledger": [
+   {
+    "y": 2019,
+    "fin": 8,
+    "rec": "7-6",
+    "pfr": 5,
+    "br": false,
+    "seed": 8
+   },
+   {
+    "y": 2020,
+    "fin": 6,
+    "rec": "6-7",
+    "pfr": 6,
+    "br": true,
+    "seed": 8
+   },
+   {
+    "y": 2021,
+    "fin": 1,
+    "rec": "10-4",
+    "pfr": 2,
+    "br": true,
+    "seed": 2
+   },
+   {
+    "y": 2022,
+    "fin": 2,
+    "rec": "7-7",
+    "pfr": 6,
+    "br": true,
+    "seed": 5
+   },
+   {
+    "y": 2023,
+    "fin": 9,
+    "rec": "6-8",
+    "pfr": 9,
+    "br": false,
+    "seed": 9
+   },
+   {
+    "y": 2024,
+    "fin": 5,
+    "rec": "9-5",
+    "pfr": 2,
+    "br": true,
+    "seed": 4
+   },
+   {
+    "y": 2025,
+    "fin": 9,
+    "rec": "6-8",
+    "pfr": 3,
+    "br": false,
+    "seed": 9
+   }
+  ],
+  "pts3": 3.7,
+  "fin3": 7.7,
+  "line": 7.5,
+  "lo_b": 5,
+  "hi_b": 9,
+  "over": 5,
+  "under": 4,
+  "champ_votes": 0,
+  "last_votes": 0,
+  "pts_votes": 4,
+  "doubles": [
+   [
+    "Luke",
+    "6-3",
+    [
+     1,
+     14
+    ]
+   ],
+   [
+    "Isaac",
+    "3-5",
+    [
+     3,
+     12
+    ]
+   ],
+   [
+    "Mason",
+    "4-4",
+    [
+     5,
+     13
+    ]
+   ]
+  ],
+  "entries": [
+   "6-7 at 8",
+   "10-4 at 2",
+   "7-7 at 5",
+   "9-5 at 4"
+  ]
+ },
+ "Joey": {
+  "conf": "Whole",
+  "rank": 6,
+  "lo_rank": 1,
+  "hi_rank": 8,
+  "room": 3,
+  "mgr": 1,
+  "win": 8,
+  "seasons": 7,
+  "rec": "53-43",
+  "ppg": 128.37,
+  "marg": 1.16,
+  "rings": 1,
+  "top3": 4,
+  "po_apps": 4,
+  "po": "7-3",
+  "ledger": [
+   {
+    "y": 2019,
+    "fin": 1,
+    "rec": "9-4",
+    "pfr": 2,
+    "br": true,
+    "seed": 2
+   },
+   {
+    "y": 2020,
+    "fin": 3,
+    "rec": "7-6",
+    "pfr": 1,
+    "br": true,
+    "seed": 3
+   },
+   {
+    "y": 2021,
+    "fin": 2,
+    "rec": "9-5",
+    "pfr": 1,
+    "br": true,
+    "seed": 3
+   },
+   {
+    "y": 2022,
+    "fin": 3,
+    "rec": "12-2",
+    "pfr": 4,
+    "br": true,
+    "seed": 1
+   },
+   {
+    "y": 2023,
+    "fin": 12,
+    "rec": "4-10",
+    "pfr": 10,
+    "br": false,
+    "seed": 12
+   },
+   {
+    "y": 2024,
+    "fin": 8,
+    "rec": "5-9",
+    "pfr": 7,
+    "br": false,
+    "seed": 8
+   },
+   {
+    "y": 2025,
+    "fin": 8,
+    "rec": "7-7",
+    "pfr": 6,
+    "br": false,
+    "seed": 6
+   }
+  ],
+  "pts3": 7.0,
+  "fin3": 8.7,
+  "line": 7.5,
+  "lo_b": 5,
+  "hi_b": 9,
+  "over": 6,
+  "under": 2,
+  "champ_votes": 0,
+  "last_votes": 0,
+  "pts_votes": 0,
+  "doubles": [
+   [
+    "Cat",
+    "2-5",
+    [
+     1,
+     12
+    ]
+   ],
+   [
+    "Connie",
+    "6-3",
+    [
+     6,
+     14
+    ]
+   ],
+   [
+    "Evan",
+    "2-1",
+    [
+     7,
+     13
+    ]
+   ]
+  ],
+  "entries": [
+   "9-4 at 2",
+   "7-6 at 3",
+   "9-5 at 3",
+   "12-2 at 1"
+  ]
+ },
+ "Ricci": {
+  "conf": "Skim",
+  "rank": 7,
+  "lo_rank": 4,
+  "hi_rank": 7,
+  "room": 7,
+  "mgr": 4,
+  "win": 6,
+  "seasons": 7,
+  "rec": "46-50",
+  "ppg": 120.11,
+  "marg": -0.19,
+  "rings": 1,
+  "top3": 3,
+  "po_apps": 5,
+  "po": "5-3",
+  "ledger": [
+   {
+    "y": 2019,
+    "fin": 12,
+    "rec": "4-9",
+    "pfr": 8,
+    "br": false,
+    "seed": 12
+   },
+   {
+    "y": 2020,
+    "fin": 1,
+    "rec": "7-6",
+    "pfr": 4,
+    "br": true,
+    "seed": 5
+   },
+   {
+    "y": 2021,
+    "fin": 5,
+    "rec": "5-9",
+    "pfr": 11,
+    "br": true,
+    "seed": 10
+   },
+   {
+    "y": 2022,
+    "fin": 5,
+    "rec": "8-6",
+    "pfr": 2,
+    "br": true,
+    "seed": 4
+   },
+   {
+    "y": 2023,
+    "fin": 10,
+    "rec": "5-9",
+    "pfr": 12,
+    "br": false,
+    "seed": 10
+   },
+   {
+    "y": 2024,
+    "fin": 2,
+    "rec": "10-4",
+    "pfr": 4,
+    "br": true,
+    "seed": 2
+   },
+   {
+    "y": 2025,
+    "fin": 3,
+    "rec": "7-7",
+    "pfr": 8,
+    "br": true,
+    "seed": 4
+   }
+  ],
+  "pts3": 7.3,
+  "fin3": 3.8,
+  "line": 6.5,
+  "lo_b": 4,
+  "hi_b": 8,
+  "over": 4,
+  "under": 4,
+  "champ_votes": 0,
+  "last_votes": 1,
+  "pts_votes": 0,
+  "doubles": [
+   [
+    "Isaac",
+    "3-4",
+    [
+     1,
+     14
+    ]
+   ],
+   [
+    "Charlie",
+    "4-4",
+    [
+     3,
+     13
+    ]
+   ],
+   [
+    "Mason",
+    "2-7",
+    [
+     7,
+     12
+    ]
+   ]
+  ],
+  "entries": [
+   "7-6 at 5",
+   "5-9 at 10",
+   "8-6 at 4",
+   "10-4 at 2",
+   "7-7 at 4"
+  ]
+ },
+ "Connie": {
+  "conf": "Whole",
+  "rank": 8,
+  "lo_rank": 5,
+  "hi_rank": 11,
+  "room": 11,
+  "mgr": 5,
+  "win": 7,
+  "seasons": 7,
+  "rec": "46-50",
+  "ppg": 120.9,
+  "marg": -0.94,
+  "rings": 1,
+  "top3": 3,
+  "po_apps": 4,
+  "po": "5-3",
+  "ledger": [
+   {
+    "y": 2019,
+    "fin": 10,
+    "rec": "6-7",
+    "pfr": 7,
+    "br": false,
+    "seed": 10
+   },
+   {
+    "y": 2020,
+    "fin": 2,
+    "rec": "6-7",
+    "pfr": 3,
+    "br": true,
+    "seed": 7
+   },
+   {
+    "y": 2021,
+    "fin": 12,
+    "rec": "3-11",
+    "pfr": 6,
+    "br": false,
+    "seed": 11
+   },
+   {
+    "y": 2022,
+    "fin": 7,
+    "rec": "7-7",
+    "pfr": 7,
+    "br": false,
+    "seed": 7
+   },
+   {
+    "y": 2023,
+    "fin": 1,
+    "rec": "8-6",
+    "pfr": 2,
+    "br": true,
+    "seed": 2
+   },
+   {
+    "y": 2024,
+    "fin": 6,
+    "rec": "9-5",
+    "pfr": 5,
+    "br": true,
+    "seed": 3
+   },
+   {
+    "y": 2025,
+    "fin": 2,
+    "rec": "7-7",
+    "pfr": 11,
+    "br": true,
+    "seed": 7
+   }
+  ],
+  "pts3": 7.5,
+  "fin3": 3.2,
+  "line": 5.5,
+  "lo_b": 3,
+  "hi_b": 7,
+  "over": 3,
+  "under": 6,
+  "champ_votes": 0,
+  "last_votes": 1,
+  "pts_votes": 0,
+  "doubles": [
+   [
+    "Sean",
+    "5-3",
+    [
+     1,
+     13
+    ]
+   ],
+   [
+    "Joey",
+    "3-6",
+    [
+     6,
+     14
+    ]
+   ],
+   [
+    "Evan",
+    "3-3",
+    [
+     9,
+     12
+    ]
+   ]
+  ],
+  "entries": [
+   "6-7 at 7",
+   "8-6 at 2",
+   "9-5 at 3",
+   "7-7 at 7"
+  ]
+ },
+ "Kyle": {
+  "conf": "Whole",
+  "rank": 9,
+  "lo_rank": 8,
+  "hi_rank": 10,
+  "room": 8,
+  "mgr": 10,
+  "win": 10,
+  "seasons": 7,
+  "rec": "46-50",
+  "ppg": 119.4,
+  "marg": -1.21,
+  "rings": 0,
+  "top3": 0,
+  "po_apps": 4,
+  "po": "2-7",
+  "ledger": [
+   {
+    "y": 2019,
+    "fin": 13,
+    "rec": "3-10",
+    "pfr": 9,
+    "br": false,
+    "seed": 13
+   },
+   {
+    "y": 2020,
+    "fin": 5,
+    "rec": "6-7",
+    "pfr": 5,
+    "br": true,
+    "seed": 6
+   },
+   {
+    "y": 2021,
+    "fin": 4,
+    "rec": "9-5",
+    "pfr": 3,
+    "br": true,
+    "seed": 5
+   },
+   {
+    "y": 2022,
+    "fin": 4,
+    "rec": "10-4",
+    "pfr": 1,
+    "br": true,
+    "seed": 2
+   },
+   {
+    "y": 2023,
+    "fin": 11,
+    "rec": "5-9",
+    "pfr": 11,
+    "br": false,
+    "seed": 11
+   },
+   {
+    "y": 2024,
+    "fin": 9,
+    "rec": "5-9",
+    "pfr": 10,
+    "br": false,
+    "seed": 9
+   },
+   {
+    "y": 2025,
+    "fin": 4,
+    "rec": "8-6",
+    "pfr": 7,
+    "br": true,
+    "seed": 3
+   }
+  ],
+  "pts3": 8.7,
+  "fin3": 6.8,
+  "line": 5.5,
+  "lo_b": 2,
+  "hi_b": 7,
+  "over": 6,
+  "under": 2,
+  "champ_votes": 1,
+  "last_votes": 0,
+  "pts_votes": 1,
+  "doubles": [
+   [
+    "Evan",
+    "3-0",
+    [
+     1,
+     14
+    ]
+   ],
+   [
+    "Sean",
+    "2-7",
+    [
+     3,
+     11
+    ]
+   ],
+   [
+    "Cat",
+    "5-5",
+    [
+     10,
+     13
+    ]
+   ]
+  ],
+  "entries": [
+   "6-7 at 6",
+   "9-5 at 5",
+   "10-4 at 2",
+   "8-6 at 3"
+  ]
+ },
+ "Charlie": {
+  "conf": "Skim",
+  "rank": 10,
+  "lo_rank": 9,
+  "hi_rank": 10,
+  "room": 10,
+  "mgr": 9,
+  "win": 9,
+  "seasons": 7,
+  "rec": "46-50",
+  "ppg": 115.45,
+  "marg": -3.07,
+  "rings": 0,
+  "top3": 0,
+  "po_apps": 2,
+  "po": "1-3",
+  "ledger": [
+   {
+    "y": 2019,
+    "fin": 7,
+    "rec": "7-6",
+    "pfr": 4,
+    "br": false,
+    "seed": 7
+   },
+   {
+    "y": 2020,
+    "fin": 12,
+    "rec": "4-9",
+    "pfr": 11,
+    "br": false,
+    "seed": 12
+   },
+   {
+    "y": 2021,
+    "fin": 7,
+    "rec": "6-8",
+    "pfr": 10,
+    "br": false,
+    "seed": 9
+   },
+   {
+    "y": 2022,
+    "fin": 9,
+    "rec": "7-7",
+    "pfr": 8,
+    "br": false,
+    "seed": 9
+   },
+   {
+    "y": 2023,
+    "fin": 4,
+    "rec": "8-6",
+    "pfr": 1,
+    "br": true,
+    "seed": 3
+   },
+   {
+    "y": 2024,
+    "fin": 7,
+    "rec": "7-7",
+    "pfr": 6,
+    "br": false,
+    "seed": 7
+   },
+   {
+    "y": 2025,
+    "fin": 6,
+    "rec": "7-7",
+    "pfr": 10,
+    "br": true,
+    "seed": 8
+   }
+  ],
+  "pts3": 7.2,
+  "fin3": 6.0,
+  "line": 5.5,
+  "lo_b": 4,
+  "hi_b": 8,
+  "over": 4,
+  "under": 4,
+  "champ_votes": 1,
+  "last_votes": 1,
+  "pts_votes": 1,
+  "doubles": [
+   [
+    "Mason",
+    "4-5",
+    [
+     1,
+     14
+    ]
+   ],
+   [
+    "Ricci",
+    "4-4",
+    [
+     3,
+     13
+    ]
+   ],
+   [
+    "Luke",
+    "6-4",
+    [
+     7,
+     11
+    ]
+   ]
+  ],
+  "entries": [
+   "8-6 at 3",
+   "7-7 at 8"
+  ]
+ },
+ "Evan": {
+  "conf": "Whole",
+  "rank": 11,
+  "lo_rank": 9,
+  "hi_rank": 11,
+  "room": 9,
+  "mgr": 11,
+  "win": 11,
+  "seasons": 3,
+  "rec": "17-25",
+  "ppg": 119.33,
+  "marg": -8.1,
+  "rings": 0,
+  "top3": 0,
+  "po_apps": 1,
+  "po": "0-1",
+  "ledger": [
+   {
+    "y": 2023,
+    "fin": 5,
+    "rec": "7-7",
+    "pfr": 5,
+    "br": true,
+    "seed": 6
+   },
+   {
+    "y": 2024,
+    "fin": 10,
+    "rec": "5-9",
+    "pfr": 11,
+    "br": false,
+    "seed": 10
+   },
+   {
+    "y": 2025,
+    "fin": 11,
+    "rec": "5-9",
+    "pfr": 9,
+    "br": false,
+    "seed": 11
+   }
+  ],
+  "pts3": 9.0,
+  "fin3": 9.7,
+  "line": 5.5,
+  "lo_b": 3,
+  "hi_b": 7,
+  "over": 4,
+  "under": 4,
+  "champ_votes": 1,
+  "last_votes": 2,
+  "pts_votes": 0,
+  "doubles": [
+   [
+    "Kyle",
+    "0-3",
+    [
+     1,
+     14
+    ]
+   ],
+   [
+    "Joey",
+    "1-2",
+    [
+     7,
+     13
+    ]
+   ],
+   [
+    "Connie",
+    "3-3",
+    [
+     9,
+     12
+    ]
+   ]
+  ],
+  "entries": [
+   "7-7 at 6"
+  ]
+ },
+ "Luke": {
+  "conf": "Skim",
+  "rank": 12,
+  "lo_rank": 12,
+  "hi_rank": 12,
+  "room": 12,
+  "mgr": 12,
+  "win": 12,
+  "seasons": 6,
+  "rec": "38-45",
+  "ppg": 113.08,
+  "marg": -5.65,
+  "rings": 1,
+  "top3": 1,
+  "po_apps": 3,
+  "po": "3-2",
+  "ledger": [
+   {
+    "y": 2020,
+    "fin": 8,
+    "rec": "7-6",
+    "pfr": 9,
+    "br": true,
+    "seed": 4
+   },
+   {
+    "y": 2021,
+    "fin": 9,
+    "rec": "7-7",
+    "pfr": 8,
+    "br": false,
+    "seed": 7
+   },
+   {
+    "y": 2022,
+    "fin": 10,
+    "rec": "4-10",
+    "pfr": 10,
+    "br": false,
+    "seed": 10
+   },
+   {
+    "y": 2023,
+    "fin": 6,
+    "rec": "8-6",
+    "pfr": 4,
+    "br": true,
+    "seed": 4
+   },
+   {
+    "y": 2024,
+    "fin": 1,
+    "rec": "8-6",
+    "pfr": 9,
+    "br": true,
+    "seed": 5
+   },
+   {
+    "y": 2025,
+    "fin": 12,
+    "rec": "4-10",
+    "pfr": 12,
+    "br": false,
+    "seed": 12
+   }
+  ],
+  "pts3": 9.7,
+  "fin3": 7.3,
+  "line": 5.5,
+  "lo_b": 3,
+  "hi_b": 8,
+  "over": 2,
+  "under": 7,
+  "champ_votes": 0,
+  "last_votes": 0,
+  "pts_votes": 0,
+  "doubles": [
+   [
+    "Chris",
+    "3-6",
+    [
+     1,
+     14
+    ]
+   ],
+   [
+    "Charlie",
+    "4-6",
+    [
+     7,
+     11
+    ]
+   ],
+   [
+    "Isaac",
+    "3-4",
+    [
+     9,
+     13
+    ]
+   ]
+  ],
+  "entries": [
+   "7-6 at 4",
+   "8-6 at 4",
+   "8-6 at 5"
+  ]
+ }
+}

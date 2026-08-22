@@ -21,8 +21,28 @@ const STATIC_INDEX_TREES = /^\/(demo|demo-m|old)(\/|$)/
 // live 404s. The mobile More sheet now links all-time the same way.
 const STATIC_FLAT_PAGES = /\/(standings|records|all-time|visualizer)\/?$/
 
+// Fully public static trees: no session lookup, no /login bounce, whatever the
+// file extension. The draft day board is opened on twelve managers' own phones
+// on draft night and none of them have a TSC account, so every asset under it
+// has to serve credential-less. The matcher below only exempts html/image/xml
+// extensions, which left .js, .css and .json redirecting to /login and broke
+// the board entirely.
+const PUBLIC_STATIC_TREES = /^\/(draftday)(\/|$)/
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  if (PUBLIC_STATIC_TREES.test(pathname)) {
+    // `next dev` does no directory-index resolution for /public, so /draftday/
+    // would 404 locally while working on Vercel. Rewrite it to match prod.
+    if (!/\.[a-z0-9]+$/i.test(pathname)) {
+      const url = request.nextUrl.clone()
+      url.pathname = pathname.replace(/\/?$/, '/index.html')
+      return NextResponse.rewrite(url)
+    }
+    return NextResponse.next()
+  }
+
   if (STATIC_INDEX_TREES.test(pathname) && !/\.[a-z0-9]+$/i.test(pathname)) {
     const url = request.nextUrl.clone()
     url.pathname = STATIC_FLAT_PAGES.test(pathname)

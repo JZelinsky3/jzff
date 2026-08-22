@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<!-- Drives the real console UI in an iframe against the sim room and checks
+     what the clock actually does at a round turn, which is the one bit of
+     timing you cannot see by looking at the board: a held clock and a clock
+     that has just started both read 2:00. Open with ?room=sim. -->
+<html><head><meta charset="utf-8"><title>clock test</title>
+<style>body{background:#0b1422;color:#d3d8de;font:14px ui-monospace,Menlo,monospace;padding:16px}
+b{color:#f0d49a}.p{color:#7fa48d}.f{color:#b57268}iframe{width:520px;height:300px;opacity:.25;border:1px solid #203047}</style>
+</head><body><pre id="out">running…</pre><iframe id="con"></iframe>
+<script type="module">
+import * as C from "./core.js";
+const out=[]; const say=s=>{out.push(s);document.getElementById("out").innerHTML=out.join("\n");};
+let fails=0;
+const ok=(c,l,extra="")=>{ if(!c)fails++; say(`<span class="${c?'p':'f'}">${c?"PASS":"FAIL"}</span>  ${l}${extra?"  "+extra:""}`); };
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+if (C.ROOM === "2026") { say("REFUSING: use ?room=sim"); }
+else {
+  await C.loadData();
+  await C.resetDraft();
+  say(`room=${C.ROOM}, wiped`);
+
+  const pool = C.DATA.players.slice(0, 40);
+  // picks 1-11 so pick 12 is the last of round one
+  for (let o = 1; o <= 11; o++) await C.commitPick(o, pool[o - 1], "app");
+  await C.setState({ status: "clock", current: 12, mode: "ceremony",
+                     clockEnds: Date.now() + 120000, paused: false, pausedLeft: null });
+
+  // the console, driven the way Joey drives it
+  const f = document.getElementById("con");
+  await new Promise(r => { f.onload = r; f.src = "control.html?room=sim"; });
+  await sleep(2500);
+  const D = () => f.contentDocument;
+  const state = async () => (await C.getState());
+
+  // the phone submits pick 12, the console announces it
+  await C.submitPick(12, pool[11]);
+  await sleep(900);
+  D().getElementById("mainBtn").click();
+  await sleep(1600);
+
+  let s = await state();
+  ok(s.status === "revealed", "pick 12 announced -> revealed", s.status);
+  ok(s.clockEnds == null, "round turn: clock is NOT started on the reveal",
+     `clockEnds=${s.clockEnds}`);
+
+  // advance into round two
+  D().getElementById("mainBtn").click();
+  await sleep(1400);
+  s = await state();
+  const left = s.clockEnds ? Math.round((s.clockEnds - Date.now()) / 1000) : null;
+  ok(s.status === "clock" && s.current === 13, "advanced to pick 13", `${s.status}/${s.current}`);
+  ok(left !== null && left > 110, "round two leadoff gets a whole clock", `${left}s left`);
+
+  // and the ordinary case: mid-round the clock does start on the reveal
+  await C.submitPick(13, pool[12]);
+  await sleep(900);
+  D().getElementById("mainBtn").click();
+  await sleep(1600);
+  s = await state();
+  const left2 = s.clockEnds ? Math.round((s.clockEnds - Date.now()) / 1000) : null;
+  ok(s.status === "revealed", "pick 13 announced -> revealed", s.status);
+  ok(left2 !== null && left2 > 110, "mid-round: clock starts on the reveal", `${left2}s left`);
+
+  await sleep(2500);
+  D().getElementById("mainBtn").click();
+  await sleep(1400);
+  s = await state();
+  const left3 = s.clockEnds ? Math.round((s.clockEnds - Date.now()) / 1000) : null;
+  ok(s.current === 14 && left3 !== null && left3 < 119,
+     "mid-round: advancing carries the running clock", `${left3}s left`);
+
+  say(fails ? `\n${fails} FAILURES` : "\nALL GOOD");
+}
+</script></body></html>

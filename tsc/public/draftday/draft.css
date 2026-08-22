@@ -1,0 +1,2230 @@
+/* ── draft.css — PA Milk Society 2026 Draft Day ────────────────────────────
+   One physical set. `bg/stage.webp` is a real draft stage: LED wall, gold
+   pillars, stadium beyond, reflective floor. It is fixed behind the whole
+   page and every panel floats over it at rgba(5,10,18,.82), so the header,
+   the board and the ticker all share one room. There are no CSS light beams
+   any more; painted triangles read as decoration, not as lighting.
+
+   Type is three families doing three jobs:
+     Archivo  900/62%  the loud moments, player and manager names
+     Barlow Condensed  headings and anything you actually read
+     IBM Plex Mono     every number, label, timer and pick
+
+   Sized in vh. On a 16:9 television calc(1 * var(--u)) and 1vmin match, so the panel heights
+   here are exact and nothing gets clipped by the ticker.                    */
+
+/* One Archivo, variable on both weight (100-900) and width (62-125%), which
+   is what every `font-weight: 900; font-stretch: 62%` in this file has always
+   assumed it had.
+
+   It did not. The three files here before ("Archivo Black" plus two static
+   condensed cuts) were broken subsets: 136-161 glyphs each, and not one
+   Latin letter or digit between them, so every headline on this board fell
+   all the way through the stack to Helvetica. `document.fonts.check()` said
+   false for all of them, and "ISAAC" measured identically in "Archivo Black"
+   and in plain `sans-serif`. Barlow Condensed and IBM Plex Mono were subset
+   the same way, so the body copy and every number were Helvetica and Menlo.
+   Re-fetched from Google Fonts with the Latin block this time. If these are
+   ever swapped again, check the file has letters in it. */
+@font-face { font-family: "Archivo"; font-weight: 100 900; font-stretch: 62% 125%;
+  font-display: swap; src: url("fonts/archivo-var.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-weight: 500;
+  font-display: swap; src: url("fonts/barlowcond-500.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-weight: 600;
+  font-display: swap; src: url("fonts/barlowcond-600.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-weight: 700;
+  font-display: swap; src: url("fonts/barlowcond-700.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Mono"; font-weight: 400;
+  font-display: swap; src: url("fonts/plexmono-400.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Mono"; font-weight: 600;
+  font-display: swap; src: url("fonts/plexmono-600.woff2") format("woff2"); }
+/* The rest of TSC's masthead face. Subset from the TTFs the OG card renderer
+   already ships in public/og/fonts, so the board is not the only place on the
+   site with its own idea of what the publication looks like. */
+@font-face { font-family: "DM Serif Display"; font-weight: 400; font-style: normal;
+  font-display: swap; src: url("fonts/dmserif-regular.woff2") format("woff2"); }
+@font-face { font-family: "DM Serif Display"; font-weight: 400; font-style: italic;
+  font-display: swap; src: url("fonts/dmserif-italic.woff2") format("woff2"); }
+/* Digits only (1.3KB), and only for the huge outlined pick number on THE PICK
+   IS IN. Archivo's `1` is drawn with a full base serif; at that size the foot
+   is a wide horizontal bar that reads as part of the design and drags the pair
+   left of where the eye puts it. Anton's `1` is stem and flag, nothing else,
+   and it is the same kind of face — heavy condensed grotesque — so it sits
+   beside Archivo without announcing itself. It also happens to fix the
+   centring: Anton's `1` is a narrow advance, so the ink of "12" lands dead in
+   the middle of its own box where Archivo's (tabular, foot and all) does not. */
+@font-face { font-family: "Anton"; font-weight: 400;
+  font-display: swap; src: url("fonts/anton-digits.woff2") format("woff2"); }
+
+:root {
+  --night:   #050a12;
+  --panel:   #0b1422;
+  --panel-2: #122036;
+  --deep:    #0a1019;   /* phone input wells */
+  --line:    #203047;
+  --line-soft: #16233a;
+  /* a rule that has to read against a panel fill, not against the set */
+  --line-2:    #2b3d58;
+
+  --milk:      #f2f0ea;
+  --chalk:     #d3d8de;
+  --chalk-dim: #79869a;
+  --mute:      #5b687a;
+
+  /* the two conferences, warm and cold */
+  --conf-whole: #e0be79;
+  --conf-skim:  #8ab4d8;
+
+  --gold:    #c99a43;
+  --gold-hi: #f0d49a;
+  --gold-lo: #6d5225;
+  --cool:    #315a82;
+
+  /* Desaturated another notch: at full chroma the roster slots start to read
+     as a video-game HUD rather than a broadcast. */
+  --qb:  #b57268;
+  --rb:  #7fa48d;
+  --wr:  #7897b3;
+  --te:  #a08eb0;
+  --k:   #8792a0;
+  --def: #7a9f9b;
+
+  --good: #7fa48d;
+  --bad:  #b57268;
+
+  /* the three places on the podium, for a points rank and nothing else */
+  --pl-one:   #e8c877;
+  --pl-two:   #c3cdd8;
+  --pl-three: #c08a5a;
+
+  --glass:   rgba(5, 10, 18, .82);
+  --glass-2: rgba(11, 20, 34, .78);
+
+  /* The design canvas is exactly 1920x1080 and #frame is scaled to fit
+     whatever screen it lands on, so these are constants, not viewport units.
+     That is what stops a 16:10 laptop mirrored to a 16:9 television from
+     stretching the cards out of proportion. */
+  --u:  10.8px;
+  --uw: 19.2px;
+
+  --display: "Archivo", "Haettenschweiler", "Arial Narrow", sans-serif;
+  --serif:   "DM Serif Display", Georgia, serif;
+  --cond:    "Barlow Condensed", "PT Sans Narrow", sans-serif;
+  --mono:    "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--night); color: var(--chalk);
+  font-family: var(--cond); -webkit-font-smoothing: antialiased;
+}
+
+.pos-QB { color: var(--qb); } .pos-RB { color: var(--rb); }
+.pos-WR { color: var(--wr); } .pos-TE { color: var(--te); }
+.pos-K  { color: var(--k);  } .pos-DEF{ color: var(--def); }
+
+/* ══ THE BOARD ═════════════════════════════════════════════════════════ */
+
+body.board {
+  width: 100vw; height: 100vh; overflow: hidden;
+  position: relative;
+}
+
+/* The fixed 1920x1080 canvas. Everything inside is sized in --u/--uw, so one
+   transform scales the entire broadcast without reflowing a single panel. */
+#frame {
+  width: 1920px; height: 1080px;
+  position: absolute; top: 50%; left: 50%;
+  display: grid; grid-template-rows: calc(5.2 * var(--u)) 1fr calc(5.8 * var(--u));
+  transform-origin: center center;
+  transform: translate(-50%, -50%);
+}
+/* the set */
+body.board::before {
+  content: ""; position: fixed; inset: 0; z-index: 0;
+  background: url("bg/stage.webp") center center / cover no-repeat;
+}
+/* knock the set back so type stays legible over it */
+body.board::after {
+  content: ""; position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(120vw 90vh at 50% 46%, transparent 62%, rgba(5,10,18,.22) 100%),
+    linear-gradient(180deg, rgba(5,10,18,.16) 0%, transparent 30% 72%, rgba(5,10,18,.24) 100%);
+}
+/* Scoped, never `body.board > *`: a blanket rule outranks position:fixed on
+   the backdrop layers and turns them into grid items, which throws the whole
+   board off screen. */
+#frame > .hdr,
+#frame > .main,
+#frame > .ticker { position: relative; z-index: 1; }
+
+/* ── header ───────────────────────────────────────────────────────────── */
+.hdr {
+  display: flex; align-items: center; gap: calc(1.6 * var(--u)); padding: 0 calc(2.4 * var(--u));
+  border-bottom: 1px solid rgba(32,48,71,.7);
+  background: linear-gradient(180deg, rgba(5,10,18,.9), rgba(5,10,18,.45));
+}
+/* TSC's own masthead, not a bespoke one. Same shape as `.nav-kicker` +
+   `.nav-title` on the site: a small tracked mono kicker over a DM Serif
+   Display line whose `em` goes italic gold. The gold slab this replaced was a
+   guess at a broadcast lockup and had the year and event fighting the league
+   name for the same eye; a masthead just says who this is. */
+.hdr-mark {
+  display: flex; flex-direction: column; justify-content: center; line-height: 1;
+}
+.hdr-kicker {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.05 * var(--u));
+  letter-spacing: .3em; text-transform: uppercase; color: var(--mute);
+  margin-bottom: calc(.5 * var(--u));
+}
+.hdr-title {
+  font-family: var(--serif); font-weight: 400; font-size: calc(3.1 * var(--u));
+  letter-spacing: .02em; color: var(--milk);
+}
+.hdr-title em { font-style: italic; color: var(--gold); }
+.hdr-rule { flex: 1; }
+.hdr-meta {
+  display: flex; align-items: center; gap: calc(1.6 * var(--u));
+  font-family: var(--mono); font-size: calc(1.15 * var(--u)); letter-spacing: .22em;
+  color: var(--chalk-dim); text-transform: uppercase;
+}
+.hdr-meta b { color: var(--milk); font-weight: 600; }
+
+/* ── main split ───────────────────────────────────────────────────────── */
+/* The rail is wider than it used to be — it carries the round wall now,
+   which needs real room for two columns of tiles with photos in them. */
+.main {
+  position: relative; display: grid; grid-template-columns: 1fr calc(27 * var(--uw));
+  min-height: 0; gap: calc(1.3 * var(--u)); padding: calc(1.3 * var(--u));
+}
+.stage {
+  position: relative; display: grid; grid-template-rows: 1fr calc(30 * var(--u));
+  min-height: 0; min-width: 0; gap: calc(1.3 * var(--u));
+}
+
+/* A team name and its conference, as a row rather than a line of inline
+   boxes: the chip sat on the text baseline before, which put a bordered box
+   with its own padding visibly low against the letters beside it. */
+.mgr-team, .oc-team, .next-team, .sc-team {
+  display: flex; align-items: center; gap: calc(.8 * var(--u));
+}
+.mgr-team .tn, .oc-team .tn, .next-team .tn, .sc-team .tn {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* the conference chip, beside a team name */
+/* Two nudges that are optical, not geometric. The row centres the chip's box
+   on the text's line box, and a line box carries descender space the caps
+   never fill — so a box centred in it sits low against type read as caps.
+   The margin lifts it by half itself, and the tighter line-height stops the
+   chip standing so much taller than the letters beside it. */
+.conf {
+  flex: none; display: inline-block; line-height: 1.05;
+  /* Down, not up. The lift was overcorrecting: measured against the team
+     name it left the chip's box two and a half pixels above the name's cap
+     band, which reads as the chip floating. In em so it holds at every size
+     the chip is used at. */
+  margin-top: .17em;
+  padding: calc(.15 * var(--u)) calc(.8 * var(--u));
+  border-radius: 2px; border: 1px solid currentColor;
+  font-family: var(--mono); font-weight: 600; font-size: .62em;
+  letter-spacing: .18em; text-transform: uppercase; vertical-align: middle;
+}
+.conf-whole { color: var(--conf-whole); background: rgba(224,190,121,.1); }
+.conf-skim  { color: var(--conf-skim);  background: rgba(138,180,216,.1); }
+
+/* ── on the clock ─────────────────────────────────────────────────────── */
+/* cut-out, then the information column. The lineup used to sit in a third,
+   cramped column here — it now lives in the bottom band, where it has room
+   to breathe. */
+.clock-wrap {
+  position: relative; min-height: 0; overflow: hidden;
+  display: grid; grid-template-columns: auto minmax(0, 1fr);
+  align-items: center; gap: calc(2.6 * var(--u)); padding: calc(2 * var(--u)) calc(2.6 * var(--u));
+}
+
+.mgr-cut {
+  height: calc(50 * var(--u)); width: auto; align-self: end; margin-bottom: calc(-2 * var(--u));
+  object-fit: contain; object-position: bottom center;
+  filter: drop-shadow(0 calc(1.6 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.72));
+}
+.mgr-av {
+  width: calc(15 * var(--u)); height: calc(15 * var(--u)); border-radius: 50%; object-fit: cover;
+  background: var(--panel-2); border: 1px solid var(--gold-lo);
+}
+.mgr-av.fallback {
+  display: grid; place-items: center;
+  font-family: var(--display); font-weight: 900; font-size: calc(6 * var(--u)); color: var(--gold);
+}
+
+.clock-info {
+  position: relative; min-width: 0;
+  display: flex; flex-direction: column; gap: calc(1.6 * var(--u));
+}
+/* One soft, wide scrim for the whole column. The old version was a tight
+   ellipse behind the text plus a separate gold wash behind the name, and the
+   two together looked like a highlighter mark. */
+.clock-info::before {
+  content: ""; position: absolute; z-index: -1;
+  inset: calc(-3 * var(--u)) calc(-6 * var(--u)) calc(-3 * var(--u)) calc(-4 * var(--u));
+  background: radial-gradient(78% 74% at 40% 50%, rgba(5,10,18,.86), rgba(5,10,18,.5) 62%, transparent 88%);
+}
+
+/* broadcast identifier above the name */
+.eyebrow {
+  display: flex; align-items: center; gap: calc(1.2 * var(--u));
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.2 * var(--u));
+  letter-spacing: .34em; text-transform: uppercase; color: var(--gold);
+}
+.eyebrow::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--gold-lo), transparent);
+}
+
+/* name block: gold rail, name, team, and the power rank as its own badge
+   rather than a line item lost among the other facts. The badge sits beside
+   .clock-id-top — just the name — and not the whole .clock-id row, so it
+   centres against the name's own line instead of the combined name+team
+   block, which pulled it visibly low. */
+.clock-id { position: relative; padding-left: calc(1.8 * var(--u)); }
+.clock-id::before {
+  content: ""; position: absolute; left: 0; top: calc(.2 * var(--u)); bottom: calc(.2 * var(--u));
+  width: 5px; background: var(--gold);
+}
+.clock-id-top { display: flex; align-items: center; gap: calc(2.2 * var(--u)); }
+/* Lifted from the podium hero on the live Power Rank page, which sets a rank
+   as a tracked mono label over a gold serif-italic roman numeral with a full
+   stop ("1st Place" over "I."). Two earlier tries missed it: a medallion, and
+   then an arabic number with the roman numeral demoted to a watermark behind
+   it, which had the numeral fighting the digit for the same spot. The numeral
+   IS the rank here. No "of 12" either: there are twelve managers in the room
+   and every one of them knows it. */
+/* Centred, not left-aligned: the label is the wider of the two, so the
+   numeral hangs under the middle of it rather than under its first letter. */
+.rank-badge {
+  position: relative; flex: none; display: none; flex-direction: column;
+  justify-content: center; align-items: center; text-align: center;
+  padding-left: calc(1.8 * var(--u));
+}
+.rank-badge.show { display: flex; }
+/* Past the badge's own box at both ends, not inset into it. The rail is read
+   against the name beside it, so it wants to be closer to that row's height
+   than to the badge's — and inset, it lost height every time the label and the
+   numeral were pulled closer together. */
+.rank-badge::before {
+  content: ""; position: absolute; left: 0; top: calc(-.2 * var(--u)); bottom: calc(-.2 * var(--u));
+  width: 3px; background: var(--gold);
+}
+.rank-badge .rb-k {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.05 * var(--u));
+  letter-spacing: .25em; text-transform: uppercase; color: var(--gold);
+  margin-bottom: calc(.28 * var(--u));
+}
+.rank-badge .rb-n {
+  font-family: var(--serif); font-style: italic; font-weight: 400;
+  font-size: calc(5.6 * var(--u)); line-height: .82; letter-spacing: -.03em;
+  color: var(--gold-hi);
+}
+.mgr-name {
+  font-family: var(--display); font-weight: 900;
+  font-size: calc(9 * var(--u)); line-height: .84; text-transform: uppercase;
+  color: var(--milk); letter-spacing: -.005em;
+}
+.mgr-name.long { font-size: calc(7 * var(--u)); }
+.mgr-team {
+  font-family: var(--cond); font-weight: 700; font-size: calc(2.2 * var(--u));
+  color: var(--gold-hi); letter-spacing: .02em; margin-top: calc(.6 * var(--u));
+}
+
+/* the writeup, on its own with a rule above it. Wider and a size up now that
+   it no longer shares the row with the lineup column. */
+.clock-note {
+  border-top: 1px solid rgba(32,48,71,.85);
+  padding-top: calc(1.3 * var(--u));
+  max-width: calc(58 * var(--uw));
+}
+.clock-note .say {
+  font-family: var(--cond); font-weight: 600; font-size: calc(2.6 * var(--u));
+  line-height: 1.3; color: var(--milk);
+}
+/* The facts strip, as labelled cells rather than a run-on line. Equal columns
+   across the full width of the note above it, not a flex row bunched at the
+   left: this sits on a television, there is a 58uw column to work with, and
+   four facts crowded into the first third of it was the whole problem. Each
+   cell is divided off by a hairline so the set reads as columns. */
+.clock-facts {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  margin-top: calc(1.8 * var(--u));
+}
+.clock-facts .f {
+  min-width: 0; padding-left: calc(2.4 * var(--u));
+  border-left: 1px solid rgba(32,48,71,.85);
+}
+.clock-facts .f:first-child { padding-left: 0; border-left: none; }
+.clock-facts .k {
+  display: block; font-family: var(--mono); font-size: calc(1.15 * var(--u));
+  letter-spacing: .2em; color: var(--mute); text-transform: uppercase;
+  margin-bottom: calc(.55 * var(--u));
+}
+.clock-facts .v {
+  font-family: var(--cond); font-weight: 700; font-size: calc(2.3 * var(--u));
+  color: var(--chalk); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.clock-facts .v b { color: var(--gold); font-weight: 700; }
+
+/* timer */
+.clock-row {
+  display: flex; align-items: baseline; gap: calc(1.8 * var(--u));
+  border-top: 1px solid rgba(32,48,71,.85); padding-top: calc(1.2 * var(--u));
+}
+.timer {
+  font-family: var(--mono); font-weight: 600; font-size: calc(9.6 * var(--u));
+  line-height: .88; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums; color: var(--milk);
+}
+.timer.warn  { color: var(--gold-hi); }
+.timer.panic { color: var(--bad); }
+/* Paused stays fully legible: the clock just turns gold and a label appears.
+   Dropping it to half opacity made it look broken. */
+.timer.paused { color: var(--gold); }
+.paused-tag {
+  display: none; font-family: var(--mono); font-weight: 600;
+  font-size: calc(1.4 * var(--u)); letter-spacing: .3em; color: var(--gold);
+  text-transform: uppercase; border: 1px solid var(--gold-lo);
+  padding: calc(.4 * var(--u)) calc(.9 * var(--u)); border-radius: 2px;
+}
+.timer.paused + .paused-tag { display: inline-block; }
+
+/* the full lineup, now in its own section of the rail (see "right rail"
+   below), always visible instead of only while resting on the clock. */
+.lineup-hd {
+  display: flex; align-items: baseline; gap: .8vh;
+  font-family: var(--mono); font-size: calc(1.05 * var(--u)); letter-spacing: .22em;
+  color: var(--mute); text-transform: uppercase;
+  padding: calc(1.1 * var(--u)) calc(1.4 * var(--u)); border-bottom: 1px solid var(--line-soft);
+}
+.lineup-hd .ct { margin-left: auto; color: var(--gold); }
+.lineup-grid { display: grid; gap: 0; padding: 0 calc(1.4 * var(--u)); }
+.lu-row {
+  position: relative; isolation: isolate;
+  display: grid;
+  grid-template-columns: calc(4.2 * var(--u)) 1fr auto calc(3.8 * var(--u));
+  gap: .8vh; align-items: center; height: calc(3.35 * var(--u));
+  font-family: var(--cond); font-weight: 600; font-size: calc(1.95 * var(--u));
+  border-bottom: 1px solid rgba(22,35,58,.7);
+}
+.lu-row .s {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.15 * var(--u)); letter-spacing: .04em;
+}
+.lu-row .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--milk); }
+/* where he was taken — round.pick, the board's shorthand everywhere else.
+   Sat between the name and the team rather than after it, so the team column
+   stays the hard right edge of the panel and the picks form their own line. */
+.lu-row .pk {
+  font-family: var(--mono); font-size: calc(1.05 * var(--u));
+  letter-spacing: .04em; color: var(--gold-lo); white-space: nowrap;
+}
+.lu-row.new .pk { color: var(--gold); }
+.lu-row .tm { font-family: var(--mono); font-size: calc(1.05 * var(--u)); color: var(--mute); text-align: right; }
+.lu-row.empty .nm { color: var(--mute); font-weight: 500; }
+.lu-row.empty .s { opacity: .55; }
+/* The pick just added, highlighted the moment it lands on the reveal. Drawn as
+   a layer rather than the row's own background so it can start a little left of
+   the slot letters — flush with them it read as though the letters were part of
+   the edge. The row keeps its box (and so its divider line stays in step with
+   every other row); only the light moves. `isolation` on the row is what lets
+   the negative z-index sit under the text without falling behind the card. */
+.lu-row.new::before {
+  content: ""; position: absolute; z-index: -1;
+  top: 0; bottom: 0; left: calc(-.9 * var(--u)); right: 0;
+  background: linear-gradient(90deg, rgba(201,154,67,.16), transparent 84%);
+}
+.lu-row.new .nm { color: var(--gold-hi); }
+
+/* ── the held beat ────────────────────────────────────────────────────── */
+/* Headline hard left, the overall pick as an outlined numeral hard right,
+   who locked it along the bottom of the left column. It was a centred stack
+   of rule / headline / rule / one line of small caps, which said the same
+   thing with none of the weight the moment has.
+
+   A direct child of #frame now, beside .selection, rather than a child of
+   .main. It used to sit inside the draft area and leave the header and ticker
+   showing above and below; hiding those (the ask) then left two dead bands
+   where they had been, because .main does not reach the edges of the canvas.
+   Covering all 1920x1080 is the same thing the selection graphic does and for
+   the same reason. */
+.pickin {
+  position: absolute; inset: 0; z-index: 10; display: none;
+  grid-template-columns: minmax(0, 1fr) auto; align-items: center;
+  gap: calc(3 * var(--u));
+  /* More room on the left than the other three sides: the headline and the
+     manager's card both hang off it, and on this set they want to sit inside
+     the LED wall rather than out over the pillar and the crowd. */
+  padding: calc(8 * var(--u)) calc(8 * var(--u)) calc(8 * var(--u)) calc(12 * var(--u));
+  background: var(--night);
+  animation: dim .5s ease-out both;
+}
+/* The set, straight. No wash over it and no brightness pushed into it: the
+   photograph is dark on purpose and that is what makes the beat cinematic
+   rather than a graphic sat on a backdrop. Everything over it is gold or white
+   and every gold thing sits on the LED wall, which is the darkest part of the
+   frame, so nothing needs help. Two earlier attempts got this wrong in both
+   directions — 74-84% black hid the set completely, and lifting the photo to
+   compensate turned the pillars and the crowd orange. */
+.pickin::before {
+  content: ""; position: absolute; inset: 0; z-index: 0;
+  background: url("bg/stage.webp") center center / cover no-repeat;
+  /* Graded, not dimmed. The photograph's stadium lights are a cyan blue that
+     reads as daylight through a window; the hue-rotate walks that back toward
+     navy, the saturate takes the last of the cyan out of it and the contrast
+     drops the floor and the ceiling away into the dark. Nothing here lowers the
+     midtones, so the set is no less visible than it was. */
+  filter: hue-rotate(-14deg) saturate(.82) contrast(1.14);
+}
+/* The one exception: a soft pool of shade under the bottom left corner, where
+   the manager's card sits over the lit floor and its reflections. It is a
+   radial with no hard edge anywhere, so it reads as the set being darker in
+   that corner rather than as a panel laid on top of it. */
+.pickin::after {
+  content: ""; position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(62% 42% at 14% 88%,
+      rgba(5,10,18,.72) 0%, rgba(5,10,18,.5) 42%, rgba(5,10,18,.2) 68%, transparent 100%),
+    /* and a wide vignette, which is the other half of "nighttime": the middle
+       of the frame is untouched and the four corners fall away */
+    radial-gradient(118% 96% at 50% 44%,
+      transparent 52%, rgba(3,7,14,.3) 78%, rgba(3,7,14,.6) 100%);
+}
+/* both columns ride above the two background layers */
+.pi-left, .pi-right { position: relative; z-index: 1; }
+.pi-left {
+  min-width: 0; height: 100%;
+  display: flex; flex-direction: column; justify-content: space-between; gap: calc(5 * var(--u));
+  /* the manager sits off the bottom edge by more than the page padding: his
+     cut-out is the lowest thing on the screen and the corner needs the air */
+  padding-bottom: calc(1.5 * var(--u));
+}
+
+/* Gold leaf rather than flat gold: the fill is a gradient clipped to the
+   glyphs, dark at both ends and near-white where the light would hit. There was
+   a blurred light bar crossing behind the letters as well; with the set lit
+   properly underneath it there is nothing left for it to do. */
+/* Slanted, and sat down off the top edge rather than jammed against it.
+   Archivo ships no italic face, so this is synthesised. It has to be
+   `font-style: italic`, not `oblique <angle>`: Chrome synthesises the first
+   and silently ignores the second for a webfont whose @font-face declares no
+   style. Either way the synthesis is a skew that leaves the advance width
+   alone, so the lean costs nothing in the column. */
+/* text-indent pulls the headline back out to the gold rail under it. The
+   synthesised italic leans off the baseline and Archivo's `T` carries a left
+   bearing of its own, so at the page padding the letters start ~40px inside the
+   rail and the two blocks read as misaligned. This splits the difference
+   between the two lines, which start at different places for the same reason
+   ("IS IN" opens on a narrow `I`). */
+.pi-head {
+  position: relative; margin: 0;
+  padding-top: calc(4.5 * var(--u)); text-indent: calc(-1.7 * var(--u));
+}
+.pi-head span {
+  /* nowrap so the break is exactly where the markup puts it. Left to itself
+     the headline re-wraps to three lines the moment the type outgrows the
+     column, which is the shape this was rebuilt to get away from. */
+  position: relative; z-index: 1; display: block; white-space: nowrap;
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-style: italic;
+  font-size: calc(26 * var(--u)); line-height: .84;
+  letter-spacing: .005em; text-transform: uppercase;
+  background: linear-gradient(102deg,
+    #7d5f24 0%, #c99a43 18%, #f0d49a 38%, #fffaf0 48%,
+    #f0d49a 58%, #c99a43 78%, #8a6a2a 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: piLine .55s cubic-bezier(.2,.9,.3,1) both;
+}
+.pi-head span:nth-child(2) { animation-delay: .1s; }
+@keyframes piLine { from { opacity: 0; transform: translateX(calc(-2.4 * var(--u))); } }
+/* The light bar. It runs warm at both ends and cools to near-white in the
+   middle, which is how a real bar of light across gold leaf behaves: the
+   centre is the specular hit, the falloff either side of it is the metal's
+   own colour. A single gold all the way across just looked like a smear. */
+
+/* who locked it, on the gold rail the rest of the board uses for a name */
+.pi-locked {
+  display: flex; align-items: flex-end; gap: calc(2 * var(--u));
+  padding-left: calc(1.8 * var(--u)); border-left: 5px solid var(--gold);
+  animation: selUp .5s .3s ease-out both;
+}
+/* The manager's cut-out, bottom aligned so swapping in alternate art of the
+   same shape drops straight in. Any portrait trimmed to the subject works. */
+.pi-face {
+  flex: none; height: calc(23 * var(--u)); width: auto;
+  object-fit: contain; object-position: bottom center;
+  filter: drop-shadow(0 calc(1 * var(--u)) calc(2.2 * var(--u)) rgba(0,0,0,.7));
+}
+.pi-who { min-width: 0; padding-bottom: calc(.4 * var(--u)); }
+.pi-eyebrow {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.75 * var(--u));
+  letter-spacing: .3em; text-transform: uppercase; color: var(--gold-hi);
+}
+.pi-name {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(11.4 * var(--u)); line-height: .9; text-transform: uppercase;
+  /* A skew rather than synthesised italic, because "slight" is the point and
+     the synthesised angle is a full italic. Pivoted at the baseline start so
+     the name stays flush to the gold rail, then pulled back left: the skew
+     leaves the baseline where it was and walks the cap line ~9px right, so
+     against the upright eyebrow and the line under it the name reads as
+     indented. Half the cap shift puts the middle of the letters back on the
+     same edge and leaves the lean intact. */
+  transform: translateX(calc(-.55 * var(--u))) skewX(-6deg); transform-origin: bottom left;
+  color: var(--milk); margin: calc(.6 * var(--u)) 0 calc(.3 * var(--u));
+}
+.pi-sub {
+  font-family: var(--mono); font-size: calc(2.1 * var(--u));
+  letter-spacing: .2em; text-transform: uppercase; color: var(--chalk-dim);
+}
+
+/* the overall pick, outlined */
+.pi-right {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  /* The label is out of flow, so without this the column would be as wide as
+     the numeral alone and a single-digit pick would let the line hang off both
+     sides of it, out through the page padding. This is the widest label the
+     draft can produce ("Round 10 · Pick 12") with room to spare. */
+  min-width: calc(40 * var(--u));
+  /* The numeral leans, so its top right corner reaches past the column's own
+     box and eats into the page padding. This holds it off the right edge by
+     about what the upright version cleared, which is as close to the bezel as
+     anything on this board should get. */
+  margin-right: calc(3 * var(--u));
+  /* Off the middle of the canvas, not on it. The grid centres this column's
+     margin box, so a margin under it lifts the numeral by half its size — the
+     set's own horizon and the manager's card both sit low, and a numeral
+     hanging over them reads better than one racked dead centre. */
+  margin-bottom: calc(13 * var(--u));
+}
+/* Straight across the middle of the numeral, not stacked above it: the line
+   crosses the waist of the 12 and the outline runs behind it. Centred on the
+   numeral's ink rather than its box — letter-spacing puts a tracking gap after
+   the last character as well as between them, so the line hangs .13em left of
+   its own centre, and the margin-left is exactly that gap handed back. Top 50%
+   lands on the digits' middle rather than the line box's because .pi-num's
+   margins reserve the overhang either side of it.
+   The shadow is the only thing keeping it off the strokes it crosses. */
+.pi-rp {
+  position: absolute; left: 50%; top: 50%; z-index: 2;
+  /* -50% centres the line on the numeral's box; the two additions centre it on
+     the numeral itself. .13em is half the tracking gap letter-spacing leaves
+     hanging off the last character, and 1.4u is where the lean puts the ink:
+     skewing about the centre moves the top of the digits right and the bottom
+     left, and their mass does not divide evenly between the two. */
+  transform: translate(calc(-50% + .13em + 1.4 * var(--u)), -50%);
+  font-family: var(--mono); font-weight: 600; font-size: calc(2.4 * var(--u));
+  letter-spacing: .26em;
+  text-transform: uppercase; white-space: nowrap; color: var(--gold);
+  text-shadow:
+    0 0 calc(.9 * var(--u)) rgba(5,10,18,.95),
+    0 0 calc(2.2 * var(--u)) rgba(5,10,18,.85),
+    0 0 calc(4 * var(--u)) rgba(5,10,18,.7);
+  animation: piRp .5s .2s ease-out both;
+}
+/* selUp's translateY would fight the one holding this on the numeral's middle */
+@keyframes piRp { from { opacity: 0; } }
+/* Stroke only, no fill, so the set shows through it. -webkit-text-stroke
+   rather than a paint-order outline: this is Chrome on a television and the
+   stroke needs to sit inside the glyph, not straddle its edge and thicken it. */
+/* Anton, at 400 — the weight has to be spelled out, because Anton ships one
+   face and asking it for 900 gets a synthesised bold, which on a stroke-only
+   glyph doubles the outline. No scale() either: Anton is drawn tall and
+   condensed already, so one font-size lands both the height the Archivo
+   version was stretched to and the slightly wider set, and the glyphs keep
+   their own stem weights instead of being squeezed sideways. */
+.pi-num {
+  font-family: "Anton", var(--display); font-weight: 400; font-stretch: normal;
+  font-size: calc(62 * var(--u)); line-height: .78; letter-spacing: 0;
+  color: transparent; -webkit-text-stroke: 2px rgba(201,154,67,.85);
+  /* The same lean as the manager's name, pivoted on the centre rather than a
+     corner so the numeral stays put under the round-and-pick line instead of
+     walking right as it tips, plus a tenth of its height again. The skew is
+     written to the left of the stretch on purpose: in that order the stretch
+     happens first and the lean is measured against the taller glyph, so it
+     stays 6 degrees. Reverse them and the same skew reads as 5.5. Both are
+     paint, so the box the label centres on does not move. */
+  transform-origin: center center; transform: skewX(-6deg) scaleY(1.05);
+  /* line-height .78 is far shorter than Anton's own line (its hhea ascent and
+     descent come to 1.5em), so the digits stand ~2.9u above the line box and
+     the baseline sits ~2.1u below it. These margins reserve exactly that, which
+     makes the margin box the same shape as the ink: the grid then centres the
+     digits themselves rather than their line box, and top: 50% on the
+     round-and-pick line lands across their middle. */
+  margin: calc(2.9 * var(--u)) 0 calc(2.1 * var(--u));
+  animation: piNum .7s .06s cubic-bezier(.2,.9,.3,1) both;
+}
+/* three digits, from pick 100 on: same column, one size down, so the numeral
+   does not reach back across the gap into the headline. The margins scale with
+   it because they are the overhang of this line height. */
+.pi-num.wide {
+  font-size: calc(50 * var(--u));
+  margin: calc(2.33 * var(--u)) 0 calc(1.7 * var(--u));
+}
+/* letter-spacing is 0 on purpose: a negative value leaves the last glyph
+   overhanging its own box, which walks the numeral off centre under the
+   round-and-pick line sitting over it. */
+/* The `from` carries the skew as well: an animated transform replaces the
+   resting one outright, so leaving it out of the keyframe stands the numeral
+   up straight for the length of the animation and then snaps it over. */
+@keyframes piNum { from { opacity: 0; transform: skewX(-6deg) scaleY(1.05) scale(1.07); } }
+@keyframes dim { from { opacity: 0; } }
+body.state-pick_in .pickin { display: grid; }
+/* ── the selection graphic (the ~7.5 second hold) ──────────────────────── */
+/* A direct child of #frame (not .main), so inset:0 covers the full
+   1920x1080 canvas — header and ticker included. This is the brief, all-in
+   beat; the static detail screen it collapses into deliberately does not
+   do this (see .reveal below). */
+.selection {
+  position: absolute; inset: 0; z-index: 9; display: none;
+  grid-template-columns: 30% 1fr; align-items: stretch;
+  background:
+    linear-gradient(180deg, rgba(5,10,18,.78), rgba(5,10,18,.88)),
+    url("bg/stage.webp") center center / cover no-repeat;
+  animation: dim .4s ease-out both;
+}
+body.phase-selection .selection { display: grid; }
+
+/* The photo used to fill this whole 30%-wide, full-height column via
+   object-fit: cover — a roughly square headshot forced into a sliver about
+   two and a half times taller than wide, cropped down to almost nothing but
+   the eyes. Now it sits in a fixed card, centred in a glow instead of
+   stretched to fill the panel. */
+.sel-shot {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  border-right: 1px solid var(--gold-lo);
+  background:
+    radial-gradient(65% 55% at 50% 40%, var(--tc, rgba(201,154,67,.16)), transparent 72%),
+    linear-gradient(180deg, #0d1930, #060c16);
+}
+/* The player's own team crest, faded, behind the cutout — same composition
+   as the detail card's, at the scale this column allows. Sized on its own
+   rather than stretched to fill the panel: the logos are 150x150 files with
+   the mark itself about 145x100 of that, and this panel runs the full height
+   of the frame, so filling it edge to edge meant a 5-6x upscale. Pulled 7u
+   above the photo's centre (the flex centres both on the same line) so the
+   mark lands behind the head, where the cutout is transparent either side of
+   it, rather than behind the chest, where it's opaque and would cover it. */
+.sel-shot .team-bg {
+  position: absolute; top: 50%; left: 50%; z-index: 0;
+  width: calc(29 * var(--u)); height: calc(29 * var(--u));
+  transform: translate(-50%, calc(-50% - 7 * var(--u)));
+  object-fit: contain; opacity: .3;
+}
+/* `contain`, uncropped: these cutouts are landscape (350x254) and a square
+   box on `cover` shaved the shoulders off both sides and zoomed the head to
+   fill, which is what left the crest nothing to show through. No border or
+   box-shadow either — the image is a transparent PNG, so both drew a hard
+   rectangle around empty air. drop-shadow follows the silhouette instead.
+
+   The mask is the other half of not looking like a sticker. Sleeper crops
+   these at the chest, so an uncropped cutout ends on a dead-straight
+   horizontal line partway down the jersey. In the detail card that line
+   lands on the card's own bottom edge and reads as framing; here there is no
+   frame under it, just open panel, so it fades out instead. */
+.sel-shot .sel-photo {
+  position: relative; z-index: 1;
+  width: calc(44 * var(--u)); height: calc(32 * var(--u));
+  object-fit: contain; object-position: bottom center;
+  filter: drop-shadow(0 calc(1.2 * var(--u)) calc(2.2 * var(--u)) rgba(0,0,0,.6));
+  -webkit-mask-image: linear-gradient(180deg, #000 76%, transparent 99%);
+  mask-image: linear-gradient(180deg, #000 76%, transparent 99%);
+  animation: selShot .7s cubic-bezier(.2,.85,.3,1) both;
+}
+@keyframes selShot { from { opacity: 0; transform: scale(1.08); } }
+
+.sel-body {
+  position: relative; display: flex; flex-direction: column; justify-content: center;
+  padding: calc(3 * var(--u)) calc(4 * var(--u)); min-width: 0; overflow: hidden;
+}
+/* the oversized pick number sitting behind everything */
+.sel-num {
+  position: absolute; right: calc(4 * var(--u)); bottom: calc(-3 * var(--u)); z-index: 0;
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(44 * var(--u)); line-height: .8; color: rgba(49,90,130,.16);
+  letter-spacing: -.02em; pointer-events: none;
+}
+.sel-owner, .sel-name, .sel-pos, .sel-badge, .sel-tagline { position: relative; z-index: 1; }
+
+.sel-owner {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.8 * var(--u));
+  letter-spacing: .3em; text-transform: uppercase; color: var(--gold);
+  animation: selUp .5s .1s ease-out both;
+}
+.sel-name {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(12.5 * var(--u)); line-height: .84; text-transform: uppercase;
+  color: var(--milk); margin: .8vh 0; max-width: calc(56 * var(--uw));
+  animation: selUp .55s .18s cubic-bezier(.2,.9,.3,1) both;
+}
+/* Long names wrap to a second line rather than shrinking away: two stacked
+   lines at full size read better across a room than one small one. */
+.sel-name.long  { font-size: calc(10.5 * var(--u)); }
+.sel-name.xlong { font-size: calc(8.4 * var(--u)); }
+@keyframes selUp { from { opacity: 0; transform: translateY(calc(2.4 * var(--u))); } }
+
+.sel-pos {
+  font-family: var(--cond); font-weight: 600; font-size: calc(3 * var(--u));
+  letter-spacing: .16em; text-transform: uppercase; color: var(--chalk-dim);
+  animation: selUp .5s .26s ease-out both;
+}
+.sel-tagline {
+  margin-top: calc(2.4 * var(--u)); padding: calc(1.1 * var(--u)) calc(1.6 * var(--u));
+  border-left: 4px solid var(--gold);
+  background: linear-gradient(90deg, rgba(201,154,67,.13), transparent 78%);
+  font-family: var(--cond); font-weight: 500; font-size: calc(2.2 * var(--u));
+  line-height: 1.35; color: var(--milk); max-width: calc(42 * var(--uw));
+  animation: selUp .5s .4s ease-out both;
+}
+.sel-badge {
+  display: inline-flex; align-items: center; gap: calc(1.4 * var(--u)); margin-top: calc(2 * var(--u));
+  padding: .8vh calc(1.6 * var(--u)); border: 1px solid var(--gold);
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.9 * var(--u));
+  letter-spacing: .2em; color: var(--gold-hi); align-self: flex-start;
+  animation: selUp .5s .34s ease-out both;
+}
+
+/* ── the detail screen ────────────────────────────────────────────────── */
+/* Still nested in .stage (so it never touches the rail — the wall stays up
+   the whole time) and, unlike the selection graphic, never touches the
+   header or ticker either: this screen is static, sitting up until the
+   commissioner hits Next Pick, so it keeps the surrounding chrome rather
+   than taking the room the way a brief popup can. The one change from a
+   plain inset:0 within .stage is the bottom edge, stopped short at the
+   bottom band's height plus the gap above it (30u + 1.3u) so that band
+   stays visible the whole time this is showing instead of getting covered
+   along with everything else in .stage. */
+.reveal {
+  position: absolute; z-index: 6; display: none;
+  inset: 0 0 calc(31.3 * var(--u)) 0;
+  align-items: center; gap: calc(3.4 * var(--u)); padding: calc(2.6 * var(--u)) calc(3.2 * var(--u));
+  background:
+    linear-gradient(180deg, rgba(5,10,18,.8), rgba(5,10,18,.89)),
+    url("bg/stage.webp") center center / cover no-repeat;
+}
+body.phase-details .reveal { display: flex; }
+
+/* One card, three layers: team-colour glow, the crest, the player. The wrap
+   itself is the card now — it owns the hairline, the corners and the drop
+   shadow, which the photo used to own. That was the thing that read wrong:
+   sleepercdn's player images are transparent-background cutouts served at a
+   misleading .jpg URL, so a border and a box-shadow on the <img> drew a hard
+   rectangle around empty air on three sides of a floating head.
+
+   The photo is `contain`, not `cover`, and sits on the card floor. Those
+   images are landscape (350x254) and were being forced into a square, which
+   cropped the shoulders off both sides and blew the head up to fill — it
+   covered the whole card, so the crest behind it had nowhere to show. Left
+   uncropped and bottom-anchored, the silhouette narrows toward the head and
+   the crest reads in the space either side of it, which is the whole idea. */
+.reveal-shot-wrap {
+  position: relative; flex: none; overflow: hidden;
+  width: calc(26 * var(--u)); height: calc(24 * var(--u));
+  border-radius: 8px; border: 1px solid var(--gold-lo);
+  background: linear-gradient(180deg, #0d1930, #060c16);
+  box-shadow: 0 calc(1 * var(--u)) calc(2.4 * var(--u)) rgba(0,0,0,.55);
+  animation: shrinkIn .55s cubic-bezier(.3,.8,.3,1) both;
+}
+.reveal-shot-wrap::before {
+  content: ""; position: absolute; z-index: 0; inset: 0;
+  background: radial-gradient(74% 66% at 50% 34%, var(--tc, rgba(201,154,67,.28)), transparent 74%);
+}
+/* Sized on its own rather than stretched to fill the card. Deliberately
+   wider than the card can show and sat low enough that the player covers a
+   good part of it — the job is "you can tell whose crest that is," not "you
+   can see the whole crest," so it runs off both edges and the head and
+   shoulders take a bite out of the middle. Any bigger and the upscale off a
+   150x150 source starts to show even at this opacity. */
+.reveal-shot-wrap .team-bg {
+  position: absolute; z-index: 0; left: 50%; top: 47%;
+  width: calc(25 * var(--u)); height: calc(25 * var(--u));
+  transform: translate(-50%, -50%);
+  object-fit: contain; opacity: .34;
+}
+/* No background-color here on purpose (there used to be one, --panel-2) —
+   a fallback colour on a transparent cutout paints over .team-bg sitting
+   behind it at every transparent pixel, not just on a failed load. The
+   shadow is a drop-shadow filter rather than box-shadow for the same reason:
+   it follows the player's outline instead of an invisible rectangle. */
+.reveal-shot {
+  position: absolute; z-index: 1; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain; object-position: bottom center;
+  filter: drop-shadow(0 calc(.5 * var(--u)) calc(1.1 * var(--u)) rgba(0,0,0,.55));
+}
+/* the portrait shrinking down out of the selection graphic */
+@keyframes shrinkIn { from { transform: scale(1.5) translateX(calc(-6 * var(--u))); opacity: .4; } }
+
+.reveal-body { min-width: 0; flex: 1; animation: bodyIn .5s .06s ease-out both; }
+@keyframes bodyIn { from { opacity: 0; transform: translateY(calc(1.4 * var(--u))); } }
+
+.reveal-eyebrow {
+  font-family: var(--mono); font-size: calc(1.15 * var(--u)); letter-spacing: .26em;
+  text-transform: uppercase; color: var(--mute);
+}
+.reveal-eyebrow b { color: var(--gold); font-weight: 600; }
+.reveal-name {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(9.4 * var(--u)); line-height: .86; text-transform: uppercase;
+  color: var(--milk); margin: .7vh 0 0;
+}
+.reveal-name.long  { font-size: calc(7.4 * var(--u)); }
+.reveal-name.xlong { font-size: calc(6 * var(--u)); }
+
+.reveal-meta {
+  display: flex; align-items: center; gap: calc(1.1 * var(--u)); margin-top: calc(1 * var(--u));
+  font-family: var(--mono); font-size: calc(1.7 * var(--u)); letter-spacing: .07em;
+  color: var(--chalk-dim);
+}
+.reveal-meta img { height: calc(3 * var(--u)); width: auto; }
+.reveal-meta .sep { color: var(--line); }
+
+.reveal-tags { display: flex; gap: .7vh; margin-top: calc(1.2 * var(--u)); flex-wrap: wrap; }
+.tag {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.3 * var(--u));
+  letter-spacing: .1em; padding: .5vh .9vh; border-radius: 2px;
+  border: 1px solid var(--line); color: var(--chalk-dim);
+}
+.tag.steal  { background: var(--good); color: #071711; border-color: var(--good); }
+.tag.value  { color: var(--good); border-color: rgba(127,164,141,.5); }
+.tag.reach  { background: var(--bad); color: #1a0705; border-color: var(--bad); }
+.tag.early  { color: var(--bad); border-color: rgba(181,114,104,.5); }
+.tag.rookie { background: var(--gold); color: #150e02; border-color: var(--gold); }
+
+/* the writeup as a lower third, not floating text */
+.reveal-note {
+  margin-top: calc(1.6 * var(--u)); padding: .9vh calc(1.4 * var(--u)); border-left: 4px solid var(--gold);
+  background: linear-gradient(90deg, rgba(201,154,67,.11), transparent 76%);
+  font-family: var(--cond); font-weight: 500; font-size: calc(2.1 * var(--u));
+  line-height: 1.34; color: var(--milk); max-width: calc(44 * var(--uw));
+}
+
+/* History and what is left at his position, side by side. The history box is
+   three narrow columns and was leaving the whole right half of the reveal
+   empty next to it. */
+/* flex-start, not stretch: these two modules hold different amounts and there
+   is no reason for the shorter one to grow a tail of empty box to match the
+   taller one. */
+.reveal-foot {
+  display: flex; align-items: flex-start; gap: calc(1.6 * var(--u));
+  margin-top: calc(1.4 * var(--u));
+}
+.reveal-also {
+  /* Sized to what is in it. As a 1fr of the writeup's width the name column
+     stretched and every row ran a lane of empty space down its middle. */
+  flex: none; width: calc(31 * var(--u));
+  padding: .9vh calc(1.2 * var(--u));
+  border: 1px solid var(--line-soft); background: var(--glass-2); border-radius: 3px;
+}
+.reveal-also:empty { display: none; }
+.reveal-also .k {
+  display: block; padding-bottom: .5vh; margin-bottom: .5vh;
+  border-bottom: 1px solid var(--line-soft);
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.25 * var(--u));
+  letter-spacing: .18em; color: var(--gold); text-transform: uppercase;
+}
+.reveal-also ul { margin: .6vh 0 0; padding: 0; list-style: none; display: grid; gap: 0; }
+.reveal-also li {
+  display: grid; grid-template-columns: calc(4.4 * var(--u)) minmax(0, 1fr) calc(3.6 * var(--u));
+  gap: calc(1 * var(--u)); align-items: baseline; padding: .2vh 0;
+  font-family: var(--mono); font-size: calc(1.35 * var(--u)); color: var(--chalk-dim);
+}
+.reveal-also li .nm {
+  font-family: var(--cond); font-weight: 600; font-size: calc(1.75 * var(--u));
+  color: var(--milk); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.reveal-also li .tm { color: var(--mute); text-align: right; }
+
+/* career history as its own compact module. Sized to its own content now —
+   three narrow columns (year, pick, manager) were stretching to a 44uw box
+   built for the wider prose modules above it, leaving most of the box empty. */
+.reveal-hist {
+  flex: none; padding: .9vh calc(1.2 * var(--u)); width: calc(26 * var(--u));
+  border: 1px solid var(--line-soft); background: var(--glass-2); border-radius: 3px;
+}
+/* The module's own heading, and it was set like a footnote: mute grey, 1.05u,
+   quarter-em tracking. Brighter, a size up, and ruled underneath so it reads
+   as a title over the list rather than the first faint row of it. */
+.reveal-hist .k {
+  display: block; padding-bottom: .5vh; margin-bottom: .5vh;
+  border-bottom: 1px solid var(--line-soft);
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.25 * var(--u));
+  letter-spacing: .18em; color: var(--gold); text-transform: uppercase;
+}
+/* A fixed-column grid, not a ragged flex-wrap — the site's own rule for
+   every other list on the board (positions, teams and ranks line up instead
+   of drifting with name length) that this one had never actually followed. */
+.reveal-hist ul { margin: .6vh 0 0; padding: 0; list-style: none; display: grid; gap: 0; }
+.reveal-hist li {
+  display: grid; grid-template-columns: calc(3.4 * var(--u)) calc(5 * var(--u)) calc(12 * var(--u));
+  gap: calc(1 * var(--u)); align-items: baseline; padding: .2vh 0;
+  font-family: var(--mono); font-size: calc(1.35 * var(--u)); color: var(--chalk-dim);
+}
+.reveal-hist li b { color: var(--milk); font-weight: 600; }
+.reveal-hist li .pk { color: var(--mute); }
+.reveal-hist li .mgr {
+  color: var(--chalk); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* The drafting manager had this exact player before — worth catching at a
+   glance, not just another row in the list. */
+.reveal-hist li .mgr.rep { color: var(--gold-hi); font-weight: 600; }
+.reveal-hist li.more {
+  display: block; grid-template-columns: none; color: var(--mute); padding-top: .4vh;
+}
+
+/* ── the round wall, now in the rail ──────────────────────────────────── */
+/* Every slot of the round in progress, Madden style: two across, six deep,
+   running the full height of the right side. Started as six-across-two-deep
+   sitting under the clock; moved into the rail on request so it could own
+   the whole right side instead of a strip at the bottom, which rotated the
+   grid 90 degrees and, since the rail runs the full height of .main, made
+   every tile taller than either version before it. */
+.rail {
+  position: relative; min-height: 0; overflow: hidden;
+  display: flex; flex-direction: column; gap: calc(.9 * var(--u));
+  padding: calc(1.1 * var(--u)) calc(1.3 * var(--u)) calc(1.4 * var(--u));
+  background: var(--glass); border: 1px solid var(--line); border-radius: 4px;
+  box-shadow: 0 calc(1.2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.42);
+}
+.wall-hd {
+  flex: none; display: flex; align-items: baseline; gap: calc(1.2 * var(--u));
+  font-family: var(--mono); font-size: calc(1.3 * var(--u)); letter-spacing: .22em;
+  color: var(--mute); text-transform: uppercase;
+}
+.wall-hd #roundHd { color: var(--milk); font-weight: 600; letter-spacing: .1em; }
+
+.wall-grid {
+  flex: 1; min-height: 0;
+  display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(6, 1fr);
+  gap: calc(.9 * var(--u));
+}
+/* Top to bottom now, not bottom-anchored: pick number and manager name as a
+   header row, then the player's own photo (a square chip, not a circle — it
+   reads as a card, not an avatar) beside his position and rank, colour-coded
+   like everywhere else on the board, with his name on its own line beneath.
+   The manager cut-out still bleeds up from the bottom behind it all as a
+   background layer. */
+.wt {
+  position: relative; min-width: 0; min-height: 0; overflow: hidden;
+  display: flex; flex-direction: column;
+  border-radius: 4px; border: 1px solid var(--line); border-top: 3px solid var(--line);
+  background: linear-gradient(180deg, rgba(16,26,42,.55), rgba(5,10,18,.88));
+  padding: calc(.8 * var(--u)) calc(1 * var(--u));
+  box-shadow: 0 calc(.6 * var(--u)) calc(1.4 * var(--u)) rgba(0,0,0,.38);
+}
+.wt .face {
+  position: absolute; right: calc(.3 * var(--u)); bottom: 0; z-index: 0;
+  height: 94%; width: auto; object-fit: contain; object-position: bottom center;
+  opacity: .85; filter: drop-shadow(0 .5vh 1vh rgba(0,0,0,.65));
+}
+/* .who fills the tile top to bottom and splits into two pinned groups —
+   pick number and manager name at the top, photo/position/name at the
+   bottom — rather than centering everything as one block, which just
+   floated the whole cluster in the middle with no real anchor either way. */
+.wt .who {
+  /* 78% clipped the two longest names in the pool by a single pixel once the
+     real Barlow Condensed replaced the Helvetica fallback. */
+  position: relative; z-index: 1; min-width: 0; max-width: 82%; flex: 1;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+/* Whose pick it is outranks which pick it is, so the name carries the weight
+   and the slot number recedes to a marker beside it. They used to be set at
+   almost the same size in almost the same grey, which made the pair read as
+   one dim string. */
+.wt .hd { display: flex; align-items: baseline; gap: calc(.7 * var(--u)); }
+.wt .hd .n {
+  font-family: var(--mono); font-weight: 400; font-size: calc(1.05 * var(--u));
+  color: var(--mute); letter-spacing: .04em;
+}
+.wt .hd .mg {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.5 * var(--u));
+  letter-spacing: .06em; color: var(--milk); text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wt .foot { display: flex; flex-direction: column; gap: calc(.55 * var(--u)); }
+/* photo and position rank together, name on its own line beneath */
+.wt .ar { display: flex; align-items: center; gap: calc(.7 * var(--u)); }
+.wt .pav {
+  flex: none; width: calc(3.4 * var(--u)); height: calc(3.4 * var(--u)); border-radius: 4px;
+  object-fit: cover; background: var(--panel-2); border: 1px solid var(--line-soft);
+}
+.wt .pos {
+  font-family: var(--mono); font-weight: 700; font-size: calc(1.3 * var(--u));
+  letter-spacing: .02em;
+}
+.wt .nm {
+  font-family: var(--cond); font-weight: 700; font-size: calc(2.2 * var(--u));
+  line-height: 1.05; color: var(--milk);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.wt.just { animation: wtIn .5s cubic-bezier(.2,.9,.3,1) both; }
+@keyframes wtIn { from { opacity: 0; transform: scale(.92); } }
+.wt.empty .nm { color: var(--mute); font-weight: 500; font-size: calc(1.6 * var(--u)); }
+.wt.onclock {
+  border-color: var(--gold); border-top-color: var(--gold);
+  background: linear-gradient(180deg, rgba(201,154,67,.24), rgba(5,10,18,.88));
+  box-shadow: 0 0 0 1px var(--gold), 0 calc(.8 * var(--u)) calc(2 * var(--u)) rgba(201,154,67,.22);
+}
+.wt.onclock .nm { color: var(--gold-hi); font-size: calc(1.9 * var(--u)); }
+/* The countdown, written into the tile of whoever is on the clock by
+   tickClock(). It is the only clock on screen while a reveal is up, and the
+   clock is running then — the next man's time starts when a pick lands, not
+   when the commissioner presses Next Pick. */
+.wc { font-family: var(--mono); font-weight: 600; letter-spacing: .06em; }
+.wc.warn   { color: var(--gold); }
+.wc.panic  { color: var(--bad); }
+.wc.paused { color: var(--mute); letter-spacing: .16em; }
+
+/* ── bottom band ──────────────────────────────────────────────────────── */
+/* Best available and the lineup, side by side, under the clock. Used to be
+   the rail's job before the round wall took the rail over — two cards in
+   .stage instead of two sections sharing one rail panel, since they no
+   longer need to share a column with anything else. */
+/* --band-rows is set by renderBestAvailable() in board.js and is always the
+   same for both cards (the lineup always draws at least its seven named
+   slots, and best available is rendered to match whatever the lineup came
+   out at). Both lists divide their card into exactly that many equal rows,
+   so the rows grow to fill instead of stopping at their natural height and
+   leaving the rest of the card empty, and the two cards stay line-for-line
+   level with each other. */
+.bottom-band {
+  --band-rows: 7;
+  display: flex; gap: calc(1.3 * var(--u)); min-height: 0;
+}
+/* rgba(...,.58) let the stage art behind it fight with the text for
+   attention — barely readable. Near-opaque now, with more blur to kill
+   whatever ghosts through the edges. */
+.bb-sec {
+  flex: 1; min-width: 0; min-height: 0; overflow: hidden;
+  display: flex; flex-direction: column;
+  background: rgba(6,11,20,.93); border: 1px solid var(--line); border-radius: 4px;
+  box-shadow: 0 calc(1.2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.42);
+  backdrop-filter: blur(6px);
+}
+
+/* A fixed height on both, not vertical padding. The two cards in the band have
+   to stay line for line level with each other, and with padding the header
+   grew to fit whatever was in it: the run alert made the BEST AVAILABLE header
+   five pixels taller than LINEUP beside it, which pushed its whole list down.
+   Same height whether the alert is up or not, and the same height on both. */
+.rail-hd, .lineup-hd {
+  flex: none; display: flex; align-items: center; height: calc(3.5 * var(--u));
+  padding: 0 calc(1.4 * var(--u));
+  font-family: var(--mono); font-size: calc(1.05 * var(--u)); letter-spacing: .24em;
+  color: var(--mute); text-transform: uppercase; border-bottom: 1px solid var(--line-soft);
+}
+.rail-hd .ct, .lineup-hd .ct { margin-left: auto; color: var(--gold); }
+/* The run alert. It used to be a third item in the round wall's header, in
+   the same 1.3u mute grey as everything else up there, on the far side of the
+   screen from the list it is actually about. It lives on the pane it
+   describes now — a small tag in the position's colour, then the run itself
+   in plain words. As one gold mono chip it was set larger than the
+   BEST AVAILABLE label next to it, so the header looked like it had two
+   headers in it. */
+.rail-hd .run {
+  margin-left: auto; align-self: center;
+  display: flex; align-items: center; gap: calc(.8 * var(--u));
+}
+/* Smaller than the label it sits beside, not bigger. The tag carries the
+   position's colour on its own text and border rather than a gold box, so the
+   header reads as one line with a mark on the end of it. */
+.run-tag {
+  flex: none;
+  font-family: var(--mono); font-weight: 600; font-size: calc(.95 * var(--u));
+  letter-spacing: .16em; line-height: 1;
+  padding: calc(.36 * var(--u)) calc(.7 * var(--u));
+  border: 1px solid currentColor; border-radius: 2px;
+  background: rgba(255,255,255,.05);
+}
+/* Sentence case on purpose: everything else in this header is tracked-out
+   small caps, and the run is the one thing up here that is a sentence. */
+.run-txt {
+  font-family: var(--cond); font-weight: 600; font-size: calc(1.45 * var(--u));
+  letter-spacing: .01em; text-transform: none; color: var(--chalk);
+  white-space: nowrap;
+  /* Optical, not geometric. Centring the boxes puts the sentence's caps level
+     with the tag's, but the tag is all caps and the sentence is mostly
+     lowercase, so its visible mass sits a descender lower and reads as if it
+     had slipped. Measured at 1.5px against the tag's cap band. */
+  position: relative; top: calc(-.14 * var(--u));
+}
+
+/* Best available and the next man's clock trade places: the band shows who is
+   left while the draft is running, and who is up next while a reveal is on
+   screen. One or the other, never both — they are the same slot in the band. */
+.bb-next { display: none; }
+body.phase-details .bb-ba { display: none; }
+body.phase-details .bb-next { display: flex; }
+/* The card had nothing behind it and read as a form. Three layers now, all
+   cheap: a pool of light under the cut-out the way the on-the-clock card lights
+   its alcove, a gold floor line, and the overall pick as a ghosted numeral
+   bleeding off the right edge behind the countdown — the same face and lean as
+   the numeral on THE PICK IS IN, at a tenth of the alpha. */
+.next-body {
+  position: relative; flex: 1; min-height: 0; display: flex; align-items: center;
+  gap: calc(1.8 * var(--u)); padding: 0 calc(1.8 * var(--u));
+  overflow: hidden;
+  background:
+    radial-gradient(46% 74% at 13% 88%, rgba(201,154,67,.16), transparent 70%),
+    linear-gradient(105deg, rgba(15,27,46,.92) 0%, rgba(8,15,26,.84) 46%, rgba(5,9,17,.5) 100%);
+}
+/* Angled planes across the left half, a gold hairline along the top, and a
+   vignette that pulls the corners down. The planes stop before the middle on
+   purpose: the name sits there and wants flat dark behind it. */
+.next-body::before {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    /* a lit edge down the leading side of two of the planes */
+    linear-gradient(104deg, transparent 11.9%, rgba(201,154,67,.4) 12%, rgba(201,154,67,.4) 12.3%, transparent 12.4%),
+    linear-gradient(104deg, transparent 27.9%, rgba(201,154,67,.18) 28%, rgba(201,154,67,.18) 28.25%, transparent 28.35%),
+    /* The planes themselves, widest at the left and thinning out, all of them
+       finished before the name starts — the middle of this card is reserved
+       for type and wants flat dark behind it. The last one has no edge at all,
+       it just fades, so the structure ends rather than stopping. */
+    linear-gradient(104deg, transparent 3%, rgba(30,49,78,.6) 3.1%, rgba(30,49,78,.6) 12%, transparent 12.1%),
+    linear-gradient(104deg, transparent 14%, rgba(21,36,58,.58) 14.1%, rgba(21,36,58,.58) 24%, transparent 24.1%),
+    linear-gradient(104deg, transparent 28%, rgba(15,26,43,.5) 28.1%, rgba(12,21,35,.3) 40%, transparent 47%),
+    /* the gold hairline along the top, brightest in the middle */
+    linear-gradient(90deg, transparent, rgba(201,154,67,.4) 24%, rgba(255,214,140,.7) 52%, rgba(201,154,67,.24) 76%, transparent),
+    radial-gradient(120% 150% at 44% 46%, transparent 48%, rgba(2,5,10,.5) 100%);
+  background-repeat: no-repeat;
+  background-size:
+    100% 100%, 100% 100%, 100% 100%,
+    100% 100%, 100% 100%, 100% 2px, 100% 100%;
+}
+/* The dot field under the planes. Masked rather than sized to the left third
+   so it dissolves instead of ending on a line. */
+.next-art {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: .5;
+  background-image: radial-gradient(circle, rgba(201,154,67,.75) .9px, transparent 1px);
+  background-size: calc(1.15 * var(--u)) calc(1.15 * var(--u));
+  -webkit-mask-image: linear-gradient(104deg, #000 0 30%, transparent 52%);
+          mask-image: linear-gradient(104deg, #000 0 30%, transparent 52%);
+}
+.next-body::after {
+  content: ""; position: absolute; left: calc(1.4 * var(--u)); right: calc(1.4 * var(--u));
+  bottom: 0; height: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(201,154,67,.12) 72%, transparent);
+}
+/* Inside the card, not bleeding off its right edge — it used to run off and
+   read as a crop rather than a numeral. The skew throws the top of it right,
+   so the inset has to cover that as well. */
+.next-ghost {
+  position: absolute; right: calc(2.2 * var(--u)); top: 50%; z-index: 0;
+  transform: translateY(-50%) skewX(-6deg);
+  font-family: "Anton", var(--display); font-weight: 400;
+  font-size: calc(26 * var(--u)); line-height: .9;
+  color: transparent; -webkit-text-stroke: 1.5px rgba(201,154,67,.22);
+  pointer-events: none;
+}
+.next-face {
+  position: relative; z-index: 1;
+  flex: none; height: calc(22.5 * var(--u)); width: auto; align-self: flex-end;
+  object-fit: contain; object-position: bottom center;
+  filter: drop-shadow(0 calc(.8 * var(--u)) calc(1.8 * var(--u)) rgba(0,0,0,.6));
+}
+.next-who { position: relative; z-index: 1; min-width: 0; flex: 1; }
+.next-name {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(6.4 * var(--u)); line-height: .9; text-transform: uppercase;
+  color: var(--milk); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.next-team {
+  font-family: var(--cond); font-weight: 600; font-size: calc(1.9 * var(--u));
+  color: var(--chalk-dim); margin-top: calc(.5 * var(--u));
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.next-time { position: relative; z-index: 1; flex: none; text-align: right; }
+.next-note {
+  font-family: var(--mono); font-size: calc(1.25 * var(--u)); letter-spacing: .16em;
+  text-transform: uppercase; color: var(--gold); margin-top: calc(.4 * var(--u));
+  text-shadow: 0 0 calc(1.2 * var(--u)) rgba(5,10,18,.9);
+}
+.next-note:empty { display: none; }
+.next-clock {
+  position: relative; z-index: 1;
+  flex: none; font-family: var(--mono); font-weight: 600;
+  font-size: calc(7.4 * var(--u)); line-height: 1; letter-spacing: .02em;
+  color: var(--milk); font-variant-numeric: tabular-nums;
+  /* it crosses the ghosted numeral behind it */
+  text-shadow: 0 0 calc(1.6 * var(--u)) rgba(5,10,18,.9);
+}
+.next-clock.warn  { color: var(--gold-hi); }
+.next-clock.panic { color: var(--bad); }
+/* `held`, not `idle`: `.idle` is the pre-draft screen's own class and it is
+   written bare — `.idle { position:absolute; display:none }` — so any element
+   that borrows the word disappears. */
+.next-clock.paused, .next-clock.held { color: var(--mute); }
+
+/* The same card at the turn of a round. No clock to run, so the round is the
+   whole point of it: the numeral in the face and the lean the round card and
+   THE PICK IS IN both use, and the man who leads it off small beside it. */
+.round-up { display: none; }
+.bb-next.turning .next-body { display: none; }
+/* More room on the left than on the right: at even padding the numeral sat
+   almost against the card's edge and the whole card read as though it had
+   slid off to one side. */
+.bb-next.turning .round-up {
+  flex: 1; min-height: 0; display: flex; align-items: center;
+  gap: calc(4.6 * var(--u)); padding: 0 calc(2.4 * var(--u)) 0 calc(5.6 * var(--u));
+  position: relative;
+  background:
+    radial-gradient(52% 78% at 22% 82%, rgba(201,154,67,.15), transparent 72%),
+    linear-gradient(105deg, rgba(18,32,54,.85) 0%, rgba(9,16,28,.7) 46%, rgba(6,11,20,.2) 100%);
+}
+.bb-next.turning .round-up::after {
+  content: ""; position: absolute; left: calc(1.4 * var(--u)); right: calc(1.4 * var(--u));
+  bottom: 0; height: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(201,154,67,.12) 72%, transparent);
+}
+.ru-left { flex: none; text-align: center; }
+/* The word is centred on the numeral's box, but the numeral is skewed, so its
+   top — the edge the word actually sits over — leans a full u to the right of
+   that box while the bottom leans the same distance left. Centred on paper
+   read as sitting left of the digit; the nudge puts it back over the top. */
+.ru-word {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%; font-style: italic;
+  font-size: calc(2.9 * var(--u)); line-height: 1; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--gold);
+  transform: translateX(calc(.7 * var(--u)));
+}
+/* line-height .9 for the same reason as the round card's numeral: the gradient
+   is clipped to the element's box as well as to the glyphs. */
+.ru-num {
+  font-family: "Anton", var(--display); font-weight: 400; font-stretch: normal;
+  font-size: calc(21 * var(--u)); line-height: .9; margin-top: calc(.2 * var(--u));
+  transform: skewX(-6deg);
+  background: linear-gradient(168deg, #f7ead0 0%, #e8cf9a 26%, #c99a43 62%, #8a6a2a 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.ru-right { min-width: 0; flex: 1; }
+.ru-when {
+  font-family: var(--cond); font-weight: 700; font-size: calc(3.9 * var(--u));
+  line-height: 1.05; text-transform: uppercase; color: var(--milk); letter-spacing: .02em;
+}
+.ru-who {
+  display: flex; align-items: center; gap: calc(1.2 * var(--u));
+  margin-top: calc(1 * var(--u)); padding-top: calc(1 * var(--u));
+  border-top: 1px solid rgba(201,154,67,.32);
+}
+.ru-face {
+  flex: none; height: calc(8.6 * var(--u)); width: auto;
+  object-fit: contain; object-position: bottom center;
+  filter: drop-shadow(0 calc(.5 * var(--u)) calc(1.2 * var(--u)) rgba(0,0,0,.6));
+}
+.ru-id { min-width: 0; }
+.ru-name {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(3.1 * var(--u)); line-height: 1; text-transform: uppercase; color: var(--milk);
+}
+.ru-pick {
+  font-family: var(--mono); font-size: calc(1.35 * var(--u)); letter-spacing: .14em;
+  text-transform: uppercase; color: var(--gold); margin-top: calc(.5 * var(--u));
+}
+
+/* flex:1 makes each list fill its card; grid-auto-rows:1fr makes the rows
+   fill the list. The list had the first and not the second, so seven rows at
+   a hard 2.85u height sat at the top of a card sized to the band and left
+   everything below the seventh as dead space. Equal fractions instead: the
+   rows divide whatever height the card has, and get taller when there are
+   fewer of them. */
+.bb-ba .ba-list, .bb-lu .lineup-grid {
+  flex: 1; min-height: 0; overflow: hidden;
+  grid-auto-rows: 1fr; align-content: stretch;
+}
+/* No vertical padding on either, and the same horizontal padding on both.
+   The list used to carry .4vh/.6vh of its own, which came off the height the
+   rows divide — enough to leave its rows about a pixel and a half shorter
+   than the lineup's beside it, so the two cards drifted out of step down the
+   card even though they draw the same number of rows. */
+.bb-ba .ba-list, .bb-lu .lineup-grid { padding: 0 calc(1.4 * var(--u)); }
+
+/* Type follows the row rather than sitting at a fixed size in a box that now
+   changes height — seven rows deep the rows are tall and the names should be
+   big, thirteen deep they aren't. The divisor is roughly the usable list
+   height in --u; the clamp keeps it readable across a room at the top end
+   and inside the row at the bottom. Everything within a row is sized in em
+   off this, so it all scales together. */
+.bb-ba .ba, .bb-lu .lu-row {
+  height: auto; min-height: 0; line-height: 1;
+  font-size: clamp(
+    calc(1.5 * var(--u)),
+    calc(15.5 * var(--u) / var(--band-rows)),
+    calc(2.25 * var(--u)));
+}
+/* The rank column is sized for three digits and the name starts after it.
+   Board rank runs past 200 by the back half of the draft (twelve teams times
+   fourteen rounds is 168 picks off the top of the board, and this pane shows
+   up to fourteen deep past that), so two digits' worth of column would have
+   started nudging the names. Nothing here ever reaches four. */
+.bb-ba .ba {
+  grid-template-columns: 2.35em minmax(0, 1fr) 2.4em 2.2em;
+}
+.bb-ba .ba .rk { font-size: .63em; }
+.bb-ba .ba .pr { font-size: .66em; }
+.bb-ba .ba .tm { font-size: .59em; }
+.bb-lu .lu-row {
+  /* slot, name, where he was taken, team */
+  grid-template-columns: 2.15em minmax(0, 1fr) 2.5em 1.95em;
+}
+.bb-lu .lu-row .s  { font-size: .59em; }
+.bb-lu .lu-row .tm { font-size: .54em; }
+/* Filled names a size down from the row, and both panes' name cells get a
+   line box taller than the type. They clip on `overflow: hidden` otherwise,
+   and with the rows at `line-height: 1` the box was exactly the font size,
+   so every descender (the p in Puka, the g in Gibbs) lost its tail. */
+.bb-lu .lu-row .nm { font-size: .88em; }
+.bb-ba .ba .nm, .bb-lu .lu-row .nm { line-height: 1.32; }
+
+.ba-list { display: grid; gap: 0; align-content: start; min-height: 0; }
+/* Height and columns here are the standalone defaults; inside the bottom
+   band both are overridden to divide the card (see .bb-ba above). */
+.ba {
+  display: grid; grid-template-columns: calc(3.4 * var(--u)) 1fr calc(4.8 * var(--u)) calc(4.4 * var(--u));
+  align-items: center; gap: calc(1 * var(--u)); height: calc(2.85 * var(--u));
+  font-family: var(--cond); font-weight: 600; font-size: calc(2.05 * var(--u));
+  border-bottom: 1px solid rgba(22,35,58,.6);
+}
+/* Left, not right. The column is three digits wide so the names line up all
+   the way down (board rank runs past 200 late in the draft), and right-aligning
+   the number inside it pushed every two-digit rank away from the card's left
+   edge — the list read as though it started with an empty column. */
+.ba .rk { font-family: var(--mono); font-size: calc(1.3 * var(--u)); color: var(--mute); text-align: left; }
+.ba .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--chalk); }
+.ba .pr { font-family: var(--mono); font-weight: 600; font-size: calc(1.35 * var(--u)); }
+.ba .tm { font-family: var(--mono); font-size: calc(1.2 * var(--u)); color: var(--mute); text-align: right; }
+
+/* ── ticker ───────────────────────────────────────────────────────────── */
+.ticker {
+  display: flex; align-items: stretch; overflow: hidden;
+  border-top: 1px solid rgba(32,48,71,.7);
+  background: linear-gradient(180deg, rgba(5,10,18,.95), rgba(5,10,18,.99));
+}
+/* A tag sitting on the bar, not a block dropped onto it — it used to run the
+   bar's full height with square corners. Rounded corners on a rectangle now
+   rather than the full pill it became: at that radius the ends were half
+   circles and it read as a lozenge instead of a label. Barlow instead of
+   mono: mono's tracking is built for a readout, and next to a bold label at
+   this size it just looked thin. */
+.ticker-tag {
+  flex: none; align-self: center; z-index: 2; display: flex; align-items: center;
+  margin-left: calc(1.4 * var(--u)); padding: calc(1.05 * var(--u)) calc(1.9 * var(--u));
+  min-width: calc(17 * var(--u)); justify-content: center;
+  border-radius: calc(.42 * var(--u));
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold));
+  color: #160f02; font-family: var(--cond); font-weight: 700;
+  font-size: calc(1.7 * var(--u)); letter-spacing: .09em; text-transform: uppercase;
+  box-shadow: 0 calc(.4 * var(--u)) calc(1 * var(--u)) rgba(0,0,0,.5);
+  transition: opacity .25s;
+}
+.ticker-view { flex: 1; min-width: 0; overflow: hidden; position: relative; }
+/* Driven by the Web Animations API in board.js, not CSS — this needed a
+   sequence (rise into place, hold, *then* scroll) where the hold and the
+   scroll's length both depend on how wide the content turns out to be, and
+   CSS keyframe offsets can't be computed at runtime. Two plain CSS
+   animations on the same element used to fight over `transform` (the later
+   one, with its own fill-backwards delay, silently overrode the vertical
+   entrance for the entire time it should have been playing), and splitting
+   them across a wrapper element sidestepped that but broke the sequencing —
+   the horizontal position from the not-yet-started scroll was already fixed
+   in place *during* the rise, so nothing visibly rose at all. One
+   `element.animate()` call with explicit offsets replaces both. */
+.ticker-track {
+  display: inline-flex; align-items: center; white-space: nowrap;
+  height: 100%; will-change: transform;
+}
+.tk {
+  display: inline-flex; align-items: center; gap: .7vh; padding: 0 calc(1.6 * var(--u));
+  font-family: var(--cond); font-weight: 600; font-size: calc(2.1 * var(--u));
+  color: var(--chalk); border-right: 1px solid var(--line-soft);
+}
+.tk .pk { font-family: var(--mono); font-size: calc(1.2 * var(--u)); color: var(--gold); }
+.tk .mg { color: var(--chalk-dim); }
+.tk .pp { font-family: var(--mono); font-weight: 600; font-size: calc(1.2 * var(--u)); }
+.tk .tm { font-family: var(--mono); font-size: calc(1.1 * var(--u)); color: var(--mute); }
+.tk.onclock { color: var(--gold-hi); }
+.tk.onclock .pk { color: var(--gold-hi); }
+.tk.pending { color: var(--mute); }
+.tk.pending b { color: var(--mute); font-weight: 500; }
+
+/* ── the full-screen announcements ────────────────────────────────────── */
+/* Two of them, both direct children of #frame so inset:0 is the whole
+   1920x1080 canvas the way the selection graphic's is: whoever is now on the
+   clock, and the top of a new round. The on-the-clock one used to be a small
+   banner dropped over the resting screen, which was announcing the manager
+   on a screen already showing that manager in a 50u cut-out. Same weight as
+   the pick reveal now, because it's the same kind of moment. */
+/* The set behind both cards is graded and vignetted the same way THE PICK IS
+   IN's is, rather than sat under a flat 82-90% black. These are the same room
+   as that beat and they should look like it — but they carry a great deal more
+   small type than it does, so they keep a wash over the photo where it does
+   not. Layered rather than shorthanded so the grade can be a filter without
+   also filtering the wash. */
+.announce {
+  position: absolute; inset: 0; z-index: 16; display: none;
+  background: var(--night);
+  pointer-events: none;
+}
+.announce::before {
+  content: ""; position: absolute; inset: 0; z-index: 0;
+  background: url("bg/stage.webp") center center / cover no-repeat;
+  filter: hue-rotate(-14deg) saturate(.82) contrast(1.14);
+}
+.announce::after {
+  content: ""; position: absolute; inset: 0; z-index: 0;
+  background:
+    linear-gradient(180deg, rgba(5,10,18,.52), rgba(5,10,18,.72)),
+    radial-gradient(118% 96% at 50% 44%,
+      transparent 50%, rgba(3,7,14,.34) 78%, rgba(3,7,14,.62) 100%);
+}
+.announce.show { display: grid; animation: dim .35s ease-out both; }
+
+/* whoever is on the clock */
+.oncard { grid-template-columns: 34% 1fr; align-items: stretch; }
+.oncard .oc-shot {
+  position: relative; z-index: 1; overflow: hidden;
+  display: flex; align-items: end; justify-content: center;
+  border-right: 1px solid var(--gold-lo);
+  background:
+    radial-gradient(62% 52% at 50% 44%, rgba(201,154,67,.16), transparent 72%),
+    linear-gradient(180deg, #0d1930, #060c16);
+}
+.oncard .oc-shot img {
+  height: 86%; width: auto; object-fit: contain; object-position: bottom center;
+  filter: drop-shadow(0 calc(1.4 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.72));
+  animation: ocShot .6s cubic-bezier(.2,.85,.3,1) both;
+}
+@keyframes ocShot { from { opacity: 0; transform: translateY(calc(3 * var(--u))); } }
+.oncard .oc-body {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: calc(3 * var(--u)) calc(4.5 * var(--u)); min-width: 0;
+}
+.oc-eyebrow {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.8 * var(--u));
+  letter-spacing: .3em; text-transform: uppercase; color: var(--gold);
+  animation: selUp .45s .08s ease-out both;
+}
+.oc-name {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(15 * var(--u)); line-height: .84; text-transform: uppercase;
+  color: var(--milk); margin: 1vh 0 .4vh;
+  animation: selUp .5s .16s cubic-bezier(.2,.9,.3,1) both;
+}
+.oc-name.long { font-size: calc(11 * var(--u)); }
+.oc-verb {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(4.6 * var(--u)); line-height: 1; text-transform: uppercase;
+  color: var(--gold-hi); letter-spacing: .01em;
+  animation: selUp .5s .24s ease-out both;
+}
+.oc-team {
+  font-family: var(--cond); font-weight: 700; font-size: calc(2.6 * var(--u));
+  color: var(--chalk-dim); margin-top: calc(1.4 * var(--u));
+  animation: selUp .5s .32s ease-out both;
+}
+/* Equal columns across the body, same as the clock's facts strip, so a row of
+   five (power rank, 2025, next pick, week 1, rival) spreads instead of
+   running off the right edge. */
+.oc-facts {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  margin-top: calc(2.8 * var(--u));
+  padding-top: calc(1.8 * var(--u)); border-top: 1px solid rgba(32,48,71,.85);
+  animation: selUp .5s .4s ease-out both;
+}
+.oc-facts > div { min-width: 0; }
+.oc-facts .k {
+  display: block; font-family: var(--mono); font-size: calc(1.3 * var(--u));
+  letter-spacing: .2em; color: var(--mute); text-transform: uppercase;
+  margin-bottom: calc(.5 * var(--u));
+}
+.oc-facts .v {
+  font-family: var(--cond); font-weight: 700; font-size: calc(3 * var(--u));
+  color: var(--milk); white-space: nowrap;
+}
+
+/* the top of a round */
+/* Two columns, the same shape as the on-the-clock card: the numeral hard left
+   in Anton — the same face and the same lean as the pick number on THE PICK IS
+   IN, so a big numeral means the same thing wherever it turns up — and the
+   twelve slots of the round on the right, in the order they will run. It was a
+   centred stack of word / numeral / rule / caption on a flat wash, which said
+   all of this in a shape the board uses nowhere else. */
+.roundcard {
+  /* Both columns sized to their content and the pair centred, rather than the
+     order stretched across whatever is left of a 1920 canvas: at full width
+     the twelve slots sat in two columns half a screen apart with nothing
+     between them. */
+  grid-template-columns: auto auto; justify-content: center; align-items: center;
+  gap: calc(7 * var(--u)); padding: calc(8 * var(--u)) calc(9 * var(--u));
+}
+.roundcard .rc-left, .roundcard .rc-right { position: relative; z-index: 1; }
+.rc-left { text-align: center; }
+.rc-word {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-style: italic; font-size: calc(7 * var(--u)); line-height: 1;
+  letter-spacing: .04em; text-transform: uppercase;
+  background: linear-gradient(102deg,
+    #7d5f24 0%, #c99a43 22%, #f0d49a 44%, #fffaf0 54%, #d8a94e 78%, #8a6a2a 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: selUp .45s .06s ease-out both;
+}
+/* Solid where the pick number is a hairline outline: same face, same lean,
+   opposite weight, so the two cards never read as the same graphic.
+
+   line-height .9, not the .78 the outlined numeral uses, and that is not
+   cosmetic: `background-clip: text` clips the gradient to the glyphs *and* to
+   the element's own box, so any part of a digit standing above its line box
+   gets no paint and comes off flat-topped. Anton needs .873em of line to keep
+   a numeral inside its box; below that the tops go missing. */
+.rc-num {
+  font-family: "Anton", var(--display); font-weight: 400; font-stretch: normal;
+  font-size: calc(52 * var(--u)); line-height: .9; letter-spacing: 0;
+  margin: calc(-.6 * var(--u)) 0 calc(-2.4 * var(--u));
+  transform-origin: center center; transform: skewX(-6deg);
+  background: linear-gradient(168deg,
+    #f7ead0 0%, #e8cf9a 26%, #c99a43 62%, #8a6a2a 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: rcNum .6s .12s cubic-bezier(.2,.9,.3,1) both;
+}
+@keyframes rcNum { from { opacity: 0; transform: skewX(-6deg) scale(1.18); } }
+.rc-of {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.9 * var(--u));
+  letter-spacing: .3em; text-transform: uppercase; color: var(--mute);
+  animation: selUp .45s .3s ease-out both;
+}
+.rc-right { width: calc(78 * var(--u)); min-width: 0; }
+.rc-hd {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: calc(2 * var(--u)); padding-bottom: calc(1.4 * var(--u));
+  border-bottom: 1px solid rgba(201,154,67,.42);
+  animation: selUp .5s .3s ease-out both;
+}
+.rc-sub {
+  font-family: var(--cond); font-weight: 700; font-size: calc(3.4 * var(--u));
+  letter-spacing: .04em; text-transform: uppercase; color: var(--milk);
+}
+.rc-turn {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.7 * var(--u));
+  letter-spacing: .24em; text-transform: uppercase; color: var(--gold);
+}
+/* Six rows of two, reading down each column, so the shape of the list matches
+   the round wall in the rail rather than wrapping into an arbitrary block. */
+.rc-order {
+  display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: column;
+  grid-template-rows: repeat(6, auto);
+  gap: calc(.9 * var(--u)) calc(2.2 * var(--u)); margin-top: calc(2.2 * var(--u));
+}
+.rc-slot {
+  position: relative; display: flex; align-items: center; gap: calc(1.1 * var(--u));
+  min-width: 0; padding: calc(.7 * var(--u)) calc(1.4 * var(--u));
+  border-left: 2px solid var(--line);
+  font-family: var(--cond); font-weight: 700; font-size: calc(2.4 * var(--u));
+  color: var(--chalk); text-transform: uppercase;
+  animation: selUp .4s ease-out both;
+}
+/* Each slot arrives a beat after the one above it, down one column and then
+   the other, which is the order they will pick in. */
+.rc-slot:nth-child(1)  { animation-delay: .38s; }
+.rc-slot:nth-child(2)  { animation-delay: .43s; }
+.rc-slot:nth-child(3)  { animation-delay: .48s; }
+.rc-slot:nth-child(4)  { animation-delay: .53s; }
+.rc-slot:nth-child(5)  { animation-delay: .58s; }
+.rc-slot:nth-child(6)  { animation-delay: .63s; }
+.rc-slot:nth-child(7)  { animation-delay: .68s; }
+.rc-slot:nth-child(8)  { animation-delay: .73s; }
+.rc-slot:nth-child(9)  { animation-delay: .78s; }
+.rc-slot:nth-child(10) { animation-delay: .83s; }
+.rc-slot:nth-child(11) { animation-delay: .88s; }
+.rc-slot:nth-child(12) { animation-delay: .93s; }
+.rc-slot i {
+  font-family: var(--mono); font-style: normal; font-weight: 400;
+  font-size: calc(1.5 * var(--u)); letter-spacing: .06em; color: var(--mute);
+}
+.rc-slot b { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* whoever leads the round off */
+.rc-slot.first {
+  border-left-color: var(--gold); color: var(--gold-hi);
+  background: linear-gradient(90deg, rgba(201,154,67,.18), transparent 78%);
+}
+.rc-slot.first i { color: var(--gold); }
+.rc-face {
+  height: calc(9 * var(--u)); width: auto; object-fit: contain; object-position: bottom center;
+  margin: calc(-3 * var(--u)) 0 calc(-1.4 * var(--u));
+  filter: drop-shadow(0 calc(.6 * var(--u)) calc(1.4 * var(--u)) rgba(0,0,0,.7));
+}
+
+/* ── the manager showcase ─────────────────────────────────────────────── */
+/* The commissioner's screen, put up from the console while a man is on the
+   clock: his whole PAMS career, his seasons, and every pick he owns tonight.
+
+   A direct child of #frame like the announcements, so it covers the full
+   1920x1080 canvas — and unlike them it has no timer on it, it stays up until
+   the console takes it down. That is why it carries its own bottom band with
+   the clock, the last pick and who is next: the header, the round wall and the
+   ticker are all behind it, so if this screen does not say where the draft is,
+   nothing on the television does.
+
+   The set is graded the way THE PICK IS IN grades it, under a heavier wash
+   than the announcements use. This is the densest screen on the board and the
+   type on it is small; the room should still be visible behind it, but it
+   cannot be doing any work up front. */
+.showcase {
+  position: absolute; inset: 0; z-index: 14; display: none;
+  /* head, career strip, the 2026 strip, the two panels, the round band, the
+     bottom band. Only the panels flex; everything else is its own content. */
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+  gap: calc(1.6 * var(--u));
+  padding: calc(2.4 * var(--u)) calc(4 * var(--uw)) calc(2.2 * var(--u));
+  background: var(--night);
+}
+.showcase::before {
+  content: ""; position: absolute; inset: 0; z-index: 0;
+  background: url("bg/stage.webp") center center / cover no-repeat;
+  filter: hue-rotate(-14deg) saturate(.82) contrast(1.14);
+}
+.showcase::after {
+  content: ""; position: absolute; inset: 0; z-index: 0;
+  background:
+    linear-gradient(180deg, rgba(5,10,18,.66), rgba(5,10,18,.84)),
+    radial-gradient(118% 96% at 50% 44%,
+      transparent 46%, rgba(3,7,14,.4) 76%, rgba(3,7,14,.66) 100%);
+}
+.showcase.show { display: grid; animation: dim .35s ease-out both; }
+/* Every child rides above the two background layers. Named individually, not
+   `.showcase > *`: a blanket child rule outranks the position on the ::before
+   pair's own class and has thrown a full-screen layer into the flow here
+   before (see .pickin). */
+.sc-head, .sc-career, .sc-sched, .sc-cols, .sc-r1, .sc-foot {
+  position: relative; z-index: 1;
+}
+
+/* who he is — the same lockup as THE PICK IS IN's gold rail, laid on its side */
+.sc-head {
+  display: flex; align-items: flex-end; gap: calc(2.6 * var(--u));
+  padding-bottom: calc(1.6 * var(--u));
+  border-bottom: 1px solid rgba(201,154,67,.42);
+  animation: selUp .45s .04s ease-out both;
+}
+.sc-face {
+  flex: none; height: calc(17.5 * var(--u)); width: auto;
+  object-fit: contain; object-position: bottom center;
+  margin-bottom: calc(-1.6 * var(--u));   /* stands on the rule, not above it */
+  filter: drop-shadow(0 calc(1 * var(--u)) calc(2.2 * var(--u)) rgba(0,0,0,.7));
+}
+.sc-id { min-width: 0; flex: 1; padding-left: calc(1.6 * var(--u)); border-left: 5px solid var(--gold); }
+.sc-eyebrow {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.5 * var(--u));
+  letter-spacing: .3em; text-transform: uppercase; color: var(--gold);
+}
+.sc-name {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(9.6 * var(--u)); line-height: .88; text-transform: uppercase;
+  color: var(--milk); margin: calc(.45 * var(--u)) 0 calc(.35 * var(--u));
+}
+.sc-team {
+  font-family: var(--cond); font-weight: 700; font-size: calc(2.4 * var(--u));
+  color: var(--gold-hi);
+}
+/* the power rank, set exactly as it is beside the clock */
+.sc-rank {
+  position: relative; flex: none; display: none; flex-direction: column;
+  justify-content: center; align-items: center; text-align: center;
+  padding-left: calc(2 * var(--u)); margin-bottom: calc(1 * var(--u));
+}
+.sc-rank.show { display: flex; }
+.sc-rank::before {
+  content: ""; position: absolute; left: 0; top: calc(-.2 * var(--u)); bottom: calc(-.2 * var(--u));
+  width: 3px; background: var(--gold);
+}
+.sc-rank .rb-k {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.15 * var(--u));
+  letter-spacing: .25em; text-transform: uppercase; color: var(--gold);
+  margin-bottom: calc(.3 * var(--u));
+}
+.sc-rank .rb-n {
+  font-family: var(--serif); font-style: italic; font-weight: 400;
+  font-size: calc(6.4 * var(--u)); line-height: .82; letter-spacing: -.03em;
+  color: var(--gold-hi);
+}
+
+/* the career strip — equal columns, same shape as the on-the-clock card's */
+/* Pulled in half a unit top and bottom against the screen's own 1.6 gap. It
+   is a two-line band between two rules and it was sitting in more air than it
+   has height, which read as a gap in the screen rather than a band on it. */
+.sc-career {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  margin: calc(-.5 * var(--u)) 0;
+  animation: selUp .45s .12s ease-out both;
+}
+.sc-career > div { min-width: 0; }
+.sc-career .k {
+  display: block; font-family: var(--mono); font-size: calc(1.2 * var(--u));
+  letter-spacing: .2em; color: var(--mute); text-transform: uppercase;
+  margin-bottom: calc(.5 * var(--u));
+}
+.sc-career .v {
+  font-family: var(--cond); font-weight: 700; font-size: calc(3.2 * var(--u));
+  color: var(--milk); white-space: nowrap;
+}
+/* the qualifier after the number — the years a title was won, how many of his
+   seasons ended in the playoffs — small, mono and grey, so the number stays
+   the thing being read */
+.sc-career .v i {
+  font-family: var(--mono); font-style: normal; font-size: calc(1.5 * var(--u));
+  letter-spacing: .06em; color: var(--chalk-dim);
+}
+.sc-career .gold .v { color: var(--gold-hi); }
+
+/* the season ahead: week one, rivalry week, his next pick */
+/* The one strip on this screen that is not about what a manager has already
+   done. It carries the other manager's cut-out beside each fixture — this is
+   the half of the showcase the room shouts at, and a face gets there faster
+   than a name does. */
+.sc-sched {
+  display: flex; align-items: center; gap: calc(1.4 * var(--u));
+  padding: calc(1.1 * var(--u)) 0;
+  border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft);
+  animation: selUp .45s .16s ease-out both;
+}
+.sc-sched:empty { display: none; }
+.sc-sched .k {
+  flex: none; font-family: var(--mono); font-size: calc(1.2 * var(--u));
+  letter-spacing: .2em; text-transform: uppercase; color: var(--gold);
+  padding-right: calc(1 * var(--u));
+}
+.sc-sched .cell {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: calc(1 * var(--u));
+  padding-left: calc(1.6 * var(--u)); border-left: 1px solid var(--line);
+}
+.sc-sched .lb {
+  flex: none; font-family: var(--mono); font-size: calc(1.15 * var(--u));
+  letter-spacing: .18em; text-transform: uppercase; color: var(--mute);
+}
+/* Bottom-aligned and bled past the strip's padding, the way every cut-out on
+   this board stands on its line rather than floating in the middle of one. */
+.sc-sched .cell img {
+  flex: none; height: calc(6.4 * var(--u)); width: auto;
+  object-fit: contain; object-position: bottom center;
+  margin: calc(-1.6 * var(--u)) 0;
+  filter: drop-shadow(0 calc(.5 * var(--u)) calc(1.2 * var(--u)) rgba(0,0,0,.65));
+}
+.sc-sched .cell b {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(3.4 * var(--u)); line-height: 1; text-transform: uppercase;
+  color: var(--milk); white-space: nowrap;
+}
+/* three names in the space one is set at */
+.sc-sched .cell b.small {
+  font-family: var(--cond); font-weight: 700; font-stretch: normal;
+  font-size: calc(2.4 * var(--u)); text-transform: none;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis;
+}
+/* the pick cell has no face, so its number takes the place the face would */
+.sc-sched .cell b:first-of-type:not(:last-child) + .sub, .sc-sched .sub {
+  font-family: var(--mono); font-size: calc(1.4 * var(--u));
+  letter-spacing: .06em; color: var(--chalk-dim); white-space: nowrap;
+}
+
+/* the two panels */
+.sc-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: calc(1.6 * var(--uw));
+  min-height: 0; animation: selUp .5s .2s ease-out both;
+}
+/* the career strip over his tendencies, in the column the seasons table used
+   to have to itself */
+/* The seasons need a definite row because the strip inside them flexes to
+   fill it; everything left over goes to the card underneath. Two units came
+   off this row and went there: the seasons had more air over and under them
+   than the strip needed, and the tendencies card was the one running out. */
+.sc-left {
+  min-width: 0; min-height: 0; display: grid;
+  grid-template-rows: calc(21 * var(--u)) minmax(0, 1fr);
+  gap: calc(1.3 * var(--u));
+}
+.sc-panel {
+  min-width: 0; min-height: 0; overflow: hidden;
+  display: flex; flex-direction: column;
+  background: rgba(6,11,20,.9); border: 1px solid var(--line); border-radius: 4px;
+  box-shadow: 0 calc(1.2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.42);
+}
+.sc-hd {
+  flex: none; display: flex; align-items: center; height: calc(3.4 * var(--u));
+  padding: 0 calc(1.6 * var(--u));
+  font-family: var(--mono); font-size: calc(1.15 * var(--u)); letter-spacing: .24em;
+  color: var(--mute); text-transform: uppercase;
+  border-bottom: 1px solid var(--line-soft);
+}
+.sc-hd .ct { margin-left: auto; color: var(--gold); }
+
+/* every season he has played. Fixed columns, so the years read straight down
+   the page rather than drifting with the width of a record. */
+/* The career, across rather than down. One grid filled column by column —
+   five rows, one season per column — so the record, the finish and the note
+   under it stay level across the whole strip whatever any one season carries.
+   The columns are equal fractions rather than a fixed width: seven of them
+   fill the card, and the three a new manager has simply sit wider. */
+.sc-seasons {
+  --seasons: 7;
+  flex: 1; min-height: 0; display: grid;
+  grid-template-columns: repeat(var(--seasons), minmax(0, 1fr));
+  grid-template-rows: repeat(5, auto); grid-auto-flow: column;
+  align-content: center; justify-items: center; text-align: center;
+  padding: calc(.9 * var(--u)) calc(1.4 * var(--u));
+  /* No row-gap, deliberately. The five cells of a season are five separate
+     grid items, so any gap between them cuts the title column's tint into
+     five stripes with bare background showing through — it read as the
+     highlight being on the words rather than on the year. The breathing room
+     between the lines is padding inside the cells instead, which the tint
+     covers. */
+  row-gap: 0;
+}
+/* Stretched to the row (so the title column's tint has no gaps in it) and
+   centring its own content, which is not the same thing. The cells have to
+   stretch, and an inline-block badge inside a stretched box sits at the top
+   of it — which is exactly how the TITLE badge came out sitting high in its
+   row while every other season's line of text sat in the middle of the same
+   row. */
+.sc-seasons .sn {
+  min-width: 0; width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  gap: calc(.5 * var(--u));
+  padding: calc(.32 * var(--u)) calc(.5 * var(--u));
+}
+/* a hairline between seasons, drawn on every cell so it runs the full height */
+.sc-seasons .sn:not(.first) { border-left: 1px solid var(--line-2); }
+.sc-seasons .y {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.5 * var(--u));
+  line-height: 1; letter-spacing: .06em; color: var(--gold);
+}
+.sc-seasons .rec {
+  font-family: var(--cond); font-weight: 700; font-size: calc(2.5 * var(--u));
+  color: var(--chalk); line-height: 1.1;
+}
+.sc-seasons .fin {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(4.4 * var(--u)); line-height: 1.04; color: var(--milk);
+}
+/* the field size, when it was not twelve */
+.sc-seasons .fin i {
+  font-family: var(--mono); font-style: normal; font-weight: 400;
+  font-size: calc(1.3 * var(--u)); color: var(--mute); letter-spacing: 0;
+}
+.sc-seasons .sub {
+  font-family: var(--mono); font-size: calc(1.3 * var(--u)); line-height: 1;
+  color: var(--chalk-dim);
+}
+/* what he averaged, and what that was worth */
+.sc-seasons .pf {
+  font-family: var(--mono); font-size: calc(1.3 * var(--u)); color: var(--chalk-dim);
+}
+.sc-seasons .pf b { font-weight: 600; color: var(--mute); }
+.sc-seasons .pf b.one   { color: var(--pl-one); }
+.sc-seasons .pf b.two   { color: var(--pl-two); }
+.sc-seasons .pf b.three { color: var(--pl-three); }
+/* A season that ended without a playoff berth is dimmed rather than marked.
+   Across a seven-season strip that reads as the shape of a career at ten
+   feet, which a tick in a sixth row would not. */
+.sc-seasons .miss.rec, .sc-seasons .miss.sub { color: var(--mute); }
+.sc-seasons .miss.fin { color: var(--chalk-dim); }
+.sc-seasons .miss.y { color: var(--gold-lo); }
+/* The title year, lit top to bottom, with the badge in place of the seed.
+   A flat tint, not a gradient: the column is five separate grid cells, so a
+   vertical gradient restarts in each one and the lit column comes out banded
+   in five steps. */
+.sc-seasons .champ { background: rgba(201,154,67,.1); }
+.sc-seasons .champ.y { color: var(--gold-hi); box-shadow: inset 0 3px 0 var(--gold); }
+.sc-seasons .champ.fin { color: var(--gold-hi); }
+.sc-seasons .tt {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.15 * var(--u));
+  letter-spacing: .16em; text-transform: uppercase; color: var(--gold);
+  border: 1px solid currentColor; border-radius: 2px;
+  padding: calc(.25 * var(--u)) calc(.55 * var(--u));
+}
+
+/* ── tendencies ────────────────────────────────────────────────────────── */
+/* The half of this screen the seasons table used to sit on. Two counted
+   facts, no prose: what he takes, and when he takes it.
+
+   Blocks, not columns of one grid. Seven cells divided by hairlines is the
+   cheapest way to lay this out and the hardest thing on the board to read at
+   ten feet: nothing tells the eye where one fact ends and the next begins, and
+   the labels — the only type on the card that says what the number under it
+   means — were the dimmest thing on it. Every cell is its own box now, lit a
+   shade off the panel and ruled at the top, and the labels are gold at the
+   size the rest of this board sets a key in.
+
+   Three rows: what he is, a caption, and when he takes each position. Only the
+   first flexes; the four position bars are as tall as their own line. */
+.sc-tend {
+  flex: 1; min-height: 0; display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  gap: calc(.9 * var(--u));
+  padding: calc(1.1 * var(--u)) calc(1.4 * var(--u)) calc(1.3 * var(--u));
+}
+.sc-tend .verdicts, .sc-tend .firsts {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  gap: calc(.9 * var(--u)); min-height: 0;
+}
+/* Each block centres its own lines, so the space above the label matches the
+   space under the number — stacked from the top they came out bottom-heavy. */
+.sc-tend .v {
+  min-width: 0; display: flex; flex-direction: column; justify-content: center;
+  gap: calc(.45 * var(--u)); text-align: center;
+  padding: calc(.8 * var(--u)) calc(1 * var(--u));
+  background: rgba(18, 32, 54, .5);
+  border: 1px solid var(--line-soft); border-top: 2px solid var(--gold-lo);
+  border-radius: 3px;
+}
+/* line-height 1 on every line in this card, and it matters: a default line
+   box carries descender space the small caps never fill, so a cell centred on
+   its boxes reads as sitting low even when it is centred to the pixel. Hugging
+   the type is what makes the space over the label match the space under the
+   number. */
+.sc-tend .k {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.3 * var(--u));
+  line-height: 1; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--gold);
+}
+.sc-tend b {
+  font-family: var(--cond); font-weight: 700; line-height: 1.05; color: var(--milk);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sc-tend .v b { font-size: calc(2.6 * var(--u)); }
+.sc-tend .rng {
+  font-family: var(--mono); font-size: calc(1.2 * var(--u)); line-height: 1;
+  color: var(--chalk-dim);
+}
+/* The caption over the four bars, with the rule running off the end of it.
+   It said FIRST QB, FIRST RB, FIRST WR, FIRST TE — the same word four times,
+   in the smallest type on the screen, doing the work one line can do. */
+.sc-tend .fhd {
+  display: flex; align-items: center; gap: calc(1 * var(--u));
+  font-family: var(--mono); font-size: calc(1.15 * var(--u)); line-height: 1;
+  letter-spacing: .22em; text-transform: uppercase; color: var(--mute);
+}
+.sc-tend .fhd::after {
+  content: ""; flex: 1; height: 1px; background: var(--line-2);
+}
+/* One bar a position, keyed down its leading edge in that position's colour.
+   The colour is what locates the cell — the eye finds the quarterback bar
+   before it reads a word of it, which is the whole question this row answers. */
+.sc-tend .f {
+  min-width: 0; display: flex; align-items: baseline; justify-content: center;
+  gap: calc(.8 * var(--u));
+  padding: calc(.75 * var(--u)) calc(.8 * var(--u));
+  background: rgba(18, 32, 54, .5);
+  border: 1px solid var(--line-soft); border-left: 3px solid var(--line-2);
+  border-radius: 3px;
+}
+.sc-tend .f-QB { border-left-color: var(--qb); }
+.sc-tend .f-RB { border-left-color: var(--rb); }
+.sc-tend .f-WR { border-left-color: var(--wr); }
+.sc-tend .f-TE { border-left-color: var(--te); }
+.sc-tend .pc {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.5 * var(--u));
+  line-height: 1; letter-spacing: .1em;
+}
+.sc-tend .f b { font-size: calc(2.6 * var(--u)); }
+/* Two numbers side by side rather than a sentence about them. "rd 6.4 to
+   their 5.6" is a thing nobody says out loud; his name over one number and
+   the room over the other is the comparison itself. */
+.sc-tend .cmp {
+  display: flex; align-items: baseline; justify-content: center;
+  gap: calc(.5 * var(--u));
+  font-family: var(--mono); font-size: calc(1.2 * var(--u)); line-height: 1;
+  color: var(--chalk);
+}
+.sc-tend .cmp i {
+  font-style: normal; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--mute); font-size: calc(1.05 * var(--u));
+}
+.sc-tend .cmp em { font-style: normal; color: var(--line-2); }
+
+/* ── his own board tonight ─────────────────────────────────────────────── */
+/* Fourteen picks, seven down each column, in the order he owns them. The
+   same shape as the lineup in the bottom band — position chip, name, team —
+   but this is the pick order, so the ones he has not reached yet are still
+   rows, carrying the round and pick they will be. */
+.sc-board {
+  flex: 1; min-height: 0; display: grid;
+  grid-template-columns: 1fr 1fr; grid-auto-flow: column;
+  grid-template-rows: repeat(7, 1fr);
+  column-gap: calc(2.4 * var(--u));
+  padding: 0 calc(1.4 * var(--u));
+}
+.sc-board .sb {
+  display: grid; align-items: center;
+  grid-template-columns: calc(4.8 * var(--u)) calc(3.6 * var(--u)) 1fr calc(3.4 * var(--u));
+  gap: calc(.8 * var(--u));
+  border-bottom: 1px solid rgba(32,48,71,.45);
+  font-family: var(--cond); font-weight: 700; font-size: calc(2.1 * var(--u));
+  color: var(--milk);
+}
+.sc-board .sb:nth-child(7n) { border-bottom: none; }
+/* Rounds 8-14 are the second column (seven rows, flowing down each in turn),
+   and they need a rule down their leading edge: the team abbreviation of a
+   pick in the left column otherwise ends up sitting against the pick number
+   of a round in the right one with only the gutter between them. */
+.sc-board .sb:nth-child(n+8) {
+  border-left: 1px solid rgba(32,48,71,.45); padding-left: calc(1.6 * var(--u));
+}
+.sc-board .pk {
+  font-family: var(--mono); font-weight: 400; font-size: calc(1.4 * var(--u));
+  color: var(--gold-lo);
+}
+.sc-board .pos { font-family: var(--mono); font-weight: 600; font-size: calc(1.4 * var(--u)); }
+.sc-board .nm { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-board .tm {
+  font-family: var(--mono); font-size: calc(1.25 * var(--u));
+  color: var(--mute); text-align: right;
+}
+.sc-board .made .pk { color: var(--gold); }
+/* A pick he has not reached is a row, not a gap: it says which round and
+   which pick it will be, so the screen answers "when is he up again" as well
+   as "what has he done". */
+.sc-board .open .nm {
+  font-family: var(--mono); font-weight: 400; font-size: calc(1.45 * var(--u));
+  letter-spacing: .04em; color: var(--mute); text-transform: uppercase;
+}
+.sc-board .now { color: var(--gold-hi); }
+.sc-board .now .pk { color: var(--gold-hi); }
+.sc-board .now .nm { text-transform: uppercase; letter-spacing: .08em; }
+
+/* every first rounder he has ever made */
+.sc-r1 {
+  display: flex; align-items: center; gap: calc(2.6 * var(--u)); overflow: hidden;
+  padding-top: calc(1.4 * var(--u)); border-top: 1px solid var(--line-soft);
+  animation: selUp .5s .28s ease-out both;
+}
+.sc-r1:empty { display: none; }
+.sc-r1 .k {
+  flex: none; font-family: var(--mono); font-size: calc(1.2 * var(--u));
+  letter-spacing: .2em; text-transform: uppercase; color: var(--mute);
+  padding-right: calc(.6 * var(--u));
+}
+/* Two lines, not one: the year and where the pick landed on top, the player
+   underneath with the full width of the chip to himself. On one line the pick
+   number left so little room that most of a round came out as "Travis Eti…",
+   and a row of ellipses is worse than no pick numbers at all.
+   They grow into the row rather than sitting at their content width: at
+   content width seven of them bunched up at the left with a third of the
+   canvas empty after the last one. Capped, though, so a manager three drafts
+   old gets three normal chips and a short row instead of three chips spread
+   across the full width with a foot of air inside each. */
+.sc-r1 .c {
+  flex: 1 1 auto; max-width: calc(26 * var(--u));
+  min-width: 0; display: flex; flex-direction: column;
+  gap: calc(.25 * var(--u));
+  padding-left: calc(1.4 * var(--u)); border-left: 1px solid var(--line);
+  font-family: var(--cond); font-weight: 700; font-size: calc(2 * var(--u));
+  color: var(--chalk);
+}
+.sc-r1 .top {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: calc(1 * var(--u));
+}
+.sc-r1 .bot { display: flex; align-items: baseline; gap: calc(.7 * var(--u)); min-width: 0; }
+.sc-r1 .c i {
+  flex: none; font-family: var(--mono); font-style: normal; font-size: calc(1.25 * var(--u));
+  color: var(--gold);
+}
+.sc-r1 .c b { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-r1 .bot span { flex: none; font-family: var(--mono); font-size: calc(1.25 * var(--u)); }
+/* where in the draft it went, which a television has the room for */
+.sc-r1 .c em {
+  flex: none; font-family: var(--mono); font-style: normal;
+  font-size: calc(1.15 * var(--u)); letter-spacing: .04em; color: var(--mute);
+}
+
+/* the bottom band: last pick, the clock, who is next */
+.sc-foot {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  gap: calc(2 * var(--uw));
+  padding-top: calc(1.6 * var(--u)); border-top: 1px solid rgba(201,154,67,.42);
+  animation: selUp .5s .34s ease-out both;
+}
+.sc-side { min-width: 0; }
+.sc-side.right { text-align: right; }
+.sc-k {
+  font-family: var(--mono); font-size: calc(1.2 * var(--u));
+  letter-spacing: .22em; text-transform: uppercase; color: var(--mute);
+  margin-bottom: calc(.5 * var(--u));
+}
+.sc-v {
+  display: flex; align-items: baseline; gap: calc(.9 * var(--u));
+  min-width: 0; font-family: var(--cond); font-weight: 700; font-size: calc(2.6 * var(--u));
+  color: var(--chalk);
+}
+.sc-side.right .sc-v { justify-content: flex-end; }
+.sc-v b { color: var(--milk); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Both faces sit inside the band's own line, and this is the one place on the
+   showcase where a cut-out must not bleed past its box: the band is the last
+   row on the canvas, so anything hanging below it is cut off by the screen
+   and anything hanging above it lands on the label. */
+.sc-v .cut {
+  flex: none; align-self: center; height: calc(5.4 * var(--u)); width: auto;
+  object-fit: contain; object-position: bottom center;
+  filter: drop-shadow(0 calc(.5 * var(--u)) calc(1.2 * var(--u)) rgba(0,0,0,.65));
+}
+.sc-v .pav {
+  flex: none; height: calc(4.2 * var(--u)); width: calc(4.2 * var(--u));
+  border-radius: 3px; object-fit: cover; object-position: top center;
+  background: var(--panel-2); align-self: center;
+}
+.sc-v .pk { flex: none; font-family: var(--mono); font-weight: 400; font-size: calc(1.5 * var(--u)); color: var(--gold); }
+.sc-v .mg { flex: none; font-weight: 600; color: var(--chalk-dim); }
+.sc-v [class^="pos-"] { flex: none; font-family: var(--mono); font-size: calc(1.4 * var(--u)); }
+.sc-mid { text-align: center; }
+.sc-mid .sc-k { color: var(--gold); }
+/* The board's own timer is behind this screen, so this is the clock. Set at
+   the size the resting screen sets its own — it is doing that job now. */
+.sc-clock {
+  font-family: var(--mono); font-weight: 600; font-size: calc(7.4 * var(--u));
+  line-height: .9; letter-spacing: .02em; color: var(--milk);
+  font-variant-numeric: tabular-nums;
+}
+.sc-clock.warn  { color: var(--gold-hi); }
+.sc-clock.panic { color: var(--bad); }
+/* `.held` and `.paused`, never bare — see the note on .idle. A bare state
+   class in this stylesheet is a landmine. */
+.sc-clock.held, .sc-clock.paused { color: var(--mute); }
+
+/* ── pre-draft ────────────────────────────────────────────────────────── */
+.idle {
+  position: absolute; inset: 0; z-index: 4; display: none;
+  flex-direction: column; align-items: center; justify-content: center; gap: calc(1.6 * var(--u));
+  background:
+    linear-gradient(180deg, rgba(5,10,18,.7), rgba(5,10,18,.88)),
+    url("bg/stage.webp") center center / cover no-repeat;
+}
+body.state-idle .idle { display: flex; }
+.idle .eyebrow::after { display: none; }
+.idle h1 {
+  margin: 0; font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(12.5 * var(--u)); line-height: .85; text-transform: uppercase;
+  text-align: center; color: var(--milk);
+}
+.idle h1 span { display: block; color: var(--gold); }
+.idle .when { font-family: var(--mono); font-weight: 600; font-size: calc(2.1 * var(--u)); letter-spacing: .24em; color: var(--chalk); }
+.idle .fmt { font-family: var(--cond); font-weight: 500; font-size: calc(1.9 * var(--u)); letter-spacing: .06em; color: var(--chalk-dim); }
+.idle .lineup { display: flex; align-items: flex-end; gap: .3vh; margin-top: .8vh; opacity: .55; }
+.idle .lineup img { height: calc(13 * var(--u)); width: auto; object-fit: contain; }
+
+/* ── connection ───────────────────────────────────────────────────────── */
+.offline {
+  position: fixed; top: calc(1 * var(--u)); left: 50%; transform: translateX(-50%); z-index: 30;
+  display: none; background: var(--bad); color: #1a0705;
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.15 * var(--u));
+  letter-spacing: .16em; padding: .6vh calc(1.4 * var(--u)); border-radius: 2px;
+}
+body.is-offline .offline { display: block; }

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>sim draft</title></head>
+<body><pre id="out">simulating…</pre>
+<script type="module">
+// Drives a fake draft into a throwaway room so the real pages can be checked
+// against live data. Open with ?room=sim. Never point this at room 2026.
+import * as C from "./core.js";
+
+const out = [];
+const say = s => { out.push(s); document.getElementById("out").textContent = out.join("\n"); };
+
+window.addEventListener("error", e => say("ERROR: " + e.message));
+window.addEventListener("unhandledrejection", e => say("REJECT: " + (e.reason?.message || e.reason)));
+
+if (C.ROOM === "2026") {
+  say("REFUSING: this is the real room. Use ?room=sim");
+} else {
+  await C.loadData();
+  say(`room=${C.ROOM} — wiping`);
+  await C.resetDraft();
+
+  const N = Number(new URLSearchParams(location.search).get("picks") || 15);
+  const taken = new Set();
+
+  for (let o = 1; o <= N; o++) {
+    const mgr = C.managerOf(o);
+    // Pick a plausible player: the best available, with some noise so we get
+    // steals and reaches to check the tagging.
+    const pool = C.DATA.players.filter(p => !taken.has(p.id)).slice(0, 12);
+    const p = pool[Math.floor(Math.random() * Math.min(pool.length, o === 1 ? 1 : 8))];
+    taken.add(p.id);
+
+    await C.setState({ status: "clock", current: o, pending: null,
+                       clockEnds: Date.now() + 120000, paused: false });
+    await C.submitPick(o, p);
+    await C.commitPick(o, p, "app");
+    await C.setState({ status: "revealed" });
+
+    const v = C.verdict(o, p.board);
+    say(`${C.roundOf(o)}.${String(C.roundPickOf(o)).padStart(2,"0")}  ` +
+        `${(mgr?mgr.name:"?").padEnd(8)} ${p.name.padEnd(22)} ${p.pos.padEnd(3)} ` +
+        `board ${String(p.board).padStart(3)}  ${v ? v.tag : ""}`);
+  }
+
+  // Leave it mid-draft, on the clock, so the board shows a live state.
+  await C.setState({ status: "clock", current: N + 1, pending: null,
+                     clockEnds: Date.now() + 95000, paused: false });
+  say(`\ndone — ${N} picks written, pick ${N+1} on the clock`);
+  document.title = "SIM DONE";
+}
+</script>
+</body></html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05080f">
+<title>PAMS 2026 Draft Day</title>
+<link rel="stylesheet" href="draft.css">
+<link rel="stylesheet" href="phone.css">
+<style>
+  .hero { text-align: center; padding: 2.6rem 1rem 1rem; }
+  .hero .eb {
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .3em;
+    color: var(--gold); text-transform: uppercase;
+  }
+  .hero h1 {
+    font-family: var(--display); font-weight: 900; font-stretch: 62%; font-size: clamp(2.8rem, 13vw, 4.6rem);
+    line-height: .86; margin: .5rem 0; text-transform: uppercase; color: var(--milk);
+  }
+  .hero h1 span { display: block; color: var(--gold); }
+  .hero .fmt { font-size: .95rem; font-weight: 500; color: var(--chalk-dim); }
+  .hero .cd {
+    font-family: var(--mono); font-weight: 700; font-size: 1.3rem;
+    letter-spacing: .16em; margin-top: .9rem; color: var(--milk);
+  }
+  .lineup {
+    display: flex; align-items: flex-end; justify-content: center;
+    gap: .1rem; margin-top: 1rem; opacity: .45; overflow: hidden;
+  }
+  .lineup img { height: 84px; width: auto; object-fit: contain; }
+
+  .cards { display: grid; gap: .6rem; padding: 1.2rem .9rem; }
+  .card {
+    display: block; text-decoration: none; color: inherit; padding: 1rem;
+    border-radius: 6px; border: 1px solid var(--line-soft);
+    background: rgba(16,23,36,.8); border-left: 4px solid var(--gold);
+  }
+  .card:active { background: var(--panel-2); }
+  .card .t {
+    font-family: var(--display); font-weight: 900; font-stretch: 62%; font-size: 1.5rem; text-transform: uppercase;
+    line-height: 1; color: var(--milk);
+  }
+  .card .d { font-size: .95rem; font-weight: 500; color: var(--chalk-dim); margin-top: .4rem; line-height: 1.45; }
+  .card .w {
+    font-family: var(--mono); font-size: .64rem; letter-spacing: .18em;
+    color: var(--gold); text-transform: uppercase; margin-top: .6rem;
+  }
+  .card.tv { border-left-color: var(--milk); }
+  .card.tv .w { color: var(--milk); }
+  .card.you { border-left-color: var(--qb); }
+  .card.you .w { color: var(--qb); }
+
+  .runbook { padding: 0 .9rem 2.5rem; }
+  .runbook h2 {
+    font-family: var(--mono); font-size: .66rem; letter-spacing: .24em;
+    color: var(--mute); text-transform: uppercase;
+    border-bottom: 1px solid var(--line); padding-bottom: .4rem; margin: 1.4rem 0 .8rem;
+  }
+  .runbook ol { margin: 0; padding-left: 1.1rem; }
+  .runbook li { margin: .5rem 0; line-height: 1.5; color: var(--chalk-dim); font-weight: 500; }
+  .runbook li b, .runbook p b { color: var(--milk); font-weight: 700; }
+  .runbook p { color: var(--chalk-dim); line-height: 1.55; margin: .5rem 0; font-weight: 500; }
+</style>
+</head>
+<body class="phone">
+
+<div class="wrap">
+  <div class="hero">
+    <div class="eb">PA Milk Society</div>
+    <h1>2026<span>Draft Day</span></h1>
+    <div class="fmt">14 rounds &middot; snake &middot; full PPR &middot; 6pt passing TD &middot; TE premium</div>
+    <div class="cd" id="cd">&nbsp;</div>
+    <div class="lineup" id="lineup"></div>
+  </div>
+
+  <div class="cards">
+    <a class="card tv" href="board.html">
+      <div class="t">The Board</div>
+      <div class="d">The television. Open this on the laptop you mirror to the
+        TV, then go fullscreen. Nobody touches it once it is up.</div>
+      <div class="w">Big screen &middot; leave it alone</div>
+    </a>
+
+    <a class="card you" href="control.html">
+      <div class="t">Commissioner</div>
+      <div class="d">Yours only. Start the draft, hold each pick, announce it,
+        move to the next. Never send this link to the group.</div>
+      <div class="w">Your phone &middot; keep it private</div>
+    </a>
+
+    <a class="card" href="pick.html">
+      <div class="t">Make Your Pick</div>
+      <div class="d">What the managers open. Pick who you are once, then tap a
+        player when you are on the clock.</div>
+      <div class="w">Send this one to the group chat</div>
+    </a>
+  </div>
+
+  <div class="runbook">
+    <h2>How a pick goes</h2>
+    <ol>
+      <li>The board puts a manager <b>on the clock</b> and the timer starts.</li>
+      <li>He taps his player on <b>Make Your Pick</b>. The TV flips to
+        <b>THE PICK IS IN</b> and gives nothing away.</li>
+      <li>You hit <b>Announce in 5s</b>, walk to the TV and say the name. The
+        board reveals him on cue with his card, his tags, his lineup and every
+        time PAMS has drafted him before.</li>
+      <li>He enters the pick in Sleeper. You hit <b>Next Pick</b>.</li>
+    </ol>
+
+    <h2>When you speed up</h2>
+    <p>Rounds one through four are worth the ceremony. After that, flip the
+      console to <b>Live Feed</b> and everyone just drafts in Sleeper as normal.
+      The board keeps reading Sleeper every few seconds and fills the rail and
+      the ticker on its own, with no buttons to press.</p>
+
+    <h2>If something goes sideways</h2>
+    <p>Any pick can be undone from the console log, which rewinds the clock to
+      that pick. If a phone dies, use <b>Enter a pick yourself</b>. If the app
+      falls over entirely, keep drafting in Sleeper and the board will catch up
+      the moment it comes back.</p>
+  </div>
+</div>
+
+<script type="module">
+  const AT = new Date("2026-08-28T19:15:00-04:00").getTime();
+  setInterval(() => {
+    const d = AT - Date.now(), el = document.getElementById("cd");
+    if (d <= 0) { el.textContent = "DRAFT DAY"; return; }
+    const days = Math.floor(d / 864e5), h = Math.floor(d / 36e5) % 24;
+    const m = Math.floor(d / 6e4) % 60, s = Math.floor(d / 1000) % 60;
+    el.textContent = days > 0
+      ? `${days}D ${h}H ${m}M ${s}S`
+      : `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+  }, 500);
+
+  fetch("data/managers.json").then(r => r.json()).then(ms => {
+    document.getElementById("lineup").innerHTML = ms
+      .filter(m => m.cutout).sort((a, b) => a.slot - b.slot)
+      .map(m => `<img src="${m.cutout}" alt="" onerror="this.remove()">`).join("");
+  }).catch(() => {});
+</script>
+</body>
+</html>

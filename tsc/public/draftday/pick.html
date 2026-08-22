@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05080d">
+<title>Make Your Pick — PAMS 2026</title>
+<link rel="stylesheet" href="draft.css">
+<link rel="stylesheet" href="phone.css">
+</head>
+<body class="phone">
+
+<div class="pbar">
+  <div class="mark">PAMS <b>2026 DRAFT</b></div>
+  <div class="who" id="who"></div>
+</div>
+
+<!-- who are you -->
+<section class="wrap pickme" id="chooser" hidden>
+  <h2>Who are you?</h2>
+  <div class="mgrid" id="mgrid"></div>
+  <p class="tiny" style="text-align:center;margin-top:1.4rem">
+    Pick once. This phone remembers you.
+  </p>
+</section>
+
+<!-- the draft room -->
+<section class="wrap" id="room" hidden>
+  <div class="status" id="status">
+    <div class="eb" id="stEb">WAITING</div>
+    <div class="big" id="stBig">&mdash;</div>
+    <div class="sm" id="stSm">&nbsp;</div>
+    <div class="clock" id="stClock" hidden>2:00</div>
+  </div>
+
+  <div class="roster" id="rosterBox"></div>
+
+  <div class="tools">
+    <input class="search" id="q" placeholder="Search a player" autocomplete="off"
+           autocorrect="off" spellcheck="false">
+    <div class="filters" id="filters"></div>
+  </div>
+
+  <div class="plist" id="plist"></div>
+  <div class="hint" id="more"></div>
+</section>
+
+<!-- confirm -->
+<div class="sheet" id="sheet">
+  <div class="sheet-in">
+    <div class="sheet-top">
+      <img id="shImg" alt="">
+      <div style="min-width:0">
+        <div class="nm" id="shName">&nbsp;</div>
+        <div class="sub" id="shSub">&nbsp;</div>
+      </div>
+    </div>
+    <div class="note" id="shNote"></div>
+    <div class="warn-need" id="shWarn"></div>
+    <div class="sheet-btns">
+      <button class="btn ghost" id="shCancel">Back</button>
+      <button class="btn go" id="shGo">Send the pick</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="pick.js"></script>
+</body>
+</html>

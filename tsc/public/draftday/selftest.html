@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>draft self test</title></head>
+<body><pre id="out">running…</pre>
+<script type="module">
+import * as C from "./core.js";
+
+const lines = [];
+let fail = 0;
+const ok = (cond, label) => {
+  lines.push((cond ? "PASS  " : "FAIL  ") + label);
+  if (!cond) fail++;
+};
+
+try {
+  await C.loadData();
+  lines.push(`loaded ${C.DATA.players.length} players, ` +
+             `${Object.keys(C.DATA.history).length} with history, ` +
+             `${C.DATA.managers.length} managers`);
+  lines.push("");
+
+  // ── snake order ──
+  ok(C.slotOf(1)  === 1,  "pick 1 -> slot 1");
+  ok(C.slotOf(12) === 12, "pick 12 -> slot 12");
+  ok(C.slotOf(13) === 12, "pick 13 -> slot 12 (snake turn)");
+  ok(C.slotOf(24) === 1,  "pick 24 -> slot 1");
+  ok(C.slotOf(25) === 1,  "pick 25 -> slot 1 (turn back)");
+  ok(C.slotOf(36) === 12, "pick 36 -> slot 12");
+  ok(C.roundOf(12) === 1 && C.roundOf(13) === 2, "round boundaries");
+  ok(C.roundPickOf(13) === 1, "pick 13 is round pick 1");
+  ok(C.TOTAL === 168, "168 total picks");
+
+  // every slot gets exactly 14 picks
+  const per = {};
+  for (let o = 1; o <= C.TOTAL; o++) per[C.slotOf(o)] = (per[C.slotOf(o)] || 0) + 1;
+  ok(Object.keys(per).length === 12 &&
+     Object.values(per).every(v => v === 14), "every slot drafts exactly 14");
+
+  // ── managers ──
+  const slots = C.DATA.managers.map(m => m.slot).sort((a,b)=>a-b);
+  ok(JSON.stringify(slots) === JSON.stringify([...Array(12)].map((_,i)=>i+1)),
+     "slots 1-12 all present, no dupes");
+  ok(C.managerOf(1).name === "Ricci",  "pick 1 is Ricci");
+  ok(C.managerOf(5).name === "Joey",   "pick 5 is Joey");
+  ok(C.managerOf(9).name === "Luke",   "pick 9 is Luke (not on Sleeper yet)");
+  ok(C.managerOf(13).name === "Isaac", "pick 13 snakes back to Isaac");
+
+  // ── next pick for a slot ──
+  ok(C.nextPickForSlot(5, 2) === 5,   "Joey's next pick from 2 is 5");
+  ok(C.nextPickForSlot(5, 6) === 20,  "Joey's next after 5 is 20");
+
+  // ── verdict ──
+  ok(C.verdict(40, 10).tag === "STEAL", "pick 40 of board-10 player is a steal");
+  ok(C.verdict(10, 40).tag === "REACH", "pick 10 of board-40 player is a reach");
+  ok(C.verdict(10, 12).tag === "ON BOARD", "small gap reads as on board");
+
+  // ── roster needs ──
+  const fake = [
+    { slot: 5, pos: "RB", playerId: "a", overall: 5 },
+    { slot: 5, pos: "RB", playerId: "b", overall: 20 },
+    { slot: 5, pos: "WR", playerId: "c", overall: 29 },
+  ];
+  const r = C.rosterFor(fake, 5);
+  ok(r.count.RB === 2, "counts two RBs");
+  ok(!r.need.includes("RB"), "RB starters satisfied");
+  ok(r.need.includes("WR"), "still needs a WR");
+  ok(r.need.includes("QB") && r.need.includes("TE"), "still needs QB and TE");
+  ok(r.need.includes("FLEX"), "flex still open with no spare");
+
+  const spare = C.rosterFor([...fake,
+    { slot: 5, pos: "WR", playerId: "d", overall: 44 },
+    { slot: 5, pos: "WR", playerId: "e", overall: 53 }], 5);
+  ok(!spare.need.includes("FLEX"), "third WR fills the flex");
+
+  // ── position run ──
+  const run = C.positionRun([...Array(6)].map((_, i) =>
+    ({ pos: i < 4 ? "RB" : "WR" })));
+  ok(run && run.pos === "RB" && run.n === 4, "detects a 4-RB run in 6");
+  ok(C.positionRun([...Array(6)].map(() => ({ pos: "K" }))) === null,
+     "kicker runs are not runs");
+  // Quarterbacks and tight ends run at three in seven, not four in six.
+  const qbRun = C.positionRun([...Array(7)].map((_, i) =>
+    ({ pos: i % 2 === 0 ? "QB" : "RB" })));
+  ok(qbRun && qbRun.pos === "QB" && qbRun.n === 4 && qbRun.window === 7,
+     "detects a QB run in 7");
+  ok(C.positionRun([...Array(6)].map((_, i) => ({ pos: i < 3 ? "TE" : "RB" }))) === null,
+     "three TEs in six is not deep enough to call");
+  ok(C.positionRun([...Array(7)].map((_, i) =>
+    ({ pos: i < 3 ? "TE" : (i % 2 ? "RB" : "WR") })))?.pos === "TE",
+     "three TEs in seven is");
+
+  // ── best available excludes drafted ──
+  const top = C.DATA.players[0];
+  const ba = C.bestAvailable([{ playerId: top.id }], null, 3);
+  ok(!ba.some(p => p.id === top.id), "drafted player leaves the board");
+  ok(C.bestAvailable([], "QB", 5).every(p => p.pos === "QB"), "position filter works");
+
+  // ── history join ──
+  const chase = C.DATA.players.find(p => p.name === "Ja'Marr Chase");
+  const ch = C.historyFor(chase);
+  ok(ch.length > 0, "Ja'Marr Chase has PAMS history");
+  ok(ch[0].y >= ch[ch.length - 1].y, "history is newest first");
+  const names = new Set(C.DATA.managers.map(m => m.name));
+  const allHist = Object.values(C.DATA.history).flat();
+  const cur = allHist.filter(h => h.active);
+  ok(cur.every(h => names.has(h.m)),
+     "every active-manager history row maps to a real manager");
+
+  // ── headshots ──
+  ok(C.headshot(chase).includes(chase.id), "player headshot url uses sleeper id");
+  const def = C.DATA.players.find(p => p.pos === "DEF");
+  ok(!def || C.headshot(def).includes("team_logos"), "defenses use team logos");
+
+  // ── board ordering is unique and dense ──
+  const boards = C.DATA.players.map(p => p.board);
+  ok(new Set(boards).size === boards.length, "board ranks are unique");
+  ok(Math.min(...boards) === 1, "board starts at 1");
+
+  // ── posrank sanity ──
+  const rb1 = C.DATA.players.find(p => p.pos === "RB" && p.posrank === 1);
+  ok(!!rb1, "there is an RB1");
+  ok(C.DATA.players.filter(p => p.pos === "RB" && p.posrank === 1).length === 1,
+     "exactly one RB1");
+
+  // ── the showcase's data ──
+  // Everything the showcase says about a career is counted in
+  // build_seasons.mjs off one set of rows, so it all has to reconcile. It did
+  // not when the ledger came from the hand-built dossier and the career line
+  // came from the managers directory: Mason had four playoff trips in one and
+  // three in the other, and a career record two losses apart. If any of these
+  // start failing, source/seasons.json needs rebuilding, not working around.
+  ok(C.DATA.managers.every(m => (m.ledger || []).length),
+     "every manager carries a season ledger");
+  ok(C.DATA.managers.every(m =>
+       m.ledger.every((y, i) => !i || y.y > m.ledger[i - 1].y)),
+     "ledgers run oldest to newest");
+  const wl = s => String(s || "0-0").split("-").map(Number);
+  const sums = C.DATA.managers.map(m => {
+    const reg = m.ledger.reduce((a, y) => {
+      const [w, l] = wl(y.rec); return [a[0] + w, a[1] + l];
+    }, [0, 0]);
+    const [pw, pl] = wl(m.career.playoff_record);
+    const [cw, cl] = wl(m.career.record);
+    const [rw, rl] = wl(m.career.regular_record);
+    return { name: m.name,
+      ok: reg[0] === rw && reg[1] === rl && rw + pw === cw && rl + pl === cl };
+  });
+  const off = sums.filter(s => !s.ok).map(s => s.name);
+  ok(!off.length, `ledger + playoffs = career record for all twelve${
+    off.length ? ` (off: ${off.join(", ")})` : ""}`);
+  const trips = C.DATA.managers.filter(m =>
+    m.career.playoffs !== m.ledger.filter(y => y.br).length).map(m => m.name);
+  ok(!trips.length, `playoff berths in the ledger match the career count${
+    trips.length ? ` (off: ${trips.join(", ")})` : ""}`);
+
+  // A seed is a playoff seed: it exists when he made it and never otherwise,
+  // and it is inside the field. This is the row that was wrong on the
+  // television — Mason was showing as the 6 seed in 2021 and 10th at the end
+  // of it, off a dossier that had him in a playoff he did not make.
+  ok(C.DATA.managers.every(m => m.ledger.every(y =>
+       (y.br ? y.seed >= 1 && y.seed <= 8 : y.seed === null))),
+     "a seed exists only for a season he made the playoffs");
+  ok(C.DATA.managers.every(m => m.ledger.every(y =>
+       y.fin >= 1 && y.fin <= y.teams)),
+     "every finish is inside its own season's field");
+  ok(C.DATA.managers.every(m => m.ledger.every(y => y.ppg > 60 && y.ppg < 220)),
+     "every season carries a believable points average");
+  ok(C.DATA.managers.every(m => m.ledger.every(y => y.pfr >= 1 && y.pfr <= y.teams)),
+     "every points rank is inside its own season's field");
+  // Missing the playoffs means finishing below everyone who made them, and
+  // the field has never been bigger than eight.
+  ok(C.DATA.managers.every(m => m.ledger.every(y => y.br || y.fin > 6 ||
+       (y.y === 2020 && y.fin > 8))),
+     "a season he missed never finishes inside the bracket");
+  const mason2021 = C.DATA.managers.find(m => m.name === "Mason")
+    .ledger.find(y => y.y === 2021);
+  ok(mason2021.fin === 7 && mason2021.br === false && mason2021.seed === null,
+     `Mason 2021 is 8-6, missed, 7th (was 6 seed and 10th): ` +
+     `${mason2021.rec}, ${mason2021.br ? "made" : "missed"}, ${mason2021.fin}th`);
+  ok(C.DATA.managers.every(m => m.career.titles ===
+       m.ledger.filter(y => y.fin === 1).length),
+     "first-place seasons match the title count");
+  ok(C.DEFAULT_STATE.showcase === null, "the board starts with no showcase up");
+
+  // The history band follows the round the draft is in, so every round of
+  // this draft has to be there for everyone, oldest year first.
+  const rp = m => m.round_picks || {};
+  ok(C.DATA.managers.every(m =>
+       [...Array(C.ROUNDS)].every((_, i) => (rp(m)[String(i + 1)] || []).length)),
+     "every manager has picks filed for all 14 rounds");
+  ok(C.DATA.managers.every(m => Object.values(rp(m)).every(list =>
+       list.every((p, i) => !i || p.y >= list[i - 1].y))),
+     "round history runs oldest to newest");
+  // One entry per draft he has been in, and the pick numbers are that year's,
+  // not this one's: PAMS had fourteen teams in 2019, so a first rounder from
+  // that draft can read pk 13 or pk 14 on a board whose first round now ends
+  // at twelve. That is the truth about where he picked and it stays.
+  ok(C.DATA.managers.every(m =>
+       (rp(m)["1"] || []).length === m.draft_tendency.drafts),
+     "one first rounder per draft each manager has been in");
+  ok(C.DATA.managers.every(m => Object.values(rp(m)).every(l =>
+       l.every(p => p.ov >= 1 && p.ov <= 210))),
+     "every historical pick number is inside its own draft");
+
+  // Everyone plays eleven opponents, three of them twice.
+  ok(C.DATA.managers.every(m => C.doublesFor(m.name).length === 3),
+     "every manager plays exactly three opponents twice");
+  // Rivalry week is week 11 and it is the only meeting for a rival in the
+  // other conference. Two of the six pairs are inside one conference — Kyle
+  // and Sean, Charlie and Luke — and those play their rival twice like any
+  // other conference opponent.
+  ok(C.DATA.managers.every(m => {
+       const r = C.rivalOf(m.name);
+       const other = C.DATA.managers.find(x => x.name === r);
+       if (!r || !other) return false;
+       const twice = C.doublesFor(m.name).includes(r);
+       return twice === (other.conference === m.conference);
+     }), "a rival is played twice only when he is in the same conference");
+
+  ok(C.mmss(125000) === "2:05", "clock formats 2:05");
+  ok(C.ordinal(1) === "1st" && C.ordinal(12) === "12th" && C.ordinal(23) === "23rd",
+     "ordinals");
+
+} catch (e) {
+  lines.push("THREW: " + (e && e.stack || e));
+  fail++;
+}
+
+lines.push("");
+lines.push(fail === 0 ? `ALL GOOD — 0 failures` : `${fail} FAILURE(S)`);
+document.getElementById("out").textContent = lines.join("\n");
+document.title = fail === 0 ? "SELFTEST OK" : "SELFTEST FAIL";
+</script>
+</body></html>

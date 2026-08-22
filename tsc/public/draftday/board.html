@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PAMS 2026 Draft Board</title>
+<link rel="stylesheet" href="draft.css">
+</head>
+<body class="board state-idle">
+
+<div class="offline">CONNECTION LOST &middot; REBUILDING FROM SLEEPER</div>
+
+<div id="frame">
+
+<header class="hdr">
+  <div class="hdr-mark">
+    <span class="hdr-kicker">PA Milk Society</span>
+    <span class="hdr-title">The 2026 <em>Draft</em></span>
+  </div>
+  <div class="hdr-rule"></div>
+  <div class="hdr-meta">
+    <span>ROUND <b id="hdrRound">1</b></span>
+    <span>PICK <b id="hdrPick">1</b></span>
+  </div>
+</header>
+
+<div class="main">
+
+  <section class="stage">
+
+    <div class="idle">
+      <div class="eyebrow">Friday, August 28 &middot; 7:15 PM</div>
+      <h1>THE MILK IS<span>ON THE CLOCK</span></h1>
+      <div class="when" id="idleCount">&nbsp;</div>
+      <div class="fmt">14 rounds &middot; snake &middot; full PPR &middot; 6pt passing TD &middot; TE premium</div>
+      <div class="lineup" id="idleLineup"></div>
+    </div>
+
+    <!-- phase three: the detail screen. Static — stays up until the
+         commissioner hits Next Pick, so unlike the selection graphic it
+         doesn't take over the header and ticker, and it stops short of the
+         bottom band on purpose: that and the wall in the rail stay up the
+         whole time this is showing. -->
+    <div class="reveal">
+      <div class="reveal-shot-wrap">
+        <img class="team-bg" id="revTeamBg" alt="">
+        <img class="reveal-shot" id="revShot" alt="">
+      </div>
+      <div class="reveal-body">
+        <div class="reveal-eyebrow" id="revEyebrow">&nbsp;</div>
+        <div class="reveal-name" id="revName">&nbsp;</div>
+        <div class="reveal-meta">
+          <img id="revLogo" alt=""><span id="revLine">&nbsp;</span>
+        </div>
+        <div class="reveal-tags" id="revTags"></div>
+        <div class="reveal-note" id="revNote"></div>
+        <div class="reveal-foot">
+          <div class="reveal-hist" id="revHist"></div>
+          <div class="reveal-also" id="revAlso"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- the resting state -->
+    <div class="clock-wrap">
+      <div id="clkPortrait"></div>
+
+      <div class="clock-info">
+        <div class="eyebrow">ON THE CLOCK</div>
+        <div class="clock-id">
+          <div class="clock-id-top">
+            <div class="mgr-name" id="clkName">&nbsp;</div>
+            <div class="rank-badge" id="clkRank"></div>
+          </div>
+          <div class="mgr-team" id="clkTeam">&nbsp;</div>
+        </div>
+        <div class="clock-note">
+          <div class="say" id="clkNote">&nbsp;</div>
+          <div class="clock-facts" id="clkFacts"></div>
+        </div>
+        <div class="clock-row">
+          <div class="timer" id="clkTimer">2:00</div>
+          <span class="paused-tag">Paused</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- bottom band: best available and the lineup, side by side, full stage
+         width. Used to be the rail's job — moved down here so the round wall
+         could take the whole right side instead. -->
+    <div class="bottom-band">
+      <div class="bb-sec bb-ba">
+        <div class="rail-hd">
+          <span>BEST AVAILABLE</span>
+          <span class="run" id="runAlert"></span>
+        </div>
+        <div class="ba-list" id="baList"></div>
+      </div>
+      <!-- Takes the same place in the band while a reveal is up, the way a
+           broadcast puts the next team and their clock on screen under the
+           pick that just happened. Best available is not the thing you want
+           there: the clock is on the far side of the screen and the reveal is
+           covering it. -->
+      <div class="bb-sec bb-next">
+        <div class="rail-hd"><span id="nextHd">NEXT ON THE CLOCK</span><span class="ct" id="nextPk"></span></div>
+        <div class="next-body">
+          <!-- the built-up left side: angled planes over a gold dot field.
+               Its own element rather than another background layer on
+               .next-body because the dots need a mask of their own. -->
+          <div class="next-art" aria-hidden="true"></div>
+          <div class="next-ghost" id="nextGhost"></div>
+          <img class="next-face" id="nextFace" alt="">
+          <div class="next-who">
+            <div class="next-name" id="nextName">&nbsp;</div>
+            <div class="next-team" id="nextTeam">&nbsp;</div>
+          </div>
+          <div class="next-time">
+            <div class="next-clock" id="nextClk">&mdash;</div>
+            <div class="next-note" id="nextNote"></div>
+          </div>
+        </div>
+        <!-- Same card at the turn of a round, where there is no clock to show
+             and the round itself is the news. The man leading it off is still
+             on it, smaller, off to the side. -->
+        <div class="round-up">
+          <div class="ru-left">
+            <div class="ru-word">Round</div>
+            <div class="ru-num" id="ruNum">2</div>
+          </div>
+          <div class="ru-right">
+            <div class="ru-when">Starting shortly</div>
+            <div class="ru-who">
+              <img class="ru-face" id="ruFace" alt="">
+              <div class="ru-id">
+                <div class="ru-name" id="ruName">&nbsp;</div>
+                <div class="ru-pick" id="ruPick">&nbsp;</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bb-sec bb-lu">
+        <div class="lineup-hd"><span>LINEUP</span><span class="ct" id="luCount"></span></div>
+        <div class="lineup-grid" id="luGrid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- the round wall: every slot of the round in progress, two across, six
+       deep, Madden style, running the full height of the right side. Now
+       that it lives in the rail rather than .stage it stays up through the
+       reveal instead of getting covered — the bottom band took over that
+       job when it moved into .stage. -->
+  <aside class="rail">
+    <div class="wall-hd">
+      <span id="roundHd">ROUND 1</span>
+    </div>
+    <div class="wall-grid" id="roundList"></div>
+  </aside>
+</div>
+
+<div class="ticker">
+  <div class="ticker-tag" id="tickerTag">EVERY PICK</div>
+  <div class="ticker-view"><div class="ticker-track" id="tickerTrack"></div></div>
+</div>
+
+<!-- phase one: the stage goes dark. Headline left, the overall pick as a
+     huge outlined numeral right, and who locked it along the bottom. Two
+     lines in the headline, not three: "THE PICK / IS IN" breaks evenly
+     where "THE / PICK IS / IN" leaves a stub. -->
+<div class="pickin">
+  <div class="pi-left">
+    <h2 class="pi-head"><span>The Pick</span><span>Is In</span></h2>
+    <div class="pi-locked">
+      <img class="pi-face" id="pickinFace" alt="">
+      <div class="pi-who">
+        <div class="pi-eyebrow">Selection locked</div>
+        <div class="pi-name" id="pickinName">&nbsp;</div>
+        <div class="pi-sub" id="pickinSub">&nbsp;</div>
+      </div>
+    </div>
+  </div>
+  <div class="pi-right">
+    <div class="pi-rp" id="pickinRp">&nbsp;</div>
+    <div class="pi-num" id="pickinNum">1</div>
+  </div>
+</div>
+
+<!-- phase two: the selection graphic, held for ~7.5 seconds. A direct child
+     of #frame, not .main — this is the brief, all-in dramatic beat, so it
+     takes over everything including the header and the ticker. The static
+     detail screen it collapses into is the opposite: it leaves the bottom
+     band and the wall up because people are looking at it for a while. -->
+<div class="selection">
+  <div class="sel-shot">
+    <img class="team-bg" id="selTeamBg" alt="">
+    <img class="sel-photo" id="selShot" alt="">
+  </div>
+  <div class="sel-body">
+    <div class="sel-num" id="selNum">01</div>
+    <div class="sel-owner" id="selOwner">&nbsp;</div>
+    <div class="sel-name" id="selName">&nbsp;</div>
+    <div class="sel-pos" id="selPos">&nbsp;</div>
+    <div class="sel-badge" id="selBadge">&nbsp;</div>
+    <div class="sel-tagline" id="selTag">&nbsp;</div>
+  </div>
+</div>
+
+<!-- The manager showcase. The commissioner puts it up from the console while
+     a man is on the clock and takes it down when he has had enough of it, so
+     it is static the way the detail screen is rather than timed like the
+     reveal. It does cover the whole canvas though — header, ticker and all —
+     which is exactly why it carries a clock, the last pick and who is up next
+     along its own bottom edge: nothing else on the board is left showing to
+     do that job. -->
+<div class="showcase" id="showcase">
+  <div class="sc-head">
+    <img class="sc-face" id="scFace" alt="">
+    <div class="sc-id">
+      <div class="sc-eyebrow">Manager showcase</div>
+      <div class="sc-name" id="scName">&nbsp;</div>
+      <div class="sc-team" id="scTeam">&nbsp;</div>
+    </div>
+    <div class="sc-rank" id="scRank"></div>
+  </div>
+
+  <div class="sc-career" id="scCareer"></div>
+  <!-- the season he is drafting for: week one, rivalry week, his next pick -->
+  <div class="sc-sched" id="scSched"></div>
+
+  <div class="sc-cols">
+    <div class="sc-left">
+      <!-- the career as a row of seasons rather than a table of them: it was
+           half this screen and all it said was what happened, year by year -->
+      <section class="sc-panel">
+        <div class="sc-hd"><span>Career</span><span class="ct" id="scSeasonsCt"></span></div>
+        <div class="sc-seasons" id="scSeasons"></div>
+      </section>
+      <!-- what the seasons table was taking the room from: what he actually
+           does in a draft, which is the question while he is in one -->
+      <section class="sc-panel">
+        <div class="sc-hd"><span>Tendencies</span><span class="ct" id="scTendCt"></span></div>
+        <div class="sc-tend" id="scTend"></div>
+      </section>
+    </div>
+    <!-- his own board: every pick he owns tonight, in order, the ones he has
+         not reached yet standing empty with the round and pick on them -->
+    <section class="sc-panel">
+      <div class="sc-hd"><span>Draft board</span><span class="ct" id="scBoardCt"></span></div>
+      <div class="sc-board" id="scBoard"></div>
+    </section>
+  </div>
+
+  <div class="sc-r1" id="scR1"></div>
+
+  <div class="sc-foot">
+    <div class="sc-side">
+      <div class="sc-k">Last pick</div>
+      <div class="sc-v" id="scPrev">&mdash;</div>
+    </div>
+    <div class="sc-mid">
+      <div class="sc-k" id="scClockK">On the clock</div>
+      <div class="sc-clock" id="scClock">&mdash;</div>
+    </div>
+    <div class="sc-side right">
+      <div class="sc-k">Up next</div>
+      <div class="sc-v" id="scNext">&mdash;</div>
+    </div>
+  </div>
+</div>
+
+<!-- The two full-screen announcements, siblings of .selection and sized the
+     same way: whoever just came on the clock, and the top of a new round.
+     Both are queued through showAnnounce() in board.js so that the last pick
+     of a round plays the round card first and the on-the-clock card after,
+     rather than stacking them on top of each other. -->
+<div class="announce oncard" id="onCard">
+  <div class="oc-shot"><img id="ocShot" alt=""></div>
+  <div class="oc-body">
+    <div class="oc-eyebrow" id="ocEyebrow">&nbsp;</div>
+    <div class="oc-name" id="ocName">&nbsp;</div>
+    <div class="oc-verb">Is now on the clock</div>
+    <div class="oc-team" id="ocTeam">&nbsp;</div>
+    <div class="oc-facts" id="ocFacts"></div>
+  </div>
+</div>
+
+<!-- The top of a round. Same set and the same two-column shape as the
+     on-the-clock card rather than a centred stack on a flat wash: the numeral
+     hard left in the face the pick-is-in beat uses, the twelve slots of the
+     round laid out on the right in the order they will actually run, with
+     whoever leads it off lit. -->
+<div class="announce roundcard" id="roundCard">
+  <div class="rc-left">
+    <div class="rc-word">Round</div>
+    <div class="rc-num" id="rcNum">1</div>
+    <div class="rc-of" id="rcOf">&nbsp;</div>
+  </div>
+  <div class="rc-right">
+    <div class="rc-hd">
+      <span class="rc-sub" id="rcSub">&nbsp;</span>
+      <span class="rc-turn" id="rcTurn">&nbsp;</span>
+    </div>
+    <div class="rc-order" id="rcOrder"></div>
+  </div>
+</div>
+
+</div><!-- /#frame -->
+
+<script type="module" src="board.js"></script>
+</body>
+</html>

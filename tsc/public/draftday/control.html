@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05080d">
+<title>Commissioner Console — PAMS 2026</title>
+<link rel="stylesheet" href="draft.css">
+<link rel="stylesheet" href="phone.css">
+</head>
+<body class="phone">
+
+<div class="pbar">
+  <div class="mark">COMMISSIONER <b>CONSOLE</b></div>
+  <div class="who" id="who"></div>
+</div>
+
+<section class="wrap console">
+
+  <!-- what is happening right now -->
+  <div class="cbox" id="nowBox">
+    <div class="hd">ON THE CLOCK</div>
+    <div style="display:flex;align-items:center;gap:.8rem">
+      <div id="nowAv"></div>
+      <div style="min-width:0;flex:1">
+        <div style="font-size:1.6rem;font-weight:700;text-transform:uppercase;line-height:1"
+             id="nowName">&mdash;</div>
+        <div class="tiny" id="nowMeta">&nbsp;</div>
+      </div>
+      <div style="font-family:var(--mono);font-size:1.8rem;font-weight:700"
+           id="nowClock">&mdash;</div>
+    </div>
+  </div>
+
+  <!-- the one big button -->
+  <button class="btn go big-go" id="mainBtn">START THE DRAFT</button>
+  <button class="btn" id="delayBtn" hidden>Announce in 5s &mdash; walk up first</button>
+  <div class="tiny" id="mainHint" style="text-align:center"></div>
+
+  <!-- clock -->
+  <div class="cbox">
+    <div class="hd">CLOCK</div>
+    <div class="cbtns three">
+      <button class="btn" id="btnPause">Pause</button>
+      <button class="btn" id="btnPlus">+30s</button>
+      <button class="btn" id="btnReset">Reset</button>
+    </div>
+    <!-- How long a pick gets, for this pick and every one after it. The early
+         rounds are worth five minutes and round twelve is not. -->
+    <div class="seg" id="lenSeg" style="margin-top:.6rem">
+      <button data-ms="90000">1:30</button>
+      <button data-ms="120000">2:00</button>
+      <button data-ms="180000">3:00</button>
+      <button data-ms="300000">5:00</button>
+    </div>
+    <div class="tiny" style="margin-top:.5rem" id="lenHint"></div>
+  </div>
+
+  <!-- the showcase: the man on the clock, in full, while his clock runs -->
+  <div class="cbox">
+    <div class="hd">MANAGER SHOWCASE</div>
+    <button class="btn wide" id="btnShowcase">Show the showcase</button>
+    <div class="tiny" style="margin-top:.6rem" id="showcaseHint"></div>
+  </div>
+
+  <!-- mode -->
+  <div class="cbox">
+    <div class="hd">BOARD MODE</div>
+    <div class="seg" id="modeSeg">
+      <button data-mode="ceremony">CEREMONY</button>
+      <button data-mode="mirror">LIVE FEED</button>
+    </div>
+    <div class="tiny" style="margin-top:.6rem" id="modeHint"></div>
+  </div>
+
+  <!-- enter a pick by hand -->
+  <div class="cbox">
+    <div class="hd">ENTER A PICK YOURSELF</div>
+    <input class="search" id="cq" placeholder="Search a player" autocomplete="off"
+           autocorrect="off" spellcheck="false">
+    <div class="plist" id="cresults" style="padding:.6rem 0 0"></div>
+  </div>
+
+  <!-- the log -->
+  <div class="cbox">
+    <div class="hd">PICKS SO FAR &mdash; TAP &times; TO UNDO</div>
+    <div class="clog" id="clog"></div>
+  </div>
+
+  <!-- danger -->
+  <div class="cbox">
+    <div class="hd">DANGER</div>
+    <button class="btn danger wide" id="btnWipe">Wipe the whole draft</button>
+    <div class="tiny" style="margin-top:.6rem">
+      Tap twice to confirm. Clears every pick and returns the board to the
+      pre-draft screen. Sleeper is not touched.
+    </div>
+  </div>
+
+  <div class="tiny" style="text-align:center;padding:1rem 0">
+    Board: <a href="board.html" style="color:var(--brass)">board.html</a> &nbsp;·&nbsp;
+    Managers: <a href="pick.html" style="color:var(--brass)">pick.html</a>
+  </div>
+</section>
+
+<script type="module" src="control.js"></script>
+</body>
+</html>

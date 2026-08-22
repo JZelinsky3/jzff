@@ -1,0 +1,543 @@
+{
+ "season": 2026,
+ "weeks_count": 14,
+ "playoffs_start": 15,
+ "conferences": {
+  "Whole": [
+   "Joey",
+   "Sean",
+   "Kyle",
+   "Evan",
+   "Connor",
+   "Connie"
+  ],
+  "Skim": [
+   "Ricci",
+   "Chris",
+   "Isaac",
+   "Mason",
+   "Charlie",
+   "Luke"
+  ]
+ },
+ "rivals": {
+  "Charlie": "Luke",
+  "Luke": "Charlie",
+  "Kyle": "Sean",
+  "Sean": "Kyle",
+  "Chris": "Joey",
+  "Joey": "Chris",
+  "Connie": "Mason",
+  "Mason": "Connie",
+  "Connor": "Isaac",
+  "Isaac": "Connor",
+  "Evan": "Ricci",
+  "Ricci": "Evan"
+ },
+ "weeks": [
+  {
+   "week": 1,
+   "note": "Conference only",
+   "games": [
+    {
+     "a": "Charlie",
+     "b": "Mason",
+     "kind": "conf"
+    },
+    {
+     "a": "Chris",
+     "b": "Luke",
+     "kind": "conf"
+    },
+    {
+     "a": "Connie",
+     "b": "Sean",
+     "kind": "conf"
+    },
+    {
+     "a": "Connor",
+     "b": "Joey",
+     "kind": "conf"
+    },
+    {
+     "a": "Evan",
+     "b": "Kyle",
+     "kind": "conf"
+    },
+    {
+     "a": "Isaac",
+     "b": "Ricci",
+     "kind": "conf"
+    }
+   ]
+  },
+  {
+   "week": 2,
+   "note": "Conference only",
+   "games": [
+    {
+     "a": "Charlie",
+     "b": "Chris",
+     "kind": "conf"
+    },
+    {
+     "a": "Connie",
+     "b": "Kyle",
+     "kind": "conf"
+    },
+    {
+     "a": "Connor",
+     "b": "Evan",
+     "kind": "conf"
+    },
+    {
+     "a": "Isaac",
+     "b": "Mason",
+     "kind": "conf"
+    },
+    {
+     "a": "Joey",
+     "b": "Sean",
+     "kind": "conf"
+    },
+    {
+     "a": "Luke",
+     "b": "Ricci",
+     "kind": "conf"
+    }
+   ]
+  },
+  {
+   "week": 3,
+   "note": null,
+   "games": [
+    {
+     "a": "Charlie",
+     "b": "Ricci",
+     "kind": "conf"
+    },
+    {
+     "a": "Chris",
+     "b": "Isaac",
+     "kind": "conf"
+    },
+    {
+     "a": "Connie",
+     "b": "Connor",
+     "kind": "conf"
+    },
+    {
+     "a": "Kyle",
+     "b": "Sean",
+     "kind": "confriv"
+    },
+    {
+     "a": "Evan",
+     "b": "Luke",
+     "kind": "inter"
+    },
+    {
+     "a": "Joey",
+     "b": "Mason",
+     "kind": "inter"
+    }
+   ]
+  },
+  {
+   "week": 4,
+   "note": null,
+   "games": [
+    {
+     "a": "Charlie",
+     "b": "Joey",
+     "kind": "inter"
+    },
+    {
+     "a": "Chris",
+     "b": "Evan",
+     "kind": "inter"
+    },
+    {
+     "a": "Connie",
+     "b": "Luke",
+     "kind": "inter"
+    },
+    {
+     "a": "Connor",
+     "b": "Ricci",
+     "kind": "inter"
+    },
+    {
+     "a": "Isaac",
+     "b": "Kyle",
+     "kind": "inter"
+    },
+    {
+     "a": "Mason",
+     "b": "Sean",
+     "kind": "inter"
+    }
+   ]
+  },
+  {
+   "week": 5,
+   "note": null,
+   "games": [
+    {
+     "a": "Chris",
+     "b": "Mason",
+     "kind": "conf"
+    },
+    {
+     "a": "Evan",
+     "b": "Sean",
+     "kind": "conf"
+    },
+    {
+     "a": "Charlie",
+     "b": "Connie",
+     "kind": "inter"
+    },
+    {
+     "a": "Connor",
+     "b": "Luke",
+     "kind": "inter"
+    },
+    {
+     "a": "Isaac",
+     "b": "Joey",
+     "kind": "inter"
+    },
+    {
+     "a": "Kyle",
+     "b": "Ricci",
+     "kind": "inter"
+    }
+   ]
+  },
+  {
+   "week": 6,
+   "note": null,
+   "games": [
+    {
+     "a": "Charlie",
+     "b": "Isaac",
+     "kind": "conf"
+    },
+    {
+     "a": "Connie",
+     "b": "Joey",
+     "kind": "conf"
+    },
+    {
+     "a": "Chris",
+     "b": "Connor",
+     "kind": "inter"
+    },
+    {
+     "a": "Evan",
+     "b": "Mason",
+     "kind": "inter"
+    },
+    {
+     "a": "Kyle",
+     "b": "Luke",
+     "kind": "inter"
+    },
+    {
+     "a": "Ricci",
+     "b": "Sean",
+     "kind": "inter"
+    }
+   ]
+  },
+  {
+   "week": 7,
+   "note": null,
+   "games": [
+    {
+     "a": "Charlie",
+     "b": "Luke",
+     "kind": "confriv"
+    },
+    {
+     "a": "Connor",
+     "b": "Sean",
+     "kind": "conf"
+    },
+    {
+     "a": "Evan",
+     "b": "Joey",
+     "kind": "conf"
+    },
+    {
+     "a": "Mason",
+     "b": "Ricci",
+     "kind": "conf"
+    },
+    {
+     "a": "Chris",
+     "b": "Kyle",
+     "kind": "inter"
+    },
+    {
+     "a": "Connie",
+     "b": "Isaac",
+     "kind": "inter"
+    }
+   ]
+  },
+  {
+   "week": 8,
+   "note": null,
+   "games": [
+    {
+     "a": "Charlie",
+     "b": "Connor",
+     "kind": "inter"
+    },
+    {
+     "a": "Chris",
+     "b": "Sean",
+     "kind": "inter"
+    },
+    {
+     "a": "Connie",
+     "b": "Ricci",
+     "kind": "inter"
+    },
+    {
+     "a": "Evan",
+     "b": "Isaac",
+     "kind": "inter"
+    },
+    {
+     "a": "Joey",
+     "b": "Luke",
+     "kind": "inter"
+    },
+    {
+     "a": "Kyle",
+     "b": "Mason",
+     "kind": "inter"
+    }
+   ]
+  },
+  {
+   "week": 9,
+   "note": null,
+   "games": [
+    {
+     "a": "Chris",
+     "b": "Ricci",
+     "kind": "conf"
+    },
+    {
+     "a": "Connie",
+     "b": "Evan",
+     "kind": "conf"
+    },
+    {
+     "a": "Isaac",
+     "b": "Luke",
+     "kind": "conf"
+    },
+    {
+     "a": "Joey",
+     "b": "Kyle",
+     "kind": "conf"
+    },
+    {
+     "a": "Charlie",
+     "b": "Sean",
+     "kind": "inter"
+    },
+    {
+     "a": "Connor",
+     "b": "Mason",
+     "kind": "inter"
+    }
+   ]
+  },
+  {
+   "week": 10,
+   "note": null,
+   "games": [
+    {
+     "a": "Connor",
+     "b": "Kyle",
+     "kind": "conf"
+    },
+    {
+     "a": "Luke",
+     "b": "Mason",
+     "kind": "conf"
+    },
+    {
+     "a": "Charlie",
+     "b": "Evan",
+     "kind": "inter"
+    },
+    {
+     "a": "Chris",
+     "b": "Connie",
+     "kind": "inter"
+    },
+    {
+     "a": "Isaac",
+     "b": "Sean",
+     "kind": "inter"
+    },
+    {
+     "a": "Joey",
+     "b": "Ricci",
+     "kind": "inter"
+    }
+   ]
+  },
+  {
+   "week": 11,
+   "note": "Rivalry week",
+   "games": [
+    {
+     "a": "Charlie",
+     "b": "Luke",
+     "kind": "rival"
+    },
+    {
+     "a": "Kyle",
+     "b": "Sean",
+     "kind": "rival"
+    },
+    {
+     "a": "Chris",
+     "b": "Joey",
+     "kind": "rival"
+    },
+    {
+     "a": "Connie",
+     "b": "Mason",
+     "kind": "rival"
+    },
+    {
+     "a": "Connor",
+     "b": "Isaac",
+     "kind": "rival"
+    },
+    {
+     "a": "Evan",
+     "b": "Ricci",
+     "kind": "rival"
+    }
+   ]
+  },
+  {
+   "week": 12,
+   "note": "Flip week: opposite of your week 11 game",
+   "games": [
+    {
+     "a": "Chris",
+     "b": "Isaac",
+     "kind": "conf2"
+    },
+    {
+     "a": "Connie",
+     "b": "Evan",
+     "kind": "conf2"
+    },
+    {
+     "a": "Connor",
+     "b": "Joey",
+     "kind": "conf2"
+    },
+    {
+     "a": "Mason",
+     "b": "Ricci",
+     "kind": "conf2"
+    },
+    {
+     "a": "Charlie",
+     "b": "Kyle",
+     "kind": "inter"
+    },
+    {
+     "a": "Luke",
+     "b": "Sean",
+     "kind": "inter"
+    }
+   ]
+  },
+  {
+   "week": 13,
+   "note": "Conference only, second meetings",
+   "games": [
+    {
+     "a": "Charlie",
+     "b": "Ricci",
+     "kind": "conf2"
+    },
+    {
+     "a": "Chris",
+     "b": "Mason",
+     "kind": "conf2"
+    },
+    {
+     "a": "Connie",
+     "b": "Sean",
+     "kind": "conf2"
+    },
+    {
+     "a": "Connor",
+     "b": "Kyle",
+     "kind": "conf2"
+    },
+    {
+     "a": "Evan",
+     "b": "Joey",
+     "kind": "conf2"
+    },
+    {
+     "a": "Isaac",
+     "b": "Luke",
+     "kind": "conf2"
+    }
+   ]
+  },
+  {
+   "week": 14,
+   "note": "Conference only, second meetings",
+   "games": [
+    {
+     "a": "Charlie",
+     "b": "Mason",
+     "kind": "conf2"
+    },
+    {
+     "a": "Chris",
+     "b": "Luke",
+     "kind": "conf2"
+    },
+    {
+     "a": "Connie",
+     "b": "Joey",
+     "kind": "conf2"
+    },
+    {
+     "a": "Connor",
+     "b": "Sean",
+     "kind": "conf2"
+    },
+    {
+     "a": "Evan",
+     "b": "Kyle",
+     "kind": "conf2"
+    },
+    {
+     "a": "Isaac",
+     "b": "Ricci",
+     "kind": "conf2"
+    }
+   ]
+  }
+ ]
+}
