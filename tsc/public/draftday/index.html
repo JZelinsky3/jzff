@@ -68,7 +68,7 @@
   <div class="hero">
     <div class="eb">PA Milk Society</div>
     <h1>2026<span>Draft Day</span></h1>
-    <div class="fmt">14 rounds &middot; snake &middot; full PPR &middot; 6pt passing TD &middot; TE premium</div>
+    <div class="fmt">15 rounds &middot; snake &middot; full PPR &middot; 6pt passing TD &middot; TE premium</div>
     <div class="cd" id="cd">&nbsp;</div>
     <div class="lineup" id="lineup"></div>
   </div>
@@ -123,7 +123,7 @@
 </div>
 
 <script type="module">
-  const AT = new Date("2026-08-28T19:15:00-04:00").getTime();
+  const AT = new Date("2026-08-28T19:20:00-04:00").getTime();
   setInterval(() => {
     const d = AT - Date.now(), el = document.getElementById("cd");
     if (d <= 0) { el.textContent = "DRAFT DAY"; return; }

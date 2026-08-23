@@ -26,7 +26,12 @@ const PICKS  = collection(db, "pams_draft", ROOM, "picks");
 const STATE  = doc(db, "pams_draft", ROOM, "meta", "state");
 
 export const TEAMS  = 12;
-export const ROUNDS = 14;
+// Fifteen from 2026: the league went to six bench spots (Sleeper had five,
+// and was corrected there too). Everything downstream reads this — the
+// showcase's board of his own picks, nextPickForSlot, the console's advance,
+// and the three-columns-of-five grid the board is drawn in, which happens to
+// hold exactly fifteen.
+export const ROUNDS = 15;
 export const TOTAL  = TEAMS * ROUNDS;
 
 export const SLEEPER_LEAGUE = "1304235036874149888";
@@ -334,23 +339,74 @@ export function rosterFor(picks, slot) {
  * is what the room actually reacts to. Kickers and defenses are left out
  * entirely: in round eleven everyone takes one, which is not news.
  */
-const RUN_SHAPE = { QB: { window: 7, n: 3 }, TE: { window: 7, n: 3 } };
-const RUN_DEFAULT = { window: 6, n: 4 };
+/**
+ * `gap` is what ends one. A run is not over because the next pick was a tight
+ * end — it is over when the room has moved on, and three straight picks
+ * somewhere else is the room moving on. Quarterbacks and tight ends get one
+ * more, because twelve of each start in this league and nobody takes two in a
+ * row: three other picks between two quarterbacks is what a quarterback run
+ * looks like, not what the end of one looks like.
+ */
+const RUN_SHAPE = {
+  QB: { window: 7, n: 3, gap: 4 },
+  TE: { window: 7, n: 3, gap: 4 },
+};
+const RUN_DEFAULT = { window: 6, n: 4, gap: 3 };
 export const runShape = pos => RUN_SHAPE[pos] || RUN_DEFAULT;
+
+/**
+ * The run at one position as it stands right now, or null.
+ *
+ * Two questions, and they used to be answered by one number. *Is* this a run
+ * is a question about density — four backs in six picks is one, four backs in
+ * twelve is Tuesday. *How far back does it go* is a question about where it
+ * started, and a fixed six-pick window could not answer it: four receivers in
+ * the last five picks got reported as "four of the last six" because six was
+ * the only window the code had, and four straight receivers got reported the
+ * same way, when the thing worth saying is that they were straight.
+ *
+ * So the run is walked backwards from the most recent pick and it ends where
+ * the board says it ends — at `gap` consecutive picks somewhere else. That
+ * fixes both. The span is measured from the run's own first pick to now, so
+ * the sentence is always the tightest one that is true, and `all` is set when
+ * there is nothing else in it at all.
+ *
+ * Starting the walk at the last pick is also what retires a finished run: if
+ * three other picks have gone since the last receiver, the walk breaks before
+ * it reaches one and there is no run to report, which is the whole point.
+ */
+export function runAt(picks, pos) {
+  const shape = runShape(pos);
+  let gap = 0, n = 0, first = -1;
+  for (let i = picks.length - 1; i >= 0; i--) {
+    if (picks[i].pos === pos) { gap = 0; n++; first = i; }
+    else if (++gap >= shape.gap) break;
+  }
+  if (n < shape.n) return null;
+  const span = picks.length - first;
+  // The density bar, held to the same ratio the shape states but allowed to
+  // stretch: four of six is a run and so is five of seven and six of eight,
+  // because the allowance is a number of other picks mixed in (two here, four
+  // for quarterbacks and tight ends), not a fixed window.
+  if (span - n > shape.window - shape.n) return null;
+  return { pos, n, span, all: n === span };
+}
 
 /** Is a position run happening right now? */
 export function positionRun(picks) {
-  let best = null;
+  let best = null, bestOver = -1;
   for (const pos of ["QB", "RB", "WR", "TE"]) {
-    const { window, n } = runShape(pos);
-    if (picks.length < window) continue;
-    const c = picks.slice(-window).filter(p => p.pos === pos).length;
-    if (c < n) continue;
+    const r = runAt(picks, pos);
+    if (!r) continue;
     // Two at once is rare, and when it happens the one furthest past its own
-    // bar is the one the board should be shouting about.
-    if (!best || c - n > best.over) best = { pos, n: c, window, over: c - n };
+    // bar is the one the board should be shouting about. Ties go to the
+    // tighter of the two.
+    const over = r.n - runShape(pos).n;
+    if (over > bestOver || (over === bestOver && r.span < best.span)) {
+      best = r; bestOver = over;
+    }
   }
-  return best ? { pos: best.pos, n: best.n, window: best.window } : null;
+  return best;
 }
 
 /** Best players still on the board, optionally filtered to a position. */

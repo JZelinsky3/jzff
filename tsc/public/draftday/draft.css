@@ -377,24 +377,36 @@ body.board::after {
 }
 .clock-facts .f:first-child { padding-left: 0; border-left: none; }
 .clock-facts .k {
-  display: block; font-family: var(--mono); font-size: calc(1.15 * var(--u));
-  letter-spacing: .2em; color: var(--mute); text-transform: uppercase;
+  display: block; font-family: var(--mono); font-weight: 600;
+  font-size: calc(1.25 * var(--u));
+  letter-spacing: .18em; color: var(--gold); text-transform: uppercase;
   margin-bottom: calc(.55 * var(--u));
 }
 .clock-facts .v {
   font-family: var(--cond); font-weight: 700; font-size: calc(2.3 * var(--u));
-  color: var(--chalk); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: var(--milk); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .clock-facts .v b { color: var(--gold); font-weight: 700; }
+/* the qualifier after a number — a win percentage, the years a title was won */
+.clock-facts .v i {
+  font-family: var(--mono); font-style: normal; font-size: calc(1.4 * var(--u));
+  letter-spacing: .04em; color: var(--chalk-dim);
+}
 
 /* timer */
 .clock-row {
   display: flex; align-items: baseline; gap: calc(1.8 * var(--u));
   border-top: 1px solid rgba(32,48,71,.85); padding-top: calc(1.2 * var(--u));
 }
+/* Teko sets its numerals tight, and the bigger the clock the more they close
+   up — at 10.8u the digits of 1:47 touch. A little tracking on all three
+   clocks on the board, and a negative margin of the same amount on each to
+   take back the trailing space so nothing shifts off its alignment. Not the
+   same figure everywhere: this is the largest of the three and wants the
+   least, because tracking is relative to the size it is set at. */
 .timer {
   font-family: var(--clock); font-weight: 600; font-size: calc(10.8 * var(--u));
-  line-height: .78; letter-spacing: 0;
+  line-height: .78; letter-spacing: .035em; margin-right: -.035em;
   font-variant-numeric: tabular-nums; color: var(--milk);
 }
 .timer.warn  { color: var(--gold-hi); }
@@ -419,7 +431,13 @@ body.board::after {
   padding: calc(1.1 * var(--u)) calc(1.4 * var(--u)); border-bottom: 1px solid var(--line-soft);
 }
 .lineup-hd .ct { margin-left: auto; color: var(--gold); }
-.lineup-grid { display: grid; gap: 0; padding: 0 calc(1.4 * var(--u)); }
+/* Padded on all four sides, not just the two. Rows that start on the card's
+   own border read as a table that has been cut off rather than a card with a
+   list in it. */
+.lineup-grid {
+  display: grid; gap: 0;
+  padding: calc(.7 * var(--u)) calc(1.9 * var(--u)) calc(.9 * var(--u));
+}
 .lu-row {
   position: relative; isolation: isolate;
   display: grid;
@@ -428,8 +446,13 @@ body.board::after {
   font-family: var(--cond); font-weight: 600; font-size: calc(1.95 * var(--u));
   border-bottom: 1px solid rgba(22,35,58,.7);
 }
+/* The position is the thing that tells you what row you are looking at, and it
+   was the faintest and smallest thing in the row. Same size, full strength —
+   these are already the position colours, they were just being asked to read
+   at 600 weight in a colour meant for a chip on a lit panel. */
 .lu-row .s {
-  font-family: var(--mono); font-weight: 600; font-size: calc(1.15 * var(--u)); letter-spacing: .04em;
+  font-family: var(--mono); font-weight: 700; font-size: calc(1.25 * var(--u));
+  letter-spacing: .06em; filter: brightness(1.25);
 }
 .lu-row .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--milk); }
 /* where he was taken — round.pick, the board's shorthand everywhere else.
@@ -437,11 +460,11 @@ body.board::after {
    stays the hard right edge of the panel and the picks form their own line. */
 .lu-row .pk {
   font-family: var(--mono); font-size: calc(1.05 * var(--u));
-  letter-spacing: .04em; color: var(--gold-lo); white-space: nowrap;
+  letter-spacing: .04em; color: var(--gold); white-space: nowrap;
 }
 .lu-row.new .pk { color: var(--gold); }
-.lu-row .tm { font-family: var(--mono); font-size: calc(1.05 * var(--u)); color: var(--mute); text-align: right; }
-.lu-row.empty .nm { color: var(--mute); font-weight: 500; }
+.lu-row .tm { font-family: var(--mono); font-size: calc(1.05 * var(--u)); color: var(--chalk-dim); text-align: right; }
+.lu-row.empty .nm { color: var(--chalk-dim); font-weight: 500; }
 .lu-row.empty .s { opacity: .55; }
 /* The pick just added, highlighted the moment it lands on the reveal. Drawn as
    a layer rather than the row's own background so it can start a little left of
@@ -829,8 +852,10 @@ body.phase-selection .selection { display: grid; }
   position: relative; overflow: hidden;
   display: flex; align-items: center; justify-content: center;
   /* Padded on the leading edge only, so the flex centring lands the player
-     off the bezel rather than on it. */
-  padding-left: calc(3.5 * var(--u));
+     off the bezel rather than on it. Named, because the crest behind him has
+     to be moved by half of it to stay under him — see .team-bg below. */
+  --sel-pad: calc(3.5 * var(--u));
+  padding-left: var(--sel-pad);
   border-right: 1px solid var(--gold-lo);
   background:
     radial-gradient(65% 55% at 50% 40%, var(--tc, rgba(201,154,67,.16)), transparent 72%),
@@ -843,9 +868,17 @@ body.phase-selection .selection { display: grid; }
    of the frame, so filling it edge to edge meant a 5-6x upscale. Pulled 7u
    above the photo's centre (the flex centres both on the same line) so the
    mark lands behind the head, where the cutout is transparent either side of
-   it, rather than behind the chest, where it's opaque and would cover it. */
+   it, rather than behind the chest, where it's opaque and would cover it.
+
+   Sideways it has to be dragged half the panel's left padding to the right,
+   and this is the whole reason that padding has a name. The player is a flex
+   item, so he is centred in the *content* box and sits half the padding right
+   of the panel's middle. The crest is absolutely positioned, so `left: 50%`
+   is 50% of the *padding* box and lands on the panel's middle exactly. They
+   were 1.75u apart — a hair under 19px on a 1080p board, which is not enough
+   to look deliberate and is plenty to look wrong. */
 .sel-shot .team-bg {
-  position: absolute; top: 50%; left: 50%; z-index: 0;
+  position: absolute; top: 50%; left: calc(50% + var(--sel-pad) / 2); z-index: 0;
   width: calc(34 * var(--u)); height: calc(34 * var(--u));
   transform: translate(-50%, calc(-50% - 8 * var(--u)));
   object-fit: contain; opacity: .3;
@@ -1036,10 +1069,31 @@ body.handoff .reveal { display: flex; }
   letter-spacing: .1em; padding: .5vh .9vh; border-radius: 2px;
   border: 1px solid var(--line); color: var(--chalk-dim);
 }
-.tag.steal  { background: var(--good); color: #071711; border-color: var(--good); }
+/* The verdict tag is two things in one chip, and only one of them is a
+   judgement. REACH is the word the room shouts; "jumped 45 spots" is the
+   arithmetic behind it. As one solid red box the whole phrase shouted, and the
+   number got the same emphasis as the verdict. So the word is stamped — a
+   filled block in the level's colour, flush into the chip's own edge — and the
+   number sits beside it in plain type on a tinted ground. */
+.tag.verdict { padding: 0 calc(1.2 * var(--u)) 0 0; display: inline-flex; align-items: center; }
+/* Stretched on its own: the phrase beside it is a bare text node, and an
+   anonymous flex item set to stretch puts its type at the top of the box. */
+.tag.verdict b {
+  align-self: stretch; display: inline-flex; align-items: center;
+  margin-right: calc(1.2 * var(--u)); padding: .5vh calc(1 * var(--u));
+  font-weight: 700; letter-spacing: .14em;
+  /* Sits in the chip's corners rather than floating inside them. 1px less than
+     the chip's own 2px radius, which is what keeps the two curves concentric. */
+  border-radius: 1px 0 0 1px;
+}
+.tag.steal  { color: var(--good); border-color: var(--good); background: rgba(127,164,141,.14); }
+.tag.steal b  { background: var(--good); color: #071711; }
 .tag.value  { color: var(--good); border-color: rgba(127,164,141,.5); }
-.tag.reach  { background: var(--bad); color: #1a0705; border-color: var(--bad); }
+.tag.value b  { background: rgba(127,164,141,.22); color: var(--good); }
+.tag.reach  { color: var(--bad); border-color: var(--bad); background: rgba(181,114,104,.14); }
+.tag.reach b  { background: var(--bad); color: #1a0705; }
 .tag.early  { color: var(--bad); border-color: rgba(181,114,104,.5); }
+.tag.early b  { background: rgba(181,114,104,.22); color: var(--bad); }
 .tag.rookie { background: var(--gold); color: #150e02; border-color: var(--gold); }
 
 /* the writeup as a lower third, not floating text */
@@ -1074,27 +1128,84 @@ body.handoff .reveal { display: flex; }
   font-family: var(--mono); font-weight: 600; font-size: calc(1.25 * var(--u));
   letter-spacing: .18em; color: var(--gold); text-transform: uppercase;
 }
-.reveal-also ul, .reveal-gone ul {
-  margin: .6vh 0 0; padding: 0; list-style: none; display: grid; gap: 0;
+/* The pair is set to a common height, and the card next to this one is a
+   four-line read that does not fill it. Rather than let this list stop at its
+   natural height and leave the difference as dead box under the fifth name,
+   the five rows divide whatever height the card is given and grow into it —
+   the same `grid-auto-rows: 1fr` the band's two lists downstairs use. Nothing
+   happens when there is no slack, so it does not need a guard. */
+.reveal-also { display: flex; flex-direction: column; }
+.reveal-also ul {
+  flex: 1; min-height: 0; margin: .6vh 0 0; padding: 0; list-style: none;
+  display: grid; gap: 0; grid-auto-rows: 1fr; align-content: stretch;
 }
-.reveal-also li, .reveal-gone li {
+.reveal-also li {
   display: grid; grid-template-columns: calc(4.4 * var(--u)) minmax(0, 1fr) calc(6.4 * var(--u));
-  gap: calc(1 * var(--u)); align-items: baseline; padding: .2vh 0;
+  gap: calc(1 * var(--u)); align-items: center; padding: .2vh 0;
   font-family: var(--mono); font-size: calc(1.35 * var(--u)); color: var(--chalk-dim);
 }
-.reveal-also li .nm, .reveal-gone li .nm {
+.reveal-also li .nm {
   font-family: var(--cond); font-weight: 600; font-size: calc(1.75 * var(--u));
   color: var(--milk); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.reveal-also li .tm, .reveal-gone li .tm {
-  color: var(--mute); text-align: right;
+.reveal-also li .tm {
+  color: var(--chalk-dim); text-align: right;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-/* Who took each one. Not --mute: this column is the point of the card. */
-.reveal-gone li .tm { color: var(--chalk-dim); }
-/* The pick that just landed, at the top of its own list. */
-.reveal-gone li.now .nm { color: var(--gold-hi); }
-.reveal-gone li.now .tm { color: var(--gold); }
+/* This pick against the round he normally takes one in. Two numbers side by
+   side with a rule between them, which is the whole argument — this card sits
+   beside a five-row list and the point of it is that the eye can tell them
+   apart before it reads either. */
+.reveal-gone .hb {
+  display: grid; grid-template-columns: 1fr 1fr;
+  margin: calc(1.1 * var(--u)) 0 calc(1 * var(--u));
+}
+.reveal-gone .hb-c {
+  display: flex; flex-direction: column; align-items: center;
+  gap: calc(.2 * var(--u)); padding: calc(.4 * var(--u)) 0;
+}
+/* The seam, not a box each: a box each makes two cards out of a comparison. */
+.reveal-gone .hb-c + .hb-c { border-left: 1px solid var(--line-soft); }
+.reveal-gone .hb-n {
+  font-family: var(--cond); font-weight: 700; font-size: calc(4.4 * var(--u));
+  line-height: .88; color: var(--milk); filter: brightness(1.15);
+}
+.reveal-gone .hb-l {
+  font-family: var(--mono); font-size: calc(1.1 * var(--u));
+  letter-spacing: .14em; text-transform: uppercase; color: var(--mute);
+}
+/* Where he has ever gone, and out of how many drafts — a two-number average
+   off seven of them and off two of them are not the same claim. */
+.reveal-gone .hb-range {
+  display: flex; align-items: baseline; gap: calc(1.2 * var(--u));
+  font-family: var(--mono); font-size: calc(1.2 * var(--u));
+  letter-spacing: .1em; text-transform: uppercase; color: var(--mute);
+}
+.reveal-gone .hb-range b { color: var(--chalk); font-weight: 600; }
+/* The read, in a sentence. Gold when he went earlier than he does, rust when
+   he waited — the same two directions the verdict tag uses upstairs. */
+.reveal-gone .hb-verdict {
+  margin: calc(.7 * var(--u)) 0 calc(1 * var(--u));
+  font-family: var(--cond); font-weight: 600; font-size: calc(1.85 * var(--u));
+  line-height: 1.2; color: var(--chalk);
+}
+.reveal-gone .hb-verdict b { font-weight: 600; }
+.reveal-gone .hb-verdict b.up { color: var(--gold-hi); }
+.reveal-gone .hb-verdict b.dn { color: var(--bad); }
+/* No history at this depth. One line, and it fills the card the numbers would
+   have taken rather than leaving a hole above the foot. */
+.reveal-gone .hb-none {
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  min-height: calc(9 * var(--u)); padding: 0 calc(1 * var(--u));
+  margin: calc(.6 * var(--u)) 0;
+  font-family: var(--cond); font-weight: 600; font-size: calc(2 * var(--u));
+  line-height: 1.24; color: var(--chalk);
+}
+/* Four lines, sat together at the top of the card rather than spread down it.
+   This card is now the shorter of the pair and it should look deliberately so
+   — the list beside it is what sets the height, and it spreads its rows into
+   whatever this one does not use. */
+.reveal-gone { display: flex; flex-direction: column; }
 
 /* career history as its own compact module. Sized to its own content now —
    three narrow columns (year, pick, manager) were stretching to a 44uw box
@@ -1116,14 +1227,30 @@ body.handoff .reveal { display: flex; }
   font-family: var(--mono); font-weight: 600; font-size: calc(1.25 * var(--u));
   letter-spacing: .18em; color: var(--gold); text-transform: uppercase;
 }
+/* A man with no PAMS history — a rookie, or a veteran this league has simply
+   never taken. The line is the card rather than the title of one, so it is
+   centred in the box under the photograph and drops the rule it would
+   otherwise be sitting on top of nothing with. */
+.reveal-hist.solo {
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+}
+.reveal-hist.solo .k {
+  padding-bottom: 0; margin-bottom: 0; border-bottom: 0;
+  line-height: 1.5;
+}
 /* A fixed-column grid, not a ragged flex-wrap — the site's own rule for
    every other list on the board (positions, teams and ranks line up instead
    of drifting with name length) that this one had never actually followed. */
 .reveal-hist ul { margin: .6vh 0 0; padding: 0; list-style: none; display: grid; gap: 0; }
+/* The card is wider than the three columns need, and all of that slack was
+   collecting on the right — so the manager's name sat hard against the pick
+   number with an empty third of the row after it. The name column takes the
+   slack now and the gutters are set to what the type actually wants. */
 .reveal-hist li {
   display: grid;
-  grid-template-columns: calc(3.4 * var(--u)) calc(4.4 * var(--u)) minmax(0, 1fr);
-  gap: calc(1 * var(--u)); align-items: baseline; padding: calc(.14 * var(--u)) 0;
+  grid-template-columns: calc(3.6 * var(--u)) calc(4.6 * var(--u)) minmax(0, 1fr);
+  gap: calc(1.8 * var(--u)); align-items: baseline; padding: calc(.14 * var(--u)) 0;
   font-family: var(--mono); font-size: calc(1.25 * var(--u)); color: var(--chalk);
 }
 .reveal-hist li b { color: var(--milk); font-weight: 600; }
@@ -1256,15 +1383,15 @@ body.handoff .reveal { display: flex; }
    so the rows grow to fill instead of stopping at their natural height and
    leaving the rest of the card empty, and the two cards stay line-for-line
    level with each other. */
-/* The gutter between the cards was the same 1.3u used everywhere else on the
-   board, and everywhere else on the board the things either side of it are
-   different shapes. These two are not: best available and the lineup are both
-   a rank, a name and a team abbreviation, in rows of the same height, and at a
-   hairline's distance they read as one twelve-row table with a seam down it.
-   Set is what tells you it is two cards, so it gets set. */
+/* Best available and the lineup are the same shape — a rank, a name, a team
+   abbreviation, in rows of the same height — so at a hairline's distance they
+   read as one twelve-row table with a seam down it. Widening the gutter on its
+   own did not fix that; what fixes it is giving each card an edge you can
+   actually see, and then keeping its contents off that edge. The gutter is
+   back to something close to the board's own spacing. */
 .bottom-band {
   --band-rows: 7;
-  display: flex; gap: calc(2.8 * var(--u)); min-height: 0;
+  display: flex; gap: calc(1.6 * var(--u)); min-height: 0;
 }
 /* rgba(...,.58) let the stage art behind it fight with the text for
    attention — barely readable. Near-opaque now, with more blur to kill
@@ -1277,7 +1404,8 @@ body.handoff .reveal { display: flex; }
 .bb-sec {
   flex: 1; min-width: 0; min-height: 0; overflow: hidden;
   display: flex; flex-direction: column;
-  background: rgba(6,11,20,.93); border: 1px solid var(--line); border-radius: 4px;
+  background: rgba(6,11,20,.93);
+  border: 2px solid var(--line-2); border-radius: 5px;
   box-shadow: 0 calc(1.2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.42);
   /* Self-contained panels: a list rebuilding inside one of them has no bearing
      on the layout of anything outside it, and saying so keeps the browser from
@@ -1363,6 +1491,28 @@ body.phase-details .bb-next { display: flex; }
    down a size and the gaps came in: CHARLIE was arriving as CHARL… while the
    clock beside him sat in a monospace wide enough for a terminal. Teko on the
    countdown is the other half of that fix and worth more than either. */
+/* On the card, not on the card's body — and sized past its own frame.
+   Two separate things were making this read as art that does not fit. It was
+   hung on .next-body, which starts below the NEXT ON THE CLOCK header, so it
+   stopped short of the top of the card. And the plate carries a painted gold
+   frame about 4% in from its own edge, so even at `100% 100%` it drew that
+   frame as a second, smaller rectangle inside the card with a dark margin
+   between the two.
+   So: on .bb-next, header included, and scaled until the painted frame has
+   gone off the edge. The card's own 2px border is the only frame now, and what
+   fills it is the plate's interior — the diagonals, the dot fields, the gold
+   streaks — corner to corner. The vertical overscale is larger than the
+   horizontal because the frame's inset is: the art is wider than it is tall
+   and its margin is even in pixels, not in percent. */
+body.phase-details .bb-next {
+  background: url("bg/smallclock.webp") center center / 114% 122% no-repeat;
+}
+/* The header sits on the plate now, so it cannot carry the panel's own rule
+   underneath it — a hairline across the art at the top is the seam this was
+   meant to remove. */
+body.phase-details .bb-next > .rail-hd {
+  border-bottom: 0; padding: 0 calc(2.4 * var(--u));
+}
 .next-body {
   position: relative; flex: 1; min-height: 0; display: flex; align-items: center;
   gap: calc(1.2 * var(--u));
@@ -1372,7 +1522,6 @@ body.phase-details .bb-next { display: flex; }
      vignette — from when this card was a CSS construction that needed help
      seating its type. The plate is a photograph of a plate and it is already
      dark where the type sits, so it is shown as delivered. */
-  background: url("bg/smallclock.webp") center center / 100% 100% no-repeat;
 }
 /* Inside the card, not bleeding off its right edge — it used to run off and
    read as a crop rather than a numeral. The skew throws the top of it right,
@@ -1414,10 +1563,16 @@ body.phase-details .bb-next { display: flex; }
   text-shadow: 0 0 calc(1.2 * var(--u)) rgba(5,10,18,.9);
 }
 .next-note:empty { display: none; }
+/* Teko is a condensed face and it sets its numerals tight — at this size on a
+   television the digits of 1:47 run into each other. A little air between them
+   without touching the size, and a negative margin of exactly the same amount
+   to take back the trailing space tracking leaves after the last digit, which
+   would otherwise push the whole countdown off its right-hand alignment. */
 .next-clock {
   position: relative; z-index: 1;
   flex: none; font-family: var(--clock); font-weight: 600;
-  font-size: calc(8.4 * var(--u)); line-height: .82; letter-spacing: 0;
+  font-size: calc(8.4 * var(--u)); line-height: .82;
+  letter-spacing: .05em; margin-right: -.05em;
   color: var(--milk); font-variant-numeric: tabular-nums;
   /* it crosses the ghosted numeral behind it */
   text-shadow: 0 0 calc(1.6 * var(--u)) rgba(5,10,18,.9);
@@ -1540,12 +1695,13 @@ body.phase-details .bb-next { display: flex; }
   flex: 1; min-height: 0; overflow: hidden;
   grid-auto-rows: 1fr; align-content: stretch;
 }
-/* No vertical padding on either, and the same horizontal padding on both.
-   The list used to carry .4vh/.6vh of its own, which came off the height the
-   rows divide — enough to leave its rows about a pixel and a half shorter
-   than the lineup's beside it, so the two cards drifted out of step down the
-   card even though they draw the same number of rows. */
-.bb-ba .ba-list, .bb-lu .lineup-grid { padding: 0 calc(1.4 * var(--u)); }
+/* The same padding on both, and it has to be exactly the same: whatever is
+   taken off the top and bottom comes off the height the rows divide, so a
+   half-unit of difference leaves one card's rows out of step with the other's
+   all the way down even though they draw the same number of them. */
+.bb-ba .ba-list, .bb-lu .lineup-grid {
+  padding: calc(.7 * var(--u)) calc(1.9 * var(--u)) calc(.9 * var(--u));
+}
 
 /* Type follows the row rather than sitting at a fixed size in a box that now
    changes height — seven rows deep the rows are tall and the names should be
@@ -1568,20 +1724,32 @@ body.phase-details .bb-next { display: flex; }
 .bb-ba .ba {
   grid-template-columns: 2.35em minmax(0, 1fr) 2.4em 2.2em;
 }
+/* The two panes are set within a step of each other, which they were not.
+   The rows always matched — both are driven by the one clamp above, which is
+   what keeps them level across the seam — but every cell inside the lineup had
+   its own smaller figure: names 0.88em against best available's 1em, the slot
+   0.59 against the position chip's 0.66, teams 0.54 against 0.59. On a 1080p
+   board that is 21px, 14px and 13px a hairline from 24px, 16px and 14px, rows
+   level across the gap, which is the arrangement that makes a 12% difference
+   read as a mistake rather than as a hierarchy.
+
+   The lineup still sits a touch under, on purpose — best available is the pane
+   the room is reading and the lineup is the reference beside it — but a touch
+   is 5%, not 12%. Both figures land between where they were and level. */
 .bb-ba .ba .rk { font-size: .63em; }
 .bb-ba .ba .pr { font-size: .66em; }
-.bb-ba .ba .tm { font-size: .59em; }
+.bb-lu .lu-row .s { font-size: .63em; }
+.bb-ba .ba .tm, .bb-lu .lu-row .tm { font-size: .59em; }
 .bb-lu .lu-row {
-  /* slot, name, where he was taken, team */
-  grid-template-columns: 2.15em minmax(0, 1fr) 2.5em 1.95em;
+  /* slot, name, where he was taken, team. The slot column is set off the
+     0.63em the chip in it now uses, so FLEX still clears its cell. */
+  grid-template-columns: 2.3em minmax(0, 1fr) 2.5em 1.95em;
 }
-.bb-lu .lu-row .s  { font-size: .59em; }
-.bb-lu .lu-row .tm { font-size: .54em; }
-/* Filled names a size down from the row, and both panes' name cells get a
-   line box taller than the type. They clip on `overflow: hidden` otherwise,
-   and with the rows at `line-height: 1` the box was exactly the font size,
-   so every descender (the p in Puka, the g in Gibbs) lost its tail. */
-.bb-lu .lu-row .nm { font-size: .88em; }
+.bb-lu .lu-row .nm { font-size: .94em; }
+/* Both panes' name cells get a line box taller than the type. They clip on
+   `overflow: hidden` otherwise, and with the rows at `line-height: 1` the box
+   was exactly the font size, so every descender (the p in Puka, the g in
+   Gibbs) lost its tail. */
 .bb-ba .ba .nm, .bb-lu .lu-row .nm { line-height: 1.32; }
 
 .ba-list { display: grid; gap: 0; align-content: start; min-height: 0; }
@@ -1597,10 +1765,10 @@ body.phase-details .bb-next { display: flex; }
    the way down (board rank runs past 200 late in the draft), and right-aligning
    the number inside it pushed every two-digit rank away from the card's left
    edge — the list read as though it started with an empty column. */
-.ba .rk { font-family: var(--mono); font-size: calc(1.3 * var(--u)); color: var(--mute); text-align: left; }
-.ba .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--chalk); }
+.ba .rk { font-family: var(--mono); font-size: calc(1.3 * var(--u)); color: var(--chalk-dim); text-align: left; }
+.ba .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--milk); }
 .ba .pr { font-family: var(--mono); font-weight: 600; font-size: calc(1.35 * var(--u)); }
-.ba .tm { font-family: var(--mono); font-size: calc(1.2 * var(--u)); color: var(--mute); text-align: right; }
+.ba .tm { font-family: var(--mono); font-size: calc(1.2 * var(--u)); color: var(--chalk-dim); text-align: right; }
 
 /* ── ticker ───────────────────────────────────────────────────────────── */
 .ticker {
@@ -1918,7 +2086,7 @@ body.phase-details .bb-next { display: flex; }
 .showcase {
   /* How long the title card owns the screen. Every panel's entrance below is
      `calc(var(--sc-in) + its own beat)`, so they arrive as the card lifts. */
-  --sc-in: 1.15s;
+  --sc-in: 1.5s;
   /* Named so the title card can cancel them: an absolutely positioned child of
      a grid container is laid against the container's *padding* box, so a plain
      inset:0 on it stops short of the canvas edge on all four sides and leaves a
@@ -1930,7 +2098,9 @@ body.phase-details .bb-next { display: flex; }
   /* head, career strip, the 2026 strip, the two panels, the round band, the
      bottom band. Only the panels flex; everything else is its own content. */
   grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
-  gap: calc(1.6 * var(--u));
+  /* Every unit taken off this gap goes to the flipping board in the middle,
+     which is the only flexible row and the only one that was short. */
+  gap: calc(1.2 * var(--u));
   padding: var(--sc-pad-t) var(--sc-pad-x) var(--sc-pad-b);
   background: var(--night);
 }
@@ -1960,26 +2130,26 @@ body.phase-details .bb-next { display: flex; }
   position: absolute; z-index: 5; pointer-events: none;
   inset: calc(-1 * var(--sc-pad-t)) calc(-1 * var(--sc-pad-x)) calc(-1 * var(--sc-pad-b));
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: calc(2.2 * var(--u));
+  gap: calc(3 * var(--u));
   /* A veil over the screen's own set, not a second copy of it. The showcase
      already paints the graded backdrop underneath; repeating the image here
      would be a second full-screen decode and paint for the one second this is
      up, and it would look identical. */
   background: linear-gradient(180deg, rgba(5,10,18,.88), rgba(5,10,18,.95));
   will-change: opacity, transform;
-  animation: scIntro 1.5s ease-out both;
+  animation: scIntro 1.9s ease-out both;
 }
 /* Opaque, hold, then lift away. The `visibility` step is what keeps it from
    sitting invisibly over the screen for the rest of the night. */
 @keyframes scIntro {
   0%   { opacity: 0; transform: scale(1.015); visibility: visible; }
-  22%  { opacity: 1; transform: scale(1); }
-  70%  { opacity: 1; transform: scale(1); }
+  17%  { opacity: 1; transform: scale(1); }
+  74%  { opacity: 1; transform: scale(1); }
   100% { opacity: 0; transform: scale(1.035) translateY(calc(-1.6 * var(--u)));
          visibility: hidden; }
 }
 .sc-intro-k {
-  font-family: var(--mono); font-weight: 600; font-size: calc(2.4 * var(--u));
+  font-family: var(--mono); font-weight: 600; font-size: calc(3.1 * var(--u));
   letter-spacing: .5em; text-indent: .5em; text-transform: uppercase;
   color: var(--gold);
   animation: scIntroK .5s .18s ease-out both;
@@ -1991,7 +2161,7 @@ body.phase-details .bb-next { display: flex; }
 /* Drawn out of the middle rather than faded in: it is the only moving line on
    the card and it is what makes it read as being built. */
 .sc-intro-rule {
-  width: calc(34 * var(--u)); height: 2px;
+  width: calc(52 * var(--u)); height: 3px;
   background: linear-gradient(90deg, transparent, var(--gold) 22%, var(--gold-hi) 50%,
     var(--gold) 78%, transparent);
   transform: scaleX(0);
@@ -2002,15 +2172,15 @@ body.phase-details .bb-next { display: flex; }
    same bar of light travelling across it. */
 .sc-intro-n {
   font-family: var(--display); font-weight: 900; font-stretch: 62%;
-  font-size: calc(11 * var(--u)); line-height: .9; text-transform: uppercase;
-  text-align: center; letter-spacing: .01em; padding: 0 calc(6 * var(--uw));
+  font-size: calc(15.5 * var(--u)); line-height: .88; text-transform: uppercase;
+  text-align: center; letter-spacing: .01em; padding: 0 calc(4 * var(--uw));
   background: linear-gradient(102deg,
     #7d5f24 0%, #c99a43 18%, #f0d49a 38%, #fffaf0 48%,
     #f0d49a 58%, #c99a43 78%, #8a6a2a 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
   animation:
-    scIntroN .6s .46s cubic-bezier(.16,.84,.3,1) both,
-    piSheen 1.05s .5s cubic-bezier(.35,.6,.35,1) both;
+    scIntroN .62s .5s cubic-bezier(.16,.84,.3,1) both,
+    piSheen 1.25s .54s cubic-bezier(.35,.6,.35,1) both;
 }
 @keyframes scIntroN {
   from { opacity: 0; transform: translateY(calc(1.8 * var(--u))); }
@@ -2150,22 +2320,91 @@ body.phase-details .bb-next { display: flex; }
   letter-spacing: .06em; color: var(--chalk-dim); white-space: nowrap;
 }
 
-/* the two panels */
+/* ── the flipping board ───────────────────────────────────────────────── */
+/* The middle of the showcase, which used to carry three panels at once: the
+   career and the tendencies stacked in the left half, his board tonight in the
+   right. All of it fitted, and from a couch it read as a wall — the problem
+   was never that any one panel was wrong, it was that there were three of them
+   at half width.
+
+   Two faces in the same grid cell now, turning over every seven seconds. His
+   board leads, because that is what the room wants while a man is on the
+   clock; his career and how he drafts follow. Every panel gets the full width
+   instead of half of it, and the two on the second face get equal heights.
+
+   No JavaScript. The animation is infinite and starts after the title card,
+   and it lives entirely in these two keyframes — nothing to leave running when
+   the console takes the screen down, because `display: none` on .showcase
+   stops it and restarts it from the top next time. */
 .sc-cols {
-  display: grid; grid-template-columns: 1fr 1fr; gap: calc(1.6 * var(--uw));
+  position: relative; display: grid;
+  grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr);
+  place-items: center;
   min-height: 0; animation: selUp .5s calc(var(--sc-in) + .2s) ease-out both;
 }
-/* the career strip over his tendencies, in the column the seasons table used
-   to have to itself */
-/* The seasons need a definite row because the strip inside them flexes to
-   fill it; everything left over goes to the card underneath. Two units came
-   off this row and went there: the seasons had more air over and under them
-   than the strip needed, and the tendencies card was the one running out. */
-.sc-left {
+/* Nine tenths of the space it is given, centred in the rest.
+   The point of turning the middle over was to have less on screen at a time,
+   and simply letting one panel stretch into the room two others gave up is the
+   opposite of that — the same wall, fewer seams. So the stage sits inside its
+   own area with air around it, and the row it lives in does not change size, so
+   nothing above or below it moves.
+
+   The scale is done by redefining --u locally rather than with a transform.
+   Every length inside these panels is `calc(N * var(--u))`, so one declaration
+   shrinks the type, the padding, the rules and the gaps together and in exact
+   proportion — and it happens in layout, so the type is rasterised at its real
+   size and stays crisp. A `transform: scale()` would resample it, which is the
+   same reason #frame is fit with `zoom` and not a transform (see below). */
+.sc-flip {
+  --u:  calc(10.8px * .9);
+  --uw: calc(19.2px * .9);
+  grid-area: 1 / 1; width: 90%; height: 93%;
   min-width: 0; min-height: 0; display: grid;
-  grid-template-rows: calc(21 * var(--u)) minmax(0, 1fr);
-  gap: calc(1 * var(--u));
+  animation-duration: 15s; animation-timing-function: linear;
+  animation-iteration-count: infinite; animation-fill-mode: both;
+  animation-delay: calc(var(--sc-in) + .2s);
 }
+.sc-flip.a { grid-template-rows: minmax(0, 1fr); animation-name: scFaceA; }
+/* The two faces are not held for the same length of time. His board tonight is
+   a column of picks you take in at a glance; the career strip and the
+   tendencies underneath it are two panels of numbers that want reading. So the
+   crossover sits a second earlier than the midpoint: a second off the board,
+   the same second onto the career face, and the cycle stays fifteen. */
+/* Equal halves, not a fixed strip over whatever is left. Both of these are
+   full width now and there is the room for it. */
+.sc-flip.b {
+  grid-template-rows: 1fr 1fr; gap: calc(1.2 * var(--u));
+  animation-name: scFaceB;
+}
+/* Sequenced rather than cross-dissolved: the outgoing face is gone before the
+   incoming one arrives, so there is never a frame with two half-transparent
+   panels stacked on each other. The last keyframe of each has to match its
+   first or the loop jumps. */
+@keyframes scFaceA {
+  0%    { opacity: 1; }
+  39.3% { opacity: 1; }
+  42.3% { opacity: 0; }
+  96%   { opacity: 0; }
+  100%  { opacity: 1; }
+}
+@keyframes scFaceB {
+  0%    { opacity: 0; }
+  42.3% { opacity: 0; }
+  45.3% { opacity: 1; }
+  93%   { opacity: 1; }
+  96%   { opacity: 0; }
+  100%  { opacity: 0; }
+}
+/* Which face you are on, in the header of whichever panel leads it. */
+.sc-hd .pg {
+  display: inline-flex; align-items: center; gap: calc(.55 * var(--u));
+  margin-right: calc(1.2 * var(--u));
+}
+.sc-hd .pg i {
+  width: calc(.7 * var(--u)); height: calc(.7 * var(--u));
+  border-radius: 50%; background: var(--line-2);
+}
+.sc-hd .pg i.on { background: var(--gold); }
 .sc-panel {
   min-width: 0; min-height: 0; overflow: hidden;
   contain: layout style paint;
@@ -2196,13 +2435,12 @@ body.phase-details .bb-next { display: flex; }
   grid-template-columns: repeat(var(--seasons), minmax(0, 1fr));
   grid-template-rows: repeat(5, auto); grid-auto-flow: column;
   align-content: center; justify-items: center; text-align: center;
-  padding: calc(.9 * var(--u)) calc(1.4 * var(--u));
-  /* No row-gap, deliberately. The five cells of a season are five separate
-     grid items, so any gap between them cuts the title column's tint into
-     five stripes with bare background showing through — it read as the
-     highlight being on the words rather than on the year. The breathing room
-     between the lines is padding inside the cells instead, which the tint
-     covers. */
+  padding: calc(.2 * var(--u)) calc(1.4 * var(--u)) calc(1.1 * var(--u));
+  /* No row-gap, deliberately. The cells of a season are separate grid items,
+     so any gap between them cuts the title column's tint into stripes with
+     bare background showing through — it read as the highlight being on the
+     words rather than on the year. The breathing room between the lines is
+     padding inside the cells instead, which the tint covers. */
   row-gap: 0;
 }
 /* Stretched to the row (so the title column's tint has no gaps in it) and
@@ -2214,9 +2452,13 @@ body.phase-details .bb-next { display: flex; }
 .sc-seasons .sn {
   min-width: 0; width: 100%;
   display: flex; align-items: center; justify-content: center;
-  gap: calc(.5 * var(--u));
-  padding: calc(.32 * var(--u)) calc(.5 * var(--u));
+  gap: calc(.6 * var(--u));
+  padding: calc(.3 * var(--u)) calc(.5 * var(--u));
 }
+/* The title year's tint used to begin at the cap line of the year, which reads
+   as a highlight that started late. The year cell carries the extra room now
+   and the container gave it up, so the lit column opens above the type. */
+.sc-seasons .sn.y { padding-top: calc(1 * var(--u)); }
 /* a hairline between seasons, drawn on every cell so it runs the full height */
 .sc-seasons .sn:not(.first) { border-left: 1px solid var(--line-2); }
 .sc-seasons .y {
@@ -2224,48 +2466,52 @@ body.phase-details .bb-next { display: flex; }
   line-height: 1; letter-spacing: .06em; color: var(--gold);
 }
 .sc-seasons .rec {
-  font-family: var(--cond); font-weight: 700; font-size: calc(2.5 * var(--u));
+  font-family: var(--cond); font-weight: 700; font-size: calc(2.7 * var(--u));
   color: var(--chalk); line-height: 1.1;
 }
 .sc-seasons .fin {
   font-family: var(--display); font-weight: 900; font-stretch: 62%;
-  font-size: calc(4.4 * var(--u)); line-height: 1.04; color: var(--milk);
+  font-size: calc(4.4 * var(--u)); line-height: 1.02; color: var(--milk);
 }
+/* the seed he went in on, or that he did not */
+.sc-seasons .sub {
+  font-family: var(--mono); font-size: calc(1.35 * var(--u)); line-height: 1;
+  color: var(--chalk-dim);
+}
+/* what he averaged, and what that was worth */
+.sc-seasons .pf {
+  font-family: var(--mono); font-size: calc(1.35 * var(--u)); line-height: 1;
+  color: var(--chalk-dim);
+}
+.sc-seasons .pf b { font-weight: 600; color: var(--chalk-dim); }
+.sc-seasons .pf b.one   { color: var(--pl-one); }
+.sc-seasons .pf b.two   { color: var(--pl-two); }
+.sc-seasons .pf b.three { color: var(--pl-three); }
 /* the field size, when it was not twelve */
 .sc-seasons .fin i {
   font-family: var(--mono); font-style: normal; font-weight: 400;
   font-size: calc(1.3 * var(--u)); color: var(--mute); letter-spacing: 0;
 }
-.sc-seasons .sub {
-  font-family: var(--mono); font-size: calc(1.3 * var(--u)); line-height: 1;
-  color: var(--chalk-dim);
-}
-/* what he averaged, and what that was worth */
-.sc-seasons .pf {
-  font-family: var(--mono); font-size: calc(1.3 * var(--u)); color: var(--chalk-dim);
-}
-.sc-seasons .pf b { font-weight: 600; color: var(--mute); }
-.sc-seasons .pf b.one   { color: var(--pl-one); }
-.sc-seasons .pf b.two   { color: var(--pl-two); }
-.sc-seasons .pf b.three { color: var(--pl-three); }
 /* A season that ended without a playoff berth is dimmed rather than marked.
    Across a seven-season strip that reads as the shape of a career at ten
-   feet, which a tick in a sixth row would not. */
+   feet, which a tick in a row of its own would not. */
 .sc-seasons .miss.rec, .sc-seasons .miss.sub { color: var(--mute); }
 .sc-seasons .miss.fin { color: var(--chalk-dim); }
 .sc-seasons .miss.y { color: var(--gold-lo); }
-/* The title year, lit top to bottom, with the badge in place of the seed.
-   A flat tint, not a gradient: the column is five separate grid cells, so a
-   vertical gradient restarts in each one and the lit column comes out banded
-   in five steps. */
-.sc-seasons .champ { background: rgba(201,154,67,.1); }
+/* The title year, lit top to bottom. No TITLE badge in it any more — the lit
+   column and the gold 1 say it, and the badge was a third thing saying the
+   same thing in a strip already carrying more than it could hold at ten feet.
+   A flat tint, not a gradient: the column is three separate grid cells, so a
+   vertical gradient restarts in each one and the lit column comes out banded. */
+.sc-seasons .champ { background: rgba(201,154,67,.12); }
 .sc-seasons .champ.y { color: var(--gold-hi); box-shadow: inset 0 3px 0 var(--gold); }
 .sc-seasons .champ.fin { color: var(--gold-hi); }
+.sc-seasons .champ.rec { color: var(--milk); }
 .sc-seasons .tt {
-  font-family: var(--mono); font-weight: 600; font-size: calc(1.15 * var(--u));
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.3 * var(--u));
   letter-spacing: .16em; text-transform: uppercase; color: var(--gold);
   border: 1px solid currentColor; border-radius: 2px;
-  padding: calc(.25 * var(--u)) calc(.55 * var(--u));
+  padding: calc(.25 * var(--u)) calc(.6 * var(--u));
 }
 
 /* ── tendencies ────────────────────────────────────────────────────────── */
@@ -2296,8 +2542,8 @@ body.phase-details .bb-next { display: flex; }
    space under the number — stacked from the top they came out bottom-heavy. */
 .sc-tend .v {
   min-width: 0; display: flex; flex-direction: column; justify-content: center;
-  gap: calc(.36 * var(--u)); text-align: center;
-  padding: calc(.6 * var(--u)) calc(1 * var(--u));
+  gap: calc(.34 * var(--u)); text-align: center;
+  padding: calc(.45 * var(--u)) calc(1 * var(--u));
   background: rgba(18, 32, 54, .5);
   border: 1px solid var(--line-soft); border-top: 2px solid var(--gold-lo);
   border-radius: 3px;
@@ -2316,7 +2562,7 @@ body.phase-details .bb-next { display: flex; }
   font-family: var(--cond); font-weight: 700; line-height: 1.05; color: var(--milk);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.sc-tend .v b { font-size: calc(2.45 * var(--u)); }
+.sc-tend .v b { font-size: calc(2.3 * var(--u)); }
 .sc-tend .rng {
   font-family: var(--mono); font-size: calc(1.2 * var(--u)); line-height: 1;
   color: var(--chalk-dim);
@@ -2326,19 +2572,26 @@ body.phase-details .bb-next { display: flex; }
    in the smallest type on the screen, doing the work one line can do. */
 .sc-tend .fhd {
   display: flex; align-items: center; gap: calc(1 * var(--u));
-  font-family: var(--mono); font-size: calc(1.15 * var(--u)); line-height: 1;
-  letter-spacing: .22em; text-transform: uppercase; color: var(--mute);
+  font-family: var(--mono); font-weight: 600;
+  font-size: calc(1.35 * var(--u)); line-height: 1;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--chalk-dim);
 }
 .sc-tend .fhd::after {
   content: ""; flex: 1; height: 1px; background: var(--line-2);
 }
 /* One bar a position, keyed down its leading edge in that position's colour.
    The colour is what locates the cell — the eye finds the quarterback bar
-   before it reads a word of it, which is the whole question this row answers. */
+   before it reads a word of it, which is the whole question this row answers.
+
+   Padded to about two thirds the height of the blocks above rather than to its
+   own single line. This row is `auto` and the row above it is `1fr`, so all the
+   slack in the card was going to the blocks and the bars were coming out at a
+   third their size — which read as the four of them having been shrunk while
+   nothing else was. */
 .sc-tend .f {
   min-width: 0; display: flex; align-items: baseline; justify-content: center;
-  gap: calc(.8 * var(--u));
-  padding: calc(.62 * var(--u)) calc(.8 * var(--u));
+  gap: calc(.9 * var(--u));
+  padding: calc(1.15 * var(--u)) calc(.8 * var(--u));
   background: rgba(18, 32, 54, .5);
   border: 1px solid var(--line-soft); border-left: 3px solid var(--line-2);
   border-radius: 3px;
@@ -2348,10 +2601,10 @@ body.phase-details .bb-next { display: flex; }
 .sc-tend .f-WR { border-left-color: var(--wr); }
 .sc-tend .f-TE { border-left-color: var(--te); }
 .sc-tend .pc {
-  font-family: var(--mono); font-weight: 600; font-size: calc(1.5 * var(--u));
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.7 * var(--u));
   line-height: 1; letter-spacing: .1em;
 }
-.sc-tend .f b { font-size: calc(2.45 * var(--u)); }
+.sc-tend .f b { font-size: calc(2.5 * var(--u)); }
 /* Two numbers side by side rather than a sentence about them. "rd 6.4 to
    their 5.6" is a thing nobody says out loud; his name over one number and
    the room over the other is the comparison itself. */
@@ -2372,46 +2625,53 @@ body.phase-details .bb-next { display: flex; }
    same shape as the lineup in the bottom band — position chip, name, team —
    but this is the pick order, so the ones he has not reached yet are still
    rows, carrying the round and pick they will be. */
+/* Three columns of five, not two of seven. This panel has the whole width of
+   the screen on its own face now, and fourteen picks down two long columns of
+   it left every row two thirds empty. Five rows also means each one is half as
+   tall again, which is where the size below comes from. */
 .sc-board {
   flex: 1; min-height: 0; display: grid;
-  grid-template-columns: 1fr 1fr; grid-auto-flow: column;
-  grid-template-rows: repeat(7, 1fr);
-  column-gap: calc(2.4 * var(--u));
-  padding: 0 calc(1.4 * var(--u));
+  grid-template-columns: repeat(3, 1fr); grid-auto-flow: column;
+  grid-template-rows: repeat(5, 1fr);
+  column-gap: calc(3.4 * var(--u));
+  padding: calc(.4 * var(--u)) calc(1.8 * var(--u)) calc(.8 * var(--u));
 }
 .sc-board .sb {
   display: grid; align-items: center;
-  grid-template-columns: calc(4.8 * var(--u)) calc(3.6 * var(--u)) 1fr calc(3.4 * var(--u));
-  gap: calc(.8 * var(--u));
+  grid-template-columns: calc(5.6 * var(--u)) calc(4.2 * var(--u)) 1fr calc(4 * var(--u));
+  gap: calc(1 * var(--u));
   border-bottom: 1px solid rgba(32,48,71,.45);
-  font-family: var(--cond); font-weight: 700; font-size: calc(2.1 * var(--u));
+  font-family: var(--cond); font-weight: 700; font-size: calc(2.3 * var(--u));
   color: var(--milk);
 }
-.sc-board .sb:nth-child(7n) { border-bottom: none; }
-/* Rounds 8-14 are the second column (seven rows, flowing down each in turn),
-   and they need a rule down their leading edge: the team abbreviation of a
-   pick in the left column otherwise ends up sitting against the pick number
-   of a round in the right one with only the gutter between them. */
-.sc-board .sb:nth-child(n+8) {
-  border-left: 1px solid rgba(32,48,71,.45); padding-left: calc(1.6 * var(--u));
+/* The foot of each column, and the last pick of the last one. */
+.sc-board .sb:nth-child(5n), .sc-board .sb:last-child { border-bottom: none; }
+/* Columns two and three need a rule down their leading edge: the team
+   abbreviation of a pick in one column otherwise ends up sitting against the
+   pick number of the next with only the gutter between them. */
+.sc-board .sb:nth-child(n+6) {
+  border-left: 1px solid rgba(32,48,71,.45); padding-left: calc(2 * var(--u));
 }
 .sc-board .pk {
-  font-family: var(--mono); font-weight: 400; font-size: calc(1.4 * var(--u));
+  font-family: var(--mono); font-weight: 400; font-size: calc(1.65 * var(--u));
   color: var(--gold-lo);
 }
-.sc-board .pos { font-family: var(--mono); font-weight: 600; font-size: calc(1.4 * var(--u)); }
+.sc-board .pos {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.65 * var(--u));
+  filter: brightness(1.15);
+}
 .sc-board .nm { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sc-board .tm {
-  font-family: var(--mono); font-size: calc(1.25 * var(--u));
-  color: var(--mute); text-align: right;
+  font-family: var(--mono); font-size: calc(1.45 * var(--u));
+  color: var(--chalk-dim); text-align: right;
 }
 .sc-board .made .pk { color: var(--gold); }
 /* A pick he has not reached is a row, not a gap: it says which round and
    which pick it will be, so the screen answers "when is he up again" as well
    as "what has he done". */
 .sc-board .open .nm {
-  font-family: var(--mono); font-weight: 400; font-size: calc(1.45 * var(--u));
-  letter-spacing: .04em; color: var(--mute); text-transform: uppercase;
+  font-family: var(--mono); font-weight: 400; font-size: calc(1.7 * var(--u));
+  letter-spacing: .04em; color: var(--chalk-dim); text-transform: uppercase;
 }
 .sc-board .now { color: var(--gold-hi); }
 .sc-board .now .pk { color: var(--gold-hi); }
@@ -2419,15 +2679,20 @@ body.phase-details .bb-next { display: flex; }
 
 /* every first rounder he has ever made */
 .sc-r1 {
-  display: flex; align-items: center; gap: calc(2.6 * var(--u)); overflow: hidden;
-  padding-top: calc(1.4 * var(--u)); border-top: 1px solid var(--line-soft);
+  display: flex; align-items: center; gap: calc(2.2 * var(--u)); overflow: hidden;
+  padding-top: calc(1.1 * var(--u)); border-top: 1px solid var(--line-soft);
   animation: selUp .5s calc(var(--sc-in) + .28s) ease-out both;
 }
 .sc-r1:empty { display: none; }
+/* Names the band, so it should be readable from the same distance the band
+   is. It was the smallest, faintest thing on the screen. A size up, in chalk,
+   with the tracking pulled in and the padding cut so the extra size costs the
+   chips beside it nothing. */
 .sc-r1 .k {
-  flex: none; font-family: var(--mono); font-size: calc(1.2 * var(--u));
-  letter-spacing: .2em; text-transform: uppercase; color: var(--mute);
-  padding-right: calc(.6 * var(--u));
+  flex: none; font-family: var(--mono); font-weight: 600;
+  font-size: calc(1.5 * var(--u));
+  letter-spacing: .16em; text-transform: uppercase; color: var(--chalk);
+  padding-right: 0; max-width: calc(17 * var(--u)); line-height: 1.15;
 }
 /* Two lines, not one: the year and where the pick landed on top, the player
    underneath with the full width of the chip to himself. On one line the pick
@@ -2502,12 +2767,17 @@ body.phase-details .bb-next { display: flex; }
 .sc-v .mg { flex: none; font-weight: 600; color: var(--chalk-dim); }
 .sc-v [class^="pos-"] { flex: none; font-family: var(--mono); font-size: calc(1.4 * var(--u)); }
 .sc-mid { text-align: center; }
-.sc-mid .sc-k { color: var(--gold); }
+/* More air under `On the clock · 18th overall` than the other two labels get.
+   The clock beneath it is set at `line-height: .8`, so its glyphs sit high in
+   a box shorter than they are and the numerals crowd the line above — the
+   0.5u that reads as a gap over a 2.6u name reads as a collision under a
+   label with an 8.4u countdown coming. */
+.sc-mid .sc-k { color: var(--gold); margin-bottom: calc(1.5 * var(--u)); }
 /* The board's own timer is behind this screen, so this is the clock. Set at
    the size the resting screen sets its own — it is doing that job now. */
 .sc-clock {
   font-family: var(--clock); font-weight: 600; font-size: calc(8.4 * var(--u));
-  line-height: .8; letter-spacing: 0; color: var(--milk);
+  line-height: .8; letter-spacing: .05em; margin-right: -.05em; color: var(--milk);
   font-variant-numeric: tabular-nums;
 }
 .sc-clock.warn  { color: var(--gold-hi); }

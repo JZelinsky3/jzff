@@ -29,10 +29,10 @@
   <section class="stage">
 
     <div class="idle">
-      <div class="eyebrow">Friday, August 28 &middot; 7:15 PM</div>
+      <div class="eyebrow">Friday, August 28 &middot; 7:20 PM</div>
       <h1>THE MILK IS<span>ON THE CLOCK</span></h1>
       <div class="when" id="idleCount">&nbsp;</div>
-      <div class="fmt">14 rounds &middot; snake &middot; full PPR &middot; 6pt passing TD &middot; TE premium</div>
+      <div class="fmt">15 rounds &middot; snake &middot; full PPR &middot; 6pt passing TD &middot; TE premium</div>
       <div class="lineup" id="idleLineup"></div>
     </div>
 
@@ -249,27 +249,39 @@
   <!-- the season he is drafting for: week one, rivalry week, his next pick -->
   <div class="sc-sched" id="scSched"></div>
 
+  <!-- The middle of this screen shows one thing at a time and turns over every
+       seven seconds: his board tonight, then his career and how he drafts. It
+       used to show all three at once in two columns, which fitted, and read
+       from a couch as a wall. Nothing is lost by turning it over — the same
+       panels get the whole width instead of half of it. Pure CSS, see
+       .sc-flip in the stylesheet; there is no timer in board.js for this. -->
   <div class="sc-cols">
-    <div class="sc-left">
-      <!-- the career as a row of seasons rather than a table of them: it was
-           half this screen and all it said was what happened, year by year -->
+    <!-- face one: every pick he owns tonight, in order, the ones he has not
+         reached yet standing empty with the round and pick on them -->
+    <div class="sc-flip a">
       <section class="sc-panel">
-        <div class="sc-hd"><span>Career</span><span class="ct" id="scSeasonsCt"></span></div>
+        <div class="sc-hd">
+          <span class="pg"><i class="on"></i><i></i></span>
+          <span>Draft board</span><span class="ct" id="scBoardCt"></span>
+        </div>
+        <div class="sc-board" id="scBoard"></div>
+      </section>
+    </div>
+    <!-- face two: the career as a row of seasons rather than a table of them,
+         over what he actually does in a draft -->
+    <div class="sc-flip b">
+      <section class="sc-panel">
+        <div class="sc-hd">
+          <span class="pg"><i></i><i class="on"></i></span>
+          <span>Career</span><span class="ct" id="scSeasonsCt"></span>
+        </div>
         <div class="sc-seasons" id="scSeasons"></div>
       </section>
-      <!-- what the seasons table was taking the room from: what he actually
-           does in a draft, which is the question while he is in one -->
       <section class="sc-panel">
         <div class="sc-hd"><span>Tendencies</span><span class="ct" id="scTendCt"></span></div>
         <div class="sc-tend" id="scTend"></div>
       </section>
     </div>
-    <!-- his own board: every pick he owns tonight, in order, the ones he has
-         not reached yet standing empty with the round and pick on them -->
-    <section class="sc-panel">
-      <div class="sc-hd"><span>Draft board</span><span class="ct" id="scBoardCt"></span></div>
-      <div class="sc-board" id="scBoard"></div>
-    </section>
   </div>
 
   <div class="sc-r1" id="scR1"></div>

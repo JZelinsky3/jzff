@@ -513,7 +513,7 @@ def main():
     meta = {
         "league_id": LEAGUE_ID,
         "draft_id": DRAFT_ID,
-        "rounds": 14,
+        "rounds": 15,
         "teams": 12,
         "pick_seconds": 120,
         "type": "snake",

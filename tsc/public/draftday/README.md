@@ -3,8 +3,19 @@
 A draft broadcast for the PA Milk Society. Three screens that share one live
 state through Firestore, with Sleeper as the eventual source of truth.
 
-Draft: **Friday August 28, 2026, 7:15pm** — 14 rounds, snake, 12 teams,
+Draft: **Friday August 28, 2026, 7:20pm** — 15 rounds, snake, 12 teams,
 120 second clock, full PPR / 6pt passing TD / TE premium (+0.5).
+
+**Fifteen rounds, not fourteen** (2026-08-22). The league went to six bench
+spots and Sleeper was corrected to match. `ROUNDS` in core.js is the only place
+the board counts from — everything downstream reads it, including the
+showcase's board of his own picks, which happens to land exactly on the three
+columns of five it was already drawn in. `data/meta.json` and
+`build_draft_data.py` carry it too, so a rebuild does not quietly undo it. The
+one thing it changes underneath: no manager has ever owned a fifteenth rounder,
+so the tendencies card's round cell walks down to the deepest round he *has*
+owned and names it, rather than falling through to the round-one count and
+reading identically on all twelve screens.
 
 ## The three screens
 
@@ -215,6 +226,55 @@ off it, and four bars keyed down the leading edge in the position's own colour
 — the eye finds the quarterback bar before it reads a word of it, which is the
 question that row exists to answer. The word `FIRST` used to be in all four
 cells, in the smallest type on the screen, doing work one line does.
+
+**The middle of the showcase turns over instead of showing everything.**
+Career and tendencies stacked in the left half, his board tonight in the right:
+all of it fitted, and from a couch it read as a wall. The problem was never
+that a panel was wrong, it was that there were three of them at half width.
+
+Two faces in the same grid cell now, on a fifteen-second cycle. His board leads
+— that is what the room wants while a man is on the clock — then his career
+over how he drafts. Not an even split: the board is a column of picks you take
+in at a glance and the career face is two panels of numbers that want reading,
+so the crossover sits a second before the midpoint and the career face is held
+about two seconds longer. Every panel has the full width it
+used to share, so the board went to three columns of five instead of two of
+seven, and the career strip kept all five of its rows (year, record, finish,
+seed, points) at a size worth reading.
+
+It sits at nine tenths of the area it is given, centred, with the row it lives
+in unchanged so nothing above or below it moves. That inset is the point: the
+reason for turning the middle over was to have less on screen at a time, and
+letting one panel stretch into the room the other two gave up is the opposite
+of it — the same wall with fewer seams. The scale is a local redefinition of
+`--u`, not a transform: every length in these panels is `calc(N * var(--u))`,
+so one declaration shrinks type, padding, rules and gaps in exact proportion,
+and it happens in layout, so the type is rasterised at its real size. A
+`transform: scale()` would resample it, for the same reason `#frame` is fit
+with `zoom`.
+
+It is `.sc-flip` in the stylesheet and there is no timer in board.js for any of
+it: two infinite keyframes, delayed behind the title card, sequenced so the
+outgoing face is gone before the incoming one arrives rather than
+cross-dissolving into it. `display: none` on the showcase stops the whole thing
+and restarts it from face one next time it goes up, which is exactly the
+behaviour you want — the board is always the first thing on screen.
+
+**And the class was very nearly `.sc-face`,** which is already the manager's
+cut-out in the showcase header. The flip inherited `height: 17.5u` off it and
+every panel came out a fifth of its proper size. This stylesheet has form for
+this (see the note on bare state classes below); grep before naming.
+
+**The title year's tint opens above the year** rather than at its cap line,
+which is what made the highlight look like it started late. The year cell
+carries the extra room and the container gave it up.
+
+**The clock's four facts are not the same four facts all night.** What he did
+with this round last year and when he is up again are on every screen — both
+are about the pick in front of him. The pair between them alternates: last
+season on the odd rounds, his whole career on the even ones. Four numbers about
+a man are enough to read at a glance, and the same four for fourteen rounds is
+wallpaper.
 
 **The round band follows the draft.** On the clock in round nine it shows every
 ninth rounder he has taken, oldest year on the left, with the overall pick each
@@ -673,12 +733,152 @@ The man's PAMS record used to sit in the foot beside what was left at his
 position — three narrow columns of year, pick and manager taking half the width
 of a television to say it. It lives under his photograph now, at the width of
 the photograph, smaller and a good deal brighter (smaller *and* fainter is how
-a module disappears). The foot took the room it gave up and answers the
-position in both directions: `{POS} OFF THE BOARD`, newest first with this pick
-lit gold at the top of it and who took each one, beside `{POS} STILL AVAILABLE`,
-five deep each. That is the pair of things the room says out loud the second a
-name is called, and both are counted off PICKS, so neither needs anything that
-was not already in hand.
+a module disappears). The foot took the room it gave up, and what is in it
+had to be got right twice. It was first `{POS} OFF THE BOARD` beside `{POS}
+STILL AVAILABLE` — both true, both useful, and completely unreadable together:
+two five-row lists of a position chip, a name and a right-aligned column, side
+by side, in the same colours. Nobody could tell at a glance which one they were
+reading.
+
+So the left half is not a list. It was `{Manager}'s board` — four counts in the
+position colours, the one he had just added lit — and that was a shape beside
+rows, which is what makes rows legible. The trouble was that the lineup card in
+the band underneath shows the same roster as named starters, so for the first
+several rounds the reveal was spending a card on a fact the room could read two
+inches lower, and the counts got *less* interesting as the night went on.
+
+`His second running back` took the slot instead, in four lines: the round he is
+in tonight against the round he normally takes that man in, the earliest and
+latest he has ever gone, and the read — *1.4 rounds earlier than usual*, or
+*earliest he has ever taken one* when he is outside his own range, which is the
+better story whenever it is true. It is the one thing on the reveal that is
+about the manager rather than the player, and it goes the other way from the
+counts: by round six every position has a history behind it. All of it is
+`nthRoundFor()` in board.js, walking `round_picks` per year in overall-pick
+order (the file is keyed by round, and a manager with two picks in a round has
+them in file order, not board order), cached per manager, position and depth
+because none of it moves while the draft runs. When he has never gone that deep
+at a position, the card says so and that is the whole fact.
+
+Four lines and no more. It also carried the count of drafts the average was
+taken over, and the *up again at pick 41, seventeen picks away* foot the
+counts used to sit on. Both went: the second one is a fact about the next
+twenty minutes on a card that is about the last seven years, and both were
+costing height the list beside them had to match.
+
+**The list beside it spreads into whatever that card does not use.** The pair
+is set to a common height, so a four-line card next to a five-row list left the
+difference as dead box under the fifth name. `WR still available` divides its
+height by its rows and grows them into it — `grid-auto-rows: 1fr`, the same
+thing the band's two lists downstairs do — so the slack turns into air between
+the names instead of a gap at the bottom. It is a no-op when there is none.
+
+**The crest and the player have to be centred on each other, and on the
+selection graphic they were not.** Measured, not eyeballed: 1.75u apart, a hair
+under 19px on a 1080p board, which is not enough to look deliberate and plenty
+to look wrong. The cause is that they are positioned by two different systems.
+`.sel-shot` pads its leading edge so the flex centring lands the player off the
+bezel, and a flex item is centred in the *content* box — so he sits half that
+padding right of the panel's middle. The crest is absolutely positioned, and
+`left: 50%` is 50% of the *padding* box, which is the panel's middle exactly.
+The padding has a name now (`--sel-pad`) and the crest is offset by half of it.
+The detail card was already square, because nothing there is padded.
+
+Both keep a deliberate *vertical* offset — the crest rides above the player's
+centre so the mark lands behind the head, where the cutout is transparent
+either side of it, rather than behind the chest, where it is opaque and would
+cover it. 8u on the selection graphic, about 5.7u on the detail card.
+
+**The clocks are tracked out.** Teko sets its numerals tight and the bigger the
+clock the more they close up, so all three — the resting screen's timer, the
+showcase's, and the small one on the next-on-the-clock card — carry a little
+letter-spacing, with a negative margin of the same amount to take back the
+trailing space so nothing shifts off its alignment. Not the same figure on each,
+because tracking is relative to the size it is set at. The showcase's label
+also got more air under it: `On the clock · 18th overall` sits over a countdown
+set at `line-height: .8`, whose glyphs sit high in a box shorter than they are,
+so the half-unit that reads as a gap elsewhere read as a collision there.
+
+**The tag row reads facts first, judgement last.** `ROOKIE`, then where he sat
+on the board, then his position rank, then the verdict on taking him here. The
+verdict was leading, and it is the loudest thing on the row — a solid red or
+green box — so the board was putting its opinion in front of the numbers the
+opinion is drawn from. It ends the row now.
+
+The phrase inside it changed with it. `REACH · 45 EARLY` was a label, a dot and
+a fragment, and a man who falls 45 spots does not then get taken "45 early" —
+he gets **jumped** 45 spots. Same verb shape in both directions, `FELL 45
+SPOTS` / `JUMPED 45 SPOTS`. And only one half of that chip is a judgement:
+REACH is the word the room shouts, "jumped 45 spots" is the arithmetic behind
+it, and as one solid red box the whole phrase shouted and the number got the
+same emphasis as the verdict. So the word is stamped — a filled block in the
+level's colour, flush into the chip's own corners — and the number sits beside
+it in plain type on a tinted ground.
+
+**A man with no PAMS history gets a line, not a heading.** The history box
+under the photograph is a gold title over a list of years. When there is no
+list the title was still being set as a title: left-aligned, ruled underneath,
+with nothing under the rule. `.solo` centres it in the box instead and drops
+the rule. Two different men land here and the line has to tell them apart — a
+rookie who has never been draftable is `Rookie's first draft`, a veteran who
+has been sitting there every year and nobody has taken is `First time drafted`.
+
+**The plate belongs to the card, and it has to be sized past its own frame.**
+Two separate things made `bg/smallclock.webp` read as art that does not fit. It
+was hung on `.next-body`, which starts below the NEXT ON THE CLOCK header, so
+it stopped short of the top of the card. And the plate carries a painted gold
+frame about 4% in from its own edge, so even at `100% 100%` it drew that frame
+as a second, smaller rectangle with a dark margin between the two — which is
+the half that survived moving it. So: on `.bb-next`, header included, at
+`114% 122%`, which puts the painted frame off the edge. The card's own 2px
+border is the only frame now and the plate's interior fills it corner to
+corner. The vertical overscale is the larger of the two because the frame's
+inset is: the art is wider than it is tall and its margin is even in pixels,
+not in percent. The header loses its rule as well — a hairline across the top
+of the art is exactly the seam this was meant to remove.
+
+**Small is fine. Faint is not.** A general pass over the board's small type
+(2026-08-22): sizes mostly left alone, colours lifted a long way. The lineup's
+position chips, the pick and team columns in both band lists, the clock's fact
+labels, the round band's own title in the showcase — all of them had been set
+"subtle", which had turned into small *and* dark, and small and dark on a
+television is gone. Keep the size, take the grey out.
+
+**The two band cards have edges, and that is as far as it goes.** Widening the
+gutter between best available and the lineup did not separate them on its own;
+a 2px border in `--line-2` and then keeping the rows off it did. Whatever
+padding goes on those two lists has to be identical, because it comes off the
+height the rows divide — half a unit of difference and one card's rows sit out
+of step with the other's all the way down.
+
+**And the type in them is within a step of itself.** The rows always were —
+both lists are driven by the one clamp that sizes a row off `--band-rows`, so
+they stay level down the card — but every cell *inside* the lineup had been
+given its own smaller figure: names at 0.88em against best available's 1em, the
+slot chip at 0.59em against the position chip's 0.66em, teams at 0.54 against
+0.59. On a 1080p board that is 21px, 14px and 13px sitting a hairline away from
+24px, 16px and 14px, with the rows level across the seam — which is exactly the
+arrangement that makes a 12% difference read as a mistake rather than as a
+hierarchy.
+
+Fixed in two passes (2026-08-23), and the second one matters. Levelling all
+three outright was too far the other way: best available is the pane the room
+is actually reading and the lineup is the reference beside it, so the lineup
+should sit a touch under. A touch is 5%, not 12% — names at 0.94em and the slot
+at 0.63em, both landing between where they were and level, with the team
+matched outright at 0.59em since three capitals carry no hierarchy either way.
+The lineup's slot column went to 2.3em so FLEX clears its cell at the larger
+chip size. Checked at fourteen rows with the longest names in the pool (Dorian
+Thompson-Robinson, Marquez Valdes-Scantling): nothing clips.
+
+It went further than this once and came straight back (2026-08-22): 4px edges
+in a bright blue with an inset highlight on the band and the round wall, the
+showcase panels given the same treatment a size down, and every rule inside
+every card doubled to 2px. It read as tacky rather than as broadcast, and the
+showcase panels in particular had no business matching the weight of the two
+cards in the band. If it is revisited: the cards in the band are the only ones
+that need to look like objects, and the rules inside a card are furniture, not
+structure.
 
 **Card headers are set to be read from a couch, not a desk.** BEST AVAILABLE,
 LINEUP, the round wall and the showcase panels were all 1.05–1.3u of `--mute`
@@ -747,6 +947,33 @@ down: where the pick landed against the board, what he did in this round last
 year, history on the player, a run on the position, and only at the end the
 shape of his roster — stated as what he has, never as what he still needs,
 because what he still needs is the on-the-clock line.
+
+**A run has a beginning and an end, and neither of them is a fixed window.**
+It used to be one number doing two jobs: four receivers inside the last six
+picks made it a run, and "the last six picks" was also the only way the board
+could describe it. So four receivers in the last *five* picks came out as
+"four of the last six", and four *straight* receivers came out the same way,
+when the thing worth saying is that they were straight.
+
+`runAt()` in core.js splits the two. Whether it is a run is still density —
+`n` at the position with at most `window - n` other picks mixed in, so four of
+six is a run and so is five of seven and six of eight. Where it *reaches* is a
+walk backwards from the most recent pick, ending at `gap` consecutive picks
+somewhere else: three for backs and receivers, four for quarterbacks and tight
+ends, because twelve of each start in this league and nobody takes two in a row
+— three other picks between two quarterbacks is what a quarterback run looks
+like, not what the end of one looks like. The span is measured from the run's
+own first pick to now, so the sentence is always the tightest true one, and
+`all` is set when there is nothing else inside it: *the last four picks have
+all been WRs*, not *four of the last six*.
+
+Starting the walk at the last pick is also what retires a finished run. Three
+other picks since the last receiver and the walk breaks before it reaches one,
+so there is nothing to report — which is the rule, and it used to be that a run
+sat on the wall until the fixed window slid off it. The wall's alert chip and
+`pickLine`'s "that is four receivers in a row" are the same call now:
+`posContext` in voice.js used to work its own window out and could disagree
+with the chip beside it.
 
 **A needs list is only worth saying when it is nearly closed.** `onClockLine`
 used to read the whole thing out from round two on — "still needs a
@@ -858,6 +1085,19 @@ the subject and resized to 620px tall (0.6mb for all twelve). They stand in the
 light on the on-the-clock screen and label the roster panel. `cat.png` in the
 source folder is Connor and is renamed on the way in. Regenerate them from
 `~/Desktop/pams 2026 power rankings/cutouts/trim` if the originals change.
+
+Two of them were redone on 2026-08-23. Joey's and Mason's had straight-edged
+bites taken out of an arm each — a bad foreground mask, baked into the trim and
+so into the webp. The replacements came back as **JPEGs of what a transparent
+image looks like**: the subject over an opaque grey-and-white checkerboard.
+`dekey_cutout.py` is what turned them back into cut-outs, and it does not key on
+colour, because these portraits are full of whites that would go with it. It
+takes the flood of checker-coloured pixels connected to the frame edge, plus
+any enclosed pocket that is checker in the strict sense — a fifth of it exactly
+`255,255,255` and a fifth exactly `204,204,204`, both perfectly neutral, which
+the gap between Mason's arm and his ribs is and a painted jersey numeral is not
+(0.30/0.30 against 0.00/0.00). Then a pixel off the subject side, because JPEG
+smears the checker into the first ring of it and that reads as a grey halo.
 
 `fonts/` are self-hosted subsets of Archivo (variable), Barlow Condensed, IBM
 Plex Mono, DM Serif Display and Anton. Self-hosted on purpose so draft night

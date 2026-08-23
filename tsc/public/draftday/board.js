@@ -495,7 +495,7 @@ function tickClock() {
     started ? (STATE.paused ? "clock paused" : "") : "starts on next pick", null);
 }
 
-const DRAFT_AT = new Date("2026-08-28T19:15:00-04:00").getTime();
+const DRAFT_AT = new Date("2026-08-28T19:20:00-04:00").getTime();
 setInterval(() => {
   if (STATE.status !== "idle") return;
   const d = DRAFT_AT - Date.now();
@@ -614,18 +614,37 @@ function renderClock() {
     const ly = (m.last_year || {})[String(round)];
     const ls = m.last_season || {};
     const next = C.nextPickForSlot(m.slot, o + 1);
+    // The two middle facts alternate with the round. The outer two do not:
+    // what he did with this round last year and when he is up again are both
+    // about the pick in front of him and belong on every screen. The pair in
+    // between is last season on the odd rounds and his whole career on the
+    // even ones — four numbers about a man are enough to read at a glance, and
+    // the same four for fourteen rounds is wallpaper.
+    const c = m.career || {};
     const facts = [];
     if (ly) {
       facts.push(`<div class="f"><span class="k">2025 RD ${round}</span>
         <span class="v">${C.escapeHtml(ly.name)}</span></div>`);
     }
-    if (ls.record) {
-      facts.push(`<div class="f"><span class="k">2025</span>
-        <span class="v">${C.escapeHtml(ls.record)}${ls.finish ? `, ${ordinalPick(ls.finish)}` : ""}</span></div>`);
-    }
-    if (ls.points_rank) {
-      facts.push(`<div class="f"><span class="k">2025 points</span>
-        <span class="v">${ordinalPick(ls.points_rank)}</span></div>`);
+    if (round % 2 === 0) {
+      if (c.record) {
+        facts.push(`<div class="f"><span class="k">All-time</span>
+          <span class="v">${record(c.record)}${c.win_pct
+            ? ` <i>${String(c.win_pct.toFixed(3)).replace(/^0/, "")}</i>` : ""}</span></div>`);
+      }
+      facts.push(`<div class="f"><span class="k">Titles</span>
+        <span class="v">${c.titles
+          ? `${c.titles} <i>${(c.title_years || []).join(", ")}</i>`
+          : "None yet"}</span></div>`);
+    } else {
+      if (ls.record) {
+        facts.push(`<div class="f"><span class="k">2025</span>
+          <span class="v">${C.escapeHtml(ls.record)}${ls.finish ? `, ${ordinalPick(ls.finish)}` : ""}</span></div>`);
+      }
+      if (ls.points_rank) {
+        facts.push(`<div class="f"><span class="k">2025 points</span>
+          <span class="v">${ordinalPick(ls.points_rank)}</span></div>`);
+      }
     }
     if (next) {
       facts.push(`<div class="f"><span class="k">Next pick</span>
@@ -784,17 +803,27 @@ function renderReveal() {
     `<span class="sep"> / </span>${C.escapeHtml(p.team || "FA")}` +
     (player.age ? `<span class="sep"> / </span>${player.age} yrs` : "");
 
+  // Read left to right, the row goes from what the player is to what the pick
+  // was: rookie first, then where he sat on the board, then the verdict on
+  // taking him here. The verdict is the loudest thing on the row — a solid
+  // red or green box — and it was leading, which put the judgement in front of
+  // the facts it is drawn from. It ends the row now.
   const tags = [];
-  const v = C.verdict(o, p.board);
-  if (v && v.level !== 0) {
-    const cls = { 2: "steal", 1: "value", "-1": "early", "-2": "reach" }[v.level];
-    const how = v.gap > 0 ? `FELL ${v.gap} SPOTS` : `${Math.abs(v.gap)} EARLY`;
-    tags.push(`<span class="tag ${cls}">${v.tag} &middot; ${how}</span>`);
-  }
+  if (p.rookie) tags.push(`<span class="tag rookie">ROOKIE</span>`);
   // "BOARD 32" meant nothing on its own. Say what the number is.
   if (p.board) tags.push(`<span class="tag">RANKED #${p.board} OVERALL</span>`);
   if (p.posrank) tags.push(`<span class="tag pos-${p.pos}">${p.pos}${p.posrank} ON THE BOARD</span>`);
-  if (p.rookie) tags.push(`<span class="tag rookie">ROOKIE</span>`);
+  const v = C.verdict(o, p.board);
+  if (v && v.level !== 0) {
+    const cls = { 2: "steal", 1: "value", "-1": "early", "-2": "reach" }[v.level];
+    // Both halves say the same kind of thing now. "REACH · 45 EARLY" was a
+    // label, a dot and a fragment; a man does not fall 45 spots and then get
+    // taken "45 early", he gets jumped 45 spots. Same verb shape either
+    // direction, and the tag word is set apart by weight rather than by a
+    // separator sitting in the middle of the phrase.
+    const how = v.gap > 0 ? `FELL ${v.gap} SPOTS` : `JUMPED ${Math.abs(v.gap)} SPOTS`;
+    tags.push(`<span class="tag verdict ${cls}"><b>${v.tag}</b>${how}</span>`);
+  }
   // A position run is a fact about the last six picks, not about this player,
   // and sitting it in a row of his own rankings read as if it were one. It
   // lives in the round wall's header now (see renderBestAvailable), which is
@@ -817,11 +846,19 @@ function renderReveal() {
         `<span class="tm">${C.escapeHtml(x.team || "")}</span></li>`).join("") + `</ul>`
     : "";
 
-  renderRevealGone(p, o);
+  renderRevealRoster(p, o, m);
 
   const box = $("revHist");
+  // Nothing under the heading in either of these cases, so it is not a heading
+  // — it is the whole card, and .solo sets it as one: centred under the
+  // photograph instead of left-aligned over a list of years that isn't there.
+  box.classList.toggle("solo", !hist.length);
   if (!hist.length) {
-    box.innerHTML = `<span class="k">${p.rookie ? "First time on a PAMS board" : "Never drafted in PAMS"}</span>`;
+    // Two different men end up here and the line has to tell them apart: one
+    // has never been draftable, the other has been sitting there every year
+    // and nobody has taken him.
+    box.innerHTML = `<span class="k">${
+      p.rookie ? "Rookie's first draft" : "First time drafted"}</span>`;
   } else {
     // Most recent first — "last time" is the interesting fact live, not
     // whatever order the history file happens to store him in.
@@ -842,36 +879,130 @@ function renderReveal() {
   }
 }
 
+const NTH = ["", "first", "second", "third", "fourth", "fifth", "sixth",
+             "seventh", "eighth", "ninth", "tenth"];
+
 /**
- * The other half of "who is left": who has already gone at this position
- * tonight, newest first, this pick at the top of it.
+ * The round a manager has historically taken his nth man at a position.
  *
- * It is the natural partner to the still-available list beside it and the
- * thing the room says out loud next — that is the fourth back off the board
- * and the second in six picks. Counted off PICKS, so it needs nothing that
- * was not already in hand, and it fills the half of the foot the man's PAMS
- * record used to take before that moved under his photograph.
+ * `firstRoundFor` below answers this for n = 1 only, which is the question the
+ * showcase asks while he is on the clock. Once a pick has landed the question
+ * is sharper — this is his third receiver, not his first — so this walks the
+ * same data one step further: for each draft he has made, the round he was in
+ * when he took his nth at that position, and then the average, the earliest and
+ * the latest across those drafts.
+ *
+ * Ordered by overall pick within a year rather than by round, because
+ * `round_picks` is keyed by round and a manager with two picks in a round has
+ * them in file order, not board order.
  */
-function renderRevealGone(p, o) {
-  const gone = PICKS
-    .filter(x => x.pos === p.pos)
-    .sort((a, b) => b.overall - a.overall)
-    .slice(0, 5);
-  const el = $("revGone");
-  if (!gone.length) { el.innerHTML = ""; return; }
-  // Where each one sits in the run on his own position, so the top row reads
-  // "RB4" for the fourth back taken rather than repeating his preseason rank.
-  const order = new Map();
-  let n = 0;
-  for (const x of PICKS.slice().sort((a, b) => a.overall - b.overall)) {
-    if (x.pos === p.pos) order.set(x.overall, ++n);
+const nthRoundCache = new Map();
+
+function nthRoundFor(m, pos, n) {
+  const key = `${m.slot}|${pos}|${n}`;
+  if (nthRoundCache.has(key)) return nthRoundCache.get(key);
+
+  const byYear = new Map();
+  for (const [r, list] of Object.entries(m.round_picks || {})) {
+    for (const p of list) {
+      if (!byYear.has(p.y)) byYear.set(p.y, []);
+      byYear.get(p.y).push({ r: Number(r), ov: p.ov, pos: p.pos });
+    }
   }
-  el.innerHTML = `<span class="k">${p.pos} off the board</span><ul>` +
-    gone.map(x => `<li${x.overall === o ? ` class="now"` : ""}>` +
-      `<span class="pr pos-${x.pos}">${x.pos}${order.get(x.overall) || ""}</span>` +
-      `<span class="nm">${C.escapeHtml(x.name)}</span>` +
-      `<span class="tm">${C.escapeHtml(x.manager || "")}</span></li>`).join("") +
-    `</ul>`;
+
+  const rounds = [];
+  for (const picks of byYear.values()) {
+    picks.sort((a, b) => a.ov - b.ov);
+    let seen = 0;
+    for (const x of picks) {
+      if (x.pos !== pos) continue;
+      if (++seen === n) { rounds.push(x.r); break; }
+    }
+  }
+
+  const out = rounds.length ? {
+    avg: rounds.reduce((a, b) => a + b, 0) / rounds.length,
+    lo: Math.min(...rounds), hi: Math.max(...rounds), n: rounds.length,
+  } : null;
+  nthRoundCache.set(key, out);
+  return out;
+}
+
+/** `3.4`, `3` — a round average, without a trailing zero on a whole number. */
+const rd = x => (Math.round(x * 10) / 10).toFixed(1).replace(/\.0$/, "");
+
+/**
+ * How this pick sits against how he normally drafts.
+ *
+ * This slot used to hold his roster as four position counts. It was true, and
+ * for the first several rounds the lineup card in the band underneath was
+ * already showing the same thing in names — so the reveal was spending a card
+ * on a fact the room could read two inches lower.
+ *
+ * What it holds instead is the one thing on this screen that is about the
+ * manager rather than the player: he has drafted in this league seven times,
+ * and this is where he usually takes his second back. The counts got less
+ * interesting as the night went on; this gets more so, because by round six
+ * every position has a history behind it.
+ *
+ * Four lines and no more. It carried the count of drafts the average was taken
+ * over, and the "up again at pick 41, seventeen picks away" foot the counts
+ * used to sit on — both true, both costing the card height it was making the
+ * still-available list beside it match. The foot in particular is a fact about
+ * the next twenty minutes on a card that is about the last seven years.
+ *
+ * Everything here is off `round_picks`, which is written at build time and does
+ * not move while the draft runs, so it is cached per manager and position.
+ */
+function renderRevealRoster(p, o, m) {
+  const el = $("revGone");
+  if (!m) { el.innerHTML = ""; return; }
+
+  // Which one of these he now has, this pick included — PICKS already carries
+  // the pick being revealed.
+  const nth = PICKS.filter(x => x.slot === m.slot && x.pos === p.pos).length || 1;
+  const round = C.roundOf(o);
+  const noun = (POS_ONE[p.pos] || p.pos).toLowerCase();
+  const label = `His ${NTH[nth] || `${nth}th`} ${noun}`;
+
+  const h = nthRoundFor(m, p.pos, nth);
+
+  // What to make of it, in one line. Being outside the range he has ever gone
+  // in is the better story when it is true, so it wins over the average.
+  let verdict = "";
+  if (h) {
+    const d = h.avg - round;               // + = earlier than he usually goes
+    if (h.n > 1 && round < h.lo) verdict = `<b class="up">Earliest he has ever taken one</b>`;
+    else if (h.n > 1 && round > h.hi) verdict = `<b class="dn">Latest he has ever taken one</b>`;
+    else if (Math.abs(d) < .5) verdict = `<b>Right on his number</b>`;
+    else {
+      const n = rd(Math.abs(d));
+      const word = `round${Math.abs(d) >= 1.5 ? "s" : ""}`;
+      verdict = d > 0
+        ? `<b class="up">${n} ${word} earlier than usual</b>`
+        : `<b class="dn">${n} ${word} later than usual</b>`;
+    }
+  }
+
+  el.innerHTML =
+    `<span class="k">${C.escapeHtml(label)}</span>` +
+    (h
+      ? `<div class="hb">
+           <div class="hb-c">
+             <span class="hb-n pos-${p.pos}">${round}</span>
+             <span class="hb-l">tonight</span>
+           </div>
+           <div class="hb-c">
+             <span class="hb-n">${rd(h.avg)}</span>
+             <span class="hb-l">his average</span>
+           </div>
+         </div>
+         <div class="hb-range">Earliest <b>${h.lo}</b> &nbsp;Latest <b>${h.hi}</b></div>
+         <div class="hb-verdict">${verdict}</div>`
+      // Either he is new to the league or he has never gone this deep at the
+      // position before, and "never" is the whole fact.
+      : `<div class="hb-none">He has never taken
+           a ${NTH[nth] || `${nth}th`} ${C.escapeHtml(noun)} in PAMS</div>`);
 }
 
 /**
@@ -939,9 +1070,14 @@ function renderBestAvailable() {
   // BEST AVAILABLE label beside it, which made the header look like it had
   // two headers in it.
   const run = C.positionRun(PICKS);
+  // The tightest true sentence, which is not always the same sentence. Four
+  // receivers in the last five picks is not "four of the last six", and four
+  // straight receivers is not "four of the last four" — it is four straight.
   $("runAlert").innerHTML = run
     ? `<span class="run-tag pos-${run.pos}">RUN ALERT</span>` +
-      `<span class="run-txt">${run.pos}s have gone ${run.n} of the last ${run.window} picks</span>`
+      `<span class="run-txt">${run.all
+        ? `the last ${run.n} picks have all been ${run.pos}s`
+        : `${run.pos}s have gone ${run.n} of the last ${run.span} picks`}</span>`
     : "";
 }
 
@@ -1291,18 +1427,27 @@ function hisGuy(m) {
  * always his whole career, since picks get traded.
  */
 function roundHabit(m, round) {
-  const list = (m.round_picks || {})[String(round)] || [];
-  if (!list.length) return null;
-  const years = new Set();
-  const byPos = new Map();
-  for (const p of list) {
-    years.add(p.y);
-    if (!byPos.has(p.pos)) byPos.set(p.pos, new Set());
-    byPos.get(p.pos).add(p.y);
+  const rp = m.round_picks || {};
+  // Walks down rather than giving up. 2026 is the league's first fifteen-round
+  // draft, so in round fifteen there is no round fifteen behind it to look at —
+  // and every manager would have fallen through to the round-one count, which
+  // is both wrong and identical on all twelve screens. The deepest round he has
+  // ever owned is the honest answer and the heading says which round that was.
+  for (let r = round; r >= 1; r--) {
+    const list = rp[String(r)];
+    if (!list || !list.length) continue;
+    const years = new Set();
+    const byPos = new Map();
+    for (const p of list) {
+      years.add(p.y);
+      if (!byPos.has(p.pos)) byPos.set(p.pos, new Set());
+      byPos.get(p.pos).add(p.y);
+    }
+    let best = null;
+    for (const [pos, ys] of byPos) if (!best || ys.size > best.n) best = { pos, n: ys.size };
+    if (best) return { ...best, of: years.size, round: r };
   }
-  let best = null;
-  for (const [pos, ys] of byPos) if (!best || ys.size > best.n) best = { pos, n: ys.size };
-  return best && { ...best, of: years.size };
+  return null;
 }
 
 function renderShowcaseTendencies(m, round) {
@@ -1325,10 +1470,13 @@ function renderShowcaseTendencies(m, round) {
   // a manager who has never owned a pick that deep.
   const hab = roundHabit(m, round);
   const r1 = hab ? null : Object.entries(t.round1 || {}).sort((a, b) => b[1] - a[1])[0];
-  const word = CARD_WORD[hab ? round : 1];
+  // `hab.round` is the round it actually found, which is this one unless the
+  // draft has gone deeper than any before it.
+  const rn = hab ? hab.round : 1;
+  const word = CARD_WORD[rn];
   if (hab || r1) {
     const pos = hab ? hab.pos : r1[0];
-    cells.push(`<div class="v"><span class="k">Round ${word || (hab ? round : 1)}</span>
+    cells.push(`<div class="v"><span class="k">Round ${word || rn}</span>
       <b class="pos-${pos}">${POS_ONE[pos] || pos}</b>
       <span class="rng">${hab ? hab.n : r1[1]} of ${hab ? hab.of : drafts} drafts</span></div>`);
   }

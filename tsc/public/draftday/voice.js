@@ -9,7 +9,7 @@
 //   2. Plain words only. No "the room", no "the bracket", no "the men",
 //      no metaphor where a fact will do.
 
-import { rosterFor, POS_ORDER, rivalOf, runShape, bestAvailable } from "./core.js";
+import { rosterFor, POS_ORDER, rivalOf, runAt, bestAvailable } from "./core.js";
 
 const CURRENT_SEASON = 2026;
 const LAST_SEASON = 2025;
@@ -681,22 +681,18 @@ function selectionAngle(m, player, overall, round, picks, history) {
 }
 
 /**
- * How this position is going: how many are gone, how many came in the window
- * that counts as a run at this position, and whether that is a run.
+ * How this position is going: how many are gone, and whether the board is in
+ * the middle of a run at it.
  *
- * The window is `runShape`'s, so the wall's alert chip and every line written
- * about a run are the same event — six picks deep for backs and receivers,
- * seven for quarterbacks and tight ends.
+ * The run itself is `runAt`, so the wall's alert chip and every line written
+ * about a run are the same event, down to the span they quote — this used to
+ * work the window out on its own and could disagree with the chip.
  */
 function posContext(player, picksAfter, overall) {
   const upTo = picksAfter.filter(p => p.overall <= overall);
   const atPos = upTo.filter(p => p.pos === player.pos).length;
-  const shape = runShape(player.pos);
-  const window = Math.min(shape.window, upTo.length);
-  const recent = upTo.slice(-window).filter(p => p.pos === player.pos).length;
-  // One short of the full window is allowed so a run that starts at the top of
-  // the draft still counts; any shallower and there is no sample behind it.
-  return { nth: atPos, recent, window, run: recent >= shape.n && window >= shape.window - 1 };
+  const run = runAt(upTo, player.pos);
+  return { nth: atPos, run };
 }
 
 /**
@@ -794,8 +790,12 @@ export function pickLine(m, player, overall, round, picksAfter, history) {
   //    graphic already said so a moment ago as "drought" or "count".
   const pc = posContext(player, picksAfter, overall);
   if (pc.run && used !== "drought" && used !== "count") {
-    return `${addPart} That is ${COUNT_WORD[pc.recent] || pc.recent} ${
-      POS_PLURAL[player.pos]} in the last ${COUNT_WORD[pc.window] || pc.window} picks.`;
+    const r = pc.run, many = POS_PLURAL[player.pos];
+    // Straight is the better sentence whenever it is the true one.
+    return r.all
+      ? `${addPart} That is ${COUNT_WORD[r.n] || r.n} ${many} in a row.`
+      : `${addPart} That is ${COUNT_WORD[r.n] || r.n} ${many} in the last ${
+          COUNT_WORD[r.span] || r.span} picks.`;
   }
   if (pc.nth === 1 && used !== "first") {
     return `${addPart} ${firstOffLine(player.pos, overall)}`;
