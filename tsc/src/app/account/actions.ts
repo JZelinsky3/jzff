@@ -2,6 +2,7 @@
 
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
+import { REFERRAL_CHANNELS } from '@/lib/referralChannels'
 import { createClient } from '@/lib/supabase/server'
 
 type Result = { ok: false; error: string } | { ok: true; message?: string }
@@ -132,7 +133,6 @@ export async function updateBackupEmail(_prev: Result | null, formData: FormData
 // profiles (not user_metadata) so it's queryable from admin. The CHECK
 // constraint on the column enforces the same allow-list as the schema.
 
-const REFERRAL_CHANNELS = ['discord', 'reddit', 'twitter', 'facebook', 'instagram', 'google', 'ai', 'other'] as const
 const ReferralSchema = z.object({
   channel: z.enum(['', ...REFERRAL_CHANNELS]).default(''),
   other: z.string().trim().max(120, 'Keep it under 120 characters.').default(''),
@@ -153,12 +153,36 @@ export async function updateReferralSource(input: z.infer<typeof ReferralSchema>
 
   const { error } = await supabase
     .from('profiles')
-    .update({ referral_source: channel, referral_source_other: other })
+    .update({
+      referral_source: channel,
+      referral_source_other: other,
+      // Answering anywhere retires the dashboard prompt, so someone who fills
+      // this in from /account is never asked again on the dashboard.
+      referral_prompt_dismissed_at: new Date().toISOString(),
+    })
     .eq('id', user.id)
   if (error) return { ok: false, error: error.message }
 
   revalidatePath('/account')
+  revalidatePath('/dashboard')
   return { ok: true, message: 'Thanks, saved.' }
+}
+
+// Wave off the one-time dashboard prompt without answering it. Stamped rather
+// than boolean so it is obvious later when someone declined.
+export async function dismissReferralPrompt(): Promise<Result> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Not signed in.' }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ referral_prompt_dismissed_at: new Date().toISOString() })
+    .eq('id', user.id)
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath('/dashboard')
+  return { ok: true }
 }
 
 // ─── Marketing email opt-in ───────────────────────────────────────────────

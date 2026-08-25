@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { OnboardingChecklist, type OnboardingStep } from '@/components/OnboardingChecklist'
 import { SiteFooter } from '@/components/SiteFooter'
 import { MobileLibrary } from '@/components/dashboard/MobileLibrary'
+import { ReferralPrompt } from '@/components/dashboard/ReferralPrompt'
 import { createClient } from '@/lib/supabase/server'
 import {
   getUserSubscription,
@@ -38,6 +39,18 @@ export default async function DashboardPage({
         .eq('manager_view', false)
         .order('created_at', { ascending: false })
     : { data: [] as never[] }
+
+  // Ask for a referral source only if we still don't have one and the user
+  // has neither answered nor waved off the prompt before.
+  let askReferral = false
+  if (user) {
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('referral_source, referral_prompt_dismissed_at')
+      .eq('id', user.id)
+      .maybeSingle()
+    askReferral = !!prof && !prof.referral_source && !prof.referral_prompt_dismissed_at
+  }
 
   // The user's Manager Hub chronicle, if they've started one. Drives the
   // second mode card below the hero.
@@ -157,6 +170,7 @@ export default async function DashboardPage({
         subTierName={subTierName}
         tier1Limit={tier1Limit}
         showDemoCard={showDemoCard}
+        askReferral={askReferral}
       />
     )
   }
@@ -355,6 +369,8 @@ export default async function DashboardPage({
       )}
 
       {sp.yahoo && <YahooStatusBanner status={sp.yahoo} />}
+
+      {askReferral && <ReferralPrompt />}
 
       <OnboardingChecklist
         storageKey="tsc_onb_dashboard"

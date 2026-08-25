@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { REFERRAL_LABELS } from '@/lib/referralChannels'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 import { isLifetimeUser, TIER_LABELS } from '@/lib/stripe'
 import { GrantCompButton, RevokeCompButton, PagedRows } from './controls'
@@ -18,16 +19,6 @@ type ProfileRow = {
 }
 
 // Canonical channel values from profiles_referral_source_chk (0042).
-const REFERRAL_LABELS: Record<string, string> = {
-  discord: 'Discord',
-  reddit: 'Reddit',
-  twitter: 'Twitter/X',
-  facebook: 'Facebook',
-  instagram: 'Instagram',
-  google: 'Google',
-  ai: 'AI',
-  other: 'Other',
-}
 
 // Render signup timestamps in Joey's timezone, not the server's (UTC on
 // Vercel would shift late-evening signups to the next day).

@@ -15,7 +15,11 @@ import { NextResponse, type NextRequest } from 'next/server'
 // on a phone with no session, so the gate turned all five stars into a login
 // bounce and the whole send collected zero responses. The handler takes an
 // anonymous submission by design — user_id is nullable.
-const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/guides', '/demo', '/demo-m', '/old', '/hub', '/api/view', '/privacy', '/terms', '/gameday', '/new', '/games', '/review', '/api/review']
+// `/api/attribution` is posted from the root layout on every page, including
+// public ones, so most calls arrive signed out. The handler no-ops without a
+// session; the point of exempting it is to return a clean JSON no-op instead
+// of bouncing a fetch() to the login page as HTML.
+const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/guides', '/demo', '/demo-m', '/old', '/hub', '/api/view', '/privacy', '/terms', '/gameday', '/new', '/games', '/review', '/api/review', '/api/attribution']
 // /api/cron/ is reached by Vercel's cron infra (no Supabase session); the
 // route handler itself enforces auth via the CRON_SECRET bearer header.
 // /api/stripe/webhook is hit by Stripe; the handler verifies the request

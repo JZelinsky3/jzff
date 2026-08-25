@@ -15,7 +15,7 @@ type Status = 'idle' | 'submitting' | 'sent' | 'error'
 // (password sign-in/up, magic link, password reset, Google OAuth), but
 // laid out as an app screen — segmented control, large pill inputs,
 // bottom-anchored primary CTA.
-type ReferralChannel = '' | 'discord' | 'reddit' | 'twitter' | 'facebook' | 'instagram' | 'google' | 'ai' | 'other'
+import { REFERRAL_OPTIONS, type ReferralChannel } from '@/lib/referralChannels'
 
 export function MobileLoginForm({ next, initialMode = 'signin' }: { next?: string; initialMode?: Mode }) {
   const [mode, setMode] = useState<Mode>(initialMode)
@@ -237,15 +237,9 @@ export function MobileLoginForm({ next, initialMode = 'signin' }: { next?: strin
               onChange={(e) => setReferral(e.target.value as ReferralChannel)}
               className="mlogin-input"
             >
-              <option value="">Prefer not to say</option>
-              <option value="discord">Discord</option>
-              <option value="reddit">Reddit</option>
-              <option value="twitter">Twitter / X</option>
-              <option value="facebook">Facebook</option>
-              <option value="instagram">Instagram</option>
-              <option value="google">Google (search or ad)</option>
-              <option value="ai">AI (ChatGPT, Claude, etc.)</option>
-              <option value="other">Other</option>
+              {REFERRAL_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
             </select>
             {referral === 'other' && (
               <input

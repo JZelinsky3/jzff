@@ -3,6 +3,7 @@
 import { useActionState, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { REFERRAL_OPTIONS } from '@/lib/referralChannels'
 import { createClient as createBrowserSupabase } from '@/lib/supabase/client'
 import { updateEmail, updatePassword, updateMarketingOptIn, updateBackupEmail, updateReferralSource } from '@/app/account/actions'
 import { MemberCodeChip } from '@/app/account/member-code-chip'
@@ -419,15 +420,10 @@ function MobileMarketingSection({ initialOptIn }: { initialOptIn: boolean }) {
 // Same channel list as the signup form. Switching to "Other" reveals a free
 // text field; switching away from it discards the detail on save.
 
-const MOBILE_REFERRAL_OPTIONS: { value: '' | 'discord' | 'reddit' | 'twitter' | 'facebook' | 'ai' | 'other'; label: string }[] = [
-  { value: '',         label: 'Prefer not to say' },
-  { value: 'discord',  label: 'Discord' },
-  { value: 'reddit',   label: 'Reddit' },
-  { value: 'twitter',  label: 'Twitter / X' },
-  { value: 'facebook', label: 'Facebook' },
-  { value: 'ai',       label: 'AI (ChatGPT, Claude, etc.)' },
-  { value: 'other',    label: 'Other' },
-]
+// Was a hand-maintained copy that had drifted out of sync with desktop (no
+// Instagram, no Google), so picking either on desktop showed as "Prefer not
+// to say" here. Shares the canonical list now.
+const MOBILE_REFERRAL_OPTIONS = REFERRAL_OPTIONS
 
 function MobileReferralSection({ initialSource, initialOther }: { initialSource: string | null; initialOther: string }) {
   type Channel = (typeof MOBILE_REFERRAL_OPTIONS)[number]['value']

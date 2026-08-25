@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { LeagueCardMenu } from '@/app/dashboard/league-card-menu'
+import { ReferralPrompt } from '@/components/dashboard/ReferralPrompt'
 
 type League = {
   id: string
@@ -30,6 +31,7 @@ export function MobileLibrary({
   subTierName,
   tier1Limit,
   showDemoCard,
+  askReferral,
 }: {
   leagues: League[]
   bookmarks: BookmarkedLeague[]
@@ -40,6 +42,7 @@ export function MobileLibrary({
   subTierName: string | null
   tier1Limit: number
   showDemoCard: boolean
+  askReferral: boolean
 }) {
   const hasLeagues = leagues.length > 0
   const latestSyncedAt = leagues
@@ -94,6 +97,10 @@ export function MobileLibrary({
           ) : null}
         </div>
       </div>
+
+      {/* Most signups arrive on a phone (Instagram especially), so the
+          referral ask has to live on this tree too, not just desktop. */}
+      {askReferral && <ReferralPrompt />}
 
       {/* ── UDFA explainer ── */}
       {isUDFA && (

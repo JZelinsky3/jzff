@@ -16,6 +16,7 @@
 
 'use client'
 
+import { REFERRAL_CHANNEL_SET } from '@/lib/referralChannels'
 import { createClient } from '@/lib/supabase/client'
 
 type GsiCredentialResponse = { credential: string }
@@ -54,7 +55,6 @@ declare global {
 }
 
 const SCRIPT_SRC = 'https://accounts.google.com/gsi/client'
-const REFERRAL_CHANNELS = new Set(['discord', 'reddit', 'twitter', 'facebook', 'instagram', 'google', 'ai', 'other'])
 
 export function isGoogleClientConfigured(): boolean {
   return !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
@@ -145,7 +145,7 @@ export async function mountGoogleSignInButton(
         // when the profile row is still blank, never overwrite.
         const opts = getOptions()
         const ref = opts.referral
-        if (ref && REFERRAL_CHANNELS.has(ref)) {
+        if (ref && REFERRAL_CHANNEL_SET.has(ref)) {
           try {
             const { data: { user } } = await supabase.auth.getUser()
             if (user) {

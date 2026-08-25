@@ -3,6 +3,7 @@
 import { useActionState, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { REFERRAL_OPTIONS } from '@/lib/referralChannels'
 import { createClient as createBrowserSupabase } from '@/lib/supabase/client'
 import { updateEmail, updatePassword, updateMarketingOptIn, updateBackupEmail, updateReferralSource } from './actions'
 import { MemberCodeChip } from './member-code-chip'
@@ -699,18 +700,6 @@ function describeSubscription(s: SubscriptionSummary): {
 // Editable post-signup. Existing users can fill it in; new users land here
 // with whatever they picked on the signup form. "Other" reveals a 120-char
 // free-form input; switching away clears the detail on save.
-
-const REFERRAL_OPTIONS: { value: '' | 'discord' | 'reddit' | 'twitter' | 'facebook' | 'instagram' | 'google' | 'ai' | 'other'; label: string }[] = [
-  { value: '',          label: 'Prefer not to say' },
-  { value: 'discord',   label: 'Discord' },
-  { value: 'reddit',    label: 'Reddit' },
-  { value: 'twitter',   label: 'Twitter / X' },
-  { value: 'facebook',  label: 'Facebook' },
-  { value: 'instagram', label: 'Instagram' },
-  { value: 'google',    label: 'Google (search or ad)' },
-  { value: 'ai',        label: 'AI (ChatGPT, Claude, etc.)' },
-  { value: 'other',     label: 'Other' },
-]
 
 function ReferralForm({ initialSource, initialOther }: { initialSource: string | null; initialOther: string }) {
   type Channel = (typeof REFERRAL_OPTIONS)[number]['value']

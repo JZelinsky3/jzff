@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
+import { REFERRAL_CHANNEL_SET } from '@/lib/referralChannels'
 import { createClient } from '@/lib/supabase/server'
-
-const REFERRAL_CHANNELS = new Set(['discord', 'reddit', 'twitter', 'facebook', 'instagram', 'google', 'ai', 'other'])
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
@@ -20,7 +19,7 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      if (refRaw && REFERRAL_CHANNELS.has(refRaw)) {
+      if (refRaw && REFERRAL_CHANNEL_SET.has(refRaw)) {
         // Only fill if the profile doesn't already have a referral on file —
         // we never want to overwrite a deliberate /account edit with stale
         // query-string data from an old redirect.
