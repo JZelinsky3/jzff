@@ -9,7 +9,8 @@
 // refresh job here populates the player_values table.
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sleeper, type SleeperPlayer } from '@/lib/platforms/sleeper'
+import { type SleeperPlayer } from '@/lib/platforms/sleeper'
+import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 
 export type PlayerValue = {
   player_id: string
@@ -40,9 +41,10 @@ export async function refreshSleeperPlayerValues(): Promise<{
   const warnings: string[] = []
   const db = createAdminClient()
 
-  const players = await sleeper.playersNfl()
-  if (!players) {
-    return { fetched: 0, upserted: 0, warnings: ['sleeper /players/nfl returned nothing'] }
+  // From our daily cache, not a live pull — see lib/sleeperPlayers.
+  const players = await getPlayersNflDict()
+  if (!players || Object.keys(players).length === 0) {
+    return { fetched: 0, upserted: 0, warnings: ['sleeper players cache was empty'] }
   }
 
   // Sleeper's dict is ~10k entries including retired/practice-squad players.

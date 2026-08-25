@@ -495,15 +495,42 @@ function tickClock() {
     started ? (STATE.paused ? "clock paused" : "") : "starts on next pick", null);
 }
 
+/**
+ * The countdown on the pre-draft screen.
+ *
+ * Set as the second biggest thing on that screen, because on the days before
+ * the draft it is the only thing on it that is news — everything else up there
+ * is the same as it was yesterday. Units are labelled rather than run together
+ * as `5D 12H 30M`, which reads as a part number from across a room.
+ *
+ * Inside the last day it drops the days column and picks up seconds, so the
+ * screen is visibly counting rather than sitting on a number that changes once
+ * a minute. Rebuilt only when the digits actually differ: this ticks twice a
+ * second and the markup is four elements deep.
+ */
 const DRAFT_AT = new Date("2026-08-28T19:20:00-04:00").getTime();
+let countKey = "";
 setInterval(() => {
   if (STATE.status !== "idle") return;
   const d = DRAFT_AT - Date.now();
-  if (d <= 0) { $("idleCount").textContent = "DRAFT DAY"; return; }
+  const el = $("idleCount");
+  if (d <= 0) {
+    if (countKey !== "now") { countKey = "now"; el.innerHTML = `<b class="now">DRAFT DAY</b>`; }
+    return;
+  }
   const days = Math.floor(d / 864e5), h = Math.floor(d / 36e5) % 24;
   const m = Math.floor(d / 6e4) % 60, s = Math.floor(d / 1000) % 60;
-  $("idleCount").textContent = days > 0 ? `${days}D ${h}H ${m}M`
-    : `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+
+  const parts = days > 0
+    ? [[days, days === 1 ? "DAY" : "DAYS"], [h, "HRS"], [m, "MIN"]]
+    : [[h, "HRS"], [m, "MIN"], [s, "SEC"]];
+
+  const key = parts.map(p => p[0]).join(":");
+  if (key === countKey) return;
+  countKey = key;
+  el.innerHTML = parts.map(([n, label], i) =>
+    `${i ? `<u></u>` : ""}<span><b>${days > 0 && i === 0 ? n : String(n).padStart(2, "0")}</b>` +
+    `<i>${label}</i></span>`).join("");
 }, 500);
 
 // ── render ────────────────────────────────────────────────────────────────
@@ -532,7 +559,7 @@ function changed(id, key) {
 function renderAll() {
   renderHeader(); renderClock(); renderLineup(); renderPickIn();
   renderSelection(); renderReveal(); renderNextUp();
-  renderBestAvailable(); renderRoundBoard();
+  renderBestAvailable(); renderRail();
   renderIdleLineup(); renderShowcase();
   renderTicker();
 }
@@ -870,8 +897,11 @@ function renderReveal() {
     box.innerHTML = `<span class="k">Drafted ${hist.length}x in PAMS</span><ul>` +
       rows.map(h => {
         // He had this exact player before — worth catching at a glance.
+        // The pick is the fact and the year is the filing, so the pick is set
+        // brighter and spelled out. It read `pk 39` in grey beside a white
+        // year, which had it exactly backwards.
         const rep = m && h.m === m.name;
-        return `<li><b>${h.y}</b><span class="pk">pk ${h.p}</span>` +
+        return `<li><b>${h.y}</b><span class="pk">pick ${h.p}</span>` +
           `<span class="mgr${rep ? " rep" : ""}">${C.escapeHtml(h.m)}</span></li>`;
       }).join("") +
       (extra > 0 ? `<li class="more">+${extra} more</li>` : "") +
@@ -920,9 +950,14 @@ function nthRoundFor(m, pos, n) {
     }
   }
 
+  // `rounds` comes back with the rest of it now. The average and the two ends
+  // say where he usually lands; the list is what says whether "usually" means
+  // anything — four drafts inside one round and four spread across six carry
+  // the same average and are not the same manager.
   const out = rounds.length ? {
     avg: rounds.reduce((a, b) => a + b, 0) / rounds.length,
     lo: Math.min(...rounds), hi: Math.max(...rounds), n: rounds.length,
+    rounds: rounds.slice().sort((a, b) => a - b),
   } : null;
   nthRoundCache.set(key, out);
   return out;
@@ -930,6 +965,113 @@ function nthRoundFor(m, pos, n) {
 
 /** `3.4`, `3` — a round average, without a trailing zero on a whole number. */
 const rd = x => (Math.round(x * 10) / 10).toFixed(1).replace(/\.0$/, "");
+
+/*
+ * The range used to be set as ordinals with the word after the figure —
+ * `3rd earliest`, `7th latest` — and read as a rank rather than as a round:
+ * his third-earliest pick instead of round three, his earliest. The word goes
+ * first now and the ordinal comes off, so both figures are plain round numbers
+ * exactly like the two above them, and the row reads label then value the way
+ * a labelled figure does. See .hb-r in draft.css for the other half of it.
+ */
+
+/**
+ * Every draft he has taken this player at, as a strip, with tonight lit.
+ *
+ * The card had a verdict line here that said "1.3 rounds earlier than usual",
+ * which was the subtraction of the two numbers directly above it, written out
+ * for a room that can subtract. Taking it out was right and left a hole, and
+ * putting back anything derived from those same two numbers would be the same
+ * mistake with different words.
+ *
+ * So this is the thing the numbers cannot say: the spread. An average of 6
+ * from 5-6-7 and an average of 6 from 2-6-10 are the same figure and a
+ * completely different habit, and one tick per draft on a round axis shows
+ * which one it is at a glance. Underneath, where tonight ranks inside his own
+ * history — also not a difference, a position.
+ */
+function historyStrip(h, round, pos) {
+  if (!h || !h.rounds || !h.rounds.length) return "";
+
+  // The axis is his own range with three rounds of air either side, not the
+  // whole draft. A man whose sevens all sit between the fourth and the seventh
+  // round was drawing five dots inside the first third of a fifteen-round line
+  // and leaving two thirds of the card empty to make a point about rounds he
+  // has never used. Zoomed to what he actually does, the same five dots have
+  // the width to show a gap.
+  //
+  // Tonight is folded into the bounds before the padding, so a pick outside
+  // everything he has ever done still lands on the line rather than pinned to
+  // an end of it. A floor on the span stops a man with one prior draft getting
+  // a four-round axis, where two dots at opposite ends would read as a wide
+  // habit instead of a narrow one.
+  const MIN_SPAN = 8;
+  let a = Math.max(1, Math.min(h.lo, round) - 3);
+  let b = Math.min(C.ROUNDS, Math.max(h.hi, round) + 3);
+  if (b - a < MIN_SPAN) {
+    const need = MIN_SPAN - (b - a);
+    a = Math.max(1, a - Math.ceil(need / 2));
+    b = Math.min(C.ROUNDS, b + Math.floor(need / 2));
+    // Ran into an end of the draft: spend what is left on the other side.
+    if (b - a < MIN_SPAN) {
+      if (a === 1) b = Math.min(C.ROUNDS, a + MIN_SPAN);
+      else a = Math.max(1, b - MIN_SPAN);
+    }
+  }
+  const at = r => ((r - a) / (b - a)) * 100;
+
+  // One dot per round, sized by how many times he has done it — not one dot per
+  // draft. A dot per draft puts every repeat at the same coordinate as the one
+  // under it, so a man who took his second back in the sixth round four years
+  // running drew four dots in the same pixel and the strip said he had done it
+  // once. Weight is the honest way to show a repeat on a single axis: the round
+  // he keeps going back to is the fattest thing on the line.
+  //
+  // Capped at three. The step has to stay under the lit dot's size or a habit
+  // outdraws tonight's pick, which is the one mark on here that must read first.
+  // A tick per round, so the line is a ruler and not just a line — without them
+  // the gap between two dots is a distance and with them it is a number of
+  // rounds, which is the thing the strip is actually about.
+  const rules = [];
+  for (let r = a; r <= b; r++) rules.push(`<i class="hb-rd" style="left:${at(r).toFixed(2)}%"></i>`);
+
+  const tally = {};
+  h.rounds.forEach(r => { tally[r] = (tally[r] || 0) + 1; });
+  const ticks = Object.keys(tally).map(Number).sort((x, y) => x - y)
+    .map(r => {
+      const d = (0.75 + (Math.min(tally[r], 3) - 1) * 0.28).toFixed(2);
+      return `<i class="hb-was" style="left:${at(r).toFixed(2)}%;--d:${d}"></i>`;
+    }).join("");
+
+  // Strictly earlier, so a tie puts tonight at the front of the equals. That is
+  // the right call everywhere except when he has taken it in the same round
+  // every year and tonight is that round again — "earliest" for a column of
+  // identical numbers reads as a finding when the fact is there is nothing to
+  // find.
+  //
+  // No "of seven" on the end of any of them. How many drafts he has is the same
+  // number on every card he appears on all night, so it is not news — the rank
+  // is the whole sentence.
+  const rank = h.rounds.filter(r => r < round).length + 1;
+  const solo = h.lo === h.hi && h.lo === round;
+  const where = solo ? "Same round every time"
+    : rank === 1 ? "Earliest taken"
+    : rank === h.n + 1 ? "Latest taken"
+    : `${ordinalPick(rank)} earliest`;
+
+  // Ruler first, then his drafts, then tonight. None of them carry a z-index —
+  // paint order is document order, so a dot always covers the tick it sits on
+  // and tonight always covers everything. That is the right way round: the tick
+  // is the scale and the dot is the reading, and where they collide the reading
+  // is what you want to see.
+  const track = `<div class="hb-track">${rules.join("")}${ticks}<i class="hb-now"
+    style="left:${at(round).toFixed(2)}%;background:var(--${pos.toLowerCase()}-hi)"></i></div>`;
+
+  return `<div class="hb-plot">${track}` + (solo
+    ? `<div class="hb-cap solo"><b>${where}</b></div>`
+    : `<div class="hb-cap"><span>RD ${a}</span><b>${where}</b><span>RD ${b}</span></div>`) +
+    `</div>`;
+}
 
 /**
  * How this pick sits against how he normally drafts.
@@ -967,38 +1109,51 @@ function renderRevealRoster(p, o, m) {
 
   const h = nthRoundFor(m, p.pos, nth);
 
-  // What to make of it, in one line. Being outside the range he has ever gone
-  // in is the better story when it is true, so it wins over the average.
-  let verdict = "";
-  if (h) {
-    const d = h.avg - round;               // + = earlier than he usually goes
-    if (h.n > 1 && round < h.lo) verdict = `<b class="up">Earliest he has ever taken one</b>`;
-    else if (h.n > 1 && round > h.hi) verdict = `<b class="dn">Latest he has ever taken one</b>`;
-    else if (Math.abs(d) < .5) verdict = `<b>Right on his number</b>`;
-    else {
-      const n = rd(Math.abs(d));
-      const word = `round${Math.abs(d) >= 1.5 ? "s" : ""}`;
-      verdict = d > 0
-        ? `<b class="up">${n} ${word} earlier than usual</b>`
-        : `<b class="dn">${n} ${word} later than usual</b>`;
-    }
-  }
-
+  // There is no verdict line under the numbers any more. It read "1.3 rounds
+  // earlier than usual" beneath a 6 sitting next to a 7.3, which is the same
+  // sentence the numbers were already saying, in words, to a room that can
+  // subtract. The four figures are the card.
   el.innerHTML =
     `<span class="k">${C.escapeHtml(label)}</span>` +
     (h
-      ? `<div class="hb">
-           <div class="hb-c">
-             <span class="hb-n pos-${p.pos}">${round}</span>
-             <span class="hb-l">tonight</span>
+      // Four columns, not two big numbers over a line of small print. Earliest
+      // and latest were set at 1.2u under a pair of 4.4u numerals, which made
+      // the range — the half of this card that says whether the average means
+      // Tonight and his average across the top, the two ends of the range
+      // underneath them. The pair on top come down a size and the range comes
+      // up two, so the row underneath reads as the other half of the same
+      // module rather than as a caption to it.
+      //
+      // Where he has only ever done it once there is no average and no range:
+      // all three numbers are the same number, and printing it three times
+      // under three different words is worse than not printing it at all.
+      ? (h.n > 1
+        ? `<div class="hb">
+             <div class="hb-c">
+               <span class="hb-n pos-${p.pos}">${round}</span>
+               <span class="hb-l">tonight</span>
+             </div>
+             <div class="hb-c">
+               <span class="hb-n">${rd(h.avg)}</span>
+               <span class="hb-l">his average</span>
+             </div>
            </div>
-           <div class="hb-c">
-             <span class="hb-n">${rd(h.avg)}</span>
-             <span class="hb-l">his average</span>
+           <div class="hb-range">
+             <span class="hb-r"><i>earliest</i><b>${h.lo}</b></span>
+             <span class="hb-r"><i>latest</i><b>${h.hi}</b></span>
            </div>
-         </div>
-         <div class="hb-range">Earliest <b>${h.lo}</b> &nbsp;Latest <b>${h.hi}</b></div>
-         <div class="hb-verdict">${verdict}</div>`
+           ${historyStrip(h, round, p.pos)}`
+        : `<div class="hb">
+             <div class="hb-c">
+               <span class="hb-n pos-${p.pos}">${round}</span>
+               <span class="hb-l">tonight</span>
+             </div>
+             <div class="hb-c">
+               <span class="hb-n">${h.lo}</span>
+               <span class="hb-l">the one before</span>
+             </div>
+           </div>
+           ${historyStrip(h, round, p.pos)}`)
       // Either he is new to the league or he has never gone this deep at the
       // position before, and "never" is the whole fact.
       : `<div class="hb-none">He has never taken
@@ -1137,6 +1292,13 @@ function renderRoundBoard() {
     const cls = p
       ? (p.overall === newest ? "filled just" : "filled")
       : n === o ? "onclock" : "empty";
+    // Which conference he is in, as the colour of the tile. The wall is the
+    // only place all twelve are on screen at once and it was the only place
+    // that never said which half of the league anybody was in — the chip is on
+    // the cards that show one man at a time, so the split was never visible as
+    // a split. Nothing is added when a manager has no conference set: the
+    // class is simply absent and the tile keeps its old blue.
+    const conf = m && m.conference ? ` cf-${m.conference.toLowerCase()}` : "";
     const face = m && m.cutout
       ? `<img class="face" src="${m.cutout}" alt="" decoding="async" onerror="this.remove()">` : "";
     const avatarRow = p
@@ -1150,7 +1312,7 @@ function renderRoundBoard() {
       : n === o ? `<span class="wc" id="wallClk">ON THE CLOCK</span>`
       : "&mdash;";
     cells.push(`
-      <div class="wt ${cls}"${p ? ` style="border-top-color:var(--${p.pos.toLowerCase()})"` : ""}>
+      <div class="wt ${cls}${conf}"${p ? ` style="--pc:var(--${p.pos.toLowerCase()}-hi)"` : ""}>
         ${face}
         <div class="who">
           <div class="hd"><span class="n">${i + 1}</span><span class="mg">${m ? C.escapeHtml(m.name) : ""}</span></div>
@@ -1162,6 +1324,578 @@ function renderRoundBoard() {
       </div>`);
   }
   $("roundList").innerHTML = cells.join("");
+}
+
+// ── the right rail ────────────────────────────────────────────────────────
+//
+// The wall is what the rail shows unless the console says otherwise. The three
+// alternates are all about the room and the pool rather than about the man on
+// the clock, which is the reason they are allowed to stay up through a pick
+// and the showcase is not — a career table over THE PICK IS IN is covering the
+// thing everyone is looking at, and a board of what twelve rosters still need
+// is a thing to talk about while the pick is going in.
+//
+// They share one paint key, `rail`, with the mode inside it, so switching
+// panels always repaints and sitting on one does not. The wall keeps its own,
+// because it is only hidden rather than torn down and does not need rebuilding
+// to come back.
+
+function renderRail() {
+  const mode = STATE.rail || "wall";
+  body.classList.toggle("rail-alt", mode !== "wall");
+  if (mode === "needs")     return renderNeeds();
+  if (mode === "run")       return renderRun();
+  if (mode === "lastyear")  return renderStillThere();
+  if (mode === "clockroom") return renderClockRoom();
+  $("railSub").textContent = "";
+  renderRoundBoard();
+}
+
+/** Header and sub-header of whichever panel is up. */
+function railHead(title, sub) {
+  $("roundHd").textContent = title;
+  $("railSub").textContent = sub || "";
+}
+
+// ── team needs ────────────────────────────────────────────────────────────
+//
+// Not a lineup card. A lineup card is nine slots per manager, twelve managers
+// deep, and by round three it is a wall of empty boxes saying nobody has a
+// kicker — true, and not a thing anybody in the room needs told for ten
+// rounds. What the room actually argues about is who is behind, at what, and
+// whether the man they want will still be there when it comes back around.
+//
+// So the panel is a pace check. Every position carries a round by which you
+// would want your first, second and third of them, a manager is behind at a
+// position when he is under that number, and the panel says so in words.
+// Kickers and defences have no targets at all and never appear.
+
+/**
+ * A need is a hole in the starting lineup, and nothing else.
+ *
+ * The first version of this measured against a table of "how many of each you
+ * want by round N", which sounded right and said nothing: by round four every
+ * manager in the league has a back and a receiver, so the panel reported
+ * eleven men on pace and one behind. A gap in the nine spots you actually
+ * start on Sunday discriminates on its own, all night, with no tuning.
+ *
+ * Kickers and defences are left out entirely — everybody fills them in the
+ * last two rounds and nobody is behind for not having one in the fifth.
+ */
+const START = { QB: 1, RB: 2, WR: 2, TE: 1 };
+// Chips are always drawn in this order, whatever the urgency: the panel is
+// twelve rows of chips read as a column, and a row that reorders itself as the
+// draft moves means comparing two managers means reading rather than glancing.
+const NEED_ORDER = ["QB", "RB", "WR", "TE", "FLEX"];
+const FLEXABLE = ["RB", "WR", "TE"];
+const POS_WORDS = {
+  QB: "quarterback", RB: "running back", WR: "receiver",
+  TE: "tight end", FLEX: "flex",
+};
+
+/**
+ * The round from which a gap is worth shouting about.
+ *
+ * Every gap is reported from the first pick — a manager with no quarterback in
+ * round three has one and the board says so — but it is drawn quiet until the
+ * round the room would actually start needling him about it. Twelve
+ * quarterbacks and twelve tight ends start in this league and everybody waits;
+ * backs and receivers are gone by the fourth.
+ */
+const URGENT_FROM = { RB: 3, WR: 3, FLEX: 6, QB: 7, TE: 8 };
+
+/**
+ * What a manager is missing from his starting nine.
+ *
+ * `needs` is in position order, for the chips. `urgent` is the same list
+ * sorted by how much it matters, which is what the sentence and the shortlist
+ * read from — those are about one man at a time and should lead with the thing
+ * he should actually be worried about.
+ */
+function needsFor(slot, round) {
+  const count = {};
+  for (const p of PICKS) if (p.slot === slot) count[p.pos] = (count[p.pos] || 0) + 1;
+
+  const out = [];
+  for (const pos of ["QB", "RB", "WR", "TE"]) {
+    const short = START[pos] - (count[pos] || 0);
+    if (short > 0) out.push({ pos, short, hot: round >= URGENT_FROM[pos] });
+  }
+  // The flex is filled by any spare back, receiver or tight end.
+  const spare = FLEXABLE.reduce((a, p) => a + Math.max(0, (count[p] || 0) - START[p]), 0);
+  if (spare < 1) out.push({ pos: "FLEX", short: 1, hot: round >= URGENT_FROM.FLEX });
+
+  out.sort((a, b) => NEED_ORDER.indexOf(a.pos) - NEED_ORDER.indexOf(b.pos));
+  const urgent = out.slice().sort((a, b) => (b.hot - a.hot) || (b.short - a.short) ||
+    (URGENT_FROM[a.pos] - URGENT_FROM[b.pos]));
+  return { count, needs: out, urgent };
+}
+
+/** "Needs a receiver and a tight end", "Needs two backs" — the whole point. */
+function needSentence(needs) {
+  if (!needs.length) return "Starting nine is full";
+  const say = ({ pos, short }) => short > 1
+    ? `${short === 2 ? "two" : short} ${POS_WORDS[pos]}s`
+    : `a ${POS_WORDS[pos]}`;
+  return `Needs ${needs.slice(0, 2).map(say).join(" and ")}`;
+}
+
+/** Who is left to fill a hole, flex included. */
+function bestForNeed(pos, n) {
+  if (pos !== "FLEX") return C.bestAvailable(PICKS, pos, n);
+  const gone = new Set(PICKS.map(p => p.playerId));
+  const out = [];
+  for (const p of C.DATA.players) {
+    if (gone.has(p.id) || !FLEXABLE.includes(p.pos)) continue;
+    out.push(p);
+    if (out.length >= n) break;
+  }
+  return out;
+}
+
+const posChip = (pos, extra = "") => pos === "FLEX"
+  ? `<span class="pchip flex ${extra}">FLEX</span>`
+  : `<span class="pchip ${extra}" style="--c:var(--${pos.toLowerCase()})">${pos}</span>`;
+
+function renderNeeds() {
+  const o = boardPick();
+  if (!changed("rail", `needs|${o}|${picksRev}`)) return;
+
+  const round = C.roundOf(o);
+  const onClock = C.slotOf(o);
+
+  // ── the man on the clock, in full ──
+  const me = C.DATA.bySlot.get(onClock);
+  const mine = needsFor(onClock, round);
+  const next = C.nextPickForSlot(onClock, o + 1);
+  const gap = next ? next - o : null;
+
+  // What is actually left at what he is short of, which is the other half of
+  // the question — a need is only interesting alongside who is there to fill
+  // it. Two names per position: the one he would take and the one he would be
+  // left with if somebody takes the first.
+  const shortlist = mine.urgent.slice(0, 2).map(({ pos }) => {
+    const left = bestForNeed(pos, 2);
+    return `<div class="nb-row">
+      <span class="nb-k">${posChip(pos)} LEFT</span>
+      <span class="nb-v">${left.map(p => C.escapeHtml(p.name)).join(", ") || "nobody"}</span>
+    </div>`;
+  }).join("");
+
+  // The man on the clock expands in place. He is not lifted to the top of the
+  // panel and he does not leave a hole at his seat: the block is his row, in
+  // his slot, opened up. The room reads this list by seat, and a name that
+  // moves depending on whose turn it is has to be hunted for.
+  const head = `
+    <div class="nb">
+      <div class="nb-hd"><span class="n">${onClock}</span>ON THE CLOCK</div>
+      <div class="nb-name">${me ? C.escapeHtml(me.name) : "&mdash;"}</div>
+      <div class="nb-say">${needSentence(mine.urgent)}</div>
+      <div class="nb-chips">${mine.needs.length
+        ? mine.needs.map(n => posChip(n.pos, n.hot ? "hot" : "")).join("")
+        : `<span class="pchip set">STARTING NINE FULL</span>`}</div>
+      ${shortlist}
+      <div class="nb-next">${next
+        ? `Next pick <b>${C.ordinal(next)}</b> &middot; ${gap} away`
+        : "No picks left"}</div>
+    </div>`;
+
+  // ── the room, in draft order ──
+  const rows = [];
+  const behind = { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0 };
+  for (let slot = 1; slot <= C.TEAMS; slot++) {
+    const { needs } = needsFor(slot, round);
+    needs.forEach(n => { behind[n.pos]++; });
+    if (slot === onClock) { rows.push(head); continue; }
+    const m = C.DATA.bySlot.get(slot);
+    rows.push(`
+      <div class="nrow">
+        <span class="n">${slot}</span>
+        <span class="mg">${m ? C.escapeHtml(m.name) : ""}</span>
+        <span class="nch">${needs.length
+          ? needs.map(n => posChip(n.pos, n.hot ? "hot" : "")).join("")
+          : `<span class="pchip set">FULL</span>`}</span>
+      </div>`);
+  }
+
+  // The gap the most of the room shares. "9 STILL WITHOUT A QB" is the line
+  // that explains the next two rounds before they happen.
+  const worst = NEED_ORDER.slice().sort((a, b) => behind[b] - behind[a])[0];
+  railHead("TEAM NEEDS", behind[worst]
+    ? `${behind[worst]} STILL WITHOUT ${worst === "FLEX" ? "A FLEX" : `A ${worst}`}`
+    : "EVERY STARTING SPOT FILLED");
+  $("railPanel").innerHTML = `<div class="needs">${rows.join("")}</div>`;
+}
+
+// ── the run ───────────────────────────────────────────────────────────────
+//
+// Best available already flags a run with a chip the size of a word. This is
+// that chip with the evidence under it: which position, how far back it goes,
+// the last twelve picks laid out so the shape of it is visible rather than
+// asserted, what is left at the position it is happening at, and how the last
+// two rounds actually broke down.
+//
+// The panel is worth putting up when there is no run on, too, which is why
+// nothing here is behind that condition — the makeup of the round and what is
+// left at each position are the same questions asked more quietly.
+
+const RUN_POS = ["QB", "RB", "WR", "TE"];
+const STRIP = 12;
+
+/**
+ * Every run the draft has had, in order, by replaying it.
+ *
+ * `positionRun` only ever answers "right now", which is the whole board's
+ * question but not the panel's — a run that ended four picks ago is the reason
+ * the last four picks look the way they do, and it vanished the moment it
+ * retired. So the draft is walked from the top and the answer recorded at each
+ * pick: consecutive readings at the same position are one event, and the
+ * biggest reading it ever gave is what that event is remembered as.
+ *
+ * A hundred and eighty prefixes of a short backwards walk, computed only when
+ * the panel is on screen and only when a pick has landed since the last time,
+ * which is nothing.
+ */
+function runHistory(picks) {
+  const out = [];
+  const open = {};
+
+  for (let i = 1; i <= picks.length; i++) {
+    const prefix = picks.slice(0, i);
+    // Each position tracked on its own, with runAt rather than positionRun.
+    // positionRun answers "which run is the board's story right now", so it
+    // returns one position and drops the others — which meant a receiver run
+    // was closed and reopened every time a back briefly outranked it, and the
+    // panel listed the same run twice with two overlapping ranges.
+    for (const pos of RUN_POS) {
+      const r = C.runAt(prefix, pos);
+      const cur = open[pos];
+      if (!r) {
+        if (cur) { out.push(cur); delete open[pos]; }
+        continue;
+      }
+      if (cur) {
+        // Still the same run. Keep its high-water mark, move its end.
+        if (r.n > cur.n) { cur.n = r.n; cur.span = r.span; cur.from = prefix[i - r.span]; }
+        cur.to = prefix[i - 1];
+      } else {
+        open[pos] = { pos, n: r.n, span: r.span, from: prefix[i - r.span], to: prefix[i - 1] };
+      }
+    }
+  }
+  // Anything still open is running now and belongs to the block at the top of
+  // the panel, not to the list of what has already been and gone.
+  for (const pos of RUN_POS) if (open[pos]) { open[pos].live = true; out.push(open[pos]); }
+  out.sort((a, b) => a.to.overall - b.to.overall);
+  return out;
+}
+
+function renderRun() {
+  const o = boardPick();
+  if (!changed("rail", `run|${o}|${picksRev}`)) return;
+
+  const run = C.positionRun(PICKS);
+  const round = C.roundOf(o);
+
+  // ── the headline ──
+  // "5 of the last 7" when the run has other picks mixed into it, "5 straight"
+  // when it does not, because those are different events and the second one is
+  // the one the room is shouting about.
+  // Who is doing it, which is the half of a run the board never said. The
+  // right of this block was empty and the answer to "who started this" was
+  // sitting in the same picks the left half is counting.
+  //
+  // Names on their own row across the foot of the block, not stacked in the
+  // right column: one per line meant the height of the headline was set by how
+  // many men were in the run, so a six-deep receiver run — the one worth
+  // putting on screen — pushed the block down over the sections under it. A
+  // wrapped row is two lines at the very worst and the same height at four
+  // names as it is at one.
+  const inIt = run
+    ? PICKS.slice(-run.span).filter(p => p.pos === run.pos)
+    : [];
+  const whoIn = [...new Set(inIt.map(p => p.manager).filter(Boolean))];
+
+  // How many each of them took, because at a turn a man picks twice inside the
+  // same run and the row read as if eight separate people had all decided the
+  // same thing. Two of the eight being one man at the turn is a different
+  // event, and it is the one that starts these — he is the reason the position
+  // came off the board twice with nobody in between.
+  const takenIn = {};
+  inIt.forEach(p => { if (p.manager) takenIn[p.manager] = (takenIn[p.manager] || 0) + 1; });
+
+  const head = run
+    ? `<div class="rn-live">
+         <div class="rn-main">
+           <div class="rn-k">RUN ON THE BOARD</div>
+           <div class="rn-pos" style="--c:var(--${run.pos.toLowerCase()})">${POS_WORDS[run.pos].toUpperCase()}S</div>
+           <div class="rn-n">${run.all
+             ? `<b>${run.n}</b> STRAIGHT`
+             : `<b>${run.n}</b> OF THE LAST <b>${run.span}</b>`}</div>
+         </div>
+         <div class="rn-who">
+           <div class="rn-k">${whoIn.length} IN IT</div>
+           <div class="rn-span">${pickLabel(inIt[0])} to ${pickLabel(inIt[inIt.length - 1])}</div>
+         </div>
+         <div class="rn-names">${whoIn.map(n => {
+           const k = takenIn[n] || 1;
+           return `<span${k > 1 ? ` class="dbl"` : ""}>${C.escapeHtml(n)}${
+             k > 1 ? `<b>&times;${k}</b>` : ""}</span>`;
+         }).join("")}</div>
+       </div>`
+    : `<div class="rn-live quiet">
+         <div class="rn-main">
+           <div class="rn-k">NO RUN ON THE BOARD</div>
+           <div class="rn-pos">THE ROOM IS SPREAD OUT</div>
+           <div class="rn-n">Nothing has gone ${C.runShape("RB").n} deep without the room moving on</div>
+         </div>
+       </div>`;
+
+  // ── the last twelve picks ──
+  // In board order, oldest on the left, so it reads the way the draft ran. The
+  // picks inside the run are lit and everything else is a grey tick.
+  const tail = PICKS.slice(-STRIP);
+  const runFrom = run ? PICKS.length - run.span : Infinity;
+  const strip = tail.map((p, i) => {
+    const idx = PICKS.length - tail.length + i;
+    const lit = run && idx >= runFrom && p.pos === run.pos;
+    return `<span class="rn-tick${lit ? " lit" : ""}" style="--c:var(--${p.pos.toLowerCase()})">
+      <i>${p.pos}</i><u>${p.round}.${String(p.roundPick).padStart(2, "0")}</u></span>`;
+  }).join("") || `<span class="rn-none">No picks yet</span>`;
+
+  // ── what is left ──
+  const gone = C.positionTally(PICKS);
+  const most = Math.max(1, ...RUN_POS.map(p => gone[p] || 0));
+  // Two names, not one. The second is what you are left with if the man in
+  // front of you takes the first, which during a run is the entire question.
+  const left = RUN_POS.map(pos => {
+    const top = C.bestAvailable(PICKS, pos, 2);
+    return `<div class="rn-lrow${run && run.pos === pos ? " hot" : ""}">
+      ${posChip(pos)}
+      <span class="rn-bar"><i style="width:${((gone[pos] || 0) / most) * 100}%;
+        background:var(--${pos.toLowerCase()})"></i></span>
+      <span class="rn-ct">${gone[pos] || 0}</span>
+      <span class="rn-top">
+        <b>${top[0] ? C.escapeHtml(top[0].name) : "&mdash;"}</b>
+        <i>${top[1] ? C.escapeHtml(top[1].name) : "&nbsp;"}</i>
+      </span>
+    </div>`;
+  }).join("");
+
+  // ── how the last two rounds broke down ──
+  // Two, not all of them: fifteen rounds of this is a table nobody reads from
+  // a couch, and the round before this one is the only history that explains
+  // what is happening in this one.
+  const roundRow = r => {
+    const inR = PICKS.filter(p => p.round === r);
+    if (!inR.length) return "";
+    const c = {};
+    inR.forEach(p => { c[p.pos] = (c[p.pos] || 0) + 1; });
+    const cells = RUN_POS.map(pos => `<span class="rm-c${c[pos] ? "" : " zero"}"
+      style="--c:var(--${pos.toLowerCase()})"><b>${c[pos] || 0}</b><i>${pos}</i></span>`).join("");
+    const other = inR.length - RUN_POS.reduce((a, p) => a + (c[p] || 0), 0);
+    return `<div class="rm-row">
+      <span class="rm-r">RD ${r}</span>${cells}
+      <span class="rm-o">${other ? `+${other}` : ""}</span>
+      <span class="rm-n">${inR.length}/${C.TEAMS}</span></div>`;
+  };
+
+  // ── every run the night has had ──
+  // The one on the board now is already the block at the top, so it is not
+  // repeated here: this is what came before it, most recent first, and it is
+  // the section that makes the panel worth putting up in a quiet stretch.
+  const past = runHistory(PICKS).filter(r => !r.live).reverse().slice(0, 5);
+  const runs = past.length
+    ? past.map(r => `<div class="rh-row">
+        ${posChip(r.pos)}
+        <span class="rh-n"><b>${r.n}</b> of ${r.span}</span>
+        <span class="rh-at">${r.from ? pickLabel(r.from) : ""} to ${pickLabel(r.to)}</span>
+        <span class="rh-ago">${PICKS.length - PICKS.indexOf(r.to) - 1} picks ago</span>
+      </div>`).join("")
+    : `<div class="rh-none">No run has come and gone yet.</div>`;
+
+  railHead("THE RUN", run
+    ? `${run.n} ${run.pos} IN ${run.span} PICKS`
+    : `ROUND ${round}`);
+  $("railPanel").innerHTML = `
+    <div class="runp">
+      ${head}
+      <div class="rn-sec"><div class="rn-hd">LAST ${tail.length} PICKS</div>
+        <div class="rn-strip">${strip}</div></div>
+      <div class="rn-sec grow"><div class="rn-hd"><span>GONE TONIGHT</span><span>BEST LEFT</span></div>
+        ${left}</div>
+      <div class="rn-sec grow runs"><div class="rn-hd"><span>RUNS ALREADY GONE</span><span>${
+        past.length ? `${past.length} TONIGHT` : ""}</span></div>
+        ${runs}</div>
+      <div class="rn-sec rounds"><div class="rn-hd">HOW THE ROUNDS BROKE</div>
+        ${roundRow(round)}${roundRow(round - 1)}</div>
+    </div>`;
+}
+
+// ── still on the board ────────────────────────────────────────────────────
+//
+// Best available, but answering the question the room actually asks about a
+// name it is surprised to still see: where did he go last year? A consensus
+// ranking cannot land that. "He went in the second round to Connie and he is
+// still sitting here in the fifth" lands with everyone in the room, because
+// everyone in the room was there.
+
+const LAST_YEAR = 2025;
+const LAST_YEAR_TEAMS = 12;
+
+/** How many drafts the history file covers, worked out once and kept. */
+let draftYearCount = 0;
+function draftYears() {
+  if (!draftYearCount) {
+    const years = new Set();
+    for (const rows of Object.values(C.DATA.history)) for (const h of rows) years.add(h.y);
+    draftYearCount = years.size;
+  }
+  return draftYearCount;
+}
+
+function renderStillThere() {
+  const o = boardPick();
+  if (!changed("rail", `still|${o}|${picksRev}`)) return;
+
+  // Ten, not twelve. The slot each of them went at a year ago is the point of
+  // the panel and it needs to be legible from a couch, which means it needs
+  // room — twelve rows made it small print on the right of a name.
+  const avail = C.bestAvailable(PICKS, null, 10);
+
+  const rows = avail.map(p => {
+    const hist = C.historyFor(p);
+    const was = hist.find(h => h.y === LAST_YEAR);
+    // Past his own slot from a year ago. Worth a highlight and not worth a
+    // sentence: nobody is ranked the same two years running, so a man sitting
+    // twenty picks past where he went last year is a mild curiosity rather
+    // than the scandal the panel used to report it as. It was carrying a count
+    // in the header and a line of gold type under every name it applied to.
+    const past = was && was.p < o;
+
+    // Where he went, as a draft slot rather than a sentence. `4.04` is how
+    // everybody in the league says it out loud, so it is what the badge says,
+    // with the year over it and who took him under it. Round pick is worked
+    // out from the overall because history.json only stores the overall, and
+    // it is safe here because this branch is 2025 only — earlier drafts ran
+    // fourteen teams and the arithmetic would be wrong for them.
+    let badge;
+    if (was) {
+      // No year on the badge. The header says the whole column is last year's
+      // draft, and repeating 2025 ten times down the panel says it ten times
+      // to a room that read it once.
+      // The separator is its own element so it can be pulled in on both sides.
+      // Teko hangs a lot of air either side of its period and `4.08` was
+      // setting as `4 . 08`; negative tracking on the whole string fixes that
+      // by squeezing the digits together too, which is a worse trade.
+      const rp = was.p - (was.r - 1) * LAST_YEAR_TEAMS;
+      badge = `<div class="sb${past ? " past" : ""}">
+        <span class="sb-p">${was.r}<s>.</s>${String(rp).padStart(2, "0")}</span>
+        <span class="sb-m">${C.escapeHtml(was.m)}</span>
+      </div>`;
+    } else if (hist.length) {
+      badge = `<div class="sb none">
+        <span class="sb-y">LAST TAKEN</span>
+        <span class="sb-p">${hist[0].y}</span>
+        <span class="sb-m">${C.escapeHtml(hist[0].m)}</span>
+      </div>`;
+    } else {
+      badge = `<div class="sb none">
+        <span class="sb-y">PAMS</span>
+        <span class="sb-p sb-word">${p.rookie ? "ROOKIE" : "NEVER"}</span>
+        <span class="sb-m">${p.rookie ? "first draft" : `in ${draftYears()} drafts`}</span>
+      </div>`;
+    }
+
+    return `
+      <div class="srow${past ? " past" : ""}">
+        <img class="sh" src="${C.headshot(p)}" alt="" decoding="async"
+             onerror="this.style.visibility='hidden'">
+        <div class="sid">
+          <div class="snm">${C.escapeHtml(p.name)}</div>
+          <div class="ssub"><span class="pos pos-${p.pos}">${p.pos}${p.posrank || ""}</span>
+            <span class="tm">${C.escapeHtml(p.team || "FA")}</span></div>
+        </div>
+        ${badge}
+      </div>`;
+  }).join("");
+
+  railHead("STILL ON THE BOARD", `${LAST_YEAR} DRAFT SLOT`);
+  $("railPanel").innerHTML = `<div class="still">${rows}</div>`;
+}
+
+// ── the clock room ────────────────────────────────────────────────────────
+//
+// How long everybody is taking. The times come off the pick records, where
+// commitPick stamps `tookMs` from the state clock — paused time already taken
+// back out, and stopping at the moment the phone locked the pick rather than
+// at the announce, so the ceremony is not billed to the manager. Picks made
+// before any of this existed simply have no time on them and sit out.
+
+function renderClockRoom() {
+  if (!changed("rail", `clockroom|${picksRev}`)) return;
+
+  const timed = PICKS.filter(p => typeof p.tookMs === "number" && p.tookMs > 0);
+  if (!timed.length) {
+    railHead("THE CLOCK ROOM", "NO TIMES YET");
+    $("railPanel").innerHTML =
+      `<div class="croom empty"><p>Nobody has been timed yet.</p>
+        <p class="sub">Every pick from here is on the stopwatch. Paused time
+        does not count against anyone.</p></div>`;
+    return;
+  }
+
+  const by = new Map();
+  for (const p of timed) {
+    const e = by.get(p.slot) || { slot: p.slot, total: 0, n: 0, worst: null };
+    e.total += p.tookMs; e.n++;
+    if (!e.worst || p.tookMs > e.worst.tookMs) e.worst = p;
+    by.set(p.slot, e);
+  }
+  for (const e of by.values()) e.avg = e.total / e.n;
+
+  // Slowest first. Anyone yet to be timed goes to the bottom, greyed, rather
+  // than being left off — twelve rows every time means the panel does not
+  // reflow under the room's eyes as the night goes on.
+  const ranked = [...by.values()].sort((a, b) => b.avg - a.avg);
+  const idle = C.DATA.managers
+    .filter(m => !by.has(m.slot))
+    .map(m => ({ slot: m.slot, avg: 0, n: 0, worst: null }));
+  const top = ranked.length ? ranked[0].avg : 1;
+
+  const longest = timed.reduce((a, b) => (b.tookMs > a.tookMs ? b : a), timed[0]);
+  const roomAvg = timed.reduce((a, p) => a + p.tookMs, 0) / timed.length;
+
+  const rows = [...ranked, ...idle].map((e, i) => {
+    const m = C.DATA.bySlot.get(e.slot);
+    if (!e.n) {
+      return `<div class="crow none">
+        <span class="cn">&mdash;</span>
+        <span class="cmg">${m ? C.escapeHtml(m.name) : ""}</span>
+        <span class="cbar"></span>
+        <span class="cav">no picks timed</span></div>`;
+    }
+    return `<div class="crow${i === 0 ? " slowest" : ""}">
+      <span class="cn">${i + 1}</span>
+      <span class="cmg">${m ? C.escapeHtml(m.name) : ""}</span>
+      <span class="cbar"><i style="width:${Math.max(3, (e.avg / top) * 100)}%"></i></span>
+      <span class="cav">${C.mmss(e.avg)}<em>${e.n}</em></span>
+    </div>`;
+  }).join("");
+
+  railHead("THE CLOCK ROOM", `ROOM AVERAGE ${C.mmss(roomAvg)}`);
+  $("railPanel").innerHTML = `
+    <div class="croom">
+      <div class="clong">
+        <div class="ck">LONGEST PICK OF THE NIGHT</div>
+        <div class="ct">${C.mmss(longest.tookMs)}</div>
+        <div class="cw">${C.escapeHtml(longest.manager || "")}
+          <span>${longest.round}.${String(longest.roundPick).padStart(2, "0")}
+          &middot; ${C.escapeHtml(longest.name)}</span></div>
+      </div>
+      <div class="chd"><span>AVERAGE ON THE CLOCK</span><span>PICKS</span></div>
+      <div class="clist">${rows}</div>
+    </div>`;
 }
 
 // ── the manager showcase ──────────────────────────────────────────────────
@@ -1543,7 +2277,14 @@ function renderShowcaseBoard(m, current) {
     if (!o) continue;
     const p = made.get(o);
     const now = !p && o === current;
-    const cls = "sb" + (p ? " made" : now ? " now" : " open");
+    // `sbr`, not `sb`. There is an unrelated `.sb` in this stylesheet — the
+    // year/slot/manager badge on the still-on-the-board panel — and it is a
+    // bordered, rounded, filled box. These rows were sharing its class name, so
+    // every one of them was picking up a border on all four sides, a radius, a
+    // background and 13px of vertical padding it never asked for, none of which
+    // `.sc-board .sb` overrode because it only ever set border-bottom. Fifteen
+    // table rows drawing themselves as fifteen little cards.
+    const cls = "sbr" + (p ? " made" : now ? " now" : " open");
     // The two labels trade places depending on whether the pick has happened.
     // A pick he has made is filed the way the whole board files a pick, 3.10,
     // with the player beside it. A pick he has not reached is the other way
@@ -1766,7 +2507,10 @@ function renderTicker() {
     tickerKey = "idle";
     $("tickerTag").textContent = "PA MILK SOCIETY";
     tickerAnim?.cancel();
-    track.innerHTML = `<span class="tk">2026 DRAFT &middot; 14 ROUNDS &middot; SNAKE &middot; FULL PPR &middot; 6PT PASSING TD &middot; TE PREMIUM</span>`;
+    // No scoring settings. They came off the idle screen's own format line and
+    // this is the same line said twice on the same screen — and it had the
+    // round count wrong besides, at 14 against C.ROUNDS' 15.
+    track.innerHTML = `<span class="tk">2026 DRAFT &middot; ${C.ROUNDS} ROUNDS &middot; SNAKE</span>`;
     return;
   }
 

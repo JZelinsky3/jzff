@@ -9,7 +9,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
 import { sleeper, parseDivisionInfo } from '@/lib/platforms/sleeper'
 import { fetchScoreboard, fetchNflNews, normTeam, type NflGame, type NflArticle } from '@/lib/nflLive'
-import type { LoadOptions, LoadResult, Platform, SlLeague, SlMatchup, SlNewsItem, SlNflGame, SlSide, WireEvent, InactiveAlert, StackUnit, TickerBoard, TickerEntry, TickerScope } from './types'
+import type { LoadOptions, LoadResult, Platform, SlLeague, SlMatchup, SlNewsItem, SlNflGame, SlSide, SlStoredFrame, WireEvent, InactiveAlert, StackUnit, TickerBoard, TickerEntry, TickerScope } from './types'
 import { platformFor, type PlatformLeagueRef } from './platforms'
 import { simulateDemo, synthesizeDemoPickems } from './demoSim'
 import { winProbA, deriveProgress } from './wp'
@@ -326,7 +326,7 @@ export async function loadSundayLive(slug: string, opts: LoadOptions = {}): Prom
 
   // Session-long WP extremes per matchup, carried frame to frame through
   // snapshots (frames persisted before this field existed lack it: ?? {}).
-  const prevPayload: SlLeague | null = prevFrame?.payload ?? null
+  const prevPayload: SlStoredFrame | null = prevFrame?.payload ?? null
   const wpBounds: SlLeague['wpBounds'] = { ...(prevPayload?.wpBounds ?? {}) }
   for (const m of matchups) {
     const key = String(m.matchupId)

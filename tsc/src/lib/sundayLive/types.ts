@@ -300,16 +300,35 @@ export type SlLeague = {
 
 // ── Snapshots (Supabase frame storage) ───────────────────────────────────────
 
-// One row per (league, year, week, taken_at). Payload is the full SlLeague at
-// that moment. Used for: WP sparkline reconstruction, Big Moment diffing, and
-// the Sunday Live Archive (frozen permalink renders).
+// What a persisted frame actually has to carry.
+//
+// Frames used to store the entire SlLeague. That payload runs ~100 KB, of
+// which ~89% is `matchups[].players` and `ticker` — data nothing ever reads
+// back out. The poller writes one frame a minute per league-week, so a single
+// watched league cost ~180 MB across a season to keep a few hundred floats.
+//
+// These are the only fields any reader touches:
+//   matchups[].matchupId + .a.wp  -> WP sparkline (page.tsx), moment diffing
+//   wpBounds                      -> session-long WP extremes, carried forward
+//   storylines[].id/.firstSeenAt  -> storyline hysteresis + "first seen" clock
+//
+// SlLeague is structurally assignable to this, so frames written before the
+// slimming still read back correctly and no backfill is needed.
+export type SlStoredFrame = {
+  matchups: { matchupId: number; a: { wp: number } }[]
+  wpBounds: Record<string, { min: number; max: number }>
+  storylines: { id: string; firstSeenAt: string }[]
+}
+
+// One row per (league, year, week, taken_at). Used for: WP sparkline
+// reconstruction, Big Moment diffing, and storyline continuity.
 export type SlFrameRow = {
   id: string
   league_id: string
   year: number
   week: number
   taken_at: string
-  payload: SlLeague
+  payload: SlStoredFrame
 }
 
 // ── Load result envelope ─────────────────────────────────────────────────────

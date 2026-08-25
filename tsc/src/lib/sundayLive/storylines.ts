@@ -10,7 +10,7 @@
 // House style (enforced in renderCopy): no emojis, no em/en dashes,
 // headline <= 90 chars, subline <= 120 chars.
 
-import type { SlLeague, SlMatchup, SlPlayer, SlSide, Storyline, StorylineKind } from './types'
+import type { SlLeague, SlMatchup, SlPlayer, SlSide, SlStoredFrame, Storyline, StorylineKind } from './types'
 import type { SlSeasonContext } from './seasonContext'
 
 // ── Utilities ────────────────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ function pick(variants: string[], id: string): string {
 
 type RuleInput = {
   frame: SlLeague
-  prev: SlLeague | null
+  prev: SlStoredFrame | null
   ctx: SlSeasonContext | null
   progress: number
 }
@@ -69,12 +69,14 @@ const CAP_PER_MATCHUP = 6
 
 export function buildStorylines(
   frame: SlLeague,
-  prev: SlLeague | null,
+  prev: SlStoredFrame | null,
   ctx: SlSeasonContext | null,
   progress: number,
 ): Storyline[] {
   const input: RuleInput = { frame, prev, ctx, progress }
-  const prevById = new Map<string, Storyline>()
+  // Only firstSeenAt survives in storage — everything else on a Storyline is
+  // rebuilt from the current frame each poll.
+  const prevById = new Map<string, { id: string; firstSeenAt: string }>()
   for (const s of prev?.storylines ?? []) prevById.set(s.id, s)
 
   const candidates: Candidate[] = []
@@ -130,7 +132,7 @@ function idFor(frame: SlLeague, kind: StorylineKind, refKey: string, bucket?: st
   return `${kind}:${frame.league.year}-${frame.league.week}:${refKey}${b}`
 }
 
-function hadId(prev: SlLeague | null, id: string): boolean {
+function hadId(prev: SlStoredFrame | null, id: string): boolean {
   return (prev?.storylines ?? []).some((s) => s.id === id)
 }
 

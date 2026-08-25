@@ -27,13 +27,16 @@ try {
   ok(C.slotOf(36) === 12, "pick 36 -> slot 12");
   ok(C.roundOf(12) === 1 && C.roundOf(13) === 2, "round boundaries");
   ok(C.roundPickOf(13) === 1, "pick 13 is round pick 1");
-  ok(C.TOTAL === 168, "168 total picks");
+  // Fifteen rounds since the league went to six bench spots in 2026. These
+  // three were still asserting the fourteen-round draft.
+  ok(C.TOTAL === C.TEAMS * C.ROUNDS, `${C.TEAMS * C.ROUNDS} total picks`);
 
-  // every slot gets exactly 14 picks
+  // every slot gets exactly one pick per round
   const per = {};
   for (let o = 1; o <= C.TOTAL; o++) per[C.slotOf(o)] = (per[C.slotOf(o)] || 0) + 1;
   ok(Object.keys(per).length === 12 &&
-     Object.values(per).every(v => v === 14), "every slot drafts exactly 14");
+     Object.values(per).every(v => v === C.ROUNDS),
+     `every slot drafts exactly ${C.ROUNDS}`);
 
   // ── managers ──
   const slots = C.DATA.managers.map(m => m.slot).sort((a,b)=>a-b);
@@ -77,16 +80,56 @@ try {
   ok(run && run.pos === "RB" && run.n === 4, "detects a 4-RB run in 6");
   ok(C.positionRun([...Array(6)].map(() => ({ pos: "K" }))) === null,
      "kicker runs are not runs");
-  // Quarterbacks and tight ends run at three in seven, not four in six.
+  // Quarterbacks and tight ends run at three, not four. These three used to
+  // assert the old fixed-six-pick-window runAt: one of them read `run.window`,
+  // which this function has never returned, and the other two expected a run to
+  // retire the moment the next pick went elsewhere. It ends where the board
+  // says it ends now — at `gap` consecutive picks somewhere else — so what they
+  // check is the walk backwards.
   const qbRun = C.positionRun([...Array(7)].map((_, i) =>
     ({ pos: i % 2 === 0 ? "QB" : "RB" })));
-  ok(qbRun && qbRun.pos === "QB" && qbRun.n === 4 && qbRun.window === 7,
+  ok(qbRun && qbRun.pos === "QB" && qbRun.n === 4 && qbRun.span === 7,
      "detects a QB run in 7");
-  ok(C.positionRun([...Array(6)].map((_, i) => ({ pos: i < 3 ? "TE" : "RB" }))) === null,
-     "three TEs in six is not deep enough to call");
+  // Three tight ends, then three picks somewhere else: still a run, because a
+  // tight end run needs four other picks to retire it.
+  ok(C.positionRun([...Array(6)].map((_, i) => ({ pos: i < 3 ? "TE" : "RB" })))?.pos === "TE",
+     "three picks elsewhere do not retire a TE run");
+  // Four does.
   ok(C.positionRun([...Array(7)].map((_, i) =>
-    ({ pos: i < 3 ? "TE" : (i % 2 ? "RB" : "WR") })))?.pos === "TE",
-     "three TEs in seven is");
+    ({ pos: i < 3 ? "TE" : (i % 2 ? "RB" : "WR") }))) === null,
+     "four picks elsewhere retire it");
+  // And two tight ends is not a run however tightly they went.
+  ok(C.positionRun([{ pos: "TE" }, { pos: "TE" }]) === null,
+     "two TEs back to back is not a run");
+  // The stretch that used to report nothing at all. Receivers right through
+  // the last dozen picks with the odd back and quarterback among them: the
+  // walk goes a long way back before three straight non-receivers end it, and
+  // testing only the span it finished on meant the density bar was applied to
+  // a window nobody was claiming was a run. Every window along the walk is
+  // tested now and the biggest one that holds is the answer.
+  const spread = ["WR", "WR", "RB", "WR", "WR", "WR", "RB", "WR", "WR", "WR",
+                  "WR", "QB", "WR", "WR"].map(pos => ({ pos }));
+  const sr = C.positionRun(spread);
+  ok(sr && sr.pos === "WR" && sr.n === 11 && sr.span === 14,
+     `eleven receivers in fourteen picks is a run (${sr ? `${sr.n} of ${sr.span}` : "reported none"})`);
+
+  // ── what ends a run ──
+  // Three picks elsewhere end a receiver run when they arrive together and do
+  // not when they are spread through it. Both of these carry exactly three
+  // non-receivers; the only difference is whether they are clustered.
+  const together = C.positionRun("WR WR WR WR RB RB RB WR".split(" ").map(pos => ({ pos })));
+  ok(together === null, "three picks elsewhere in a row retire a receiver run");
+  const apart = C.positionRun("WR WR WR RB WR WR QB WR WR WR RB".split(" ").map(pos => ({ pos })));
+  ok(apart && apart.pos === "WR" && apart.n === 8 && apart.span === 11,
+     `the same three spread through it do not (${apart ? `${apart.n} of ${apart.span}` : "reported none"})`);
+
+  // The other half of the bar: a position taken every second or third pick is
+  // how a draft normally runs and must never read as a run, however many of
+  // them add up over a long enough stretch.
+  ok(C.positionRun("RB WR RB TE RB QB RB WR".split(" ").map(pos => ({ pos }))) === null,
+     "a back every other pick is not a run");
+  ok(C.positionRun("RB WR TE RB WR QB RB TE WR RB".split(" ").map(pos => ({ pos }))) === null,
+     "a back every third pick is not a run");
 
   // ── best available excludes drafted ──
   const top = C.DATA.players[0];
@@ -180,13 +223,48 @@ try {
        m.ledger.filter(y => y.fin === 1).length),
      "first-place seasons match the title count");
   ok(C.DEFAULT_STATE.showcase === null, "the board starts with no showcase up");
+  ok(C.DEFAULT_STATE.rail === null, "the rail starts on the round wall");
+
+  // ── the clock room's stopwatch ──
+  // Everything the panel says rests on elapsedOnClock being honest about a
+  // pause. A draft that stops for ten minutes must not make anyone a slow
+  // picker, and a clock that never started must give back nothing at all.
+  const t0 = 1_000_000;
+  ok(C.elapsedOnClock({ clockStartedAt: null }) === null,
+     "no clock started means no time to report");
+  ok(C.elapsedOnClock({ clockStartedAt: t0, clockPausedMs: 0, pausedAt: null },
+                      t0 + 45_000) === 45_000,
+     "45s on a clock nobody touched reads as 45s");
+  ok(C.elapsedOnClock({ clockStartedAt: t0, clockPausedMs: 600_000, pausedAt: null },
+                      t0 + 645_000) === 45_000,
+     "ten minutes of pause comes back off his time");
+  ok(C.elapsedOnClock({ clockStartedAt: t0, clockPausedMs: 0, pausedAt: t0 + 30_000 },
+                      t0 + 630_000) === 30_000,
+     "a pause still running counts from the moment it started");
+  ok(C.elapsedOnClock({ clockStartedAt: t0, clockPausedMs: 90_000, pausedAt: null },
+                      t0 + 30_000) === null,
+     "more pause than clock reports nothing rather than a negative");
+  const fresh = C.freshClock(120_000);
+  ok(fresh.clockPausedMs === 0 && fresh.pausedAt === null && fresh.clockStartedAt,
+     "a fresh clock starts with a clean stopwatch");
+  ok(C.heldClock().clockStartedAt === null,
+     "a clock held for the turn of a round is not running a stopwatch");
+
+  // ── still on the board ──
+  // The panel is only worth putting up if the men on it have somewhere to have
+  // gone last year. Rookies and the genuinely never-rostered are the point of
+  // the other two lines it can write, but they cannot be most of the list.
+  const withLast = C.DATA.players.slice(0, 120)
+    .filter(p => (C.DATA.history[p.n] || []).some(h => h.y === 2025)).length;
+  ok(withLast >= 100,
+     `at least 100 of the top 120 have a 2025 draft slot to show (${withLast})`);
 
   // The history band follows the round the draft is in, so every round of
   // this draft has to be there for everyone, oldest year first.
   const rp = m => m.round_picks || {};
   ok(C.DATA.managers.every(m =>
        [...Array(C.ROUNDS)].every((_, i) => (rp(m)[String(i + 1)] || []).length)),
-     "every manager has picks filed for all 14 rounds");
+     `every manager has picks filed for all ${C.ROUNDS} rounds`);
   ok(C.DATA.managers.every(m => Object.values(rp(m)).every(list =>
        list.every((p, i) => !i || p.y >= list[i - 1].y))),
      "round history runs oldest to newest");

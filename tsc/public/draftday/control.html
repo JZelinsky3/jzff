@@ -7,8 +7,9 @@
 <title>Commissioner Console — PAMS 2026</title>
 <link rel="stylesheet" href="draft.css">
 <link rel="stylesheet" href="phone.css">
+<link rel="stylesheet" href="console.css">
 </head>
-<body class="phone">
+<body class="phone console-page">
 
 <div class="pbar">
   <div class="mark">COMMISSIONER <b>CONSOLE</b></div>
@@ -17,86 +18,162 @@
 
 <section class="wrap console">
 
-  <!-- what is happening right now -->
-  <div class="cbox" id="nowBox">
-    <div class="hd">ON THE CLOCK</div>
-    <div style="display:flex;align-items:center;gap:.8rem">
-      <div id="nowAv"></div>
-      <div style="min-width:0;flex:1">
-        <div style="font-size:1.6rem;font-weight:700;text-transform:uppercase;line-height:1"
-             id="nowName">&mdash;</div>
-        <div class="tiny" id="nowMeta">&nbsp;</div>
+  <!-- The command strip: who is up, what the pick is, and the button. The
+       three things the night actually runs on, in the order they are used and
+       on one line of attention, so nothing on the critical path is ever below
+       the fold or in a different corner of the screen than the last thing. -->
+  <div class="cmd">
+
+    <!-- Everything about the man on the clock, because the laptop has room for
+         it: where the pick sits in the draft, and what he has already taken,
+         which is the thing that makes the next two minutes predictable. -->
+    <div class="cmd-now" id="nowBox">
+      <div class="hd">ON THE CLOCK</div>
+      <div class="now-who">
+        <div id="nowAv"></div>
+        <div class="now-id">
+          <div class="now-name" id="nowName">&mdash;</div>
+          <div class="now-team" id="nowTeam">&nbsp;</div>
+        </div>
+        <div class="now-clock" id="nowClock">&mdash;</div>
       </div>
-      <div style="font-family:var(--mono);font-size:1.8rem;font-weight:700"
-           id="nowClock">&mdash;</div>
+      <div class="now-stats" id="nowStats"></div>
+      <div class="now-roster">
+        <div class="hd sm"><span>ALREADY TAKEN</span><span id="nowCt"></span></div>
+        <div class="now-list" id="nowList"></div>
+      </div>
+    </div>
+
+    <!-- Two states in one cell. Waiting, it says who it is waiting on. Holding
+         a pick, it becomes the thing being read out: the man's photograph, who
+         is taking him, and the pick number, big enough to announce from
+         standing up and across the room from the laptop. -->
+    <div class="cmd-pick" id="cmdPick">
+      <div class="pc-wait" id="pcWait">
+        <div class="hd">NO PICK IN YET</div>
+        <div class="pc-wait-b" id="pcWaitName">&mdash;</div>
+        <div class="tiny" id="pcWaitSub">&nbsp;</div>
+      </div>
+      <div class="pc-card">
+        <img class="pc-shot" id="pcShot" alt="">
+        <div class="pc-body">
+          <div class="hd gold">THE PICK IS IN</div>
+          <div class="pc-owner" id="pcOwner">&nbsp;</div>
+          <div class="pc-name" id="pcName">&nbsp;</div>
+          <div class="pc-meta" id="pcMeta">&nbsp;</div>
+          <div class="pc-tags" id="pcTags"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmd-act">
+      <button class="btn go big-go" id="mainBtn">START THE DRAFT</button>
+      <button class="btn" id="delayBtn" hidden>Announce in 5s &mdash; walk up first</button>
+      <div class="tiny" id="mainHint"></div>
     </div>
   </div>
 
-  <!-- the one big button -->
-  <button class="btn go big-go" id="mainBtn">START THE DRAFT</button>
-  <button class="btn" id="delayBtn" hidden>Announce in 5s &mdash; walk up first</button>
-  <div class="tiny" id="mainHint" style="text-align:center"></div>
+  <div class="cgrid">
 
-  <!-- clock -->
-  <div class="cbox">
-    <div class="hd">CLOCK</div>
-    <div class="cbtns three">
-      <button class="btn" id="btnPause">Pause</button>
-      <button class="btn" id="btnPlus">+30s</button>
-      <button class="btn" id="btnReset">Reset</button>
+    <!-- clock, and the thing you must never press, kept together and away from
+         the bottom of a log a hundred and eighty picks long -->
+    <div class="ccol">
+
+      <div class="cbox">
+        <div class="hd">CLOCK</div>
+        <div class="cbtns three">
+          <button class="btn" id="btnPause">Pause</button>
+          <button class="btn" id="btnPlus">+30s</button>
+          <button class="btn" id="btnReset">Reset</button>
+        </div>
+        <!-- What the clock is actually doing, in words. A dead Pause button with
+             no explanation is the worst thing this console can do at 8pm. -->
+        <div class="tiny" style="margin-top:.5rem" id="clockWhat"></div>
+        <!-- How long a pick gets, for this pick and every one after it. The early
+             rounds are worth five minutes and round twelve is not. -->
+        <div class="seg" id="lenSeg" style="margin-top:.6rem">
+          <button data-ms="90000">1:30</button>
+          <button data-ms="120000">2:00</button>
+          <button data-ms="180000">3:00</button>
+          <button data-ms="300000">5:00</button>
+        </div>
+        <div class="tiny" style="margin-top:.5rem" id="lenHint"></div>
+      </div>
+
+      <!-- mode -->
+      <div class="cbox">
+        <div class="hd">BOARD MODE</div>
+        <div class="seg" id="modeSeg">
+          <button data-mode="ceremony">CEREMONY</button>
+          <button data-mode="mirror">LIVE FEED</button>
+        </div>
+        <div class="tiny" style="margin-top:.6rem" id="modeHint"></div>
+      </div>
+
+      <!-- It used to sit under the pick log, which meant scrolling past every
+           pick of the night to reach it. It is up here now, where it is one
+           box from the top and still needs two taps. -->
+      <div class="cbox grave">
+        <div class="hd">DANGER</div>
+        <button class="btn danger wide" id="btnWipe">Wipe the whole draft</button>
+        <div class="tiny" style="margin-top:.6rem">
+          Tap twice to confirm. Clears every pick and returns the board to the
+          pre-draft screen. Sleeper is not touched.
+        </div>
+      </div>
+
     </div>
-    <!-- What the clock is actually doing, in words. A dead Pause button with
-         no explanation is the worst thing this console can do at 8pm. -->
-    <div class="tiny" style="margin-top:.5rem" id="clockWhat"></div>
-    <!-- How long a pick gets, for this pick and every one after it. The early
-         rounds are worth five minutes and round twelve is not. -->
-    <div class="seg" id="lenSeg" style="margin-top:.6rem">
-      <button data-ms="90000">1:30</button>
-      <button data-ms="120000">2:00</button>
-      <button data-ms="180000">3:00</button>
-      <button data-ms="300000">5:00</button>
+
+    <!-- what the television is showing that is not the draft itself: the
+         showcase over the whole canvas, the rail down the right-hand side -->
+    <div class="ccol">
+
+      <div class="cbox">
+        <div class="hd">MANAGER SHOWCASE</div>
+        <button class="btn wide" id="btnShowcase">Show the showcase</button>
+        <div class="tiny" style="margin-top:.6rem" id="showcaseHint"></div>
+      </div>
+
+      <!-- A list rather than a four-across segmented control: each panel gets
+           its name and a line saying what is on it, so choosing one does not
+           mean remembering what STILL THERE meant. Unlike the showcase these
+           stay up until they are swapped back. -->
+      <div class="cbox">
+        <div class="hd">RIGHT RAIL</div>
+        <div class="raillist" id="railSeg">
+          <button data-rail="wall">
+            <b>THE BOARD</b><i>Every pick of the round in progress. The default.</i></button>
+          <button data-rail="run">
+            <b>THE RUN</b><i>Whether a position run is on, the last twelve picks, what is left at each spot.</i></button>
+          <button data-rail="needs">
+            <b>TEAM NEEDS</b><i>Who is behind and at what, and who is left to fill it.</i></button>
+          <button data-rail="lastyear">
+            <b>STILL THERE</b><i>Who is still on the board, and the slot he went at last year.</i></button>
+          <button data-rail="clockroom">
+            <b>CLOCK ROOM</b><i>Who is taking the longest tonight.</i></button>
+        </div>
+      </div>
+
     </div>
-    <div class="tiny" style="margin-top:.5rem" id="lenHint"></div>
-  </div>
 
-  <!-- the showcase: the man on the clock, in full, while his clock runs -->
-  <div class="cbox">
-    <div class="hd">MANAGER SHOWCASE</div>
-    <button class="btn wide" id="btnShowcase">Show the showcase</button>
-    <div class="tiny" style="margin-top:.6rem" id="showcaseHint"></div>
-  </div>
+    <div class="ccol">
 
-  <!-- mode -->
-  <div class="cbox">
-    <div class="hd">BOARD MODE</div>
-    <div class="seg" id="modeSeg">
-      <button data-mode="ceremony">CEREMONY</button>
-      <button data-mode="mirror">LIVE FEED</button>
-    </div>
-    <div class="tiny" style="margin-top:.6rem" id="modeHint"></div>
-  </div>
+      <!-- enter a pick by hand -->
+      <div class="cbox">
+        <div class="hd">ENTER A PICK YOURSELF</div>
+        <label class="vh" for="cq">Search a player</label>
+        <input class="search" id="cq" placeholder="Search a player" autocomplete="off"
+               autocorrect="off" spellcheck="false">
+        <div class="plist" id="cresults" style="padding:.6rem 0 0"></div>
+      </div>
 
-  <!-- enter a pick by hand -->
-  <div class="cbox">
-    <div class="hd">ENTER A PICK YOURSELF</div>
-    <input class="search" id="cq" placeholder="Search a player" autocomplete="off"
-           autocorrect="off" spellcheck="false">
-    <div class="plist" id="cresults" style="padding:.6rem 0 0"></div>
-  </div>
+      <!-- the log, one round at a time -->
+      <div class="cbox grow">
+        <div class="hd">PICKS SO FAR &mdash; TAP &times; TO UNDO</div>
+        <div class="rndseg" id="logSeg"></div>
+        <div class="clog" id="clog"></div>
+      </div>
 
-  <!-- the log -->
-  <div class="cbox">
-    <div class="hd">PICKS SO FAR &mdash; TAP &times; TO UNDO</div>
-    <div class="clog" id="clog"></div>
-  </div>
-
-  <!-- danger -->
-  <div class="cbox">
-    <div class="hd">DANGER</div>
-    <button class="btn danger wide" id="btnWipe">Wipe the whole draft</button>
-    <div class="tiny" style="margin-top:.6rem">
-      Tap twice to confirm. Clears every pick and returns the board to the
-      pre-draft screen. Sleeper is not touched.
     </div>
   </div>
 

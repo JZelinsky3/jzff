@@ -15,6 +15,7 @@ import {
   type SleeperPlayer,
   type SleeperTransaction,
 } from '@/lib/platforms/sleeper'
+import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 
@@ -173,12 +174,13 @@ export async function ingestSleeperSource(
   let draftsIngested = 0
   let tradesIngested = 0
 
-  // Sleeper's full NFL player dictionary. ~5MB; fetched once per ingest run
-  // and reused across every season's trade enrichment. Failure is non-fatal —
-  // trades still ingest, just without resolved player names.
+  // Sleeper's full NFL player dictionary, read from our daily cache rather
+  // than pulled per ingest run. Reused across every season's trade
+  // enrichment. Failure is non-fatal — trades still ingest, just without
+  // resolved player names.
   let playersByPid: Map<string, SleeperPlayer> | null = null
   try {
-    const players = await sleeper.playersNfl()
+    const players = await getPlayersNflDict()
     if (players) {
       playersByPid = new Map()
       for (const [pid, p] of Object.entries(players)) {
@@ -186,7 +188,7 @@ export async function ingestSleeperSource(
       }
     }
   } catch (e) {
-    warnings.push(`Sleeper /players/nfl failed: ${e instanceof Error ? e.message : String(e)}. Trades will store player_id without names.`)
+    warnings.push(`Sleeper players cache read failed: ${e instanceof Error ? e.message : String(e)}. Trades will store player_id without names.`)
   }
 
   // 4. For each season in history, ingest the per-season data

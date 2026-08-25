@@ -294,10 +294,17 @@ export default async function DashboardPage({
               letterSpacing: '.22em', textTransform: 'uppercase',
               color: 'var(--cream-mute)',
             }}>
-              ★ Testing phase 2 ends:{' '}
-              <strong style={{ color: 'var(--gold)' }}>Aug 16, 2026</strong>
+              ★ Still in testing:{' '}
+              <strong style={{ color: 'var(--gold)' }}>everything is free</strong>
             </span>
             <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
+              <Link
+                href="/review"
+                className="dc-btn-ghost dc-banner-btn"
+                title="Tell us how testing is going"
+              >
+                Leave a review
+              </Link>
               <Link
                 href="/pricing"
                 className="dc-btn-ghost dc-banner-btn"

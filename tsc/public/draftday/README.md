@@ -22,10 +22,68 @@ reading identically on all twelve screens.
 | Page | Who opens it | What it is |
 |---|---|---|
 | `board.html` | the laptop mirrored to the TV | the broadcast. Read-only, never touch it once it's up |
-| `control.html` | Joey's phone, privately | start, hold, announce, advance, undo, showcase |
+| `control.html` | Joey's laptop, privately | start, hold, announce, advance, undo, showcase, rail |
 | `pick.html` | every manager's phone | pick who you are once, then tap a player on the clock |
 
 `index.html` is the hub that links all three plus the runbook.
+
+**The console is a laptop page and the manager page is a phone page.** They
+were built as the same thing — one 620px column of stacked cards — because
+they were written next to each other, and it cost the console real time on the
+night: who is up, what the pick is and the button were a scroll apart on a
+screen two thirds empty. `console.css` lays it out for a laptop and does
+nothing at all under 900px, so the console still works from a phone if the
+laptop dies at 8pm. Everything it adds is layout; the cards, buttons and
+segmented controls still come from `phone.css`.
+
+**The command strip is the critical path in one line of attention.** Who is on
+the clock, what the pick is, and the button, left to right in the order they
+are used, all three the same height and none of them ever below the fold. The
+button column is a fixed width rather than fluid, because it is the target hit
+most often all night and it should be in the same place on every screen this is
+opened on, whatever the middle cell happens to be showing.
+
+**What is being announced is a card with his photograph on it.** The console
+used to say the pick in six words of grey body copy under the button ("It's
+Jahmyr Gibbs. Say the name, then hit this.") — the one thing on the page that
+gets read out loud to a room, set smaller than the buttons around it. The
+middle cell of the strip now either says who it is waiting on or turns into
+that card: the man's photo, who is taking him, the pick number, his position
+rank and team, and chips for the facts worth having in your mouth before you
+say the name (`renderPickCard()`). Which half shows is one class on the cell,
+so there is never a frame where the console is holding a pick and still saying
+it is waiting for one. It also flags a player who is **already gone** somewhere
+else on the board, because `doAnnounce()` refuses that pick and the refusal
+should not be the first anybody hears about it.
+
+**The on-the-clock cell carries his roster.** Round, pick and overall as three
+numbers rather than one run-on line that wrapped, and under them everything he
+has already taken, two columns, shortened to `C. Lamb` — full names truncate on
+a 1280 laptop and `CeeDee L...` identifies nobody where a surname always does.
+Four backs and no quarterback tells you what the next two minutes hold better
+than anything else on the page.
+
+**Three columns under the strip, and what is in each is the point.** The
+draft's own controls on the left, what the television is showing in the middle,
+the record of what has happened on the right. Two consequences worth keeping:
+
+- **The wipe button lives under the clock, not under the log.** It used to sit
+  at the bottom of the right-hand column, which by round nine meant scrolling
+  past a hundred picks to reach the one control that can destroy the night. It
+  still needs two taps.
+- **The rail is a list, not a segmented control.** Five rows, each with its
+  name and a line saying what is on it. The four-across version had one shared
+  hint underneath, so choosing a panel meant already knowing what STILL THERE
+  meant and the hint only told you after you had pressed it. The showcase sits
+  directly above it: both are "what is on the television", and they are the two
+  controls most often used together.
+
+**The log is one round deep by default.** A hundred and eighty rows in a single
+scroller is a list you cannot find anything in, and undoing the wrong pick
+because you miscounted rows is not a mistake this console should make
+available. `logRound` is null for the round the draft is actually in, which
+follows along on its own and is where anything needing undone almost always is;
+the chips pin a specific round or open it up to ALL.
 
 ## How a pick goes
 
@@ -621,6 +679,19 @@ wrong on a television:
 2. **Every list is a fixed-column grid,** so positions, teams and ranks line
    up down the page instead of drifting with name length.
 
+**The pre-draft screen says what it means and counts in units.** It read `THE
+MILK IS / ON THE CLOCK` over a countdown saying the draft was five days away,
+which is a headline about a thing that has not happened; it is `THE MILK GOES /
+ON THE CLOCK` now, future tense, and the break still falls evenly, which is why
+it is two lines and not three. The countdown under it was 2.1u of mono beneath
+a headline set at 12.5u — the only changing thing on that screen was the
+smallest thing on it — and is now a row of labelled columns at clock size that
+drops the days and picks up seconds inside the last day, so it is visibly
+counting rather than sitting on a number that moves once a minute. The scoring
+format is gone from the line underneath: rounds and snake are facts about the
+draft, full PPR and TE premium are facts about the season and everybody in the
+league already knows them.
+
 **Bare state classes in this stylesheet are landmines.** `.idle` is the
 pre-draft screen and it is written bare — `.idle { position: absolute;
 display: none }` — so anything else that borrows the word vanishes. The
@@ -668,6 +739,135 @@ moved from a strip under the clock), two tiles across and six deep, running
 the full height of the right side — which is also why it stays visible
 through the reveal instead of getting covered by `.reveal`: `.rail` is a
 sibling of `.stage`, not inside it.
+
+**The wall is the rail's default, not the only thing it can hold.** The
+console's RIGHT RAIL control writes `rail` into state and the board swaps the
+wall for one of three panels (`renderRail()` in board.js, `body.rail-alt` in
+the CSS). The wall is hidden rather than torn down, so it comes back with no
+repaint. Each panel writes the rail's own header and the sub beside it, which
+is where the one sentence it is really making goes: how much of the room still
+needs a quarterback, how many men are sitting past the pick they went at last
+year, what the room is averaging on the clock.
+
+**These stay up through a pick and the showcase does not.** That is the rule
+that decides what is allowed in here. The showcase is a screen about the man on
+the clock, so it is meaningless the moment his pick is in and `CLOSED` in
+control.js clears it from every patch that moves the draft on. All three rail
+panels are about the room and the pool, which are still true a pick later, so
+`rail` is deliberately left out of `CLOSED`. Anything added here that is only
+true while one man is thinking belongs in the showcase instead.
+
+- **THE RUN** — whether a position run is on, blown up: the position, how far
+  back it goes, the last twelve picks as a strip with the run's own picks lit,
+  what has gone at each of the four positions with the best two left at each,
+  and how this round and the last one broke down by position. Nothing on it is
+  behind the "is there a run" condition, because the panel has to be worth
+  putting up when there isn't one — no run gets the same block drawn flat, and
+  the makeup and what-is-left sections are the same questions asked quietly.
+- **TEAM NEEDS** — who is short of what, in words. The first version drew all
+  nine starting slots for all twelve managers, which by round three was a wall
+  of empty boxes reporting that nobody had a kicker. A need is a hole in the
+  starting nine and nothing else now (`needsFor()`, `START`), kickers and
+  defences are not in it at all, and the round only controls **urgency**: every
+  gap shows from the first pick, but it is drawn at half strength until
+  `URGENT_FROM` says the room would be needling him about it. The man on the
+  clock gets the top of the panel in full — the sentence (`needSentence()`),
+  his chips, the best two left at each of his top two holes, and when he is up
+  again — over the other eleven as a chip row each.
+- **STILL ON THE BOARD** — the top ten available and the slot each went at in
+  last year's PAMS draft, out of `history.json`, drawn as a draft-pick badge:
+  the year, `4.01` at clock size, and who took him. That slot is the whole
+  point of the panel, so it is the second biggest thing in the row after his
+  name; it started life as small type on the right and read as a footnote. This
+  is the version of a value board that works in a home league — nobody carries
+  consensus ADP in their head, and everybody remembers Luke taking DJ Moore in
+  the fourth. Three fallbacks when there is no 2025 row: last taken in an
+  earlier year, ROOKIE, never drafted in PAMS. Ten rows rather than twelve
+  because the badge needs the height.
+- **THE CLOCK ROOM** — who is taking the longest, off `tookMs` on the pick
+  records. See below for what that number actually measures.
+
+**The run panel remembers runs that have already retired.** `positionRun`
+only ever answers "right now", so a run that ended four picks ago vanished with
+it even though it is the reason the last four picks look the way they do.
+`runHistory()` replays the draft and records the answer at each pick. It reads
+each position with `runAt` **separately** rather than through `positionRun`:
+positionRun returns the one run that is the board's story and drops the others,
+which meant a receiver run was closed and reopened every time a back briefly
+outranked it, and the panel listed the same run twice as two overlapping
+ranges. Anything still open is running now and belongs to the block at the top
+of the panel, not to the list of what has been and gone.
+
+**Team needs chips are in position order, always.** QB, RB, WR, TE, FLEX,
+whatever the urgency. Twelve rows of chips get read as a column, and a row that
+reorders itself as the draft moves means comparing two managers is reading
+rather than glancing. `needsFor()` returns both: `needs` in position order for
+the chips, `urgent` sorted by what matters for the sentence and the shortlist,
+which are about one man at a time. The man on the clock keeps his seat in the
+list and is lit in it — the block above is the expanded version of his row, not
+a replacement for it, and pulling him out left a hole at his slot.
+
+**The bottom band's panels have a graded frame, and that is the whole change.**
+They were a flat 2px grey rule on all four sides — the border a div gets when
+nobody has decided what it is — and the fix is not to hang anything off it. Two
+backgrounds on the same element: the panel's fill clipped to the padding box,
+and a brass-to-black gradient clipped to the border box, so the 2px edge is lit
+along the top and falls away to nearly black at the bottom the way a metal
+plate does under a light. `border-image` would be the obvious tool and cannot
+follow a border radius, which is why it is done with `background-clip`. The two
+inset hairlines are the same idea a pixel further in, giving the frame a
+thickness rather than leaving it a line drawn around a hole. **A first pass
+added brass corner marks and they were wrong** — the ask was for a border, and
+brackets sitting near a border are decoration next to the problem rather than a
+fix for it.
+
+**A run ends when the interruptions arrive together, not when they add up.**
+`gap` picks somewhere else retire a run, and they used to have to be
+consecutive, which ended runs that had not ended: three receivers, a back, two
+receivers, a quarterback, three more receivers is one receiver run to everybody
+in the room, but the back and the quarterback each reset the count so the board
+only ever reported its tail. The opposite reading is just as wrong — any three
+picks elsewhere wherever they fell, because across eleven picks three of
+something else is nothing. So they have to be **clustered**: `gap` of them
+inside `endSpan` picks is the room moving on, and the same `gap` spread through
+a dozen picks is the room drafting receivers with the odd back in between. The
+density bar moved with it, from a flat allowance to a ratio — twice as many of
+this position as everything else put together, with the shape's own allowance
+as a floor so short runs behave exactly as they always did. A flat allowance
+cannot describe both ends of this: two other picks is generous inside a
+six-pick window and meaningless inside a sixteen-pick one. There are tests for
+both halves, including the two boards that must never read as runs (a back
+every other pick, and a back every third pick).
+
+**`runAt()` tests every window, not just the one the walk ends on.** It walks
+back from the most recent pick until `gap` consecutive picks somewhere else
+retire the run, which is right and unchanged. What was wrong was the test at
+the end: it applied the density bar to the single span the walk finished at, so
+a receiver-heavy stretch — a long walk, because three straight non-receivers
+are rare in one — collected far more than `slack` other picks along the way and
+came back **null**. A board that had just taken nine receivers in eleven picks
+reported no run at all, on the ticker and in best available as well as here.
+Every candidate window along the walk is tested now and the biggest one that
+holds is the answer. There is a regression test for exactly that board.
+
+**The stopwatch is three fields, not `clockEnds`.** `clockEnds` moves every
+time a clock is extended, paused, resumed or reset, so working backwards from
+it gives the time a pick was *allowed*, not the time it took.
+`clockStartedAt`, `clockPausedMs` and `pausedAt` are written beside it and
+never adjusted, and `elapsedOnClock()` is the only thing that reads them.
+Paused time comes off — a draft that stops for ten minutes while the pizza
+arrives did not make anybody a slow picker — and an extension does not, because
++30s changes what he was allowed and not what he took. `freshClock()` and
+`heldClock()` exist so no site can start a clock while leaving the previous
+manager's start time on it.
+
+**And it stops at `submittedAt`, not at the announce.** `tookMsFor()` in
+core.js takes the moment the phone locked the pick when there is one, so the
+ceremony is billed to the commissioner rather than to the manager. It also
+refuses to time any pick that is not the one currently on the clock: the
+Sleeper loop backfills older picks whenever it finds one the board missed, and
+those would otherwise be scored against whatever clock happens to be running
+now.
 
 **At the turn of a round that card is about the round.** No clock has started
 yet, so `.bb-next.turning` swaps the name-and-countdown layout for the round

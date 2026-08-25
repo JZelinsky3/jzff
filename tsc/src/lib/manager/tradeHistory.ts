@@ -5,6 +5,7 @@
 // names, and returns a unified history list sorted newest-first.
 
 import { sleeper, type SleeperLeague, type SleeperRoster, type SleeperTransaction, type SleeperUser } from '@/lib/platforms/sleeper'
+import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 import { createClient } from '@/lib/supabase/server'
 
 // Trade deadline is typically Week 12-13 in fantasy. Walking 1-13 covers
@@ -110,12 +111,12 @@ export async function loadTradeHistory(slug: string, ownerId: string): Promise<T
     }
   }
 
-  // Player names: fetch the NFL player dictionary once and share across leagues.
-  // It's a ~5MB payload so we only do it if there's at least one Sleeper league.
+  // Player names from our daily cache, read once and shared across leagues.
+  // Still skipped entirely when no league is on Sleeper.
   let playersDict: Record<string, { full_name?: string; first_name?: string; last_name?: string; position?: string; team?: string | null }> | null = null
   if (sleeperLinks.length > 0) {
     try {
-      playersDict = await sleeper.playersNfl()
+      playersDict = await getPlayersNflDict()
     } catch {
       // If the dictionary fails, trades still render with raw player IDs as names.
     }

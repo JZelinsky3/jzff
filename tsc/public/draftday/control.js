@@ -25,9 +25,7 @@ const PICK_MS = () => STATE.pickMs || (C.DATA.meta.pick_seconds || 120) * 1000;
  * Advancing carries this clock forward rather than restarting it — see the
  * Next Pick branch of the main button — so what starts here just keeps running.
  */
-const startNextClock = () => ({
-  clockEnds: Date.now() + PICK_MS(), paused: false, pausedLeft: null,
-});
+const startNextClock = () => C.freshClock(PICK_MS());
 
 /**
  * Whether there is a clock to act on, for Pause / +30s / Reset.
@@ -68,7 +66,7 @@ function clockState() {
  * than left stale so every screen shows a full clock rather than the last
  * one's remains.
  */
-const holdNextClock = () => ({ clockEnds: null, paused: false, pausedLeft: null });
+const holdNextClock = () => C.heldClock();
 
 /**
  * Anything that moves the draft on takes the showcase down with it.
@@ -117,8 +115,7 @@ async function director() {
     if (STATE.status === "clock" && open < o) {
       directing = true;
       await C.setState({
-        current: open, pending: null, ...CLOSED,
-        clockEnds: Date.now() + PICK_MS(), paused: false, pausedLeft: null,
+        current: open, pending: null, ...CLOSED, ...startNextClock(),
       });
       directing = false;
     }
@@ -172,21 +169,55 @@ async function advanceToOpen() {
 
 // ── render ────────────────────────────────────────────────────────────────
 
+/**
+ * `C. Lamb` rather than `CeeDee Lamb`, for the two-column roster in the strip.
+ *
+ * Full names in that column truncate on a 1280 laptop and truncation is worse
+ * than an initial: `CeeDee L...` and `Tetairoa ...` identify nobody, where a
+ * surname always does. Defences are left whole — "Arizona Cardinals" shortened
+ * to "A. Cardinals" is not a thing anybody says.
+ */
+function shortName(name, pos) {
+  if (pos === "DEF") return name;
+  const parts = String(name || "").split(" ");
+  if (parts.length < 2) return name;
+  return `${parts[0][0]}. ${parts.slice(1).join(" ")}`;
+}
+
 function render() {
   const o = STATE.current || 1;
   const m = C.managerOf(o);
 
+  // Sized in console.css, not here. It carried an inline height, which beats a
+  // stylesheet rule outright — so the console's own portrait was the one thing
+  // on the page that never got bigger when the rest of it did.
   $("nowAv").innerHTML = m && m.cutout
-    ? `<img src="${m.cutout}" style="height:56px;width:auto;object-fit:contain" alt=""
-         onerror="this.remove()">`
-    : `<div style="width:46px;height:46px;border-radius:50%;background:var(--panel-2);
-        display:grid;place-items:center;color:var(--brass);font-weight:700">${
-        m ? C.escapeHtml(m.name[0]) : "?"}</div>`;
+    ? `<img src="${m.cutout}" alt="" onerror="this.remove()">`
+    : `<div class="now-av-fb">${m ? C.escapeHtml(m.name[0]) : "?"}</div>`;
 
   $("nowName").textContent = m ? m.name : "—";
-  $("nowMeta").textContent =
-    `ROUND ${C.roundOf(o)} · PICK ${C.roundPickOf(o)} · ${o} OVERALL` +
-    (m ? ` · ${m.team}` : "");
+  $("nowTeam").textContent = m ? m.team.trim() : "";
+
+  // Where the pick sits, as three numbers rather than one run-on line. The
+  // overall is the one that gets said out loud, so it is the one set biggest.
+  $("nowStats").innerHTML = `
+    <span class="ns"><b>${C.roundOf(o)}</b><i>ROUND</i></span>
+    <span class="ns"><b>${C.roundPickOf(o)}</b><i>PICK</i></span>
+    <span class="ns wide"><b>${C.ordinal(o)}</b><i>OVERALL</i></span>`;
+
+  // What he already has. The laptop has the room for it and it is what makes
+  // the next two minutes predictable — four backs and no quarterback tells you
+  // what is coming better than anything else on this screen.
+  const mine = m ? PICKS.filter(p => p.slot === m.slot) : [];
+  $("nowCt").textContent = mine.length ? `${mine.length} PICK${mine.length > 1 ? "S" : ""}` : "";
+  $("nowList").innerHTML = mine.length
+    ? mine.map(p => `<span class="nl">
+        <u>${p.round}.${String(p.roundPick).padStart(2, "0")}</u>
+        <b>${C.escapeHtml(shortName(p.name, p.pos))}</b>
+        <i class="pos-${p.pos}">${p.pos}</i></span>`).join("")
+    : `<span class="nl-none">Nothing yet.</span>`;
+
+  renderPickCard(o, m);
 
   renderLength();
 
@@ -218,22 +249,21 @@ function render() {
       if (STATE.pending) {
         btn.textContent = "ANNOUNCE THE PICK";
         btn.className = "btn go big-go";
-        hint.textContent = "";
+        hint.textContent = "Say the name, then hit this.";
       } else {
         btn.textContent = "WAITING ON THE PICK";
         btn.className = "btn big-go";
         btn.disabled = true;
-        hint.textContent = m
-          ? `${m.name} picks on their phone. Or enter it yourself below.`
-          : "";
+        // Who it is waiting on is on the card in the middle of the strip.
+        hint.textContent = "";
       }
       break;
     case "pick_in":
       btn.textContent = "ANNOUNCE THE PICK";
       btn.className = "btn go big-go";
-      hint.textContent = STATE.pending
-        ? `It's ${STATE.pending.name}. Say the name, then hit this.`
-        : "";
+      // The name itself is on the card beside this now, at three times the
+      // size, so the hint is about the button rather than about the pick.
+      hint.textContent = "Say the name, then hit this.";
       break;
     case "revealed": {
       const done = o >= C.TOTAL;
@@ -253,6 +283,74 @@ function render() {
   $("delayBtn").hidden = !holding;
 
   renderShowcase(m);
+  renderRail();
+}
+
+/**
+ * What is being announced, on the console, with his photograph on it.
+ *
+ * This used to be a sentence of grey body copy under the button — "It's Jahmyr
+ * Gibbs. Say the name, then hit this." — which is the one thing on this page
+ * that gets read out loud to a room, set smaller than the buttons around it.
+ * Now the cell either says who it is waiting on or turns into the card, and
+ * which one is decided by a class rather than by two elements each guessing.
+ *
+ * The tags are the facts worth having in your mouth before you say the name:
+ * where he was on the board against where he is going, and whether he is a
+ * rookie. Nothing that needs working out while a room is watching.
+ */
+function renderPickCard(o, m) {
+  const cell = $("cmdPick");
+  const p = STATE.pending;
+  cell.classList.toggle("holding", !!p);
+
+  if (!p) {
+    $("pcWaitName").textContent = m ? `Waiting on ${m.name}` : "—";
+    $("pcWaitSub").textContent = STATE.status === "idle"
+      ? "The draft has not started."
+      : STATE.status === "revealed"
+        ? "The pick is on the board. Next Pick moves the clock on."
+        : "He picks on his phone, or you enter it below.";
+    return;
+  }
+
+  const full = C.DATA.byId.get(p.id) || p;
+  $("pcShot").src = C.headshot(full);
+  $("pcOwner").textContent = m
+    ? `${m.name} selects · ${C.ordinal(o)} overall`
+    : `${C.ordinal(o)} overall`;
+  $("pcName").textContent = p.name;
+  $("pcMeta").innerHTML =
+    `<b>${C.escapeHtml(p.pos)}${p.posrank || ""}</b> · ${C.escapeHtml(p.team || "FA")}` +
+    (p.board ? ` · board ${p.board}` : "");
+
+  const tags = [];
+  const v = C.verdict(o, p.board);
+  if (v && v.level !== 0) {
+    tags.push(`<span class="${v.level > 0 ? "hot" : "cold"}">${v.tag} ${
+      v.gap > 0 ? `+${v.gap}` : v.gap}</span>`);
+  }
+  if (p.rookie) tags.push(`<span class="hot">ROOKIE</span>`);
+  // Already on the board somewhere else. doAnnounce refuses this pick when it
+  // happens, so say so here rather than letting the refusal be the first
+  // anybody hears about it.
+  const dup = PICKS.find(x => x.playerId === p.id && x.overall !== o);
+  if (dup) tags.push(`<span class="cold">ALREADY GONE ${dup.round}.${
+    String(dup.roundPick).padStart(2, "0")}</span>`);
+  $("pcTags").innerHTML = tags.join("");
+}
+
+/**
+ * The rail list. Each option carries its own description, so there is no
+ * shared hint line under it saying what the thing you just pressed was.
+ *
+ * These do not disable themselves the way the showcase button does — the
+ * panels are about the room and the pool rather than about one man, so there
+ * is no moment in the night when swapping one in is wrong.
+ */
+function renderRail() {
+  const mode = STATE.rail || "wall";
+  for (const b of $("railSeg").children) b.classList.toggle("on", b.dataset.rail === mode);
 }
 
 /**
@@ -292,11 +390,19 @@ function renderLength() {
 function renderClock() {
   const el = $("nowClock");
   // Through the reveal as well, because it is running through the reveal.
+  // While a pick is being held there is deliberately no clock on the board
+  // either, so this empties rather than sitting there as a stray dash under
+  // the card that has taken over the strip.
+  if (STATE.status === "pick_in") { el.textContent = ""; return; }
   if (STATE.status !== "clock" && STATE.status !== "revealed") { el.textContent = "—"; return; }
   // No clock at all means it is being held for the turn of a round: say so,
   // because a held 2:00 looks exactly like a 2:00 that started a moment ago.
+  // The word rides at a fraction of the digits' size, because the digits are
+  // the reading and the word is the caveat. Set at the same size it was as
+  // wide as the number itself, and on a narrow console that pushed the
+  // manager's name into an ellipsis to make room for "paused".
   if (!STATE.clockEnds && !STATE.paused) {
-    el.textContent = `${C.mmss(PICK_MS())} held`;
+    el.innerHTML = `${C.mmss(PICK_MS())}<i>held</i>`;
     el.style.color = "var(--mute)";
     return;
   }
@@ -306,14 +412,35 @@ function renderClock() {
   // Says so when it is stopped. A frozen number and a running one are the same
   // picture for the first second you look at them, which is exactly long enough
   // to conclude the button did nothing and tap it again.
-  el.textContent = C.mmss(left) + (STATE.paused ? " paused" : "");
+  el.innerHTML = C.mmss(left) + (STATE.paused ? "<i>paused</i>" : "");
   el.style.color = STATE.paused ? "var(--brass)"
                  : left <= 10000 ? "var(--qb)"
                  : left <= 30000 ? "var(--brass)" : "var(--milk)";
 }
 
+/**
+ * The log, a round at a time.
+ *
+ * A hundred and eighty rows in one scroller is a list you cannot find anything
+ * in, and undoing the wrong pick because you miscounted rows is not a mistake
+ * this console should make available. `logRound` is null for the round the
+ * draft is actually in — it follows along on its own, which is the round
+ * anything is likely to need undoing from — or a pinned round, or "all".
+ */
+let logRound = null;
+
 function renderLog() {
-  const rows = PICKS.slice().reverse().map(p => `
+  const live = C.roundOf(C.nextOpenPick(PICKS));
+  const rounds = [...new Set(PICKS.map(p => p.round))].sort((a, b) => a - b);
+  const showing = logRound === "all" ? null : (logRound ?? live);
+
+  $("logSeg").innerHTML =
+    `<button data-r="live" class="${logRound === null ? "on" : ""}">THIS ROUND</button>` +
+    rounds.map(r => `<button data-r="${r}" class="${logRound === r ? "on" : ""}">${r}</button>`).join("") +
+    `<button data-r="all" class="${logRound === "all" ? "on" : ""}">ALL</button>`;
+
+  const shown = showing == null ? PICKS : PICKS.filter(p => p.round === showing);
+  const rows = shown.slice().reverse().map(p => `
     <div class="row">
       <span class="pk">${p.round}.${String(p.roundPick).padStart(2, "0")}</span>
       <span class="nm">${C.escapeHtml(p.manager || "")} &middot; ${C.escapeHtml(p.name)}
@@ -321,7 +448,9 @@ function renderLog() {
         ${p.source === "sleeper" ? '<span style="color:var(--mute)">sleeper</span>' : ""}</span>
       <span class="un" data-undo="${p.overall}">&times;</span>
     </div>`).join("");
-  $("clog").innerHTML = rows || `<div class="tiny">No picks yet.</div>`;
+
+  $("clog").innerHTML = rows || `<div class="tiny">${
+    PICKS.length ? `Nothing in round ${showing}.` : "No picks yet."}</div>`;
   $("clog").onclick = async e => {
     const u = e.target.closest("[data-undo]");
     if (!u) return;
@@ -330,7 +459,7 @@ function renderLog() {
     // Rewind the board to that pick and put them back on the clock.
     await C.setState({
       status: "clock", current: overall, pending: null, ...CLOSED,
-      clockEnds: Date.now() + PICK_MS(), paused: false, pausedLeft: null,
+      ...startNextClock(),
     });
   };
 }
@@ -343,8 +472,7 @@ $("mainBtn").onclick = async () => {
 
   if (STATE.status === "idle") {
     await C.setState({
-      status: "clock", current: 1, pending: null, ...CLOSED,
-      clockEnds: Date.now() + PICK_MS(), paused: false, pausedLeft: null,
+      status: "clock", current: 1, pending: null, ...CLOSED, ...startNextClock(),
     });
     return;
   }
@@ -436,6 +564,8 @@ document.addEventListener("visibilitychange", () => {
 
 // ── clock controls ────────────────────────────────────────────────────────
 
+// Resuming banks however long the stoppage lasted, so the clock room can take
+// it back off his time. A pause is the room's, not the picker's.
 $("btnPause").onclick = async () => {
   if (!clockLive()) return;
   if (STATE.paused) {
@@ -443,11 +573,15 @@ $("btnPause").onclick = async () => {
       paused: false,
       clockEnds: Date.now() + (STATE.pausedLeft ?? PICK_MS()),
       pausedLeft: null,
+      clockPausedMs: (STATE.clockPausedMs || 0) +
+        (STATE.pausedAt ? Math.max(0, Date.now() - STATE.pausedAt) : 0),
+      pausedAt: null,
     });
   } else {
     await C.setState({
       paused: true,
       pausedLeft: Math.max(0, (STATE.clockEnds || Date.now()) - Date.now()),
+      pausedAt: Date.now(),
     });
   }
 };
@@ -458,9 +592,11 @@ $("btnPlus").onclick = async () => {
   else await C.setState({ clockEnds: (STATE.clockEnds || Date.now()) + 30000 });
 };
 
+// A reset is a clock starting over, timing included: whatever he had already
+// burned is gone with the countdown it belonged to.
 $("btnReset").onclick = async () => {
   if (!clockLive()) return;
-  await C.setState({ clockEnds: Date.now() + PICK_MS(), paused: false, pausedLeft: null });
+  await C.setState(startNextClock());
 };
 
 /**
@@ -477,9 +613,7 @@ $("lenSeg").onclick = async e => {
   const ms = Number(b.dataset.ms);
   await C.setState({
     pickMs: ms,
-    ...(clockLive()
-      ? { clockEnds: Date.now() + ms, paused: false, pausedLeft: null }
-      : {}),
+    ...(clockLive() ? C.freshClock(ms) : {}),
   });
 };
 
@@ -491,6 +625,24 @@ $("btnShowcase").onclick = async () => {
   if (STATE.showcase != null) { await C.setState(CLOSED); return; }
   if (STATE.status !== "clock") return;
   await C.setState({ showcase: C.slotOf(STATE.current || 1) });
+};
+
+$("logSeg").onclick = e => {
+  const b = e.target.closest("[data-r]");
+  if (!b) return;
+  const r = b.dataset.r;
+  logRound = r === "live" ? null : r === "all" ? "all" : Number(r);
+  renderLog();
+};
+
+// ── the right rail ────────────────────────────────────────────────────────
+// Stored as null for the wall rather than the string, so a state document
+// written before any of this existed still means the board.
+
+$("railSeg").onclick = async e => {
+  const b = e.target.closest("[data-rail]");
+  if (!b) return;
+  await C.setState({ rail: b.dataset.rail === "wall" ? null : b.dataset.rail });
 };
 
 // ── mode ──────────────────────────────────────────────────────────────────
@@ -537,7 +689,7 @@ function renderSearch() {
       await C.setState({
         status: next > C.TOTAL ? "revealed" : "clock",
         current: Math.min(next, C.TOTAL), pending: null, ...CLOSED,
-        clockEnds: Date.now() + PICK_MS(), paused: false, pausedLeft: null,
+        ...startNextClock(),
       });
     } else {
       // Hold it, same as if the phone had sent it.

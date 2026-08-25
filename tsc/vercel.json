@@ -9,6 +9,10 @@
       "schedule": "0 13 * * 1"
     },
     {
+      "path": "/api/cron/refresh-sleeper-players",
+      "schedule": "0 9 * * *"
+    },
+    {
       "path": "/api/cron/refresh-draft-ranks",
       "schedule": "0 10 * * *"
     },

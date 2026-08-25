@@ -130,15 +130,86 @@ export const DEFAULT_STATE = {
   // while someone is on the clock — the board takes it down for the ceremony
   // whatever this says, because THE PICK IS IN owns the screen when it comes.
   showcase: null,
+  // What the right-hand rail is showing. Null is the round wall, which is what
+  // it has always been and what it goes back to. The others are the alternate
+  // panels in board.js — see renderRail(). Unlike the showcase this is NOT
+  // cleared when a pick lands: these are panels about the room and the pool
+  // rather than about the man on the clock, so they stay up until the console
+  // swaps them back. Anything that is only true while one man is thinking has
+  // no business being in here.
+  rail: null,
   mode: "ceremony",
   autoReveal: false,
   sound: true,
+  // ── how long the man on the clock has actually been on it ────────────────
+  // `clockEnds` alone cannot answer this. It moves every time the clock is
+  // extended, paused, resumed or reset, so working backwards from it gives the
+  // time a pick was *allowed*, not the time it took. These three are written
+  // beside it and never adjusted: when the clock started, how much of that has
+  // been spent stopped, and when the current stoppage began.
+  clockStartedAt: null,
+  clockPausedMs: 0,
+  pausedAt: null,
 };
+
+/**
+ * The last state every page has seen.
+ *
+ * commitPick needs to know what the clock was doing at the moment a pick
+ * landed, and it is called from four places across three pages — the console's
+ * announce, the console's manual entry, the director in live feed, and the
+ * Sleeper sync loop, which lives in this file and has no state of its own. A
+ * module-level copy kept fresh by watchState means the clock is timed the same
+ * way from all four rather than at whichever call sites remembered to pass it.
+ */
+let LIVE = { ...DEFAULT_STATE };
 
 export function watchState(cb) {
   return onSnapshot(STATE, snap => {
-    cb(snap.exists() ? { ...DEFAULT_STATE, ...snap.data() } : { ...DEFAULT_STATE });
+    const s = snap.exists() ? { ...DEFAULT_STATE, ...snap.data() } : { ...DEFAULT_STATE };
+    LIVE = s;
+    cb(s);
   });
+}
+
+/**
+ * A clock starting from scratch, as a state patch.
+ *
+ * Every site that starts one uses this, so a new clock can never be written
+ * with the timing fields left over from the last one — which would hand the
+ * new man the previous manager's start time and score him for a pick he had
+ * nothing to do with.
+ */
+export function freshClock(ms) {
+  const now = Date.now();
+  return {
+    clockEnds: now + ms, paused: false, pausedLeft: null,
+    clockStartedAt: now, clockPausedMs: 0, pausedAt: null,
+  };
+}
+
+/** No clock at all — held for the turn of a round. */
+export function heldClock() {
+  return {
+    clockEnds: null, paused: false, pausedLeft: null,
+    clockStartedAt: null, clockPausedMs: 0, pausedAt: null,
+  };
+}
+
+/**
+ * Time actually spent on the clock, in ms, or null if it cannot be known.
+ *
+ * Paused time is subtracted, including an ongoing pause, because a draft that
+ * stops for ten minutes while the pizza arrives did not make anybody a slow
+ * picker. Extensions are deliberately *not* subtracted: +30s changes what he
+ * was allowed, not what he took.
+ */
+export function elapsedOnClock(state, endAt = Date.now()) {
+  const s = state || LIVE;
+  if (!s.clockStartedAt) return null;
+  let ms = endAt - s.clockStartedAt - (s.clockPausedMs || 0);
+  if (s.pausedAt) ms -= Math.max(0, endAt - s.pausedAt);
+  return ms > 0 ? ms : null;
 }
 
 export function watchPicks(cb) {
@@ -152,7 +223,8 @@ export function watchPicks(cb) {
 
 export async function getState() {
   const s = await getDoc(STATE);
-  return s.exists() ? { ...DEFAULT_STATE, ...s.data() } : { ...DEFAULT_STATE };
+  LIVE = s.exists() ? { ...DEFAULT_STATE, ...s.data() } : { ...DEFAULT_STATE };
+  return LIVE;
 }
 
 export async function setState(patch) {
@@ -188,10 +260,28 @@ export async function submitPick(overall, player) {
   });
 }
 
+/**
+ * How long this pick sat on the clock, for the clock room panel.
+ *
+ * Two guards, and both matter. Only the pick that is currently on the clock
+ * gets a time: the Sleeper loop backfills older picks whenever it finds one the
+ * board missed, and those would otherwise be scored against whatever clock
+ * happens to be running now. And when the pick was held on the phone the
+ * stopwatch stops at `submittedAt`, not at the announce — the ceremony is the
+ * commissioner's time, not the manager's.
+ */
+function tookMsFor(overall, player) {
+  if (overall !== (LIVE.current || 1)) return null;
+  const p = LIVE.pending;
+  const end = (p && p.id === player.id && LIVE.submittedAt) ? LIVE.submittedAt : Date.now();
+  return elapsedOnClock(LIVE, end);
+}
+
 /** Console: reveal the held pick and write it to the board. */
 export async function commitPick(overall, player, source = "app") {
   const mgr = managerOf(overall);
   const rec = {
+    tookMs: tookMsFor(overall, player),
     overall,
     round: roundOf(overall),
     roundPick: roundPickOf(overall),
@@ -347,11 +437,26 @@ export function rosterFor(picks, slot) {
  * row: three other picks between two quarterbacks is what a quarterback run
  * looks like, not what the end of one looks like.
  */
+/**
+ * `gap` picks somewhere else end a run, but only if they arrive together.
+ *
+ * They used to have to be consecutive, which ended runs that had not ended.
+ * Three receivers, a back, two receivers, a quarterback, three more receivers:
+ * nobody in the room thinks that stopped being a receiver run, but the back
+ * and the quarterback each reset the count, so the board only ever reported
+ * the tail of it. And the opposite reading — any three picks elsewhere,
+ * wherever they fell — ends a run that is plainly still going, because over
+ * eleven picks three of something else is nothing.
+ *
+ * So the interruptions have to be clustered: `gap` of them inside `endSpan`
+ * picks is the room moving on, and the same `gap` spread across a dozen picks
+ * is the room drafting receivers with the odd back in between.
+ */
 const RUN_SHAPE = {
-  QB: { window: 7, n: 3, gap: 4 },
-  TE: { window: 7, n: 3, gap: 4 },
+  QB: { window: 7, n: 3, gap: 4, endSpan: 6 },
+  TE: { window: 7, n: 3, gap: 4, endSpan: 6 },
 };
-const RUN_DEFAULT = { window: 6, n: 4, gap: 3 };
+const RUN_DEFAULT = { window: 6, n: 4, gap: 3, endSpan: 4 };
 export const runShape = pos => RUN_SHAPE[pos] || RUN_DEFAULT;
 
 /**
@@ -377,19 +482,53 @@ export const runShape = pos => RUN_SHAPE[pos] || RUN_DEFAULT;
  */
 export function runAt(picks, pos) {
   const shape = runShape(pos);
-  let gap = 0, n = 0, first = -1;
+  const base = shape.window - shape.n;
+
+  /**
+   * How many picks somewhere else a window of this size may carry.
+   *
+   * A flat allowance cannot describe both ends of this: two other picks is
+   * generous inside a six-pick window and meaningless inside a sixteen-pick
+   * one. The bar is a ratio — twice as many of this position as everything
+   * else put together — with the shape's own allowance as a floor so the short
+   * runs behave exactly as they always did.
+   */
+  const slackFor = n => Math.max(base, Math.floor(n / 2));
+
+  // The best window ending at the most recent pick, not the whole walk.
+  //
+  // This used to walk all the way back and then test the one span it arrived
+  // at, which failed in exactly the case the panel exists for: a receiver-heavy
+  // stretch walks a long way before the run retires, and by then the span had
+  // collected more interruptions than a flat allowance permitted, so a board
+  // that had just taken eight receivers in twelve picks reported no run at all.
+  // Every window along the walk is tested now and the biggest one that holds is
+  // the answer.
+  let best = null, n = 0;
+  // Indices of the picks at other positions, in walk order, so the most
+  // recently seen `gap` of them can be checked for being clustered.
+  const others = [];
+
   for (let i = picks.length - 1; i >= 0; i--) {
-    if (picks[i].pos === pos) { gap = 0; n++; first = i; }
-    else if (++gap >= shape.gap) break;
+    if (picks[i].pos === pos) {
+      n++;
+      const span = picks.length - i;
+      // A run starts on a pick of its own position, so only these indices are
+      // candidates. Bigger wins: six of nine says more than four of six.
+      if (n >= shape.n && span - n <= slackFor(n) && (!best || n > best.n)) {
+        best = { pos, n, span, all: n === span };
+      }
+    } else {
+      others.push(i);
+      // `gap` picks elsewhere inside `endSpan` picks of each other: the room
+      // has moved on, and everything before this belongs to an older run.
+      if (others.length >= shape.gap) {
+        const group = others.slice(others.length - shape.gap);
+        if (group[0] - group[group.length - 1] + 1 <= shape.endSpan) break;
+      }
+    }
   }
-  if (n < shape.n) return null;
-  const span = picks.length - first;
-  // The density bar, held to the same ratio the shape states but allowed to
-  // stretch: four of six is a run and so is five of seven and six of eight,
-  // because the allowance is a number of other picks mixed in (two here, four
-  // for quarterbacks and tight ends), not a fixed window.
-  if (span - n > shape.window - shape.n) return null;
-  return { pos, n, span, all: n === span };
+  return best;
 }
 
 /** Is a position run happening right now? */

@@ -22,9 +22,9 @@ export function MobileReview({
       backHref={signedIn ? '/dashboard' : '/'}
       barTitle="Review"
       signedIn={signedIn}
-      kicker="Testing closes August 16"
-      heroTitle="How did"
-      heroTitleEm="it go?"
+      kicker="Still in testing"
+      heroTitle="How is"
+      heroTitleEm="it going?"
       heroSub="Tap a star. Add a note if you want. The harsh ones help most."
     >
       <ReviewForm

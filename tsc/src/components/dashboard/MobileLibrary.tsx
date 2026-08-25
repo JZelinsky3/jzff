@@ -103,7 +103,8 @@ export function MobileLibrary({
             <span>First league is a free trial with every feature unlocked.</span>
           </div>
           <div className="mlib-udfa-foot">
-            <span>Testing 2 ends <strong>Aug 16, 2026</strong></span>
+            <span>Still in testing, <strong>everything free</strong></span>
+            <Link href="/review" className="mlib-udfa-link">Review</Link>
             <Link href="/pricing" className="mlib-udfa-link">Plans</Link>
           </div>
         </div>

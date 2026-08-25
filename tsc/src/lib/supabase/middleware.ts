@@ -10,7 +10,12 @@ import { NextResponse, type NextRequest } from 'next/server'
 // /api/view is the mobile/desktop view toggle — signed-out visitors on the
 // public landing must be able to flip to the desktop layout, so it can't be
 // behind the auth gate.
-const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/guides', '/demo', '/demo-m', '/old', '/hub', '/api/view', '/privacy', '/terms', '/gameday', '/new', '/games']
+// `/review` and `/api/review` are the end-of-testing feedback form. The email
+// hands every tester a star link (/review?r=4&src=email); most of them read it
+// on a phone with no session, so the gate turned all five stars into a login
+// bounce and the whole send collected zero responses. The handler takes an
+// anonymous submission by design — user_id is nullable.
+const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/guides', '/demo', '/demo-m', '/old', '/hub', '/api/view', '/privacy', '/terms', '/gameday', '/new', '/games', '/review', '/api/review']
 // /api/cron/ is reached by Vercel's cron infra (no Supabase session); the
 // route handler itself enforces auth via the CRON_SECRET bearer header.
 // /api/stripe/webhook is hit by Stripe; the handler verifies the request

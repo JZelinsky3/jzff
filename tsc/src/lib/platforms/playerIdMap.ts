@@ -12,7 +12,7 @@
 // and keeps mental model simple.
 
 import { unstable_cache } from 'next/cache'
-import { sleeper } from './sleeper'
+import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 
 export type PlatformIdMaps = {
   // ESPN's numeric playerId → Sleeper player_id. ESPN sometimes sends the id
@@ -29,7 +29,7 @@ export type PlatformIdMaps = {
 }
 
 async function build(): Promise<PlatformIdMaps> {
-  const all = await sleeper.playersNfl()
+  const all = await getPlayersNflDict()
   const espnToSleeper = new Map<string, string>()
   const yahooToSleeper = new Map<string, string>()
   const gsisToSleeper = new Map<string, string>()

@@ -15,7 +15,7 @@ import { ReviewForm } from './review-form'
 
 export const metadata: Metadata = {
   title: 'Review · The Sunday Chronicle',
-  description: 'Tell us how the testing season went. Takes about a minute.',
+  description: 'Tell us how testing is going. Takes about a minute.',
   alternates: { canonical: 'https://thesundaychronicle.app/review/' },
   // Nothing to gain from indexing a feedback form.
   robots: { index: false, follow: false },
@@ -75,13 +75,13 @@ export default async function ReviewPage({
       </nav>
 
       <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '1rem' }}>
-        <div className="hero-sup">★ The testing season closes August 16 ★</div>
+        <div className="hero-sup">★ Still in testing ★</div>
         <h1 className="hero-title" style={{ fontSize: 'clamp(2.2rem, 5vw, 3.8rem)' }}>
           One minute, honestly.
         </h1>
         <p className="hero-sub">
-          You used this while it was free and unfinished. The harsh notes are worth more
-          than the kind ones.
+          You are using this while it is free and unfinished. The harsh notes are worth
+          more than the kind ones.
         </p>
       </section>
 

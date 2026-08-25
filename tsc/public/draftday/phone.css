@@ -246,6 +246,14 @@ body.phone {
   font-weight: 700; letter-spacing: .1em; cursor: pointer;
 }
 .seg button.on { background: var(--gold); color: #150e02; }
+/* Four words rather than four times: at a phone width "STILL THERE" and
+   "CLOCK ROOM" set side by side in one row come out four characters wide
+   apiece. Two by two, with the hairlines drawn as a gap so the thing still
+   reads as one control. */
+.seg.wrapseg {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line);
+}
+.seg.wrapseg button { padding: .8rem .4rem; }
 
 .clog { max-height: 38vh; overflow-y: auto; display: grid; gap: 0; font-family: var(--mono); font-size: .74rem; }
 .clog .row {
