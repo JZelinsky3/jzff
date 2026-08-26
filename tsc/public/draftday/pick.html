@@ -8,59 +8,131 @@
 <link rel="stylesheet" href="draft.css">
 <link rel="stylesheet" href="phone.css">
 </head>
-<body class="phone">
+<body class="phone pick-page">
 
-<div class="pbar">
+<!-- ── check-in ───────────────────────────────────────────────────────────
+     The first thing eleven other people see on their phone tonight, and it
+     used to be a grey heading over a three-across contact sheet. It is the
+     door now: the masthead, then twelve seats with a number on each. Nobody
+     signs in to anything — claiming a seat is the whole of it — so the screen
+     says that and nothing else. -->
+<section class="ci" id="chooser" hidden>
+  <div class="ci-top">
+    <div class="ci-kicker">PA Milk Society</div>
+    <div class="ci-title">The 2026 <em>Draft</em></div>
+    <div class="ci-when">Friday, August 28 &middot; 7:20 PM</div>
+  </div>
+  <div class="ci-ask">
+    <span class="ci-ask-l"></span>
+    <span class="ci-ask-t">Claim your seat</span>
+    <span class="ci-ask-l"></span>
+  </div>
+  <div class="ci-grid" id="mgrid"></div>
+  <p class="ci-foot">Twelve seats, one each. This phone remembers which one is
+    yours. Tap your name in the bar at the top to hand it back.</p>
+</section>
+
+<!-- ── the draft room ─────────────────────────────────────────────────── -->
+<div class="pbar" id="pbar" hidden>
   <div class="mark">PAMS <b>2026 DRAFT</b></div>
   <div class="who" id="who"></div>
 </div>
 
-<!-- who are you -->
-<section class="wrap pickme" id="chooser" hidden>
-  <h2>Who are you?</h2>
-  <div class="mgrid" id="mgrid"></div>
-  <p class="tiny" style="text-align:center;margin-top:1.4rem">
-    Pick once. This phone remembers you.
-  </p>
-</section>
+<section class="wrap room" id="room" hidden>
 
-<!-- the draft room -->
-<section class="wrap" id="room" hidden>
-  <div class="status" id="status">
-    <div class="eb" id="stEb">WAITING</div>
-    <div class="big" id="stBig">&mdash;</div>
-    <div class="sm" id="stSm">&nbsp;</div>
-    <div class="clock" id="stClock" hidden>2:00</div>
+  <!-- The state of the room, and the only thing on this page that changes on
+       its own. Three registers: waiting, somebody else on the clock, and you
+       on it — and the third one takes the page over rather than recolouring a
+       border, because it is the one moment all night this phone matters. -->
+  <div class="st" id="status">
+    <div class="st-eb" id="stEb">Waiting</div>
+    <div class="st-big" id="stBig">&mdash;</div>
+    <div class="st-sm" id="stSm">&nbsp;</div>
+    <div class="st-clock" id="stClock" hidden>
+      <div class="st-time" id="stTime">2:00</div>
+      <div class="st-bar"><i id="stBarFill"></i></div>
+      <div class="st-tag" id="stTag" hidden>Paused</div>
+    </div>
   </div>
 
   <div class="roster" id="rosterBox"></div>
 
   <div class="tools">
+    <label class="vh" for="q">Search a player</label>
     <input class="search" id="q" placeholder="Search a player" autocomplete="off"
            autocorrect="off" spellcheck="false">
     <div class="filters" id="filters"></div>
   </div>
 
+  <div class="plist-hd">
+    <span id="plistHd">On the board</span>
+    <span class="plist-ct" id="more"></span>
+  </div>
   <div class="plist" id="plist"></div>
-  <div class="hint" id="more"></div>
+  <div class="hint" id="hint"></div>
 </section>
 
-<!-- confirm -->
-<div class="sheet" id="sheet">
-  <div class="sheet-in">
-    <div class="sheet-top">
-      <img id="shImg" alt="">
-      <div style="min-width:0">
-        <div class="nm" id="shName">&nbsp;</div>
-        <div class="sub" id="shSub">&nbsp;</div>
+<!-- ── the card ───────────────────────────────────────────────────────────
+     What a pick actually is: a card with the round, the pick and one name
+     written on it, carried to the podium and read out. This used to be a
+     bottom sheet with a headshot and two buttons, which is a confirm dialog.
+     The card is the confirm dialog now, and sending it is a hold rather than
+     a tap — nobody has ever handed over the wrong card by brushing it. -->
+<div class="cs" id="sheet">
+  <div class="cs-in">
+    <div class="cs-card">
+      <div class="cs-hd">
+        <span class="cs-lg">PA Milk Society</span>
+        <span class="cs-of">Official selection</span>
+      </div>
+      <div class="cs-fields">
+        <div class="cs-f"><i>Round</i><b id="csRound">1</b></div>
+        <div class="cs-f"><i>Pick</i><b id="csPick">1</b></div>
+        <div class="cs-f"><i>Overall</i><b id="csOv">1</b></div>
+      </div>
+      <div class="cs-f wide"><i>Club</i><b id="csClub">&nbsp;</b></div>
+      <div class="cs-sel">
+        <img id="shImg" alt="">
+        <div class="cs-sel-id">
+          <i>The selection</i>
+          <div class="cs-name" id="shName">&nbsp;</div>
+          <div class="cs-sub" id="shSub">&nbsp;</div>
+        </div>
+      </div>
+      <div class="cs-note" id="shNote"></div>
+      <div class="cs-warn" id="shWarn"></div>
+    </div>
+
+    <div class="cs-act">
+      <button class="btn ghost" id="shCancel">Tear it up</button>
+      <button class="hold" id="shGo">
+        <span class="hold-fill"></span>
+        <span class="hold-l" id="shGoL">Hold to send</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── the card is in ─────────────────────────────────────────────────────
+     Held on the picker's own phone from the moment he sends until the board
+     reveals him. Nobody else sees this and nobody else sees the name: on the
+     other eleven phones the status card says the card is in and stops there,
+     and the player stays on the board so the room cannot work out who went by
+     noticing who is missing. -->
+<div class="sent" id="sent">
+  <div class="sent-in">
+    <div class="sent-stamp">The card<span>is in</span></div>
+    <div class="sent-card">
+      <img id="sentImg" alt="">
+      <div class="sent-id">
+        <div class="sent-name" id="sentName">&nbsp;</div>
+        <div class="sent-sub" id="sentSub">&nbsp;</div>
       </div>
     </div>
-    <div class="note" id="shNote"></div>
-    <div class="warn-need" id="shWarn"></div>
-    <div class="sheet-btns">
-      <button class="btn ghost" id="shCancel">Back</button>
-      <button class="btn go" id="shGo">Send the pick</button>
+    <div class="sent-note">
+      Pick <b id="sentPk">&mdash;</b> is at the podium. Watch the television.
     </div>
+    <div class="sent-dots"><i></i><i></i><i></i></div>
   </div>
 </div>
 

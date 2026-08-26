@@ -23,7 +23,7 @@ reading identically on all twelve screens.
 |---|---|---|
 | `board.html` | the laptop mirrored to the TV | the broadcast. Read-only, never touch it once it's up |
 | `control.html` | Joey's laptop, privately | start, hold, announce, advance, undo, showcase, rail |
-| `pick.html` | every manager's phone | pick who you are once, then tap a player on the clock |
+| `pick.html` | every manager's phone | claim a seat once, then fill out a card and hold to send it |
 
 `index.html` is the hub that links all three plus the runbook.
 
@@ -88,8 +88,10 @@ the chips pin a specific round or open it up to ALL.
 ## How a pick goes
 
 1. Board puts a manager **on the clock**, timer runs.
-2. He taps his player in `pick.html`. The TV flips to **THE PICK IS IN** and
-   shows nothing about who it is.
+2. He taps his player in `pick.html`, which fills out a selection card, and
+   holds the button to hand it over. The TV flips to **THE PICK IS IN** and
+   shows nothing about who it is; so does every other phone in the room, and
+   the man he took stays on their boards until the announce.
 3. Joey hits **Announce in 5s**, walks to the TV, says the name. The board
    then runs one continuous sequence:
    - the stage takes over on **THE PICK IS IN**, covering the whole canvas:
@@ -184,6 +186,73 @@ end of the snake. `clockForReveal()` in control.js clears the clock there
 instead of starting one, and advancing into a new round starts a whole one. The
 next-up card says **STARTS ON NEXT PICK** and the console reads `2:00 held`,
 because otherwise there is no way to tell a held clock from a running one.
+
+## The phone
+
+**A pick is a card.** That is the idea the whole of `pick.html` is built on,
+and it is not a metaphor invented for the page — it is the object the ceremony
+on the television is about. Somebody fills a card out, somebody carries it to
+the podium, somebody reads it out from there. The phone knew nothing about
+that: it was a player list with a confirm dialog on the end of it.
+
+Three screens, in the order a manager meets them.
+
+**Check-in.** Twelve seats in draft order, two across, each with its slot
+number ghosted behind the cut-out the way the pre-show does it on the
+television, his team name, his conference and last season. The number matters
+as much as the face — half the room opens this looking for where they pick
+rather than for themselves. Claiming a seat is the whole of signing in, so the
+screen says that and nothing else, and the top bar is hidden until a seat is
+claimed so the door is a door.
+
+**The room.** The status card has three registers and the third one is not a
+recoloured border: on his own clock the card goes gold, the countdown goes to
+`3.4rem` of Teko with a bar draining under it, a hairline of light travels the
+top edge, and `body.armed` lights the list header and puts a visible edge on
+every row. Off the clock the same list is reference and is left alone. The
+header on the list says which of the two it is — **Scouting** against **Fill
+out the card** — because at the one moment the page should not look like it
+did a minute ago, it looked exactly like it did a minute ago.
+
+**The card.** Tapping a man fills out an official selection card on cream
+stock: round, pick, overall, club, the selection, and underneath it whether he
+has fallen past his ranking and every time PAMS has drafted him before. It is
+the only surface in the whole broadcast that is meant to be a physical object,
+which is why it is the only one that is not dark glass over a stage. The
+position colours are set in ink on it — they are drawn for a dark board and are
+unreadable on cream.
+
+**Handing it over is a hold, not a tap.** `HOLD_MS` is 900ms with the button
+filling as it runs. This is the only irreversible thing anybody does on this
+phone and it used to be a tap on a button an inch below a list he was scrolling
+with his thumb. The hold is not a confirmation bolted on top of that button —
+it *is* that button, and it cannot fire by brushing the screen.
+
+**The card is in.** From the moment he sends until the board reveals him his
+phone holds a full-screen card at the podium: what he sent, which pick it is,
+and three dots walking. He has nothing left to do, so there is nothing left on
+the screen to do it with — no list, no search, no roster.
+
+### The phones give nothing away
+
+The other eleven see **THE CARD IS IN** and no name, and — this is the part
+that is easy to break — **the player stays in their list.**
+
+`candidates()` in pick.js filters on `PICKS` and on nothing else. A pick only
+becomes a document in `PICKS` when the commissioner commits it, which is at the
+announce; `submitPick` writes the player to `STATE.pending`, which is a
+different thing in a different place. So while a card is at the podium the man
+on it is still on the board on all twelve phones, exactly as he was a minute
+ago.
+
+**Never filter `STATE.pending` out of that list.** Every phone can read it.
+Taking the pending man out would hand the whole room the pick the board is
+holding back — not by naming him, but by leaving a hole where he was, which
+anybody scrolling their own board spots inside a few seconds. The ceremony on
+the television is only worth running if the phones give nothing away. The one
+case that legitimately removes him early is somebody entering the pick into
+Sleeper before the announce, which the Sleeper loop absorbs; the runbook says
+enter it after.
 
 ## The manager showcase
 
@@ -679,26 +748,67 @@ wrong on a television:
 2. **Every list is a fixed-column grid,** so positions, teams and ranks line
    up down the page instead of drifting with name length.
 
-**The pre-draft screen says what it means and counts in units.** It read `THE
-MILK IS / ON THE CLOCK` over a countdown saying the draft was five days away,
-which is a headline about a thing that has not happened; it is `THE MILK GOES /
-ON THE CLOCK` now, future tense, and the break still falls evenly, which is why
-it is two lines and not three. The countdown under it was 2.1u of mono beneath
-a headline set at 12.5u — the only changing thing on that screen was the
-smallest thing on it — and is now a row of labelled columns at clock size that
-drops the days and picks up seconds inside the last day, so it is visibly
-counting rather than sitting on a number that moves once a minute. The scoring
-format is gone from the line underneath: rounds and snake are facts about the
-draft, full PPR and TE premium are facts about the season and everybody in the
-league already knows them.
+**The pre-show is the whole canvas, not a panel on the stage.** `.pre` is a
+direct child of `#frame` alongside the announcements, so before the first pick
+the television is only the pre-show — the header, the round wall and the ticker
+are covered. They had nothing to say: a `ROUND 1 / PICK 1` header for a pick
+nobody had made, twelve names in a wall of empty slots, and a ticker with the
+format line in it that the screen underneath was already saying.
 
-**Bare state classes in this stylesheet are landmines.** `.idle` is the
-pre-draft screen and it is written bare — `.idle { position: absolute;
-display: none }` — so anything else that borrows the word vanishes. The
-next-up card's stopped clock did exactly that: `.next-clock.idle` matched
-`.idle` too and the countdown disappeared instead of greying out. It is
-`.held` now. Check `grep -nE "^\.(idle|warn|panic|paused|new|first)" draft.css`
-before naming a state class.
+Three bands, in order of what is actually true before a draft:
+
+1. **The slate.** The TSC masthead and the date, and nothing else.
+2. **The countdown**, the largest thing on the screen because it is the only
+   thing on it that changes. Its plates are padded `2.3u` on top against `.7u`
+   underneath, and that asymmetry is not a fudge: Teko is a scoreboard face with
+   a tall ascent and almost no descender, so at `line-height: .78` the ink sits
+   high inside its own line box and centring the box parks the numbers against
+   the top of the plate with a gap beneath them. The padding centres the *ink*.
+   `DRAFT DAY` sets in Archivo and needs no such correction. Labelled columns on their own mounted plates —
+   `13.5u` of Teko — that drop the days and pick up seconds inside the last day
+   so it is visibly counting rather than sitting on a number that moves once an
+   hour. On the day itself it collapses to one gold plate reading `DRAFT DAY`
+   and stops pretending to be a clock.
+3. **The room.** Twelve plinths in draft order at full strength, each with his
+   slot ghosted behind him, his name, his conference as the rule above it and
+   last season under it. This was a strip of cut-outs at 55% opacity with
+   nothing said about any of them, which is decoration — a pre-show is the one
+   moment all night when the men in the room are the story.
+
+   It runs at 86% of the canvas rather than edge to edge. Full width put twelve
+   men at 160px apiece and made the foot of the screen as loud as the countdown
+   above it, and the countdown is the thing here that is news. It is a band
+   inside the screen now, not the base of it.
+
+   **The defending champion gets the whole plinth**, not a gold line on his
+   nameplate: a brass mount drawn behind his column, open at the foot so it
+   reads as a case he is standing in rather than a box he is inside. Built as
+   one reusable block — if it is worth having on the round wall, the
+   on-the-clock card or the showcase, `.pre-pl.champ::before` is the thing to
+   lift, and every value in it is a fraction of `--u`. No glow: light lives in
+   the room on this board and never as a halo on content, so it is an edge and
+   a wash, both of which a printed frame has and neither of which is a light
+   source.
+
+**Twelve teams, fifteen rounds, snake, and that is the lot.** A second line
+carrying the scoring — full PPR, 6pt passing TD, TE premium — got reintroduced
+during the rebuild and was cut again. It is the wrong screen for it twice over:
+those are facts about the season rather than about tonight, and all twelve
+people in the room already know them.
+
+The headline is two faces, not two sizes of one: `THE MILK DRAFT` is the
+headline and `BEGINS IN` is a tracked mono caption on the clock beneath it,
+between two rules. Both set in gold at the same size, they fought the
+countdown for the eye.
+
+**Bare state classes in this stylesheet are landmines.** The pre-draft screen
+used to own `.idle`, written bare — `.idle { position: absolute; display:
+none }` — so anything else that borrowed the word vanished. The next-up card's
+stopped clock did exactly that: `.next-clock.idle` matched `.idle` too and the
+countdown disappeared instead of greying out. It is `.held` now, and the
+pre-show is `.pre`. Check
+`grep -nE "^\.(idle|warn|panic|paused|new|first)" draft.css` before naming a
+state class.
 
 **Three traps that will silently come back:**
 
@@ -820,6 +930,241 @@ thickness rather than leaving it a line drawn around a hole. **A first pass
 added brass corner marks and they were wrong** — the ask was for a border, and
 brackets sitting near a border are decoration next to the problem rather than a
 fix for it.
+
+**Best available's plate is built in CSS, not shipped as an image** — and this
+is the second time this board has gone that way round, in the opposite
+direction to the first. `.bb-next`'s plate was a CSS construction that became a
+photograph, because what it is drawing is *painted*: angled planes, streaks, a
+lit border. Seven gradients approximating that came out looking like an
+approximation.
+
+This plate is not painted. It is a near-black navy field, one soft light, a
+keyline and a straight gold rule, and every one of those is something CSS draws
+exactly and a raster only ever draws at one size. Three background layers, each
+with one job, which is the whole difference between this and the `.bb-next`
+version that got thrown away.
+
+**The field is nearly black, and that is what makes the frame work.** Brass only
+reads as brass against something much darker than itself; matching the
+reference art's navy left the mount and the plate at similar weight and the edge
+stopped being an edge. `#030a14` at the top, `#01060d` through the middle,
+`#000308` at the foot — darker than the two cards beside it, which is also what
+makes it the one card in the band the eye goes to first.
+
+| against `#01060d` | contrast |
+|---|---|
+| brass highlight `#f0d9a6` | 14.7:1 |
+| brass mid `--gold` | 7.9:1 |
+| list names `--milk` | 17.8:1 |
+| rank column `--chalk-dim` | 5.5:1 |
+
+**Four things the plate does not have, all built and all cut.** They are worth
+listing because each was the obvious next idea and each was worse:
+
+- **A dot grid** at 6.74px measured off the art. On a field this dark a regular
+  grid of dots does not read as texture, it reads as a pattern swatch, and it
+  is the first thing that makes a panel look cheap.
+- **A faint keyline** inset `.68u` — a fourth edge inside three that already
+  read as a frame.
+- **Masked diagonals down the left side**, two colours on a ~108px period at
+  62°. The technique was right and worth keeping in mind for something else: a
+  repeating gradient on `::before` under a horizontal `mask-image`, so the rake
+  *fades out* by 62% instead of ending at the seam a cropped bitmap would
+  leave. It was still the wrong thing on a card that also carries a list.
+- **Anything approaching the reference navy,** per above.
+
+The art stays in the tree at `bg/bestavail.webp`, unreferenced on purpose — it
+is what the measurements came from and what to diff against if the plate
+drifts. Its gold rule sits at .1335 of its height, which is 42.72px, a pixel
+and a half under where the shared 3.8u header already ends; that is why the
+header needed no adjusting to carry one.
+
+**Every layer is clipped to the padding box.** A layer left on the default
+`border-box` paints over the frame gradient underneath it and the mount simply
+disappears — the same trap that cost `.bb-next` its border, one level further
+in.
+
+**The keyline and the mark are `::before` and `::after`, and both are pinned to
+`z-index: 0` with the header and the list lifted to 1.** A pseudo-element comes
+last in the box tree, so left alone `::after` paints over every row on the
+card.
+
+**The mark is a ghosted `PAMS`, not somebody else's shield.** The board already
+ghosts a numeral behind every manager on the pre-show and behind the pick on
+THE PICK IS IN, so a wordmark at the same weight is an idiom it owns rather
+than one it borrows. At `.05` alpha it is a texture at the edge of vision; past
+about `.08` it starts competing with the team column sitting over it.
+
+**The gold rule runs straight.** The reference art dipped it around a notch on
+the left and stepped it near the right. That is a broadcast mannerism that only
+works when the graphic is a fixed picture — here it is a rule under a live
+header, and a kink in it just reads as a rule that failed to line up. Full
+width, brightest at the left third where the title sits, fading to nothing at
+both ends so it does not collide with the keyline it crosses.
+
+**A middle version of the art printed its own seven rows and a marker rail, and
+the card was bent to fit them:** a 5.3u header, four paddings derived from the
+line positions, and a row count pinned at seven with `--band-rows` handed to the
+lineup. All of it is backed out, and none of it should return unless art with
+rows does. If that ever happens, re-measure and re-derive rather than nudging by
+eye — threshold the row-to-row brightness contrast down a central column band
+and print the peaks as fractions of the image height.
+
+**The frame is a mount, not an edge, and it is four pixels.** Two dark keylines
+with 2px of brass between them: the outer one a non-inset `0 0 0 1px` ring, the
+inner one an `inset 0 0 0 1px`, around a `border-box` gradient. Concentric
+rings are the one thing a gradient in a border cannot draw, which is why it is
+built this way rather than with more colour stops. It is darker and redder than
+the bright gold on `.bb-next`, since those two share this slot in the band, and
+on a plate this dark anything heavier stops reading as a frame and starts
+reading as a margin.
+
+**The run is 135° and its trough bottoms out at `--gold-lo`.** Both were
+corrections. At 160° the lit ends land in the middle of the top and bottom
+edges, so the dark part of the run fell across two corners at an angle — a
+frame that looks cut from a larger one. Corner to corner instead: lit at top
+left and bottom right, turning down through the other two. And the trough was
+`#241a0e`, which against the plate is **1.19:1** — the two far corners were
+effectively not drawn, and a frame with corners missing is worse than a flat one
+because a flat one at least closes. At `--gold-lo` it is 2.79:1: still visibly
+darker through the middle, the way a machined edge is under a light, but
+present.
+
+| in the run | against the plate |
+|---|---|
+| 0% / 100% highlight `#f0d9a6` | 14.7:1 |
+| 10% / 90% `--gold` | 7.9:1 |
+| 28% / 72% `#8f6d33` | 4.3:1 |
+| 50% trough `--gold-lo` | 2.8:1 |
+
+**The band's corners are square.** All three cards, not just this one — a 5px
+radius on a row of panels along the bottom of a television is a web habit, and
+broadcast furniture has corners.
+
+### Both looks ship, and the console picks
+
+`baSkin` and `luSkin` in the state document, applied by `renderBandSkins()` as
+two classes on `.bottom-band`, driven by **THE BOTTOM BAND** in the console's
+left column, between BOARD MODE and DANGER.
+
+Four buttons on one row under one title, and no prose under either pair. Every
+other control in that column is a segmented pair that explains itself by being
+pressed, and two paragraphs describing what a card looks like are worth less
+than looking at the card, which is on a television three feet away. Each half
+keeps its own small label, because a bare row of PLATE / PLAIN / DARK / PAPER
+does not say which pair is which. It stacks below 900px like everything else in
+`console.css` — four buttons across a phone is eighty pixels each, the width
+that turned STILL THERE into four characters and made `.seg.wrapseg` necessary.
+
+They exist because it is not a question a stylesheet can answer. A card that is
+right on a laptop at a desk can be wrong on a television across a room, and
+eight o'clock on draft night is not the time to be editing CSS. So both looks
+are built, the choice is a button, and nothing has to be undone afterwards.
+
+| | default (`null`) | the alternative |
+|---|---|---|
+| `baSkin` | the brass-mounted plate | `"steel"` — the plain card the band shipped with, identical to the lineup |
+| `luSkin` | the dark card | `"paper"` — a printed team sheet |
+
+**Both defaults are stored as `null`, never as the word for them** — the same
+convention `rail` uses — so a state document written before any of this existed
+still means the right thing.
+
+**Each skin block is purely overrides.** Nothing in either invents a value that
+exists only in one skin; every rule puts something back to a value already named
+elsewhere in the file. `.ba-steel` repeats `.bb-sec`'s own background and shadow
+verbatim rather than referencing them, because there is no `revert-rule` that
+reaches a class instead of the UA sheet.
+
+**The paper lineup is the same stock as the phone's selection card** (`.cs-card`
+in `phone.css`), deliberately, rather than a second light surface invented for
+the board. There is one piece of paper in this production: what a manager fills
+out on his phone is what the television shows him holding. It also does a job
+the dark version cannot — two dark cards side by side under a dark stage is
+three of the same thing in a row, and putting one on paper says which is the
+live board and which is the record of one team.
+
+**Only the stock is warm.** The first pass put the whole card on hue 40 — sepia
+header bar, sepia ink, a tan at the foot of the paper. Handsome enough on its
+own and a fourth colour family on a board built out of navy, gold and cream;
+the header bar measured hue 40 at 35% saturation against the board's navy at
+hue 217. Everything dark on the card is hue ~217 now, and the only warm things
+left are the paper and the gold.
+
+| | | |
+|---|---|---|
+| header bar | `--panel` → `#060d18` | hue 217 |
+| names | `#131820` | 14.0:1 on stock |
+| secondary / open | `#57616f` | 5.0:1 on stock |
+| cream label on the bar | `--milk` | 16.2:1 |
+| gold count on the bar | `--gold-hi` | 12.8:1 |
+
+The header is the one band that inverts, and it inverts to **navy rather than to
+ink** — it is the furniture holding the paper, not something printed on it, and
+it is the one place on the card where all three of navy, gold and cream meet. A
+solid bar also stops the top row of the list reading as the first line of the
+header.
+
+Its mount is **pewter, not brass**: brass on cream is two warm tones a few
+degrees apart and reads as a printing mistake, where a cool edge makes the paper
+look mounted rather than stained — and it is the same hue family as the steel
+edge on the card beside it.
+
+The phone's selection card keeps its warm ink. It is held at arm's length rather
+than read across a room, and warm ink on cream is what a real card looks like in
+the hand; the stock is the thing the two surfaces share.
+
+**The position colours had to be redrawn for it, and so did the filter.** The
+board's hues are built to glow on a dark panel and are washed out on cream —
+`--rb` lands at **1.9:1** on the stock. Same hues taken down into ink, all
+between 4.7:1 and 6.0:1. And `.lu-row .s` carries `filter: brightness(1.25)` to
+lift them for the dark card, so `.lu-paper` has to switch it off or darkening
+them achieves nothing.
+
+| on cream `#e6e1d2` | |
+|---|---|
+| names `#171410` | 14.0:1 |
+| pick / team / open `#6f6144` | 4.6:1 |
+| QB `#8c463c` · RB `#2f6d47` · WR `#33556f` | 5.3 / 4.7 / 6.0:1 |
+| TE `#5d4a70` · K `#4a5460` · DEF `#3c5f5b` | 6.0 / 5.9 / 5.4:1 |
+
+The first pass had the unfilled `open` slot at `#9a8f77`, which is **2.4:1** —
+on the dark card the same placeholder is 5.3:1, and that faint on a television
+across a room is a blank row rather than a quiet one. It is the same ink as the
+pick and team columns now, with the *weight* doing the recessing instead of the
+tone.
+
+**The gold flash on the pick that just landed goes solid.** The dark card washes
+the row in `rgba(gold,.16)` light; on paper a translucent wash reads as a stain,
+so it becomes a highlighter stripe at `.42` and the name stays ink.
+
+**The panel title is the masthead lockup, not a field label** — and the fix was
+the face, not the size. `BEST AVAILABLE` was IBM Plex Mono at 1.45u, which is
+what this board uses for a count, a slot, a timestamp: small furniture. On a
+plate with a gold rule ruled under it that reads as a caption somebody forgot
+to set.
+
+**The first attempt reached for Archivo and only made the same label bigger.**
+A tracked-out bold grotesque is still a label, and it had nothing to do with
+the gold on the plate. Worth remembering as a general point: when a piece of
+type is in the wrong register, scaling it up moves it further into the wrong
+register.
+
+So it is the lockup this board already owns. `The 2026 Draft` is set in DM
+Serif in the header and again on the pre-show — mixed case, one word in italic
+gold — and that is the shape of a thing that has been *titled* rather than
+named. `Best <em>Available</em>` gets the same treatment, which ties the plate
+to the masthead and answers the gold with the one face here warm enough to sit
+beside it.
+
+Mixed case and .02em tracking, both deliberate: caps at .2em is the register of
+the panel next door, and a Didone set that way turns into a wordmark on a
+bottle. It runs at 2.5u because this is a 400-weight high-contrast serif and
+the thin strokes are the first thing a television loses — the fix for that is
+size, since there is no bolder cut in the file. Scoped to `.bb-ba`, so the run
+alert and the `LINEUP` header beside it are untouched; the two cards carry
+different titles because one is a plated feature panel and the other is
+reference.
 
 **A run ends when the interruptions arrive together, not when they add up.**
 `gap` picks somewhere else retire a run, and they used to have to be
@@ -1046,10 +1391,13 @@ television is gone. Keep the size, take the grey out.
 
 **The two band cards have edges, and that is as far as it goes.** Widening the
 gutter between best available and the lineup did not separate them on its own;
-a 2px border in `--line-2` and then keeping the rows off it did. Whatever
-padding goes on those two lists has to be identical, because it comes off the
-height the rows divide — half a unit of difference and one card's rows sit out
-of step with the other's all the way down.
+a 2px border in `--line-2` and then keeping the rows off it did.
+
+Whatever padding goes on those two lists has to be identical, because it comes
+off the height the rows divide — half a unit of difference and one card's rows
+sit out of step with the other's all the way down. That survived best available
+getting its own plate in 2026-08-25: the art draws no rows, so the geometry did
+not have to move. See **Best available is set on a plate**.
 
 **And the type in them is within a step of itself.** The rows always were —
 both lists are driven by the one clamp that sizes a row off `--band-rows`, so

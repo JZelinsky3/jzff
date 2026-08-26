@@ -515,7 +515,7 @@ setInterval(() => {
   const d = DRAFT_AT - Date.now();
   const el = $("idleCount");
   if (d <= 0) {
-    if (countKey !== "now") { countKey = "now"; el.innerHTML = `<b class="now">DRAFT DAY</b>`; }
+    if (countKey !== "now") { countKey = "now"; paintCountNow(el); }
     return;
   }
   const days = Math.floor(d / 864e5), h = Math.floor(d / 36e5) % 24;
@@ -532,6 +532,10 @@ setInterval(() => {
     `${i ? `<u></u>` : ""}<span><b>${days > 0 && i === 0 ? n : String(n).padStart(2, "0")}</b>` +
     `<i>${label}</i></span>`).join("");
 }, 500);
+
+function paintCountNow(el) {
+  el.innerHTML = `<span class="now"><b>DRAFT DAY</b><i>Doors are open</i></span>`;
+}
 
 // ── render ────────────────────────────────────────────────────────────────
 
@@ -559,9 +563,25 @@ function changed(id, key) {
 function renderAll() {
   renderHeader(); renderClock(); renderLineup(); renderPickIn();
   renderSelection(); renderReveal(); renderNextUp();
-  renderBestAvailable(); renderRail();
+  renderBestAvailable(); renderRail(); renderBandSkins();
   renderIdleLineup(); renderShowcase();
   renderTicker();
+}
+
+/**
+ * How the two cards in the bottom band are dressed, from the console.
+ *
+ * Two classes on the band rather than two on the document, because this is the
+ * only thing on the board either of them affects and a body class would invite
+ * the next panel to reach for it. Both are absent by default — `null` in the
+ * state document means the look each card shipped with, so nothing has to be
+ * written for the board to be correct.
+ */
+function renderBandSkins() {
+  const band = document.querySelector(".bottom-band");
+  if (!band) return;
+  band.classList.toggle("ba-steel", STATE.baSkin === "steel");
+  band.classList.toggle("lu-paper", STATE.luSkin === "paper");
 }
 
 function renderHeader() {
@@ -570,12 +590,53 @@ function renderHeader() {
   $("hdrPick").textContent  = C.roundPickOf(o);
 }
 
+/**
+ * The twelve plinths along the foot of the pre-show.
+ *
+ * In draft order rather than file order — this row *is* the first round, so
+ * the man who opens the draft stands on the left — and every one of them says
+ * something. The note under the name is last season and nothing else: it is
+ * the shortest true sentence about a manager that the room has an opinion
+ * about, where a career line at this width comes out as four characters of
+ * win percentage.
+ *
+ * Built once. Nothing on this screen depends on the draft, so a rebuild would
+ * only throw twelve decoded images away and ask for them again.
+ */
 function renderIdleLineup() {
   if (STATE.status !== "idle") return;
   const el = $("idleLineup");
   if (el.childElementCount) return;
-  el.innerHTML = C.DATA.managers.filter(m => m.cutout).slice(0, 12)
-    .map(m => `<img src="${m.cutout}" alt="" decoding="async" onerror="this.remove()">`).join("");
+
+  el.innerHTML = C.DATA.managers.slice().sort((a, b) => a.slot - b.slot).map(m => {
+    const ls = m.last_season || {};
+    const conf = (m.conference || "").toLowerCase();
+    // Last year's champion is the one man here worth breaking the row for.
+    const champ = ls.finish === 1;
+    const note = champ
+      ? `&#9733; DEFENDING`
+      : (ls.record ? `<b>${C.escapeHtml(ls.record)}</b>${ls.finish ? ` &middot; ${C.ordinal(ls.finish)}` : ""}` : "&nbsp;");
+
+    // The photograph is laid over a fixed-height well rather than being the
+    // thing that sets the column's height, so a man with no cut-out — or one
+    // whose file 404s on the night — leaves his initial standing in the same
+    // place instead of dropping his whole column half a screen out of line.
+    return `
+      <div class="pre-pl${conf ? ` conf-${conf}` : ""}${champ ? " champ" : ""}">
+        <div class="pre-pl-shot${m.cutout ? "" : " nof"}">
+          <div class="pre-pl-no">${m.slot}</div>
+          <div class="pre-pl-fb">${C.escapeHtml(m.name[0])}</div>
+          ${m.cutout
+            ? `<img class="pre-pl-face" src="${m.cutout}" alt="" decoding="async"
+                    onerror="this.parentElement.classList.add('nof');this.remove()">`
+            : ""}
+        </div>
+        <div class="pre-pl-id">
+          <div class="pre-pl-name">${C.escapeHtml(m.name)}</div>
+          <div class="pre-pl-note">${note}</div>
+        </div>
+      </div>`;
+  }).join("");
 }
 
 /**
@@ -1222,7 +1283,7 @@ function renderBestAvailable() {
   // Says what the run actually is, now that it is the only place the board
   // reports one. A small tag in the position's own colour and then the fact
   // in plain words — it used to be one mono chip set larger than the
-  // BEST AVAILABLE label beside it, which made the header look like it had
+  // Best Available title beside it, which made the header look like it had
   // two headers in it.
   const run = C.positionRun(PICKS);
   // The tightest true sentence, which is not always the same sentence. Four

@@ -28,19 +28,6 @@
 
   <section class="stage">
 
-    <!-- Nobody is on the clock before the draft starts, so the headline does
-         not claim anybody is: it used to read THE MILK IS / ON THE CLOCK over a
-         countdown saying the thing was five days away. It runs straight into
-         the countdown now — the second line is the start of the sentence the
-         numbers underneath finish, which is why that line is the short one. -->
-    <div class="idle">
-      <div class="eyebrow">Friday, August 28 &middot; 7:20 PM</div>
-      <h1>THE MILK DRAFT<span>BEGINS IN</span></h1>
-      <div class="when" id="idleCount">&nbsp;</div>
-      <div class="fmt">15 rounds &middot; snake</div>
-      <div class="lineup" id="idleLineup"></div>
-    </div>
-
     <!-- phase three: the detail screen. Static — stays up until the
          commissioner hits Next Pick, so unlike the selection graphic it
          doesn't take over the header and ticker, and it stops short of the
@@ -105,7 +92,11 @@
     <div class="bottom-band">
       <div class="bb-sec bb-ba">
         <div class="rail-hd">
-          <span>BEST AVAILABLE</span>
+          <!-- The board's own masthead lockup, not a tracked-out label: DM
+               Serif with the second word italic gold, the same shape as
+               `The 2026 Draft` in the header and on the pre-show. See the
+               note on `.bb-ba > .rail-hd`. -->
+          <span class="ba-title">Best <em>Available</em></span>
           <span class="run" id="runAlert"></span>
         </div>
         <div class="ba-list" id="baList"></div>
@@ -347,6 +338,52 @@
       <span class="rc-turn" id="rcTurn">&nbsp;</span>
     </div>
     <div class="rc-order" id="rcOrder"></div>
+  </div>
+</div>
+
+<!-- ── the pre-show ───────────────────────────────────────────────────────
+     Everything before the first pick, and the only screen on this board that
+     is not about one. It used to be a panel inside .stage, which meant the
+     pre-draft television was a centred stack of type with the round wall
+     sitting beside it listing twelve men nobody had drafted for yet, a
+     ROUND 1 / PICK 1 header for a pick that had not happened, and an empty
+     ticker along the bottom.
+
+     So it is a direct child of #frame like the announcements: it takes the
+     whole canvas, and it is built out of the two things that are actually
+     true before a draft — how long is left, and who is in the room. The
+     countdown is the largest thing on the screen because it is the only
+     thing on it that changes. -->
+<div class="pre">
+  <div class="pre-top">
+    <div class="pre-mark">
+      <span class="pre-kicker">PA Milk Society</span>
+      <span class="pre-title">The 2026 <em>Draft</em></span>
+    </div>
+    <div class="pre-slate">
+      <span class="pre-slate-d">Friday, August 28</span>
+      <span class="pre-slate-t">7:20 PM</span>
+    </div>
+  </div>
+
+  <div class="pre-mid">
+    <!-- Twelve teams, fifteen rounds, snake, and that is the lot. The scoring
+         used to run underneath as a second line — full PPR, 6pt passing TD, TE
+         premium — and it is the wrong screen for it twice over: those are facts
+         about the season rather than about tonight, and every one of the twelve
+         people in the room already knows them. -->
+    <div class="pre-eyebrow">Twelve teams &middot; Fifteen rounds &middot; Snake</div>
+    <h1 class="pre-head"><span class="a">The Milk Draft</span><span class="b">Begins In</span></h1>
+    <div class="pre-count" id="idleCount">&nbsp;</div>
+  </div>
+
+  <div class="pre-order">
+    <div class="pre-order-hd">
+      <span class="pre-order-t">The Room</span>
+      <span class="pre-order-rule"></span>
+      <span class="pre-order-sub">Round one, in order</span>
+    </div>
+    <div class="pre-lineup" id="idleLineup"></div>
   </div>
 </div>
 

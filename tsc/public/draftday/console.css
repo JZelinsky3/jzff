@@ -40,13 +40,6 @@
 html { font-size: 16px; }
 body.console-page { font-size: 1rem; }
 
-/* Screen-reader label for the search field, which is placeholder-labelled by
-   design — a visible label above it would cost a line the strip cannot spare. */
-.vh {
-  position: absolute; width: 1px; height: 1px; margin: -1px;
-  padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
-}
-
 /* The command strip and the two columns are a stack on a phone, which is what
    they already were. Everything below only happens on a real screen. */
 .cmd { display: grid; gap: .7rem; }
@@ -138,6 +131,18 @@ body.console-page { font-size: 1rem; }
 .nl-none { font-family: var(--mono); font-size: .72rem; color: var(--mute); }
 
 .hd.gold { color: var(--gold); }
+
+/* The two bottom-band controls under one title. They are the same kind of
+   choice made twice, so they are one box rather than two and the box says once
+   what it is about. Each half keeps its own small label because a bare row of
+   PLATE / PLAIN / DARK / PAPER does not say which pair is which.
+
+   Stacked here and side by side only on a real screen, like everything else in
+   this file. Four buttons across a phone would give each of them about eighty
+   pixels, which is the width that turned STILL THERE into four characters and
+   is why `.seg.wrapseg` exists. */
+.bandpair { display: grid; gap: .7rem; }
+.bandpair .hd.sm { margin-bottom: .45rem; }
 
 /* Which half of the cell is showing is decided by one class on it, so there is
    never a moment where the console is holding a pick and still saying it is
@@ -238,6 +243,10 @@ body.console-page { font-size: 1rem; }
   /* Room between anything that sits next to something it must not be mistaken
      for — Pause beside +30s beside Reset, most of all. */
   .cbtns { gap: .6rem; }
+
+  /* Both bottom-band pairs on one row. There is width for it here and the two
+     of them are one decision about one strip of the television. */
+  .bandpair { grid-template-columns: 1fr 1fr; gap: .9rem; }
 
   /* Who is up, what the pick is, and the button. The button column is fixed
      rather than fluid: it is the target hit most often in the night and it

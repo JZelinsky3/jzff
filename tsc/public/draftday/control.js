@@ -284,6 +284,7 @@ function render() {
 
   renderShowcase(m);
   renderRail();
+  renderBand();
 }
 
 /**
@@ -351,6 +352,26 @@ function renderPickCard(o, m) {
 function renderRail() {
   const mode = STATE.rail || "wall";
   for (const b of $("railSeg").children) b.classList.toggle("on", b.dataset.rail === mode);
+}
+
+/**
+ * How the two cards in the bottom band are dressed.
+ *
+ * Both of these ship built and the choice is made on the night, because it is
+ * not a question a stylesheet can answer: a card that is right on a laptop at a
+ * desk can be wrong on a television across a room, and eight o'clock is not the
+ * time to be editing CSS. Pressing one writes state and every screen follows,
+ * so nothing has to be undone later.
+ *
+ * The default is stored as null rather than as the string, exactly as `rail`
+ * is, so a state document written before any of this existed still means the
+ * look each card shipped with.
+ */
+function renderBand() {
+  const ba = STATE.baSkin === "steel" ? "steel" : "plate";
+  const lu = STATE.luSkin === "paper" ? "paper" : "dark";
+  for (const b of $("baSeg").children) b.classList.toggle("on", b.dataset.ba === ba);
+  for (const b of $("luSeg").children) b.classList.toggle("on", b.dataset.lu === lu);
 }
 
 /**
@@ -643,6 +664,20 @@ $("railSeg").onclick = async e => {
   const b = e.target.closest("[data-rail]");
   if (!b) return;
   await C.setState({ rail: b.dataset.rail === "wall" ? null : b.dataset.rail });
+};
+
+// ── the bottom band ───────────────────────────────────────────────────────
+// Same convention as the rail: the default is written as null, never as the
+// word for it, so an old state document and a fresh one agree.
+
+$("baSeg").onclick = async e => {
+  const b = e.target.closest("[data-ba]");
+  if (b) await C.setState({ baSkin: b.dataset.ba === "steel" ? "steel" : null });
+};
+
+$("luSeg").onclick = async e => {
+  const b = e.target.closest("[data-lu]");
+  if (b) await C.setState({ luSkin: b.dataset.lu === "paper" ? "paper" : null });
 };
 
 // ── mode ──────────────────────────────────────────────────────────────────

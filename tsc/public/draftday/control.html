@@ -110,6 +110,36 @@
         <div class="tiny" style="margin-top:.6rem" id="modeHint"></div>
       </div>
 
+      <!-- Both looks ship built and the choice is made here, because it is not
+           a question a stylesheet can answer from a desk: a card that is right
+           on a laptop can be wrong on a television across a room. Press one and
+           the board follows, so nothing has to be undone later.
+
+           Four buttons on one row under one title, and no copy under either.
+           Every other control in this column is a segmented pair that explains
+           itself by being pressed; two paragraphs describing what a card looks
+           like are worth less than looking at the card, which is on a
+           television three feet away. -->
+      <div class="cbox">
+        <div class="hd">THE BOTTOM BAND</div>
+        <div class="bandpair">
+          <div>
+            <div class="hd sm"><span>BEST AVAILABLE</span></div>
+            <div class="seg" id="baSeg">
+              <button data-ba="plate">PLATE</button>
+              <button data-ba="steel">PLAIN</button>
+            </div>
+          </div>
+          <div>
+            <div class="hd sm"><span>LINEUP</span></div>
+            <div class="seg" id="luSeg">
+              <button data-lu="dark">DARK</button>
+              <button data-lu="paper">PAPER</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- It used to sit under the pick log, which meant scrolling past every
            pick of the night to reach it. It is up here now, where it is one
            box from the top and still needs two taps. -->

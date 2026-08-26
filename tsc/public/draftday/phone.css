@@ -18,6 +18,19 @@ body.phone {
 
 .wrap { max-width: 620px; margin: 0 auto; padding: 0 0 5rem; }
 
+/* `[hidden]` is how every page here shows and hides a whole section, and the
+   UA rule that implements it is the weakest one in the cascade: any class in
+   this file that sets `display` beats it and the element stays on screen.
+   Anything hidden this way needs saying explicitly. */
+[hidden] { display: none !important; }
+
+/* Screen-reader label for a field that is placeholder-labelled by design — a
+   visible label above it would cost a line the strip cannot spare. */
+.vh {
+  position: absolute; width: 1px; height: 1px; margin: -1px;
+  padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
 /* ── top bar ── */
 .pbar {
   position: sticky; top: 0; z-index: 20;
@@ -39,33 +52,90 @@ body.phone {
 }
 .pbar .who img { height: 30px; width: auto; object-fit: contain; }
 
-/* ── status card ── */
-.status {
-  margin: .9rem; padding: 1rem; border-radius: 6px; text-align: center;
+/* ══ THE PICK PAGE ═════════════════════════════════════════════════════════
+   Everything under `.pick-page` is the managers' phone. The console shares the
+   bar, the search field, the player rows and the buttons above, so nothing in
+   here may reach outside that scope.
+
+   The idea the whole page is built on: a pick is a card. It gets filled out,
+   it gets carried to the podium, and it gets read out from there. That is the
+   real object, it is why the ceremony on the television works, and until now
+   the phone knew nothing about it — a player list and a confirm dialog.       */
+
+/* ── the state of the room ────────────────────────────────────────────────
+   The one thing on this page that changes on its own, and it has three
+   registers. Waiting is quiet. Somebody else on the clock is a name and how
+   far away your turn is. You on the clock takes the page over: gold rails, the
+   clock at the size of the one on the television, and a bar draining under it
+   so the last thirty seconds are something you see rather than read.         */
+.pick-page .st {
+  position: relative; margin: .9rem; padding: 1rem .9rem;
+  border-radius: 6px; text-align: center; overflow: hidden;
   border: 1px solid var(--line); background: rgba(16,23,36,.8);
 }
-.status.live {
-  border-color: var(--gold-lo);
+.pick-page .st-eb {
+  font-family: var(--mono); font-weight: 600; font-size: .62rem;
+  letter-spacing: .28em; color: var(--mute); text-transform: uppercase;
+}
+.pick-page .st-big {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: 2rem; line-height: 1; text-transform: uppercase;
+  color: var(--milk); margin: .4rem 0 .3rem;
+}
+.pick-page .st-sm { font-size: .95rem; color: var(--chalk-dim); font-weight: 500; line-height: 1.4; }
+.pick-page .st-sm b { color: var(--milk); font-weight: 700; }
+.pick-page .st-clock { margin-top: .6rem; }
+.pick-page .st-time {
+  font-family: var(--clock), var(--mono); font-weight: 600; font-size: 3.4rem;
+  line-height: .9; font-variant-numeric: tabular-nums; color: var(--milk);
+  letter-spacing: .02em;
+}
+.pick-page .st-time.warn  { color: var(--gold-hi); }
+.pick-page .st-time.panic { color: var(--qb); }
+.pick-page .st-time.held  { color: var(--mute); }
+.pick-page .st-bar {
+  height: 3px; margin-top: .5rem; border-radius: 2px;
+  background: rgba(32,48,71,.8); overflow: hidden;
+}
+.pick-page .st-bar i {
+  display: block; height: 100%; width: 100%; background: var(--gold);
+  transform-origin: left center; transition: transform .25s linear;
+}
+.pick-page .st-time.warn  ~ .st-bar i { background: var(--gold-hi); }
+.pick-page .st-time.panic ~ .st-bar i { background: var(--qb); }
+.pick-page .st-time.held  ~ .st-bar i { background: var(--mute); }
+/* Teko is digits and a colon and nothing else, so a word inside the clock
+   falls through to the mono per glyph and the line arrives in two faces.
+   "Paused" is its own chip under it for that reason as much as for clarity. */
+.pick-page .st-tag {
+  display: inline-block; margin-top: .5rem;
+  font-family: var(--mono); font-weight: 600; font-size: .6rem;
+  letter-spacing: .24em; text-transform: uppercase; color: var(--mute);
+  border: 1px solid var(--line); border-radius: 2px; padding: .2rem .5rem;
+}
+
+/* Yours. The border is not the change — the page is. */
+.pick-page .st.live {
+  border-color: var(--gold); border-width: 2px; margin: .9rem .8rem;
   background:
-    radial-gradient(80% 120% at 50% 0%, rgba(255,214,158,.1), transparent 70%),
-    rgba(16,23,36,.9);
+    radial-gradient(90% 130% at 50% 0%, rgba(201,154,67,.16), transparent 72%),
+    rgba(16,23,36,.94);
+  box-shadow: 0 0 0 4px rgba(201,154,67,.07), 0 .8rem 2rem rgba(0,0,0,.5);
 }
-.status .eb {
-  font-family: var(--mono); font-size: .62rem; letter-spacing: .28em;
-  color: var(--mute); text-transform: uppercase;
+.pick-page .st.live .st-eb { color: var(--gold); }
+.pick-page .st.live .st-big { color: var(--gold-hi); font-size: 2.5rem; }
+/* A hairline of light travelling the top edge, so the card is visibly live
+   rather than just a different colour. Slow — this runs for two minutes. */
+.pick-page .st.live::after {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold-hi), transparent);
+  background-size: 45% 100%; background-repeat: no-repeat;
+  animation: stSweep 2.6s linear infinite;
 }
-.status.live .eb { color: var(--gold); }
-.status .big {
-  font-family: var(--display); font-weight: 900; font-stretch: 62%; font-size: 2rem; line-height: 1;
-  text-transform: uppercase; color: var(--milk); margin: .4rem 0 .3rem;
+@keyframes stSweep { from { background-position: -50% 0; } to { background-position: 150% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .pick-page .st.live::after { animation: none; background-position: 50% 0; }
 }
-.status .sm { font-size: .95rem; color: var(--chalk-dim); font-weight: 500; }
-.status .clock {
-  font-family: var(--mono); font-weight: 700; font-size: 2.6rem;
-  font-variant-numeric: tabular-nums; margin-top: .35rem; color: var(--milk);
-}
-.status .clock.warn  { color: var(--gold-hi); }
-.status .clock.panic { color: var(--qb); }
 
 /* ── controls ── */
 .tools { padding: 0 .9rem; display: grid; gap: .55rem; }
@@ -89,8 +159,32 @@ body.phone {
 .fbtn.on { background: var(--gold); color: #150e02; border-color: var(--gold); }
 
 /* ── player rows ── */
+/* A header on the list, because the list means two different things depending
+   on whose clock is running: it is a board you are scouting, or it is a board
+   you are picking off. It said neither, so the page looked identical at the
+   one moment it should not have. */
+.pick-page .plist-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: .6rem; margin: 1.1rem .9rem 0; padding-bottom: .4rem;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono); font-weight: 600; font-size: .62rem;
+  letter-spacing: .24em; text-transform: uppercase; color: var(--chalk);
+}
+.pick-page .plist-ct { color: var(--mute); letter-spacing: .12em; }
+body.armed .plist-hd { color: var(--gold); }
+body.armed .plist-ct { color: var(--gold-lo); }
+
 .plist { padding: .7rem .9rem 0; display: grid; gap: .35rem; }
+/* On the clock every row is a card waiting to be filled out, so it gets the
+   affordance it has been missing: a right-hand edge you can see. Off the
+   clock the same rows are reference and are left alone. */
+body.armed .prow { border-color: var(--line-2); }
+body.armed .prow::after {
+  content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 2px;
+  background: linear-gradient(180deg, transparent, var(--gold-lo), transparent);
+}
 .prow {
+  position: relative; overflow: hidden;
   display: grid; grid-template-columns: 38px 1fr auto;
   gap: .7rem; align-items: center; padding: .5rem .6rem;
   border-radius: 5px; border: 1px solid var(--line-soft);
@@ -152,39 +246,179 @@ body.phone {
 .rslot .e { color: var(--mute); font-weight: 500; }
 .rslot .t { font-family: var(--mono); font-size: .66rem; color: var(--mute); text-align: right; }
 
-/* ── confirm sheet ── */
-.sheet {
+/* ── the card ─────────────────────────────────────────────────────────────
+   A pick is a card: the round, the pick, the club and one name, carried to
+   the podium and read out from there. So the confirm step is that card, filled
+   out in front of him, on paper stock rather than on the night ground — this
+   is the one surface in the whole broadcast that is meant to be a physical
+   object, and everything else here is dark glass over a stage.               */
+.cs {
   position: fixed; inset: 0; z-index: 40; display: none;
-  background: rgba(5,8,15,.92); align-items: flex-end;
+  background: rgba(4,7,12,.94); align-items: flex-end; justify-content: center;
+  backdrop-filter: blur(3px);
 }
-.sheet.open { display: flex; }
-.sheet-in {
-  width: 100%; background: var(--panel); border-top: 2px solid var(--gold);
-  border-radius: 10px 10px 0 0;
-  padding: 1.1rem 1rem calc(1.3rem + env(safe-area-inset-bottom));
-  animation: sheetUp .22s ease-out;
+.cs.open { display: flex; }
+.cs-in {
+  width: 100%; max-width: 620px;
+  padding: 1rem .8rem calc(1rem + env(safe-area-inset-bottom));
+  animation: csUp .24s cubic-bezier(.2,.9,.3,1);
 }
-@keyframes sheetUp { from { transform: translateY(100%); } }
-.sheet-top { display: flex; gap: .9rem; align-items: center; }
-.sheet-top img {
-  width: 70px; height: 70px; border-radius: 4px;
-  object-fit: cover; object-position: top center; background: var(--panel-2);
+@keyframes csUp { from { transform: translateY(14%); opacity: 0; } }
+
+.cs-card {
+  background: linear-gradient(178deg, #f4f1e8 0%, #e8e3d5 100%);
+  color: #1a1710; border-radius: 3px;
+  padding: .85rem .9rem 1rem;
+  box-shadow: 0 1.4rem 3rem rgba(0,0,0,.6), 0 0 0 1px rgba(201,154,67,.5);
 }
-.sheet .nm {
-  font-family: var(--display); font-weight: 900; font-stretch: 62%; font-size: 1.7rem; line-height: 1;
-  text-transform: uppercase; color: var(--milk);
+.cs-hd {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: .6rem; padding-bottom: .5rem;
+  border-bottom: 2px solid rgba(26,23,16,.85);
 }
-.sheet .sub { font-family: var(--mono); font-size: .8rem; color: var(--chalk-dim); margin-top: .3rem; }
-.sheet .note {
-  margin-top: .8rem; padding-top: .7rem; border-top: 1px solid var(--line);
-  font-size: .95rem; font-weight: 500; color: var(--chalk-dim); line-height: 1.45;
+.cs-lg { font-family: var(--serif); font-size: 1.15rem; line-height: 1; color: #1a1710; }
+.cs-of {
+  font-family: var(--mono); font-weight: 600; font-size: .58rem;
+  letter-spacing: .2em; text-transform: uppercase; color: #7a6a48;
 }
-.sheet .note b { color: var(--milk); font-weight: 700; }
-.sheet .warn-need {
-  margin-top: .6rem; font-family: var(--mono); font-size: .72rem;
-  color: var(--gold); letter-spacing: .05em;
+/* Ruled fields, the way a form is ruled: a small tracked label over a heavy
+   value, on a line. Three across for the numbers, full width for the club. */
+.cs-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin-top: .7rem; }
+.cs-f { border-bottom: 1px solid rgba(26,23,16,.28); padding-bottom: .3rem; }
+.cs-f.wide { margin-top: .55rem; }
+.cs-f i {
+  display: block; font-family: var(--mono); font-style: normal; font-weight: 600;
+  font-size: .55rem; letter-spacing: .2em; text-transform: uppercase; color: #8a7a55;
 }
-.sheet-btns { display: grid; grid-template-columns: 1fr 1.6fr; gap: .5rem; margin-top: 1rem; }
+.cs-f b {
+  display: block; font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: 1.4rem; line-height: 1.05; text-transform: uppercase; color: #1a1710;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cs-sel { display: flex; gap: .75rem; align-items: flex-end; margin-top: .75rem; }
+.cs-sel img {
+  width: 64px; height: 64px; flex: none; border-radius: 2px;
+  object-fit: cover; object-position: top center; background: #d8d2c2;
+  border: 1px solid rgba(26,23,16,.2);
+}
+.cs-sel-id { min-width: 0; flex: 1; border-bottom: 2px solid rgba(26,23,16,.85); padding-bottom: .3rem; }
+.cs-sel-id i {
+  display: block; font-family: var(--mono); font-style: normal; font-weight: 600;
+  font-size: .55rem; letter-spacing: .2em; text-transform: uppercase; color: #8a7a55;
+}
+.cs-name {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: 1.75rem; line-height: 1; text-transform: uppercase; color: #1a1710;
+  margin-top: .12rem;
+}
+.cs-sub {
+  font-family: var(--mono); font-weight: 600; font-size: .68rem;
+  letter-spacing: .08em; color: #6b5d3f; margin-top: .25rem;
+}
+/* The position colours are drawn for a dark board and they are unreadable on
+   cream, so on the card they are set in the ink and the position is carried by
+   the word rather than the hue. */
+.cs-sub .pos { color: #1a1710; font-weight: 600; }
+.cs-note {
+  margin-top: .7rem; padding-top: .55rem; border-top: 1px dashed rgba(26,23,16,.3);
+  font-family: var(--cond); font-weight: 500; font-size: .92rem; line-height: 1.45;
+  color: #4a4132;
+}
+.cs-note b { color: #1a1710; font-weight: 700; }
+.cs-note:empty { display: none; }
+.cs-warn {
+  margin-top: .45rem; font-family: var(--mono); font-weight: 600;
+  font-size: .64rem; letter-spacing: .06em; line-height: 1.5; color: #8a5a2a;
+}
+.cs-warn:empty { display: none; }
+
+.cs-act { display: grid; grid-template-columns: 1fr 1.9fr; gap: .5rem; margin-top: .8rem; }
+
+/* Hold to send, not tap to send.
+   The one action on this phone that cannot be taken back is handing the card
+   over, and it used to be a tap on a button under a list you were scrolling
+   with your thumb. A hold is the right length of ceremony for it and it is not
+   an extra confirm step — it *is* the step, and it cannot happen by accident. */
+.hold {
+  position: relative; overflow: hidden;
+  padding: 1.05rem .8rem; border-radius: 5px;
+  border: 1px solid var(--gold); background: var(--deep); color: var(--gold-hi);
+  font-family: var(--cond); font-size: 1.02rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none;
+  user-select: none; -webkit-user-select: none;
+}
+.hold-fill {
+  position: absolute; inset: 0; transform: scaleX(0); transform-origin: left center;
+  background: var(--gold); transition: transform 60ms linear;
+}
+.hold.arm .hold-fill { transform: scaleX(1); transition: transform var(--hold-ms, 900ms) linear; }
+.hold-l { position: relative; }
+.hold.arm .hold-l { color: #150e02; }
+.hold[disabled] { opacity: .4; pointer-events: none; }
+/* Sent, failed, or he was taken while the card was open — the button says so
+   itself rather than a line of copy appearing somewhere else on the card. */
+.hold.done { border-color: var(--good); color: var(--good); }
+.hold.fail { border-color: var(--bad); color: var(--bad); }
+
+/* ── the card is in ───────────────────────────────────────────────────────
+   The picker's own phone from the moment he sends until the board reveals him.
+   He has nothing left to do and there is nothing left on this screen for him
+   to do it with: no list, no search, no roster. Just the card he sent and
+   where it is.                                                              */
+.sent {
+  position: fixed; inset: 0; z-index: 50; display: none;
+  background:
+    radial-gradient(90vw 60vh at 50% 30%, rgba(201,154,67,.1), transparent 70%),
+    rgba(4,7,12,.97);
+  align-items: center; justify-content: center; padding: 1.4rem;
+}
+.sent.open { display: flex; }
+.sent-in { width: 100%; max-width: 460px; text-align: center; }
+.sent-stamp {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: 2.9rem; line-height: .88; text-transform: uppercase; color: var(--milk);
+}
+.sent-stamp span { display: block; color: var(--gold); }
+.sent-card {
+  display: flex; align-items: center; gap: .8rem; text-align: left;
+  margin-top: 1.6rem; padding: .7rem .8rem; border-radius: 3px;
+  background: linear-gradient(178deg, #f4f1e8, #e8e3d5); color: #1a1710;
+  box-shadow: 0 1rem 2.4rem rgba(0,0,0,.6), 0 0 0 1px rgba(201,154,67,.45);
+}
+.sent-card img {
+  width: 54px; height: 54px; flex: none; border-radius: 2px;
+  object-fit: cover; object-position: top center; background: #d8d2c2;
+}
+.sent-id { min-width: 0; }
+.sent-name {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: 1.5rem; line-height: 1; text-transform: uppercase; color: #1a1710;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sent-sub {
+  font-family: var(--mono); font-weight: 600; font-size: .66rem;
+  letter-spacing: .1em; color: #6b5d3f; margin-top: .25rem;
+}
+.sent-note {
+  margin-top: 1.1rem; font-family: var(--cond); font-weight: 500;
+  font-size: 1rem; line-height: 1.5; color: var(--chalk-dim);
+}
+.sent-note b { color: var(--gold); font-weight: 700; }
+/* Three dots walking, which is the only thing on this screen that says the
+   wait is a wait rather than a hang. */
+.sent-dots { display: flex; justify-content: center; gap: .45rem; margin-top: 1.4rem; }
+.sent-dots i {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--gold-lo);
+  animation: sentDot 1.35s ease-in-out infinite;
+}
+.sent-dots i:nth-child(2) { animation-delay: .18s; }
+.sent-dots i:nth-child(3) { animation-delay: .36s; }
+@keyframes sentDot {
+  0%, 65%, 100% { background: var(--gold-lo); transform: scale(1); }
+  30%           { background: var(--gold-hi); transform: scale(1.35); }
+}
+@media (prefers-reduced-motion: reduce) { .sent-dots i { animation: none; } }
 
 .btn {
   padding: .95rem; border-radius: 5px; border: 1px solid var(--line);
@@ -200,31 +434,94 @@ body.phone {
 .btn[disabled] { opacity: .35; pointer-events: none; }
 .btn.wide { grid-column: 1 / -1; }
 
-/* ── who are you ── */
-.pickme { padding: 1rem; }
-.pickme h2 {
-  font-family: var(--mono); font-size: .72rem; letter-spacing: .24em;
-  text-transform: uppercase; color: var(--mute); font-weight: 400;
-  text-align: center; margin: .8rem 0 1.1rem;
+/* ── check-in ─────────────────────────────────────────────────────────────
+   The door. A masthead, then twelve seats laid out in draft order with the
+   slot number on each — the number is the useful thing here, because half the
+   room will be looking for where they pick rather than for their own face. */
+.ci { padding: 0 .9rem 3rem; max-width: 620px; margin: 0 auto; }
+.ci-top {
+  text-align: center; padding: 2.4rem .5rem 1.6rem;
+  padding-top: calc(2.4rem + env(safe-area-inset-top));
 }
-.mgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
-.mcard {
-  display: flex; flex-direction: column; align-items: center; gap: .3rem;
-  padding: .6rem .3rem .5rem; border-radius: 6px;
-  border: 1px solid var(--line-soft); background: rgba(16,23,36,.75);
+.ci-kicker {
+  font-family: var(--mono); font-weight: 600; font-size: .62rem;
+  letter-spacing: .34em; text-transform: uppercase; color: var(--mute);
+}
+.ci-title {
+  font-family: var(--serif); font-size: 2.4rem; line-height: 1.05;
+  color: var(--milk); margin-top: .45rem;
+}
+.ci-title em { font-style: italic; color: var(--gold); }
+.ci-when {
+  font-family: var(--mono); font-weight: 600; font-size: .66rem;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--chalk-dim);
+  margin-top: .7rem;
+}
+.ci-ask {
+  display: flex; align-items: center; gap: .8rem; margin-bottom: 1rem;
+}
+.ci-ask-l { flex: 1; height: 1px; background: var(--line); }
+.ci-ask-t {
+  font-family: var(--mono); font-weight: 600; font-size: .66rem;
+  letter-spacing: .26em; text-transform: uppercase; color: var(--chalk);
+}
+
+.ci-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; }
+/* A seat, not a contact-sheet thumbnail. The slot numeral runs behind the
+   cut-out the way it does on the television's pre-show, so the two screens are
+   plainly the same broadcast. */
+.ci-seat {
+  position: relative; display: grid; grid-template-columns: 62px 1fr;
+  align-items: end; gap: .5rem; padding: .55rem .6rem .5rem;
+  text-align: left; overflow: hidden;
+  border: 1px solid var(--line-soft); border-radius: 6px;
+  border-top: 2px solid var(--line-2);
+  background: linear-gradient(180deg, rgba(18,32,54,.8), rgba(10,16,25,.85));
   cursor: pointer; -webkit-tap-highlight-color: transparent;
+  font: inherit; color: inherit;
 }
-.mcard:active { background: var(--panel-2); }
-.mcard img { height: 74px; width: auto; object-fit: contain; }
-.mcard .fb {
-  height: 74px; width: 52px; display: grid; place-items: center;
-  font-family: var(--display); font-weight: 900; font-stretch: 62%; font-size: 2rem; color: var(--gold);
+.ci-seat:active { background: var(--panel-2); }
+.ci-seat.conf-whole { border-top-color: var(--conf-whole); }
+.ci-seat.conf-skim  { border-top-color: var(--conf-skim); }
+.ci-seat.champ { border-top-color: var(--gold); }
+.ci-no {
+  position: absolute; top: .1rem; right: .35rem;
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: 3.2rem; line-height: 1; color: rgba(214,226,240,.07);
 }
-.mcard .n {
-  font-family: var(--display); font-weight: 900; font-stretch: 62%; font-size: 1rem; text-transform: uppercase;
-  color: var(--milk); line-height: 1;
+.ci-shot { position: relative; height: 74px; }
+.ci-shot img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain; object-position: bottom center;
 }
-.mcard .s { font-family: var(--mono); font-size: .6rem; color: var(--mute); letter-spacing: .1em; }
+/* Only when there is no photograph over it: the cut-outs are transparent, so a
+   letter left underneath one shows through the gaps in it. */
+.ci-fb { display: none; }
+.ci-shot.nof .ci-fb {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: 2rem; color: rgba(214,226,240,.2);
+}
+.ci-id { position: relative; min-width: 0; padding-bottom: .15rem; }
+.ci-n {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: 1.25rem; line-height: 1; text-transform: uppercase; color: var(--milk);
+}
+.ci-t {
+  font-size: .78rem; font-weight: 600; color: var(--chalk-dim); line-height: 1.2;
+  margin-top: .18rem;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.ci-tag {
+  font-family: var(--mono); font-weight: 600; font-size: .58rem;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--mute);
+  margin-top: .3rem;
+}
+.ci-seat.champ .ci-tag { color: var(--gold); }
+.ci-foot {
+  font-family: var(--cond); font-weight: 500; font-size: .88rem; line-height: 1.5;
+  color: var(--mute); text-align: center; margin: 1.6rem .6rem 0;
+}
 
 /* ── commish console ── */
 .console { padding: .9rem; display: grid; gap: .7rem; }

@@ -138,6 +138,19 @@ export const DEFAULT_STATE = {
   // swaps them back. Anything that is only true while one man is thinking has
   // no business being in here.
   rail: null,
+  // ── how the two cards in the bottom band are dressed ─────────────────────
+  // Both null by default, and null means the look each card shipped with, so a
+  // state document written before any of this existed still reads correctly.
+  // They are in state rather than in the stylesheet because the point of them
+  // is that the commissioner picks on the night, on a television, in a room —
+  // which is the only place the answer is knowable.
+  //   baSkin  null | "steel"  the brass-mounted plate, or the plain card the
+  //                           band shipped with, identical to the lineup's
+  //   luSkin  null | "paper"  the dark card, or a printed team sheet: cream
+  //                           stock, ink type, the same stock as the phone's
+  //                           selection card
+  baSkin: null,
+  luSkin: null,
   mode: "ceremony",
   autoReveal: false,
   sound: true,

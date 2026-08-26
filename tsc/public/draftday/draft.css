@@ -2314,7 +2314,9 @@ body.rail-alt .rp { display: block; }
   position: relative;
   flex: 1; min-width: 0; min-height: 0; overflow: hidden;
   display: flex; flex-direction: column;
-  border: 2px solid transparent; border-radius: 5px;
+  /* Square. A 5px radius on three cards in a row along the bottom of a
+     television is a web habit — broadcast furniture has corners. */
+  border: 2px solid transparent; border-radius: 0;
   background:
     linear-gradient(180deg, rgba(22,35,58,.55), rgba(6,11,20,.96) 24%) padding-box,
     /* Never darker than the flat rule it replaced. The first pass ran the
@@ -2403,6 +2405,272 @@ body.rail-alt .rp { display: block; }
      had slipped. Measured at 1.5px against the tag's cap band. */
   position: relative; top: calc(-.14 * var(--u));
 }
+
+/* ── best available's plate ───────────────────────────────────────────────
+ * Built here rather than shipped as an image, which is the second time this
+ * board has gone that way round and the first time it has been the right call.
+ * `.bb-next`'s plate is a photograph because it is *painted* — angled planes,
+ * streaks, a lit border — and seven gradients approximating that came out
+ * looking like an approximation. This plate is not painted. It is a near-black
+ * navy field, one soft light, a keyline and a straight gold rule, and every one
+ * of those is a thing CSS draws exactly and an image only ever draws at one
+ * size.
+ *
+ * Three background layers and each has one job, which is the whole difference
+ * between this and the version of `.bb-next` that got thrown away. All three
+ * are clipped to the padding box: a layer left on the default border box paints
+ * over the frame gradient underneath it and the mount disappears.
+ *
+ * Four things it does NOT have, all built and all removed. They are listed
+ * because each one is the obvious next idea and each one was worse:
+ *
+ *   - A dot grid, at 6.74px off the reference art. On a field this dark a
+ *     regular grid of dots does not read as texture, it reads as a pattern
+ *     swatch, and it is the first thing that makes a panel look cheap.
+ *   - A faint keyline inset .68u, which was a fourth edge inside three that
+ *     already read as a frame.
+ *   - Masked diagonals down the left side, two colours on a 108px period.
+ *     They were the right technique — a repeating gradient under a horizontal
+ *     mask, so the rake ends by fading rather than at a seam the way a cropped
+ *     bitmap would — and still the wrong thing on a card carrying a list.
+ *   - Anything approaching the reference navy. See the note on the field.
+ *
+ * The reference art is still in the tree at `bg/bestavail.webp`, unreferenced
+ * on purpose: it is what the measurements came from and what to diff against
+ * if the plate drifts. Its gold rule sits at .1335 of the height -> 42.72px, a
+ * pixel and a half under where the shared 3.8u header already ends, which is
+ * why the header needed no adjusting to carry one.
+ */
+.bb-ba {
+  background:
+    /* The key light, upper left, where the stadium sat in the reference. It is
+       what stops the field reading as a flat fill; there is no texture on this
+       plate doing that job. */
+    radial-gradient(56% 78% at 13% 2%, rgba(126,168,214,.06), transparent 60%) padding-box,
+    /* A broad, shallow lift through the middle, written as an alpha rather
+       than an opaque navy so it adds light to the field instead of replacing
+       it and having to be re-matched every time the field moves. */
+    radial-gradient(94% 126% at 52% 42%,
+      rgba(16,36,60,.5) 0%, rgba(16,36,60,0) 76%) padding-box,
+    /* The field, and it is nearly black on purpose. Brass only reads as brass
+       against something much darker than itself — at the navy this started on
+       the frame and the plate sat at similar weight and the mount stopped
+       being an edge. This is darker than the two cards beside it, which is
+       also what makes it the one card in the band you look at first. */
+    linear-gradient(178deg, #030a14 0%, #01060d 48%, #000308 100%) padding-box,
+    /* The mount. Two dark keylines with 2px of brass between them — the outer
+       one is the non-inset ring in the box-shadow, the inner one the inset —
+       so the edge has a thickness rather than being a line drawn around a
+       hole. Concentric rings are the one thing a gradient in a border cannot
+       draw, which is why it is done this way and not with more colour stops.
+       Four pixels all in: on a plate this dark a heavier frame stops reading
+       as a frame and starts reading as a margin.
+
+       135deg, so the run goes corner to corner: lit at the top left and the
+       bottom right, and turning down through the other two. It used to be
+       160deg, whose ends land in the middle of the top and bottom edges and
+       whose trough therefore fell across two corners at an angle, which is
+       a frame that looks like it was cut from a larger one.
+
+       The trough bottoms out at --gold-lo and no lower. At #241a0e the far
+       corners went to what is effectively black, so the frame had two corners
+       missing — and a frame with corners missing is worse than a flat one,
+       because a flat one at least closes. It still darkens through the middle
+       of the run, which is what a machined edge does under a light; what it
+       must not do is stop existing. Darker and redder than the bright gold on
+       `.bb-next` throughout — those two share this slot in the band and should
+       not arrive wearing the same edge. */
+    linear-gradient(135deg,
+      #f0d9a6 0%, var(--gold) 10%, #8f6d33 28%,
+      var(--gold-lo) 50%, #8f6d33 72%, var(--gold) 90%, #f0d9a6 100%) border-box;
+  box-shadow:
+    inset 0 0 0 1px rgba(2,5,10,.9),
+    0 0 0 1px rgba(2,5,10,.95),
+    0 calc(1.2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.45);
+}
+/* The mark. A ghosted PAMS rather than somebody else's shield — this board
+   already ghosts a numeral behind every manager on the pre-show and behind the
+   pick on THE PICK IS IN, so a wordmark at the same weight is the idiom it
+   owns. Faint enough to be a watermark and not a graphic, and the alpha came
+   down with the field: against a near-black plate .05 was reading as type
+   rather than as a ghost. */
+.bb-ba::after {
+  content: "PAMS"; position: absolute; z-index: 0; pointer-events: none;
+  right: calc(2.2 * var(--u)); top: 52%; transform: translateY(-50%);
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(9 * var(--u)); line-height: 1; letter-spacing: .02em;
+  color: rgba(138,180,216,.038);
+}
+/* Both are behind the list, and saying so is not optional: a pseudo-element
+   comes last in the box tree, so left to itself `::after` paints over every
+   row on the card. */
+.bb-ba > .rail-hd, .bb-ba .ba-list { position: relative; z-index: 1; }
+
+/* The gold rule under the title, and it runs straight.
+   The reference art dipped it around a notch on the left and stepped it near
+   the right, which is a broadcast mannerism that only works when the graphic
+   is a fixed picture: here it is a rule under a live header and a kink in it
+   just reads as a rule that did not line up. Full width, brightest at the left
+   third where the title sits, out to nothing at both ends so it does not
+   collide with the keyline it crosses. */
+.bb-ba > .rail-hd { border-bottom: 0; }
+.bb-ba > .rail-hd::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  background: linear-gradient(90deg,
+    rgba(240,212,154,0) 0%, var(--gold-hi) 4%, var(--gold) 34%,
+    var(--gold-lo) 84%, rgba(109,82,37,0) 100%);
+}
+/* The title, and the point is the face rather than the size.
+ *
+ * It was IBM Plex Mono at 1.45u, which is what this board uses for a count, a
+ * slot, a timestamp — small furniture. On a plate with a gold rule ruled under
+ * it that reads as a caption somebody forgot to set. The first attempt at
+ * fixing it reached for Archivo, the board's loud face, and only made the same
+ * label bigger: a tracked-out bold grotesque is still a label, and it had
+ * nothing to do with the gold.
+ *
+ * So it is the lockup this board already owns. `The 2026 Draft` is set in DM
+ * Serif in the header and again on the pre-show, mixed case, with one word in
+ * italic gold — and that is the shape of a thing that has been *titled* rather
+ * than named. Best Available gets the same treatment, which ties the plate to
+ * the masthead and answers the gold with the one face on the board that is
+ * warm enough to sit beside it.
+ *
+ * Mixed case, and hardly any tracking. Both matter. Caps and .2em is the
+ * register of the panel next door; a Didone set that way turns into a wordmark
+ * on a bottle. And it is set at 2.5u because this is a 400-weight high-contrast
+ * serif — the thin strokes are the first thing a television loses, and the fix
+ * for that is size, not weight, because there is no bolder cut in the file.
+ *
+ * Scoped to this header alone. `.run-tag` and `.run-txt` set their own faces,
+ * and the run alert is a mark on the title rather than part of it. */
+.bb-ba > .rail-hd { text-transform: none; }
+.bb-ba .ba-title {
+  font-family: var(--serif); font-weight: 400;
+  font-size: calc(2.5 * var(--u)); letter-spacing: .02em;
+  line-height: 1; color: var(--milk);
+}
+.bb-ba .ba-title em { font-style: italic; color: var(--gold); }
+
+/* ── the two skins the console can pick ───────────────────────────────────
+ * `baSkin` and `luSkin` in the state document, applied by renderBandSkins() in
+ * board.js as classes on `.bottom-band`. Both are absent by default, so what
+ * is written above and in `.bb-sec` is what the board does with no state at
+ * all; each block below is purely a set of overrides on top of that.
+ *
+ * They exist because the answer is not knowable from here. A plate that is
+ * right on a laptop at a desk can be wrong on a television across a room, and
+ * the night is not the time to be editing a stylesheet — so both looks ship
+ * and the choice is a button. Everything one of these blocks changes, it
+ * changes back to something already named above; nothing here invents a value
+ * that only exists in one skin.
+ */
+
+/* ── best available, as the plain card the band shipped with ──────────────
+ * Identical to the lineup beside it, which is what it was before the plate.
+ * Every rule here is undoing one specific thing, in the order they were added,
+ * and `.bb-sec`'s own values are repeated rather than referenced because there
+ * is no `revert-rule` that would reach a class instead of the UA sheet. */
+.ba-steel .bb-ba {
+  background:
+    linear-gradient(180deg, rgba(22,35,58,.55), rgba(6,11,20,.96) 24%) padding-box,
+    linear-gradient(165deg,
+      #55688a 0%, #46597c 12%, #3d5478 32%,
+      #2f4463 62%, var(--line-2) 100%) border-box;
+  box-shadow:
+    inset 0 1px 0 rgba(214,226,240,.10),
+    inset 0 -1px 0 rgba(0,0,0,.5),
+    0 calc(1.2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.42);
+}
+/* the ghosted wordmark and the painted gold rule are both plate furniture */
+.ba-steel .bb-ba::after { display: none; }
+.ba-steel .bb-ba > .rail-hd::after { display: none; }
+/* and the header goes back to being a header: its own hairline, and the label
+   in the mono every other panel on this board uses */
+.ba-steel .bb-ba > .rail-hd {
+  border-bottom: 1px solid var(--line);
+  text-transform: uppercase;
+}
+.ba-steel .bb-ba .ba-title {
+  font-family: var(--mono); font-weight: 600;
+  font-size: calc(1.45 * var(--u)); letter-spacing: .2em; color: var(--chalk);
+}
+.ba-steel .bb-ba .ba-title em { font-style: normal; color: inherit; }
+
+/* ── the lineup, as a printed team sheet ──────────────────────────────────
+ * Cream stock and ink, and deliberately the *same* stock as the selection card
+ * on the phone (`.cs-card` in phone.css) rather than a second light surface
+ * invented for the board. There is one piece of paper in this production and
+ * this is it, seen from the other side of the room: what a manager fills out
+ * on his phone is what the television shows him holding.
+ *
+ * It also does a job the dark version could not. Two dark cards side by side
+ * under a dark stage is three of the same thing in a row; one of them on paper
+ * says which is the live board and which is the record of one team.
+ */
+/* Cream stock, but only the stock is warm.
+ *
+ * The first pass had the whole card on hue 40 — a sepia header bar, sepia ink,
+ * a tan at the foot of the paper — which is a handsome enough object and a
+ * fourth colour family on a board built out of navy, gold and cream. Everything
+ * dark on this card is hue ~217 now, the board's own navy, and the only warm
+ * things left are the paper itself and the gold. */
+.lu-paper .bb-lu {
+  background:
+    linear-gradient(178deg, #f5f2ea 0%, #e9e4d9 62%, #ded9cd 100%) padding-box,
+    /* A pewter mount rather than brass. Brass on cream is two warm tones a few
+       degrees apart, which reads as a printing mistake; the cool edge is what
+       makes the paper look mounted rather than stained, and it is the same
+       hue family as the steel edge on the card beside it. */
+    linear-gradient(135deg,
+      #b9c2cd 0%, #8e99a8 22%, #5d6878 50%,
+      #8e99a8 78%, #b9c2cd 100%) border-box;
+  box-shadow:
+    inset 0 0 0 1px rgba(19,24,32,.3),
+    0 0 0 1px rgba(2,5,10,.85),
+    0 calc(1.2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.5);
+}
+/* The header is the one band on the sheet that inverts, and it inverts to the
+   board's navy rather than to ink: it is the furniture holding the paper, not
+   something printed on it. A solid bar is also what stops the top row of the
+   list from reading as the first line of the header. Cream label at 16:1, gold
+   count at 12.8:1 — navy, gold and cream, in the one place on this card where
+   all three meet. */
+.lu-paper .bb-lu > .lineup-hd {
+  background: linear-gradient(180deg, var(--panel), #060d18);
+  border-bottom: 0; color: var(--milk);
+}
+.lu-paper .bb-lu > .lineup-hd .ct { color: var(--gold-hi); }
+.lu-paper .bb-lu .lu-row { border-bottom: 1px solid rgba(19,24,32,.18); }
+.lu-paper .bb-lu .lu-row .nm { color: #131820; }
+.lu-paper .bb-lu .lu-row .pk,
+.lu-paper .bb-lu .lu-row .tm { color: #57616f; }
+/* An unfilled slot has to stay quiet without going away. On the dark card
+   `open` is --chalk-dim on the panel, which is 5.3:1; the first cream value
+   tried here was 2.4:1, and a placeholder that faint on a television across a
+   room is a blank row rather than a quiet one. 5:1, the same ink as the pick
+   and team columns, with the weight doing the recessing instead of the tone. */
+.lu-paper .bb-lu .lu-row.empty .nm { color: #57616f; font-weight: 500; }
+.lu-paper .bb-lu .lu-row.empty .s { opacity: .7; }
+/* The position colours are drawn to glow on a dark panel and they are all
+   washed out on cream — same hues, taken down into ink so they read as printed
+   marks. `brightness(1.25)` on `.lu-row .s` is lifting them for the dark card,
+   so it has to come off here or the whole point of darkening them is undone. */
+.lu-paper .bb-lu .lu-row .s { filter: none; }
+.lu-paper .bb-lu .pos-QB  { color: #8c463c; }
+.lu-paper .bb-lu .pos-RB  { color: #2f6d47; }
+.lu-paper .bb-lu .pos-WR  { color: #33556f; }
+.lu-paper .bb-lu .pos-TE  { color: #5d4a70; }
+.lu-paper .bb-lu .pos-K   { color: #4a5460; }
+.lu-paper .bb-lu .pos-DEF { color: #3c5f5b; }
+/* The pick that just landed. The dark card washes its row in gold light, which
+   on paper would be a stain — a highlighter stripe is what a printed sheet
+   does, so the wash goes warm and solid and the name stays ink. */
+.lu-paper .bb-lu .lu-row.new::before {
+  background: linear-gradient(90deg, rgba(201,154,67,.42), rgba(201,154,67,0) 84%);
+}
+.lu-paper .bb-lu .lu-row.new .nm { color: #131820; }
+.lu-paper .bb-lu .lu-row.new .pk { color: #7a5c1e; }
 
 /* Best available and the next man's clock trade places: the band shows who is
    left while the draft is running, and who is up next while a reveal is on
@@ -2534,9 +2802,10 @@ body.phase-details .bb-next > .rail-hd {
 }
 .next-clock.warn  { color: var(--gold-hi); }
 .next-clock.panic { color: var(--bad); }
-/* `held`, not `idle`: `.idle` is the pre-draft screen's own class and it is
-   written bare — `.idle { position:absolute; display:none }` — so any element
-   that borrows the word disappears. */
+/* `held`, not `idle`. Nothing on this board is styled off a bare state word
+   any more (the pre-draft screen used to own `.idle` written on its own, so
+   any element that borrowed the word went to display:none), and keeping the
+   habit is what stops that coming back. */
 .next-clock.paused, .next-clock.held { color: var(--mute); }
 
 /* The beat before the countdown.
@@ -2653,7 +2922,8 @@ body.phase-details .bb-next > .rail-hd {
 /* The same padding on both, and it has to be exactly the same: whatever is
    taken off the top and bottom comes off the height the rows divide, so a
    half-unit of difference leaves one card's rows out of step with the other's
-   all the way down even though they draw the same number of them. */
+   all the way down even though they draw the same number of them. The 1.9u
+   sides also clear the keyline printed 7px inside best available's plate. */
 .bb-ba .ba-list, .bb-lu .lineup-grid {
   padding: calc(.7 * var(--u)) calc(1.9 * var(--u)) calc(.9 * var(--u));
 }
@@ -3775,62 +4045,280 @@ body.phase-details .bb-next > .rail-hd {
 }
 .sc-clock.warn  { color: var(--gold-hi); }
 .sc-clock.panic { color: var(--bad); }
-/* `.held` and `.paused`, never bare — see the note on .idle. A bare state
-   class in this stylesheet is a landmine. */
+/* `.held` and `.paused`, never bare — see the note on .next-clock.held. A bare
+   state class in this stylesheet is a landmine. */
 .sc-clock.held, .sc-clock.paused { color: var(--mute); }
 
-/* ── pre-draft ────────────────────────────────────────────────────────── */
-.idle {
-  position: absolute; inset: 0; z-index: 4; display: none;
-  flex-direction: column; align-items: center; justify-content: center; gap: calc(1.6 * var(--u));
+/* ══ THE PRE-SHOW ══════════════════════════════════════════════════════════
+   The whole canvas, not a panel on the stage. Three bands down the screen and
+   they are in order of how much they matter tonight: who this is, how long is
+   left, and who is in the room. Nothing else — no round wall for a round that
+   has not started, no header counting a pick nobody has made, no ticker with
+   nothing in it.
+
+   Sized off the same --u as everything else so it holds its proportions on
+   whatever the laptop is mirrored to.                                       */
+.pre {
+  position: absolute; inset: 0; z-index: 20; display: none;
+  grid-template-rows: calc(9.6 * var(--u)) 1fr auto;
   background:
-    linear-gradient(180deg, rgba(5,10,18,.7), rgba(5,10,18,.88)),
+    /* The set, pushed back further than anywhere else on the board. There is
+       no panel furniture on this screen to sit the type on, so the wash has to
+       do that job on its own: a hard vignette into the corners and a long
+       gradient down the middle where the countdown lands. */
+    radial-gradient(70vw 70vh at 50% 42%, rgba(201,154,67,.10), transparent 70%),
+    radial-gradient(120vw 100vh at 50% 46%, rgba(5,10,18,.55) 30%, rgba(5,10,18,.93) 100%),
     url("bg/stage.webp") center center / cover no-repeat;
 }
-body.state-idle .idle { display: flex; }
-.idle .eyebrow::after { display: none; }
-.idle h1 {
-  margin: 0; font-family: var(--display); font-weight: 900; font-stretch: 62%;
-  font-size: calc(12.5 * var(--u)); line-height: .85; text-transform: uppercase;
-  text-align: center; color: var(--milk);
+body.state-idle .pre { display: grid; }
+
+/* ── the slate along the top ── */
+.pre-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 calc(4 * var(--u));
+  border-bottom: 1px solid rgba(32,48,71,.7);
+  background: linear-gradient(180deg, rgba(5,10,18,.86), rgba(5,10,18,.2));
 }
-.idle h1 span { display: block; color: var(--gold); }
-/* The countdown, as a row of labelled columns rather than a line of type. It
-   used to be 2.1u of mono under a headline set at 12.5u, which on the days
-   before the draft made the only changing thing on the screen the smallest
-   thing on it. */
-.idle .when {
-  display: flex; align-items: flex-end; gap: calc(1.4 * var(--u));
-  margin-top: calc(.6 * var(--u));
+.pre-mark { display: flex; flex-direction: column; justify-content: center; line-height: 1; }
+.pre-kicker {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.15 * var(--u));
+  letter-spacing: .34em; text-transform: uppercase; color: var(--mute);
+  margin-bottom: calc(.7 * var(--u));
 }
-.idle .when span {
-  display: flex; flex-direction: column; align-items: center; gap: calc(.2 * var(--u));
-  min-width: calc(7.6 * var(--u));
+.pre-title {
+  font-family: var(--serif); font-size: calc(3.6 * var(--u)); line-height: 1;
+  color: var(--milk);
 }
-.idle .when b {
-  font-family: var(--clock); font-weight: 600; font-size: calc(7.4 * var(--u));
-  line-height: .82; color: var(--milk); font-variant-numeric: tabular-nums;
+.pre-title em { font-style: italic; color: var(--gold); }
+/* The date, set as a slate rather than a sentence: it is the one fact up here
+   that anybody walking in is looking for. */
+.pre-slate {
+  display: flex; align-items: baseline; gap: calc(1.6 * var(--u));
+  font-family: var(--mono); font-weight: 600; text-transform: uppercase;
 }
-.idle .when i {
+.pre-slate-d { font-size: calc(1.5 * var(--u)); letter-spacing: .22em; color: var(--chalk-dim); }
+.pre-slate-t {
+  font-size: calc(1.5 * var(--u)); letter-spacing: .22em; color: var(--gold);
+  border-left: 1px solid var(--line-2); padding-left: calc(1.6 * var(--u));
+}
+
+/* ── the countdown band ── */
+.pre-mid {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: calc(1.2 * var(--u)); min-height: 0; padding: calc(2 * var(--u)) 0;
+}
+.pre-eyebrow {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.3 * var(--u));
+  letter-spacing: .3em; text-transform: uppercase; color: var(--mute);
+}
+/* Two lines, two jobs, two faces. The name of the thing is the headline; the
+   words that run into the numbers are a caption on them, so they are set small
+   and tracked out under it rather than at the same size in gold, where they
+   fought the countdown for the eye. */
+.pre-head {
+  margin: 0; text-align: center; display: flex; flex-direction: column;
+  align-items: center; gap: calc(1 * var(--u));
+}
+.pre-head .a {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(12 * var(--u)); line-height: .84; letter-spacing: .01em;
+  text-transform: uppercase; color: var(--milk);
+}
+.pre-head .b {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.5 * var(--u));
+  letter-spacing: .42em; text-transform: uppercase; color: var(--gold);
+  padding: 0 calc(2.2 * var(--u));
+  display: flex; align-items: center; gap: calc(2.2 * var(--u));
+}
+/* rules either side of it, so the line reads as a label on the clock below */
+.pre-head .b::before, .pre-head .b::after {
+  content: ""; width: calc(7 * var(--u)); height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-lo));
+}
+.pre-head .b::after { background: linear-gradient(90deg, var(--gold-lo), transparent); }
+
+/* The countdown itself, as labelled columns on their own plates. This is the
+   only thing on the screen that moves, so it is the only thing on it with a
+   frame around it. */
+.pre-count {
+  display: flex; align-items: stretch; gap: calc(1.4 * var(--u));
+  margin-top: calc(.8 * var(--u));
+}
+/* The padding is not symmetrical and cannot be. Teko is a scoreboard face: its
+   digits carry a tall ascent and almost no descender, so with `line-height:.78`
+   the ink sits high inside its own line box and centring that box optically
+   parks the numbers against the top of the plate with a gap underneath. The
+   extra 1u on top and the 0.4u off the bottom put the ink where the middle of
+   the plate actually is. Measured against the ink, not the box. */
+.pre-count span {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: calc(.55 * var(--u)); min-width: calc(16.5 * var(--u));
+  padding: calc(2.3 * var(--u)) calc(1.6 * var(--u)) calc(.7 * var(--u));
+  border: 2px solid transparent; border-radius: 5px;
+  background:
+    linear-gradient(180deg, rgba(22,35,58,.62), rgba(6,11,20,.94) 60%) padding-box,
+    linear-gradient(165deg, #55688a 0%, #3d5478 34%, #2f4463 66%, var(--line-2) 100%) border-box;
+  box-shadow:
+    inset 0 1px 0 rgba(214,226,240,.10),
+    inset 0 -1px 0 rgba(0,0,0,.5),
+    0 calc(1.2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.42);
+}
+.pre-count b {
+  font-family: var(--clock); font-weight: 600; font-size: calc(13.5 * var(--u));
+  line-height: .78; color: var(--milk); font-variant-numeric: tabular-nums;
+}
+.pre-count i {
   font-family: var(--mono); font-style: normal; font-weight: 600;
-  font-size: calc(1.25 * var(--u)); letter-spacing: .24em; color: var(--gold);
+  font-size: calc(1.2 * var(--u)); letter-spacing: .3em; color: var(--gold);
 }
-/* The separator between columns, drawn as a pair of dots rather than a colon
-   glyph so it sits on the digits' optical centre at any size. */
-.idle .when u {
-  align-self: center; width: calc(.5 * var(--u)); height: calc(2.6 * var(--u));
-  margin-bottom: calc(1.4 * var(--u)); text-decoration: none;
+/* The separator, drawn as a pair of dots rather than a colon glyph so it sits
+   on the digits' optical centre at any size. */
+.pre-count u {
+  align-self: center; width: calc(.6 * var(--u)); height: calc(4.6 * var(--u));
+  text-decoration: none;
   background:
     radial-gradient(circle, var(--gold-lo) 45%, transparent 46%) top center / 100% 50% no-repeat,
     radial-gradient(circle, var(--gold-lo) 45%, transparent 46%) bottom center / 100% 50% no-repeat;
 }
-.idle .when b.now {
-  font-family: var(--display); font-weight: 900; font-stretch: 62%;
-  font-size: calc(4.4 * var(--u)); letter-spacing: .04em; color: var(--gold);
+/* Draft day itself: one plate, and it stops pretending to be a clock. Archivo
+   rather than Teko here, so it does not need the optical correction above. */
+.pre-count span.now {
+  min-width: 0; padding: calc(1.9 * var(--u)) calc(5 * var(--u)) calc(1.6 * var(--u));
+  background:
+    linear-gradient(180deg, rgba(46,34,10,.7), rgba(6,11,20,.94) 70%) padding-box,
+    linear-gradient(165deg, var(--gold) 0%, var(--gold-lo) 40%, #2f4463 70%, var(--gold-lo) 100%) border-box;
 }
-.idle .fmt { font-family: var(--cond); font-weight: 500; font-size: calc(1.9 * var(--u)); letter-spacing: .06em; color: var(--chalk-dim); }
-.idle .lineup { display: flex; align-items: flex-end; gap: .3vh; margin-top: .8vh; opacity: .55; }
-.idle .lineup img { height: calc(13 * var(--u)); width: auto; object-fit: contain; }
+.pre-count span.now b {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(8 * var(--u)); line-height: .9; letter-spacing: .03em; color: var(--gold-hi);
+}
+
+/* ── the room ─────────────────────────────────────────────────────────────
+   Twelve plinths across the foot of the screen in draft order, at full
+   strength. They used to be a strip of cut-outs at 55% opacity with nothing
+   said about any of them, which is decoration; a pre-show is the one moment
+   all night when the men in the room are the story, so each one carries his
+   slot, his name, his conference and what he did last year.                 */
+.pre-order {
+  padding: 0 calc(2.6 * var(--u)) calc(1.6 * var(--u));
+  display: flex; flex-direction: column; gap: calc(1 * var(--u));
+}
+.pre-order-hd {
+  display: flex; align-items: center; gap: calc(1.6 * var(--u));
+  padding: 0 calc(1 * var(--u));
+}
+.pre-order-t {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.45 * var(--u));
+  letter-spacing: .3em; text-transform: uppercase; color: var(--chalk);
+}
+.pre-order-rule { flex: 1; height: 1px; background: var(--line); }
+.pre-order-sub {
+  font-family: var(--cond); font-weight: 600; font-size: calc(1.6 * var(--u));
+  letter-spacing: .08em; color: var(--mute);
+}
+
+/* Narrower than the screen. The room used to run the full width of the canvas,
+   which put twelve men at 160px apiece and made the foot of the pre-show as
+   loud as the countdown above it — and the countdown is the thing on this
+   screen that is news. It is a band inside the screen now, not the base of it. */
+.pre-lineup {
+  display: grid; grid-template-columns: repeat(12, 1fr); gap: calc(.8 * var(--u));
+  align-items: end; width: 86%; margin: 0 auto;
+}
+/* No card fill behind the cut-outs. They are photographed against nothing and
+   they are the only real thing on this screen — a box around each one turns
+   twelve people into twelve tiles. What holds the row together instead is the
+   plate under the type, which every plinth shares. */
+.pre-pl {
+  position: relative; display: flex; flex-direction: column; align-items: center;
+  min-width: 0;
+}
+/* A well of a fixed height, and everything in it is laid over everything else:
+   the slot numeral at the back, the initial that stands in for a missing
+   photograph, and the photograph itself on top. The column's height is the
+   well's, so nothing in the row moves if a cut-out is missing. */
+.pre-pl-shot { position: relative; width: 100%; height: calc(13.6 * var(--u)); }
+/* The slot number, ghosted behind the man. Big enough to be the thing you read
+   from the couch, faint enough that he is the thing you look at. */
+.pre-pl-no {
+  position: absolute; top: calc(.4 * var(--u)); left: 50%; transform: translateX(-50%);
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(7.8 * var(--u)); line-height: 1; color: rgba(214,226,240,.09);
+  letter-spacing: -.02em;
+}
+/* The initial, and only when there is no photograph over it — the cut-outs are
+   transparent, so a letter left underneath one shows through the gaps between
+   an arm and a body rather than being hidden by it. The well says which case
+   it is in (`.nof`, set at build time or by the image's own onerror) rather
+   than the letter working it out from a sibling. */
+.pre-pl-fb { display: none; }
+.pre-pl-shot.nof .pre-pl-fb {
+  position: absolute; inset: 0;
+  display: grid; place-items: end center; padding-bottom: calc(1.4 * var(--u));
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(4.9 * var(--u)); color: rgba(214,226,240,.18);
+}
+.pre-pl-face {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain; object-position: bottom center;
+  filter: drop-shadow(0 calc(1 * var(--u)) calc(1.6 * var(--u)) rgba(0,0,0,.55));
+}
+.pre-pl-id {
+  position: relative; width: 100%; text-align: center;
+  padding: calc(.65 * var(--u)) calc(.4 * var(--u)) calc(.6 * var(--u));
+  border-top: 2px solid var(--line-2);
+  background: linear-gradient(180deg, rgba(11,20,34,.9), rgba(5,10,18,.5));
+}
+/* The conference is the rule above the name, not a chip beside it. At twelve
+   across there is no room for a chip, and the two halves of the league read
+   faster as a colour along a row than as a word repeated twelve times. */
+.pre-pl.conf-whole .pre-pl-id { border-top-color: var(--conf-whole); }
+.pre-pl.conf-skim  .pre-pl-id { border-top-color: var(--conf-skim); }
+.pre-pl-name {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(2.1 * var(--u)); line-height: 1; text-transform: uppercase;
+  color: var(--milk);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pre-pl-note {
+  font-family: var(--mono); font-weight: 600; font-size: calc(.95 * var(--u));
+  letter-spacing: .1em; color: var(--mute); margin-top: calc(.3 * var(--u));
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pre-pl-note b { color: var(--chalk-dim); font-weight: 600; }
+/* ── the defending champion ───────────────────────────────────────────────
+ * One man in twelve, and he gets the whole plinth rather than a gold line on
+ * the nameplate: a mount drawn behind his column in brass, open at the foot so
+ * it reads as a case he is standing in and not a box he is inside.
+ *
+ * Deliberately built as one reusable block. If this is worth having on the
+ * round wall, the on-the-clock card or the showcase, the thing to lift is
+ * `.champ-mount` — the ::before below is only where it is anchored, and every
+ * value in it is a fraction of --u like everything else on the board.
+ *
+ * No glow. The board's rule is that light lives in the room and never as a
+ * halo on content, so this is an edge and a wash, both of which a printed
+ * frame would have and neither of which is a light source.
+ */
+.pre-pl.champ::before {
+  content: ""; position: absolute; z-index: 0; pointer-events: none;
+  left: calc(-.5 * var(--u)); right: calc(-.5 * var(--u));
+  top: calc(-.6 * var(--u)); bottom: 0;
+  border: 1px solid rgba(201,154,67,.42); border-bottom: 0;
+  background: linear-gradient(180deg,
+    rgba(201,154,67,.13) 0%, rgba(201,154,67,.03) 46%, rgba(201,154,67,0) 78%);
+}
+/* Two brass ticks at the top corners of the mount, which is what turns an
+   outlined rectangle into a fitting. They are drawn on the id plate rather
+   than the mount so they sit at a fixed distance from the name. */
+.pre-pl.champ .pre-pl-id {
+  border-top-color: var(--gold);
+  background: linear-gradient(180deg, rgba(46,34,10,.9), rgba(5,10,18,.55));
+  box-shadow: inset 0 1px 0 rgba(240,212,154,.3);
+}
+.pre-pl.champ .pre-pl-name { color: var(--gold-hi); }
+.pre-pl.champ .pre-pl-note { color: var(--gold); }
+.pre-pl.champ .pre-pl-no { color: rgba(201,154,67,.18); }
 
 /* ── connection ───────────────────────────────────────────────────────── */
 .offline {
