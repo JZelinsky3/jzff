@@ -33,15 +33,20 @@ const BA_ROWS = 7;
 
 // How long the big selection graphic holds before it collapses into the
 // detail screen. Override with ?sel=8000 to retime it on the night, or a huge
-// number to park on the graphic and look at it.
+// number to park on the graphic and look at it. The override is for looking
+// at a graphic, not for running a draft: in LIVE FEED the console is timing
+// its own advance off C.LIVE_FEED and will not know you moved this.
 const SELECTION_MS = Number(
-  new URLSearchParams(location.search).get("sel")) || 6000;
+  new URLSearchParams(location.search).get("sel")) || C.LIVE_FEED.selection;
 
 let STATE = { ...C.DEFAULT_STATE };
 let PICKS = [];
 let lastPickCount = 0;
 let phase = null;              // 'selection' | 'details'
 let phaseTimer = null;
+// The LIVE FEED collapse from the selection graphic to the detail screen,
+// which happens a fade behind the next man's card rather than in the open.
+let mirrorTimer = null;
 // How many rows the lineup panel actually drew, set by renderLineup() and
 // read by renderBestAvailable() right after — so best available never sits
 // shorter than the lineup beside it once a manager is a few picks deep.
@@ -183,11 +188,11 @@ let lastRound = null;
  * one timer.
  */
 const HANDOFF_MS = 440;
-let handoff = false;
+let handoff = null;      // which outgoing screen is being held up, by name
 let handoffTimer = null;
 
 function setBodyClass(cls) {
-  body.className = cls + (handoff ? " handoff" : "");
+  body.className = cls + (handoff ? ` handoff-${handoff}` : "");
 }
 
 /**
@@ -223,17 +228,36 @@ function clearCue() {
   document.querySelector(".bb-next")?.classList.remove("cue", "ready");
 }
 
-function beginHandoff() {
-  handoff = true;
+function beginHandoff(outgoing) {
+  handoff = outgoing;
   clearTimeout(handoffTimer);
   handoffTimer = setTimeout(() => {
-    handoff = false;
-    body.classList.remove("handoff");
+    body.classList.remove(`handoff-${handoff}`);
+    handoff = null;
   }, HANDOFF_MS);
+}
+
+/**
+ * Who is up, announced while the pick that was just made is still on screen.
+ *
+ * LIVE FEED only. `STATE.current` is still the pick being revealed here, so
+ * the man being announced is the one at the pick after it, and it has to be
+ * the same man the console is about to move the clock to. It is simply the
+ * next pick in the draft in both files, which is a thing neither of them can
+ * get wrong and neither has to be told.
+ */
+function announceNextUp() {
+  const o = STATE.current || 1;
+  const nx = o + 1;
+  if (nx > C.TOTAL) return;   // that was the last pick of the draft
+  // A new round leads, then the man who opens it. showAnnounce() queues them.
+  if (C.roundOf(nx) > C.roundOf(o)) announceRound(C.roundOf(nx));
+  announceOnClock(nx);
 }
 
 function applyPhase(prevStatus, nextStatus) {
   clearTimeout(phaseTimer);
+  clearTimeout(mirrorTimer);
 
   if (nextStatus !== "revealed") {
     phase = null;
@@ -244,12 +268,18 @@ function applyPhase(prevStatus, nextStatus) {
     // Not idle to clock at the very start: the resting state already makes an
     // entrance of its own there.
     if (nextStatus === "clock" && prevStatus === "revealed") {
-      // The detail screen stays up under the card that is fading in over it.
-      beginHandoff();
-      // A new round leads, then the manager who opens it. showAnnounce()
-      // queues them so they play in that order rather than on top of us.
-      if (lastRound !== null && round > lastRound) announceRound(round);
-      announceOnClock();
+      // The detail screen stays up under whatever fades in over it.
+      beginHandoff("reveal");
+      // In LIVE FEED these have already played, over the selection graphic,
+      // and the ten seconds since were the whole point of playing them there.
+      // Announcing the same man again as the board comes to rest would be the
+      // second time the room has been told and the first time it was news.
+      if (STATE.mode !== "mirror") {
+        // A new round leads, then the manager who opens it. showAnnounce()
+        // queues them so they play in that order rather than on top of us.
+        if (lastRound !== null && round > lastRound) announceRound(round);
+        announceOnClock();
+      }
     } else if (nextStatus === "idle" || nextStatus === "pick_in") {
       clearAnnounce();
     }
@@ -264,14 +294,26 @@ function applyPhase(prevStatus, nextStatus) {
     phase = "selection";
     sting();
     // THE PICK IS IN stays up under the selection graphic's fade.
-    if (prevStatus === "pick_in") beginHandoff();
+    if (prevStatus === "pick_in") beginHandoff("pickin");
     phaseTimer = setTimeout(() => {
-      phase = "details";
-      setBodyClass("board state-revealed phase-details");
-      renderAll();
-      // After renderAll, which is what decides whether this card is a clock
-      // or the turn of a round.
-      cueNextOnClock();
+      const toDetails = () => {
+        phase = "details";
+        setBodyClass("board state-revealed phase-details");
+        renderAll();
+        // After renderAll, which is what decides whether this card is a clock
+        // or the turn of a round.
+        cueNextOnClock();
+      };
+
+      // Ceremony: the graphic collapses into the detail screen and the board
+      // waits there for the commissioner, exactly as it always has.
+      if (STATE.mode !== "mirror") { toDetails(); return; }
+
+      // LIVE FEED: the next man's card comes over the top of the graphic, and
+      // the collapse happens behind it. See C.LIVE_FEED for the whole shape of
+      // it and for why the console is counting the same beats.
+      announceNextUp();
+      mirrorTimer = setTimeout(toDetails, ANN_FADE_MS);
     }, SELECTION_MS);
   }
   setBodyClass(`board state-revealed phase-${phase || "details"}`);
@@ -284,8 +326,8 @@ function applyPhase(prevStatus, nextStatus) {
 // and without a queue the second would overwrite the first mid-animation. One
 // plays out, then the next starts.
 
-const ONCARD_MS = 5200;
-const ROUNDCARD_MS = 4600;
+const ONCARD_MS = C.LIVE_FEED.oncard;
+const ROUNDCARD_MS = C.LIVE_FEED.roundcard;
 // How long a card's own fade takes, in both directions. Matches the `dim` and
 // `undim` animations on .announce.
 const ANN_FADE_MS = 360;
@@ -355,9 +397,17 @@ function clearAnnounce() {
   }
 }
 
-/** "X is now on the clock", full screen, the way the pick reveal is. */
-function announceOnClock() {
-  const o = STATE.current || 1;
+/**
+ * "X is now on the clock", full screen, the way the pick reveal is.
+ *
+ * The pick it is about is passed in rather than read off STATE, because in
+ * LIVE FEED it plays during the reveal, when `current` is still the pick that
+ * has just been made and reading it there would announce the man who has just
+ * sat down. Defaults to `current` for the ceremony path, where the console has
+ * already advanced by the time this runs.
+ */
+function announceOnClock(pick) {
+  const o = pick || STATE.current || 1;
   const m = C.managerOf(o);
   if (!m) return;
 
@@ -808,10 +858,13 @@ function renderPickIn() {
   const m = C.managerOf(o);
 
   // The big outlined numeral is the overall pick; round and pick cross its
-  // middle. From pick 100 the third digit would reach back into the headline,
-  // so the numeral steps down a size for the rest of the draft.
+  // middle. It is sized by how many digits it has so that it fits the fixed
+  // column it sits in, rather than the column being sized to fit it — see
+  // .pi-right in draft.css. The column used to grow 230px the moment the draft
+  // reached pick 10, and every one of those pixels came off THE PICK IS IN
+  // beside it, which is why the headline was being trimmed from there on.
   $("pickinNum").textContent = o;
-  $("pickinNum").classList.toggle("wide", o >= 100);
+  $("pickinNum").className = "pi-num" + (o >= 100 ? " d3" : o >= 10 ? " d2" : "");
   $("pickinRp").textContent = `Round ${C.roundOf(o)} · Pick ${C.roundPickOf(o)}`;
 
   $("pickinName").textContent = m ? m.name.toUpperCase() : "";
@@ -1373,7 +1426,7 @@ function renderRoundBoard() {
       : n === o ? `<span class="wc" id="wallClk">ON THE CLOCK</span>`
       : "&mdash;";
     cells.push(`
-      <div class="wt ${cls}${conf}"${p ? ` style="--pc:var(--${p.pos.toLowerCase()}-hi)"` : ""}>
+      <div class="wt ${cls}${conf}">
         ${face}
         <div class="who">
           <div class="hd"><span class="n">${i + 1}</span><span class="mg">${m ? C.escapeHtml(m.name) : ""}</span></div>

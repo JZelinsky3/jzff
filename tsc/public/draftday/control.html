@@ -13,7 +13,13 @@
 
 <div class="pbar">
   <div class="mark">COMMISSIONER <b>CONSOLE</b></div>
-  <div class="who" id="who"></div>
+  <!-- The state of the night, on the one strip of the page that never moves.
+       It was an empty element that nothing ever filled in. -->
+  <div class="pbar-rig">
+    <div class="rig state" id="rigState">STANDING BY</div>
+    <div class="rig" id="rigPick">PICK <b>&mdash;</b></div>
+    <div class="rig" id="rigMade">MADE <b>0</b></div>
+  </div>
 </div>
 
 <section class="wrap console">
@@ -29,6 +35,11 @@
          which is the thing that makes the next two minutes predictable. -->
     <div class="cmd-now" id="nowBox">
       <div class="hd">ON THE CLOCK</div>
+      <!-- The cut-out, his name, and the clock hard against the right edge on
+           the same line. The room reads the real clock off the television, so
+           this one only has to tell the man holding the console how long the
+           man in front of him has been standing there, and a whole row of the
+           strip is too much rent for that. -->
       <div class="now-who">
         <div id="nowAv"></div>
         <div class="now-id">
@@ -44,60 +55,85 @@
       </div>
     </div>
 
-    <!-- Two states in one cell. Waiting, it says who it is waiting on. Holding
-         a pick, it becomes the thing being read out: the man's photograph, who
-         is taking him, and the pick number, big enough to announce from
-         standing up and across the room from the laptop. -->
+    <!-- Two states in one module, and the plate across the top says which.
+         Waiting, it names who it is waiting on. Holding a pick, the whole
+         module goes gold and becomes the thing being read out: the man's
+         photograph, who is taking him, and the pick number, big enough to
+         announce from standing up across the room from the laptop. -->
     <div class="cmd-pick" id="cmdPick">
-      <div class="pc-wait" id="pcWait">
-        <div class="hd">NO PICK IN YET</div>
-        <div class="pc-wait-b" id="pcWaitName">&mdash;</div>
-        <div class="tiny" id="pcWaitSub">&nbsp;</div>
-      </div>
-      <div class="pc-card">
-        <img class="pc-shot" id="pcShot" alt="">
-        <div class="pc-body">
-          <div class="hd gold">THE PICK IS IN</div>
-          <div class="pc-owner" id="pcOwner">&nbsp;</div>
-          <div class="pc-name" id="pcName">&nbsp;</div>
-          <div class="pc-meta" id="pcMeta">&nbsp;</div>
-          <div class="pc-tags" id="pcTags"></div>
+      <div class="hd"><span class="a">NO PICK IN YET</span><span class="b">THE PICK IS IN</span></div>
+      <div class="pc-in">
+        <div class="pc-wait" id="pcWait">
+          <div class="pc-wait-b" id="pcWaitName">&mdash;</div>
+          <div class="tiny" id="pcWaitSub">&nbsp;</div>
         </div>
+        <div class="pc-card">
+          <img class="pc-shot" id="pcShot" alt="">
+          <div class="pc-body">
+            <div class="pc-owner" id="pcOwner">&nbsp;</div>
+            <div class="pc-name" id="pcName">&nbsp;</div>
+            <div class="pc-meta" id="pcMeta">&nbsp;</div>
+            <div class="pc-tags" id="pcTags"></div>
+          </div>
+        </div>
+        <!-- Things to have in your mouth before you say the name. The card
+             above is who it is; this is what there is to say about him, and
+             none of it is anything you should be working out while a room is
+             watching you. -->
+        <div class="pc-notes" id="pcNotes"></div>
       </div>
     </div>
 
     <div class="cmd-act">
-      <button class="btn go big-go" id="mainBtn">START THE DRAFT</button>
-      <button class="btn" id="delayBtn" hidden>Announce in 5s &mdash; walk up first</button>
-      <div class="tiny" id="mainHint"></div>
+      <div class="hd">COMMAND</div>
+      <div class="ca-in">
+        <button class="btn go big-go" id="mainBtn">START THE DRAFT</button>
+        <button class="btn" id="delayBtn" hidden>Announce in 5s. Walk up first.</button>
+        <div class="tiny" id="mainHint"></div>
+      </div>
     </div>
   </div>
 
   <div class="cgrid">
 
-    <!-- clock, and the thing you must never press, kept together and away from
-         the bottom of a log a hundred and eighty picks long -->
+    <!-- ══ 01 — the draft's own machinery ══════════════════════════════════ -->
     <div class="ccol">
+      <div class="colhd"><span class="ix">01</span><b>Draft Control</b><i>The clock &amp; the draft</i></div>
 
+      <!-- clock -->
       <div class="cbox">
         <div class="hd">CLOCK</div>
-        <div class="cbtns three">
+
+        <div class="cbtns two">
           <button class="btn" id="btnPause">Pause</button>
-          <button class="btn" id="btnPlus">+30s</button>
           <button class="btn" id="btnReset">Reset</button>
         </div>
-        <!-- What the clock is actually doing, in words. A dead Pause button with
-             no explanation is the worst thing this console can do at 8pm. -->
-        <div class="tiny" style="margin-top:.5rem" id="clockWhat"></div>
-        <!-- How long a pick gets, for this pick and every one after it. The early
-             rounds are worth five minutes and round twelve is not. -->
-        <div class="seg" id="lenSeg" style="margin-top:.6rem">
-          <button data-ms="90000">1:30</button>
-          <button data-ms="120000">2:00</button>
-          <button data-ms="180000">3:00</button>
-          <button data-ms="300000">5:00</button>
+        <!-- What the clock is actually doing, in words. A dead Pause button
+             with no explanation is the worst thing this console can do. -->
+        <div class="tiny" style="margin-top:.55rem" id="clockWhat"></div>
+
+        <!-- Time added to the clock in front of him, kept apart from the two
+             buttons that change what the clock is. -->
+        <div class="sublab">Add time</div>
+        <div class="cbtns two">
+          <button class="btn" id="btnPlus15">+15s</button>
+          <button class="btn" id="btnPlus">+30s</button>
         </div>
-        <div class="tiny" style="margin-top:.5rem" id="lenHint"></div>
+
+        <!-- How long a pick gets, for this pick and every one after it. Round
+             one is worth five minutes and round fifteen is worth forty-five
+             seconds, and both of those are on the pad. Longest first, because
+             the night only ever runs one way down this pad. -->
+        <div class="sublab">Pick length</div>
+        <div class="seg keys" id="lenSeg">
+          <button data-ms="300000">5:00</button>
+          <button data-ms="180000">3:00</button>
+          <button data-ms="120000">2:00</button>
+          <button data-ms="90000">1:30</button>
+          <button data-ms="60000">1:00</button>
+          <button data-ms="45000">0:45</button>
+        </div>
+        <div class="tiny" style="margin-top:.55rem" id="lenHint"></div>
       </div>
 
       <!-- mode -->
@@ -110,39 +146,9 @@
         <div class="tiny" style="margin-top:.6rem" id="modeHint"></div>
       </div>
 
-      <!-- Both looks ship built and the choice is made here, because it is not
-           a question a stylesheet can answer from a desk: a card that is right
-           on a laptop can be wrong on a television across a room. Press one and
-           the board follows, so nothing has to be undone later.
-
-           Four buttons on one row under one title, and no copy under either.
-           Every other control in this column is a segmented pair that explains
-           itself by being pressed; two paragraphs describing what a card looks
-           like are worth less than looking at the card, which is on a
-           television three feet away. -->
-      <div class="cbox">
-        <div class="hd">THE BOTTOM BAND</div>
-        <div class="bandpair">
-          <div>
-            <div class="hd sm"><span>BEST AVAILABLE</span></div>
-            <div class="seg" id="baSeg">
-              <button data-ba="plate">PLATE</button>
-              <button data-ba="steel">PLAIN</button>
-            </div>
-          </div>
-          <div>
-            <div class="hd sm"><span>LINEUP</span></div>
-            <div class="seg" id="luSeg">
-              <button data-lu="dark">DARK</button>
-              <button data-lu="paper">PAPER</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- It used to sit under the pick log, which meant scrolling past every
-           pick of the night to reach it. It is up here now, where it is one
-           box from the top and still needs two taps. -->
+           pick of the night to reach it. It is at the foot of its own rack
+           now, wearing hazard stripes, and still needs two taps. -->
       <div class="cbox grave">
         <div class="hd">DANGER</div>
         <button class="btn danger wide" id="btnWipe">Wipe the whole draft</button>
@@ -154,9 +160,9 @@
 
     </div>
 
-    <!-- what the television is showing that is not the draft itself: the
-         showcase over the whole canvas, the rail down the right-hand side -->
+    <!-- ══ 02 — what the television is showing ═════════════════════════════ -->
     <div class="ccol">
+      <div class="colhd"><span class="ix">02</span><b>The Television</b><i>What the room sees</i></div>
 
       <div class="cbox">
         <div class="hd">MANAGER SHOWCASE</div>
@@ -164,10 +170,10 @@
         <div class="tiny" style="margin-top:.6rem" id="showcaseHint"></div>
       </div>
 
-      <!-- A list rather than a four-across segmented control: each panel gets
-           its name and a line saying what is on it, so choosing one does not
-           mean remembering what STILL THERE meant. Unlike the showcase these
-           stay up until they are swapped back. -->
+      <!-- A channel selector rather than a four-across segmented control: each
+           panel gets a lamp, its name and a line saying what is on it, so
+           choosing one does not mean remembering what STILL THERE meant.
+           Unlike the showcase these stay up until they are swapped back. -->
       <div class="cbox">
         <div class="hd">RIGHT RAIL</div>
         <div class="raillist" id="railSeg">
@@ -184,9 +190,36 @@
         </div>
       </div>
 
+      <!-- Both looks ship built and the choice is made here, because it is not
+           a question a stylesheet can answer from a desk: a card that is right
+           on a laptop can be wrong on a television across a room. Press one
+           and the board follows, so nothing has to be undone later.
+
+           One module, because it is the same kind of choice made twice about
+           the same strip of screen. No copy under either: two paragraphs
+           describing what a card looks like are worth less than looking at the
+           card, which is on a television three feet away. -->
+      <div class="cbox">
+        <div class="hd">THE BOTTOM BAND</div>
+        <div class="bandpair">
+          <div class="sublab">Best available</div>
+          <div class="seg" id="baSeg">
+            <button data-ba="plate">PLATE</button>
+            <button data-ba="steel">PLAIN</button>
+          </div>
+          <div class="sublab">Lineup</div>
+          <div class="seg" id="luSeg">
+            <button data-lu="dark">DARK</button>
+            <button data-lu="paper">PAPER</button>
+          </div>
+        </div>
+      </div>
+
     </div>
 
+    <!-- ══ 03 — the record ═════════════════════════════════════════════════ -->
     <div class="ccol">
+      <div class="colhd"><span class="ix">03</span><b>The Record</b><i>Entering &amp; undoing picks</i></div>
 
       <!-- enter a pick by hand -->
       <div class="cbox">
@@ -199,17 +232,19 @@
 
       <!-- the log, one round at a time -->
       <div class="cbox grow">
-        <div class="hd">PICKS SO FAR &mdash; TAP &times; TO UNDO</div>
+        <div class="hd">PICKS SO FAR</div>
+        <div class="sublab">Round</div>
         <div class="rndseg" id="logSeg"></div>
+        <div class="sublab">Tap &times; to undo</div>
         <div class="clog" id="clog"></div>
       </div>
 
     </div>
   </div>
 
-  <div class="tiny" style="text-align:center;padding:1rem 0">
-    Board: <a href="board.html" style="color:var(--brass)">board.html</a> &nbsp;·&nbsp;
-    Managers: <a href="pick.html" style="color:var(--brass)">pick.html</a>
+  <div class="cfoot">
+    <span>Board</span> <a href="board.html">board.html</a>
+    <span>Managers</span> <a href="pick.html">pick.html</a>
   </div>
 </section>
 

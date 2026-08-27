@@ -101,10 +101,46 @@ setInterval(director, 1500);
 
 let directing = false;
 
+/**
+ * The pick whose advance timer is already out, so a reveal is never left
+ * without one and never gets two.
+ *
+ * A LIVE FEED reveal can start in three ways and only one of them used to arm
+ * the timer that ends it: Sleeper reporting the pick, a phone sending it, and
+ * the console entering it by hand. It also has to survive the console being
+ * reloaded halfway through a reveal, which would otherwise leave the board
+ * parked on a pick with nothing coming to move it on.
+ */
+let mirrorArmed = null;
+
+function armMirrorAdvance(o) {
+  if (mirrorArmed === o) return;
+  mirrorArmed = o;
+  // The board is playing three beats off C.LIVE_FEED and this is the fourth:
+  // the graphic, the next man's card over it, the pick's own screen with his
+  // clock running, and then the board coming to rest. Nobody touches the
+  // console for any of it.
+  setTimeout(() => advanceToOpen(o), C.liveFeedTotal(roundTurnsAfter(o)));
+}
+
 async function director() {
-  if (directing || !PICKS.length) return;
-  const have = new Set(PICKS.map(p => p.overall));
+  if (directing) return;
   const o = STATE.current || 1;
+
+  // LIVE FEED: a pick sent from a phone is announced on its own. THE PICK IS
+  // IN is a beat that exists so a commissioner can stand up and read a name,
+  // and in this mode there is nobody to press the button, so the board would
+  // sit on it forever. Ahead of the PICKS guard below because the first pick
+  // of the draft arrives before there are any picks to count.
+  if (STATE.mode === "mirror" && STATE.status === "pick_in" && STATE.pending) {
+    directing = true;
+    await doAnnounce();
+    directing = false;
+    return;
+  }
+
+  if (!PICKS.length) return;
+  const have = new Set(PICKS.map(p => p.overall));
 
   // Where should the clock actually be? First pick nobody has made.
   let open = 1;
@@ -131,8 +167,13 @@ async function director() {
       await C.setState({ status: "revealed", pending: pendingFrom(made), ...CLOSED,
                         ...clockForReveal(o) });
       directing = false;
-      setTimeout(advanceToOpen, 5000);
+      // A fresh reveal of this pick, so any timer left over from an earlier
+      // one — the same pick undone and taken again — does not count as armed.
+      mirrorArmed = null;
     }
+    // Whether we started the reveal or walked in on one, something has to be
+    // coming to end it.
+    armMirrorAdvance(o);
     return;
   }
 
@@ -153,15 +194,33 @@ function pendingFrom(p) {
   };
 }
 
-async function advanceToOpen() {
+/**
+ * The end of a LIVE FEED reveal: the board comes to rest on the next man.
+ *
+ * It moves to the very next pick, not to the next pick nobody has made. It
+ * used to skip forward over anything Sleeper had reported while the reveal
+ * was playing, which meant a pick made during another pick's twenty seconds
+ * on screen never got a reveal of its own — it just appeared on the wall. It
+ * lands on the clock instead, the director sees on its next pass that it has
+ * already been made, and it gets the same twenty seconds as everything else.
+ * Nothing is skipped and the board and the console cannot disagree about who
+ * is up, because "the next pick" is the same answer in both files.
+ */
+async function advanceToOpen(from) {
   if (STATE.mode !== "mirror") return;
-  const have = new Set(PICKS.map(p => p.overall));
-  let open = (STATE.current || 1) + 1;
-  while (have.has(open) && open <= C.TOTAL) open++;
-  if (open > C.TOTAL) return;
+  // Only the reveal that armed this timer gets to end it. Hitting NEXT PICK by
+  // hand during a live-feed reveal moves the draft on already, and a timer
+  // still coming for twenty seconds later would then advance a second time and
+  // skip a man. Same guard covers a second pick landing and being revealed
+  // while this one's timer is still out.
+  if (STATE.status !== "revealed") return;
+  if (from != null && (STATE.current || 1) !== from) return;
+
+  const next = (STATE.current || 1) + 1;
+  if (next > C.TOTAL) return;
   directing = true;
   await C.setState({
-    status: "clock", current: open, pending: null, ...CLOSED,
+    status: "clock", current: next, pending: null, ...CLOSED,
     ...(STATE.clockEnds ? { clockEnds: STATE.clockEnds } : startNextClock()),
   });
   directing = false;
@@ -224,7 +283,9 @@ function render() {
   [...$("modeSeg").children].forEach(b =>
     b.classList.toggle("on", b.dataset.mode === (STATE.mode || "ceremony")));
   $("modeHint").textContent = (STATE.mode === "mirror")
-    ? "Picks flow straight from Sleeper onto the board. No holding, no announce. Use this once you speed up."
+    ? `Picks flow straight from Sleeper and the board runs itself: the pick, then who is up, then ${
+        Math.round(C.LIVE_FEED.details / 1000)}s on the pick with his clock going. About ${
+        Math.round(C.LIVE_FEED_TOTAL / 1000)}s each, hands off.`
     : "Pick is held on THE PICK IS IN until you hit announce. Use this for the early rounds.";
 
   // Lit or dead according to whether there is actually a clock to act on, with
@@ -232,8 +293,16 @@ function render() {
   // indistinguishable from a broken one.
   $("btnPause").textContent = STATE.paused ? "Resume" : "Pause";
   const live = clockLive();
-  for (const id of ["btnPause", "btnPlus", "btnReset"]) $(id).disabled = !live;
+  for (const id of ["btnPause", "btnPlus15", "btnPlus", "btnReset"]) $(id).disabled = !live;
   $("clockWhat").textContent = clockState();
+
+  // The lamp on the ON THE CLOCK plate. Lit only while a countdown is actually
+  // running, so it never claims a draft that has not started or a clock that
+  // is stopped.
+  $("nowBox").classList.toggle(
+    "live", STATE.status === "clock" && !!STATE.clockEnds && !STATE.paused);
+
+  renderRig(o);
 
   const btn = $("mainBtn"), hint = $("mainHint");
   btn.classList.remove("danger");
@@ -288,6 +357,26 @@ function render() {
 }
 
 /**
+ * The readout in the top bar: what the console is doing, which pick, how many
+ * are in. It is the one strip of this page that never scrolls away, and it
+ * used to hold an element that nothing ever filled in.
+ */
+function renderRig(o) {
+  const word = STATE.pending ? "PICK HELD" : {
+    idle: "STANDING BY",
+    clock: "ON THE CLOCK",
+    pick_in: "PICK HELD",
+    revealed: "ON THE BOARD",
+  }[STATE.status] || "STANDING BY";
+
+  $("rigState").textContent = word;
+  $("rigState").classList.toggle("on", STATE.status !== "idle");
+  $("rigPick").innerHTML =
+    `PICK <b>${o}</b>/${C.TOTAL} &middot; RD <b>${C.roundOf(o)}</b>`;
+  $("rigMade").innerHTML = `IN <b>${PICKS.length}</b>`;
+}
+
+/**
  * What is being announced, on the console, with his photograph on it.
  *
  * This used to be a sentence of grey body copy under the button — "It's Jahmyr
@@ -339,6 +428,84 @@ function renderPickCard(o, m) {
   if (dup) tags.push(`<span class="cold">ALREADY GONE ${dup.round}.${
     String(dup.roundPick).padStart(2, "0")}</span>`);
   $("pcTags").innerHTML = tags.join("");
+
+  $("pcNotes").innerHTML = announceNotes(o, m, p, full);
+}
+
+const LAST_YEAR = 2025;
+const POS_WORD = {
+  QB: "quarterback", RB: "back", WR: "receiver",
+  TE: "tight end", K: "kicker", DEF: "defence",
+};
+
+/**
+ * What there is to say about the man being announced.
+ *
+ * The card above it is who it is. This is the colour, and the rule for what
+ * earns a row is that it has to be a thing worth saying out loud and a thing
+ * you would otherwise be working out in your head with a room watching: where
+ * he was a year ago, what he does to the roster he is joining, whether he is
+ * part of a run, and when that manager is up again. Nothing that is already on
+ * the card in bigger type, and nothing that needs a second sentence to explain.
+ *
+ * Rows are dropped rather than shown empty. A fixed five-row block with three
+ * of them reading "-" is worse than three rows.
+ */
+function announceNotes(o, m, p, full) {
+  const rows = [];
+  const row = (label, html, cls = "") =>
+    rows.push(`<div class="pcn ${cls}"><u>${label}</u><s>${html}</s></div>`);
+
+  // Where he went a year ago, and to whom. The single best thing to have in
+  // your mouth: it is either "back to the same manager" or it is a story.
+  const was = C.historyFor(full).find(h => h.y === LAST_YEAR);
+  if (was) {
+    const again = m && was.m === m.name;
+    row("Last year", `<b>${C.escapeHtml(was.m)}</b> took him at ${was.r}.${
+      String(was.p).padStart(2, "0")}${again ? ", and has him back" : ""}`);
+  } else if (p.rookie) {
+    row("Last year", "Rookie. First time off this board.");
+  }
+
+  // What he becomes on the roster he is joining, and what that leaves open.
+  if (m) {
+    const mine = PICKS.filter(x => x.slot === m.slot);
+    const nth = mine.filter(x => x.pos === p.pos).length + 1;
+    const word = POS_WORD[p.pos] || p.pos;
+    const need = C.rosterFor([...mine, { slot: m.slot, pos: p.pos }], m.slot).need;
+    row("Roster", `${nth === 1 ? `first <b>${word}</b>` : `<b>${C.ordinal(nth)}</b> ${word}`}${
+      need.length ? ` &middot; still no ${need.slice(0, 3).join(", ")}` : " &middot; starters full"}`);
+  }
+
+  // Whether he is part of something. Only when the run is his own position —
+  // a receiver run is not news while a tight end is being announced.
+  const run = C.positionRun(PICKS);
+  if (run && run.pos === p.pos) {
+    row("The run", run.all
+      ? `the last <b>${run.n}</b> picks have all been ${run.pos}s`
+      : `${run.pos}s have gone <b>${run.n}</b> of the last ${run.span}`);
+  }
+
+  // When he is up again, which is the question the room asks next.
+  if (m) {
+    const nxt = C.nextPickForSlot(m.slot, o + 1);
+    if (nxt) {
+      row("Back at", `<b>${C.roundOf(nxt)}.${String(C.roundPickOf(nxt)).padStart(2, "0")}</b>` +
+        ` &middot; ${nxt - o - 1} pick${nxt - o - 1 === 1 ? "" : "s"} away`);
+    } else {
+      row("Back at", "that was his last pick of the draft");
+    }
+  }
+
+  // Age and experience, one line, and the injury only when there is one. This
+  // is the row that stops an announcement being wrong out loud.
+  const bits = [];
+  if (full.age) bits.push(`${full.age} years old`);
+  if (full.exp != null) bits.push(full.exp === 0 ? "rookie season" : `${C.ordinal(full.exp + 1)} season`);
+  if (bits.length) row("Profile", bits.join(" &middot; "));
+  if (full.inj) row("Note", `<b>${C.escapeHtml(full.inj)}</b>`, "warn");
+
+  return rows.join("");
 }
 
 /**
@@ -408,23 +575,36 @@ function renderLength() {
     STATE.pickMs ? "" : " (league default)"}. Applies to every pick from here.`;
 }
 
+/**
+ * The clock in its well.
+ *
+ * The state is a class rather than an inline colour. It used to write
+ * `style.color = "var(--brass)"` for both paused and the last thirty seconds,
+ * and `--brass` is not declared anywhere these three pages load: the whole
+ * declaration was invalid, so the two states the console most needs to shout
+ * about were the same white as a clock with two minutes on it. The class also
+ * lets the well carry the glow with the colour, which an inline colour cannot.
+ */
 function renderClock() {
   const el = $("nowClock");
+  const set = (html, cls) => {
+    el.innerHTML = html;
+    el.className = cls ? `now-clock ${cls}` : "now-clock";
+  };
+
   // Through the reveal as well, because it is running through the reveal.
   // While a pick is being held there is deliberately no clock on the board
-  // either, so this empties rather than sitting there as a stray dash under
-  // the card that has taken over the strip.
-  if (STATE.status === "pick_in") { el.textContent = ""; return; }
-  if (STATE.status !== "clock" && STATE.status !== "revealed") { el.textContent = "—"; return; }
+  // either, so the well says what it is holding rather than counting down a
+  // clock that is not running.
+  if (STATE.status === "pick_in") { set("<i>pick in</i>", "held"); return; }
+  if (STATE.status !== "clock" && STATE.status !== "revealed") { set("&mdash;", "idle"); return; }
   // No clock at all means it is being held for the turn of a round: say so,
   // because a held 2:00 looks exactly like a 2:00 that started a moment ago.
-  // The word rides at a fraction of the digits' size, because the digits are
-  // the reading and the word is the caveat. Set at the same size it was as
-  // wide as the number itself, and on a narrow console that pushed the
-  // manager's name into an ellipsis to make room for "paused".
+  // The word rides as a chip beside the digits because Teko is digits and a
+  // colon and nothing else, so a word set inside the number arrives in a
+  // second face halfway through the line.
   if (!STATE.clockEnds && !STATE.paused) {
-    el.innerHTML = `${C.mmss(PICK_MS())}<i>held</i>`;
-    el.style.color = "var(--mute)";
+    set(`${C.mmss(PICK_MS())}<i>held</i>`, "held");
     return;
   }
   const left = STATE.paused
@@ -433,10 +613,10 @@ function renderClock() {
   // Says so when it is stopped. A frozen number and a running one are the same
   // picture for the first second you look at them, which is exactly long enough
   // to conclude the button did nothing and tap it again.
-  el.innerHTML = C.mmss(left) + (STATE.paused ? "<i>paused</i>" : "");
-  el.style.color = STATE.paused ? "var(--brass)"
-                 : left <= 10000 ? "var(--qb)"
-                 : left <= 30000 ? "var(--brass)" : "var(--milk)";
+  set(C.mmss(left) + (STATE.paused ? "<i>paused</i>" : ""),
+      STATE.paused ? "paused"
+      : left <= 10000 ? "panic"
+      : left <= 30000 ? "warn" : "");
 }
 
 /**
@@ -607,11 +787,16 @@ $("btnPause").onclick = async () => {
   }
 };
 
-$("btnPlus").onclick = async () => {
+// Two sizes of the same favour. Fifteen is the one you give a man who is
+// mid-sentence; thirty is the one you give a man who has lost his phone.
+const addTime = async ms => {
   if (!clockLive()) return;
-  if (STATE.paused) await C.setState({ pausedLeft: (STATE.pausedLeft ?? 0) + 30000 });
-  else await C.setState({ clockEnds: (STATE.clockEnds || Date.now()) + 30000 });
+  if (STATE.paused) await C.setState({ pausedLeft: (STATE.pausedLeft ?? 0) + ms });
+  else await C.setState({ clockEnds: (STATE.clockEnds || Date.now()) + ms });
 };
+
+$("btnPlus15").onclick = () => addTime(15000);
+$("btnPlus").onclick = () => addTime(30000);
 
 // A reset is a clock starting over, timing included: whatever he had already
 // burned is gone with the countdown it belonged to.
@@ -718,14 +903,14 @@ function renderSearch() {
     $("cq").value = ""; $("cresults").innerHTML = "";
 
     if (STATE.mode === "mirror") {
-      // No ceremony: straight onto the board and move on.
+      // Onto the board and nothing else. This used to commit the pick and
+      // advance the clock in the same breath, which meant a pick entered here
+      // in LIVE FEED went from the search box to the wall without ever being
+      // revealed: the board jumped straight to the next man and the pick just
+      // appeared. Committing it is all this has to do. The director sees the
+      // pick land on the man who is on the clock and plays the reveal, which
+      // is the same path a Sleeper pick takes.
       await C.commitPick(STATE.current, player, "app");
-      const next = STATE.current + 1;
-      await C.setState({
-        status: next > C.TOTAL ? "revealed" : "clock",
-        current: Math.min(next, C.TOTAL), pending: null, ...CLOSED,
-        ...startNextClock(),
-      });
     } else {
       // Hold it, same as if the phone had sent it.
       await C.submitPick(STATE.current, player);

@@ -82,6 +82,11 @@
   --chalk:     #d3d8de;
   --chalk-dim: #79869a;
   --mute:      #5b687a;
+  /* Ink, for the places this board runs dark type on a light ground: the cream
+     headers on the two undressed cards in the bottom band. Navy rather than
+     black, because there is no black anywhere else in this production, and
+     dark enough that it is 15:1 on the cream it sits on. */
+  --ink-navy:  #0e1b2f;
 
   /* The two conferences. Skim is a pale blue because that is what skim milk
      looks like. Whole is a light red — it went through gold first, and gold
@@ -135,6 +140,21 @@
   --te-hi:  #c3add7;
   --k-hi:   #a5b2c3;
   --def-hi: #95c2bd;
+
+  /* The same six again, taken the other way: hue held, chroma pulled back to
+     where the muted set sits, lightness down to about 28%. This is the set for
+     anywhere a position has to be a filled block with cream type on it, or ink
+     on a light ground — the wall's position badges and the run alert's tag on
+     the cream header in the bottom band. Both of the other two sets are wrong
+     for that: cream on the lifted set is a pastel under a pastel, and the
+     muted set as ink on cream lands between 2.7:1 and 3.3:1. These run 5.8:1
+     to 9.6:1 either way round, which is the whole reason they exist. */
+  --qb-deep:  #6d2e25;
+  --rb-deep:  #29683e;
+  --wr-deep:  #2a4a67;
+  --te-deep:  #4a335e;
+  --k-deep:   #3c4755;
+  --def-deep: #385956;
 
   --good: #7fa48d;
   --bad:  #b57268;
@@ -773,11 +793,23 @@ body.board::after {
 .pi-right {
   position: relative;
   display: flex; align-items: center; justify-content: center;
-  /* The label is out of flow, so without this the column would be as wide as
-     the numeral alone and a single-digit pick would let the line hang off both
-     sides of it, out through the page padding. This is the widest label the
-     draft can produce ("Round 10 · Pick 12") with room to spare. */
-  min-width: calc(40 * var(--u));
+  /* Fixed, not a floor, and this is the whole fix for a column that used to
+     take its width from the numeral in it.
+
+     Anton's digits are .4941em each, so at the old flat 62u a two-digit pick
+     was 662px wide against a one-digit pick's 331px — and the numeral is the
+     `auto` track in `minmax(0, 1fr) auto`, so every one of those 230 pixels
+     came out of the block on the left. From pick 10 to the end of the draft
+     THE PICK IS IN was being read in a column 20% narrower than the one it was
+     laid out in, which is what was crowding the player's name.
+
+     44u is set by the label rather than by the numeral: "ROUND 10 · PICK 12"
+     at 2.4u with .26em of tracking comes to about 401px, and the label is out
+     of flow so the column has to hold it on its own. The numeral is then sized
+     to fit this box instead of the box being sized to fit the numeral, which
+     is what keeps the left-hand block exactly the same width at pick 1, pick
+     20 and pick 180. */
+  width: calc(44 * var(--u));
   /* The numeral leans, so its top right corner reaches past the column's own
      box and eats into the page padding. This holds it off the right edge by
      about what the upright version cleared, which is as close to the bezel as
@@ -862,31 +894,31 @@ body.board::after {
      paint, so the box the label centres on does not move. */
   transform-origin: center center; transform: skewX(-6deg) scaleY(1.05);
   /* line-height .78 is far shorter than Anton's own line (its hhea ascent and
-     descent come to 1.5em), so the digits stand ~2.9u above the line box and
-     the baseline sits ~2.1u below it. These margins reserve exactly that, which
-     makes the margin box the same shape as the ink: the grid then centres the
-     digits themselves rather than their line box, and top: 50% on the
-     round-and-pick line lands across their middle. */
-  margin: calc(2.9 * var(--u)) 0 calc(2.1 * var(--u));
+     descent come to 1.5em), so the digits stand above the line box and the
+     baseline sits below it. These margins reserve exactly that, which makes the
+     margin box the same shape as the ink: the grid then centres the digits
+     themselves rather than their line box, and top: 50% on the round-and-pick
+     line lands across their middle.
+
+     In em, so they follow the font-size down the size steps below. They were
+     hand-written per size — 2.9u/2.1u at 62u and 2.1u/1.52u at 45u — which is
+     the same two numbers, .0468em and .0339em, worked out twice. Anything that
+     has to be recalculated every time a size changes is a thing that will one
+     day not be. */
+  margin: .0468em 0 .0339em;
   animation: piNum .8s .26s cubic-bezier(.14,.86,.26,1) both;
 }
-/* Three digits, from pick 100 on: same column, two sizes down, so the numeral
-   does not reach back across the gap into the headline. The margins scale with
-   it because they are the overhang of this line height.
+/* Sized by how many digits it has, so the ink fills the fixed column above
+   rather than pushing it wider. One digit is .4941em, two are .9882em and
+   three are 1.4823em, and 44u of column is 475px: 62u leaves a single digit
+   sitting comfortably inside it, and the two steps under that put a two- and
+   three-digit pick at about 470px of ink apiece.
 
-   45, not 50, and the number is not arbitrary. A three-digit numeral makes its
-   own column wide enough that the 1fr beside it drops under what THE PICK
-   needs, and the headline is `nowrap` — so it kept its size and simply ran out
-   the side of its box. That is not just an overlap: the gold leaf is a
-   background clipped to the glyphs, and a background tiles, so everything past
-   the box edge came out painted in the dark end of the gradient. The K went
-   black against a black wall from pick 100 to the end of the draft. At 45 the
-   column is narrow enough that the headline fits its box and the question does
-   not arise. */
-.pi-num.wide {
-  font-size: calc(45 * var(--u));
-  margin: calc(2.1 * var(--u)) 0 calc(1.52 * var(--u));
-}
+   A tall narrow 7 and a short wide 180 is what a numeral fitted to a box looks
+   like, and it is the right trade — the alternative is the block beside it
+   changing width three times over the course of a draft. */
+.pi-num.d2 { font-size: calc(44 * var(--u)); }
+.pi-num.d3 { font-size: calc(29 * var(--u)); }
 /* letter-spacing is 0 on purpose: a negative value leaves the last glyph
    overhanging its own box, which walks the numeral off centre under the
    round-and-pick line sitting over it. */
@@ -904,8 +936,16 @@ body.state-pick_in .pickin { display: grid; }
 /* Held up under the selection graphic while that fades in over it — see
    beginHandoff() in board.js. Without this the pick-in screen switches off in
    the same frame the selection starts fading up from transparent, and the
-   resting board shows through the gap for a third of a second. */
-body.handoff .pickin { display: grid; }
+   resting board shows through the gap for a third of a second.
+
+   Named, because there are two handoffs and they hold up different screens.
+   This used to be a bare `body.handoff`, which the other one sets too — so
+   the end of a reveal put THE PICK IS IN back on screen for 440ms on its way
+   to the resting board. In CEREMONY nobody ever saw it, because the next
+   man's announcement card was fading in over the top of exactly that gap; in
+   LIVE FEED the card has already played by then and there is nothing covering
+   it, so the flash was in the open. */
+body.handoff-pickin .pickin { display: grid; }
 /* ── the selection graphic (the ~7.5 second hold) ──────────────────────── */
 /* A direct child of #frame (not .main), so inset:0 covers the full
    1920x1080 canvas — header and ticker included. This is the brief, all-in
@@ -1066,9 +1106,9 @@ body.phase-selection .selection { display: grid; }
     url("bg/stage.webp") center center / cover no-repeat;
 }
 body.phase-details .reveal { display: flex; }
-/* And held under the announcement fading in over it, the same way the pick-in
-   screen is held under the selection graphic. */
-body.handoff .reveal { display: flex; }
+/* And held under whatever fades in over it, the same way the pick-in screen is
+   held under the selection graphic. Named for the same reason it is. */
+body.handoff-reveal .reveal { display: flex; }
 
 /* The photograph and the man's record, one column. The record was in the foot
    taking half the width of the screen to say a thing three narrow columns
@@ -1550,9 +1590,10 @@ body.handoff .reveal { display: flex; }
   position: relative; min-width: 0; min-height: 0; overflow: hidden;
   display: flex; flex-direction: column;
   /* An even hairline the whole way round now. The top edge used to be 3px and
-     carry the position of the pick — see .wt::after, which has it — and with a
-     tinted nameplate directly under it the two stacked into one thick striped
-     band that made neither reading clearly. */
+     carry the position of the pick, and with a tinted nameplate directly under
+     it the two stacked into one thick striped band that made neither reading
+     clearly. The position moved to the foot of the card and then off it
+     entirely — it is the badge beside the photograph now. */
   border-radius: 4px; border: 1px solid var(--line);
   background:
     /* Stock. A weave this faint is not a texture anybody sees, it is the
@@ -1604,52 +1645,15 @@ body.handoff .reveal { display: flex; }
     linear-gradient(180deg, var(--cfb), var(--cfb2));
   border-bottom: 1px solid rgba(var(--cf), calc(var(--cfa) * 1.25));
 }
-/* What he took, as a bar along the foot of the card.
+/* The foot bar that used to live here — three pixels of the pick's position
+ * colour along the bottom edge of every tile — is gone, and with it a long
+ * comment about painting it as a background image so it survived fractional
+ * grid rows. The position is a filled badge up beside the photograph now (see
+ * .wt .pos), which states it once, in one place, instead of running it along
+ * an edge that twelve tiles share with each other.
  *
- * It was the top border, which put it directly above the conference nameplate:
- * two coloured horizontal bands stacked on each other at the top of a 137px
- * card, each saying something about a different thing. Down here it sits under
- * the player's name, which is what it is about, and the card reads top to
- * bottom as one thing per zone — who is picking, then who he took, then what
- * he is. Above the cut-out, which bleeds to the same edge.
- *
- * --pc is set inline by renderRoundWall and only on a tile with a pick in it,
- * so an empty tile and the one on the clock have no bar at all.
- *
- * Painted as a gradient inside a taller box, not as a box of its own height,
- * and that is the whole trick.
- *
- * The wall's six rows are 1fr of 873.453px, so no tile bottom lands on a whole
- * pixel — row by row the edge falls at .750, .953, .141, .344, .531 and .734.
- * A box is snapped to whole device pixels when it is painted, top and bottom
- * independently, so a 2px bar sitting on those six edges is painted as 2px on
- * some rows and 1px on others: on a round of twelve the top four tiles came out
- * at full weight and the bottom eight at half. Making the bar thinner made it
- * worse, because the whole error is one pixel however few there are to lose.
- *
- * Nothing in CSS can round a grid track, and rounding them from script is worse
- * than the disease — it needs the frame's `zoom` factored back out of every
- * measurement, and getting that backwards blows the bottom two tiles off the
- * panel. So the bar stops being a box. The element is six pixels tall, which is
- * more than it needs and therefore never the thing being measured, and the
- * colour is a background image three pixels tall pinned to the bottom of it.
- * A background image is resampled rather than snapped, and `background-size`
- * fixes its height in pixels rather than as a share of the box, so every tile
- * gets the same three pixels of ink whatever fraction its own edge is sitting
- * on and whatever the box around it rounded to.
- *
- * Colouring the bottom border to make up a fourth pixel is what NOT to do, and
- * it is what I tried in between: two boxes meeting on a fractional edge each
- * paint about half of the pixel they share, and half over half composites to
- * three quarters, not to one. That leaves a darker seam along the join — a
- * double line with a gap in it, which is worse than either problem. One box.
+ * --pc went with it. Nothing sets it and nothing reads it.
  */
-.wt::after {
-  content: ""; position: absolute; inset: auto 0 0 0; z-index: 2;
-  height: 6px;
-  background: linear-gradient(var(--pc, transparent), var(--pc, transparent))
-              bottom / 100% 3px no-repeat;
-}
 /* Whole runs warm, so it still needs its own alpha and its own base — see
    --cfa and --cfb above. Retuned for the red: .44 rather than the .52 the gold
    wanted, because red carries at a lower alpha than yellow does, and the base
@@ -1711,24 +1715,48 @@ body.handoff .reveal { display: flex; }
 /* photo and position rank together, name on its own line beneath */
 .wt .ar { display: flex; align-items: center; gap: calc(.7 * var(--u)); }
 .wt .pav {
-  flex: none; width: calc(3.4 * var(--u)); height: calc(3.4 * var(--u)); border-radius: 4px;
-  object-fit: cover; background: var(--panel-2); border: 1px solid var(--line-soft);
+  flex: none; width: calc(4.3 * var(--u)); height: calc(4.3 * var(--u)); border-radius: 4px;
+  object-fit: cover; background: var(--panel-2);
+  border: 1px solid var(--line-2);
+  box-shadow: 0 1px calc(.4 * var(--u)) rgba(0,0,0,.5);
 }
-/* The position chip takes the lifted palette, and only inside a card. The
-   muted set is right on a flat panel read close up; on this card, against a
-   nameplate and a cut-out, it went grey. Written out per position rather than
-   as a filter on the chip, because the foot bar has to land on exactly the
-   same colour and a filter cannot reach a border. */
+/* The position, as a badge rather than as coloured type.
+ *
+ * The colour used to be carried twice: once on these three or four characters
+ * and once on a 3px bar along the foot of the tile. The bar is gone. Twelve
+ * tiles in a grid means twelve of those bars meeting each other along shared
+ * edges, and the position palette was never designed to be read as adjacent
+ * blocks of flat colour — a lifted red beside a lifted green beside a lifted
+ * violet, six rows deep, is a swatch book, and it was the loudest thing on a
+ * panel that is meant to be scanned for names.
+ *
+ * A badge carries it better than a bar did anyway. It sits where the eye
+ * already is, next to the photograph, it is one object per tile instead of a
+ * continuous stripe, and being filled it reads at a glance as the position
+ * without the tile having to be coloured anywhere else.
+ *
+ * Cream type on a deep fill of the position's own hue: the lifted set is a
+ * pastel and cream on a pastel is unreadable at any distance, so the fill is
+ * the same hue taken down to about 28% lightness, which puts every one of the
+ * six between 5.8:1 and 9.6:1 against the cream. The hairline stays on the
+ * lifted colour, so the hue is still stated at full strength on the edge where
+ * it is not carrying any type.
+ */
 .wt .pos {
-  font-family: var(--mono); font-weight: 700; font-size: calc(1.3 * var(--u));
-  letter-spacing: .02em;
+  display: inline-flex; align-items: center;
+  padding: calc(.3 * var(--u)) calc(.66 * var(--u)) calc(.36 * var(--u));
+  border-radius: 3px; border: 1px solid var(--ph, var(--line-2));
+  background: var(--pd, var(--panel-2));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.13), 0 1px calc(.3 * var(--u)) rgba(0,0,0,.45);
+  font-family: var(--mono); font-weight: 700; font-size: calc(1.24 * var(--u));
+  letter-spacing: .06em; line-height: 1; color: var(--milk);
 }
-.wt .pos.pos-QB  { color: var(--qb-hi); }
-.wt .pos.pos-RB  { color: var(--rb-hi); }
-.wt .pos.pos-WR  { color: var(--wr-hi); }
-.wt .pos.pos-TE  { color: var(--te-hi); }
-.wt .pos.pos-K   { color: var(--k-hi); }
-.wt .pos.pos-DEF { color: var(--def-hi); }
+.wt .pos.pos-QB  { --pd: var(--qb-deep);  --ph: var(--qb-hi); }
+.wt .pos.pos-RB  { --pd: var(--rb-deep);  --ph: var(--rb-hi); }
+.wt .pos.pos-WR  { --pd: var(--wr-deep);  --ph: var(--wr-hi); }
+.wt .pos.pos-TE  { --pd: var(--te-deep);  --ph: var(--te-hi); }
+.wt .pos.pos-K   { --pd: var(--k-deep);   --ph: var(--k-hi); }
+.wt .pos.pos-DEF { --pd: var(--def-deep); --ph: var(--def-hi); }
 .wt .nm {
   font-family: var(--cond); font-weight: 700; font-size: calc(2.2 * var(--u));
   line-height: 1.05; color: var(--milk);
@@ -2314,28 +2342,139 @@ body.rail-alt .rp { display: block; }
   position: relative;
   flex: 1; min-width: 0; min-height: 0; overflow: hidden;
   display: flex; flex-direction: column;
-  /* Square. A 5px radius on three cards in a row along the bottom of a
-     television is a web habit — broadcast furniture has corners. */
-  border: 2px solid transparent; border-radius: 0;
-  background:
-    linear-gradient(180deg, rgba(22,35,58,.55), rgba(6,11,20,.96) 24%) padding-box,
-    /* Never darker than the flat rule it replaced. The first pass ran the
-       gradient out to near-black, which meant the bottom and right edges of
-       every panel simply were not there — a frame that disappears down two of
-       its four sides is worse than the one it replaced. Lit along the top,
-       falling to steel, and steel is where it stops.
+  /* The header's height, and the one place it is written. It had been
+     hand-copied as `3.8 * var(--u)` into the card backgrounds as well, which
+     is exactly the arrangement where one of the copies eventually does not get
+     changed. Declared here rather than at :root so it resolves against
+     whatever --u is in scope on the band. */
+  /* The band's own unit, a notch under the board's.
+   *
+   * The card's outer box is not set here — it is `flex: 1` inside a band of a
+   * fixed height — so this scales the inside of the card and nothing else:
+   * the header, the padding, the type, the row heights, all in proportion,
+   * because every length inside these cards is written as `calc(N * var(--u))`
+   * and this is the one number they all come off. The card stays exactly the
+   * size it was and its contents step back from the edge, which is what buys
+   * the mount its extra pixel without the card growing to pay for it.
+   *
+   * Same technique as `.sc-flip`, and the same reason it is a local --u rather
+   * than a `transform: scale()`: this happens in layout, so the type is
+   * rasterised at its real size instead of being resampled. The root value is
+   * written out because a custom property cannot be defined in terms of
+   * itself. */
+  --u: calc(10.8px * .95);
 
-       No brass in it. It used to open on gold, which meant all three panels in
-       the band wore the same lit corner — and two of those three are the slot
-       that best available and the next man's clock share. A gold corner that is
-       there whichever of the two is up says nothing; on the clock card alone it
-       says which one you are looking at before you read the header. So the base
-       frame is steel and .bb-next puts the gold back (see below). */
-    linear-gradient(165deg,
-      #55688a 0%, #46597c 12%, #3d5478 32%,
-      #2f4463 62%, var(--line-2) 100%) border-box;
+  --bb-hd: calc(3.8 * var(--u));
+
+  /* The mount's weight, and the one place it is written. It was a literal 2px
+     in the border shorthand and hand-copied into the inner-radius sum, which
+     is two places to change and one of them easy to miss. The rule under each
+     header takes it too, so the mount and the rule are the same weight and
+     stay that way. */
+  --bb-bw: 3px;
+  /* The card's corner, and the corner one step in from it.
+   *
+   * `--bb-r-in` is what the padding box is actually rounded to: a border box
+   * with a border of W rounded to R leaves an inner corner of R - W. Anything
+   * sitting flush inside the border and drawing its own edge has to be rounded
+   * to that and not to R, or its corners cut across the card's.
+   *
+   * The two cream headers need it. They are square children of a rounded,
+   * overflow-hidden parent, so anything they draw at their own edge gets its
+   * corners sliced by the parent's curve. Given the inner radius they follow
+   * the card round instead. */
+  --bb-r:    calc(.55 * var(--u));
+  --bb-r-in: calc(var(--bb-r) - var(--bb-bw));
+  /* The line colour, and it is deliberately neither of the two the cards are
+   * made of. This is what the last several passes kept missing.
+   *
+   * These cards are built out of a cream and a near-black, and every keyline
+   * on them was drawn in one of those two, so every keyline was invisible
+   * somewhere. A cream mount disappears into a cream header. A navy mount
+   * disappears into the dark stage the band is laid on (1.09:1) and into the
+   * dark body. The two-tone mount that changed over at the header line was an
+   * attempt to have it both ways, and only moved the problem to whichever
+   * segment sat next to its own colour.
+   *
+   * A keyline is not part of the thing it outlines. It wants to be a third
+   * colour, picked for one property: visible against every ground on this
+   * board. #6d7d94 is the board's own navy hue at 15% chroma and 50%
+   * lightness, and the 50% is the whole point. It is the only place a single
+   * value can sit and clear both ends at once:
+   *
+   *     vs the dark stage outside   4.47:1
+   *     vs the cream header/stock   3.68:1
+   *     vs the near-black body      4.70:1
+   *     vs the paper card's navy    4.41:1
+   *
+   * --chalk-dim and --mute were checked first, because a value already in the
+   * palette beats a new one; they bottom out at 3.24 and 3.26 against the
+   * cream, and clearing the cream is the entire job. So it gets a name.
+   *
+   * One colour, two jobs: the mount around all three cards and the rule under
+   * every header. There is no fillet any more and nothing needs one. */
+  --bb-rule: #6d7d94;
+  /* It was square, on the argument that a radius on three cards in a row along
+     the bottom of a television is a web habit and broadcast furniture has
+     corners. That reads fine on the two plain cards and badly on the two
+     dressed ones: the plate and the paper both draw a mount out of concentric
+     keylines, and a keyline that turns a hard 90 is the one place the whole
+     band looks printed rather than built. Everything else on this board is
+     rounded a little — the wall tiles, the rail panels, the chips — so square
+     was also the odd man out.
+
+     Set here rather than on the two skins so the band does not change shape
+     when best available is flipped to PLAIN or the lineup to DARK. Small: this
+     is a soft corner on a big card, not a rounded rectangle. */
+  border: var(--bb-bw) solid transparent; border-radius: var(--bb-r);
+  background:
+    /* One flat field, and nothing fading anywhere.
+     *
+     * This was a wash off the top of the card: light navy at 0, dark by 24% of
+     * the card's height. On a 30u band that is 78px against a 3.8u (41px)
+     * header, so the light carried on well past the header rule and put a blue
+     * cast over the first row or two of the list — the top of a list reading as
+     * a different colour from the rest of it.
+     *
+     * It went to a hard stop at the header's height, and then the header got a
+     * cream ground of its own and stopped needing the card to draw it at all.
+     * So the card is one colour: the header paints over the top 3.8u of it and
+     * the rest is the field the list sits on. */
+    linear-gradient(rgba(6,11,20,.96), rgba(6,11,20,.96)) padding-box,
+    /* Cream, flat, the whole way round, and the reasoning that got here is
+     * worth keeping because every wrong answer was a good idea.
+     *
+     * It was brass, then steel, then lighter steel, then cream, then cream and
+     * navy in two segments meeting at the header's bottom edge. That last one
+     * was the most carefully argued and the most wrong. The argument was that
+     * the mount should be the opposite colour to whatever it is holding, so it
+     * ran navy beside the cream header and cream beside the dark body.
+     *
+     * A border has two sides. The inside is the card, which is what that
+     * argument was about; the outside is the stage this whole band is laid on,
+     * which is a dark photograph — and separating the card from the stage is
+     * the entire job of a mount. Navy against the stage measures 1.09:1. Not
+     * subtle, not moody: gone, and gone along the top edge of the card where
+     * the frame most needs to close.
+     *
+     * Cream is 16.45:1 against the stage at every point of the perimeter. It
+     * does merge with the cream header along the top, and that is not the
+     * failure it looks like on a screenshot — the border and the header are
+     * the same colour there, so the top of the card reads as one cream cap
+     * with a hard edge against the stage, which is what it is.
+     *
+     * Flat, and not graded, for the same reason it is not navy: a graded edge
+     * is only as visible as its darkest stop, and every gradient tried here
+     * died away down two of its four sides.
+     *
+     * Painted as a background layer clipped to the border box rather than as
+     * `border-color`, and that is not optional: the border on this element has
+     * to stay transparent so the plate, the paper and the clock card can each
+     * paint their own mount into it. A solid border-color here would paint on
+     * top of all three of them. */
+    linear-gradient(var(--bb-rule), var(--bb-rule)) border-box;
   box-shadow:
-    inset 0 1px 0 rgba(214,226,240,.10),
+    inset 0 1px 0 rgba(214,226,240,.14),
     inset 0 -1px 0 rgba(0,0,0,.5),
     0 calc(1.2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.42);
   /* Self-contained panels: a list rebuilding inside one of them has no bearing
@@ -2356,7 +2495,7 @@ body.rail-alt .rp { display: block; }
    the point of a card header at ten feet is that you know which card you are
    looking at before you read a word of it. */
 .rail-hd, .lineup-hd {
-  flex: none; display: flex; align-items: center; height: calc(3.8 * var(--u));
+  flex: none; display: flex; align-items: center; height: var(--bb-hd);
   padding: 0 calc(1.4 * var(--u));
   font-family: var(--mono); font-weight: 600;
   font-size: calc(1.45 * var(--u)); letter-spacing: .2em;
@@ -2371,6 +2510,37 @@ body.rail-alt .rp { display: block; }
    now that the frame beside it does. */
 .rail-hd .ct { color: var(--gold); }
 .lineup-hd .ct { color: var(--chalk-dim); }
+/* The lineup in DARK gets the cream rule the plain best-available card gets,
+   for the same reason and from the same pair: the mount around the card and
+   the line across it are the only two pieces of drawing on an undressed card,
+   so they are the colour of the type rather than a hairline nobody finds.
+   Not on `.rail-hd, .lineup-hd` above, because that pair is also worn by the
+   plate (which paints its own gold rule and zeroes this one) and by the clock
+   card. PAPER overrides it with `border-bottom: 0` at higher specificity. */
+/* The lineup in DARK gets the same inverted header the plain best-available
+   card gets, for the same reason: see `.ba-steel .bb-ba > .rail-hd`. Scoped to
+   `.bb-lu` rather than put on the `.rail-hd, .lineup-hd` pair above, because
+   that pair is also worn by the plate and by the next man's card, and both of
+   those have their own dark header on their own art. PAPER overrides all of
+   this at higher specificity — it inverts the other way, a navy bar on cream
+   stock, which is the same idea upside down and the reason the two cards do
+   not read as the same card. */
+.bb-lu > .lineup-hd {
+  background: var(--milk);
+  color: var(--ink-navy);
+  border-radius: var(--bb-r-in) var(--bb-r-in) 0 0;
+  border-bottom: var(--bb-bw) solid var(--bb-rule);
+}
+/* Not --chalk-dim, and not gold either. Dim was a value chosen to recede on a
+   near-black bar; on cream it is 1.4:1. Gold belongs to the next man's card
+   and this one has never carried it. So: the label's own ink, lightened toward
+   the stock until it sits behind the label without leaving it — 4.65:1, which
+   is the ink at 62% if it were done with opacity.
+   And it is not done with opacity, on purpose. PAPER overrides the colour of
+   this element and nothing else, so an `opacity` here would still be in force
+   on that card and would take 38% off its gold count for no reason anybody
+   would ever find. A colour is overridden by a colour. */
+.bb-lu > .lineup-hd .ct { color: #656c76; }
 /* The run alert. It used to be a third item in the round wall's header, in
    the same 1.3u mute grey as everything else up there, on the far side of the
    screen from the list it is actually about. It lives on the pane it
@@ -2573,29 +2743,76 @@ body.rail-alt .rp { display: block; }
  * is no `revert-rule` that would reach a class instead of the UA sheet. */
 .ba-steel .bb-ba {
   background:
-    linear-gradient(180deg, rgba(22,35,58,.55), rgba(6,11,20,.96) 24%) padding-box,
-    linear-gradient(165deg,
-      #55688a 0%, #46597c 12%, #3d5478 32%,
-      #2f4463 62%, var(--line-2) 100%) border-box;
+    linear-gradient(rgba(6,11,20,.96), rgba(6,11,20,.96)) padding-box,
+    linear-gradient(var(--bb-rule), var(--bb-rule)) border-box;
   box-shadow:
-    inset 0 1px 0 rgba(214,226,240,.10),
+    inset 0 1px 0 rgba(214,226,240,.14),
     inset 0 -1px 0 rgba(0,0,0,.5),
     0 calc(1.2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.42);
 }
 /* the ghosted wordmark and the painted gold rule are both plate furniture */
 .ba-steel .bb-ba::after { display: none; }
 .ba-steel .bb-ba > .rail-hd::after { display: none; }
-/* and the header goes back to being a header: its own hairline, and the label
-   in the mono every other panel on this board uses */
+/* and the header goes back to being a header: the label in the mono every
+   other panel on this board uses, on a cream bar with navy ink.
+ *
+ * Inverted, and that is the fourth thing this header has been. It was a navy
+ * wash, then a flat navy, then a lighter flat navy, and each step was chasing
+ * the same thing: a header that is unmistakably the header at ten feet. Every
+ * navy is a shade of the card it sits on and has to be told apart from it. A
+ * cream bar is a different object.
+ *
+ * No bottom rule at all. Cream meeting near-black is the hardest edge on the
+ * card already, and a line drawn on top of it is a line nobody can see. This
+ * is what the paper card does with the same problem the other way up, and its
+ * header does not carry a rule either.
+ *
+ * Everything in here has to invert with it, which is most of what follows: at
+ * --chalk on cream the label runs 1.26:1 and the gold count 2.25:1, which is
+ * not dim, it is gone. */
 .ba-steel .bb-ba > .rail-hd {
-  border-bottom: 1px solid var(--line);
-  text-transform: uppercase;
+  background: var(--milk);
+  color: var(--ink-navy);
+  border-radius: var(--bb-r-in) var(--bb-r-in) 0 0;
+  border-bottom: var(--bb-bw) solid var(--bb-rule);
 }
+/* The masthead lockup, kept, and printed rather than lit.
+ *
+ * This was the board's mono label tracked out to a fifth of an em, and that
+ * was the right call when the plain card's header was dark and matched every
+ * other dark panel on the board. A cream bar is not one of those. Tracked-out
+ * small caps on cream is a caption on a form; the same two words in DM Serif
+ * with the second one italic is a masthead, which is what the plate has been
+ * doing all along and what the header of the whole board does — and on cream
+ * it stops being a graphic and starts being print, which is the one thing
+ * this card can do that none of the others can.
+ *
+ * All one ink. The plate sets the second word in gold and a dark brass version
+ * of that was tried here, but the plate can do it because it is a gold object
+ * on a near-black field and this is print: two colours of ink on a cream bar
+ * two words long is a logo, and one is a masthead. The italic still splits the
+ * lockup, which was all the colour was doing. */
 .ba-steel .bb-ba .ba-title {
-  font-family: var(--mono); font-weight: 600;
-  font-size: calc(1.45 * var(--u)); letter-spacing: .2em; color: var(--chalk);
+  font-family: var(--serif); font-weight: 400;
+  font-size: calc(2.5 * var(--u)); letter-spacing: .02em;
+  line-height: 1; color: var(--ink-navy);
 }
-.ba-steel .bb-ba .ba-title em { font-style: normal; color: inherit; }
+.ba-steel .bb-ba .ba-title em { font-style: italic; color: inherit; }
+/* The pick count, which is gold on the plate and on the next man's card. Gold
+   on cream is 2.25:1 — the one place on this board where the brass has nothing
+   to sit against. It reads as the same ink as the label here. */
+.ba-steel .bb-ba > .rail-hd .ct { color: var(--ink-navy); }
+/* The run alert lives in this header, so it inverts too. The sentence takes
+   the ink; the tag keeps its position's colour, in the deep set — the muted
+   one it uses on a dark header lands between 2.7:1 and 3.3:1 on cream. */
+.ba-steel .bb-ba > .rail-hd .run-txt { color: var(--ink-navy); }
+.ba-steel .bb-ba > .rail-hd .run-tag { background: rgba(14,27,47,.06); }
+.ba-steel .bb-ba > .rail-hd .run-tag.pos-QB  { color: var(--qb-deep); }
+.ba-steel .bb-ba > .rail-hd .run-tag.pos-RB  { color: var(--rb-deep); }
+.ba-steel .bb-ba > .rail-hd .run-tag.pos-WR  { color: var(--wr-deep); }
+.ba-steel .bb-ba > .rail-hd .run-tag.pos-TE  { color: var(--te-deep); }
+.ba-steel .bb-ba > .rail-hd .run-tag.pos-K   { color: var(--k-deep); }
+.ba-steel .bb-ba > .rail-hd .run-tag.pos-DEF { color: var(--def-deep); }
 
 /* ── the lineup, as a printed team sheet ──────────────────────────────────
  * Cream stock and ink, and deliberately the *same* stock as the selection card
@@ -2618,15 +2835,22 @@ body.rail-alt .rp { display: block; }
 .lu-paper .bb-lu {
   background:
     linear-gradient(178deg, #f5f2ea 0%, #e9e4d9 62%, #ded9cd 100%) padding-box,
-    /* A pewter mount rather than brass. Brass on cream is two warm tones a few
-       degrees apart, which reads as a printing mistake; the cool edge is what
-       makes the paper look mounted rather than stained, and it is the same
-       hue family as the steel edge on the card beside it. */
-    linear-gradient(135deg,
-      #b9c2cd 0%, #8e99a8 22%, #5d6878 50%,
-      #8e99a8 78%, #b9c2cd 100%) border-box;
+    /* The same flat cream mount the two undressed cards wear — see .bb-sec for
+       why, and for the two-tone version that had to be taken back out.
+
+       On this card the cream is the stock, so the mount is invisible from the
+       inside and is doing its whole job from the outside: it is the edge of a
+       sheet of paper against a dark stage. That is the correct picture for the
+       one card in this production that is pretending to be a piece of paper,
+       and it is also why the pewter it used to wear is not missed. Pewter was
+       a third material on a card that is already paper and navy. */
+    linear-gradient(var(--bb-rule), var(--bb-rule)) border-box;
+  /* No inner ring. This card carried one when the mount was cream and needed
+     holding off the cream stock; the mount is the line colour now and holds
+     itself off everything, on this card and on the two beside it. The outer
+     ring stays: it is the dark hairline that sits the whole card down onto the
+     stage, and it is doing a different job from a keyline. */
   box-shadow:
-    inset 0 0 0 1px rgba(19,24,32,.3),
     0 0 0 1px rgba(2,5,10,.85),
     0 calc(1.2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.5);
 }
@@ -2638,7 +2862,13 @@ body.rail-alt .rp { display: block; }
    all three meet. */
 .lu-paper .bb-lu > .lineup-hd {
   background: linear-gradient(180deg, var(--panel), #060d18);
-  border-bottom: 0; color: var(--milk);
+  color: var(--milk);
+  /* The same rule under it that the other two headers get. A navy bar meeting
+     cream stock is already a hard edge, but "already a hard edge" was the
+     argument for leaving it off the cream headers too, and the point is that
+     a boundary between two grounds is not a drawn line however strong it is.
+     All three headers are built the same way. */
+  border-bottom: var(--bb-bw) solid var(--bb-rule);
 }
 .lu-paper .bb-lu > .lineup-hd .ct { color: var(--gold-hi); }
 .lu-paper .bb-lu .lu-row { border-bottom: 1px solid rgba(19,24,32,.18); }
@@ -2726,9 +2956,15 @@ body.phase-details .bb-next { display: flex; }
 body.phase-details .bb-next {
   background:
     url("bg/smallclock.webp") center center / 114% 122% no-repeat padding-box,
+    /* The steel through the middle of the run was lifted out of the tone the
+       header sits at. At its old values it fell to within about 1.3:1 of the
+       card behind it, so this frame was gold at two corners and absent down
+       both long edges — and it is the one card in the band still wearing a
+       graded mount, with a cream keyline on either side of it. The gold at the
+       two corners is untouched. */
     linear-gradient(165deg,
-      var(--gold) 0%, var(--gold-lo) 11%, #3d5478 32%,
-      #2f4463 60%, var(--gold-lo) 90%, var(--gold) 100%) border-box;
+      var(--gold) 0%, var(--gold-lo) 11%, #677c9e 32%,
+      #566a8a 60%, var(--gold-lo) 90%, var(--gold) 100%) border-box;
 }
 /* The header sits on the plate now, so it cannot carry the panel's own rule
    underneath it — a hairline across the art at the top is the seam this was

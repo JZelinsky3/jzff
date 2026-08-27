@@ -1,339 +1,749 @@
 /* ── console.css — the commissioner's console, on a laptop ─────────────────
  *
- * control.html and pick.html were built as the same thing: one 620px column of
- * stacked cards, because the manager page is a phone page and the console was
- * written next to it. The console is not a phone page. It is open on a laptop
- * on the table all night, next to a television, and the layout it inherited
- * meant the three controls the night actually runs on — who is up, what the
- * pick is, and the button — were a scroll apart from each other on a screen
- * with two thirds of it empty.
+ * This is the only screen in the building with buttons on it. The board is a
+ * broadcast and the phone is a form; this is the desk both of them answer to,
+ * and it should look like a desk: modules in a rack, keys that sit up off the
+ * panel, wells that sit down into it, and a title on every single thing so
+ * nobody has to read a paragraph at eight o'clock to find the clock.
  *
- * So: everything here is layout, and almost all of it is inside one media
- * query. The card, button and segmented-control styles still come from
- * phone.css, and under 900px this file does nothing at all, which keeps the
- * console usable from a phone as a fallback if the laptop dies at 8pm.
+ * Two rules run through the whole file.
+ *
+ *   Colour belongs to the module, not to the selection. Every column has a
+ *   colour, every module wears it on a solid title plate, and a control that
+ *   is switched on lights up in its own module's colour. The old page was one
+ *   flat blue sheet with a gold glow wherever something happened, which is
+ *   the same picture for the clock, the rail and the bottom band.
+ *
+ *   Nothing is subtle. Titles are plates with dark type on them. Groups inside
+ *   a module are separated by a labelled rule, not by whitespace. A key that
+ *   is on is a lit plate, not a tinted one.
+ *
+ * Under 900px this file still gets out of the way and the page falls back to
+ * the phone stack, so the console is usable off a handset if the laptop dies.
  */
 
-/* ── the size of the thing ────────────────────────────────────────────────
- *
- * Everything on this page and in phone.css is set in rem, so the whole console
- * scales off one number: the root. It is declared here rather than left on the
- * browser's default so there is one place to turn it, and because this file is
- * only ever loaded by control.html — pick.html and index.html take draft.css
- * and phone.css and nothing else — so turning it cannot reach the manager page
- * or the pre-draft screen.
- *
- * It went to 19 and then 18 and is back at 16, which is where it started. That
- * is not a wasted trip: a page that has to be read across a table wants to be
- * bigger right up until the third column falls below the fold, and this one
- * runs out of height before it runs out of type size. Everything the night
- * touches has to be on screen at once, and that beats legibility won a line at
- * a time. What the trip did buy is the spacing, which is not tied to the root
- * and stayed where it was put: the gap between Pause and +30s, the round chips
- * in the log, the five rail buttons. Those were the mis-press risk, not the
- * point size.
- *
- * The page's own font-size still has to be said: phone.css pins the body at a
- * flat 16px, which rem does not see, so a change to the root above would
- * otherwise leave every unstyled string on the page behind.
- */
 html { font-size: 16px; }
-body.console-page { font-size: 1rem; }
 
-/* The command strip and the two columns are a stack on a phone, which is what
-   they already were. Everything below only happens on a real screen. */
+/* ── the surface ──────────────────────────────────────────────────────────
+ * A technical ground rather than the phone's soft radials: a wide, faint
+ * measuring grid with the brass wash sitting over the top of it. It is far
+ * too quiet to read as a pattern and just enough to stop the page reading as
+ * a flat blue sheet, which was most of what made it look cheap. */
+body.console-page {
+  font-size: 1rem;
+  background:
+    radial-gradient(140vw 55vh at 50% -12%, rgba(201,154,67,.07), transparent 62%),
+    radial-gradient(120vw 60vh at 50% 112%, rgba(19,29,44,.9), transparent 62%),
+    repeating-linear-gradient(90deg, rgba(122,160,200,.03) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(0deg,  rgba(122,160,200,.03) 0 1px, transparent 1px 72px),
+    var(--night);
+  background-attachment: fixed;
+}
+
+/* ── the kit ──────────────────────────────────────────────────────────────
+ * Every raised key on the page is the same three shadows and every well is
+ * the same two, so a control that is new next week still looks like it came
+ * out of the same box. --sec is the module colour; it is set per column below
+ * and defaulted here so a control that ends up outside a column still works.
+ */
+body.console-page {
+  --sec:     #c99a43;
+  --sec-hi:  #e9c27a;
+  --sec-rgb: 201, 154, 67;
+  --sec-ink: #170f02;
+
+  --well:    #05090f;
+  --key:     linear-gradient(180deg, #1b2b45, #101b2d);
+  --key-hi:  linear-gradient(180deg, #24385a, #16243c);
+  --lift:    inset 0 1px 0 rgba(255,255,255,.09), 0 2px 0 rgba(0,0,0,.55),
+             0 4px 8px rgba(0,0,0,.35);
+  --lift-in: inset 0 1px 0 rgba(255,255,255,.06), 0 0 0 rgba(0,0,0,.5);
+  --sunk:    inset 0 2px 6px rgba(0,0,0,.7), inset 0 -1px 0 rgba(255,255,255,.04);
+}
+
+/* Column colours. Gold is the draft's own machinery, blue is the television,
+   green is the record of what has happened, red is the one box that must not
+   look like anything near it. Declared outside the layout query so the lit
+   states are right at any width. */
+.ccol:nth-child(1) { --sec:#c99a43; --sec-hi:#e9c27a; --sec-rgb:201,154,67; --sec-ink:#170f02; }
+.ccol:nth-child(2) { --sec:#5f9fd0; --sec-hi:#a3cdea; --sec-rgb:95,159,208; --sec-ink:#04121e; }
+.ccol:nth-child(3) { --sec:#6fae8a; --sec-hi:#a8d7bd; --sec-rgb:111,174,138; --sec-ink:#05170e; }
+.cbox.grave        { --sec:#c4695c; --sec-hi:#e8a094; --sec-rgb:196,105,92;  --sec-ink:#1c0604; }
+
+/* ── the top bar ──────────────────────────────────────────────────────────
+ * It said COMMISSIONER CONSOLE and nothing else, next to an element that was
+ * never filled in. It carries the state of the night now: what the console is
+ * doing, which pick, which round. */
+.console-page .pbar {
+  border-bottom: 1px solid rgba(201,154,67,.32);
+  box-shadow: 0 1px 0 rgba(0,0,0,.6), 0 6px 18px rgba(0,0,0,.45);
+  gap: 1rem;
+}
+.console-page .pbar .mark { font-size: 1.15rem; letter-spacing: .05em; }
+.console-page .pbar .mark b { color: var(--gold); font-weight: 900; }
+.pbar-rig {
+  margin-left: auto; display: flex; align-items: center; gap: .55rem;
+  flex-wrap: wrap; justify-content: flex-end;
+}
+/* A readout, not a caption: dark type on a lit plate for the live one, dark
+   well with lit type for the counters. */
+.rig {
+  display: flex; align-items: center; gap: .4rem;
+  font-family: var(--mono); font-size: .68rem; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase;
+  padding: .34rem .6rem; border-radius: 3px;
+  background: var(--well); box-shadow: var(--sunk);
+  color: var(--chalk-dim); white-space: nowrap;
+}
+.rig b { color: var(--milk); font-weight: 700; }
+.rig.state { color: var(--gold-hi); }
+.rig.state.on {
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold));
+  color: #150e02; box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 12px rgba(201,154,67,.35);
+}
+
+/* ── module chrome ────────────────────────────────────────────────────────
+ * Every panel on the page is one of these: a dark face, a hard edge, and a
+ * solid title plate across the top of it in the module's colour. The plate is
+ * the whole idea. Twelve dark rectangles with a small grey label on each is a
+ * page you have to read; twelve plates is a page you can point at. */
+.console-page .cbox,
+.cmd-now, .cmd-pick, .cmd-act {
+  position: relative;
+  padding: .9rem;
+  border-radius: 6px;
+  border: 1px solid rgba(var(--sec-rgb), .3);
+  background:
+    linear-gradient(180deg, rgba(var(--sec-rgb), .1), rgba(var(--sec-rgb), .028) 38%, transparent 72%),
+    linear-gradient(180deg, #0e1726, #0a1120);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 6px 18px rgba(0,0,0,.42);
+}
+
+.console-page .cbox > .hd,
+.cmd-now > .hd, .cmd-pick > .hd, .cmd-act > .hd {
+  display: flex; align-items: center; gap: .5rem;
+  margin: -.9rem -.9rem .85rem;
+  padding: .48rem .7rem;
+  border: 0; border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, var(--sec-hi), var(--sec));
+  color: var(--sec-ink);
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: .92rem; letter-spacing: .13em; text-transform: uppercase;
+  line-height: 1.15;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -1px 0 rgba(0,0,0,.28);
+  text-shadow: 0 1px 0 rgba(255,255,255,.22);
+}
+/* Machined edge at the far end of the plate, so a title is plainly a piece of
+   hardware rather than a coloured highlighter stroke. */
+.console-page .cbox > .hd::after,
+.cmd-now > .hd::after, .cmd-pick > .hd::after, .cmd-act > .hd::after {
+  content: ""; flex: 1; height: 9px; margin-left: auto; border-radius: 1px;
+  background: repeating-linear-gradient(115deg,
+    rgba(0,0,0,.3) 0 2px, transparent 2px 5px);
+  opacity: .5;
+}
+
+/* A labelled rule between groups of controls inside one module. This is the
+   "clear lines between sections" job: the clock module has three separate
+   things to do and they were three stacks of buttons with air between them. */
+.sublab {
+  display: flex; align-items: center; gap: .55rem;
+  margin: .95rem 0 .5rem;
+  font-family: var(--mono); font-weight: 700; font-size: .58rem;
+  letter-spacing: .24em; text-transform: uppercase;
+  color: rgba(var(--sec-rgb), .95);
+}
+.sublab::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(90deg, rgba(var(--sec-rgb), .5), rgba(var(--sec-rgb), .06));
+}
+.sublab:first-child { margin-top: 0; }
+
+/* ── keys ─────────────────────────────────────────────────────────────────
+ * Scoped to this page so the manager's phone keeps its flat tap targets. */
+.console-page .btn {
+  border-radius: 4px;
+  border: 1px solid #2a3f5c;
+  background: var(--key);
+  box-shadow: var(--lift);
+  color: var(--chalk);
+  font-family: var(--mono); font-weight: 700; font-size: .8rem;
+  letter-spacing: .1em; text-transform: uppercase;
+  padding: .8rem .7rem;
+  transition: background .12s ease, color .12s ease, border-color .12s ease;
+}
+.console-page .btn:hover:not([disabled]) {
+  background: var(--key-hi); border-color: rgba(var(--sec-rgb), .7); color: var(--milk);
+}
+.console-page .btn:active:not([disabled]) { transform: translateY(2px); box-shadow: var(--lift-in); }
+
+.console-page .btn.go {
+  border-color: var(--gold-hi); color: #150e02;
+  background: linear-gradient(180deg, #f2d9a6, #c99a43 58%, #ad8134);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 3px 0 #6d5225,
+              0 7px 16px rgba(201,154,67,.26);
+  text-shadow: 0 1px 0 rgba(255,255,255,.28);
+}
+.console-page .btn.go:hover:not([disabled]) { filter: brightness(1.06); color: #150e02; }
+.console-page .btn.go:active:not([disabled]) {
+  transform: translateY(3px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 0 0 #6d5225;
+}
+
+.console-page .btn.danger {
+  border-color: #e8a094; color: #1c0604;
+  background: linear-gradient(180deg, #e8a094, #c4695c 58%, #a4544a);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 3px 0 #5c2b25,
+              0 7px 16px rgba(196,105,92,.24);
+}
+.console-page .btn.danger:active:not([disabled]) {
+  transform: translateY(3px); box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 0 0 #5c2b25;
+}
+/* `.wide` is `grid-column: 1 / -1` in phone.css, which does nothing at all to a
+   button that is a plain block child of its module rather than a cell in a
+   .cbtns grid. Both of the ones on this page are. */
+.console-page .btn.wide { display: block; width: 100%; }
+.console-page .btn[disabled] { opacity: 1; pointer-events: none; }
+/* A key with nothing behind it reads as unlit, not as faded gold. */
+.console-page .btn:not(.big-go)[disabled] {
+  background: var(--well); border-color: #16233a; color: #3f4c5e;
+  box-shadow: var(--sunk); text-shadow: none;
+}
+
+/* ── segmented controls ───────────────────────────────────────────────────
+ * A well with keys sitting in it. The lit key is a plate in the module's own
+ * colour with dark type on it, which is a different object from the ones
+ * beside it rather than the same object with a glow behind it. */
+.console-page .seg {
+  display: flex; gap: 3px; padding: 3px; overflow: visible;
+  border: 1px solid rgba(0,0,0,.6); border-radius: 5px;
+  background: var(--well); box-shadow: var(--sunk);
+}
+.console-page .seg button {
+  flex: 1; padding: .68rem .4rem; border-radius: 3px;
+  border: 1px solid rgba(255,255,255,.05);
+  background: var(--key); box-shadow: var(--lift);
+  color: var(--chalk-dim);
+  font-family: var(--mono); font-weight: 700; font-size: .76rem;
+  letter-spacing: .1em; text-transform: uppercase;
+  transition: background .12s ease, color .12s ease;
+}
+.console-page .seg button:hover { background: var(--key-hi); color: var(--milk); }
+.console-page .seg button:active { transform: translateY(2px); box-shadow: var(--lift-in); }
+.console-page .seg button.on {
+  background: linear-gradient(180deg, var(--sec-hi), var(--sec));
+  color: var(--sec-ink);
+  border-color: rgba(255,255,255,.3);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 0 16px rgba(var(--sec-rgb), .4);
+  text-shadow: 0 1px 0 rgba(255,255,255,.24);
+}
+.console-page .seg button.on:active { transform: none; }
+
+/* The pick-length pad. Six lengths do not fit across one column, and six keys
+   in two rows of three is a keypad, which is what it is. */
+.console-page .seg.keys {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px;
+}
+.console-page .seg.keys button {
+  padding: .62rem .3rem;
+  font-family: var(--clock), var(--mono); font-size: 1.15rem;
+  letter-spacing: .02em; font-variant-numeric: tabular-nums;
+}
+
+/* ── the command strip ────────────────────────────────────────────────────
+ * Who is up, what the pick is, and the button. Three modules on one line, in
+ * the order they get used. */
 .cmd { display: grid; gap: .7rem; }
-.cgrid { display: grid; gap: .7rem; margin-top: .7rem; }
+.cgrid { display: grid; gap: .7rem; margin-top: .9rem; }
 .ccol { display: grid; gap: .7rem; align-content: start; }
 
-/* ── the pick-is-in card ──────────────────────────────────────────────────
- * The console used to say what the pick was in six words of grey body copy
- * under the button ("It's Jahmyr Gibbs. Say the name, then hit this."), which
- * is the one thing on this page that gets read out loud to a room. It is a
- * card with his photograph on it now, and it is the same card at any width. */
+/* The strip is the head of the console and gets a heavier frame than the
+   modules under it: brighter edge, deeper drop, and a hairline of brass along
+   the top so it reads as the lit part of the desk. */
+.cmd-now, .cmd-pick, .cmd-act { --sec:#c99a43; --sec-hi:#e9c27a; --sec-rgb:201,154,67; --sec-ink:#170f02; }
 .cmd-now, .cmd-pick, .cmd-act {
-  padding: .9rem; border-radius: 6px;
-  border: 1px solid var(--line); background: rgba(16,23,36,.8);
+  border-color: rgba(201,154,67,.3);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 10px 26px rgba(0,0,0,.5);
 }
-.cmd-act { display: grid; gap: .55rem; align-content: center; }
-.cmd-act .tiny { text-align: center; min-height: 1.1rem; }
 
 .cmd-now { display: grid; gap: .6rem; align-content: start; }
+
+/* The live lamp on the ON THE CLOCK plate. Dark until a clock is actually
+   running, so it is never claiming a draft that has not started. */
+.cmd-now > .hd::before {
+  content: ""; width: 9px; height: 9px; border-radius: 50%; flex: none;
+  background: #2a1c06; box-shadow: inset 0 0 0 1px rgba(0,0,0,.5);
+}
+.cmd-now.live > .hd::before {
+  background: #fff2d4;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.35), 0 0 9px 2px rgba(255,240,208,.95);
+  animation: lamp 1.9s ease-in-out infinite;
+}
+@keyframes lamp { 50% { opacity: .35; } }
+
 .now-who { display: flex; align-items: center; gap: .8rem; min-width: 0; }
 .now-id { min-width: 0; flex: 1; }
 .now-name {
-  font-size: 1.6rem; font-weight: 700; text-transform: uppercase; line-height: 1;
-  color: var(--milk);
-}
-.now-team {
-  font-family: var(--mono); font-size: .74rem; color: var(--chalk-dim);
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: 1.9rem; text-transform: uppercase; line-height: 1;
+  color: var(--milk); letter-spacing: .01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-/* A reference, not the countdown. The room reads the clock off the television,
-   where it is set 12u tall; this one only has to tell the commissioner how long
-   he has been standing there. At 1.8rem it was set larger than the manager's
-   own name beside it, and larger still at the wide breakpoint, so the number
-   was the loudest thing in a card that is about a person. Tabular so the
-   digits do not shuffle the name every second. */
-.now-clock {
-  flex: none; font-family: var(--mono); font-size: 1.05rem; font-weight: 700;
-  line-height: 1; letter-spacing: .02em; font-variant-numeric: tabular-nums;
-  color: var(--chalk); white-space: nowrap;
+.now-team {
+  font-family: var(--mono); font-size: .7rem; letter-spacing: .06em; color: var(--chalk-dim);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: .18rem;
 }
-.now-clock i {
-  font-style: normal; font-size: .62em; font-weight: 600; letter-spacing: .12em;
-  text-transform: uppercase; opacity: .72; margin-left: .45em;
-}
-/* In px, and so it does not come up with the root the way everything else on
-   this page does — the few image sizes here are set against it by hand. */
-#nowAv img { height: 58px; width: auto; object-fit: contain; }
+#nowAv img { height: 62px; width: auto; object-fit: contain; }
 .now-av-fb {
-  width: 46px; height: 46px; border-radius: 50%; background: var(--panel-2);
-  display: grid; place-items: center; color: var(--brass); font-weight: 700;
+  width: 48px; height: 48px; border-radius: 50%; background: var(--well);
+  display: grid; place-items: center; color: var(--gold); font-weight: 700;
+  box-shadow: var(--sunk);
 }
 
-/* Where the pick sits, as three numbers. It was one run-on line of small caps
-   that wrapped at this width and put the team name on a line of its own. */
+/* The clock, hard against the right edge of the manager's own row.
+ *
+ * It had a full-width well of its own for a while and that was a whole row of
+ * the strip spent on a number the room is reading off the television anyway.
+ * Back on the line, no ground behind it, just the digits set in Teko at about
+ * the size of the man's name.
+ *
+ * The state word stacks underneath the digits rather than sitting beside
+ * them, and that is the part that makes it fit: "paused" set inline is wider
+ * than the clock itself, so on a narrow console it used to push the manager's
+ * name into an ellipsis every time anybody stopped the clock. Stacked and
+ * right-aligned, the column is never wider than mm:ss and the row is the same
+ * width running, paused, held or holding a pick. */
+.now-clock {
+  flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: .18rem;
+  font-family: var(--clock), var(--mono); font-weight: 600; font-size: 2rem;
+  line-height: .9; letter-spacing: .02em; font-variant-numeric: tabular-nums;
+  color: var(--milk); white-space: nowrap;
+  text-shadow: 0 0 16px rgba(242,240,234,.25);
+}
+/* A chip rather than a small run of the same face, because Teko is digits and
+   a colon and nothing else and the word would otherwise arrive in a second
+   font halfway through the line. */
+.now-clock i {
+  font-family: var(--mono); font-style: normal; font-size: .55rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; line-height: 1;
+  padding: .18rem .34rem; border-radius: 2px;
+  border: 1px solid currentColor; opacity: .85;
+}
+.now-clock.warn  { color: var(--gold-hi); text-shadow: 0 0 20px rgba(240,212,154,.4); }
+.now-clock.panic { color: #ff7a6b; text-shadow: 0 0 22px rgba(255,122,107,.5); }
+.now-clock.held,
+.now-clock.idle  { color: var(--mute); text-shadow: none; }
+.now-clock.paused { color: var(--gold); text-shadow: none; }
+
+/* Where the pick sits, as three readouts. */
 .now-stats { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: .4rem; }
 .ns {
-  display: flex; flex-direction: column; align-items: center; gap: .1rem;
-  padding: .4rem .2rem; border-radius: 4px;
-  background: rgba(11,20,34,.7); border: 1px solid var(--line);
+  display: flex; flex-direction: column; align-items: center; gap: .15rem;
+  padding: .45rem .2rem; border-radius: 4px;
+  background: var(--well); box-shadow: var(--sunk);
 }
 .ns b {
-  font-family: var(--cond); font-weight: 700; font-size: 1.5rem; line-height: 1;
-  color: var(--milk);
+  font-family: var(--clock), var(--mono); font-weight: 600; font-size: 1.75rem;
+  line-height: 1; color: var(--milk); font-variant-numeric: tabular-nums;
 }
-.ns.wide b { color: var(--gold-hi); }
+.ns.wide b { color: var(--gold-hi); text-shadow: 0 0 14px rgba(240,212,154,.3); }
 .ns i {
-  font-family: var(--mono); font-style: normal; font-size: .6rem;
-  letter-spacing: .16em; color: var(--mute);
+  font-family: var(--mono); font-style: normal; font-size: .55rem; font-weight: 700;
+  letter-spacing: .18em; color: var(--chalk-dim);
 }
 
 /* What he already has. Two columns, because fifteen rounds of one column is
    taller than the strip it lives in. */
-.now-roster { display: grid; gap: .35rem; }
-.hd.sm { display: flex; justify-content: space-between; font-size: .62rem; }
+.now-roster { display: grid; gap: .35rem; align-content: start; }
+.hd.sm {
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--mono); font-weight: 700; font-size: .58rem;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: rgba(var(--sec-rgb), .95);
+  padding-bottom: .32rem; margin-bottom: .1rem;
+  border-bottom: 1px solid rgba(var(--sec-rgb), .28);
+}
+.hd.sm span:last-child { color: var(--chalk-dim); }
+/* Two columns on a phone, three once the cell is wide enough to carry them.
+   Fifteen rounds at two across is eight rows and a scrollbar; at three it is
+   five rows and the whole roster is on screen, which is the point of having it
+   here at all — four backs and no quarterback tells you what is coming next
+   better than anything else on this console. */
 .now-list {
-  display: grid; grid-template-columns: 1fr 1fr; gap: .1rem .7rem;
+  display: grid; grid-template-columns: 1fr 1fr; gap: .08rem .8rem;
   max-height: 8.4rem; overflow-y: auto;
 }
+/* A row, not three columns.
+ *
+ * It was a fixed grid with the name on `1fr`, which is the house idiom for a
+ * list and wrong for this one: the name track absorbed every spare pixel in
+ * the column, so the position was pinned to the far right and a short name
+ * left a hole between the two. The position belongs to the player, not to the
+ * edge of the card.
+ *
+ * Flex, so the name takes what it needs and the position follows it. The round
+ * keeps a fixed width and stays a column, because that one is genuinely being
+ * read down rather than across. `min-width: 0` on the name is what still lets
+ * it ellipse rather than pushing the position out of the row. */
 .nl {
-  display: grid; grid-template-columns: 2.1rem minmax(0, 1fr) 1.5rem;
-  align-items: baseline; gap: .3rem; font-size: .76rem;
+  display: flex; align-items: baseline; gap: .3rem; font-size: .76rem;
+  padding: .12rem 0; border-bottom: 1px solid rgba(32,48,71,.4);
 }
-.nl u { font-family: var(--mono); text-decoration: none; font-size: .66rem; color: var(--mute); }
+.nl u {
+  flex: none; width: 2.2rem;
+  font-family: var(--mono); text-decoration: none; font-size: .64rem; color: var(--mute);
+}
 .nl b {
-  font-family: var(--cond); font-weight: 600; font-size: .95rem; color: var(--chalk);
+  min-width: 0;
+  font-family: var(--cond); font-weight: 600; font-size: .98rem; color: var(--chalk);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.nl i { font-family: var(--mono); font-style: normal; font-size: .62rem; font-weight: 700; }
+.nl i {
+  flex: none;
+  font-family: var(--mono); font-style: normal; font-size: .6rem; font-weight: 700;
+}
 .nl-none { font-family: var(--mono); font-size: .72rem; color: var(--mute); }
 
-.hd.gold { color: var(--gold); }
-
-/* The two bottom-band controls under one title. They are the same kind of
-   choice made twice, so they are one box rather than two and the box says once
-   what it is about. Each half keeps its own small label because a bare row of
-   PLATE / PLAIN / DARK / PAPER does not say which pair is which.
-
-   Stacked here and side by side only on a real screen, like everything else in
-   this file. Four buttons across a phone would give each of them about eighty
-   pixels, which is the width that turned STILL THERE into four characters and
-   is why `.seg.wrapseg` exists. */
-.bandpair { display: grid; gap: .7rem; }
-.bandpair .hd.sm { margin-bottom: .45rem; }
-
-/* Which half of the cell is showing is decided by one class on it, so there is
-   never a moment where the console is holding a pick and still saying it is
-   waiting for one. */
-/* A grid rather than a plain block so whichever half is showing is centred in
-   the cell's full height — the strip's three cells stretch to the tallest of
-   them and this one is usually the shortest. */
-.cmd-pick { display: grid; align-content: center; }
+/* ── the pick cell ────────────────────────────────────────────────────────
+ * Two states in one module, and the title plate says which. Waiting is a dark
+ * panel with a slate-grey plate. Holding is the loudest object on the page:
+ * the plate goes gold, the frame goes gold, and the man's face is on it. */
+.cmd-pick { display: grid; grid-template-rows: auto 1fr; }
+.cmd-pick > .hd .b { display: none; }
+.cmd-pick.holding > .hd .a { display: none; }
+.cmd-pick.holding > .hd .b { display: block; }
+/* Slate while it is waiting: a gold plate over an empty cell was the console
+   shouting about nothing. */
+.cmd-pick:not(.holding) > .hd {
+  background: linear-gradient(180deg, #2c3a51, #1b2537);
+  color: var(--chalk-dim); text-shadow: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), inset 0 -1px 0 rgba(0,0,0,.4);
+}
+.pc-in { display: grid; align-content: center; min-width: 0; }
 .cmd-pick .pc-card { display: none; }
 .cmd-pick.holding .pc-wait { display: none; }
 .cmd-pick.holding .pc-card { display: flex; }
 
-.pc-wait { display: grid; gap: .35rem; }
+.pc-wait { display: grid; gap: .35rem; padding: .3rem 0; }
 .pc-wait-b {
-  font-family: var(--cond); font-weight: 700; font-size: 1.5rem;
-  text-transform: uppercase; letter-spacing: .03em; color: var(--chalk-dim);
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: 1.5rem; text-transform: uppercase; letter-spacing: .03em;
+  color: var(--chalk-dim);
 }
 
 .pc-card { display: flex; align-items: center; gap: .9rem; min-width: 0; }
 .pc-shot {
-  flex: none; width: 96px; height: 96px; object-fit: cover; object-position: top center;
-  border-radius: 4px; background: var(--panel-2);
-  border: 1px solid var(--gold-lo);
+  flex: none; width: 104px; height: 104px; object-fit: cover; object-position: top center;
+  border-radius: 4px; background: var(--well);
+  border: 2px solid var(--gold); box-shadow: 0 0 0 1px rgba(0,0,0,.6), 0 6px 16px rgba(0,0,0,.5);
 }
-.pc-body { min-width: 0; display: grid; gap: .12rem; }
+.pc-body { min-width: 0; display: grid; gap: .14rem; }
 .pc-owner {
-  font-family: var(--mono); font-size: .74rem; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--chalk);
+  font-family: var(--mono); font-size: .72rem; font-weight: 700; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--gold-hi);
 }
 .pc-name {
   font-family: var(--display); font-weight: 900; font-stretch: 62%;
-  font-size: 2.3rem; line-height: .96; text-transform: uppercase; color: var(--milk);
+  font-size: 2.4rem; line-height: .96; text-transform: uppercase; color: var(--milk);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-shadow: 0 2px 14px rgba(0,0,0,.6);
 }
-.pc-meta { font-family: var(--mono); font-size: .8rem; color: var(--chalk-dim); }
+.pc-meta { font-family: var(--mono); font-size: .78rem; color: var(--chalk-dim); }
 .pc-meta b { color: var(--milk); font-weight: 700; }
-.pc-tags { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .18rem; }
+.pc-tags { display: flex; flex-wrap: wrap; gap: .32rem; margin-top: .3rem; }
 .pc-tags span {
-  font-family: var(--mono); font-size: .66rem; font-weight: 700; letter-spacing: .1em;
-  padding: .16rem .4rem; border-radius: 2px;
+  font-family: var(--mono); font-size: .64rem; font-weight: 700; letter-spacing: .12em;
+  padding: .2rem .45rem; border-radius: 2px;
+  background: var(--well); box-shadow: var(--sunk);
   border: 1px solid var(--line-2); color: var(--chalk-dim);
 }
-.pc-tags span.hot { border-color: var(--gold-lo); color: var(--gold); }
-.pc-tags span.cold { border-color: var(--qb); color: var(--qb); }
+.pc-tags span.hot { border-color: var(--gold); color: var(--gold-hi); }
+.pc-tags span.cold { border-color: #c4695c; color: #e8a094; }
 
-/* A held pick is the one thing on this page that is genuinely urgent, so the
-   cell says so without anybody having to look at the words on it. */
+/* The announce notes. A label column and a line, in the cell that used to be
+   two thirds air. Every row is a sentence you could read out as it stands, so
+   nothing here needs turning into English while the room waits. */
+.pc-notes { display: grid; gap: .22rem; margin-top: .7rem; }
+.pc-notes:empty { display: none; }
+.pcn {
+  display: grid; grid-template-columns: 5.6rem minmax(0, 1fr);
+  gap: .6rem; align-items: baseline;
+  padding-top: .22rem; border-top: 1px solid rgba(201,154,67,.16);
+}
+.pcn u {
+  font-family: var(--mono); text-decoration: none; font-size: .58rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--gold);
+  white-space: nowrap;
+}
+.pcn s {
+  font-family: var(--cond); text-decoration: none; font-weight: 500;
+  font-size: .95rem; line-height: 1.25; color: var(--chalk);
+}
+.pcn s b { color: var(--milk); font-weight: 700; }
+/* The one row that is a warning rather than a note. */
+.pcn.warn u { color: #e8a094; }
+.pcn.warn s b { color: #e8a094; }
+
+/* A held pick is the one genuinely urgent thing on this page, so the module
+   says so without anybody reading the words on it. */
 .cmd-pick.holding {
-  border-color: var(--gold); background: rgba(201,154,67,.09);
+  border-color: var(--gold);
+  background:
+    radial-gradient(120% 160% at 0% 0%, rgba(201,154,67,.2), transparent 66%),
+    linear-gradient(180deg, #16192099, #0a1120);
+  box-shadow: inset 0 0 0 1px rgba(201,154,67,.35), 0 0 30px rgba(201,154,67,.16),
+              0 10px 26px rgba(0,0,0,.5);
   animation: pcIn .22s ease-out both;
 }
-@keyframes pcIn { from { transform: translateY(-3px); opacity: .4; } }
+@keyframes pcIn { from { transform: translateY(-4px); opacity: .35; } }
 
-/* ── the rail list ───────────────────────────────────────────────────────── */
-/* Five rows, each with its name and a line saying what is on it. It was a
-   four-across segmented control with one shared hint underneath, which meant
-   choosing a panel required already knowing what STILL THERE meant, and the
-   hint only told you after you had pressed it. */
-.raillist { display: grid; gap: .5rem; }
+/* ── the command module ───────────────────────────────────────────────────
+ * One button that does the whole night, and it should be the biggest target
+ * on the desk by a distance. */
+.cmd-act { display: grid; grid-template-rows: auto 1fr; }
+.ca-in { display: grid; gap: .6rem; align-content: center; }
+.cmd-act .tiny { text-align: center; min-height: 2.2rem; }
+
+.console-page .big-go {
+  padding: 1.5rem 1rem;
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: 1.55rem; letter-spacing: .045em;
+}
+/* Waiting on a phone is a state, not a broken button: an unlit slab with the
+   lamp sweeping across it, so it plainly has power and is just not ready. */
+.console-page .big-go[disabled] {
+  position: relative; overflow: hidden;
+  background: var(--well); border: 1px solid #22334c; color: #5d7086;
+  box-shadow: var(--sunk); text-shadow: none;
+}
+.console-page .big-go[disabled]::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent 35%, rgba(201,154,67,.16) 50%, transparent 65%);
+  animation: sweep 2.6s linear infinite;
+}
+@keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .console-page .big-go[disabled]::after,
+  .cmd-now.live > .hd::before,
+  .cmd-pick.holding { animation: none; }
+}
+
+/* ── the column headers ───────────────────────────────────────────────────
+ * Three racks, named, so the page has three places rather than nine boxes. */
+.colhd {
+  display: flex; align-items: center; gap: .6rem;
+  padding: 0 0 .5rem; margin-bottom: -.1rem;
+  border-bottom: 2px solid rgba(var(--sec-rgb), .5);
+}
+.colhd .ix {
+  font-family: var(--clock), var(--mono); font-weight: 600; font-size: 1.15rem;
+  line-height: 1; color: var(--sec-ink);
+  background: var(--sec); border-radius: 3px; padding: .1rem .38rem .04rem;
+  box-shadow: 0 0 12px rgba(var(--sec-rgb), .35);
+}
+.colhd b {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: 1.05rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--milk);
+}
+.colhd i {
+  font-family: var(--mono); font-style: normal; font-size: .58rem; font-weight: 600;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--mute);
+  margin-left: auto; text-align: right;
+}
+
+/* ── the rail list ────────────────────────────────────────────────────────
+ * Five channels for one strip of the television, so it is built like a
+ * channel selector: a lamp, a name and a line of what is on it. The lit one
+ * is a plate in the column's blue. */
+.raillist {
+  display: grid; gap: 3px; padding: 3px;
+  border: 1px solid rgba(0,0,0,.6); border-radius: 5px;
+  background: var(--well); box-shadow: var(--sunk);
+}
 .raillist button {
-  display: grid; gap: .1rem; text-align: left; cursor: pointer;
-  padding: .6rem .7rem; border-radius: 5px;
-  border: 1px solid var(--line); background: var(--deep); color: var(--chalk);
+  position: relative; display: grid; gap: .1rem; text-align: left; cursor: pointer;
+  padding: .58rem .7rem .58rem 2.05rem; border-radius: 3px;
+  border: 1px solid rgba(255,255,255,.05);
+  background: var(--key); box-shadow: var(--lift); color: var(--chalk);
+  transition: background .12s ease;
+}
+.raillist button::before {
+  content: ""; position: absolute; left: .75rem; top: 50%; margin-top: -4px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #0a1220; box-shadow: inset 0 0 0 1px rgba(255,255,255,.14);
 }
 .raillist button b {
-  font-family: var(--mono); font-size: .78rem; font-weight: 700; letter-spacing: .12em;
+  font-family: var(--mono); font-size: .76rem; font-weight: 700; letter-spacing: .14em;
 }
 .raillist button i {
   font-family: var(--cond); font-style: normal; font-weight: 500;
   font-size: .92rem; line-height: 1.25; color: var(--chalk-dim);
 }
-.raillist button:hover { border-color: var(--gold-lo); }
-/* The one on the television, lit the way the segmented controls are. */
-.raillist button.on { background: var(--gold); border-color: var(--gold); color: #150e02; }
-.raillist button.on i { color: rgba(21,14,2,.72); }
+.raillist button:hover { background: var(--key-hi); }
+.raillist button:hover i { color: var(--chalk); }
+.raillist button.on {
+  background: linear-gradient(180deg, var(--sec-hi), var(--sec));
+  border-color: rgba(255,255,255,.3); color: var(--sec-ink);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 16px rgba(var(--sec-rgb), .4);
+}
+.raillist button.on i { color: rgba(4,18,30,.78); }
+.raillist button.on::before {
+  background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.3), 0 0 8px 2px rgba(255,255,255,.8);
+}
 
-/* ── the log's round filter ──────────────────────────────────────────────── */
-/* The smallest targets on the page by some way, and there are fifteen of them
-   in a row — so they get the gap and the padding rather than the size, which
-   is the pair that decides whether the wrong one gets pressed. */
-.rndseg { display: flex; flex-wrap: wrap; gap: .35rem; padding: .5rem 0 .1rem; }
+/* ── the bottom band pair ─────────────────────────────────────────────────
+ * The same kind of choice made twice about one strip of the television, so it
+ * is one module with a labelled rule between the halves rather than two boxes
+ * or two unlabelled rows. */
+.bandpair { display: grid; gap: .3rem; }
+
+/* ── manual entry ─────────────────────────────────────────────────────────*/
+.console-page .search {
+  border-radius: 4px; background: var(--well); border: 1px solid rgba(0,0,0,.6);
+  box-shadow: var(--sunk); color: var(--milk);
+  font-family: var(--mono); font-size: .86rem; letter-spacing: .04em;
+}
+.console-page .search:focus {
+  outline: none; border-color: rgba(var(--sec-rgb), .8);
+  box-shadow: var(--sunk), 0 0 0 2px rgba(var(--sec-rgb), .22);
+}
+.console-page .prow {
+  border-radius: 4px; background: linear-gradient(180deg, #131f33, #0c1523);
+  box-shadow: 0 1px 0 rgba(255,255,255,.04), 0 2px 5px rgba(0,0,0,.35);
+}
+
+/* ── the log ──────────────────────────────────────────────────────────────*/
+/* Fifteen round chips in a row are the smallest targets on the page, so they
+   sit in their own well and get the gap rather than the point size. */
+.rndseg {
+  display: flex; flex-wrap: wrap; gap: 3px; padding: 3px; margin-bottom: .6rem;
+  border: 1px solid rgba(0,0,0,.6); border-radius: 5px;
+  background: var(--well); box-shadow: var(--sunk);
+}
 .rndseg button {
-  min-width: 2rem; padding: .4rem .55rem; cursor: pointer;
-  border-radius: 3px; border: 1px solid var(--line); background: var(--deep);
+  min-width: 2.1rem; padding: .4rem .55rem; cursor: pointer; border-radius: 3px;
+  border: 1px solid rgba(255,255,255,.05);
+  background: var(--key); box-shadow: 0 1px 0 rgba(0,0,0,.5);
   color: var(--chalk-dim); font-family: var(--mono); font-size: .68rem;
   font-weight: 700; letter-spacing: .08em;
 }
-.rndseg button:hover { border-color: var(--gold-lo); }
-.rndseg button.on { background: var(--gold); border-color: var(--gold); color: #150e02; }
+.rndseg button:hover { background: var(--key-hi); color: var(--milk); }
+.rndseg button.on {
+  background: linear-gradient(180deg, var(--sec-hi), var(--sec));
+  color: var(--sec-ink); border-color: rgba(255,255,255,.3);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 12px rgba(var(--sec-rgb), .35);
+}
 
-/* ── the laptop layout ───────────────────────────────────────────────────── */
+.console-page .clog {
+  border-radius: 4px; background: var(--well); box-shadow: var(--sunk);
+  padding: .2rem .5rem;
+}
+.console-page .clog .row { border-bottom: 1px solid rgba(32,48,71,.45); padding: .38rem 0; }
+.console-page .clog .row:last-child { border-bottom: 0; }
+.console-page .clog .row:hover { background: rgba(var(--sec-rgb), .07); }
+.console-page .clog .row .pk { color: var(--sec-hi); font-weight: 700; }
+.console-page .clog .row .un {
+  color: #e8a094; border-radius: 2px;
+}
+.console-page .clog .row .un:hover { background: rgba(196,105,92,.2); }
+
+/* ── the box that is not like the others ──────────────────────────────────*/
+.cbox.grave {
+  border-color: rgba(196,105,92,.4);
+  background:
+    repeating-linear-gradient(135deg,
+      rgba(196,105,92,.055) 0 10px, transparent 10px 20px),
+    linear-gradient(180deg, rgba(196,105,92,.1), transparent 60%),
+    linear-gradient(180deg, #16121a, #0d0a12);
+}
+
+/* ── the footer ───────────────────────────────────────────────────────────*/
+.cfoot {
+  display: flex; justify-content: center; gap: 1.4rem; flex-wrap: wrap;
+  margin-top: 1.2rem; padding: .8rem;
+  border-top: 1px solid var(--line-soft);
+  font-family: var(--mono); font-size: .66rem; font-weight: 700;
+  letter-spacing: .18em; text-transform: uppercase;
+}
+.cfoot a { color: var(--gold); text-decoration: none; }
+.cfoot a:hover { color: var(--gold-hi); }
+.cfoot span { color: var(--mute); }
+
+/* ══ the laptop layout ═════════════════════════════════════════════════════
+ * Everything above is the look and holds at any width. This is where the
+ * page becomes a desk rather than a stack. */
 @media (min-width: 900px) {
-  /* Wider than it was, because everything inside it came up a fifth and the
-     three columns want that back from somewhere. */
   .wrap { max-width: 1700px; padding-bottom: 1.5rem; }
-  .console { padding: 1rem 1.2rem; }
-
-  /* Room between anything that sits next to something it must not be mistaken
-     for — Pause beside +30s beside Reset, most of all. */
-  .cbtns { gap: .6rem; }
-
-  /* Both bottom-band pairs on one row. There is width for it here and the two
-     of them are one decision about one strip of the television. */
-  .bandpair { grid-template-columns: 1fr 1fr; gap: .9rem; }
+  .console { padding: 1rem 1.2rem 2rem; }
 
   /* Who is up, what the pick is, and the button. The button column is fixed
      rather than fluid: it is the target hit most often in the night and it
-     should be in exactly the same place on every screen this is ever opened
-     on, whatever the middle cell happens to be showing. */
+     should be in the same place on every screen this is ever opened on. */
+  /* The middle cell was 2fr against the left's 1, which was sized for the pick
+     card at its widest — a 124px photograph next to a name at 3rem — and that
+     card only needs about 590px to hold the longest name in the pool without
+     ellipsing. Everything past that was air, sitting in the one cell that is
+     empty most of the night. The left-hand cell has the opposite problem: it
+     is the card that is always full, and it now runs its roster three across.
+
+     1 : 1.8 is where that lands, after overshooting to 1.15 : 1.35 and coming
+     back through 1 : 1.6. The left cell takes about 465px of the 1300 the two
+     of them share, which is three roster columns of about 140px — enough for
+     an abbreviated name and the position beside it and not a pixel spare,
+     which is the point. The rest goes to the card the announcements are read
+     off. The roster rows stopped needing slack when they stopped being a grid
+     with the name on `1fr`; see .nl.
+
+     The button column does not move in any of this. It is the target hit most
+     often in the night and it should be in the same place on every screen this
+     is ever opened on. */
   .cmd {
-    grid-template-columns: minmax(270px, 1fr) minmax(0, 2fr) 330px;
+    grid-template-columns: minmax(330px, 1fr) minmax(0, 1.8fr) 340px;
     align-items: stretch;
   }
-  .cmd-now { grid-template-rows: auto 1fr auto; }
-  .now-clock { font-size: 1.2rem; }
-  #nowAv img { height: 76px; }
-  .cmd-act .big-go { padding: 1.6rem 1rem; font-size: 1.7rem; }
+  .cmd-now { grid-template-rows: auto auto auto 1fr; }
+  .now-name { font-size: 2.1rem; }
+  .now-clock { font-size: 2.35rem; }
+  #nowAv img { height: 78px; }
 
-  .pc-shot { width: 118px; height: 118px; }
+  /* Three across, and the row tightens to pay for it: the round column loses
+     the space it was never using and the gap between columns comes in, so the
+     name still gets most of the width. shortName() is already turning
+     "CeeDee Lamb" into "C. Lamb" for exactly this reason. */
+  .now-list { grid-template-columns: repeat(3, 1fr); gap: .06rem .55rem; max-height: 7.4rem; }
+  .nl { gap: .26rem; }
+  .nl u { width: 1.95rem; }
+  .nl b { font-size: .92rem; }
+  .console-page .big-go { padding: 1.75rem 1rem; font-size: 1.85rem; }
+
+  .pc-shot { width: 124px; height: 124px; }
   .pc-name { font-size: 3rem; }
 
-  /* Three columns: the draft's own controls, what the television is showing,
+  /* Three racks: the draft's own machinery, what the television is showing,
      and the record of what has happened. The log is the tallest thing on the
-     page and the only one that wants the room, so it gets the widest column. */
-  .cgrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1.15fr); align-items: start; }
-
-  /* A colour a column, carried on the edge of every box in it and on its
-     label. Twelve near-identical dark cards in a three by three arrangement is
-     a page you navigate by reading, and at eight o'clock on a Friday nobody is
-     reading.
-
-     Brass is the draft's own machinery — the clock and how the board behaves.
-     Blue is what the television is showing that is not the draft itself. Green
-     is the picks: entering one by hand, and the record of every one so far.
-     Red is the one box that does not take its column's colour, because it is
-     the one box that should not look like anything near it.
-
-     The colour is on the card, not on a tag stuck to it. A 3px edge and a
-     coloured label leaves twelve dark rectangles that happen to have a stripe
-     — you still have to find the stripe. The ground carries it instead: a wash
-     off the top of each card in its own colour, its hairline border in the same
-     colour, and the label to match. Every card in a column is then the same
-     object seen three times and the columns separate at arm's length with the
-     page out of focus, which is the state it is actually read in.
-
-     Kept low — .13 at the top of the wash falling to .045 — because the type on
-     these cards is white on near-black and has to stay that way. The triples
-     are written out because a wash needs the colour at an alpha and CSS cannot
-     take one from a hex custom property. */
-  .ccol:nth-child(1) { --sec: var(--gold); --sec-rgb: 201, 154, 67; }
-  .ccol:nth-child(2) { --sec: var(--wr);   --sec-rgb: 120, 151, 179; }
-  .ccol:nth-child(3) { --sec: var(--good); --sec-rgb: 127, 164, 141; }
-  .cbox.grave        { --sec: var(--bad);  --sec-rgb: 181, 114, 104; }
-
-  .cbox {
-    border: 1px solid rgba(var(--sec-rgb, 32, 48, 71), .34);
-    border-left: 3px solid var(--sec, var(--line));
-    background:
-      linear-gradient(180deg,
-        rgba(var(--sec-rgb, 32, 48, 71), .13),
-        rgba(var(--sec-rgb, 32, 48, 71), .045) 42%,
-        transparent 78%),
-      rgba(13,20,32,.88);
+     page and the only one that wants the room. */
+  .cgrid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.02fr) minmax(0, 1.12fr);
+    align-items: start; gap: 1.1rem;
   }
-  .cbox .hd {
-    color: var(--sec, var(--mute));
-    border-bottom-color: rgba(var(--sec-rgb, 32, 48, 71), .3);
-  }
-  /* Still scrolls, but it is one round deep by default now rather than the
-     whole night, so it rarely has to. */
+
+  /* Room between anything that must not be mistaken for the thing beside it,
+     Pause next to Reset most of all. */
+  .cbtns { gap: .55rem; }
+  .cbtns.two { grid-template-columns: 1fr 1fr; }
+  .bandpair { gap: .3rem; }
+
   .cbox.grow .clog { max-height: 26rem; }
 
-  /* Three across rather than stacked: at this width the clock box was one
-     button per line down a column 700px wide. */
-  .cbtns.three { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
-  .seg.wrapseg { grid-template-columns: repeat(4, 1fr); }
-
-  /* Pointer, not thumb: the phone rules give everything on this page a 44px
-     tap target and a press-down transform, which on a laptop reads as a page
-     built for someone else. */
-  .btn { cursor: pointer; }
-  .btn:hover:not([disabled]) { border-color: var(--gold-lo); }
-  .btn.go:hover:not([disabled]) { filter: brightness(1.07); }
+  .console-page .btn { cursor: pointer; }
   .prow { cursor: pointer; }
-  .prow:hover { background: var(--panel-2); }
   .clog .un { cursor: pointer; }
 }
 
-/* Between 900 and the width three columns actually want, the log drops to its
-   own full-width row underneath rather than being squeezed into a third of a
-   narrow screen. */
+/* Between 900 and the width three racks actually want, the record drops to
+   its own full-width row rather than being squeezed into a narrow third. */
 @media (min-width: 900px) and (max-width: 1279px) {
   .cgrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .ccol:nth-child(3) { grid-column: 1 / -1; }
@@ -341,6 +751,7 @@ body.console-page { font-size: 1rem; }
 
 /* A wide laptop: the strip's middle cell gets the room it is worth. */
 @media (min-width: 1440px) {
-  .pc-name { font-size: 3.4rem; }
-  .pc-shot { width: 132px; height: 132px; }
+  .pc-name { font-size: 3.5rem; }
+  .pc-shot { width: 138px; height: 138px; }
+  .now-clock { font-size: 2.6rem; }
 }

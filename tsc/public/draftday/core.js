@@ -114,6 +114,40 @@ export function nextPickForSlot(slot, after) {
 //   ceremony  full pick-is-in / announce / reveal sequence (rounds 1-4)
 //   mirror    picks flow straight from Sleeper with a short reveal
 
+/**
+ * How long a LIVE FEED pick takes to play, beat by beat.
+ *
+ * It lives here because two files have to agree on it and they cannot see each
+ * other: the board draws the beats and the console decides when the draft has
+ * moved on. When they disagreed, the console won — it used to advance five
+ * seconds after a pick landed while the selection graphic was still on screen
+ * for another second, so the next man's card cut in over the top of the pick
+ * and you never actually saw who had been taken. That is the whole bug.
+ *
+ * The order is deliberate. The big graphic says who it is, the next man's card
+ * comes over the top of it, and then the board comes back to the pick's own
+ * screen with his clock already running underneath. The room gets the news,
+ * then gets told who is up, then gets ten seconds to argue about it, and
+ * nobody has touched the console.
+ */
+export const LIVE_FEED = {
+  selection: 6000,   // the full-screen pick graphic
+  oncard:    5200,   // the next man's card, over the top of it
+  roundcard: 4600,   // and the new round's card ahead of it, at a round turn
+  details:   9000,   // the pick's own screen, his clock counting down on it
+};
+export const LIVE_FEED_TOTAL =
+  LIVE_FEED.selection + LIVE_FEED.oncard + LIVE_FEED.details;
+
+/**
+ * The same, for the last pick of a round, which has a round card to play
+ * before the next man's. Without the extra the round card eats half the beat
+ * the pick was supposed to get, at exactly the moment of the night with the
+ * most to look at.
+ */
+export const liveFeedTotal = roundTurns =>
+  LIVE_FEED_TOTAL + (roundTurns ? LIVE_FEED.roundcard : 0);
+
 export const DEFAULT_STATE = {
   status: "idle",
   current: 1,
