@@ -302,7 +302,14 @@ body.board::after {
 .hdr {
   display: flex; align-items: center; gap: calc(1.6 * var(--u)); padding: 0 calc(2.4 * var(--u));
   border-bottom: 1px solid rgba(32,48,71,.7);
-  background: linear-gradient(180deg, rgba(5,10,18,.96), rgba(5,10,18,.88));
+  /* Opaque. Two passes at this were still translucent (.9/.45, then .96/.88)
+     and the set behind it is not a flat wash: the lit ceiling truss runs
+     straight through the right hand end of this bar, which is exactly where
+     ROUND and PICK sit. A photograph showing through type is not "a little
+     see through", it is a second image competing with the only two numbers on
+     the board that change every pick. The band is a solid plate now, ruled top
+     and bottom, and it is the same plate on every screen that carries it. */
+  background: linear-gradient(180deg, #050a12, #070d18);
 }
 /* TSC's own masthead, not a bespoke one. Same shape as `.nav-kicker` +
    `.nav-title` on the site: a small tracked mono kicker over a DM Serif
@@ -313,8 +320,8 @@ body.board::after {
   display: flex; flex-direction: column; justify-content: center; line-height: 1;
 }
 .hdr-kicker {
-  font-family: var(--mono); font-weight: 600; font-size: calc(1.05 * var(--u));
-  letter-spacing: .3em; text-transform: uppercase; color: var(--mute);
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.15 * var(--u));
+  letter-spacing: .3em; text-transform: uppercase; color: var(--chalk-dim);
   margin-bottom: calc(.5 * var(--u));
 }
 .hdr-title {
@@ -2134,17 +2141,37 @@ body.rail-alt .rp { display: block; }
   display: inline-flex; align-items: center; justify-content: center;
   min-width: calc(3.4 * var(--u)); padding: calc(.22 * var(--u)) calc(.5 * var(--u));
   border-radius: 2px; font-family: var(--mono); font-weight: 700;
-  font-size: calc(1.32 * var(--u)); letter-spacing: .08em; color: var(--c);
-  background: color-mix(in srgb, var(--c) 20%, transparent);
-  border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
+  font-size: calc(1.32 * var(--u)); letter-spacing: .08em;
+  /* Lit, not raw.
+     The position palette is a set of mid-tones — #7897b3 for a receiver,
+     #b57268 for a quarterback — and they were picked to sit as fills and rules
+     across the board rather than as three letters of ink on a navy chip. At
+     chip size, on this panel, the raw colour is about one step off the panel it
+     is printed on: legible on a laptop, a grey smudge across a room.
+     Mixed toward white it keeps the hue, which is the whole job of the colour
+     (the eye finds the RB chip before it reads it), and gains the lightness
+     that makes it a badge instead of a stain. */
+  color: color-mix(in srgb, var(--c) 70%, #fff);
+  background: color-mix(in srgb, var(--c) 26%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 72%, transparent);
 }
 /* A gap the room would already be needling him about. Everything else is
    reported at half strength — true, but not yet news. */
 /* .45 was the difference between "reported" and "news" on a monitor. On a
    television it was the difference between reported and absent — eleven rows of
    chips where only the hot ones rendered at all. The gap still reads. */
-.pchip { opacity: .62; }
-.pchip.hot { opacity: 1; }
+/* A gap worth needling him about is `hot`; everything else is true but not yet
+   news, and that distinction used to be carried by fading the whole chip. Two
+   passes at the opacity (.45, then .62) both made the same mistake: a faded
+   chip is not a quieter chip on a television, it is an absent one, and eleven
+   rows of them read as a panel that had failed to draw. The difference is in
+   the fill now, where it costs no legibility. */
+.pchip { opacity: .88; }
+.pchip.hot {
+  opacity: 1;
+  background: color-mix(in srgb, var(--c) 46%, transparent);
+  border-color: color-mix(in srgb, var(--c) 92%, transparent);
+}
 .pchip.flex {
   --c: var(--chalk-dim);
   color: var(--chalk); background: rgba(32,48,71,.5); border-color: var(--line-2);
@@ -2268,7 +2295,11 @@ body.rail-alt .rp { display: block; }
 .rn-pos {
   font-family: var(--display); font-weight: 900; font-stretch: 62%;
   font-size: calc(4 * var(--u)); line-height: .95; letter-spacing: .01em;
-  text-transform: uppercase; color: var(--c, var(--chalk-dim));
+  /* --c is unset on the "no run" version of this line, and color-mix on an
+     unset custom property is an invalid value that would drop the whole
+     declaration — so the fallback is inside the var(), not around the mix. */
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--c, var(--chalk-dim)) 78%, #fff);
 }
 .rn-live.quiet .rn-pos { font-size: calc(2.4 * var(--u)); color: var(--chalk-dim); }
 .rn-n {
@@ -2337,7 +2368,7 @@ body.rail-alt .rp { display: block; }
   background: color-mix(in srgb, var(--c) 26%, transparent);
   border-color: color-mix(in srgb, var(--c) 62%, transparent);
 }
-.rn-tick.lit i { color: var(--c); }
+.rn-tick.lit i { color: color-mix(in srgb, var(--c) 70%, #fff); }
 .rn-tick.lit u { color: var(--chalk-dim); }
 .rn-none { font-family: var(--mono); font-size: calc(1.4 * var(--u)); color: var(--chalk-dim); }
 
@@ -2375,15 +2406,18 @@ body.rail-alt .rp { display: block; }
   border-radius: 2px; padding: calc(.25 * var(--u)) 0;
   background: color-mix(in srgb, var(--c) 16%, transparent);
 }
-.rm-c b { font-family: var(--clock); font-weight: 600; font-size: calc(2 * var(--u)); color: var(--c); line-height: 1; }
+.rm-c b {
+  font-family: var(--clock); font-weight: 600; font-size: calc(2 * var(--u));
+  color: color-mix(in srgb, var(--c) 70%, #fff); line-height: 1;
+}
 .rm-c i {
-  font-family: var(--mono); font-style: normal; font-size: calc(.9 * var(--u));
-  letter-spacing: .1em; color: var(--mute);
+  font-family: var(--mono); font-style: normal; font-size: calc(1.1 * var(--u));
+  letter-spacing: .1em; color: var(--chalk-dim);
 }
 .rm-c.zero { background: transparent; }
 .rm-c.zero b { color: var(--line-2); }
-.rm-o { font-family: var(--mono); font-size: calc(1.05 * var(--u)); color: var(--mute); text-align: right; }
-.rm-n { font-family: var(--mono); font-size: calc(1.1 * var(--u)); color: var(--chalk-dim); text-align: right; }
+.rm-o { font-family: var(--mono); font-size: calc(1.25 * var(--u)); color: var(--chalk-dim); text-align: right; }
+.rm-n { font-family: var(--mono); font-size: calc(1.3 * var(--u)); color: var(--chalk-dim); text-align: right; }
 
 /* ── still on the board ───────────────────────────────────────────────── */
 /* Ten rows, and the slot he went at last year drawn as a draft-pick badge on
@@ -2620,7 +2654,13 @@ body.rail-alt .rp { display: block; }
    * itself. */
   --u: calc(10.8px * .95);
 
-  --bb-hd: calc(3.8 * var(--u));
+  /* Deeper than it was. The three cards in this band all divide their list
+     into equal rows, so the header takes its extra out of about a pixel a row,
+     and the rows had it to give: seven lineup slots at 37.7px each is a good
+     deal more than the type in them needs, and the titles across the top were
+     set at 1.45u because that was the smallest thing that fitted the old
+     header rather than because it was the right size to read from a couch. */
+  --bb-hd: calc(4.8 * var(--u));
 
   /* The mount's weight, and the one place it is written. It was a literal 2px
      in the border shorthand and hand-copied into the inner-radius sum, which
@@ -2754,7 +2794,7 @@ body.rail-alt .rp { display: block; }
   flex: none; display: flex; align-items: center; height: var(--bb-hd);
   padding: 0 calc(1.4 * var(--u));
   font-family: var(--mono); font-weight: 600;
-  font-size: calc(1.45 * var(--u)); letter-spacing: .2em;
+  font-size: calc(1.85 * var(--u)); letter-spacing: .18em;
   color: var(--chalk); text-transform: uppercase;
   border-bottom: 1px solid var(--line);
 }
@@ -2973,7 +3013,7 @@ body.rail-alt .rp { display: block; }
 .bb-ba > .rail-hd { text-transform: none; }
 .bb-ba .ba-title {
   font-family: var(--serif); font-weight: 400;
-  font-size: calc(2.5 * var(--u)); letter-spacing: .02em;
+  font-size: calc(3 * var(--u)); letter-spacing: .02em;
   line-height: 1; color: var(--milk);
 }
 .bb-ba .ba-title em { font-style: italic; color: var(--gold); }
@@ -3232,12 +3272,12 @@ body.phase-details .bb-next {
    ninety pixels short of the bottom of its own body, and the label was set at
    1.45u anyway because that is what its neighbours use. The card has the slack;
    the title takes it. Scoped to this card so nothing else in the band moves. */
-body.phase-details .bb-next { --bb-hd: calc(5.8 * var(--u)); }
+body.phase-details .bb-next { --bb-hd: calc(7 * var(--u)); }
 body.phase-details .bb-next > .rail-hd {
   border-bottom: 0; padding: 0 calc(2.4 * var(--u));
-  font-size: calc(2.15 * var(--u)); letter-spacing: .16em; color: var(--milk);
+  font-size: calc(2.75 * var(--u)); letter-spacing: .12em; color: var(--milk);
 }
-body.phase-details .bb-next > .rail-hd .ct { font-size: calc(1.6 * var(--u)); }
+body.phase-details .bb-next > .rail-hd .ct { font-size: calc(1.9 * var(--u)); }
 .next-body {
   position: relative; flex: 1; min-height: 0; display: flex; align-items: center;
   gap: calc(1.2 * var(--u));
