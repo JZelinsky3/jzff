@@ -326,15 +326,15 @@ const MANAGER_VOICE = {
 const SEASON_OUTLOOK = {
   Sean: {
     goal: "The first title",
-    text: `Sean has outscored his opponents by 492 points across seven years and won nothing, which is a strange way to be one of the two best teams in this league. The tell is quarterback: Mahomes in round two in 2023, third place; a tenth-round flier last year, tenth place. Early quarterbacks are worth nearly two places in the final table here. He is No. 1 because the roster keeps being right, and this is the year that has to stop being funny.`,
+    text: `Seven years, 492 points of margin over his opponents, and nothing to show for it. That is a strange way to be one of the two best teams in this league, and No. 1 is a ranking of the roster rather than of the results. The tell is quarterback: Mahomes in round two in 2023, third place; a tenth-round flier last year, tenth place. Early quarterbacks are worth nearly two places in the final table here. This is the year it has to stop being funny.`,
   },
   Isaac: {
     goal: "A second ring",
-    text: `No. 2 in the power rank is as high as a four-year drought should sit, and Isaac has earned it: 25-17 over three seasons, the best record in the league, off finishes of second, eleventh and fifth. His ring came in 2022 out of a 7-7 team, so the good sides have not won it and a mediocre one did. Watch his first pick. Five of six drafts have opened on a running back, and the year he took a receiver instead he finished eleventh.`,
+    text: `The ring came in 2022 out of a 7-7 team, so the good sides have not won it here and a mediocre one did. Isaac's good sides are very good: 25-17 over three seasons is the best record in the league, off finishes of second, eleventh and fifth. Four years without another is as long a drought as No. 2 can carry. Watch his first pick. Five of six drafts have opened on a running back, and the year he took a receiver instead he finished eleventh.`,
   },
   Connor: {
     goal: "Back to the playoffs, and a win there",
-    text: `Connor has gone from 116 points a week across his first four seasons to 132 across the last three, the highest in the league over that stretch, and his record has moved from 16-30 to 23-21 with it. All of that has bought one playoff trip. His only top-three finish came off a receiver in round one in 2024; he went back to a running back last year and came seventh. No. 3 is the boldest call on this board and it is a call on the points.`,
+    text: `The best three-year scoring stretch in the league belongs to Connor: 132 points a week, up from 116 across his first four seasons, with the record moving 16-30 to 23-21 behind it. All of that has bought one playoff trip. His only top-three finish came off a receiver in round one in 2024; he went back to a running back last year and came seventh. No. 3 is the boldest placing on this board, and it is a bet on the points.`,
   },
   Mason: {
     goal: "Go back to back",
@@ -342,15 +342,15 @@ const SEASON_OUTLOOK = {
   },
   Chris: {
     goal: "Turn the points into a finish",
-    text: `Chris has been the fourth-highest scoring team in the league over the last three seasons and gone 6-11 in the games decided by under ten across the same three, which is most of how a team that good finishes ninth, fifth, ninth. His draft hit rate of 39% is the best here. No. 5 is low for a team this good, and the ranking is discounting three years of one-score luck.`,
+    text: `Ninth, fifth, ninth. Those are the finishes of the fourth-highest scoring team of the last three seasons, and No. 5 is low for exactly that reason. The same three years produced a 6-11 record in games decided by under ten, which is most of the explanation, and his draft hit rate of 39% is the best here. The ranking is discounting three years of one-score luck.`,
   },
   Joey: {
     goal: "A fifth top three, and a second title",
-    text: `Joey scored 137 points a week across his first four seasons and 117 across the last three, and the record went 35-18 to 16-26 with it. All four top-three finishes are in the first stretch. Two receiver-first drafts finished first and third, five back-first drafts produced three seasons out, and his quarterback has slid from round three to round thirteen. No. 6 is generous, and week 11 against Chris is where it gets tested.`,
+    text: `The first four seasons: 137 points a week, 35-18, and all four of his top-three finishes. The last three: 117 a week and 16-26. Two receiver-first drafts came back first and third, five back-first drafts produced three seasons out of the playoffs, and his quarterback has slid from round three to round thirteen. No. 6 is generous, and week 11 against Chris is where it gets tested.`,
   },
   Ricci: {
     goal: "A sixth trip, and the second title",
-    text: `No. 7 is a bet that Ricci stops getting away with it, and nobody should feel good about that bet. He is the only manager who has ever spent a first-round pick on a quarterback: Lamar Jackson in 2020, and he won the title with him. He took Travis Kelce first in 2023 and finished eleventh, the same instinct with the other result. Five playoff trips on a losing career record says it is worth something.`,
+    text: `Ricci is the only manager who has ever spent a first-round pick on a quarterback: Lamar Jackson in 2020, and he won the title with him. He took Travis Kelce first in 2023 and finished eleventh, the same instinct with the other result. Five playoff trips on a losing career record says the instinct is worth something. No. 7 bets that he stops getting away with it, and nobody should feel good about that bet.`,
   },
   Kyle: {
     goal: "The first top-three finish",
@@ -358,19 +358,19 @@ const SEASON_OUTLOOK = {
   },
   Connie: {
     goal: "A fourth title game, and a second ring",
-    text: `Connie is 46-50 across regular seasons and 6-3 once the playoffs start, more playoff wins than anyone else in PAMS. Two of the three championship-game runs began from a six seed, so this is a team that gets in and then becomes a different team. Round three has been the quarterback pick in both of the last two drafts, for a sixth and a second. No. 9 bets against a fourth run, which has never been a winning bet.`,
+    text: `Forty-six and fifty in regular seasons is where No. 9 comes from. Six and three once the playoffs start is not: that is more playoff wins than anyone else in PAMS. Two of the three championship-game runs began from a six seed, so this is a side that gets in and then becomes a different one. Round three has been the quarterback pick in both of the last two drafts, for a sixth and a second.`,
   },
   Charlie: {
     goal: "Finish top three, once",
-    text: `Charlie has gone from 112 points a week across his first four seasons to 124 across the last three, and from 3-15 in games decided by thirty or more to 9-5. Only Connor has repaired more, and it has produced finishes of fourth, seventh and sixth. His best season came with Josh Allen in round three, and paying round two for the same player a year later got him seventh. No. 10 is the last ranking that makes sense if this holds.`,
+    text: `Only Connor has repaired more than Charlie: 112 points a week across his first four seasons to 124 across the last three, and 3-15 in games decided by thirty or more to 9-5. It has produced finishes of fourth, seventh and sixth. His best season came with Josh Allen in round three, and paying round two for the same player a year later got him seventh. No. 10 is the last spot that makes sense if this holds.`,
   },
   Evan: {
     goal: "A winning season and a playoff spot",
-    text: `No. 11 is a ranking of what is known about Evan, and he can move it faster than anyone here. Three seasons and 17-26 is not enough to have a reputation, which is the most useful thing anybody can say about him tonight. He made the playoffs as a rookie with Ja'Marr Chase and Jalen Hurts inside three rounds, then went 5-9 twice. His games stay close at 6-5 under ten points, so nobody is running him off the field.`,
+    text: `Three seasons and 17-26 is not enough to have a reputation, which is the most useful thing anybody can say about Evan tonight, and No. 11 is a ranking of what is known rather than of what is coming. He made the playoffs as a rookie with Ja'Marr Chase and Jalen Hurts inside three rounds, then went 5-9 twice. His games stay close at 6-5 under ten points, so nobody is running him off the field.`,
   },
   Luke: {
     goal: "Prove 2024 was not a fluke",
-    text: `Luke won it in 2024 and finished last in 2025, and No. 12 says the second result is closer to the truth: across six seasons he is 37-47 with a 10-27 record in games decided by thirty or more, the worst mark in the league by a distance. Both drafts he opened on a receiver came back sixth and first; the four he opened on a running back came back eighth, eighth, tenth and twelfth. The argument starts at 1.09.`,
+    text: `Won it in 2024, finished last in 2025, and No. 12 says the second result is closer to the truth. Across six seasons he is 37-47 with a 10-27 record in games decided by thirty or more, the worst mark in the league by a distance. Both drafts he opened on a receiver came back sixth and first; the four he opened on a running back came back eighth, eighth, tenth and twelfth. The argument starts at 1.09.`,
   },
 };
 
@@ -557,8 +557,8 @@ function round1Note(m, player, used) {
   if (tend) bits.push(tend);
 
   // Who he opened with last year, but only when it was a different position —
-  // same position is the "same round, same position as last year" line higher
-  // up in pickLine, and it says it better. The position is named only when it
+  // same position is the "he took a receiver in this round last year too" line
+  // higher up in pickLine, and it says it better. The position is named only when it
   // is doing the contrast on its own; after the tendency line it is repetition.
   const ly = (m.last_year || {})["1"];
   if (ly && ly.name !== player.name && ly.pos !== player.pos) {
@@ -860,9 +860,15 @@ export function pickLine(m, player, overall, round, picksAfter, history) {
   //    Not when it is the same player: "same position as last year, when he
   //    took Jaylen Waddle" while taking Jaylen Waddle reads as a mistake.
   //    That case has its own line further down.
+  //
+  //    The line used to read "Same round, same position as last year". In a
+  //    draft, "position" is where you are sitting as often as it is what the
+  //    man plays, and next to "same round" it read as the same slot on the
+  //    board rather than another running back. So it names the position
+  //    instead of using the word: nothing to disambiguate.
   const lyEcho = lastYearSamePos(m, player, round);
   if (lyEcho && lyEcho.name !== player.name && round <= 10 && said !== "lastyear") {
-    return `${addPart} Same round, same position as last year, when he took ${nm(lyEcho.name)}.`;
+    return `${addPart} He took a ${POS_WORD[player.pos] || player.pos} in this round last year too, ${nm(lyEcho.name)}.`;
   }
 
   // 3. History on the player, if the graphic did not already use it.

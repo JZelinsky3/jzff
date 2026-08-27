@@ -241,13 +241,71 @@ export function watchState(cb) {
  * new man the previous manager's start time and score him for a pick he had
  * nothing to do with.
  */
-export function freshClock(ms) {
-  const now = Date.now();
+/**
+ * How long a new man gets before his clock actually starts moving.
+ *
+ * The board does not put him on screen the instant the state says he is up: the
+ * selection graphic runs, then his own card comes over the top of it announcing
+ * him, and only then does the room see whose turn it is. That is about eight
+ * seconds in which his clock was already running and he had no way of knowing
+ * it — and he cannot pick until he has been told, because the pick is entered
+ * on his phone in the room while everybody watches the reveal.
+ *
+ * So the clock is written with a start time in the near future. Nothing has to
+ * remember to start it later: it is one number in state, every screen reads the
+ * same number, and if the console is closed and reopened mid-beat the clock
+ * still starts when it was always going to.
+ */
+export const CLOCK_GRACE_MS = 10000;
+
+/**
+ * `graceMs` defaults to none, and that is deliberate rather than lazy. This is
+ * called from two different kinds of place: a new manager coming on the clock,
+ * which is an announcement and earns the grace, and Reset / change-the-pick-
+ * length, which are the commissioner reaching for the clock of a man who is
+ * already up and looking at it. Ten seconds of nothing happening after you
+ * press Reset is a broken button.
+ */
+export function freshClock(ms, graceMs = 0) {
+  const startsAt = Date.now() + graceMs;
   return {
-    clockEnds: now + ms, paused: false, pausedLeft: null,
-    clockStartedAt: now, clockPausedMs: 0, pausedAt: null,
+    clockEnds: startsAt + ms, paused: false, pausedLeft: null,
+    // Doubles as when the clock starts. elapsedOnClock() already measures from
+    // here, so the grace is not charged to the manager in the clock room
+    // either — it is time the board spent talking, not time he spent thinking.
+    clockStartedAt: startsAt, clockPausedMs: 0, pausedAt: null,
   };
 }
+
+/**
+ * What the countdown should read, in ms, or null if there is no clock at all.
+ *
+ * One function because three screens draw this clock — the board, the phone and
+ * the console — and they each used to compute `clockEnds - Date.now()` inline.
+ * That is the wrong answer during the grace above: the clock ends at
+ * start + length, so before it starts, the naive subtraction reads length plus
+ * whatever is left of the grace, and a two minute pick would come up on all
+ * three screens as 2:08 counting down to 2:00. Held at the full length until it
+ * starts, then counting, is what the room expects to see.
+ *
+ * Extensions move `clockEnds` and not `clockStartedAt`, so +30s during the
+ * grace correctly shows 2:30 held rather than 2:00.
+ */
+export function msLeft(state, at = Date.now()) {
+  const s = state || LIVE;
+  if (s.paused) return s.pausedLeft ?? 0;
+  if (!s.clockEnds) return null;
+  const running = s.clockEnds - at;
+  return s.clockStartedAt && s.clockStartedAt > at
+    ? Math.min(running, s.clockEnds - s.clockStartedAt)
+    : running;
+}
+
+/** Whether the clock is written but not yet ticking — the grace window. */
+export const clockHeldOff = (state, at = Date.now()) => {
+  const s = state || LIVE;
+  return !!s.clockEnds && !s.paused && !!s.clockStartedAt && s.clockStartedAt > at;
+};
 
 /** No clock at all — held for the turn of a round. */
 export function heldClock() {

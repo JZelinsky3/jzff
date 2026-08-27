@@ -446,6 +446,12 @@ body.console-page {
 .cmd-pick .pc-card { display: none; }
 .cmd-pick.holding .pc-wait { display: none; }
 .cmd-pick.holding .pc-card { display: flex; }
+/* The notes belong to the man on the card and have to come and go with it.
+   They were outside the swap, so the moment a pick landed and `pending` went
+   back to null the cell said "Waiting on Chris" over five rows about the player
+   who had just been taken — the one place on this page you would read from
+   while talking to a room, still describing the last pick. */
+.cmd-pick:not(.holding) .pc-notes { display: none; }
 
 .pc-wait { display: grid; gap: .35rem; padding: .3rem 0; }
 .pc-wait-b {

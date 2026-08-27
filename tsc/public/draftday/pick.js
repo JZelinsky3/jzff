@@ -188,9 +188,9 @@ function renderClock() {
   if (STATE.status !== "clock" && STATE.status !== "revealed") return;
   const el = $("stTime");
   const total = STATE.pickMs || (C.DATA.meta.pick_seconds || 120) * 1000;
-  const left = STATE.paused
-    ? (STATE.pausedLeft ?? 0)
-    : (STATE.clockEnds ? STATE.clockEnds - Date.now() : 0);
+  // Held at the full pick length while the board is still announcing him — his
+  // phone must not be counting down time he has not been given yet.
+  const left = C.msLeft(STATE) ?? 0;
 
   el.textContent = C.mmss(left);
   el.classList.toggle("held",  !!STATE.paused);

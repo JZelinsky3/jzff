@@ -25,7 +25,9 @@ const PICK_MS = () => STATE.pickMs || (C.DATA.meta.pick_seconds || 120) * 1000;
  * Advancing carries this clock forward rather than restarting it — see the
  * Next Pick branch of the main button — so what starts here just keeps running.
  */
-const startNextClock = () => C.freshClock(PICK_MS());
+// The grace is here and not inside freshClock, because this is the one call
+// site that is a man being *announced*. See C.CLOCK_GRACE_MS.
+const startNextClock = () => C.freshClock(PICK_MS(), C.CLOCK_GRACE_MS);
 
 /**
  * Whether there is a clock to act on, for Pause / +30s / Reset.
@@ -401,6 +403,17 @@ function renderPickCard(o, m) {
       : STATE.status === "revealed"
         ? "The pick is on the board. Next Pick moves the clock on."
         : "He picks on his phone, or you enter it below.";
+    // Torn down, not just hidden. The card and the notes are about one player
+    // and the next thing to happen in this cell is a different one — leaving
+    // the old man's photograph, tags and notes in the DOM behind a display:none
+    // means any rule that ever shows them again shows the wrong player, and it
+    // holds a headshot decoded for a pick that is already history.
+    $("pcShot").removeAttribute("src");
+    $("pcOwner").textContent = " ";
+    $("pcName").textContent = " ";
+    $("pcMeta").textContent = " ";
+    $("pcTags").innerHTML = "";
+    $("pcNotes").innerHTML = "";
     return;
   }
 
@@ -611,14 +624,16 @@ function renderClock() {
     set(`${C.mmss(PICK_MS())}<i>held</i>`, "held");
     return;
   }
-  const left = STATE.paused
-    ? (STATE.pausedLeft ?? 0)
-    : (STATE.clockEnds ? STATE.clockEnds - Date.now() : PICK_MS());
+  const left = C.msLeft(STATE) ?? PICK_MS();
+  // And says so while it is written but not yet moving, which is the ten
+  // seconds the board spends announcing the man it belongs to.
+  const waiting = C.clockHeldOff(STATE);
   // Says so when it is stopped. A frozen number and a running one are the same
   // picture for the first second you look at them, which is exactly long enough
   // to conclude the button did nothing and tap it again.
-  set(C.mmss(left) + (STATE.paused ? "<i>paused</i>" : ""),
+  set(C.mmss(left) + (STATE.paused ? "<i>paused</i>" : waiting ? "<i>on air</i>" : ""),
       STATE.paused ? "paused"
+      : waiting ? "held"
       : left <= 10000 ? "panic"
       : left <= 30000 ? "warn" : "");
 }

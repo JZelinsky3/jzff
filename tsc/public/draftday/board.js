@@ -149,15 +149,63 @@ window.addEventListener("resize", fitFrame);
 window.addEventListener("orientationchange", () => setTimeout(fitFrame, 250));
 setTimeout(fitFrame, 500);
 
+/**
+ * Keeping the television awake for four hours.
+ *
+ * This mattered less when a pick was two minutes; round one is on five minute
+ * clocks, so there are stretches where nothing is touched for a long time and
+ * the display goes looking for a reason to sleep.
+ *
+ * What the board can actually control is the machine it is running on. The
+ * Screen Wake Lock API is that control, and the old version of this asked for
+ * it exactly once, on the first click, and never again:
+ *
+ *   - `{ once: true }` meant a single attempt. A request made before the page
+ *     has been interacted with can be rejected outright, and that was the end
+ *     of it for the night.
+ *   - The browser releases the lock whenever the page is hidden, and it is not
+ *     handed back on its own. `visibilitychange` covered that one case.
+ *   - It is also released for reasons the page never hears about as a
+ *     visibility change: the tab being backgrounded on some platforms, the
+ *     machine sleeping and waking, the lock being revoked. Nothing re-asked.
+ *
+ * So: re-ask on release, re-ask on any interaction rather than the first one,
+ * and re-ask on a slow timer as a backstop, which costs nothing when the lock
+ * is already held because `request` on a live lock is a no-op we replace.
+ *
+ * What this cannot do is stop a *receiver* going to its screensaver. If the
+ * board is on the television over AirPlay or a Chromecast, the aerial photos
+ * and the app previews belong to that box and no web page can turn them off:
+ * that is a setting on the device. Nor is the board a still image that a TV's
+ * idle detection could object to; the clock repaints four times a second all
+ * night. Mirroring over a cable and keeping this tab in front is the
+ * configuration this can actually keep alive.
+ */
 let wakeLock = null;
+
 async function keepAwake() {
-  try { if ("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); }
-  catch (_) { /* unsupported or denied */ }
+  if (!("wakeLock" in navigator)) return;
+  if (wakeLock && !wakeLock.released) return;
+  if (document.visibilityState !== "visible") return;
+  try {
+    wakeLock = await navigator.wakeLock.request("screen");
+    // Taken away rather than given up: ask for it straight back. The listener
+    // goes on the lock itself, so it dies with the lock it belongs to.
+    wakeLock.addEventListener("release", () => { wakeLock = null; keepAwake(); });
+  } catch (_) { wakeLock = null; /* unsupported, or refused for now */ }
 }
-document.addEventListener("click", keepAwake, { once: true });
+
+keepAwake();
+for (const ev of ["click", "pointerdown", "keydown", "touchstart"]) {
+  document.addEventListener(ev, keepAwake, { passive: true });
+}
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") keepAwake();
 });
+// The backstop. Half a minute is far inside any display sleep timer worth
+// worrying about, and on a night when nobody touches this machine for five
+// minutes at a time it is the only thing still asking.
+setInterval(keepAwake, 30000);
 
 /**
  * The reveal runs as one continuous sequence on the board rather than as
@@ -526,23 +574,32 @@ function tickClock() {
     put($("nextNote"), "", null);
     return;
   }
-  const left = STATE.paused
-    ? (STATE.pausedLeft ?? 0)
-    : (STATE.clockEnds ? STATE.clockEnds - Date.now() : pickMs());
-  const heat = STATE.paused ? " paused" : left <= 10000 ? " panic" : left <= 30000 ? " warn" : "";
+  const left = C.msLeft(STATE) ?? pickMs();
+  // Written but not ticking yet: the board is still announcing the man whose
+  // clock this is, and it holds at the full length until he has been told he is
+  // up. No heat on a clock that has not started — a held 0:12 would go red at a
+  // man who has not been given his time yet.
+  const waiting = C.clockHeldOff(STATE);
+  const heat = STATE.paused ? " paused"
+    : waiting ? ""
+    : left <= 10000 ? " panic" : left <= 30000 ? " warn" : "";
   put(el, C.mmss(left), "timer" + heat);
   put(sc,
     STATE.clockEnds || STATE.paused ? C.mmss(left) : C.mmss(pickMs()),
-    "sc-clock" + (!STATE.clockEnds && !STATE.paused ? " held" : heat));
+    "sc-clock" + ((!STATE.clockEnds && !STATE.paused) || waiting ? " held" : heat));
   put(wall, STATE.paused ? "PAUSED" : C.mmss(left), "wc" + heat);
   // At the turn of a round there is no clock yet — it starts when the
   // commissioner advances — so this shows the full pick length, greyed, and
   // says so. A held 2:00 and a 2:00 that started a second ago are the same
   // picture otherwise, which is no way to know which one you are looking at.
   const started = !!STATE.clockEnds;
-  put(next, C.mmss(started ? left : pickMs()), "next-clock" + (started ? heat : " held"));
+  put(next, C.mmss(started ? left : pickMs()),
+    "next-clock" + (!started || waiting ? " held" : heat));
   put($("nextNote"),
-    started ? (STATE.paused ? "clock paused" : "") : "starts on next pick", null);
+    !started ? "starts on next pick"
+    : STATE.paused ? "clock paused"
+    : waiting ? "starts after the announcement"
+    : "", null);
 }
 
 /**

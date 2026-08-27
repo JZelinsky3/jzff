@@ -235,17 +235,55 @@ body.board {
   display: grid; grid-template-rows: calc(5.2 * var(--u)) 1fr calc(5.8 * var(--u));
   transform-origin: center center;
   transform: translate(-50%, -50%);
+  /* Above the two letterbox layers, and it has to be said rather than assumed.
+     Both of those are `position: fixed` at the auto z-index, which is the same
+     z-index this is at, and ::after on the body paints after the body's own
+     children — so the scrim that fills the letterbox was painting over the
+     entire board. It did not show while that scrim was a faint gradient. */
+  z-index: 1;
 }
-/* the set */
+/* The set in the letterbox, and only there.
+   This pair used to be the set for the whole board, and being `fixed` they were
+   sized to the *viewport* while everything laid over them is sized to a
+   letterboxed 1920x1080 frame. Those are two different boxes on any screen that
+   is not exactly 16:9 — a browser with a URL bar, a television with overscan, a
+   16:10 laptop mirrored across — and `cover` crops the photograph to the one it
+   is in. So the set's own gold rail and the gold step across its floor slid up
+   and down behind the type depending on the display, and the board was laid out
+   against wherever they happened to fall on the machine it was built on. On a
+   16:9 laptop ON THE CLOCK cleared the rail; on the television it sat on it.
+
+   They stay only to fill the letterbox bars, where nothing is ever laid over
+   them and the crop does not matter. The authoritative set is #frame's, below. */
 body.board::before {
   content: ""; position: fixed; inset: 0; z-index: 0;
   background: url("bg/stage.webp") center center / cover no-repeat;
 }
-/* knock the set back so type stays legible over it */
+/* And knocked well back, because the only place it shows is the letterbox and
+   what shows there is a *different crop* of the same photograph than the one
+   inside the canvas. At the old strength the two met at the frame's edge as a
+   visible seam: the same pillar in two places, a few inches apart. Taken down
+   to near black it reads as the room continuing past the edge of the picture,
+   which is what a letterbox should look like. */
 body.board::after {
   content: ""; position: fixed; inset: 0; z-index: 0;
+  background: rgba(5,10,18,.86);
+}
+/* The set the board is actually laid out against, drawn inside the canvas.
+   #frame is exactly 1920x1080 and stage.webp is exactly 1920x1080, so `cover`
+   here is a 1:1 fit with nothing cropped at any zoom factor: the rail is at
+   y=130 and the step at y=800 on every screen the board will ever be on, and
+   the layout can hold a gap against them once and keep it.
+
+   Absolutely positioned, so #frame's grid never sees them as tracks. */
+#frame::before, #frame::after {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+}
+#frame::before { background: url("bg/stage.webp") center center / cover no-repeat; }
+/* knock the set back so type stays legible over it */
+#frame::after {
   background:
-    radial-gradient(120vw 90vh at 50% 46%, transparent 62%, rgba(5,10,18,.22) 100%),
+    radial-gradient(120% 90% at 50% 46%, transparent 62%, rgba(5,10,18,.22) 100%),
     linear-gradient(180deg, rgba(5,10,18,.16) 0%, transparent 30% 72%, rgba(5,10,18,.24) 100%);
 }
 /* Scoped, never `body.board > *`: a blanket rule outranks position:fixed on
@@ -256,10 +294,15 @@ body.board::after {
 #frame > .ticker { position: relative; z-index: 1; }
 
 /* ── header ───────────────────────────────────────────────────────────── */
+/* Near-solid, like the pre-show's slate. It faded to .45 at the foot, which put
+   the set's own lit ceiling truss straight through ROUND / PICK at the right
+   hand end — the two things up here that change. This is the only header on the
+   board that sits on the bare photograph; the announcements, the showcase and
+   the pre-show all cover it and carry their own. */
 .hdr {
   display: flex; align-items: center; gap: calc(1.6 * var(--u)); padding: 0 calc(2.4 * var(--u));
   border-bottom: 1px solid rgba(32,48,71,.7);
-  background: linear-gradient(180deg, rgba(5,10,18,.9), rgba(5,10,18,.45));
+  background: linear-gradient(180deg, rgba(5,10,18,.96), rgba(5,10,18,.88));
 }
 /* TSC's own masthead, not a bespoke one. Same shape as `.nav-kicker` +
    `.nav-title` on the site: a small tracked mono kicker over a DM Serif
@@ -280,10 +323,14 @@ body.board::after {
 }
 .hdr-title em { font-style: italic; color: var(--gold); }
 .hdr-rule { flex: 1; }
+/* Where the draft actually is, and it was the smallest, dimmest thing on the
+   board — 1.15u of --chalk-dim in the far corner, which is a caption on a
+   laptop and nothing at all across a room. */
 .hdr-meta {
-  display: flex; align-items: center; gap: calc(1.6 * var(--u));
-  font-family: var(--mono); font-size: calc(1.15 * var(--u)); letter-spacing: .22em;
-  color: var(--chalk-dim); text-transform: uppercase;
+  display: flex; align-items: center; gap: calc(1.8 * var(--u));
+  font-family: var(--mono); font-weight: 600;
+  font-size: calc(1.45 * var(--u)); letter-spacing: .22em;
+  color: var(--chalk); text-transform: uppercase;
 }
 .hdr-meta b { color: var(--milk); font-weight: 600; }
 
@@ -367,8 +414,21 @@ body.board::after {
   font-family: var(--display); font-weight: 900; font-size: calc(6 * var(--u)); color: var(--gold);
 }
 
+/* Sat down off the set's gold rail.
+   The rail is baked into the photograph at y=137 and the column used to open at
+   153, so ON THE CLOCK cleared it by sixteen pixels — which is not clearance,
+   it is a near miss, and on any screen where the set drifted at all (see the
+   note on #frame::before) the two collided outright. The set is locked to the
+   canvas now, so this gap is the same on every television, and it is set to
+   something that reads as a decision rather than as luck.
+
+   A margin rather than padding on the wrap: the manager's cut-out is 50u tall
+   in a row with about 51u of room, so anything that takes height off the top of
+   .clock-wrap crops his head. The column is centred, so the grid splits this
+   between the two ends and the eyebrow lands ~30px lower. */
 .clock-info {
   position: relative; min-width: 0;
+  margin-top: calc(5.6 * var(--u));
   display: flex; flex-direction: column; gap: calc(1.6 * var(--u));
 }
 /* One soft, wide scrim for the whole column. The old version was a tight
@@ -789,7 +849,20 @@ body.board::after {
 @keyframes piFace {
   from { opacity: 0; transform: translateY(calc(5 * var(--u))) scale(.97); }
 }
-.pi-who { min-width: 0; padding-bottom: calc(.4 * var(--u)); }
+/* Lifted clear of the steps in the floor of the set.
+   The set has three lit step edges baked into it, at y=786, y=807 and y=822,
+   and SELECTION LOCKED was sitting on the brightest of the three — a gold rule
+   running straight through 25px of gold tracked-out mono, which is the one
+   combination on this screen that cannot be read. The gaps between the steps
+   are 17px and 12px and the eyebrow is 25px tall, so there is nowhere between
+   them to put it: the block goes above the group entirely.
+
+   Padding on the text rather than a move on .pi-locked, because the cut-out is
+   bottom-aligned beside it and he belongs on the floor — he is standing in the
+   room. This lifts the three lines and leaves him where he is. What crosses the
+   steps now is the name, which is 110px of solid white display type and does
+   not notice them. */
+.pi-who { min-width: 0; padding-bottom: calc(7.5 * var(--u)); }
 /* The three lines of the card come in behind the rail, one after the other,
    rather than as a block. */
 .pi-eyebrow, .pi-sub { animation: selUp .5s ease-out both; }
@@ -1964,9 +2037,28 @@ body.handoff-reveal .reveal { display: flex; }
    sitting past the pick they went at last year, what the room is averaging on
    the clock. The wall is hidden rather than torn down: it comes back the
    instant the console asks for it, with no repaint. */
+/* ── a note on the sizes and tones in the four panels below ───────────────
+ * These were built and judged on a laptop, eighteen inches from the screen,
+ * and they are read on a television from across a room. That is not the same
+ * problem and the difference is not evenly spread: the headline in each panel
+ * was always large enough, and it is everything *around* the headline — the
+ * slot numbers, the keys, the counts, the captions under a badge — that was
+ * set at 1.0-1.2u in --mute and disappeared at ten feet.
+ *
+ * --mute is #5b687a. It is a navy, the panels are navy, and it was doing the
+ * work of a secondary tone on a monitor where the eye can resolve a 2:1
+ * contrast ratio at 11px. Across a room it is not a dim label, it is a blank
+ * space. The floor for anything that carries a word on this side of the board
+ * is --chalk-dim, and --mute is left for rules, empties and disabled states —
+ * things whose job is to be nearly absent.
+ *
+ * The sizes go up by roughly a sixth on the small type and are left alone on
+ * anything already above 2u. The round wall is untouched: it is the one panel
+ * on the right that was already legible, and it is the one on screen most of
+ * the night.                                                               */
 .wall-sub {
   margin-left: auto; min-width: 0; font-family: var(--mono); font-weight: 600;
-  font-size: calc(1.2 * var(--u)); letter-spacing: .12em; color: var(--gold);
+  font-size: calc(1.4 * var(--u)); letter-spacing: .12em; color: var(--gold);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .rp { display: none; flex: 1; min-height: 0; }
@@ -1998,18 +2090,20 @@ body.rail-alt .rp { display: block; }
    the numbers still run 1 to 12 straight down the panel. */
 .nb-hd {
   display: flex; align-items: baseline; gap: calc(.9 * var(--u));
-  font-family: var(--mono); font-size: calc(1.05 * var(--u)); letter-spacing: .2em;
+  font-family: var(--mono); font-size: calc(1.25 * var(--u)); letter-spacing: .2em;
   color: var(--gold);
 }
-.nb-hd .n { color: var(--mute); letter-spacing: 0; font-size: calc(1.15 * var(--u)); }
+.nb-hd .n { color: var(--chalk-dim); letter-spacing: 0; font-size: calc(1.35 * var(--u)); }
 .nb-name {
   font-family: var(--cond); font-weight: 700; font-size: calc(3 * var(--u));
   line-height: 1; letter-spacing: .03em; text-transform: uppercase; color: var(--milk);
 }
 /* The sentence. This is the panel — everything around it is the evidence. */
+/* The sentence, and the whole reason the panel exists — so it is the one line
+   in here that gets the full white rather than the secondary tone. */
 .nb-say {
-  font-family: var(--cond); font-weight: 500; font-size: calc(2.1 * var(--u));
-  line-height: 1.1; color: var(--chalk);
+  font-family: var(--cond); font-weight: 500; font-size: calc(2.4 * var(--u));
+  line-height: 1.1; color: var(--milk);
 }
 .nb-chips { display: flex; flex-wrap: wrap; gap: calc(.4 * var(--u)); margin-top: calc(.2 * var(--u)); }
 .nb-row {
@@ -2019,18 +2113,18 @@ body.rail-alt .rp { display: block; }
 }
 .nb-k {
   display: flex; align-items: center; gap: calc(.4 * var(--u));
-  font-family: var(--mono); font-size: calc(1.02 * var(--u)); letter-spacing: .14em;
-  color: var(--mute); white-space: nowrap;
+  font-family: var(--mono); font-size: calc(1.2 * var(--u)); letter-spacing: .14em;
+  color: var(--chalk-dim); white-space: nowrap;
 }
 .nb-v {
   min-width: 0; flex: 1; text-align: right;
-  font-family: var(--cond); font-weight: 600; font-size: calc(1.6 * var(--u));
+  font-family: var(--cond); font-weight: 600; font-size: calc(1.9 * var(--u));
   color: var(--chalk); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .nb-next {
   margin-top: calc(.3 * var(--u));
-  font-family: var(--mono); font-size: calc(1.15 * var(--u)); letter-spacing: .08em;
-  color: var(--chalk-dim);
+  font-family: var(--mono); font-size: calc(1.35 * var(--u)); letter-spacing: .08em;
+  color: var(--chalk);
 }
 .nb-next b { color: var(--gold-hi); font-weight: 700; }
 
@@ -2040,20 +2134,23 @@ body.rail-alt .rp { display: block; }
   display: inline-flex; align-items: center; justify-content: center;
   min-width: calc(3.4 * var(--u)); padding: calc(.22 * var(--u)) calc(.5 * var(--u));
   border-radius: 2px; font-family: var(--mono); font-weight: 700;
-  font-size: calc(1.15 * var(--u)); letter-spacing: .08em; color: var(--c);
+  font-size: calc(1.32 * var(--u)); letter-spacing: .08em; color: var(--c);
   background: color-mix(in srgb, var(--c) 20%, transparent);
   border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
 }
 /* A gap the room would already be needling him about. Everything else is
    reported at half strength — true, but not yet news. */
-.pchip { opacity: .45; }
+/* .45 was the difference between "reported" and "news" on a monitor. On a
+   television it was the difference between reported and absent — eleven rows of
+   chips where only the hot ones rendered at all. The gap still reads. */
+.pchip { opacity: .62; }
 .pchip.hot { opacity: 1; }
 .pchip.flex {
   --c: var(--chalk-dim);
   color: var(--chalk); background: rgba(32,48,71,.5); border-color: var(--line-2);
 }
 .pchip.set {
-  opacity: 1; color: var(--mute); background: transparent;
+  opacity: 1; color: var(--chalk-dim); background: transparent;
   border-color: var(--line-soft); letter-spacing: .14em;
 }
 
@@ -2064,9 +2161,9 @@ body.rail-alt .rp { display: block; }
   align-items: center; gap: calc(.8 * var(--u));
   border-bottom: 1px solid var(--line-soft);
 }
-.nrow .n { font-family: var(--mono); font-size: calc(1.15 * var(--u)); color: var(--mute); }
+.nrow .n { font-family: var(--mono); font-size: calc(1.35 * var(--u)); color: var(--chalk-dim); }
 .nrow .mg {
-  font-family: var(--cond); font-weight: 600; font-size: calc(1.85 * var(--u));
+  font-family: var(--cond); font-weight: 600; font-size: calc(2.15 * var(--u));
   letter-spacing: .03em; text-transform: uppercase; color: var(--milk);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
@@ -2157,17 +2254,17 @@ body.rail-alt .rp { display: block; }
   vertical-align: .06em;
 }
 .rn-span {
-  font-family: var(--mono); font-size: calc(1.1 * var(--u)); letter-spacing: .08em;
-  color: var(--mute); white-space: nowrap;
+  font-family: var(--mono); font-size: calc(1.3 * var(--u)); letter-spacing: .08em;
+  color: var(--chalk-dim); white-space: nowrap;
 }
 /* No run on is a real answer and gets the same block, drawn flat. The panel
    has to be worth pressing the button for either way. */
 .rn-live.quiet { border-color: var(--line); background: rgba(11,20,34,.6); }
 .rn-k {
-  font-family: var(--mono); font-size: calc(1.05 * var(--u)); letter-spacing: .2em;
+  font-family: var(--mono); font-size: calc(1.25 * var(--u)); letter-spacing: .2em;
   color: var(--gold);
 }
-.rn-live.quiet .rn-k { color: var(--mute); }
+.rn-live.quiet .rn-k { color: var(--chalk-dim); }
 .rn-pos {
   font-family: var(--display); font-weight: 900; font-stretch: 62%;
   font-size: calc(4 * var(--u)); line-height: .95; letter-spacing: .01em;
@@ -2179,7 +2276,7 @@ body.rail-alt .rp { display: block; }
   letter-spacing: .06em; text-transform: uppercase; color: var(--chalk);
 }
 .rn-n b { font-family: var(--clock); font-weight: 600; font-size: calc(2.8 * var(--u)); color: var(--milk); }
-.rn-live.quiet .rn-n { font-size: calc(1.5 * var(--u)); text-transform: none; color: var(--mute); }
+.rn-live.quiet .rn-n { font-size: calc(1.75 * var(--u)); text-transform: none; color: var(--chalk-dim); }
 
 /* Runs that have come and gone. `positionRun` only ever answers "right now",
    so a run that retired four picks ago vanished with it even though it is the
@@ -2190,13 +2287,13 @@ body.rail-alt .rp { display: block; }
   align-items: center; gap: calc(.7 * var(--u));
   padding: calc(.42 * var(--u)) 0; border-bottom: 1px solid var(--line-soft);
 }
-.rh-n { font-family: var(--cond); font-size: calc(1.6 * var(--u)); color: var(--chalk-dim); }
+.rh-n { font-family: var(--cond); font-size: calc(1.8 * var(--u)); color: var(--chalk-dim); }
 .rh-n b { font-family: var(--clock); font-weight: 600; font-size: calc(2.1 * var(--u)); color: var(--milk); }
-.rh-at { font-family: var(--mono); font-size: calc(1.15 * var(--u)); color: var(--chalk-dim); }
-.rh-ago { font-family: var(--mono); font-size: calc(1.05 * var(--u)); color: var(--mute); text-align: right; }
+.rh-at { font-family: var(--mono); font-size: calc(1.32 * var(--u)); color: var(--chalk-dim); }
+.rh-ago { font-family: var(--mono); font-size: calc(1.22 * var(--u)); color: var(--chalk-dim); text-align: right; }
 .rh-none {
   padding: calc(1 * var(--u)) 0;
-  font-family: var(--cond); font-size: calc(1.7 * var(--u)); color: var(--mute);
+  font-family: var(--cond); font-size: calc(1.9 * var(--u)); color: var(--chalk-dim);
 }
 
 .rn-sec { flex: none; }
@@ -2216,8 +2313,8 @@ body.rail-alt .rp { display: block; }
 .rn-n b { font-size: calc(2.3 * var(--u)); }
 .rn-hd {
   display: flex; justify-content: space-between;
-  font-family: var(--mono); font-size: calc(1.02 * var(--u)); letter-spacing: .16em;
-  color: var(--mute); border-bottom: 1px solid var(--line);
+  font-family: var(--mono); font-size: calc(1.22 * var(--u)); letter-spacing: .16em;
+  color: var(--chalk-dim); border-bottom: 1px solid var(--line);
   padding-bottom: calc(.35 * var(--u)); margin-bottom: calc(.5 * var(--u));
 }
 /* The last twelve picks as a row of ticks, oldest left, so the shape of a run
@@ -2230,11 +2327,11 @@ body.rail-alt .rp { display: block; }
 }
 .rn-tick i {
   font-family: var(--mono); font-style: normal; font-weight: 700;
-  font-size: calc(1.02 * var(--u)); color: var(--mute);
+  font-size: calc(1.2 * var(--u)); color: var(--chalk-dim);
 }
 .rn-tick u {
   font-family: var(--mono); text-decoration: none;
-  font-size: calc(.85 * var(--u)); color: var(--line-2);
+  font-size: calc(1 * var(--u)); color: var(--mute);
 }
 .rn-tick.lit {
   background: color-mix(in srgb, var(--c) 26%, transparent);
@@ -2242,7 +2339,7 @@ body.rail-alt .rp { display: block; }
 }
 .rn-tick.lit i { color: var(--c); }
 .rn-tick.lit u { color: var(--chalk-dim); }
-.rn-none { font-family: var(--mono); font-size: calc(1.2 * var(--u)); color: var(--mute); }
+.rn-none { font-family: var(--mono); font-size: calc(1.4 * var(--u)); color: var(--chalk-dim); }
 
 .rn-lrow {
   display: grid; grid-template-columns: calc(4 * var(--u)) minmax(0, 1fr)
@@ -2321,13 +2418,13 @@ body.rail-alt .rp { display: block; }
 }
 .ssub {
   display: flex; align-items: center; gap: calc(.6 * var(--u));
-  font-family: var(--mono); font-size: calc(1.15 * var(--u));
+  font-family: var(--mono); font-size: calc(1.35 * var(--u));
 }
 .ssub .tm { color: var(--chalk-dim); }
 /* How far past his own slot he is, under his name where a sentence goes,
    rather than pinned to the row's corner. Only on the rows that have one. */
 .sgap {
-  font-family: var(--cond); font-weight: 600; font-size: calc(1.5 * var(--u));
+  font-family: var(--cond); font-weight: 600; font-size: calc(1.7 * var(--u));
   letter-spacing: .02em; color: var(--gold);
 }
 
@@ -2340,8 +2437,8 @@ body.rail-alt .rp { display: block; }
   background: rgba(11,20,34,.7);
 }
 .sb-y {
-  font-family: var(--mono); font-size: calc(.95 * var(--u)); letter-spacing: .18em;
-  color: var(--mute);
+  font-family: var(--mono); font-size: calc(1.15 * var(--u)); letter-spacing: .18em;
+  color: var(--chalk-dim);
 }
 .sb-p {
   font-family: var(--clock); font-weight: 600; font-size: calc(3.2 * var(--u));
@@ -2356,7 +2453,7 @@ body.rail-alt .rp { display: block; }
 /* Who took him is the caption to the slot, not a second headline beside it. */
 .sb-m {
   max-width: 100%; font-family: var(--cond); font-weight: 600;
-  font-size: calc(1.25 * var(--u)); text-transform: uppercase; letter-spacing: .06em;
+  font-size: calc(1.45 * var(--u)); text-transform: uppercase; letter-spacing: .06em;
   color: var(--chalk-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .sb.past .sb-m { color: var(--chalk); }
@@ -2367,7 +2464,7 @@ body.rail-alt .rp { display: block; }
    right-hand column stays a column all the way down. */
 .sb.none { border-style: dashed; border-color: var(--line-soft); }
 .sb.none .sb-p { color: var(--chalk-dim); font-size: calc(2.4 * var(--u)); }
-.sb.none .sb-m { color: var(--mute); font-weight: 500; text-transform: none; font-size: calc(1.25 * var(--u)); }
+.sb.none .sb-m { color: var(--chalk-dim); font-weight: 500; text-transform: none; font-size: calc(1.4 * var(--u)); }
 
 /* ── the clock room ───────────────────────────────────────────────────── */
 /* No flex gap. It applied between all three children, which put a unit of air
@@ -2382,7 +2479,7 @@ body.rail-alt .rp { display: block; }
 }
 .croom.empty p.sub {
   margin-top: calc(1.2 * var(--u));
-  font-size: calc(1.55 * var(--u)); color: var(--mute);
+  font-size: calc(1.75 * var(--u)); color: var(--chalk-dim);
 }
 /* The one number worth setting big. Everything under it is a table. */
 .clong {
@@ -2392,7 +2489,7 @@ body.rail-alt .rp { display: block; }
   margin-bottom: calc(1 * var(--u));
 }
 .clong .ck {
-  font-family: var(--mono); font-size: calc(1.05 * var(--u)); letter-spacing: .18em;
+  font-family: var(--mono); font-size: calc(1.25 * var(--u)); letter-spacing: .18em;
   color: var(--gold);
 }
 .clong .ct {
@@ -2409,8 +2506,8 @@ body.rail-alt .rp { display: block; }
 }
 .chd {
   flex: none; display: flex; justify-content: space-between;
-  font-family: var(--mono); font-size: calc(1.05 * var(--u)); letter-spacing: .16em;
-  color: var(--mute); border-bottom: 1px solid var(--line); padding-bottom: calc(.4 * var(--u));
+  font-family: var(--mono); font-size: calc(1.3 * var(--u)); letter-spacing: .16em;
+  color: var(--chalk-dim); border-bottom: 1px solid var(--line); padding-bottom: calc(.4 * var(--u));
 }
 .clist { flex: 1; min-height: 0; display: grid; grid-template-rows: repeat(12, 1fr); }
 .crow {
@@ -2420,9 +2517,9 @@ body.rail-alt .rp { display: block; }
   border-bottom: 1px solid var(--line-soft);
   padding-right: calc(.4 * var(--u));
 }
-.crow .cn { font-family: var(--mono); font-size: calc(1.1 * var(--u)); color: var(--mute); }
+.crow .cn { font-family: var(--mono); font-size: calc(1.3 * var(--u)); color: var(--chalk-dim); }
 .crow .cmg {
-  font-family: var(--cond); font-weight: 600; font-size: calc(1.8 * var(--u));
+  font-family: var(--cond); font-weight: 600; font-size: calc(2.05 * var(--u));
   text-transform: uppercase; letter-spacing: .04em; color: var(--milk);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
@@ -2440,12 +2537,15 @@ body.rail-alt .rp { display: block; }
 /* How many picks that average is built on, so one slow pick in round one is
    not mistaken for a habit. */
 .crow .cav em {
-  font-family: var(--mono); font-style: normal; font-size: calc(1.05 * var(--u));
-  color: var(--mute); margin-left: calc(.6 * var(--u));
+  font-family: var(--mono); font-style: normal; font-size: calc(1.25 * var(--u));
+  color: var(--chalk-dim); margin-left: calc(.6 * var(--u));
 }
-.crow.none .cmg, .crow.none .cn { color: var(--mute); }
+/* A man who has not picked yet stays the quietest thing in the list, but quiet
+   is --chalk-dim now: at --mute his name was not dim on a television, it was
+   gone, and a row with nothing in it reads as a rendering fault. */
+.crow.none .cmg, .crow.none .cn { color: var(--chalk-dim); }
 .crow.none .cav {
-  font-family: var(--mono); font-size: calc(1.1 * var(--u)); color: var(--mute);
+  font-family: var(--mono); font-size: calc(1.3 * var(--u)); color: var(--mute);
   letter-spacing: .08em;
 }
 
@@ -3125,9 +3225,19 @@ body.phase-details .bb-next {
 /* The header sits on the plate now, so it cannot carry the panel's own rule
    underneath it — a hairline across the art at the top is the seam this was
    meant to remove. */
+/* And it is the one header in the band that gets to be bigger than the others.
+   The two cards either side of it are titles on lists that fill their cards, so
+   their headers are as small as they can be and every pixel goes to rows. This
+   one labels a single row of three things — face, name, clock — that sits
+   ninety pixels short of the bottom of its own body, and the label was set at
+   1.45u anyway because that is what its neighbours use. The card has the slack;
+   the title takes it. Scoped to this card so nothing else in the band moves. */
+body.phase-details .bb-next { --bb-hd: calc(5.8 * var(--u)); }
 body.phase-details .bb-next > .rail-hd {
   border-bottom: 0; padding: 0 calc(2.4 * var(--u));
+  font-size: calc(2.15 * var(--u)); letter-spacing: .16em; color: var(--milk);
 }
+body.phase-details .bb-next > .rail-hd .ct { font-size: calc(1.6 * var(--u)); }
 .next-body {
   position: relative; flex: 1; min-height: 0; display: flex; align-items: center;
   gap: calc(1.2 * var(--u));
@@ -4168,12 +4278,48 @@ body.phase-details .bb-next > .rail-hd {
    tendencies underneath it are two panels of numbers that want reading. So the
    crossover sits a second earlier than the midpoint: a second off the board,
    the same second onto the career face, and the cycle stays fifteen. */
-/* Equal halves, not a fixed strip over whatever is left. Both of these are
-   full width now and there is the room for it. */
+/* Not equal halves. They were, and the two panels are not the same size of
+   problem: the career is seven columns of four short lines that are legible at
+   whatever height they are given, and the tendencies are three verdict blocks
+   plus four position bars plus a caption, all of which were being squeezed into
+   the same 181px. Three fifths and two fifths, measured off what each one
+   actually has in it — the career loses about six pixels it was not using and
+   the tendencies gain about seventy-five. */
 .sc-flip.b {
-  grid-template-rows: 1fr 1fr; gap: calc(1.2 * var(--u));
+  grid-template-rows: 2fr 3fr; gap: calc(1.2 * var(--u));
   animation-name: scFaceB;
 }
+/* ── the titles, moved off the top of each panel ───────────────────────────
+ * Both panels carried a full-width header bar 3.4u deep to hold one word and a
+ * count. Two of them came to 66px of a 444px face — fifteen percent of the only
+ * screen on the board that has two panels stacked on it — spent on "CAREER" and
+ * "TENDENCIES", and the tendencies underneath were the most cramped thing in
+ * the showcase.
+ *
+ * So the header turns ninety degrees and becomes a rail down the left edge. It
+ * is the same element with the same content in the same reading order; it just
+ * takes width instead of height, and width is what this face has going spare —
+ * the career strip is seven columns across 1588px and the rail costs it 146.
+ * The rule that was under the title is now beside it and does the same job of
+ * separating the label from the thing it labels.
+ *
+ * Face B only. His board tonight is a single tall list where a header bar costs
+ * one row out of fifteen and a rail would cost it a tenth of its width. */
+.sc-flip.b .sc-panel { flex-direction: row; align-items: stretch; }
+.sc-flip.b .sc-hd {
+  flex: none; width: calc(15 * var(--u)); height: auto;
+  flex-direction: column; align-items: flex-start; justify-content: center;
+  gap: calc(1 * var(--u));
+  padding: calc(1.2 * var(--u)) calc(1.2 * var(--u)) calc(1.2 * var(--u)) calc(1.5 * var(--u));
+  border-bottom: 0; border-right: 1px solid var(--line);
+  line-height: 1.25;
+}
+/* The count sat right of a `margin-left: auto` when the header was a row. In a
+   column that pushes it to the bottom of the rail and leaves the title floating
+   at the top; it belongs directly under the word it qualifies. */
+.sc-flip.b .sc-hd .ct { margin-left: 0; font-size: calc(1.15 * var(--u)); }
+/* Which face you are on, at the head of the rail rather than beside the title */
+.sc-flip.b .sc-hd .pg { margin-right: 0; }
 /* Sequenced rather than cross-dissolved: the outgoing face is gone before the
    incoming one arrives, so there is never a frame with two half-transparent
    panels stacked on each other. The last keyframe of each has to match its
@@ -4351,8 +4497,12 @@ body.phase-details .bb-next > .rail-hd {
    its boxes reads as sitting low even when it is centred to the pixel. Hugging
    the type is what makes the space over the label match the space under the
    number. */
+/* Everything in this card is set a size up now that the card is half again as
+   tall. The point of giving the tendencies the room was to be able to read them
+   from a couch, and simply letting three blocks grow into it would have bought
+   nothing but taller boxes with the same 2.3u name floating in the middle. */
 .sc-tend .k {
-  font-family: var(--mono); font-weight: 600; font-size: calc(1.3 * var(--u));
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.55 * var(--u));
   line-height: 1; letter-spacing: .15em; text-transform: uppercase;
   color: var(--gold);
 }
@@ -4360,9 +4510,9 @@ body.phase-details .bb-next > .rail-hd {
   font-family: var(--cond); font-weight: 700; line-height: 1.05; color: var(--milk);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.sc-tend .v b { font-size: calc(2.3 * var(--u)); }
+.sc-tend .v b { font-size: calc(3.2 * var(--u)); }
 .sc-tend .rng {
-  font-family: var(--mono); font-size: calc(1.2 * var(--u)); line-height: 1;
+  font-family: var(--mono); font-size: calc(1.5 * var(--u)); line-height: 1;
   color: var(--chalk-dim);
 }
 /* The caption over the four bars, with the rule running off the end of it.
@@ -4371,7 +4521,7 @@ body.phase-details .bb-next > .rail-hd {
 .sc-tend .fhd {
   display: flex; align-items: center; gap: calc(1 * var(--u));
   font-family: var(--mono); font-weight: 600;
-  font-size: calc(1.35 * var(--u)); line-height: 1;
+  font-size: calc(1.5 * var(--u)); line-height: 1;
   letter-spacing: .2em; text-transform: uppercase; color: var(--chalk-dim);
 }
 .sc-tend .fhd::after {
@@ -4399,22 +4549,22 @@ body.phase-details .bb-next > .rail-hd {
 .sc-tend .f-WR { border-left-color: var(--wr); }
 .sc-tend .f-TE { border-left-color: var(--te); }
 .sc-tend .pc {
-  font-family: var(--mono); font-weight: 600; font-size: calc(1.7 * var(--u));
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.95 * var(--u));
   line-height: 1; letter-spacing: .1em;
 }
-.sc-tend .f b { font-size: calc(2.5 * var(--u)); }
+.sc-tend .f b { font-size: calc(2.9 * var(--u)); }
 /* Two numbers side by side rather than a sentence about them. "rd 6.4 to
    their 5.6" is a thing nobody says out loud; his name over one number and
    the room over the other is the comparison itself. */
 .sc-tend .cmp {
   display: flex; align-items: baseline; justify-content: center;
   gap: calc(.5 * var(--u));
-  font-family: var(--mono); font-size: calc(1.2 * var(--u)); line-height: 1;
+  font-family: var(--mono); font-size: calc(1.5 * var(--u)); line-height: 1;
   color: var(--chalk);
 }
 .sc-tend .cmp i {
   font-style: normal; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--mute); font-size: calc(1.05 * var(--u));
+  color: var(--chalk-dim); font-size: calc(1.3 * var(--u));
 }
 .sc-tend .cmp em { font-style: normal; color: var(--line-2); }
 
