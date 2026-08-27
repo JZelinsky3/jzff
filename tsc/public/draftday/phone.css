@@ -482,7 +482,10 @@ body.armed .prow::after {
 }
 .ci-seat:active { background: var(--panel-2); }
 .ci-seat.conf-whole { border-top-color: var(--conf-whole); }
-.ci-seat.conf-skim  { border-top-color: var(--conf-skim); }
+/* The lit navy, not `--conf-skim` itself. A 2px rule along the top of a dark
+   card is the same problem the wall tile's index box has: the palette navy is
+   a fill colour and vanishes when it is asked to be a hairline. */
+.ci-seat.conf-skim  { border-top-color: var(--conf-skim-lit); }
 .ci-seat.champ { border-top-color: var(--gold); }
 .ci-no {
   position: absolute; top: .1rem; right: .35rem;

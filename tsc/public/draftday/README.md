@@ -715,6 +715,116 @@ Two things this makes easy to get wrong:
 
 ## Design
 
+### The conferences are navy and cream
+
+`--conf-whole` and `--conf-skim` at the top of `draft.css`, plus the two channel
+triples under them. **There is nowhere else to change.**
+
+They were a pale blue and a light red, which is a perfectly good pair that
+belonged to nothing: red appears nowhere else in this production and the blue
+was three shades off the one the panels are built from. The set is navy, cream
+and brass, so the halves of the league are **navy and cream** and the whole
+screen is made of the same handful of colours.
+
+**A navy conference forces two changes, both of them the same lesson: the
+palette navy is a fill colour, not an ink.** `#315a82` on the panel is 2.6:1,
+which is fine behind something and gone as type.
+
+- **The chips became filled plates.** They were a coloured label on a 10% wash
+  of the same colour, which works while both conference colours are light. Now
+  Whole is navy ink on a cream ground (15:1) and Skim is cream ink on a navy
+  ground (9.6:1), and the two are told apart across a room by which one is
+  light — something no amount of hue ever managed at a 62%-of-parent font size.
+- **Anywhere the colour has to be a hairline or a numeral, Skim uses
+  `--conf-skim-lit`** (`#6f9ac8`): the pre-show plinth rule and the phone's
+  seat rule.
+
+**On the round wall the nameplate stopped being a wash and became a solid
+bar.** It was the conference colour at 30-45% alpha over the tile's own navy,
+which worked while the two colours were a pale blue and a light red: both were
+far enough from the card to survive being diluted into it. Navy and cream do
+not survive it. Navy at 30% over navy is a slightly different dark, and cream
+at 17% is a grey smudge — twelve tiles that all looked like the same tile,
+which is the opposite of what a colour marking the halves of the league is for.
+Two passes were spent tuning alphas before the answer turned out to be that an
+alpha was the wrong instrument.
+
+**The reference is the bottom band, which already does this**: a solid cream
+plate with navy ink sitting on a dark card. Whole gets that plate. Skim gets it
+inverted, navy ground with cream ink. Both are unmissable across a room and
+neither depends on an alpha landing right against whatever is behind it. The
+ink flips with the plate, which is the part a wash never had to do — `.hd .mg`
+is cream by default and has to be navy on a cream bar, and the index box goes
+with it. Everything below the band is untouched.
+
+**Skim's bar is `--conf-skim-bar` (#2d5378) falling to #152845, and it is a
+third blue on purpose.** Three values were tried and the middle one is right,
+which took going to both ends to establish:
+
+| | | |
+|---|---|---|
+| `#37628d` | the hairline value at plate size | reads as a steel blue, not the board's navy |
+| `#0a1220` | the bottom band's actual surface | correct answer to "what colour is that", wrong answer here |
+| `#2d5378` | between them | **this one** |
+
+The near-black is worth understanding because it is genuinely what those cards
+are made of. It failed for a reason that has nothing to do with colour
+matching: **the tile it sits on is already dark, so a near-black band on it is
+a band nobody can see.** A nameplate has to be a different object from the
+card, and against a dark card that means lighter, whatever the reference is
+made of. Matching a surface and marking a division are two different jobs and
+only one of them was the brief.
+
+Cream on the bar is 9.2:1 at the top and 12.8:1 at the bottom, and the champion
+gold clears 5:1.
+
+**The index box on the cream bar is blue, in that same `--conf-skim-bar`.** It
+was `--ink-navy`, the same colour as the name beside it, which made the box a
+second piece of the same text rather than a marker. In the other conference's
+navy it becomes the one place the two halves touch: a cream card with a blue
+number, a blue card with a cream one. 5.6:1 on the cream.
+
+**The index box went to a 2px border.** At one pixel it was a suggestion of a
+box: it is 24px across on a nameplate carrying a name three times its size, and
+the reason it is drawn at all is that twelve tiles then start their names on the
+same vertical. A hairline that thin also disappeared entirely on the cream bar,
+where it has to hold its own against the brightest ground on the board. The box
+is the same size — `min-width` and `height` are the border box.
+
+`.wt.onclock::before` puts the brass band back for whoever is on the clock,
+same specificity as the conference rules and later in the file, which is what
+decides it. The man on the clock outranks his conference.
+
+**The one place `--conf-skim` still appears as a raw value is a filled ground.**
+If a future panel wants it as type, reach for the lit value.
+
+### The defending champion's name is gold, on the round wall only
+
+`.wt.champ .hd .mg`, set from `last_season.finish === 1` in `renderRoundBoard()`
+rather than hardcoded to Mason, so it moves on its own next August.
+
+The wall is the only panel with all twelve names on screen at once, which is
+the only place the mark reads as a mark: one gold name among eleven cream ones
+says who won it last year with no label and no extra furniture. The same colour
+on the on-the-clock card would just be a name set in a different colour,
+because there is nothing beside it to be different from.
+
+The colour is `#e9b451`, which is `--gold` lifted about a fifth in value and
+nothing else: same hue, same chroma, brighter. Both of the palette's other
+brasses were wrong here for opposite reasons. `--gold-hi` (#f0d49a) is the pale
+one meant for large display type on near-black, and at 16px on a lit nameplate
+it stops being gold at all and reads as a soft yellow — which is exactly what
+it did on the first pass. `--gold` itself lands at about 3:1 through the middle
+of Skim's navy bar, under what a name needs across a room. Nothing else about
+the tile changes. A champion's tile is a tile, with his name lit.
+
+On a cream bar the bright brass would be 2:1, so a Whole champion gets the ink
+version of the same idea, `#6b4f14` at 5.3:1. Mason is Skim, so that rule fires
+on nobody tonight; it fires the first year a Whole team wins.
+(The pre-show plinth has had its own brass mount for him since 2026-08-25;
+that is a different panel and a different treatment, and neither knows about
+the other.)
+
 The set is `bg/stage.webp`, fixed behind the whole page, with every panel
 floating over it at `rgba(5,10,18,.82)` so the header, board and ticker share
 one room. Four type families do four jobs: **Archivo 900/62%** for the loud
@@ -1082,11 +1192,220 @@ card carries one or two sentences beside a running timer, which is all a man
 with 180 seconds will read. The showcase is a full-screen takeover that covers
 the draft. This is neither: a paragraph on a card that is already up, for as
 long as the console leaves it there. It says where a manager actually stands
-going into 2026, where the Milk Order put him and why, and what would make the
+going into 2026, where the power rank put him and why, and what would make the
 season count.
 
-Four parts and no more: the name, the Milk Order slot, **The goal**, the
-writeup, and one line of facts under it.
+**Three parts and no more: The goal, the writeup, and head to head.** No name
+and no rank badge on the card, which is the whole reason the paragraph fits at
+half the band. The card is directly under the on-the-clock hero, which is
+already printing the manager's name at 97px, his team in gold and his slot as
+POWER RANK. A row repeating all three was forty-six pixels of a card with none
+to spare, spent saying twice what one glance up already answers. The rank is in
+the prose instead, where it can say what it means rather than just what it is.
+
+**One gold rule on the card, under the goal, at 2px.** The goal used to sit
+between two of them, which put three horizontal lines in the top third: the
+plate's own rule under the masthead, then the pair. The masthead's rule already
+closes the header, so the one above the goal was drawing the same boundary a
+second time twelve pixels lower. With nothing above it to share the work, the
+survivor has to hold the split between the goal and the writeup on its own, so
+it doubled.
+
+**It is the power rank on this board, never "the Milk Order."** The Milk Order
+is the twelve-day countdown the ranking came out of, which is a different thing
+in a different place; the label on the card above says POWER RANK and the prose
+has to agree with it. `selftest.html` checks.
+
+**The bottom strip is career head to head, with the fixture attached:** the man
+he owns, the man who owns him, his week one opener and his week eleven rival,
+each with the record and the week or weeks they meet in 2026. `h2h` in
+`data/managers.json`, counted in `build_seasons.mjs` over every game either man
+has ever played, regular season and playoffs both; the weeks come off
+`weeksAgainst()` in `core.js`, read from the fixtures rather than stored so a
+week on the board can never disagree with the schedule.
+
+**A head to head with no date on it is trivia; with one it is a fixture list.**
+That is the whole reason the weeks are there. Two weeks in a cell also says
+something nothing else on the board mentions: that man is one of the three he
+plays twice, so the record in that cell counts double this season.
+
+Two of the four are records and two are fixtures, and the labels are coloured
+on that split — the opener in the cool channel blue, the rival in gold, the way
+the rest of the board already uses those two ideas.
+
+It spent one pass as a strip of every season and where it finished, which was a
+good graphic in the wrong place: **the manager showcase already draws that exact
+table, in full, one button away.** A panel that repeats another panel is worth
+less than a shorter panel. Head to head is nowhere else on the board, it is
+what people actually shout about, and it is the right register for a card about
+the season ahead rather than the ones behind, because all four of these men are
+on his 2026 schedule.
+
+**The two fixtures take their cells first and the two records are chosen from
+whoever is left.** Week one and week eleven happen whether or not the record
+attached to them is interesting. Kyle is the case that forced the ordering:
+Sean is both his rivalry-week opponent and the man he has the worst record
+against, and choosing best and worst first left the strip drawing three cells
+and an empty quarter of a card.
+
+**The cells run OPENER, RIVAL, OWNS, LOSES TO,** left to right in the order the
+season happens: week one, then week eleven, and only then the two men his
+record has an opinion about. It read owns-first at one point, which put two
+pieces of history in front of the two fixtures on a card about the year ahead.
+
+**Three lines to a cell, and which two share a line is the whole question.** It
+went name / record-and-week / nothing first, and the record read as part of the
+date: `9-3 Wk 8` looks like a record with dates attached to it. A man and what
+he has done to you is one fact and takes the line with the name; the week is
+when it happens again, which is a different kind of thing, and takes the line
+under. The name is in Barlow and the record in the mono, so the two halves of
+that line are told apart by face rather than by a separator drawn between them,
+which is what a middot would have cost width for.
+
+**Space between things belongs between the cells, not inside them.** The week
+was pushed hard right with `margin-left: auto` in an earlier pass, which put
+`Wk 8` a hair from the next cell's `CHRIS`, so the wrong two things paired up.
+The grid gap is 1.7u and nothing inside a cell is pushed anywhere.
+
+**An NFL season outlook does not transfer whole, and the part that does not is
+the roster.** Theirs is mostly about who is back, who left and what the draft
+has to replace. None of that is true here: PAMS is a full redraft, nobody keeps
+a player, and all twelve of these rosters are about to be built from nothing in
+the next three hours. So the card is about the manager and only the manager,
+and no writeup talks about what anybody is bringing back.
+
+**Recent form, not career totals, is the spine of the prose.** A points-per-week
+average across seven years is a fact about 2019 as much as about 2026, and the
+outlooks were leaning on it. They run off the last three seasons now, which
+reorders the league: Connor is the highest-scoring team in PAMS over that
+stretch and 42-54 for his career, Charlie has gone from twelfth-ish to fifth,
+and Joey has fallen from the best career average in league history to ninth of
+twelve with the worst three-year record anybody is carrying. Career numbers
+still appear where the point is a career.
+
+**And it has to sound like somebody talking.** Four writeups in a row used the
+same shape for a run of seasons: "the three since have gone 16-26", "the last
+three years have gone third, fourth and tenth", "gone 5-9 twice since". Seasons
+do not go anywhere; a manager finishes them. They read "over the last three
+years he is 16-26", "he has finished third, fourth and tenth", "5-9 in both
+years since". The rule is the same one the whole file runs on, one level down
+from sentence shape: **whatever construction the last card used, the next one
+uses a different one**, and if a sentence would sound odd said out loud it is
+wrong however true it is.
+
+Rewriting for that also caught a duplication nothing else would have. Isaac's
+opened with his three-year record and its finishes and then said the 11-3 and
+10-4 sides "finished second and fifth" — the same two seasons, the same two
+placings, twice in three sentences.
+
+**And it has to be an outlook written from outside.** Two passes were spent
+getting here. The first several were a career summary, which is a fine
+paragraph and the wrong one for a card that goes up while a man is on the
+clock. The next was forward-looking but neutral, a list of true things with no
+view in it. What the card wants is somebody's read: what is actually going on
+with this manager, what would have to change, and what to watch him do in the
+next three hours.
+
+Every writeup now carries **a thesis, the evidence for it, and a draft
+reference point**, and the thesis is usually about a gap between how good a
+team has been and what it has to show for it:
+
+- **Chris** has outscored his opponents by **642 points**, more than anybody in
+  PAMS, and gone **13-19** in games decided by under ten. Read together, 51-45
+  with two ninth-place finishes stops looking like a manager problem.
+- **Connor** is the highest-scoring team in the league over three years and
+  **8-17** in one-score games for his career. That is where 42-54 comes from,
+  and it is not the roster.
+- **Joey** has the *best* one-score record in PAMS at 13-8 and has still gone
+  16-26 across three years, which takes some doing.
+- **Luke** is **11-30** in games decided by thirty or more, the worst in the
+  league by a distance, and won a title in the middle of it.
+- **Kyle** is 46-50 on a **minus-313** differential with four playoff trips, so
+  none of it has been comfortable.
+
+**Consolation and placement games are excluded from all of it, and that is not
+a detail.** Every "playoff week" in PAMS carries a game for all twelve teams:
+the championship bracket, the consolation bracket underneath it, and in the
+final week a full row of placement games (3rd place, 5v6, 7v8, 9v10, 11v12).
+Across seven seasons that is **100 games in playoff weeks of which only 37 are
+the tournament.** Counting the week rather than the bracket does not just
+inflate a record, it distorts it in one direction, because the teams playing
+the most of those games are the teams that missed.
+
+The test is the one `build_seasons.mjs` already used for playoff records: one
+side seated in the top four, and neither side already knocked out, so the
+3rd-place game the semifinal losers play does not count either. It is now
+computed **once per season** and shared by the playoff record and head to head,
+so the two can never disagree about whether a game happened. Every published
+career number came out identical after the change, which is the check that the
+refactor was a refactor.
+
+The `h2h` map moved by a lot: Connor went from 45-55 to 39-51, Kyle from 50-54
+to 44-49, Charlie's worst opponent changed from Isaac to Connie. `selftest.html`
+now asserts no head-to-head total exceeds a manager's career record, and that
+Evan's equals his exactly, since he is the only manager who has never played
+anyone who has since left.
+
+**Those numbers are not in any data file the board ships.** They come from
+`matchups` in TSC's database, walked both sides at a time the same way
+`build_seasons.mjs` walks them: points for and against, record in games decided
+by under ten, record in games decided by thirty or more, **split at 2023** so
+the first four seasons and the last three can be compared. If they ever need
+re-deriving, that is the query. They are written into `voice.js` by hand like
+every other fact in it.
+
+**Both halves of a comparison have to cover the same seasons, and the first
+pass broke that twice on one card.** Joey's read "the best record in one-score
+games in PAMS at 13-8 and has still gone 16-26 over three years": a career
+number against a three-year one, and those thirteen one-score wins could all
+have come before the collapse. It also said "127 a week for a career, ninth of
+twelve since 2023", which compares a total against a stretch that is inside it,
+so the two can never disagree by much and the sentence says less than it looks
+like it does. Both are first-four-seasons against last-three now, on both
+measures: **136 a week and 36-18, then 119 a week and 20-29**, which is the
+same claim made honestly and hits harder for it.
+
+The same audit moved four other cards. Connor's one-score record is the
+three-year one that sits beside his three-year scoring. Chris pairs a
+three-year scoring rank with a three-year one-score record. Kyle's differential
+went out for a three-year record and scoring rank. Charlie's "up from a career
+116" became **110 across the first four, 122 across the last three** — and the
+blowout number, split the same way, turned out to be a better story than the
+one being told: **3-18 in games decided by thirty or more, then 9-6.** He has
+stopped getting run off the field, and only Connor has added more points a week
+between the two stretches.
+
+**A career-versus-recent comparison is almost always the wrong one** when the
+career contains the recent. Either split the career at the same point, or use
+one window for both halves.
+
+**Trades were the one suggestion that did not survive contact with the data.**
+There are 112 of them across the seven seasons and they carry
+`raw_payload.team_ids`, which are NFL.com per-season team numbers. Nothing in
+the schema joins those back to a manager: `managers.external_id` holds NFL
+*user* ids, and `manager_seasons` has no team number at all. So there is no way
+to say who traded, and any "he trades more in the years he does well" line would
+have been invented. Worth knowing before anyone tries again.
+
+**Big matchups go in the prose only when they are the point.** Joey's ends on
+week 11 against Chris because his card is about a gap that gets tested there;
+Kyle's mentions drawing Sean twice because he is 2-7 against him. The strip
+under the writeup already carries four fixtures with their weeks, so a card that
+also lists fixtures in prose is saying the same thing twice.
+
+
+**The rank is spread through the writeups rather than closing all twelve.** Four
+open on it, three carry it in the middle, five close on it. Twelve paragraphs
+that all end the same way are one template however different the middles are,
+which is the same failure the openers were written against. `selftest.html`
+caps the closers at six.
+
+**Two more copy rules came out of this pass.** No sentence may open with "The"
+where anything else will do — there was a run of them, and a paragraph of
+"The 127 a week ... The 117 of the last three years ..." also used **"one" as a
+pronoun for something never named**, which reads as a reference to a thing the
+viewer has not been told about. Neither appears now: eleven of the twelve have
+no "The" opener at all, and there is no bare "one" anywhere in the set.
 
 **The twelve writeups are hand-written in `voice.js`** (`SEASON_OUTLOOK`) and
 not generated. A template with slots for a record and a finish produces twelve
@@ -1094,38 +1413,56 @@ paragraphs of the same shape, which is the exact failure the power-ranking
 writeups kept falling into: the same sentence built twelve times with different
 nouns in it reads as one thing written once. No two open the same way, no
 construction is reused, and each is arguing something different. If a
-thirteenth manager ever needs one, **write it, do not extend a pattern.** Every
-fact in them comes off `data/managers.json`.
+thirteenth manager ever needs one, **write it, do not extend a pattern.**
 
-**Everything on the card that the card above already says was cut**, and that
-is what bought the paragraph its lines:
+**Every number in them is checked against `data/managers.json`, and the first
+pass got five wrong.** All five were the same kind of error, which is worth
+naming: a claim that sounds true about a manager and is actually a claim about
+all twelve, made without looking at the other eleven.
 
-- the team name in gold, which the on-the-clock card prints in gold with the
-  same conference chip, three feet up
-- a three-column facts strip carrying ALL-TIME and TITLES, both of which are
-  in that same card. What is left is playoff trips and the best finish, which
-  is what half the writeups turn on and is nowhere else on the screen. A
-  champion gets top-three finishes instead, because his best finish is 1st and
-  TITLES has said so.
+| claimed | actually |
+|---|---|
+| Isaac has the best regular-season record in PAMS | .554, third, behind Sean and Mason at .583 |
+| Isaac's 11-3 team in 2023 went out early | it finished second |
+| Charlie scores fewer points a week than anyone with more than three seasons | Luke is lower, 114.4 to 116.2 |
+| Connie's playoff record is comfortably the best | .667 against Joey's .625 is not comfortable; the true version is the win count, six against everyone else's five |
+| Connie reached two title games from a seven seed | a six seed both times |
+| Kyle's 2025 was a four seed | a three seed that finished fourth |
 
-**The card takes 1.55 of the band while the outlook is up.** A list can be any
-width and stay a list; a paragraph cannot. At half the band the writeups came
-out six lines deep in a card with room for four and the last two sentences were
-cut off the bottom. The width comes off the lineup, which is nine names and a
-two-character team and has more than it needs, and whose columns are all in em
-off the shared row clamp so nothing in it moves out of proportion.
+**A rank is not a finish, and the prose has to say which.** Joey's writeup read
+"twelfth, eighth, eighth" and then "he ranked himself sixth" two sentences
+later, and the sixth reads as a fourth finish in that list. Every writeup names
+its slot as **No. N**, never as a bare ordinal, for the same reason.
+
+**And no writeup says who made the ranking.** Joey's said "he put himself No. 6
+on his own Milk Order," which is true and is still wrong on this card: the
+power rank is furniture on the board, the same as the ordinal a player carries,
+and a card that stops to explain where the number came from is a card about the
+number. His reads like the other eleven now.
+
+**The phrase "December has" was cut, and the reason is worth keeping.** It was
+the close of Joey's writeup, meaning the scoring is fine and the finish is not.
+Two things wrong with it. Fantasy playoffs *are* in December, so it reads as a
+claim about the wrong months entirely, and every regular season game decides
+who is in them, so there is no part of this season that does not count. If a
+writeup wants to say a manager loses games he should win, it has to say that.
+
+**The budget is six lines of about eighty characters.** Overflow is hidden, so
+a rewrite that runs past it loses its last sentence silently. That is the one
+failure here worth knowing about before draft night, and `selftest.html` is
+what watches it.
 
 **One type size for all twelve.** There was a smaller second step for the long
-ones and it was wrong twice: all twelve writeups are 363-411 characters so the
-step fired on every one of them and the base size was dead code — and had it
-ever not fired, the card would have changed type size as the draft moved from
-one manager to the next, in the same place on the same screen, which reads as a
-fault. It is set at the size that holds the longest of the twelve in four
-lines.
+ones and it was wrong twice: every writeup tripped it, so the base size was
+dead code, and had it ever not tripped, the card would have changed type size
+as the draft moved from one manager to the next, in the same place on the same
+screen, which reads as a fault.
 
-**The budget is four lines of about a hundred characters.** Overflow is hidden,
-so a rewrite that runs past it loses its last sentence silently. That is the
-one failure here worth knowing about before draft night.
+**The card stays exactly half the band.** It took 1.55 of it for one pass, on
+the argument that a paragraph cannot be any width the way a list can. True, and
+not worth it: the lineup shrank visibly every time the outlook went up, and a
+panel that resizes its neighbour when it is switched on is a worse fault than a
+tight column. The lines came out of the card's own furniture instead.
 
 ### Both looks ship, and the console picks
 

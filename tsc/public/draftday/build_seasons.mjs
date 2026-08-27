@@ -96,10 +96,18 @@ const managerRows = await q(
 const nameOf = Object.fromEntries(
   managerRows.map(m => [m.id, MANAGERS[Number(m.external_id)] || null]));
 
+let poKept = 0, poDropped = 0;
 const out = {};
 const ensure = n => (out[n] ||= {
   ledger: [], regW: 0, regL: 0, regT: 0, poW: 0, poL: 0,
   pts: 0, games: 0, titles: [], top3: 0, playoffs: 0,
+  // Career head to head, keyed by the other manager's name: [wins, losses].
+  // Regular season plus championship-bracket playoff games; consolation and
+  // placement games are excluded, for the reason written where it is counted.
+  // Built here rather than on the board because it is 800-odd games across
+  // seven seasons and the board should not be walking them; the answer is
+  // twelve small objects.
+  h2h: {},
 });
 
 for (const s of seasons) {
@@ -200,6 +208,52 @@ for (const s of seasons) {
     }
   }
 
+  // ── head to head ──
+  //
+  // Regular season plus championship-bracket playoff games, and nothing else.
+  //
+  // Every "playoff week" in this league contains a game for all twelve teams:
+  // the bracket, the consolation bracket beneath it, and in the last week a
+  // full row of placement games (3rd place, 5v6, 7v8, 9v10, 11v12). Across the
+  // seven seasons that is 100 games in playoff weeks of which only **37** are
+  // the tournament; the other 63 are consolation and placement. Counting them
+  // does not just inflate a record, it distorts it in one direction, because
+  // the teams playing the most of them are the teams that missed.
+  //
+  // So a playoff game counts here on exactly the test the playoff record uses
+  // above — one side seated in the top four, and neither side already knocked
+  // out — and the set is built once for the season rather than per manager, so
+  // head to head and the playoff record can never disagree about whether a
+  // game happened.
+  //
+  // Both sides of a meeting are written from the same row, so the two
+  // managers' maps can never drift. Ties are dropped rather than given a third
+  // column: PAMS has had a handful in seven years and "6-2-1 against Kyle" is
+  // not a thing anybody says out loud. Managers who have left the league are
+  // skipped, so the map only ever names the eleven a man can play in 2026.
+  const knockedOut = new Set();
+  const counts = new Set();
+  for (const g of po.slice().sort((a, b) => a.week - b.week)) {
+    const A = g.manager_a_id, B = g.manager_b_id;
+    if (knockedOut.has(A) || knockedOut.has(B)) continue;
+    const top4 = id => (rows.find(x => x.manager_id === id)?.final_rank ?? 99) <= 4;
+    if (!top4(A) && !top4(B)) continue;
+    counts.add(g);
+    const sa = Number(g.score_a), sb = Number(g.score_b);
+    if (sa > sb) knockedOut.add(B); else if (sb > sa) knockedOut.add(A);
+  }
+  for (const g of games) {
+    if (g.is_playoff && !counts.has(g)) continue;
+    const A = nameOf[g.manager_a_id], B = nameOf[g.manager_b_id];
+    if (!A || !B || A === B) continue;
+    const sa = Number(g.score_a), sb = Number(g.score_b);
+    if (!(sa || sb) || sa === sb) continue;
+    const aWon = sa > sb;
+    (ensure(A).h2h[B] ||= [0, 0])[aWon ? 0 : 1]++;
+    (ensure(B).h2h[A] ||= [0, 0])[aWon ? 1 : 0]++;
+  }
+  poKept += counts.size; poDropped += po.length - counts.size;
+
   function byId(id) { return rows.find(r => r.manager_id === id); }
   console.log(`${s.year}  ${teams} teams, ${N} in the bracket, ` +
     `${missed.length} re-seated on the regular season`);
@@ -221,6 +275,7 @@ for (const [name, m] of Object.entries(out)) {
     title_years: m.titles,
     top3: m.top3,
     playoffs: m.playoffs,
+    h2h: m.h2h,
   };
 }
 
@@ -229,6 +284,8 @@ fs.writeFileSync(OUT, JSON.stringify({
   source: "TSC database, league pams, seasons 2019-2025",
   managers: payload,
 }, null, 1));
+console.log(`\nplayoff-week games: ${poKept} counted, ${poDropped} dropped as ` +
+  `consolation or placement`);
 console.log(`\nwrote ${path.relative(HERE, OUT)}  ${Object.keys(payload).length} managers`);
 for (const [n, m] of Object.entries(payload)) {
   console.log(`  ${n.padEnd(9)} ${m.record.padEnd(9)} reg ${m.regular_record.padEnd(8)} ` +

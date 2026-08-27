@@ -480,6 +480,11 @@ def build_managers():
             },
             # Season by season, oldest first, for the showcase table.
             "ledger": s.get("ledger", []),
+            # Career head to head against each of the other eleven, as
+            # [wins, losses]. Counted in build_seasons.mjs over every game
+            # either man has played, so it is the whole record and not a
+            # regular-season subset. The season outlook reads it.
+            "h2h": s.get("h2h", {}),
             # Every pick he has made, filed by round, for the showcase band
             # that follows whatever round the draft is in.
             "round_picks": round_picks.get(name, {}),

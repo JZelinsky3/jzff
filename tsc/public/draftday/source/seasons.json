@@ -1,5 +1,5 @@
 {
- "built": "2026-08-21",
+ "built": "2026-08-27",
  "source": "TSC database, league pams, seasons 2019-2025",
  "managers": {
   "Connor": {
@@ -84,7 +84,53 @@
    "titles": 0,
    "title_years": [],
    "top3": 1,
-   "playoffs": 2
+   "playoffs": 2,
+   "h2h": {
+    "Ricci": [
+     4,
+     7
+    ],
+    "Charlie": [
+     5,
+     2
+    ],
+    "Mason": [
+     4,
+     6
+    ],
+    "Chris": [
+     4,
+     4
+    ],
+    "Joey": [
+     5,
+     2
+    ],
+    "Sean": [
+     3,
+     8
+    ],
+    "Connie": [
+     3,
+     4
+    ],
+    "Kyle": [
+     5,
+     5
+    ],
+    "Luke": [
+     1,
+     5
+    ],
+    "Isaac": [
+     5,
+     5
+    ],
+    "Evan": [
+     0,
+     3
+    ]
+   }
   },
   "Joey": {
    "ledger": [
@@ -170,7 +216,53 @@
     2019
    ],
    "top3": 4,
-   "playoffs": 4
+   "playoffs": 4,
+   "h2h": {
+    "Mason": [
+     4,
+     5
+    ],
+    "Kyle": [
+     5,
+     7
+    ],
+    "Chris": [
+     6,
+     7
+    ],
+    "Connor": [
+     2,
+     5
+    ],
+    "Sean": [
+     5,
+     3
+    ],
+    "Charlie": [
+     6,
+     2
+    ],
+    "Connie": [
+     6,
+     3
+    ],
+    "Ricci": [
+     6,
+     3
+    ],
+    "Isaac": [
+     4,
+     4
+    ],
+    "Luke": [
+     5,
+     4
+    ],
+    "Evan": [
+     2,
+     1
+    ]
+   }
   },
   "Mason": {
    "ledger": [
@@ -256,7 +348,53 @@
     2025
    ],
    "top3": 2,
-   "playoffs": 3
+   "playoffs": 3,
+   "h2h": {
+    "Charlie": [
+     5,
+     3
+    ],
+    "Joey": [
+     5,
+     4
+    ],
+    "Chris": [
+     4,
+     4
+    ],
+    "Connor": [
+     6,
+     4
+    ],
+    "Sean": [
+     5,
+     5
+    ],
+    "Connie": [
+     5,
+     5
+    ],
+    "Kyle": [
+     3,
+     7
+    ],
+    "Ricci": [
+     7,
+     2
+    ],
+    "Isaac": [
+     5,
+     2
+    ],
+    "Luke": [
+     4,
+     2
+    ],
+    "Evan": [
+     1,
+     3
+    ]
+   }
   },
   "Sean": {
    "ledger": [
@@ -340,7 +478,53 @@
    "titles": 0,
    "title_years": [],
    "top3": 2,
-   "playoffs": 4
+   "playoffs": 4,
+   "h2h": {
+    "Kyle": [
+     6,
+     2
+    ],
+    "Ricci": [
+     6,
+     2
+    ],
+    "Charlie": [
+     5,
+     4
+    ],
+    "Mason": [
+     5,
+     5
+    ],
+    "Chris": [
+     5,
+     2
+    ],
+    "Connor": [
+     8,
+     3
+    ],
+    "Joey": [
+     3,
+     5
+    ],
+    "Connie": [
+     3,
+     5
+    ],
+    "Isaac": [
+     5,
+     5
+    ],
+    "Luke": [
+     3,
+     6
+    ],
+    "Evan": [
+     3,
+     1
+    ]
+   }
   },
   "Chris": {
    "ledger": [
@@ -426,7 +610,53 @@
     2021
    ],
    "top3": 2,
-   "playoffs": 4
+   "playoffs": 4,
+   "h2h": {
+    "Charlie": [
+     4,
+     4
+    ],
+    "Mason": [
+     4,
+     4
+    ],
+    "Joey": [
+     7,
+     6
+    ],
+    "Connor": [
+     4,
+     4
+    ],
+    "Sean": [
+     2,
+     5
+    ],
+    "Connie": [
+     5,
+     4
+    ],
+    "Kyle": [
+     8,
+     3
+    ],
+    "Ricci": [
+     6,
+     3
+    ],
+    "Luke": [
+     6,
+     3
+    ],
+    "Isaac": [
+     3,
+     5
+    ],
+    "Evan": [
+     3,
+     1
+    ]
+   }
   },
   "Kyle": {
    "ledger": [
@@ -510,7 +740,53 @@
    "titles": 0,
    "title_years": [],
    "top3": 0,
-   "playoffs": 4
+   "playoffs": 4,
+   "h2h": {
+    "Sean": [
+     2,
+     6
+    ],
+    "Connie": [
+     4,
+     3
+    ],
+    "Joey": [
+     7,
+     5
+    ],
+    "Ricci": [
+     3,
+     5
+    ],
+    "Charlie": [
+     2,
+     5
+    ],
+    "Mason": [
+     7,
+     3
+    ],
+    "Chris": [
+     3,
+     8
+    ],
+    "Connor": [
+     5,
+     5
+    ],
+    "Isaac": [
+     3,
+     7
+    ],
+    "Luke": [
+     5,
+     2
+    ],
+    "Evan": [
+     3,
+     0
+    ]
+   }
   },
   "Connie": {
    "ledger": [
@@ -596,7 +872,53 @@
     2023
    ],
    "top3": 3,
-   "playoffs": 4
+   "playoffs": 4,
+   "h2h": {
+    "Kyle": [
+     3,
+     4
+    ],
+    "Ricci": [
+     4,
+     8
+    ],
+    "Charlie": [
+     8,
+     2
+    ],
+    "Mason": [
+     5,
+     5
+    ],
+    "Chris": [
+     4,
+     5
+    ],
+    "Connor": [
+     4,
+     3
+    ],
+    "Sean": [
+     5,
+     3
+    ],
+    "Joey": [
+     3,
+     6
+    ],
+    "Luke": [
+     5,
+     4
+    ],
+    "Isaac": [
+     4,
+     4
+    ],
+    "Evan": [
+     3,
+     3
+    ]
+   }
   },
   "Charlie": {
    "ledger": [
@@ -680,7 +1002,53 @@
    "titles": 0,
    "title_years": [],
    "top3": 0,
-   "playoffs": 2
+   "playoffs": 2,
+   "h2h": {
+    "Mason": [
+     3,
+     5
+    ],
+    "Chris": [
+     4,
+     4
+    ],
+    "Connor": [
+     2,
+     5
+    ],
+    "Sean": [
+     4,
+     5
+    ],
+    "Connie": [
+     2,
+     8
+    ],
+    "Kyle": [
+     5,
+     2
+    ],
+    "Ricci": [
+     4,
+     4
+    ],
+    "Joey": [
+     2,
+     6
+    ],
+    "Isaac": [
+     2,
+     7
+    ],
+    "Luke": [
+     6,
+     4
+    ],
+    "Evan": [
+     6,
+     0
+    ]
+   }
   },
   "Ricci": {
    "ledger": [
@@ -766,7 +1134,53 @@
     2020
    ],
    "top3": 3,
-   "playoffs": 5
+   "playoffs": 5,
+   "h2h": {
+    "Connor": [
+     7,
+     4
+    ],
+    "Sean": [
+     2,
+     6
+    ],
+    "Connie": [
+     8,
+     4
+    ],
+    "Kyle": [
+     5,
+     3
+    ],
+    "Charlie": [
+     4,
+     4
+    ],
+    "Mason": [
+     2,
+     7
+    ],
+    "Chris": [
+     3,
+     6
+    ],
+    "Joey": [
+     3,
+     6
+    ],
+    "Luke": [
+     6,
+     3
+    ],
+    "Isaac": [
+     3,
+     4
+    ],
+    "Evan": [
+     2,
+     2
+    ]
+   }
   },
   "Isaac": {
    "ledger": [
@@ -842,7 +1256,53 @@
     2022
    ],
    "top3": 2,
-   "playoffs": 4
+   "playoffs": 4,
+   "h2h": {
+    "Mason": [
+     2,
+     5
+    ],
+    "Sean": [
+     5,
+     5
+    ],
+    "Connie": [
+     4,
+     4
+    ],
+    "Joey": [
+     4,
+     4
+    ],
+    "Kyle": [
+     7,
+     3
+    ],
+    "Connor": [
+     5,
+     5
+    ],
+    "Charlie": [
+     7,
+     2
+    ],
+    "Ricci": [
+     4,
+     3
+    ],
+    "Chris": [
+     5,
+     3
+    ],
+    "Luke": [
+     4,
+     3
+    ],
+    "Evan": [
+     2,
+     1
+    ]
+   }
   },
   "Luke": {
    "ledger": [
@@ -918,7 +1378,53 @@
     2024
    ],
    "top3": 1,
-   "playoffs": 3
+   "playoffs": 3,
+   "h2h": {
+    "Connie": [
+     4,
+     5
+    ],
+    "Chris": [
+     3,
+     6
+    ],
+    "Sean": [
+     6,
+     3
+    ],
+    "Ricci": [
+     3,
+     6
+    ],
+    "Connor": [
+     5,
+     1
+    ],
+    "Mason": [
+     2,
+     4
+    ],
+    "Joey": [
+     4,
+     5
+    ],
+    "Kyle": [
+     2,
+     5
+    ],
+    "Isaac": [
+     3,
+     4
+    ],
+    "Charlie": [
+     4,
+     6
+    ],
+    "Evan": [
+     1,
+     2
+    ]
+   }
   },
   "Evan": {
    "ledger": [
@@ -962,7 +1468,53 @@
    "titles": 0,
    "title_years": [],
    "top3": 0,
-   "playoffs": 1
+   "playoffs": 1,
+   "h2h": {
+    "Connie": [
+     3,
+     3
+    ],
+    "Ricci": [
+     2,
+     2
+    ],
+    "Joey": [
+     1,
+     2
+    ],
+    "Connor": [
+     3,
+     0
+    ],
+    "Isaac": [
+     1,
+     2
+    ],
+    "Sean": [
+     1,
+     3
+    ],
+    "Mason": [
+     3,
+     1
+    ],
+    "Chris": [
+     1,
+     3
+    ],
+    "Luke": [
+     2,
+     1
+    ],
+    "Charlie": [
+     0,
+     6
+    ],
+    "Kyle": [
+     0,
+     3
+    ]
+   }
   }
  }
 }

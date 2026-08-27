@@ -664,7 +664,7 @@ function renderIdleLineup() {
     // Last year's champion is the one man here worth breaking the row for.
     const champ = ls.finish === 1;
     const note = champ
-      ? `&#9733; DEFENDING`
+      ? `Defending Champion`
       : (ls.record ? `<b>${C.escapeHtml(ls.record)}</b>${ls.finish ? ` &middot; ${C.ordinal(ls.finish)}` : ""}` : "&nbsp;");
 
     // The photograph is laid over a fixed-height well rather than being the
@@ -1390,47 +1390,86 @@ function renderOutlook() {
   if (!m) { el.innerHTML = ""; return; }
 
   const o = seasonOutlook(m);
-  const c = m.career || {};
-  // Best finish is not on the manager record, and it is the one number this
-  // card keeps needing: half of these writeups turn on a man never having
-  // finished top three. Off the ledger, which is every season he has played.
-  const best = (m.ledger || []).reduce(
-    (b, y) => (y.fin && (!b || y.fin < b) ? y.fin : b), null);
-
-  // Two facts, and neither of them is one the card above is already printing.
-  // The on-the-clock card carries the all-time record and the titles for this
-  // same man; repeating them here would be spending the only spare lines on
-  // this card saying something the screen has already said.
-  const facts = [
-    ["Playoffs", c.playoffs
-      ? `${c.playoffs} ${c.playoffs === 1 ? "trip" : "trips"}${c.playoff_record ? `, ${c.playoff_record}` : ""}`
-      : "Never"],
-    // Best finish, unless he has won it, in which case best finish is 1st and
-    // the card above has already said so under TITLES. For a champion the
-    // question the writeups keep asking is how often he has been close, so
-    // that is the number that goes here instead.
-    c.titles
-      ? ["Top three", `${c.top3 || 0}`]
-      : ["Best finish", best ? ordinalPick(best) : ""],
-  ];
-
   el.innerHTML = `
-    <div class="ol-top">
-      <div class="ol-name">${C.escapeHtml(m.name.toUpperCase())}</div>
-      ${m.power_rank ? `<div class="ol-rank">
-        <span class="ol-rank-k">Milk Order</span>
-        <span class="ol-rank-n">${ROMAN[m.power_rank] || m.power_rank}.</span>
-      </div>` : ""}
-    </div>
     <div class="ol-goal"><span class="k">The goal</span>
       <span class="v">${C.escapeHtml(o.goal)}</span></div>
-    <!-- The card holds four lines of about a hundred characters. Every one of
-         the twelve writeups is inside that; if a rewrite ever runs past it the
+    <!-- The card holds six lines of about eighty characters. Every one of the
+         twelve writeups is inside that; if a rewrite ever runs past it the
          overflow is hidden and the last sentence goes missing quietly, which
-         is the one failure worth knowing about before the night. -->
+         is the one failure here worth knowing about before the night. -->
     <p class="ol-text">${C.escapeHtml(o.text)}</p>
-    <div class="ol-facts">${facts.filter(f => f[1]).map(f =>
-      `<div class="f"><span class="k">${f[0]}</span><span class="v">${f[1]}</span></div>`).join("")}</div>`;
+    <div class="ol-h2h">${headToHead(m)}</div>`;
+}
+
+/**
+ * Career head to head: the man he owns, the man who owns him, and the rival.
+ *
+ * This slot was a strip of every season and where it finished, which was a
+ * good graphic in the wrong place — the manager showcase already draws that
+ * exact table, in full, one button away. A panel that repeats another panel is
+ * worth less than a shorter panel.
+ *
+ * Head to head is nowhere else on the board and it is the thing a room
+ * actually shouts about. It is also the right register for a card about the
+ * season ahead rather than the seasons behind: these three men are on his
+ * 2026 schedule, and one of them is on it in week 11.
+ *
+ * `h2h` is [wins, losses] against each of the other eleven, counted in
+ * build_seasons.mjs over every game either man has played. Sorted on the
+ * margin and then on wins, so 7-2 beats 6-1 and neither is decided by object
+ * key order.
+ */
+function headToHead(m) {
+  const h = m.h2h || {};
+  const rows = Object.entries(h).filter(([, v]) => v && (v[0] + v[1]));
+  if (!rows.length) return "";
+
+  // The two fixtures take their cells first, and the two records are chosen
+  // from whoever is left, so the strip is never the same man twice. Week one
+  // and week eleven happen whether or not the record attached to them is
+  // interesting, which is what makes them the fixed points. Kyle is the case
+  // that forced the ordering: Sean is both his rivalry-week opponent and the
+  // man he has the worst record against, and picking best and worst first left
+  // the strip drawing three cells and an empty quarter of a card.
+  const rival  = C.rivalOf(m.name);
+  const opener = C.week1For(m.name);
+  const fixed  = new Set([rival, opener].filter(Boolean));
+  const pool   = rows.filter(([n]) => !fixed.has(n));
+
+  const margin = ([, v]) => v[0] - v[1];
+  const best  = pool.slice().sort((a, b) => margin(b) - margin(a) || b[1][0] - a[1][0])[0];
+  const worst = pool.slice().sort((a, b) => margin(a) - margin(b) || b[1][1] - a[1][1])[0];
+  const row = n => (n && h[n] ? [n, h[n]] : null);
+
+  const cell = (label, r, cls = "") => {
+    if (!r) return "";
+    const [who, [w, l]] = r;
+    // The weeks are the point of the strip as much as the records are: a
+    // head to head with no date on it is trivia, and with one it is a fixture
+    // list. Two weeks means he is one of the three played twice, which is the
+    // schedule quietly saying this one matters double.
+    const wks = C.weeksAgainst(m.name, who);
+    const when = wks.length
+      ? `${wks.length > 1 ? "Wks" : "Wk"} ${wks.join(", ")}` : "";
+    // Name and record on one line, the week on the next. They were the other
+    // way round and the record kept reading as part of the date: `9-3 Wk 8`
+    // looks like a record with dates attached to it. A man and what he has
+    // done to you is the fact; the week is when it happens again, which is a
+    // different kind of thing and belongs on a different line.
+    return `<div class="h2 ${cls}">
+      <span class="k">${label}</span>
+      <span class="who"><b>${C.escapeHtml(who.toUpperCase())}</b>
+        <i>${w}-${l}</i></span>
+      <span class="v">${when}</span></div>`;
+  };
+
+  // Fixtures first, records second. The card is a season outlook, so it reads
+  // left to right in the order the season happens: week one, then week eleven,
+  // and only then the two men his record has an opinion about.
+  return cell("Opener", row(opener), "fix")
+       + cell("Rival", row(rival), "riv")
+       + cell("Owns", best)
+       + cell("Loses to", worst);
 }
 
 /**
@@ -1496,6 +1535,13 @@ function renderRoundBoard() {
     // a split. Nothing is added when a manager has no conference set: the
     // class is simply absent and the tile keeps its old blue.
     const conf = m && m.conference ? ` cf-${m.conference.toLowerCase()}` : "";
+    // The defending champion's name in gold, and only here. The wall is the
+    // one panel with all twelve on it at once, which is the only place the
+    // mark means anything: a gold name among eleven cream ones says who won it
+    // last year without a label. On a card showing one man it would just be a
+    // name in a different colour. Read off the ledger rather than hardcoded to
+    // Mason, so it moves on its own next August.
+    const champ = m && (m.last_season || {}).finish === 1 ? " champ" : "";
     const face = m && m.cutout
       ? `<img class="face" src="${m.cutout}" alt="" decoding="async" onerror="this.remove()">` : "";
     const avatarRow = p
@@ -1509,7 +1555,7 @@ function renderRoundBoard() {
       : n === o ? `<span class="wc" id="wallClk">ON THE CLOCK</span>`
       : "&mdash;";
     cells.push(`
-      <div class="wt ${cls}${conf}">
+      <div class="wt ${cls}${conf}${champ}">
         ${face}
         <div class="who">
           <div class="hd"><span class="n">${i + 1}</span><span class="mg">${m ? C.escapeHtml(m.name) : ""}</span></div>

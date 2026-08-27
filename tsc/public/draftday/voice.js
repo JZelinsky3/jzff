@@ -325,52 +325,52 @@ const MANAGER_VOICE = {
  */
 const SEASON_OUTLOOK = {
   Sean: {
-    goal: "Win the first one",
-    text: `Sean is the best manager in this league never to have won it, and by now that is close to a whole identity. Fifty-six regular season wins, four playoff trips, and a 1-4 record once he gets there. Last season broke the run: 6-8, tenth, his first year out since 2020. He tops the Milk Order because the teams keep being good, and a stretch like this ends with a trophy or it just ends.`,
+    goal: "The first title",
+    text: `Sean has outscored his opponents by 492 points across seven years and won nothing, which is a strange way to be one of the two best teams in this league. The tell is quarterback: Mahomes in round two in 2023, third place; a tenth-round flier last year, tenth place. Early quarterbacks are worth nearly two places in the final table here. He is No. 1 because the roster keeps being right, and this is the year that has to stop being funny.`,
   },
   Isaac: {
     goal: "A second ring",
-    text: `The best regular season record in PAMS belongs to Isaac, and it has produced exactly one title. That ring came out of a 7-7 team in 2022, while the 11-3 team in 2023 and last year's 10-4 team both went out early. Six seasons, four playoff trips, one trophy, and a fifth-place finish that felt like less than it was. Second in the Milk Order is a bet that the roster and the result finally land in the same year.`,
+    text: `No. 2 in the power rank is as high as a four-year drought should sit, and Isaac has earned it: 25-17 over three seasons, the best record in the league, off finishes of second, eleventh and fifth. His ring came in 2022 out of a 7-7 team, so the good sides have not won it and a mediocre one did. Watch his first pick. Five of six drafts have opened on a running back, and the year he took a receiver instead he finished eleventh.`,
   },
   Connor: {
-    goal: "Back to the playoffs, and win one there",
-    text: `There is a 2-12 season on Connor's record and this league has never once let it go. Seven years in he sits at 42-54 with two playoff trips, and third place in 2024 is the only time he has finished anywhere near the top. Third in the Milk Order is a long way ahead of any of that. It is a call on the roster he is about to draft rather than on the seven that came before it.`,
+    goal: "Back to the playoffs, and a win there",
+    text: `Connor has gone from 116 points a week across his first four seasons to 132 across the last three, the highest in the league over that stretch, and his record has moved from 16-30 to 23-21 with it. All of that has bought one playoff trip. His only top-three finish came off a receiver in round one in 2024; he went back to a running back last year and came seventh. No. 3 is the boldest call on this board and it is a call on the points.`,
   },
   Mason: {
     goal: "Go back to back",
-    text: `Worst to first, inside a single offseason. Mason went 4-10 and finished twelfth in 2024, then won the whole thing at 10-4 last year, a turn only Ricci has ever made here. He is fourth rather than first because nobody in PAMS has won it twice and repeating is a different kind of hard. Eleven other managers draft against him tonight, and every one of them knows exactly where he is sitting.`,
+    text: `Nobody in PAMS has ever won it twice, which is most of why the defending champion sits No. 4 rather than higher. The question about Mason is whether last season was a plan or a rebound, because he had gone 4-10 and finished last the year before it. Six of his seven drafts have opened on a running back, and the single year he took a receiver instead is the year he came twelfth. Eleven managers draft against him tonight.`,
   },
   Chris: {
     goal: "Turn the points into a finish",
-    text: `Chris has scored more per week across the last three seasons than he did over the four that produced a title and a runner-up, and it has bought him a 21-21 record and two ninth-place finishes. His drafts are the sharpest here: 39 of every 100 picks turn into a starter, and his rosters average 2,249 points a year. Fifth in the Milk Order says the scoring is real and the record is the part that is lying.`,
+    text: `Chris has been the fourth-highest scoring team in the league over the last three seasons and gone 6-11 in the games decided by under ten across the same three, which is most of how a team that good finishes ninth, fifth, ninth. His draft hit rate of 39% is the best here. No. 5 is low for a team this good, and the ranking is discounting three years of one-score luck.`,
   },
   Joey: {
     goal: "A fifth top three, and a second title",
-    text: `Four top-three finishes is more than anybody else has managed, and all four arrived in the first four seasons. Since 2022 it has gone twelfth, eighth, eighth, and the highest points-per-week average in league history has done nothing to change that. He ranked himself sixth and called it honest. Scoring has never been the problem in this team; converting it in December is.`,
+    text: `Joey scored 137 points a week across his first four seasons and 117 across the last three, and the record went 35-18 to 16-26 with it. All four top-three finishes are in the first stretch. Two receiver-first drafts finished first and third, five back-first drafts produced three seasons out, and his quarterback has slid from round three to round thirteen. No. 6 is generous, and week 11 against Chris is where it gets tested.`,
   },
   Ricci: {
     goal: "A sixth trip, and the second title",
-    text: `Five playoff trips out of seven seasons, with a losing career record sitting underneath them. Ricci won it in 2020, came second in 2024 and finished third last year off the eighth-most points in the league. He gets in, and then he runs hot at the right time. Seventh is not a shot at the results, it is a question about how they keep arriving from a team that spends September and October looking ordinary.`,
+    text: `No. 7 is a bet that Ricci stops getting away with it, and nobody should feel good about that bet. He is the only manager who has ever spent a first-round pick on a quarterback: Lamar Jackson in 2020, and he won the title with him. He took Travis Kelce first in 2023 and finished eleventh, the same instinct with the other result. Five playoff trips on a losing career record says it is worth something.`,
   },
   Kyle: {
     goal: "The first top-three finish",
-    text: `In four times, out four times. Kyle has reached the playoffs in four of seven seasons and has never finished top three in any of them, which is a very particular way to spend seven years. Last season was 8-6 and a four seed and it ended the way the other three did. He is eighth rather than ninth because he earned three of those trips outright at 9-5, 10-4 and 8-6, with nothing handed to him.`,
+    text: `Four playoff trips and not a single top-three finish is its own kind of achievement. The pattern is unusually clean for this league: three drafts opened on a running back, three trips; four opened on a receiver, one trip. Kyle has scored 115 a week over the last three seasons, last of the twelve, and gone 19-25 for it, and he draws Sean twice. No. 8, and his first pick tonight tells you most of what to expect.`,
   },
   Connie: {
     goal: "A fourth title game, and a second ring",
-    text: `Three trips to the championship game, in 2020, 2023 and 2025, and one of them turned into a ring. A 6-3 record once the playoffs begin is comfortably the best in PAMS. The regular seasons are the trouble: 46-50 all told, and two of those title-game runs started from a seven seed at 6-7 and 7-7. Ninth is a bet against that particular trick working a fourth time.`,
+    text: `Connie is 46-50 across regular seasons and 6-3 once the playoffs start, more playoff wins than anyone else in PAMS. Two of the three championship-game runs began from a six seed, so this is a team that gets in and then becomes a different team. Round three has been the quarterback pick in both of the last two drafts, for a sixth and a second. No. 9 bets against a fourth run, which has never been a winning bet.`,
   },
   Charlie: {
     goal: "Finish top three, once",
-    text: `Seven seasons, a best finish of fourth, and not one top-three year in any of them. Money God has made the playoffs twice and scores fewer points a week than anyone here who has played more than three seasons. He was ranked first in last year's Milk Order and came sixth, which is roughly how these have tended to go. Tenth this time, and the goal has not moved in seven years.`,
+    text: `Charlie has gone from 112 points a week across his first four seasons to 124 across the last three, and from 3-15 in games decided by thirty or more to 9-5. Only Connor has repaired more, and it has produced finishes of fourth, seventh and sixth. His best season came with Josh Allen in round three, and paying round two for the same player a year later got him seventh. No. 10 is the last ranking that makes sense if this holds.`,
   },
   Evan: {
     goal: "A winning season and a playoff spot",
-    text: `The newest team in the league, and the only manager here without a fourth season on the record. Evan made the playoffs in his first year, before he really knew what any of this was, and has gone 5-9 in both seasons since. Seventeen wins and twenty-five losses is the entire file. Eleventh is a ranking of what is known about him, and there is not very much known yet.`,
+    text: `No. 11 is a ranking of what is known about Evan, and he can move it faster than anyone here. Three seasons and 17-26 is not enough to have a reputation, which is the most useful thing anybody can say about him tonight. He made the playoffs as a rookie with Ja'Marr Chase and Jalen Hurts inside three rounds, then went 5-9 twice. His games stay close at 6-5 under ten points, so nobody is running him off the field.`,
   },
   Luke: {
     goal: "Prove 2024 was not a fluke",
-    text: `A champion sitting twelfth, which needs some explaining. Luke won it in 2024 out of an 8-6 season, then went 4-10 and finished dead last a year later. Six seasons, 38 wins, one top-three finish, and it happened to be the one that came with a trophy. This ranking is about who wins it this year rather than who has won it, and that reading is the only one that puts him down here.`,
+    text: `Luke won it in 2024 and finished last in 2025, and No. 12 says the second result is closer to the truth: across six seasons he is 37-47 with a 10-27 record in games decided by thirty or more, the worst mark in the league by a distance. Both drafts he opened on a receiver came back sixth and first; the four he opened on a running back came back eighth, eighth, tenth and twelfth. The argument starts at 1.09.`,
   },
 };
 

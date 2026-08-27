@@ -231,15 +231,15 @@ try {
   //
   // Twelve hand-written paragraphs, and the one way they can fail on the night
   // is quietly: the card hides its overflow, so a writeup that runs long loses
-  // its last sentence off the bottom and nothing says so. The budget is four
-  // lines of about a hundred characters at the size the card sets, and the
-  // ceiling here is under that with a line's slack, because the count is only
-  // an estimate of what Barlow will actually set.
+  // its last sentence off the bottom and nothing says so. The budget is six
+  // lines of about eighty characters at the size the card sets, and the ceiling
+  // here is under that with a line's slack, because the count is only an
+  // estimate of what Barlow will actually set.
   const outlooks = C.DATA.managers.map(m => [m.name, seasonOutlook(m)]);
   ok(outlooks.every(([, o]) => o && o.goal && o.text),
      "every manager has a season outlook with a goal");
   const longest = outlooks.reduce((a, b) => (b[1].text.length > a[1].text.length ? b : a));
-  ok(longest[1].text.length <= 420,
+  ok(longest[1].text.length <= 450,
      `no outlook runs past the card (longest is ${longest[0]} at ${longest[1].text.length})`);
   ok(outlooks.every(([, o]) => o.goal.length <= 44),
      "every goal fits on its line");
@@ -256,6 +256,82 @@ try {
   // written against, so no two may start on the same three words.
   const openers = outlooks.map(([, o]) => o.text.toLowerCase().split(/\s+/).slice(0, 3).join(" "));
   ok(new Set(openers).size === openers.length, "no two outlooks open the same way");
+
+  // The power ranking is called the power rank on this board, the way the
+  // on-the-clock card labels it. "The Milk Order" is the name of the twelve-day
+  // countdown it came out of, which is a different thing in a different place.
+  ok(!outlooks.some(([, o]) => /milk order/i.test(o.text)),
+     "no outlook calls the power rank the Milk Order");
+
+  // It is a season *outlook*, so every one of them has to say something about
+  // the draft happening tonight rather than only reciting a career. In
+  // practice that means naming a round, a pick or a draft, which is what the
+  // reference points are all built out of.
+  ok(outlooks.every(([, o]) => /\bround|\bdraft|\bpick\b/i.test(o.text)),
+     "every outlook points at a draft decision, not just a career");
+
+  // The rank is written No. N so it cannot be mistaken for a finish, and the
+  // twelve of them are spread through the writeups rather than all landing in
+  // the last sentence, which is what turns twelve paragraphs into one template.
+  ok(outlooks.every(([, o]) => /No\. \d+/.test(o.text)),
+     "every outlook names its rank as No. N");
+  const late = outlooks.filter(([, o]) => o.text.indexOf("No. ") > o.text.length - 90);
+  ok(late.length <= 6, `the rank does not close every writeup (${late.length} of 12)`);
+
+  // ── head to head ──
+  //
+  // Two managers cannot disagree about a game they both played in, and the
+  // export writes both sides from the same row, so this is really a check that
+  // nothing downstream has re-keyed one of them by a handle instead of a name.
+  const mgrs = C.DATA.managers;
+  ok(mgrs.every(m => Object.keys(m.h2h || {}).length === mgrs.length - 1),
+     "every manager has a head-to-head line against the other eleven");
+  ok(mgrs.every(m => !(m.h2h || {})[m.name]), "nobody has played himself");
+  const mirrored = mgrs.every(a => mgrs.every(b => {
+    if (a === b) return true;
+    const x = (a.h2h || {})[b.name], y = (b.h2h || {})[a.name];
+    return x && y && x[0] === y[1] && x[1] === y[0];
+  }));
+  ok(mirrored, "every head-to-head record mirrors the other man's");
+
+  // No consolation or placement games in it, which is the failure this is here
+  // to catch: every playoff week in PAMS carries a game for all twelve teams,
+  // so counting the week rather than the tournament silently adds up to nine
+  // games a season to the wrong people. A manager's head to head against the
+  // other eleven cannot exceed his career record, which counts only the
+  // bracket, and for anyone who has never played a departed manager the two
+  // are equal. Evan is that case and it is exact.
+  ok(mgrs.every(m => {
+    const [w, l] = Object.values(m.h2h || {})
+      .reduce(([a, b], [x, y]) => [a + x, b + y], [0, 0]);
+    const [cw, cl] = (m.career.record || "0-0").split("-").map(Number);
+    return w <= cw && l <= cl;
+  }), "no head-to-head record counts more games than the career record");
+  const evan = mgrs.find(m => m.name === "Evan");
+  const evanH = Object.values(evan.h2h).reduce(([a, b], [x, y]) => [a + x, b + y], [0, 0]);
+  ok(evanH.join("-") === evan.career.record,
+     `Evan has only played current managers, so his head to head is his career (${evanH.join("-")} vs ${evan.career.record})`);
+  // The outlook draws four cells and they have to be four different men. Kyle
+  // is the case: Sean is both his rivalry-week opponent and the man he has the
+  // worst record against, so the two fixtures are taken out first.
+  ok(mgrs.every(m => {
+    const fixed = new Set([C.rivalOf(m.name), C.week1For(m.name)].filter(Boolean));
+    return fixed.size === 2
+      && Object.keys(m.h2h || {}).filter(n => !fixed.has(n)).length >= 2;
+  }), "every manager has a distinct opener and rival, plus two more for the strip");
+
+  // Every cell prints the week they meet, and the schedule gives everybody
+  // all eleven opponents once and three of them twice. A pair that came back
+  // with no weeks would print a name with no fixture beside it.
+  const pairs = mgrs.flatMap(a => mgrs.filter(b => b !== a).map(b => [a.name, b.name]));
+  ok(pairs.every(([a, b]) => {
+    const n = C.weeksAgainst(a, b).length;
+    return n === 1 || n === 2;
+  }), "every pair of managers meets once or twice in 2026");
+  ok(mgrs.every(m => C.weeksAgainst(m.name, C.rivalOf(m.name)).includes(11)),
+     "every rivalry is played in week 11");
+  ok(mgrs.every(m => C.weeksAgainst(m.name, C.week1For(m.name)).includes(1)),
+     "every opener is played in week 1");
 
   // ── the clock room's stopwatch ──
   // Everything the panel says rests on elapsedOnClock being honest about a

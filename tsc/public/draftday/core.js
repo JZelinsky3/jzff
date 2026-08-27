@@ -669,6 +669,23 @@ export function rivalOf(name) {
 }
 
 /**
+ * Which weeks two managers meet in 2026, in order. One or two of them: the
+ * schedule gives everybody all eleven opponents once and three of them twice.
+ *
+ * Read off the fixtures rather than stored, the same as `doublesFor`, so a
+ * week printed on the board can never disagree with the week the schedule
+ * lists. Empty when there is no schedule loaded, which is the one file the
+ * board tolerates missing.
+ */
+export function weeksAgainst(a, b) {
+  const weeks = (DATA.schedule && DATA.schedule.weeks) || [];
+  return weeks
+    .filter(w => w.games.some(g =>
+      (g.a === a && g.b === b) || (g.a === b && g.b === a)))
+    .map(w => w.week);
+}
+
+/**
  * The three men he plays twice.
  *
  * Everyone plays all eleven opponents once and three of them a second time,

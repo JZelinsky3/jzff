@@ -172,7 +172,23 @@ body.console-page {
   padding: .8rem .7rem;
   transition: background .12s ease, color .12s ease, border-color .12s ease;
 }
-.console-page .btn:hover:not([disabled]) {
+/* Plain keys only, and the `:not()`s are the fix rather than a tidy-up.
+ *
+ * This rule used to hit every key on the page, including the gold ones. It
+ * sets `background`, which is the shorthand, so it wiped the gradient off
+ * ANNOUNCE and NEXT PICK and painted them the same dark navy as an unlit key.
+ * `.btn.go:hover` outranks it on specificity but only declares `filter` and
+ * `color`, so the near-black ink a gold plate needs stayed put and landed on a
+ * dark navy ground: 1.4:1, and the label effectively vanished under the
+ * cursor. The busiest button on the console, unreadable exactly while it was
+ * being pressed.
+ *
+ * The coloured keys carry their own hover below and keep their own plate.
+ * Excluding them here is better than adding a cream `color` to them, which was
+ * the other way out: a gold key that turns navy on hover has still stopped
+ * being a gold key, and the point of the plate is that it looks like the one
+ * thing on the page you are meant to hit. */
+.console-page .btn:not(.go):not(.danger):hover:not([disabled]) {
   background: var(--key-hi); border-color: rgba(var(--sec-rgb), .7); color: var(--milk);
 }
 .console-page .btn:active:not([disabled]) { transform: translateY(2px); box-shadow: var(--lift-in); }
@@ -195,6 +211,13 @@ body.console-page {
   background: linear-gradient(180deg, #e8a094, #c4695c 58%, #a4544a);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 3px 0 #5c2b25,
               0 7px 16px rgba(196,105,92,.24);
+}
+/* Same treatment as the gold key, for the same reason. WIPE THE WHOLE DRAFT had
+   the opposite failure: the base hover repainted it navy and set cream ink, so
+   it stayed readable and stopped being red, which on the one button that erases
+   the night is the wrong thing to lose. */
+.console-page .btn.danger:hover:not([disabled]) {
+  filter: brightness(1.06); color: #1c0604;
 }
 .console-page .btn.danger:active:not([disabled]) {
   transform: translateY(3px); box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 0 0 #5c2b25;

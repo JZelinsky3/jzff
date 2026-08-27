@@ -88,25 +88,51 @@
      dark enough that it is 15:1 on the cream it sits on. */
   --ink-navy:  #0e1b2f;
 
-  /* The two conferences. Skim is a pale blue because that is what skim milk
-     looks like. Whole is a light red — it went through gold first, and gold
-     had two problems: it sat a few degrees off the brass the on-the-clock card
-     uses, and it is the hardest hue on a screen to put behind anything, since
-     a dark yellow is olive and a pale one is cream and neither is gold. Red is
-     none of that. It is far from every blue on the board, it stays red at any
-     depth, and it is the one warm colour here that does not have to be babied.
-
-     Every place the two colours appear on any of these pages reads from these
-     two lines and the two channel triples under them — the conference chip on
-     the on-the-clock and next-up cards, and the nameplate, index box and left
-     edge of every tile on the round wall. There is nowhere else to change. */
-  --conf-whole: #e8564e;
-  --conf-skim:  #8ab4d8;
+  /* The two conferences, and they are the board's own two colours now.
+   *
+   * They were a pale blue and a light red, which is a perfectly good pair and
+   * belonged to nothing: red appears nowhere else in this production and the
+   * blue was three shades off the one the panels are built from. The set is
+   * navy, cream and brass, so the halves of the league are **navy and cream**
+   * and the whole screen is made of the same handful of colours.
+   *
+   * Skim is `--cool`, the palette's navy, which is dark: 2.6:1 on the panel,
+   * nowhere near enough for type. So the chip stopped tinting its text and
+   * became a filled plate instead — navy ground with cream ink, and cream
+   * ground with navy ink for Whole. Both read across a room, both are objects
+   * rather than coloured words, and the pair is legible at any size because
+   * neither depends on a thin coloured glyph surviving.
+   *
+   * Every place the two colours appear on any of these pages reads from these
+   * two lines and the two channel triples under them — the conference chip on
+   * the on-the-clock and next-up cards, and the nameplate, index box and left
+   * edge of every tile on the round wall. There is nowhere else to change. */
+  --conf-whole: #f2f0ea;
+  --conf-skim:  #315a82;
   /* The same two as channels, for anything that needs them at an opacity
      rather than flat — the wash on the round wall's tiles. Kept beside the
      hexes they are taken from so the pair cannot drift apart. */
-  --conf-whole-rgb: 232, 86, 78;
-  --conf-skim-rgb:  138, 180, 216;
+  --conf-whole-rgb: 242, 240, 234;
+  --conf-skim-rgb:  49, 90, 130;
+  /* One lighter navy, for the two places a Skim tile needs its colour as type
+     rather than as a ground: the index box and the left edge of a wall tile.
+     `--conf-skim` itself is a fill colour and disappears when it is asked to
+     be a 10px numeral on a dark card. */
+  --conf-skim-lit: #6f9ac8;
+  /* And one more, the navy the round wall's Skim nameplate is actually made
+     of. It is a third value on purpose: `--conf-skim` is too dark to be seen
+     as a band on a card that is already dark, `--conf-skim-lit` is a hairline
+     colour and reads as a steel blue at plate size, and this sits between
+     them. It is also the ink the Whole tile's index box uses, so the two
+     halves of the wall are quoting the same blue at each other rather than
+     each carrying a blue of its own. */
+  --conf-skim-bar: #2d5378;
+  /* The bottom of that bar, which is also every mark on the cream one: the
+     name, the index box's numeral and its keyline. So the two tiles are made
+     of one blue at two depths — the navy card is lit with it, the cream card
+     is inked with it — rather than each having a colour the other never uses.
+     10.4:1 on the cream stock. */
+  --conf-skim-deep: #152845;
 
   --gold:    #c99a43;
   --gold-hi: #f0d49a;
@@ -276,10 +302,10 @@ body.board::after {
 /* A team name and its conference, as a row rather than a line of inline
    boxes: the chip sat on the text baseline before, which put a bordered box
    with its own padding visibly low against the letters beside it. */
-.mgr-team, .oc-team, .next-team, .sc-team, .ol-team {
+.mgr-team, .oc-team, .next-team, .sc-team {
   display: flex; align-items: center; gap: calc(.8 * var(--u));
 }
-.mgr-team .tn, .oc-team .tn, .next-team .tn, .sc-team .tn, .ol-team .tn {
+.mgr-team .tn, .oc-team .tn, .next-team .tn, .sc-team .tn {
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 /* the conference chip, beside a team name */
@@ -300,10 +326,22 @@ body.board::after {
   font-family: var(--mono); font-weight: 600; font-size: .62em;
   letter-spacing: .18em; text-transform: uppercase; vertical-align: middle;
 }
-/* Off the channel triples, not a second copy of the hex: the chip and the wall
-   tile are the same colour by construction, so brightening one brightens both. */
-.conf-whole { color: var(--conf-whole); background: rgba(var(--conf-whole-rgb), .1); }
-.conf-skim  { color: var(--conf-skim);  background: rgba(var(--conf-skim-rgb), .1); }
+/* Filled plates, not tinted words.
+ *
+ * These were a coloured label on a 10%-alpha wash of the same colour, which
+ * works while both conference colours are light and stops working the moment
+ * one of them is the palette's navy: #315a82 as type on a dark panel is 2.6:1,
+ * and at a 62%-of-parent font size on a television it is gone. Filled, the
+ * colour is carried by an object big enough to hold it and the ink is chosen
+ * for contrast rather than for identity. Cream ink on navy is 9.6:1, navy ink
+ * on cream is 15:1, and the two chips are told apart across a room by which
+ * one is light, which no amount of hue ever managed. */
+.conf-whole {
+  color: var(--ink-navy); background: var(--conf-whole); border-color: var(--conf-whole);
+}
+.conf-skim {
+  color: var(--milk); background: var(--conf-skim); border-color: var(--conf-skim-lit);
+}
 
 /* ── on the clock ─────────────────────────────────────────────────────── */
 /* cut-out, then the information column. The lineup used to sit in a third,
@@ -1654,19 +1692,92 @@ body.handoff-reveal .reveal { display: flex; }
  *
  * --pc went with it. Nothing sets it and nothing reads it.
  */
-/* Whole runs warm, so it still needs its own alpha and its own base — see
-   --cfa and --cfb above. Retuned for the red: .44 rather than the .52 the gold
-   wanted, because red carries at a lower alpha than yellow does, and the base
-   is a dark red rather than a dark brown so the band fades into more of itself
-   the way Skim's does. Lands at #752b27 at the top of the band and #301210 at
-   the bottom, holding 50% saturation the whole way down, against Skim's 26%
-   to 36% — the same presence, from the other end of the wheel. */
-.wt.cf-whole { --cf: var(--conf-whole-rgb); --cfa: .44; --cfb: #1a0a09; --cfb2: #140807; }
-.wt.cf-skim  { --cf: var(--conf-skim-rgb); }
+/* The nameplate is a solid conference bar, the way the cards in the bottom
+ * band carry a solid cream header over a dark body.
+ *
+ * It was a wash: the conference colour at 30-45% alpha over the tile's own
+ * navy. That worked while the two colours were a pale blue and a light red,
+ * because both were far enough from the card to survive being diluted into it.
+ * Navy and cream do not survive it. Navy at 30% over navy is a slightly
+ * different dark, and cream at 17% is a grey smudge — twelve tiles that all
+ * looked like the same tile, which is the opposite of what a colour marking
+ * the halves of the league is for.
+ *
+ * So the band stops being a tint and becomes an object, and the reference is
+ * the bottom band, which already does exactly this: a cream plate with navy
+ * ink sitting on a dark card. Whole gets that plate. Skim gets it inverted,
+ * navy with cream ink. Both are unmissable from across a room and neither
+ * depends on an alpha landing right against whatever is behind it.
+ *
+ * The ink flips with the plate, which is the part a wash never had to do:
+ * `.hd .mg` is cream by default and has to be navy on a cream bar, and the
+ * index box goes with it. Everything below the band is untouched.
+ */
+.wt.cf-whole { --cf: var(--conf-whole-rgb); --cfa: .17; }
+.wt.cf-skim  { --cf: 111, 154, 200; --cfa: .30; }
+
+.wt.cf-whole::before {
+  background:
+    /* the weave, in the dark direction now that the ground is light */
+    repeating-linear-gradient(135deg,
+      rgba(14,27,47,.05) 0 1px, transparent 1px calc(.62 * var(--u))),
+    linear-gradient(180deg, #f4f2ec, #ded9cb);
+  /* The bar's own foot, in the same navy everything on it is inked in. */
+  border-bottom-color: rgba(21,40,69,.42);
+}
+.wt.cf-whole .hd .mg { color: var(--conf-skim-deep); }
+/* Everything on the cream bar is the one dark navy: the name, the numeral and
+ * the box around it.
+ *
+ * Two passes to get here and both of them split the card. First the name was
+ * `--ink-navy` and the box was `--ink-navy` too, which are the same colour but
+ * not the same colour as anything else on the wall. Then the box went to
+ * `--conf-skim-bar` to tie the two conferences together, which tied them and
+ * left the name and the number as two different blues eight pixels apart.
+ *
+ * One value fixes both: `--conf-skim-deep`, which is the bottom of the navy
+ * bar on the other half of the wall. The cream card is inked with the same
+ * blue the navy card is lit with, and nothing on either card is a colour the
+ * other never uses. */
+.wt.cf-whole .hd .n {
+  color: var(--conf-skim-deep); border-color: rgba(21,40,69,.6);
+  background: rgba(255,255,255,.3);
+}
+
+/* A navy light enough to be seen, and the reasoning went the long way round.
+ *
+ * Three values were tried. #37628d read as a steel blue rather than as the
+ * board's navy. The bottom band's own near-black (#0a1220) is exactly the
+ * surface those cards are made of and is the *right* answer to the question
+ * "what colour is that", and the wrong answer to this one: the tile it sits on
+ * is already dark, so a near-black band on it is a band nobody can see. A
+ * nameplate has to be a different object from the card, and against a dark
+ * card that means lighter, whatever the reference is made of.
+ *
+ * So it lands in the middle, on `--conf-skim-bar`, falling to a deeper navy
+ * under it. Cream on it is 9.2:1 at the top and 12.8:1 at the bottom and the
+ * champion gold clears 5:1, so it is legible everywhere while still being a
+ * navy rather than a blue. */
+.wt.cf-skim::before {
+  background:
+    repeating-linear-gradient(135deg,
+      rgba(211,216,222,.07) 0 1px, transparent 1px calc(.62 * var(--u))),
+    linear-gradient(180deg, var(--conf-skim-bar), var(--conf-skim-deep));
+  border-bottom-color: rgba(111,154,200,.42);
+}
+.wt.cf-skim .hd .mg { color: var(--milk); }
+/* Lifted rather than sunk. The box used to sit on a darker fill than its band,
+   which worked when the band was a mid blue and cannot work now that the band
+   is the darkest thing on the card. */
+.wt.cf-skim .hd .n {
+  color: var(--milk); border-color: rgba(242,240,234,.5);
+  background: rgba(211,216,222,.07);
+}
 /* The left edge carries it too, at a weight that reads as a lit edge rather
    than a second border. The top edge is already spoken for — it carries the
    position of the pick that landed. */
 .wt.cf-whole, .wt.cf-skim { border-left-color: rgba(var(--cf), calc(var(--cfa) * 1.25)); }
+
 /* Solid. It was at 85%, which was a hangover from when the cut-out was a
    background layer the text sat over — the card lifts the text off it now, so
    the man himself has no reason to be washed out into the tile behind him. The
@@ -1701,7 +1812,14 @@ body.handoff-reveal .reveal { display: flex; }
 .wt .hd .n {
   flex: none; display: inline-flex; align-items: center; justify-content: center;
   min-width: calc(2.2 * var(--u)); height: calc(1.85 * var(--u));
-  border-radius: 2px; border: 1px solid rgba(var(--cf), calc(var(--cfa) * 1.25));
+  /* 2px, not 1. At one pixel the box was a suggestion of a box: it is 24px
+     across on a nameplate carrying a name three times its size, and the whole
+     point of drawing it is that twelve tiles then start their names on the
+     same vertical. A hairline that thin also disappeared entirely on the cream
+     bar, where it has to hold its own against the brightest ground on the
+     board. Doubling it is the only change; the box is the same size, because
+     `min-width` and `height` are the border box. */
+  border-radius: 2px; border: 2px solid rgba(var(--cf), calc(var(--cfa) * 1.25));
   background: rgba(5,10,18,.46);
   font-family: var(--mono); font-weight: 600; font-size: calc(1.02 * var(--u));
   color: rgba(var(--cf), .92); letter-spacing: .02em;
@@ -1711,6 +1829,31 @@ body.handoff-reveal .reveal { display: flex; }
   letter-spacing: .06em; color: var(--milk); text-transform: uppercase;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* The defending champion, in gold, on this panel and nowhere else.
+ *
+ * The wall is the only place all twelve names are on screen together, which is
+ * the only place the mark reads as a mark: one gold name among eleven cream
+ * ones says who won it last year with no label and no extra furniture. The
+ * same colour on the on-the-clock card would just be a name set in a different
+ * colour, because there is nothing beside it to be different from.
+ *
+ * The colour is `--gold` lifted about a fifth in value and nothing else: same
+ * hue, same chroma, brighter. Both of the palette's other brasses were wrong
+ * here for opposite reasons. `--gold-hi` (#f0d49a) is the pale one meant for
+ * large display type on near-black, and on a lit nameplate at 16px it stops
+ * being gold at all and reads as a soft yellow, which is what it did on the
+ * first pass. `--gold` itself (#c99a43) is the right colour and lands at about
+ * 3:1 through the middle of Skim's navy bar, which is under what a name needs
+ * across a room. #e9b451 holds the brass and clears 4.3:1.
+ *
+ * Nothing else about the tile changes — no border, no ground, no badge. A
+ * champion's tile is a tile, with his name lit. */
+.wt.champ .hd .mg { color: #e9b451; }
+/* On a cream bar the bright brass is 2:1 and unreadable, so a Whole champion
+   gets the ink version of the same idea: a dark brass at 5.3:1 on the cream,
+   which still reads as gold rather than as a third colour. Mason is Skim so
+   this fires on nobody tonight; it fires the first year a Whole team wins. */
+.wt.cf-whole.champ .hd .mg { color: #6b4f14; }
 .wt .foot { display: flex; flex-direction: column; gap: calc(.55 * var(--u)); }
 /* photo and position rank together, name on its own line beneath */
 .wt .ar { display: flex; align-items: center; gap: calc(.7 * var(--u)); }
@@ -1789,7 +1932,20 @@ body.handoff-reveal .reveal { display: flex; }
     linear-gradient(180deg, rgba(201,154,67,.24), rgba(5,10,18,.88));
   box-shadow: 0 0 0 1px var(--gold), 0 calc(.8 * var(--u)) calc(2 * var(--u)) rgba(201,154,67,.22);
 }
-.wt.onclock .hd .n { color: var(--gold-hi); border-color: rgba(201,154,67,.6); }
+/* The man on the clock outranks his conference. His tile is brass end to end,
+   so the solid conference bar above has to come back off it — same specificity
+   as `.wt.cf-whole::before`, later in the file, which is what decides it. */
+.wt.onclock::before {
+  background:
+    repeating-linear-gradient(135deg,
+      rgba(240,212,154,.055) 0 1px, transparent 1px calc(.62 * var(--u))),
+    linear-gradient(180deg,
+      rgba(var(--cf), var(--cfa)), rgba(var(--cf), calc(var(--cfa) * .3))),
+    linear-gradient(180deg, var(--cfb), var(--cfb2));
+  border-bottom-color: rgba(var(--cf), calc(var(--cfa) * 1.25));
+}
+.wt.onclock .hd .mg { color: var(--milk); }
+.wt.onclock .hd .n { color: var(--gold-hi); border-color: rgba(201,154,67,.6); background: rgba(5,10,18,.46); }
 .wt.onclock .nm { color: var(--gold-hi); font-size: calc(1.9 * var(--u)); }
 /* The countdown, written into the tile of whoever is on the clock by
    tickClock(). It is the only clock on screen while a reveal is up, and the
@@ -3254,21 +3410,15 @@ body.phase-details .bb-next > .rail-hd {
  * makes a list legible at a glance and what makes a paragraph a wall. */
 .ba-outlook { display: none; }
 .ba-outlook-on .ba-list { display: none; }
-/* Wider than half the band, and only while this channel is up.
+/* The card stays exactly half the band, the same as every other channel.
  *
- * A list can be any width and stay a list. A paragraph cannot: at half the
- * band it came out at about 75 characters a line, which put the writeups at
- * six lines in a card with room for four, and the last two sentences were
- * simply cut off the bottom. Every other way of buying those lines was worse.
- * Smaller type on the one block of running prose on this board is the wrong
- * thing to shrink; shorter writeups would be shortening them to fit a column
- * width rather than because there is less to say.
- *
- * So the card takes the width instead, and it takes it from the lineup, which
- * is nine names and a two-character team and has more than it needs. The
- * lineup's columns are all in em off the shared row clamp, so it gives the
- * space back without anything in it moving out of proportion. */
-.ba-outlook-on .bb-ba { flex: 1.55; }
+ * It took 1.55 of the band for one pass, on the argument that a paragraph
+ * cannot be any width the way a list can. True, and not worth it: the lineup
+ * shrank visibly every time the outlook went up, and a panel that resizes its
+ * neighbour when it is switched on is a worse fault than a tight column. The
+ * lines came out of the card's own furniture instead — see `.ol-goal` and the
+ * form strip below, both of which replaced something that was saying what the
+ * on-the-clock card had already said. */
 .ba-outlook-on .bb-ba .ba-outlook {
   display: flex; flex-direction: column; position: relative; z-index: 1;
   flex: 1; min-height: 0; overflow: hidden;
@@ -3278,61 +3428,34 @@ body.phase-details .bb-next > .rail-hd {
   padding: calc(.7 * var(--u)) calc(1.9 * var(--u)) calc(.9 * var(--u));
 }
 
-/* Name on the left, the Milk Order slot on the right, on one line.
+/* The name and the Milk Order badge are not on this card, and that is the
+ * whole reason the paragraph fits at half the band.
  *
- * The team name is not on this card, and that is the whole reason the row is
- * one line. It was under the name in gold, which is exactly where the
- * on-the-clock card three feet above is already printing it, in gold, with
- * the same conference chip beside it. Twenty pixels of a card that has none
- * spare, spent saying Woodpooper twice on one screen. */
-.ol-top {
-  display: flex; align-items: baseline; gap: calc(1.4 * var(--u));
-  padding-bottom: calc(.5 * var(--u));
-}
-/* Under the ON THE CLOCK card's name, and it has to be: that one is 97px and
-   this is the same word about the same man on the same screen. Big enough to
-   head a card, small enough that nobody wonders which of the two is the
-   headline. */
-.ol-name {
-  flex: 1; min-width: 0;
-  font-family: var(--display); font-weight: 900;
-  font-size: calc(3.2 * var(--u)); line-height: 1; text-transform: uppercase;
-  color: var(--milk); letter-spacing: -.005em;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-/* The same badge the clock card and the showcase use, one step smaller. It is
-   a serif italic numeral over a tracked-out mono key, and it is a Roman
-   numeral because an arabic 3 beside a paragraph that also says "third" reads
-   as two different numbers about the same man. */
-.ol-rank {
-  flex: none; text-align: right; display: flex; flex-direction: column;
-  align-items: flex-end; line-height: 1;
-  /* The row is baseline-aligned on the name, and this box's first baseline is
-     the mono key's, which would hang the numeral a line below the name. Its
-     own baseline is taken out of the calculation instead and the block is
-     nudged to sit level by eye. */
-  align-self: flex-start; margin-top: calc(-.1 * var(--u));
-}
-.ol-rank-k {
-  font-family: var(--mono); font-weight: 600; font-size: calc(1.02 * var(--u));
-  letter-spacing: .25em; text-transform: uppercase; color: var(--gold);
-  margin-bottom: calc(.22 * var(--u));
-}
-.ol-rank-n {
-  font-family: var(--serif); font-style: italic; font-weight: 400;
-  font-size: calc(3.4 * var(--u)); line-height: .82; letter-spacing: -.03em;
-  color: var(--gold-hi);
-}
+ * It had both, in a row across the top: the manager's name in Archivo and his
+ * slot as a serif numeral on the right. The on-the-clock card directly above
+ * is already printing that name at 97px and that slot as POWER RANK, so the
+ * row was forty-six pixels of a card with none spare, spent saying twice what
+ * one glance up already answers. The rank is in the prose now, where it can
+ * say what it means rather than just what it is.
+ */
 
 /* The goal, on its own rule, because it is the one line on this card that is
    about the season in front of him rather than the seven behind. A gold rail
    at the left rather than a box: a bordered chip here would be a third framed
    object on a card that already has a mount and a header bar. */
+/* One rule, under it, and it is heavier than the hairline it replaced.
+ *
+ * The goal used to sit between two gold rules, which put three horizontal
+ * lines in the top third of the card: the plate's own rule under the masthead,
+ * then this pair. The masthead's rule already closes the header, so the one
+ * above the goal was drawing the same boundary a second time twelve pixels
+ * lower. Gone, and the survivor doubles to 2px — with nothing above it to
+ * share the work it has to hold the split between the goal and the writeup on
+ * its own. */
 .ol-goal {
   display: flex; align-items: baseline; gap: calc(1 * var(--u));
-  border-top: 1px solid rgba(201,154,67,.34);
-  border-bottom: 1px solid rgba(201,154,67,.34);
-  padding: calc(.62 * var(--u)) 0;
+  border-bottom: 2px solid rgba(201,154,67,.4);
+  padding: 0 0 calc(.62 * var(--u));
 }
 .ol-goal .k {
   flex: none;
@@ -3362,33 +3485,84 @@ body.phase-details .bb-next > .rail-hd {
   line-height: 1.34; color: #d7dde6;
 }
 
-/* One line of facts, and not a strip of three stacked key-over-value columns.
+/* Head to head, and when the fixture actually is.
  *
- * The strip was what was eating the paragraph: forty pixels of a card that has
- * none to spare, spent reprinting two numbers the on-the-clock card is already
- * showing for the same man a foot straight up. ALL-TIME and TITLES are both up
- * there. What is not up there is how often he has been to the playoffs and how
- * high he has ever finished, which is what half of these writeups turn on, so
- * that is what is left, on one line, keys inline rather than stacked over. */
-.ol-facts {
-  flex: none; display: flex; flex-wrap: wrap;
-  column-gap: calc(1.6 * var(--u)); row-gap: calc(.3 * var(--u));
-  margin-top: calc(.7 * var(--u)); padding-top: calc(.6 * var(--u));
+ * Four cells: the man he owns, the man who owns him, week one and the rival.
+ * The two records are who he is, the two fixtures are what is coming, and
+ * every cell carries the week or weeks they meet in 2026 — a head to head with
+ * no date on it is trivia, and with one it is a fixture list. Two weeks in a
+ * cell is the schedule saying that one counts double, which is a fact about
+ * the season that nothing else on the board mentions.
+ *
+ * This slot spent one pass as a strip of every season and where it finished,
+ * and the strip was a good graphic in the wrong place. The manager showcase
+ * already draws that exact table, in full, one button away, so the outlook was
+ * spending its last pixels repeating a panel that does it better. Head to head
+ * is nowhere else on the board, it is the thing anybody watching actually
+ * shouts about, and it is the right register for a card about the season ahead
+ * rather than the ones behind: all four of these men are on his 2026 schedule.
+ *
+ * Three lines to a cell, and which two share a line is the whole question.
+ * It went record-then-week on the second line first, and the record kept
+ * reading as part of the date: `9-3 Wk 8` looks like a record with dates
+ * attached to it. A man and what he has done to you is one fact and it takes
+ * the line with the name; the week is when it happens again, which is a
+ * different kind of thing, and it takes the line under.
+ */
+.ol-h2h {
+  flex: none; display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: calc(1.7 * var(--u));
+  margin-top: calc(.7 * var(--u)); padding-top: calc(.62 * var(--u));
   border-top: 1px solid rgba(32,48,71,.85);
 }
-.ol-facts .f {
-  min-width: 0; display: flex; align-items: baseline; gap: calc(.62 * var(--u));
+.ol-h2h .h2 { min-width: 0; }
+.ol-h2h .k {
+  display: block;
+  font-family: var(--mono); font-weight: 600; font-size: calc(.94 * var(--u));
+  letter-spacing: .16em; text-transform: uppercase; color: var(--chalk-dim);
+  white-space: nowrap; overflow: hidden;
 }
-.ol-facts .k {
-  flex: none;
-  font-family: var(--mono); font-weight: 600; font-size: calc(.98 * var(--u));
-  letter-spacing: .18em; text-transform: uppercase; color: var(--chalk-dim);
+/* Name and record, held together. The record is in the mono every number on
+   this board uses and the name is not, so the two halves are told apart by
+   face rather than by a separator drawn between them, which is what a middot
+   would have cost width for. */
+.ol-h2h .who {
+  display: flex; align-items: baseline; gap: calc(.72 * var(--u));
+  margin-top: calc(.22 * var(--u)); min-width: 0;
 }
-.ol-facts .v {
-  white-space: nowrap;
-  font-family: var(--cond); font-weight: 600; font-size: calc(1.72 * var(--u));
-  color: var(--milk);
+.ol-h2h .who b {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: var(--cond); font-weight: 600; font-size: calc(1.78 * var(--u));
+  line-height: 1.05; color: var(--milk);
 }
+.ol-h2h .who i {
+  flex: none; font-style: normal;
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.28 * var(--u));
+  color: var(--chalk-dim);
+}
+/* The week, under it and quieter. Four cells deep it makes its own row along
+   the foot of the card: Wks 1, 14 / Wks 3, 11 / Wk 8 / Wk 7. */
+.ol-h2h .v {
+  display: block; margin-top: calc(.2 * var(--u)); line-height: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.02 * var(--u));
+  letter-spacing: .06em; color: var(--mute);
+}
+/* The two fixtures are lit and the two records are not, which is the split the
+   strip is built on: these two are dates, those two are history. Week one is
+   the cool channel colour and the rivalry is gold, matching what the rest of
+   the board already does with those two ideas — cool for a scheduled thing,
+   gold for the one about to matter. */
+/* The opener's label was borrowing the Skim channel colour, which used to be a
+   pale blue and is now the palette's navy: a 10px navy label on a near-black
+   plate is not dim, it is gone. It takes `--chalk` instead. The distinction the
+   strip needs is only that the two fixtures are lit and the two records are
+   not, and chalk against chalk-dim carries that without a hue at all. */
+.ol-h2h .h2.fix .k { color: var(--chalk); }
+.ol-h2h .h2.riv .k { color: var(--gold); }
+.ol-h2h .h2.riv .v { color: var(--gold-lo); }
+.ol-h2h .h2.fix .v { color: #63788f; }
+
 /* The run alert belongs to the list. It is a fact about the board and there is
    no board on this card, and left alone it would sit in the header beside a
    title that no longer has anything to do with it. */
@@ -4471,12 +4645,16 @@ body.phase-details .bb-next > .rail-hd {
 }
 body.state-idle .pre { display: grid; }
 
-/* ── the slate along the top ── */
+/* ── the slate along the top ──
+   Near-solid, and only here. Everywhere else on the board a header sits over
+   its own panel; this one sits on the bare set, and at .86 fading to .2 the
+   stage photograph read straight through the league name and the date — the
+   two things somebody walking in is looking for. The wash is the panel. */
 .pre-top {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 calc(4 * var(--u));
   border-bottom: 1px solid rgba(32,48,71,.7);
-  background: linear-gradient(180deg, rgba(5,10,18,.86), rgba(5,10,18,.2));
+  background: linear-gradient(180deg, rgba(5,10,18,.97), rgba(5,10,18,.9));
 }
 .pre-mark { display: flex; flex-direction: column; justify-content: center; line-height: 1; }
 .pre-kicker {
@@ -4602,6 +4780,10 @@ body.state-idle .pre { display: grid; }
   padding: 0 calc(2.6 * var(--u)) calc(1.6 * var(--u));
   display: flex; flex-direction: column; gap: calc(1 * var(--u));
 }
+/* Centred, with a rule running out either side of it. It used to be hard left
+   with the rule and a caption trailing off to the right, which read as the head
+   of a column rather than the title of the band under the countdown — and the
+   countdown above it is centred. */
 .pre-order-hd {
   display: flex; align-items: center; gap: calc(1.6 * var(--u));
   padding: 0 calc(1 * var(--u));
@@ -4609,12 +4791,11 @@ body.state-idle .pre { display: grid; }
 .pre-order-t {
   font-family: var(--mono); font-weight: 600; font-size: calc(1.45 * var(--u));
   letter-spacing: .3em; text-transform: uppercase; color: var(--chalk);
+  /* the tracking hangs a .3em space off the last M, which is dead width the
+     centring would otherwise count — pull it back or the words sit left */
+  margin-right: -.3em;
 }
 .pre-order-rule { flex: 1; height: 1px; background: var(--line); }
-.pre-order-sub {
-  font-family: var(--cond); font-weight: 600; font-size: calc(1.6 * var(--u));
-  letter-spacing: .08em; color: var(--mute);
-}
 
 /* Narrower than the screen. The room used to run the full width of the canvas,
    which put twelve men at 160px apiece and made the foot of the pre-show as
@@ -4672,19 +4853,25 @@ body.state-idle .pre { display: grid; }
    across there is no room for a chip, and the two halves of the league read
    faster as a colour along a row than as a word repeated twelve times. */
 .pre-pl.conf-whole .pre-pl-id { border-top-color: var(--conf-whole); }
-.pre-pl.conf-skim  .pre-pl-id { border-top-color: var(--conf-skim); }
+.pre-pl.conf-skim  .pre-pl-id { border-top-color: var(--conf-skim-lit); }
 .pre-pl-name {
   font-family: var(--display); font-weight: 900; font-stretch: 62%;
   font-size: calc(2.1 * var(--u)); line-height: 1; text-transform: uppercase;
   color: var(--milk);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* Last season, and it has to be readable from across a room. It was set in
+   --mute, which is a navy — the same family as the plate it is printed on — so
+   twelve records disappeared into their own nameplates.
+   Both halves of the line carry, not just the record: where a man finished is
+   the half of it people argue about, and stepping it down to --chalk-dim only
+   moved it from invisible to dim. The record leads on weight, not on tone. */
 .pre-pl-note {
-  font-family: var(--mono); font-weight: 600; font-size: calc(.95 * var(--u));
-  letter-spacing: .1em; color: var(--mute); margin-top: calc(.3 * var(--u));
+  font-family: var(--mono); font-weight: 600; font-size: calc(1 * var(--u));
+  letter-spacing: .08em; color: var(--chalk); margin-top: calc(.3 * var(--u));
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.pre-pl-note b { color: var(--chalk-dim); font-weight: 600; }
+.pre-pl-note b { color: var(--milk); font-weight: 600; }
 /* ── the defending champion ───────────────────────────────────────────────
  * One man in twelve, and he gets the whole plinth rather than a gold line on
  * the nameplate: a mount drawn behind his column in brass, open at the foot so
@@ -4703,9 +4890,9 @@ body.state-idle .pre { display: grid; }
   content: ""; position: absolute; z-index: 0; pointer-events: none;
   left: calc(-.5 * var(--u)); right: calc(-.5 * var(--u));
   top: calc(-.6 * var(--u)); bottom: 0;
-  border: 1px solid rgba(201,154,67,.42); border-bottom: 0;
+  border: 1px solid rgba(201,154,67,.72); border-bottom: 0;
   background: linear-gradient(180deg,
-    rgba(201,154,67,.13) 0%, rgba(201,154,67,.03) 46%, rgba(201,154,67,0) 78%);
+    rgba(201,154,67,.22) 0%, rgba(201,154,67,.07) 46%, rgba(201,154,67,0) 78%);
 }
 /* Two brass ticks at the top corners of the mount, which is what turns an
    outlined rectangle into a fitting. They are drawn on the id plate rather
@@ -4716,7 +4903,16 @@ body.state-idle .pre { display: grid; }
   box-shadow: inset 0 1px 0 rgba(240,212,154,.3);
 }
 .pre-pl.champ .pre-pl-name { color: var(--gold-hi); }
-.pre-pl.champ .pre-pl-note { color: var(--gold); }
+/* His line says two words where everybody else's says a record, and mono at
+   the row's tracking runs eighteen characters past the width of a plinth. The
+   condensed face carries the whole phrase inside the column at a size that is
+   bigger than the records around it rather than smaller, which is the point:
+   this is the loudest thing in the row. */
+.pre-pl.champ .pre-pl-note {
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(1.15 * var(--u)); letter-spacing: .02em;
+  text-transform: uppercase; color: var(--gold-hi);
+}
 .pre-pl.champ .pre-pl-no { color: rgba(201,154,67,.18); }
 
 /* ── connection ───────────────────────────────────────────────────────── */
