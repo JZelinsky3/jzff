@@ -46,7 +46,7 @@ MANAGER_MAP = [
     ("1360402900567728128",   22539599, "Charlie",  6),
     ("1358933101526409216",   21679454, "Connie",   7),
     ("728702248099663872",    21688760, "Sean",     8),
-    (None,                    25036608, "Luke",     9),   # not on Sleeper yet
+    ("1396713777201737728",   25036608, "Luke",     9),   # joined as BigMoBigDough
     ("866125212939329536",    21679447, "Mason",   10),
     ("609426003600670720",    21680087, "Kyle",    11),
     ("739751326224969728",    25033943, "Isaac",   12),
@@ -503,6 +503,48 @@ def build_managers():
     return out
 
 
+def build_meta():
+    """meta.json, read off the live draft and league rather than typed here.
+
+    Every one of these was a literal, and every one of them had already drifted
+    by the week of the draft: the clock went 120 -> 180 and the league added a
+    sixth bench spot, so a rebuild would have quietly put a 120-second clock and
+    a fourteenth round back on the board. Sleeper is the only thing that knows
+    what the settings are on the night, so ask it.
+
+    `roster` is the starting lineup in Sleeper's own order, which is what the
+    lineup card draws; `bench` is however many BN spots follow it. `scoring`
+    stays a hand-written sentence because it is prose for a television, not a
+    field: the numbers behind it are checked against `scoring_settings` below.
+    """
+    draft = fetch(f"https://api.sleeper.app/v1/draft/{DRAFT_ID}")
+    league = fetch(f"https://api.sleeper.app/v1/league/{LEAGUE_ID}")
+    st = draft.get("settings") or {}
+    slots = league.get("roster_positions") or []
+
+    meta = {
+        "league_id": LEAGUE_ID,
+        "draft_id": DRAFT_ID,
+        "rounds": st.get("rounds") or 15,
+        "teams": st.get("teams") or 12,
+        "pick_seconds": st.get("pick_timer") or 120,
+        "type": draft.get("type") or "snake",
+        "scoring": "Full PPR / 6pt pass TD / TE premium +0.5",
+        "roster": [p for p in slots if p != "BN"],
+        "bench": sum(1 for p in slots if p == "BN"),
+    }
+
+    # A round is a starter or a bench spot and nothing else, so if these two
+    # ever disagree one of them is being read wrong and the board would be
+    # drawing a lineup it cannot fill.
+    spots = len(meta["roster"]) + meta["bench"]
+    if spots != meta["rounds"]:
+        print(f"  WARNING: {spots} roster spots but {meta['rounds']} rounds.")
+    print(f"  meta: {meta['rounds']} rounds, {meta['pick_seconds']}s clock, "
+          f"{len(meta['roster'])} starters + {meta['bench']} bench")
+    return meta
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
 
@@ -510,17 +552,7 @@ def main():
     history = build_history(players)
     managers = build_managers()
 
-    meta = {
-        "league_id": LEAGUE_ID,
-        "draft_id": DRAFT_ID,
-        "rounds": 15,
-        "teams": 12,
-        "pick_seconds": 120,
-        "type": "snake",
-        "scoring": "Full PPR / 6pt pass TD / TE premium +0.5",
-        "roster": ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "K", "DEF"],
-        "bench": 5,
-    }
+    meta = build_meta()
 
     for fname, payload in [
         ("players.json", players),

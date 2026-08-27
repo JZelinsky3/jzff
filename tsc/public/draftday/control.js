@@ -537,6 +537,10 @@ function renderRail() {
 function renderBand() {
   const ba = STATE.baSkin === "steel" ? "steel" : "plate";
   const lu = STATE.luSkin === "paper" ? "paper" : "dark";
+  // What the left card is carrying, above how it is dressed. Same null-means-
+  // the-default convention as everything else in this module.
+  const panel = STATE.baPanel === "outlook" ? "outlook" : "board";
+  for (const b of $("baPanelSeg").children) b.classList.toggle("on", b.dataset.bapanel === panel);
   for (const b of $("baSeg").children) b.classList.toggle("on", b.dataset.ba === ba);
   for (const b of $("luSeg").children) b.classList.toggle("on", b.dataset.lu === lu);
 }
@@ -854,6 +858,11 @@ $("railSeg").onclick = async e => {
 // ── the bottom band ───────────────────────────────────────────────────────
 // Same convention as the rail: the default is written as null, never as the
 // word for it, so an old state document and a fresh one agree.
+
+$("baPanelSeg").onclick = async e => {
+  const b = e.target.closest("[data-bapanel]");
+  if (b) await C.setState({ baPanel: b.dataset.bapanel === "outlook" ? "outlook" : null });
+};
 
 $("baSeg").onclick = async e => {
   const b = e.target.closest("[data-ba]");

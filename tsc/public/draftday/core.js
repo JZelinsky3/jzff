@@ -185,6 +185,20 @@ export const DEFAULT_STATE = {
   //                           selection card
   baSkin: null,
   luSkin: null,
+  // What the left card of the band is showing, the way `rail` says what the
+  // right-hand panel is showing. Null is best available, which is what that
+  // slot has always been and what it goes back to; "outlook" swaps the list
+  // for the season outlook of whoever is on the clock.
+  //
+  // A channel and not a skin, so it is a separate field from `baSkin` — the
+  // dressing is a taste call about a television and this is a decision about
+  // what the board is saying. They compose: the outlook is drawn inside the
+  // same `.bb-ba` shell, so it wears whichever of the two skins is on.
+  //
+  // Unlike `showcase` this is NOT cleared when a pick lands. The card is
+  // covered by NEXT ON THE CLOCK through the reveal anyway and comes back on
+  // the next man by itself, so there is nothing to clear.
+  baPanel: null,
   mode: "ceremony",
   autoReveal: false,
   sound: true,

@@ -298,6 +298,100 @@ const MANAGER_VOICE = {
   },
 };
 
+/**
+ * The season outlook, which is the long form of a manager and the only long
+ * form on this board.
+ *
+ * Everything else written in this file is a line: `stakes` is one or two
+ * sentences beside a running clock, `pickLine` is a caption. This is the panel
+ * the console can put in the bottom band for as long as it likes, so it gets
+ * room to say where a manager actually is going into 2026 — what the seven
+ * years behind him add up to, where the Milk Order put him and why, and the
+ * one thing that would make this season count.
+ *
+ * Written by hand, twelve times, and not generated. A template with slots for
+ * a record and a finish would produce twelve paragraphs of the same shape,
+ * which is the exact failure the power-ranking writeups kept falling into: the
+ * same sentence built twelve times with different nouns in it reads as one
+ * thing written once. So no two of these open the same way, no construction is
+ * reused, and the argument each one is making is different from the one before
+ * it. If a thirteenth manager ever needs one, write it, do not extend a
+ * pattern.
+ *
+ * The facts are real and come off `data/managers.json`: career records, the
+ * ledger, playoff trips, top-three finishes, points per week. `goal` is the
+ * short line above the prose and is the thing being played for, in the plainest
+ * words available.
+ */
+const SEASON_OUTLOOK = {
+  Sean: {
+    goal: "Win the first one",
+    text: `Sean is the best manager in this league never to have won it, and by now that is close to a whole identity. Fifty-six regular season wins, four playoff trips, and a 1-4 record once he gets there. Last season broke the run: 6-8, tenth, his first year out since 2020. He tops the Milk Order because the teams keep being good, and a stretch like this ends with a trophy or it just ends.`,
+  },
+  Isaac: {
+    goal: "A second ring",
+    text: `The best regular season record in PAMS belongs to Isaac, and it has produced exactly one title. That ring came out of a 7-7 team in 2022, while the 11-3 team in 2023 and last year's 10-4 team both went out early. Six seasons, four playoff trips, one trophy, and a fifth-place finish that felt like less than it was. Second in the Milk Order is a bet that the roster and the result finally land in the same year.`,
+  },
+  Connor: {
+    goal: "Back to the playoffs, and win one there",
+    text: `There is a 2-12 season on Connor's record and this league has never once let it go. Seven years in he sits at 42-54 with two playoff trips, and third place in 2024 is the only time he has finished anywhere near the top. Third in the Milk Order is a long way ahead of any of that. It is a call on the roster he is about to draft rather than on the seven that came before it.`,
+  },
+  Mason: {
+    goal: "Go back to back",
+    text: `Worst to first, inside a single offseason. Mason went 4-10 and finished twelfth in 2024, then won the whole thing at 10-4 last year, a turn only Ricci has ever made here. He is fourth rather than first because nobody in PAMS has won it twice and repeating is a different kind of hard. Eleven other managers draft against him tonight, and every one of them knows exactly where he is sitting.`,
+  },
+  Chris: {
+    goal: "Turn the points into a finish",
+    text: `Chris has scored more per week across the last three seasons than he did over the four that produced a title and a runner-up, and it has bought him a 21-21 record and two ninth-place finishes. His drafts are the sharpest here: 39 of every 100 picks turn into a starter, and his rosters average 2,249 points a year. Fifth in the Milk Order says the scoring is real and the record is the part that is lying.`,
+  },
+  Joey: {
+    goal: "A fifth top three, and a second title",
+    text: `Four top-three finishes is more than anybody else has managed, and all four arrived in the first four seasons. Since 2022 it has gone twelfth, eighth, eighth, and the highest points-per-week average in league history has done nothing to change that. He ranked himself sixth and called it honest. Scoring has never been the problem in this team; converting it in December is.`,
+  },
+  Ricci: {
+    goal: "A sixth trip, and the second title",
+    text: `Five playoff trips out of seven seasons, with a losing career record sitting underneath them. Ricci won it in 2020, came second in 2024 and finished third last year off the eighth-most points in the league. He gets in, and then he runs hot at the right time. Seventh is not a shot at the results, it is a question about how they keep arriving from a team that spends September and October looking ordinary.`,
+  },
+  Kyle: {
+    goal: "The first top-three finish",
+    text: `In four times, out four times. Kyle has reached the playoffs in four of seven seasons and has never finished top three in any of them, which is a very particular way to spend seven years. Last season was 8-6 and a four seed and it ended the way the other three did. He is eighth rather than ninth because he earned three of those trips outright at 9-5, 10-4 and 8-6, with nothing handed to him.`,
+  },
+  Connie: {
+    goal: "A fourth title game, and a second ring",
+    text: `Three trips to the championship game, in 2020, 2023 and 2025, and one of them turned into a ring. A 6-3 record once the playoffs begin is comfortably the best in PAMS. The regular seasons are the trouble: 46-50 all told, and two of those title-game runs started from a seven seed at 6-7 and 7-7. Ninth is a bet against that particular trick working a fourth time.`,
+  },
+  Charlie: {
+    goal: "Finish top three, once",
+    text: `Seven seasons, a best finish of fourth, and not one top-three year in any of them. Money God has made the playoffs twice and scores fewer points a week than anyone here who has played more than three seasons. He was ranked first in last year's Milk Order and came sixth, which is roughly how these have tended to go. Tenth this time, and the goal has not moved in seven years.`,
+  },
+  Evan: {
+    goal: "A winning season and a playoff spot",
+    text: `The newest team in the league, and the only manager here without a fourth season on the record. Evan made the playoffs in his first year, before he really knew what any of this was, and has gone 5-9 in both seasons since. Seventeen wins and twenty-five losses is the entire file. Eleventh is a ranking of what is known about him, and there is not very much known yet.`,
+  },
+  Luke: {
+    goal: "Prove 2024 was not a fluke",
+    text: `A champion sitting twelfth, which needs some explaining. Luke won it in 2024 out of an 8-6 season, then went 4-10 and finished dead last a year later. Six seasons, 38 wins, one top-three finish, and it happened to be the one that came with a trophy. This ranking is about who wins it this year rather than who has won it, and that reading is the only one that puts him down here.`,
+  },
+};
+
+/**
+ * The outlook for one manager, with a fallback that is honest about knowing
+ * nothing. A late replacement should get a short true sentence rather than a
+ * paragraph assembled out of a template, because the paragraph would be the
+ * one thing on the card that reads as machinery.
+ */
+export function seasonOutlook(m) {
+  const o = SEASON_OUTLOOK[m && m.name];
+  if (o) return o;
+  const f = facts(m);
+  return {
+    goal: f.titles ? "Another one" : "The first one",
+    text: `${m.name} is ${f.seasons} seasons into PAMS at ${f.record}, with `
+      + `${f.playoffs === 1 ? "one playoff trip" : `${f.playoffs} playoff trips`}`
+      + `${f.titles ? ` and a title in ${f.last}` : " and no title yet"}.`,
+  };
+}
+
 function stakes(m) {
   const v = MANAGER_VOICE[m.name];
   if (v) return pick(v.stakes, seed(m.name));

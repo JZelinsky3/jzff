@@ -276,10 +276,10 @@ body.board::after {
 /* A team name and its conference, as a row rather than a line of inline
    boxes: the chip sat on the text baseline before, which put a bordered box
    with its own padding visibly low against the letters beside it. */
-.mgr-team, .oc-team, .next-team, .sc-team {
+.mgr-team, .oc-team, .next-team, .sc-team, .ol-team {
   display: flex; align-items: center; gap: calc(.8 * var(--u));
 }
-.mgr-team .tn, .oc-team .tn, .next-team .tn, .sc-team .tn {
+.mgr-team .tn, .oc-team .tn, .next-team .tn, .sc-team .tn, .ol-team .tn {
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 /* the conference chip, beside a team name */
@@ -3230,6 +3230,169 @@ body.phase-details .bb-next > .rail-hd {
 .ba .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--milk); }
 .ba .pr { font-family: var(--mono); font-weight: 600; font-size: calc(1.35 * var(--u)); }
 .ba .tm { font-family: var(--mono); font-size: calc(1.2 * var(--u)); color: var(--chalk-dim); text-align: right; }
+
+/* ── the season outlook ───────────────────────────────────────────────────
+ *
+ * The second channel the best-available card can carry, chosen from the
+ * console (`baPanel`), and the only block of running prose on this board.
+ *
+ * It is drawn inside `.bb-ba` rather than as a card of its own, so the plate,
+ * the mount, the gold rule and the ghosted wordmark are all already there and
+ * both skins keep working with nothing added. Only one of the list and this
+ * is ever in the box.
+ *
+ * A column with the paragraph as the only flexible part. The name, the goal
+ * and the three facts are all fixed height, so a shorter writeup leaves its
+ * air at the bottom rather than floating the facts up into the middle of the
+ * card and off the line the lineup's last row sits on.
+ *
+ * The paragraph is set at 1.95u, which is bigger than it looks like it wants
+ * to be on a laptop and about as big as it can be here. This is the one thing
+ * on the board somebody reads a whole sentence of from a sofa; every other
+ * panel is a name, a number or a two-word label that can be recognised rather
+ * than read. Barlow at 500 rather than the 600 the lists use: weight is what
+ * makes a list legible at a glance and what makes a paragraph a wall. */
+.ba-outlook { display: none; }
+.ba-outlook-on .ba-list { display: none; }
+/* Wider than half the band, and only while this channel is up.
+ *
+ * A list can be any width and stay a list. A paragraph cannot: at half the
+ * band it came out at about 75 characters a line, which put the writeups at
+ * six lines in a card with room for four, and the last two sentences were
+ * simply cut off the bottom. Every other way of buying those lines was worse.
+ * Smaller type on the one block of running prose on this board is the wrong
+ * thing to shrink; shorter writeups would be shortening them to fit a column
+ * width rather than because there is less to say.
+ *
+ * So the card takes the width instead, and it takes it from the lineup, which
+ * is nine names and a two-character team and has more than it needs. The
+ * lineup's columns are all in em off the shared row clamp, so it gives the
+ * space back without anything in it moving out of proportion. */
+.ba-outlook-on .bb-ba { flex: 1.55; }
+.ba-outlook-on .bb-ba .ba-outlook {
+  display: flex; flex-direction: column; position: relative; z-index: 1;
+  flex: 1; min-height: 0; overflow: hidden;
+  /* The list's own padding, deliberately: whichever channel is up, the card's
+     contents start on the same two lines down each side, so flipping between
+     them moves the words and nothing else. */
+  padding: calc(.7 * var(--u)) calc(1.9 * var(--u)) calc(.9 * var(--u));
+}
+
+/* Name on the left, the Milk Order slot on the right, on one line.
+ *
+ * The team name is not on this card, and that is the whole reason the row is
+ * one line. It was under the name in gold, which is exactly where the
+ * on-the-clock card three feet above is already printing it, in gold, with
+ * the same conference chip beside it. Twenty pixels of a card that has none
+ * spare, spent saying Woodpooper twice on one screen. */
+.ol-top {
+  display: flex; align-items: baseline; gap: calc(1.4 * var(--u));
+  padding-bottom: calc(.5 * var(--u));
+}
+/* Under the ON THE CLOCK card's name, and it has to be: that one is 97px and
+   this is the same word about the same man on the same screen. Big enough to
+   head a card, small enough that nobody wonders which of the two is the
+   headline. */
+.ol-name {
+  flex: 1; min-width: 0;
+  font-family: var(--display); font-weight: 900;
+  font-size: calc(3.2 * var(--u)); line-height: 1; text-transform: uppercase;
+  color: var(--milk); letter-spacing: -.005em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* The same badge the clock card and the showcase use, one step smaller. It is
+   a serif italic numeral over a tracked-out mono key, and it is a Roman
+   numeral because an arabic 3 beside a paragraph that also says "third" reads
+   as two different numbers about the same man. */
+.ol-rank {
+  flex: none; text-align: right; display: flex; flex-direction: column;
+  align-items: flex-end; line-height: 1;
+  /* The row is baseline-aligned on the name, and this box's first baseline is
+     the mono key's, which would hang the numeral a line below the name. Its
+     own baseline is taken out of the calculation instead and the block is
+     nudged to sit level by eye. */
+  align-self: flex-start; margin-top: calc(-.1 * var(--u));
+}
+.ol-rank-k {
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.02 * var(--u));
+  letter-spacing: .25em; text-transform: uppercase; color: var(--gold);
+  margin-bottom: calc(.22 * var(--u));
+}
+.ol-rank-n {
+  font-family: var(--serif); font-style: italic; font-weight: 400;
+  font-size: calc(3.4 * var(--u)); line-height: .82; letter-spacing: -.03em;
+  color: var(--gold-hi);
+}
+
+/* The goal, on its own rule, because it is the one line on this card that is
+   about the season in front of him rather than the seven behind. A gold rail
+   at the left rather than a box: a bordered chip here would be a third framed
+   object on a card that already has a mount and a header bar. */
+.ol-goal {
+  display: flex; align-items: baseline; gap: calc(1 * var(--u));
+  border-top: 1px solid rgba(201,154,67,.34);
+  border-bottom: 1px solid rgba(201,154,67,.34);
+  padding: calc(.62 * var(--u)) 0;
+}
+.ol-goal .k {
+  flex: none;
+  font-family: var(--mono); font-weight: 600; font-size: calc(1.05 * var(--u));
+  letter-spacing: .22em; text-transform: uppercase; color: var(--gold);
+}
+.ol-goal .v {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: var(--cond); font-weight: 600; font-size: calc(2.1 * var(--u));
+  color: var(--milk);
+}
+
+/* One size for all twelve, and that is the point rather than an oversight.
+ *
+ * There was a second, smaller step here for the long ones, and it was wrong
+ * twice over: every one of the twelve writeups is between 363 and 411
+ * characters, so the step fired on all of them and the base size was dead
+ * code — and if it ever had not fired, the card would have changed type size
+ * as the draft moved from one manager to the next, on the same card, in the
+ * same place on the screen. That reads as a fault. The size is the one that
+ * holds the longest of the twelve in four lines, and the other eleven are set
+ * at it too. */
+.ol-text {
+  flex: 1; min-height: 0; overflow: hidden;
+  margin: calc(.8 * var(--u)) 0 0;
+  font-family: var(--cond); font-weight: 500; font-size: calc(1.95 * var(--u));
+  line-height: 1.34; color: #d7dde6;
+}
+
+/* One line of facts, and not a strip of three stacked key-over-value columns.
+ *
+ * The strip was what was eating the paragraph: forty pixels of a card that has
+ * none to spare, spent reprinting two numbers the on-the-clock card is already
+ * showing for the same man a foot straight up. ALL-TIME and TITLES are both up
+ * there. What is not up there is how often he has been to the playoffs and how
+ * high he has ever finished, which is what half of these writeups turn on, so
+ * that is what is left, on one line, keys inline rather than stacked over. */
+.ol-facts {
+  flex: none; display: flex; flex-wrap: wrap;
+  column-gap: calc(1.6 * var(--u)); row-gap: calc(.3 * var(--u));
+  margin-top: calc(.7 * var(--u)); padding-top: calc(.6 * var(--u));
+  border-top: 1px solid rgba(32,48,71,.85);
+}
+.ol-facts .f {
+  min-width: 0; display: flex; align-items: baseline; gap: calc(.62 * var(--u));
+}
+.ol-facts .k {
+  flex: none;
+  font-family: var(--mono); font-weight: 600; font-size: calc(.98 * var(--u));
+  letter-spacing: .18em; text-transform: uppercase; color: var(--chalk-dim);
+}
+.ol-facts .v {
+  white-space: nowrap;
+  font-family: var(--cond); font-weight: 600; font-size: calc(1.72 * var(--u));
+  color: var(--milk);
+}
+/* The run alert belongs to the list. It is a fact about the board and there is
+   no board on this card, and left alone it would sit in the header beside a
+   title that no longer has anything to do with it. */
+.ba-outlook-on #runAlert { display: none; }
 
 /* ── ticker ───────────────────────────────────────────────────────────── */
 .ticker {

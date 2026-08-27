@@ -598,6 +598,15 @@ body.console-page {
  * is one module with a labelled rule between the halves rather than two boxes
  * or two unlabelled rows. */
 .bandpair { display: grid; gap: .3rem; }
+/* The channel list sits above the skins in the same box, so the module reads
+   top down as what the card is showing and then how it is dressed. The rule
+   between them is the boundary between those two questions; without it the
+   channel list and the "Best available" sublabel under it look like a heading
+   and its options, which is exactly backwards. */
+#baPanelSeg { margin-bottom: .55rem; }
+#baPanelSeg + .bandpair {
+  padding-top: .55rem; border-top: 1px solid rgba(255,255,255,.07);
+}
 
 /* ── manual entry ─────────────────────────────────────────────────────────*/
 .console-page .search {

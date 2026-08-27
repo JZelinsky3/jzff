@@ -605,10 +605,20 @@ submitting and the console refuses to announce a duplicate.
 Everything is namespaced by a `room` query param, default `2026`.
 `board.html?room=sim` etc. points at a throwaway copy. Use it to rehearse.
 
-- `selftest.html` — 62 assertions over snake order, roster needs, value
+**The state document is `pams_draft/<room>/meta/state`, not `pams_draft/<room>`.**
+The room document itself only holds the `picks` subcollection and has no fields
+of its own. Writing a state patch straight onto it over the REST API succeeds,
+creates a document nothing reads, and leaves the board showing whatever the
+real state says while every check of the thing you just wrote says it went in.
+Worth knowing before poking the sim room by hand.
+
+- `selftest.html` — 83 assertions over snake order, roster needs, value
   verdicts, position runs, the history join, and the showcase's ledgers: that
   every career reconciles, that a seed only exists for a season he made the
-  playoffs, and that Mason's 2021 is the corrected row. Open it, read the list.
+  playoffs, and that Mason's 2021 is the corrected row. It also covers the
+  twelve season outlooks, which are prose and so are checked the way prose can
+  be: none runs past the card, none uses a banned word, and no two open on the
+  same three words. Open it, read the list.
 - `simdraft.html?room=sim&picks=24` — drives a fake draft into the sim room so
   you can see a populated board. It refuses to run against room `2026`.
 - `clocktest.html?room=sim` — drives the real console in an iframe and checks
@@ -635,13 +645,26 @@ quarterbacks too high. Set `TSC_BASE` to hit production instead.
 It writes four files (and reads a fifth, `source/seasons.json`, written by
 `build_seasons.mjs` — see the showcase section):
 
-- `players.json` — 1,828 draftable players, consensus order for the top 340 and
+- `players.json` — 1,880 draftable players, consensus order for the top 340 and
   Sleeper order behind them, positional ranks, rookie flags
-- `history.json` — 400 of those players mapped to every time PAMS drafted them,
+- `history.json` — 402 of those players mapped to every time PAMS drafted them,
   2019-2025
 - `managers.json` — the twelve, Sleeper identity joined to PAMS career record,
   titles, draft tendencies and the season-by-season ledger the showcase reads
-- `meta.json` — league format
+- `meta.json` — league format, and **every field of it is read off the live
+  draft and league** rather than typed into the script
+
+**`meta.json` used to be twelve literals and every one of them had drifted by
+the week of the draft.** The clock went from 120 seconds to 180 and the league
+added a sixth bench spot, so a rebuild on draft week would have quietly put a
+two-minute clock and a fourteen-round board back on the television. Sleeper is
+the only thing that knows what the settings are on the night: `build_meta()`
+takes rounds, teams, the clock and the type off the draft, and the starting
+lineup and the bench count off the league's `roster_positions`. It warns if
+starters plus bench do not add up to the number of rounds, because if those two
+disagree one of them is being read wrong and the board is drawing a lineup it
+cannot fill. The scoring line stays hand-written: it is a sentence for a
+television, not a field.
 
 ## Manager identity
 
@@ -650,10 +673,13 @@ display names are actively misleading: `Cnnr430` is **Connie**, Connor drafts
 as `Atkinsson`. The mapping is `MANAGER_MAP` in `build_draft_data.py`,
 confirmed by Joey 2026-08-19. Key on the ids, never the handle.
 
-**Luke has not joined the Sleeper league yet.** He is hardcoded into draft slot
-9 with his full PAMS history, and `refreshLateJoiners()` in `core.js` binds him
-to his Sleeper account automatically the moment he joins — the board checks
-every 60 seconds. Nothing needs rebuilding.
+**Luke joined on 2026-08-27, as `BigMoBigDough`,** and is in `MANAGER_MAP` with
+the other eleven. He had been hardcoded into draft slot 9 with a `None` Sleeper
+id and his full PAMS history, on the assumption that `refreshLateJoiners()` in
+`core.js` would bind him the moment he joined. It would have. Now that all
+twelve carry an id that function returns on its first line and never touches
+the network, which is what it was written to do — it is the safety net for a
+thirteenth late joiner, not something the board depends on.
 
 ## Why it does not stretch on a television
 
@@ -1040,6 +1066,66 @@ present.
 **The band's corners are square.** All three cards, not just this one — a 5px
 radius on a row of panels along the bottom of a television is a web habit, and
 broadcast furniture has corners.
+
+### The season outlook, in the best-available slot
+
+`baPanel` in the state document, chosen from the channel list at the top of
+**THE BOTTOM BAND** in the console. `null` is best available, which is what
+that slot has always been; `"outlook"` swaps the list for a written outlook on
+whoever is on the clock. A channel, not a skin, so it is a separate field from
+`baSkin` — the dressing is a taste call about a television, this is a decision
+about what the board is saying — and the two compose, because the outlook is
+drawn inside the same `.bb-ba` card and wears whichever skin is on.
+
+**It exists because there was nowhere on this board to be long.** The clock
+card carries one or two sentences beside a running timer, which is all a man
+with 180 seconds will read. The showcase is a full-screen takeover that covers
+the draft. This is neither: a paragraph on a card that is already up, for as
+long as the console leaves it there. It says where a manager actually stands
+going into 2026, where the Milk Order put him and why, and what would make the
+season count.
+
+Four parts and no more: the name, the Milk Order slot, **The goal**, the
+writeup, and one line of facts under it.
+
+**The twelve writeups are hand-written in `voice.js`** (`SEASON_OUTLOOK`) and
+not generated. A template with slots for a record and a finish produces twelve
+paragraphs of the same shape, which is the exact failure the power-ranking
+writeups kept falling into: the same sentence built twelve times with different
+nouns in it reads as one thing written once. No two open the same way, no
+construction is reused, and each is arguing something different. If a
+thirteenth manager ever needs one, **write it, do not extend a pattern.** Every
+fact in them comes off `data/managers.json`.
+
+**Everything on the card that the card above already says was cut**, and that
+is what bought the paragraph its lines:
+
+- the team name in gold, which the on-the-clock card prints in gold with the
+  same conference chip, three feet up
+- a three-column facts strip carrying ALL-TIME and TITLES, both of which are
+  in that same card. What is left is playoff trips and the best finish, which
+  is what half the writeups turn on and is nowhere else on the screen. A
+  champion gets top-three finishes instead, because his best finish is 1st and
+  TITLES has said so.
+
+**The card takes 1.55 of the band while the outlook is up.** A list can be any
+width and stay a list; a paragraph cannot. At half the band the writeups came
+out six lines deep in a card with room for four and the last two sentences were
+cut off the bottom. The width comes off the lineup, which is nine names and a
+two-character team and has more than it needs, and whose columns are all in em
+off the shared row clamp so nothing in it moves out of proportion.
+
+**One type size for all twelve.** There was a smaller second step for the long
+ones and it was wrong twice: all twelve writeups are 363-411 characters so the
+step fired on every one of them and the base size was dead code — and had it
+ever not fired, the card would have changed type size as the draft moved from
+one manager to the next, in the same place on the same screen, which reads as a
+fault. It is set at the size that holds the longest of the twelve in four
+lines.
+
+**The budget is four lines of about a hundred characters.** Overflow is hidden,
+so a rewrite that runs past it loses its last sentence silently. That is the
+one failure here worth knowing about before draft night.
 
 ### Both looks ship, and the console picks
 
@@ -1537,6 +1623,18 @@ seasons since his 2022 ring, and "four of six seasons since" a title four
 years ago is impossible. And a tie is not a lead: Sean and Mason are both
 56-40, so neither has "the best record in PAMS." Recompute from the ledger
 before writing a number. **No em dashes in any rendered copy, anywhere.**
+
+**`source/dossier.json` carries only one number the board reads: `rank`.**
+Everything else in it — the ledger, the career record, the playoff record — was
+superseded by `source/seasons.json` and is left in place as the record of what
+the Milk Order was argued from. The ranks in it went stale twice while the
+countdown was still running (Isaac and Cat swapped to 2 and 3, Kyle and Connie
+to 8 and 9) and the board was still printing the old order weeks later, because
+nothing joins this file back to the project that owns it. **The authority is
+`data.ORDER` in `~/Desktop/pams 2026 power rankings/_scripts/data.py`.** Diff
+against it before draft week. The order is Sean, Isaac, Cat, Mason, Chris,
+Joey, Ricci, Kyle, Connie, Charlie, Evan, Luke; `lo_rank`, `hi_rank`, `room`,
+`mgr` and `win` all derive from the four orderings in that same file.
 
 **Two full-screen announcements, queued.** `.announce.oncard` ("X is now on
 the clock", 5.2s) and `.announce.roundcard` (the round numeral, its pick range

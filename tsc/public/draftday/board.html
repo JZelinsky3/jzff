@@ -96,10 +96,17 @@
                Serif with the second word italic gold, the same shape as
                `The 2026 Draft` in the header and on the pre-show. See the
                note on `.bb-ba > .rail-hd`. -->
-          <span class="ba-title">Best <em>Available</em></span>
+          <span class="ba-title" id="baTitle">Best <em>Available</em></span>
           <span class="run" id="runAlert"></span>
         </div>
         <div class="ba-list" id="baList"></div>
+        <!-- The other channel this card can carry, chosen from the console
+             (`baPanel`). It is a sibling of the list rather than a card of its
+             own on purpose: the plate, the mount, the ghosted wordmark and the
+             gold rule under the title are all furniture of `.bb-ba`, and a
+             second card would have to own copies of every one of them. Only
+             one of the two is ever in the box at a time. -->
+        <div class="ba-outlook" id="baOutlook"></div>
       </div>
       <!-- Takes the same place in the band while a reveal is up, the way a
            broadcast puts the next team and their clock on screen under the

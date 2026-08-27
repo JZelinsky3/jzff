@@ -118,7 +118,7 @@
  },
  "Cat": {
   "conf": "Whole",
-  "rank": 2,
+  "rank": 3,
   "lo_rank": 2,
   "hi_rank": 8,
   "room": 6,
@@ -233,7 +233,7 @@
  },
  "Isaac": {
   "conf": "Skim",
-  "rank": 3,
+  "rank": 2,
   "lo_rank": 1,
   "hi_rank": 5,
   "room": 5,
@@ -811,7 +811,7 @@
  },
  "Connie": {
   "conf": "Whole",
-  "rank": 8,
+  "rank": 9,
   "lo_rank": 5,
   "hi_rank": 11,
   "room": 11,
@@ -928,7 +928,7 @@
  },
  "Kyle": {
   "conf": "Whole",
-  "rank": 9,
+  "rank": 8,
   "lo_rank": 8,
   "hi_rank": 10,
   "room": 8,

@@ -3,6 +3,7 @@
 <body><pre id="out">running…</pre>
 <script type="module">
 import * as C from "./core.js";
+import { seasonOutlook } from "./voice.js";
 
 const lines = [];
 let fail = 0;
@@ -44,7 +45,7 @@ try {
      "slots 1-12 all present, no dupes");
   ok(C.managerOf(1).name === "Ricci",  "pick 1 is Ricci");
   ok(C.managerOf(5).name === "Joey",   "pick 5 is Joey");
-  ok(C.managerOf(9).name === "Luke",   "pick 9 is Luke (not on Sleeper yet)");
+  ok(C.managerOf(9).name === "Luke",   "pick 9 is Luke");
   ok(C.managerOf(13).name === "Isaac", "pick 13 snakes back to Isaac");
 
   // ── next pick for a slot ──
@@ -224,6 +225,37 @@ try {
      "first-place seasons match the title count");
   ok(C.DEFAULT_STATE.showcase === null, "the board starts with no showcase up");
   ok(C.DEFAULT_STATE.rail === null, "the rail starts on the round wall");
+  ok(C.DEFAULT_STATE.baPanel === null, "the band starts on best available");
+
+  // ── the season outlooks ──
+  //
+  // Twelve hand-written paragraphs, and the one way they can fail on the night
+  // is quietly: the card hides its overflow, so a writeup that runs long loses
+  // its last sentence off the bottom and nothing says so. The budget is four
+  // lines of about a hundred characters at the size the card sets, and the
+  // ceiling here is under that with a line's slack, because the count is only
+  // an estimate of what Barlow will actually set.
+  const outlooks = C.DATA.managers.map(m => [m.name, seasonOutlook(m)]);
+  ok(outlooks.every(([, o]) => o && o.goal && o.text),
+     "every manager has a season outlook with a goal");
+  const longest = outlooks.reduce((a, b) => (b[1].text.length > a[1].text.length ? b : a));
+  ok(longest[1].text.length <= 420,
+     `no outlook runs past the card (longest is ${longest[0]} at ${longest[1].text.length})`);
+  ok(outlooks.every(([, o]) => o.goal.length <= 44),
+     "every goal fits on its line");
+
+  // The house rules on copy, checked rather than remembered. "Bracket" is the
+  // playoffs here and nobody says "the room", and an em dash is banned outright
+  // across everything this league publishes.
+  const banned = /\bbracket\b|\bthe room\b|—/i;
+  const offenders = outlooks.filter(([, o]) => banned.test(`${o.goal} ${o.text}`));
+  ok(!offenders.length,
+     `no outlook uses a banned word${offenders.length ? ` (${offenders.map(o => o[0]).join(", ")})` : ""}`);
+
+  // Twelve paragraphs that all open the same way is the failure these were
+  // written against, so no two may start on the same three words.
+  const openers = outlooks.map(([, o]) => o.text.toLowerCase().split(/\s+/).slice(0, 3).join(" "));
+  ok(new Set(openers).size === openers.length, "no two outlooks open the same way");
 
   // ── the clock room's stopwatch ──
   // Everything the panel says rests on elapsedOnClock being honest about a

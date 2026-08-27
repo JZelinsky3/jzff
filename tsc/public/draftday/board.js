@@ -2,7 +2,7 @@
 // Read-only. It never writes state; the phone and the console drive it.
 
 import * as C from "./core.js";
-import { onClockLine, pickLine, selectionLine, ordinalPick } from "./voice.js";
+import { onClockLine, pickLine, selectionLine, seasonOutlook, ordinalPick } from "./voice.js";
 
 const $ = id => document.getElementById(id);
 const body = document.body;
@@ -1325,6 +1325,19 @@ function renderBestAvailable() {
   // Outside the guard: it is a custom property, not markup, and the lineup
   // beside it can grow on a render that leaves this list untouched.
   document.querySelector(".bottom-band")?.style.setProperty("--band-rows", rows);
+
+  // Which of the two channels the card is carrying, from the console. The
+  // class goes on the band rather than on the card because the two skins are
+  // already there and a second place to look for "what is this card doing" is
+  // one too many.
+  const outlook = STATE.baPanel === "outlook";
+  document.querySelector(".bottom-band")?.classList.toggle("ba-outlook-on", outlook);
+  // The title is part of the channel. Same lockup either way, second word
+  // italic gold, so swapping the card does not swap the shape of its header.
+  $("baTitle").innerHTML = outlook
+    ? `Season <em>Outlook</em>` : `Best <em>Available</em>`;
+  if (outlook) { renderOutlook(); return; }
+
   if (!changed("bestavail", `${picksRev}|${rows}`)) return;
   $("baList").innerHTML = C.bestAvailable(PICKS, null, rows).map(p => `
     <div class="ba">
@@ -1348,6 +1361,76 @@ function renderBestAvailable() {
         ? `the last ${run.n} picks have all been ${run.pos}s`
         : `${run.pos}s have gone ${run.n} of the last ${run.span} picks`}</span>`
     : "";
+}
+
+/**
+ * The season outlook, in the best-available slot, for whoever is on the clock.
+ *
+ * The long form of a manager, and the reason it exists is that there was
+ * nowhere on this board to be long. The clock card carries one or two
+ * sentences beside a running timer because that is all a man with 180 seconds
+ * will read; the showcase is a full-screen takeover that covers the draft.
+ * This is neither: a paragraph in a card that is already on screen, up for as
+ * long as the console leaves it there, saying where a manager actually stands
+ * going into 2026 and what would make the season count.
+ *
+ * Four parts and no more: who, where the Milk Order put him, what he is
+ * playing for, and then the writeup. The facts under it are the three that the
+ * paragraph is arguing about, so a viewer can check the claim against the
+ * numbers without leaving the card.
+ *
+ * Keyed on the manager rather than the pick. It does not change while a man is
+ * on the clock, so a repaint every time a pick lands somewhere else would only
+ * restart its fade for no reason.
+ */
+function renderOutlook() {
+  const m = C.managerOf(STATE.current || 1);
+  if (!changed("outlook", m ? m.name : "none")) return;
+  const el = $("baOutlook");
+  if (!m) { el.innerHTML = ""; return; }
+
+  const o = seasonOutlook(m);
+  const c = m.career || {};
+  // Best finish is not on the manager record, and it is the one number this
+  // card keeps needing: half of these writeups turn on a man never having
+  // finished top three. Off the ledger, which is every season he has played.
+  const best = (m.ledger || []).reduce(
+    (b, y) => (y.fin && (!b || y.fin < b) ? y.fin : b), null);
+
+  // Two facts, and neither of them is one the card above is already printing.
+  // The on-the-clock card carries the all-time record and the titles for this
+  // same man; repeating them here would be spending the only spare lines on
+  // this card saying something the screen has already said.
+  const facts = [
+    ["Playoffs", c.playoffs
+      ? `${c.playoffs} ${c.playoffs === 1 ? "trip" : "trips"}${c.playoff_record ? `, ${c.playoff_record}` : ""}`
+      : "Never"],
+    // Best finish, unless he has won it, in which case best finish is 1st and
+    // the card above has already said so under TITLES. For a champion the
+    // question the writeups keep asking is how often he has been close, so
+    // that is the number that goes here instead.
+    c.titles
+      ? ["Top three", `${c.top3 || 0}`]
+      : ["Best finish", best ? ordinalPick(best) : ""],
+  ];
+
+  el.innerHTML = `
+    <div class="ol-top">
+      <div class="ol-name">${C.escapeHtml(m.name.toUpperCase())}</div>
+      ${m.power_rank ? `<div class="ol-rank">
+        <span class="ol-rank-k">Milk Order</span>
+        <span class="ol-rank-n">${ROMAN[m.power_rank] || m.power_rank}.</span>
+      </div>` : ""}
+    </div>
+    <div class="ol-goal"><span class="k">The goal</span>
+      <span class="v">${C.escapeHtml(o.goal)}</span></div>
+    <!-- The card holds four lines of about a hundred characters. Every one of
+         the twelve writeups is inside that; if a rewrite ever runs past it the
+         overflow is hidden and the last sentence goes missing quietly, which
+         is the one failure worth knowing about before the night. -->
+    <p class="ol-text">${C.escapeHtml(o.text)}</p>
+    <div class="ol-facts">${facts.filter(f => f[1]).map(f =>
+      `<div class="f"><span class="k">${f[0]}</span><span class="v">${f[1]}</span></div>`).join("")}</div>`;
 }
 
 /**
