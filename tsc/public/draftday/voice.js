@@ -207,66 +207,65 @@ const MANAGER_VOICE = {
     // 2020 title. 46-50. Top three in 2024 and 2025. Playoffs in 4 of the 5
     // seasons since the ring.
     stakes: [
-      `Ricci won it in 2020 and has been back in the playoffs four times in the five years since, including a second-place finish in 2024 and a third last year. No second ring out of any of it.`,
-      `Six years since the trophy. Ricci has finished top three in each of the last two seasons and neither one got him back to the top.`,
+      `First in, last out, is what they call him at the Chick-f-la drive thru, same as his draft this year.`,
+      `With his first pick at menu, will he take Bijan, whom he’s had before, or satisfy other cravings, the clock starts now.`,
     ],
   },
   Connor: {
     // No title in seven seasons. 42-54. One top three (2024). Two playoff trips.
     stakes: [
-      `One top-three finish in seven years is the closest Connor has gotten. He is chasing that feeling again, not just a ring.`,
-      `Connor has made the playoffs twice in seven seasons. Most years end well before that is even a conversation.`,
+      `This guy might be pick 2, but he was ranked 3 overall. One of the heaviest drafters of Receivers in the league, will he stick to his guns, or create his own options.`,
     ],
   },
   Evan: {
     // Three seasons, 17-25, one playoff trip.
     stakes: [
-      `Three seasons in, one playoff trip, nothing else yet. Evan is still figuring out what this team is.`,
-      `The newest team in the league, and the only manager here without a fourth season behind him. Evan is still building the résumé.`,
+      `Three seasons in, one playoff trip, and the worst overall record. The newest team in the league is still building his résumé on and off the field.`,
+      `While Evan is figuring out the league, he at least won the off-season. But will that be the only ring he gets?`,
     ],
   },
   Chris: {
     // 2021 title, second in 2022. Then ninth, fifth, ninth.
     stakes: [
-      `Chris won it in 2021 and finished second the year after. The three seasons since have gone ninth, fifth, ninth.`,
-      `Five years removed from the only ring he has, and Chris has not finished top three in any season since 2022.`,
+      `The backbone of the league would be an understatement for this player, but the backbone of his team comes from the draft.`,
+      `He has taken a receiver with his 1st pick for the last 4 years, whether he continues this trend or not, we know his draft will be one of the best.`,
     ],
   },
   Joey: {
     // 2019 title, then third, second, third. Four top-three finishes ties
     // nobody: it is the outright most in PAMS. Last three years: 12th, 8th, 8th.
     stakes: [
-      `Joey won the league's first title in 2019 and finished top three in each of the next three seasons. Four top-three finishes is more than anyone else in PAMS, and only the first one ended in a trophy.`,
-      `Seven years since the only ring he has. Joey has not finished better than eighth in any of the last three seasons.`,
+      `Not only is this guy the commissioner, but he’s also extremely sexy.`,
+      `He takes a Running back 83% of the time in the 1st round, will he take a gamble with his pick like he did league dues or play it safe.`,
     ],
   },
   Charlie: {
     // Seven seasons, no top three, two playoff trips, best finish fourth.
     stakes: [
-      `Seven seasons, zero top-three finishes. Not once has Charlie's team finished among the best three.`,
-      `Money God has made the playoffs twice in seven years and has never finished better than fourth. Tonight is about finally getting into that conversation.`,
+      `One of the few employed members of the league, he never drafts the same way twice.`,
+      `Usually taking a Receiver in round 1, can his draft define his team better than his LinkedIn posts.`,
     ],
   },
   Connie: {
     // Championship game (1st or 2nd) in 2020, 2023, 2025 — three trips, most
     // in PAMS of anyone who has ever won it. Only the 2023 one is a ring.
     stakes: [
-      `Connie has been to the championship three times, in 2020, 2023 and 2025. Only the middle one ended in a ring.`,
-      `Nobody in PAMS has reached the title game more than Connie's three trips. Just one of them went her way.`,
+      `Connie's got more than a championship on the line this year.`,
+      `His season, and his relationship with Bing Bong could both come to a crushing end. If he wants another shot at his prize jewel, a championship ring might allow him to go all the way!`,
     ],
   },
   Sean: {
     // 56-40, tied with Mason for the most wins in PAMS. No title.
     stakes: [
-      `Nobody in PAMS has won more games than Sean. Four playoff trips, two top-three finishes, and still no ring to go with any of it.`,
-      `Seven seasons, more wins than anyone in this league, and nothing at the end of any of them. Sean is the best manager in PAMS without a title.`,
+      `Despite enterring the season being ranked #1 and having the best record in league history, he has never made a championship game. Unfortunate for him, he doesnt have the same success in the playoffs as he does beating kyle.`,
+      `He has an average finish of 5.67 over the last 3 years drafting a WR in the first round. What milestone will happen next, a championship ring or a wedding ring?`,
     ],
   },
   Luke: {
     // 2024 title, the only top three of six seasons. Last in 2025.
     stakes: [
-      `Luke won it in 2024 with the only top-three finish of his six seasons, then finished last in 2025.`,
-      `One good year out of six, and it happened to be the one that mattered. Luke is chasing proof it was not a fluke.`,
+      `After winning it in 2024, being his only top-three finish ever, followed it up the next year getting last.`,
+      `To add to that, more tragic news hit this off-season, as Luke's go-to-guy unexpectedly retired. Drafting a WR in the first has resulted in playoff appearances both times, will he go back to the well?`,
     ],
   },
   Mason: {
@@ -277,23 +276,23 @@ const MANAGER_VOICE = {
     // something better anyway: 4-10 and dead last in 2024, champion in 2025.
     // Worst to first, which has happened exactly twice (Ricci did it in 2020).
     stakes: [
-      `Mason went 4-10 in 2024 and finished dead last. He won the whole thing a year later. Only Ricci has ever made that turn in PAMS.`,
-      `The defending champion. Mason is picking with a target on him and everyone in this draft knows it.`,
+      `After going 4-10 in 2024 and finishing dead last, He won the whole it all a year later.`,
+      `He has taken a RB first in 6 of 7 drafts, and the one time he didnt, he got last. Accomplishing his goal last season now has left him one thing to get: Amelia.`,
     ],
   },
   Kyle: {
     // Four playoff trips in seven seasons, zero top-three finishes.
     stakes: [
-      `Kyle has made the playoffs four times in seven years and has never finished top three once he got there. He gets in and he gets out.`,
-      `Seven seasons, four playoff trips, zero top-three finishes. Nobody in this draft gets to the playoffs more and does less with it than Kyle.`,
+      `SHALOM, This guy has gotten more players clipped from him, than media posts he has for his business.`,
+      `Usually taking who he thinks is best available in the first round, then sending you a bad trade after. Can this guy get the ring that was promised to his people.`,
     ],
   },
   Isaac: {
     // 2022 title, second in 2023. Three seasons since the ring, two playoff
     // trips in them. Six seasons, 46-37, four playoff trips all told.
     stakes: [
-      `Isaac won it in 2022 and finished second the year after. The two seasons since have gone eleventh and fifth.`,
-      `Four years since the title, and Isaac has been back in the playoffs in two of the three seasons since. Getting back on top is the only box left.`,
+      `Whether it’s the last pick in the draft, or the last time we see him, His team is usually blessed by Running Backs being taken in round 1.`,
+      `With lots of options around the bend, can we attribute his teams success to him, or a higher power.`,
     ],
   },
 };
@@ -654,7 +653,7 @@ export function onClockLine(m, overall, round, picks) {
   if (!m) return "";
   const n = seed(m.name + round);
 
-  if (round === 1) return round1TendencyLine(m) || stakes(m);
+  if (round === 1) return stakes(m);
 
   const { count, need } = rosterFor(picks, m.slot);
   const want = listNeeds(need, round);
@@ -948,6 +947,47 @@ export function pickLine(m, player, overall, round, picksAfter, history) {
   return `${addPart} ${need.length ? "" : "His starting lineup is complete."}`.trim();
 }
 
+// ── reveal reactions ──────────────────────────────────────────────────────
+//
+// Two managers get a running bit on the reveal screen instead of the
+// generated line. Not a fact about the draft, a joke about the man — kept
+// separate from `selectionAngle`'s fact chain on purpose, so it never has to
+// compete with a rival steal or a drought for the same sentence. It just
+// wins outright for these two.
+
+/**
+ * Connie's boyfriend gets a verdict on every pick, all night. Four shapes so
+ * fourteen picks don't all read as the same line with a new name dropped in,
+ * split between the approving-question version and the "that's a reach"
+ * version. Every shape names the player and the pick number — a joke that
+ * doesn't say who she just took isn't about the pick.
+ */
+function connieReaction(player, overall, n) {
+  return pick([
+    `Would Olivia Bing approve ${player.name} at ${ordinalPick(overall)} overall? Jury's still out.`,
+    `What a reach from Connie. I don't think the Bing Bong is signing off on ${player.name}.`,
+    `Somewhere, Olivia Bing is watching Connie take ${player.name}, and she does not look thrilled.`,
+    `${player.name}, ${ordinalPick(overall)} overall. Bing Bong's approval rating: pending.`,
+  ], n);
+}
+
+/**
+ * Evan gets a "he never does this" reaction, but only rounds one through
+ * three, where taking a position outside his norm actually reads as a
+ * surprise. Past round three every pick looks like a reach off somebody's
+ * board and the line stops meaning anything, so it returns null and
+ * `selectionLine` falls back to the generated fact chain instead.
+ */
+function evanReaction(player, round, n) {
+  if (round > 3) return null;
+  const pos = POS_WORD[player.pos];
+  return pick([
+    `Surprise pick from Evan. He usually doesn't take a black person this early.`,
+    `Didn't see that coming. A black guy from Evan before round four is new.`,
+    `Evan rarely takes black people this early. Interesting one.`,
+  ], n);
+}
+
 /**
  * The one line on the five second selection graphic.
  *
@@ -959,6 +999,15 @@ export function selectionLine(m, player, overall, round, picks, history) {
   if (!m || !player) return "";
   const n = seed(m.name + player.name);
   const pos = POS_WORD[player.pos];
+
+  // Two managers get a running personality bit instead of the generated
+  // line: Connie's fires every time, Evan's only in the first three rounds.
+  if (m.name === "Connie") return connieReaction(player, overall, n);
+  if (m.name === "Evan") {
+    const reaction = evanReaction(player, round, n);
+    if (reaction) return reaction;
+  }
+
   // One decision, shared with pickLine, which then takes a different one.
   const angle = selectionAngle(m, player, overall, round, picks, history);
 
