@@ -1106,10 +1106,31 @@ body.phase-selection .selection { display: grid; }
      right instead of 28. */
   --sel-pad: calc(3.5 * var(--u));
   padding-inline: calc(var(--sel-pad) / 2);
-  border-right: 1px solid var(--gold-lo);
+  /* Blue the whole way down.
+     The column always was full height — it is a stretched grid item — but it
+     was not full height to look at, because the base ran #0d1930 to #060c16 and
+     #060c16 is the canvas. So the panel dissolved into the screen at the bottom
+     and very nearly at the top, and what read as "the blue panel" was really
+     the team glow in the middle of it with nothing under it. It holds a blue at
+     both ends now, so the edge of the column is where the column ends. */
   background:
-    radial-gradient(65% 55% at 50% 40%, var(--tc, rgba(201,154,67,.16)), transparent 72%),
-    linear-gradient(180deg, #0d1930, #060c16);
+    radial-gradient(72% 62% at 50% 42%, var(--tc, rgba(201,154,67,.16)), transparent 78%),
+    linear-gradient(180deg, #14243f 0%, #101d36 52%, #0c1729 100%);
+}
+/* The divider, as a drawn rule rather than a border.
+   It was 1px of --gold-lo, which is #6d5225 — it ran the full height already
+   and measured the same tone at y=0 and y=1020, but at that weight against the
+   dark top and bottom of the panel it was only findable where the artwork
+   behind it was light. So it stops relying on the surroundings: two pixels,
+   and lit through the middle where the player is, falling back to the old tone
+   at the two ends rather than to nothing. Painted on the panel so it cannot be
+   anything other than exactly as tall as the panel is. */
+.sel-shot::after {
+  content: ""; position: absolute; z-index: 2;
+  top: 0; bottom: 0; right: 0; width: 2px;
+  background: linear-gradient(180deg,
+    var(--gold-lo) 0%, var(--gold) 18%, var(--gold-hi) 50%,
+    var(--gold) 82%, var(--gold-lo) 100%);
 }
 /* The player's own team crest, faded, behind the cutout — same composition
    as the detail card's, at the scale this column allows. Sized on its own
@@ -1215,15 +1236,41 @@ body.phase-selection .selection { display: grid; }
    bottom band's height plus the gap above it (30u + 1.3u) so that band
    stays visible the whole time this is showing instead of getting covered
    along with everything else in .stage. */
+/* The scrim only. It used to carry its own copy of the set underneath the dim,
+   and that is what drew the card everybody could see around this screen: the
+   box is 1359x595, the canvas behind it is 1920x1080, and `cover` fits the same
+   photograph to those two aspect ratios at two different scales. So the set
+   inside this rectangle did not line up with the set outside it — the same
+   pillar in two places, a step in the LED wall along the top edge — and the eye
+   reads a mismatched photograph as an edge long before it notices a change in
+   brightness. Exactly the seam the letterbox had (see body.board::after).
+   Taken out, what was left was a dim over the canvas's own set, and then that
+   went too. Everything on this screen that needs a ground has one: the
+   photograph is in a card, his PAMS record is in a card, the note has its own
+   plate and the two panels at the foot are cards. The only things left over
+   are the eyebrow, the name and the meta line, and the name is 8u of Archivo.
+   A scrim behind all that was a rectangle over the set to protect four words
+   that did not need protecting, and a rectangle over the set is the thing this
+   screen kept being described as. Nothing to draw, so nothing draws. */
 .reveal {
   position: absolute; z-index: 6; display: none;
   inset: 0 0 calc(31.3 * var(--u)) 0;
   align-items: center; gap: calc(3.4 * var(--u)); padding: calc(2.6 * var(--u)) calc(3.2 * var(--u));
-  background:
-    linear-gradient(180deg, rgba(5,10,18,.8), rgba(5,10,18,.89)),
-    url("bg/stage.webp") center center / cover no-repeat;
 }
 body.phase-details .reveal { display: flex; }
+/* And the resting screen underneath is switched off, not merely covered.
+   It was only ever hidden by the copy of the set this panel used to paint over
+   it: take that away and the man on the clock reads straight through the scrim,
+   his name in 8u caps ghosting behind the player's. The scrim's job is to knock
+   the *set* back so the type on this screen holds, and 78% is the right number
+   for a photograph — it is nowhere near enough to erase a screenful of white
+   display type, and turning it up until it was would put the flat dark card
+   back that this was getting rid of.
+   `visibility`, not `display`: renderClock() writes into #clkTimer four times a
+   second whatever is on screen, and taking the column out of layout would make
+   every one of those writes a reflow of the whole stage. */
+body.phase-details .clock-wrap,
+body.handoff-reveal .clock-wrap { visibility: hidden; }
 /* And held under whatever fades in over it, the same way the pick-in screen is
    held under the selection graphic. Named for the same reason it is. */
 body.handoff-reveal .reveal { display: flex; }
@@ -1288,12 +1335,26 @@ body.handoff-reveal .reveal { display: flex; }
 /* the portrait shrinking down out of the selection graphic */
 @keyframes shrinkIn { from { transform: scale(1.5) translateX(calc(-6 * var(--u))); opacity: .4; } }
 
-.reveal-body { min-width: 0; flex: 1; animation: bodyIn .5s .06s ease-out both; }
+/* Sat down off the set's gold rail, the same fix and the same reason as the
+   clock column's eyebrow. The rail is baked into the photograph at y=137 and
+   this column opened at 147, which was fine while the screen carried a scrim
+   over the set and is not fine now that it does not: the rail runs along the
+   cap line of ROUND 1 / 9TH OVERALL and reads as a line struck through it.
+   `top` rather than a margin, because the column is centred in a flex row and
+   a margin would be split between the two ends and move it half as far. */
+.reveal-body {
+  position: relative; top: calc(1.9 * var(--u));
+  min-width: 0; flex: 1; animation: bodyIn .5s .06s ease-out both;
+}
 @keyframes bodyIn { from { opacity: 0; transform: translateY(calc(1.4 * var(--u))); } }
 
+/* --mute was a tone for small type on a panel. There is no panel here any
+   more — this line is printed straight onto the photograph — and at 1.15u it
+   was the least legible thing on the board. */
 .reveal-eyebrow {
-  font-family: var(--mono); font-size: calc(1.15 * var(--u)); letter-spacing: .26em;
-  text-transform: uppercase; color: var(--mute);
+  font-family: var(--mono); font-weight: 600;
+  font-size: calc(1.25 * var(--u)); letter-spacing: .26em;
+  text-transform: uppercase; color: var(--chalk);
 }
 .reveal-eyebrow b { color: var(--gold); font-weight: 600; }
 .reveal-name {
@@ -1365,17 +1426,45 @@ body.handoff-reveal .reveal { display: flex; }
   display: flex; align-items: stretch; gap: calc(1.6 * var(--u));
   margin-top: calc(1.4 * var(--u));
 }
+/* Built like the cards in the band, because they are the same kind of object
+ * and were the only two on the board still drawn the lazy way: one flat
+ * rgba fill and a 1px grey rule, which is the border a div gets when nobody
+ * has decided what it is. Now that the band downstairs is mounted plates with
+ * cream caps, these two sitting underneath in plain blue read as unfinished.
+ *
+ * Same three parts, same reasoning, and the long version of all of it is on
+ * `.bb-sec`: a near-black field clipped to the padding box, a flat keyline
+ * clipped to the border box, and two inset hairlines so the frame has a
+ * thickness. #6d7d94 rather than a palette tone for the keyline, for the reason
+ * given there — it is the one value that clears the dark stage outside, the
+ * cream inside and the near-black body all at once.
+ */
 .reveal-also, .reveal-gone {
-  flex: none; width: calc(31 * var(--u));
+  flex: none; width: calc(31 * var(--u)); overflow: hidden;
   padding: .9vh calc(1.2 * var(--u));
-  border: 1px solid var(--line-soft); background: var(--glass-2); border-radius: 3px;
+  border: 2px solid transparent; border-radius: 4px;
+  background:
+    linear-gradient(rgba(6,11,20,.96), rgba(6,11,20,.96)) padding-box,
+    linear-gradient(#6d7d94, #6d7d94) border-box;
+  box-shadow:
+    inset 0 1px 0 rgba(211,216,222,.07),
+    inset 0 -1px 0 rgba(0,0,0,.55),
+    0 calc(.6 * var(--u)) calc(1.6 * var(--u)) rgba(0,0,0,.42);
 }
 .reveal-also:empty, .reveal-gone:empty { display: none; }
+/* The cap, bled to the card's edges the way the band's headers are. It was
+   gold small caps on a hairline, floating inside the padding — a label rather
+   than a header. Cream and full width it caps the card, and it is the same
+   ground the EARLIEST / LATEST band inside one of them already uses, so the
+   screen has one light tone on it rather than a new one per card. */
 .reveal-also .k, .reveal-gone .k {
-  display: block; padding-bottom: .5vh; margin-bottom: .5vh;
-  border-bottom: 1px solid var(--line-soft);
+  display: block;
+  margin: -.9vh calc(-1.2 * var(--u)) .7vh;
+  padding: calc(.42 * var(--u)) calc(1.2 * var(--u));
+  background: var(--milk); color: var(--ink-navy);
+  border-bottom: 2px solid #6d7d94;
   font-family: var(--mono); font-weight: 600; font-size: calc(1.25 * var(--u));
-  letter-spacing: .18em; color: var(--gold); text-transform: uppercase;
+  letter-spacing: .18em; text-transform: uppercase;
 }
 /* The pair is set to a common height, and the card next to this one is a
    four-line read that does not fill it. Rather than let this list stop at its
@@ -1412,7 +1501,9 @@ body.handoff-reveal .reveal { display: flex; }
    a size and the range came up two, so the two rows read as one module. */
 .reveal-gone .hb {
   display: grid; grid-template-columns: 1fr 1fr;
-  margin: calc(.65 * var(--u)) 0 calc(.45 * var(--u));
+  /* A notch tighter than it was, to pay for the air over the timeline below.
+     These two are the largest figures on the card and had the most to give. */
+  margin: calc(.4 * var(--u)) 0 calc(.25 * var(--u));
 }
 .reveal-gone .hb-c {
   display: flex; flex-direction: column; align-items: center;
@@ -1424,7 +1515,7 @@ body.handoff-reveal .reveal { display: flex; }
    than the pair at the top needs the last unit, and at 3.6 they were the only
    thing on a card that is meant to be four readings. */
 .reveal-gone .hb-n {
-  font-family: var(--cond); font-weight: 700; font-size: calc(2.7 * var(--u));
+  font-family: var(--cond); font-weight: 700; font-size: calc(2.4 * var(--u));
   line-height: .88; color: var(--milk); filter: brightness(1.15);
   font-variant-numeric: tabular-nums;
 }
@@ -1439,21 +1530,25 @@ body.handoff-reveal .reveal { display: flex; }
    went to margin-top:auto and the card sized to its content that margin
    resolved to nothing, and these two numbers ended up sitting directly on the
    strip's rule with air above them and none beneath. */
+/* Printed, not lit, and that is the whole separation.
+   The four figures on this card are two different kinds of fact: tonight
+   against his average is the comparison, and earliest against latest is the
+   range that says whether that average means anything. All four were the same
+   cream-on-navy in the same two-column grid, so the card read as one block of
+   four numbers and the eye had to work out which pair was which.
+   Inverting the bottom pair onto cream splits them in one move, with no extra
+   rule and no extra label. It is the same ground and ink the two undressed
+   cards in the bottom band already use for their headers, so it is a treatment
+   this board has rather than a new colour. */
+/* Back to the plain pair on the card's own ground.
+   The cream moved to the timeline below, which is where it does more work: a
+   scale with dots on it reads better on white than two figures do, and two
+   light bands in a card this size was always one too many. These are numbers
+   like the two above them and they are now set like them. */
 .reveal-gone .hb-range {
   display: grid; grid-template-columns: 1fr 1fr;
-  border-top: 1px solid var(--line-soft);
-  padding: calc(.6 * var(--u)) 0 calc(.85 * var(--u));
+  margin: 0; padding: calc(.55 * var(--u)) 0 0;
 }
-/* Word first, figure second — and the figure is a plain round number, not an
-   ordinal. Set the other way round it was `3rd earliest`, which is a rank: his
-   third-earliest pick, when the fact is round three and that is the earliest he
-   has ever gone. Label then value cannot be read that way, and dropping the
-   suffix makes these the same kind of number as the two above them.
-
-   Both halves read the same way round, left to right. Mirroring the second one
-   so the two figures meet in the middle is the prettier arrangement and it puts
-   one of the two words after its number, which is the whole thing this is
-   fixing. */
 .reveal-gone .hb-r {
   display: flex; align-items: baseline; justify-content: center;
   gap: calc(.7 * var(--u));
@@ -1464,7 +1559,7 @@ body.handoff-reveal .reveal { display: flex; }
 }
 .reveal-gone .hb-r i {
   font-family: var(--mono); font-style: normal; font-size: calc(1.15 * var(--u));
-  letter-spacing: .12em; text-transform: uppercase; color: var(--mute);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--chalk-dim);
 }
 /* Where the verdict line used to be — "1.3 rounds earlier than usual", set
  * beneath a 6 sitting next to a 7.3, which was those two numbers subtracted
@@ -1483,9 +1578,22 @@ body.handoff-reveal .reveal { display: flex; }
    track instead of a rule sitting on top of the dots. 0.9u, down from 1.5 —
    the first pass took more than the strip needed and the range above it was
    paying, so some of it has gone back as that block's bottom padding. */
+/* The cream is on the timeline now, and this is the one thing in the card that
+   earns it: it is a drawing rather than a reading. Dots on a ruler are a figure
+   in the graphic sense and a figure wants paper, which is why every chart on
+   this board that has a ground has a light one. The two rows of numbers either
+   side of it stay on the card's own dark and stay consistent with each other,
+   and the band separates them without a rule.
+   Bled to the card's edges like the cap above it, so the card has two light
+   bands at the same width rather than one bled and one floated. */
 .reveal-gone .hb-plot {
-  margin-top: auto; padding-top: calc(.9 * var(--u));
-  border-top: 1px solid var(--line-soft);
+  margin: calc(.45 * var(--u)) calc(-1.2 * var(--u)) 0;
+  /* Weighted to the top. The track is a line with dots sitting on it and the
+     caption hangs below, so an even padding put the drawing hard against the
+     band's top edge with all the air underneath it. */
+  padding: calc(1.15 * var(--u)) calc(1.2 * var(--u)) calc(.42 * var(--u));
+  background: var(--milk);
+  border-top: 1px solid #6d7d94; border-bottom: 1px solid #6d7d94;
 }
 /* The axis is the full draft, round one to fifteen, not his own range — a
    spread only means something against the board it happened on. */
@@ -1494,14 +1602,14 @@ body.handoff-reveal .reveal { display: flex; }
 }
 .reveal-gone .hb-track::before {
   content: ""; position: absolute; left: 0; right: 0; top: 50%;
-  height: 1px; background: var(--line-2);
+  height: 1px; background: rgba(14, 27, 47, .34);
 }
 /* One per round in the window. Set a shade up from the axis line so the ruler
    reads as marks on a rule rather than a fuzzy band, and short enough that the
    smallest draft dot still covers one whole. */
 .reveal-gone .hb-rd {
   position: absolute; top: 50%; transform: translate(-50%, -50%);
-  width: 1px; height: calc(.6 * var(--u)); background: var(--line-2);
+  width: 1px; height: calc(.6 * var(--u)); background: rgba(14, 27, 47, .3);
 }
 .reveal-gone .hb-was, .reveal-gone .hb-now {
   position: absolute; top: 50%; transform: translate(-50%, -50%); border-radius: 50%;
@@ -1509,30 +1617,41 @@ body.handoff-reveal .reveal { display: flex; }
 /* --d is set per dot by historyStrip: one dot per round, grown by how many
    times he has taken it there. A dot per draft stacks every repeat in the same
    pixel, and four years in the sixth round would draw as one. */
+/* His past drafts, and they are a solid colour rather than a tint of the paper.
+   Drawn at 58% alpha the fatter dots — the rounds he keeps going back to, which
+   are the whole point of weighting them — came out visibly paler where they
+   overlapped nothing, so the mark that means "he has done this three times"
+   read as the faintest one on the line. One flat navy, a clear step under
+   tonight's, and the weighting does the talking. */
 .reveal-gone .hb-was {
   width: calc(var(--d, .75) * var(--u)); height: calc(var(--d, .75) * var(--u));
-  background: var(--chalk-dim);
+  background: #56657a;
 }
-/* Ringed in the card's own fill rather than just drawn larger, so it still
-   reads as one dot when it lands on top of a year he has already done. */
+/* Ringed in the band's own paper, which is what keeps this reading as a single
+   dot when it lands on a round he has already used. No outline around that any
+   more: it was there to rescue a pale tint on cream, and the dot is drawn in
+   the deep set now (see historyStrip), which holds on paper by itself. */
 .reveal-gone .hb-now {
   width: calc(1.5 * var(--u)); height: calc(1.5 * var(--u));
-  box-shadow: 0 0 0 2px var(--glass-2);
+  box-shadow: 0 0 0 2px var(--milk);
 }
 .reveal-gone .hb-cap {
   display: flex; align-items: baseline; justify-content: space-between;
   gap: calc(.6 * var(--u)); margin-top: calc(.35 * var(--u));
 }
+/* The axis ends, and they are the smallest thing on the card on purpose: they
+   are a scale, not a reading. Everything that matters on this strip is a dot. */
 .reveal-gone .hb-cap span {
-  font-family: var(--mono); font-size: calc(1.02 * var(--u));
-  letter-spacing: .1em; color: var(--mute);
+  font-family: var(--mono); font-size: calc(.88 * var(--u));
+  letter-spacing: .1em; color: #5b6773;
 }
-/* 1.5u, down from 1.75. Still clearly the sentence on the row rather than a
-   third label — it sits half again over the RD marks at 1.02u, which is enough
-   to rank it without it competing with the numbers above the strip. */
+/* Smaller again, at 1.25u. It is a label on the drawing now rather than a
+   finding about tonight's pick, and a label does not need to outrank the four
+   figures on the card — it only needs to beat the RD marks either side of it,
+   which it does at 1.02u. */
 .reveal-gone .hb-cap b {
-  font-family: var(--cond); font-weight: 700; font-size: calc(1.5 * var(--u));
-  letter-spacing: .02em; color: var(--chalk); white-space: nowrap;
+  font-family: var(--cond); font-weight: 700; font-size: calc(1.25 * var(--u));
+  letter-spacing: .02em; color: var(--ink-navy); white-space: nowrap;
 }
 /* Every dot in one place: there is no range to label, so the axis ends come
    off and the sentence takes the row. */
@@ -3252,15 +3371,27 @@ body.phase-details .bb-next { display: flex; }
 body.phase-details .bb-next {
   background:
     url("bg/smallclock.webp") center center / 114% 122% no-repeat padding-box,
-    /* The steel through the middle of the run was lifted out of the tone the
-       header sits at. At its old values it fell to within about 1.3:1 of the
-       card behind it, so this frame was gold at two corners and absent down
-       both long edges — and it is the one card in the band still wearing a
-       graded mount, with a cream keyline on either side of it. The gold at the
-       two corners is untouched. */
+    /* The run at 165deg puts gold on the top-left and bottom-right corners and
+       its own midpoint on the other two, so whatever the middle stops are is
+       what the top-right and bottom-left corners come out as. They were a steel
+       blue lifted well clear of the card, which read as two lit corners on a
+       card whose other two are gold: four corners, two colours, none of them
+       the panel colour the rest of the band wears.
+       Back to navy, which is what the other cards in the band are edged in.
+       Not as dark as it once was, though: at its original value the run fell to
+       about 1.3:1 against the card behind it and the frame went missing down
+       both long edges, which is the failure this was lifted to fix. These sit
+       around 2:1 against the plate, so the edge still draws and the corners
+       read as dark. The gold stops are untouched. */
+    /* Down again, to the very dark navy. The pair above still read as a blue
+       decision on a card whose other two corners are gold; these are the board's
+       own near-black with just enough blue left in them to be navy rather than
+       grey. The long edges are quiet now, which is the trade, and it is the
+       right one here: this card's frame is carried by its two gold corners and
+       the 2px cream keyline of the band it sits in, not by its long sides. */
     linear-gradient(165deg,
-      var(--gold) 0%, var(--gold-lo) 11%, #677c9e 32%,
-      #566a8a 60%, var(--gold-lo) 90%, var(--gold) 100%) border-box;
+      var(--gold) 0%, var(--gold-lo) 11%, #16233a 32%,
+      #0f1a2c 60%, var(--gold-lo) 90%, var(--gold) 100%) border-box;
 }
 /* The header sits on the plate now, so it cannot carry the panel's own rule
    underneath it — a hairline across the art at the top is the seam this was
@@ -3272,12 +3403,31 @@ body.phase-details .bb-next {
    ninety pixels short of the bottom of its own body, and the label was set at
    1.45u anyway because that is what its neighbours use. The card has the slack;
    the title takes it. Scoped to this card so nothing else in the band moves. */
-body.phase-details .bb-next { --bb-hd: calc(7 * var(--u)); }
+body.phase-details .bb-next { --bb-hd: calc(6.4 * var(--u)); }
+/* The one title on the board set in the display face rather than in mono.
+   Mono is the board's label voice and it is right on the other two cards, which
+   head lists; at 2.75u it stopped reading as a label and started reading as a
+   headline in a typewriter, which is to say as no decision at all. This card is
+   a broadcast lower third and Archivo is what the rest of the board announces
+   people in.
+   Topped out rather than centred, too. The header is 6.4u of card and the type
+   was floating in the middle of it, which put the title a third of the way down
+   a card whose whole job is to be the first thing read. Baseline alignment
+   keeps the pick number sitting on the same line as the words. */
 body.phase-details .bb-next > .rail-hd {
-  border-bottom: 0; padding: 0 calc(2.4 * var(--u));
-  font-size: calc(2.75 * var(--u)); letter-spacing: .12em; color: var(--milk);
+  border-bottom: 0;
+  padding: calc(1.15 * var(--u)) calc(2.4 * var(--u)) 0;
+  /* Both to the top edge, not on a shared baseline. The title is 3.6u of
+     Archivo and the pick number is 1.55u of mono, so a common baseline hangs
+     the small one off the bottom of the big one and it reads as having sunk. */
+  align-items: flex-start;
+  font-family: var(--display); font-weight: 900; font-stretch: 62%;
+  font-size: calc(3.6 * var(--u)); letter-spacing: .02em; color: var(--milk);
 }
-body.phase-details .bb-next > .rail-hd .ct { font-size: calc(1.9 * var(--u)); }
+body.phase-details .bb-next > .rail-hd .ct {
+  font-family: var(--mono); font-weight: 600;
+  font-size: calc(1.55 * var(--u)); letter-spacing: .14em;
+}
 .next-body {
   position: relative; flex: 1; min-height: 0; display: flex; align-items: center;
   gap: calc(1.2 * var(--u));
@@ -3359,17 +3509,27 @@ body.phase-details .bb-next > .rail-hd .ct { font-size: calc(1.9 * var(--u)); }
 .next-cue { display: none; }
 .bb-next.cue .next-cue { display: block; animation: cueIn .46s .14s cubic-bezier(.2,.9,.3,1) both; }
 .bb-next.cue .next-clock, .bb-next.cue .next-note { display: none; }
+/* IS NOW is taken out of the flow so it cannot vote on where this block sits.
+   In flow, the two lines centred as a pair, which put ON THE CLOCK below the
+   middle of the card — and the countdown it stands in for is a single line on
+   that middle. So the words and the numbers they replace sat at two different
+   heights and the card jumped when one became the other. Out of flow, the box
+   is exactly as tall as ON THE CLOCK, that lands where the clock lands, and IS
+   NOW hangs above it. */
+.next-cue { position: relative; }
 .next-cue span {
+  position: absolute; right: 0; bottom: 100%;
+  margin-bottom: calc(.75 * var(--u));
   display: block; font-family: var(--mono); font-weight: 600;
   font-size: calc(1.5 * var(--u)); line-height: 1; letter-spacing: .26em;
-  text-transform: uppercase; color: var(--gold);
+  text-transform: uppercase; color: var(--gold); white-space: nowrap;
 }
 /* Wrapped, and capped. The countdown it stands in for is four characters
    wide; ON THE CLOCK on one line is three times that, and this card sizes its
    name column off whatever is left — so the cue was squeezing MASON down to
    MA… for the two and a half seconds it was up. */
 .next-cue b {
-  display: block; margin: calc(.7 * var(--u)) 0 0 auto;
+  display: block; margin: 0 0 0 auto;
   max-width: calc(14 * var(--u));
   font-family: var(--display); font-weight: 900; font-stretch: 62%;
   font-size: calc(3.9 * var(--u)); line-height: .95; text-transform: uppercase;

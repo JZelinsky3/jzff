@@ -1176,7 +1176,16 @@ function historyStrip(h, round, pos) {
   // an end of it. A floor on the span stops a man with one prior draft getting
   // a four-round axis, where two dots at opposite ends would read as a wide
   // habit instead of a narrow one.
-  const MIN_SPAN = 8;
+  // Eight was too wide, and the reason is the clamp below rather than the number
+  // itself. A man whose receivers all go in the first two rounds gets `a` pinned
+  // to round 1, so there is nothing to his left to pad with and the whole floor
+  // is spent on the right: his axis came out RD 1 to RD 9 with both dots inside
+  // the left eighth of it, and six rounds of empty line after his last one. Six
+  // is the span the padding gives on its own for a single-round history, so it
+  // is the smallest floor that never fights the padding, and it takes that case
+  // to RD 1-7. Round one is a wall and an early drafter will always sit left of
+  // centre; this is about how much dead axis runs off to the right of him.
+  const MIN_SPAN = 6;
   let a = Math.max(1, Math.min(h.lo, round) - 3);
   let b = Math.min(C.ROUNDS, Math.max(h.hi, round) + 3);
   if (b - a < MIN_SPAN) {
@@ -1214,29 +1223,39 @@ function historyStrip(h, round, pos) {
       return `<i class="hb-was" style="left:${at(r).toFixed(2)}%;--d:${d}"></i>`;
     }).join("");
 
-  // Strictly earlier, so a tie puts tonight at the front of the equals. That is
-  // the right call everywhere except when he has taken it in the same round
-  // every year and tonight is that round again — "earliest" for a column of
-  // identical numbers reads as a finding when the fact is there is nothing to
-  // find.
+  // A label on the drawing, not a verdict on tonight.
   //
-  // No "of seven" on the end of any of them. How many drafts he has is the same
-  // number on every card he appears on all night, so it is not news — the rank
-  // is the whole sentence.
-  const rank = h.rounds.filter(r => r < round).length + 1;
+  // This used to rank the pick against his own history — "Earliest taken",
+  // "Latest taken", "3rd earliest" — and sitting under a strip of dots it read
+  // as a caption on the dot nearest it rather than as a statement about the
+  // whole line. "Earliest taken" under a picture of six rounds looks like it is
+  // naming one of them. The rank was also the third place on this card saying
+  // something about where tonight sits: the two figures above it are tonight
+  // against his average, and the two below are the ends of the range.
+  //
+  // So the line says what the strip is. Every dot on it is a round he has gone
+  // to this position in, which is the one thing about the picture that is not
+  // obvious from looking at it.
+  //
+  // Three words, because it sits between the two axis ends on a 300px row and
+  // it is a label rather than a sentence. It reads straight into the two round
+  // numbers either side of it — RD 1 / has taken in / RD 9 — which is why it is
+  // a verb phrase with nothing after it rather than a noun. The card above
+  // already says which position it is, so this does not have to.
   const solo = h.lo === h.hi && h.lo === round;
-  const where = solo ? "Same round every time"
-    : rank === 1 ? "Earliest taken"
-    : rank === h.n + 1 ? "Latest taken"
-    : `${ordinalPick(rank)} earliest`;
+  const where = solo ? "Same round every time" : "Has taken in";
 
   // Ruler first, then his drafts, then tonight. None of them carry a z-index —
   // paint order is document order, so a dot always covers the tick it sits on
   // and tonight always covers everything. That is the right way round: the tick
   // is the scale and the dot is the reading, and where they collide the reading
   // is what you want to see.
+  // `-deep`, not `-hi`. The strip is on cream now and the lifted set is a
+  // pastel built for a dark card: #92b8da on paper is under 2:1, and this is the
+  // one mark here that has to read first. The deep set exists for exactly this
+  // (ink on a light ground) and runs 5.8:1 or better.
   const track = `<div class="hb-track">${rules.join("")}${ticks}<i class="hb-now"
-    style="left:${at(round).toFixed(2)}%;background:var(--${pos.toLowerCase()}-hi)"></i></div>`;
+    style="left:${at(round).toFixed(2)}%;background:var(--${pos.toLowerCase()}-deep)"></i></div>`;
 
   return `<div class="hb-plot">${track}` + (solo
     ? `<div class="hb-cap solo"><b>${where}</b></div>`
@@ -1309,11 +1328,11 @@ function renderRevealRoster(p, o, m) {
                <span class="hb-l">his average</span>
              </div>
            </div>
+           ${historyStrip(h, round, p.pos)}
            <div class="hb-range">
-             <span class="hb-r"><i>earliest</i><b>${h.lo}</b></span>
-             <span class="hb-r"><i>latest</i><b>${h.hi}</b></span>
-           </div>
-           ${historyStrip(h, round, p.pos)}`
+             <span class="hb-r"><i>earliest</i><b>${C.ordinal(h.lo)}</b></span>
+             <span class="hb-r"><i>latest</i><b>${C.ordinal(h.hi)}</b></span>
+           </div>`
         : `<div class="hb">
              <div class="hb-c">
                <span class="hb-n pos-${p.pos}">${round}</span>
@@ -1731,6 +1750,26 @@ function needsFor(slot, round) {
   return { count, needs: out, urgent };
 }
 
+/**
+ * Short at every starting spot, which is the state this panel has nothing to
+ * say about.
+ *
+ * In the first two rounds every manager is missing a quarterback, two backs,
+ * two receivers, a tight end and a flex, because he has taken one player. So
+ * the panel drew the identical five chips against all twelve names and
+ * reported, at length, that the draft had not happened yet — and the sentence
+ * on the man at the top read "Needs a running back and a receiver" when what is
+ * true is that anything helps.
+ *
+ * Measured off the holes rather than off the round number, so it answers for
+ * itself when it stops being true. It stops the moment somebody doubles up at
+ * a position: two backs closes RB, and his row starts saying something. That is
+ * usually round three or four and it is not the same pick for everybody, which
+ * is the point — a round cutoff would switch all twelve rows over on a pick
+ * where half of them still had nothing to report.
+ */
+const wideOpen = needs => needs.length === NEED_ORDER.length;
+
 /** "Needs a receiver and a tight end", "Needs two backs" — the whole point. */
 function needSentence(needs) {
   if (!needs.length) return "Starting nine is full";
@@ -1774,13 +1813,26 @@ function renderNeeds() {
   // the question — a need is only interesting alongside who is there to fill
   // it. Two names per position: the one he would take and the one he would be
   // left with if somebody takes the first.
-  const shortlist = mine.urgent.slice(0, 2).map(({ pos }) => {
-    const left = bestForNeed(pos, 2);
-    return `<div class="nb-row">
-      <span class="nb-k">${posChip(pos)} LEFT</span>
-      <span class="nb-v">${left.map(p => C.escapeHtml(p.name)).join(", ") || "nobody"}</span>
-    </div>`;
-  }).join("");
+  //
+  // Unless he is short everywhere, in which case splitting the board by
+  // position is a division with no numerator: the two positions picked would be
+  // whichever two came out of the urgency sort, and he has the same hole at all
+  // five. The top of the board, undivided, is the honest version of the same
+  // row and it is what he is actually going to do.
+  const open = wideOpen(mine.needs);
+  const shortlist = open
+    ? `<div class="nb-row">
+         <span class="nb-k">BEST LEFT</span>
+         <span class="nb-v">${C.bestAvailable(PICKS, null, 2)
+           .map(p => C.escapeHtml(p.name)).join(", ") || "nobody"}</span>
+       </div>`
+    : mine.urgent.slice(0, 2).map(({ pos }) => {
+        const left = bestForNeed(pos, 2);
+        return `<div class="nb-row">
+          <span class="nb-k">${posChip(pos)} LEFT</span>
+          <span class="nb-v">${left.map(p => C.escapeHtml(p.name)).join(", ") || "nobody"}</span>
+        </div>`;
+      }).join("");
 
   // The man on the clock expands in place. He is not lifted to the top of the
   // panel and he does not leave a hole at his seat: the block is his row, in
@@ -1790,10 +1842,13 @@ function renderNeeds() {
     <div class="nb">
       <div class="nb-hd"><span class="n">${onClock}</span>ON THE CLOCK</div>
       <div class="nb-name">${me ? C.escapeHtml(me.name) : "&mdash;"}</div>
-      <div class="nb-say">${needSentence(mine.urgent)}</div>
-      <div class="nb-chips">${mine.needs.length
-        ? mine.needs.map(n => posChip(n.pos, n.hot ? "hot" : "")).join("")
-        : `<span class="pchip set">STARTING NINE FULL</span>`}</div>
+      <div class="nb-say">${open
+        ? "Short at every spot. Best player on the board."
+        : needSentence(mine.urgent)}</div>
+      <div class="nb-chips">${
+        !mine.needs.length ? `<span class="pchip set">STARTING NINE FULL</span>`
+        : open ? `<span class="pchip set">EVERY SPOT OPEN</span>`
+        : mine.needs.map(n => posChip(n.pos, n.hot ? "hot" : "")).join("")}</div>
       ${shortlist}
       <div class="nb-next">${next
         ? `Next pick <b>${C.ordinal(next)}</b> &middot; ${gap} away`
@@ -1803,26 +1858,36 @@ function renderNeeds() {
   // ── the room, in draft order ──
   const rows = [];
   const behind = { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0 };
+  let stillOpen = 0;
   for (let slot = 1; slot <= C.TEAMS; slot++) {
     const { needs } = needsFor(slot, round);
     needs.forEach(n => { behind[n.pos]++; });
+    if (wideOpen(needs)) stillOpen++;
     if (slot === onClock) { rows.push(head); continue; }
     const m = C.DATA.bySlot.get(slot);
     rows.push(`
       <div class="nrow">
         <span class="n">${slot}</span>
         <span class="mg">${m ? C.escapeHtml(m.name) : ""}</span>
-        <span class="nch">${needs.length
-          ? needs.map(n => posChip(n.pos, n.hot ? "hot" : "")).join("")
-          : `<span class="pchip set">FULL</span>`}</span>
+        <span class="nch">${
+          !needs.length ? `<span class="pchip set">FULL</span>`
+          : wideOpen(needs) ? `<span class="pchip set">ANY</span>`
+          : needs.map(n => posChip(n.pos, n.hot ? "hot" : "")).join("")}</span>
       </div>`);
   }
 
   // The gap the most of the room shares. "9 STILL WITHOUT A QB" is the line
   // that explains the next two rounds before they happen.
+  //
+  // Except while most of the room is short at everything, when that line is
+  // "12 STILL WITHOUT A QB" and reads as news about quarterbacks rather than
+  // as the draft being two rounds old. How many men still have nothing closed
+  // off is the fact the panel actually has in the first few rounds, and it is
+  // a number that visibly falls.
   const worst = NEED_ORDER.slice().sort((a, b) => behind[b] - behind[a])[0];
-  railHead("TEAM NEEDS", behind[worst]
-    ? `${behind[worst]} STILL WITHOUT ${worst === "FLEX" ? "A FLEX" : `A ${worst}`}`
+  railHead("TEAM NEEDS",
+    stillOpen > C.TEAMS / 2 ? `${stillOpen} OF ${C.TEAMS} WIDE OPEN`
+    : behind[worst] ? `${behind[worst]} STILL WITHOUT ${worst === "FLEX" ? "A FLEX" : `A ${worst}`}`
     : "EVERY STARTING SPOT FILLED");
   $("railPanel").innerHTML = `<div class="needs">${rows.join("")}</div>`;
 }

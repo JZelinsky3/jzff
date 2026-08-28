@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PAMS 2026 Draft Board</title>
+<link rel="stylesheet" href="draft.css">
+</head>
+<body class="board state-idle">
+
+<div class="offline">CONNECTION LOST &middot; REBUILDING FROM SLEEPER</div>
+
+<div id="frame">
+
+<header class="hdr">
+  <div class="hdr-mark">
+    <span class="hdr-kicker">PA Milk Society</span>
+    <span class="hdr-title">The 2026 <em>Draft</em></span>
+  </div>
+  <div class="hdr-rule"></div>
+  <div class="hdr-meta">
+    <span>ROUND <b id="hdrRound">1</b></span>
+    <span>PICK <b id="hdrPick">1</b></span>
+  </div>
+</header>
+
+<div class="main">
+
+  <section class="stage">
+
+    <!-- phase three: the detail screen. Static — stays up until the
+         commissioner hits Next Pick, so unlike the selection graphic it
+         doesn't take over the header and ticker, and it stops short of the
+         bottom band on purpose: that and the wall in the rail stay up the
+         whole time this is showing. -->
+    <div class="reveal">
+      <!-- The photograph and the man's PAMS record, in one column. The record
+           used to sit in the foot beside what is left at his position, where
+           it took half the width of the screen to say a thing that is three
+           narrow columns wide. Under the photo it is the caption to it. -->
+      <div class="reveal-side">
+        <div class="reveal-shot-wrap">
+          <img class="team-bg" id="revTeamBg" alt="">
+          <img class="reveal-shot" id="revShot" alt="">
+        </div>
+        <div class="reveal-hist" id="revHist"></div>
+      </div>
+      <div class="reveal-body">
+        <div class="reveal-eyebrow" id="revEyebrow">&nbsp;</div>
+        <div class="reveal-name" id="revName">&nbsp;</div>
+        <div class="reveal-meta">
+          <img id="revLogo" alt=""><span id="revLine">&nbsp;</span>
+        </div>
+        <div class="reveal-tags" id="revTags"></div>
+        <div class="reveal-note" id="revNote"></div>
+        <!-- What has gone at this position tonight, and what is left. The two
+             halves of the question the room asks the second a name is called. -->
+        <div class="reveal-foot">
+          <div class="reveal-gone" id="revGone"></div>
+          <div class="reveal-also" id="revAlso"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- the resting state -->
+    <div class="clock-wrap">
+      <div id="clkPortrait"></div>
+
+      <div class="clock-info">
+        <div class="eyebrow">ON THE CLOCK</div>
+        <div class="clock-id">
+          <div class="clock-id-top">
+            <div class="mgr-name" id="clkName">&nbsp;</div>
+            <div class="rank-badge" id="clkRank"></div>
+          </div>
+          <div class="mgr-team" id="clkTeam">&nbsp;</div>
+        </div>
+        <div class="clock-note">
+          <div class="say" id="clkNote">&nbsp;</div>
+          <div class="clock-facts" id="clkFacts"></div>
+        </div>
+        <div class="clock-row">
+          <div class="timer" id="clkTimer">2:00</div>
+          <span class="paused-tag">Paused</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- bottom band: best available and the lineup, side by side, full stage
+         width. Used to be the rail's job — moved down here so the round wall
+         could take the whole right side instead. -->
+    <div class="bottom-band">
+      <div class="bb-sec bb-ba">
+        <div class="rail-hd">
+          <!-- The board's own masthead lockup, not a tracked-out label: DM
+               Serif with the second word italic gold, the same shape as
+               `The 2026 Draft` in the header and on the pre-show. See the
+               note on `.bb-ba > .rail-hd`. -->
+          <span class="ba-title" id="baTitle">Best <em>Available</em></span>
+          <span class="run" id="runAlert"></span>
+        </div>
+        <div class="ba-list" id="baList"></div>
+        <!-- The other channel this card can carry, chosen from the console
+             (`baPanel`). It is a sibling of the list rather than a card of its
+             own on purpose: the plate, the mount, the ghosted wordmark and the
+             gold rule under the title are all furniture of `.bb-ba`, and a
+             second card would have to own copies of every one of them. Only
+             one of the two is ever in the box at a time. -->
+        <div class="ba-outlook" id="baOutlook"></div>
+      </div>
+      <!-- Takes the same place in the band while a reveal is up, the way a
+           broadcast puts the next team and their clock on screen under the
+           pick that just happened. Best available is not the thing you want
+           there: the clock is on the far side of the screen and the reveal is
+           covering it. -->
+      <div class="bb-sec bb-next">
+        <div class="rail-hd"><span id="nextHd">NEXT ON THE CLOCK</span><span class="ct" id="nextPk"></span></div>
+        <div class="next-body">
+          <div class="next-ghost" id="nextGhost"></div>
+          <img class="next-face" id="nextFace" alt="">
+          <div class="next-who">
+            <div class="next-name" id="nextName">&nbsp;</div>
+            <div class="next-team" id="nextTeam">&nbsp;</div>
+          </div>
+          <!-- The clock does not simply appear here. For the first two and a
+               half seconds of a reveal the card says he is on it, and only
+               then does the countdown arrive — see cueNextOnClock(). -->
+          <div class="next-time">
+            <div class="next-cue"><span>Is now</span><b>On the clock</b></div>
+            <div class="next-clock" id="nextClk">&mdash;</div>
+            <div class="next-note" id="nextNote"></div>
+          </div>
+        </div>
+        <!-- Same card at the turn of a round, where there is no clock to show
+             and the round itself is the news. The man leading it off is still
+             on it, smaller, off to the side. -->
+        <div class="round-up">
+          <div class="ru-left">
+            <div class="ru-word">Round</div>
+            <div class="ru-num" id="ruNum">2</div>
+          </div>
+          <div class="ru-right">
+            <div class="ru-when">Starting shortly</div>
+            <div class="ru-who">
+              <img class="ru-face" id="ruFace" alt="">
+              <div class="ru-id">
+                <div class="ru-name" id="ruName">&nbsp;</div>
+                <div class="ru-pick" id="ruPick">&nbsp;</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bb-sec bb-lu">
+        <div class="lineup-hd"><span>LINEUP</span><span class="ct" id="luCount"></span></div>
+        <div class="lineup-grid" id="luGrid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- the round wall: every slot of the round in progress, two across, six
+       deep, Madden style, running the full height of the right side. Now
+       that it lives in the rail rather than .stage it stays up through the
+       reveal instead of getting covered — the bottom band took over that
+       job when it moved into .stage. -->
+  <!-- The wall is the default and the rail goes back to it, but it is no
+       longer the only thing that can be in here. The console can swap in one
+       of the panels in #railPanel — team needs, who is still on the board,
+       the clock room — and unlike the showcase they stay up until it swaps
+       them back, because none of them are about the man on the clock. -->
+  <aside class="rail">
+    <div class="wall-hd">
+      <span id="roundHd">ROUND 1</span>
+      <span class="wall-sub" id="railSub"></span>
+    </div>
+    <div class="wall-grid" id="roundList"></div>
+    <div class="rp" id="railPanel"></div>
+  </aside>
+</div>
+
+<div class="ticker">
+  <div class="ticker-tag" id="tickerTag">EVERY PICK</div>
+  <div class="ticker-view"><div class="ticker-track" id="tickerTrack"></div></div>
+</div>
+
+<!-- phase one: the stage goes dark. Headline left, the overall pick as a
+     huge outlined numeral right, and who locked it along the bottom. Two
+     lines in the headline, not three: "THE PICK / IS IN" breaks evenly
+     where "THE / PICK IS / IN" leaves a stub. -->
+<div class="pickin">
+  <div class="pi-left">
+    <h2 class="pi-head"><span>The Pick</span><span>Is In</span></h2>
+    <div class="pi-locked">
+      <img class="pi-face" id="pickinFace" alt="">
+      <div class="pi-who">
+        <div class="pi-eyebrow">Selection locked</div>
+        <div class="pi-name" id="pickinName">&nbsp;</div>
+        <div class="pi-sub" id="pickinSub">&nbsp;</div>
+      </div>
+    </div>
+  </div>
+  <div class="pi-right">
+    <div class="pi-rp" id="pickinRp">&nbsp;</div>
+    <div class="pi-num" id="pickinNum">1</div>
+  </div>
+</div>
+
+<!-- phase two: the selection graphic, held for ~7.5 seconds. A direct child
+     of #frame, not .main — this is the brief, all-in dramatic beat, so it
+     takes over everything including the header and the ticker. The static
+     detail screen it collapses into is the opposite: it leaves the bottom
+     band and the wall up because people are looking at it for a while. -->
+<div class="selection">
+  <div class="sel-shot">
+    <img class="team-bg" id="selTeamBg" alt="">
+    <img class="sel-photo" id="selShot" alt="">
+  </div>
+  <div class="sel-body">
+    <div class="sel-num" id="selNum">01</div>
+    <div class="sel-owner" id="selOwner">&nbsp;</div>
+    <div class="sel-name" id="selName">&nbsp;</div>
+    <div class="sel-pos" id="selPos">&nbsp;</div>
+    <div class="sel-badge" id="selBadge">&nbsp;</div>
+    <div class="sel-tagline" id="selTag">&nbsp;</div>
+  </div>
+</div>
+
+<!-- The manager showcase. The commissioner puts it up from the console while
+     a man is on the clock and takes it down when he has had enough of it, so
+     it is static the way the detail screen is rather than timed like the
+     reveal. It does cover the whole canvas though — header, ticker and all —
+     which is exactly why it carries a clock, the last pick and who is up next
+     along its own bottom edge: nothing else on the board is left showing to
+     do that job. -->
+<div class="showcase" id="showcase">
+  <!-- The title card. It runs for about a second and a quarter over the top of
+       the screen and then lifts off it, which is the whole reason it exists:
+       this used to arrive as a finished page of small type with no warning,
+       and the room needs a beat to look up. Pure CSS, no timer — the animation
+       runs once because .showcase goes display:none to grid when it opens,
+       and the screen underneath is held back by --sc-in until it clears. -->
+  <div class="sc-intro" aria-hidden="true">
+    <div class="sc-intro-k">Manager Showcase</div>
+    <div class="sc-intro-rule"></div>
+    <div class="sc-intro-n" id="scIntroName">&nbsp;</div>
+  </div>
+
+  <div class="sc-head">
+    <img class="sc-face" id="scFace" alt="">
+    <div class="sc-id">
+      <div class="sc-eyebrow">Manager showcase</div>
+      <div class="sc-name" id="scName">&nbsp;</div>
+      <div class="sc-team" id="scTeam">&nbsp;</div>
+    </div>
+    <div class="sc-rank" id="scRank"></div>
+  </div>
+
+  <div class="sc-career" id="scCareer"></div>
+  <!-- the season he is drafting for: week one, rivalry week, his next pick -->
+  <div class="sc-sched" id="scSched"></div>
+
+  <!-- The middle of this screen shows one thing at a time and turns over every
+       seven seconds: his board tonight, then his career and how he drafts. It
+       used to show all three at once in two columns, which fitted, and read
+       from a couch as a wall. Nothing is lost by turning it over — the same
+       panels get the whole width instead of half of it. Pure CSS, see
+       .sc-flip in the stylesheet; there is no timer in board.js for this. -->
+  <div class="sc-cols">
+    <!-- face one: every pick he owns tonight, in order, the ones he has not
+         reached yet standing empty with the round and pick on them -->
+    <div class="sc-flip a">
+      <section class="sc-panel">
+        <div class="sc-hd">
+          <span class="pg"><i class="on"></i><i></i></span>
+          <span>Draft board</span><span class="ct" id="scBoardCt"></span>
+        </div>
+        <div class="sc-board" id="scBoard"></div>
+      </section>
+    </div>
+    <!-- face two: the career as a row of seasons rather than a table of them,
+         over what he actually does in a draft -->
+    <div class="sc-flip b">
+      <section class="sc-panel">
+        <div class="sc-hd">
+          <span class="pg"><i></i><i class="on"></i></span>
+          <span>Career</span><span class="ct" id="scSeasonsCt"></span>
+        </div>
+        <div class="sc-seasons" id="scSeasons"></div>
+      </section>
+      <section class="sc-panel">
+        <div class="sc-hd"><span>Tendencies</span><span class="ct" id="scTendCt"></span></div>
+        <div class="sc-tend" id="scTend"></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="sc-r1" id="scR1"></div>
+
+  <div class="sc-foot">
+    <div class="sc-side">
+      <div class="sc-k">Last pick</div>
+      <div class="sc-v" id="scPrev">&mdash;</div>
+    </div>
+    <div class="sc-mid">
+      <div class="sc-k" id="scClockK">On the clock</div>
+      <div class="sc-clock" id="scClock">&mdash;</div>
+    </div>
+    <div class="sc-side right">
+      <div class="sc-k">Up next</div>
+      <div class="sc-v" id="scNext">&mdash;</div>
+    </div>
+  </div>
+</div>
+
+<!-- The two full-screen announcements, siblings of .selection and sized the
+     same way: whoever just came on the clock, and the top of a new round.
+     Both are queued through showAnnounce() in board.js so that the last pick
+     of a round plays the round card first and the on-the-clock card after,
+     rather than stacking them on top of each other. -->
+<div class="announce oncard" id="onCard">
+  <div class="oc-shot"><img id="ocShot" alt=""></div>
+  <div class="oc-body">
+    <div class="oc-eyebrow" id="ocEyebrow">&nbsp;</div>
+    <div class="oc-name" id="ocName">&nbsp;</div>
+    <div class="oc-verb">Is now on the clock</div>
+    <div class="oc-team" id="ocTeam">&nbsp;</div>
+    <div class="oc-facts" id="ocFacts"></div>
+  </div>
+</div>
+
+<!-- The top of a round. Same set and the same two-column shape as the
+     on-the-clock card rather than a centred stack on a flat wash: the numeral
+     hard left in the face the pick-is-in beat uses, the twelve slots of the
+     round laid out on the right in the order they will actually run, with
+     whoever leads it off lit. -->
+<div class="announce roundcard" id="roundCard">
+  <div class="rc-left">
+    <div class="rc-word">Round</div>
+    <div class="rc-num" id="rcNum">1</div>
+    <div class="rc-of" id="rcOf">&nbsp;</div>
+  </div>
+  <div class="rc-right">
+    <div class="rc-hd">
+      <span class="rc-sub" id="rcSub">&nbsp;</span>
+      <span class="rc-turn" id="rcTurn">&nbsp;</span>
+    </div>
+    <div class="rc-order" id="rcOrder"></div>
+  </div>
+</div>
+
+<!-- ── the pre-show ───────────────────────────────────────────────────────
+     Everything before the first pick, and the only screen on this board that
+     is not about one. It used to be a panel inside .stage, which meant the
+     pre-draft television was a centred stack of type with the round wall
+     sitting beside it listing twelve men nobody had drafted for yet, a
+     ROUND 1 / PICK 1 header for a pick that had not happened, and an empty
+     ticker along the bottom.
+
+     So it is a direct child of #frame like the announcements: it takes the
+     whole canvas, and it is built out of the two things that are actually
+     true before a draft — how long is left, and who is in the room. The
+     countdown is the largest thing on the screen because it is the only
+     thing on it that changes. -->
+<div class="pre">
+  <div class="pre-top">
+    <div class="pre-mark">
+      <span class="pre-kicker">PA Milk Society</span>
+      <span class="pre-title">The 2026 <em>Draft</em></span>
+    </div>
+    <div class="pre-slate">
+      <span class="pre-slate-d">Friday, August 28</span>
+      <span class="pre-slate-t">7:20 PM</span>
+    </div>
+  </div>
+
+  <div class="pre-mid">
+    <!-- Twelve teams, fifteen rounds, snake, and that is the lot. The scoring
+         used to run underneath as a second line — full PPR, 6pt passing TD, TE
+         premium — and it is the wrong screen for it twice over: those are facts
+         about the season rather than about tonight, and every one of the twelve
+         people in the room already knows them. -->
+    <div class="pre-eyebrow">Twelve teams &middot; Fifteen rounds &middot; Snake</div>
+    <h1 class="pre-head"><span class="a">The Milk Draft</span><span class="b">Begins In</span></h1>
+    <div class="pre-count" id="idleCount">&nbsp;</div>
+  </div>
+
+  <div class="pre-order">
+    <div class="pre-order-hd">
+      <span class="pre-order-rule"></span>
+      <span class="pre-order-t">The Room</span>
+      <span class="pre-order-rule"></span>
+    </div>
+    <div class="pre-lineup" id="idleLineup"></div>
+  </div>
+</div>
+
+</div><!-- /#frame -->
+
+<script type="importmap">{"imports":{"./core.js":"./_stub.js"}}</script>
+<script>const st=document.createElement("style");st.textContent="*,*::before,*::after{animation:none!important;transition:none!important}";document.head.appendChild(st);</script>
+<script type="module" src="board.js"></script>
+</body>
+</html>
