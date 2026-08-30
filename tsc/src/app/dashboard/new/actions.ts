@@ -113,16 +113,14 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
     if (!playoffTeamCount) {
       return { ok: false, error: 'Pick the number of playoff teams (4, 6, or 8).' }
     }
-    try {
-      const probe = await fetch(`https://fantasy.nfl.com/league/${encodeURIComponent(externalId)}/history/${seasonEnd}/owners`, {
-        headers: { 'User-Agent': 'Mozilla/5.0' },
-        cache: 'no-store',
-      })
-      if (probe.status === 404) return { ok: false, error: 'NFL.com returned 404 for that league + most-recent year.' }
-      if (!probe.ok) return { ok: false, error: `NFL.com returned ${probe.status}. Double-check the league ID + season range.` }
-      leagueName = customName?.trim() || `NFL League ${externalId}`
-    } catch {
-      return { ok: false, error: 'Could not reach NFL.com. Try again in a moment.' }
+    // NFL Fantasy was retired ahead of the 2026 season; fantasy.nfl.com 301s
+    // every league URL to the nfl.com fantasy news page, so a probe would
+    // "succeed" with a 200 and then import an archive that stays permanently
+    // empty. Reject up front and send them down the ESPN path instead.
+    return {
+      ok: false,
+      error:
+        'NFL.com Fantasy has shut down and no longer serves league pages, so there is nothing left to import. Migrate the league to ESPN at espn.com/importnfl (settings and history come with it), then add it here as an ESPN league.',
     }
   } else if (platform === 'espn') {
     const { seasonStart, seasonEnd, swid, espnS2 } = parsed.data
@@ -272,15 +270,10 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
     }
   }
 
-  // NFL settings live in the JSONB; Sleeper auto-detects everything we need.
+  // Sleeper auto-detects everything we need. (NFL used to stash its season
+  // range + playoff config here, but NFL leagues can no longer be created —
+  // the platform shut down; existing NFL archives keep their stored settings.)
   const settings: Record<string, unknown> = {}
-  if (platform === 'nfl') {
-    const { seasonStart, seasonEnd, playoffWeekStart, playoffTeamCount } = parsed.data
-    settings.season_start = seasonStart
-    settings.season_end = seasonEnd
-    settings.playoff_week_start = playoffWeekStart
-    settings.playoff_team_count = playoffTeamCount
-  }
 
   // Stamp the league as UDFA (free tier) when the owner has no active
   // subscription and no comp grant. Paid users always get the full feature
@@ -316,8 +309,7 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
 
   // Per-source settings. ESPN reads its season range + cookies off the source
   // row exclusively (so cookies never bleed into the leagues table that the
-  // public almanac reads from). NFL also stores its range/playoff config here
-  // for parity with the multi-source flow.
+  // public almanac reads from).
   const sourceSettings: Record<string, unknown> = {}
   if (platform === 'espn') {
     const { seasonStart, seasonEnd, swid, espnS2 } = parsed.data
@@ -327,12 +319,6 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
       sourceSettings.swid = swid
       sourceSettings.espn_s2 = espnS2
     }
-  } else if (platform === 'nfl') {
-    const { seasonStart, seasonEnd, playoffWeekStart, playoffTeamCount } = parsed.data
-    sourceSettings.season_start = seasonStart
-    sourceSettings.season_end = seasonEnd
-    sourceSettings.playoff_week_start = playoffWeekStart
-    sourceSettings.playoff_team_count = playoffTeamCount
   }
 
   await supabase.from('league_sources').insert({

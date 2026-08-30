@@ -13,7 +13,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import {
   fetchOwners, fetchWeekSchedule, fetchStandings, fetchDraft,
   fetchTrades, fetchTeamWeekRoster, nflIsStarterSlot,
-  parallelLimit,
+  parallelLimit, NflSunsetError, NFL_SUNSET_MESSAGE,
   type NflOwner, type NflMatchup, type NflStandingsRow,
 } from '@/lib/platforms/nfl'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
@@ -163,6 +163,19 @@ export async function ingestNflSource(
       return { year: y, owners: [] as NflOwner[], error: (err as Error).message }
     }
   })
+  // Nothing downstream can be attributed without the team → manager map, and
+  // every stage below replaces stored rows. If not one season produced owners,
+  // treat the source as unreadable and abort BEFORE any delete runs — an empty
+  // scrape must never be mistaken for "this league is empty now".
+  const anyOwners = ownerFetches.some((f) => f.error == null && f.owners.length > 0)
+  if (!anyOwners) {
+    const sunset = ownerFetches.some((f) => f.error === NFL_SUNSET_MESSAGE)
+    if (sunset) throw new NflSunsetError()
+    throw new Error(
+      `No owners could be read for any season in ${startYear}-${endYear}; refusing to sync so stored history isn't overwritten with an empty scrape.`
+    )
+  }
+
   for (const f of ownerFetches) {
     if (f.error != null) {
       result.warnings.push(`Season ${f.year}: owners fetch failed (${f.error})`)
@@ -256,6 +269,16 @@ async function ingestSeason(args: {
     return uid ? managerIdByUserId.get(uid) ?? null : null
   }
 
+  // No roster for this season means every stage below would compute zero rows.
+  // Bail before the season row is even touched rather than walk the stages and
+  // blank the year out.
+  if (ownersThisYear.length === 0) {
+    result.warnings.push(
+      `Season ${year}: no owners returned; season skipped and existing data left untouched.`
+    )
+    return
+  }
+
   // Last playoff week:  4-team → +1 (2 rounds);  6/8-team → +2 (3 rounds).
   const playoffRounds = playoffTeams === 4 ? 2 : 3
   const lastPlayoffWeek = playoffStart + playoffRounds - 1
@@ -278,15 +301,14 @@ async function ingestSeason(args: {
   if (seasonErr || !seasonRow) throw new Error(`upsert season: ${seasonErr?.message}`)
   const seasonId = seasonRow.id
 
-  // Rebuild per-season aggregates. Matchups are NOT wiped — they're upserted
-  // with a deterministic a/b key so re-syncs update rows in place, keeping
-  // matchup ids stable (pickems_picks references them via a cascading FK).
-  if (stages.matchups) await db.from('manager_seasons').delete().eq('season_id', seasonId)
-  // Drafts cascade to draft_picks via FK; delete drafts for the season too.
-  // Preserve curated drafts (hand-authored imports, external_id 'curated-*')
-  // — same guard sleeper/espn ingests carry.
-  if (stages.drafts) await db.from('drafts').delete().eq('season_id', seasonId).not('external_id', 'like', 'curated-%')
-  if (stages.lineups) await db.from('weekly_lineups').delete().eq('season_id', seasonId)
+  // Per-season aggregates are replaced, not merged — but the delete now waits
+  // until its replacement rows exist (see each stage below). Wiping up front
+  // meant any scrape that came back empty erased the season and left nothing
+  // in its place; that is how the 2026 NFL sunset silently deleted
+  // manager_seasons, drafts and weekly_lineups across every league that synced
+  // after it. Matchups are NOT wiped at all — they're upserted with a
+  // deterministic a/b key so re-syncs update rows in place, keeping matchup ids
+  // stable (pickems_picks references them via a cascading FK).
 
   // Fetch all weekly matchups (1..lastPlayoffWeek). NFL serves a page per
   // week; parallel-fetch with a concurrency cap to be polite. Skip
@@ -426,6 +448,7 @@ async function ingestSeason(args: {
     })
   }
   if (seasonRowsByManager.size > 0) {
+    await db.from('manager_seasons').delete().eq('season_id', seasonId)
     const { error } = await db.from('manager_seasons').upsert([...seasonRowsByManager.values()], {
       onConflict: 'season_id,manager_id',
     })
@@ -433,15 +456,16 @@ async function ingestSeason(args: {
   }
 
   // Regular-season winner = top of regRank.
+  // Only write the season's headline ids when we actually resolved them —
+  // a blank standings scrape must not null out a champion we already know.
   const regularSeasonWinner = ranked[0] ? teamToManagerId(ranked[0][0]) : null
-  await db
-    .from('seasons')
-    .update({
-      champion_manager_id: champManager,
-      runner_up_manager_id: runnerUpManager,
-      regular_season_winner_id: regularSeasonWinner,
-    })
-    .eq('id', seasonId)
+  const seasonPatch: Record<string, string> = {}
+  if (champManager) seasonPatch.champion_manager_id = champManager
+  if (runnerUpManager) seasonPatch.runner_up_manager_id = runnerUpManager
+  if (regularSeasonWinner) seasonPatch.regular_season_winner_id = regularSeasonWinner
+  if (Object.keys(seasonPatch).length > 0) {
+    await db.from('seasons').update(seasonPatch).eq('id', seasonId)
+  }
 
   result.matchupsIngested += matchupsCount
   } // end stages.matchups
@@ -497,6 +521,7 @@ async function ingestSeason(args: {
     let lineupUpserted = 0
     let lineupErrors = 0
     if (seasonLineupRows.length > 0) {
+      await db.from('weekly_lineups').delete().eq('season_id', seasonId)
       const CHUNK = 1000
       for (let i = 0; i < seasonLineupRows.length; i += CHUNK) {
         const slice = seasonLineupRows.slice(i, i + CHUNK)
@@ -526,6 +551,10 @@ async function ingestSeason(args: {
       result.warnings.push(`Season ${year} draft: parser returned 0 picks. NFL.com may not have draft data for this year, or markup changed.`)
     }
     if (picks.length > 0) {
+      // Drafts cascade to draft_picks via FK. Preserve curated drafts
+      // (hand-authored imports, external_id 'curated-*') — same guard
+      // sleeper/espn ingests carry.
+      await db.from('drafts').delete().eq('season_id', seasonId).not('external_id', 'like', 'curated-%')
       const { data: draftRow } = await db
         .from('drafts')
         .upsert(

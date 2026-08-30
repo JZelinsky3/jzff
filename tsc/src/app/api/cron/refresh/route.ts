@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ingestSleeperSource } from '@/lib/ingest/sleeper'
-import { ingestNflSource } from '@/lib/ingest/nfl'
+
 import { ingestEspnSource, type EspnSourceSettings } from '@/lib/ingest/espn'
 import { ingestYahooSource } from '@/lib/ingest/yahoo'
 import { getValidAccessToken as getYahooAccessToken } from '@/lib/platforms/yahoo'
@@ -63,11 +63,16 @@ export async function GET(req: Request) {
       skipped.push({ source: src.external_id, league_id: src.league_id, reason: 'udfa-locked' })
       continue
     }
+    // NFL Fantasy was retired ahead of 2026 and fantasy.nfl.com no longer
+    // serves league pages, so there is nothing left to refresh. Skipping here
+    // (rather than letting the ingest throw) keeps the run quiet and cheap.
+    if (src.platform === 'nfl') {
+      skipped.push({ source: src.external_id, league_id: src.league_id, reason: 'nfl-sunset' })
+      continue
+    }
     try {
       if (src.platform === 'sleeper') {
         await ingestSleeperSource(src.league_id, src.external_id, src.walk_history)
-      } else if (src.platform === 'nfl') {
-        await ingestNflSource(src.league_id, src.external_id, (src.settings ?? {}) as Record<string, number>)
       } else if (src.platform === 'espn') {
         await ingestEspnSource(src.league_id, src.external_id, (src.settings ?? {}) as EspnSourceSettings)
       } else if (src.platform === 'yahoo') {

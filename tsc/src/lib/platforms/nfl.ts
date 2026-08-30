@@ -57,6 +57,21 @@ export type NflDraftPick = {
 
 // ─── HTTP ─────────────────────────────────────────────────────────────────
 
+// NFL Fantasy was retired ahead of the 2026 season — ESPN is now the official
+// NFL fantasy game, and every fantasy.nfl.com URL 301s to the nfl.com fantasy
+// news page. Nothing under /league/<id>/ resolves any more, for any league.
+// Thrown as a distinct message so the ingest can recognise it and refuse to
+// touch stored data (see lib/ingest/nfl.ts).
+export const NFL_SUNSET_MESSAGE =
+  'NFL Fantasy has shut down (fantasy.nfl.com now redirects to nfl.com) — league pages can no longer be read. Existing history is preserved; migrate the league to ESPN at espn.com/importnfl to keep syncing.'
+
+export class NflSunsetError extends Error {
+  constructor() {
+    super(NFL_SUNSET_MESSAGE)
+    this.name = 'NflSunsetError'
+  }
+}
+
 async function fetchHtml(url: string): Promise<string> {
   const res = await fetch(url, {
     headers: { 'User-Agent': UA, 'Accept': 'text/html,application/xhtml+xml' },
@@ -65,20 +80,34 @@ async function fetchHtml(url: string): Promise<string> {
     cache: 'no-store',
   })
   if (!res.ok) throw new Error(`NFL ${url} → HTTP ${res.status}`)
-  // NFL.com 302s unknown/private league URLs straight to fantasy.nfl.com/ —
-  // followed transparently by fetch, leaving us with the marketing homepage
-  // and an "no rows found" downstream parse. Detect the bounce and throw so
-  // the caller surfaces a real error instead of "no owners returned".
-  if (res.redirected) {
+  // NFL.com bounces every league URL elsewhere — historically a 302 to
+  // fantasy.nfl.com/ for private/unknown ids, and since the 2026 sunset a 301
+  // to www.nfl.com/news/series/fantasy for ALL of them. Either way fetch
+  // follows it transparently and we're left parsing a marketing page into
+  // zero rows, which downstream reads as "this league is empty".
+  //
+  // Judge the landing URL, never `res.redirected`: Next's patched fetch drops
+  // that flag, which is exactly how the sunset slipped past this guard and let
+  // empty scrapes wipe five seasons of stored history.
+  // res.url is empty on some fetch implementations; only judge it when present.
+  if (res.url) {
     const final = new URL(res.url)
     const original = new URL(url)
-    const sameLeague = final.pathname.startsWith(original.pathname.split('?')[0]) ||
-      final.pathname.includes('/league/')
-    if (!sameLeague) {
-      throw new Error(`NFL ${url} → redirected to ${res.url} (league may be private or id wrong)`)
+    if (final.host !== original.host || !final.pathname.startsWith('/league/')) {
+      if (final.host.endsWith('nfl.com') && !final.host.startsWith('fantasy.')) {
+        throw new NflSunsetError()
+      }
+      throw new Error(`NFL ${url} → landed on ${res.url} (league may be private or id wrong)`)
     }
   }
-  return res.text()
+  const html = await res.text()
+  // Second line of defence for when the landing URL isn't observable: the
+  // sunset page is the nfl.com news template, which carries none of the
+  // fantasy league chrome every page we parse has.
+  if (!/teamId-\d|playerNameId-\d|leagueNav|fantasy\.nfl\.com/.test(html)) {
+    throw new NflSunsetError()
+  }
+  return html
 }
 
 // ─── Public probe: confirm league exists + grab basic metadata ─────────────
