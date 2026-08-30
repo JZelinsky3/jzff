@@ -1024,6 +1024,28 @@ a.lo-billboard:hover::before { border-color: rgba(232, 200, 137, .45); }
     color: var(--cream-mute);
 }
 
+/* Per-platform setup help under the platform tiles. Someone this deep in the
+   league office has no route back to the guides index, so the guide for the
+   platform they just picked comes to them. */
+.lo-help-links {
+    display: flex; flex-wrap: wrap; gap: .5rem;
+    margin-top: .6rem;
+}
+.lo-help-link {
+    font-family: var(--mono);
+    font-size: .6rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cream-mute);
+    text-decoration: none;
+    padding: .34rem .6rem;
+    border: 1px solid var(--ink-line);
+    background: var(--ink-soft);
+    transition: color .2s, border-color .2s;
+}
+.lo-help-link:hover {
+    color: var(--accent, var(--gold));
+    border-color: var(--accent-dim, rgba(232,200,137,.4));
+}
+
 /* --------------------------------------------------- forms
    Reuses dc-input / dc-select / dc-label primitives from
    globals.css; this adds the sheet framing. */

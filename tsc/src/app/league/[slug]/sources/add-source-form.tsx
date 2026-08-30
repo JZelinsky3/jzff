@@ -32,9 +32,36 @@ export type SourcePrefill = {
 const PLATFORM_TILES: { key: Platform; name: string; sub: string }[] = [
   { key: 'sleeper', name: 'Sleeper', sub: 'Walks history' },
   { key: 'espn', name: 'ESPN', sub: 'Public or private' },
-  { key: 'nfl', name: 'NFL.com', sub: 'Public leagues' },
+  { key: 'nfl', name: 'NFL.com', sub: 'Retired' },
   { key: 'yahoo', name: 'Yahoo', sub: 'Beta · connect' },
 ]
+
+// Per-platform setup help, surfaced right where the IDs get typed. Someone
+// deep in /league/<slug>/sources has no path back to the guides index, and
+// the ESPN cookie fields are the one place people reliably get stuck.
+const PLATFORM_HELP: Record<Platform, { label: string; href: string }[]> = {
+  sleeper: [{ label: 'Sleeper Setup Guide', href: '/guides/sleeper-league-history/' }],
+  espn: [
+    { label: 'ESPN Setup Guide', href: '/guides/espn-league-history/' },
+    { label: 'SWID + espn_s2 cookie grabber', href: '/tools/espn-cookies/' },
+  ],
+  yahoo: [{ label: 'Yahoo Setup Guide', href: '/guides/yahoo-league-history/' }],
+  nfl: [{ label: 'Moving a league between platforms', href: '/guides/migrate-fantasy-league/' }],
+}
+
+function PlatformHelp({ platform }: { platform: Platform }) {
+  const links = PLATFORM_HELP[platform]
+  if (!links?.length) return null
+  return (
+    <div className="lo-help-links">
+      {links.map((l) => (
+        <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" className="lo-help-link">
+          {l.label}
+        </a>
+      ))}
+    </div>
+  )
+}
 
 function describeYahooRange(seasons: string[]): string {
   if (seasons.length === 0) return '?'
@@ -140,19 +167,25 @@ export function AddSourceForm({
         <label className="dc-label">Platform</label>
         <input type="hidden" name="platform" value={platform} />
         <div className="lo-tiles">
-          {PLATFORM_TILES.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              className={`lo-tile${platform === t.key ? ' on' : ''}`}
-              onClick={() => setPlatform(t.key)}
-              disabled={extending && t.key !== platform}
-              style={extending && t.key !== platform ? { opacity: 0.35, cursor: 'default' } : undefined}
-            >
-              <span className="lo-tile-name">{t.name}</span>
-              <span className="lo-tile-sub">{t.sub}</span>
-            </button>
-          ))}
+          {PLATFORM_TILES.map((t) => {
+            // NFL.com is retired — the pages a new source would read are gone,
+            // so the tile stays selectable only to explain itself, never to
+            // attach a source that could never sync.
+            const dimmed = (extending && t.key !== platform) || t.key === 'nfl'
+            return (
+              <button
+                key={t.key}
+                type="button"
+                className={`lo-tile${platform === t.key ? ' on' : ''}`}
+                onClick={() => setPlatform(t.key)}
+                disabled={extending && t.key !== platform}
+                style={dimmed ? { opacity: 0.35, cursor: t.key === 'nfl' ? 'pointer' : 'default' } : undefined}
+              >
+                <span className="lo-tile-name">{t.name}</span>
+                <span className="lo-tile-sub">{t.sub}</span>
+              </button>
+            )
+          })}
         </div>
         {platform === 'sleeper' && (
           <span className="dc-checkbox-hint">
@@ -162,16 +195,17 @@ export function AddSourceForm({
         )}
         {platform === 'nfl' && (
           <span className="dc-checkbox-hint">
-            League must be set to public on NFL.com. You pick the year range and
-            the playoff rules for that range; if the rules changed mid-history,
-            split it into two sources (see the field guide above the form).
+            NFL.com Fantasy shut down ahead of the 2026 season and no longer
+            serves league pages, so no new NFL source can be read. Existing NFL
+            history stays exactly as it is. To keep syncing, migrate the league
+            to ESPN at espn.com/importnfl, then add it here as an ESPN source.
           </span>
         )}
         {platform === 'espn' && (
           <span className="dc-checkbox-hint">
             Public leagues need only the league ID. Private leagues also need your
-            SWID + espn_s2 cookies from a logged-in ESPN tab (DevTools, then
-            Application, then Cookies). Playoff config is read from ESPN automatically.
+            SWID + espn_s2 cookies from a logged-in ESPN tab. Playoff config is
+            read from ESPN automatically.
           </span>
         )}
         {platform === 'yahoo' && (
@@ -181,6 +215,7 @@ export function AddSourceForm({
             chain back through prior seasons.
           </span>
         )}
+        <PlatformHelp platform={platform} />
       </div>
 
       {platform === 'sleeper' ? (
@@ -446,6 +481,14 @@ export function AddSourceForm({
                   placeholder="AEB...long opaque token..."
                   className="dc-input mono"
                 />
+                <span className="dc-checkbox-hint">
+                  Easy mode: install our{' '}
+                  <a href="/tools/espn-cookies/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)' }}>
+                    one-click bookmarklet
+                  </a>
+                  {' '}to grab both with a single click on fantasy.espn.com. Or
+                  manually: DevTools → Application → Cookies → fantasy.espn.com.
+                </span>
               </div>
             </>
           )}
@@ -524,11 +567,17 @@ export function AddSourceForm({
 
       <button
         type="submit"
-        disabled={isPending || (platform === 'yahoo' && (!yahooConnected || !pickedYahooKey))}
+        disabled={
+          isPending ||
+          platform === 'nfl' ||
+          (platform === 'yahoo' && (!yahooConnected || !pickedYahooKey))
+        }
         className="lo-btn block"
       >
         {isPending
           ? 'Validating…'
+          : platform === 'nfl'
+          ? 'NFL.com is retired'
           : platform === 'yahoo' && !yahooConnected
           ? 'Connect Yahoo first'
           : platform === 'yahoo' && !pickedYahooKey

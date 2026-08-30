@@ -81,6 +81,17 @@ export async function addSource(_prev: ActionResult, formData: FormData): Promis
   const access = await assertWriteAccess(leagueId)
   if (!access.ok) return access
 
+  // NFL.com Fantasy was retired ahead of 2026 and every league URL now
+  // redirects away, so a new NFL source could never read a single row.
+  // Refused here as well as in the form so nothing can attach one.
+  if (platform === 'nfl') {
+    return {
+      ok: false,
+      error:
+        'NFL.com Fantasy has shut down and no longer serves league pages, so a new NFL source cannot be read. Existing NFL history is kept as-is. Migrate the league to ESPN at espn.com/importnfl, then add it here as an ESPN source.',
+    }
+  }
+
   let resolvedLabel: string | null = label || null
   // `settings` JSONB is heterogeneous across platforms — numbers (year ranges,
   // playoff config) plus strings (ESPN cookies). Type as `unknown` so we don't
