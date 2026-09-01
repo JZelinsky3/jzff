@@ -34,6 +34,7 @@ import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
 import { manualLocks, manualLockWarning } from './manualLocks'
+import { checkSeasonIdentity, identityWarning } from './identityGuard'
 
 export type IngestResult = {
   ok: boolean
@@ -126,6 +127,16 @@ export async function ingestYahooSource(
   const db = createAdminClient()
   const warnings: string[] = []
   const stages = resolveStages(stagesIn)
+
+  // Opt-out for the identity guard, deliberately league-level and settings-only.
+  // See lib/ingest/identityGuard.ts for why this is not a UI toggle.
+  const { data: leagueSettingsRow } = await db
+    .from('leagues')
+    .select('settings')
+    .eq('id', archiveLeagueId)
+    .maybeSingle()
+  const allowIdentityReplace =
+    (leagueSettingsRow?.settings as { allow_identity_replace?: boolean } | null)?.allow_identity_replace === true
 
   // Build the chronological list of seasons (oldest first).
   const fullHistory: YahooLeagueMeta[] = walkHistory
@@ -253,11 +264,10 @@ export async function ingestYahooSource(
     const locks = await manualLocks(db, seasonId)
     for (const kind of locks) warnings.push(manualLockWarning(year, kind))
 
-    if (!locks.has('standings')) await db.from('manager_seasons').delete().eq('season_id', seasonId)
-    // Curated drafts (external_id 'curated-*') are hand-authored and have no
-    // platform equivalent, so they are never part of what a re-sync replaces.
-    if (stages.drafts && !locks.has('drafts')) await db.from('drafts').delete().eq('season_id', seasonId).not('external_id', 'like', 'curated-%')
-    if (stages.lineups) await db.from('weekly_lineups').delete().eq('season_id', seasonId)
+    // Each stage's delete now waits until its replacement rows exist, further
+    // down. Wiping here meant a season Yahoo answered thinly was erased with
+    // nothing put back, which is how the NFL.com sunset destroyed history in
+    // August 2026 before the same fix landed in ingest/nfl.ts.
 
     const teams = teamsBySeason.get(lg.league_key) ?? []
     if (teams.length === 0) {
@@ -330,7 +340,18 @@ export async function ingestYahooSource(
         division_index: t.division_id != null ? Math.max(0, parseInt(t.division_id, 10) - 1) : null,
       })
     }
+    // A season whose stored managers share nothing with the ones this source
+    // returned is a different league landing on top of this one, not a refresh.
+    const identity = await checkSeasonIdentity(db, seasonId, seasonRowsByManager.keys(), {
+      allowReplace: allowIdentityReplace,
+    })
+    if (!identity.ok) {
+      warnings.push(identityWarning(year, identity))
+      continue
+    }
+
     if (seasonRowsByManager.size > 0 && !locks.has('standings')) {
+      await db.from('manager_seasons').delete().eq('season_id', seasonId)
       const { error } = await db.from('manager_seasons').upsert([...seasonRowsByManager.values()], {
         onConflict: 'season_id,manager_id',
       })
@@ -527,6 +548,8 @@ export async function ingestYahooSource(
       let lineupUpserted = 0
       let lineupErrors = 0
       if (seasonLineupRows.length > 0) {
+        // Replacements exist, so the old rows can go.
+        await db.from('weekly_lineups').delete().eq('season_id', seasonId)
         const CHUNK = 1000
         for (let i = 0; i < seasonLineupRows.length; i += CHUNK) {
           const slice = seasonLineupRows.slice(i, i + CHUNK)
@@ -551,6 +574,11 @@ export async function ingestYahooSource(
     if (stages.drafts) {
     const picks = await getLeagueDraft(accessToken, lg.league_key)
     if (picks.length > 0) {
+      // Replacement picks are in hand. Curated (hand-authored) drafts are
+      // never part of what a sync replaces.
+      if (!locks.has('drafts')) {
+        await db.from('drafts').delete().eq('season_id', seasonId).not('external_id', 'like', 'curated-%')
+      }
       // Yahoo doesn't tell us snake vs auction directly in draftresults — infer
       // from presence of `cost` on picks.
       const isAuction = picks.some((p) => p.cost != null && p.cost > 0)

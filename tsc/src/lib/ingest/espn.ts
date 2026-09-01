@@ -36,6 +36,7 @@ import {
 } from '@/lib/platforms/espn'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
 import { manualLocks, manualLockWarning } from './manualLocks'
+import { checkSeasonIdentity, identityWarning } from './identityGuard'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 
@@ -153,6 +154,16 @@ export async function ingestEspnSource(
   const startYear = window.start!
   const endYear = window.end!
 
+  // Opt-out for the identity guard, deliberately league-level and settings-only.
+  // See lib/ingest/identityGuard.ts for why this is not a UI toggle.
+  const { data: leagueSettingsRow } = await db
+    .from('leagues')
+    .select('settings')
+    .eq('id', archiveLeagueId)
+    .maybeSingle()
+  const allowIdentityReplace =
+    (leagueSettingsRow?.settings as { allow_identity_replace?: boolean } | null)?.allow_identity_replace === true
+
   // Fetch every season once. ESPN returns members + teams + schedule + settings
   // + draft in a single call per season; the calls are independent so run a
   // few in parallel instead of strictly sequencing a long year range.
@@ -248,6 +259,7 @@ export async function ingestEspnSource(
         auth,
         result,
         stages,
+        allowIdentityReplace,
       })
       result.seasonsIngested++
     } catch (err) {
@@ -269,8 +281,9 @@ async function ingestSeason(args: {
   auth?: EspnAuth
   result: IngestResult
   stages: Required<IngestStages>
+  allowIdentityReplace: boolean
 }): Promise<void> {
-  const { db, archiveLeagueId, year, lg, managerIdBySwid, auth, result, stages } = args
+  const { db, archiveLeagueId, year, lg, managerIdBySwid, auth, result, stages, allowIdentityReplace } = args
 
   // team_id → SWID (this season only — ESPN recycles team_ids across years).
   // Some old seasons return teams whose owners[0] points at a SWID that was
@@ -414,11 +427,10 @@ async function ingestSeason(args: {
   const locks = await manualLocks(db, seasonId)
   for (const kind of locks) result.warnings.push(manualLockWarning(year, kind))
 
-  if (!locks.has('standings')) await db.from('manager_seasons').delete().eq('season_id', seasonId)
-  // Preserve curated drafts (e.g. the hand-authored 2019 Lubbs import)
-  // across re-syncs by matching on external_id pattern.
-  if (stages.drafts && !locks.has('drafts')) await db.from('drafts').delete().eq('season_id', seasonId).not('external_id', 'like', 'curated-%')
-  if (stages.lineups) await db.from('weekly_lineups').delete().eq('season_id', seasonId)
+  // Each stage's delete now waits until its replacement rows exist, further
+  // down. Wiping here meant a season ESPN answered thinly (or not at all) was
+  // erased with nothing put back, which is how the NFL.com sunset destroyed
+  // history in August 2026 before the same fix landed in ingest/nfl.ts.
 
   // ─── manager_seasons ────────────────────────────────────────────────────
   // ESPN's team.record.overall has the authoritative regular-season totals.
@@ -474,7 +486,18 @@ async function ingestSeason(args: {
       division_index: divIdx,
     })
   }
+  // A season whose stored managers share nothing with the ones this source
+  // returned is a different league landing on top of this one, not a refresh.
+  const identity = await checkSeasonIdentity(db, seasonId, seasonRowsByManager.keys(), {
+    allowReplace: allowIdentityReplace,
+  })
+  if (!identity.ok) {
+    result.warnings.push(identityWarning(year, identity))
+    return
+  }
+
   if (seasonRowsByManager.size > 0 && !locks.has('standings')) {
+    await db.from('manager_seasons').delete().eq('season_id', seasonId)
     const { error } = await db.from('manager_seasons').upsert([...seasonRowsByManager.values()], {
       onConflict: 'season_id,manager_id',
     })
@@ -615,12 +638,23 @@ async function ingestSeason(args: {
 
   // Cleanup: delete matchups in this season that weren't in the new flat list.
   // Previously ingested ESPN seasons may carry consolation games we no longer
-  // import. This is safe — pickems_picks cascades, and consolation games
-  // never had pickems on them anyway. Use a paged read so the IN clause
-  // doesn't blow past Supabase's 1000-row limit.
+  // import. pickems_picks cascades, and consolation games never had pickems on
+  // them anyway. Use a paged read so the IN clause doesn't blow past
+  // Supabase's 1000-row limit.
+  //
+  // The floor below is the important part. This prune matches on
+  // (week, manager_a, manager_b), so it silently becomes "delete the entire
+  // season" whenever the manager ids change out from under it. That is exactly
+  // what happened to weekly-depression on 2026-08-30: an ESPN source was added
+  // to a league with seven years of NFL.com history, ESPN's members resolved
+  // to brand new manager rows, not one stored key matched, and every matchup
+  // from 2021-2025 was pruned as "stale". Trimming a few consolation games is
+  // the only job this has; anything resembling a wipe is a mismatch, not
+  // cleanup, and gets reported instead of executed.
   let deletedStale = 0
   let from = 0
   const PAGE = 1000
+  const PRUNE_CEILING = 0.34
   for (;;) {
     const { data: existing } = await db
       .from('matchups')
@@ -631,6 +665,15 @@ async function ingestSeason(args: {
     const staleIds = existing
       .filter((r) => !validKeys.has(`${r.week}|${r.manager_a_id}|${r.manager_b_id}`))
       .map((r) => r.id)
+    if (staleIds.length > existing.length * PRUNE_CEILING) {
+      result.warnings.push(
+        `Season ${year}: refused to prune ${staleIds.length} of ${existing.length} stored matchups. ` +
+        `That is not consolation cleanup, it means the ${matchupsCount} matchups ESPN just returned ` +
+        `do not line up with what is stored (usually because this season's managers came from a ` +
+        `different platform). Nothing was deleted. Reconcile the managers, then re-sync.`
+      )
+      break
+    }
     if (staleIds.length > 0) {
       const { error: delErr } = await db.from('matchups').delete().in('id', staleIds)
       if (delErr) {
@@ -706,6 +749,9 @@ async function ingestSeason(args: {
     let lineupUpserted = 0
     let lineupErrors = 0
     if (seasonLineupRows.length > 0) {
+      // Replacements exist, so the old rows can go. A season where ESPN
+      // returned no roster data keeps whatever is stored.
+      await db.from('weekly_lineups').delete().eq('season_id', seasonId)
       const CHUNK = 1000
       for (let i = 0; i < seasonLineupRows.length; i += CHUNK) {
         const slice = seasonLineupRows.slice(i, i + CHUNK)
@@ -735,6 +781,11 @@ async function ingestSeason(args: {
   if (stages.drafts) {
   const picks = lg.draftDetail?.picks ?? []
   if (picks.length > 0 && lg.draftDetail?.completed !== false) {
+    // Replacement picks are in hand, so clear the season's platform drafts.
+    // Curated (hand-authored) drafts are never part of what a sync replaces.
+    if (!locks.has('drafts')) {
+      await db.from('drafts').delete().eq('season_id', seasonId).not('external_id', 'like', 'curated-%')
+    }
     const isAuction = picks.some((p) => typeof p.bidAmount === 'number')
     const { data: draftRow, error: draftErr } = await db
       .from('drafts')
