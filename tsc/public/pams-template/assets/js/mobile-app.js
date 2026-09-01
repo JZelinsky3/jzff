@@ -1064,13 +1064,13 @@
         var pillLabel, text;
         if (tier === 'test') {
             pillLabel = '★ Trial';
-            text = 'Your free trial league — some features may be incomplete.';
+            text = 'Your free trial league. Some features are still being built.';
         } else if (tier === 'udfa') {
             pillLabel = '★ UDFA';
-            text = 'Free tier — upgrade to unlock the full chronicle.';
+            text = 'Free tier. Upgrade to unlock the full chronicle.';
         } else {
             pillLabel = '★ Beta';
-            text = 'Still being polished — expect rough edges.';
+            text = 'Still being polished. Expect a few rough edges.';
         }
 
         var strip = document.createElement('div');

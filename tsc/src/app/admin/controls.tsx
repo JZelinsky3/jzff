@@ -48,7 +48,10 @@ export function PagedRows({ rows, cols, initial = 15, step = 15, min = 5 }: {
   )
 }
 
-export function GrantCompButton({ userId }: { userId: string }) {
+// `months` grants a comp that ends on its own. Used for thank-yous (a bug
+// report, a review) where a permanent comp would be a subscription given away
+// by accident, since nothing else ever revokes one.
+export function GrantCompButton({ userId, months, label }: { userId: string; months?: number; label?: string }) {
   const [pending, start] = useTransition()
   const [error, setError] = useState<string | null>(null)
   return (
@@ -59,15 +62,17 @@ export function GrantCompButton({ userId }: { userId: string }) {
         style={{ fontSize: '.65rem', padding: '.35rem .7rem' }}
         disabled={pending}
         onClick={() => {
-          const note = window.prompt('Note for this comp (optional):') ?? ''
+          const note = window.prompt(
+            months ? `Note for this ${months}-month comp (optional):` : 'Note for this comp (optional):'
+          ) ?? ''
           start(async () => {
             setError(null)
-            const res = await grantComp(userId, note || undefined)
+            const res = await grantComp(userId, note || undefined, months)
             if (!res.ok) setError(res.error ?? 'Failed.')
           })
         }}
       >
-        {pending ? '…' : 'Grant comp'}
+        {pending ? '…' : label ?? 'Grant comp'}
       </button>
       {error && <div style={{ color: 'rgba(220,120,80,.85)', fontSize: '.65rem', marginTop: '.2rem' }}>{error}</div>}
     </>

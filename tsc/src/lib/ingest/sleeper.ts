@@ -17,6 +17,7 @@ import {
 } from '@/lib/platforms/sleeper'
 import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
+import { manualLocks, manualLockWarning } from './manualLocks'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 
 export type IngestResult = {
@@ -233,8 +234,13 @@ export async function ingestSleeperSource(
     // hand-authored 2019 Lubbs import (and any future curated imports)
     // survive re-syncs. The platform-side delete only targets drafts that
     // the ingest would have produced itself.
-    await db.from('manager_seasons').delete().eq('season_id', seasonId)
-    if (stages.drafts) await db.from('drafts').delete().eq('season_id', seasonId).not('external_id', 'like', 'curated-%')
+    // Stages a commissioner filled in by hand are left exactly as they are;
+    // the platform is not the authority on a season it no longer serves.
+    const locks = await manualLocks(db, seasonId)
+    for (const kind of locks) warnings.push(manualLockWarning(year, kind))
+
+    if (!locks.has('standings')) await db.from('manager_seasons').delete().eq('season_id', seasonId)
+    if (stages.drafts && !locks.has('drafts')) await db.from('drafts').delete().eq('season_id', seasonId).not('external_id', 'like', 'curated-%')
     if (stages.lineups) await db.from('weekly_lineups').delete().eq('season_id', seasonId)
 
     // 4b. Fetch users + rosters for THIS season
@@ -334,7 +340,7 @@ export async function ingestSleeperSource(
         division_index: r.settings.division != null ? Math.max(0, r.settings.division - 1) : null,
       })
     }
-    if (seasonRowsByManager.size > 0) {
+    if (seasonRowsByManager.size > 0 && !locks.has('standings')) {
       const { error } = await db.from('manager_seasons').upsert([...seasonRowsByManager.values()], {
         onConflict: 'season_id,manager_id',
       })
@@ -512,7 +518,7 @@ export async function ingestSleeperSource(
         if (stages.lineups && lineupRows.length > 0) seasonLineupRows.push(...lineupRows)
       }
     }
-    if (stages.matchups && seasonMatchupRows.size > 0) {
+    if (stages.matchups && seasonMatchupRows.size > 0 && !locks.has('matchups')) {
       const { error } = await db.from('matchups').upsert([...seasonMatchupRows.values()], {
         onConflict: 'season_id,week,manager_a_id,manager_b_id',
       })

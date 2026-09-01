@@ -114,6 +114,51 @@ export async function getValidAccessToken(
   return refreshed.access_token
 }
 
+// Yahoo gates the Fantasy Sports API behind an approval list
+// (sports.yahoo.com/developer/access). A client id that isn't on it gets a 403
+// on EVERY endpoint — including public game metadata like /game/nfl — no matter
+// which user's token signs the request, and no matter how the query is shaped.
+// Reconnecting doesn't help either: the OAuth handshake still succeeds, it's the
+// Fantasy API that refuses the app. So this one failure gets its own message,
+// because the only fix is Yahoo re-approving our client id.
+export const YAHOO_ACCESS_MESSAGE =
+  'Yahoo is not accepting requests from The Sunday Chronicle right now, so we cannot list or sync Yahoo leagues. This is on our side, not your Yahoo account, and reconnecting will not clear it. Yahoo seasons already imported are unaffected. We have asked Yahoo to restore access.'
+
+export class YahooApiError extends Error {
+  readonly status: number
+  readonly description: string
+  // True when Yahoo rejected the app itself rather than this request.
+  readonly appUnauthorized: boolean
+
+  constructor(status: number, path: string, description: string, appUnauthorized: boolean) {
+    super(appUnauthorized ? YAHOO_ACCESS_MESSAGE : `Yahoo ${status} on ${path}: ${description}`)
+    this.name = 'YahooApiError'
+    this.status = status
+    this.description = description
+    this.appUnauthorized = appUnauthorized
+  }
+}
+
+export function isYahooAccessError(err: unknown): boolean {
+  return err instanceof YahooApiError && err.appUnauthorized
+}
+
+// Yahoo error bodies echo the full request URI back before the description, so
+// slicing the raw text cuts the sentence off mid-word (that's how the sources
+// page ended up showing "This application is not authorized to"). Read the
+// description field out of the JSON and fall back to raw text only if it isn't
+// there.
+function describeYahooError(text: string): string {
+  try {
+    const body = JSON.parse(text) as { error?: { description?: string } }
+    const desc = body?.error?.description
+    if (typeof desc === 'string' && desc.trim()) return desc.trim()
+  } catch {
+    // Not JSON — Yahoo occasionally answers with an HTML error page.
+  }
+  return text.replace(/\s+/g, ' ').trim().slice(0, 200)
+}
+
 export async function yahooFetchJson<T = unknown>(
   accessToken: string,
   path: string
@@ -125,7 +170,10 @@ export async function yahooFetchJson<T = unknown>(
   })
   if (!res.ok) {
     const text = await res.text().catch(() => '')
-    throw new Error(`Yahoo ${res.status} on ${path}: ${text.slice(0, 300)}`)
+    const description = describeYahooError(text)
+    const appUnauthorized =
+      res.status === 403 && /application is not authorized/i.test(description)
+    throw new YahooApiError(res.status, path, description, appUnauthorized)
   }
   return (await res.json()) as T
 }

@@ -119,6 +119,7 @@ export function AddSourceForm({
   // Yahoo league picker — fetched on demand from the connected user's account.
   const [yahooLeagues, setYahooLeagues] = useState<YahooPickerLeague[] | null>(null)
   const [yahooLeaguesError, setYahooLeaguesError] = useState<string | null>(null)
+  const [yahooBlocked, setYahooBlocked] = useState(false)
   const [isLoadingYahooLeagues, startYahooLoad] = useTransition()
   const [pickedYahooKey, setPickedYahooKey] = useState<string | null>(
     prefill?.platform === 'yahoo' ? prefill.externalId : null
@@ -130,9 +131,11 @@ export function AddSourceForm({
     if (yahooLeagues !== null || isLoadingYahooLeagues) return
     startYahooLoad(async () => {
       setYahooLeaguesError(null)
+      setYahooBlocked(false)
       const res = await listYahooLeaguesForSources()
       if (!res.ok) {
         setYahooLeaguesError(res.error)
+        setYahooBlocked(!!res.blocked)
         setYahooLeagues([])
         return
       }
@@ -262,7 +265,14 @@ export function AddSourceForm({
               <p className="dc-checkbox-hint">Loading your Yahoo leagues…</p>
             )}
             {yahooLeaguesError && (
-              <p className="dc-form-error" style={{ margin: '.4rem 0 0' }}>{yahooLeaguesError}</p>
+              yahooBlocked ? (
+                <div className="lo-note steel" style={{ marginTop: '.4rem' }}>
+                  <div className="lo-note-head"><span className="pin">✦</span> Yahoo access is paused</div>
+                  <div className="lo-note-body">{yahooLeaguesError}</div>
+                </div>
+              ) : (
+                <p className="dc-form-error" style={{ margin: '.4rem 0 0' }}>{yahooLeaguesError}</p>
+              )
             )}
             {yahooLeagues && yahooLeagues.length === 0 && !isLoadingYahooLeagues && !yahooLeaguesError && (
               <p className="dc-checkbox-hint">

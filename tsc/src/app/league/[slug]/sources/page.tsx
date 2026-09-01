@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { MobileSources } from '@/components/league/MobileSources'
@@ -126,6 +127,15 @@ export default async function SourcesPage({
               even scoring. Each source gets its own year range and its own
               rules, and they sync independently, so nothing overlaps or
               double-counts as long as the ranges don&apos;t.
+            </div>
+          </div>
+          <div className="lo-note">
+            <div className="lo-note-head"><span className="pin">✦</span> Seasons no platform has</div>
+            <div className="lo-note-body">
+              NFL.com is gone and other platforms drop old years. You can
+              still <Link href={`/league/${slug}/import`}>enter a season by hand</Link>:
+              paste standings, a draft board or weekly scores from a
+              spreadsheet. Syncs leave hand-entered seasons alone.
             </div>
           </div>
         </div>

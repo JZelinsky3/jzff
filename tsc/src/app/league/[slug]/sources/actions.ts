@@ -13,7 +13,7 @@ import type { IngestStages } from '@/lib/ingest/stages'
 import { STAGE_KEYS, type StageKey } from '@/lib/ingest/stages'
 import { sleeper } from '@/lib/platforms/sleeper'
 import { probeLeague as probeEspn } from '@/lib/platforms/espn'
-import { getValidAccessToken as getYahooAccessToken, getLeagueDetail as getYahooLeagueDetail, listUserNflLeaguesDeduped, type YahooLeaguePickerEntry } from '@/lib/platforms/yahoo'
+import { getValidAccessToken as getYahooAccessToken, getLeagueDetail as getYahooLeagueDetail, listUserNflLeaguesDeduped, isYahooAccessError, YAHOO_ACCESS_MESSAGE, type YahooLeaguePickerEntry } from '@/lib/platforms/yahoo'
 import { devCacheBust } from '@/lib/devCache'
 
 const AddSchema = z.object({
@@ -465,7 +465,10 @@ export async function deleteSource(sourceId: string, leagueId: string) {
 // for the Yahoo source picker on this page.
 export async function listYahooLeaguesForSources(): Promise<
   | { ok: true; leagues: YahooLeaguePickerEntry[] }
-  | { ok: false; error: string }
+  // `blocked` marks the Yahoo-side access outage, which the form shows as a
+  // notice rather than a red form error — nothing the user did caused it and
+  // nothing they can do clears it.
+  | { ok: false; error: string; blocked?: boolean }
 > {
   try {
     const supabase = await createClient()
@@ -475,6 +478,7 @@ export async function listYahooLeaguesForSources(): Promise<
     const leagues = await listUserNflLeaguesDeduped(token)
     return { ok: true, leagues }
   } catch (err) {
+    if (isYahooAccessError(err)) return { ok: false, error: YAHOO_ACCESS_MESSAGE, blocked: true }
     return { ok: false, error: err instanceof Error ? err.message : 'Could not reach Yahoo.' }
   }
 }

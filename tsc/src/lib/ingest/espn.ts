@@ -35,6 +35,7 @@ import {
   type EspnTransaction,
 } from '@/lib/platforms/espn'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
+import { manualLocks, manualLockWarning } from './manualLocks'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 
@@ -408,10 +409,15 @@ async function ingestSeason(args: {
   // Rebuild per-season aggregates. Matchups are NOT wiped — they're upserted
   // with a deterministic a/b key so re-syncs update rows in place, keeping
   // matchup ids stable (pickems_picks references them via a cascading FK).
-  await db.from('manager_seasons').delete().eq('season_id', seasonId)
+  // Stages a commissioner filled in by hand are left exactly as they are;
+  // the platform is not the authority on a season it no longer serves.
+  const locks = await manualLocks(db, seasonId)
+  for (const kind of locks) result.warnings.push(manualLockWarning(year, kind))
+
+  if (!locks.has('standings')) await db.from('manager_seasons').delete().eq('season_id', seasonId)
   // Preserve curated drafts (e.g. the hand-authored 2019 Lubbs import)
   // across re-syncs by matching on external_id pattern.
-  if (stages.drafts) await db.from('drafts').delete().eq('season_id', seasonId).not('external_id', 'like', 'curated-%')
+  if (stages.drafts && !locks.has('drafts')) await db.from('drafts').delete().eq('season_id', seasonId).not('external_id', 'like', 'curated-%')
   if (stages.lineups) await db.from('weekly_lineups').delete().eq('season_id', seasonId)
 
   // ─── manager_seasons ────────────────────────────────────────────────────
@@ -468,7 +474,7 @@ async function ingestSeason(args: {
       division_index: divIdx,
     })
   }
-  if (seasonRowsByManager.size > 0) {
+  if (seasonRowsByManager.size > 0 && !locks.has('standings')) {
     const { error } = await db.from('manager_seasons').upsert([...seasonRowsByManager.values()], {
       onConflict: 'season_id,manager_id',
     })
@@ -579,7 +585,7 @@ async function ingestSeason(args: {
       is_championship: isChampGame,
     })
   }
-  if (matchupRows.size > 0) {
+  if (matchupRows.size > 0 && !locks.has('matchups')) {
     const { error } = await db.from('matchups').upsert([...matchupRows.values()], {
       onConflict: 'season_id,week,manager_a_id,manager_b_id',
     })

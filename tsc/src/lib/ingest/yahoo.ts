@@ -33,6 +33,7 @@ import { parallelLimit } from '@/lib/platforms/sleeper'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
+import { manualLocks, manualLockWarning } from './manualLocks'
 
 export type IngestResult = {
   ok: boolean
@@ -247,8 +248,15 @@ export async function ingestYahooSource(
     // Wipe rebuildable per-season aggregates. Matchups are NOT wiped — they
     // upsert by (season_id, week, manager_a_id, manager_b_id) so re-syncs
     // update in place and matchup ids stay stable (FK from pickems_picks).
-    await db.from('manager_seasons').delete().eq('season_id', seasonId)
-    if (stages.drafts) await db.from('drafts').delete().eq('season_id', seasonId)
+    // Stages a commissioner filled in by hand are left exactly as they are;
+    // the platform is not the authority on a season it no longer serves.
+    const locks = await manualLocks(db, seasonId)
+    for (const kind of locks) warnings.push(manualLockWarning(year, kind))
+
+    if (!locks.has('standings')) await db.from('manager_seasons').delete().eq('season_id', seasonId)
+    // Curated drafts (external_id 'curated-*') are hand-authored and have no
+    // platform equivalent, so they are never part of what a re-sync replaces.
+    if (stages.drafts && !locks.has('drafts')) await db.from('drafts').delete().eq('season_id', seasonId).not('external_id', 'like', 'curated-%')
     if (stages.lineups) await db.from('weekly_lineups').delete().eq('season_id', seasonId)
 
     const teams = teamsBySeason.get(lg.league_key) ?? []
@@ -322,7 +330,7 @@ export async function ingestYahooSource(
         division_index: t.division_id != null ? Math.max(0, parseInt(t.division_id, 10) - 1) : null,
       })
     }
-    if (seasonRowsByManager.size > 0) {
+    if (seasonRowsByManager.size > 0 && !locks.has('standings')) {
       const { error } = await db.from('manager_seasons').upsert([...seasonRowsByManager.values()], {
         onConflict: 'season_id,manager_id',
       })
@@ -457,7 +465,7 @@ export async function ingestYahooSource(
         seasonInserted++
       }
     }
-    if (matchupRows.size > 0) {
+    if (matchupRows.size > 0 && !locks.has('matchups')) {
       const { error } = await db.from('matchups').upsert([...matchupRows.values()], {
         onConflict: 'season_id,week,manager_a_id,manager_b_id',
       })

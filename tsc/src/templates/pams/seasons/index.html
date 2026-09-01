@@ -143,8 +143,21 @@
     font-family: var(--mono); font-weight: 700;
     font-size: .52rem; letter-spacing: .14em; text-transform: uppercase;
     color: rgba(10, 10, 12, .85);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    /* A 98px spine fits about 13 characters, and the median name is 9 — but
+       ESPN and Yahoo hand back 17-character machine names, and truncating
+       every one of those to "ESPNFAN04…" reads as broken. Two lines with a
+       size step covers the real range; only the extremes still clip.
+       overflow-wrap breaks an unbroken token rather than letting it spill. */
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-clamp: 2;
+    overflow: hidden;
 }
+.book-band.long   { font-size: .46rem; letter-spacing: .1em; }
+.book-band.longer { font-size: .41rem; letter-spacing: .06em; }
 .book-band.in-play {
     background: var(--ink-soft);
     color: var(--cream-mute);
@@ -245,8 +258,18 @@
     color: var(--cream-soft);
     margin-top: .5rem;
     max-width: 84%;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    /* Same reasoning as .book-band: wrap to two lines rather than ellipse a
+       name the cloth could hold. */
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-clamp: 2;
+    overflow: hidden;
 }
+.flag-name.long   { font-size: .44rem; letter-spacing: .08em; }
+.flag-name.longer { font-size: .39rem; letter-spacing: .04em; }
 .flag-star {
     font-size: .62rem;
     color: var(--gold);
@@ -262,6 +285,8 @@
 }
 .rafter-strip.dense .flag-year { font-size: .92rem; }
 .rafter-strip.dense .flag-name { font-size: .42rem; margin-top: .4rem; }
+.rafter-strip.dense .flag-name.long   { font-size: .38rem; }
+.rafter-strip.dense .flag-name.longer { font-size: .34rem; }
 .rafter-strip.dense .flag-star { font-size: .52rem; margin-top: .35rem; }
 @media (max-width: 640px) { .rafter-strip { display: none; } }
 
@@ -659,13 +684,21 @@ function render(seasons) {
     document.getElementById('page-regions').style.display = '';
 }
 
+/* How much to shrink a champion's name so it fits the cloth or the spine.
+   Length, not measurement: these are fixed-width mono boxes, so characters
+   are a reliable proxy and it costs no layout read. */
+function nameFit(name) {
+    const n = (name ?? '').length;
+    return n > 20 ? ' longer' : n > 13 ? ' long' : '';
+}
+
 /* ─── §01 The shelf ─── */
 function buildShelf(chrono, colors) {
     const first = chrono[0]?.year ?? 0;
     document.getElementById('shelf-row').innerHTML = chrono.map((s, i) => {
         const k = champKey(s);
         const band = k
-            ? `<span class="book-band" style="--band:${colors[k]}">${s.champion.owner_name}</span>`
+            ? `<span class="book-band${nameFit(s.champion.owner_name)}" style="--band:${colors[k]}">${s.champion.owner_name}</span>`
             : `<span class="book-band in-play">In play</span>`;
         // Slight deterministic height variation so the shelf reads organic.
         const h = 258 + ((s.year % 3) * 11);
@@ -703,7 +736,7 @@ function buildRafterStrip(chrono, colors) {
             style="--cloth:${cloth(colors[k])}"
             title="${s.year} · ${s.champion.owner_name} · ${s.champion.team_name}">
             <div class="flag-year">${s.year}</div>
-            <div class="flag-name">${s.champion.owner_name}</div>
+            <div class="flag-name${nameFit(s.champion.owner_name)}">${s.champion.owner_name}</div>
             <div class="flag-star">★</div>
         </a>`;
     }).join('');

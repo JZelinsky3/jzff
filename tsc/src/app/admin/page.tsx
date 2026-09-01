@@ -4,7 +4,7 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { REFERRAL_LABELS } from '@/lib/referralChannels'
-import { isSiteAdmin } from '@/lib/siteAdmin'
+import { isSiteAdmin, compIsActive } from '@/lib/siteAdmin'
 import { isLifetimeUser, TIER_LABELS } from '@/lib/stripe'
 import { GrantCompButton, RevokeCompButton, PagedRows } from './controls'
 
@@ -52,7 +52,7 @@ type SubscriptionRow = {
   trial_ends_at: string | null
 }
 
-type CompRow = { user_id: string; granted_by: string | null; note: string | null; created_at: string }
+type CompRow = { user_id: string; granted_by: string | null; note: string | null; created_at: string; expires_at: string | null }
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -66,7 +66,7 @@ export default async function AdminPage() {
     db.from('profiles').select('id, display_name, member_code, created_at, referral_source, referral_source_other').order('created_at', { ascending: false }),
     db.from('leagues').select('id, name, slug, platform, owner_id, created_at, last_synced_at, published_at, grace_period_ends_at, is_udfa').order('created_at', { ascending: false }),
     db.from('subscriptions').select('user_id, tier, billing_period, status, current_period_end, trial_ends_at'),
-    db.from('comp_grants').select('user_id, granted_by, note, created_at'),
+    db.from('comp_grants').select('user_id, granted_by, note, created_at, expires_at'),
     db.auth.admin.listUsers({ perPage: 1000 }),
   ])
 
@@ -234,8 +234,17 @@ export default async function AdminPage() {
                     <td style={td}>
                       {envComp ? (
                         <span style={{ color: 'var(--gold)' }}>★ env</span>
+                      ) : comp && compIsActive(comp) ? (
+                        <>
+                          <span style={{ color: 'var(--gold)' }}>★ granted</span>
+                          {comp.expires_at && (
+                            <div style={{ opacity: 0.6, fontSize: '.7rem' }}>
+                              until {new Date(comp.expires_at).toLocaleDateString()}
+                            </div>
+                          )}
+                        </>
                       ) : comp ? (
-                        <span style={{ color: 'var(--gold)' }}>★ granted</span>
+                        <span style={{ opacity: 0.5 }}>expired</span>
                       ) : (
                         <span style={{ opacity: 0.4 }}>, </span>
                       )}
@@ -243,10 +252,14 @@ export default async function AdminPage() {
                     <td style={{ ...td, textAlign: 'right' }}>
                       {envComp ? (
                         <span style={{ opacity: 0.4, fontFamily: 'var(--mono)', fontSize: '.65rem' }}>via env</span>
-                      ) : comp ? (
+                      ) : comp && compIsActive(comp) ? (
                         <RevokeCompButton userId={p.id} />
                       ) : (
-                        <GrantCompButton userId={p.id} />
+                        <span style={{ display: 'inline-flex', gap: '.35rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                          <GrantCompButton userId={p.id} months={1} label="Comp 1 mo" />
+                          <GrantCompButton userId={p.id} months={3} label="Comp 3 mo" />
+                          <GrantCompButton userId={p.id} />
+                        </span>
                       )}
                     </td>
                   </tr>

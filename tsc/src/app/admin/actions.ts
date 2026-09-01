@@ -14,14 +14,29 @@ async function requireSiteAdmin(): Promise<{ userId: string } | { error: string 
   return { userId: user.id }
 }
 
-export async function grantComp(userId: string, note?: string): Promise<{ ok: boolean; error?: string }> {
+/**
+ * Comps a user. `months` makes it temporary: full access now, back to their
+ * own plan when it lapses, with no cleanup to remember. Omit for a permanent
+ * comp, which is what every grant was before 0063.
+ */
+export async function grantComp(userId: string, note?: string, months?: number): Promise<{ ok: boolean; error?: string }> {
   const guard = await requireSiteAdmin()
   if ('error' in guard) return { ok: false, error: guard.error }
   if (!userId) return { ok: false, error: 'Missing userId.' }
 
+  let expiresAt: string | null = null
+  if (months != null) {
+    if (!Number.isFinite(months) || months <= 0 || months > 60) {
+      return { ok: false, error: 'Comp length must be between 1 and 60 months.' }
+    }
+    const ends = new Date()
+    ends.setMonth(ends.getMonth() + Math.trunc(months))
+    expiresAt = ends.toISOString()
+  }
+
   const db = createAdminClient()
   const { error } = await db.from('comp_grants').upsert(
-    { user_id: userId, granted_by: guard.userId, note: note ?? null },
+    { user_id: userId, granted_by: guard.userId, note: note ?? null, expires_at: expiresAt },
     { onConflict: 'user_id' },
   )
   if (error) return { ok: false, error: error.message }

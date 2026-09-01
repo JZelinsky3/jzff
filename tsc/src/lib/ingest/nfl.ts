@@ -17,6 +17,7 @@ import {
   type NflOwner, type NflMatchup, type NflStandingsRow,
 } from '@/lib/platforms/nfl'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
+import { manualLocks, manualLockWarning } from './manualLocks'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 
@@ -301,6 +302,12 @@ async function ingestSeason(args: {
   if (seasonErr || !seasonRow) throw new Error(`upsert season: ${seasonErr?.message}`)
   const seasonId = seasonRow.id
 
+  // Stages a commissioner filled in by hand are left exactly as they are. This
+  // matters most here: NFL.com is retired, so for these seasons the hand-typed
+  // rows are the only record that exists.
+  const locks = await manualLocks(db, seasonId)
+  for (const kind of locks) result.warnings.push(manualLockWarning(year, kind))
+
   // Per-season aggregates are replaced, not merged — but the delete now waits
   // until its replacement rows exist (see each stage below). Wiping up front
   // meant any scrape that came back empty erased the season and left nothing
@@ -408,7 +415,7 @@ async function ingestSeason(args: {
       })
     }
   }
-  if (matchupRows.size > 0) {
+  if (matchupRows.size > 0 && !locks.has('matchups')) {
     const { error } = await db.from('matchups').upsert([...matchupRows.values()], {
       onConflict: 'season_id,week,manager_a_id,manager_b_id',
     })
@@ -447,7 +454,7 @@ async function ingestSeason(args: {
       regular_rank: regRank.get(owner.team_id) ?? null,
     })
   }
-  if (seasonRowsByManager.size > 0) {
+  if (seasonRowsByManager.size > 0 && !locks.has('standings')) {
     await db.from('manager_seasons').delete().eq('season_id', seasonId)
     const { error } = await db.from('manager_seasons').upsert([...seasonRowsByManager.values()], {
       onConflict: 'season_id,manager_id',
@@ -550,7 +557,7 @@ async function ingestSeason(args: {
     if (picks.length === 0) {
       result.warnings.push(`Season ${year} draft: parser returned 0 picks. NFL.com may not have draft data for this year, or markup changed.`)
     }
-    if (picks.length > 0) {
+    if (picks.length > 0 && !locks.has('drafts')) {
       // Drafts cascade to draft_picks via FK. Preserve curated drafts
       // (hand-authored imports, external_id 'curated-*') — same guard
       // sleeper/espn ingests carry.
