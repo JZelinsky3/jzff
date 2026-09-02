@@ -15,9 +15,19 @@ import { createClient } from '@/lib/supabase/server'
 const REVIEW_TO = process.env.SUPPORT_EMAIL_TO ?? 'jzffgames@gmail.com'
 const REVIEW_FROM = process.env.SUPPORT_EMAIL_FROM ?? 'TSC Support <onboarding@resend.dev>'
 
+// Half-star steps only, matching the DB constraint and the star control.
+const star = z.number().min(1).max(5).refine((n) => (n * 2) % 1 === 0, 'Half stars only')
+
 const schema = z.object({
-  // Half-star steps only, matching the DB constraint and the star control.
-  rating: z.number().min(1).max(5).refine((n) => (n * 2) % 1 === 0, 'Half stars only'),
+  rating: star,
+  // Sub-ratings. Every one is optional and stays null when unanswered —
+  // "no opinion" and "one star" must never collapse into the same value.
+  rating_design: star.nullish(),
+  rating_navigation: star.nullish(),
+  rating_speed: star.nullish(),
+  rating_value: star.nullish(),
+  used_areas: z.array(z.string().trim().min(1).max(60)).max(20).nullish(),
+  wish: z.string().trim().max(3000).nullish(),
   best_part: z.string().trim().max(3000).nullish(),
   needs_work: z.string().trim().max(3000).nullish(),
   can_quote: z.boolean().optional(),
@@ -53,17 +63,29 @@ function throttled(ip: string): boolean {
 async function notify(input: z.infer<typeof schema>, email: string | null): Promise<void> {
   const key = process.env.RESEND_API_KEY
   if (!key) return
+  // Unanswered sub-ratings print as a dash rather than being dropped: the
+  // gap between "everyone skipped speed" and "nobody was asked" matters.
+  const sub = (n: number | null | undefined) => (n == null ? '—' : `${n.toFixed(1)} / 5`)
   const lines = [
     `Rating:  ${input.rating.toFixed(1)} / 5`,
     `From:    ${email ?? 'anonymous'}`,
     `Quote:   ${input.can_quote ? `yes, as "${input.quote_name || 'unnamed'}"` : 'no'}`,
     `Source:  ${input.source ?? '(direct)'}`,
     '',
+    `Design:      ${sub(input.rating_design)}`,
+    `Navigation:  ${sub(input.rating_navigation)}`,
+    `Speed:       ${sub(input.rating_speed)}`,
+    `Worth it:    ${sub(input.rating_value)}`,
+    `Used:        ${input.used_areas?.length ? input.used_areas.join(', ') : '(blank)'}`,
+    '',
     'BEST PART',
     input.best_part || '(blank)',
     '',
     'NEEDS WORK',
     input.needs_work || '(blank)',
+    '',
+    'MISSING / WANTED',
+    input.wish || '(blank)',
   ]
   try {
     const res = await fetch('https://api.resend.com/emails', {
@@ -124,7 +146,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   await notify(input, email)
 
   const db = createAdminClient()
-  const { error } = await db.from('site_reviews').insert({
+  const base = {
     user_id: userId,
     email,
     rating: input.rating,
@@ -134,7 +156,25 @@ export async function POST(req: NextRequest): Promise<Response> {
     quote_name: input.quote_name ?? null,
     source: input.source ?? null,
     user_agent: req.headers.get('user-agent'),
-  })
+  }
+  const detail = {
+    rating_design: input.rating_design ?? null,
+    rating_navigation: input.rating_navigation ?? null,
+    rating_speed: input.rating_speed ?? null,
+    rating_value: input.rating_value ?? null,
+    used_areas: input.used_areas?.length ? input.used_areas : null,
+    wish: input.wish ?? null,
+  }
+
+  let { error } = await db.from('site_reviews').insert({ ...base, ...detail })
+  // If this deploy landed before migration 0065, the detail columns don't
+  // exist yet and the whole row is rejected. Save what the old schema can
+  // hold rather than losing the review: the overall rating and the prose are
+  // the parts worth keeping, and the full text still went out by email above.
+  if (error && (error.code === 'PGRST204' || error.code === '42703')) {
+    console.error('[review] detail columns missing — run migration 0065:', error.message)
+    ;({ error } = await db.from('site_reviews').insert(base))
+  }
   if (error) {
     console.error('[review] insert failed:', error)
     return NextResponse.json(

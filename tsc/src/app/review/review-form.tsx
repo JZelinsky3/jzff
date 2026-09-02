@@ -4,18 +4,49 @@
 // mobile tree; `compact` shrinks the control, tightens the padding, and swaps
 // in shorter labels rather than shipping a second copy of the form.
 //
-// The rating is the only required field. Everything below it is optional on
-// purpose: the email's one-click stars drop people here with a rating already
-// chosen, and the fastest path from "clicked a star" to "submitted" is one
-// button. Prose is a bonus, not a toll.
+// The overall rating is the only required field. Everything below it is
+// optional on purpose: the email's one-click stars drop people here with a
+// rating already chosen, and the fastest path from "clicked a star" to
+// "submitted" is one button. Prose is a bonus, not a toll.
+//
+// The four sub-ratings (design, finding your way around, speed, worth paying
+// for) are taps rather than typing, which is the only reason they earn a spot
+// in front of the submit button. On compact they start collapsed so the
+// one-tap path stays one tap; on desktop there is room to show them open.
 //
 // Half stars are real, not decorative. Each star is two hit zones (left half
 // = x.5, right half = x.0), which is why the control is hand-built rather
 // than a radio group of five.
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 
 const STARS = [1, 2, 3, 4, 5]
+
+// Sub-ratings, in the order they appear. `key` matches the API field and the
+// column in site_reviews.
+const ASPECTS = [
+  { key: 'design', label: 'Design and look', short: 'Design' },
+  { key: 'navigation', label: 'Finding your way around', short: 'Getting around' },
+  { key: 'speed', label: 'How fast it felt', short: 'Speed' },
+  { key: 'value', label: 'Worth paying for', short: 'Worth paying for' },
+] as const
+
+type AspectKey = (typeof ASPECTS)[number]['key']
+
+// Surfaces someone can plausibly have opened. Deliberately not every page:
+// this is a "what did you actually use" checklist, and a list long enough to
+// scroll gets skipped. Stored as text so retiring an option later doesn't
+// strand old rows.
+const AREAS = [
+  'League almanac',
+  'Records & Hall',
+  'Draft tools',
+  "Pick'ems",
+  'Power Rankings',
+  'Live Season',
+  'Trade Desk',
+  'Games',
+]
 
 const LABELS: Record<string, string> = {
   '1': 'Rough',
@@ -32,16 +63,17 @@ const LABELS: Record<string, string> = {
 const GOLD = 'var(--gold, #e8c889)'
 const GOLD_DEEP = 'var(--gold-deep, #a88a4a)'
 
-function Star({ fill }: { fill: 'full' | 'half' | 'empty' }) {
+function Star({ fill, gradientId }: { fill: 'full' | 'half' | 'empty'; gradientId: string }) {
   return (
     <svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true">
-      {/* Only the half state needs a gradient, and at most one star is ever
-          half-filled, so this id stays unique in the document. The empty
-          half is transparent rather than a dark fill: an unrated control
-          should read as five outlined stars, not five dark blobs. */}
+      {/* Only the half state needs a gradient, and at most one star per row is
+          ever half-filled, but the page now carries five star rows, so the id
+          is scoped per row rather than hardcoded. The empty half is
+          transparent rather than a dark fill: an unrated control should read
+          as five outlined stars, not five dark blobs. */}
       {fill === 'half' && (
         <defs>
-          <linearGradient id="tsc-star-half">
+          <linearGradient id={gradientId}>
             <stop offset="50%" stopColor={GOLD} />
             <stop offset="50%" stopColor="transparent" />
           </linearGradient>
@@ -49,12 +81,83 @@ function Star({ fill }: { fill: 'full' | 'half' | 'empty' }) {
       )}
       <path
         d="M12 2.2l2.95 5.98 6.6.96-4.77 4.65 1.13 6.57L12 17.26l-5.9 3.1 1.12-6.57L2.45 9.14l6.6-.96L12 2.2z"
-        fill={fill === 'full' ? GOLD : fill === 'half' ? 'url(#tsc-star-half)' : 'transparent'}
+        fill={fill === 'full' ? GOLD : fill === 'half' ? `url(#${gradientId})` : 'transparent'}
         stroke={fill === 'empty' ? GOLD_DEEP : GOLD}
         strokeWidth={fill === 'empty' ? 1.1 : 0.7}
         strokeLinejoin="round"
       />
     </svg>
+  )
+}
+
+// One row of five half-steppable stars. Hover lives inside the row so a
+// preview in one row can't light up another; `onHover` is only for the main
+// control, which prints the hovered value in its readout.
+function StarRow({
+  value,
+  onChange,
+  size,
+  ariaLabel,
+  gap = '.5rem',
+  onHover,
+}: {
+  value: number | null
+  onChange: (v: number) => void
+  size: number
+  ariaLabel: string
+  gap?: string
+  onHover?: (v: number | null) => void
+}) {
+  const [hover, setHover] = useState<number | null>(null)
+  const uid = useId()
+  const shown = hover ?? value
+
+  function hoverTo(v: number | null) {
+    setHover(v)
+    onHover?.(v)
+  }
+
+  return (
+    <div
+      style={{ display: 'flex', gap }}
+      onMouseLeave={() => hoverTo(null)}
+      role="radiogroup"
+      aria-label={ariaLabel}
+    >
+      {STARS.map((n) => {
+        const fill = shown === null || shown < n - 0.5 ? 'empty' : shown < n ? 'half' : 'full'
+        return (
+          <div key={n} style={{ position: 'relative', width: size, height: size }}>
+            <Star fill={fill} gradientId={`${uid}-half`} />
+            {/* Two invisible hit zones per star: left half = n-0.5, right = n. */}
+            {[n - 0.5, n].map((val, i) => (
+              <button
+                key={val}
+                type="button"
+                role="radio"
+                aria-checked={value === val}
+                aria-label={`${val} star${val === 1 ? '' : 's'}`}
+                onMouseEnter={() => hoverTo(val)}
+                onFocus={() => hoverTo(val)}
+                onBlur={() => hoverTo(null)}
+                onClick={() => onChange(val)}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: i === 0 ? 0 : '50%',
+                  width: '50%',
+                  height: '100%',
+                  background: 'transparent',
+                  border: 0,
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              />
+            ))}
+          </div>
+        )
+      })}
+    </div>
   )
 }
 
@@ -78,6 +181,17 @@ export function ReviewForm({
   // before it's submitted rather than after.
   const [touched, setTouched] = useState(false)
   const carriedIn = initialRating !== null && !touched
+  // Sub-ratings, all null until touched. Kept in one object so the payload
+  // and the "did they answer any of this" check stay one line each.
+  const [aspects, setAspects] = useState<Record<AspectKey, number | null>>({
+    design: null, navigation: null, speed: null, value: null,
+  })
+  const [areas, setAreas] = useState<string[]>([])
+  const [wish, setWish] = useState('')
+  // The detail block is a lot of control for a form whose whole pitch is
+  // "one minute". Open on desktop where it costs nothing, closed on a phone
+  // where it would push the submit button off the screen.
+  const [detailOpen, setDetailOpen] = useState(!compact)
   const [bestPart, setBestPart] = useState('')
   const [needsWork, setNeedsWork] = useState('')
   const [canQuote, setCanQuote] = useState(false)
@@ -91,6 +205,16 @@ export function ReviewForm({
   // Hover wins over the committed value so the control previews as you move.
   const shown = hover ?? rating
   const starSize = compact ? 38 : 46
+  const answeredDetail =
+    ASPECTS.filter((a) => aspects[a.key] !== null).length + (areas.length ? 1 : 0) + (wish.trim() ? 1 : 0)
+
+  function setAspect(key: AspectKey, v: number | null) {
+    setAspects((prev) => ({ ...prev, [key]: v }))
+  }
+
+  function toggleArea(name: string) {
+    setAreas((prev) => (prev.includes(name) ? prev.filter((a) => a !== name) : [...prev, name]))
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -106,6 +230,12 @@ export function ReviewForm({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           rating,
+          rating_design: aspects.design,
+          rating_navigation: aspects.navigation,
+          rating_speed: aspects.speed,
+          rating_value: aspects.value,
+          used_areas: areas.length ? areas : null,
+          wish: wish.trim() || null,
           best_part: bestPart.trim() || null,
           needs_work: needsWork.trim() || null,
           can_quote: canQuote,
@@ -189,46 +319,17 @@ export function ReviewForm({
         style={{
           display: 'flex',
           justifyContent: 'center',
-          gap: compact ? '.35rem' : '.5rem',
           margin: compact ? '.8rem 0 .5rem' : '.9rem 0 .6rem',
         }}
-        onMouseLeave={() => setHover(null)}
-        role="radiogroup"
-        aria-label="Rating out of five stars"
       >
-        {STARS.map((n) => {
-          const fill = shown === null || shown < n - 0.5 ? 'empty' : shown < n ? 'half' : 'full'
-          return (
-            <div key={n} style={{ position: 'relative', width: starSize, height: starSize }}>
-              <Star fill={fill} />
-              {/* Two invisible hit zones per star: left half = n-0.5, right = n. */}
-              {[n - 0.5, n].map((val, i) => (
-                <button
-                  key={val}
-                  type="button"
-                  role="radio"
-                  aria-checked={rating === val}
-                  aria-label={`${val} star${val === 1 ? '' : 's'}`}
-                  onMouseEnter={() => setHover(val)}
-                  onFocus={() => setHover(val)}
-                  onBlur={() => setHover(null)}
-                  onClick={() => { setRating(val); setTouched(true); setError(null) }}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: i === 0 ? 0 : '50%',
-                    width: '50%',
-                    height: '100%',
-                    background: 'transparent',
-                    border: 0,
-                    cursor: 'pointer',
-                    padding: 0,
-                  }}
-                />
-              ))}
-            </div>
-          )
-        })}
+        <StarRow
+          value={rating}
+          onChange={(v) => { setRating(v); setTouched(true); setError(null) }}
+          onHover={setHover}
+          size={starSize}
+          gap={compact ? '.35rem' : '.5rem'}
+          ariaLabel="Rating out of five stars"
+        />
       </div>
       {/* Readout sits under the row rather than beside it. Inline, it pushed
           the control off the side of a narrow phone. */}
@@ -259,6 +360,103 @@ export function ReviewForm({
           Carried over from your email. Tap a star to change it.
         </div>
       )}
+
+      {/* ── Detail (optional) ─────────────────────────────────────── */}
+      <div style={detailWrap(compact)}>
+        <button
+          type="button"
+          onClick={() => setDetailOpen((o) => !o)}
+          style={detailToggle}
+          aria-expanded={detailOpen}
+        >
+          <span style={{ ...kicker, opacity: 1 }}>
+            The details {answeredDetail > 0 ? `· ${answeredDetail} answered` : '· optional'}
+          </span>
+          <span style={{ color: GOLD, fontSize: '.9rem', lineHeight: 1 }}>{detailOpen ? '▾' : '▸'}</span>
+        </button>
+
+        {detailOpen && (
+          <>
+            <p style={{ fontSize: compact ? '.78rem' : '.82rem', lineHeight: 1.6, opacity: 0.6, margin: '.7rem 0 1rem' }}>
+              Skip anything you have no opinion on. Blank is a fine answer.
+            </p>
+
+            {ASPECTS.map((a) => (
+              <div key={a.key} style={aspectRow(compact)}>
+                <span style={{ fontSize: compact ? '.85rem' : '.9rem', color: 'var(--cream, #f4ebd8)' }}>
+                  {compact ? a.short : a.label}
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+                  <StarRow
+                    value={aspects[a.key]}
+                    onChange={(v) => setAspect(a.key, v)}
+                    size={compact ? 20 : 24}
+                    gap=".18rem"
+                    ariaLabel={a.label}
+                  />
+                  {/* A mis-tap on an optional field has to be undoable, or the
+                      only way back to "no opinion" is reloading the page. */}
+                  <button
+                    type="button"
+                    onClick={() => setAspect(a.key, null)}
+                    disabled={aspects[a.key] === null}
+                    aria-label={`Clear ${a.label}`}
+                    style={{
+                      background: 'none', border: 0, padding: '.1rem .2rem',
+                      fontSize: '.68rem', letterSpacing: '.08em', textTransform: 'uppercase',
+                      fontFamily: 'var(--font-jetbrains-mono), ui-monospace, monospace',
+                      color: 'var(--cream-soft, #c9c0ad)',
+                      opacity: aspects[a.key] === null ? 0 : 0.55,
+                      cursor: aspects[a.key] === null ? 'default' : 'pointer',
+                    }}
+                  >
+                    Clear
+                  </button>
+                </span>
+              </div>
+            ))}
+
+            <div style={{ ...label(compact), marginTop: compact ? '1.1rem' : '1.3rem' }}>
+              Which parts did you actually use?
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem' }}>
+              {AREAS.map((name) => {
+                const on = areas.includes(name)
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => toggleArea(name)}
+                    aria-pressed={on}
+                    style={{
+                      fontSize: '.75rem',
+                      padding: '.4rem .7rem',
+                      cursor: 'pointer',
+                      background: on ? GOLD : 'transparent',
+                      color: on ? 'var(--ink, #0e1620)' : 'var(--cream, #f4ebd8)',
+                      border: `1px solid ${on ? GOLD : 'var(--ink-line, #2a3645)'}`,
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    {name}
+                  </button>
+                )
+              })}
+            </div>
+
+            <label style={label(compact)} htmlFor="wish">Anything missing you wanted?</label>
+            <textarea
+              id="wish"
+              value={wish}
+              onChange={(e) => setWish(e.target.value)}
+              rows={2}
+              maxLength={3000}
+              placeholder={compact ? 'A page or stat you went looking for' : 'A page, a stat, a setting you went looking for and it was not there.'}
+              style={field}
+            />
+          </>
+        )}
+      </div>
 
       {/* ── Prose ─────────────────────────────────────────────────── */}
       <label style={label(compact)} htmlFor="best">What did you like?</label>
@@ -369,6 +567,38 @@ const stub = (compact: boolean): React.CSSProperties => ({
   borderTop: `3px solid ${GOLD_DEEP}`,
   padding: compact ? '1rem .9rem' : '1.3rem 1.2rem',
   marginTop: '1.6rem',
+})
+
+// The optional block reads as a panel inside the panel, so nobody mistakes
+// the four extra star rows for four more required questions.
+const detailWrap = (compact: boolean): React.CSSProperties => ({
+  marginTop: compact ? '1.3rem' : '1.6rem',
+  padding: compact ? '.8rem .85rem 1rem' : '1rem 1.1rem 1.2rem',
+  background: 'var(--ink, #0e1620)',
+  border: '1px solid var(--ink-line, #2a3645)',
+})
+
+const detailToggle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '.6rem',
+  width: '100%',
+  background: 'none',
+  border: 0,
+  padding: 0,
+  cursor: 'pointer',
+  textAlign: 'left',
+}
+
+const aspectRow = (compact: boolean): React.CSSProperties => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  flexWrap: 'wrap',
+  gap: '.4rem .8rem',
+  padding: compact ? '.45rem 0' : '.5rem 0',
+  borderTop: '1px solid var(--ink-line, #2a3645)',
 })
 
 const kicker: React.CSSProperties = {

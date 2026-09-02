@@ -17,12 +17,27 @@ type ReviewRow = {
   created_at: string
   email: string | null
   rating: number
+  rating_design: number | null
+  rating_navigation: number | null
+  rating_speed: number | null
+  rating_value: number | null
+  used_areas: string[] | null
+  wish: string | null
   best_part: string | null
   needs_work: string | null
   can_quote: boolean
   quote_name: string | null
   source: string | null
 }
+
+// Sub-ratings, in form order. `col` is the column; `label` is what the
+// question actually asked, shortened to fit a table header.
+const ASPECTS = [
+  { col: 'rating_design', label: 'Design' },
+  { col: 'rating_navigation', label: 'Getting around' },
+  { col: 'rating_speed', label: 'Speed' },
+  { col: 'rating_value', label: 'Worth paying for' },
+] as const
 
 const ADMIN_TZ = 'America/New_York'
 function fmt(iso: string) {
@@ -54,7 +69,7 @@ export default async function AdminReviewsPage() {
   const db = createAdminClient()
   const { data } = await db
     .from('site_reviews')
-    .select('id, created_at, email, rating, best_part, needs_work, can_quote, quote_name, source')
+    .select('id, created_at, email, rating, rating_design, rating_navigation, rating_speed, rating_value, used_areas, wish, best_part, needs_work, can_quote, quote_name, source')
     .order('created_at', { ascending: false })
   const reviews = (data ?? []) as ReviewRow[]
 
@@ -66,7 +81,23 @@ export default async function AdminReviewsPage() {
     n: reviews.filter((r) => Math.ceil(Number(r.rating)) === star).length,
   }))
   const quotable = reviews.filter((r) => r.can_quote).length
-  const withNotes = reviews.filter((r) => r.best_part || r.needs_work).length
+  const withNotes = reviews.filter((r) => r.best_part || r.needs_work || r.wish).length
+
+  // Sub-rating averages, each over the people who answered that one question.
+  // Averaging a skipped answer as zero would make an unpopular question look
+  // like an unpopular feature.
+  const aspectAvgs = ASPECTS.map(({ col, label }) => {
+    const vals = reviews.map((r) => r[col]).filter((v): v is number => v != null).map(Number)
+    return { label, n: vals.length, avg: vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null }
+  })
+
+  // Which surfaces get named most often, so "what do people actually open"
+  // is answerable without reading every row.
+  const areaCounts = new Map<string, number>()
+  for (const r of reviews) {
+    for (const a of r.used_areas ?? []) areaCounts.set(a, (areaCounts.get(a) ?? 0) + 1)
+  }
+  const areas = [...areaCounts.entries()].sort((a, b) => b[1] - a[1])
 
   return (
     <main>
@@ -111,6 +142,41 @@ export default async function AdminReviewsPage() {
         </section>
       )}
 
+      {count > 0 && (
+        <section className="section" style={{ maxWidth: '760px', margin: '0 auto', padding: '.75rem 1.25rem 0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '.75rem' }}>
+            {aspectAvgs.map(({ label, n, avg }) => (
+              <div key={label} style={{ border: '1px solid var(--ink-line)', padding: '.7rem .8rem' }}>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: '.58rem', letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--gold)' }}>
+                  {label}
+                </div>
+                <div style={{ color: 'var(--cream)', fontSize: '1.3rem', fontFamily: 'var(--serif)', marginTop: '.2rem' }}>
+                  {avg === null ? '·' : avg.toFixed(2)}
+                </div>
+                <div style={{ color: 'var(--cream-soft)', opacity: 0.6, fontSize: '.68rem' }}>
+                  {n} answered
+                </div>
+              </div>
+            ))}
+          </div>
+          {areas.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem', marginTop: '.9rem' }}>
+              {areas.map(([name, n]) => (
+                <span
+                  key={name}
+                  style={{
+                    border: '1px solid var(--ink-line)', padding: '.25rem .6rem',
+                    fontSize: '.72rem', color: 'var(--cream-soft)',
+                  }}
+                >
+                  {name} <strong style={{ color: 'var(--gold)' }}>{n}</strong>
+                </span>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
       <section className="section" style={{ maxWidth: '1100px', margin: '0 auto', padding: '1.5rem 1.25rem 3rem' }}>
         {count === 0 ? (
           <p style={{ color: 'var(--cream-soft)', textAlign: 'center', opacity: 0.7 }}>
@@ -123,8 +189,10 @@ export default async function AdminReviewsPage() {
                 <tr style={{ background: 'rgba(232,200,137,.06)', textAlign: 'left' }}>
                   <th style={th}>Rating</th>
                   <th style={th}>From</th>
+                  <th style={th}>Detail</th>
                   <th style={th}>Liked</th>
                   <th style={th}>Broken</th>
+                  <th style={th}>Wanted</th>
                   <th style={th}>Quote</th>
                   <th style={th}>When</th>
                 </tr>
@@ -139,8 +207,28 @@ export default async function AdminReviewsPage() {
                         <div style={{ opacity: 0.5, fontFamily: 'var(--mono)', fontSize: '.62rem' }}>{r.source}</div>
                       )}
                     </td>
-                    <td style={{ ...td, minWidth: 220, color: 'var(--cream)' }}>{r.best_part || '·'}</td>
-                    <td style={{ ...td, minWidth: 220, color: 'var(--cream)' }}>{r.needs_work || '·'}</td>
+                    <td style={{ ...td, minWidth: 150 }}>
+                      {ASPECTS.every(({ col }) => r[col] == null) && !r.used_areas?.length ? '·' : (
+                        <>
+                          {ASPECTS.filter(({ col }) => r[col] != null).map(({ col, label }) => (
+                            <div key={col} style={{ whiteSpace: 'nowrap', fontSize: '.74rem' }}>
+                              {label}{' '}
+                              <span style={{ color: 'var(--gold)', fontFamily: 'var(--mono)' }}>
+                                {Number(r[col]).toFixed(1)}
+                              </span>
+                            </div>
+                          ))}
+                          {!!r.used_areas?.length && (
+                            <div style={{ opacity: 0.6, fontSize: '.68rem', marginTop: '.25rem' }}>
+                              {r.used_areas.join(' · ')}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </td>
+                    <td style={{ ...td, minWidth: 200, color: 'var(--cream)' }}>{r.best_part || '·'}</td>
+                    <td style={{ ...td, minWidth: 200, color: 'var(--cream)' }}>{r.needs_work || '·'}</td>
+                    <td style={{ ...td, minWidth: 180, color: 'var(--cream)' }}>{r.wish || '·'}</td>
                     <td style={td}>
                       {r.can_quote
                         ? <span style={{ color: 'var(--gold)' }}>Yes{r.quote_name ? ` · ${r.quote_name}` : ''}</span>

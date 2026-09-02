@@ -51,7 +51,19 @@ export function ReferralPrompt() {
   }
 
   return (
-    <div className="dc-card-static" style={{ marginBottom: '1rem', position: 'relative' }}>
+    // Width-capped to match the dashboard banners above it. Unconstrained it
+    // stretched the full page and one short question read like a section.
+    // Padding is trimmed from .dc-card-static's 2rem for the same reason:
+    // this is a one-line ask, not a form.
+    <div
+      className="dc-card-static"
+      style={{
+        maxWidth: '880px',
+        margin: '1rem auto',
+        padding: '.9rem 1.15rem 1rem',
+        position: 'relative',
+      }}
+    >
       <button
         type="button"
         onClick={dismiss}
@@ -65,30 +77,36 @@ export function ReferralPrompt() {
         ✕
       </button>
 
+      {/* Question and chips share a row where there's width for it, and the
+          chips drop underneath when there isn't. */}
       <div
-        className="dc-label"
-        style={{ marginBottom: '.6rem', paddingRight: '1.5rem' }}
+        style={{
+          display: 'flex', flexWrap: 'wrap', alignItems: 'center',
+          gap: '.5rem .9rem', paddingRight: '1.5rem',
+        }}
       >
-        One quick thing: where did you hear about us?
-      </div>
+        <div className="dc-label" style={{ marginBottom: 0 }}>
+          One quick thing: where did you hear about us?
+        </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem' }}>
-        {choices.map((o) => (
-          <button
-            key={o.value}
-            type="button"
-            disabled={pending}
-            onClick={() => choose(o.value)}
-            className="dc-btn-ghost"
-            style={{
-              fontSize: '.72rem',
-              padding: '.35rem .7rem',
-              opacity: picked && picked !== o.value ? 0.45 : 1,
-            }}
-          >
-            {o.label}
-          </button>
-        ))}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem' }}>
+          {choices.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              disabled={pending}
+              onClick={() => choose(o.value)}
+              className="dc-btn-ghost"
+              style={{
+                fontSize: '.72rem',
+                padding: '.35rem .7rem',
+                opacity: picked && picked !== o.value ? 0.45 : 1,
+              }}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {picked === 'other' && (

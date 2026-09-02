@@ -626,6 +626,34 @@ export default async function DashboardPage({
         </div>
       </div>
 
+      {/* Standing feedback strip. The "Leave a review" button in the UDFA
+          banner only exists for people who never upgraded, which meant
+          paying and comped users had no way back to /review at all. This
+          one shows for everybody, every visit, and stays out of the way at
+          the bottom of the page. */}
+      <div className="section" style={{ paddingTop: 0 }}>
+        <div
+          style={{
+            maxWidth: '880px', margin: '0 auto',
+            padding: '.85rem 1.15rem',
+            border: '1px solid var(--ink-line)',
+            borderRadius: '2px',
+            display: 'flex', flexWrap: 'wrap', gap: '.75rem',
+            alignItems: 'center', justifyContent: 'space-between',
+          }}
+        >
+          <div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '.2rem' }}>
+              ★ Feedback
+            </div>
+            <div style={{ fontFamily: 'var(--serif)', color: 'var(--cream-soft)' }}>
+              Something broken, ugly, or hard to find? Say so. It takes about a minute.
+            </div>
+          </div>
+          <Link href="/review" className="dc-btn-ghost dc-banner-btn">Leave a review</Link>
+        </div>
+      </div>
+
       <SiteFooter />
     </main>
   )

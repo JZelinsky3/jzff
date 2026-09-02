@@ -254,12 +254,17 @@ export function MobileLibrary({
         </div>
       )}
 
+      {/* Review link lives in the footer, not just in the UDFA block above:
+          on a paid or comped account that block never renders, and there was
+          no other way back to /review from a phone. */}
       <div className="mlib-footer">
         <Link href="/" className="mlib-footer-link">Home</Link>
         <span className="mlib-footer-sep">·</span>
         <Link href="/pricing" className="mlib-footer-link">Pricing</Link>
         <span className="mlib-footer-sep">·</span>
         <Link href="/account" className="mlib-footer-link">Account</Link>
+        <span className="mlib-footer-sep">·</span>
+        <Link href="/review" className="mlib-footer-link">Review</Link>
       </div>
     </main>
   )
