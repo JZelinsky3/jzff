@@ -23,17 +23,23 @@ alter table site_reviews
   -- retired option should stay readable in old rows instead of blocking a
   -- migration.
   add column if not exists used_areas        text[],
+  -- Which single part they liked most and least. The checklist above says
+  -- what got opened; these two say how the sections rank against each other,
+  -- which is the answer that decides what gets built next.
+  add column if not exists favorite_area       text,
+  add column if not exists least_favorite_area text,
   -- "Anything you wanted that isn't there." Kept apart from needs_work:
   -- a missing feature is a roadmap item, a broken page is a bug.
   add column if not exists wish              text;
 
 -- One constraint per column instead of a shared one, so a bad value names
--- the field it came from.
+-- the field it came from. Dropped first so the whole file stays re-runnable.
 do $$
 declare col text;
 begin
   foreach col in array array['rating_design', 'rating_navigation', 'rating_speed', 'rating_value']
   loop
+    execute format('alter table site_reviews drop constraint if exists site_reviews_%s_chk', col);
     execute format(
       'alter table site_reviews add constraint site_reviews_%s_chk
          check (%I is null or (%I >= 1.0 and %I <= 5.0 and (%I * 2) = floor(%I * 2)))',

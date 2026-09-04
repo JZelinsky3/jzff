@@ -11,8 +11,11 @@
 //
 // The four sub-ratings (design, finding your way around, speed, worth paying
 // for) are taps rather than typing, which is the only reason they earn a spot
-// in front of the submit button. On compact they start collapsed so the
-// one-tap path stays one tap; on desktop there is room to show them open.
+// in front of the submit button. They are deliberately NOT stacked as four
+// star rows in a column — that reads as a survey and gets one lazy pass of
+// identical scores. Each one heads a short numbered section and is followed
+// by the written question it belongs to, so the answers stay separated by
+// something that takes a different kind of attention.
 //
 // Half stars are real, not decorative. Each star is two hit zones (left half
 // = x.5, right half = x.0), which is why the control is hand-built rather
@@ -34,9 +37,9 @@ const ASPECTS = [
 type AspectKey = (typeof ASPECTS)[number]['key']
 
 // Surfaces someone can plausibly have opened. Deliberately not every page:
-// this is a "what did you actually use" checklist, and a list long enough to
-// scroll gets skipped. Stored as text so retiring an option later doesn't
-// strand old rows.
+// this is a "what did you use" checklist, and a list long enough to scroll
+// gets skipped. Stored as text so retiring an option later doesn't strand
+// old rows.
 const AREAS = [
   'League almanac',
   'Records & Hall',
@@ -62,6 +65,7 @@ const LABELS: Record<string, string> = {
 
 const GOLD = 'var(--gold, #e8c889)'
 const GOLD_DEEP = 'var(--gold-deep, #a88a4a)'
+const RUST = 'var(--rust, #a04830)'
 
 function Star({ fill, gradientId }: { fill: 'full' | 'half' | 'empty'; gradientId: string }) {
   return (
@@ -161,6 +165,98 @@ function StarRow({
   )
 }
 
+// A sub-rating: its question on the left, five small stars on the right, and
+// a Clear that only exists once there is something to clear. A mis-tap on an
+// optional field has to be undoable, or the only way back to "no opinion" is
+// reloading the page.
+function AspectStars({
+  aspect,
+  value,
+  onChange,
+  compact,
+}: {
+  aspect: (typeof ASPECTS)[number]
+  value: number | null
+  onChange: (v: number | null) => void
+  compact: boolean
+}) {
+  return (
+    <div style={aspectRow(compact)}>
+      <span style={{ fontSize: compact ? '.85rem' : '.9rem', color: 'var(--cream, #f4ebd8)' }}>
+        {compact ? aspect.short : aspect.label}
+      </span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+        <StarRow
+          value={value}
+          onChange={onChange}
+          size={compact ? 20 : 24}
+          gap=".18rem"
+          ariaLabel={aspect.label}
+        />
+        <button
+          type="button"
+          onClick={() => onChange(null)}
+          disabled={value === null}
+          aria-label={`Clear ${aspect.label}`}
+          style={{
+            background: 'none', border: 0, padding: '.1rem .2rem',
+            fontSize: '.68rem', letterSpacing: '.08em', textTransform: 'uppercase',
+            fontFamily: 'var(--font-jetbrains-mono), ui-monospace, monospace',
+            color: 'var(--cream-soft, #c9c0ad)',
+            opacity: value === null ? 0 : 0.55,
+            cursor: value === null ? 'default' : 'pointer',
+          }}
+        >
+          Clear
+        </button>
+      </span>
+    </div>
+  )
+}
+
+// Chips over the same option list, used three times: multi-select for what
+// got used, single-select for favourite, single-select for least favourite.
+// `accent` is what separates the last one visually — rust reads as the
+// negative answer without needing the word "worst" anywhere.
+function ChipRow({
+  options,
+  isOn,
+  onPick,
+  accent,
+}: {
+  options: readonly string[]
+  isOn: (name: string) => boolean
+  onPick: (name: string) => void
+  accent: string
+}) {
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem' }}>
+      {options.map((name) => {
+        const on = isOn(name)
+        return (
+          <button
+            key={name}
+            type="button"
+            onClick={() => onPick(name)}
+            aria-pressed={on}
+            style={{
+              fontSize: '.75rem',
+              padding: '.4rem .7rem',
+              cursor: 'pointer',
+              background: on ? accent : 'transparent',
+              color: on ? 'var(--ink, #0e1620)' : 'var(--cream, #f4ebd8)',
+              border: `1px solid ${on ? accent : 'var(--ink-line, #2a3645)'}`,
+              fontFamily: 'inherit',
+            }}
+          >
+            {name}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 export function ReviewForm({
   initialRating,
   source,
@@ -187,11 +283,12 @@ export function ReviewForm({
     design: null, navigation: null, speed: null, value: null,
   })
   const [areas, setAreas] = useState<string[]>([])
+  // Favourite / least favourite are single-select over the same list. Not
+  // derived from `areas`: someone can name a favourite without first ticking
+  // the checklist, and forcing that order loses the answer that matters more.
+  const [favorite, setFavorite] = useState<string | null>(null)
+  const [leastFavorite, setLeastFavorite] = useState<string | null>(null)
   const [wish, setWish] = useState('')
-  // The detail block is a lot of control for a form whose whole pitch is
-  // "one minute". Open on desktop where it costs nothing, closed on a phone
-  // where it would push the submit button off the screen.
-  const [detailOpen, setDetailOpen] = useState(!compact)
   const [bestPart, setBestPart] = useState('')
   const [needsWork, setNeedsWork] = useState('')
   const [canQuote, setCanQuote] = useState(false)
@@ -205,9 +302,6 @@ export function ReviewForm({
   // Hover wins over the committed value so the control previews as you move.
   const shown = hover ?? rating
   const starSize = compact ? 38 : 46
-  const answeredDetail =
-    ASPECTS.filter((a) => aspects[a.key] !== null).length + (areas.length ? 1 : 0) + (wish.trim() ? 1 : 0)
-
   function setAspect(key: AspectKey, v: number | null) {
     setAspects((prev) => ({ ...prev, [key]: v }))
   }
@@ -235,6 +329,8 @@ export function ReviewForm({
           rating_speed: aspects.speed,
           rating_value: aspects.value,
           used_areas: areas.length ? areas : null,
+          favorite_area: favorite,
+          least_favorite_area: leastFavorite,
           wish: wish.trim() || null,
           best_part: bestPart.trim() || null,
           needs_work: needsWork.trim() || null,
@@ -361,125 +457,116 @@ export function ReviewForm({
         </div>
       )}
 
-      {/* ── Detail (optional) ─────────────────────────────────────── */}
-      <div style={detailWrap(compact)}>
-        <button
-          type="button"
-          onClick={() => setDetailOpen((o) => !o)}
-          style={detailToggle}
-          aria-expanded={detailOpen}
-        >
-          <span style={{ ...kicker, opacity: 1 }}>
-            The details {answeredDetail > 0 ? `· ${answeredDetail} answered` : '· optional'}
-          </span>
-          <span style={{ color: GOLD, fontSize: '.9rem', lineHeight: 1 }}>{detailOpen ? '▾' : '▸'}</span>
-        </button>
+      <p style={{ fontSize: compact ? '.78rem' : '.82rem', lineHeight: 1.6, opacity: 0.6, margin: compact ? '1.2rem 0 0' : '1.5rem 0 0', textAlign: 'center' }}>
+        The rest is optional. Skip anything you have no opinion on.
+      </p>
 
-        {detailOpen && (
-          <>
-            <p style={{ fontSize: compact ? '.78rem' : '.82rem', lineHeight: 1.6, opacity: 0.6, margin: '.7rem 0 1rem' }}>
-              Skip anything you have no opinion on. Blank is a fine answer.
-            </p>
+      {/* ── § 01 · The look ───────────────────────────────────────── */}
+      <section style={sectionBox(compact)}>
+        <div style={kicker}>§ 01 · The look</div>
+        <AspectStars
+          aspect={ASPECTS[0]}
+          value={aspects.design}
+          onChange={(v) => setAspect('design', v)}
+          compact={compact}
+        />
+        <label style={label(compact)} htmlFor="best">What did you like?</label>
+        <textarea
+          id="best"
+          value={bestPart}
+          onChange={(e) => setBestPart(e.target.value)}
+          rows={3}
+          maxLength={3000}
+          placeholder={compact ? 'A page you kept going back to' : 'A page you kept going back to, a stat that surprised you.'}
+          style={field}
+        />
+      </section>
 
-            {ASPECTS.map((a) => (
-              <div key={a.key} style={aspectRow(compact)}>
-                <span style={{ fontSize: compact ? '.85rem' : '.9rem', color: 'var(--cream, #f4ebd8)' }}>
-                  {compact ? a.short : a.label}
-                </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
-                  <StarRow
-                    value={aspects[a.key]}
-                    onChange={(v) => setAspect(a.key, v)}
-                    size={compact ? 20 : 24}
-                    gap=".18rem"
-                    ariaLabel={a.label}
-                  />
-                  {/* A mis-tap on an optional field has to be undoable, or the
-                      only way back to "no opinion" is reloading the page. */}
-                  <button
-                    type="button"
-                    onClick={() => setAspect(a.key, null)}
-                    disabled={aspects[a.key] === null}
-                    aria-label={`Clear ${a.label}`}
-                    style={{
-                      background: 'none', border: 0, padding: '.1rem .2rem',
-                      fontSize: '.68rem', letterSpacing: '.08em', textTransform: 'uppercase',
-                      fontFamily: 'var(--font-jetbrains-mono), ui-monospace, monospace',
-                      color: 'var(--cream-soft, #c9c0ad)',
-                      opacity: aspects[a.key] === null ? 0 : 0.55,
-                      cursor: aspects[a.key] === null ? 'default' : 'pointer',
-                    }}
-                  >
-                    Clear
-                  </button>
-                </span>
-              </div>
-            ))}
+      {/* ── § 02 · Getting around ─────────────────────────────────── */}
+      <section style={sectionBox(compact)}>
+        <div style={kicker}>§ 02 · Getting around</div>
+        <AspectStars
+          aspect={ASPECTS[1]}
+          value={aspects.navigation}
+          onChange={(v) => setAspect('navigation', v)}
+          compact={compact}
+        />
+        <label style={label(compact)} htmlFor="worst">What was broken or confusing?</label>
+        <textarea
+          id="worst"
+          value={needsWork}
+          onChange={(e) => setNeedsWork(e.target.value)}
+          rows={3}
+          maxLength={3000}
+          placeholder={compact ? 'A bug, or something that confused you' : 'A bug, a page that confused you, something you expected and could not find.'}
+          style={field}
+        />
+      </section>
 
-            <div style={{ ...label(compact), marginTop: compact ? '1.1rem' : '1.3rem' }}>
-              Which parts did you actually use?
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem' }}>
-              {AREAS.map((name) => {
-                const on = areas.includes(name)
-                return (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => toggleArea(name)}
-                    aria-pressed={on}
-                    style={{
-                      fontSize: '.75rem',
-                      padding: '.4rem .7rem',
-                      cursor: 'pointer',
-                      background: on ? GOLD : 'transparent',
-                      color: on ? 'var(--ink, #0e1620)' : 'var(--cream, #f4ebd8)',
-                      border: `1px solid ${on ? GOLD : 'var(--ink-line, #2a3645)'}`,
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    {name}
-                  </button>
-                )
-              })}
-            </div>
+      {/* ── § 03 · What you used ──────────────────────────────────── */}
+      <section style={sectionBox(compact)}>
+        <div style={kicker}>§ 03 · What you used</div>
+        <AspectStars
+          aspect={ASPECTS[2]}
+          value={aspects.speed}
+          onChange={(v) => setAspect('speed', v)}
+          compact={compact}
+        />
 
-            <label style={label(compact)} htmlFor="wish">Anything missing you wanted?</label>
-            <textarea
-              id="wish"
-              value={wish}
-              onChange={(e) => setWish(e.target.value)}
-              rows={2}
-              maxLength={3000}
-              placeholder={compact ? 'A page or stat you went looking for' : 'A page, a stat, a setting you went looking for and it was not there.'}
-              style={field}
-            />
-          </>
-        )}
-      </div>
+        <div style={{ ...label(compact), marginTop: compact ? '1rem' : '1.2rem' }}>
+          Which parts did you use?
+        </div>
+        <ChipRow
+          options={AREAS}
+          isOn={(name) => areas.includes(name)}
+          onPick={toggleArea}
+          accent={GOLD}
+        />
 
-      {/* ── Prose ─────────────────────────────────────────────────── */}
-      <label style={label(compact)} htmlFor="best">What did you like?</label>
-      <textarea
-        id="best"
-        value={bestPart}
-        onChange={(e) => setBestPart(e.target.value)}
-        rows={3}
-        maxLength={3000}
-        placeholder={compact ? 'A page you kept going back to' : 'A page you kept going back to, a stat that surprised you.'}
-        style={field}
-      />
+        {/* Favourite and least favourite are the two answers that actually
+            rank the sections against each other; the checklist above only
+            says what got opened. Second click on a lit chip clears it. */}
+        <div style={{ ...label(compact), marginTop: compact ? '1rem' : '1.2rem' }}>
+          Favorite part?
+        </div>
+        <ChipRow
+          options={AREAS}
+          isOn={(name) => favorite === name}
+          onPick={(name) => setFavorite((cur) => (cur === name ? null : name))}
+          accent={GOLD}
+        />
 
-      <label style={label(compact)} htmlFor="worst">What was broken or confusing?</label>
-      <textarea
-        id="worst"
-        value={needsWork}
-        onChange={(e) => setNeedsWork(e.target.value)}
-        rows={3}
-        maxLength={3000}
-        placeholder={compact ? 'A bug, or something that confused you' : 'A bug, a page that confused you, something you expected and could not find.'}
-        style={field}
-      />
+        <div style={{ ...label(compact), marginTop: compact ? '1rem' : '1.2rem' }}>
+          Least favorite?
+        </div>
+        <ChipRow
+          options={AREAS}
+          isOn={(name) => leastFavorite === name}
+          onPick={(name) => setLeastFavorite((cur) => (cur === name ? null : name))}
+          accent={RUST}
+        />
+      </section>
+
+      {/* ── § 04 · Worth paying for ───────────────────────────────── */}
+      <section style={sectionBox(compact)}>
+        <div style={kicker}>§ 04 · Worth paying for</div>
+        <AspectStars
+          aspect={ASPECTS[3]}
+          value={aspects.value}
+          onChange={(v) => setAspect('value', v)}
+          compact={compact}
+        />
+        <label style={label(compact)} htmlFor="wish">Anything missing you wanted?</label>
+        <textarea
+          id="wish"
+          value={wish}
+          onChange={(e) => setWish(e.target.value)}
+          rows={2}
+          maxLength={3000}
+          placeholder={compact ? 'A page or stat you went looking for' : 'A page, a stat, a setting you went looking for and it was not there.'}
+          style={field}
+        />
+      </section>
 
       {!signedInEmail && (
         <>
@@ -569,27 +656,14 @@ const stub = (compact: boolean): React.CSSProperties => ({
   marginTop: '1.6rem',
 })
 
-// The optional block reads as a panel inside the panel, so nobody mistakes
-// the four extra star rows for four more required questions.
-const detailWrap = (compact: boolean): React.CSSProperties => ({
-  marginTop: compact ? '1.3rem' : '1.6rem',
-  padding: compact ? '.8rem .85rem 1rem' : '1rem 1.1rem 1.2rem',
+// Each optional section is a panel inside the panel, so nobody mistakes the
+// numbered blocks below the required stars for four more required questions.
+const sectionBox = (compact: boolean): React.CSSProperties => ({
+  marginTop: compact ? '1rem' : '1.2rem',
+  padding: compact ? '.85rem .85rem 1rem' : '1rem 1.1rem 1.2rem',
   background: 'var(--ink, #0e1620)',
   border: '1px solid var(--ink-line, #2a3645)',
 })
-
-const detailToggle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '.6rem',
-  width: '100%',
-  background: 'none',
-  border: 0,
-  padding: 0,
-  cursor: 'pointer',
-  textAlign: 'left',
-}
 
 const aspectRow = (compact: boolean): React.CSSProperties => ({
   display: 'flex',
@@ -597,8 +671,7 @@ const aspectRow = (compact: boolean): React.CSSProperties => ({
   justifyContent: 'space-between',
   flexWrap: 'wrap',
   gap: '.4rem .8rem',
-  padding: compact ? '.45rem 0' : '.5rem 0',
-  borderTop: '1px solid var(--ink-line, #2a3645)',
+  marginTop: compact ? '.5rem' : '.6rem',
 })
 
 const kicker: React.CSSProperties = {

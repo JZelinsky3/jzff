@@ -7,6 +7,7 @@ import { MobileSiteMenu } from "@/components/MobileSiteMenu";
 import { MobileHeaderCollapse } from "@/components/MobileHeaderCollapse";
 import { MobileViewEscape } from "@/components/MobileViewEscape";
 import { AttributionCapture } from "@/components/AttributionCapture";
+import { VisitPing } from "@/components/VisitPing";
 import { NavTracker } from "@/components/NavTracker";
 import { createClient } from "@/lib/supabase/server";
 import { isSiteAdmin } from "@/lib/siteAdmin";
@@ -321,6 +322,7 @@ export default async function RootLayout({
         <div className="site-grain"></div>
         <NavTracker />
         <AttributionCapture />
+        <VisitPing />
         {children}
         <MobileSiteMenu signedIn={signedIn} email={user?.email ?? null} admin={admin} />
         {stuckOnDesktop && <MobileViewEscape />}

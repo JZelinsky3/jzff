@@ -27,6 +27,8 @@ const schema = z.object({
   rating_speed: star.nullish(),
   rating_value: star.nullish(),
   used_areas: z.array(z.string().trim().min(1).max(60)).max(20).nullish(),
+  favorite_area: z.string().trim().max(60).nullish(),
+  least_favorite_area: z.string().trim().max(60).nullish(),
   wish: z.string().trim().max(3000).nullish(),
   best_part: z.string().trim().max(3000).nullish(),
   needs_work: z.string().trim().max(3000).nullish(),
@@ -77,6 +79,8 @@ async function notify(input: z.infer<typeof schema>, email: string | null): Prom
     `Speed:       ${sub(input.rating_speed)}`,
     `Worth it:    ${sub(input.rating_value)}`,
     `Used:        ${input.used_areas?.length ? input.used_areas.join(', ') : '(blank)'}`,
+    `Favorite:    ${input.favorite_area || '(blank)'}`,
+    `Least fav:   ${input.least_favorite_area || '(blank)'}`,
     '',
     'BEST PART',
     input.best_part || '(blank)',
@@ -163,6 +167,8 @@ export async function POST(req: NextRequest): Promise<Response> {
     rating_speed: input.rating_speed ?? null,
     rating_value: input.rating_value ?? null,
     used_areas: input.used_areas?.length ? input.used_areas : null,
+    favorite_area: input.favorite_area ?? null,
+    least_favorite_area: input.least_favorite_area ?? null,
     wish: input.wish ?? null,
   }
 

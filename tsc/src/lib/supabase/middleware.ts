@@ -19,7 +19,11 @@ import { NextResponse, type NextRequest } from 'next/server'
 // public ones, so most calls arrive signed out. The handler no-ops without a
 // session; the point of exempting it is to return a clean JSON no-op instead
 // of bouncing a fetch() to the login page as HTML.
-const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/guides', '/demo', '/demo-m', '/old', '/hub', '/api/view', '/privacy', '/terms', '/gameday', '/new', '/games', '/review', '/api/review', '/api/attribution']
+// `/api/visit` is the once-per-session presence ping, posted from the root
+// layout on every page for the same reason /api/attribution is: most of those
+// calls arrive signed out, and the handler no-ops rather than bouncing a
+// fetch() to the login page as HTML.
+const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/guides', '/demo', '/demo-m', '/old', '/hub', '/api/view', '/privacy', '/terms', '/gameday', '/new', '/games', '/review', '/api/review', '/api/attribution', '/api/visit']
 // /api/cron/ is reached by Vercel's cron infra (no Supabase session); the
 // route handler itself enforces auth via the CRON_SECRET bearer header.
 // /api/stripe/webhook is hit by Stripe; the handler verifies the request

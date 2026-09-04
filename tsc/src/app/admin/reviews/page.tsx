@@ -22,6 +22,8 @@ type ReviewRow = {
   rating_speed: number | null
   rating_value: number | null
   used_areas: string[] | null
+  favorite_area: string | null
+  least_favorite_area: string | null
   wish: string | null
   best_part: string | null
   needs_work: string | null
@@ -69,7 +71,7 @@ export default async function AdminReviewsPage() {
   const db = createAdminClient()
   const { data } = await db
     .from('site_reviews')
-    .select('id, created_at, email, rating, rating_design, rating_navigation, rating_speed, rating_value, used_areas, wish, best_part, needs_work, can_quote, quote_name, source')
+    .select('id, created_at, email, rating, rating_design, rating_navigation, rating_speed, rating_value, used_areas, favorite_area, least_favorite_area, wish, best_part, needs_work, can_quote, quote_name, source')
     .order('created_at', { ascending: false })
   const reviews = (data ?? []) as ReviewRow[]
 
@@ -93,11 +95,23 @@ export default async function AdminReviewsPage() {
 
   // Which surfaces get named most often, so "what do people actually open"
   // is answerable without reading every row.
-  const areaCounts = new Map<string, number>()
-  for (const r of reviews) {
-    for (const a of r.used_areas ?? []) areaCounts.set(a, (areaCounts.get(a) ?? 0) + 1)
+  // Used / favourite / least-favourite are tallied together so one strip
+  // answers all three at a glance: how many opened it, how many named it
+  // best, how many named it worst.
+  const tally = new Map<string, { used: number; best: number; worst: number }>()
+  const bump = (name: string, k: 'used' | 'best' | 'worst') => {
+    const row = tally.get(name) ?? { used: 0, best: 0, worst: 0 }
+    row[k]++
+    tally.set(name, row)
   }
-  const areas = [...areaCounts.entries()].sort((a, b) => b[1] - a[1])
+  for (const r of reviews) {
+    for (const a of r.used_areas ?? []) bump(a, 'used')
+    if (r.favorite_area) bump(r.favorite_area, 'best')
+    if (r.least_favorite_area) bump(r.least_favorite_area, 'worst')
+  }
+  const areas = [...tally.entries()].sort(
+    (a, b) => (b[1].used + b[1].best + b[1].worst) - (a[1].used + a[1].best + a[1].worst),
+  )
 
   return (
     <main>
@@ -160,19 +174,28 @@ export default async function AdminReviewsPage() {
             ))}
           </div>
           {areas.length > 0 && (
+            <>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem', marginTop: '.9rem' }}>
-              {areas.map(([name, n]) => (
+              {areas.map(([name, t]) => (
                 <span
                   key={name}
+                  title={`${t.used} used · ${t.best} favorite · ${t.worst} least favorite`}
                   style={{
                     border: '1px solid var(--ink-line)', padding: '.25rem .6rem',
                     fontSize: '.72rem', color: 'var(--cream-soft)',
                   }}
                 >
-                  {name} <strong style={{ color: 'var(--gold)' }}>{n}</strong>
+                  {name}{' '}
+                  <strong style={{ color: 'var(--gold)' }}>{t.used}</strong>
+                  {t.best > 0 && <span style={{ color: 'var(--gold)' }}> · ♥{t.best}</span>}
+                  {t.worst > 0 && <span style={{ color: 'var(--rust, #a04830)' }}> · ✗{t.worst}</span>}
                 </span>
               ))}
             </div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: '.58rem', letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--cream-soft)', opacity: 0.55, marginTop: '.5rem' }}>
+              Count = used · ♥ favorite · ✗ least favorite
+            </div>
+            </>
           )}
         </section>
       )}
@@ -208,7 +231,8 @@ export default async function AdminReviewsPage() {
                       )}
                     </td>
                     <td style={{ ...td, minWidth: 150 }}>
-                      {ASPECTS.every(({ col }) => r[col] == null) && !r.used_areas?.length ? '·' : (
+                      {ASPECTS.every(({ col }) => r[col] == null) && !r.used_areas?.length
+                        && !r.favorite_area && !r.least_favorite_area ? '·' : (
                         <>
                           {ASPECTS.filter(({ col }) => r[col] != null).map(({ col, label }) => (
                             <div key={col} style={{ whiteSpace: 'nowrap', fontSize: '.74rem' }}>
@@ -221,6 +245,16 @@ export default async function AdminReviewsPage() {
                           {!!r.used_areas?.length && (
                             <div style={{ opacity: 0.6, fontSize: '.68rem', marginTop: '.25rem' }}>
                               {r.used_areas.join(' · ')}
+                            </div>
+                          )}
+                          {r.favorite_area && (
+                            <div style={{ fontSize: '.68rem', marginTop: '.2rem', color: 'var(--gold)' }}>
+                              ♥ {r.favorite_area}
+                            </div>
+                          )}
+                          {r.least_favorite_area && (
+                            <div style={{ fontSize: '.68rem', marginTop: '.1rem', color: 'var(--rust, #a04830)' }}>
+                              ✗ {r.least_favorite_area}
                             </div>
                           )}
                         </>

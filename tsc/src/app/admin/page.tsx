@@ -140,6 +140,16 @@ export default async function AdminPage() {
           </h2>
           <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
             <Link
+              href="/admin/visitors"
+              style={{
+                fontFamily: 'var(--mono)', fontSize: '.65rem', letterSpacing: '.16em',
+                textTransform: 'uppercase', color: 'var(--gold)', textDecoration: 'none',
+                border: '1px solid var(--ink-line)', padding: '.45rem .9rem',
+              }}
+            >
+              Who came back
+            </Link>
+            <Link
               href="/admin/reviews"
               style={{
                 fontFamily: 'var(--mono)', fontSize: '.65rem', letterSpacing: '.16em',
