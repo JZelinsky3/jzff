@@ -25,7 +25,7 @@ export function MobileReview({
       kicker="Still in testing"
       heroTitle="How is"
       heroTitleEm="it going?"
-      heroSub="Tap a star. Add a note if you want. The harsh ones help most."
+      heroSub="Tap a star. Add a note if you want. Specifics help most."
     >
       <ReviewForm
         initialRating={initialRating}

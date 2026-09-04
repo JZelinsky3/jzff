@@ -80,8 +80,8 @@ export default async function ReviewPage({
           One minute, honestly.
         </h1>
         <p className="hero-sub">
-          You are using this while it is free and unfinished. The harsh notes are worth
-          more than the kind ones.
+          You are using this while it is free and unfinished. Good or bad, the specific
+          notes are the ones that change what gets built next.
         </p>
       </section>
 
