@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const TPL = '/Users/jojo/Desktop/jzff/tsc/src/templates/pams/draft/index.html';
-const DRAFTS = '/Users/jojo/Desktop/jzff/tsc/public/old/pams/data/drafts';
+const DRAFTS = '/Users/jojo/Desktop/jzff/tsc/archive/old/pams/data/drafts';
 const RANKS = '/Users/jojo/Desktop/jzff/tsc/public/data/fantasy_ranks/ppr_6pt';
 
 const html = fs.readFileSync(TPL, 'utf8');

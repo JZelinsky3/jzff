@@ -2,7 +2,7 @@
 // One-shot: import the hand-curated 2019 draft from the legacy pams JSON
 // into the Nubbs/Lubbs league. The 2019 NFL.com draft was a mess (the
 // commissioner couldn't restore the real picks), so a manual reconstruction
-// was authored in /public/old/pams/data/drafts/2019.json. This script
+// was authored in archive/old/pams/data/drafts/2019.json. This script
 // replaces whatever Sleeper / NFL ingest landed for the 2019 season on the
 // target league with the curated version.
 //
@@ -53,7 +53,7 @@ if (!slug) {
   process.exit(1)
 }
 
-const draftPath = resolve(process.cwd(), 'public/old/pams/data/drafts/2019.json')
+const draftPath = resolve(process.cwd(), 'archive/old/pams/data/drafts/2019.json')
 const draft = JSON.parse(readFileSync(draftPath, 'utf8'))
 if (!Array.isArray(draft?.picks) || draft.picks.length === 0) {
   console.error(`No picks in ${draftPath}`)
