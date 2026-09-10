@@ -8,6 +8,8 @@ instead of being one-off image files.
 |---|---|
 | `triptych.html` | the three pinned posts that read as one nameplate across the top of the profile |
 | `cover.html` | the reusable cover for every other post, with a swappable section label and accent colour |
+| `offseason.html` | the eight-slide offseason carousel, six things to run before Week 1 |
+| `tour.html` | the twenty-slide site tour, for somebody who has never heard of us |
 | `brand.css` | shared palette, surface layers and type roles, mirroring `src/styles/main.css` |
 | `render.sh` | renders to `out/` |
 
@@ -122,6 +124,90 @@ Two things were learned by trying it:
 `grab` sends a phone user agent, but the site still answered with its
 desktop tree, so a 430px grab overflows and clips on the right. Worth
 fixing at the source before leaning on `--phone` much.
+
+---
+
+## The site tour
+
+```
+./render.sh tour            # all twenty
+./render.sh tour 7 13       # just those two, while iterating
+```
+
+Twenty slides for somebody who has never heard of the site. Cover,
+what it is, then three sections with a plate in front of each, then
+two contents pages as a refresher, then the offer.
+
+**Twenty is Instagram's hard cap on a carousel.** There is no room to
+add a slide without taking one out. The current run is:
+
+| | |
+|---|---|
+| 01 | cover |
+| 02 | what it is: one league ID, and what came back |
+| 03 | plate: The Almanac |
+| 04–09 | standings, record book, managers, chart room, draft, rivalries |
+| 10 | plate: The Live Season |
+| 11–15 | matchups, pick'ems, records watch, trade desk, Sunday Live |
+| 16 | The Games |
+| 17 | The Clubhouse |
+| 18–19 | contents, part one and part two |
+| 20 | 30 days free, `FIRST50` |
+
+### It wears the site's clothes, unlike the offseason deck
+
+That deck was selling ideas, so it went poster black with condensed
+caps. This one is selling the site, and a stranger should recognise
+the pages when they land on them. So the type is the real thing (DM
+Serif nameplates with the second half italic gold, mono labels), and
+each section carries the ground its pages actually sit on:
+
+| section | ground | from |
+|---|---|---|
+| almanac | navy `#0e1620` + gold | `src/styles/main.css` |
+| live season | moss `#15201b` + amber | `public/demo/live/index.html` |
+| Sunday Live | black `#0b0d0e` + amber | game day |
+| games | slate `#101013` + per-game accents | `src/app/games/gameDefs.ts` |
+| clubhouse | cream `#f3ead6` + brass | `src/styles/hub.css`, day theme |
+
+The swipe therefore changes ground colour twice. That is the thing
+that tells somebody the site has rooms rather than pages, and it is
+worth more than any sentence on any of the slides. Slide 17 is the
+only light one; check it against its neighbours in the grid before
+posting, because it is the slide most likely to read as a mistake.
+
+### Every number is invented, every board is real
+
+The artifacts are redraws of boards that exist: the all-time
+standings, the record book's podiums, the chart room's above-average
+lines, the draft grader's class grades, the live scoreboard. The data
+in them is fiction, and the cast (`CAST` in the file) is the same
+invented twelve the offseason deck used, so the two decks read as the
+same imaginary league. **No real league, manager or team name goes on
+a public post.**
+
+Two things learned drawing them:
+
+* **A true chart can still be a useless one.** The chart room slide
+  first plotted cumulative points, which is what the page plots, and
+  it rendered as five near-parallel diagonals. Nobody can read a race
+  off that, and a board nobody can read is exactly what makes a
+  mockup look invented. It plots points above the league average now:
+  same data, but the lines cross.
+* **Half-empty cards are the tell.** Several artifacts were laid out
+  with two blocks in a card tall enough for four, and the voids read
+  as a template with the copy missing. Where that happened the answer
+  was always more real content (a third podium, the other games this
+  week, how each game plays), never bigger type.
+
+### The two contents pages
+
+They list *pages*, not slides, because the deck folds two or three
+pages onto some slides. They are numbered 01 to 23 straight through,
+which is why the numbering does not match the `§` marks in the deck.
+`TOC` in the file is the source; if a page is added to the site it
+goes there and in the matching section plate's `inside` list, and the
+counts in `kick` / `band` have to move with it.
 
 ---
 

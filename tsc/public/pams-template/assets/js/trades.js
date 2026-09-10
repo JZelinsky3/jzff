@@ -356,10 +356,12 @@
     });
   }
 
+  // Past sits last: it's the archive, and the two live things (what just
+  // happened, and what the desk has ruled on) belong in front of it.
   var TABS = [
     { id: 'current',  label: 'Current',  render: renderCurrentTab },
-    { id: 'past',     label: 'Past',     render: renderPastTab },
     { id: 'verdicts', label: 'Verdicts', render: renderVerdictsTab },
+    { id: 'past',     label: 'Past',     render: renderPastTab },
   ];
 
   function setTab(tabId, data) {

@@ -1,0 +1,1517 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TSC &middot; the site tour carousel</title>
+
+<!-- ============================================================
+     THE TOUR: fifteen slides for Instagram, 1080x1350.
+
+       tour.html?slide=1    the front page
+       tour.html?slide=2    what the paper is
+       tour.html?slide=3    section plate: The Almanac
+       tour.html?slide=4    .. 7   the almanac, two chapters a page
+       tour.html?slide=8    section plate: The Live Season
+       tour.html?slide=9    .. 12  the live season
+       tour.html?slide=13   The Games and The Clubhouse
+       tour.html?slide=14   contents
+       tour.html?slide=15   the closer
+
+     ── WHAT THIS IS BUILT OUT OF ────────────────────────────────
+     Not cards. The site is a newspaper and its front page is laid
+     out like one, so the deck is too: regions divided by COLUMN
+     RULES and hairlines, not objects floating in boxes. The
+     vocabulary is lifted straight out of the real stylesheets and
+     each piece is named after its source:
+
+       .agate      new.module.css .agateTable  mono figures, serif
+                   names, a hairline under every row, no container
+       .stat       main.css .stat              1px line, 3px gold
+                   spine down the left, mono label / gold serif value
+       .clipping   new.module.css .ledger      cream paper, tilted,
+                   hard offset shadow, double-rule head, ink stamp
+                   hanging off the corner
+       .foil       new.module.css .mastFlourish  the gilded rule
+
+     ── THE HORIZONTAL CUT ───────────────────────────────────────
+     Two chapters share a page by being cut ACROSS, not down the
+     middle. Top half runs its header on the left and its figures on
+     the right; bottom half mirrors it. The foil rule is the cut.
+     Vertical splits are used only INSIDE a half, where two things
+     genuinely sit side by side.
+
+     ── NO CORNER MARKS ──────────────────────────────────────────
+     Printer's crop marks were on an earlier cut of this and on the
+     offseason deck before it. They were cut from both. The edge
+     furniture is a running head and a folio instead, which is what
+     an almanac page actually carries.
+
+     ── NAMES ────────────────────────────────────────────────────
+     Every figure is invented and the cast in CAST is the same
+     fictional twelve the offseason deck used. No real league,
+     manager or team name goes on a public post.
+     ============================================================ -->
+
+<style>
+:root {
+  --serif: 'DM Serif Display', Georgia, serif;
+  --sans:  'Helvetica Neue', -apple-system, 'Segoe UI', Arial, sans-serif;
+  --mono:  'SF Mono', Menlo, Monaco, Consolas, monospace;
+
+  /* Set per slide from THEMES. Defaults are the almanac, which is
+     the site's own ground (src/styles/main.css). */
+  --bg:      #0e1620;
+  --bg-2:    #16202c;
+  --panel:   #1a2532;
+  --line:    #2a3645;
+  --line-2:  #1e2937;
+  --fg:      #f4ebd8;
+  --soft:    #c9c0ad;
+  --mute:    #837b6a;
+  --faint:   #4e4838;
+  --gold:    #e8c889;
+  --deep:    #a88a4a;
+  --rust:    #a04830;
+
+  --wash:  .16;
+  --vig:   .50;
+  --grain: .26;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background:#000; -webkit-font-smoothing:antialiased;
+             text-rendering:geometricPrecision; }
+
+.board { position:relative; overflow:hidden; width:1080px; height:1350px;
+         background:var(--bg); color:var(--fg); font-family:var(--sans); }
+
+/* ── ground ─────────────────────────────────────────────────── */
+.l-ledger { position:absolute; inset:0; z-index:0;
+  background-image: repeating-linear-gradient(to bottom,
+    rgba(244,235,216,.026) 0 1px, transparent 1px 26px); }
+.is-light .l-ledger { background-image: repeating-linear-gradient(to bottom,
+    rgba(28,24,18,.045) 0 1px, transparent 1px 26px); }
+
+.l-wash { position:absolute; inset:0; z-index:0; opacity:var(--wash);
+  background-image:
+    radial-gradient(ellipse 58% 42% at 84% 6%, var(--gold) 0%, transparent 62%),
+    radial-gradient(ellipse 64% 40% at 10% 98%, var(--rust) 0%, transparent 60%); }
+
+.l-vig { position:absolute; inset:0; z-index:1;
+  background-image: radial-gradient(ellipse 84% 70% at 50% 48%,
+                    transparent 0%, rgba(3,6,10,var(--vig)) 100%); }
+.is-light .l-vig { background-image: radial-gradient(ellipse 84% 70% at 50% 48%,
+                    transparent 0%, rgba(96,78,40,.18) 100%); }
+
+.l-grain { position:absolute; inset:0; z-index:80; opacity:var(--grain);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 0.92 0 0 0 0 0.8 0 0 0 0.05 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>"); }
+
+/* ══ PAGE FURNITURE ═══════════════════════════════════════════
+   A running head across the top and a folio across the foot, the
+   way a bound almanac carries them. Deliberately NOT the offseason
+   deck's arrangement (wordmark left, section right, progress bar
+   under): the wordmark has moved down to the foot and the progress
+   bar is gone, replaced by a page number, which is the thing a book
+   uses to say how far in you are. */
+
+.run { position:absolute; top:72px; left:88px; right:88px; z-index:30;
+       display:flex; align-items:center; gap:18px; }
+.run .sec { font-family:var(--mono); font-size:17px; letter-spacing:.30em;
+            text-transform:uppercase; color:var(--gold); white-space:nowrap; }
+.run u { flex:1; height:1px; background:var(--line); }
+.run .orn { font-size:15px; color:var(--deep); letter-spacing:.5em; }
+
+.foot { position:absolute; left:88px; right:88px; bottom:64px; z-index:30;
+        display:flex; align-items:flex-end; gap:20px;
+        padding-top:16px; border-top:1px solid var(--line); }
+.foot .imp { font-family:var(--mono); font-size:15px; letter-spacing:.22em;
+             text-transform:uppercase; color:var(--mute); }
+/* The wordmark version of the imprint, so the foot is not the same
+   line on all fifteen slides. */
+.foot .mark { display:flex; align-items:baseline; gap:11px; }
+.foot .mark b { font-family:var(--serif); font-weight:400; font-size:26px;
+                line-height:1; color:var(--soft); }
+.foot .mark b em { font-style:italic; color:var(--gold); }
+.foot .mark s { text-decoration:none; font-family:var(--mono); font-size:12px;
+                letter-spacing:.20em; text-transform:uppercase; color:var(--faint); }
+.foot .folio { margin-left:auto; display:flex; align-items:baseline; gap:9px;
+               font-family:var(--mono); font-size:14px; letter-spacing:.18em;
+               text-transform:uppercase; color:var(--faint); }
+.foot .folio i { font-style:italic; font-family:var(--serif); font-size:27px;
+                 line-height:1; color:var(--gold); letter-spacing:0; }
+
+/* ══ THE SPREAD ═══════════════════════════════════════════════ */
+.page { position:absolute; top:132px; bottom:132px; left:88px; right:88px;
+        z-index:20; display:flex; flex-direction:column; }
+
+/* One chapter. Header column on one side, figures on the other, with
+   a column rule between them, and the side flips between the two
+   halves of the page. */
+.half { flex:1; min-height:0; display:flex; gap:30px; padding:22px 0; }
+.half.a { padding-top:6px; }
+.half.b { padding-bottom:6px; flex-direction:row-reverse; }
+
+/* Optically centred against the figures, not top-aligned. Pinned to
+   the top with the pulled figure pushed to the bottom, the column
+   opened a 200px hole in its own middle on every spread. */
+.hd { flex:0 0 322px; display:flex; flex-direction:column;
+      justify-content:center; }
+.half.b .hd { text-align:right; }
+/* Global, not `.hd .kick`: the same kicker heads the sections that
+   sit outside a header column (the how-it-works band, the platform
+   strip, the issue strip), and scoped to .hd those all silently fell
+   back to body sans. */
+.kick { display:flex; align-items:center; gap:10px; font-family:var(--mono);
+        font-size:13px; letter-spacing:.24em; text-transform:uppercase;
+        color:var(--deep); }
+.kick u { flex:1; height:1px; background:var(--line); text-decoration:none; }
+.half.b .hd .kick { justify-content:flex-end; }
+.hd .kick { color:var(--deep); }
+.hd h2 { margin-top:16px; font-family:var(--serif); font-weight:400;
+         font-size:var(--h2, 54px); line-height:1.0; color:var(--fg);
+         letter-spacing:-.01em; }
+.hd h2 em { font-style:italic; color:var(--gold); }
+.hd .dek { margin-top:15px; font-size:19px; line-height:1.46; color:var(--soft); }
+/* A pulled figure at the bottom of the header column, so the column
+   is never a title floating over empty space. */
+.hd .pull { margin-top:22px; padding-top:16px; border-top:1px solid var(--line-2); }
+.hd .pull .v { font-family:var(--serif); font-size:38px; line-height:1;
+               color:var(--gold); }
+.hd .pull .k { margin-top:8px; font-family:var(--mono); font-size:12px;
+               letter-spacing:.16em; text-transform:uppercase; color:var(--mute);
+               line-height:1.5; }
+
+.art { flex:1; min-width:0; display:flex; flex-direction:column;
+       border-left:1px solid var(--line); padding-left:30px; }
+.half.b .art { border-left:0; border-right:1px solid var(--line);
+               padding-left:0; padding-right:30px; }
+
+/* The cut. The site's gilded foil rule (new.module.css
+   .mastFlourish): a metallic gradient whose ends dissolve rather
+   than stop, with a bloom under it. */
+.foil { flex:0 0 4px; border-radius:2px;
+        background: linear-gradient(90deg,
+          rgba(168,138,74,0) 0%, #a88a4a 12%, #e8c889 36%, #f8e5b2 50%,
+          #e8c889 64%, #a88a4a 88%, rgba(168,138,74,0) 100%);
+        box-shadow: 0 2px 14px rgba(232,200,137,.30); }
+
+/* ══ AGATE ════════════════════════════════════════════════════
+   new.module.css .agateTable. Mono figures, serif names, a hairline
+   under every row, and no container: the rules do the containing. */
+.agate { flex:1; display:flex; flex-direction:column; }
+.agate .hd-row { display:flex; align-items:baseline; gap:14px; padding-bottom:7px;
+                 font-family:var(--mono); font-size:12px; letter-spacing:.16em;
+                 text-transform:uppercase; color:var(--faint); }
+.agate .r { flex:1; display:flex; align-items:center; gap:14px;
+            border-bottom:1px solid var(--line-2); }
+.agate .r:last-child { border-bottom:0; }
+.agate .rk { width:30px; font-family:var(--mono); font-size:16px; color:var(--faint); }
+.agate .nm { flex:1; font-family:var(--serif); font-size:27px; line-height:1;
+             color:var(--fg); white-space:nowrap; }
+.agate .c  { font-family:var(--mono); font-size:16px; color:var(--soft);
+             text-align:right; white-space:nowrap; }
+.agate .c.dim { color:var(--mute); } .agate .c.on { color:var(--gold); }
+.agate .w1 { width:86px; } .agate .w2 { width:112px; }
+.agate .w3 { width:62px; } .agate .w4 { width:150px; }
+.agate .r.lead .rk { color:var(--gold); }
+
+.pips { display:flex; gap:4px; justify-content:flex-end; width:62px; }
+.pips i { width:9px; height:9px; border-radius:50%; background:var(--gold); }
+.pips u { width:9px; height:9px; border-radius:50%; border:1px solid var(--line);
+          text-decoration:none; }
+
+/* ══ STAT ═════════════════════════════════════════════════════
+   main.css .stat: 1px line, a 3px gold spine down the left edge,
+   mono label, gold serif value. The site's one real box, used
+   sparingly and always in a row. */
+.stats { flex:1; display:flex; gap:14px; }
+.stats.col { flex-direction:column; }
+.stat { flex:1; min-width:0; position:relative; background:var(--panel);
+        border:1px solid var(--line); padding:16px 18px 17px;
+        display:flex; flex-direction:column; justify-content:center; }
+.stat::before { content:''; position:absolute; top:0; left:0; width:3px;
+                height:100%; background:var(--gold); }
+.stat .k { font-family:var(--mono); font-size:11px; letter-spacing:.20em;
+           text-transform:uppercase; color:var(--mute); }
+.stat .v { margin-top:9px; font-family:var(--serif); font-size:40px;
+           line-height:1; color:var(--gold); letter-spacing:-.02em; }
+.stat .d { margin-top:8px; font-size:15px; line-height:1.4; color:var(--soft); }
+.stat .d b { color:var(--fg); font-weight:400; }
+.stat.cool::before { background:var(--deep); }
+.stat.cool .v { color:var(--soft); }
+
+/* ══ CLIPPING ═════════════════════════════════════════════════
+   new.module.css .ledger: cream stock cut out and taped in, tilted
+   a degree, hard offset shadow, double-rule head, ink stamp hanging
+   off the corner. The one place the deck goes to paper. */
+.clipping { position:relative; background:var(--fg); color:#0e1620;
+            padding:15px 19px 20px; transform:rotate(-1deg);
+            box-shadow:9px 9px 0 rgba(0,0,0,.34);
+            display:flex; flex-direction:column; }
+.clipping .ch { display:flex; justify-content:space-between; align-items:baseline;
+                gap:12px; padding-bottom:8px;
+                border-bottom:3px double #0e1620; }
+.clipping .ch b { font-family:var(--serif); font-weight:400; font-size:21px; }
+.clipping .ch s { text-decoration:none; font-family:var(--mono); font-size:11px;
+                  letter-spacing:.18em; text-transform:uppercase; opacity:.55; }
+.clipping .ln { flex:1; display:flex; align-items:center; gap:12px;
+                padding:6px 2px; border-bottom:1px solid rgba(14,22,32,.18); }
+.clipping .ln:last-child { border-bottom:0; }
+.clipping .ln .t { flex:1; font-size:16px; line-height:1.25; }
+.clipping .ln .t i { display:block; font-style:normal; font-family:var(--mono);
+                     font-size:11px; letter-spacing:.10em; text-transform:uppercase;
+                     opacity:.5; margin-top:3px; }
+.clipping .ln .v { font-family:var(--serif); font-size:23px; line-height:1; }
+.clipping .stamp { position:absolute; right:14px; bottom:-11px; padding:5px 12px;
+                   background:#0e1620; color:var(--gold); font-family:var(--mono);
+                   font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+                   transform:rotate(2deg); }
+
+/* ══ COLUMN CHART (the seasons) ═══════════════════════════════
+   Seven years read ACROSS, not down: a second vertical table under
+   the standings would have made the page one long list.
+
+   The bars carry what the champion scored, which is the point of
+   the figure: without them the row was four lines of type floating
+   in a half-page and the space under it read as a mistake. Heights
+   are set from script against a 1,600 to 1,900 window, so the
+   differences between seasons are visible instead of all seven bars
+   sitting at 90% of each other. */
+.cols { flex:1; display:flex; align-items:stretch; }
+.cols .c { flex:1; padding:0 11px; border-left:1px solid var(--line-2);
+           display:flex; flex-direction:column; justify-content:flex-end; }
+.cols .c:first-child { border-left:0; padding-left:0; }
+.cols .c .who { font-family:var(--serif); font-size:24px; line-height:1;
+                color:var(--fg); }
+/* The record and the year used to share one line under the bar. In
+   a 68px column "'20" and "10-4" collided and then wrapped, so the
+   record moved up under the champion's name where there is room and
+   the foot carries the year alone. */
+.cols .c .rec { margin-top:7px; font-family:var(--mono); font-size:12px;
+                color:var(--mute); }
+.cols .c .pf { margin-top:4px; font-family:var(--mono); font-size:12px;
+               color:var(--faint); }
+.cols .c .bar { margin-top:11px; background:var(--line); width:100%; }
+.cols .c .yr { margin-top:11px; padding-top:9px; border-top:1px solid var(--line);
+               font-family:var(--mono); font-size:13px; letter-spacing:.08em;
+               color:var(--mute); }
+.cols .c.rep .who { color:var(--gold); }
+.cols .c.rep .bar { background:var(--gold); }
+
+/* ══ YEAR RAIL (the milestones) ═══════════════════════════════ */
+.rail { flex:1; display:flex; align-items:stretch; }
+.rail .y { flex:1; padding:0 12px; border-left:1px solid var(--line-2);
+           display:flex; flex-direction:column; justify-content:center; }
+.rail .y:first-child { border-left:0; padding-left:0; }
+.rail .y .yr { font-family:var(--mono); font-size:12px; letter-spacing:.10em;
+               color:var(--faint); }
+.rail .y .who { margin-top:9px; font-family:var(--serif); font-size:25px;
+                line-height:1; color:var(--fg); }
+.rail .y .rec { margin-top:8px; font-family:var(--mono); font-size:13px;
+                color:var(--mute); }
+.rail .y.rep .who { color:var(--gold); }
+.rail .y .bar { margin-top:11px; height:4px; background:var(--line); }
+.rail .y.rep .bar { background:var(--gold); }
+
+/* ══ HEAD TO HEAD ═════════════════════════════════════════════ */
+.h2h { flex:1; display:flex; flex-direction:column; }
+.h2h .m { flex:1; display:flex; align-items:center; gap:14px;
+          border-bottom:1px solid var(--line-2); }
+.h2h .m:last-child { border-bottom:0; }
+.h2h .m .a, .h2h .m .b { font-family:var(--serif); font-size:25px; line-height:1;
+                         color:var(--fg); width:84px; }
+.h2h .m .b { text-align:right; }
+.h2h .m .sc { font-family:var(--mono); font-size:16px; color:var(--soft);
+              width:58px; text-align:center; }
+.h2h .m .mid { flex:1; }
+.h2h .m .mid .bar { display:flex; height:8px; }
+.h2h .m .mid .bar u.x { background:var(--gold); }
+.h2h .m .mid .bar u.y { background:var(--line); }
+.h2h .m .mid .lb { margin-top:7px; font-family:var(--mono); font-size:12px;
+                   letter-spacing:.06em; color:var(--mute); }
+
+/* ══ CHART ════════════════════════════════════════════════════ */
+.chart { flex:1; min-height:0; display:flex; flex-direction:column; }
+.chart svg { flex:1; width:100%; display:block; }
+.chart .lg { margin-top:9px; display:flex; gap:15px; flex-wrap:wrap;
+             font-family:var(--mono); font-size:12px; color:var(--mute); }
+.chart .lg i { display:inline-block; width:15px; height:2px; margin-right:6px;
+               vertical-align:middle; }
+
+/* ══ LINEUP (the all-time team) ═══════════════════════════════ */
+.lineup { flex:1; display:flex; align-items:stretch; }
+.lineup .s { flex:1; padding:0 10px; border-left:1px solid var(--line-2);
+             display:flex; flex-direction:column; justify-content:center;
+             text-align:center; }
+.lineup .s:first-child { border-left:0; }
+.lineup .s .pos { font-family:var(--mono); font-size:11px; letter-spacing:.14em;
+                  color:var(--deep); }
+.lineup .s .pt { margin-top:10px; font-family:var(--serif); font-size:30px;
+                 line-height:1; color:var(--fg); }
+.lineup .s .wk { margin-top:8px; font-family:var(--mono); font-size:11px;
+                 color:var(--faint); }
+.lineup .s.top .pt { color:var(--gold); }
+
+/* ══ DRAFT BOARD ══════════════════════════════════════════════ */
+.picks { flex:1; display:flex; flex-direction:column; }
+.picks .p { flex:1; display:flex; align-items:center; gap:13px;
+            border-bottom:1px solid var(--line-2); }
+.picks .p:last-child { border-bottom:0; }
+.picks .p .no { width:46px; font-family:var(--mono); font-size:13px; color:var(--faint); }
+.picks .p .t { flex:1; font-family:var(--serif); font-size:22px; line-height:1;
+               color:var(--fg); white-space:nowrap; }
+.picks .p .by { width:66px; font-family:var(--mono); font-size:13px; color:var(--mute); }
+.picks .p .g { width:40px; text-align:center; font-family:var(--mono); font-size:13px;
+               padding:3px 0; border:1px solid var(--line); color:var(--soft); }
+.picks .p .g.hi { border-color:var(--gold); color:var(--gold); }
+.picks .p .g.lo { border-color:var(--rust); color:var(--rust); }
+
+/* ══ METERS ═══════════════════════════════════════════════════ */
+.meters { flex:1; display:flex; flex-direction:column; }
+.meters .m { flex:1; display:flex; flex-direction:column; justify-content:center; }
+.meters .m .l { display:flex; align-items:baseline; gap:12px; }
+.meters .m .l .k { font-family:var(--serif); font-size:22px; line-height:1;
+                   color:var(--fg); }
+.meters .m .l .k small { margin-left:9px; font-family:var(--mono); font-size:12px;
+                         letter-spacing:.06em; color:var(--mute); }
+.meters .m .l .v { margin-left:auto; font-family:var(--mono); font-size:15px;
+                   color:var(--gold); }
+.meters .m .bar { margin-top:8px; height:7px; background:var(--line-2); }
+.meters .m .bar i { display:block; height:7px; background:var(--gold); }
+.meters .m .bar i.dim { background:var(--line); }
+.meters .m .note { margin-top:7px; font-family:var(--mono); font-size:12px;
+                   letter-spacing:.04em; color:var(--mute); }
+
+/* ══ PICK'EMS CHIPS ═══════════════════════════════════════════ */
+.picks-b { flex:1; display:flex; flex-direction:column; }
+.picks-b .r { flex:1; display:flex; align-items:center; gap:13px;
+              border-bottom:1px solid var(--line-2); }
+.picks-b .r:last-child { border-bottom:0; }
+.picks-b .r .mono { width:34px; height:34px; flex:none; border:1px solid var(--line);
+                    display:flex; align-items:center; justify-content:center;
+                    font-family:var(--serif); font-size:19px; color:var(--soft); }
+.picks-b .r.lead .mono { border-color:var(--gold); color:var(--gold); }
+.picks-b .r .nm { font-family:var(--serif); font-size:24px; line-height:1;
+                  color:var(--fg); }
+.picks-b .r .rec { margin-left:9px; font-family:var(--mono); font-size:13px;
+                   color:var(--mute); }
+.picks-b .r .chips { margin-left:auto; display:flex; gap:5px; }
+.picks-b .r .chips i { width:23px; height:23px; font-style:normal;
+                       font-family:var(--mono); font-size:12px; display:flex;
+                       align-items:center; justify-content:center; }
+.picks-b .r .chips i.w { background:var(--gold); color:var(--bg); }
+.picks-b .r .chips i.l { border:1px solid var(--line); color:var(--mute); }
+
+/* ══ MATCHUP ══════════════════════════════════════════════════ */
+.mu { flex:1; display:flex; flex-direction:column; justify-content:center; }
+.mu .t { display:flex; align-items:baseline; gap:14px; }
+.mu .t .nm { flex:1; font-family:var(--serif); font-size:34px; line-height:1;
+             color:var(--fg); }
+.mu .t .nm.r { text-align:right; }
+.mu .t .v { font-family:var(--mono); font-size:20px; color:var(--soft); }
+.mu .t .x { font-family:var(--mono); font-size:14px; color:var(--faint); }
+.mu .edge { margin-top:14px; }
+.mu .edge .bar { display:flex; height:9px; }
+.mu .edge .bar u.x { background:var(--gold); }
+.mu .edge .bar u.y { background:var(--line); }
+.mu .edge .lb { margin-top:8px; display:flex; font-family:var(--mono);
+                font-size:12px; letter-spacing:.08em; color:var(--mute); }
+.mu .edge .lb span:last-child { margin-left:auto; }
+.mu .lines { margin-top:16px; padding-top:14px; border-top:1px solid var(--line-2);
+             display:flex; flex-direction:column; gap:9px; }
+.mu .lines div { display:flex; font-family:var(--mono); font-size:13px;
+                 letter-spacing:.04em; color:var(--mute); }
+.mu .lines div b { margin-left:auto; font-weight:400; color:var(--soft); }
+
+/* ══ TRADE TICKET ═════════════════════════════════════════════ */
+.ticket { flex:1; display:flex; gap:26px; }
+.ticket .side { flex:1; display:flex; flex-direction:column;
+                border-left:3px solid var(--line); padding-left:15px; }
+.ticket .side.win { border-left-color:var(--gold); }
+.ticket .side .who { display:flex; align-items:baseline; }
+.ticket .side .who .n { font-family:var(--serif); font-size:26px; line-height:1;
+                        color:var(--fg); }
+.ticket .side .who .g { margin-left:auto; font-family:var(--mono); font-size:15px;
+                        letter-spacing:.10em; color:var(--mute); }
+.ticket .side.win .who .g { color:var(--gold); }
+.ticket .side ul { list-style:none; margin-top:13px; }
+.ticket .side li { padding:8px 0; border-bottom:1px solid var(--line-2);
+                   font-size:17px; line-height:1.3; color:var(--soft); }
+.ticket .side li:last-child { border-bottom:0; }
+.ticket .side li i { display:block; font-style:normal; font-family:var(--mono);
+                     font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+                     color:var(--faint); margin-top:4px; }
+
+/* ══ RULED LIST (games, clubhouse, contents) ══════════════════ */
+.list { flex:1; display:flex; flex-direction:column; }
+.list .r { flex:1; display:flex; align-items:center; gap:16px;
+           border-bottom:1px solid var(--line-2); }
+.list .r:last-child { border-bottom:0; }
+.list .r .no { width:32px; font-family:var(--mono); font-size:13px; color:var(--faint); }
+.list .r .n { font-family:var(--serif); font-size:26px; line-height:1;
+              color:var(--fg); white-space:nowrap; }
+.list .r .n em { font-style:italic; color:var(--tint, var(--gold)); }
+.list .r .d { margin-left:auto; padding-left:20px; text-align:right;
+              font-size:16px; line-height:1.3; color:var(--mute); max-width:400px; }
+.list .r .tick { width:4px; align-self:stretch; background:var(--tint, var(--gold)); }
+
+/* ══ PLATFORM STRIP ═══════════════════════════════════════════
+   NFL.com is retired and its history is still in here, which is a
+   selling point rather than an omission, so it stays on the strip
+   greyed with its status stamped on it. */
+.plat { display:flex; align-items:stretch; border-top:1px solid var(--line);
+        border-bottom:1px solid var(--line); }
+.plat .p { flex:1; padding:15px 16px; border-left:1px solid var(--line-2); }
+.plat .p:first-child { border-left:0; padding-left:0; }
+.plat .p .n { font-family:var(--serif); font-size:26px; line-height:1;
+              color:var(--fg); }
+.plat .p .s { margin-top:9px; font-family:var(--mono); font-size:11px;
+              letter-spacing:.16em; text-transform:uppercase; color:var(--gold); }
+.plat .p.off .n { color:var(--faint); }
+.plat .p.off .s { color:var(--mute); white-space:nowrap; }
+
+/* ══ HOW IT WORKS ═════════════════════════════════════════════ */
+.steps { display:flex; }
+.steps .s { flex:1; padding:0 26px; border-left:1px solid var(--line); }
+.steps .s:first-child { border-left:0; padding-left:0; }
+.steps .s:last-child { padding-right:0; }
+.steps .s .n { font-family:var(--serif); font-style:italic; font-size:32px;
+               line-height:1; color:var(--gold); }
+.steps .s .t { margin-top:12px; font-family:var(--serif); font-size:25px;
+               line-height:1.1; color:var(--fg); }
+.steps .s .d { margin-top:10px; font-size:16px; line-height:1.42; color:var(--mute); }
+
+/* ══ PLATES: front page, section plates, contents, closer ═════ */
+.plate { position:absolute; left:88px; right:88px; z-index:20; }
+
+.nameplate { font-family:var(--serif); font-weight:400; line-height:.94;
+             color:var(--fg); letter-spacing:-.015em; }
+.nameplate em { font-style:italic; color:var(--gold); }
+
+.mastbar { display:flex; align-items:baseline; padding-bottom:14px;
+           border-bottom:1px solid var(--line); font-family:var(--mono);
+           font-size:14px; letter-spacing:.16em; text-transform:uppercase;
+           color:var(--mute); }
+.mastbar .mid { margin:0 auto; color:var(--gold); }
+
+/* the deck, set between rules in serif italic, exactly as the real
+   masthead sets it (new.module.css .mastDeckRow / .deck) */
+.deckrow { margin-top:26px; padding:22px 0; border-top:1px solid var(--line);
+           border-bottom:1px solid var(--line); text-align:center; }
+.deckrow p { font-family:var(--serif); font-style:italic; font-size:29px;
+             line-height:1.34; color:var(--soft); }
+
+.kick-c { font-family:var(--mono); font-size:17px; letter-spacing:.32em;
+          text-transform:uppercase; color:var(--deep); text-align:center; }
+
+/* The wire. NewLanding.tsx runs a ticker of invented league
+   headlines across the real front page; the same column set between
+   rules is what fills the middle of this one, and it is the fastest
+   way to show a stranger that the site writes about a league rather
+   than just tabulating one. */
+.wire { display:flex; margin-top:38px; padding:6px 0;
+        border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.wire .c { flex:1; padding:14px 26px; border-left:1px solid var(--line-2); }
+.wire .c:first-child { border-left:0; padding-left:0; }
+.wire .c:last-child { padding-right:0; }
+.wire .l { display:flex; gap:11px; padding:8px 0; font-size:18px; line-height:1.36;
+           color:var(--soft); }
+.wire .l i { flex:none; font-style:normal; font-size:11px; color:var(--deep);
+             padding-top:5px; }
+
+/* the three column "in this issue" strip on the front page */
+.issue { display:flex; margin-top:30px; }
+.issue .c { flex:1; padding:0 22px; border-left:1px solid var(--line); }
+.issue .c:first-child { border-left:0; padding-left:0; }
+.issue .c:last-child { padding-right:0; }
+.issue .c .rn { font-family:var(--serif); font-style:italic; font-size:34px;
+                line-height:1; color:var(--gold); }
+.issue .c .n { margin-top:12px; font-family:var(--serif); font-size:27px;
+               line-height:1.05; color:var(--fg); }
+.issue .c .d { margin-top:10px; font-size:16px; line-height:1.42; color:var(--mute); }
+.issue .c .ct { margin-top:14px; padding-top:11px; border-top:1px solid var(--line-2);
+                font-family:var(--mono); font-size:11px; letter-spacing:.18em;
+                text-transform:uppercase; color:var(--deep); }
+
+/* section plate: a big italic roman numeral, as main.css .card-roman
+   sets the chapter numerals on the site itself */
+.roman { font-family:var(--serif); font-style:italic; font-size:150px;
+         line-height:.8; color:var(--gold); }
+
+/* Two columns of chapters at their natural height. Stretched to fill
+   the page they opened a 58px trench between every pair of rows and
+   the list stopped reading as a list; the leftover height goes into
+   ONE gap below instead, which the standfirst then occupies. */
+.chaplist { flex:0 0 auto; display:flex; flex-wrap:wrap; margin-top:22px; }
+.chaplist .c { width:50%; display:flex; align-items:baseline; gap:12px;
+               padding:11px 0; border-bottom:1px solid var(--line-2); }
+.chaplist .c:nth-child(odd) { padding-right:26px; }
+.chaplist .c:nth-child(even) { padding-left:26px; border-left:1px solid var(--line); }
+.chaplist .c .no { font-family:var(--mono); font-size:12px; color:var(--faint);
+                   width:26px; }
+.chaplist .c .n { font-family:var(--serif); font-size:24px; line-height:1;
+                  color:var(--soft); }
+.chaplist .c .d { margin-left:auto; font-family:var(--mono); font-size:11px;
+                  letter-spacing:.12em; text-transform:uppercase; color:var(--faint); }
+
+/* The standfirst: one line of serif italic, centred between rules,
+   sitting in whatever height the plate has left over. A paper fills
+   an awkward gap with a line worth reading rather than with air. */
+.standfirst { flex:1; display:flex; align-items:center; justify-content:center;
+              margin:24px 0; padding:22px 0;
+              border-top:1px solid var(--line-2); border-bottom:1px solid var(--line-2); }
+.standfirst p { font-family:var(--serif); font-style:italic; font-size:30px;
+                line-height:1.34; color:var(--soft); text-align:center;
+                max-width:760px; }
+
+/* contents page */
+.toc { display:flex; gap:0; }
+.toc .col { flex:1; padding:0 26px; border-left:1px solid var(--line); }
+.toc .col:first-child { padding-left:0; border-left:0; }
+.toc .col:last-child { padding-right:0; }
+.toc .col h3 { font-family:var(--mono); font-size:13px; letter-spacing:.24em;
+               text-transform:uppercase; color:var(--gold); font-weight:400;
+               padding-bottom:11px; border-bottom:1px solid var(--line); }
+.toc .e { display:flex; align-items:baseline; gap:10px; padding:10px 0;
+          border-bottom:1px solid var(--line-2); }
+.toc .e:last-child { border-bottom:0; }
+.toc .e .no { width:26px; font-family:var(--mono); font-size:12px; color:var(--faint); }
+.toc .e .n { font-family:var(--serif); font-size:23px; line-height:1; color:var(--fg); }
+.toc .e .dots { flex:1; height:1px; margin:0 4px 6px; align-self:flex-end;
+                background-image: radial-gradient(circle, var(--line) 1px, transparent 1px);
+                background-size:7px 2px; background-repeat:repeat-x; }
+.toc .e .p { font-family:var(--mono); font-size:12px; color:var(--mute); }
+
+/* closer */
+.offer { display:flex; margin-top:32px; border-top:1px solid var(--line);
+         border-bottom:1px solid var(--line); }
+.offer .o { flex:1; padding:26px 26px 28px; border-left:1px solid var(--line); }
+.offer .o:first-child { border-left:0; padding-left:0; }
+.offer .o:last-child { padding-right:0; }
+.offer .o .k { font-family:var(--mono); font-size:12px; letter-spacing:.20em;
+               text-transform:uppercase; color:var(--mute); }
+.offer .o .v { margin-top:12px; font-family:var(--serif); font-size:50px;
+               line-height:.98; color:var(--gold); letter-spacing:-.02em; }
+.offer .o .d { margin-top:12px; font-size:17px; line-height:1.4; color:var(--soft); }
+.coupon { margin-top:15px; border:2px dashed var(--deep); padding:13px 0;
+          text-align:center; font-family:var(--mono); font-size:29px;
+          letter-spacing:.24em; color:var(--gold); }
+
+/* the reversed panel: a cream half-page, the way a paper drops a
+   boxed feature into the bottom of a broadsheet */
+.reverse { background:#f3ead6; color:#1c1812;
+           --fg:#1c1812; --soft:#4a4336; --mute:#8a8068; --faint:#a89b78;
+           --line:rgba(28,24,18,.22); --line-2:rgba(28,24,18,.11);
+           --gold:#8a6a24; --deep:#8a6a24; --panel:#faf4e6;
+           margin:0 -88px; padding:22px 88px; }
+</style>
+</head>
+<body>
+
+<div class="board" id="board">
+  <div class="l-ledger"></div>
+  <div class="l-wash"></div>
+  <div class="l-vig"></div>
+  <div id="body"></div>
+  <div class="l-grain"></div>
+</div>
+
+<script>
+'use strict';
+
+/* Invented cast, shared with the offseason deck so the two read as
+   the same fictional league. Nothing here belongs to anybody. */
+const CAST = ['John', 'Matt', 'Bryce', 'Cole', 'Drew', 'Nate',
+              'Owen', 'Jack', 'Reid', 'Tyler', 'Vince', 'Grant'];
+
+const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const pips = (n, of) => `<span class="pips">${
+  Array.from({length: of}, (_, i) => i < n ? '<i></i>' : '<u></u>').join('')}</span>`;
+
+/* ── themes ───────────────────────────────────────────────────
+   Each is the ground its pages actually sit on. The almanac is
+   main.css; the live season is the moss canvas the live dashboard
+   declares in public/demo/live/index.html. */
+const THEMES = {
+  almanac: {
+    bg:'#0e1620', bg2:'#16202c', panel:'#1a2532', line:'#2a3645', line2:'#1e2937',
+    fg:'#f4ebd8', soft:'#c9c0ad', mute:'#837b6a', faint:'#4e4838',
+    gold:'#e8c889', deep:'#a88a4a', rust:'#a04830',
+    wash:.17, vig:.50, grain:.26,
+  },
+  live: {
+    bg:'#15201b', bg2:'#1d2a23', panel:'#1d2a23', line:'#2e3d34', line2:'#22302a',
+    fg:'#eff1e9', soft:'#b7c1b4', mute:'#7d8c81', faint:'#4a574e',
+    gold:'#d8b25a', deep:'#9b8442', rust:'#cf9163',
+    wash:.15, vig:.48, grain:.26,
+  },
+  slate: {
+    bg:'#101013', bg2:'#1a1a20', panel:'#1a1a20', line:'#2d2d36', line2:'#212128',
+    fg:'#f2efe8', soft:'#aaa8a1', mute:'#76746d', faint:'#4a4843',
+    gold:'#e8c889', deep:'#a88a4a', rust:'#c9a9ea',
+    wash:.14, vig:.52, grain:.26,
+  },
+};
+
+function applyTheme(name) {
+  const t = THEMES[name] || THEMES.almanac;
+  const r = document.documentElement.style;
+  r.setProperty('--bg', t.bg);      r.setProperty('--bg-2', t.bg2);
+  r.setProperty('--panel', t.panel);
+  r.setProperty('--line', t.line);  r.setProperty('--line-2', t.line2);
+  r.setProperty('--fg', t.fg);      r.setProperty('--soft', t.soft);
+  r.setProperty('--mute', t.mute);  r.setProperty('--faint', t.faint);
+  r.setProperty('--gold', t.gold);  r.setProperty('--deep', t.deep);
+  r.setProperty('--rust', t.rust);
+  r.setProperty('--wash', t.wash);  r.setProperty('--vig', t.vig);
+  r.setProperty('--grain', t.grain);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   THE FIGURES
+
+   Each returns the contents of one .art column. Deliberately
+   partial: six rows of twelve, one round of fifteen. A slide is
+   read at thumbnail size, and a fragment looks like evidence where
+   a complete panel looks like a diagram.
+   ══════════════════════════════════════════════════════════════ */
+const FIG = {
+
+/* ── the almanac ─────────────────────────────────────────────── */
+
+standings: () => `
+  <div class="agate">
+    <div class="hd-row"><span class="rk"></span><span class="nm"></span>
+      <span class="c w1">Record</span><span class="c w3">Pct</span>
+      <span class="c w2">Points for</span><span class="c w3">Titles</span></div>
+    <div class="r lead"><span class="rk">1</span><span class="nm">Bryce</span>
+      <span class="c w1">78&ndash;40</span><span class="c w3 dim">.661</span>
+      <span class="c w2">14,982.4</span>${pips(2,2)}</div>
+    <div class="r"><span class="rk">2</span><span class="nm">John</span>
+      <span class="c w1">74&ndash;44</span><span class="c w3 dim">.627</span>
+      <span class="c w2 on">15,204.1</span>${pips(1,2)}</div>
+    <div class="r"><span class="rk">3</span><span class="nm">Matt</span>
+      <span class="c w1">71&ndash;47</span><span class="c w3 dim">.602</span>
+      <span class="c w2">14,556.8</span>${pips(1,2)}</div>
+    <div class="r"><span class="rk">4</span><span class="nm">Drew</span>
+      <span class="c w1">66&ndash;52</span><span class="c w3 dim">.559</span>
+      <span class="c w2">14,201.3</span>${pips(1,2)}</div>
+    <div class="r"><span class="rk">5</span><span class="nm">Nate</span>
+      <span class="c w1">62&ndash;56</span><span class="c w3 dim">.525</span>
+      <span class="c w2">13,884.9</span>${pips(1,2)}</div>
+    <div class="r"><span class="rk">6</span><span class="nm">Tyler</span>
+      <span class="c w1">58&ndash;60</span><span class="c w3 dim">.492</span>
+      <span class="c w2">13,540.2</span>${pips(0,2)}</div>
+  </div>`,
+
+seasons: () => {
+  /* year, champion, record, points for, repeat winner */
+  const Y = [['19','Matt', '9&ndash;5',  1802.9, 0],
+             ['20','Drew', '10&ndash;4', 1744.2, 0],
+             ['21','Bryce','11&ndash;3', 1851.2, 1],
+             ['22','John', '12&ndash;2', 1884.6, 0],
+             ['23','Nate', '9&ndash;5',  1698.4, 0],
+             ['24','Bryce','10&ndash;4', 1806.1, 1],
+             ['25','Jack', '11&ndash;3', 1770.5, 0]];
+  const LO = 1600, HI = 1900, MAX = 168;
+  return `<div class="cols">${Y.map(([y, w, r, pf, rep]) => {
+    const h = Math.round(((pf - LO) / (HI - LO)) * MAX);
+    return `<div class="c${rep ? ' rep' : ''}">
+      <div class="who">${esc(w)}</div>
+      <div class="rec">${r}</div>
+      <div class="pf">${pf.toLocaleString('en-US', {minimumFractionDigits:1})}</div>
+      <div class="bar" style="height:${h}px"></div>
+      <div class="yr">&rsquo;${y}</div>
+    </div>`;
+  }).join('')}</div>`;
+},
+
+records: () => `
+  <div class="stats col">
+    <div class="stats">
+      <div class="stat"><div class="k">Highest week ever</div>
+        <div class="v">212.44</div>
+        <div class="d"><b>Drew</b>, 2022, week 9</div></div>
+      <div class="stat"><div class="k">Most points, one season</div>
+        <div class="v">1,884.6</div>
+        <div class="d"><b>John</b>, 2022</div></div>
+      <div class="stat"><div class="k">Longest win streak</div>
+        <div class="v">11</div>
+        <div class="d"><b>Bryce</b>, into 2022</div></div>
+    </div>
+    <div class="stats">
+      <div class="stat cool"><div class="k">Worst beat</div>
+        <div class="v">178.90</div>
+        <div class="d">Most ever scored in a loss. <b>Tyler</b>, 2023.</div></div>
+      <div class="stat cool"><div class="k">Biggest blowout</div>
+        <div class="v">92.4</div>
+        <div class="d">The margin. <b>Nate</b> over <b>Vince</b>, 2021.</div></div>
+      <div class="stat cool"><div class="k">Boards in the book</div>
+        <div class="v">41</div>
+        <div class="d">Each one with a first, second and third.</div></div>
+    </div>
+  </div>`,
+
+draft: () => `
+  <div class="picks">
+    <div class="p"><span class="no">1.01</span><span class="t">Kept four more years</span>
+      <span class="by">Bryce</span><span class="g hi">A</span></div>
+    <div class="p"><span class="no">1.02</span><span class="t">Traded that October</span>
+      <span class="by">John</span><span class="g hi">A+</span></div>
+    <div class="p"><span class="no">1.03</span><span class="t">Missed nine weeks</span>
+      <span class="by">Matt</span><span class="g lo">D</span></div>
+    <div class="p"><span class="no">1.04</span><span class="t">Started every week</span>
+      <span class="by">Drew</span><span class="g">B</span></div>
+    <div class="p"><span class="no">1.05</span><span class="t">Cut by week six</span>
+      <span class="by">Vince</span><span class="g lo">F</span></div>
+    <div class="p"><span class="no">1.06</span><span class="t">Led the position</span>
+      <span class="by">Nate</span><span class="g hi">A</span></div>
+  </div>`,
+
+managers: () => `
+  <div style="flex:1;display:flex;gap:26px;min-height:0">
+    <div style="flex:1.05;display:flex;align-items:center">
+      <div class="clipping" style="width:100%">
+        <div class="ch"><b>Bryce</b><s>On file since 2019</s></div>
+        <div class="ln"><span class="t">Titles<i>2021 and 2024</i></span>
+          <span class="v">2</span></div>
+        <div class="ln"><span class="t">All-time<i>Seven seasons</i></span>
+          <span class="v">78&ndash;40</span></div>
+        <div class="ln"><span class="t">Playoff trips<i>Missed once</i></span>
+          <span class="v">6</span></div>
+        <div class="ln"><span class="t">Cannot beat<i>Lost the last three</i></span>
+          <span class="v">John</span></div>
+        <div class="stamp">The Manager File</div>
+      </div>
+    </div>
+    <div style="flex:.95;display:flex;flex-direction:column;
+                border-left:1px solid var(--line);padding-left:26px">
+      <div class="agate">
+        <div class="hd-row"><span class="rk"></span><span class="nm">The index</span>
+          <span class="c w1">All-time</span></div>
+        <div class="r lead"><span class="rk">01</span><span class="nm">Bryce</span>
+          <span class="c w1 dim">78&ndash;40</span></div>
+        <div class="r"><span class="rk">02</span><span class="nm">John</span>
+          <span class="c w1 dim">74&ndash;44</span></div>
+        <div class="r"><span class="rk">03</span><span class="nm">Matt</span>
+          <span class="c w1 dim">71&ndash;47</span></div>
+        <div class="r"><span class="rk">04</span><span class="nm">Drew</span>
+          <span class="c w1 dim">66&ndash;52</span></div>
+        <div class="r"><span class="rk">11</span><span class="nm">Vince</span>
+          <span class="c w1 dim">41&ndash;57</span></div>
+      </div>
+    </div>
+  </div>`,
+
+rivalries: () => `
+  <div class="h2h">
+    <div class="m"><span class="a">Bryce</span><span class="sc">12&ndash;9</span>
+      <span class="mid"><span class="bar"><u class="x" style="flex:12"></u><u class="y" style="flex:9"></u></span>
+        <span class="lb">Bryce has won the last four. Closest ever: 0.86</span></span>
+      <span class="b">John</span></div>
+    <div class="m"><span class="a">Matt</span><span class="sc">11&ndash;11</span>
+      <span class="mid"><span class="bar"><u class="x" style="flex:11"></u><u class="y" style="flex:11"></u></span>
+        <span class="lb">Dead even in six years. Three of them in the playoffs</span></span>
+      <span class="b">Drew</span></div>
+    <div class="m"><span class="a">Nate</span><span class="sc">14&ndash;6</span>
+      <span class="mid"><span class="bar"><u class="x" style="flex:14"></u><u class="y" style="flex:6"></u></span>
+        <span class="lb">Biggest margin in the league: 78.2</span></span>
+      <span class="b">Owen</span></div>
+    <div class="m"><span class="a">Tyler</span><span class="sc">13&ndash;8</span>
+      <span class="mid"><span class="bar"><u class="x" style="flex:13"></u><u class="y" style="flex:8"></u></span>
+        <span class="lb">Five straight to Tyler, and Cole still leads on points</span></span>
+      <span class="b">Cole</span></div>
+  </div>`,
+
+/* Points above or below the league average, which is how the real
+   Chart Room draws a race. Plotted as cumulative totals it renders
+   as five near-parallel diagonals: true, and unreadable. */
+chart: () => {
+  const W = 640, H = 210, PAD = 8;
+  const S = [
+    { n:'Bryce', c:'var(--gold)', w:2.6, d:[0,12,41,33,62,58,96,121,147,138,176,203,194,231,268] },
+    { n:'John',  c:'#c9c0ad', w:1.6,     d:[0,25,18,54,39,88,104,133,141,178,172,211,236,244,281] },
+    { n:'Matt',  c:'#6b8aa8', w:1.6,     d:[0,4,21,2,19,6,-12,9,-4,14,-8,11,3,-6,17] },
+    { n:'Drew',  c:'#a04830', w:1.6,     d:[0,16,-9,26,8,44,22,51,29,58,31,74,49,81,62] },
+    { n:'Vince', c:'#7d7462', w:1.6,     d:[0,-21,-48,-74,-96,-118,-141,-176,-188,-221,-238,-268,-291,-314,-338] },
+  ];
+  const lo = -360, hi = 300;
+  const y = v => H - PAD - ((v - lo) / (hi - lo)) * (H - PAD * 2);
+  const pts = d => d.map((v, i) =>
+    `${(PAD + (i / 14) * (W - PAD * 2)).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  return `<div class="chart">
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      <line x1="0" y1="${y(0).toFixed(1)}" x2="${W}" y2="${y(0).toFixed(1)}"
+            stroke="var(--line)" stroke-width="1.4" stroke-dasharray="5 5"/>
+      ${S.map(s => `<polyline points="${pts(s.d)}" fill="none" stroke="${s.c}"
+        stroke-width="${s.w}" stroke-linejoin="round" stroke-linecap="round"/>`).join('')}
+    </svg>
+    <div class="lg">${S.map(s =>
+      `<span><i style="background:${s.c}"></i>${s.n}</span>`).join('')}
+      <span style="margin-left:auto;color:var(--faint)">Points above the league &middot; 2025</span>
+    </div>
+  </div>`;
+},
+
+alltime: () => {
+  const L = [['QB','44.9','&rsquo;22 wk 9',1], ['RB','41.2','&rsquo;21 wk 4',0],
+             ['RB','38.6','&rsquo;24 wk 11',0], ['WR','39.4','&rsquo;23 wk 6',0],
+             ['WR','36.1','&rsquo;19 wk 13',0], ['TE','31.8','&rsquo;20 wk 2',0],
+             ['FLX','34.7','&rsquo;25 wk 8',0]];
+  return `<div class="lineup">${L.map(([p, v, w, top]) => `
+    <div class="s${top ? ' top' : ''}"><div class="pos">${p}</div>
+      <div class="pt">${v}</div><div class="wk">${w}</div></div>`).join('')}
+    <div class="s top" style="border-left:1px solid var(--line)">
+      <div class="pos" style="color:var(--gold)">Total</div>
+      <div class="pt">266.7</div><div class="wk">Career best</div></div>
+  </div>`;
+},
+
+/* ── the live season ─────────────────────────────────────────── */
+
+matchup: () => `
+  <div class="mu">
+    <div class="t"><span class="nm">Bryce</span><span class="v">121.4</span>
+      <span class="x">v</span><span class="v">117.9</span><span class="nm r">Reid</span></div>
+    <div class="edge">
+      <div class="bar"><u class="x" style="flex:53"></u><u class="y" style="flex:47"></u></div>
+      <div class="lb"><span>53% Bryce</span><span>47% Reid</span></div>
+    </div>
+    <div class="lines">
+      <div>All-time series<b>7&ndash;4 Bryce</b></div>
+      <div>Last meeting<b>Reid by 1.2</b></div>
+      <div>Reid&rsquo;s last win in this fixture<b>2023</b></div>
+      <div>At stake<b>The last first-round bye</b></div>
+    </div>
+  </div>`,
+
+pickems: () => `
+  <div class="picks-b">
+    <div class="r lead"><span class="mono">O</span>
+      <span class="nm">Owen</span><span class="rec">43&ndash;23</span>
+      <span class="chips"><i class="w">W</i><i class="w">W</i><i class="l">L</i><i class="w">W</i><i class="w">W</i><i class="w">W</i></span></div>
+    <div class="r"><span class="mono">B</span>
+      <span class="nm">Bryce</span><span class="rec">41&ndash;25</span>
+      <span class="chips"><i class="w">W</i><i class="l">L</i><i class="w">W</i><i class="w">W</i><i class="l">L</i><i class="w">W</i></span></div>
+    <div class="r"><span class="mono">J</span>
+      <span class="nm">John</span><span class="rec">40&ndash;26</span>
+      <span class="chips"><i class="w">W</i><i class="w">W</i><i class="w">W</i><i class="w">W</i><i class="w">W</i><i class="w">W</i></span></div>
+    <div class="r"><span class="mono">M</span>
+      <span class="nm">Matt</span><span class="rec">38&ndash;28</span>
+      <span class="chips"><i class="l">L</i><i class="w">W</i><i class="l">L</i><i class="w">W</i><i class="w">W</i><i class="l">L</i></span></div>
+    <div class="r"><span class="mono">V</span>
+      <span class="nm">Vince</span><span class="rec">24&ndash;42</span>
+      <span class="chips"><i class="l">L</i><i class="l">L</i><i class="w">W</i><i class="l">L</i><i class="l">L</i><i class="l">L</i></span></div>
+  </div>`,
+
+power: () => `
+  <div class="agate">
+    <div class="hd-row"><span class="rk"></span><span class="nm"></span>
+      <span class="c w1">Record</span><span class="c w2">Points</span>
+      <span class="c w3">Move</span></div>
+    <div class="r lead"><span class="rk">1</span><span class="nm">Bryce</span>
+      <span class="c w1">9&ndash;2</span><span class="c w2 dim">1,412.8</span>
+      <span class="c w3 on">+1</span></div>
+    <div class="r"><span class="rk">2</span><span class="nm">John</span>
+      <span class="c w1">8&ndash;3</span><span class="c w2 dim">1,448.1</span>
+      <span class="c w3 dim">&minus;1</span></div>
+    <div class="r"><span class="rk">3</span><span class="nm">Nate</span>
+      <span class="c w1">7&ndash;4</span><span class="c w2 dim">1,377.4</span>
+      <span class="c w3 on">+2</span></div>
+    <div class="r"><span class="rk">4</span><span class="nm">Matt</span>
+      <span class="c w1">7&ndash;4</span><span class="c w2 dim">1,341.9</span>
+      <span class="c w3 dim">&middot;</span></div>
+    <div class="r"><span class="rk">5</span><span class="nm">Drew</span>
+      <span class="c w1">6&ndash;5</span><span class="c w2 dim">1,362.2</span>
+      <span class="c w3 on">+3</span></div>
+    <div class="r"><span class="rk">6</span><span class="nm">Jack</span>
+      <span class="c w1">6&ndash;5</span><span class="c w2 dim">1,298.6</span>
+      <span class="c w3 dim">&minus;2</span></div>
+  </div>`,
+
+coach: () => `
+  <div class="meters">
+    <div class="m"><div class="l"><span class="k">Nate<small>96.4% optimal</small></span>
+      <span class="v">41.2 left</span></div><div class="bar"><i style="width:96%"></i></div></div>
+    <div class="m"><div class="l"><span class="k">Bryce<small>94.1% optimal</small></span>
+      <span class="v">78.9 left</span></div><div class="bar"><i style="width:94%"></i></div></div>
+    <div class="m"><div class="l"><span class="k">Matt<small>89.8% optimal</small></span>
+      <span class="v">147.0 left</span></div><div class="bar"><i class="dim" style="width:90%"></i></div></div>
+    <div class="m"><div class="l"><span class="k">Grant<small>82.7% optimal</small></span>
+      <span class="v">264.3 left</span></div><div class="bar"><i class="dim" style="width:83%"></i></div>
+      <div class="note">Two of Grant&rsquo;s five losses were sitting on his bench</div></div>
+  </div>`,
+
+watch: () => `
+  <div class="meters">
+    <div class="m"><div class="l"><span class="k">Most points, one season</span>
+      <span class="v">101%</span></div><div class="bar"><i style="width:100%"></i></div>
+      <div class="note">John is on pace for 1,902.4. The record is 1,884.6</div></div>
+    <div class="m"><div class="l"><span class="k">Longest win streak</span>
+      <span class="v">73%</span></div><div class="bar"><i class="dim" style="width:73%"></i></div>
+      <div class="note">Nate is at 8. Bryce holds it at 11</div></div>
+    <div class="m"><div class="l"><span class="k">Highest week ever</span>
+      <span class="v">93%</span></div><div class="bar"><i class="dim" style="width:93%"></i></div>
+      <div class="note">Best this year is 198.10. The record is 212.44</div></div>
+  </div>`,
+
+milestones: () => {
+  const M = [['Bryce','Two wins from<br>his 80th', 1], ['John','118 points<br>from 15,000', 0],
+             ['Nate','Three games from<br>100 started', 0], ['Matt','One win from 50<br>in the division', 0],
+             ['Drew','Four from 900<br>all-time', 0]];
+  return `<div class="rail">${M.map(([n, d, on]) => `
+    <div class="y${on ? ' rep' : ''}">
+      <div class="who" style="margin-top:0">${esc(n)}</div>
+      <div class="rec" style="line-height:1.5">${d}</div>
+      <div class="bar"></div>
+    </div>`).join('')}</div>`;
+},
+
+trade: () => `
+  <div class="ticket">
+    <div class="side win">
+      <div class="who"><span class="n">Bryce gets</span><span class="g">Grade A&minus;</span></div>
+      <ul>
+        <li>A top-five receiver<i>Under contract two more years</i></li>
+        <li>A 2027 second<i>Projected pick 18</i></li>
+      </ul>
+    </div>
+    <div class="side">
+      <div class="who"><span class="n">Reid gets</span><span class="g">Grade B</span></div>
+      <ul>
+        <li>Volume at running back<i>Fourth in carries since week 4</i></li>
+        <li>A tight end<i>Has not missed a game in three years</i></li>
+      </ul>
+    </div>
+  </div>`,
+
+mill: () => `
+  <div class="agate">
+    <div class="hd-row"><span class="nm">The rumor mill</span>
+      <span class="c w4">Offers started &middot; accepted</span></div>
+    <div class="r lead"><span class="nm">Grant</span>
+      <span class="c w4 on">17 sent &middot; 2 taken</span></div>
+    <div class="r"><span class="nm">Bryce</span>
+      <span class="c w4 dim">9 sent &middot; 6 taken</span></div>
+    <div class="r"><span class="nm">Reid</span>
+      <span class="c w4 dim">6 sent &middot; 3 taken</span></div>
+    <div class="r"><span class="nm">Vince</span>
+      <span class="c w4 dim">1 sent &middot; 0 taken</span></div>
+  </div>`,
+
+dna: () => `
+  <div class="meters">
+    <div class="m"><div class="l"><span class="k">Drafts and holds</span>
+      <span class="v">82</span></div><div class="bar"><i style="width:82%"></i></div></div>
+    <div class="m"><div class="l"><span class="k">Trade volume</span>
+      <span class="v">71</span></div><div class="bar"><i style="width:71%"></i></div></div>
+    <div class="m"><div class="l"><span class="k">Waiver hawk</span>
+      <span class="v">34</span></div><div class="bar"><i class="dim" style="width:34%"></i></div></div>
+    <div class="m"><div class="l"><span class="k">Streams defense</span>
+      <span class="v">12</span></div><div class="bar"><i class="dim" style="width:12%"></i></div></div>
+  </div>`,
+
+/* ── the rest ────────────────────────────────────────────────── */
+
+games: () => {
+  /* Names, pitches and accents from src/app/games/gameDefs.ts, so
+     the tiles and the real cards say the same thing in the same
+     colour. If a pitch changes there, change it here. */
+  const G = [
+    ['Roster <em>Roulette</em>', 'Can you go 17-0?', '#e8c889'],
+    ['Guess the <em>Draft</em>', 'A draft with the name blacked out', '#e29278'],
+    ['The <em>Gauntlet</em>', 'Two teams, one week. Who won?', '#8fb3d6'],
+    ['The <em>Over/Under</em>', 'Ten real weeks, ten lines', '#c9a9ea'],
+    ['The <em>Redraft</em>', 'A real slot. Pick again, with hindsight', '#9ec8a8'],
+    ['The Multiverse <em>Draft</em>', 'Every player is three players', '#5fc9bd'],
+  ];
+  return `<div class="list">${G.map(([n, d, c]) => `
+    <div class="r" style="--tint:${c}"><span class="tick"></span>
+      <span class="n">${n}</span><span class="d">${esc(d)}</span></div>`).join('')}</div>`;
+},
+
+clubhouse: () => `
+  <div class="list">
+    <div class="r"><span class="no">01</span><span class="n">The Newsstand</span>
+      <span class="d">Every almanac anyone has published. 152 of them.</span></div>
+    <div class="r"><span class="no">02</span><span class="n">The Hall</span>
+      <span class="d">Every record on the network, raw or against the league average.</span></div>
+    <div class="r"><span class="no">03</span><span class="n">The Census</span>
+      <span class="d">What 1.1 million games say about how the game is played.</span></div>
+    <div class="r"><span class="no">04</span><span class="n">The Trade Room</span>
+      <span class="d">Weigh a deal on real value, on any platform.</span></div>
+    <div class="r"><span class="no">05</span><span class="n">The Dispatch</span>
+      <span class="d">What shipped, and what is being built next.</span></div>
+  </div>`,
+};
+
+/* ══════════════════════════════════════════════════════════════
+   THE SLIDES
+   ══════════════════════════════════════════════════════════════ */
+
+const SLIDES = [
+  /* 01 */ { kind:'front', theme:'almanac', run:'The tour' },
+
+  /* 02 */ { kind:'pitch', theme:'almanac', run:'What it is' },
+
+  /* 03 */ { kind:'plate', theme:'almanac', run:'Section one', num:'I',
+             title:'The <em>Almanac.</em>',
+             kick:'Section one of three',
+             deck:'Everything your league has already done, walked back to the first season anybody can remember and bound in one book. Nobody has to remember anything.',
+             chapters:[
+               ['01','The Standings','All-time'], ['02','The Seasons','Year by year'],
+               ['03','The Record Book','41 boards'], ['04','The Draft','Every pick'],
+               ['05','The Managers','Careers'], ['06','The Manager File','One dossier'],
+               ['07','The Rivalries','66 pairings'], ['08','The Chart Room','Six charts'],
+               ['09','The All-Time Team','Best ever'], ['10','The Mock Room','Next year'],
+             ],
+             stand:'Seven seasons nobody ever wrote down, and every one of them is in here.',
+             /* The platforms belong on this plate rather than on their own
+                slide: the almanac is the thing they feed, and NFL.com being
+                dead is a reason to sign up rather than a gap to hide. */
+             bottom:`<div style="margin-top:30px">
+               <div class="kick" style="margin-bottom:14px">
+                 Read off &nbsp;<u></u></div>
+               <div class="plat">
+                 <div class="p"><div class="n">Sleeper</div><div class="s">Live sync</div></div>
+                 <div class="p"><div class="n">ESPN</div><div class="s">Live sync</div></div>
+                 <div class="p"><div class="n">Yahoo</div><div class="s">Live sync</div></div>
+                 <div class="p off"><div class="n">NFL.com</div>
+                   <div class="s">Retired &middot; archived here</div></div>
+               </div>
+             </div>` },
+
+  /* 04 */ { kind:'spread', theme:'almanac', run:'The Almanac',
+             a:{ kick:'Chapter one', t:'The <em>Standings.</em>',
+                 dek:'Every win, loss and point ever scored, in one table that settles it.',
+                 pull:['15,204.1','John has the most points ever scored and one title to show for it'],
+                 fig:'standings' },
+             b:{ kick:'Chapter two', t:'The <em>Seasons.</em>',
+                 dek:'And a front page for every year, carrying what it took to win that one.',
+                 pull:['7','Seasons, each opening to its own standings, bracket and draft'],
+                 fig:'seasons' } },
+
+  /* 05 */ { kind:'spread', theme:'almanac', run:'The Almanac',
+             a:{ kick:'Chapter three', t:'The Record <em>Book.</em>',
+                 dek:'The records of record, with a first, second and third for every mark.',
+                 fig:'records' },
+             b:{ kick:'Chapter four', t:'The <em>Draft.</em>',
+                 dek:'Every pick ever made, graded on what it actually returned.',
+                 pull:['A&minus; to F','Every manager gets a class grade for every draft'],
+                 fig:'draft' } },
+
+  /* 06 */ { kind:'spread', theme:'almanac', run:'The Almanac',
+             a:{ kick:'Chapter five', t:'The <em>Managers.</em>',
+                 dek:'Everyone who ever ran a team, and a complete file on each of them.',
+                 fig:'managers' },
+             b:{ kick:'Chapter seven', t:'The <em>Rivalries.</em>',
+                 dek:'Every grudge match tracked meeting by meeting, both directions.',
+                 pull:['66','Pairings, each with its own page of streaks and margins'],
+                 fig:'rivalries' } },
+
+  /* 07 */ { kind:'spread', theme:'almanac', run:'The Almanac',
+             a:{ kick:'Chapter eight', t:'The Chart <em>Room.</em>',
+                 dek:'The league drawn in ink: points races, standings trajectories and luck lines.',
+                 fig:'chart' },
+             b:{ kick:'Chapter nine', t:'The All-Time <em>Team.</em>',
+                 dek:'The best lineup a career could field, one slot at a time.',
+                 pull:['266.7','What Bryce would have scored with his best week at every slot'],
+                 fig:'alltime' } },
+
+  /* 08 */ { kind:'plate', theme:'live', run:'Section two', num:'II',
+             title:'The Live <em>Season.</em>',
+             kick:'Section two of three',
+             deck:'The same league, running in real time. Pages that wake up in September, keep score against the record book all year, and go quiet again in January.',
+             chapters:[
+               ['11','Matchup Preview','Every week'], ['12','Pick&rsquo;ems','All season'],
+               ['13','Power Rankings','Every Tuesday'], ['14','Best Coach','The bench'],
+               ['15','Records Watch','Live chases'], ['16','Milestones','Countdowns'],
+               ['17','The Trade Desk','Graded deals'], ['18','The Rumor Mill','Who asks'],
+               ['19','Manager DNA','Habits'], ['20','Sunday Live','Game day'],
+             ],
+             stand:'It wakes up on the first Thursday of September without being asked.',
+             bottom:`<div style="margin-top:30px">
+               <div class="kick" style="margin-bottom:14px">
+                 The rhythm &nbsp;<u></u></div>
+               <div class="plat">
+                 <div class="p"><div class="n">Thursday</div>
+                   <div class="s">The week ahead</div></div>
+                 <div class="p"><div class="n">Sunday</div>
+                   <div class="s">Live from kickoff</div></div>
+                 <div class="p"><div class="n">Tuesday</div>
+                   <div class="s">Rebuilt overnight</div></div>
+                 <div class="p off"><div class="n">February</div>
+                   <div class="s">It sleeps</div></div>
+               </div>
+             </div>` },
+
+  /* 09 */ { kind:'spread', theme:'live', run:'The Live Season',
+             a:{ kick:'Every Thursday', t:'Matchup <em>Preview.</em>',
+                 dek:'What this week actually means, with the whole history of the two teams under it.',
+                 fig:'matchup' },
+             b:{ kick:'All season', t:'The <em>Pick&rsquo;ems.</em>',
+                 dek:'Everybody picks every game, and the board keeps the receipts until January.',
+                 pull:['12 of 12','Nobody gets to quietly forget the week they went one for six'],
+                 fig:'pickems' } },
+
+  /* 10 */ { kind:'spread', theme:'live', run:'The Live Season',
+             a:{ kick:'Every Tuesday', t:'Power <em>Rankings.</em>',
+                 dek:'All twelve ranked off the results, or ranked by hand if you would rather argue.',
+                 fig:'power' },
+             b:{ kick:'The hard one', t:'Best <em>Coach.</em>',
+                 dek:'How much of your season went unplayed, sitting on your own bench.',
+                 pull:['264.3','Points Grant has left on the bench this year'],
+                 fig:'coach' } },
+
+  /* 11 */ { kind:'spread', theme:'live', run:'The Live Season',
+             a:{ kick:'Live', t:'Records <em>Watch.</em>',
+                 dek:'The record book pointed at the current season, so you hear about it on the Thursday.',
+                 fig:'watch' },
+             b:{ kick:'Coming up', t:'The <em>Milestones.</em>',
+                 dek:'Told the week before it happens, not the March after.',
+                 pull:['Before','Every countdown fires ahead of the game, never after it'],
+                 fig:'milestones' } },
+
+  /* 12 */ { kind:'trade', theme:'live', run:'The Live Season' },
+
+  /* 13 */ { kind:'rest', theme:'slate', run:'Section three' },
+
+  /* 14 */ { kind:'toc', theme:'almanac', run:'Contents' },
+
+  /* 15 */ { kind:'close', theme:'almanac', run:'Start yours' },
+];
+
+const TOTAL = SLIDES.length;
+
+/* ── the foot ─────────────────────────────────────────────────
+   Rotated so the imprint is not the same line fifteen times: the
+   URL, then the wordmark, then the edition line. The folio on the
+   right never changes, because that is the one thing a page number
+   is for. */
+const IMPRINTS = [
+  () => `<span class="imp">thesundaychronicle.app</span>`,
+  () => `<span class="mark"><b>The Sunday <em>Chronicle.</em></b>
+           <s>Est. 2025</s></span>`,
+  () => `<span class="imp">Vol. II &middot; No. 118 &middot; Compiled from seven seasons</span>`,
+];
+
+function foot(n) {
+  return `<div class="foot">
+    ${IMPRINTS[(n - 1) % IMPRINTS.length]()}
+    <span class="folio"><i>${n}</i> of ${TOTAL}</span>
+  </div>`;
+}
+
+const runHead = label => `<div class="run">
+  <span class="sec">${esc(label)}</span><u></u><span class="orn">&#10022;</span>
+</div>`;
+
+/* ══════════════════════════════════════════════════════════════
+   RENDER
+   ══════════════════════════════════════════════════════════════ */
+
+const params = new URLSearchParams(location.search);
+const n = Math.min(Math.max(parseInt(params.get('slide') || '1', 10), 1), TOTAL);
+const s = SLIDES[n - 1];
+
+applyTheme(s.theme);
+const body = document.getElementById('body');
+
+/* one half of a spread: header column on one side, figures on the
+   other, with a column rule between */
+function half(cls, h) {
+  return `<div class="half ${cls}">
+    <div class="hd">
+      <div class="kick">${esc(h.kick)}</div>
+      <h2>${h.t}</h2>
+      <div class="dek">${esc(h.dek)}</div>
+      ${h.pull ? `<div class="pull"><div class="v">${h.pull[0]}</div>
+                   <div class="k">${esc(h.pull[1])}</div></div>` : ''}
+    </div>
+    <div class="art">${FIG[h.fig]()}</div>
+  </div>`;
+}
+
+/* The front page fills the sheet rather than sitting in the top two
+   thirds of it: masthead block at the top, the issue strip pinned
+   above the foot, and the air distributed between them, which is
+   how a broadsheet lays out a front page. */
+if (s.kind === 'front') {
+  body.innerHTML = runHead(s.run) + `
+    <div class="page" style="justify-content:space-between">
+      <div>
+        <div class="mastbar">
+          <span>Vol. II &middot; No. 118</span>
+          <span class="mid">Sleeper &middot; ESPN &middot; Yahoo &middot; NFL.com</span>
+          <span>Price: one league ID</span>
+        </div>
+        <div class="kick-c" style="margin-top:44px">A tour of the whole paper</div>
+        <div class="nameplate" style="font-size:126px;text-align:center;margin-top:24px">
+          The Sunday<br><em>Chronicle.</em></div>
+        <div class="foil" style="width:78%;margin:36px auto 0"></div>
+        <div class="deckrow"><p>The record book your league never kept.</p></div>
+      </div>
+
+      <div>
+        <div class="wire">
+          <div class="c">
+            <div class="l"><i>&#9733;</i><span>Bryce takes sole possession of first</span></div>
+            <div class="l"><i>&#9733;</i><span>Reid comeback falls 1.2 short, still disputed</span></div>
+            <div class="l"><i>&#9733;</i><span>Record watch: 212.44 survives a fourth season</span></div>
+          </div>
+          <div class="c">
+            <div class="l"><i>&#9733;</i><span>Nate rides a four game heater into week 15</span></div>
+            <div class="l"><i>&#9733;</i><span>Grant benches the wrong quarterback again</span></div>
+            <div class="l"><i>&#9733;</i><span>Deadline passes without a single offer made</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="kick" style="justify-content:center;color:var(--deep)">
+          Inside this issue</div>
+        <div class="issue">
+          <div class="c"><div class="rn">I</div>
+            <div class="n">The Almanac</div>
+            <div class="d">Everything the league has already done, walked back
+              to the first season anybody can remember.</div>
+            <div class="ct">Eleven chapters</div></div>
+          <div class="c"><div class="rn">II</div>
+            <div class="n">The Live Season</div>
+            <div class="d">The same league running in real time, keeping score
+              against the record book every week.</div>
+            <div class="ct">Ten pages</div></div>
+          <div class="c"><div class="rn">III</div>
+            <div class="n">And the rest</div>
+            <div class="d">Six games dealt out of your own seasons, and five
+              rooms open to anybody with an account.</div>
+            <div class="ct">Games and Clubhouse</div></div>
+        </div>
+      </div>
+    </div>` + foot(n);
+
+} else if (s.kind === 'pitch') {
+  body.innerHTML = runHead(s.run) + `
+    <div class="page">
+      <div class="half a">
+        <div class="hd" style="flex-basis:352px">
+          <div class="kick">The whole idea</div>
+          <h2 style="font-size:48px">One league ID.<br><em>Everything after.</em></h2>
+          <div class="dek">The Chronicle reads your league off the platform you
+            already play on, walks it back to the first season anybody can
+            remember, and prints the paper trail as a book that keeps itself
+            current from there.</div>
+          <div class="pull"><div class="v">90 seconds</div>
+            <div class="k">From pasting the ID to reading the first chapter</div></div>
+        </div>
+        <div class="art">
+          <div class="clipping" style="margin:auto 0">
+            <div class="ch"><b>What came back</b><s>First sync</s></div>
+            <div class="ln"><span class="t">Seasons<i>Back to year one</i></span>
+              <span class="v">7</span></div>
+            <div class="ln"><span class="t">Games played<i>Every box score, both sides</i></span>
+              <span class="v">1,092</span></div>
+            <div class="ln"><span class="t">Managers on file<i>Including the ones who left</i></span>
+              <span class="v">14</span></div>
+            <div class="ln"><span class="t">Draft picks<i>Every one of them graded</i></span>
+              <span class="v">812</span></div>
+            <div class="ln"><span class="t">Trades<i>Re-graded on what they returned</i></span>
+              <span class="v">96</span></div>
+            <div class="ln"><span class="t">Records found<i>Nobody knew about most of them</i></span>
+              <span class="v">148</span></div>
+            <div class="stamp">Compiled</div>
+          </div>
+        </div>
+      </div>
+      <div class="foil"></div>
+      <div class="half b" style="flex:.52;display:block;padding-top:26px">
+        <div class="kick" style="margin-bottom:18px">How it goes
+          <u></u>
+          <span style="color:var(--mute);letter-spacing:.18em">No spreadsheet, ever</span>
+        </div>
+        <div class="steps">
+          <div class="s"><div class="n">I</div>
+            <div class="t">Paste the league ID</div>
+            <div class="d">The one already in the address bar of the league you
+              play in. Nothing to install, nothing to fill in.</div></div>
+          <div class="s"><div class="n">II</div>
+            <div class="t">It reads every season back</div>
+            <div class="d">Standings, box scores, drafts, trades and the managers
+              behind them, as far back as the platform kept them.</div></div>
+          <div class="s"><div class="n">III</div>
+            <div class="t">The paper prints itself</div>
+            <div class="d">Twenty-three chapters, and it stays current on its own
+              every week of the season after that.</div></div>
+        </div>
+      </div>
+    </div>` + foot(n);
+
+} else if (s.kind === 'plate') {
+  body.innerHTML = runHead(s.run) + `
+    <div class="page">
+      <div style="display:flex;align-items:flex-start;gap:34px">
+        <div class="roman">${s.num}</div>
+        <div style="flex:1;padding-top:6px">
+          <div class="kick-c" style="text-align:left">${esc(s.kick)}</div>
+          <div class="nameplate" style="font-size:96px;margin-top:18px">${s.title}</div>
+        </div>
+      </div>
+      <div class="foil" style="margin:32px 0 28px"></div>
+      <div style="font-size:26px;line-height:1.46;color:var(--soft);max-width:860px">
+        ${esc(s.deck)}</div>
+      <div class="chaplist">
+        ${s.chapters.map(c => `<div class="c"><span class="no">${c[0]}</span>
+          <span class="n">${c[1]}</span><span class="d">${c[2]}</span></div>`).join('')}
+      </div>
+      <div class="standfirst"><p>${s.stand}</p></div>
+      ${s.bottom}
+    </div>` + foot(n);
+
+} else if (s.kind === 'spread') {
+  body.innerHTML = runHead(s.run) + `
+    <div class="page">
+      ${half('a', s.a)}
+      <div class="foil"></div>
+      ${half('b', s.b)}
+    </div>` + foot(n);
+
+/* The Trade Desk gets a page to itself: the ticket across the top,
+   then the mill and the profile side by side under it, which is how
+   the real page stacks them. */
+} else if (s.kind === 'trade') {
+  body.innerHTML = runHead(s.run) + `
+    <div class="page">
+      <div class="half a">
+        <div class="hd">
+          <div class="kick">Chapter seventeen</div>
+          <h2>The Trade <em>Desk.</em></h2>
+          <div class="dek">Every deal in the league graded from both sides on
+            what the pieces are actually worth, not on who shouted loudest in
+            the group chat.</div>
+          <div class="pull"><div class="v">14</div>
+            <div class="k">Trades this season, the most since 2021</div></div>
+        </div>
+        <div class="art">${FIG.trade()}</div>
+      </div>
+      <div class="foil"></div>
+      <div class="half b" style="align-items:stretch">
+        <div class="hd">
+          <div class="kick">And underneath it</div>
+          <h2 style="font-size:44px">The Mill, and<br>the <em>Profile.</em></h2>
+          <div class="dek">Who keeps starting the conversations, and seven
+            years of habits read back at whoever made them.</div>
+        </div>
+        <div class="art" style="flex-direction:row;gap:26px">
+          <div style="flex:1;display:flex;flex-direction:column">${FIG.mill()}</div>
+          <div style="flex:1;display:flex;flex-direction:column;
+                      border-left:1px solid var(--line);padding-left:26px">
+            <div class="kick" style="margin-bottom:12px">Drew, since 2019</div>
+            ${FIG.dna()}
+          </div>
+        </div>
+      </div>
+    </div>` + foot(n);
+
+/* Games above, Clubhouse below on a reversed cream panel: a paper
+   drops a boxed feature into the foot of a broadsheet, and it gives
+   the deck its one light surface. */
+} else if (s.kind === 'rest') {
+  body.innerHTML = runHead(s.run) + `
+    <div class="page">
+      <div class="half a">
+        <div class="hd">
+          <div class="kick">Section three</div>
+          <h2>The <em>Games.</em></h2>
+          <div class="dek">Six of them, every one dealt out of seasons your
+            league actually played. Par graded, shareable, and there is a
+            leaderboard.</div>
+          <div class="pull"><div class="v">Any league</div>
+            <div class="k">Playable on yours, on the demo, or across the whole site</div></div>
+        </div>
+        <div class="art">${FIG.games()}</div>
+      </div>
+      <div class="half b reverse" style="flex:.92">
+        <div class="hd">
+          <div class="kick">Free with any account</div>
+          <h2 style="font-size:46px">The <em>Clubhouse.</em></h2>
+          <div class="dek">Five rooms outside your own league, open before
+            you have set one up.</div>
+        </div>
+        <div class="art">${FIG.clubhouse()}</div>
+      </div>
+    </div>` + foot(n);
+
+} else if (s.kind === 'toc') {
+  const A = [['01','The Standings'], ['02','The Seasons'], ['03','The Record Book'],
+             ['04','The Draft'], ['05','The Draft Grader'], ['06','The Managers'],
+             ['07','The Manager File'], ['08','The Rivalries'], ['09','The Chart Room'],
+             ['10','The All-Time Team'], ['11','The Mock Room']];
+  const B = [['12','Matchup Preview'], ['13','Pick&rsquo;ems'], ['14','Power Rankings'],
+             ['15','Best Coach'], ['16','Records Watch'], ['17','Milestones'],
+             ['18','The Trade Desk'], ['19','The Rumor Mill'], ['20','Manager DNA'],
+             ['21','Sunday Live']];
+  const C = [['22','The Games'], ['23','The Clubhouse']];
+  const col = (h, rows, p) => `<div class="col"><h3>${h}</h3>
+    ${rows.map(r => `<div class="e"><span class="no">${r[0]}</span>
+      <span class="n">${r[1]}</span><span class="dots"></span>
+      <span class="p">${p}</span></div>`).join('')}</div>`;
+  body.innerHTML = runHead(s.run) + `
+    <div class="plate" style="top:150px">
+      <div class="kick-c" style="text-align:left">Everything in the paper</div>
+      <div class="nameplate" style="font-size:78px;margin-top:18px">
+        Twenty-three <em>chapters.</em></div>
+      <div class="foil" style="margin:28px 0 30px"></div>
+      <div class="toc">
+        ${col('Section I &middot; The Almanac', A, 'History')}
+        ${col('Section II &middot; The Live Season', B, 'In season')}
+      </div>
+      <div class="toc" style="margin-top:26px;padding-top:22px;
+                              border-top:1px solid var(--line)">
+        ${col('Section III &middot; And the rest', C, 'Any time')}
+        <div class="col" style="display:flex;align-items:center">
+          <div style="font-family:var(--serif);font-style:italic;font-size:25px;
+                      line-height:1.4;color:var(--soft)">
+            Every one of them built out of games your league<br>
+            has already played.</div>
+        </div>
+      </div>
+    </div>` + foot(n);
+
+} else if (s.kind === 'close') {
+  body.innerHTML = runHead(s.run) + `
+    <div class="plate" style="top:132px">
+      <div class="mastbar">
+        <span>Vol. II &middot; No. 118</span>
+        <span class="mid">Sleeper &middot; ESPN &middot; Yahoo &middot; NFL.com</span>
+        <span>Price: one league ID</span>
+      </div>
+    </div>
+    <div class="plate" style="top:250px">
+      <div class="kick-c" style="text-align:left">Start your chronicle</div>
+      <div class="nameplate" style="font-size:88px;margin-top:20px">
+        Your league has a<br><em>paper trail.</em><br>Go and read it.</div>
+      <div class="offer">
+        <div class="o">
+          <div class="k">On signing up</div>
+          <div class="v">30 days free</div>
+          <div class="d">The whole almanac, the live season and every game.
+            Nothing charged until it is over.</div>
+        </div>
+        <div class="o">
+          <div class="k">Then, on your first bill</div>
+          <div class="v">50% off</div>
+          <div class="d">Enter this code at checkout.</div>
+          <div class="coupon">FIRST50</div>
+        </div>
+      </div>
+      <div style="margin-top:26px;display:flex;align-items:baseline;
+                  font-family:var(--mono);font-size:16px;letter-spacing:.18em;
+                  text-transform:uppercase;color:var(--soft)">
+        <span>Ninety seconds to start it</span>
+        <span style="margin-left:auto;color:var(--mute)">Or read the demo league first</span>
+      </div>
+    </div>` + foot(n);
+}
+</script>
+</body>
+</html>

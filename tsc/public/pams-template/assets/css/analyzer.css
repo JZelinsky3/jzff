@@ -143,67 +143,45 @@ html, body { background: var(--td-bg, #1a1209); color: var(--td-text, #f5e9c8); 
 
 /* Stacked (phone) layout — tell the two teams apart.
    Side by side, the two panels are obviously two teams. Stacked, they are
-   identical dark cards separated by 1rem, so scrolling through a long
-   roster you cross from one team into the other without noticing and start
-   picking players for the wrong side. Three cues, cheapest first: real
-   space between them, a labelled rule marking the boundary, and a side
-   header that stays put while you scroll that panel. */
-@media (max-width: 759px) {
-    .an-sides { gap: 2.6rem; }
+   identical dark cards, so scrolling a long roster you cross from one team
+   into the other without noticing and start picking for the wrong side.
 
-    .an-side + .an-side {
-        position: relative;
-        margin-top: .4rem;
-    }
-    .an-side + .an-side::before {
+   Two cues, both kept strictly inside the card: real space between the
+   panels, and a side header that stays put while you scroll that panel.
+   An earlier version put a labelled rule ABOVE the second card with
+   position:absolute and bled the sticky header out with negative margins.
+   Both escaped the card — the rule landed on top of the first card's
+   bottom edge, and the header spilled past the 1px border and squared off
+   the rounded corners. Nothing here leaves the padding box now. */
+@media (max-width: 759px) {
+    .an-sides { gap: 2.4rem; }
+
+    /* Boundary marker, in normal flow at the top of the second card, so it
+       cannot overlap the card above it. */
+    .an-side + .an-side .an-side-head::before {
         content: "Second team";
-        position: absolute;
-        top: -1.55rem; left: 0; right: 0;
-        display: flex; align-items: center; gap: .6rem;
-        font-family: var(--mono); font-size: .55rem;
+        display: block;
+        width: 100%;
+        margin-bottom: .5rem;
+        font-family: var(--mono); font-size: .53rem;
         letter-spacing: .25em; text-transform: uppercase;
         color: var(--td-live);
-        opacity: .75;
-    }
-    /* The rule itself, drawn to the right of the label. */
-    .an-side + .an-side::after {
-        content: "";
-        position: absolute;
-        top: -1.2rem; left: 7.2rem; right: 0;
-        border-top: 1px dashed var(--td-line);
+        opacity: .7;
     }
 
     /* Keep whose roster you're in on screen. Offset by the mobile app bar
-       when there is one; the fallback covers the desktop tree at phone
-       widths, where nothing is fixed above. */
+       where one is fixed above; the fallback covers the desktop tree at
+       phone widths, where nothing is. */
     .an-side-head {
         position: sticky;
         top: calc(var(--m-appbar-h, 0px) + env(safe-area-inset-top, 0px));
         z-index: 2;
         background: var(--td-card);
-        margin: 0 -1.1rem .85rem;
-        padding: .55rem 1.1rem .7rem;
+        /* No horizontal bleed: the row content lives inside this same
+           padding box, so there is nothing in the gutters to cover. */
+        padding-top: .6rem;
+        flex-wrap: wrap;
     }
-}
-.an-side {
-    background: var(--td-card);
-    border: 1px solid var(--td-line);
-    border-radius: 4px;
-    padding: 1.1rem 1.1rem 1.3rem;
-}
-.an-side-head {
-    display: flex; align-items: baseline; gap: .8rem;
-    margin-bottom: .85rem;
-    padding-bottom: .7rem;
-    border-bottom: 1px solid var(--td-line-soft);
-}
-.an-side-tag {
-    font-family: var(--mono); font-size: .58rem; letter-spacing: .25em;
-    text-transform: uppercase; color: var(--td-live);
-}
-.an-side-name {
-    font-family: var(--serif); font-size: 1.05rem;
-    color: var(--td-text); flex: 1; text-align: right;
 }
 
 /* ── Position groups + player rows ──────────────────────────── */

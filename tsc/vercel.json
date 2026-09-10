@@ -1,24 +1,17 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/refresh",
-      "schedule": "0 22 * * 2"
-    },
-    {
-      "path": "/api/cron/refresh-player-values",
-      "schedule": "0 13 * * 1"
-    },
-    {
-      "path": "/api/cron/refresh-sleeper-players",
-      "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/cron/refresh-draft-ranks",
-      "schedule": "0 10 * * *"
-    },
-    {
-      "path": "/api/cron/grade-trades",
-      "schedule": "0 14 * * *"
-    }
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "//": [
+    "Scheduled jobs are NOT declared here any more. This file used to list 5",
+    "crons, but the account is on Hobby, which allows 2 and fires them once a",
+    "day at an approximate time, so none of them ever ran and every sync in",
+    "the database was manual.",
+    "",
+    "They now run from GitHub Actions instead (free on public repos, exact",
+    "schedules, no plan change): see .github/workflows/cron.yml at the repo",
+    "root. That workflow calls the same /api/cron/* endpoints with the",
+    "CRON_SECRET bearer token.",
+    "",
+    "If you move to Vercel Pro and want crons back here, delete the workflow",
+    "first so the jobs don't fire twice."
   ]
 }

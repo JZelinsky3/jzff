@@ -763,7 +763,14 @@ export function generateMockTrades(args: GenerateMocksArgs): MockTrade[] {
       const sendVal = sumValues(sends, values)
       if (sendVal <= 0) continue
       for (const receives of combosB) {
-        if (evals >= 70) break   // per-pair budget
+        // Per-pair budget. Raised from 70: the Mill was reliably printing 2
+        // deals against a target of 3-5, and this cap was throwing away
+        // candidates before they were ever scored. Like the pair-sample
+        // width above, this changes only how many combinations get LOOKED
+        // at, never the bar they have to clear, so the column can't fill up
+        // with worse trades. Measured at ~5s per generation, once a week
+        // per league, and cached after.
+        if (evals >= 160) break
         const recvVal = sumValues(receives, values)
         if (recvVal <= 0) continue
         const ratio = Math.min(sendVal, recvVal) / Math.max(sendVal, recvVal)

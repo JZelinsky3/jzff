@@ -63,18 +63,18 @@ body {
             mock trades for {{LEAGUE_ABBR}} · read them, argue about them,
             steal one and send the offer for real.
         </p>
-        <button type="button" class="td-share-btn" onclick="TSCShare&&TSCShare.open()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
         <div class="rm-stamp" id="rm-stamp" hidden>
             <span id="rm-stamp-week"></span>
             <span class="rm-stamp-dot">·</span>
             <span id="rm-stamp-src"></span>
         </div>
-        <div>
+        <div class="rm-actions">
             <!-- DEV ONLY — remove before release (mirrors the desktop shell).
                  Rerolls this week's column with a fresh seed. -->
             <button type="button" class="rm-dev-sim" id="rm-dev-sim">
                 ⚗ Reroll this week's slate
             </button>
+            <button type="button" class="td-share-btn" onclick="TSCShare&&TSCShare.open()" aria-label="Share the Rumor Mill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span>Share</span></button>
         </div>
     </header>
 

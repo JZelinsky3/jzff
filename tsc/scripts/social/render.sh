@@ -147,6 +147,25 @@ case "${1:-}" in
     done
     ;;
 
+  # ./render.sh tour [slide-number ...]
+  #
+  # The site tour. Twenty slides, which is Instagram's cap on a
+  # carousel. With no arguments it renders all twenty; with numbers it
+  # renders only those, which is what you want while iterating on one
+  # panel. Slide 17 is the only light one (the Clubhouse day theme) —
+  # check it against its neighbours before posting, since it is the
+  # slide most likely to look like a mistake in the grid.
+  tour)
+    shift
+    SLIDES=("$@")
+    [ ${#SLIDES[@]} -eq 0 ] && SLIDES=($(seq 1 15))
+    echo "Rendering site tour:"
+    for i in "${SLIDES[@]}"; do
+      shot "file://$HERE/tour.html?slide=$i" \
+           "tour-$(printf '%02d' "$i")" 1080 1350
+    done
+    ;;
+
   # ./render.sh grab <url> <name> [width] [height]
   #
   # Captures a page into shots/ so it can be fed to cover.html's

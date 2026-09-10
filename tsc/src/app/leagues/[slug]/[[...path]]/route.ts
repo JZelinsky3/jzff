@@ -472,9 +472,10 @@ const SHARE_BUTTON_FILES = new Set<string>([
 // express.
 const SHARE_DIALOG_FILES = new Set<string>([
   'managers/all-time.html',
-  // Trade Desk rooms. Each ships an in-layout Share control in its header
-  // rather than the floating pill, which doesn't belong on a live page.
-  'live/trades/index.html',
+  // Trade Desk rooms with something worth sending: the wire and the week's
+  // mock column. Each ships an in-layout Share control rather than the
+  // floating pill, which doesn't belong on a live page. The Desk hub itself
+  // is just a set of doors, so it keeps its OG tags and skips the dialog.
   'live/trades/grader/index.html',
   'live/trades/mocks/index.html',
 ])

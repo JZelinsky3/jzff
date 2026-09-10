@@ -183,3 +183,32 @@
 .td-share-btn svg { width: 13px; height: 13px; }
 .td-share-btn:hover, .td-share-btn:focus-visible { opacity: 1; }
 .td-share-btn:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+/* Pinned to the top-right of a page header, the way the Power Rankings
+   carries its share control. Sat under the title before, which read as an
+   orphan button floating between the masthead and the content. */
+.td-share-btn--corner {
+    position: absolute;
+    top: 1rem; right: 1rem;
+    margin-top: 0;
+    z-index: 3;
+}
+/* The headers it pins inside. Padding keeps a long title from running under
+   the button on narrow screens. */
+.wire-hero, .tr-page-head { position: relative; }
+@media (max-width: 560px) {
+    .td-share-btn--corner { top: .7rem; right: .7rem; padding: .38rem .6rem; }
+    /* Icon only once there isn't room for the word. */
+    .td-share-btn--corner span { display: none; }
+    .wire-hero, .tr-page-head { padding-right: 3.4rem; }
+}
+
+/* Rumor Mill: Share sits beside the commissioner's reroll control, under
+   the column stamp. Members who never see the reroll just get Share on
+   that row by itself. */
+.rm-actions {
+    display: flex; align-items: center; gap: .6rem;
+    flex-wrap: wrap;
+    margin-top: .9rem;
+}
+.rm-actions .td-share-btn { margin-top: 0; }
