@@ -1,14 +1,17 @@
 // Vercel Cron — daily automatic trade grading + 4-week revisits.
 //
-// This is how grades happen in production: no buttons. Any trade that
-// landed on the wire in the last GRADE_WINDOW_DAYS and hasn't been graded
-// yet gets a grade on the next daily run, so a Tuesday-night trade is
-// marked up by Wednesday morning. Old archives imported with a new league
-// are deliberately left alone — the executed_at window means only trades
-// made while the league is on TSC ever auto-grade.
+// This is how grades happen in production: no buttons. Any ungraded trade
+// from FIRST_GRADED_SEASON (2026) on gets a grade on the next daily run, so
+// a Tuesday-night trade is marked up by Wednesday morning and a preseason
+// trade is marked up the day after it clears. Old archives imported with a
+// new league are deliberately left alone: the season floor is the guard, so
+// imported history never picks up a grade even if a backfill or re-import
+// gives it a recent timestamp.
 //
-// Revisits ride the same run: any auto-or-manually graded trade whose
-// grade is 4+ weeks old and hasn't been revisited gets its verdict pass.
+// Revisits ride the same run: a graded trade gets its verdict pass once the
+// season reaches four weeks past the week the trade happened (preseason
+// trades count as week 0, so they land in week 4 and week-1 trades in
+// week 5). Tied to the trade's week, not to when the grade was written.
 //
 // Eligibility: the league owner must have Veteran-tier trades access
 // (tier2+/comp) — same gate the trades page enforces — so free leagues
@@ -23,15 +26,13 @@
 
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { gradeTrade, revisitTrade } from '@/lib/tradeGrader'
+import { gradeTrade, revisitTrade, FIRST_GRADED_SEASON, verdictIsDue } from '@/lib/tradeGrader'
 import { leagueHasTradesAccess } from '@/lib/trades'
 import { computePositionRanks, stampRanks, type PositionRanks } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 
 export const maxDuration = 300
 
-const GRADE_WINDOW_DAYS = 14
-const REVISIT_AGE_DAYS = 28
 const MAX_GRADES = 25
 const MAX_REVISITS = 15
 const PER_CALL_DELAY_MS = 5000
@@ -164,16 +165,22 @@ export async function GET(req: Request) {
 
   const db = createAdminClient()
   const warnings: string[] = []
-  const now = Date.now()
 
   // ── Fresh trades → initial grades ─────────────────────────────────────
-  const windowStart = new Date(now - GRADE_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString()
+  // Every ungraded trade from FIRST_GRADED_SEASON on, newest first.
+  //
+  // There used to be a 14-day executed_at window here as the guard against
+  // grading imported history. The season floor does that job properly now,
+  // and the window actively broke preseason: the offseason is long, so a
+  // draft-week trade would age past 14 days and never get a grade at all.
+  // Anything still ungraded is fair game; the caps below drain a backlog
+  // across consecutive days.
   const { data: freshRows, error: freshErr } = await db
     .from('trades')
-    .select('id, league_id')
+    .select('id, league_id, seasons!inner(year)')
     .eq('status', 'completed')
     .is('ai_summary', null)
-    .gte('executed_at', windowStart)
+    .gte('seasons.year', FIRST_GRADED_SEASON)
     .order('executed_at', { ascending: false })
     .limit(MAX_GRADES * 3)
   if (freshErr) warnings.push(`load fresh trades: ${freshErr.message}`)
@@ -189,20 +196,28 @@ export async function GET(req: Request) {
     warnings.push(...r.warnings)
   }
 
-  // ── Month-old grades → verdict revisits ───────────────────────────────
-  const revisitCutoff = new Date(now - REVISIT_AGE_DAYS * 24 * 60 * 60 * 1000).toISOString()
+  // ── Graded trades → verdicts, four weeks after the trade's week ───────
   const { data: staleRows, error: staleErr } = await db
     .from('trades')
-    .select('id, league_id')
+    .select('id, league_id, week, seasons!inner(year, is_live, settings)')
     .eq('status', 'completed')
     .not('ai_summary', 'is', null)
     .is('revisited_at', null)
-    .lte('ai_summary_at', revisitCutoff)
-    .order('ai_summary_at', { ascending: true })
-    .limit(MAX_REVISITS * 3)
+    .gte('seasons.year', FIRST_GRADED_SEASON)
+    .order('executed_at', { ascending: true })
+    .limit(MAX_REVISITS * 6)
   if (staleErr) warnings.push(`load revisit candidates: ${staleErr.message}`)
 
-  const stale = await filterEligible(db, (staleRows ?? []) as TradeRow[])
+  const dueRows = (staleRows ?? []).filter((t) => {
+    const season = Array.isArray(t.seasons) ? t.seasons[0] : t.seasons
+    return verdictIsDue({
+      tradeWeek: t.week as number | null,
+      seasonIsLive: !!season?.is_live,
+      seasonSettings: season?.settings as Record<string, unknown> | null,
+    })
+  })
+
+  const stale = await filterEligible(db, dueRows as TradeRow[])
   const toRevisit = stale.eligible.slice(0, MAX_REVISITS)
 
   let revisited = 0

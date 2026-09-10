@@ -158,3 +158,28 @@
   cursor: pointer;
 }
 .tsc-share-close:hover { color: var(--tsc-share-accent); }
+
+/* ── In-layout Share control ─────────────────────────────────────────────
+   For pages that trigger the dialog from their own layout instead of the
+   floating pill (the Trade Desk rooms: they're live pages, where a FAB
+   doesn't belong). Lives here rather than in a room's stylesheet because
+   share.css is injected on exactly the pages that have a dialog to open,
+   so the button can never render unstyled. Inherits color so it reads
+   correctly under all four trades themes. */
+.td-share-btn {
+    display: inline-flex; align-items: center; gap: .45rem;
+    margin-top: .9rem;
+    padding: .42rem .85rem;
+    font-family: var(--mono, ui-monospace, monospace); font-size: .6rem;
+    letter-spacing: .2em; text-transform: uppercase;
+    color: currentColor;
+    background: transparent;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    opacity: .72;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.td-share-btn svg { width: 13px; height: 13px; }
+.td-share-btn:hover, .td-share-btn:focus-visible { opacity: 1; }
+.td-share-btn:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }

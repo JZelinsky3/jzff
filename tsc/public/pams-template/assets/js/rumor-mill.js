@@ -165,12 +165,27 @@
     '</div>';
   }
 
+  // Dateline for the column stamp.
+  //
+  // payload.weekKey is an ISO CALENDAR week ("2026-W37") used as the cache
+  // and vote key. It was being printed here, which read as "week 37" of a
+  // 18-week season. Print the NFL week when the season is running, and the
+  // generated date otherwise.
+  function stampWeek(payload) {
+    if (payload.nflWeek) return 'Week ' + payload.nflWeek;
+    var d = payload.generatedAt ? new Date(payload.generatedAt) : null;
+    if (d && !isNaN(d.getTime())) {
+      return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    return '';
+  }
+
   function render(payload) {
     hide(loadingEl);
     current = payload;
 
     if (payload.deskClosed) {
-      $('rm-stamp-week').textContent = payload.weekKey || '';
+      $('rm-stamp-week').textContent = stampWeek(payload);
       $('rm-stamp-src').textContent = 'Desk closed';
       show(stampEl);
       closedMsg.textContent = payload.deadlineWeek
@@ -181,7 +196,7 @@
       return;
     }
 
-    $('rm-stamp-week').textContent = payload.weekKey || '';
+    $('rm-stamp-week').textContent = stampWeek(payload);
     // 'Desk column' = full write-up landed; 'Desk notes' = deterministic
     // fallback copy. Reads the same to members, tells us which path ran.
     $('rm-stamp-src').textContent =

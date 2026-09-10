@@ -92,6 +92,39 @@
   padding: 1.5rem 1rem; text-align: center;
   font-size: .85rem; border-radius: 3px;
 }
+
+/* Archive season picker. Themed by inheritance (currentColor + transparent
+   fill) so it reads correctly under all four trades themes without four
+   separate overrides. */
+.tr-year-pick {
+  display: flex; align-items: center; gap: .55rem;
+  margin-bottom: 1rem;
+}
+.tr-year-pick-label {
+  font-family: var(--mono); font-size: .62rem;
+  letter-spacing: .22em; text-transform: uppercase;
+  opacity: .6;
+}
+.tr-year-select {
+  font-family: var(--mono); font-size: .72rem; letter-spacing: .08em;
+  color: currentColor;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  padding: .3rem 1.6rem .3rem .55rem;
+  cursor: pointer;
+  /* Native arrow varies wildly across the themes' dark backgrounds. */
+  appearance: none; -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 14px) 52%, calc(100% - 9px) 52%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+/* Options render in the OS menu, which does not inherit the page's dark
+   theme on every browser — pin readable colors. */
+.tr-year-select option { color: #1a1a1a; background: #f4efe6; }
+.tr-year-select:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 .tr-empty { text-align: center; padding: 3rem 1rem; }
 .tr-empty h2 { font-family: var(--serif); font-size: 1.6rem; margin-bottom: .6rem; }
 .tr-lock { text-align: center; padding: 3rem 1rem 4rem; border-radius: 3px; }

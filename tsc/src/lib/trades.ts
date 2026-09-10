@@ -18,6 +18,7 @@ import { isCompUser, isSubscriptionActive, getUserSubscription } from '@/lib/str
 import { getLockReason } from '@/lib/leagueTier'
 import { buildNameLookup, nameKey } from '@/lib/positionRanks'
 import { parseSettings, mergeEffective } from '@/lib/tradeDesk/settings'
+import { resolveCurrentWeek } from '@/lib/liveSeason'
 import { valuateLeague, type LeagueMode, type PlayerValue as ConsensusValue } from '@/lib/values'
 
 const MAX_TRADES = 100
@@ -210,6 +211,14 @@ export async function getTradesState(slug: string): Promise<TradesState | null> 
     return { status: 'tier-locked', league_id: league.id }
   }
 
+  // Live season, for the preseason hold in the bucketing below.
+  const { data: liveSeason } = await db
+    .from('seasons')
+    .select('year, settings')
+    .eq('league_id', league.id)
+    .eq('is_live', true)
+    .maybeSingle<{ year: number; settings: Record<string, unknown> | null }>()
+
   // Pull trades + season year in one query. Order newest first, cap at MAX_TRADES.
   // ai_summary = original recap (after first grade pass).
   // revisit_summary + revisited_at = 4-week retrospective (verdict pass).
@@ -309,13 +318,36 @@ export async function getTradesState(slug: string): Promise<TradesState | null> 
   //   Verdicts tab → all_verdicts (every revisited trade, all time)
   const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
 
-  const current_trades = allTrades.filter(
-    (t) => Date.parse(t.executed_at) >= sevenDaysAgo,
-  )
+  // Preseason hold: a rolling 7 days is the wrong clock before week 1.
+  //
+  // The offseason runs for months with nothing else on the page, so a draft-
+  // week trade would slide into Past while it is still the only thing anyone
+  // has to talk about. Every trade made before week 1 opened therefore stays
+  // in Current for as long as the season hasn't gotten past week 1. Once
+  // week 2 starts, the hold lifts and those trades age out on the normal
+  // 7-day clock like everything else.
+  const liveSettings = liveSeason?.settings ?? {}
+  const liveWeek = resolveCurrentWeek(liveSettings)
+  const week1StartMs =
+    typeof liveSettings.season_start_date === 'string'
+      ? Date.parse(liveSettings.season_start_date)
+      : NaN
+  const preseasonHoldActive =
+    liveSeason != null && liveWeek != null && liveWeek <= 1 && Number.isFinite(week1StartMs)
+
+  // Scoped to the live season so a genuinely old preseason trade from an
+  // imported archive can't be dragged back into Current.
+  const isPreseasonHold = (t: TradePublic) =>
+    preseasonHoldActive &&
+    t.season_year === liveSeason!.year &&
+    Date.parse(t.executed_at) < week1StartMs
+
+  const isCurrent = (t: TradePublic) =>
+    Date.parse(t.executed_at) >= sevenDaysAgo || isPreseasonHold(t)
+
+  const current_trades = allTrades.filter(isCurrent)
   const current_verdicts = allTrades.filter((t) => tradesWithRecentVerdict.has(t.id))
-  const past_trades = allTrades.filter(
-    (t) => Date.parse(t.executed_at) < sevenDaysAgo,
-  )
+  const past_trades = allTrades.filter((t) => !isCurrent(t))
 
   // Need to re-query trades that have a revisit_summary to populate the
   // all-verdicts tab — the MAX_TRADES limit above could cut off older

@@ -140,6 +140,51 @@ html, body { background: var(--td-bg, #1a1209); color: var(--td-text, #f5e9c8); 
 @media (min-width: 760px) {
     .an-sides { grid-template-columns: 1fr 1fr; }
 }
+
+/* Stacked (phone) layout — tell the two teams apart.
+   Side by side, the two panels are obviously two teams. Stacked, they are
+   identical dark cards separated by 1rem, so scrolling through a long
+   roster you cross from one team into the other without noticing and start
+   picking players for the wrong side. Three cues, cheapest first: real
+   space between them, a labelled rule marking the boundary, and a side
+   header that stays put while you scroll that panel. */
+@media (max-width: 759px) {
+    .an-sides { gap: 2.6rem; }
+
+    .an-side + .an-side {
+        position: relative;
+        margin-top: .4rem;
+    }
+    .an-side + .an-side::before {
+        content: "Second team";
+        position: absolute;
+        top: -1.55rem; left: 0; right: 0;
+        display: flex; align-items: center; gap: .6rem;
+        font-family: var(--mono); font-size: .55rem;
+        letter-spacing: .25em; text-transform: uppercase;
+        color: var(--td-live);
+        opacity: .75;
+    }
+    /* The rule itself, drawn to the right of the label. */
+    .an-side + .an-side::after {
+        content: "";
+        position: absolute;
+        top: -1.2rem; left: 7.2rem; right: 0;
+        border-top: 1px dashed var(--td-line);
+    }
+
+    /* Keep whose roster you're in on screen. Offset by the mobile app bar
+       when there is one; the fallback covers the desktop tree at phone
+       widths, where nothing is fixed above. */
+    .an-side-head {
+        position: sticky;
+        top: calc(var(--m-appbar-h, 0px) + env(safe-area-inset-top, 0px));
+        z-index: 2;
+        background: var(--td-card);
+        margin: 0 -1.1rem .85rem;
+        padding: .55rem 1.1rem .7rem;
+    }
+}
 .an-side {
     background: var(--td-card);
     border: 1px solid var(--td-line);

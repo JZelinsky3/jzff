@@ -22,7 +22,7 @@ import { loadAnalyzerData } from '@/lib/tradeDesk/analyzer'
 import { getDeadlineStatus } from '@/lib/tradeDesk/deadline'
 import { generateMockTrades, type MockTrade } from '@/lib/tradeDesk/finder'
 import { valuateLeague } from '@/lib/values'
-import { groqChatJson, GroqError } from '@/lib/groq'
+import { groqChatJson, GroqError, DEFAULT_GROQ_MODEL } from '@/lib/groq'
 import { sleeper } from '@/lib/platforms/sleeper'
 import { computePositionRanks } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
@@ -42,7 +42,13 @@ function isoWeekKey(d = new Date()): string {
 }
 
 type MocksPayload = {
+  // Internal cache + vote key ("2026-W37"), an ISO CALENDAR week. Never
+  // render this: ISO week 37 is NFL week 1, and printing it on the column
+  // made the Mill look like it was stuck in a nonexistent week 37.
   weekKey: string
+  // NFL week the column belongs to, for the dateline. Null in the
+  // offseason or when Sleeper's clock can't be read.
+  nflWeek?: number | null
   generatedAt: string
   leagueName: string
   // Season the rosters came from (e.g. '2025'). Differs from the current
@@ -82,6 +88,22 @@ async function withVotes(
 //   • In-season → cumulative rank through the current NFL week.
 //   • Offseason → previous season's FINAL (Wk 18) rank, so the slate
 //     still reads with meaningful context.
+// Current NFL week for the column's dateline. Null out of season, so the
+// stamp falls back to the date rather than printing a week that isn't
+// being played.
+async function currentNflWeek(): Promise<number | null> {
+  try {
+    const clock = await sleeper.state()
+    if (!clock) return null
+    const inSeason = clock.season_type === 'regular' || clock.season_type === 'post'
+    if (!inSeason) return null
+    const wk = Number(clock.week)
+    return Number.isFinite(wk) && wk > 0 ? wk : null
+  } catch {
+    return null
+  }
+}
+
 async function stampPositionRanks(trades: MockTrade[]): Promise<void> {
   try {
     const clock = await sleeper.state()
@@ -151,7 +173,7 @@ async function writeBlurbs(leagueName: string, mode: string, trades: MockTrade[]
   try {
     const result = await groqChatJson<z.infer<typeof BlurbsOut>>({
       apiKey,
-      model: process.env.GROQ_MODEL_TRADE ?? 'llama-3.3-70b-versatile',
+      model: process.env.GROQ_MODEL_TRADE ?? DEFAULT_GROQ_MODEL,
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: `League: ${leagueName}\n\n${user}` },
@@ -210,6 +232,9 @@ export async function GET(
       // The stamp is a single Sleeper stats fetch (cached for an hour),
       // so doing it per request is cheap.
       await stampPositionRanks(existing.payload.trades)
+      // Columns stored before nflWeek existed have no dateline; fill it in
+      // on read so old rows don't fall back to the raw date.
+      existing.payload.nflWeek ??= await currentNflWeek()
       return NextResponse.json(await withVotes(db, id, existing.payload), {
         headers: { 'Cache-Control': 'no-store' },
       })
@@ -227,6 +252,7 @@ export async function GET(
         .maybeSingle<{ name: string }>()
       const closedPayload: MocksPayload = {
         weekKey,
+        nflWeek: await currentNflWeek(),
         generatedAt: new Date().toISOString(),
         leagueName: league?.name ?? '',
         trades: [],
@@ -318,6 +344,7 @@ export async function GET(
 
   const payload: MocksPayload = {
     weekKey,
+    nflWeek: await currentNflWeek(),
     generatedAt: new Date().toISOString(),
     leagueName: data.leagueName,
     season: data.season,

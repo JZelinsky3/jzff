@@ -28,7 +28,7 @@ import {
 } from '@/lib/tradeDesk/depth'
 import { valuateLeague } from '@/lib/values'
 import { getProjectionsForYear, sumPpg } from '@/lib/values/projections'
-import { groqChatJson, GroqError } from '@/lib/groq'
+import { groqChatJson, GroqError, DEFAULT_GROQ_MODEL } from '@/lib/groq'
 
 // Groq call ~1-3s + depth compute ~50ms + Sleeper roster fetch ~700ms;
 // 30s gives plenty of headroom for retries on rate limits.
@@ -221,7 +221,7 @@ async function runNarrative(ctx: PromptCtx): Promise<{ ok: true; data: Narrative
     const { system, user } = buildAnalyzerPrompt(ctx)
     const result = await groqChatJson<NarrativeOut>({
       apiKey,
-      model: process.env.GROQ_MODEL_TRADE ?? 'llama-3.3-70b-versatile',
+      model: process.env.GROQ_MODEL_TRADE ?? DEFAULT_GROQ_MODEL,
       messages: [
         { role: 'system', content: system },
         { role: 'user',   content: user },

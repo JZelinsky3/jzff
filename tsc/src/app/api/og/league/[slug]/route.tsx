@@ -171,6 +171,11 @@ function pct(p: number): string {
 const CHAPTERS: Record<string, { label: string; accent: string }> = {
   rivalries: { label: 'The Rivalries', accent: '#c86848' }, // rust
   live: { label: 'The Live Season', accent: '#e8c850' },    // bright gold
+  // Trade Desk rooms. The Grader has its own bespoke card at
+  // /api/og/grader/<slug> (it leads with an actual trade); these two have
+  // no single deal to feature, so they take the stamped league cover.
+  trades: { label: 'The Trade Desk', accent: '#d8a24c' },   // brass
+  mill: { label: 'The Rumor Mill', accent: '#a878c8' },     // plum
 }
 
 export async function GET(

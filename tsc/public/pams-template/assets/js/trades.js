@@ -283,20 +283,58 @@
     );
   }
 
+  // Which season the Archive is showing. Null until the first render picks
+  // the newest one on file.
+  var pastYear = null;
+
+  function yearsIn(trades) {
+    var seen = {};
+    trades.forEach(function (t) {
+      if (t.season_year) seen[t.season_year] = (seen[t.season_year] || 0) + 1;
+    });
+    return Object.keys(seen).map(Number).sort(function (a, b) { return b - a; });
+  }
+
+  // Exposed for the inline onchange on the year <select>.
+  window.__trPastYear = function (v) {
+    pastYear = Number(v);
+    if (window.__trData) setTab('past', window.__trData);
+  };
+
   function renderPastTab(data) {
-    var trades = data.past_trades || [];
-    if (trades.length === 0) {
+    var all = data.past_trades || [];
+    if (all.length === 0) {
       return '<div class="tr-empty">' +
         '<h2>No archive yet</h2>' +
         '<p>Past trades will appear here once they\'re more than 7 days old.</p>' +
       '</div>';
     }
-    return renderSection({
+
+    // One season at a time, newest by default. The archive used to dump
+    // every trade the league has ever made into one list, so a league with
+    // years of history buried this season under 2020.
+    var years = yearsIn(all);
+    if (pastYear == null || years.indexOf(pastYear) === -1) pastYear = years[0];
+    var trades = all.filter(function (t) { return Number(t.season_year) === pastYear; });
+
+    var picker = years.length > 1
+      ? '<label class="tr-year-pick">' +
+          '<span class="tr-year-pick-label">Season</span>' +
+          '<select class="tr-year-select" onchange="__trPastYear(this.value)">' +
+            years.map(function (y) {
+              return '<option value="' + y + '"' + (y === pastYear ? ' selected' : '') + '>' + y + '</option>';
+            }).join('') +
+          '</select>' +
+        '</label>'
+      : '';
+
+    return picker + renderSection({
       num: '§ 01 · Archive',
       title: 'Older <em>trades —</em>',
-      meta: trades.length + ' trade' + (trades.length === 1 ? '' : 's'),
+      meta: trades.length + ' trade' + (trades.length === 1 ? '' : 's') + ' in ' + pastYear,
       trades: trades,
       alwaysRender: true,
+      emptyText: 'No trades on record for ' + pastYear + '.',
     });
   }
 

@@ -472,6 +472,11 @@ const SHARE_BUTTON_FILES = new Set<string>([
 // express.
 const SHARE_DIALOG_FILES = new Set<string>([
   'managers/all-time.html',
+  // Trade Desk rooms. Each ships an in-layout Share control in its header
+  // rather than the floating pill, which doesn't belong on a live page.
+  'live/trades/index.html',
+  'live/trades/grader/index.html',
+  'live/trades/mocks/index.html',
 ])
 
 type OgImage = { url: string; title: string; description: string; downloadName?: string; shareSub?: string }
@@ -611,6 +616,28 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
       url,
       title: `${meta.name} · The Grader`,
       description: `Every trade in ${meta.name} hits the wire, announced, graded on arrival, revisited four weeks later.`,
+    }
+  }
+  // The Trade Desk hub: /leagues/<slug>/live/trades/
+  if (file === 'live/trades/index.html') {
+    const url = new URL(`/api/og/league/${meta.slug}?page=trades`, req.nextUrl.origin).toString()
+    return {
+      url,
+      title: `${meta.name} · The Trade Desk`,
+      description: `Every trade in ${meta.name}, graded and revisited, plus the analyzer, the finder, and the week's mock deals.`,
+      downloadName: `${meta.slug}-trade-desk`,
+      shareSub: 'The Trade Desk',
+    }
+  }
+  // The Rumor Mill: /leagues/<slug>/live/trades/mocks/
+  if (file === 'live/trades/mocks/index.html') {
+    const url = new URL(`/api/og/league/${meta.slug}?page=mill`, req.nextUrl.origin).toString()
+    return {
+      url,
+      title: `${meta.name} · The Rumor Mill`,
+      description: `Mock trades the desk cooked up for ${meta.name} this week. Nobody proposed these. Argue anyway.`,
+      downloadName: `${meta.slug}-rumor-mill`,
+      shareSub: 'The Rumor Mill',
     }
   }
   // Power Rankings: /leagues/<slug>/live/powerrank/

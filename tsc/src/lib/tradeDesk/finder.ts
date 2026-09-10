@@ -715,7 +715,16 @@ export function generateMockTrades(args: GenerateMocksArgs): MockTrade[] {
     const k = Math.floor(rand() * (i + 1))
     ;[pairs[i], pairs[k]] = [pairs[k], pairs[i]]
   }
-  const samplePairs = pairs.slice(0, 24)
+  // Consider every pair in a normal-sized league.
+  //
+  // This was 24, which in a 12-team league is barely a third of the 66
+  // possible pairings. Combined with the deliberately strict publish
+  // filters below, an unlucky weekly seed could sample 24 pairs that
+  // happened to contain no publishable deal and the Mill printed an empty
+  // column. Widening the sample changes nothing about WHICH deals qualify
+  // (every filter below is untouched), it just stops the seed from hiding
+  // the ones that do. The per-pair eval budget still bounds the work.
+  const samplePairs = pairs.slice(0, 80)
 
   // League-wide p85 single-player value — a trade headlined by a player
   // above this line reads as a blockbuster.

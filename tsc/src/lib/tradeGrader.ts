@@ -22,17 +22,64 @@
 //     review of the same context
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { groqChatJson, GroqError } from '@/lib/groq'
+import { groqChatJson, GroqError, DEFAULT_GROQ_MODEL } from '@/lib/groq'
 import { getSleeperValuesForPlayerIds, type PlayerValue } from '@/lib/playerValues'
 import { computePositionRanks, stampRanks, buildNameLookup, nameKey } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 import { loadAnalyzerData, type AnalyzerLeagueData, type AnalyzerRoster } from '@/lib/tradeDesk/analyzer'
 import { parseSettings, mergeEffective, type EffectiveSettings } from '@/lib/tradeDesk/settings'
 import { valuateLeague, type PlayerValue as ConsensusValue, type LeagueMode } from '@/lib/values'
+import { resolveCurrentWeek } from '@/lib/liveSeason'
 
 // Same env override the Analyzer + Rumor Mill use, so one var upgrades the
 // whole desk's writing model at once.
-const MODEL = process.env.GROQ_MODEL_TRADE ?? 'llama-3.3-70b-versatile'
+const MODEL = process.env.GROQ_MODEL_TRADE ?? DEFAULT_GROQ_MODEL
+
+// Grading starts at 2026 and never runs backwards.
+//
+// Everything from 2025 and earlier is imported history: those deals happened
+// before the league was on TSC, the roster and injury context that made them
+// make sense is gone, and an AI verdict stapled on years later is worth
+// nothing to the people who made them. Any pre-2026 grade in the database is
+// a leftover from testing the feature against old seasons, not something to
+// reproduce.
+//
+// Enforced inside gradeTrade/revisitTrade rather than only in the callers'
+// queries, so a manual backfill, a force re-grade, or some future caller
+// can't route around it. The queries filter too, but only to avoid loading
+// candidates that would be refused anyway.
+export const FIRST_GRADED_SEASON = 2026
+
+// A verdict lands four weeks after the week the trade happened, not four
+// weeks after the grade was written. Grading time is an artifact of when the
+// cron ran, so every trade from a given week gets its verdict on the same
+// week this way, which is what makes the verdict desk read like a scheduled
+// column rather than a trickle.
+export const REVISIT_LAG_WEEKS = 4
+
+// Is this trade's verdict week here yet?
+//
+// Preseason trades carry no week and sit at week 0, so their verdicts land in
+// week 4, the week before a week-1 trade's. Shared by the daily cron and the
+// manual per-league revisit tool so "due" means one thing in both.
+export function verdictIsDue(args: {
+  tradeWeek: number | null
+  seasonIsLive: boolean
+  seasonSettings: Record<string, unknown> | null | undefined
+}): boolean {
+  const tradeWeek = typeof args.tradeWeek === 'number' && args.tradeWeek > 0 ? args.tradeWeek : 0
+  const dueWeek = tradeWeek + REVISIT_LAG_WEEKS
+
+  // A season that is no longer live has finished: there is nothing left to
+  // wait for, so any outstanding verdict is due.
+  if (!args.seasonIsLive) return true
+
+  const current = resolveCurrentWeek(args.seasonSettings ?? {})
+  // No resolvable week means no schedule to judge against. Wait rather than
+  // guess, so a misconfigured season doesn't hand out early verdicts.
+  if (current == null) return false
+  return current >= dueWeek
+}
 
 type TradePlatform = 'sleeper' | 'espn' | 'yahoo' | 'nfl'
 
@@ -194,6 +241,11 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
   const leagueType = (league?.league_type as 'redraft' | 'keeper' | 'dynasty') ?? 'redraft'
   const seasonYear = season?.year ?? null
   const platform = ((trade.platform as string | null) ?? 'sleeper') as TradePlatform
+
+  if (seasonYear == null || seasonYear < FIRST_GRADED_SEASON) {
+    warnings.push(`trade ${tradeId}: season ${seasonYear ?? 'unknown'} is before ${FIRST_GRADED_SEASON}, not graded`)
+    return { trade_id: tradeId, graded_sides: 0, warnings }
+  }
 
   // 2. Resolve every player asset to a Sleeper id so value data attaches
   // on ALL platforms — ESPN/Yahoo/NFL trades store platform-native ids
@@ -413,6 +465,11 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
   const season = Array.isArray(trade.seasons) ? trade.seasons[0] : trade.seasons
   const leagueType = (league?.league_type as 'redraft' | 'keeper' | 'dynasty') ?? 'redraft'
 
+  if (season?.year == null || season.year < FIRST_GRADED_SEASON) {
+    warnings.push(`trade ${tradeId}: season ${season?.year ?? 'unknown'} is before ${FIRST_GRADED_SEASON}, not revisited`)
+    return { trade_id: tradeId, graded_sides: 0, warnings }
+  }
+
   // Resolve asset ids cross-platform (same path as gradeTrade) and pull
   // consensus values. Revisits intentionally skip the live roster fetch
   // (the original summary already encoded that picture); valuateLeague is
@@ -605,13 +662,14 @@ export async function revisitForLeague(args: {
 
   // Candidates: trades with an ai_summary (i.e. initially graded) and no
   // revisit yet, newest first.
-  let q = db
+  const q = db
     .from('trades')
-    .select('id, ai_summary_at, revisited_at')
+    .select('id, ai_summary_at, revisited_at, week, seasons!inner(year, is_live, settings)')
     .eq('league_id', args.leagueId)
     .eq('status', 'completed')
     .not('ai_summary', 'is', null)
     .is('revisited_at', null)
+    .gte('seasons.year', FIRST_GRADED_SEASON)
     .order('ai_summary_at', { ascending: false })
 
   const { data: rows, error } = await q.limit(limit * 2)
@@ -620,11 +678,15 @@ export async function revisitForLeague(args: {
     return { scanned: 0, revisited: 0, warnings }
   }
 
+  // Same due rule the cron uses (trade week + 4), not age-since-grading.
   const eligible = (args.eligibleOnly ?? true)
     ? rows.filter((r) => {
-        if (!r.ai_summary_at) return false
-        const ageMs = Date.now() - Date.parse(r.ai_summary_at)
-        return ageMs >= 28 * 24 * 60 * 60 * 1000 // 4 weeks
+        const season = Array.isArray(r.seasons) ? r.seasons[0] : r.seasons
+        return verdictIsDue({
+          tradeWeek: r.week as number | null,
+          seasonIsLive: !!season?.is_live,
+          seasonSettings: season?.settings as Record<string, unknown> | null,
+        })
       })
     : rows
 
@@ -669,8 +731,16 @@ export async function gradeUngradedForLeague(args: {
     .select('id, executed_at, season_id, seasons!inner(year)')
     .eq('league_id', args.leagueId)
     .eq('status', 'completed')
+    .gte('seasons.year', FIRST_GRADED_SEASON)
     .order('executed_at', { ascending: false })
   if (args.seasonYear != null) {
+    // An explicit season below the floor asks for something we won't do.
+    // Say so instead of silently returning "0 graded", which reads like the
+    // season had no ungraded trades.
+    if (args.seasonYear < FIRST_GRADED_SEASON) {
+      warnings.push(`season ${args.seasonYear} is before ${FIRST_GRADED_SEASON}; grading only runs from ${FIRST_GRADED_SEASON} on`)
+      return { scanned: 0, graded: 0, warnings }
+    }
     q = q.eq('seasons.year', args.seasonYear)
   }
 

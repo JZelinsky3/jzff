@@ -6,13 +6,23 @@
 // in private env vars (GROQ_API_KEY_* — see .env.local). Exposing this to
 // the browser would leak the key.
 //
-// Models we use:
-//   trade grader:   llama-3.3-70b-versatile  (quality > speed for grading)
-//   weekly recap:   llama-3.3-70b-versatile  (same)
-// Both share the same chat-completions surface, so this single function
-// fits every Groq feature we'll build.
-
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
+
+// The model every Groq feature defaults to, overridable per-deploy with
+// GROQ_MODEL_TRADE.
+//
+// This lives here, in one place, because it used to be spelled out
+// separately at three call sites, all reading 'llama-3.3-70b-versatile'.
+// Groq decommissioned that model, so every one of those calls started
+// coming back `model_not_found` and every feature silently took its
+// fallback path: the Rumor Mill printed "Desk notes" instead of a column,
+// the Analyzer's narrative went blank, and trade grading would have written
+// nothing at all. Nothing surfaced the failure because each caller treats a
+// Groq error as "degrade quietly".
+//
+// If narratives go blank again, check this first: list the account's models
+// (GET /openai/v1/models) and confirm this id is still among them.
+export const DEFAULT_GROQ_MODEL = 'openai/gpt-oss-120b'
 
 export type GroqMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 
@@ -97,7 +107,7 @@ export async function groqChat(args: GroqChatArgs): Promise<GroqResult> {
     if (res.status !== 429 && res.status < 500) throw lastErr
 
     // Daily token limit (TPD) — Groq's free tier is 100k/day for
-    // llama-3.3-70b-versatile. The suggested wait can be minutes-to-hours;
+    // the shared default model. The suggested wait can be minutes-to-hours;
     // there's no point burning Vercel function time pretending we'll retry.
     // Fail fast so the caller can mark the batch as blocked and the user
     // sees a clear "out for the day" message.
