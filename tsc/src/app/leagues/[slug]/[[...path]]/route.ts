@@ -112,14 +112,31 @@ async function loadLeagueMetaUncached(slug: string): Promise<LeagueMeta | null> 
   }
 }
 
+// Concurrent meta lookups for the same slug, released as soon as the
+// lookup settles. This is single-flight, not a cache: it can only merge
+// requests that are already in the air together, so it can never hand back
+// anything older than the moment the first one started. That's why it's
+// safe in production where a TTL cache wouldn't be — a settings write
+// still shows up on the very next request.
+const metaInFlight = new Map<string, Promise<LeagueMeta | null>>()
+
 function loadLeagueMeta(slug: string): Promise<LeagueMeta | null> {
   // Dev: dedupe parallel lookups. Every request to /leagues/<slug>/... (HTML
   // and every data file) needs meta, and the hub fires 5+ of those in
   // close succession — without this, each one pays the Supabase floor.
-  // Prod: skip the in-memory cache. Reads here are fast against the
-  // hosted Postgres and we'd rather not hand-roll TTL invalidation on
-  // settings changes; trust the platform.
-  if (process.env.NODE_ENV === 'production') return loadLeagueMetaUncached(slug)
+  // Prod: same problem, four queries a piece, so dedupe the in-flight ones
+  // (no TTL — see metaInFlight).
+  if (process.env.NODE_ENV === 'production') {
+    const inflight = metaInFlight.get(slug)
+    if (inflight) return inflight
+    const fresh = loadLeagueMetaUncached(slug)
+    metaInFlight.set(slug, fresh)
+    const release = () => {
+      if (metaInFlight.get(slug) === fresh) metaInFlight.delete(slug)
+    }
+    fresh.then(release, release)
+    return fresh
+  }
   const cached = devMetaGet<LeagueMeta>(slug)
   if (cached) return cached
   const fresh = loadLeagueMetaUncached(slug)
@@ -745,13 +762,39 @@ function getBundle(leagueId: string, slug: string): Promise<ExportBundle> {
   // way that the templates need to see immediately — adding a new field,
   // renaming an existing one, etc. Bumping forces unstable_cache to
   // recompute on the next request instead of waiting out the 1h TTL.
-  const BUNDLE_VERSION = 'v80'
-  return unstable_cache(
+  //
+  // v81: current_form.json stopped counting half-played weeks, so every
+  // league that synced mid-week is holding a Form Sheet full of phantom
+  // 1-0 records until its bundle is rebuilt.
+  const BUNDLE_VERSION = 'v81'
+  // Single-flight, the same reason dev does it: a hub landing fires the
+  // page plus five preloaded data/*.json files at once, and on a cold
+  // cache unstable_cache has nothing to hand back yet, so all six run
+  // their own exportLeague(). One league's full history, six times over,
+  // is what turns a cold open into a wait. Sharing the in-flight Promise
+  // collapses everything that lands on the same instance into one build.
+  const key = `${BUNDLE_VERSION}|${leagueId}|${slug}`
+  const inflight = bundleInFlight.get(key)
+  if (inflight) return inflight
+  const build = unstable_cache(
     async () => exportLeague(leagueId, { slug }),
     ['pams-bundle', BUNDLE_VERSION, leagueId, slug],
     { tags: [`league-${leagueId}`], revalidate: 3600 }
   )()
+  bundleInFlight.set(key, build)
+  // Only held for the life of the build — this dedupes concurrent callers,
+  // it isn't a second cache layer. unstable_cache owns the actual caching
+  // (and its tag bust), so nothing here can go stale behind it.
+  const release = () => {
+    if (bundleInFlight.get(key) === build) bundleInFlight.delete(key)
+  }
+  build.then(release, release)
+  return build
 }
+
+// Concurrent callers awaiting the same league bundle build. Keyed by
+// version|leagueId|slug and cleared the moment the build settles.
+const bundleInFlight = new Map<string, Promise<ExportBundle>>()
 
 // Phone detection. Chromium ships an explicit client hint; everything else
 // falls back to a deliberately narrow UA regex: iPadOS 13+ presents as

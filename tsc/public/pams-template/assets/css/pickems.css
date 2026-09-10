@@ -481,6 +481,17 @@ body {
   vertical-align: middle;
 }
 
+/* Picking deadline, sat beside the "Open for picks" badge. Deliberately
+   quieter than the badge: it's a fact to plan around, not a status. */
+.week-info .week-lockat {
+  align-self: center;
+  font-family: var(--mono); font-weight: 700;
+  font-size: .46rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--pk-chalk-soft);
+  opacity: .8;
+  padding: .28rem 0;
+}
+
 .week-locked {
   text-align: center;
   font-family: var(--mono); font-weight: 700;

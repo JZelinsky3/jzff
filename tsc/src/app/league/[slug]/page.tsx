@@ -14,6 +14,8 @@ import { GradeTradesButton } from './grade-trades-button'
 import { PublishButton } from './setup/publish-button'
 import { BillboardPublishCta } from './billboard-publish-cta'
 import { SetupWizCallout } from './setup-wiz-callout'
+import { SeasonLiveCallout } from './season-live-callout'
+import { getSeasonNotice } from '@/lib/seasonNotice'
 import { ChapterBook } from './chapter-book'
 import { SourcesWorkbench } from './sources/sources-workbench'
 import { SetupList, type ProfileRow } from './setup/setup-list'
@@ -73,6 +75,17 @@ export default async function LeagueOverviewPage({
   const liveYear = (liveRow?.year as number) ?? null
   const liveWeek = liveRow ? resolveCurrentWeek((liveRow.settings ?? {}) as Record<string, unknown>) : null
 
+  // "The season has kicked off and this league isn't running" nudge. Null
+  // in the offseason, for a league that's already live on a resolvable
+  // week, and for one whose commissioner dismissed this year's notice.
+  const leagueSettings = (league.settings ?? {}) as {
+    wizard_dismissed_at?: string
+    season_notice_year?: number
+  }
+  const seasonNotice = canManage
+    ? await getSeasonNotice(yearRows ?? [], leagueSettings.season_notice_year ?? null)
+    : null
+
   const words = league.name.trim().split(/\s+/)
   const head = words.slice(0, -1).join(' ')
   const tail = words[words.length - 1] ?? ''
@@ -95,6 +108,7 @@ export default async function LeagueOverviewPage({
         lastYear={lastYear}
         liveYear={liveYear}
         liveWeek={liveWeek}
+        seasonNotice={seasonNotice}
       />
     )
   }
@@ -426,9 +440,14 @@ export default async function LeagueOverviewPage({
         </div>
       </section>
 
-      {canManage && !((league.settings ?? {}) as { wizard_dismissed_at?: string }).wizard_dismissed_at && (
+      {(seasonNotice || (canManage && !leagueSettings.wizard_dismissed_at)) && (
         <div className="lo-band tight">
-          <SetupWizCallout leagueId={league.id} slug={slug} />
+          {seasonNotice && (
+            <SeasonLiveCallout leagueId={league.id} slug={slug} notice={seasonNotice} />
+          )}
+          {canManage && !leagueSettings.wizard_dismissed_at && (
+            <SetupWizCallout leagueId={league.id} slug={slug} />
+          )}
         </div>
       )}
 

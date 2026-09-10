@@ -10,7 +10,7 @@
 // See supabase/migrations/0008_pickems.sql + 0009_pickems_hl.sql.
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { resolveCurrentWeek } from '@/lib/liveSeason'
+import { resolveCurrentWeek, resolveWeekLockAt } from '@/lib/liveSeason'
 import { getLockReason } from '@/lib/leagueTier'
 
 export type PickemsTeam = {
@@ -29,6 +29,9 @@ export type PickemsWeek = {
   week: number
   label: string
   locked: boolean // true for weeks before the current week
+  // ISO instant this week stops accepting picks (null when the season is
+  // pinned to a manual week, so no deadline can be derived).
+  locks_at: string | null
   is_current: boolean
   matchups: { id: string; home: string; away: string }[]
   records: Record<string, string> // manager_id -> "W-L" going into this week
@@ -258,6 +261,7 @@ export async function getPickemsState(slug: string): Promise<PickemsState | null
       week: wk,
       label: `Week ${wk}`,
       locked: wk < currentWeek,
+      locks_at: wk < currentWeek ? null : resolveWeekLockAt(settings, wk),
       is_current: isCurrent,
       matchups: wkMatchups.map((m) => ({ id: m.id, home: m.manager_a_id, away: m.manager_b_id })),
       records,

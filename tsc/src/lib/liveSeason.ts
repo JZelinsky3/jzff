@@ -29,3 +29,27 @@ export function resolveCurrentWeek(settings: Record<string, unknown> | null | un
 
   return null
 }
+
+// When does `week` stop being the current week?
+//
+// Pick'ems locks a week the moment the season rolls past it, so that
+// instant is the picking deadline. Readers had no way to see it: the board
+// said "Open for picks" right up until it silently said "Locked".
+//
+// Only derivable from the calendar. A manual `current_week` pin overrides
+// the date maths entirely, so the boundary would be fiction; so would a
+// week at MAX_WEEK, which the clamp in resolveCurrentWeek never advances
+// past. Both return null and the UI shows no deadline rather than a wrong
+// one.
+export function resolveWeekLockAt(
+  settings: Record<string, unknown> | null | undefined,
+  week: number,
+): string | null {
+  const s = settings ?? {}
+  if (typeof s.current_week === 'number') return null
+  if (typeof s.season_start_date !== 'string') return null
+  if (!Number.isFinite(week) || week < 1 || week >= MAX_WEEK) return null
+  const startMs = Date.parse(s.season_start_date)
+  if (Number.isNaN(startMs)) return null
+  return new Date(startMs + week * WEEK_MS).toISOString()
+}

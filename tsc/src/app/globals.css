@@ -32003,6 +32003,17 @@ option.wiz-used {
     opacity: .5;
     cursor: wait;
 }
+/* Season-started notice — the same card as the setup wizard, but it's
+   telling the commissioner something is switched off rather than offering
+   an optional tour, so its mark reads filled from the start instead of
+   only on hover. When both cards show, tighten the gap between them. */
+.setup-wiz-callout.is-season .setup-wiz-callout-mark {
+    background: var(--gold);
+    color: var(--ink);
+}
+.setup-wiz-callout.is-season + .setup-wiz-callout {
+    margin-top: .75rem;
+}
 @media (max-width: 640px) {
     .setup-wiz-callout {
         flex-direction: column;

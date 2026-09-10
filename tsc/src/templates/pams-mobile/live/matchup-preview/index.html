@@ -452,7 +452,11 @@ button.dk-btn { width: 100%; }
 <body>
 <div class="site-glow"></div>
 
-<nav id="site-nav" data-page="matchup-preview" data-chapter="Ch. VII · Matchup Preview" data-back-href="live/"></nav>
+<!-- back-smart: a matchup desk is opened from the board, from Pick'ems ("Preview"),
+     and from the live hub. Backing out to the live hub every time dumps Pick'ems
+     voters two pages from where they were, so return them to whichever page they
+     actually came from; direct loads still fall through to data-back-href. -->
+<nav id="site-nav" data-page="matchup-preview" data-chapter="Ch. VII · Matchup Preview" data-back-href="live/" data-back-smart="1"></nav>
 <script src="/pams-template/assets/js/mobile-app.js"></script>
 
 <main class="m-main">
@@ -548,11 +552,36 @@ button.dk-btn { width: 100%; }
             }
             renderGotw(data);
             renderBoard(data);
+            bindBoardShare(data);
             // No conductor on mobile — the board rows are tap targets, so
             // the "pick your name" picker is redundant. Identity still
             // carries via the shared localStorage key when set on desktop
             // (used to pre-target the GOTW marquee CTA).
         });
+
+    // Board-level share, mounted in the chrome app bar's right slot via
+    // __MA.setAppbarRight — same placement as the power rankings page, so
+    // the header stays clean and the league title stays centered. The desk
+    // view keeps its own in-body "Share matchup" button; this is the one
+    // for the whole slate, which readers arriving from a home-screen link
+    // otherwise had no way to pass on. Desktop already has the equivalent
+    // ("Share the board" in the section-header meta slot).
+    function bindBoardShare(data) {
+        if (!window.__MA || !window.__MA.setAppbarRight) return;
+        var html =
+            '<button type="button" class="m-appbar-share" aria-label="Share this week\'s board">' +
+                '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 9.5 9.5 6.5"/><path d="M7 4.5h-1.5a3 3 0 0 0 0 6h1.5"/><path d="M9 11.5h1.5a3 3 0 0 0 0-6h-1.5"/></svg>' +
+                'Share' +
+            '</button>';
+        window.__MA.setAppbarRight(html, function () {
+            var leagueName = (window.__DC && window.__DC.name) || 'Live Season';
+            // Drop ?m= so the link always opens on the board, never on
+            // whichever desk view the reader happened to visit last.
+            var url = new URL(window.location.href);
+            url.searchParams.delete('m');
+            shareLink(url.toString(), 'Wk ' + data.week + ' Matchups · ' + leagueName);
+        });
+    }
 
     // ── Share — native sheet first, clipboard fallback, toast either way.
     function showToast(msg) {

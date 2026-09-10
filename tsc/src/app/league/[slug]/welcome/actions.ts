@@ -192,3 +192,28 @@ export async function dismissWelcomeCallout(leagueId: string): Promise<Result> {
   revalidatePath(`/league/${access.slug}`)
   return { ok: true }
 }
+
+// Dismiss the "the season has kicked off" hub notice for one year. Unlike
+// the wizard callout this is NOT forever: it stores the year, so a league
+// that deliberately sits out 2026 stops being nagged now but still gets the
+// reminder when 2027 starts. See lib/seasonNotice.ts.
+export async function dismissSeasonNotice(leagueId: string, year: number): Promise<Result> {
+  const access = await assertOwner(leagueId)
+  if (!access.ok) return access
+  if (!Number.isInteger(year)) return { ok: false, error: 'Invalid year.' }
+
+  const db = createAdminClient()
+  const { data: row } = await db
+    .from('leagues')
+    .select('settings')
+    .eq('id', leagueId)
+    .maybeSingle()
+  const settings = (row?.settings ?? {}) as Record<string, unknown>
+  if (settings.season_notice_year !== year) {
+    settings.season_notice_year = year
+    const { error } = await db.from('leagues').update({ settings }).eq('id', leagueId)
+    if (error) return { ok: false, error: error.message }
+  }
+  revalidatePath(`/league/${access.slug}`)
+  return { ok: true }
+}

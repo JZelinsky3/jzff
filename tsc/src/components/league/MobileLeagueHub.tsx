@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { SyncButton } from '@/app/league/[slug]/sync-button'
 import { PublishButton } from '@/app/league/[slug]/setup/publish-button'
 import { MobileSetupWizCallout } from '@/components/league/MobileSetupWizCallout'
+import { MobileSeasonLiveCallout } from '@/components/league/MobileSeasonLiveCallout'
+import type { SeasonNotice } from '@/lib/seasonNotice'
 
 type LeagueData = {
   id: string
@@ -28,6 +30,7 @@ export function MobileLeagueHub({
   lastYear,
   liveYear,
   liveWeek,
+  seasonNotice,
 }: {
   league: LeagueData
   isOwner: boolean
@@ -42,6 +45,7 @@ export function MobileLeagueHub({
   lastYear: number | null
   liveYear: number | null
   liveWeek: number | null
+  seasonNotice: SeasonNotice | null
 }) {
   const slug = league.slug
   const yearSpan =
@@ -122,6 +126,13 @@ export function MobileLeagueHub({
           )}
         </div>
       </div>
+
+      {/* ── The season started and this league isn't running (owner only) ── */}
+      {seasonNotice && (
+        <div className="mwc-wrap">
+          <MobileSeasonLiveCallout leagueId={league.id} slug={slug} notice={seasonNotice} />
+        </div>
+      )}
 
       {/* ── Setup wizard re-entry (owner only) ── */}
       {isOwner && !((league.settings ?? {}) as { wizard_dismissed_at?: string }).wizard_dismissed_at && (

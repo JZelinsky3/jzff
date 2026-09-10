@@ -191,13 +191,41 @@
       && state.submissions[state.user.profileId][weekId]);
   }
 
+  // "Locks Thursday at 8:00 PM" — the deadline in the reader's own time
+  // zone. The board used to read "Open for picks" right up until it read
+  // "Locked", with nothing in between to plan around. Near dates get a
+  // weekday (or today/tomorrow) because that's how people actually think
+  // about a deadline this week; anything further out gets a plain date.
+  function lockCountdownHTML(w) {
+    if (w.locked || !w.locks_at) return '';
+    var at = new Date(w.locks_at);
+    if (isNaN(at.getTime())) return '';
+    var now = new Date();
+    if (at <= now) return '';
+
+    var time = at.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    // Compare calendar days, not elapsed hours: 11pm to 1am is "tomorrow"
+    // even though it's two hours away.
+    var midnightToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var midnightAt = new Date(at.getFullYear(), at.getMonth(), at.getDate());
+    var days = Math.round((midnightAt - midnightToday) / 86400000);
+
+    var when;
+    if (days === 0) when = 'today at ' + time;
+    else if (days === 1) when = 'tomorrow at ' + time;
+    else if (days > 1 && days < 7) when = at.toLocaleDateString([], { weekday: 'long' }) + ' at ' + time;
+    else when = at.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+    return '<span class="week-lockat">Locks ' + esc(when) + '</span>';
+  }
+
   function weekViewHTML(w) {
     var statusBadge = w.locked
       ? '<span class="badge">Locked · Final</span>'
       : '<span class="badge">Open for picks</span>';
     return ''
       + '<section class="week" data-week="' + esc(w.id) + '">'
-      +   '<div class="week-info">' + statusBadge + '</div>'
+      +   '<div class="week-info">' + statusBadge + lockCountdownHTML(w) + '</div>'
       +   '<div id="lock-msg-' + esc(w.id) + '" class="week-locked"></div>'
       // GOTW header is now rendered inline as the first row of the GOTW
       // card itself (see matchHTML), not as a section-level title — keeps
