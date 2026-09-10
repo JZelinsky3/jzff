@@ -12,6 +12,7 @@ export type SimTeam = {
   ppg: number // expected points per game
   startWins: number
   startLosses: number
+  startTies: number
   startPf: number
 }
 
@@ -99,11 +100,17 @@ export function simulateSeason(
   const out = new Map<string, TeamProjection>()
   for (const t of teams) {
     const acc = tally.get(t.teamId)!
-    const totalGames = t.startWins + t.startLosses + (remainingCount.get(t.teamId) ?? 0)
+    // Games already banked include ties, which are neither a win nor a loss.
+    // Leaving them out here shortens the projected season for exactly the
+    // teams that tied, so a 14-game league reads 14 games for most and 13 for
+    // the tied pair. Simulated games can't tie (the sim awards sa >= sb to a),
+    // so every remaining game lands in the W or L column.
+    const played = t.startWins + t.startLosses + t.startTies
+    const totalGames = played + (remainingCount.get(t.teamId) ?? 0)
     const projWins = acc.wins / runs
     out.set(t.teamId, {
       proj_wins: Math.round(projWins),
-      proj_losses: Math.max(0, totalGames - Math.round(projWins)),
+      proj_losses: Math.max(0, totalGames - t.startTies - Math.round(projWins)),
       playoff_pct: Math.round((acc.playoff / runs) * 1000) / 10,
       bye_pct: Math.round((acc.bye / runs) * 1000) / 10,
       conf_win_pct: Math.round((acc.confWin / runs) * 1000) / 10,

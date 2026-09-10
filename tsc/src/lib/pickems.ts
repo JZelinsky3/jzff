@@ -11,6 +11,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
+import { getLockReason } from '@/lib/leagueTier'
 
 export type PickemsTeam = {
   id: string // manager_id
@@ -76,12 +77,14 @@ export async function getPickemsState(slug: string): Promise<PickemsState | null
 
   const { data: league } = await db
     .from('leagues')
-    .select('id, is_udfa')
+    .select('id, owner_id')
     .eq('slug', slug)
     .maybeSingle()
   if (!league) return null
   // Pick'ems is a paid-tier feature — UDFA (free) leagues never get it.
-  if (league.is_udfa) return null
+  // Tier is resolved live rather than read off leagues.is_udfa; see the same
+  // check in lib/powerRankings.ts for why that column can't be trusted.
+  if ((await getLockReason(league.id, league.owner_id)) === 'udfa') return null
 
   const { data: liveSeason } = await db
     .from('seasons')

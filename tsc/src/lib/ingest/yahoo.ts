@@ -35,6 +35,7 @@ import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
 import { manualLocks, manualLockWarning } from './manualLocks'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
+import { getNflClock, weekIsFinal } from '@/lib/nflClock'
 
 export type IngestResult = {
   ok: boolean
@@ -215,6 +216,9 @@ export async function ingestYahooSource(
   let matchupsIngested = 0
   let draftsIngested = 0
   let tradesIngested = 0
+
+  // Fetched once for the whole walk — gates the in-progress week's scores.
+  const nflClock = await getNflClock()
 
   // Pass 2 — per-season ingest.
   for (const lg of history) {
@@ -430,7 +434,12 @@ export async function ingestYahooSource(
         if (!aMgr || !bMgr) { seasonUnresolvedManager++; continue }
         if (aMgr === bMgr) { seasonSameManager++; continue }
 
-        const isPlayed = m.status === 'postevent' || m.status === 'midevent'
+        // 'midevent' is Yahoo telling us the week is still being played, so
+        // its points are partial — storing them invents a finished result
+        // out of whoever happened to start a Thursday player. Only
+        // 'postevent' counts, and only once the NFL clock agrees the week is
+        // done (see lib/nflClock.ts).
+        const isPlayed = m.status === 'postevent' && weekIsFinal(year, week, nflClock)
 
         // Bracket attribution. Start from Yahoo's flags, then prune anything
         // we can prove is a 5th-place-or-below game using final ranks.

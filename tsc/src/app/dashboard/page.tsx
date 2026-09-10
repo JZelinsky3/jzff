@@ -646,12 +646,14 @@ export default async function DashboardPage({
             <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '.2rem' }}>
               ★ Feedback
             </div>
-            {/* Copy stays neutral on purpose. An earlier version asked what
-                was "broken, ugly, or hard to find", which reads as a site
-                apologising for itself and tells anyone having a good time
-                that they are not the audience. */}
+            {/* An ask, not instructions. Two earlier versions failed
+                differently: "something broken, ugly, or hard to find?" reads
+                as the site apologising for itself and tells anyone having a
+                good time they are not the audience, and spelling out that the
+                stars are quick and the rest optional describes the form
+                instead of asking for the thing we actually want. */}
             <div style={{ fontFamily: 'var(--serif)', color: 'var(--cream-soft)' }}>
-              How is it going so far? The star rating takes a second, everything else is optional.
+              How is it going so far? Tell us how your experience has been.
             </div>
           </div>
           <Link href="/review" className="dc-btn-ghost dc-banner-btn">Leave a review</Link>

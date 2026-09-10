@@ -3800,8 +3800,26 @@ function buildCurrentForm(s: Snapshot): unknown {
     const liveSeason = s.seasons.find((sn) => sn.is_live)
     const matchupsScored = (sn: SeasonRow) =>
       (s.matchupsBySeason.get(sn.id) ?? []).filter((m) => m.score_a != null && m.score_b != null)
+    // For the in-progress season, drop weeks the NFL is still playing. A
+    // side sitting on 0.00 hasn't kicked off, so the week's other results
+    // aren't final either — counting them puts W-L records and a form
+    // streak next to games nobody has played. (Past seasons skip this: a
+    // genuine 0.00 forfeit in an old archive is a real result.) The ingest
+    // guard in lib/nflClock.ts keeps these out of the database going
+    // forward; this covers rows written before it.
+    const settledOnly = (rows: MatchupRow[]) => {
+      const byWeek = new Map<number, MatchupRow[]>()
+      for (const m of rows) {
+        const arr = byWeek.get(m.week) ?? []
+        arr.push(m)
+        byWeek.set(m.week, arr)
+      }
+      return rows.filter((m) =>
+        (byWeek.get(m.week) ?? []).every((g) => Number(g.score_a) > 0 && Number(g.score_b) > 0),
+      )
+    }
     if (liveSeason) {
-      const ms = matchupsScored(liveSeason)
+      const ms = settledOnly(matchupsScored(liveSeason))
       if (ms.length > 0) return { season: liveSeason, matchups: ms, isFinal: false }
     }
     // Off-season / live-but-no-games: walk seasons newest-first for
@@ -4457,6 +4475,13 @@ function buildPlayoffOddsPreview(
       ppg: gp > 0 ? pf / gp : leagueAvgPpg,
       startWins: teamWins.get(ms.manager_id) ?? 0,
       startLosses: teamLosses.get(ms.manager_id) ?? 0,
+      // teamGames counts every scored game; only decisive ones landed in
+      // teamWins/teamLosses, so whatever's left over is a tie. The sim needs
+      // it to know how long the season is.
+      startTies: Math.max(
+        0,
+        gp - (teamWins.get(ms.manager_id) ?? 0) - (teamLosses.get(ms.manager_id) ?? 0),
+      ),
       startPf: pf,
     }
   })

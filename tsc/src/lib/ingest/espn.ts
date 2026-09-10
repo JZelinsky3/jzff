@@ -38,6 +38,7 @@ import { resolveStages, intersectRange, type IngestStages, type IngestYearRange 
 import { manualLocks, manualLockWarning } from './manualLocks'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
+import { getNflClock, weekIsFinal } from '@/lib/nflClock'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 
 export type IngestResult = {
@@ -522,6 +523,10 @@ async function ingestSeason(args: {
   // (or is being) scored. Used by both matchups and lineups, so compute once
   // outside the stage gates.
   const latestScored = lg.status?.latestScoringPeriod ?? 0
+  // "or is being" is the catch: mid-week this points at a week that is still
+  // in progress, whose scores are partial. The NFL clock decides which of
+  // those weeks is actually settled. See lib/nflClock.ts.
+  const nflClock = await getNflClock()
 
   // ─── matchups ───────────────────────────────────────────────────────────
   // Stage-gated: trades-only / lineups-only sync skips the matchup write
@@ -575,7 +580,7 @@ async function ingestSeason(args: {
 
     matchupsCount++
 
-    const played = m.week <= latestScored
+    const played = m.week <= latestScored && weekIsFinal(year, m.week, nflClock)
     const aScore = played ? m.a_score : null
     const bScore = played ? m.b_score : null
 

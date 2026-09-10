@@ -32,6 +32,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
 import { simulateSeason } from '@/lib/powerSim'
+import { getLockReason } from '@/lib/leagueTier'
 
 export type PowerFactors = {
   // preseason (weeks 0–3, blended down)
@@ -60,6 +61,7 @@ export type PowerTeam = {
   division_name: string | null
   wins: number
   losses: number
+  ties: number
   pf: number
   pa: number
   score: number
@@ -160,12 +162,18 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
 
   const { data: league } = await db
     .from('leagues')
-    .select('id, division_names, is_udfa')
+    .select('id, division_names, owner_id')
     .eq('slug', slug)
     .maybeSingle()
   if (!league) return null
   // Power rankings is a paid-tier feature — UDFA (free) leagues never get it.
-  if (league.is_udfa) return null
+  // Resolve the tier live rather than reading leagues.is_udfa: that column is
+  // a snapshot of the owner's plan the day the league was created and nothing
+  // ever updates it, so it stays true after an upgrade and it's true for every
+  // owner's trial-slot league (which is supposed to bypass the UDFA locks).
+  // getLockReason is the same check the page-level lock uses, so the page and
+  // its data agree instead of the page unlocking and this route 404ing.
+  if ((await getLockReason(league.id, league.owner_id)) === 'udfa') return null
   const divisionNames: string[] = Array.isArray(league.division_names) ? league.division_names : []
 
   const { data: liveSeason } = await db
@@ -314,12 +322,26 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
     arr.push(m)
     byWeek.set(m.week, arr)
   }
+  // A week is settled when every game in it is scored AND no side sits on
+  // 0.00. A zero isn't a shutout, it's a team whose players haven't kicked
+  // off yet: mid-week the platforms hand back a Thursday starter's 15.2
+  // against an opponent's 0.0, and taking that at face value hands out
+  // records for games nobody has played. lib/nflClock.ts stops those partial
+  // scores reaching the database; this is the belt-and-braces read side, and
+  // it also cleans up rows written before that guard existed.
+  //
+  // Everything downstream keys off this one decision — a settled week feeds
+  // the snapshots, an unsettled week is ignored and its games go back into
+  // the Monte Carlo's remaining schedule — so a team can never end up with a
+  // different projected game count than the rest of the league.
+  const settledWeeks = new Set<number>()
+  for (const [w, games] of byWeek) {
+    if (!games || games.length === 0) continue
+    if (games.every((g) => Number(g.score_a) > 0 && Number(g.score_b) > 0)) settledWeeks.add(w)
+  }
   const completedWeeks: number[] = []
   for (let w = 1; w <= currentWeek; w++) {
-    const games = byWeek.get(w) ?? []
-    if (games.length > 0 && games.every((g) => g.score_a != null && g.score_b != null)) {
-      completedWeeks.push(w)
-    }
+    if (settledWeeks.has(w)) completedWeeks.push(w)
   }
 
   // ── Compute one snapshot (week N; 0 = preseason) ─────────────────────────
@@ -333,15 +355,16 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
     // the full game list (score / opp score / opp id) so SOS, margin-form,
     // and top-half rate can derive from it.
     type Game = { week: number; result: 0 | 0.5 | 1; score: number; oppScore: number; oppId: string }
-    type Agg = { w: number; l: number; pf: number; pa: number; games: Game[] }
+    type Agg = { w: number; l: number; t: number; pf: number; pa: number; games: Game[] }
     const agg = new Map<string, Agg>()
     const ensureAgg = (id: string): Agg => {
       let a = agg.get(id)
-      if (!a) { a = { w: 0, l: 0, pf: 0, pa: 0, games: [] }; agg.set(id, a) }
+      if (!a) { a = { w: 0, l: 0, t: 0, pf: 0, pa: 0, games: [] }; agg.set(id, a) }
       return a
     }
     for (const b of bases) ensureAgg(b.teamId)
     for (let w = 1; w <= throughWeek; w++) {
+      if (!settledWeeks.has(w)) continue
       for (const g of byWeek.get(w) ?? []) {
         if (g.score_a == null || g.score_b == null) continue
         const sa = Number(g.score_a)
@@ -354,6 +377,7 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
         const resultB: 0 | 0.5 | 1 = sb > sa ? 1 : sb < sa ? 0 : 0.5
         if (resultA === 1) { a.w++; b.l++ }
         else if (resultB === 1) { b.w++; a.l++ }
+        else { a.t++; b.t++ }
         a.games.push({ week: w, result: resultA, score: sa, oppScore: sb, oppId: g.manager_b_id })
         b.games.push({ week: w, result: resultB, score: sb, oppScore: sa, oppId: g.manager_a_id })
       }
@@ -363,10 +387,11 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
     // SOS pool (each opponent's PF percentile is read from this).
     const seasonPfPool = bases.map((b) => agg.get(b.teamId)!.pf)
 
-    // Bye-aware PPG pool for the PF factor.
+    // Bye-aware PPG pool for the PF factor. A tie is a game that was played
+    // and whose points are already in `pf`, so it belongs in the denominator.
     const ppgPool = bases.map((b) => {
       const a = agg.get(b.teamId)!
-      const games = a.w + a.l
+      const games = a.w + a.l + a.t
       return games > 0 ? a.pf / games : 0
     })
 
@@ -410,8 +435,10 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
         const ranked = [...group].sort((x, y) => {
           const ax = agg.get(x.teamId)!
           const ay = agg.get(y.teamId)!
-          const wpx = ax.w + ax.l > 0 ? ax.w / (ax.w + ax.l) : 0
-          const wpy = ay.w + ay.l > 0 ? ay.w / (ay.w + ay.l) : 0
+          const gx = ax.w + ax.l + ax.t
+          const gy = ay.w + ay.l + ay.t
+          const wpx = gx > 0 ? (ax.w + 0.5 * ax.t) / gx : 0
+          const wpy = gy > 0 ? (ay.w + 0.5 * ay.t) / gy : 0
           return wpy - wpx || ay.pf - ax.pf
         })
         ranked.forEach((b, i) => divRank.set(b.teamId, { rank: i + 1, size: group.length }))
@@ -422,8 +449,8 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
 
     const teams: Omit<PowerTeam, 'rank' | 'delta'>[] = bases.map((b) => {
       const a = agg.get(b.teamId)!
-      const games = a.w + a.l
-      const winPct = games > 0 ? a.w / games : 0
+      const games = a.w + a.l + a.t
+      const winPct = games > 0 ? (a.w + 0.5 * a.t) / games : 0
       const ppg = games > 0 ? a.pf / games : 0
 
       // Preseason factors.
@@ -518,6 +545,7 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
         division_name: b.divisionIdx != null ? divisionNames[b.divisionIdx] ?? null : null,
         wins: a.w,
         losses: a.l,
+        ties: a.t,
         pf: Math.round(a.pf * 10) / 10,
         pa: Math.round(a.pa * 10) / 10,
         score: Math.round(score * 100) / 100,
@@ -575,8 +603,11 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
   // ── Monte Carlo projections ──────────────────────────────────────────────
   const playoffWeeks: number[] = Array.isArray(liveSeason.playoff_weeks) ? liveSeason.playoff_weeks : []
   const playoffStart = playoffWeeks.length > 0 ? Math.min(...playoffWeeks) : 15
+  // Still to be played: every regular-season game outside a settled week.
+  // Keyed off the same set the snapshots use, so games are counted exactly
+  // once — as a banked result or as a game left on the schedule.
   const remaining = (matchups ?? [])
-    .filter((m) => m.week >= 1 && m.week < playoffStart && (m.score_a == null || m.score_b == null))
+    .filter((m) => m.week >= 1 && m.week < playoffStart && !settledWeeks.has(m.week))
     .map((m) => ({ a: m.manager_a_id, b: m.manager_b_id }))
 
   let hasProjections = false
@@ -586,7 +617,7 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
     const teamPpg = new Map<string, number>()
     const ppgVals: number[] = []
     for (const t of latest) {
-      const games = t.wins + t.losses
+      const games = t.wins + t.losses + t.ties
       let ppg = games > 0 ? t.pf / games : 0
       if (ppg === 0) {
         const b = baseById.get(t.team_id)
@@ -622,6 +653,7 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
       ppg: teamPpg.get(t.team_id) || leagueAvgPpg,
       startWins: t.wins,
       startLosses: t.losses,
+      startTies: t.ties,
       startPf: t.pf,
     }))
     const projections = simulateSeason(simTeams, remaining, { scoreSd, playoffTeams, byeTeams, runs: 8000 })

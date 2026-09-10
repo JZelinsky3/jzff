@@ -16,6 +16,7 @@ import {
   type SleeperTransaction,
 } from '@/lib/platforms/sleeper'
 import { getPlayersNflDict } from '@/lib/sleeperPlayers'
+import { getNflClock, weekIsFinal } from '@/lib/nflClock'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
 import { manualLocks, manualLockWarning } from './manualLocks'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
@@ -202,6 +203,10 @@ export async function ingestSleeperSource(
   } catch (e) {
     warnings.push(`Sleeper players cache read failed: ${e instanceof Error ? e.message : String(e)}. Trades will store player_id without names.`)
   }
+
+  // The NFL clock, fetched once for the whole walk — decides whether the
+  // in-progress week's partial scores get stored (they don't).
+  const nflClock = await getNflClock()
 
   // 4. For each season in history, ingest the per-season data
   for (const lg of history) {
@@ -431,9 +436,13 @@ export async function ingestSleeperSource(
         seasonEmptyWeeks++
         continue
       }
-      // A week with no points anywhere is unplayed/future. We still write its
-      // matchups (so pick'ems can show upcoming weeks) but with null scores.
-      const weekPlayed = rows.some((r) => (r.points ?? 0) > 0)
+      // A week with no points anywhere is unplayed/future; a week the NFL is
+      // still playing holds partial scores (Thursday starters against
+      // opponents who haven't played) that would read as finished results.
+      // Both cases still write their matchups — pick'ems needs the upcoming
+      // slate — but with null scores.
+      const weekPlayed =
+        rows.some((r) => (r.points ?? 0) > 0) && weekIsFinal(year, week, nflClock)
 
       // Group by matchup_id to pair the two teams
       const byMatchup = new Map<number, SleeperMatchup[]>()
