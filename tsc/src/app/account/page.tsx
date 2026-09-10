@@ -3,7 +3,8 @@ import { BackButton } from '@/components/BackButton'
 import { SiteFooter } from '@/components/SiteFooter'
 import { MobileProfile } from '@/components/account/MobileProfile'
 import { createClient } from '@/lib/supabase/server'
-import { getUserSubscription, isCompUser, TIER_LABELS } from '@/lib/stripe'
+import { getUserSubscription, isCompUser, TIER_LABELS, advertisedTrialDays } from '@/lib/stripe'
+import { compExpiryLabel } from '@/lib/siteAdmin'
 import { getViewMode } from '@/lib/viewMode'
 import { AccountForms } from './account-forms'
 import { AccountNavMenu } from './account-nav-menu'
@@ -66,6 +67,12 @@ export default async function AccountPage({
   // source of truth so we don't re-derive it in the client component.
   const tierLabel = sub ? TIER_LABELS[sub.tier].name : null
   const lifetime = await isCompUser(user.id)
+  // Null for a permanent comp too, so it is only meaningful next to
+  // `lifetime`. A time-limited comp used to render as "no expiration".
+  const compEnds = lifetime ? await compExpiryLabel(user.id) : null
+  // Follows the launch offer, so this card stops saying "7-day" the moment
+  // the offer opens or the standard length changes.
+  const trialDays = advertisedTrialDays()
 
   if ((await getViewMode()) === 'mobile') {
     return (
@@ -88,6 +95,7 @@ export default async function AccountPage({
           cancelAtPeriodEnd: sub.cancel_at_period_end,
         } : null}
         lifetime={lifetime}
+        compEnds={compEnds}
         justSubscribed={justSubscribed}
         referralSource={referralSource}
         referralOther={referralOther}
@@ -136,6 +144,8 @@ export default async function AccountPage({
           cancelAtPeriodEnd: sub.cancel_at_period_end,
         } : null}
         lifetime={lifetime}
+        compEnds={compEnds}
+        trialDays={trialDays}
         justSubscribed={justSubscribed}
         referralSource={referralSource}
         referralOther={referralOther}

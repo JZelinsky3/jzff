@@ -9,6 +9,7 @@ import { MobileViewEscape } from "@/components/MobileViewEscape";
 import { AttributionCapture } from "@/components/AttributionCapture";
 import { VisitPing } from "@/components/VisitPing";
 import { NavTracker } from "@/components/NavTracker";
+import { ReviewNudge } from "@/components/ReviewNudge";
 import { createClient } from "@/lib/supabase/server";
 import { isSiteAdmin } from "@/lib/siteAdmin";
 import { isMobileForcingDesktop } from "@/lib/viewMode";
@@ -323,6 +324,11 @@ export default async function RootLayout({
         <NavTracker />
         <AttributionCapture />
         <VisitPing />
+        {/* Before {children} on purpose: on a phone this renders as a strip
+            in the normal document flow, so it has to sit above the page's
+            own masthead. On desktop it's position:fixed and the DOM order
+            doesn't matter. */}
+        <ReviewNudge />
         {children}
         <MobileSiteMenu signedIn={signedIn} email={user?.email ?? null} admin={admin} />
         {stuckOnDesktop && <MobileViewEscape />}

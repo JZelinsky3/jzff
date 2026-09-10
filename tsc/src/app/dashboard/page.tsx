@@ -10,8 +10,13 @@ import {
   isSubscriptionActive,
   TIER_LABELS,
   TIER_LIMITS,
+  trialSlotActive,
+  trialSlotDaysLeft,
+  trialSlotEndsAt,
+  launchOfferDeadlineLabel,
+  STANDARD_TRIAL_DAYS,
 } from '@/lib/stripe'
-import { isSiteAdmin } from '@/lib/siteAdmin'
+import { isSiteAdmin, compExpiryLabel } from '@/lib/siteAdmin'
 import { getViewMode } from '@/lib/viewMode'
 import { Bookshelf } from './bookshelf'
 import { CollapsedSection } from './collapsed-section'
@@ -109,16 +114,33 @@ export default async function DashboardPage({
   // simple comp badge instead.
   const subUserId = user?.id ?? null
   const comp = subUserId ? await isCompUser(subUserId) : false
+  // Null for a permanent comp as well as for no comp, so it is only ever
+  // read alongside `comp` above.
+  const compEnds = comp ? await compExpiryLabel(subUserId) : null
   const siteAdmin = subUserId ? await isSiteAdmin(subUserId) : false
   const sub = !comp && subUserId ? await getUserSubscription(subUserId) : null
   const subActive = isSubscriptionActive(sub)
   const subEndsLabel = formatSubEndsLabel(sub)
   const subTierName = sub ? TIER_LABELS[sub.tier]?.name ?? sub.tier : null
 
-  // UDFA = signed-in user with no comp, no active subscription. Their
-  // earliest league gets the trial slot (full paid-feature preview);
-  // additional leagues use the UDFA feature set.
+  // UDFA = signed-in user with no comp, no active subscription. While the
+  // free preview window is open their earliest league gets the trial slot
+  // (full paid-feature preview); after it closes every league they own uses
+  // the UDFA feature set.
   const isUDFA = !!user && !comp && !subActive
+  const previewOpen = trialSlotActive()
+  const previewEndsAt = previewOpen ? trialSlotEndsAt() : null
+  const previewDaysLeft = previewOpen ? trialSlotDaysLeft() : null
+  const previewEndsLabel = previewEndsAt
+    ? previewEndsAt.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'America/New_York',
+      })
+    : null
+  // Deadline for the free month, which is three days past the flip and so
+  // is a genuinely different date. Same formatter the pricing page uses.
+  const offerDeadline = launchOfferDeadlineLabel()
   const tier1Limit = TIER_LIMITS.tier1
 
   // Demo card hides permanently once the user has created their first league
@@ -154,9 +176,12 @@ export default async function DashboardPage({
   // "Trial · Full access" badge. Subsequent free-tier leagues show as
   // UDFA-limited. Leagues come back sorted newest-first so the last
   // entry is the oldest. Mirrors the trial-resolution rule used by
-  // resolveLeagueTier on the public side.
+  // resolveLeagueTier on the public side, including its expiry: once the
+  // free preview window shuts there is no trial slot to badge, so this
+  // goes null and every free league on the shelf reads UDFA in both the
+  // desktop and mobile trees.
   const earliestOwnedLeagueId =
-    leagues && leagues.length > 0 ? leagues[leagues.length - 1].id : null
+    previewOpen && leagues && leagues.length > 0 ? leagues[leagues.length - 1].id : null
 
   if ((await getViewMode()) === 'mobile') {
     return (
@@ -171,6 +196,8 @@ export default async function DashboardPage({
         tier1Limit={tier1Limit}
         showDemoCard={showDemoCard}
         askReferral={askReferral}
+        previewEndsLabel={previewEndsLabel}
+        offerDeadline={offerDeadline}
       />
     )
   }
@@ -245,7 +272,9 @@ export default async function DashboardPage({
             {comp ? (
               <>
                 <span style={{ color: 'var(--gold)' }}>★ Comp</span>
-                <span style={{ opacity: 0.6 }}>· Unlimited access</span>
+                <span style={{ opacity: 0.6 }}>
+                  · {compEnds ? `Through ${compEnds}` : 'Unlimited access'}
+                </span>
               </>
             ) : subActive ? (
               <>
@@ -276,20 +305,51 @@ export default async function DashboardPage({
           }}
         >
           <div className="dc-banner-kicker" style={{ fontFamily: 'var(--mono)', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '.25rem' }}>
-            ★ How UDFA works
+            {previewOpen ? `★ Full access ends ${previewEndsLabel}` : '★ How UDFA works'}
           </div>
+          {/* The date leads, in the kicker, so it survives being skimmed.
+              Anyone who signed up after the announcement email still finds
+              out here, which is the only place every account lands. */}
           <div className="dc-banner-lede" style={{ fontFamily: 'var(--serif)', color: 'var(--cream)' }}>
-            <strong style={{ color: 'var(--gold)' }}>First league</strong> is a free trial: every feature, unlocked as a preview of the paid plans.
+            {previewOpen ? (
+              <>
+                <strong style={{ color: 'var(--gold)' }}>
+                  {previewDaysLeft === 1 ? 'Tomorrow' : `${previewDaysLeft} days left.`}
+                </strong>
+                {' '}
+                {hasLeague
+                  ? 'After that your leagues move to the free UDFA feature set.'
+                  : 'After that new leagues start on the free UDFA feature set.'}
+                {offerDeadline
+                  ? ` Subscribe by ${offerDeadline} and your first month is free instead of ${STANDARD_TRIAL_DAYS} days.`
+                  : ''}
+              </>
+            ) : (
+              <>
+                <strong style={{ color: 'var(--gold)' }}>One league, free forever.</strong> All-time standings, rivalries, season archives and the manager strip.
+              </>
+            )}
           </div>
           <div className="dc-banner-thanks" style={{ fontFamily: 'var(--serif)', color: 'var(--cream-soft)', marginTop: '.4rem' }}>
-            Thank you to everyone who tested the first round and sent feedback. Phase 2 picks up right where you left off.
+            {previewOpen ? (
+              <>
+                Nothing is deleted and nothing goes offline. Every season you have synced stays
+                where it is, your almanac keeps its address, and the locked chapters come straight
+                back the day you subscribe.
+              </>
+            ) : (
+              <>
+                Thank you to everyone who tested the first round and sent feedback. Everything you
+                built is still here.
+              </>
+            )}
           </div>
           {/* Feature-list explanation is verbose; it's the first thing to hide
               on phones where vertical real-estate is precious. The email
               follow-up stays visible at every width. */}
           <div className="dc-banner-note" style={{ opacity: 0.7, marginTop: '.35rem' }}>
             <span className="hide-on-mobile">
-              Additional leagues use the free UDFA feature set (all-time standings, rivalries, and the manager strip). Pick&apos;ems, Power Rankings, Live Season Hub, and Manager Hub stay locked on UDFA leagues until you upgrade.{' '}
+              UDFA leagues keep all-time standings, rivalries, season archives and the manager strip. Pick&apos;ems, Power Rankings, the Live Season Hub, the record book, draft history and the Manager Hub stay locked until you upgrade.{' '}
             </span>
             Email <a href="mailto:jzffgames@gmail.com" style={{ color: 'var(--gold)' }}>jzffgames@gmail.com</a> with bugs or suggestions.
           </div>
@@ -308,8 +368,17 @@ export default async function DashboardPage({
               letterSpacing: '.22em', textTransform: 'uppercase',
               color: 'var(--cream-mute)',
             }}>
-              ★ Still in testing:{' '}
-              <strong style={{ color: 'var(--gold)' }}>everything is free</strong>
+              {previewOpen ? (
+                <>
+                  ★ You tested this:{' '}
+                  <strong style={{ color: 'var(--gold)' }}>your first month is on us</strong>
+                </>
+              ) : (
+                <>
+                  ★ Free tier:{' '}
+                  <strong style={{ color: 'var(--gold)' }}>one league, no card</strong>
+                </>
+              )}
             </span>
             <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
               <Link

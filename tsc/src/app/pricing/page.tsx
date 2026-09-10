@@ -12,7 +12,10 @@ import {
   getUserSubscription,
   isSubscriptionActive,
   isCompUser,
+  advertisedTrialDays,
+  launchOfferDeadlineLabel,
 } from '@/lib/stripe'
+import { compExpiryLabel } from '@/lib/siteAdmin'
 import { PricingCards } from './pricing-cards'
 import { PricingViewTabs } from './pricing-view-tabs'
 import { MobilePricing } from './MobilePricing'
@@ -25,13 +28,21 @@ export const viewport: Viewport = {
   maximumScale: 5,
 }
 
-const TRIAL_DAYS = Number(process.env.STRIPE_TRIAL_DAYS ?? '10')
-
 export default async function PricingPage({
   searchParams,
 }: {
   searchParams?: Promise<{ back?: string }>
 }) {
+  // Resolved per request, not at module scope: while the launch offer is
+  // open this is the free month, and a build-time constant would keep
+  // promising the standard trial right through it. Comes from the same
+  // place the checkout route reads, so the page can never advertise a
+  // trial Stripe isn't told to grant.
+  const TRIAL_DAYS = advertisedTrialDays()
+  // Short ET date while the launch offer is open, null after. The deadline
+  // is the reason to act today rather than in October, so it belongs in the
+  // hero next to the number it explains.
+  const offerDeadline = launchOfferDeadlineLabel()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   // Read the persisted view choice (cookie set by PricingViewTabs).
@@ -55,6 +66,8 @@ export default async function PricingPage({
   const sub = user ? await getUserSubscription(user.id) : null
   const hasActive = isSubscriptionActive(sub)
   const lifetime = !!user && (await isCompUser(user.id))
+  // Null for a permanent comp as well, so only read next to `lifetime`.
+  const compEnds = lifetime && user ? await compExpiryLabel(user.id) : null
 
   if ((await getViewMode()) === 'mobile') {
     return (
@@ -68,6 +81,7 @@ export default async function PricingPage({
         lifetime={lifetime}
         initialView={initialView}
         trialDays={TRIAL_DAYS}
+        offerDeadline={offerDeadline}
         backHref={backHref}
       />
     )
@@ -108,12 +122,17 @@ export default async function PricingPage({
           Built to <em>last.</em>
         </h1>
         <p className="hero-sub">
-          {TRIAL_DAYS}-day free trial on every plan. Cancel anytime. Yearly saves you six months
-          compared to paying monthly.
+          {offerDeadline
+            ? `First month free on every plan, if you start by ${offerDeadline}. `
+            : `${TRIAL_DAYS}-day free trial on every plan. `}
+          Cancel anytime. Yearly saves you six months compared to paying monthly.
         </p>
         {lifetime ? (
           <div className="hero-meta">
-            <strong style={{ color: 'var(--gold)' }}>Lifetime access.</strong> You don&apos;t need a plan.
+            <strong style={{ color: 'var(--gold)' }}>
+              {compEnds ? `Comped through ${compEnds}.` : 'Lifetime access.'}
+            </strong>{' '}
+            You don&apos;t need a plan{compEnds ? ' until then' : ''}.
           </div>
         ) : hasActive && sub ? (
           <div className="hero-meta">
@@ -127,8 +146,10 @@ export default async function PricingPage({
           <div className="dc-card-static" style={{ textAlign: 'center' }}>
             <div style={{ fontFamily: 'var(--serif)', fontSize: '1.4rem' }}>You&apos;re comped.</div>
             <p style={{ opacity: 0.7, marginTop: '.6rem', fontSize: '.95rem', lineHeight: 1.6 }}>
-              Your account has lifetime access: unlimited leagues, no billing, no expiration.
-              Nothing to manage on this page.
+              {compEnds
+                ? `Your account is comped through ${compEnds}: unlimited leagues, no billing. After that it returns to the free tier.`
+                : 'Your account has lifetime access: unlimited leagues, no billing, no expiration.'}
+              {' '}Nothing to manage on this page.
             </p>
             <Link href="/dashboard" className="dc-btn" style={{ marginTop: '1.25rem' }}>← Back to your library</Link>
           </div>

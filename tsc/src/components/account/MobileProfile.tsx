@@ -31,6 +31,7 @@ export function MobileProfile({
   backupEmail,
   subscription,
   lifetime,
+  compEnds,
   justSubscribed,
   referralSource,
   referralOther,
@@ -45,6 +46,7 @@ export function MobileProfile({
   backupEmail: string
   subscription: SubscriptionSummary | null
   lifetime: boolean
+  compEnds: string | null
   justSubscribed: boolean
   referralSource: string | null
   referralOther: string
@@ -76,6 +78,7 @@ export function MobileProfile({
         leagueCount={leagueCount}
         subscription={subscription}
         lifetime={lifetime}
+        compEnds={compEnds}
         justSubscribed={justSubscribed}
       />
 
@@ -131,11 +134,14 @@ function MobileSubscriptionCard({
   leagueCount,
   subscription,
   lifetime,
+  compEnds,
   justSubscribed,
 }: {
   leagueCount: number
   subscription: SubscriptionSummary | null
   lifetime: boolean
+  /** End date of a time-limited comp, else null (permanent ones included). */
+  compEnds: string | null
   justSubscribed: boolean
 }) {
   const router = useRouter()
@@ -160,10 +166,13 @@ function MobileSubscriptionCard({
         <div className="mprof-section-label">Plan</div>
         <div className="mprof-card">
           <div className="mprof-card-row">
-            <span className="mprof-card-title">Lifetime</span>
+            <span className="mprof-card-title">{compEnds ? 'Comped' : 'Lifetime'}</span>
             <span className="mprof-badge comp">Comp</span>
           </div>
-          <div className="mprof-card-detail">Unlimited access. {leagueCount} {leagueCount === 1 ? 'league' : 'leagues'}.</div>
+          <div className="mprof-card-detail">
+            {compEnds ? `Unlimited access through ${compEnds}.` : 'Unlimited access.'}{' '}
+            {leagueCount} {leagueCount === 1 ? 'league' : 'leagues'}.
+          </div>
         </div>
       </div>
     )

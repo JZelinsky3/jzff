@@ -44,3 +44,41 @@ export function compIsActive(grant: { expires_at?: string | null }): boolean {
   const ends = new Date(grant.expires_at).getTime()
   return Number.isFinite(ends) && ends > Date.now()
 }
+
+// When does this user's comp run out? Null for "no active comp" AND for a
+// permanent one, so callers must not read null as "expired" — pair it with
+// isCompUser()/hasCompGrant() to tell the two apart.
+//
+// This exists because every surface that mentions a comp used to say
+// "unlimited access, no expiration", which stopped being true the moment
+// migration 0063 added expires_at. Someone on a 3-month comp was being told
+// in three separate places that it would never end, and would then have
+// found out by watching their leagues lock. A granted comp is silent enough
+// already (nothing emails the user), so the least it can do is state its own
+// end date wherever it is shown.
+export async function compExpiresAt(userId: string | null | undefined): Promise<Date | null> {
+  if (!userId) return null
+  const db = createAdminClient()
+  const { data, error } = await db
+    .from('comp_grants')
+    .select('expires_at')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (error || !data?.expires_at) return null
+  const grant = data as { expires_at: string }
+  if (!compIsActive(grant)) return null
+  const ends = new Date(grant.expires_at)
+  return Number.isFinite(ends.getTime()) ? ends : null
+}
+
+/** "December 10" in ET, or null when there is nothing to state. */
+export async function compExpiryLabel(userId: string | null | undefined): Promise<string | null> {
+  const ends = await compExpiresAt(userId)
+  if (!ends) return null
+  return ends.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'America/New_York',
+  })
+}

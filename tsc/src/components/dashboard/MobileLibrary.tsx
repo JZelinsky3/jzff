@@ -32,6 +32,8 @@ export function MobileLibrary({
   tier1Limit,
   showDemoCard,
   askReferral,
+  previewEndsLabel,
+  offerDeadline,
 }: {
   leagues: League[]
   bookmarks: BookmarkedLeague[]
@@ -43,6 +45,12 @@ export function MobileLibrary({
   tier1Limit: number
   showDemoCard: boolean
   askReferral: boolean
+  /** e.g. "September 17" while the free preview is still open, null once
+      it has closed. Drives the countdown wording in the UDFA card. */
+  previewEndsLabel: string | null
+  /** e.g. "Sep 20", the free-month deadline. Three days past the flip, so
+      it is a different date and outlives previewEndsLabel by a few days. */
+  offerDeadline: string | null
 }) {
   const hasLeagues = leagues.length > 0
   const latestSyncedAt = leagues
@@ -107,10 +115,22 @@ export function MobileLibrary({
         <div className="mlib-udfa">
           <div className="mlib-udfa-head">
             <span className="mlib-udfa-icon">★</span>
-            <span>First league is a free trial with every feature unlocked.</span>
+            <span>
+              {previewEndsLabel
+                ? `Full access ends ${previewEndsLabel}. Your archive stays, the extras lock.`
+                : 'One league free, with all-time standings, rivalries and season archives.'}
+            </span>
           </div>
           <div className="mlib-udfa-foot">
-            <span>Still in testing, <strong>everything free</strong></span>
+            <span>
+              {offerDeadline ? (
+                <>By {offerDeadline}, <strong>first month free</strong></>
+              ) : previewEndsLabel ? (
+                <><strong>Your archive stays</strong>, free</>
+              ) : (
+                <>Free tier, <strong>no card</strong></>
+              )}
+            </span>
             <Link href="/review" className="mlib-udfa-link">Review</Link>
             <Link href="/pricing" className="mlib-udfa-link">Plans</Link>
           </div>

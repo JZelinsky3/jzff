@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState, useTransition } from 'react'
 import { SleeperLeaguePicker } from '@/components/SleeperLeaguePicker'
 import { slugify } from '@/lib/slugify'
 import {
+import { PLATFORM_STATUS, type PlatformKey } from '@/lib/platformStatus'
   addLeague,
   checkSlugAvailable,
   listYahooLeagues,
@@ -30,15 +31,18 @@ export type ArchiveDraft = {
   leagueFound: boolean
 }
 
+// Subtitle for a platform you CAN import from. The two you cannot get their
+// status from PLATFORM_STATUS instead, so this plate rail can never go back
+// to advertising a dead platform as "Beta".
 const PLATFORM_PLATES: {
-  key: 'sleeper' | 'nfl' | 'espn' | 'yahoo'
+  key: PlatformKey
   name: string
   sub: string
 }[] = [
   { key: 'sleeper', name: 'Sleeper', sub: 'Username or ID' },
   { key: 'nfl', name: 'NFL.com', sub: 'League ID' },
   { key: 'espn', name: 'ESPN', sub: 'League ID' },
-  { key: 'yahoo', name: 'Yahoo', sub: 'Connect · Beta' },
+  { key: 'yahoo', name: 'Yahoo', sub: 'Connect' },
 ]
 
 export function AddLeagueForm({
@@ -289,19 +293,35 @@ export function AddLeagueForm({
       <Chapter num="§" title="Choose the press">
         <input type="hidden" name="platform" value={platform} />
         <div className="dc-plat-grid" role="group" aria-label="Platform">
-          {PLATFORM_PLATES.map((p) => (
-            <button
-              key={p.key}
-              type="button"
-              aria-pressed={platform === p.key}
-              className={`dc-plat${platform === p.key ? ' is-on' : ''}`}
-              onClick={() => setPlatform(p.key)}
-            >
-              <span className="dc-plat-name">{p.name}</span>
-              <span className="dc-plat-sub">{p.sub}</span>
-            </button>
-          ))}
+          {PLATFORM_PLATES.map((p) => {
+            const status = PLATFORM_STATUS[p.key]
+            return (
+              <button
+                key={p.key}
+                type="button"
+                aria-pressed={platform === p.key}
+                aria-disabled={!status.canImport}
+                className={`dc-plat${platform === p.key ? ' is-on' : ''}${status.canImport ? '' : ' is-off'}`}
+                onClick={() => setPlatform(p.key)}
+              >
+                <span className="dc-plat-name">{p.name}</span>
+                <span className="dc-plat-sub">
+                  {status.canImport ? p.sub : status.badge}
+                </span>
+              </button>
+            )
+          })}
         </div>
+        {/* Say WHY before they paste an ID and wait for a failure. Selectable
+            rather than disabled on purpose: someone arriving with an NFL.com
+            league needs to read the sentence, and a dead plate that cannot be
+            clicked never shows it. */}
+        {!PLATFORM_STATUS[platform].canImport && (
+          <p className="dc-plat-notice" role="status">
+            <strong>{PLATFORM_STATUS[platform].name}:</strong>{' '}
+            {PLATFORM_STATUS[platform].blurb}
+          </p>
+        )}
       </Chapter>
 
       {platform === 'yahoo' ? (

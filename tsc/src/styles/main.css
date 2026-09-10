@@ -610,3 +610,82 @@ table.data tbody tr.highlight {
     .toc-title { font-size: 1.3rem; }
     .toc-chapter { min-width: 4rem; font-size: .58rem; }
 }
+/* ============================================================
+   REVIEW NUDGE
+   A standing "leave a review" prompt, mounted once in the root
+   layout (see components/ReviewNudge.tsx) so it reaches every
+   page rather than just /dashboard. Reviews take no account, so
+   signed-out visitors see it too.
+
+   Two shapes on one element:
+     desktop — a pill fixed to the BOTTOM-LEFT. Deliberately not a
+               band across the top (reads as a system alert on a
+               wide page) and not bottom-right, which the support
+               widget owns at z-index 90/95. This sits at 88 so a
+               support panel opening always covers it.
+     ≤940px  — a slim strip at the top of the DOCUMENT FLOW, not
+               fixed. In flow it pushes the page down by its own
+               height instead of overlapping anything, and every
+               mobile masthead on the site is `position: sticky;
+               top: 0`, so those bars slide up and stick as normal
+               once it scrolls away. No offset math, nothing to
+               keep in sync with a header height.
+   ============================================================ */
+
+.tsc-rev {
+    position: fixed;
+    left: calc(1.1rem + env(safe-area-inset-left));
+    bottom: calc(1.1rem + env(safe-area-inset-bottom));
+    z-index: 88;
+    display: flex; align-items: stretch;
+    background: var(--ink-card);
+    border: 1px solid var(--gold-deep);
+    border-radius: 2px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, .45);
+    font-family: var(--mono, 'JetBrains Mono', monospace);
+    overflow: hidden;
+}
+
+.tsc-rev-link {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .5rem .75rem;
+    color: var(--cream); text-decoration: none;
+    font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+}
+.tsc-rev-link:hover { background: rgba(232, 200, 137, .1); color: var(--gold); }
+
+.tsc-rev-stars { color: var(--gold); letter-spacing: .05em; font-size: .62rem; }
+.tsc-rev-text-short { display: none; }
+
+.tsc-rev-x {
+    flex: none;
+    padding: 0 .55rem;
+    background: none; border: 0;
+    border-left: 1px solid var(--ink-line);
+    color: var(--cream-mute); cursor: pointer;
+    font-size: .62rem; line-height: 1;
+}
+.tsc-rev-x:hover { color: var(--cream); background: rgba(255, 255, 255, .05); }
+
+@media (max-width: 940px) {
+    .tsc-rev {
+        position: static;
+        display: flex; align-items: stretch; justify-content: center;
+        border: 0; border-bottom: 1px solid var(--ink-line);
+        border-radius: 0;
+        box-shadow: none;
+        background: var(--ink-soft);
+        padding-top: env(safe-area-inset-top);
+    }
+    .tsc-rev-link {
+        flex: 1;
+        justify-content: center;
+        padding: .42rem .6rem;
+        font-size: .6rem; letter-spacing: .1em;
+    }
+    /* The long sentence wraps to two lines at 360px and doubles the strip's
+       height, which is the one thing this was asked not to do. */
+    .tsc-rev-text-full { display: none; }
+    .tsc-rev-text-short { display: inline; }
+    .tsc-rev-x { border-left: 0; padding: 0 .8rem; }
+}

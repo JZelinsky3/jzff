@@ -10,9 +10,14 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
-import { getStripe, priceIdFor, getUserSubscription, isCompUser, resolveTrial } from '@/lib/stripe'
-
-const TRIAL_DAYS = Number(process.env.STRIPE_TRIAL_DAYS ?? '7')
+import {
+  getStripe,
+  priceIdFor,
+  getUserSubscription,
+  isCompUser,
+  resolveTrial,
+  STANDARD_TRIAL_DAYS,
+} from '@/lib/stripe'
 
 const Body = z.object({
   tier: z.enum(['tier1', 'tier2', 'tier3']),
@@ -65,17 +70,19 @@ export async function POST(req: Request) {
     // (active, canceled, or trialing on a different tier/period), they've
     // already used their free trial — bill them immediately. Otherwise grant
     // the configured trial length. This prevents the loophole where a user
-    // could claim a 7-day trial on Rookie monthly, cancel, then claim
-    // another on Veteran yearly, etc.
+    // could claim a trial on Rookie monthly, cancel, then claim another on
+    // Veteran yearly, etc.
+    //
+    // This is also the whole eligibility test for the launch offer: "has
+    // never subscribed" is the same set either way, so resolveTrial only has
+    // to answer how LONG, never to whom.
     const trialEligible = !existing
 
-    // Testers who signed up during the free window get the promised month
-    // instead of the standard trial — granted server-side off their signup
-    // date, so there is no code to enter and nothing to lose. Theirs comes
-    // back as an absolute `trial_end` so it can't start before the 17th and
-    // waste itself against the still-free testing period. Everyone else
-    // gets plain TRIAL_DAYS. See resolveTrial() in lib/stripe.ts.
-    const trial = trialEligible ? await resolveTrial(user.id, TRIAL_DAYS) : null
+    // While the launch offer is open that's a free month, handed back as an
+    // absolute `trial_end` so it can't start before the paywall does and
+    // waste itself against access that is still free. After the deadline
+    // it's the standard trial. See resolveTrial() in lib/stripe.ts.
+    const trial = trialEligible ? resolveTrial(STANDARD_TRIAL_DAYS) : null
     const trialArg = !trial
       ? {}
       : trial.kind === 'days'

@@ -1192,33 +1192,68 @@
         };
     }
 
-    // Light-blue advisory strip for every public almanac during the
-    // pre-launch build phase. Wording varies by the league's tier so
-    // the message lines up with what the visitor's seeing:
-    //   - 'test' → owner's first/free trial league
-    //   - 'udfa' → owner's free-tier (non-trial) league
+    // Advisory strip for the public almanac. Wording varies by the league's
+    // tier so the message lines up with what the visitor's seeing:
+    //   - 'test' → owner's first league, still inside the free preview
+    //              window. Counts down to the day it becomes UDFA.
+    //   - 'udfa' → owner's free-tier league
     //   - 'paid' → comp or paid plan
     // The route handler resolves the tier server-side and injects it as
-    // __DC.leagueTier.
+    // __DC.leagueTier, with the flip date as __DC.trialSlotEndsAt.
+    //
+    // Once that window closes the strip is UDFA-only: 'test' stops being a
+    // tier the server can return, and a paying commissioner does not need a
+    // banner across the top of their own almanac telling them so.
     function buildTestingStrip() {
         var dc = window.__DC || {};
         var tier = dc.leagueTier;
         if (tier !== 'test' && tier !== 'udfa' && tier !== 'paid' && tier !== 'comp') return;
         if (document.getElementById('dc-testing-strip')) return;
 
+        // When the preview shuts, as a short ET date ("Sept 17"). Null when
+        // the server says the window is already closed.
+        //
+        // A DATE, not "in 6 days": the strip has one line on a 390px phone
+        // before it wraps and doubles in height, and a date is the thing
+        // people can act on and repeat to each other. The long version of
+        // this sentence ran off the page, which is the one thing a fixed
+        // band must never do.
+        var endLabel = null;
+        if (dc.trialSlotEndsAt) {
+            var endMs = Date.parse(dc.trialSlotEndsAt);
+            if (!isNaN(endMs) && endMs > Date.now()) {
+                try {
+                    endLabel = new Date(endMs).toLocaleDateString('en-US', {
+                        month: 'short', day: 'numeric', timeZone: 'America/New_York',
+                    });
+                } catch (e) {
+                    endLabel = new Date(endMs).toISOString().slice(0, 10);
+                }
+            }
+        }
+
         var pillLabel, text;
         if (tier === 'test') {
-            // First league for any non-comp owner — their free trial slot.
-            pillLabel = '★ Trial League';
-            text = 'Your free trial league. Some features are still being built.';
+            if (endLabel === null) return;
+            // First league for any non-comp owner, on borrowed time.
+            pillLabel = '★ Free Preview';
+            text = 'Full access ends ' + endLabel + '.';
         } else if (tier === 'udfa') {
             pillLabel = '★ UDFA · Limited';
             text = 'Free-tier league. Upgrade to unlock the full chronicle.';
         } else {
-            // 'paid' and 'comp' both surface the beta message; the only
-            // distinction is the badge color in the hub.
-            pillLabel = '★ Beta';
+            // 'paid' and 'comp'. Nothing to say once the site is live.
+            if (endLabel === null) return;
+            pillLabel = '★ Early Access';
             text = 'Thanks for the early support. Expect a few rough edges.';
+        }
+
+        // The two strips that are telling someone their access is limited
+        // carry a way to act on it. The early-access thank-you doesn't —
+        // there is nothing for a paying commissioner to click.
+        var ctaHtml = '';
+        if (tier === 'test' || tier === 'udfa') {
+            ctaHtml = '<a class="dc-demo-strip-cta" href="/pricing">Keep it all</a>';
         }
 
         var strip = document.createElement('div');
@@ -1226,7 +1261,8 @@
         strip.className = 'dc-demo-strip dc-testing-strip dc-testing-strip--' + tier;
         strip.innerHTML =
             '<span class="dc-demo-strip-pill">' + pillLabel + '</span>' +
-            '<span class="dc-demo-strip-text">' + text + '</span>';
+            '<span class="dc-demo-strip-text">' + text + '</span>' +
+            ctaHtml;
         document.body.insertBefore(strip, document.body.firstChild);
 
         var style = document.createElement('style');
@@ -1253,11 +1289,23 @@
             '  letter-spacing: .22em;',
             '}',
             '.dc-demo-strip-text { color: #0e1620; }',
+            '.dc-demo-strip-cta {',
+            '  flex: none;',
+            '  color: #0e1620; text-decoration: none;',
+            '  border: 1px solid rgba(14,22,32,.45);',
+            '  padding: 4px 10px; border-radius: 2px;',
+            '  font-size: .68rem; letter-spacing: .18em;',
+            '}',
+            '.dc-demo-strip-cta:hover { background: #0e1620; color: #b8d4e6; }',
             '@media (max-width: 480px) {',
             '  :root { --demo-strip-h: 38px; }',
             '  .dc-demo-strip { font-size: .6rem; letter-spacing: .1em; gap: .55rem; padding: 0 .6rem; }',
             '  .dc-demo-strip-pill { font-size: .55rem; padding: 3px 7px; }',
             '  .dc-demo-strip-text { letter-spacing: .06em; white-space: normal; line-height: 1.25; }',
+            // A 38px strip holding a wrapped sentence has no room left for a
+            // button. The same upgrade path is on the lock overlay and the
+            // dashboard, so the phone keeps the message and drops the click.
+            '  .dc-demo-strip-cta { display: none; }',
             '}',
             'body { padding-top: var(--demo-strip-h) !important; }',
             'nav.nav { top: var(--demo-strip-h) !important; }',
@@ -1610,8 +1658,131 @@
         document.head.appendChild(style);
     }
 
+    // Standing "leave a review" prompt for the almanac tree, matching the
+    // one the React pages mount from components/ReviewNudge.tsx. Reviews
+    // need no account, and almanac readers are mostly league members who
+    // will never see the dashboard — which is the only place the ask used
+    // to live.
+    //
+    // Shape depends on what is already at the top of the page. If a strip
+    // is up there (the tier advisory, or the demo banner) this renders as
+    // a small bottom-left pill at every width, because two stacked bands
+    // is worse than no prompt at all. With a clear masthead, phones get a
+    // slim strip instead, pushing the sticky nav stack down by --rev-strip-h
+    // the same way the tier strip does with --demo-strip-h.
+    function buildReviewNudge() {
+        if (document.getElementById('dc-review-nudge')) return;
+        // Not on the page whose whole job is the thing being asked for.
+        if (/^\/review(\/|$)/.test(window.location.pathname)) return;
+        try {
+            if (localStorage.getItem('tsc-review-nudge-dismissed')) return;
+        } catch (e) { /* private mode — show it, worst case it returns */ }
+
+        var stripUp = !!(document.getElementById('dc-testing-strip') ||
+                         document.getElementById('dc-demo-strip'));
+
+        var el = document.createElement('div');
+        el.id = 'dc-review-nudge';
+        el.className = 'dc-rev' + (stripUp ? ' dc-rev--pill-only' : '');
+        el.innerHTML =
+            '<a class="dc-rev-link" href="/review" target="_top">' +
+                '<span class="dc-rev-stars" aria-hidden="true">★★★★★</span>' +
+                '<span class="dc-rev-full">Enjoying the Chronicle? Leave a review</span>' +
+                '<span class="dc-rev-short">Rate the Chronicle</span>' +
+            '</a>' +
+            '<button type="button" class="dc-rev-x" aria-label="Dismiss">✕</button>';
+
+        // Appended to the END of body for the pill, and to the TOP for the
+        // strip — a strip has to precede the masthead to sit above it.
+        if (stripUp) document.body.appendChild(el);
+        else document.body.insertBefore(el, document.body.firstChild);
+
+        el.querySelector('.dc-rev-x').addEventListener('click', function () {
+            try { localStorage.setItem('tsc-review-nudge-dismissed', String(Date.now())); } catch (e) {}
+            el.remove();
+            document.documentElement.classList.remove('dc-rev-strip-on');
+        });
+        el.querySelector('.dc-rev-link').addEventListener('click', function () {
+            try { localStorage.setItem('tsc-review-nudge-dismissed', String(Date.now())); } catch (e) {}
+        });
+
+        var style = document.createElement('style');
+        style.setAttribute('data-review-nudge', '1');
+        style.textContent = [
+            '.dc-rev {',
+            '  position: fixed; z-index: 88;',
+            '  left: calc(1.1rem + env(safe-area-inset-left));',
+            '  bottom: calc(1.1rem + env(safe-area-inset-bottom));',
+            '  display: flex; align-items: stretch;',
+            '  background: var(--ink-card, #1a2532);',
+            '  border: 1px solid var(--gold-deep, #a88a4a);',
+            '  border-radius: 2px;',
+            '  box-shadow: 0 6px 24px rgba(0,0,0,.45);',
+            '  font-family: var(--mono, "JetBrains Mono", monospace);',
+            '  overflow: hidden;',
+            '}',
+            '.dc-rev-link {',
+            '  display: flex; align-items: center; gap: .5rem;',
+            '  padding: .5rem .75rem;',
+            '  color: var(--cream, #f4ebd8); text-decoration: none;',
+            '  font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;',
+            '}',
+            '.dc-rev-link:hover { background: rgba(232,200,137,.1); color: var(--gold, #e8c889); }',
+            '.dc-rev-stars { color: var(--gold, #e8c889); font-size: .62rem; }',
+            '.dc-rev-short { display: none; }',
+            '.dc-rev-x {',
+            '  flex: none; padding: 0 .55rem;',
+            '  background: none; border: 0;',
+            '  border-left: 1px solid var(--ink-line, #2a3645);',
+            '  color: var(--cream-mute, #837b6a); cursor: pointer;',
+            '  font-size: .62rem; line-height: 1;',
+            '}',
+            '.dc-rev-x:hover { color: var(--cream, #f4ebd8); }',
+            // Phones with a clear masthead: a band across the top, and the
+            // same sticky-stack offsets the tier strip uses.
+            '@media (max-width: 940px) {',
+            '  .dc-rev:not(.dc-rev--pill-only) {',
+            '    position: fixed; top: 0; left: 0; right: 0; bottom: auto;',
+            '    height: var(--rev-strip-h, 34px);',
+            '    align-items: center; justify-content: center;',
+            '    border: 0; border-bottom: 1px solid var(--ink-line, #2a3645);',
+            '    border-radius: 0; box-shadow: none;',
+            '    background: var(--ink-soft, #16202c);',
+            '  }',
+            '  .dc-rev:not(.dc-rev--pill-only) .dc-rev-link {',
+            '    flex: 1; justify-content: center;',
+            '    padding: 0 .6rem; font-size: .58rem; letter-spacing: .1em;',
+            '  }',
+            '  .dc-rev:not(.dc-rev--pill-only) .dc-rev-full { display: none; }',
+            '  .dc-rev:not(.dc-rev--pill-only) .dc-rev-short { display: inline; }',
+            '  .dc-rev:not(.dc-rev--pill-only) .dc-rev-x { border-left: 0; padding: 0 .8rem; }',
+            // Pill mode on a phone: the mobile app shell pins a tab bar to
+            // the bottom at z-index 220, so the pill has to clear it in both
+            // axes. --m-tab-h only exists once mobile-app.css is loaded, and
+            // the 0px fallback puts the pill back on the floor everywhere
+            // else.
+            '  .dc-rev--pill-only {',
+            '    z-index: 221;',
+            '    bottom: calc(var(--m-tab-h, 0px) + 1rem + env(safe-area-inset-bottom));',
+            '  }',
+            '  html.dc-rev-strip-on body { padding-top: var(--rev-strip-h, 34px) !important; }',
+            '  html.dc-rev-strip-on nav.nav { top: var(--rev-strip-h, 34px) !important; }',
+            '  html.dc-rev-strip-on .nav-chapbar {',
+            '    top: calc(var(--nav-h, 4.5rem) + var(--rev-strip-h, 34px)) !important;',
+            '  }',
+            '}',
+        ].join('\n');
+        document.head.appendChild(style);
+
+        // The offset rules are keyed off a class rather than applied
+        // unconditionally so dismissing the strip gives the height back
+        // without having to unpick individual declarations.
+        if (!stripUp) document.documentElement.classList.add('dc-rev-strip-on');
+    }
+
     function init() {
         buildTestingStrip();
+        buildReviewNudge();
         buildNav();
         enhanceAuthLinks();
         wireBookmarkToggle();

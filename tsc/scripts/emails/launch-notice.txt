@@ -1,0 +1,70 @@
+Plain-text alternative for launch-notice.html.
+
+Paste this into the broadcast's text version in Resend rather than letting it
+auto-generate one. An auto-generated text part from a table-heavy HTML email
+comes out as a wall of link soup, and a mismatched or missing text part is one
+of the cheapest spam signals to avoid. Keep the two versions saying the same
+thing: filters compare them.
+
+Resend merge tags work here too. Everything below the line is the body.
+
+────────────────────────────────────────────────────────────────────────────
+
+THE SUNDAY CHRONICLE
+Account Notice
+
+YOUR FREE ACCESS ENDS SEPTEMBER 17
+
+{{{FIRST_NAME|Hey}}}, Thursday September 17 is the last day of full access on
+your account.
+
+You signed up while this thing was half-built, found bugs nobody was paid to
+find, and used pages that changed under you without warning. That is most of
+the reason it works now. So you get the date a week early, instead of an email
+on the day telling you something already happened.
+
+
+WHAT HAPPENS ON THE 17TH
+
+  Nothing is deleted. Not a season, not a draft.
+  Your almanac stays online, same address, still free.
+  You keep standings, rivalries, season archives, manager pages.
+  Pick'ems, power rankings, the live hub, records and drafts lock.
+  Free accounts keep one league. It all comes back if you subscribe.
+
+
+IF YOU WANT TO KEEP THE WHOLE THING
+
+Start a subscription by Sunday September 20 and your trial runs 30 days free
+instead of the usual 10. It does not start counting until the 17th, so the week
+you have left is not spent against it. Cancel before it ends and you are never
+charged.
+
+
+ONE ASK
+
+Tap a star. That's the whole thing. It opens with your rating already filled
+in, so one tap is a finished review. Add a note if you feel like it. If
+something annoyed you, say that instead. I would rather know what is broken
+than collect five stars.
+
+  1 star   https://thesundaychronicle.app/review?r=1&src=email
+  2 stars  https://thesundaychronicle.app/review?r=2&src=email
+  3 stars  https://thesundaychronicle.app/review?r=3&src=email
+  4 stars  https://thesundaychronicle.app/review?r=4&src=email
+  5 stars  https://thesundaychronicle.app/review?r=5&src=email
+
+Or just hit reply. One line is fine.
+
+
+Week 1 is on. Go check your standings.
+
+JZFF
+The Sunday Chronicle
+
+────────────────────────────────────────────────────────────────────────────
+
+You're getting this because you made an account at thesundaychronicle.app.
+Unsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}
+Privacy: https://thesundaychronicle.app/privacy
+Terms: https://thesundaychronicle.app/terms

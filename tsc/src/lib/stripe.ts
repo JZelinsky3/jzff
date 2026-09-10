@@ -163,56 +163,128 @@ export function testingModeEndsAt(): Date | null {
   return resolveTestingCutoff()
 }
 
-// ─── Tester free month ────────────────────────────────────────────────────
-// Everyone who registered during the free testing window was promised a
-// month on the house when it closed. That promise is honored server-side as
-// a longer Stripe trial rather than a coupon code, for two reasons: a code
-// can be lost or forwarded, and Stripe only accepts one promotion code per
-// checkout — spending that slot on the free month would block the separate
-// launch discount from ever applying.
+// ─── The free preview window (trial slot) ─────────────────────────────────
+// This is the switch that actually ends the free period, and it is separate
+// from TESTING_MODE_UNTIL above (which nothing reads any more).
 //
-// Two dates bound the offer, and they do different jobs:
+// Until this instant, every non-comp owner's EARLIEST league resolves to the
+// 'test' tier in resolveLeagueTier: the whole paid feature set, free, with no
+// card. That is what 93 of the 101 leagues on the site were running on, so
+// closing this window — not flipping some testing flag — is what moves free
+// accounts onto UDFA.
 //
-//   TESTER_FREE_MONTH_CUTOFF   — who qualifies. Signed up before this, read
-//                                from the profile row (created by the
-//                                on_auth_user_created trigger at signup, so
-//                                it is the registration timestamp).
-//   TESTER_FREE_MONTH_REDEEM_BY — how long they have to take it. Without
-//                                this the offer never expires and someone
-//                                could claim their free month two years
-//                                from now, which makes it impossible to
-//                                ever reason about revenue.
+// After the window shuts the 'test' tier stops existing entirely: a league is
+// comp, paid, or UDFA, and a new free signup is UDFA from the day they create
+// it. Nothing is deleted and nothing needs re-syncing — the almanac bundle is
+// built from the database per request, so the locks engage on their own within
+// the cache TTL.
 //
-// TESTER_TRIAL_DAYS changes the length.
-//
-// This does NOT bypass the one-trial-per-user rule in /api/stripe/checkout —
-// a user who already burned a trial gets billed immediately either way.
-const TESTER_CUTOFF_DEFAULT = '2026-08-17T03:59:59Z'    // Aug 16 2026, 11:59pm ET
-const TESTER_REDEEM_BY_DEFAULT = '2026-09-01T03:59:59Z' // Aug 31 2026, 11:59pm ET
-const TESTER_TRIAL_DAYS = Number(process.env.TESTER_TRIAL_DAYS ?? '30')
+// Set TRIAL_SLOT_ENDS_AT in Vercel to move the date (pushing the announcement
+// back is a one-variable change). A past date closes the window immediately.
+const TRIAL_SLOT_DEFAULT_ENDS = '2026-09-17T04:00:00Z' // Sept 17 2026, 12:00am ET
 
-// Is the offer still open at all? Cheap synchronous check so the common
-// post-deadline path never touches the database.
-export function testerOfferOpen(): boolean {
-  const raw = process.env.TESTER_FREE_MONTH_REDEEM_BY ?? TESTER_REDEEM_BY_DEFAULT
+export function trialSlotEndsAt(): Date | null {
+  const raw = process.env.TRIAL_SLOT_ENDS_AT ?? TRIAL_SLOT_DEFAULT_ENDS
   const t = Date.parse(raw)
-  // An unparseable date closes the offer rather than opening it forever.
-  // Failing shut is the safe direction for something that gives away money.
-  if (Number.isNaN(t)) return false
-  return Date.now() < t
+  if (Number.isNaN(t)) {
+    console.warn(`[stripe] TRIAL_SLOT_ENDS_AT is not a parseable date: ${raw}`)
+    return null
+  }
+  return new Date(t)
 }
 
-export async function isTesterAccount(userId: string): Promise<boolean> {
-  const cutoff = Date.parse(process.env.TESTER_FREE_MONTH_CUTOFF ?? TESTER_CUTOFF_DEFAULT)
-  if (Number.isNaN(cutoff)) return false
-  const db = createAdminClient()
-  const { data } = await db
-    .from('profiles')
-    .select('created_at')
-    .eq('id', userId)
-    .maybeSingle()
-  if (!data?.created_at) return false
-  return Date.parse(data.created_at as string) < cutoff
+// Note this fails OPEN, the opposite of launchOfferOpen() below, and the
+// asymmetry is deliberate. There, failing shut declines to give money away.
+// Here, failing shut would lock ninety-odd leagues out of features their
+// owners are still using because someone fat-fingered an env var — a
+// user-facing incident. Failing open costs nothing that isn't already free
+// and leaves a warning in the logs to find it by.
+export function trialSlotActive(): boolean {
+  const ends = trialSlotEndsAt()
+  if (!ends) return true
+  return Date.now() < ends.getTime()
+}
+
+// Whole days from now until the window shuts, or null once it has. Lives
+// here rather than in the pages that render the countdown because reading
+// the clock inside a component body is an impure render.
+export function trialSlotDaysLeft(): number | null {
+  const ends = trialSlotEndsAt()
+  if (!ends) return null
+  const ms = ends.getTime() - Date.now()
+  if (ms <= 0) return null
+  return Math.ceil(ms / 86_400_000)
+}
+
+// ─── Launch offer: the first month free ───────────────────────────────────
+// One date, one rule: start a subscription before LAUNCH_OFFER_ENDS_AT and
+// the first 30 days are free. After it, everyone gets the standard trial.
+//
+// It is a longer Stripe trial rather than a coupon code, for two reasons: a
+// code can be lost or forwarded, and Stripe accepts only one promotion code
+// per checkout, so spending that slot on the free month would block the
+// separate launch discount from ever applying.
+//
+// This replaced a two-date scheme (qualify by signup date, then redeem by a
+// second date) that had to read the profile row to find out when the user
+// had registered. Three things were wrong with it: nobody could tell from
+// the outside whether they qualified, it cost a database round trip inside
+// checkout, and the qualifying set was invisible to the person writing the
+// email. Eligibility is now exactly "you have never subscribed" — which
+// /api/stripe/checkout already computes for its one-trial-per-user rule —
+// and the deadline is a single date you can print.
+//
+// Consequence worth knowing: the month is no longer restricted to accounts
+// that existed during testing. Anyone who signs up before the deadline gets
+// it too. That is a launch promotion rather than a thank-you, and it is the
+// price of the simpler rule.
+//
+// This does NOT bypass one-trial-per-user: a user with any prior
+// subscription row is billed immediately either way.
+const LAUNCH_OFFER_DEFAULT_ENDS = '2026-09-21T03:59:59Z' // Sept 20 2026, 11:59pm ET
+export const LAUNCH_OFFER_TRIAL_DAYS = Number(process.env.LAUNCH_OFFER_TRIAL_DAYS ?? '30')
+
+// The standard trial every other new subscriber gets, in days. Read from one
+// place because it used to be declared twice with different fallbacks — the
+// pricing page promised `?? 10` in its hero while the checkout route granted
+// `?? 7`. Production had STRIPE_TRIAL_DAYS set to 7, so both surfaces did
+// agree in practice; the env var was masking the split.
+export const STANDARD_TRIAL_DAYS = Number(process.env.STRIPE_TRIAL_DAYS ?? '10')
+
+export function launchOfferEndsAt(): Date | null {
+  const raw = process.env.LAUNCH_OFFER_ENDS_AT ?? LAUNCH_OFFER_DEFAULT_ENDS
+  const t = Date.parse(raw)
+  return Number.isNaN(t) ? null : new Date(t)
+}
+
+// Fails SHUT, unlike trialSlotActive() above: an unparseable date declines
+// to give a month away rather than giving it away forever.
+export function launchOfferOpen(): boolean {
+  const ends = launchOfferEndsAt()
+  if (!ends) return false
+  return Date.now() < ends.getTime()
+}
+
+// The offer deadline as a short ET date ("Sept 20"), or null once it has
+// passed. One formatter so the pricing page, the dashboard and the almanac
+// strip can't drift into naming three different days.
+export function launchOfferDeadlineLabel(): string | null {
+  if (!launchOfferOpen()) return null
+  const ends = launchOfferEndsAt()
+  if (!ends) return null
+  return ends.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'America/New_York',
+  })
+}
+
+// How long a trial to ADVERTISE. Must be called per request, never hoisted
+// to a module constant, or the pricing page bakes in whichever answer was
+// true at build time and keeps promising 10 days through the whole offer
+// (or a free month for a week after it closes).
+export function advertisedTrialDays(): number {
+  return launchOfferOpen() ? LAUNCH_OFFER_TRIAL_DAYS : STANDARD_TRIAL_DAYS
 }
 
 // Stripe takes a trial as either a length (`trial_period_days`) or an
@@ -222,26 +294,21 @@ export type TrialGrant =
   | { kind: 'days'; days: number }
   | { kind: 'end'; endsAt: number } // unix seconds, for Stripe
 
-// When the tester month is allowed to begin. Subscribing before this does
-// not start the clock: testing is still free until the 16th, and a free
-// month that burns down during an already-free period is not a free month.
-// Anyone who subscribes early gets their 30 days beginning here instead.
-const TESTER_TRIAL_STARTS_DEFAULT = '2026-08-17T04:00:00Z' // Aug 17 2026, 12:00am ET
+// What trial does this subscription get? Standard days normally; a fixed
+// 30-day window while the launch offer is open. Callers still decide
+// *whether* a trial applies at all.
+//
+// The free month never begins before the paywall does. Someone subscribing
+// during the notice week still has full access for free until
+// TRIAL_SLOT_ENDS_AT, and a free month that burns down against already-free
+// access is not a free month. That floor is the only reason this returns an
+// absolute `trial_end` instead of a day count.
+export function resolveTrial(standardDays: number): TrialGrant {
+  if (!launchOfferOpen()) return { kind: 'days', days: standardDays }
 
-// What trial does this user get on their first subscription? Standard days
-// for everyone normal; a fixed 30-day window starting no earlier than the
-// 17th for testers claiming the offer before it closes. Callers still
-// decide *whether* a trial applies at all.
-export async function resolveTrial(userId: string, standardDays: number): Promise<TrialGrant> {
-  if (!testerOfferOpen()) return { kind: 'days', days: standardDays }
-  if (!(await isTesterAccount(userId))) return { kind: 'days', days: standardDays }
-
-  const startsRaw = Date.parse(process.env.TESTER_TRIAL_STARTS ?? TESTER_TRIAL_STARTS_DEFAULT)
-  // An unparseable start date degrades to "begins now" rather than throwing.
-  // The tester still gets their full 30 days; the only thing lost is the
-  // no-overlap guarantee.
-  const startMs = Number.isNaN(startsRaw) ? Date.now() : Math.max(Date.now(), startsRaw)
-  const endMs = startMs + TESTER_TRIAL_DAYS * 24 * 60 * 60 * 1000
+  const paywallAt = trialSlotEndsAt()
+  const startMs = paywallAt ? Math.max(Date.now(), paywallAt.getTime()) : Date.now()
+  const endMs = startMs + LAUNCH_OFFER_TRIAL_DAYS * 24 * 60 * 60 * 1000
   return { kind: 'end', endsAt: Math.floor(endMs / 1000) }
 }
 
@@ -284,10 +351,13 @@ export type EnforcementResult =
   | { ok: true }
   | { ok: false; reason: 'no_subscription' | 'tier_limit'; tier?: Tier; limit?: number; current?: number; message: string }
 
-// Every non-comp user gets one free trial league on top of whatever
-// their plan allows. Tier1 (1 league) → 2 total (1 paid + 1 trial).
-// UDFA (no plan) → 1 trial league. During the preview window UDFA gets
-// unlimited; the trial flag still latches onto their first league.
+// Every non-comp user gets one free league on top of whatever their plan
+// allows. Tier1 (1 league) → 2 total. A free account → that one league and
+// nothing else.
+//
+// The bonus outlives the preview window on purpose: closing TRIAL_SLOT_ENDS_AT
+// changes what a free league can DO, not how many a user may keep. Nobody
+// loses an archive on launch day.
 const TRIAL_BONUS = 1
 
 // Can this user create another league? Loads their subscription + counts
@@ -306,17 +376,17 @@ export async function canCreateLeague(userId: string): Promise<EnforcementResult
   const sub = await getUserSubscription(userId)
   const hasSub = isSubscriptionActive(sub) && !!sub
 
-  // Trial slot: first league is always allowed regardless of plan.
+  // The free slot: a first league is always allowed, plan or no plan.
   if (current === 0) return { ok: true }
 
-  // No active subscription past the trial. UDFA is capped at 1 league
-  // immediately — no preview-window grace. The trial slot covers the
-  // first league; everything else needs a paid plan.
+  // No active subscription. Free accounts keep exactly one archive — the
+  // "Tier 0 · Free forever" card on /pricing — and anything past it needs
+  // a plan.
   if (!hasSub) {
     return {
       ok: false,
       reason: 'no_subscription',
-      message: "You've used your free trial league. Upgrade to add more.",
+      message: 'A free account covers one league. Upgrade to add more.',
     }
   }
 

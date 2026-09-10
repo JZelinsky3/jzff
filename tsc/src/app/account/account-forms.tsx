@@ -32,6 +32,8 @@ export function AccountForms({
   backupEmail,
   subscription,
   lifetime,
+  compEnds,
+  trialDays,
   justSubscribed,
   referralSource,
   referralOther,
@@ -47,6 +49,8 @@ export function AccountForms({
   backupEmail: string
   subscription: SubscriptionSummary | null
   lifetime: boolean
+  compEnds: string | null
+  trialDays: number
   justSubscribed: boolean
   referralSource: string | null
   referralOther: string
@@ -147,6 +151,8 @@ export function AccountForms({
                 leagueCount={leagueCount}
                 subscription={subscription}
                 lifetime={lifetime}
+                compEnds={compEnds}
+                trialDays={trialDays}
                 justSubscribed={justSubscribed}
               />
             )}
@@ -219,11 +225,19 @@ function PlanPanel({
   leagueCount,
   subscription,
   lifetime,
+  compEnds,
+  trialDays,
   justSubscribed,
 }: {
   leagueCount: number
   subscription: SubscriptionSummary | null
   lifetime: boolean
+  /** End date of a time-limited comp, else null (including permanent ones). */
+  compEnds: string | null
+  /** Trial length to advertise. Resolved server-side so it follows the
+      launch offer instead of being frozen at whatever was true when this
+      string was written. */
+  trialDays: number
   justSubscribed: boolean
 }) {
   // Only stamp a "current" tier while the subscription is actually in
@@ -237,12 +251,13 @@ function PlanPanel({
           leagueCount={leagueCount}
           subscription={subscription}
           lifetime={lifetime}
+          compEnds={compEnds}
           justSubscribed={justSubscribed}
         />
       ) : (
         <p style={{ fontSize: '.88rem', color: 'var(--cream-soft)', margin: '0 0 .35rem', lineHeight: 1.6 }}>
           No active plan. You have {leagueCount} {leagueCount === 1 ? 'league' : 'leagues'} on file;
-          pick a tier below to keep adding. Every plan starts with a 7-day free trial.
+          pick a tier below to keep adding. Every plan starts with a {trialDays}-day free trial.
         </p>
       )}
 
@@ -286,11 +301,14 @@ function SubscriptionCard({
   leagueCount,
   subscription,
   lifetime,
+  compEnds,
   justSubscribed,
 }: {
   leagueCount: number
   subscription: SubscriptionSummary | null
   lifetime: boolean
+  /** End date of a time-limited comp, else null (permanent ones included). */
+  compEnds: string | null
   justSubscribed: boolean
 }) {
   const router = useRouter()
@@ -332,7 +350,9 @@ function SubscriptionCard({
             </span>
           </div>
           <div style={{ opacity: 0.65, fontSize: '.85rem', marginTop: '.35rem', lineHeight: 1.5 }}>
-            You have unlimited access. No billing, no tier limits, no expiration.
+            {compEnds
+              ? `You have unlimited access through ${compEnds}. No billing, no tier limits. After that your account returns to the free tier.`
+              : 'You have unlimited access. No billing, no tier limits, no expiration.'}
           </div>
           <div style={{ opacity: 0.55, fontSize: '.75rem', marginTop: '.6rem' }}>
             {leagueCount} {leagueCount === 1 ? 'league' : 'leagues'} on file.

@@ -20,7 +20,14 @@ import { createClient } from '@/lib/supabase/server'
 import { exportLeague, type ExportBundle } from '@/lib/export/pams'
 import { devBundleGet, devBundleSet, devMetaGet, devMetaSet } from '@/lib/devCache'
 import { resolveLeagueTier, getLockReason, classifyLockedPath } from '@/lib/leagueTier'
-import { getUserSubscription, isSubscriptionActive, isCompUser, type Tier } from '@/lib/stripe'
+import {
+  getUserSubscription,
+  isSubscriptionActive,
+  isCompUser,
+  trialSlotActive,
+  trialSlotEndsAt,
+  type Tier,
+} from '@/lib/stripe'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
 
 const TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams')
@@ -216,6 +223,10 @@ async function injectDcConfig(
     const sub = await getUserSubscription(meta.owner_id)
     if (isSubscriptionActive(sub) && sub) paidTier = sub.tier
   }
+  // When the free preview window shuts and this league's 'test' tier
+  // becomes 'udfa'. Null once the window has already closed, which is what
+  // nav.js reads to stop drawing the countdown strip.
+  const trialEnds = trialSlotActive() ? trialSlotEndsAt() : null
   const config = `<script>window.__DC=${JSON.stringify({
     id: meta.id,
     slug: meta.slug,
@@ -225,6 +236,7 @@ async function injectDcConfig(
     isBookmarked,
     isUdfaLeague: meta.is_udfa,
     leagueTier,
+    trialSlotEndsAt: trialEnds ? trialEnds.toISOString() : null,
     paidTier,
     pageLocked,
     tradesTheme: meta.trades_theme,

@@ -18,6 +18,7 @@ export function MobilePricing({
   lifetime,
   initialView,
   trialDays,
+  offerDeadline,
   backHref,
 }: {
   signedIn: boolean
@@ -29,6 +30,8 @@ export function MobilePricing({
   lifetime: boolean
   initialView: 'paid' | 'free'
   trialDays: number
+  /** Short ET date ("Sept 20") while the launch offer is open, else null. */
+  offerDeadline: string | null
   backHref: string
 }) {
   return (
@@ -49,8 +52,10 @@ export function MobilePricing({
         <div className="mpricing-sup">★ Subscription ★</div>
         <h1 className="mpricing-title">Built to <em>last.</em></h1>
         <p className="mpricing-sub">
-          {trialDays}-day free trial on every plan. Cancel anytime. Yearly saves you six
-          months versus monthly.
+          {offerDeadline
+            ? `First month free, if you start by ${offerDeadline}. `
+            : `${trialDays}-day free trial on every plan. `}
+          Cancel anytime. Yearly saves you six months versus monthly.
         </p>
         {lifetime ? (
           <div className="mpricing-meta is-gold">

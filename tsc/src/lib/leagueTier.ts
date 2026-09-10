@@ -3,6 +3,7 @@ import {
   getUserSubscription,
   isCompUser,
   isSubscriptionActive,
+  trialSlotActive,
 } from '@/lib/stripe'
 
 // Tier classification for a specific league instance — used by both the
@@ -14,6 +15,11 @@ import {
 //   'test'  → owner's earliest league (their one free trial slot)
 //   'paid'  → non-trial league owned by a paid (active sub) user
 //   'udfa'  → non-trial league owned by a free-tier user
+//
+// 'test' is time-limited. It only exists while the free preview window is
+// open (trialSlotActive, keyed off TRIAL_SLOT_ENDS_AT). Once that window
+// shuts every free league is 'udfa' — including the owner's first one —
+// which is what moves the free accounts off the full feature set.
 export type LeagueTier = 'comp' | 'test' | 'paid' | 'udfa'
 
 export async function resolveLeagueTier(
@@ -23,15 +29,22 @@ export async function resolveLeagueTier(
   if (!ownerId) return 'paid'
   if (await isCompUser(ownerId)) return 'comp'
 
-  const db = createAdminClient()
-  const { data: firstRow } = await db
-    .from('leagues')
-    .select('id')
-    .eq('owner_id', ownerId)
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .maybeSingle()
-  if (firstRow?.id === leagueId) return 'test'
+  // Check the clock before the query, not after. Once the preview window
+  // closes there is no answer this lookup could give that changes the
+  // outcome, and this runs on every almanac request — so from launch day
+  // on it's one fewer database round trip per page rather than a query
+  // whose result gets thrown away.
+  if (trialSlotActive()) {
+    const db = createAdminClient()
+    const { data: firstRow } = await db
+      .from('leagues')
+      .select('id')
+      .eq('owner_id', ownerId)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+    if (firstRow?.id === leagueId) return 'test'
+  }
 
   const sub = await getUserSubscription(ownerId)
   return isSubscriptionActive(sub) ? 'paid' : 'udfa'
