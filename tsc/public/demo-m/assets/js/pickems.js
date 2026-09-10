@@ -176,9 +176,15 @@
   }
 
   function weekViewHTML(w) {
-    var statusBadge = w.locked
-      ? '<span class="badge">Locked · Final</span>'
-      : '<span class="badge">Open for picks</span>';
+    // Three states, not two. A week locks at Thursday kickoff but stays the
+    // current week until the season rolls past it on Tuesday, so there is a
+    // stretch where picks are closed and the games are still being played.
+    // Calling that "Final" would be wrong.
+    var statusBadge = !w.locked
+      ? '<span class="badge">Open for picks</span>'
+      : w.is_current
+        ? '<span class="badge">Locked · In progress</span>'
+        : '<span class="badge">Locked · Final</span>';
     return ''
       + '<section class="week" data-week="' + esc(w.id) + '">'
       +   '<div class="week-info">' + statusBadge + '</div>'
@@ -206,7 +212,7 @@
     var locked = w.locked;
 
     var lockMsg = byId('lock-msg-' + w.id);
-    if (lockMsg) lockMsg.textContent = locked ? 'This week is locked.' : '';
+    if (lockMsg) lockMsg.textContent = locked ? 'Picks closed at kickoff Thursday night.' : '';
 
     // High/low selects — every team playing that week.
     var teamIds = [];
@@ -244,7 +250,7 @@
         var btn = e.target.closest('.vote-btn');
         if (!btn) return;
         if (!state.user) { alert('Pick your name first.'); return; }
-        if (w.locked)    { alert('This week is locked.'); return; }
+        if (w.locked)    { alert('Picks for this week closed at kickoff Thursday night.'); return; }
         if (userSubmitted(w.id)) { alert('You already submitted this week.'); return; }
         var mid = btn.dataset.matchup;
         var m = w.matchups.find(function (x) { return x.id === mid; });
@@ -629,7 +635,7 @@
       submitHint.textContent = state.user ? 'Select a week' : 'Pick your name to vote';
       return;
     }
-    if (w.locked) { submitBtn.disabled = true; submitHint.textContent = 'This week is locked'; return; }
+    if (w.locked) { submitBtn.disabled = true; submitHint.textContent = 'Picks closed Thursday night'; return; }
     if (userSubmitted(w.id)) { submitBtn.disabled = true; submitHint.textContent = 'You already submitted this week'; return; }
     var need = requiredMatchups(w).map(function (m) { return m.id; });
     var missing = need.filter(function (id) { return !state.pending.picks[id]; });

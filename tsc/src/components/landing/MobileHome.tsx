@@ -102,8 +102,8 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
           <div className="mlp-plat-row">
             <span className="mlp-plat"><span className="mlp-plat-dot live" />Sleeper</span>
             <span className="mlp-plat"><span className="mlp-plat-dot live" />ESPN</span>
-            <span className="mlp-plat"><span className="mlp-plat-dot beta" />NFL.com</span>
-            <span className="mlp-plat"><span className="mlp-plat-dot beta" />Yahoo</span>
+            <span className="mlp-plat"><span className="mlp-plat-dot off" />NFL.com</span>
+            <span className="mlp-plat"><span className="mlp-plat-dot off" />Yahoo</span>
           </div>
         </div>
       </section>

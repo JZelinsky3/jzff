@@ -916,14 +916,9 @@ button.m-card:active { background: var(--ink-soft); }
     // a class graded B here is the same B everywhere. This section only does
     // presentation: three views, one visible at a time.
 
-    var PROFILE_LABEL = {
-        ppr_6pt:  'Full PPR · 6pt pass TD',
-        ppr_4pt:  'Full PPR · 4pt pass TD',
-        half_6pt: 'Half PPR · 6pt pass TD',
-        half_4pt: 'Half PPR · 4pt pass TD',
-        std_6pt:  'Standard · 6pt pass TD',
-        std_4pt:  'Standard · 4pt pass TD',
-    };
+    // gradeProfile still selects which fantasy_ranks set the grades are built
+    // from, but it is no longer printed. On a phone the header line has room
+    // for what was graded, not for restating the league's own scoring rules.
 
     var gradePromise = null;   // one build per pageload, shared by all views
     var gradeData = null;      // DraftGrade.compute() output
@@ -1042,8 +1037,7 @@ button.m-card:active { background: var(--ink-soft); }
             var ny = data.years.length;
             box.innerHTML =
                 '<div class="gr-note m-mono">' + ny + ' season' + (ny === 1 ? '' : 's') +
-                    ' graded · ' + data.total + ' classes · ' +
-                    esc(PROFILE_LABEL[gradeProfile] || gradeProfile) + '</div>' +
+                    ' graded · ' + data.total + ' classes</div>' +
                 '<div class="m-seg gr-seg" id="grSeg">' +
                     viewBtn('transcript', 'Transcript') +
                     viewBtn('records', 'Records') +

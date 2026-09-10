@@ -1,3 +1,4 @@
+import { PLATFORM_STATUS, PLATFORM_SUMMARY } from '@/lib/platformStatus'
 import Link from 'next/link'
 import { GAMES } from '@/app/games/gameDefs'
 import s from './MobileHomeCover.module.css'
@@ -116,7 +117,7 @@ const FAQ_LD = {
       name: 'Which fantasy football platforms does The Sunday Chronicle support?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Sleeper and ESPN are fully live (historical + live-season sync). NFL.com and Yahoo are in beta (historical seasons supported; live-season sync rolling out). You can combine multiple platforms under one league archive if your league has moved between providers.',
+        text: PLATFORM_SUMMARY,
       },
     },
     {
@@ -346,14 +347,14 @@ export function MobileHomeCover({ signedIn }: { signedIn: boolean }) {
             <span className={s.platStatus}>Live</span>
           </div>
           <div className={s.plat}>
-            <span className={`${s.platDot} ${s.platBeta}`} aria-hidden="true" />
-            <span className={s.platName}>NFL.com</span>
-            <span className={s.platStatus}>Beta</span>
+            <span className={`${s.platDot} ${s.platOff}`} aria-hidden="true" />
+            <span className={s.platName}>{PLATFORM_STATUS.nfl.name}</span>
+            <span className={s.platStatus}>{PLATFORM_STATUS.nfl.badge}</span>
           </div>
           <div className={s.plat}>
-            <span className={`${s.platDot} ${s.platBeta}`} aria-hidden="true" />
-            <span className={s.platName}>Yahoo</span>
-            <span className={s.platStatus}>Beta</span>
+            <span className={`${s.platDot} ${s.platOff}`} aria-hidden="true" />
+            <span className={s.platName}>{PLATFORM_STATUS.yahoo.name}</span>
+            <span className={s.platStatus}>{PLATFORM_STATUS.yahoo.badge}</span>
           </div>
         </div>
       </section>

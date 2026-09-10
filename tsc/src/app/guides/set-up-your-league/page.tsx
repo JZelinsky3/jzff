@@ -1,3 +1,4 @@
+import { PLATFORM_SUMMARY } from '@/lib/platformStatus'
 import type { Metadata } from "next"
 import Link from "next/link"
 import { GuideShell, faqSchema, P } from "../_layout"
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 type Platform = {
   slug: string
   name: string
-  status: "Live" | "Beta"
+  status: "Live" | "Retired" | "Unavailable"
   blurb: string
   steps: string
 }
@@ -38,18 +39,18 @@ const PLATFORMS: Platform[] = [
   {
     slug: "yahoo-league-history",
     name: "Yahoo",
-    status: "Beta",
+    status: "Unavailable",
     blurb:
-      "Yahoo requires a one-time OAuth sign-in. After authorizing read access, every season the league has played comes back. Live-season sync rolling out.",
-    steps: "Sign up · Choose Yahoo · OAuth sign-in · Pick league · Publish",
+      "Yahoo is temporarily unavailable. Yahoo now gates its fantasy API behind an approval process and our access is being re-applied for, so new Yahoo imports cannot be started right now. The OAuth flow and every season parser are already built, so this is an access problem, not a missing feature. Yahoo archives that were already imported stay online.",
+    steps: "Temporarily unavailable · Existing Yahoo archives unaffected",
   },
   {
     slug: "nfl-com-league-history",
     name: "NFL.com",
-    status: "Beta",
+    status: "Retired",
     blurb:
-      "NFL.com exposes league data publicly behind the league ID. No sign-in, no cookies. Paste the league ID and every season the league has played gets imported.",
-    steps: "Find league ID · Paste at signup · Wait ~1m · Publish",
+      "NFL.com retired its fantasy platform in August 2026. fantasy.nfl.com is gone, so there is no longer anything to import from and new NFL.com archives cannot be created. Archives built from NFL.com before the shutdown stay online and keep working. If your league is moving, ESPN is the migration path.",
+    steps: "Retired by the NFL · Existing NFL.com archives unaffected",
   },
 ]
 
@@ -57,7 +58,7 @@ export default function Page() {
   const faq = faqSchema([
     {
       q: "Which fantasy football platforms does The Sunday Chronicle support?",
-      a: "Four platforms in 2026: Sleeper (full live + historical), ESPN (full live + historical, with cookie support for private leagues), Yahoo (historical via OAuth, live-season rolling out), and NFL.com (historical, live-season rolling out). Leagues that moved between platforms can combine sources under one archive.",
+      a: PLATFORM_SUMMARY,
     },
     {
       q: "Do I need separate accounts for each platform?",

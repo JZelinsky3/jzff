@@ -6680,7 +6680,9 @@ a.g-decision-pick-name:hover { text-decoration: underline; }
     border-color: rgba(232, 200, 137, .5);
     background: rgba(232, 200, 137, .06);
 }
-.setup-platform-pill-beta {
+.setup-platform-pill-beta,
+.setup-platform-pill-retired,
+.setup-platform-pill-unavailable {
     color: var(--cream-mute);
     border-color: var(--ink-line);
 }
@@ -12795,6 +12797,7 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
 }
 .mlp-plat-dot.live { background: var(--gold); }
 .mlp-plat-dot.beta { background: var(--cream-mute); }
+.mlp-plat-dot.off { background: var(--cream-mute); }
 
 /* ── Screen 3 · What's Inside ── */
 .mlp-inside {
@@ -23328,7 +23331,9 @@ a.g-decision-pick-name:hover { text-decoration: underline; }
     border-color: rgba(232, 200, 137, .5);
     background: rgba(232, 200, 137, .06);
 }
-.setup-platform-pill-beta {
+.setup-platform-pill-beta,
+.setup-platform-pill-retired,
+.setup-platform-pill-unavailable {
     color: var(--cream-mute);
     border-color: var(--ink-line);
 }
@@ -29443,6 +29448,7 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
 }
 .mlp-plat-dot.live { background: var(--gold); }
 .mlp-plat-dot.beta { background: var(--cream-mute); }
+.mlp-plat-dot.off { background: var(--cream-mute); }
 
 /* ── Screen 3 · What's Inside ── */
 .mlp-inside {

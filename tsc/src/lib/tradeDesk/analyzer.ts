@@ -229,21 +229,28 @@ async function loadLeagueHeader(
   type SeasonRow = { year: number; external_id: string | null }
   const rows: SeasonRow[] = (allSeasons ?? []) as SeasonRow[]
 
-  let pickedRow: SeasonRow | undefined
-  if (opts.year) {
-    // Year pinned — match the league's live platform when both rows for that
-    // year exist, otherwise take whichever row we have.
-    const yearRows = rows.filter((r) => r.year === opts.year)
-    pickedRow = league.platform === 'nfl'
-      ? yearRows.find((r) => isNflShaped(r.external_id)) ?? yearRows[0]
-      : yearRows.find((r) => !isNflShaped(r.external_id)) ?? yearRows[0]
-  } else {
-    // No year — prefer the most recent row matching the live platform, then
-    // fall back to the most recent row of any platform.
-    pickedRow = league.platform === 'nfl'
-      ? rows.find((r) => isNflShaped(r.external_id)) ?? rows[0]
-      : rows.find((r) => !isNflShaped(r.external_id)) ?? rows[0]
-  }
+  // An NFL.com row is always the last resort now.
+  //
+  // This used to prefer the row matching leagues.platform, which meant a
+  // league still stamped platform='nfl' would reach past a freshly-synced
+  // Sleeper season to grab its old NFL.com row. That was right while
+  // fantasy.nfl.com was up and wrong the moment it went dark: the NFL
+  // loader cannot succeed at all any more, so preferring it just turns a
+  // working Trade Desk into a 502. pams is the case in point — a live 2026
+  // Sleeper season sitting behind a 2025 NFL.com row.
+  //
+  // leagues.platform is deliberately not consulted. It records where the
+  // league started, gets stale when a league migrates, and every other
+  // platform's loader still works, so "newest row that isn't NFL.com" is
+  // both simpler and correct. A league that only ever played on NFL.com
+  // still falls through to its NFL row and gets the honest shut-down
+  // message from the loader.
+  const preferLive = (candidates: SeasonRow[]) =>
+    candidates.find((r) => !isNflShaped(r.external_id)) ?? candidates[0]
+
+  const pickedRow: SeasonRow | undefined = opts.year
+    ? preferLive(rows.filter((r) => r.year === opts.year))
+    : preferLive(rows)
 
   const liveLeagueId = pickedRow?.external_id ?? undefined
   const seasonYear = pickedRow?.year
@@ -260,14 +267,26 @@ async function loadLeagueHeader(
   // NFL.com league id for those.
   let platform = league.platform
   let resolvedLeagueId = liveLeagueId
+
+  const { data: srcRows } = await db
+    .from('league_sources')
+    .select('platform, external_id')
+    .eq('league_id', league.id)
+  const sources = (srcRows ?? []) as { platform: string; external_id: string }[]
+
+  // Which platform actually served THIS season?
+  //
+  // leagues.platform records where the league started and goes stale the
+  // moment it migrates, so on pams it still reads 'nfl' even though the
+  // live 2026 season is Sleeper. Every non-NFL platform stores its own
+  // league id in seasons.external_id, so an exact match against
+  // league_sources names the serving platform outright. Without this the
+  // row picked above is right but gets handed to the wrong loader.
+  const owningSource = sources.find((s) => s.external_id === liveLeagueId)
+  if (owningSource) platform = owningSource.platform
+
   if (/^\d{4}$/.test(liveLeagueId) && Number(liveLeagueId) === seasonYear) {
-    const { data: src } = await db
-      .from('league_sources')
-      .select('external_id')
-      .eq('league_id', league.id)
-      .eq('platform', 'nfl')
-      .maybeSingle<{ external_id: string }>()
-    const nflLeagueId = src?.external_id
+    const nflLeagueId = sources.find((s) => s.platform === 'nfl')?.external_id
       ?? (league.platform === 'nfl' && !/^\d{4}$/.test(league.external_id)
           ? league.external_id
           : undefined)

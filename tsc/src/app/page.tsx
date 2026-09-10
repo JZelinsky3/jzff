@@ -1,3 +1,4 @@
+import { PLATFORM_SUMMARY } from '@/lib/platformStatus'
 import type { Viewport } from 'next'
 import { MobileHomeCover } from '@/components/landing/MobileHomeCover'
 import { NewLanding } from '@/components/landing/NewLanding'
@@ -72,7 +73,7 @@ export default async function Home() {
         name: "Which fantasy football platforms does The Sunday Chronicle support?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Sleeper and ESPN are fully live (historical + live-season sync). NFL.com and Yahoo are in beta (historical seasons supported; live-season sync rolling out). You can combine multiple platforms under one league archive if your league has moved between providers.",
+          text: PLATFORM_SUMMARY,
         },
       },
       {

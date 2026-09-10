@@ -61,6 +61,15 @@ export async function POST(
   const weekObj = state.weeks.find((w) => w.week === week)
   if (!weekObj) return fail('No matchups for that week.', 409)
 
+  // Picks close at Thursday kickoff, which happens days before the season
+  // rolls past the week. Enforced here and not just in the board, because
+  // the board is a static page a reader can leave open past the deadline —
+  // without this a stale tab could still post picks on games in progress.
+  // Same `locked` the board renders, so the two can never disagree.
+  if (weekObj.locked) {
+    return fail('Picks for this week closed at kickoff Thursday night.', 409)
+  }
+
   const picker = state.profiles.find((p) => p.profileId === profile_id)
   if (!picker) return fail('Unknown picker.')
 

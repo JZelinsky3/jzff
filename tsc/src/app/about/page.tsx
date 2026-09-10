@@ -1,3 +1,4 @@
+import { PLATFORM_SUMMARY } from '@/lib/platformStatus'
 import type { Metadata } from "next"
 import Link from "next/link"
 import { BackButton } from "@/components/BackButton"
@@ -32,7 +33,7 @@ const faqJsonLd = {
       name: "Which fantasy football platforms does it support?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Sleeper (full historical + live season), ESPN (full historical + live season, with cookie pasting for private leagues), and NFL.com (historical seasons only). Yahoo support is in progress, blocked on Yahoo's developer portal.",
+        text: PLATFORM_SUMMARY,
       },
     },
     {
@@ -308,13 +309,13 @@ export default async function AboutPage() {
           </div>
           <div className="abt-ledger-row">
             <span className="abt-ledger-name">NFL.com</span>
-            <span className="abt-ledger-status is-partial"><span className="abt-ledger-dot" />Historical seasons</span>
-            <span className="abt-ledger-note">NFL.com hasn&apos;t reopened live leagues yet.</span>
+            <span className="abt-ledger-status is-soon"><span className="abt-ledger-dot" />Retired</span>
+            <span className="abt-ledger-note">NFL.com shut its fantasy platform down in August 2026. Archives already built from it stay online.</span>
           </div>
           <div className="abt-ledger-row">
             <span className="abt-ledger-name">Yahoo</span>
-            <span className="abt-ledger-status is-soon"><span className="abt-ledger-dot" />In the works</span>
-            <span className="abt-ledger-note">Waiting on Yahoo&apos;s developer portal.</span>
+            <span className="abt-ledger-status is-soon"><span className="abt-ledger-dot" />Unavailable</span>
+            <span className="abt-ledger-note">Temporarily down while we regain API access. Existing Yahoo archives stay online.</span>
           </div>
         </div>
       </div>

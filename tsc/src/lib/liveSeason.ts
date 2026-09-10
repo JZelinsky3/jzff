@@ -30,17 +30,62 @@ export function resolveCurrentWeek(settings: Record<string, unknown> | null | un
   return null
 }
 
-// When does `week` stop being the current week?
+// ── The pick'ems deadline ────────────────────────────────────────────────
 //
-// Pick'ems locks a week the moment the season rolls past it, so that
-// instant is the picking deadline. Readers had no way to see it: the board
-// said "Open for picks" right up until it silently said "Locked".
+// Picks close at kickoff of Thursday Night Football: 8:00 PM Eastern on the
+// Thursday of that week. This used to be the moment the season rolled past
+// the week (Tuesday), which meant Thursday and Sunday games could be picked
+// after they had already been played.
 //
+// Eastern, not the server's zone: Vercel runs UTC, so building this from a
+// local-time constructor would put the deadline four or five hours off, and
+// the error would change halfway through the season when DST ends. The
+// deadline is a fixed wall-clock time in one zone and gets converted to a
+// real instant here. Readers see it in their own zone: `locks_at` goes out
+// as an ISO instant and the board formats it with toLocaleTimeString.
+const LOCK_TZ = 'America/New_York'
+const LOCK_HOUR = 20 // 8:00 PM
+const THURSDAY = 4 // Date.getUTCDay()
+
+// How far is `timeZone` from UTC at this instant, in ms? Positive east of
+// Greenwich. Derived by asking Intl what wall clock the instant shows there
+// and diffing against the UTC wall clock, which is the only way to get a
+// zone's offset (including DST) without shipping a timezone library.
+function zoneOffsetMs(instant: number, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  }).formatToParts(new Date(instant))
+
+  const at: Record<string, number> = {}
+  for (const p of parts) if (p.type !== 'literal') at[p.type] = Number(p.value)
+  // Intl can emit hour 24 for midnight under hour12:false.
+  const asIfUTC = Date.UTC(at.year, at.month - 1, at.day, at.hour % 24, at.minute, at.second)
+  return asIfUTC - instant
+}
+
+// The instant at which the given wall clock occurs in `timeZone`.
+//
+// Solved by iteration because the offset depends on the answer: guess that
+// the wall clock is UTC, correct by the offset at that guess, then correct
+// once more. The second pass only matters when the first guess lands on the
+// far side of a DST transition, which an 8 PM deadline never does, but it
+// costs one Intl call and removes the class of bug entirely.
+function wallClockToInstant(
+  y: number, m: number, d: number, hour: number, timeZone: string,
+): number {
+  const guess = Date.UTC(y, m - 1, d, hour, 0, 0)
+  let ts = guess - zoneOffsetMs(guess, timeZone)
+  ts = guess - zoneOffsetMs(ts, timeZone)
+  return ts
+}
+
 // Only derivable from the calendar. A manual `current_week` pin overrides
-// the date maths entirely, so the boundary would be fiction; so would a
-// week at MAX_WEEK, which the clamp in resolveCurrentWeek never advances
-// past. Both return null and the UI shows no deadline rather than a wrong
-// one.
+// the date maths entirely, so any deadline would be fiction — it returns
+// null, the UI shows no deadline, and nothing enforces one. That is what
+// keeps mock-testing against an old season submittable.
 export function resolveWeekLockAt(
   settings: Record<string, unknown> | null | undefined,
   week: number,
@@ -48,8 +93,39 @@ export function resolveWeekLockAt(
   const s = settings ?? {}
   if (typeof s.current_week === 'number') return null
   if (typeof s.season_start_date !== 'string') return null
-  if (!Number.isFinite(week) || week < 1 || week >= MAX_WEEK) return null
+  if (!Number.isFinite(week) || week < 1 || week > MAX_WEEK) return null
   const startMs = Date.parse(s.season_start_date)
   if (Number.isNaN(startMs)) return null
-  return new Date(startMs + week * WEEK_MS).toISOString()
+
+  // season_start_date is the Tuesday that opens week 1 (fantasy weeks roll
+  // over after Monday Night Football), so this lands on the Tuesday that
+  // opens the requested week. Bare YYYY-MM-DD parses as UTC midnight, and
+  // the getUTC* reads below keep it there.
+  const weekStart = new Date(startMs + (week - 1) * WEEK_MS)
+
+  // Walk forward to that week's Thursday. Written as a search rather than
+  // "+2 days" so a start date saved on some other weekday still resolves to
+  // a Thursday instead of silently sliding the deadline off kickoff.
+  const toThursday = (THURSDAY - weekStart.getUTCDay() + 7) % 7
+  const thu = new Date(weekStart.getTime() + toThursday * 24 * 60 * 60 * 1000)
+
+  return new Date(
+    wallClockToInstant(
+      thu.getUTCFullYear(), thu.getUTCMonth() + 1, thu.getUTCDate(), LOCK_HOUR, LOCK_TZ,
+    ),
+  ).toISOString()
+}
+
+// Has the pick'ems deadline for `week` already passed?
+//
+// False when no deadline is derivable (manual week pin, no start date) —
+// absent a deadline nothing is enforced, matching what the board displays.
+export function isWeekLocked(
+  settings: Record<string, unknown> | null | undefined,
+  week: number,
+  now: number = Date.now(),
+): boolean {
+  const at = resolveWeekLockAt(settings, week)
+  if (at === null) return false
+  return now >= Date.parse(at)
 }

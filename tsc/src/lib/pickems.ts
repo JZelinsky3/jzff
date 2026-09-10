@@ -10,7 +10,7 @@
 // See supabase/migrations/0008_pickems.sql + 0009_pickems_hl.sql.
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { resolveCurrentWeek, resolveWeekLockAt } from '@/lib/liveSeason'
+import { resolveCurrentWeek, resolveWeekLockAt, isWeekLocked } from '@/lib/liveSeason'
 import { getLockReason } from '@/lib/leagueTier'
 
 export type PickemsTeam = {
@@ -98,8 +98,8 @@ export async function getPickemsState(slug: string): Promise<PickemsState | null
   if (!liveSeason) return { status: 'no-live' }
 
   const settings = (liveSeason.settings ?? {}) as Record<string, unknown>
-  const currentWeek = resolveCurrentWeek(settings)
-  if (currentWeek == null) return { status: 'no-week', year: liveSeason.year }
+  const calendarWeek = resolveCurrentWeek(settings)
+  if (calendarWeek == null) return { status: 'no-week', year: liveSeason.year }
   const gotwMap = (settings.gotw ?? {}) as Record<string, string>
 
   // All matchups for the live season — drives every week up to the current one.
@@ -107,6 +107,21 @@ export async function getPickemsState(slug: string): Promise<PickemsState | null
     .from('matchups')
     .select('id, week, manager_a_id, manager_b_id, score_a, score_b')
     .eq('season_id', liveSeason.id)
+
+  // A week opens when its matchups land, not when the calendar rolls over.
+  //
+  // The calendar rolls a week over on Tuesday, but the schedule for the new
+  // week only exists once the Tuesday sync has run. Opening on the calendar
+  // alone left a gap where the board pointed at a week with no matchups to
+  // pick — nothing to show, and submissions failed with "no matchups for
+  // that week". So the current week is the newest one the sync has actually
+  // delivered, and the previous week simply stays up (locked, since its
+  // Thursday deadline is long past) until it does.
+  const syncedWeeks = new Set<number>()
+  for (const m of allMatchups ?? []) {
+    if (m.week >= 1 && m.week <= calendarWeek) syncedWeeks.add(m.week)
+  }
+  const currentWeek = syncedWeeks.size > 0 ? Math.max(...syncedWeeks) : calendarWeek
 
   const { data: managers } = await db
     .from('managers')
@@ -195,11 +210,10 @@ export async function getPickemsState(slug: string): Promise<PickemsState | null
 
   // Build weeks 1..currentWeek that have matchups. Records are cumulative
   // (going into each week); winners come from scored games.
-  const weeksWithMatchups = new Set<number>()
-  for (const m of allMatchups ?? []) {
-    if (m.week >= 1 && m.week <= currentWeek) weeksWithMatchups.add(m.week)
-  }
-  const weekNums = [...weeksWithMatchups].sort((a, b) => a - b)
+  //
+  // syncedWeeks is already exactly this set: currentWeek is its maximum, so
+  // every member is in range. Recomputing it here is how the two could drift.
+  const weekNums = [...syncedWeeks].sort((a, b) => a - b)
 
   const cum = new Map<string, { w: number; l: number; t: number }>()
   const ensureRec = (id: string) => {
@@ -255,12 +269,15 @@ export async function getPickemsState(slug: string): Promise<PickemsState | null
     // The current (open) week is undecided by definition — even when testing
     // against an old season whose scores already exist, don't surface winners
     // or high/low results until the week locks.
+    // A week closes at Thursday kickoff, which lands well before the season
+    // rolls past it on Tuesday. Between those two the week is still the
+    // *current* week (so its results stay hidden) but no longer takes picks.
     const isCurrent = wk === currentWeek
     weeks.push({
       id: String(wk),
       week: wk,
       label: `Week ${wk}`,
-      locked: wk < currentWeek,
+      locked: wk < currentWeek || isWeekLocked(settings, wk),
       locks_at: wk < currentWeek ? null : resolveWeekLockAt(settings, wk),
       is_current: isCurrent,
       matchups: wkMatchups.map((m) => ({ id: m.id, home: m.manager_a_id, away: m.manager_b_id })),

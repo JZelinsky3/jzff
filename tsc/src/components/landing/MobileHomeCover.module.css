@@ -676,7 +676,9 @@
     background: var(--rust);
     animation: platPulse 1.9s ease-out infinite;
 }
-.platBeta { background: var(--steel); }
+/* NFL.com (retired) and Yahoo (temporarily unavailable): a flat,
+   un-pulsing dot. Never label these "beta" again. */
+.platOff { background: var(--steel); }
 @keyframes platPulse {
     0%   { box-shadow: 0 0 0 0 rgba(160, 72, 48, .55); }
     70%  { box-shadow: 0 0 0 7px rgba(160, 72, 48, 0); }

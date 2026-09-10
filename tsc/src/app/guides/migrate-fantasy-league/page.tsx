@@ -13,11 +13,11 @@ export default function Page() {
   const faq = faqSchema([
     {
       q: "Can I keep my fantasy football league history when changing platforms?",
-      a: "Yes, but you need a tool that imports from each platform separately and stitches them together. The Sunday Chronicle supports multiple sources per league: paste your old Yahoo/ESPN ID for past seasons + your new Sleeper ID for current seasons, and we render them as one unified almanac.",
+      a: "Yes, but you need a tool that imports from each platform separately and stitches them together. The Sunday Chronicle supports multiple sources per league: paste your old ESPN ID for past seasons + your new Sleeper ID for current seasons, and we render them as one unified almanac. Note that new Yahoo and NFL.com imports are not available right now, so seasons that only ever lived on those platforms can only be brought in if they were already imported or are entered by hand.",
     },
     {
       q: "What if my league started on Yahoo and moved to ESPN, then to Sleeper?",
-      a: "Add each platform as a separate source on the league. Sleeper handles 2020+ via its API, ESPN handles 2015-2019 via its API + legacy archive, and Yahoo support is coming when their developer portal reopens. Each source contributes its years; the almanac unifies them.",
+      a: "Add each platform as a separate source on the league. Sleeper handles 2020+ via its API and ESPN handles 2015-2019 via its API plus the legacy archive. Each source contributes its years and the almanac unifies them. The Yahoo years are the catch: Yahoo imports are temporarily unavailable while we regain API access, so those seasons either wait for Yahoo to come back or get entered by hand.",
     },
     {
       q: "Will the manager identities match across platforms?",
@@ -25,11 +25,11 @@ export default function Page() {
     },
     {
       q: "Can I bring in NFL.com league history?",
-      a: "Yes for historical seasons. NFL.com hasn't reopened current-year leagues this cycle, so live support is paused, but every past season you played there can be scraped and joined to a newer Sleeper/ESPN source.",
+      a: "Not anymore. NFL.com retired its fantasy platform in August 2026, so there is nothing left to import from and new NFL.com imports cannot be started. Archives built from NFL.com before the shutdown stay online and keep working alongside newer Sleeper or ESPN sources. For seasons that were never imported, hand entry is the remaining option.",
     },
     {
       q: "What about leagues that moved to a platform we don't support yet?",
-      a: "Yahoo is in active development (blocked on Yahoo developer portal access). If your league lived elsewhere (CBS, MyFantasyLeague, FleaFlicker, etc), email us at jzffgames@gmail.com. We maintain a wishlist and prioritize based on demand.",
+      a: "Yahoo is temporarily unavailable while we regain access to their fantasy API, and is expected back. If your league lived elsewhere (CBS, MyFantasyLeague, FleaFlicker, etc), email us at jzffgames@gmail.com. We maintain a wishlist and prioritize based on demand.",
     },
   ])
 

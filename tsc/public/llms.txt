@@ -21,8 +21,8 @@ Fantasy platforms (Sleeper, ESPN, Yahoo, NFL.com) all store league data but expo
 
 - **Sleeper** — full historical + live-season support, public API, no authentication
 - **ESPN** — full historical + live-season support (private leagues require SWID + espn_s2 browser cookies)
-- **NFL.com** — historical seasons supported, live-season rolling out
-- **Yahoo** — historical seasons supported via OAuth sign-in, live-season rolling out
+- **NFL.com** — retired. The NFL shut its fantasy platform down in August 2026, so new NFL.com imports are not possible. Archives built before the shutdown stay online.
+- **Yahoo** — temporarily unavailable while API access is regained. Existing Yahoo archives stay online. Expected back.
 
 Multi-platform leagues can combine sources under one archive — useful when a league started on ESPN or Yahoo and migrated to Sleeper.
 
