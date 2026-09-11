@@ -1,17 +1,3 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "//": [
-    "Scheduled jobs are NOT declared here any more. This file used to list 5",
-    "crons, but the account is on Hobby, which allows 2 and fires them once a",
-    "day at an approximate time, so none of them ever ran and every sync in",
-    "the database was manual.",
-    "",
-    "They now run from GitHub Actions instead (free on public repos, exact",
-    "schedules, no plan change): see .github/workflows/cron.yml at the repo",
-    "root. That workflow calls the same /api/cron/* endpoints with the",
-    "CRON_SECRET bearer token.",
-    "",
-    "If you move to Vercel Pro and want crons back here, delete the workflow",
-    "first so the jobs don't fire twice."
-  ]
+  "$schema": "https://openapi.vercel.sh/vercel.json"
 }
