@@ -2,556 +2,404 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>TSC &middot; page treatments</title>
+<title>TSC &middot; slide treatments</title>
 
 <!-- ============================================================
      REVIEW SHEET, NOT A POST.
 
-     Twelve candidate treatments for a chapter page in the tour
-     deck, plus five ways a sheet can be split. Rendered at
-     1620x2360 for looking at on a screen and picking from; nothing
-     here is 4:5 and nothing here goes to Instagram.
+     Six ways to draw ONE slide. Every tile carries the same two
+     chapters — the Standings and the Seasons, which is slide 03 —
+     with the same figures on it, so the only thing changing between
+     tiles is the design language. Pick one and it gets applied to
+     the whole deck.
 
-     The problem it exists to solve: once every chapter became a
-     bound volume with a sewn binding down one edge, all of them
-     looked like the same object in a different colour, and the
-     only variation left on a sheet was which side the binding sat
-     on. A record board and a rivalry and a set of standings are
-     not the same kind of thing and should not be the same drawing.
+     Each tile is a real 1080x1350 board scaled to 0.59, so the type
+     sizes, rules and margins are exactly what would render. Nothing
+     is drawn smaller "for the review".
 
-     Each tile names the chapter it is meant for. The palette on
-     each is the real one out of that page's stylesheet, same as
-     PAGES in tour.html.
+     THREE RULES THIS SHEET IS OBEYING
+
+     1. Two chapters to a slide. An earlier sheet drew twelve single
+        artifacts and forgot that the deck puts two pages on a board.
+        Every tile here is a whole slide.
+
+     2. Only what the page already holds. Standings has rank, name,
+        record, points, titles. Seasons has year, champion, record,
+        points. Nothing invented, no new features.
+
+     3. Breadth where the page is broad, depth where it is deep.
+        Standings is a table of everybody, so it shows five or six.
+        A rivalry or a manager profile is one thing seen closely and
+        would show one — the opposite of this pairing.
+
+     COLOUR: the ground stays neutral or borrows from one of the two
+     pages. Never two saturated complements against each other; the
+     green table with the oxblood border read as Christmas.
      ============================================================ -->
 
 <style>
-:root {
-  --serif:'DM Serif Display', Georgia, serif;
-  --sans:'Helvetica Neue', -apple-system, Arial, sans-serif;
-  --mono:'SF Mono', Menlo, Monaco, Consolas, monospace;
-  --gold:#e8c889; --cream:#f4ebd8; --mute:#8a8b90;
-}
+:root { --serif:'DM Serif Display', Georgia, serif;
+        --sans:'Helvetica Neue', -apple-system, Arial, sans-serif;
+        --mono:'SF Mono', Menlo, Monaco, Consolas, monospace; }
 * { box-sizing:border-box; margin:0; padding:0; }
-body { width:1620px; background:#0b0f14; color:#f4ebd8;
+body { width:1440px; background:#0a0d12; color:#f4ebd8;
        font-family:var(--sans); -webkit-font-smoothing:antialiased; }
-
-.sheet { padding:52px 56px 60px; }
+.sheet { padding:46px 50px 54px; }
 
 .masthead { display:flex; align-items:flex-end; gap:22px;
-            padding-bottom:20px; border-bottom:2px solid #2a3645; }
-.masthead h1 { font-family:var(--serif); font-weight:400; font-size:52px;
-               line-height:1; letter-spacing:-.01em; }
-.masthead h1 em { font-style:italic; color:var(--gold); }
-.masthead p { margin-left:auto; max-width:640px; font-size:15px; line-height:1.5;
-              color:#9aa3ae; text-align:right; }
+  padding-bottom:18px; border-bottom:2px solid #26313f; }
+.masthead h1 { font-family:var(--serif); font-weight:400; font-size:46px;
+  line-height:1; }
+.masthead h1 em { font-style:italic; color:#e8c889; }
+.masthead p { margin-left:auto; max-width:680px; font-size:14px; line-height:1.5;
+  color:#939ca8; text-align:right; }
 
-.band { margin-top:30px; margin-bottom:14px; display:flex; align-items:center;
-        gap:14px; font-family:var(--mono); font-size:12px; letter-spacing:.26em;
-        text-transform:uppercase; color:var(--gold); }
-.band u { flex:1; height:1px; background:#243040; text-decoration:none; }
+.grid { margin-top:26px; display:grid; grid-template-columns:repeat(2,1fr);
+  gap:30px 24px; }
+.tile .frame { width:646px; height:808px; overflow:hidden; border-radius:3px;
+  box-shadow:0 0 0 1px #26313f, 0 10px 26px rgba(0,0,0,.55); }
+.tile .frame > .s { width:1080px; height:1350px; transform:scale(.5981);
+  transform-origin:0 0; position:relative; overflow:hidden; }
+.cap { padding:14px 4px 0; display:flex; gap:14px; align-items:flex-start; }
+.cap .no { font-family:var(--mono); font-size:12px; letter-spacing:.2em;
+  color:#6d7a89; padding-top:6px; }
+.cap h3 { font-family:var(--serif); font-weight:400; font-size:25px; line-height:1; }
+.cap p { margin-top:7px; font-size:14px; line-height:1.45; color:#939ca8;
+  max-width:540px; }
 
-.grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:22px; }
+/* ══════════════════════════════════════════════════════════════
+   SHARED PIECES — the two figures, identical across all six, so
+   only the container is being compared.
+   ══════════════════════════════════════════════════════════════ */
+.s { font-family:var(--sans); }
+.s .kick { font-family:var(--mono); font-size:13px; letter-spacing:.24em;
+  text-transform:uppercase; }
+.s h2 { font-family:var(--serif); font-weight:400; font-size:54px; line-height:1;
+  letter-spacing:-.01em; }
+.s h2 em { font-style:italic; }
+.s .dek { font-size:19px; line-height:1.45; }
 
-.tile { background:#11161d; border:1px solid #212c3a; border-radius:3px;
-        overflow:hidden; display:flex; flex-direction:column; }
-.tile .art { height:328px; position:relative; overflow:hidden; }
-.tile .cap { padding:14px 17px 16px; border-top:1px solid #212c3a; }
-.tile .cap .no { font-family:var(--mono); font-size:11px; letter-spacing:.20em;
-                 color:#6d7a89; }
-.tile .cap h3 { margin-top:7px; font-family:var(--serif); font-weight:400;
-                font-size:25px; line-height:1; }
-.tile .cap .for { margin-top:9px; font-family:var(--mono); font-size:10px;
-                  letter-spacing:.14em; text-transform:uppercase; color:var(--gold); }
-.tile .cap p { margin-top:9px; font-size:14px; line-height:1.45; color:#96a0ac; }
+.tbl { width:100%; }
+.tbl .hr { display:flex; align-items:baseline; gap:26px; padding-bottom:9px;
+  font-family:var(--mono); font-size:11px; letter-spacing:.22em;
+  text-transform:uppercase; }
+.tbl .rw { display:flex; align-items:center; gap:26px; padding:13px 0; }
+.tbl .rk { width:26px; font-family:var(--mono); font-size:15px; }
+.tbl .nm { flex:1; font-family:var(--serif); font-size:27px; line-height:1; }
+.tbl .c  { font-family:var(--mono); font-size:16px; text-align:right; }
+.tbl .w1 { width:84px; } .tbl .w2 { width:104px; } .tbl .w3 { width:52px; }
 
-/* ══ 01 AGATE COLUMN ════════════════════════════════════════
-   The standings as a newspaper prints them: cream stock, a heavy
-   rule, and nothing in a box. */
-.m-agate { background:#e9ddc1; color:#241c0e; padding:20px 22px; }
-.m-agate .h { display:flex; align-items:baseline; gap:10px;
-  padding-bottom:8px; border-bottom:3px solid #241c0e; }
-.m-agate .h b { font-family:var(--serif); font-weight:400; font-size:23px; }
-.m-agate .h s { text-decoration:none; margin-left:auto; font-family:var(--mono);
-  font-size:9px; letter-spacing:.18em; text-transform:uppercase; opacity:.6; }
-.m-agate .r { display:flex; align-items:baseline; gap:10px; padding:9px 0;
-  border-bottom:1px solid rgba(40,30,12,.28); }
-.m-agate .r i { font-style:normal; font-family:var(--mono); font-size:11px;
-  width:16px; color:#7f7154; }
-.m-agate .r em { font-style:normal; flex:1; font-family:var(--serif); font-size:20px; }
-.m-agate .r span { font-family:var(--mono); font-size:12px; }
-.m-agate .r span.p { width:76px; text-align:right; }
+.yrs { display:flex; align-items:stretch; }
+.yrs .y { flex:1; min-width:0; overflow:hidden; padding:0 10px;
+  display:flex; flex-direction:column; justify-content:flex-end; }
+.yrs .y .who { font-family:var(--serif); font-size:22px; line-height:1; }
+.yrs .y .rec { margin-top:6px; font-family:var(--mono); font-size:12px; }
+.yrs .y .bar { margin-top:10px; width:100%; }
+.yrs .y .yr { margin-top:10px; padding-top:8px; font-family:var(--mono);
+  font-size:13px; }
 
-/* ══ 02 HONOURS BOARD ═══════════════════════════════════════
-   The varnished board on a clubhouse wall, names incised in gold. */
-.m-board { background:
-    radial-gradient(ellipse 70% 50% at 50% 18%, rgba(255,220,150,.10), transparent 70%),
-    linear-gradient(180deg, #3d2a16 0%, #2a1c0e 46%, #170f07 100%);
-  padding:16px; }
-.m-board .in { height:100%; border:2px solid rgba(232,200,137,.42);
-  box-shadow: inset 0 0 0 4px rgba(0,0,0,.3), inset 0 0 26px rgba(0,0,0,.5);
-  padding:16px 20px; display:flex; flex-direction:column; }
-.m-board .ttl { text-align:center; font-family:var(--serif); font-size:19px;
-  letter-spacing:.10em; color:#e8c889; text-transform:uppercase;
-  text-shadow:0 1px 0 rgba(0,0,0,.7); }
-.m-board .ttl u { display:block; width:44px; height:1px; margin:9px auto 0;
-  background:rgba(232,200,137,.5); }
-.m-board .r { flex:1; display:flex; align-items:center; gap:12px;
-  font-family:var(--serif); font-size:17px; color:#f0dcae;
-  text-shadow:0 1px 0 rgba(0,0,0,.65); }
-.m-board .r s { text-decoration:none; font-family:var(--mono); font-size:11px;
-  color:rgba(232,200,137,.62); width:38px; }
-.m-board .r b { font-weight:400; }
-.m-board .r span { margin-left:auto; font-family:var(--mono); font-size:11px;
-  color:rgba(232,200,137,.62); }
+/* ── A. BROADSHEET ───────────────────────────────────────────── */
+.cA { background:#e9ddc1; color:#241c0e; }
+.cA .pg { position:absolute; inset:74px 78px; display:flex; flex-direction:column; }
+.cA .mast { display:flex; justify-content:space-between; padding-bottom:12px;
+  border-bottom:3px double #241c0e; font-family:var(--mono); font-size:13px;
+  letter-spacing:.2em; text-transform:uppercase; color:#6d5f3e; }
+.cA h2 { margin-top:26px; } .cA h2 em { color:#7a5c14; }
+.cA .dek { margin-top:12px; color:#55482e; max-width:620px; }
+.cA .tbl { margin-top:22px; }
+.cA .tbl .hr { color:#8a7c5c; border-bottom:1px solid rgba(40,30,12,.45); }
+.cA .tbl .rw { border-bottom:1px solid rgba(40,30,12,.22); }
+.cA .tbl .rk, .cA .tbl .c { color:#55482e; }
+.cA .cut { margin:28px 0 24px; height:7px;
+  border-top:3px solid #3a1d16; border-bottom:1px solid #3a1d16; }
+.cA .low { flex:1; min-height:0; display:flex; flex-direction:column; }
+.cA .low h2 { margin-top:0; color:#3a1d16; } .cA .low h2 em { color:#8c2b1e; }
+.cA .yrs { flex:1; min-height:0; margin-top:18px; }
+.cA .yrs .y { border-left:1px solid rgba(40,30,12,.2); }
+.cA .yrs .y:first-child { border-left:0; padding-left:0; }
+.cA .yrs .y .rec { color:#7f7154; }
+.cA .yrs .y .bar { background:#c3b28c; }
+.cA .yrs .y.rep .bar { background:#3a1d16; }
+.cA .yrs .y .yr { border-top:1px solid rgba(40,30,12,.3); color:#7f7154; }
 
-/* ══ 03 THE BIG BOARD ═══════════════════════════════════════
-   The draft war room: name cards on a wall, colour-coded, one row
-   still face down. */
-.m-big { background:#0c0c0b; padding:16px; display:flex; flex-direction:column; gap:7px; }
-.m-big .hd { display:flex; font-family:var(--mono); font-size:9px;
-  letter-spacing:.18em; color:#8a7a60; text-transform:uppercase; }
-.m-big .hd span { flex:1; text-align:center; }
-.m-big .row { flex:1; display:flex; gap:7px; }
-.m-big .c { flex:1; border-radius:2px; padding:7px 6px 6px;
-  background:#191917; border:1px solid #302e29;
-  display:flex; flex-direction:column; justify-content:space-between; }
-.m-big .c i { font-style:normal; font-family:var(--mono); font-size:8px;
-  color:#6b6252; }
-.m-big .c b { font-family:var(--serif); font-weight:400; font-size:13px;
-  line-height:1; color:#f4ebd8; }
-.m-big .c u { display:block; height:3px; text-decoration:none; border-radius:2px; }
-.m-big .qb u{background:#6ba3cc}.m-big .rb u{background:#5fae7f}
-.m-big .wr u{background:#d4a94c}.m-big .te u{background:#a07fd0}
-.m-big .c.down { background:repeating-linear-gradient(45deg,
-  #141413 0 5px, #1b1a18 5px 10px); border-color:#26241f; }
-
-/* ══ 04 CARD CATALOGUE ══════════════════════════════════════
-   A bank of drawers with one pulled open and a typed index card
-   standing in it. */
-.m-cat { background:linear-gradient(180deg,#2e2114 0%,#1b1309 100%);
-  padding:15px; display:flex; flex-direction:column; gap:8px; }
-.m-cat .d { flex:1; border-radius:2px; position:relative;
-  background:linear-gradient(180deg,#4a3620 0%,#33230f 60%,#241806 100%);
-  box-shadow: inset 0 1px 0 rgba(255,222,160,.16), 0 2px 5px rgba(0,0,0,.5);
-  display:flex; align-items:center; padding:0 14px; gap:12px; }
-.m-cat .d .lbl { font-family:var(--mono); font-size:9px; letter-spacing:.2em;
-  text-transform:uppercase; color:rgba(240,214,160,.62);
-  border:1px solid rgba(240,214,160,.3); padding:3px 9px; }
-.m-cat .d .pull { margin-left:auto; width:36px; height:9px; border-radius:5px;
-  background:linear-gradient(180deg,#e8c889,#8a6a24); }
-.m-cat .open { flex:2.1; background:#150e05; align-items:flex-start;
-  padding:10px 12px; }
-.m-cat .card { flex:1; height:100%; background:#efe5cd; color:#241c0e;
-  border-radius:2px; padding:9px 11px; box-shadow:0 4px 10px rgba(0,0,0,.6);
-  border-top:3px solid #8c2b1e; }
-.m-cat .card b { display:block; font-family:var(--serif); font-weight:400;
-  font-size:18px; }
-.m-cat .card i { display:block; font-style:normal; font-family:var(--mono);
-  font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:#7f7154;
-  margin-top:3px; }
-.m-cat .card .l { display:flex; justify-content:space-between; margin-top:7px;
-  padding-top:5px; border-top:1px solid rgba(40,30,12,.25);
-  font-family:var(--mono); font-size:10px; }
-
-/* ══ 05 TALE OF THE TAPE ════════════════════════════════════
-   The fight poster: two names facing off, figures stacked down a
-   red spine between them. */
-.m-tape { background:
-    radial-gradient(ellipse 60% 50% at 50% 50%, rgba(220,38,38,.14), transparent 70%),
-    #0a0a0a; padding:18px; display:flex; flex-direction:column; }
-.m-tape .top { display:flex; align-items:center; }
-.m-tape .top b { flex:1; font-family:var(--serif); font-weight:400; font-size:30px;
-  line-height:1; color:#f3f4f6; }
-.m-tape .top b.r { text-align:right; }
-.m-tape .top s { text-decoration:none; font-family:var(--mono); font-size:10px;
-  letter-spacing:.2em; color:#dc2626; padding:0 12px; }
-.m-tape .rows { flex:1; margin-top:14px; display:flex; flex-direction:column; }
-.m-tape .rw { flex:1; display:flex; align-items:center;
-  border-top:1px solid #1e1e1e; }
-.m-tape .rw span { width:54px; font-family:var(--mono); font-size:13px; color:#d1d5db; }
-.m-tape .rw span.r { text-align:right; }
-.m-tape .rw em { flex:1; font-style:normal; text-align:center; font-family:var(--mono);
-  font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:#6b7280; }
-.m-tape .rw.hi span { color:#dc2626; }
-
-/* ══ 06 CONTACT SHEET ═══════════════════════════════════════
-   Every season as a miniature front page, with a grease pencil
-   ring round the one that mattered. */
-.m-cont { background:#14100b; padding:16px; display:grid;
-  grid-template-columns:repeat(4,1fr); gap:9px; }
-.m-cont .f { position:relative; background:#e9ddc1; border-radius:1px;
-  padding:6px 5px; display:flex; flex-direction:column; gap:3px; }
-.m-cont .f b { display:block; height:7px; background:#241c0e; }
-.m-cont .f u { display:block; height:2px; background:rgba(40,30,12,.34);
-  text-decoration:none; }
-.m-cont .f u.s { width:62%; } .m-cont .f u.m { width:84%; }
-.m-cont .f i { margin-top:auto; font-style:normal; font-family:var(--mono);
-  font-size:8px; color:#7f7154; }
-.m-cont .f.on { outline:3px solid rgba(220,60,40,.85); outline-offset:2px; }
-
-/* ══ 07 DRAFTING TABLE ══════════════════════════════════════
-   Graph paper on a light table, lines plotted in ink, one corner
-   pinned down. */
-.m-draft { background:#e6e2d4; padding:0; position:relative;
-  background-image:
-    repeating-linear-gradient(0deg, rgba(60,90,120,.16) 0 1px, transparent 1px 17px),
-    repeating-linear-gradient(90deg, rgba(60,90,120,.16) 0 1px, transparent 1px 17px),
-    repeating-linear-gradient(0deg, rgba(60,90,120,.30) 0 1px, transparent 1px 85px),
-    repeating-linear-gradient(90deg, rgba(60,90,120,.30) 0 1px, transparent 1px 85px),
-    linear-gradient(180deg,#eeeade,#ddd8c8); }
-.m-draft svg { position:absolute; inset:0; width:100%; height:100%; }
-.m-draft .tack { position:absolute; top:10px; right:12px; width:17px; height:17px;
-  border-radius:50%; background:radial-gradient(circle at 34% 28%,
-  #ff9a8a,#c8412c 60%,#6e1c11); box-shadow:0 3px 6px rgba(0,0,0,.45); }
-.m-draft .ky { position:absolute; left:12px; bottom:10px; display:flex; gap:13px;
-  font-family:var(--mono); font-size:9px; letter-spacing:.1em; color:#3f4d5c; }
-.m-draft .ky i { display:inline-block; width:14px; height:2px; margin-right:5px;
-  vertical-align:middle; }
-
-/* ══ 08 LINEUP CARD ═════════════════════════════════════════
-   The card a manager hands in: ruled slots, carbon blue, filled by
-   hand. */
-.m-line { background:#241c0e; padding:17px; }
-.m-line .card { height:100%; background:#efe5cd; color:#1e2a3a;
-  border:1px solid #b9ad8d; border-radius:2px; padding:12px 14px;
+/* ── B. PLATES ───────────────────────────────────────────────── */
+.cB { background:#0c1016; }
+.cB .pg { position:absolute; inset:74px 78px; display:flex; flex-direction:column;
+  gap:26px; }
+.cB .pl { flex:1; min-height:0; position:relative; padding:34px 38px;
   display:flex; flex-direction:column;
-  box-shadow:0 6px 14px rgba(0,0,0,.55); }
-.m-line .card .h { display:flex; justify-content:space-between; align-items:baseline;
-  padding-bottom:7px; border-bottom:2px solid #1e2a3a; }
-.m-line .card .h b { font-family:var(--serif); font-weight:400; font-size:17px;
-  letter-spacing:.06em; text-transform:uppercase; }
-.m-line .card .h s { text-decoration:none; font-family:var(--mono); font-size:9px;
-  letter-spacing:.16em; color:#6d6650; }
-.m-line .card .s { flex:1; display:flex; align-items:center; gap:10px;
-  border-bottom:1px dotted rgba(30,42,58,.4); }
-.m-line .card .s i { font-style:normal; font-family:var(--mono); font-size:10px;
-  width:34px; color:#6d6650; }
-.m-line .card .s em { font-style:normal; font-family:var(--serif); font-size:18px;
-  color:#233a5e; }
-.m-line .card .s span { margin-left:auto; font-family:var(--mono); font-size:11px;
-  color:#233a5e; }
+  box-shadow:0 16px 34px -12px rgba(0,0,0,.8); }
+.cB .pl::after { content:''; position:absolute; inset:11px; pointer-events:none;
+  border:1px solid currentColor; opacity:.22; }
+.cB .one { background:#e9ddc1; color:#241c0e; }
+.cB .two { background:#3a1d16; color:#e8c889; }
+.cB .hd { display:flex; align-items:flex-end; gap:22px; margin-top:12px; }
+.cB .hd h2 { flex:none; } .cB .hd .dek { flex:1; padding-bottom:6px; opacity:.74; }
+.cB .one .kick { color:#8a7c5c; } .cB .two .kick { color:#c89a72; }
+.cB .one h2 em { color:#7a5c14; }
+.cB .two h2 { color:#f4ebd8; } .cB .two h2 em { color:#e8c889; }
+.cB .tbl { margin-top:18px; }
+.cB .one .tbl .hr { color:#8a7c5c; border-bottom:1px solid rgba(40,30,12,.4); }
+.cB .one .tbl .rw { border-bottom:1px solid rgba(40,30,12,.2); padding:11px 0; }
+.cB .one .tbl .rk, .cB .one .tbl .c { color:#55482e; }
+.cB .yrs { flex:1; min-height:0; margin-top:18px; }
+.cB .two .yrs .y { border-left:1px solid rgba(232,200,137,.16); }
+.cB .two .yrs .y:first-child { border-left:0; padding-left:0; }
+.cB .two .yrs .y .who { color:#f4ebd8; } .cB .two .yrs .y .rec { color:#c0a184; }
+.cB .two .yrs .y .bar { background:rgba(232,200,137,.20); }
+.cB .two .yrs .y.rep .bar { background:#e8c889; }
+.cB .two .yrs .y .yr { border-top:1px solid rgba(232,200,137,.22); color:#c0a184; }
 
-/* ══ 09 CHALKBOARD ══════════════════════════════════════════ */
-.m-chalk { background:
-    radial-gradient(ellipse 70% 60% at 40% 30%, rgba(255,255,255,.045), transparent 70%),
-    #28342f; padding:18px; display:flex; flex-direction:column;
-  box-shadow: inset 0 0 44px rgba(0,0,0,.45); }
-.m-chalk .t { font-family:var(--serif); font-size:23px; color:#ece4cc;
-  letter-spacing:.02em; }
-.m-chalk .t u { display:block; width:118px; height:2px; margin-top:6px;
-  background:rgba(236,228,204,.55); border-radius:2px; }
-.m-chalk .bars { flex:1; margin-top:14px; display:flex; align-items:flex-end;
-  gap:11px; }
-.m-chalk .bars .b { justify-content:flex-end; }
-.m-chalk .bars .b { flex:1; display:flex; flex-direction:column;
-  align-items:center; gap:6px; }
-.m-chalk .bars .b u { display:block; width:100%; text-decoration:none;
-  border:2px solid rgba(236,228,204,.6); border-bottom:0; }
-.m-chalk .bars .b.on u { background:rgba(232,200,80,.30);
-  border-color:rgba(243,215,117,.85); }
-.m-chalk .bars .b i { font-style:normal; font-family:var(--mono); font-size:9px;
-  color:rgba(236,228,204,.6); }
-.m-chalk .bars .b em { font-style:normal; font-family:var(--serif); font-size:13px;
-  color:#ece4cc; }
+/* ── C. LAID PAPER ───────────────────────────────────────────── */
+.cC { background:
+    radial-gradient(ellipse 70% 46% at 50% 34%, rgba(232,200,137,.09), transparent 72%),
+    linear-gradient(180deg,#14181e 0%,#0a0d11 100%); }
+.cC .sh { position:absolute; left:70px; right:70px; background:#efe5cd;
+  color:#241c0e; box-shadow:0 18px 40px -10px rgba(0,0,0,.85); }
+.cC .one { top:92px; height:590px; transform:rotate(-.8deg); }
+.cC .two { top:668px; height:590px; transform:rotate(.6deg); z-index:2; }
+.cC .band { display:flex; justify-content:space-between; align-items:center;
+  padding:11px 30px; font-family:var(--mono); font-size:13px; letter-spacing:.22em;
+  text-transform:uppercase; }
+.cC .one .band { background:#1e2a38; color:#e8c889; }
+.cC .two .band { background:#3a1d16; color:#e8c889; }
+.cC .in { padding:22px 30px 24px; display:flex; flex-direction:column;
+  height:calc(100% - 44px); }
+.cC h2 { color:#241c0e; } .cC .one h2 em { color:#2f4a68; }
+.cC .two h2 em { color:#8c2b1e; }
+.cC .dek { margin-top:10px; color:#55482e; }
+.cC .tbl { margin-top:14px; }
+.cC .tbl .hr { color:#8a7c5c; border-bottom:1px solid rgba(40,30,12,.4); }
+.cC .tbl .rw { border-bottom:1px solid rgba(40,30,12,.2); padding:10px 0; }
+.cC .tbl .rk, .cC .tbl .c { color:#55482e; }
+.cC .yrs { flex:1; min-height:0; margin-top:12px; }
+.cC .yrs .y { border-left:1px solid rgba(40,30,12,.18); }
+.cC .yrs .y:first-child { border-left:0; padding-left:0; }
+.cC .yrs .y .rec { color:#7f7154; }
+.cC .yrs .y .bar { background:#cdbc97; }
+.cC .yrs .y.rep .bar { background:#3a1d16; }
+.cC .yrs .y .yr { border-top:1px solid rgba(40,30,12,.28); color:#7f7154; }
 
-/* ══ 10 TWO-PART TICKET ═════════════════════════════════════ */
-.m-tick { background:#1a1612; padding:20px; display:flex; align-items:center; }
-.m-tick .t { flex:1; display:flex; background:#efe5cd; color:#241c0e;
-  border-radius:2px; box-shadow:0 8px 18px rgba(0,0,0,.6); overflow:hidden; }
-.m-tick .main { flex:1; padding:14px 16px; }
-.m-tick .main .k { font-family:var(--mono); font-size:9px; letter-spacing:.2em;
-  text-transform:uppercase; color:#7f7154; }
-.m-tick .main b { display:block; margin-top:6px; font-family:var(--serif);
-  font-weight:400; font-size:22px; }
-.m-tick .main .l { margin-top:10px; padding-top:8px;
-  border-top:1px solid rgba(40,30,12,.25); display:flex;
-  justify-content:space-between; font-family:var(--mono); font-size:11px; }
-.m-tick .main .st { margin-top:11px; display:inline-block; padding:4px 10px;
-  border:2px solid #8c2b1e; color:#8c2b1e; transform:rotate(-3deg);
-  font-family:var(--mono); font-size:11px; letter-spacing:.2em; }
-.m-tick .stub { width:92px; padding:14px 10px; text-align:center;
-  border-left:2px dashed rgba(40,30,12,.45);
-  background:repeating-linear-gradient(0deg, rgba(40,30,12,.05) 0 6px, transparent 6px 12px); }
-.m-tick .stub b { display:block; font-family:var(--serif); font-weight:400;
-  font-size:26px; color:#8c2b1e; }
-.m-tick .stub i { display:block; margin-top:5px; font-style:normal;
-  font-family:var(--mono); font-size:8px; letter-spacing:.14em; color:#7f7154; }
+/* ── D. SPLIT FIELD ──────────────────────────────────────────── */
+.cD .half { position:absolute; left:0; right:0; height:50%;
+  padding:72px 78px; display:flex; flex-direction:column; }
+.cD .one { top:0; background:#e9ddc1; color:#241c0e; }
+.cD .two { top:50%; background:#3a1d16; color:#f4ebd8;
+  box-shadow:0 -2px 0 rgba(232,200,137,.45); }
+.cD .one .kick { color:#8a7c5c; } .cD .two .kick { color:#c89a72; }
+.cD h2 { margin-top:14px; } .cD .one h2 em { color:#7a5c14; }
+.cD .two h2 em { color:#e8c889; }
+.cD .tbl { margin-top:auto; }
+.cD .tbl .hr { color:#8a7c5c; border-bottom:1px solid rgba(40,30,12,.4); }
+.cD .tbl .rw { border-bottom:1px solid rgba(40,30,12,.2); padding:11px 0; }
+.cD .tbl .rk, .cD .tbl .c { color:#55482e; }
+.cD .yrs { flex:1; min-height:0; margin-top:20px; }
+.cD .yrs .y { border-left:1px solid rgba(244,235,216,.16); }
+.cD .yrs .y:first-child { border-left:0; padding-left:0; }
+.cD .yrs .y .rec { color:#c0a184; }
+.cD .yrs .y .bar { background:rgba(244,235,216,.2); }
+.cD .yrs .y.rep .bar { background:#e8c889; }
+.cD .yrs .y .yr { border-top:1px solid rgba(244,235,216,.22); color:#c0a184; }
 
-/* ══ 11 PUNCH CARD ══════════════════════════════════════════ */
-.m-punch { background:#160b1d; padding:20px; display:flex; align-items:center; }
-.m-punch .c { flex:1; background:#e7dcc0; color:#241c0e; border-radius:2px;
-  padding:13px 15px 13px 26px; position:relative; overflow:hidden;
-  box-shadow:0 8px 18px rgba(0,0,0,.6);
-  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%); }
-.m-punch .c::before { content:''; position:absolute; left:8px; top:12px; bottom:12px;
-  width:8px; background-image:repeating-linear-gradient(180deg,
-    #160b1d 0 8px, transparent 8px 20px); }
-.m-punch .c .k { font-family:var(--mono); font-size:9px; letter-spacing:.2em;
-  text-transform:uppercase; color:#7f7154; }
-.m-punch .c .r { display:flex; align-items:center; gap:10px; padding:7px 0;
-  border-bottom:1px solid rgba(40,30,12,.22); }
-.m-punch .c .r:last-child { border-bottom:0; }
-.m-punch .c .r em { font-style:normal; flex:1; font-family:var(--serif); font-size:17px; }
-.m-punch .c .r u { width:19px; height:19px; text-decoration:none; border-radius:2px;
-  border:1px solid rgba(40,30,12,.4); }
-.m-punch .c .r u.x { background:#160b1d; border-color:#160b1d; }
+/* ── E. PANEL AND RAIL ───────────────────────────────────────── */
+.cE { background:#0b0f14; }
+.cE .pg { position:absolute; inset:74px 78px; display:flex; flex-direction:column;
+  gap:24px; }
+.cE .pn { flex:1; min-height:0; display:flex; border:1px solid;
+  box-shadow:0 14px 30px -12px rgba(0,0,0,.8); }
+.cE .rail { flex:none; width:60px; display:flex; align-items:center;
+  justify-content:center; }
+.cE .rail b { writing-mode:vertical-rl; font-family:var(--mono); font-size:13px;
+  letter-spacing:.34em; text-transform:uppercase; font-weight:400; }
+.cE .bd { flex:1; min-width:0; padding:28px 32px 28px 28px; display:flex;
+  flex-direction:column; }
+.cE .one { background:#e9ddc1; color:#241c0e; border-color:#cbbb96; }
+.cE .one .rail { background:#241c0e; color:#e8c889; }
+.cE .two { background:#3a1d16; color:#f4ebd8; border-color:#4d2a20; }
+.cE .two .rail { background:#241009; color:#e8c889; }
+.cE .one h2 em { color:#7a5c14; } .cE .two h2 em { color:#e8c889; }
+.cE .one .dek { color:#55482e; } .cE .two .dek { color:#c9b3a6; }
+.cE .tbl { margin-top:16px; }
+.cE .one .tbl .hr { color:#8a7c5c; border-bottom:1px solid rgba(40,30,12,.4); }
+.cE .one .tbl .rw { border-bottom:1px solid rgba(40,30,12,.2); padding:11px 0; }
+.cE .one .tbl .rk, .cE .one .tbl .c { color:#55482e; }
+.cE .yrs { flex:1; min-height:0; margin-top:16px; }
+.cE .two .yrs .y { border-left:1px solid rgba(244,235,216,.14); }
+.cE .two .yrs .y:first-child { border-left:0; padding-left:0; }
+.cE .two .yrs .y .rec { color:#b49a8c; }
+.cE .two .yrs .y .bar { background:rgba(244,235,216,.18); }
+.cE .two .yrs .y.rep .bar { background:#e8c889; }
+.cE .two .yrs .y .yr { border-top:1px solid rgba(244,235,216,.2); color:#b49a8c; }
 
-/* ══ 12 TELETYPE ════════════════════════════════════════════ */
-.m-wire { background:#0f0a0c; padding:16px 0; display:flex; align-items:center; }
-.m-wire .p { flex:1; background:#e6e0cd; color:#241c0e; position:relative;
-  padding:14px 34px; box-shadow:0 6px 16px rgba(0,0,0,.6);
-  background-image:repeating-linear-gradient(180deg,
-    transparent 0 26px, rgba(40,30,12,.05) 26px 52px); }
-.m-wire .p::before, .m-wire .p::after { content:''; position:absolute; top:0;
-  bottom:0; width:22px; background-image:repeating-linear-gradient(180deg,
-    transparent 0 7px, #0f0a0c 7px 16px, transparent 16px 26px);
-  border-right:1px dashed rgba(40,30,12,.35); }
-.m-wire .p::before { left:0; }
-.m-wire .p::after { right:0; border-right:0; border-left:1px dashed rgba(40,30,12,.35); }
-.m-wire .l { font-family:var(--mono); font-size:11px; line-height:2.0;
-  letter-spacing:.02em; white-space:nowrap; overflow:hidden; }
-.m-wire .l b { font-weight:400; color:#8c2b1e; }
-
-/* ══ SPLITS ═════════════════════════════════════════════════ */
-.splits { display:grid; grid-template-columns:repeat(5,1fr); gap:22px; }
-.split { background:#11161d; border:1px solid #212c3a; border-radius:3px;
-  padding:15px; }
-.split .d { height:172px; display:flex; flex-direction:column; gap:7px;
-  position:relative; }
-.split .d .p { background:#1e2b3a; border:1px solid #33445a; border-radius:2px;
-  display:flex; align-items:center; justify-content:center;
-  font-family:var(--mono); font-size:10px; color:#7f8fa2; }
-.split .d .p.g { background:#22322a; border-color:#3a5246; color:#8fae9b; }
-.split h4 { margin-top:12px; font-family:var(--serif); font-weight:400; font-size:19px; }
-.split p { margin-top:6px; font-size:13px; line-height:1.42; color:#8f99a5; }
+/* ── F. TABBED CARDS ─────────────────────────────────────────── */
+.cF { background:linear-gradient(180deg,#15181d 0%,#0b0d11 100%); }
+.cF .pg { position:absolute; inset:82px 78px 74px; display:flex;
+  flex-direction:column; gap:34px; }
+.cF .cd { flex:1; min-height:0; position:relative; padding:30px 34px;
+  display:flex; flex-direction:column;
+  box-shadow:0 14px 32px -12px rgba(0,0,0,.85); }
+.cF .tab { position:absolute; top:-30px; height:30px; padding:0 22px;
+  display:flex; align-items:center; border-radius:3px 3px 0 0;
+  font-family:var(--mono); font-size:13px; letter-spacing:.22em;
+  text-transform:uppercase; }
+.cF .one { background:#e9ddc1; color:#241c0e; }
+.cF .one .tab { left:0; background:#1e2a38; color:#e8c889; }
+.cF .two { background:#3a1d16; color:#f4ebd8; }
+.cF .two .tab { left:172px; background:#8c2b1e; color:#f4ebd8; }
+.cF .one h2 em { color:#2f4a68; } .cF .two h2 em { color:#e8c889; }
+.cF .dek { margin-top:11px; } .cF .one .dek { color:#55482e; }
+.cF .two .dek { color:#c9b3a6; }
+.cF .tbl { margin-top:14px; }
+.cF .one .tbl .hr { color:#8a7c5c; border-bottom:1px solid rgba(40,30,12,.4); }
+.cF .one .tbl .rw { border-bottom:1px solid rgba(40,30,12,.2); padding:11px 0; }
+.cF .one .tbl .rk, .cF .one .tbl .c { color:#55482e; }
+.cF .yrs { flex:1; min-height:0; margin-top:14px; }
+.cF .two .yrs .y { border-left:1px solid rgba(244,235,216,.15); }
+.cF .two .yrs .y:first-child { border-left:0; padding-left:0; }
+.cF .two .yrs .y .rec { color:#c0a184; }
+.cF .two .yrs .y .bar { background:rgba(244,235,216,.18); }
+.cF .two .yrs .y.rep .bar { background:#e8c889; }
+.cF .two .yrs .y .yr { border-top:1px solid rgba(244,235,216,.2); color:#c0a184; }
 </style>
 </head>
 <body>
 <div class="sheet">
-
   <div class="masthead">
-    <h1>Page <em>treatments.</em></h1>
-    <p>Twelve ways a chapter can be drawn, instead of fourteen bound volumes
-       in different colours. Each is named for the chapter it suits and uses
-       that page&rsquo;s real palette. Review sheet: not 4:5, not for posting.</p>
+    <h1>Slide <em>treatments.</em></h1>
+    <p>One slide, six ways. Same two chapters, same figures, same type sizes as
+       the real board &mdash; only the design language changes. Each tile is a
+       true 1080&times;1350 at 0.6 scale. Review sheet, not for posting.</p>
   </div>
-
-  <div class="band">Twelve treatments <u></u> pick per chapter</div>
-
-  <div class="grid">
-
-    <div class="tile"><div class="art m-agate">
-      <div class="h"><b>All-time standings</b><s>Seven seasons</s></div>
-      <div class="r"><i>1</i><em>Bryce</em><span class="p">78&ndash;40</span><span>&#9733;&#9733;</span></div>
-      <div class="r"><i>2</i><em>John</em><span class="p">74&ndash;44</span><span>&#9733;</span></div>
-      <div class="r"><i>3</i><em>Matt</em><span class="p">71&ndash;47</span><span>&#9733;</span></div>
-      <div class="r"><i>4</i><em>Drew</em><span class="p">66&ndash;52</span><span>&#9733;</span></div>
-      <div class="r"><i>5</i><em>Nate</em><span class="p">62&ndash;56</span><span></span></div>
-    </div><div class="cap"><div class="no">01</div><h3>Agate column</h3>
-      <div class="for">The Standings</div>
-      <p>Cream stock, one heavy rule, nothing in a box. How a paper has
-         always printed a table.</p></div></div>
-
-    <div class="tile"><div class="art m-board"><div class="in">
-      <div class="ttl">Champions<u></u></div>
-      <div class="r"><s>2019</s><b>Matt</b><span>9&ndash;5</span></div>
-      <div class="r"><s>2020</s><b>Drew</b><span>10&ndash;4</span></div>
-      <div class="r"><s>2021</s><b>Bryce</b><span>11&ndash;3</span></div>
-      <div class="r"><s>2022</s><b>John</b><span>12&ndash;2</span></div>
-      <div class="r"><s>2023</s><b>Nate</b><span>9&ndash;5</span></div>
-    </div></div><div class="cap"><div class="no">02</div><h3>Honours board</h3>
-      <div class="for">The Seasons &middot; Record Book</div>
-      <p>The varnished board on a clubhouse wall, names incised in gold. Reads
-         as permanent, which is the point.</p></div></div>
-
-    <div class="tile"><div class="art m-big">
-      <div class="hd"><span>1.01</span><span>1.02</span><span>1.03</span><span>1.04</span></div>
-      <div class="row">
-        <div class="c rb"><i>Bryce</i><b>Hall</b><u></u></div>
-        <div class="c wr"><i>John</i><b>Lamb</b><u></u></div>
-        <div class="c qb"><i>Matt</i><b>Daniels</b><u></u></div>
-        <div class="c rb"><i>Drew</i><b>Okafor</b><u></u></div>
-      </div>
-      <div class="row">
-        <div class="c te"><i>Nate</i><b>Voss</b><u></u></div>
-        <div class="c wr"><i>Owen</i><b>Reyes</b><u></u></div>
-        <div class="c rb"><i>Jack</i><b>Pike</b><u></u></div>
-        <div class="c down"></div>
-      </div>
-      <div class="row">
-        <div class="c down"></div><div class="c down"></div>
-        <div class="c down"></div><div class="c down"></div>
-      </div>
-    </div><div class="cap"><div class="no">03</div><h3>The big board</h3>
-      <div class="for">The Draft &middot; Mock Room</div>
-      <p>War-room wall: name cards colour-coded by position, the rounds still
-         to come face down.</p></div></div>
-
-    <div class="tile"><div class="art m-cat">
-      <div class="d"><span class="lbl">A &ndash; F</span><span class="pull"></span></div>
-      <div class="d open"><div class="card"><b>Bryce</b><i>On file since 2019</i>
-        <div class="l"><span>Titles</span><span>2</span></div>
-        <div class="l"><span>All-time</span><span>78&ndash;40</span></div>
-        <div class="l"><span>Owns</span><span>Vince</span></div></div></div>
-      <div class="d"><span class="lbl">G &ndash; M</span><span class="pull"></span></div>
-      <div class="d"><span class="lbl">N &ndash; Z</span><span class="pull"></span></div>
-    </div><div class="cap"><div class="no">04</div><h3>Card catalogue</h3>
-      <div class="for">The Managers</div>
-      <p>A bank of drawers, one pulled open, a typed card standing in it. A
-         dossier that looks filed rather than designed.</p></div></div>
-
-    <div class="tile"><div class="art m-tape">
-      <div class="top"><b>Bryce</b><s>vs</s><b class="r">John</b></div>
-      <div class="rows">
-        <div class="rw hi"><span>12</span><em>All-time</em><span class="r">9</span></div>
-        <div class="rw"><span>4</span><em>Playoff meetings</em><span class="r">3</span></div>
-        <div class="rw"><span>118.4</span><em>Average score</em><span class="r">114.9</span></div>
-        <div class="rw"><span>0.86</span><em>Closest ever</em><span class="r">0.86</span></div>
-        <div class="rw"><span>W4</span><em>Current run</em><span class="r">&mdash;</span></div>
-      </div>
-    </div><div class="cap"><div class="no">05</div><h3>Tale of the tape</h3>
-      <div class="for">The Rivalries &middot; Matchup Preview</div>
-      <p>Fight poster. Two names facing off, figures stacked down a red spine
-         between them.</p></div></div>
-
-    <div class="tile"><div class="art m-cont">
-      <div class="f"><b></b><u class="m"></u><u class="s"></u><u class="m"></u><i>&rsquo;19</i></div>
-      <div class="f"><b></b><u class="s"></u><u class="m"></u><u class="s"></u><i>&rsquo;20</i></div>
-      <div class="f on"><b></b><u class="m"></u><u class="m"></u><u class="s"></u><i>&rsquo;21</i></div>
-      <div class="f"><b></b><u class="s"></u><u class="s"></u><u class="m"></u><i>&rsquo;22</i></div>
-      <div class="f"><b></b><u class="m"></u><u class="s"></u><u class="s"></u><i>&rsquo;23</i></div>
-      <div class="f on"><b></b><u class="s"></u><u class="m"></u><u class="m"></u><i>&rsquo;24</i></div>
-      <div class="f"><b></b><u class="m"></u><u class="m"></u><u class="s"></u><i>&rsquo;25</i></div>
-      <div class="f"><b></b><u class="s"></u><u class="s"></u><u class="m"></u><i>&rsquo;26</i></div>
-    </div><div class="cap"><div class="no">06</div><h3>Contact sheet</h3>
-      <div class="for">The Seasons</div>
-      <p>Every year as a miniature front page, with a grease-pencil ring round
-         the ones that mattered.</p></div></div>
-
-    <div class="tile"><div class="art m-draft">
-      <svg viewBox="0 0 480 328" preserveAspectRatio="none">
-        <polyline points="20,250 80,214 140,228 200,150 260,176 320,96 380,120 450,58"
-          fill="none" stroke="#8c2b1e" stroke-width="3"/>
-        <polyline points="20,278 80,262 140,196 200,220 260,132 320,168 380,80 450,106"
-          fill="none" stroke="#2f5d84" stroke-width="3"/>
-        <polyline points="20,296 80,290 140,272 200,282 260,250 320,262 380,224 450,236"
-          fill="none" stroke="#4e7a4a" stroke-width="2" stroke-dasharray="7 5"/>
-      </svg>
-      <span class="tack"></span>
-      <div class="ky"><span><i style="background:#8c2b1e"></i>Bryce</span>
-        <span><i style="background:#2f5d84"></i>John</span>
-        <span><i style="background:#4e7a4a"></i>League</span></div>
-    </div><div class="cap"><div class="no">07</div><h3>Drafting table</h3>
-      <div class="for">The Chart Room</div>
-      <p>Graph paper on a light table, lines plotted in ink, one corner pinned.
-         The only tile that is genuinely a chart.</p></div></div>
-
-    <div class="tile"><div class="art m-line"><div class="card">
-      <div class="h"><b>All-time lineup</b><s>Best week, each slot</s></div>
-      <div class="s"><i>QB</i><em>Bryce</em><span>44.8</span></div>
-      <div class="s"><i>RB</i><em>Nate</em><span>39.2</span></div>
-      <div class="s"><i>RB</i><em>John</em><span>36.7</span></div>
-      <div class="s"><i>WR</i><em>Drew</em><span>41.1</span></div>
-      <div class="s"><i>TE</i><em>Matt</em><span>28.9</span></div>
-      <div class="s"><i>FLEX</i><em>Owen</em><span>34.0</span></div>
-    </div></div><div class="cap"><div class="no">08</div><h3>Lineup card</h3>
-      <div class="for">The All-Time Team</div>
-      <p>The card handed in before kickoff: ruled slots, carbon blue, filled in
-         by hand.</p></div></div>
-
-    <div class="tile"><div class="art m-chalk">
-      <div class="t">Points left on the bench<u></u></div>
-      <div class="bars">
-        <div class="b"><em>44</em><u style="height:74px"></u><i>Bryce</i></div>
-        <div class="b"><em>91</em><u style="height:122px"></u><i>John</i></div>
-        <div class="b"><em>58</em><u style="height:86px"></u><i>Matt</i></div>
-        <div class="b on"><em>264</em><u style="height:188px"></u><i>Grant</i></div>
-        <div class="b"><em>77</em><u style="height:106px"></u><i>Nate</i></div>
-        <div class="b"><em>29</em><u style="height:56px"></u><i>Drew</i></div>
-      </div>
-    </div><div class="cap"><div class="no">09</div><h3>Chalkboard</h3>
-      <div class="for">Best Coach</div>
-      <p>Slate and chalk. Lifted straight off the real page, which already
-         draws itself this way.</p></div></div>
-
-    <div class="tile"><div class="art m-tick"><div class="t">
-      <div class="main"><div class="k">Trade &middot; Week 9</div>
-        <b>Bryce sends Hall, gets Pike + 1.04</b>
-        <div class="l"><span>Bryce &nbsp;A&minus;</span><span>John &nbsp;C+</span></div>
-        <div class="l"><span>58% of the value</span><span>42%</span></div>
-        <span class="st">Graded</span></div>
-      <div class="stub"><b>A&minus;</b><i>No. 0412</i></div>
-    </div></div><div class="cap"><div class="no">10</div><h3>Two-part ticket</h3>
-      <div class="for">The Trade Desk</div>
-      <p>Perforated stub, serial number, overprinted grade. A deal is a
-         transaction, so draw it as one.</p></div></div>
-
-    <div class="tile"><div class="art m-punch"><div class="c">
-      <div class="k">Week 12 &middot; Bryce</div>
-      <div class="r"><em>Bryce over John</em><u class="x"></u></div>
-      <div class="r"><em>Matt over Drew</em><u class="x"></u></div>
-      <div class="r"><em>Nate over Owen</em><u></u></div>
-      <div class="r"><em>Jack over Cole</em><u class="x"></u></div>
-      <div class="r"><em>Reid over Vince</em><u></u></div>
-    </div></div><div class="cap"><div class="no">11</div><h3>Punch card</h3>
-      <div class="for">Pick&rsquo;ems</div>
-      <p>Clipped corner, punched column, one box filled per pick. A ballot you
-         hand in, not a table.</p></div></div>
-
-    <div class="tile"><div class="art m-wire"><div class="p">
-      <div class="l"><b>&#9656;</b> BRYCE TAKES SOLE POSSESSION OF FIRST</div>
-      <div class="l"><b>&#9656;</b> REID COMEBACK FALLS 1.2 SHORT</div>
-      <div class="l"><b>&#9656;</b> DEADLINE PASSES, NO OFFERS MADE</div>
-      <div class="l"><b>&#9656;</b> GRANT BENCHES THE WRONG QB AGAIN</div>
-      <div class="l"><b>&#9656;</b> 212.44 SURVIVES A FOURTH SEASON</div>
-    </div></div><div class="cap"><div class="no">12</div><h3>Teletype</h3>
-      <div class="for">The Rumor Mill &middot; Records Watch</div>
-      <p>Continuous fanfold with sprocket holes. Says &ldquo;this is coming in
-         live&rdquo; without a single word of copy.</p></div></div>
-
-  </div>
-
-  <div class="band">Five ways to split a sheet <u></u> stop defaulting to halves</div>
-
-  <div class="splits">
-
-    <div class="split"><div class="d">
-      <div class="p" style="flex:1">Chapter</div>
-      <div class="p g" style="flex:1">Chapter</div>
-    </div><h4>Halves</h4>
-      <p>What the deck does now. Fine once or twice, not eleven times.</p></div>
-
-    <div class="split"><div class="d">
-      <div class="p" style="flex:2.1">Chapter</div>
-      <div class="p g" style="flex:1">Chapter</div>
-    </div><h4>Two thirds</h4>
-      <p>One chapter gets the figure, the other gets a strap. Use when one has
-         more to show.</p></div>
-
-    <div class="split"><div class="d">
-      <div class="p" style="flex:1">One chapter</div>
-    </div><h4>Full bleed</h4>
-      <p>One chapter, whole sheet. The deck has fourteen slides and about
-         twenty chapters, so some already share.</p></div>
-
-    <div class="split"><div class="d" style="display:block">
-      <div class="p" style="position:absolute;left:0;top:6px;width:74%;height:62%;
-                            transform:rotate(-2deg)">Chapter</div>
-      <div class="p g" style="position:absolute;right:0;bottom:6px;width:74%;height:62%;
-                              transform:rotate(1.5deg)">Chapter</div>
-    </div><h4>Overlapped</h4>
-      <p>Two artifacts dropped on a surface, tilted and crossing. Only works
-         with real paper objects.</p></div>
-
-    <div class="split"><div class="d" style="flex-direction:row">
-      <div class="p" style="flex:1">Chapter</div>
-      <div class="p g" style="flex:0 0 30%;writing-mode:vertical-rl">Rail</div>
-    </div><h4>Rail</h4>
-      <p>Main artifact plus a narrow column beside it. Good for a chapter whose
-         figure is a list.</p></div>
-
-  </div>
-
+  <div class="grid" id="grid"></div>
 </div>
+
+<script>
+'use strict';
+
+/* Only what the two pages already hold. Standings: rank, manager,
+   record, points, titles. Seasons: year, champion, record, points. */
+const ST = [[1,'Bryce','78&ndash;40','14,982.4',2],
+            [2,'John', '74&ndash;44','15,204.1',1],
+            [3,'Matt', '71&ndash;47','14,556.8',1],
+            [4,'Drew', '66&ndash;52','14,201.3',1],
+            [5,'Nate', '62&ndash;56','13,884.9',0],
+            [6,'Tyler','58&ndash;60','13,540.2',0]];
+
+const SE = [['19','Matt', '9&ndash;5',  1802.9, 0],
+            ['20','Drew', '10&ndash;4', 1744.2, 0],
+            ['21','Bryce','11&ndash;3', 1851.2, 1],
+            ['22','John', '12&ndash;2', 1884.6, 0],
+            ['23','Nate', '9&ndash;5',  1698.4, 0],
+            ['24','Bryce','10&ndash;4', 1806.1, 1],
+            ['25','Jack', '11&ndash;3', 1770.5, 0]];
+
+const star = n => '&#9733;'.repeat(n);
+
+/* How many managers the table shows. Standings is a broad page, so
+   it shows five or six. A rivalry or a manager profile is one thing
+   seen closely and would show one. */
+const tbl = (rows) => `
+  <div class="tbl">
+    <div class="hr"><span class="rk"></span><span class="nm"></span>
+      <span class="c w1">Record</span><span class="c w2">Points</span>
+      <span class="c w3">Titles</span></div>
+    ${ST.slice(0, rows).map(([r, n, rec, pf, t]) => `
+      <div class="rw"><span class="rk">${r}</span><span class="nm">${n}</span>
+        <span class="c w1">${rec}</span><span class="c w2">${pf}</span>
+        <span class="c w3">${star(t)}</span></div>`).join('')}
+  </div>`;
+
+const yrs = (max) => {
+  const LO = 1600, HI = 1900;
+  return `<div class="yrs">${SE.map(([y, w, r, pf, rep]) => `
+    <div class="y${rep ? ' rep' : ''}">
+      <div class="who">${w}</div><div class="rec">${r}</div>
+      <div class="bar" style="height:${Math.round(((pf - LO) / (HI - LO)) * max)}px"></div>
+      <div class="yr">&rsquo;${y}</div>
+    </div>`).join('')}</div>`;
+};
+
+const K1 = 'Chapter one', K2 = 'Chapter two';
+const H1 = 'The <em>Standings.</em>', H2 = 'The <em>Seasons.</em>';
+const D1 = 'Every win, loss and point ever scored.';
+const D2 = 'A front page for every year, and what it took to win it.';
+
+const CONCEPTS = [
+
+['A', 'Broadsheet',
+ 'No objects at all. One sheet of newsprint with the two regions divided by a \
+rule, which is what the site&rsquo;s own front page already is. The page colours \
+survive as the stock and the accent.', `
+  <div class="s cA"><div class="pg">
+    <div class="mast"><span>The Almanac</span><span>Chapters one and two</span></div>
+    <h2>${H1}</h2><div class="dek">${D1}</div>${tbl(6)}
+    <div class="cut"></div>
+    <div class="low"><h2>${H2}</h2><div class="dek">${D2}</div>${yrs(186)}</div>
+  </div></div>`],
+
+['B', 'Plates',
+ 'Two flat fields of the pages&rsquo; own colours on a neutral ground. No \
+binding, no frame, no border &mdash; a hairline inset is the only edge. Lets the \
+real palette do all of the work.', `
+  <div class="s cB"><div class="pg">
+    <div class="pl one"><div class="kick">${K1}</div>
+      <div class="hd"><h2>${H1}</h2><div class="dek">${D1}</div></div>${tbl(5)}</div>
+    <div class="pl two"><div class="kick">${K2}</div>
+      <div class="hd"><h2>${H2}</h2><div class="dek">${D2}</div></div>${yrs(176)}</div>
+  </div></div>`],
+
+['C', 'Laid paper',
+ 'Both chapters printed on the same stock and dropped on a dark surface at an \
+angle, overlapping. The page colour is the header band and the accent, not the \
+whole field.', `
+  <div class="s cC">
+    <div class="sh one">
+      <div class="band"><span>${K1}</span><span>All-time</span></div>
+      <div class="in"><h2>${H1}</h2><div class="dek">${D1}</div>${tbl(5)}</div></div>
+    <div class="sh two">
+      <div class="band"><span>${K2}</span><span>Year by year</span></div>
+      <div class="in"><h2>${H2}</h2><div class="dek">${D2}</div>${yrs(148)}</div></div>
+  </div>`],
+
+['D', 'Split field',
+ 'No ground, no container, no margin between them. Two full-bleed fields meeting \
+on one line. The loudest of the six, and the one that survives being seen at \
+thumbnail size.', `
+  <div class="s cD">
+    <div class="half one"><div class="kick">${K1}</div><h2>${H1}</h2>${tbl(5)}</div>
+    <div class="half two"><div class="kick">${K2}</div><h2>${H2}</h2>${yrs(168)}</div>
+  </div>`],
+
+['E', 'Panel and rail',
+ 'The site&rsquo;s own chapter furniture: a panel with a narrow spine rail down \
+the edge carrying the chapter, which is how the real league pages already mark \
+one.', `
+  <div class="s cE"><div class="pg">
+    <div class="pn one"><div class="rail"><b>${K1}</b></div>
+      <div class="bd"><h2>${H1}</h2><div class="dek">${D1}</div>${tbl(5)}</div></div>
+    <div class="pn two"><div class="rail"><b>${K2}</b></div>
+      <div class="bd"><h2>${H2}</h2><div class="dek">${D2}</div>${yrs(164)}</div></div>
+  </div></div>`],
+
+['F', 'Tabbed cards',
+ 'Two filed cards, each with a tab in its page&rsquo;s colour standing proud of \
+the top edge. Scales to a deck: twenty chapters is twenty tabs, and the reader \
+learns the colour code by slide four.', `
+  <div class="s cF"><div class="pg">
+    <div class="cd one"><span class="tab">Standings</span>
+      <h2>${H1}</h2><div class="dek">${D1}</div>${tbl(5)}</div>
+    <div class="cd two"><span class="tab">Seasons</span>
+      <h2>${H2}</h2><div class="dek">${D2}</div>${yrs(158)}</div>
+  </div></div>`],
+
+];
+
+document.getElementById('grid').innerHTML = CONCEPTS.map(([no, name, note, art]) => `
+  <div class="tile">
+    <div class="frame">${art}</div>
+    <div class="cap"><span class="no">${no}</span>
+      <div><h3>${name}</h3><p>${note}</p></div></div>
+  </div>`).join('');
+</script>
 </body>
 </html>

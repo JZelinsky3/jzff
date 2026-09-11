@@ -2,54 +2,51 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>TSC &middot; the site tour carousel</title>
+<title>TSC &middot; the sign-up carousel</title>
 
 <!-- ============================================================
-     THE TOUR: fifteen slides for Instagram, 1080x1350.
+     THE PITCH: seven slides for Instagram, 1080x1350.
 
-       tour.html?slide=1    the front page
-       tour.html?slide=2    what the paper is
-       tour.html?slide=3    section plate: The Almanac
-       tour.html?slide=4    .. 7   the almanac, two chapters a page
-       tour.html?slide=8    section plate: The Live Season
-       tour.html?slide=9    .. 12  the live season
-       tour.html?slide=13   The Games and The Clubhouse
-       tour.html?slide=14   contents
-       tour.html?slide=15   the closer
+       pitch.html?slide=1   the closed book
+       pitch.html?slide=2   six questions, answers redacted
+       pitch.html?slide=3   a whole front page about one week
+       pitch.html?slide=4   a manager's file
+       pitch.html?slide=5   three exhibits
+       pitch.html?slide=6   Sunday, live
+       pitch.html?slide=7   the offer
 
-     ── WHAT THIS IS BUILT OUT OF ────────────────────────────────
-     Not cards. The site is a newspaper and its front page is laid
-     out like one, so the deck is too: regions divided by COLUMN
-     RULES and hairlines, not objects floating in boxes. The
-     vocabulary is lifted straight out of the real stylesheets and
-     each piece is named after its source:
+     ── WHY THIS EXISTS ALONGSIDE THE TOUR ───────────────────────
+     tour.html is an index: fifteen sheets of "here is another page
+     we have". It is the right post for somebody already curious and
+     the wrong one for somebody scrolling past, because nobody
+     subscribes to a table of contents.
 
-       .agate      new.module.css .agateTable  mono figures, serif
-                   names, a hairline under every row, no container
-       .stat       main.css .stat              1px line, 3px gold
-                   spine down the left, mono label / gold serif value
-       .clipping   new.module.css .ledger      cream paper, tilted,
-                   hard offset shadow, double-rule head, ink stamp
-                   hanging off the corner
-       .foil       new.module.css .mastFlourish  the gilded rule
+     This deck sells instead. Three rules separate it from the tour:
 
-     ── THE HORIZONTAL CUT ───────────────────────────────────────
-     Two chapters share a page by being cut ACROSS, not down the
-     middle. Top half runs its header on the left and its figures on
-     the right; bottom half mirrors it. The foil rule is the cut.
-     Vertical splits are used only INSIDE a half, where two things
-     genuinely sit side by side.
+       1. ONE FINISHED OBJECT A SHEET. Never a grid of features.
+          Every slide is a whole artefact at the size it would
+          print at: a redacted questionnaire, a front page, a
+          personnel file, a sheet of exhibits, a live board. The
+          tour shows what the site HAS; this shows what it HANDS
+          you.
+       2. SEVEN DIFFERENT KINDS OF OBJECT. Not one template with
+          the copy swapped. The stock, the ink and the layout
+          change every sheet, because a deck where slide four
+          looks like slide three is a deck people stop swiping.
+       3. EVERY SHEET ASKS. `.strap` runs across the foot of all
+          five interior slides: one plain sentence naming what the
+          reader does not have, with a short mono note pushed
+          right so it never centres and never reads as an ad.
 
-     ── NO CORNER MARKS ──────────────────────────────────────────
-     Printer's crop marks were on an earlier cut of this and on the
-     offseason deck before it. They were cut from both. The edge
-     furniture is a running head and a folio instead, which is what
-     an almanac page actually carries.
+     ── WHAT IT IS BUILT OUT OF ──────────────────────────────────
+     Everything above the PITCH banner in the stylesheet is copied
+     verbatim from tour.html, so the two posts are visibly the same
+     publication. Only the components under that banner are new.
 
      ── NAMES ────────────────────────────────────────────────────
-     Every figure is invented and the cast in CAST is the same
-     fictional twelve the offseason deck used. No real league,
-     manager or team name goes on a public post.
+     Every figure is invented and CAST is the same fictional twelve
+     the tour and the offseason deck use. No real league, manager
+     or team name goes on a public post.
      ============================================================ -->
 
 <style>
@@ -213,7 +210,7 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
 /* Header cells must NOT carry .nm: `.agate .nm` sets serif 27px and
    wins over the row's inherited mono, which turned a column label
    into a headline sitting on top of its neighbour. */
-.agate .hd-row .lbl { flex:1; }
+.agate .hd-row .lbl { flex:1; white-space:nowrap; }
 .agate .r { flex:1; display:flex; align-items:center; gap:30px;
             border-bottom:1px solid var(--line-2); }
 .agate .r:last-child { border-bottom:0; }
@@ -1067,6 +1064,217 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
            --line:rgba(28,24,18,.22); --line-2:rgba(28,24,18,.11);
            --gold:#8a6a24; --deep:#8a6a24; --panel:#faf4e6;
            margin:0 -88px; padding:22px 88px; }
+
+/* ══════════════════════════════════════════════════════════════
+   THE PITCH: components the tour does not have.
+   Everything above this line is the tour's own chrome, copied so
+   the two decks read as one publication.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── a sell line across the foot of every interior slide ──────
+   The tour never asks for anything; this deck asks on every sheet.
+   It is a strap rather than a button: one plain sentence in the
+   page's own serif, with the mono note pushed to the right so the
+   line never centres and never reads as an ad. */
+/* margin-top:auto rather than a fixed gap: a sheet whose figures do
+   not happen to fill the page (Sunday is the short one) otherwise
+   left the ask stranded halfway up with a quarter page of nothing
+   under it. The strap is furniture at the FOOT, so it is pinned
+   there, and the block above it is given the 24px back. */
+.strap { flex:none; margin-top:auto; padding-top:19px;
+         border-top:1px solid var(--line); display:flex;
+         align-items:flex-end; gap:26px; }
+.page:has(> .strap) > *:nth-last-child(2) { margin-bottom:24px; }
+.strap .b { flex:1; font-family:var(--serif); font-size:29px; line-height:1.16;
+            color:var(--fg); letter-spacing:-.005em; }
+.strap .b em { font-style:italic; color:var(--gold); }
+.strap .n { flex:none; text-align:right; font-family:var(--mono); font-size:12px;
+            letter-spacing:.18em; text-transform:uppercase; color:var(--mute);
+            line-height:1.7; }
+
+/* A header that runs ACROSS the sheet instead of down one side, for
+   the slides that are a single document rather than two chapters. */
+.head-x { flex:none; display:flex; align-items:flex-end; gap:30px; }
+.head-x .l { flex:1; }
+.head-x h2 { font-family:var(--serif); font-weight:400; font-size:var(--h2, 62px);
+             line-height:1.0; color:var(--fg); letter-spacing:-.015em; }
+.head-x h2 em { font-style:italic; color:var(--gold); }
+.head-x .dek { margin-top:14px; font-size:20px; line-height:1.42; color:var(--soft); }
+.head-x .r { flex:0 0 var(--rw, 210px); text-align:right; font-family:var(--mono);
+             font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+             color:var(--mute); line-height:1.8; }
+
+/* ══ THE QUESTIONNAIRE (slide 2) ══════════════════════════════
+   Six questions with the answers struck out. The redaction is the
+   whole slide: at thumbnail size a column of black bars reads as
+   "something is being withheld" before a single word is read, which
+   is the one thing a feature list can never do.
+
+   The bars are drawn with a fraction of rotation and a hard offset
+   under them so they read as marker laid on paper rather than as
+   CSS rectangles. Widths are set per row from the answer that is
+   actually under them, so the column is ragged. */
+.qs { flex:1; min-height:0; display:flex; flex-direction:column; }
+.qs .q { flex:1; display:flex; align-items:center; gap:26px;
+         border-bottom:1px solid var(--line-2); }
+.qs .q:last-child { border-bottom:0; }
+.qs .q .no { flex:none; width:44px; font-family:var(--mono); font-size:14px;
+             letter-spacing:.1em; color:var(--faint); }
+.qs .q .t { flex:1; font-family:var(--serif); font-size:31px; line-height:1.14;
+            color:var(--fg); }
+.qs .q .a { flex:none; width:270px; display:flex; flex-direction:column;
+            align-items:flex-end; gap:8px; }
+
+.redact { display:block; height:30px; border-radius:1px; background:#17130d;
+          transform:rotate(-.4deg); box-shadow:2px 3px 0 rgba(23,19,13,.20); }
+.redact.sm { height:14px; opacity:.82; transform:rotate(.5deg); }
+
+/* The last row is left open, so the sheet pays something out instead
+   of only withholding. */
+.qs .q.open { border-bottom:0; }
+.qs .q.open .t { color:var(--gold); }
+.qs .q.open .v { font-family:var(--serif); font-size:42px; line-height:1;
+                 color:var(--gold); letter-spacing:-.02em; }
+.qs .q.open .k { margin-top:9px; font-family:var(--mono); font-size:12px;
+                 letter-spacing:.14em; text-transform:uppercase; color:var(--mute); }
+/* the rule under the open row, drawn in the accent so the eye lands */
+.qs .q.open { border-top:2px solid var(--gold); }
+
+/* ══ THE FRONT PAGE (slide 3) ═════════════════════════════════
+   A whole broadsheet page about one week of an invented league.
+   Not a feature shown off: an artefact, which is what somebody is
+   actually buying. */
+.fp { flex:1; min-height:0; display:flex; flex-direction:column; }
+.fp .lead { flex:none; padding:18px 0 19px; border-bottom:1px solid var(--line); }
+.fp .lead h1 { font-family:var(--serif); font-weight:400; font-size:57px;
+               line-height:1.01; letter-spacing:-.018em; color:var(--fg); }
+.fp .lead h1 em { font-style:italic; color:var(--gold); }
+.fp .lead .sub { margin-top:15px; display:flex; align-items:baseline; gap:24px; }
+.fp .lead .sub p { flex:1; font-family:var(--serif); font-style:italic;
+                   font-size:21px; line-height:1.36; color:var(--soft); }
+.fp .lead .sub .by { flex:none; width:168px; text-align:right;
+                     font-family:var(--mono); font-size:11px; letter-spacing:.16em;
+                     text-transform:uppercase; color:var(--faint); line-height:1.7; }
+
+.fp .mid { flex:1; min-height:0; display:flex; padding:20px 0; }
+.fp .mid .m { flex:1.28; min-width:0; display:flex; flex-direction:column;
+              padding-right:28px; }
+.fp .mid .s { flex:1; min-width:0; display:flex; flex-direction:column;
+              padding-left:28px; border-left:1px solid var(--line); }
+
+/* ══ THE FILE (slide 4) ═══════════════════════════════════════ */
+.dossier { flex:none; display:flex; align-items:flex-end; gap:22px; }
+.dossier .nm { font-family:var(--serif); font-size:94px; line-height:.88;
+               letter-spacing:-.03em; color:var(--fg); }
+.dossier .yr { padding-bottom:12px; font-family:var(--mono); font-size:13px;
+               letter-spacing:.2em; text-transform:uppercase; color:var(--mute); }
+.dossier .st { margin-left:auto; padding-bottom:14px; display:flex; gap:7px; }
+.dossier .st i { font-style:normal; font-size:27px; line-height:1; color:var(--gold); }
+
+.band { flex:none; display:flex; border-top:1px solid var(--line);
+        border-bottom:1px solid var(--line); }
+.band .b { flex:1; min-width:0; padding:15px 18px; border-left:1px solid var(--line-2); }
+.band .b:first-child { border-left:0; padding-left:0; }
+.band .b:last-child { padding-right:0; }
+.band .b .k { font-family:var(--mono); font-size:10px; letter-spacing:.2em;
+              text-transform:uppercase; color:var(--mute); white-space:nowrap; }
+.band .b .v { margin-top:9px; font-family:var(--serif); font-size:34px; line-height:1;
+              color:var(--fg); letter-spacing:-.02em; }
+.band .b.on .v { color:var(--gold); }
+
+/* Points above or below the league average, by season. A signed bar
+   column rather than a line: seven points is not a trend, it is
+   seven verdicts, and a bar that drops under the rule says "that
+   year was bad" without a label. */
+.pm { flex:none; display:flex; align-items:stretch; }
+.pm .c { flex:1; min-width:0; display:flex; flex-direction:column; padding:0 7px;
+         border-left:1px solid var(--line-2); }
+.pm .c:first-child { border-left:0; padding-left:0; }
+.pm .up { height:152px; display:flex; align-items:flex-end; }
+.pm .dn { height:60px; display:flex; align-items:flex-start; }
+.pm .up i, .pm .dn i { display:block; width:100%; font-style:normal;
+                       background:var(--gold); }
+.pm .dn i { background:var(--line); }
+.pm .z { height:1px; background:var(--line); }
+.pm .lb { margin-top:10px; text-align:center; font-family:var(--mono);
+          font-size:12px; letter-spacing:.06em; color:var(--mute); }
+
+.grades { flex:none; display:flex; gap:7px; }
+.grades i { flex:1; font-style:normal; text-align:center; padding:10px 0;
+            border:1px solid var(--line); font-family:var(--mono); font-size:15px;
+            color:var(--soft); }
+.grades i.hi { border-color:var(--gold); color:var(--gold); }
+.grades i.lo { border-color:var(--rust); color:var(--rust); border-width:2px; }
+
+/* the tour's draft board used as a block rather than as a whole
+   column, so its rows keep their own height instead of sharing out
+   a height they have not been given */
+.picks.rows { flex:none; }
+.picks.rows .p { flex:none; padding:10px 0; }
+
+/* the right-hand column of the file: label left, figure right */
+.ruled { flex:1; min-height:0; display:flex; flex-direction:column; }
+.ruled .r { flex:1; display:flex; align-items:center; gap:16px;
+            border-bottom:1px solid var(--line-2); }
+.ruled .r:last-child { border-bottom:0; }
+/* the same list used as a block inside a column rather than as the
+   whole column, so its rows keep their own height */
+.ruled.tight { flex:none; }
+.ruled.tight .r { flex:none; padding:15px 0; }
+.ruled .r .k { flex:1; font-size:16px; line-height:1.3; color:var(--soft); }
+.ruled .r .k i { display:block; font-style:normal; font-family:var(--mono);
+                 font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+                 color:var(--faint); margin-top:4px; }
+.ruled .r .v { flex:none; text-align:right; font-family:var(--serif); font-size:26px;
+               line-height:1; color:var(--fg); }
+.ruled .r .v.on { color:var(--gold); }
+
+/* ══ THE RECEIPTS (slide 5) ═══════════════════════════════════
+   Three exhibits: what somebody said, and the document that settles
+   it. The quote column is set in serif italic so it reads as speech
+   and the evidence column in the page's own figures, which is the
+   whole joke. */
+.exh { flex:1; min-height:0; display:flex; flex-direction:column; }
+.exh .e { flex:1; min-height:0; display:flex; gap:30px; padding:20px 0;
+          border-top:1px solid var(--line); }
+.exh .e:first-child { border-top:0; padding-top:4px; }
+.exh .e .q { flex:0 0 306px; display:flex; flex-direction:column;
+             justify-content:center; }
+.exh .e .q .no { font-family:var(--mono); font-size:12px; letter-spacing:.24em;
+                 text-transform:uppercase; color:var(--deep); }
+.exh .e .q .said { margin-top:14px; font-family:var(--serif); font-style:italic;
+                   font-size:27px; line-height:1.2; color:var(--fg); }
+.exh .e .q .who { margin-top:12px; font-family:var(--mono); font-size:11px;
+                  letter-spacing:.14em; text-transform:uppercase; color:var(--mute); }
+.exh .e .ev { flex:1; min-width:0; display:flex; flex-direction:column;
+              justify-content:center; padding-left:30px;
+              border-left:1px solid var(--line); }
+.exh .e .ev .cap { margin-top:14px; padding-top:12px;
+                   border-top:1px solid var(--line-2); display:flex;
+                   font-family:var(--mono); font-size:12px; letter-spacing:.08em;
+                   color:var(--mute); }
+.exh .e .ev .cap b { margin-left:auto; font-weight:400; color:var(--gold); }
+
+/* ══ SUNDAY (slide 6) ═════════════════════════════════════════ */
+.scores { flex:none; display:flex; flex-direction:column; }
+.scores .g { display:flex; align-items:center; gap:18px; padding:14px 0;
+             border-bottom:1px solid var(--line-2); }
+.scores .g:last-child { border-bottom:0; }
+.scores .g .n { flex:1; min-width:0; font-family:var(--serif); font-size:27px;
+                line-height:1; color:var(--fg); white-space:nowrap; }
+.scores .g .n.r { text-align:right; }
+.scores .g .v { flex:none; width:78px; text-align:center; font-family:var(--mono);
+                font-size:19px; color:var(--soft); }
+.scores .g .v.on { color:var(--gold); }
+.scores .g .p { flex:0 0 196px; }
+.scores .g .p .bar { display:flex; height:7px; }
+.scores .g .p .bar u.x { background:var(--gold); }
+.scores .g .p .bar u.y { background:var(--line); }
+.scores .g .p .lb { margin-top:7px; display:flex; font-family:var(--mono);
+                    font-size:11px; letter-spacing:.1em; color:var(--mute); }
+.scores .g .p .lb span:last-child { margin-left:auto; }
+.scores .g .live { flex:none; font-family:var(--mono); font-size:10px;
+                   letter-spacing:.2em; text-transform:uppercase; color:var(--rust); }
 </style>
 </head>
 <body>
@@ -1082,25 +1290,20 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
 <script>
 'use strict';
 
-/* Invented cast, shared with the offseason deck so the two read as
-   the same fictional league. Nothing here belongs to anybody. */
+/* The same invented twelve the tour and the offseason deck use, so
+   every post reads as one imaginary league. No real league, manager
+   or team name goes on a public post. */
 const CAST = ['John', 'Matt', 'Bryce', 'Cole', 'Drew', 'Nate',
               'Owen', 'Jack', 'Reid', 'Tyler', 'Vince', 'Grant'];
 
 const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-/* A star per title and nothing at all for none. The old version drew
-   an empty circle for every title a manager had NOT won, which turned
-   a column of achievements into a column of scorekeeping against a
-   target nobody set. */
 const pips = n => `<span class="pips">${'<i>&#9733;</i>'.repeat(n)}</span>`;
 
 /* ── themes ───────────────────────────────────────────────────
-   Each is the ground its pages actually sit on. The almanac is
-   main.css; the live season is the moss canvas the live dashboard
-   declares in public/demo/live/index.html. */
+   Copied from the tour. The almanac is main.css, the live season is
+   the moss canvas the live dashboard declares, and slate is the
+   neutral dark the games section prints on. */
 const THEMES = {
-  /* `wall` is the section's ink a couple of stops under its page, so
-     a volume set against it still stands off the ground. */
   almanac: {
     bg:'#0e1620', bg2:'#16202c', panel:'#1a2532', line:'#2a3645', line2:'#1e2937',
     fg:'#f4ebd8', soft:'#c9c0ad', mute:'#837b6a', faint:'#4e4838',
@@ -1121,57 +1324,16 @@ const THEMES = {
   },
 };
 
-/* ── the real page colours ────────────────────────────────────
-   Every chapter page on the site declares its own ground, and they
-   are nothing like each other: the Record Book is green felt, the
-   Draft Annual is black cloth, the Seasons are mahogany, the
-   Rivalries are black and red, and Standings, the Manager File and
-   the Power Rankings are printed on cream. Running navy over all of
-   the almanac and moss over all of the live season — which is what
-   this deck did — threw away the one thing a rebuild in HTML can
-   get exactly right.
+/* Two of the site's real paper stocks, read off the pages that use
+   them: the questionnaire prints on the Manager File's cream with
+   its oxblood stamp, the file itself on the same stock.
 
-   `cloth` is the page's own background, `foil` the accent it stamps
-   with, and `src` the file the pair came out of. Anything added here
-   must be read off the page, not picked. */
-const PAGES = {
-  /* the almanac */
-  standings: { cloth:'#e9ddc1', foil:'#6b5320', pale:1, src:'demo/standings.html body{--cream}' },
-  seasons:   { cloth:'#3a1d16', foil:'#e8c889',          src:'demo/seasons/index.html --mahog' },
-  records:   { cloth:'#0b1a0f', foil:'#e8c889',          src:'demo/records.html --rb-bg' },
-  draft:     { cloth:'#0c0c0b', foil:'#e8c889',          src:'demo/draft/index.html --an-bg' },
-  managers:  { cloth:'#16202c', foil:'#6b8aa8',          src:'main.css --ink-soft / --steel' },
-  file:      { cloth:'#efe5cd', foil:'#8c2b1e', pale:1,  src:'demo/managers/manager.html --paper' },
-  rivalries: { cloth:'#0a0a0a', foil:'#dc2626',          src:'demo/rivalries --rv-bg / --rv-red' },
-  chart:     { cloth:'#0e1620', foil:'#e8c889',          src:'demo/managers/visualizer.html' },
-  /* The chrome of that page is navy, but the lineup itself prints on
-     its paper stock, and a navy plate next to the Chart Room's navy
-     would have been two of the same field. */
-  alltime:   { cloth:'#efe5cd', foil:'#7a5c14', pale:1,  src:'demo/managers/all-time.html --paper' },
-  mock:      { cloth:'#0d0d0d', foil:'#e8c889',          src:'demo/draft-layouts --dg-bg' },
-  /* the live season */
-  live:      { cloth:'#15201b', foil:'#d8b25a',          src:'demo/live/index.html --ls-bg' },
-  matchup:   { cloth:'#0c1812', foil:'#c89d5c',          src:'live/matchup-preview --mp-bg / --mp-brass' },
-  pickems:   { cloth:'#160b1d', foil:'#f0c463',          src:'pickems.css --pk-bg / --pk-champagne' },
-  power:     { cloth:'#f0e5c8', foil:'#7a5a18', pale:1,  src:'powerrank.css' },
-  coach:     { cloth:'#28342f', foil:'#e8c850',          src:'live/best-coach --bc-slate / --bc-yellow' },
-  watch:     { cloth:'#0f0a0c', foil:'#7fa8bd',          src:'live/records-watch --rw-bg / --rw-steel' },
-  milestones:{ cloth:'#110a18', foil:'#b58cff',          src:'live/milestones --ml-bg / --ml-violet' },
-  trade:     { cloth:'#1a1612', foil:'#c8a464',          src:'assets/css/trades.css' },
-  /* and the rest */
-  games:     { cloth:'#0b1119', foil:'#e8c889',          src:'games.module.css --gp-ink' },
-  clubhouse: { cloth:'#0d0d0d', foil:'#e8c889',          src:'hub.css --hb-bg' },
-};
-
-/* one volume on a shelf */
-const spine = (key, no, title, foot, h) => {
-  const p = PAGES[key];
-  return `<div class="bk${p.pale ? ' pale' : ''}" style="height:${h}%;
-            --cloth:${p.cloth};--foil:${p.foil}">
-    <span class="no">${no}</span><span class="band"></span>
-    <span class="ti"><b>${title}</b></span>
-    <span class="band"></span><span class="ft">${foot}</span>
-  </div>`;
+   A stock is applied to the BOARD, not to the document, so it beats
+   whatever theme is set underneath for everything inside, including
+   the running head and the foot. */
+const STOCKS = {
+  file: { bg:'#efe5cd', accent:'#8c2b1e', src:'demo/managers/manager.html --paper' },
+  news: { bg:'#e9e1cf', accent:'#7a5a18', src:'powerrank.css' },
 };
 
 function applyTheme(name) {
@@ -1183,161 +1345,54 @@ function applyTheme(name) {
   r.setProperty('--fg', t.fg);      r.setProperty('--soft', t.soft);
   r.setProperty('--mute', t.mute);  r.setProperty('--faint', t.faint);
   r.setProperty('--gold', t.gold);  r.setProperty('--deep', t.deep);
-  r.setProperty('--rust', t.rust); r.setProperty('--wall', t.wall);
+  r.setProperty('--rust', t.rust);  r.setProperty('--wall', t.wall);
   r.setProperty('--wash', t.wash);  r.setProperty('--vig', t.vig);
   r.setProperty('--grain', t.grain);
 }
 
+function applyStock(name) {
+  const st = STOCKS[name]; if (!st) return;
+  const b = document.getElementById('board');
+  b.classList.add('is-light');
+  const s = b.style;
+  s.background = st.bg;
+  s.setProperty('--bg', st.bg);
+  s.setProperty('--bg-2', '#e4d8ba');
+  s.setProperty('--panel', '#f7f0de');
+  s.setProperty('--fg', '#1c1812');
+  s.setProperty('--soft', '#4a4134');
+  s.setProperty('--mute', '#7a6c56');
+  s.setProperty('--faint', '#a4957a');
+  s.setProperty('--line', 'rgba(28,24,18,.27)');
+  s.setProperty('--line-2', 'rgba(28,24,18,.13)');
+  s.setProperty('--gold', st.accent);
+  s.setProperty('--deep', st.accent);
+  s.setProperty('--rust', st.accent);
+  /* The wash is two saturated radials. At the dark deck's .17 it
+     puts a visible stain on cream, so it comes almost all the way
+     down and reads as the warmth of the stock instead. */
+  s.setProperty('--wash', '.07');
+}
+
 /* ══════════════════════════════════════════════════════════════
-   THE FIGURES
+   FIGURES
 
-   Each returns the contents of one .art column. Deliberately
-   partial: six rows of twelve, one round of fifteen. A slide is
-   read at thumbnail size, and a fragment looks like evidence where
-   a complete panel looks like a diagram.
+   Fewer and bigger than the tour's. This deck sells by showing one
+   finished artefact per sheet, so nothing here is a thumbnail of a
+   feature: each figure is the size it would print at.
    ══════════════════════════════════════════════════════════════ */
-const FIG = {
 
-/* ── the almanac ─────────────────────────────────────────────── */
-
-standings: () => `
-  <div class="agate">
-    <div class="hd-row"><span class="rk"></span><span class="nm"></span>
-      <span class="c w1">Record</span>
-      <span class="c w2">Points</span><span class="c w3">Titles</span></div>
-    <div class="r lead"><span class="rk">1</span><span class="nm">Bryce</span>
-      <span class="c w1">78&ndash;40</span><span class="c w2">14,982.4</span>${pips(2)}</div>
-    <div class="r"><span class="rk">2</span><span class="nm">John</span>
-      <span class="c w1">74&ndash;44</span><span class="c w2 on">15,204.1</span>${pips(1)}</div>
-    <div class="r"><span class="rk">3</span><span class="nm">Matt</span>
-      <span class="c w1">71&ndash;47</span><span class="c w2">14,556.8</span>${pips(1)}</div>
-    <div class="r"><span class="rk">4</span><span class="nm">Drew</span>
-      <span class="c w1">66&ndash;52</span><span class="c w2">14,201.3</span>${pips(1)}</div>
-    <div class="r"><span class="rk">5</span><span class="nm">Nate</span>
-      <span class="c w1">62&ndash;56</span><span class="c w2">13,884.9</span>${pips(1)}</div>
-    <div class="r"><span class="rk">6</span><span class="nm">Tyler</span>
-      <span class="c w1">58&ndash;60</span><span class="c w2">13,540.2</span>${pips(0)}</div>
-  </div>`,
-
-seasons: () => {
-  /* year, champion, record, points for, repeat winner */
-  const Y = [['19','Matt', '9&ndash;5',  1802.9, 0],
-             ['20','Drew', '10&ndash;4', 1744.2, 0],
-             ['21','Bryce','11&ndash;3', 1851.2, 1],
-             ['22','John', '12&ndash;2', 1884.6, 0],
-             ['23','Nate', '9&ndash;5',  1698.4, 0],
-             ['24','Bryce','10&ndash;4', 1806.1, 1],
-             ['25','Jack', '11&ndash;3', 1770.5, 0]];
-  const LO = 1600, HI = 1900, MAX = 248;
-  /* A head over the rail. The bars are bottom-aligned, so without one
-     the top third of the volume was bare cloth. */
-  return `<div class="kick" style="margin-bottom:16px">Champions&nbsp;
-    <u></u>&nbsp;Points scored</div>
-    <div class="cols">${Y.map(([y, w, r, pf, rep]) => {
-    const h = Math.round(((pf - LO) / (HI - LO)) * MAX);
-    return `<div class="c${rep ? ' rep' : ''}">
-      <div class="who">${esc(w)}</div>
-      <div class="rec">${r}</div>
-      <div class="pf">${pf.toLocaleString('en-US', {minimumFractionDigits:1})}</div>
-      <div class="bar" style="height:${h}px"></div>
-      <div class="yr">&rsquo;${y}</div>
-    </div>`;
-  }).join('')}</div>`;
-},
-
-records: () => `
-  <div class="stats col">
-    <div class="stats">
-      <div class="stat"><div class="k">Highest week ever</div>
-        <div class="v">212.44</div>
-        <div class="d"><b>Drew</b>, 2022</div></div>
-      <div class="stat"><div class="k">Most points, one season</div>
-        <div class="v">1,884.6</div>
-        <div class="d"><b>John</b>, 2022</div></div>
-      <div class="stat"><div class="k">Longest win streak</div>
-        <div class="v">11</div>
-        <div class="d"><b>Bryce</b>, into 2022</div></div>
-    </div>
-    <div class="stats">
-      <div class="stat cool"><div class="k">Worst beat</div>
-        <div class="v">178.90</div>
-        <div class="d">Most ever scored in a loss</div></div>
-      <div class="stat cool"><div class="k">Biggest blowout</div>
-        <div class="v">92.4</div>
-        <div class="d"><b>Nate</b> over <b>Vince</b>, 2021</div></div>
-      <div class="stat cool"><div class="k">Boards in the book</div>
-        <div class="v">41</div>
-        <div class="d">Every one of them podiumed.</div></div>
-    </div>
-  </div>`,
-
-draft: () => `
-  <div class="picks">
-    <div class="p"><span class="no">1.01</span><span class="t">Kept four more years</span>
-      <span class="by">Bryce</span><span class="g hi">A</span></div>
-    <div class="p"><span class="no">1.02</span><span class="t">Traded that October</span>
-      <span class="by">John</span><span class="g hi">A+</span></div>
-    <div class="p"><span class="no">1.03</span><span class="t">Missed nine weeks</span>
-      <span class="by">Matt</span><span class="g lo">D</span></div>
-    <div class="p"><span class="no">1.04</span><span class="t">Started every week</span>
-      <span class="by">Drew</span><span class="g">B</span></div>
-    <div class="p"><span class="no">1.05</span><span class="t">Cut by week six</span>
-      <span class="by">Vince</span><span class="g lo">F</span></div>
-    <div class="p"><span class="no">1.06</span><span class="t">Led the position</span>
-      <span class="by">Nate</span><span class="g hi">A</span></div>
-  </div>`,
-
-/* The clipping gets the whole art column. Split with the index
-   beside it, each row had about 140px for its label and the long
-   ones broke over three lines, which on cream stock reads as a
-   printing fault rather than a layout. */
-managers: () => `
-  <div class="clipping" style="margin:auto 0">
-    <div class="ch"><b>Bryce</b><s>On file since 2019</s></div>
-    <div class="ln"><span class="t">Titles<i>2021 and 2024</i></span>
-      <span class="v">2</span></div>
-    <div class="ln"><span class="t">All-time<i>Seven seasons</i></span>
-      <span class="v">78&ndash;40</span></div>
-    <div class="ln"><span class="t">Playoff trips<i>Missed once</i></span>
-      <span class="v">6</span></div>
-    <div class="ln"><span class="t">Owns<i>Nine of eleven</i></span>
-      <span class="v">Vince</span></div>
-    <div class="ln"><span class="t">Cannot beat<i>Lost the last three</i></span>
-      <span class="v">John</span></div>
-    <div class="stamp">The Manager File</div>
-  </div>`,
-
-rivalries: () => `
-  <div class="h2h">
-    <div class="m"><span class="a">Bryce</span><span class="sc">12&ndash;9</span>
-      <span class="mid"><span class="bar"><u class="x" style="flex:12"></u><u class="y" style="flex:9"></u></span>
-        <span class="lb">Won the last four</span></span>
-      <span class="b">John</span></div>
-    <div class="m"><span class="a">Matt</span><span class="sc">11&ndash;11</span>
-      <span class="mid"><span class="bar"><u class="x" style="flex:11"></u><u class="y" style="flex:11"></u></span>
-        <span class="lb">Dead even, three in the playoffs</span></span>
-      <span class="b">Drew</span></div>
-    <div class="m"><span class="a">Nate</span><span class="sc">14&ndash;6</span>
-      <span class="mid"><span class="bar"><u class="x" style="flex:14"></u><u class="y" style="flex:6"></u></span>
-        <span class="lb">Biggest margin in the league</span></span>
-      <span class="b">Owen</span></div>
-    <div class="m"><span class="a">Tyler</span><span class="sc">13&ndash;8</span>
-      <span class="mid"><span class="bar"><u class="x" style="flex:13"></u><u class="y" style="flex:8"></u></span>
-        <span class="lb">Five straight, Cole leads on points</span></span>
-      <span class="b">Cole</span></div>
-  </div>`,
-
-/* Points above or below the league average, which is how the real
-   Chart Room draws a race. Plotted as cumulative totals it renders
-   as five near-parallel diagonals: true, and unreadable. */
-chart: () => {
-  const W = 640, H = 210, PAD = 8;
+/* Points above the league average. Cumulative totals plot as five
+   near-parallel diagonals, which is true and unreadable; against the
+   average the lines cross, which is what a race looks like. */
+function chart() {
+  const W = 620, H = 236, PAD = 8;
   const S = [
-    { n:'Bryce', c:'var(--gold)', w:2.6, d:[0,12,41,33,62,58,96,121,147,138,176,203,194,231,268] },
-    { n:'John',  c:'#c9c0ad', w:1.6,     d:[0,25,18,54,39,88,104,133,141,178,172,211,236,244,281] },
-    { n:'Matt',  c:'#6b8aa8', w:1.6,     d:[0,4,21,2,19,6,-12,9,-4,14,-8,11,3,-6,17] },
-    { n:'Drew',  c:'#a04830', w:1.6,     d:[0,16,-9,26,8,44,22,51,29,58,31,74,49,81,62] },
-    { n:'Vince', c:'#7d7462', w:1.6,     d:[0,-21,-48,-74,-96,-118,-141,-176,-188,-221,-238,-268,-291,-314,-338] },
+    { n:'Bryce', c:'var(--gold)', w:2.8, d:[0,12,41,33,62,58,96,121,147,138,176,203,194,231,268] },
+    { n:'John',  c:'var(--soft)', w:1.7, d:[0,25,18,54,39,88,104,133,141,178,172,211,236,244,281] },
+    { n:'Nate',  c:'#6b8aa8', w:1.7,     d:[0,4,21,2,19,6,-12,9,-4,14,-8,11,3,-6,17] },
+    { n:'Drew',  c:'var(--rust)', w:1.7, d:[0,16,-9,26,8,44,22,51,29,58,31,74,49,81,62] },
+    { n:'Vince', c:'var(--faint)', w:1.7,d:[0,-21,-48,-74,-96,-118,-141,-176,-188,-221,-238,-268,-291,-314,-338] },
   ];
   const lo = -360, hi = 300;
   const y = v => H - PAD - ((v - lo) / (hi - lo)) * (H - PAD * 2);
@@ -1351,404 +1406,83 @@ chart: () => {
         stroke-width="${s.w}" stroke-linejoin="round" stroke-linecap="round"/>`).join('')}
     </svg>
     <div class="lg">${S.map(s =>
-      `<span><i style="background:${s.c}"></i>${s.n}</span>`).join('')}
-      <span style="margin-left:auto;color:var(--faint)">Points above the league &middot; 2025</span>
-    </div>
+      `<span><i style="background:${s.c}"></i>${s.n}</span>`).join('')}</div>
   </div>`;
-},
+}
 
-/* Drawn as bars rather than a row of figures. Eight text columns
-   overflowed their 520px and the last one crossed the column rule
-   into the header; seven bars fill the half and say "best week" in
-   one look. The total lives in the pulled figure, not in an eighth
-   column. */
-alltime: () => {
-  const L = [['QB',44.9,'&rsquo;22',1], ['RB',41.2,'&rsquo;21',0],
-             ['RB',38.6,'&rsquo;24',0], ['WR',39.4,'&rsquo;23',0],
-             ['WR',36.1,'&rsquo;19',0], ['TE',31.8,'&rsquo;20',0],
-             ['FLX',34.7,'&rsquo;25',0]];
-  const LO = 24, HI = 48, MAX = 180;
-  return `<div class="cols">${L.map(([pos, v, w, top]) => `
-    <div class="c${top ? ' rep' : ''}">
-      <div class="who">${v}</div>
-      <div class="rec">${pos}</div>
-      <div class="bar" style="height:${Math.round(((v-LO)/(HI-LO))*MAX)}px"></div>
-      <div class="yr">${w}</div>
-    </div>`).join('')}</div>`;
-},
-
-/* ── the live season ─────────────────────────────────────────── */
-
-matchup: () => `
-  <div class="mu">
-    <div class="t"><span class="nm">Bryce</span><span class="v">121.4</span>
-      <span class="x">v</span><span class="v">117.9</span><span class="nm r">Reid</span></div>
-    <div class="edge">
-      <div class="bar"><u class="x" style="flex:53"></u><u class="y" style="flex:47"></u></div>
-      <div class="lb"><span>53% Bryce</span><span>47% Reid</span></div>
-    </div>
-    <div class="lines">
-      <div>All-time series<b>7&ndash;4 Bryce</b></div>
-      <div>Last meeting<b>Reid by 1.2</b></div>
-      <div>Reid&rsquo;s last win here<b>2023</b></div>
-      <div>At stake<b>The last bye</b></div>
-    </div>
-  </div>`,
-
-pickems: () => `
-  <div class="picks-b">
-    <div class="r lead"><span class="mono">O</span>
-      <span class="nm">Owen</span><span class="rec">43&ndash;23</span>
-      <span class="chips"><i class="w">W</i><i class="w">W</i><i class="l">L</i><i class="w">W</i><i class="w">W</i><i class="w">W</i></span></div>
-    <div class="r"><span class="mono">B</span>
-      <span class="nm">Bryce</span><span class="rec">41&ndash;25</span>
-      <span class="chips"><i class="w">W</i><i class="l">L</i><i class="w">W</i><i class="w">W</i><i class="l">L</i><i class="w">W</i></span></div>
-    <div class="r"><span class="mono">J</span>
-      <span class="nm">John</span><span class="rec">40&ndash;26</span>
-      <span class="chips"><i class="w">W</i><i class="w">W</i><i class="w">W</i><i class="w">W</i><i class="w">W</i><i class="w">W</i></span></div>
-    <div class="r"><span class="mono">M</span>
-      <span class="nm">Matt</span><span class="rec">38&ndash;28</span>
-      <span class="chips"><i class="l">L</i><i class="w">W</i><i class="l">L</i><i class="w">W</i><i class="w">W</i><i class="l">L</i></span></div>
-    <div class="r"><span class="mono">V</span>
-      <span class="nm">Vince</span><span class="rec">24&ndash;42</span>
-      <span class="chips"><i class="l">L</i><i class="l">L</i><i class="w">W</i><i class="l">L</i><i class="l">L</i><i class="l">L</i></span></div>
-  </div>`,
-
-power: () => `
-  <div class="agate">
-    <div class="hd-row"><span class="rk"></span><span class="nm"></span>
+function standings() {
+  const R = [[1,'Bryce','9&ndash;3','1,482.4',2,0],
+             [2,'John', '9&ndash;3','1,551.9',1,1],
+             [3,'Nate', '8&ndash;4','1,404.2',1,0],
+             [4,'Drew', '7&ndash;5','1,398.6',1,0],
+             [5,'Matt', '6&ndash;6','1,361.0',1,0],
+             [6,'Reid', '6&ndash;6','1,338.7',0,0]];
+  return `<div class="agate">
+    <div class="hd-row"><span class="rk"></span><span class="lbl">Standings</span>
       <span class="c w1">Record</span><span class="c w2">Points</span>
-      <span class="c w3">Move</span></div>
-    <div class="r lead"><span class="rk">1</span><span class="nm">Bryce</span>
-      <span class="c w1">9&ndash;2</span><span class="c w2 dim">1,412.8</span>
-      <span class="c w3 on">+1</span></div>
-    <div class="r"><span class="rk">2</span><span class="nm">John</span>
-      <span class="c w1">8&ndash;3</span><span class="c w2 dim">1,448.1</span>
-      <span class="c w3 dim">&minus;1</span></div>
-    <div class="r"><span class="rk">3</span><span class="nm">Nate</span>
-      <span class="c w1">7&ndash;4</span><span class="c w2 dim">1,377.4</span>
-      <span class="c w3 on">+2</span></div>
-    <div class="r"><span class="rk">4</span><span class="nm">Matt</span>
-      <span class="c w1">7&ndash;4</span><span class="c w2 dim">1,341.9</span>
-      <span class="c w3 dim">&middot;</span></div>
-    <div class="r"><span class="rk">5</span><span class="nm">Drew</span>
-      <span class="c w1">6&ndash;5</span><span class="c w2 dim">1,362.2</span>
-      <span class="c w3 on">+3</span></div>
-    <div class="r"><span class="rk">6</span><span class="nm">Jack</span>
-      <span class="c w1">6&ndash;5</span><span class="c w2 dim">1,298.6</span>
-      <span class="c w3 dim">&minus;2</span></div>
-  </div>`,
+      <span class="c w3">Titles</span></div>
+    ${R.map(([rk, n, rec, pf, t, on]) => `<div class="r${rk === 1 ? ' lead' : ''}">
+      <span class="rk">${rk}</span><span class="nm">${n}</span>
+      <span class="c w1">${rec}</span>
+      <span class="c w2${on ? ' on' : ''}">${pf}</span>${pips(t)}</div>`).join('')}
+  </div>`;
+}
 
-coach: () => `
-  <div class="meters">
-    <div class="m"><div class="l"><span class="k">Nate<small>96.4% optimal</small></span>
-      <span class="v">41.2 left</span></div><div class="bar"><i style="width:96%"></i></div></div>
-    <div class="m"><div class="l"><span class="k">Bryce<small>94.1% optimal</small></span>
-      <span class="v">78.9 left</span></div><div class="bar"><i style="width:94%"></i></div></div>
-    <div class="m"><div class="l"><span class="k">Matt<small>89.8% optimal</small></span>
-      <span class="v">147.0 left</span></div><div class="bar"><i class="dim" style="width:90%"></i></div></div>
-    <div class="m"><div class="l"><span class="k">Grant<small>82.7% optimal</small></span>
-      <span class="v">264.3 left</span></div><div class="bar"><i class="dim" style="width:83%"></i></div>
-      <div class="note">Two of his five losses were sitting there</div></div>
-  </div>`,
-
-watch: () => `
-  <div class="meters">
-    <div class="m"><div class="l"><span class="k">Most points, one season</span>
-      <span class="v">101%</span></div><div class="bar"><i style="width:100%"></i></div>
-      <div class="note">John is on pace for 1,902.4. The record is 1,884.6</div></div>
-    <div class="m"><div class="l"><span class="k">Longest win streak</span>
-      <span class="v">73%</span></div><div class="bar"><i class="dim" style="width:73%"></i></div>
-      <div class="note">Nate is at 8. Bryce holds it at 11</div></div>
-    <div class="m"><div class="l"><span class="k">Highest week ever</span>
-      <span class="v">93%</span></div><div class="bar"><i class="dim" style="width:93%"></i></div>
-      <div class="note">Best this year is 198.10. The record is 212.44</div></div>
-    <div class="m"><div class="l"><span class="k">Most points against</span>
-      <span class="v">88%</span></div><div class="bar"><i class="dim" style="width:88%"></i></div>
-      <div class="note">Cole has drawn 1,612.8. The record is 1,824.0</div></div>
-  </div>`,
-
-/* The countdown, and how close it is, as a bar. Written out long
-   ("Three games from 100 started") each column wrapped to four
-   lines in 110px and the rail turned into a paragraph. */
-milestones: () => {
-  const M = [['Bryce','2 from 80', 94, 1], ['John','118 from 15k', 71, 0],
-             ['Nate','3 from 100', 64, 0], ['Matt','1 from 50', 88, 0],
-             ['Drew','4 from 900', 52, 0]];
-  const MAX = 180;
-  return `<div class="cols">${M.map(([n, d, pct, on]) => `
-    <div class="c${on ? ' rep' : ''}">
-      <div class="who">${esc(n)}</div>
-      <div class="rec">${d}</div>
-      <div class="bar" style="height:${Math.round(pct/100*MAX)}px"></div>
-      <div class="yr">${pct}%</div>
+/* Points above or below the league average, one bar a season. */
+function seasonPM() {
+  const D = [['19',-62],['20',88],['21',310],['22',124],['23',-18],['24',268],['25',196]];
+  const M = 340;
+  return `<div class="pm">${D.map(([y, v]) => `
+    <div class="c">
+      <div class="up">${v > 0 ? `<i style="height:${Math.round(v / M * 152)}px"></i>` : ''}</div>
+      <div class="z"></div>
+      <div class="dn">${v < 0 ? `<i style="height:${Math.round(-v / M * 60)}px"></i>` : ''}</div>
+      <div class="lb">&rsquo;${y}</div>
     </div>`).join('')}</div>`;
-},
-
-trade: () => `
-  <div class="ticket">
-    <div class="sides">
-    <div class="side win">
-      <div class="who"><span class="n">Bryce gets</span><span class="g">Grade A&minus;</span></div>
-      <ul>
-        <li>A top-five receiver<i>Two years left</i></li>
-        <li>A 2027 second<i>Projected 18th</i></li>
-      </ul>
-    </div>
-    <div class="side">
-      <div class="who"><span class="n">Reid gets</span><span class="g">Grade B</span></div>
-      <ul>
-        <li>Volume at running back<i>Fourth in carries</i></li>
-        <li>A tight end<i>Never missed a game</i></li>
-      </ul>
-    </div>
-    </div>
-    <div class="verdict">
-      <div class="bar"><u class="x" style="flex:58"></u><u class="y" style="flex:42"></u></div>
-      <div class="lb"><span>58% of the value</span><span>42%</span></div>
-    </div>
-  </div>`,
-
-mill: () => `
-  <div class="agate">
-    <div class="hd-row"><span class="lbl">Offers started</span>
-      <span class="c w3">Sent</span><span class="c w3">Taken</span></div>
-    <div class="r lead"><span class="nm">Grant</span>
-      <span class="c w3 on">17</span><span class="c w3 dim">2</span></div>
-    <div class="r"><span class="nm">Bryce</span>
-      <span class="c w3 dim">9</span><span class="c w3 dim">6</span></div>
-    <div class="r"><span class="nm">Reid</span>
-      <span class="c w3 dim">6</span><span class="c w3 dim">3</span></div>
-    <div class="r"><span class="nm">Vince</span>
-      <span class="c w3 dim">1</span><span class="c w3 dim">0</span></div>
-  </div>`,
-
-dna: () => `
-  <div class="meters">
-    <div class="m"><div class="l"><span class="k">Drafts and holds</span>
-      <span class="v">82</span></div><div class="bar"><i style="width:82%"></i></div></div>
-    <div class="m"><div class="l"><span class="k">Trade volume</span>
-      <span class="v">71</span></div><div class="bar"><i style="width:71%"></i></div></div>
-    <div class="m"><div class="l"><span class="k">Waiver hawk</span>
-      <span class="v">34</span></div><div class="bar"><i class="dim" style="width:34%"></i></div></div>
-    <div class="m"><div class="l"><span class="k">Streams defense</span>
-      <span class="v">12</span></div><div class="bar"><i class="dim" style="width:12%"></i></div></div>
-  </div>`,
-
-/* ── the rest ────────────────────────────────────────────────── */
-
-games: () => {
-  /* Names, pitches and accents from src/app/games/gameDefs.ts, so
-     the tiles and the real cards say the same thing in the same
-     colour. If a pitch changes there, change it here. */
-  const G = [
-    ['Roster <em>Roulette</em>', 'Can you go 17-0?', '#e8c889'],
-    ['Guess the <em>Draft</em>', 'Name blacked out. Whose was it?', '#e29278'],
-    ['The <em>Gauntlet</em>', 'Two teams, one week. Who won?', '#8fb3d6'],
-    ['The <em>Over/Under</em>', 'Ten real weeks, ten lines', '#c9a9ea'],
-    ['The <em>Redraft</em>', 'A real slot. Pick again', '#9ec8a8'],
-    ['The Multiverse <em>Draft</em>', 'Every player is three players', '#5fc9bd'],
-  ];
-  return `<div class="list">${G.map(([n, d, c]) => `
-    <div class="r" style="--tint:${c}"><span class="tick"></span>
-      <span class="n">${n}</span><span class="d">${esc(d)}</span></div>`).join('')}</div>`;
-},
-
-clubhouse: () => `
-  <div class="list">
-    <div class="r"><span class="no">01</span><span class="n">The Newsstand</span>
-      <span class="d">152 published almanacs</span></div>
-    <div class="r"><span class="no">02</span><span class="n">The Hall</span>
-      <span class="d">Every record on the network</span></div>
-    <div class="r"><span class="no">03</span><span class="n">The Census</span>
-      <span class="d">What 1.1 million games say</span></div>
-    <div class="r"><span class="no">04</span><span class="n">The Trade Room</span>
-      <span class="d">Weigh a deal on real value</span></div>
-    <div class="r"><span class="no">05</span><span class="n">The Dispatch</span>
-      <span class="d">What shipped, and what is next</span></div>
-  </div>`,
-};
+}
 
 /* ══════════════════════════════════════════════════════════════
    THE SLIDES
+
+   Seven, and deliberately seven different KINDS of object: a closed
+   book, a redacted questionnaire, a front page, a personnel file, a
+   sheet of exhibits, a live board and a back cover.
+
+   The tour's problem was that it was an index: fifteen sheets of
+   "here is another page we have". Nobody subscribes to a table of
+   contents. This deck never names a feature until the sheet has
+   already shown one finished thing, and every sheet ends on a line
+   that asks.
    ══════════════════════════════════════════════════════════════ */
 
 const SLIDES = [
-  /* 01 */ { kind:'front', theme:'almanac', run:'The tour' },
-
-  /* 02 — the shelf, not a chapter list. Every spine is the colour of
-     the page it opens, straight out of PAGES. Seven volumes rather
-     than ten: at ten the spines were 85px wide and the shelf read as
-     a barcode. The figures that used to carry the deleted how-it-
-     works slide are the ledger tape under the platforms. */
-  /* 02 */ { kind:'plate', theme:'almanac', ground:'shelf', run:'Section one', num:'I',
-             title:'The <em>Almanac.</em>',
-             deck:'Everything your league has already done, bound and shelved.',
-             shelf:[
-               ['standings','01','Standings','All-time',    81],
-               ['seasons',  '02','Seasons','Year by year',  90],
-               ['records',  '03','Record Book','41 boards', 85],
-               ['draft',    '04','Draft','Every pick',      76],
-               ['managers', '05','Managers','Careers',      88],
-               ['rivalries','06','Rivalries','66 pairings', 79],
-             ],
-             /* The platforms belong on this plate rather than on their own
-                slide: the almanac is the thing they feed, and NFL.com being
-                dead is a reason to sign up rather than a gap to hide. */
-             bottom:`<div class="plat" style="margin-top:24px">
-                 <div class="p"><div class="n">Sleeper</div><div class="s">Live sync</div></div>
-                 <div class="p"><div class="n">ESPN</div><div class="s">Live sync</div></div>
-                 <div class="p"><div class="n">Yahoo</div><div class="s">Live sync</div></div>
-                 <div class="p off"><div class="n">NFL.com</div>
-                   <div class="s">Retired</div></div>
-               </div>
-               <div class="tape">
-                 <div class="head">What&rsquo;s included</div>
-                 <div class="row">
-                   <div class="k"><div class="v">Every season</div>
-                     <div class="l">Right back to year one</div></div>
-                   <div class="k"><div class="v">Each matchup</div>
-                     <div class="l">Both sides, week by week</div></div>
-                   <div class="k"><div class="v">Entire drafts</div>
-                     <div class="l">Graded pick by pick</div></div>
-                   <div class="k"><div class="v">Trade grades</div>
-                     <div class="l">Scored on what came back</div></div>
-                   <div class="k"><div class="v">Every manager</div>
-                     <div class="l">Including the ones who left</div></div>
-                   <div class="k"><div class="v">Lost records</div>
-                     <div class="l">Most were never written down</div></div>
-                 </div>
-               </div>` },
-
-  /* 03 */ { kind:'spread', theme:'almanac', ground:'stone', run:'The Almanac',
-             a:{ page:'standings', kick:'Chapter one', t:'The <em>Standings.</em>',
-                 dek:'Every win, loss and point ever scored.',
-                 pull:['15,204.1','Most points ever scored. One title to show for it'],
-                 fig:'standings' },
-             /* Not a count. A bare "7" read as a requirement, as though
-                a league needed some number of seasons on file before any
-                of this was worth having. It does not need replacing with
-                something cleverer either, just with the plain fact: every
-                year, not only the ones people still remember. */
-             b:{ page:'seasons', kick:'Chapter two', t:'The <em>Seasons.</em>',
-                 dek:'A front page for every year, and what it took to win it.',
-                 pull:['Every year','Back to your first season, not just the recent ones'],
-                 fig:'seasons' } },
-
-  /* 04 */ { kind:'spread', theme:'almanac', ground:'kraft', ink:1, run:'The Almanac',
-             a:{ page:'records', kick:'Chapter three', t:'The Record <em>Book.</em>',
-                 dek:'A first, second and third for every mark.',
-                 fig:'records' },
-             b:{ page:'draft', kick:'Chapter four', t:'The <em>Draft.</em>',
-                 dek:'Every pick, graded on what it returned.',
-                 pull:['A&minus; to F','A class grade for every draft'],
-                 fig:'draft' } },
-
-  /* 05 */ { kind:'spread', theme:'almanac', ground:'news', ink:1, run:'The Almanac',
-             a:{ page:'managers', kick:'Chapter five', t:'The <em>Managers.</em>',
-                 dek:'Everyone who ever ran a team, with a file on each.',
-                 fig:'managers' },
-             b:{ page:'rivalries', kick:'Chapter seven', t:'The <em>Rivalries.</em>',
-                 dek:'Every grudge, tracked meeting by meeting.',
-                 pull:['Every pairing','All sixty-six of them, each on its own page'],
-                 fig:'rivalries' } },
-
-  /* 06 */ { kind:'spread', theme:'almanac', ground:'slab', treat:'plate',
-             run:'The Almanac',
-             a:{ page:'chart', kick:'Chapter eight', t:'The Chart <em>Room.</em>',
-                 dek:'The league drawn in ink.',
-                 fig:'chart' },
-             b:{ page:'alltime', kick:'Chapter nine', t:'The All-Time <em>Team.</em>',
-                 dek:'The best lineup a career could field.',
-                 pull:['266.7','His best week at every slot, added up'],
-                 fig:'alltime' } },
-
-  /* 07 */ { kind:'plate', theme:'live', run:'Section two', num:'II',
-             title:'The Live <em>Season.</em>',
-             deck:'The same league, running in real time. It wakes in September and sleeps in January.',
-             chapters:[
-               ['11','Matchup Preview','Every week'], ['12','Pick&rsquo;ems','All season'],
-               ['13','Power Rankings','Every Tuesday'], ['14','Best Coach','The bench'],
-               ['15','Records Watch','Live chases'], ['16','Milestones','Countdowns'],
-               ['17','The Trade Desk','Graded deals'], ['18','The Rumor Mill','Who asks'],
-               ['19','Manager DNA','Habits'], ['20','Sunday Live','Game day'],
-             ],
-             stand:'It wakes up on the first Thursday of September on its own.',
-             bottom:`<div style="margin-top:30px">
-               <div class="kick" style="margin-bottom:14px">
-                 The rhythm &nbsp;<u></u></div>
-               <div class="plat">
-                 <div class="p"><div class="n">Thursday</div>
-                   <div class="s">The week ahead</div></div>
-                 <div class="p"><div class="n">Sunday</div>
-                   <div class="s">Live from kickoff</div></div>
-                 <div class="p"><div class="n">Tuesday</div>
-                   <div class="s">Rebuilt overnight</div></div>
-                 <div class="p off"><div class="n">February</div>
-                   <div class="s">It sleeps</div></div>
-               </div>
-             </div>` },
-
-  /* 08 */ { kind:'spread', theme:'live', run:'The Live Season',
-             a:{ kick:'Every Thursday', t:'Matchup <em>Preview.</em>',
-                 dek:'What this week actually means.',
-                 fig:'matchup' },
-             b:{ kick:'All season', t:'The <em>Pick&rsquo;ems.</em>',
-                 dek:'Everybody picks. The board remembers.',
-                 pull:['12 of 12','Nobody forgets the week they went one for six'],
-                 fig:'pickems' } },
-
-  /* 09 */ { kind:'spread', theme:'live', run:'The Live Season',
-             a:{ kick:'Every Tuesday', t:'Power <em>Rankings.</em>',
-                 dek:'All twelve, ranked every Tuesday.',
-                 fig:'power' },
-             b:{ kick:'The hard one', t:'Best <em>Coach.</em>',
-                 dek:'What you left on your own bench.',
-                 pull:['264.3','Points Grant has benched this year'],
-                 fig:'coach' } },
-
-  /* 10 */ { kind:'spread', theme:'live', run:'The Live Season',
-             a:{ kick:'Live', t:'Records <em>Watch.</em>',
-                 dek:'The record book, pointed at right now.',
-                 pull:['4','Chases live this week'],
-                 fig:'watch' },
-             b:{ kick:'Coming up', t:'The <em>Milestones.</em>',
-                 dek:'Told the week before, not the March after.',
-                 pull:['Before','Every countdown fires ahead of the game'],
-                 fig:'milestones' } },
-
-  /* 11 */ { kind:'trade', theme:'live', run:'The Live Season' },
-
-  /* 12 */ { kind:'rest', theme:'slate', run:'Section three' },
-
-  /* 13 */ { kind:'toc', theme:'almanac', run:'Contents' },
-
-  /* 14 */ { kind:'close', theme:'almanac', run:'Start yours' },
+  { kind:'front', theme:'almanac', run:'The pitch' },
+  { kind:'blind', theme:'almanac', stock:'file',  run:'The blind spot' },
+  { kind:'paper', theme:'almanac',                run:'The front page' },
+  { kind:'file',  theme:'almanac', stock:'file',  run:'The manager file' },
+  /* Slate's `rust` is the milestones violet, which came out as lilac
+     grade chips on a sheet whose whole point is a failing mark. The
+     exhibits borrow the almanac's red for it. */
+  { kind:'exhibits', theme:'slate', vars:{ rust:'#b5573c' }, run:'The receipts' },
+  { kind:'sunday', theme:'live',                  run:'Sunday' },
+  { kind:'close', theme:'almanac',                run:'Start yours' },
 ];
 
 const TOTAL = SLIDES.length;
 
-/* ── the foot ───────────────────────────────────────────────── */
-/* Two imprints, alternating, and no page number.
-   The folio is gone from every sheet: "3 of 14" is furniture a bound
-   book needs and a carousel does not, and at thumbnail size it just
-   reads as a counter somebody forgot to take off.
-   "Vol. II, No. 118, compiled from seven seasons" went with it. It
-   meant nothing to the person who wrote the site, so it was never
-   going to mean anything to somebody seeing it for the first time. */
 const IMPRINTS = [
   () => `<span class="imp">thesundaychronicle.app</span>`,
   () => `<span class="mark"><b>The Sunday <em>Chronicle.</em></b>
            <s>Est. 2025</s></span>`,
 ];
-
-function foot(n) {
-  return `<div class="foot">${IMPRINTS[(n - 1) % IMPRINTS.length]()}</div>`;
-}
+const foot = n => `<div class="foot">${IMPRINTS[(n - 1) % IMPRINTS.length]()}</div>`;
 
 const runHead = label => `<div class="run">
   <span class="sec">${esc(label)}</span><u></u><span class="orn">&#10022;</span>
 </div>`;
+
+const strap = (b, n) => `<div class="strap"><div class="b">${b}</div>
+  <div class="n">${n}</div></div>`;
 
 /* ══════════════════════════════════════════════════════════════
    RENDER
@@ -1759,62 +1493,17 @@ const n = Math.min(Math.max(parseInt(params.get('slide') || '1', 10), 1), TOTAL)
 const s = SLIDES[n - 1];
 
 applyTheme(s.theme);
+if (s.stock) applyStock(s.stock);
+if (s.vars) for (const [k, v] of Object.entries(s.vars))
+  document.getElementById('board').style.setProperty('--' + k, v);
+
 const body = document.getElementById('body');
 
-/* Each slide names its own surface. Running one ground under the
-   whole deck is what made it read as fourteen of the same board, and
-   a surface is only right for what is standing on it: wood under a
-   shelf, baize under an almanac, cork under a record board. */
-if (s.ground) document.getElementById('board').classList.add('is-room');
-if (s.ink) document.getElementById('board').classList.add('is-ink');
-const room = () => s.ground ? `<div class="ground g-${s.ground}"></div>` : '';
-
-/* One chapter, as a bound volume lying on the desk: binding down the
-   inner edge, header column on one side, figures on the other. `page`
-   keys into PAGES, so the volume comes out in the real colours of the
-   page it is showing. */
-function half(cls, h) {
-  const p = PAGES[h.page] || PAGES.chart;
-
-  /* A plate: flat field, header across the top, figure full width
-     underneath. Deliberately not the volume's geometry. */
-  if (s.treat === 'plate') {
-    return `<div class="plate${p.pale ? ' pale' : ''}"
-                 style="--cloth:${p.cloth};--foil:${p.foil}">
-      <div class="kick">${esc(h.kick)}</div>
-      <div class="top"><h2>${h.t}</h2><div class="dek">${esc(h.dek)}</div></div>
-      <div class="fig">${FIG[h.fig]()}</div>
-      ${h.pull ? `<div class="strap"><b>${h.pull[0]}</b>
-                   <s>${esc(h.pull[1])}</s></div>` : ''}
-    </div>`;
-  }
-
-  return `<div class="vol${cls === 'b' ? ' right' : ''}${p.pale ? ' pale' : ''}"
-               style="--cloth:${p.cloth};--foil:${p.foil}">
-    <div class="bind"></div>
-    <div class="half ${cls}">
-      <div class="hd">
-        <div class="kick">${esc(h.kick)}</div>
-        <h2>${h.t}</h2>
-        <div class="dek">${esc(h.dek)}</div>
-        ${h.pull ? `<div class="pull"><div class="v">${h.pull[0]}</div>
-                     <div class="k">${esc(h.pull[1])}</div></div>` : ''}
-      </div>
-      <div class="art">${FIG[h.fig]()}</div>
-    </div>
-  </div>`;
-}
-
-/* Slide one is the closed book, not a front page.
-   The broadsheet version of it carried a masthead bar, a six-item
-   wire and a three column contents strip — about a hundred and
-   twenty words — and still left a band of dead cloth across its
-   middle, because none of that is what stops a thumb. This is the
-   binding seen head on: spine and hinge at the left, gilt fore-edge
-   at the right, a blind-stamped frame, the nameplate in actual foil
-   and five short lines in total. Everything that was cut is said
-   later in the deck anyway. It carries no running head and no folio
-   strap: a cover is not a page. */
+/* ── 01 the closed book ──────────────────────────────────────
+   The same binding as the tour's cover, so the two posts are
+   obviously the same publication, with one line changed: the tour
+   opens on what the paper IS, this one opens on what the reader
+   does not have. */
 if (s.kind === 'front') {
   document.getElementById('board').classList.add('is-cover');
   body.innerHTML = `
@@ -1831,7 +1520,7 @@ if (s.kind === 'front') {
           <div class="edition"><span>Vol. II</span><span>No. 118</span></div>
 
           <div class="mid">
-            <div class="over">The whole paper</div>
+            <div class="over">What your league is missing</div>
             <h1 class="stampfoil">The Sunday<br><em>Chronicle.</em></h1>
             <div class="foil" style="width:56%;margin-top:34px"></div>
             <p class="line">The record book your league never kept.</p>
@@ -1845,146 +1534,394 @@ if (s.kind === 'front') {
       </div>
     </div>`;
 
-/* A section plate is a shelf when it has one (see PAGES). The
-   chapter list is kept for the plates not converted yet. */
-} else if (s.kind === 'plate') {
-  body.innerHTML = room() + runHead(s.run) + `
-    <div class="page">
-      <div style="flex:none;display:flex;align-items:flex-start;gap:34px">
-        <div class="roman">${s.num}</div>
-        <div style="flex:1;padding-top:10px">
-          <div class="nameplate" style="font-size:92px">${s.title}</div>
-          <div style="margin-top:20px;font-size:24px;line-height:1.4;color:var(--soft)">
-            ${esc(s.deck)}</div>
-        </div>
-      </div>
-      <div class="foil" style="flex:none;margin:26px 0 24px"></div>
-      ${s.shelf ? `
-        <div class="shelf">
-          <div class="row">${s.shelf.map(b => spine(b[0], b[1], b[2], b[3], b[4])).join('')}</div>
-          <div class="plank"></div>
-        </div>`
-      : `<div class="chaplist">
-          ${s.chapters.map(c => `<div class="c"><span class="no">${c[0]}</span>
-            <span class="n">${c[1]}</span><span class="d">${c[2]}</span></div>`).join('')}
-        </div>
-        <div class="standfirst"><p>${s.stand}</p></div>`}
-      ${s.bottom}
-    </div>` + foot(n);
-
-/* Two volumes on the desk. No gilded rule between them any more: the
-   strip of desk showing through the gap is the cut, and it says the
-   two halves are separate books, which a line never did. */
-} else if (s.kind === 'spread') {
-  body.innerHTML = room() + runHead(s.run) + `
-    <div class="page" style="gap:24px">
-      ${half('a', s.a)}
-      ${half('b', s.b)}
-    </div>` + foot(n);
-
-/* The Trade Desk gets a page to itself: the ticket across the top,
-   then the mill and the profile side by side under it, which is how
-   the real page stacks them. */
-} else if (s.kind === 'trade') {
+/* ── 02 the questionnaire ────────────────────────────────────
+   Six things a league argues about and cannot settle, with the
+   answers struck out, and the sixth left open so the sheet pays out
+   instead of only teasing. Every question maps to a real page, and
+   none of them says which. */
+} else if (s.kind === 'blind') {
+  const Q = [
+    ['01', 'Who has scored the most points<br>and never won it?', [236, 132]],
+    ['02', 'Which draft was the worst one<br>anybody has ever had?', [198, 156]],
+    ['03', 'Who leaves the most points<br>sitting on their bench?', [170, 118]],
+    ['04', 'Which trade actually won,<br>a year after it was made?', [252, 144]],
+    ['05', 'Who owns who, all time,<br>and by how much?', [214, 166]],
+  ];
   body.innerHTML = runHead(s.run) + `
     <div class="page">
-      <div class="half a">
-        <div class="hd">
-          <div class="kick">Chapter seventeen</div>
-          <h2>The Trade <em>Desk.</em></h2>
-          <div class="dek">Every deal graded from both sides, on what the
-            pieces are actually worth.</div>
-          <div class="pull"><div class="v">14</div>
-            <div class="k">Trades this season. Most since 2021</div></div>
+      <div class="head-x" style="--h2:66px;--rw:196px">
+        <div class="l">
+          <h2>Six questions your<br>league <em>cannot answer.</em></h2>
         </div>
-        <div class="art">${FIG.trade()}</div>
+        <div class="r">Twelve managers<br>Ten seasons<br>Nothing written down</div>
       </div>
-      <div class="foil"></div>
-      <div class="half b">
-        <div class="hd">
-          <div class="kick">Underneath it</div>
-          <h2>The Rumor <em>Mill.</em></h2>
-          <div class="dek">And who keeps asking.</div>
-          <div class="pull"><div class="v">17</div>
-            <div class="k">Offers Grant has sent. Two got taken</div></div>
+      <div class="foil" style="flex:none;margin:26px 0 8px"></div>
+      <div class="qs">
+        ${Q.map(([no, t, w]) => `<div class="q">
+          <span class="no">${no}</span>
+          <span class="t">${t}</span>
+          <span class="a"><i class="redact" style="width:${w[0]}px"></i>
+            <i class="redact sm" style="width:${w[1]}px"></i></span>
+        </div>`).join('')}
+        <div class="q open">
+          <span class="no">06</span>
+          <span class="t">What is the highest score<br>anyone has ever put up?</span>
+          <span class="a"><span class="v">212.44</span>
+            <span class="k">Drew &middot; Week 11 &middot; 2022</span></span>
         </div>
-        <div class="art">${FIG.mill()}</div>
       </div>
+      ${strap(`We answered the sixth one. The site answers <em>all six</em>
+               about ninety seconds after you connect your league.`,
+              'One league ID<br>Nothing to fill in')}
     </div>` + foot(n);
 
-/* Games above, Clubhouse below on a reversed cream panel: a paper
-   drops a boxed feature into the foot of a broadsheet, and it gives
-   the deck its one light surface. */
-} else if (s.kind === 'rest') {
+/* ── 03 the front page ───────────────────────────────────────
+   Not a screenshot and not a feature: a whole printed page about
+   one week of a league that does not exist. It is the only sheet in
+   the deck that shows what the product hands you rather than what
+   the product has. */
+} else if (s.kind === 'paper') {
   body.innerHTML = runHead(s.run) + `
     <div class="page">
-      <div class="half a">
-        <div class="hd">
-          <div class="kick">Section three</div>
-          <h2>The <em>Games.</em></h2>
-          <div class="dek">Dealt out of seasons your league actually played.</div>
-          <div class="pull"><div class="v">Any league</div>
-            <div class="k">Yours, the demo, or the whole site</div></div>
-        </div>
-        <div class="art">${FIG.games()}</div>
+      <div class="mastbar" style="flex:none">
+        <span>Vol. II &middot; No. 118</span>
+        <span class="mid">Sunday, 23 November</span>
+        <span>Week 12 of 14</span>
       </div>
-      <div class="half b reverse" style="flex:.92">
-        <div class="hd">
-          <div class="kick">Free with any account</div>
-          <h2 style="font-size:46px">The <em>Clubhouse.</em></h2>
-          <div class="dek">Five rooms, open before you set anything up.</div>
+      <div class="fp">
+        <div class="lead">
+          <h1>Bryce survives on a kicker,<br>and the <em>last bye is gone.</em></h1>
+          <div class="sub">
+            <p>Four points covered the top six on Sunday night. Nate, who had
+              not lost since September, is suddenly playing for his life, and
+              John has the most points in the league and nothing to show for it.</p>
+            <div class="by">Written the<br>minute the<br>games ended</div>
+          </div>
         </div>
-        <div class="art">${FIG.clubhouse()}</div>
+        <div class="mid">
+          <div class="m">
+            <div class="kick" style="margin-bottom:14px">
+              Points above the league &nbsp;<u></u>&nbsp; 2025</div>
+            ${chart()}
+          </div>
+          <div class="s">${standings()}</div>
+        </div>
       </div>
+      ${strap(`This is one page, about one week. Your league already has
+               <em>ten years</em> of them sitting in an app that will never
+               print a single one.`,
+              'Forty more pages<br>behind this one')}
     </div>` + foot(n);
 
-} else if (s.kind === 'toc') {
-  const A = [['01','The Standings'], ['02','The Seasons'], ['03','The Record Book'],
-             ['04','The Draft'], ['05','The Draft Grader'], ['06','The Managers'],
-             ['07','The Manager File'], ['08','The Rivalries'], ['09','The Chart Room'],
-             ['10','The All-Time Team'], ['11','The Mock Room']];
-  const B = [['12','Matchup Preview'], ['13','Pick&rsquo;ems'], ['14','Power Rankings'],
-             ['15','Best Coach'], ['16','Records Watch'], ['17','Milestones'],
-             ['18','The Trade Desk'], ['19','The Rumor Mill'], ['20','Manager DNA'],
-             ['21','Sunday Live']];
-  const C = [['22','The Games'], ['23','The Clubhouse']];
-  const col = (h, rows, p) => `<div class="col"><h3>${h}</h3>
-    ${rows.map(r => `<div class="e"><span class="no">${r[0]}</span>
-      <span class="n">${r[1]}</span><span class="dots"></span>
-      <span class="p">${p}</span></div>`).join('')}</div>`;
+/* ── 04 the file ─────────────────────────────────────────────
+   The personal sheet. Everything else in the deck is about a
+   league; this one is about a person, which is the sheet that gets
+   sent to somebody in a group chat. */
+} else if (s.kind === 'file') {
   body.innerHTML = runHead(s.run) + `
     <div class="page">
-      <div class="kick-c" style="text-align:left">Everything in the paper</div>
-      <div class="nameplate" style="font-size:78px;margin-top:18px">
-        Twenty-three <em>chapters.</em></div>
-      <div class="foil" style="margin:26px 0 26px"></div>
-      <div class="toc">
-        ${col('Section I &middot; The Almanac', A, 'History')}
-        ${col('Section II &middot; The Live Season', B, 'In season')}
+      <div class="mastbar" style="flex:none">
+        <span>File No. 04</span>
+        <span class="mid">Opened 2019 &middot; still open</span>
+        <span>Twelve on file</span>
       </div>
-      <div class="toc short" style="margin-top:24px;padding-top:22px;
-                                    border-top:1px solid var(--line)">
-        ${col('Section III &middot; And the rest', C, 'Any time')}
-        <div class="col" style="justify-content:center">
-          <div style="font-family:var(--serif);font-style:italic;font-size:26px;
-                      line-height:1.4;color:var(--soft)">
-            All of it built out of games your<br>league has already played.</div>
+
+      <div class="dossier" style="margin-top:24px">
+        <div class="nm">Bryce</div>
+        <div class="yr">Seven seasons<br>2019 to present</div>
+        <div class="st"><i>&#9733;</i><i>&#9733;</i></div>
+      </div>
+
+      <div class="band" style="margin-top:22px">
+        <div class="b"><div class="k">All-time</div><div class="v">78&ndash;40</div></div>
+        <div class="b"><div class="k">Win pct</div><div class="v">.661</div></div>
+        <div class="b on"><div class="k">Titles</div><div class="v">2</div></div>
+        <div class="b"><div class="k">Playoffs</div><div class="v">6 of 7</div></div>
+        <div class="b"><div class="k">Last place</div><div class="v">0</div></div>
+      </div>
+
+      <div style="flex:1;min-height:0;display:flex;padding:24px 0 0">
+        <div style="flex:1.1;min-width:0;display:flex;flex-direction:column;
+                    justify-content:space-between;padding-right:28px">
+          <div>
+            <div class="kick" style="margin-bottom:16px">
+              Above the league &nbsp;<u></u>&nbsp; By season</div>
+            ${seasonPM()}
+          </div>
+          <div>
+            <div class="kick" style="margin-bottom:14px">
+              Draft grades &nbsp;<u></u>&nbsp; Seven years</div>
+            <div class="grades">
+              <i>A&minus;</i><i class="lo">D</i><i class="hi">A</i><i>B</i>
+              <i>B+</i><i class="hi">A</i><i>B&minus;</i>
+            </div>
+          </div>
+          <div>
+            <div class="kick" style="margin-bottom:6px">
+              The finals &nbsp;<u></u>&nbsp; Won two of three</div>
+            <div class="ruled tight">
+              <div class="r"><span class="k">Beat John in the final
+                <i>By 3.1, after trailing all Sunday</i></span>
+                <span class="v on">2021</span></div>
+              <div class="r"><span class="k">Beat Drew in the final
+                <i>Wire to wire, from the three seed</i></span>
+                <span class="v on">2024</span></div>
+              <div class="r"><span class="k">Lost the final to Matt
+                <i>Best record in the league that year</i></span>
+                <span class="v">2019</span></div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;
+                    padding-left:28px;border-left:1px solid var(--line)">
+          <div class="ruled">
+            <div class="r"><span class="k">Best week<i>Still the league record</i></span>
+              <span class="v on">212.44</span></div>
+            <div class="r"><span class="k">Most ever scored in a loss<i>Week 6, 2023</i></span>
+              <span class="v">178.9</span></div>
+            <div class="r"><span class="k">Owns<i>Nine of the last eleven</i></span>
+              <span class="v">Vince</span></div>
+            <div class="r"><span class="k">Cannot beat<i>Lost the last three</i></span>
+              <span class="v">John</span></div>
+            <div class="r"><span class="k">Trades made<i>Net gain of 186 points</i></span>
+              <span class="v">14</span></div>
+            <div class="r"><span class="k">Lineups set<i>Of the best he could have</i></span>
+              <span class="v">91.4%</span></div>
+          </div>
         </div>
       </div>
+
+      ${strap(`There is one of these on <em>everyone</em> who has ever played in
+               your league, including the two who quit and took the group chat
+               with them.`,
+              'Built from what<br>your league already did')}
     </div>` + foot(n);
 
+/* ── 05 the exhibits ─────────────────────────────────────────
+   What somebody said, and the document that settles it. The only
+   combative sheet in the deck, and the one aimed squarely at the
+   group chat rather than at the commissioner. */
+} else if (s.kind === 'exhibits') {
+  body.innerHTML = runHead(s.run) + `
+    <div class="page">
+      <div class="head-x" style="--h2:58px;--rw:230px">
+        <div class="l">
+          <h2>Every argument in there<br>already has a <em>document.</em></h2>
+        </div>
+        <div class="r">Filed the day<br>it happened<br>Still there in March</div>
+      </div>
+      <div class="foil" style="flex:none;margin:24px 0 6px"></div>
+
+      <div class="exh">
+        <div class="e">
+          <div class="q">
+            <div class="no">Exhibit A</div>
+            <div class="said">&ldquo;I only lost that week<br>because of my kicker.&rdquo;</div>
+            <div class="who">Grant, week nine</div>
+          </div>
+          <div class="ev">
+            <div class="meters">
+              <div class="m">
+                <div class="l"><span class="k">What you started<small>Final</small></span>
+                  <span class="v">118.4</span></div>
+                <div class="bar"><i style="width:80%"></i></div>
+              </div>
+              <div class="m">
+                <div class="l"><span class="k">What you had<small>Best lineup</small></span>
+                  <span class="v">147.9</span></div>
+                <div class="bar"><i class="dim" style="width:100%"></i></div>
+              </div>
+            </div>
+            <div class="cap"><span>Left on the bench 29.5</span>
+              <b>Margin of defeat 4.1</b></div>
+          </div>
+        </div>
+
+        <div class="e">
+          <div class="q">
+            <div class="no">Exhibit B</div>
+            <div class="said">&ldquo;That trade was fair<br>when we made it.&rdquo;</div>
+            <div class="who">Vince, October 2024</div>
+          </div>
+          <div class="ev">
+            <div class="kick" style="margin-bottom:13px">
+              The deal &nbsp;<u></u>&nbsp; October 2024</div>
+            <div class="ticket" style="flex:none">
+              <div class="sides">
+                <div class="side win">
+                  <div class="who"><span class="n">Bryce</span><span class="g">B+</span></div>
+                  <ul><li>The back he still starts<i>Every week since</i></li>
+                      <li>A first-round pick<i>Became the 1.04</i></li></ul>
+                </div>
+                <div class="side">
+                  <div class="who"><span class="n">Vince</span><span class="g">D</span></div>
+                  <ul><li>A receiver, cut in November<i>Six games, 41 points</i></li>
+                      <li>A second-round pick<i>Became the 2.11</i></li></ul>
+                </div>
+              </div>
+              <div class="verdict" style="margin-top:6px;border-top:0;padding-top:10px">
+                <div class="bar"><u class="x" style="flex:186"></u>
+                  <u class="y" style="flex:94"></u></div>
+                <div class="lb"><span>+186 points since</span>
+                  <span>&minus;94 points since</span></div>
+              </div>
+            </div>
+            <div class="cap"><span>Graded on what came back, not on what it felt like</span>
+              <b>Both sides</b></div>
+          </div>
+        </div>
+
+        <div class="e">
+          <div class="q">
+            <div class="no">Exhibit C</div>
+            <div class="said">&ldquo;I have never had<br>a bad draft.&rdquo;</div>
+            <div class="who">Vince, every August</div>
+          </div>
+          <div class="ev">
+            <div class="kick" style="margin-bottom:13px">
+              Every draft he has had &nbsp;<u></u>&nbsp; 2019 to 2025</div>
+            <div class="grades">
+              <i>C</i><i>C+</i><i class="lo">F</i><i>B&minus;</i>
+              <i>C&minus;</i><i class="lo">D</i><i>C</i>
+            </div>
+            <div class="picks rows" style="margin-top:14px">
+              <div class="p"><span class="no">1.05</span>
+                <span class="t">Cut by week six</span>
+                <span class="by">2021</span><span class="g lo">F</span></div>
+              <div class="p"><span class="no">2.08</span>
+                <span class="t">Never started a game</span>
+                <span class="by">2021</span><span class="g lo">F</span></div>
+            </div>
+            <div class="cap"><span>Graded on what each pick actually returned</span>
+              <b>Class average C&minus;</b></div>
+          </div>
+        </div>
+      </div>
+
+      ${strap(`Nobody has to remember any of it. It was <em>written down</em>
+               on the day, by something that does not take a side.`,
+              'Drafts, trades, lineups<br>All of it, all the way back')}
+    </div>` + foot(n);
+
+/* ── 06 Sunday ───────────────────────────────────────────────
+   The one sheet that is about the season rather than the archive.
+   It answers the objection the other five raise: this all sounds
+   like work. It is not; it runs on its own. */
+} else if (s.kind === 'sunday') {
+  body.innerHTML = runHead(s.run) + `
+    <div class="page">
+      <div class="head-x" style="--h2:58px;--rw:210px">
+        <div class="l">
+          <h2>And then it wakes up<br>every <em>Sunday</em> on its own.</h2>
+        </div>
+        <div class="r">Nothing to open<br>Nothing to update<br>Nobody has to run it</div>
+      </div>
+      <div class="foil" style="flex:none;margin:24px 0 20px"></div>
+
+      <div class="kick" style="margin-bottom:8px">Live &nbsp;<u></u>&nbsp; 4:41pm</div>
+      <div class="scores">
+        <div class="g"><span class="n">Bryce</span><span class="v on">121.4</span>
+          <span class="p"><span class="bar"><u class="x" style="flex:53"></u>
+            <u class="y" style="flex:47"></u></span>
+            <span class="lb"><span>53%</span><span>47%</span></span></span>
+          <span class="v">117.9</span><span class="n r">Reid</span></div>
+        <div class="g"><span class="n">Nate</span><span class="v">96.2</span>
+          <span class="p"><span class="bar"><u class="x" style="flex:18"></u>
+            <u class="y" style="flex:82"></u></span>
+            <span class="lb"><span>18%</span><span>82%</span></span></span>
+          <span class="v on">134.8</span><span class="n r">Drew</span></div>
+        <div class="g"><span class="n">John</span><span class="v on">142.0</span>
+          <span class="p"><span class="bar"><u class="x" style="flex:91"></u>
+            <u class="y" style="flex:9"></u></span>
+            <span class="lb"><span>91%</span><span>9%</span></span></span>
+          <span class="v">108.3</span><span class="n r">Vince</span></div>
+      </div>
+
+      <div class="wire" style="margin-top:22px">
+        <div class="c">
+          <div class="l"><i>&#10022;</i>Nate needs 38.6 from a Monday night
+            back who has not cleared 30 all year.</div>
+          <div class="l"><i>&#10022;</i>Bryce is four points from the highest
+            losing score in league history.</div>
+        </div>
+        <div class="c">
+          <div class="l"><i>&#10022;</i>John takes the all-time points record
+            at 16.2 tonight. He is on 14.9.</div>
+          <div class="l"><i>&#10022;</i>A Drew win ends Nate&rsquo;s eleven-game
+            streak, the second longest ever.</div>
+        </div>
+      </div>
+
+      <!-- Sunday alone left a quarter of the sheet bare, and the
+           objection this slide answers is "that sounds like work",
+           which one live board does not fully put down. Tuesday
+           morning is the half that proves nobody has to be there:
+           the rankings move and the pick'ems board settles itself
+           overnight, off the same games. -->
+      <div style="display:flex;margin-top:26px;padding-top:22px;
+                  border-top:1px solid var(--line)">
+        <div style="flex:1;min-width:0;padding-right:28px">
+          <div class="kick" style="margin-bottom:14px">
+            Tuesday, 7am &nbsp;<u></u>&nbsp; Power rankings</div>
+          <div class="ruled tight">
+            <div class="r"><span class="k">Drew<i>Up four, the biggest jump of the year</i></span>
+              <span class="v on">1</span></div>
+            <div class="r"><span class="k">Bryce<i>Held, and has not left the top three</i></span>
+              <span class="v">2</span></div>
+            <div class="r"><span class="k">Nate<i>Down five after one bad Sunday</i></span>
+              <span class="v">7</span></div>
+          </div>
+        </div>
+        <div style="flex:1;min-width:0;padding-left:28px;
+                    border-left:1px solid var(--line)">
+          <div class="kick" style="margin-bottom:14px">
+            Tuesday, 7am &nbsp;<u></u>&nbsp; Pick&rsquo;ems</div>
+          <div class="picks-b" style="flex:none">
+            <div class="r lead" style="padding:11px 0"><span class="mono">D</span>
+              <span class="nm">Drew</span><span class="rec">5&ndash;1</span>
+              <span class="chips"><i class="w">W</i><i class="w">W</i><i class="l">L</i>
+                <i class="w">W</i><i class="w">W</i><i class="w">W</i></span></div>
+            <div class="r" style="padding:11px 0"><span class="mono">R</span>
+              <span class="nm">Reid</span><span class="rec">4&ndash;2</span>
+              <span class="chips"><i class="w">W</i><i class="l">L</i><i class="w">W</i>
+                <i class="w">W</i><i class="l">L</i><i class="w">W</i></span></div>
+            <div class="r" style="padding:11px 0"><span class="mono">V</span>
+              <span class="nm">Vince</span><span class="rec">1&ndash;5</span>
+              <span class="chips"><i class="l">L</i><i class="l">L</i><i class="w">W</i>
+                <i class="l">L</i><i class="l">L</i><i class="l">L</i></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="plat" style="margin-top:26px">
+        <div class="p"><div class="n">Thursday</div><div class="s">The week ahead</div></div>
+        <div class="p"><div class="n">Sunday</div><div class="s">Live from kickoff</div></div>
+        <div class="p"><div class="n">Tuesday</div><div class="s">Rebuilt overnight</div></div>
+        <div class="p off"><div class="n">February</div><div class="s">It sleeps</div></div>
+      </div>
+
+      ${strap(`Power rankings, pick&rsquo;ems, record chases and a written preview
+               of every matchup, <em>every week</em>, without anybody in your
+               league lifting a finger.`,
+              'Starts the first<br>Thursday of September')}
+    </div>` + foot(n);
+
+/* ── 07 the back cover ───────────────────────────────────────
+   Same offer as the tour, word for word. Two posts making the same
+   promise in two different ways is a campaign; two posts making
+   two different promises is a mess. */
 } else if (s.kind === 'close') {
   body.innerHTML = runHead(s.run) + `
     <div class="page" style="justify-content:space-between">
       <div>
-      <div class="mastbar">
-        <span>Vol. II &middot; No. 118</span>
-        <span class="mid">Sleeper &middot; ESPN &middot; Yahoo &middot; NFL.com</span>
-        <span>Price: one league ID</span>
-      </div>
-      <div class="kick-c" style="text-align:left;margin-top:46px">Start your chronicle</div>
-      <div class="nameplate" style="font-size:88px;margin-top:20px">
-        Your league has a<br><em>paper trail.</em><br>Go and read it.</div>
+        <div class="mastbar">
+          <span>Vol. II &middot; No. 118</span>
+          <span class="mid">Sleeper &middot; ESPN &middot; Yahoo &middot; NFL.com</span>
+          <span>Price: one league ID</span>
+        </div>
+        <div class="kick-c" style="text-align:left;margin-top:46px">Start your chronicle</div>
+        <div class="nameplate" style="font-size:88px;margin-top:20px">
+          Your league has a<br><em>paper trail.</em><br>Go and read it.</div>
       </div>
 
       <div class="offer">
@@ -2007,9 +1944,6 @@ if (s.kind === 'front') {
         <span style="margin-left:auto;color:var(--mute)">Or read the demo first</span>
       </div>
 
-      <!-- The back cover. The offer used to end two thirds down the
-           sheet and the last slide of the deck closed on a quarter
-           page of nothing. -->
       <div>
         <div class="foil" style="width:64%;margin:0 auto 30px"></div>
         <div class="nameplate" style="font-size:64px;text-align:center">

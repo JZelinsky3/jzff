@@ -244,22 +244,48 @@ where you would actually find a book, a newspaper or an almanac:
 
 | | | |
 |---|---|---|
-| `g-shelf` | 02 | dim library, warm lamp pool, case boards behind, the wooden plank |
-| `g-baize` | 03 | reading table: green baize, tooled oxblood border, gold fillet |
-| `g-cork` | 04 | bulletin board in a wood frame, volumes tacked through the corner |
-| `g-news` | 05 | newsprint, light, with a fold crease |
+| `g-shelf` | 02 | dim library, warm lamp pool, the wooden plank |
+| `g-stone` | 03 | dark warm charcoal, near-zero chroma, lit from above |
+| `g-kraft` | 04 | archive-folder board, mid-tone, soft grain |
+| `g-news`  | 05 | newsprint, light, with a fold crease |
+| `g-slab`  | 06 | neutral dark, for plates to sit on |
 
-`g-baize` exists because cream boards and a mahogany annual on navy
-was the wrong room entirely. `g-cork` because a record board and a
-draft board are both literally boards. Wood appears only under the
-shelf, which is the one place wood belongs.
+### The colour rule
+
+**When the objects carry the colour, the ground goes neutral.** Near
+zero chroma, and either far darker or far lighter than what sits on
+it. Two saturated hues facing each other is how a board ends up
+reading as a flag or a holiday, and this went wrong three times before
+the rule got written down:
+
+* **Green baize under cream and mahogany.** Mahogany is a dark
+  red-orange, so a green field under it is a straight complement
+  pairing, and cream on any saturated hue picks up a cast. It is
+  low-chroma warm charcoal now (`g-stone`).
+* **An oxblood border on that green.** Saturated red frame, saturated
+  green field. Christmas. Gone, along with the wood border round the
+  cork: both turned the sheet into a picture frame that had nothing to
+  do with the page inside it. **Grounds run to the edge.**
+* **Orange cork under a green volume.** The same complement problem,
+  and the grain was coarse enough to read as sandpaper. Pulled down to
+  a low-chroma kraft board with softer speckle.
+
+Which way to go, darker or lighter, is set by the volumes. `g-stone`
+is dark because its two are cream and mahogany. `g-kraft` is mid-tone
+because both of its two are near-black and need the ground to separate
+them.
+
+**Mid-tone grounds need dark chrome and a shallow falloff.** Set
+`ink: 1` to put `.is-ink` on the board; it flips the running head and
+the foot to ink and kills the vignette, the wash and the ledger lines.
+Those values are tuned to survive on `g-kraft`, not just on paper — on
+the first pass they were newsprint-only and the foot strap vanished. A
+heavy bottom vignette does the same thing, so a mid-tone ground falls
+off shallowly.
 
 **One section runs light.** Fourteen dark boards in a row go flat no
-matter how well each is lit, so 05 is paper with the two volumes as
-dark slabs on it. `g-news` also puts `.is-ink` on the board, which
-flips the running head and foot to ink and kills the vignette, the
-wash and the ledger lines. The volumes carry their own ink so they are
-untouched.
+matter how well each is lit, so 04 and 05 lift the deck out of the
+dark before it drops back for the live season.
 
 **Texture has to be coarse.** The first cork was one fine-grained
 noise layer and it rendered as a flat tan gradient: the deck draws at
@@ -267,7 +293,26 @@ noise layer and it rendered as a flat tan gradient: the deck draws at
 away on the way down. It is two layers now, dark grains over light
 ones, both well above 1px.
 
-* **`.vol`** — a chapter as a bound volume lying open on it:
+### Two ways to draw a chapter, and counting
+
+`treat:` on a slide picks one. **Do not let the whole deck run on
+one.** Fourteen bound volumes in different colours is the same
+mistake as one ground under every slide, a layer up.
+
+* **`.plate`** (`treat: 'plate'`, slide 06) — a flat field of the
+  page's own colour with a hairline inset and nothing else: no cloth,
+  no binding, no frame. It is also laid out differently, which is the
+  actual point: the header runs **across** the top with the title and
+  dek on one line and the figure takes the full width underneath,
+  instead of a header column beside a figure column.
+
+  Use it on a pairing whose two pages differ in value. Two navies on a
+  neutral ground just go muddy — which is why the All-Time Team is
+  keyed to its **paper** stock in `PAGES` rather than its navy chrome.
+  The lineup really does print on paper on that page, and it gives the
+  slide a cream plate against the Chart Room's dark one.
+
+* **`.vol`** (the default) — a chapter as a bound volume lying open:
   its own cloth, a sewn binding down the inner edge, a soft shadow
   cast on the leather. `--cloth` and `--foil` come from `PAGES`, and
   the volume overrides the ink roles so every figure inside picks up

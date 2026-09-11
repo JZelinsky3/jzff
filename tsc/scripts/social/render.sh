@@ -155,7 +155,7 @@ case "${1:-}" in
   # order and the layout rules.
   concepts)
     echo "Rendering the treatments review sheet:"
-    shot "file://$HERE/concepts.html" "concepts" 1620 2600
+    shot "file://$HERE/concepts.html" "concepts" 1440 3010
     ;;
   tour)
     shift
@@ -165,6 +165,17 @@ case "${1:-}" in
     for i in "${SLIDES[@]}"; do
       shot "file://$HERE/tour.html?slide=$i" \
            "tour-$(printf '%02d' "$i")" 1080 1350
+    done
+    ;;
+
+  pitch)
+    shift
+    SLIDES=("$@")
+    [ ${#SLIDES[@]} -eq 0 ] && SLIDES=($(seq 1 7))
+    echo "Rendering sign-up carousel:"
+    for i in "${SLIDES[@]}"; do
+      shot "file://$HERE/pitch.html?slide=$i" \
+           "pitch-$(printf '%02d' "$i")" 1080 1350
     done
     ;;
 
