@@ -631,8 +631,12 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
     }
   }
   // The Rumor Mill: /leagues/<slug>/live/trades/mocks/
+  // Bespoke card at /api/og/mill/<slug>, leading with the week's own
+  // headlines. It used to take the stamped league cover on the reasoning
+  // that the Mill had no single deal to feature; the headlines ARE the
+  // feature, and "The Rumor Mill" alone is not a reason to click.
   if (file === 'live/trades/mocks/index.html') {
-    const url = new URL(`/api/og/league/${meta.slug}?page=mill`, req.nextUrl.origin).toString()
+    const url = new URL(`/api/og/mill/${meta.slug}`, req.nextUrl.origin).toString()
     return {
       url,
       title: `${meta.name} · The Rumor Mill`,
