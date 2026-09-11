@@ -231,20 +231,27 @@ body {
 .rc-grade.a { color: var(--g-a); }
 .rc-grade.b { color: var(--g-b); }
 
-.rc-list { margin: .75rem 0 0; }
+/* Each player is its own cell, not a line in an agate block. The list
+   version saved vertical space but read as fine print; a trade is three
+   or four objects and they should look like objects. */
+.rc-list { margin: .75rem 0 0; display: flex; flex-direction: column; gap: .35rem; }
 .rc-row {
-  display: flex; align-items: baseline; gap: .55rem;
-  padding: .38rem 0;
-  border-bottom: 1px dotted var(--line-soft);
+  display: flex; align-items: center; gap: .5rem;
+  padding: .45rem .55rem;
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--line-soft);
+  border-radius: 5px;
 }
-.rc-row:last-child { border-bottom: none; }
 .rc-pos {
   font-family: var(--mono); font-size: .52rem; font-weight: 700;
-  letter-spacing: .1em; width: 30px; flex-shrink: 0; color: var(--mute);
+  letter-spacing: .1em; color: var(--mute);
+  background: rgba(255,255,255,.05);
+  padding: 2px 5px; border-radius: 3px;
+  min-width: 32px; text-align: center; flex-shrink: 0;
 }
 .rc-side:nth-of-type(2) .rc-pos { color: var(--sage); }
 .rc-side:nth-of-type(3) .rc-pos { color: var(--orchid); }
-.rc-player { font-family: var(--serif); font-size: .95rem; flex: 1; min-width: 0; }
+.rc-player { font-family: var(--serif); font-size: .92rem; flex: 1; min-width: 0; }
 .rc-tm {
   font-family: var(--mono); font-size: .52rem; font-weight: 700;
   letter-spacing: .1em; color: var(--mute);
@@ -252,6 +259,8 @@ body {
 .rc-rk {
   font-family: var(--mono); font-size: .52rem; font-weight: 700;
   color: var(--copper); letter-spacing: .08em;
+  border: 1px solid rgba(216,177,90,.35); background: rgba(216,177,90,.08);
+  padding: 2px 7px; border-radius: 999px;
 }
 .rc-recap {
   border-top: 1px solid var(--line);

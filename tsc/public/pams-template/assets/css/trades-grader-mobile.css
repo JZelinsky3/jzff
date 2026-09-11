@@ -56,8 +56,14 @@
     --tg-text:      #ede5f5;
     --tg-text-em:   #e8a26c;
     --tg-gold:      #d49260;
-    --tg-a:         #9eb280;
-    --tg-b:         #c98ed1;
+    /* The two sides are true inverses of each other, so their accents are
+       too: A is a light purple on its dark panel, B the same purple driven
+       dark for its light one. The sage green A used to carry read as a
+       third colour that belonged to neither card. C only shows up on
+       three-way trades and stays copper so it can't be mistaken for
+       either of them. */
+    --tg-a:         #c9b0ea;
+    --tg-b:         #4a2f6b;
     --tg-c:         #d4a36e;
 
     background: var(--tg-bg) !important;
@@ -367,15 +373,28 @@
     gap: 0 !important;
     background: transparent !important;
   }
+  /* Two-column grid so the grade can ride in the manager's row without
+     touching trades.js, which the desktop wire shares. Row 1 is identity
+     on the left and the letter on the right; rows 2 and 3 span both
+     columns. The grade used to sit in a panel at the foot of the card,
+     which read as a second section and pushed every card taller. */
   body[data-trades-theme] .tr-side {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    align-items: center !important;
     background: var(--tg-card) !important;
     padding: 1rem 1rem 1.05rem !important;
-    gap: .65rem !important;
+    gap: .7rem .75rem !important;
     border: none !important;
     box-shadow: none !important;
     position: relative;
     --side-accent: var(--tg-mute);
   }
+  body[data-trades-theme] .tr-side-head  { grid-column: 1; grid-row: 1; }
+  body[data-trades-theme] .tr-grade,
+  body[data-trades-theme] .tr-grade-pending { grid-column: 2; grid-row: 1; }
+  body[data-trades-theme] .tr-side-label { grid-column: 1 / -1; grid-row: 2; }
+  body[data-trades-theme] .tr-assets     { grid-column: 1 / -1; grid-row: 3; }
   body[data-trades-theme] .tr-side:nth-of-type(1) { --side-accent: var(--tg-a); }
   body[data-trades-theme] .tr-side:nth-of-type(2) { --side-accent: var(--tg-b); }
   body[data-trades-theme] .tr-side:nth-of-type(3) { --side-accent: var(--tg-c); }
@@ -399,7 +418,11 @@
     align-items: center !important;
     gap: .7rem !important;
     padding-right: 0;
+    /* Shares row 1 with the grade. Without min-width:0 a long team name
+       refuses to wrap and pushes the letter off the card edge. */
+    min-width: 0;
   }
+  body[data-trades-theme] .tr-side-head > div { min-width: 0; }
   body[data-trades-theme] .tr-side-avatar {
     width: 36px !important; height: 36px !important;
     border-radius: 50% !important;
@@ -449,16 +472,25 @@
     border-radius: 0 !important;
     width: fit-content;
   }
+  /* Aligned with the TEXT inside the player cells below, not with their
+     outer edge. Flush left it started a border and a pad ahead of the
+     first thing it was introducing. .55rem cell padding + 1px border. */
   body[data-trades-theme] .tr-side-label {
-    padding-left: 0;
+    padding: 0 0 0 calc(.55rem + 1px) !important;
   }
   body[data-trades-theme] .tr-side-label::before { content: none !important; }
 
-  /* ── Assets — clean rows with a position pill + name + team ── */
+  /* ── Assets — clean rows with a position pill + name + team ──
+     padding:0 is load-bearing. The walnut "cards" theme insets this block
+     by 1.1rem on both sides, and this sheet never had an opinion on it, so
+     the player cells sat 18px inside the manager row and the "Received"
+     caption above them while everything else ran to the card's padding.
+     Same class of leak as the gold/coral bars and the grade box. */
   body[data-trades-theme] .tr-assets {
     display: flex !important;
     flex-direction: column !important;
     gap: .35rem !important;
+    padding: 0 !important;
   }
   body[data-trades-theme] .tr-asset {
     display: flex !important;
@@ -547,27 +579,22 @@
   }
 
   /* ── Grade badges ─────────────────────────────────
-     A circular pill at the bottom of each side, colored
-     by the grade tier. Stands out as the verdict. */
+     Just the letter, centred in the manager's row at the
+     right edge of the card. No box, no "GRADE" caption:
+     a circled letter beside a name in a trade recap can't
+     be anything else. */
   body[data-trades-theme] .tr-grade {
-    margin-top: .8rem !important;
-    padding-top: .75rem !important;
-    border-top: 1px solid var(--tg-line-soft) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
-    gap: .65rem !important;
+    justify-content: flex-end !important;
+    gap: .5rem !important;
   }
-  body[data-trades-theme] .tr-grade::before { content: 'Grade'; }
-  body[data-trades-theme] .tr-grade::before {
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: .5rem;
-    letter-spacing: .28em;
-    text-transform: uppercase;
-    color: var(--tg-mute);
-    margin-right: auto;
-  }
+  body[data-trades-theme] .tr-grade::before,
   body[data-trades-theme] .tr-grade::after { content: none !important; }
   body[data-trades-theme] .tr-grade-letter {
     display: inline-flex !important;
@@ -621,14 +648,20 @@
     align-items: center !important;
     gap: .45rem !important;
   }
+  /* Ungraded trades put a caption where the letter would be. Narrow
+     enough to leave the manager name room, so it wraps to two lines
+     rather than squeezing the identity column. */
   body[data-trades-theme] .tr-grade-pending {
-    margin-top: .8rem !important;
-    padding-top: .75rem !important;
-    border-top: 1px solid var(--tg-line-soft) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    max-width: 5.2rem;
+    text-align: right;
+    line-height: 1.5 !important;
     font-family: var(--mono) !important;
     font-weight: 700 !important;
-    font-size: .52rem !important;
-    letter-spacing: .26em !important;
+    font-size: .5rem !important;
+    letter-spacing: .2em !important;
     text-transform: uppercase !important;
     color: var(--tg-mute) !important;
     background: transparent !important;
@@ -751,23 +784,21 @@ body[data-trades-theme] .tr-page-sub {
     display: none !important;
   }
 
-  /* 2 · The grade panel.
+  /* 2 · The grade panel, removed.
      The walnut theme paints this #2a1d11, a brown box on an aubergine
-     card. Keeping the box (it frames the verdict) and recolouring it to
-     the plum palette, rather than stripping it out. Each side gets a fill
-     that contrasts with ITS OWN surface, since side B is inverted below.
-     Horizontal margins dropped too: they pushed the row wider than the
-     card and clipped the letter. */
+     card. It was recoloured to plum for a while, then dropped entirely:
+     the letter now sits in the manager's own row at the top of the card
+     (see the grid above), so a framed panel at the foot was a second
+     section saying the same thing. Only the transparent reset survives,
+     and it has to repeat here because this block loads after the one
+     that sets it. */
   body[data-trades-theme] .tr-grade {
-    margin: .9rem 0 0 !important;
-    padding: .6rem .75rem !important;
-    background: var(--tg-card-head) !important;
-    color: var(--tg-text) !important;
-    border: 1px solid var(--tg-line) !important;
-    border-radius: 6px !important;
-    justify-content: space-between !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    justify-content: flex-end !important;
   }
-  body[data-trades-theme] .tr-grade::before { color: var(--tg-mute) !important; }
 
   /* 3 · Two cards, opposite surfaces.
      Accent rails alone weren't enough: both sides still read as the same
@@ -785,12 +816,11 @@ body[data-trades-theme] .tr-page-sub {
     border: none !important;
     margin: 1rem !important;
   }
-  /* One uniform border per side card. The accent used to be a 3px left
-     rail, which made each card look like it was leaning; the side colour
-     now rings the whole card instead, at about half strength so a full
-     perimeter of it doesn't shout. */
+  /* One uniform border per side card, 2px so each side reads as a solid
+     object rather than a hairline sketch. The accent used to be a 3px
+     left rail, which made each card look like it was leaning. */
   body[data-trades-theme] .tr-side {
-    border: 1px solid var(--side-ring, var(--tg-line)) !important;
+    border: 2px solid var(--side-ring, var(--tg-line)) !important;
     border-radius: 8px !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, .28) !important;
     padding: 1rem !important;
@@ -799,37 +829,89 @@ body[data-trades-theme] .tr-page-sub {
   /* Side A — a RAISED plum panel, deliberately not the same tone as the
      trade card it sits on. It used to be exactly --tg-card, so it had no
      edge of its own and only side B looked like a card. Both sides now sit
-     visibly on top of the card, in opposite directions from it. */
+     visibly on top of the card, in opposite directions from it.
+
+     A and B are exact inverses down to the border: A is the dark panel
+     ringed in the light purple, B the light panel ringed in A's own
+     background colour. */
   body[data-trades-theme] .tr-side:nth-of-type(1) {
     background: #2a2140 !important;
-    --side-ring: rgba(158, 178, 128, .5);
+    --side-ring: rgba(201, 176, 234, .55);
   }
 
   /* Side B — the inverse. Light surface, dark ink. Every child that
-     assumed a dark background has to be flipped or it disappears. */
+     assumed a dark background has to be flipped or it disappears.
+     The ink is deep purple rather than near-black, mirroring A's light
+     lavender text: a black-on-lavender panel read as a different design
+     dropped into the card. */
   body[data-trades-theme] .tr-side:nth-of-type(2) {
     background: #e9e1f2 !important;
-    color: #1c1526 !important;
-    --side-ring: rgba(150, 92, 160, .45);
+    color: #2e2145 !important;
+    --side-ring: #2a2140;
   }
-  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-side-name { color: #16101f !important; }
-  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-side-team { color: #5b4f70 !important; }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-side-name { color: #2a1d42 !important; }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-side-team { color: #6a5a88 !important; }
   body[data-trades-theme] .tr-side:nth-of-type(2) .tr-side-avatar {
-    border-color: #cbbfe0 !important;
+    border-color: #bdaed6 !important;
   }
   body[data-trades-theme] .tr-side:nth-of-type(2) .tr-asset {
-    background: rgba(28, 21, 38, .05) !important;
-    border-color: rgba(28, 21, 38, .12) !important;
+    background: rgba(42, 33, 64, .05) !important;
+    border-color: rgba(42, 33, 64, .16) !important;
   }
-  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-asset-name { color: #16101f !important; }
-  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-asset-pos,
-  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-asset-team { color: #6a5d80 !important; }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-asset-name { color: #2a1d42 !important; }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-asset-team { color: #6a5a88 !important; }
+  /* The position pill inherits a white wash from the dark panel, which is
+     invisible on this one. It needs the opposite: a dark tint of the
+     side's own accent. */
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-asset-pos {
+    color: var(--side-accent) !important;
+    background: rgba(74, 47, 107, .13) !important;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-asset.kind-pick .tr-asset-pos {
+    color: #8a5a1e !important;
+    background: rgba(138, 90, 30, .12) !important;
+  }
   body[data-trades-theme] .tr-side:nth-of-type(2) .tr-grade {
-    background: rgba(28, 21, 38, .07) !important;
-    border-color: rgba(28, 21, 38, .14) !important;
-    color: #1c1526 !important;
+    background: transparent !important;
+    border: none !important;
+    color: #2e2145 !important;
   }
-  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-grade::before { color: #6a5d80 !important; }
+  /* Rank chips and grade letters are tuned for the dark panel: copper on
+     near-black, pastel grade colours on 10% fills. All of it goes pale on
+     the light side, so the whole set is driven darker here. */
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-asset-rank {
+    color: #7a4a12 !important;
+    background: rgba(138, 90, 30, .1) !important;
+    border-color: rgba(138, 90, 30, .32) !important;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-asset-rank-revisit {
+    background: rgba(42, 33, 64, .05) !important;
+    border-color: rgba(42, 33, 64, .2) !important;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-asset-rank-then,
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-asset-rank-arrow { color: #6a5a88 !important; }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-asset-rank-now { color: #7a4a12 !important; }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-grade-letter {
+    background: rgba(42, 33, 64, .05) !important;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-grade-letter.g-a {
+    color: #2f7a42 !important; border-color: #2f7a42 !important;
+    background: rgba(47, 122, 66, .1) !important;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-grade-letter.g-b {
+    color: #8a6512 !important; border-color: #8a6512 !important;
+    background: rgba(138, 101, 18, .1) !important;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-grade-letter.g-c {
+    color: #6f5a33 !important; border-color: #6f5a33 !important;
+    background: rgba(111, 90, 51, .1) !important;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-grade-letter.g-d {
+    color: #a53c26 !important; border-color: #a53c26 !important;
+    background: rgba(165, 60, 38, .1) !important;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-grade-arrow { color: #6a5a88 !important; }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-grade-pending { color: #6a5a88 !important; }
 
   /* 4 · Writeup last.
      The markup order is head → summary → sides, so the grade explanation
