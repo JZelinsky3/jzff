@@ -79,20 +79,33 @@ export function stripDashes(text: string): string {
 //
 // Dynasty vocabulary is only a violation in REDRAFT, where the roster
 // resets and youth is worth nothing. In dynasty it is the correct analysis.
-export function summaryViolations(
-  text: string,
-  leagueType: string,
+export type SummaryCheckOpts = {
   // Tokens identifying pieces each side RECEIVED in this trade: surnames
-  // and rank labels ("Nabers", "WR13"). Optional so callers can skip it.
-  receivedTokens: string[] = [],
+  // and rank labels ("Nabers", "WR13").
+  receivedTokens?: string[]
   // Exact side names. A fragment of one of these is a violation: "Kyle's"
   // for "Kyle's Foreskin" names a different team in a league with two
   // Kyles, and the reader can't tell which.
-  sideNames: string[] = [],
+  sideNames?: string[]
   // Every rank label in the trade, flagged when the player is deep enough
-  // that printing his exact rank is false precision. Optional.
-  rankLabels: Array<{ label: string; deep: boolean }> = [],
+  // that printing his exact rank is false precision.
+  rankLabels?: Array<{ label: string; deep: boolean }>
+  // The week the trade happened, null for preseason. Standings language is
+  // only legitimate once a record exists to talk about.
+  week?: number | null
+}
+
+export function summaryViolations(
+  text: string,
+  leagueType: string,
+  opts: SummaryCheckOpts = {},
 ): string[] {
+  const {
+    receivedTokens = [],
+    sideNames = [],
+    rankLabels = [],
+    week = null,
+  } = opts
   const out: string[] = []
   const t = text.toLowerCase()
 
@@ -188,6 +201,33 @@ export function summaryViolations(
   }
 
   if (leagueType === 'redraft') {
+    // Intent framing. Every manager in a one-year league is trying to make
+    // the playoffs every season, and the season resets afterward, so nobody
+    // is tanking or rebuilding and there are no buyers and sellers. Calling
+    // one side's trade "a playoff push" implies the other side isn't
+    // chasing the same thing, which is never true here.
+    //
+    // Standings language is legal from week 7 on, where a record exists and
+    // is fed to the model. Before that (and in the preseason, where week is
+    // null) any of it is invention.
+    const STANDINGS_TALK = [
+      /\bplayoff push\b/i, /\bpostseason push\b/i, /\bmaking a push\b/i,
+      /\bwin-?now\b/i, /\bgoing for it\b/i, /\ball-?in\b/i,
+      /\bbuyers?\b/i, /\bsellers?\b/i, /\bpunting\b/i, /\btanking\b/i,
+      /\bplayoff (spot|berth|hopes|picture|race|position)\b/i,
+      /\bin the hunt\b/i, /\bseeding\b/i, /\bbubble\b/i,
+    ]
+    const standingsHits = STANDINGS_TALK.filter((re) => re.test(text))
+    if (standingsHits.length > 0) {
+      const when = week == null ? 'a preseason trade' : `a week ${week} trade`
+      if (week == null || week < STANDINGS_TALK_FROM_WEEK) {
+        out.push(
+          `framed ${when} around playoff positioning; every manager in this league is chasing ` +
+          `the playoffs every year, and before week ${STANDINGS_TALK_FROM_WEEK} there is no record to argue from`,
+        )
+      }
+    }
+
     // Deliberately NOT 'upside': in redraft that means this week's ceiling,
     // which is exactly the right thing to talk about. Only terms that are
     // meaningless without a next season belong here.
@@ -229,7 +269,74 @@ export function summaryViolations(
   return out
 }
 
+// Before this week a redraft trade has no standings story. Everyone is 0-0
+// or close to it, everyone is trying to make the playoffs, and "X is making
+// a playoff push" says nothing except that the model needed a sentence.
+export const STANDINGS_TALK_FROM_WEEK = 7
+
 export const FIRST_GRADED_SEASON = 2026
+
+// Each manager's record through the week BEFORE a trade, plus where that
+// put them in the league. The grader had no standings data at all, which
+// did not stop the model from writing that one side was pushing for the
+// playoffs off a preseason deal. Regular-season games only: a playoff
+// result can't precede an in-season trade anyway, and counting them would
+// mix two different things.
+type RecordLine = { w: number; l: number; t: number; pf: number; rank: number; of: number }
+
+async function loadRecordsBefore(
+  db: ReturnType<typeof createAdminClient>,
+  seasonId: string,
+  week: number | null,
+): Promise<Map<string, RecordLine>> {
+  const out = new Map<string, RecordLine>()
+  if (week == null || week < STANDINGS_TALK_FROM_WEEK) return out
+
+  const { data } = await db
+    .from('matchups')
+    .select('manager_a_id, manager_b_id, score_a, score_b')
+    .eq('season_id', seasonId)
+    .eq('is_playoff', false)
+    .lt('week', week)
+  if (!data || data.length === 0) return out
+
+  const tally = new Map<string, { w: number; l: number; t: number; pf: number }>()
+  const bump = (id: string) => {
+    let r = tally.get(id)
+    if (!r) { r = { w: 0, l: 0, t: 0, pf: 0 }; tally.set(id, r) }
+    return r
+  }
+  for (const m of data) {
+    const a = m.manager_a_id as string
+    const b = m.manager_b_id as string
+    const sa = m.score_a as number | null
+    const sb = m.score_b as number | null
+    // An unplayed or unscored matchup contributes nothing. Treating a null
+    // as a zero would hand somebody a loss they never played.
+    if (sa == null || sb == null) continue
+    const ra = bump(a)
+    const rb = bump(b)
+    ra.pf += sa
+    rb.pf += sb
+    if (sa > sb) { ra.w += 1; rb.l += 1 }
+    else if (sb > sa) { rb.w += 1; ra.l += 1 }
+    else { ra.t += 1; rb.t += 1 }
+  }
+
+  // Rank by wins, then points for, the way almost every fantasy platform
+  // breaks a tie.
+  const ordered = [...tally.entries()].sort((x, y) =>
+    y[1].w - x[1].w || y[1].pf - x[1].pf)
+  ordered.forEach(([id, r], i) => {
+    out.set(id, { ...r, rank: i + 1, of: ordered.length })
+  })
+  return out
+}
+
+function formatRecord(r: RecordLine): string {
+  const wl = r.t > 0 ? `${r.w}-${r.l}-${r.t}` : `${r.w}-${r.l}`
+  return `${wl}, ${ordinal(r.rank)} of ${r.of} by record`
+}
 
 // A verdict lands four weeks after the week the trade happened, not four
 // weeks after the grade was written. Grading time is an artifact of when the
@@ -535,19 +642,27 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
       })
     : new Map<string, string>()
 
+  // Records as they stood going into this trade. Empty before week 7 by
+  // design, so the model can't reach for a standings angle that doesn't
+  // exist yet.
+  const tradeWeek = (trade.week as number | null) ?? null
+  const records = await loadRecordsBefore(db, trade.season_id as string, tradeWeek)
+
   // 4. Build the prompt.
   const prompt = buildPrompt({
     leagueType,
     seasonYear,
-    week: trade.week ?? null,
+    week: tradeWeek,
     tradeId,
     sides: sides.map((s) => {
       const mgr = Array.isArray(s.managers) ? s.managers[0] : s.managers
+      const rec = records.get(s.manager_id as string)
       return {
         side_id: s.id as string,
         manager_name: (mgr?.team_name as string | null) || (mgr?.display_name as string) || 'Manager',
         assets: (s.assets as Array<Record<string, unknown>>) ?? [],
         roster_summary: rosterSummaries.get(s.id as string) ?? null,
+        record: rec ? formatRecord(rec) : null,
       }
     }),
     bundle,
@@ -640,7 +755,8 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     const MAX_FIXUPS = 2
     for (let fix = 0; fix < MAX_FIXUPS; fix++) {
       const violations = summaryViolations(
-        String(parsed?.summary ?? ''), leagueType, receivedTokens, sideNames, rankLabels,
+        String(parsed?.summary ?? ''), leagueType,
+        { receivedTokens, sideNames, rankLabels, week: tradeWeek },
       )
       if (violations.length === 0) break
       if (fix === MAX_FIXUPS - 1) {
@@ -1222,6 +1338,10 @@ type PromptArgs = {
     side_id: string
     manager_name: string
     assets: Array<Record<string, unknown>>
+    // W-L and league position going into this trade. Null in the preseason
+    // and before STANDINGS_TALK_FROM_WEEK, which is what keeps the model
+    // from arguing standings that don't exist yet.
+    record?: string | null
     // One-line positional depth summary for the side's current roster.
     // Null when the manager couldn't be matched to a live roster or the
     // roster fetch failed.
@@ -1281,6 +1401,15 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
     '1. NEVER OPEN with "The X won this trade", "X won the trade", or any variation of who-won-the-trade as the first line. The user message names a LEAD ANGLE for this specific write-up: open from that angle, then broaden into the full rationale. This is a rule about the OPENING SENTENCE ONLY. Once you are past it, naming the winner outright is expected.',
       '',
       'NEVER WRITE THE NEGATIVE SPACE. These instructions tell you which factors do not apply in this league. That is guidance for YOU. The reader has not seen it and does not need it. When a factor does not apply, LEAVE IT OUT SILENTLY. Never write a clause announcing that something is irrelevant, does not matter, is a non-factor, is moot, or is worth nothing here. "While the age gap is irrelevant in redraft" is exactly the sentence never to write: it spends a clause on a thing you are not allowed to use, it names no player, and it tells the reader nothing. Delete the thought, do not negate it.',
+      '',
+      args.leagueType === 'redraft'
+        ? [
+            'EVERY TEAM IS TRYING TO MAKE THE PLAYOFFS. This is a one-year league. It resets every season, so a future season is worth nothing to anybody and NOBODY tanks, rebuilds, punts a year, or sells. There are no buyers and no sellers, and no side is more motivated than the other. Never frame one side as "making a playoff push", "going for it", "in win-now mode", "all in", or "chasing a playoff spot", because every manager in this league is doing exactly that, every year, and saying it about one side implies the other is not.',
+            args.week != null && args.week >= STANDINGS_TALK_FROM_WEEK
+              ? `This trade happened in week ${args.week}, so a standings angle is available. Each side carries a "Record going into this trade" line. You may reference it, but ONLY by stating the record itself, and only when it is genuinely notable (near the bottom, or clearly out in front). Never convert it into a claim about who wants it more.`
+              : 'This trade happened in the PRESEASON or the first weeks of the season. There is no standings story yet: no records, no seeding, no playoff picture, no urgency. Grade the players. Any sentence about playoff position here is invented.',
+          ].join(' ')
+        : 'BUYING AND SELLING. This league carries value across seasons, so a side trading for the future against a side trading for now is a real distinction, and worth naming when the assets show it.',
       '',
       'DO NOT EXPLAIN THE LEAGUE TO THE LEAGUE. The reader is a manager in this league. He knows whether it is redraft, keeper or dynasty, he knows how many teams there are, and he knows how the lineup works. Never write "in a redraft league", "in this format", "since rosters reset every year", or any other line explaining the rules back to him. Write only what he could not already know: what these specific players do for these specific rosters.',
       '',
@@ -1351,13 +1480,14 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
         : s.assets.map((a) => `  - ${formatAssetWithValue(a, args.bundle, args.sidByAsset)}`).join('\n')
       const pkg = summarisePackage(s.assets, args.bundle, args.sidByAsset)
       const roster = s.roster_summary ? `\n   Roster BEFORE this trade: ${s.roster_summary}` : ''
+      const rec = s.record ? `\n   Record going into this trade: ${s.record}` : ''
       const a = anchors.get(s.side_id)
       const anchor = a
         ? `\n   ANCHOR GRADE: ${a.grade}${a.confident
             ? ' (high confidence, move at most one notch)'
             : ' (low confidence: this side holds picks or players the value engine could not price, move at most two notches)'}`
         : ''
-      return `Side ${idx + 1}, ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}${pkg ? `\n${pkg}` : ''}${roster}${anchor}`
+      return `Side ${idx + 1}, ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}${pkg ? `\n${pkg}` : ''}${roster}${rec}${anchor}`
     })
     .join('\n\n')
 
