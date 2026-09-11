@@ -234,3 +234,20 @@
     border-radius: 999px;
     align-items: center;
 }
+
+/* App-bar variant: icon only, no pill. The bar is dense chrome and the
+   word "Share" doesn't fit beside a centred league title. */
+.td-share-btn--bar {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    color: currentColor;
+    opacity: .85;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.td-share-btn--bar svg { width: 16px; height: 16px; }
+.td-share-btn--bar:hover, .td-share-btn--bar:focus-visible { opacity: 1; }

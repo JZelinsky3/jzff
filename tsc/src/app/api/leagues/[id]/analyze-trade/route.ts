@@ -93,8 +93,8 @@ type SidePromptCtx = {
   teamName: string
   receivedValue: number
   sentValue: number
-  received: Array<{ name: string; position: string | null; value: number }>
-  sent:     Array<{ name: string; position: string | null; value: number }>
+  received: Array<{ playerId?: string; name: string; position: string | null; value: number }>
+  sent:     Array<{ playerId?: string; name: string; position: string | null; value: number }>
   grade: string
   depth: TeamDepthDelta
   starterBefore: number
@@ -170,16 +170,31 @@ function buildAnalyzerPrompt(ctx: PromptCtx): { system: string; user: string } {
     'PER-TEAM VERDICTS. One sentence each. The verdict is the takeaway tagline for that team (e.g. "Wins big on consensus value but skews older at WR" or "Loses real value for a positional bet that probably doesn\'t pay off"). NOT another grade. That is already determined.',
     '',
     'OUTPUT: strict JSON only, no prose before/after, no markdown fences. Shape:',
+    ctx.mode === 'redraft'
+      ? 'REDRAFT LEAGUE: rosters reset every year, so age and long-term upside are worth nothing. Never credit a side for acquiring a "younger" player, "future upside", "years of control", a "contention window", or being "ascending" — those are dynasty concepts. Judge only what each side scores for the rest of THIS season. Age is worth a mention only as a current-season durability risk.'
+      : 'Long-term value counts here: age, contract horizon, and pick equity are legitimate reasons for a grade.',
+    'NAMING: refer to each side by the EXACT team name given above, character for character, or not at all. Never shorten it, never split it, never swap in a manager first name that was not provided. A half-name like "Kyle\'s" for "Kyle\'s Foreskin" reads as a different team and confuses the reader.',
+    'STARTER CLAIMS: every incoming and outgoing player is tagged STARTS or BENCH, meaning whether they are in that team\'s starting lineup after (or before) the trade. Only call a player a starter if they are tagged STARTS. A player tagged BENCH is depth, however good they are, and must not be described as a weekly starter, a plug-and-play piece, or a week 1 starter.',
+    'Never use an em dash. Use commas, periods, or parentheses.',
     '{ "narrative": "<4-6 sentences>", "teamA_verdict": "<one sentence>", "teamB_verdict": "<one sentence>" }',
   ].join('\n')
 
   const fmtSide = (s: SidePromptCtx, sideLabel: 'A' | 'B') => {
+    // Whether each incoming player actually cracks the post-trade starting
+    // lineup, stated as a fact. Without it the model inferred starter status
+    // from nothing and got it wrong, calling a player buried at the bottom
+    // of a WR bench "a true week 1 starter".
+    const startsAfter = new Set(s.depth.after.starterIds ?? [])
+    const startedBefore = new Set(s.depth.before.starterIds ?? [])
+    const slotTag = (id: string | undefined, set: Set<string>) =>
+      id ? (set.has(id) ? ' · STARTS' : ' · BENCH') : ''
+
     const receivedList = s.received.length === 0
       ? '    (nothing)'
-      : s.received.map((p) => `    - ${p.name} (${p.position ?? '?'}) · value ${Math.round(p.value)}`).join('\n')
+      : s.received.map((p) => `    - ${p.name} (${p.position ?? '?'}) · value ${Math.round(p.value)}${slotTag(p.playerId, startsAfter)}`).join('\n')
     const sentList = s.sent.length === 0
       ? '    (nothing)'
-      : s.sent.map((p) => `    - ${p.name} (${p.position ?? '?'}) · value ${Math.round(p.value)}`).join('\n')
+      : s.sent.map((p) => `    - ${p.name} (${p.position ?? '?'}) · value ${Math.round(p.value)}${slotTag(p.playerId, startedBefore)}`).join('\n')
     const marginalSign = s.marginalGain >= 0 ? '+' : ''
     return [
       `Team ${sideLabel}, ${s.teamName} (grade ${s.grade}):`,

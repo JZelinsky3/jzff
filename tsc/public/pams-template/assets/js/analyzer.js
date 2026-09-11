@@ -685,20 +685,25 @@
     // can drop in the actual manager name instead of "Team A/B".
     var legendA = teamA ? (teamA.ownerName || teamA.teamName || 'Team A') : 'Team A';
     var legendB = teamB ? (teamB.ownerName || teamB.teamName || 'Team B') : 'Team B';
+    // Percentage only. The raw point gap ("wins by 3054") is the same fact
+    // twice and the big number read as the headline, when the share is what
+    // actually says how lopsided the deal is.
     var deltaTxt = '';
     if (r.delta > 0) {
-      deltaTxt = legendA + ' wins by ' + Math.round(r.delta) +
-        ' (' + (r.deltaPct * 100).toFixed(1) + '%)';
+      deltaTxt = legendA + ' wins by ' + (r.deltaPct * 100).toFixed(1) + '%';
     } else if (r.delta < 0) {
-      deltaTxt = legendB + ' wins by ' + Math.round(-r.delta) +
-        ' (' + (Math.abs(r.deltaPct) * 100).toFixed(1) + '%)';
+      deltaTxt = legendB + ' wins by ' + (Math.abs(r.deltaPct) * 100).toFixed(1) + '%';
     } else {
       deltaTxt = 'Even';
     }
+    // Both ends read name-then-total. They used to be mirrored (B was
+    // "total · name") so that on a phone, where these stack, side B's
+    // number sat above its name while side A's sat below, and the two
+    // halves looked like different things.
     $('an-result-bar-legend').innerHTML =
       '<span><strong>' + escapeHtml(legendA) + '</strong> · ' + Math.round(totA) + '</span>' +
       '<span>' + escapeHtml(deltaTxt) + '</span>' +
-      '<span>' + Math.round(totB) + ' · <strong>' + escapeHtml(legendB) + '</strong> </span>';
+      '<span><strong>' + escapeHtml(legendB) + '</strong> · ' + Math.round(totB) + '</span>';
 
     show(resultEl);
   }

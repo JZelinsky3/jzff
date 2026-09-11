@@ -137,6 +137,7 @@ async function stampMagnitudes(
       lineupType: null,
       teamCount: null,
       qbStarters: null,
+      tePremium: null,
     })
     const valuation = await valuateLeague({
       mode: effective.mode,

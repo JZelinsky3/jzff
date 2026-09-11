@@ -160,10 +160,15 @@ export type AutoDetected = {
   // Friendly aliases for the engine's qbStarters concept (1 or 2). Null
   // when the platform doesn't expose roster_positions (ESPN / Yahoo).
   qbStarters: 1 | 2 | null
+  // Read from the league's own scoring rules where the platform exposes
+  // them (Sleeper's bonus_rec_te). Null when it doesn't, in which case the
+  // commissioner override is the only way to set it.
+  tePremium: 'NONE' | 'MILD' | 'FULL' | null
 }
 
 export const EMPTY_AUTODETECT: AutoDetected = {
   mode: null,
+  tePremium: null,
   lineupType: null,
   teamCount: null,
   qbStarters: null,
@@ -197,7 +202,7 @@ export function mergeEffective(
     qbStarters: lineupType === 'SUPERFLEX' ? 2 : (detected.qbStarters ?? 1),
     teamCount: overrides.teamCount ?? detected.teamCount ?? 12,
     scoringProfile: overrides.scoringProfile ?? 'PPR',
-    tePremium: overrides.tePremium ?? 'NONE',
+    tePremium: overrides.tePremium ?? detected.tePremium ?? 'NONE',
     rosterSlots: overrides.rosterSlots ?? {},
     valueSourcePreference: overrides.valueSourcePreference ?? 'EQUAL',
   }

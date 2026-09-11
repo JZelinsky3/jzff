@@ -343,6 +343,22 @@ function sleeperRosterPlayerIds(r: SleeperRoster): string[] {
   return out
 }
 
+// TE premium straight from the league's own scoring rules.
+//
+// Sleeper stores it as `bonus_rec_te`: points added per TE reception on
+// top of the base reception value. Nothing was reading it, so a TEP league
+// was valued as though it were standard PPR and every tight end came out
+// light. pams runs +0.5/rec, which is exactly the MILD band.
+//
+// Banding rather than a continuous scale because the value engine's
+// premium is a flat per-tier multiplier (see TE_PREMIUM_MULT): MILD is
+// sized for +0.5/rec, FULL for +1.0/rec.
+function detectSleeperTePremium(league: { scoring_settings?: Record<string, number> }): 'NONE' | 'MILD' | 'FULL' | null {
+  const bonus = league.scoring_settings?.bonus_rec_te
+  if (typeof bonus !== 'number' || !Number.isFinite(bonus) || bonus <= 0) return 'NONE'
+  return bonus >= 0.75 ? 'FULL' : 'MILD'
+}
+
 async function loadSleeper(header: LeagueHeader): Promise<LoadResult> {
   let sleeperLeague: SleeperLeague | null = null
   let users: SleeperUser[] | null = null
@@ -394,6 +410,7 @@ async function loadSleeper(header: LeagueHeader): Promise<LoadResult> {
     lineupType: countSleeperQbStarters(sleeperLeague) >= 2 ? 'SUPERFLEX' : '1QB',
     teamCount: sleeperLeague.total_rosters,
     qbStarters: (countSleeperQbStarters(sleeperLeague) >= 2 ? 2 : 1) as 1 | 2,
+    tePremium: detectSleeperTePremium(sleeperLeague),
   }
   const effective = mergeEffective(overrides, detected)
 
@@ -528,6 +545,7 @@ async function loadEspn(header: LeagueHeader): Promise<LoadResult> {
     lineupType: '1QB',
     teamCount: teams.length || 12,
     qbStarters: 1,
+    tePremium: null,
   }
   const effective = mergeEffective(overrides, detected)
 
@@ -627,6 +645,7 @@ async function loadNfl(header: LeagueHeader): Promise<LoadResult> {
     lineupType: '1QB',
     teamCount,
     qbStarters: 1,
+    tePremium: null,
   }
   const effective = mergeEffective(overrides, detected)
 
@@ -737,6 +756,9 @@ async function loadYahoo(header: LeagueHeader): Promise<LoadResult> {
     lineupType: '1QB',
     teamCount: meta.num_teams || teams.length || 12,
     qbStarters: 1,
+    // Yahoo's league meta doesn't expose per-stat scoring here, so TEP
+    // can only come from the commissioner override.
+    tePremium: null,
   }
   const effective = mergeEffective(overrides, detected)
 

@@ -338,6 +338,7 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
       lineupType: null,
       teamCount: null,
       qbStarters: null,
+      tePremium: null,
     })
   }
 
@@ -582,6 +583,7 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
     lineupType: null,
     teamCount: null,
     qbStarters: null,
+    tePremium: null,
   })
   let consensus = new Map<string, ConsensusValue>()
   try {
@@ -997,6 +999,8 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '• Each player line shows the player\'s consensus position rank (e.g. "RB3" = the 3rd-most-valuable RB on the market), consensus market value, age, and injury status when known. Position rank is your primary anchor: a player with rank "RB12" is a strong starter; "RB48" is depth. Market value settles close calls: RB11 vs RB13 with near-equal values is a wash.',
       '• Each side also has a "Current roster" line showing positional depth (e.g. "RB(4): McCaffrey (RB3), Hall (RB8), Mostert (RB42) +1 | WR(3): Chase (WR2)..."). Use this to weigh need: a side acquiring an RB while already deep at RB is paying retail; the same RB to a side thin at the position is a real win. NOTE: this is the current roster, which may differ from the at-trade roster for historical trades. When the trade is recent (within a week or two), trust the roster; for older trades, treat it as a rough proxy.',
       '• Tier reference: pos_rank 1-12 = elite starter at the position; 13-24 = solid starter; 25-48 = bye-week filler / handcuff; 49+ = deep depth / waiver.',
+      '• PACKAGE SHAPE BEATS RAW TOTAL. Each side has a "Package:" line with its player count, total value, and best piece. Do NOT grade on total value alone. A lineup starts a fixed number of players, so consolidation wins: two starters worth 9000 combined beat three pieces worth 9000 combined, because the third piece rides the bench and contributes nothing on Sunday. If one side has the better BEST player and the totals are close, that side won. Only credit the quantity side when the receiving roster is genuinely thin enough to start those extra pieces (check its Current roster line), or when the total gap is large enough to outweigh the drop in top-end talent.',
+      '• The reverse also holds: a side that turns one elite player into several mid pieces has usually lost, even at an even total, unless it had a glaring hole the depth actually fills.',
       '• Calibrate the grade gap to the rank gap:',
       '  - Both sides got comparable tiers (e.g. RB10 traded for RB14) → roughly even, both B+/B (or A-/A- if both filled real needs).',
       '  - One tier apart (RB8 vs RB22) → clear winner, A-/B range.',
@@ -1014,8 +1018,9 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       const assets = s.assets.length === 0
         ? '  (nothing)'
         : s.assets.map((a) => `  - ${formatAssetWithValue(a, args.bundle, args.sidByAsset)}`).join('\n')
+      const pkg = summarisePackage(s.assets, args.bundle, args.sidByAsset)
       const roster = s.roster_summary ? `\n   Current roster: ${s.roster_summary}` : ''
-      return `Side ${idx + 1}, ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}${roster}`
+      return `Side ${idx + 1}, ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}${pkg ? `\n${pkg}` : ''}${roster}`
     })
     .join('\n\n')
 
@@ -1117,9 +1122,11 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
       const assets = s.assets.length === 0
         ? '  (nothing)'
         : s.assets.map((a) => `  - ${formatAssetWithValue(a, args.bundle, args.sidByAsset)}`).join('\n')
+      const pkg = summarisePackage(s.assets, args.bundle, args.sidByAsset)
+      const pkgLine = pkg ? `${pkg}\n` : ''
       const rosterLine = s.roster_summary ? `   Current roster: ${s.roster_summary}\n` : ''
       const originalGradeLine = s.original_grade ? `   Original grade: ${s.original_grade}\n` : ''
-      return `Side ${idx + 1}, ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}\n${rosterLine}${originalGradeLine}`
+      return `Side ${idx + 1}, ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}\n${pkgLine}${rosterLine}${originalGradeLine}`
     })
     .join('\n')
 
@@ -1173,6 +1180,50 @@ function formatAsset(a: Record<string, unknown>): string {
 // naturally. Works on every platform because the asset was resolved to a
 // Sleeper id first (sidByAsset). Falls back to the plain format for
 // players we couldn't resolve or the value engine doesn't cover.
+// A one-line arithmetic summary of what a side is receiving.
+//
+// The model was being handed a list of players and asked to compare
+// packages in prose, so it did the addition itself and got it wrong: on a
+// 2-for-3 it claimed one side had "roughly 3,600 more value" when that
+// side was actually 1,000 BEHIND on the total. Doing the sum here removes
+// the arithmetic from the model's job.
+//
+// `best` is reported separately from `total` on purpose. Fantasy lineups
+// start a fixed number of players, so three mid pieces that add up to two
+// good ones are not equivalent: the two good ones both start and the third
+// mid piece rides the bench. Total alone hides that; best + count exposes
+// it, and the prompt rule below tells the model what to do with it.
+function summarisePackage(
+  assets: Array<Record<string, unknown>>,
+  bundle: ValueBundle,
+  sidByAsset: Map<Record<string, unknown>, string>,
+): string {
+  const vals: Array<{ v: number; label: string }> = []
+  let picks = 0
+  for (const a of assets) {
+    if (a.kind === 'pick') { picks += 1; continue }
+    if (a.kind !== 'player') continue
+    const sid = sidByAsset.get(a)
+    const cv = sid ? bundle.consensus.get(sid) : undefined
+    if (!cv) continue
+    const rank = sid ? bundle.rankLabels.get(sid) : undefined
+    vals.push({ v: cv.value, label: `${(a.name as string) || cv.name}${rank ? ` ${rank}` : ''}` })
+  }
+  if (vals.length === 0) return picks > 0 ? `   Package: ${picks} pick(s), no player value data` : ''
+
+  vals.sort((a, b) => b.v - a.v)
+  const total = vals.reduce((acc, x) => acc + x.v, 0)
+  const best = vals[0]
+  const parts = [
+    `${vals.length} valued player${vals.length === 1 ? '' : 's'}`,
+    `total ${total}`,
+    `best ${best.v} (${best.label})`,
+  ]
+  if (vals.length > 1) parts.push(`rest ${total - best.v}`)
+  if (picks > 0) parts.push(`plus ${picks} pick(s)`)
+  return `   Package: ${parts.join(', ')}`
+}
+
 function formatAssetWithValue(
   a: Record<string, unknown>,
   bundle: ValueBundle,

@@ -142,45 +142,62 @@ html, body { background: var(--td-bg, #1a1209); color: var(--td-text, #f5e9c8); 
 }
 
 /* Stacked (phone) layout — tell the two teams apart.
-   Side by side, the two panels are obviously two teams. Stacked, they are
-   identical dark cards, so scrolling a long roster you cross from one team
-   into the other without noticing and start picking for the wrong side.
+   Stacked, the two panels were identical dark cards, so scrolling a long
+   roster you crossed from one team into the other without noticing and
+   started picking for the wrong side.
 
-   Two cues, both kept strictly inside the card: real space between the
-   panels, and a side header that stays put while you scroll that panel.
-   An earlier version put a labelled rule ABOVE the second card with
-   position:absolute and bled the sticky header out with negative margins.
-   Both escaped the card — the rule landed on top of the first card's
-   bottom edge, and the header spilled past the 1px border and squared off
-   the rounded corners. Nothing here leaves the padding box now. */
+   The first attempt only added a sticky header and a "Second team" label
+   above the lower card. That labelled one side and not the other (there
+   was no "first team"), and the header floated with no visible bottom so
+   it looked like the panel just ran off. The real fix is to make side B
+   a visibly different surface from side A. */
 @media (max-width: 759px) {
-    .an-sides { gap: 2.4rem; }
+    .an-sides { gap: 2rem; }
 
-    /* Boundary marker, in normal flow at the top of the second card, so it
-       cannot overlap the card above it. */
-    .an-side + .an-side .an-side-head::before {
-        content: "Second team";
-        display: block;
-        width: 100%;
-        margin-bottom: .5rem;
-        font-family: var(--mono); font-size: .53rem;
-        letter-spacing: .25em; text-transform: uppercase;
-        color: var(--td-live);
-        opacity: .7;
+    /* Side B is a different surface: lighter card, its own accent border,
+       and inverted player rows. Nothing is labelled "second"; the colour
+       carries it. */
+    .an-side:nth-of-type(1) { --an-side-accent: var(--td-live); }
+    .an-side:nth-of-type(2) {
+        --an-side-accent: var(--td-warn, #c98ed1);
+        background: var(--td-card-hover) !important;
+        border-color: var(--an-side-accent) !important;
+    }
+    .an-side:nth-of-type(2) .an-row,
+    .an-side:nth-of-type(2) .an-pos-group {
+        background: rgba(255, 255, 255, .04);
     }
 
-    /* Keep whose roster you're in on screen. Offset by the mobile app bar
-       where one is fixed above; the fallback covers the desktop tree at
-       phone widths, where nothing is. */
+    /* Identity gets real weight, and the avatar moves to the opposite
+       edge on side B so the two headers are visibly mirrored. */
     .an-side-head {
         position: sticky;
         top: calc(var(--m-appbar-h, 0px) + env(safe-area-inset-top, 0px));
         z-index: 2;
-        background: var(--td-card);
-        /* No horizontal bleed: the row content lives inside this same
-           padding box, so there is nothing in the gutters to cover. */
-        padding-top: .6rem;
+        background: inherit;
+        padding-top: .7rem;
+        padding-bottom: .6rem;
         flex-wrap: wrap;
+        /* A sticky header with only a bottom rule reads as the panel
+           running off the top of the screen. Boxing it closes the shape. */
+        border: 1px solid var(--td-line);
+        border-left: 3px solid var(--an-side-accent);
+        border-radius: 6px;
+        padding-left: .7rem;
+        padding-right: .7rem;
+        margin-bottom: .9rem;
+    }
+    .an-side:nth-of-type(2) .an-side-head { flex-direction: row-reverse; }
+    .an-side:nth-of-type(2) .an-side-name { text-align: left; }
+
+    .an-side-name {
+        font-size: 1.25rem !important;
+        font-weight: 700;
+        line-height: 1.15;
+    }
+    .an-side-tag {
+        font-size: .62rem;
+        color: var(--an-side-accent);
     }
 }
 
