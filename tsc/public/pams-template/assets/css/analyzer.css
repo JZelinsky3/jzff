@@ -154,19 +154,58 @@ html, body { background: var(--td-bg, #1a1209); color: var(--td-text, #f5e9c8); 
 @media (max-width: 759px) {
     .an-sides { gap: 2rem; }
 
-    /* Side B is a different surface: lighter card, its own accent border,
-       and inverted player rows. Nothing is labelled "second"; the colour
-       carries it. */
-    .an-side:nth-of-type(1) { --an-side-accent: var(--td-live); }
-    .an-side:nth-of-type(2) {
-        --an-side-accent: var(--td-warn, #c98ed1);
+    /* Opposite surfaces, same idea as the Grader's wire cards.
+       --td-card-hover was too close to --td-card to register as a
+       different team, so side B is now a genuinely light panel and side A
+       a raised dark one. Both carry a full border so each reads as its
+       own card rather than a stretch of page. */
+    .an-side {
+        border: 1px solid var(--td-line) !important;
+        border-left: 3px solid var(--an-side-accent, var(--td-line)) !important;
+        border-radius: 8px !important;
+    }
+    .an-side:nth-of-type(1) {
+        --an-side-accent: var(--td-live);
         background: var(--td-card-hover) !important;
-        border-color: var(--an-side-accent) !important;
+        border-color: #35495f !important;
     }
-    .an-side:nth-of-type(2) .an-row,
-    .an-side:nth-of-type(2) .an-pos-group {
-        background: rgba(255, 255, 255, .04);
+    .an-side:nth-of-type(2) {
+        --an-side-accent: #b98bd4;
+        background: #e3ebf4 !important;
+        border-color: #bcc9d8 !important;
+        color: #121a24 !important;
     }
+    /* Everything inside side B assumed a dark background. */
+    .an-side:nth-of-type(2) .an-side-name { color: #0e151f !important; }
+    .an-side:nth-of-type(2) .an-side-tag { color: #6a3f8a !important; }
+    .an-side:nth-of-type(2) .an-pos-label {
+        color: #4a5a6e !important;
+        border-bottom-color: rgba(18, 26, 36, .14) !important;
+    }
+    .an-side:nth-of-type(2) .an-row {
+        background: rgba(18, 26, 36, .05) !important;
+        border-color: rgba(18, 26, 36, .12) !important;
+        color: #121a24 !important;
+    }
+    .an-side:nth-of-type(2) .an-row-name,
+    .an-side:nth-of-type(2) .an-row[data-slot="starter"] .an-row-name,
+    .an-side:nth-of-type(2) .an-row[data-slot="flex"] .an-row-name,
+    .an-side:nth-of-type(2) .an-row[data-slot="sf"] .an-row-name { color: #0e151f !important; }
+    .an-side:nth-of-type(2) .an-row-avatar,
+    .an-side:nth-of-type(2) .an-row-avatar-fallback {
+        border-color: rgba(18, 26, 36, .18) !important;
+    }
+    .an-side:nth-of-type(2) .an-side-foot {
+        border-top-color: rgba(18, 26, 36, .14) !important;
+        color: #4a5a6e !important;
+    }
+    .an-side:nth-of-type(2) .an-side-foot strong { color: #0e151f !important; }
+    /* Values are a pale blue tuned for the dark panel; on the light one
+       they wash out, so darken them and the group totals too. */
+    .an-side:nth-of-type(2) .an-row-value { color: #1d4f80 !important; }
+    .an-side:nth-of-type(2) .an-row[aria-pressed="true"] .an-row-value { color: #7a4a12 !important; }
+    .an-side:nth-of-type(2) .an-row-value-zero { color: #6a7787 !important; }
+    .an-side:nth-of-type(2) .an-pos-count { color: #4a5a6e !important; }
 
     /* Identity gets real weight, and the avatar moves to the opposite
        edge on side B so the two headers are visibly mirrored. */
@@ -187,7 +226,11 @@ html, body { background: var(--td-bg, #1a1209); color: var(--td-text, #f5e9c8); 
         padding-right: .7rem;
         margin-bottom: .9rem;
     }
-    .an-side:nth-of-type(2) .an-side-head { flex-direction: row-reverse; }
+    .an-side:nth-of-type(2) .an-side-head {
+        flex-direction: row-reverse;
+        border-color: rgba(18, 26, 36, .18) !important;
+        border-left-color: var(--an-side-accent) !important;
+    }
     .an-side:nth-of-type(2) .an-side-name { text-align: left; }
 
     .an-side-name {

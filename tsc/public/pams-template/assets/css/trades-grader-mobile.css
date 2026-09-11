@@ -794,9 +794,13 @@ body[data-trades-theme] .tr-page-sub {
     padding: 1rem !important;
   }
 
-  /* Side A — the dark card. */
+  /* Side A — a RAISED plum panel, deliberately not the same tone as the
+     trade card it sits on. It used to be exactly --tg-card, so it had no
+     edge of its own and only side B looked like a card. Both sides now sit
+     visibly on top of the card, in opposite directions from it. */
   body[data-trades-theme] .tr-side:nth-of-type(1) {
-    background: var(--tg-card) !important;
+    background: #2a2140 !important;
+    border-color: #453764 !important;
   }
 
   /* Side B — the inverse. Light surface, dark ink. Every child that

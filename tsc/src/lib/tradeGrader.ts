@@ -82,24 +82,36 @@ export function stripDashes(text: string): string {
 export function summaryViolations(
   text: string,
   leagueType: string,
-  // Player names each side RECEIVED in this trade, for the factual check
-  // below. Optional so existing callers keep working.
-  receivedNames: string[] = [],
+  // Tokens identifying pieces each side RECEIVED in this trade: surnames
+  // and rank labels ("Nabers", "WR13"). Optional so callers can skip it.
+  receivedTokens: string[] = [],
+  // Exact side names. A fragment of one of these is a violation: "Kyle's"
+  // for "Kyle's Foreskin" names a different team in a league with two
+  // Kyles, and the reader can't tell which.
+  sideNames: string[] = [],
 ): string[] {
   const out: string[] = []
   const t = text.toLowerCase()
 
-  // "already had / already featured Tee Higgins" about a player acquired IN
-  // this trade. The roster context is now rewound to pre-trade so the data
-  // no longer suggests it, but the model still says it occasionally, and it
-  // is the single most confusing thing it can get wrong: it inverts who
-  // gave up whom. Cheap to detect because we know exactly who came in.
-  for (const name of receivedNames) {
-    const last = name.trim().split(/\s+/).slice(-1)[0]?.toLowerCase()
-    if (!last || last.length < 3) continue
-    const re = new RegExp(`already\\s+\\w*\\s*(had|has|held|rostered|featured|owned|carried|boasted)[^.]{0,60}${last}`, 'i')
-    if (re.test(text)) {
-      out.push(`claimed a side already had ${name}, who they RECEIVED in this trade`)
+  // "already had Tee Higgins" / "already stocked with a WR13" about a piece
+  // acquired IN this trade. The roster context is rewound to pre-trade so
+  // the data no longer suggests it, but the model still says it, and it is
+  // the most confusing thing it can get wrong: it inverts who gave up whom.
+  //
+  // Matched on "already" near any token that identifies an incoming piece,
+  // rather than on a verb list. The first version keyed off
+  // had/has/held/rostered/featured and missed "already STOCKED with a
+  // WR13", which also swapped the name for the rank label. Tokens are
+  // therefore both surnames AND rank labels, and any verb counts.
+  //
+  // "already deep at WR" with no specific piece named stays legal: that is
+  // real pre-trade context and the prompt asks for it.
+  for (const token of receivedTokens) {
+    const t2 = token.trim()
+    if (t2.length < 3) continue
+    const esc = t2.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    if (new RegExp(`already[^.]{0,70}\\b${esc}\\b`, 'i').test(text)) {
+      out.push(`said a side "already" had ${t2}, which they RECEIVED in this trade`)
     }
   }
 
@@ -121,6 +133,28 @@ export function summaryViolations(
       out.push(`used dynasty reasoning in a redraft league (${hits.join(', ')})`)
     }
   }
+  // Half a team name. Checked by blanking every full, correct mention
+  // first, then looking for any distinctive word of that name still
+  // loose in the text.
+  const norm = (x: string) => x.replace(/[\u2018\u2019]/g, "'")
+  let residue = norm(text)
+  for (const name of sideNames) {
+    const full = norm(name).trim()
+    if (!full) continue
+    residue = residue.replace(new RegExp(full.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), ' ')
+  }
+  for (const name of sideNames) {
+    const words = norm(name).trim().split(/\s+/).filter((w) => w.replace(/[^a-z']/gi, '').length >= 3)
+    if (words.length < 2) continue
+    for (const w of words) {
+      const esc = w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      if (new RegExp(`\\b${esc}`, 'i').test(residue)) {
+        out.push(`used a fragment of a team name ("${w}") instead of the full "${name}"`)
+        break
+      }
+    }
+  }
+
   return out
 }
 
@@ -478,13 +512,44 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     // stated. Naming the specific violation back to the model works far
     // better than restating the rule; a second failure is accepted rather
     // than burning a third call, and stripDashes still cleans the dashes.
-    const receivedNames = sides.flatMap((sd) =>
+    // Surname + rank label for every incoming piece, so the factual check
+    // catches both "already had Nabers" and "already stocked with a WR13".
+    const receivedTokens = sides.flatMap((sd) =>
       ((sd.assets as Array<Record<string, unknown>>) ?? [])
-        .filter((a) => a.kind === 'player' && typeof a.name === 'string')
-        .map((a) => a.name as string),
+        .filter((a) => a.kind === 'player')
+        .flatMap((a) => {
+          const toks: string[] = []
+          const nm = typeof a.name === 'string' ? a.name.trim() : ''
+          const last = nm.split(/\s+/).slice(-1)[0]
+          if (last && last.length >= 3) toks.push(last)
+          const sid = sidByAsset.get(a)
+          const rank = sid ? bundle.rankLabels.get(sid) : undefined
+          if (rank) toks.push(rank)
+          return toks
+        }),
     )
-    const violations = summaryViolations(String(parsed?.summary ?? ''), leagueType, receivedNames)
-    if (violations.length > 0) {
+    const sideNames = sides.map((sd) => {
+      const m = Array.isArray(sd.managers) ? sd.managers[0] : sd.managers
+      return (m?.team_name as string | null) || (m?.display_name as string) || ''
+    }).filter(Boolean)
+
+    // Keep correcting until the copy is clean, up to a small cap.
+    //
+    // One retry wasn't enough: the corrected answer kept reintroducing
+    // "already had a WR13" and half team names, and a single pass meant
+    // whatever came back second got stored regardless. Each attempt is
+    // told exactly what it broke, and the last clean answer wins. Two
+    // extra calls is an acceptable ceiling on a job that runs once per
+    // trade, and most trades never spend even one.
+    const MAX_FIXUPS = 2
+    for (let fix = 0; fix < MAX_FIXUPS; fix++) {
+      const violations = summaryViolations(
+        String(parsed?.summary ?? ''), leagueType, receivedTokens, sideNames,
+      )
+      if (violations.length === 0) break
+      if (fix === MAX_FIXUPS - 1) {
+        warnings.push(`summary still imperfect after ${MAX_FIXUPS} fixups: ${violations.join('; ')}`)
+      }
       try {
         const retry = await groqChatJson<typeof parsed>({
           apiKey,
@@ -497,16 +562,18 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
               role: 'user',
               content:
                 `That response broke these rules: ${violations.join('; ')}. ` +
-                'Rewrite the summary so it breaks none of them. Keep the same grades ' +
-                'unless the reasoning genuinely changes. Same strict JSON shape.',
+                'Rewrite the summary so it breaks none of them. Use each side\'s ' +
+                'exact full name every time. Keep the same grades unless the ' +
+                'reasoning genuinely changes. Same strict JSON shape.',
             },
           ],
-          temperature: 0.4,
+          temperature: 0.35,
           maxTokens: 2500,
         })
         if (retry.data?.summary) parsed = retry.data
+        else break
       } catch {
-        // Keep the first answer; it is imperfect, not broken.
+        break // Keep the best answer so far; imperfect, not broken.
       }
     }
   } catch (e) {
@@ -1034,6 +1101,8 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '',
       '3. Vary sentence structure and vocabulary. Do not use the same opening template twice.',
       '',
+      'NAMING. Refer to a side by its EXACT full name as given ("Kyle\'s Foreskin", "Commisioner Goodhead"), character for character, every time. Never shorten it to the first word or the last word. "Kyle\'s" is not a team, and in a league with more than one Kyle it names the wrong person. If the full name feels repetitive, use a pronoun or "the other side" rather than a fragment.',
+      '',
       'BANNED PHRASES. Never write any of these:',
       '• "won this trade" / "won the trade" / "got the better end"',
       '• "primarily due to" / "primarily because"',
@@ -1168,7 +1237,7 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
       '• "What looked like a depth move at the time has become a roster cornerstone..."',
       '• "The early returns favored A; week-six performance flips that..."',
       '',
-      'BANNED PHRASES (same as initial grading): "won this trade", "primarily due to", "added depth", "upgrades the position", "solid move", "fair deal". The em dash character is also banned everywhere; use commas, periods, or parentheses instead.',
+      'BANNED PHRASES (same as initial grading): "won this trade", "primarily due to", "added depth", "upgrades the position", "solid move", "fair deal". The em dash character is also banned everywhere; use commas, periods, or parentheses instead. Refer to each side by its EXACT full name every time, never shortened to one word.',
       '',
       'Reference managers by team name. Retrospective voice is optional and should be used sparingly, most sentences should be present-tense analysis.',
       '',
