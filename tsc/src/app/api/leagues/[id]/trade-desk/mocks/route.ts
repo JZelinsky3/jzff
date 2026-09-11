@@ -24,7 +24,7 @@ import { generateMockTrades, type MockTrade } from '@/lib/tradeDesk/finder'
 import { valuateLeague } from '@/lib/values'
 import { groqChatJson, GroqError, DEFAULT_GROQ_MODEL } from '@/lib/groq'
 import { sleeper } from '@/lib/platforms/sleeper'
-import { computePositionRanks } from '@/lib/positionRanks'
+import { computePositionRanks, resolveRankWindow } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 
 // Roster fetch + valuation + ~1.4k bounded depth sims + one Groq call.
@@ -85,9 +85,10 @@ async function withVotes(
 // the fresh-generation and cache-hit paths so old cached payloads still
 // pick up rank pills retroactively. PPR scoring is the default — per-
 // league scoring translation is a follow-up.
-//   • In-season → cumulative rank through the current NFL week.
-//   • Offseason → previous season's FINAL (Wk 18) rank, so the slate
-//     still reads with meaningful context.
+// The season/cutoff comes from resolveRankWindow, which falls back to last
+// season's final ranks whenever the current one is too young to rank
+// honestly (see MIN_RANK_WEEKS). Ranking off one Thursday made these chips
+// contradict the value printed beside them.
 // Current NFL week for the column's dateline. Null out of season, so the
 // stamp falls back to the date rather than printing a week that isn't
 // being played.
@@ -107,14 +108,11 @@ async function currentNflWeek(): Promise<number | null> {
 async function stampPositionRanks(trades: MockTrade[]): Promise<void> {
   try {
     const clock = await sleeper.state()
-    if (!clock) return
-    const inSeason = clock.season_type === 'regular' || clock.season_type === 'post'
-    const rankSeason = inSeason ? Number(clock.season) : Number(clock.season) - 1
-    const rankWeek = inSeason ? (Number(clock.week) || 17) : 18
-    if (!rankSeason || rankWeek < 1) return
+    const window = resolveRankWindow(clock)
+    if (!window) return
     const ranks = await computePositionRanks({
-      season: rankSeason,
-      throughWeek: rankWeek,
+      season: window.season,
+      throughWeek: window.throughWeek,
       scoring: DEFAULT_PPR_SCORING,
     })
     const annotate = (p: { id: string; rank?: string | null }) => {
