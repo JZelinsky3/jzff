@@ -367,24 +367,57 @@ function effectiveWeights(pref: 'EQUAL' | 'FC_WEIGHTED' | 'DP_WEIGHTED'): Record
 }
 
 // TE premium value adjustment. No public source prices TEP leagues
-// directly, so we lift every TE's blended value by a flat multiplier —
-// simple, monotonic (ordering within TE never changes), and sized to
-// match how TEP market calculators shift mid-tier TE1s: MILD (+0.5/rec)
-// ≈ +10%, FULL (+1.0/rec) ≈ +20%.
-const TE_PREMIUM_MULT: Record<'NONE' | 'MILD' | 'FULL', number> = {
-  NONE: 1.0,
-  MILD: 1.10,
-  FULL: 1.20,
+// directly, so we lift TE values ourselves.
+//
+// This used to be a FLAT multiplier (MILD ×1.10, FULL ×1.20) applied to
+// every TE alike. That is the wrong shape, and it under-priced the only
+// tight ends anyone actually pays up for. TEP adds points per RECEPTION,
+// and an elite TE catches two or three times what a streamer does, so he
+// gains more absolute points AND his gap over replacement widens. Trade
+// value tracks advantage over replacement, so the premium concentrates at
+// the top of the position. A flat multiplier preserves every ratio
+// exactly, which is precisely the thing that should change.
+//
+// The lift now decays exponentially with TE rank (by blended value):
+//
+//   FULL   TE1 ×1.55   TE2 ×1.47   TE3 ×1.39   TE5 ×1.28   TE12 ×1.09   TE24 ×1.01
+//   MILD   TE1 ×1.28   TE2 ×1.24   TE3 ×1.20   TE5 ×1.13   TE12 ×1.05   TE24 ×1.01
+//
+// which matches how the position actually tiers: two tight ends clear of
+// the field, a second tier a step back, then a long flat tail where the
+// premium is worth close to nothing because the volume isn't there.
+//
+// Still monotonic within the position. Rank is derived from value and the
+// multiplier is non-increasing in rank, so a more valuable TE always takes
+// a multiplier at least as large: the ordering can never invert, the gaps
+// just widen.
+// Peak lift, applied to TE1 and decaying from there. Sized so the TOTAL
+// premium across a starting-TE pool is a little above the old flat rate
+// (the position was under-priced, not just mis-shaped) while most of it
+// lands on the two or three tight ends a manager would actually trade for.
+const TE_PREMIUM_PEAK: Record<'NONE' | 'MILD' | 'FULL', number> = {
+  NONE: 0,
+  MILD: 0.28,
+  FULL: 0.55,
 }
 
+// Decay constant, in ranks. At K the lift is down to ~37% of peak, so the
+// curve is meaningful through the top handful of TEs and negligible by the
+// back of the TE2 range.
+const TE_PREMIUM_DECAY = 6
+
 function applyTePremium(values: Map<string, PlayerValue>, tePremium: 'NONE' | 'MILD' | 'FULL' | undefined): void {
-  const mult = TE_PREMIUM_MULT[tePremium ?? 'NONE']
-  if (mult === 1.0) return
-  for (const pv of values.values()) {
-    if (pv.position.toUpperCase() === 'TE') {
-      pv.value = Math.round(pv.value * mult)
-    }
-  }
+  const peak = TE_PREMIUM_PEAK[tePremium ?? 'NONE']
+  if (peak === 0) return
+
+  const tes = [...values.values()]
+    .filter((pv) => pv.position.toUpperCase() === 'TE')
+    .sort((a, b) => b.value - a.value)
+
+  tes.forEach((pv, i) => {
+    const mult = 1 + peak * Math.exp(-i / TE_PREMIUM_DECAY)
+    pv.value = Math.round(pv.value * mult)
+  })
 }
 
 // Only drop a source when its value is more than 2x or less than 0.5x the
