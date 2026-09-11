@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trade Grader · mobile card concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+/* ============================================================
+   Four ways to organise a graded trade on a phone.
+
+   Same trade in all four so the comparison is honest. Palette is
+   the grader's current aubergine + copper; colour is not what is
+   being decided here, ORGANISATION is. Any of these can be
+   recoloured in ten minutes.
+   ============================================================ */
+:root {
+  --bg:        #14101c;
+  --bg-2:      #1c1626;
+  --card:      #1f1830;
+  --card-2:    #2a2140;
+  --head:      #161020;
+  --line:      #3a2e50;
+  --line-soft: #261d38;
+  --mute:      #968aa6;
+  --text:      #ede5f5;
+  --copper:    #e8a26c;
+  --copper-2:  #d49260;
+  --sage:      #9eb280;
+  --orchid:    #c98ed1;
+
+  --g-a: #79c285;
+  --g-b: #d4a94c;
+  --g-c: #c4ad84;
+  --g-d: #e0816e;
+
+  --serif: 'Playfair Display', Georgia, serif;
+  --sans:  'Inter', system-ui, sans-serif;
+  --mono:  'JetBrains Mono', 'SF Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 0 0 5rem;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 120% 60% at 50% -10%, rgba(232,162,108,.08), transparent 60%),
+    linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 30%);
+  color: var(--text);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Phone column. Everything below is designed at this width. */
+.phone { max-width: 400px; margin: 0 auto; padding: 0 1rem; }
+
+/* ── Page masthead ─────────────────────────────────────── */
+.doc-head { padding: 2.2rem 0 1.4rem; border-bottom: 1px solid var(--line); }
+.doc-kicker {
+  font-family: var(--mono); font-size: .55rem; font-weight: 700;
+  letter-spacing: .3em; text-transform: uppercase; color: var(--copper);
+  display: flex; align-items: center; gap: .5rem;
+}
+.doc-kicker::before { content: ''; width: 18px; height: 1px; background: var(--copper); }
+.doc-title {
+  font-family: var(--serif); font-size: 2rem; line-height: 1.05;
+  margin: .6rem 0 0; font-weight: 700;
+}
+.doc-title em { color: var(--copper); font-style: italic; }
+.doc-sub {
+  margin: .7rem 0 0; font-size: .85rem; line-height: 1.55; color: var(--mute);
+}
+
+/* ── Concept framing ───────────────────────────────────── */
+.concept { padding: 2.4rem 0 0; }
+.concept-head { margin-bottom: 1.1rem; }
+.concept-num {
+  font-family: var(--mono); font-size: .55rem; font-weight: 700;
+  letter-spacing: .26em; text-transform: uppercase; color: var(--copper-2);
+}
+.concept-name {
+  font-family: var(--serif); font-size: 1.5rem; line-height: 1.15;
+  margin: .3rem 0 0; font-weight: 600;
+}
+.concept-why {
+  margin: .55rem 0 0; font-size: .8rem; line-height: 1.6; color: var(--mute);
+}
+.concept-why b { color: var(--text); font-weight: 600; }
+
+/* ══════════════════════════════════════════════════════════
+   1 · THE EXCHANGE
+   One box. The two sides sit next to each other because a
+   trade IS a comparison, and a phone can hold two short
+   columns. Grades ride in the header above their own column.
+   ══════════════════════════════════════════════════════════ */
+.ex {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.ex-dateline {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .6rem .85rem;
+  background: var(--head);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono); font-size: .53rem; font-weight: 700;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--mute);
+}
+.ex-dateline .wk { color: var(--copper); }
+.ex-dateline .plat { margin-left: auto; opacity: .7; }
+
+.ex-grid { display: grid; grid-template-columns: 1fr 1px 1fr; }
+.ex-rule { background: var(--line-soft); }
+
+.ex-col { padding: .9rem .8rem 1rem; min-width: 0; }
+.ex-who {
+  display: flex; flex-direction: column; align-items: center; gap: .45rem;
+  text-align: center;
+}
+.ex-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--head); border: 1px solid var(--line);
+  display: grid; place-items: center;
+  font-family: var(--mono); font-size: .6rem; font-weight: 700; color: var(--mute);
+}
+.ex-name {
+  font-family: var(--serif); font-size: 1.02rem; line-height: 1.1;
+}
+.ex-team {
+  font-family: var(--mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--mute);
+}
+.ex-grade {
+  margin: .7rem auto .8rem;
+  width: 46px; height: 46px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--serif); font-size: 1.4rem; font-weight: 700;
+  border: 1.5px solid currentColor;
+}
+.ex-grade.a { color: var(--g-a); background: rgba(121,194,133,.1); }
+.ex-grade.b { color: var(--g-b); background: rgba(212,169,76,.1); }
+.ex-gets {
+  font-family: var(--mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .22em; text-transform: uppercase; color: var(--mute);
+  text-align: center; margin-bottom: .5rem;
+}
+.ex-asset {
+  padding: .45rem .5rem;
+  border-radius: 5px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--line-soft);
+  margin-bottom: .35rem;
+}
+.ex-asset-name {
+  font-family: var(--serif); font-size: .88rem; line-height: 1.2;
+  display: block;
+}
+.ex-asset-meta {
+  display: flex; align-items: center; gap: .3rem; margin-top: .22rem;
+  font-family: var(--mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--mute);
+}
+.ex-asset-meta .rk { color: var(--copper); }
+.ex-col:nth-of-type(1) .ex-asset-meta .pos { color: var(--sage); }
+.ex-col:nth-of-type(3) .ex-asset-meta .pos { color: var(--orchid); }
+.ex-asset.faab { background: rgba(216,177,90,.05); border-color: rgba(216,177,90,.25); }
+
+.ex-recap {
+  border-top: 1px solid var(--line);
+  padding: .95rem .95rem 1.05rem;
+  background: var(--head);
+}
+.ex-recap-label {
+  font-family: var(--mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .26em; text-transform: uppercase; color: var(--copper-2);
+  margin-bottom: .5rem;
+}
+.ex-recap p {
+  margin: 0; font-family: var(--serif); font-size: .87rem; line-height: 1.6;
+  color: var(--text);
+}
+
+/* ══════════════════════════════════════════════════════════
+   2 · THE RECEIPT
+   No boxes inside boxes. One card, hairlines only, the two
+   sides read top to bottom like a newspaper agate block.
+   Spacing is uniform because there is nothing to space.
+   ══════════════════════════════════════════════════════════ */
+.rc {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0 0 .2rem;
+  overflow: hidden;
+}
+.rc-dateline {
+  display: flex; gap: .6rem; align-items: center;
+  padding: .6rem .95rem; border-bottom: 1px solid var(--line);
+  font-family: var(--mono); font-size: .53rem; font-weight: 700;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--mute);
+}
+.rc-dateline .wk { color: var(--copper); }
+.rc-dateline .plat { margin-left: auto; opacity: .7; }
+
+.rc-side { padding: 1rem .95rem 1.05rem; }
+.rc-side + .rc-side { border-top: 1px solid var(--line-soft); }
+.rc-head { display: flex; align-items: center; gap: .6rem; }
+.rc-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--head); border: 1px solid var(--line);
+  display: grid; place-items: center;
+  font-family: var(--mono); font-size: .58rem; font-weight: 700; color: var(--mute);
+  flex-shrink: 0;
+}
+.rc-id { min-width: 0; flex: 1; }
+.rc-name { font-family: var(--serif); font-size: 1.05rem; line-height: 1.1; }
+.rc-verb {
+  font-family: var(--mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase; margin-top: .18rem;
+}
+.rc-side:nth-of-type(2) .rc-verb { color: var(--sage); }
+.rc-side:nth-of-type(3) .rc-verb { color: var(--orchid); }
+.rc-grade {
+  font-family: var(--serif); font-size: 1.5rem; font-weight: 700;
+  line-height: 1; padding-left: .6rem; flex-shrink: 0;
+}
+.rc-grade.a { color: var(--g-a); }
+.rc-grade.b { color: var(--g-b); }
+
+.rc-list { margin: .75rem 0 0; }
+.rc-row {
+  display: flex; align-items: baseline; gap: .55rem;
+  padding: .38rem 0;
+  border-bottom: 1px dotted var(--line-soft);
+}
+.rc-row:last-child { border-bottom: none; }
+.rc-pos {
+  font-family: var(--mono); font-size: .52rem; font-weight: 700;
+  letter-spacing: .1em; width: 30px; flex-shrink: 0; color: var(--mute);
+}
+.rc-side:nth-of-type(2) .rc-pos { color: var(--sage); }
+.rc-side:nth-of-type(3) .rc-pos { color: var(--orchid); }
+.rc-player { font-family: var(--serif); font-size: .95rem; flex: 1; min-width: 0; }
+.rc-tm {
+  font-family: var(--mono); font-size: .52rem; font-weight: 700;
+  letter-spacing: .1em; color: var(--mute);
+}
+.rc-rk {
+  font-family: var(--mono); font-size: .52rem; font-weight: 700;
+  color: var(--copper); letter-spacing: .08em;
+}
+.rc-recap {
+  border-top: 1px solid var(--line);
+  padding: .95rem .95rem 1.1rem;
+  font-family: var(--serif); font-size: .87rem; line-height: 1.6;
+}
+.rc-recap b {
+  display: block; font-family: var(--mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .26em; text-transform: uppercase; color: var(--copper-2);
+  margin-bottom: .5rem;
+}
+
+/* ══════════════════════════════════════════════════════════
+   3 · THE SCORECARD
+   Verdict first. A grade bar you can read at a glance, the
+   reason directly under it, and the player lists folded away
+   behind a tap. Built for scrolling a season of trades.
+   ══════════════════════════════════════════════════════════ */
+.sc {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.sc-dateline {
+  display: flex; gap: .6rem; align-items: center;
+  padding: .55rem .95rem;
+  font-family: var(--mono); font-size: .52rem; font-weight: 700;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--mute);
+  border-bottom: 1px solid var(--line-soft);
+}
+.sc-dateline .wk { color: var(--copper); }
+.sc-dateline .plat { margin-left: auto; opacity: .7; }
+
+.sc-verdict { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 1.05rem .95rem .95rem; gap: .5rem; }
+.sc-party { min-width: 0; }
+.sc-party.right { text-align: right; }
+.sc-letter {
+  font-family: var(--serif); font-size: 2.4rem; font-weight: 700; line-height: 1;
+}
+.sc-letter.a { color: var(--g-a); }
+.sc-letter.b { color: var(--g-b); }
+.sc-party-name {
+  font-family: var(--serif); font-size: .95rem; line-height: 1.15; margin-top: .35rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sc-party-team {
+  font-family: var(--mono); font-size: .48rem; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--mute);
+  margin-top: .2rem;
+}
+.sc-vs {
+  font-family: var(--mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .2em; color: var(--mute);
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: .3rem .5rem;
+}
+.sc-recap {
+  padding: 0 .95rem 1rem;
+  font-family: var(--serif); font-size: .88rem; line-height: 1.6;
+}
+.sc-toggle {
+  width: 100%; text-align: left;
+  background: var(--head); border: none; border-top: 1px solid var(--line);
+  color: var(--copper); cursor: pointer;
+  padding: .75rem .95rem;
+  font-family: var(--mono); font-size: .53rem; font-weight: 700;
+  letter-spacing: .22em; text-transform: uppercase;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sc-toggle::-webkit-details-marker { display: none; }
+.sc-toggle { list-style: none; }
+.sc-toggle .chev { transition: transform .18s ease; }
+.sc-fold[open] .sc-toggle .chev { transform: rotate(180deg); }
+.sc-body { padding: .2rem .95rem 1rem; background: var(--head); }
+.sc-group { padding: .8rem 0; }
+.sc-group + .sc-group { border-top: 1px solid var(--line-soft); }
+.sc-group-label {
+  font-family: var(--mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase; margin-bottom: .5rem;
+}
+.sc-group:nth-of-type(1) .sc-group-label { color: var(--sage); }
+.sc-group:nth-of-type(2) .sc-group-label { color: var(--orchid); }
+.sc-chip {
+  display: inline-flex; align-items: baseline; gap: .4rem;
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: .3rem .65rem; margin: 0 .3rem .35rem 0;
+  background: rgba(255,255,255,.02);
+}
+.sc-chip .nm { font-family: var(--serif); font-size: .85rem; }
+.sc-chip .rk { font-family: var(--mono); font-size: .5rem; font-weight: 700; color: var(--copper); }
+
+/* ══════════════════════════════════════════════════════════
+   4 · THE DISPATCH
+   Densest option. A trade is one headline, one exchange line,
+   two grades. Five deals on a screen instead of one and a
+   half. Tap opens the full card.
+   ══════════════════════════════════════════════════════════ */
+.dp-feed { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--card); }
+.dp {
+  display: block; padding: .9rem .9rem 1rem;
+  border-bottom: 1px solid var(--line-soft);
+  text-decoration: none; color: inherit;
+}
+.dp:last-child { border-bottom: none; }
+.dp-meta {
+  font-family: var(--mono); font-size: .5rem; font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--mute);
+  display: flex; gap: .5rem; align-items: center;
+}
+.dp-meta .wk { color: var(--copper); }
+.dp-grades { margin-left: auto; display: flex; gap: .3rem; }
+.dp-g {
+  font-family: var(--mono); font-size: .55rem; font-weight: 700;
+  border: 1px solid currentColor; border-radius: 4px;
+  padding: .1rem .35rem; letter-spacing: .05em;
+}
+.dp-g.a { color: var(--g-a); }
+.dp-g.b { color: var(--g-b); }
+.dp-g.c { color: var(--g-c); }
+.dp-hed {
+  font-family: var(--serif); font-size: 1.08rem; line-height: 1.25;
+  margin: .45rem 0 .5rem;
+}
+.dp-hed em { color: var(--copper); font-style: italic; }
+.dp-swap {
+  display: flex; align-items: center; gap: .45rem; flex-wrap: wrap;
+  font-family: var(--mono); font-size: .56rem; font-weight: 700;
+  letter-spacing: .06em; color: var(--mute);
+}
+.dp-swap .who { color: var(--text); }
+.dp-swap .arrow { color: var(--copper); }
+
+/* ── Footer note ───────────────────────────────────────── */
+.doc-foot {
+  margin-top: 3rem; padding-top: 1.3rem; border-top: 1px solid var(--line);
+  font-size: .78rem; line-height: 1.6; color: var(--mute);
+}
+.doc-foot b { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <header class="doc-head">
+    <div class="doc-kicker">Trade Grader · Mobile</div>
+    <h1 class="doc-title">Four ways to <em>build the card.</em></h1>
+    <p class="doc-sub">
+      Same trade in all four, so the only thing changing is the organisation.
+      Colours are the grader's current palette and can be swapped for any of these.
+      Pick one, or pick pieces from a few.
+    </p>
+  </header>
+
+  <!-- ══ 1 · THE EXCHANGE ══════════════════════════════ -->
+  <section class="concept">
+    <div class="concept-head">
+      <div class="concept-num">Concept 01</div>
+      <h2 class="concept-name">The Exchange</h2>
+      <p class="concept-why">
+        Both sides in view at once, because a trade is a comparison and you
+        should not have to scroll to make it. <b>One box, split down the middle</b>,
+        grades sitting above the column they belong to. Nothing is inverted
+        or cut off. Costs you long player names.
+      </p>
+    </div>
+
+    <div class="ex">
+      <div class="ex-dateline">
+        <span>Oct 14, 2025</span><span class="wk">Week 6</span>
+        <span class="plat">Sleeper</span>
+      </div>
+
+      <div class="ex-grid">
+        <div class="ex-col">
+          <div class="ex-who">
+            <span class="ex-avatar">SZ</span>
+            <span class="ex-name">Sean</span>
+            <span class="ex-team">Sinkaroos</span>
+          </div>
+          <div class="ex-grade a">A-</div>
+          <div class="ex-gets">Gets</div>
+          <div class="ex-asset">
+            <span class="ex-asset-name">Puka Nacua</span>
+            <span class="ex-asset-meta"><span class="pos">WR</span><span>LAR</span><span class="rk">WR2</span></span>
+          </div>
+        </div>
+
+        <div class="ex-rule"></div>
+
+        <div class="ex-col">
+          <div class="ex-who">
+            <span class="ex-avatar">CH</span>
+            <span class="ex-name">Charlie</span>
+            <span class="ex-team">tinfoil99</span>
+          </div>
+          <div class="ex-grade b">B+</div>
+          <div class="ex-gets">Gets</div>
+          <div class="ex-asset">
+            <span class="ex-asset-name">Jaxon Smith-Njigba</span>
+            <span class="ex-asset-meta"><span class="pos">WR</span><span>SEA</span><span class="rk">WR3</span></span>
+          </div>
+          <div class="ex-asset">
+            <span class="ex-asset-name">Chase Brown</span>
+            <span class="ex-asset-meta"><span class="pos">RB</span><span>CIN</span><span class="rk">RB14</span></span>
+          </div>
+          <div class="ex-asset faab">
+            <span class="ex-asset-name">$22 FAAB</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ex-recap">
+        <div class="ex-recap-label">The Desk</div>
+        <p>
+          Consolidation is the whole story. The two starters Charlie shipped out
+          come back as one receiver who outscores either of them on his own, and
+          Sean was flexing a WR4 before this. Charlie is not robbed: Chase Brown
+          walks into a backfield split that has trended his way for three weeks,
+          and the FAAB covers the bench spot this opens. The grades separate
+          because a lineup only starts three receivers, and Sean's third one
+          just got much harder to beat.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 2 · THE RECEIPT ═══════════════════════════════ -->
+  <section class="concept">
+    <div class="concept-head">
+      <div class="concept-num">Concept 02</div>
+      <h2 class="concept-name">The Receipt</h2>
+      <p class="concept-why">
+        Kills the boxes inside boxes. <b>One card, hairline rules, no nested
+        panels at all</b>, so there is no spacing to get wrong and no border to
+        argue with. The grade sits on the manager's own row instead of in a
+        panel underneath. Full player names fit.
+      </p>
+    </div>
+
+    <div class="rc">
+      <div class="rc-dateline">
+        <span>Oct 14, 2025</span><span class="wk">Week 6</span>
+        <span class="plat">Sleeper</span>
+      </div>
+
+      <div class="rc-side">
+        <div class="rc-head">
+          <span class="rc-avatar">SZ</span>
+          <span class="rc-id">
+            <span class="rc-name">Sean</span>
+            <div class="rc-verb">Sinkaroos get</div>
+          </span>
+          <span class="rc-grade a">A-</span>
+        </div>
+        <div class="rc-list">
+          <div class="rc-row">
+            <span class="rc-pos">WR</span>
+            <span class="rc-player">Puka Nacua</span>
+            <span class="rc-tm">LAR</span>
+            <span class="rc-rk">WR2</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="rc-side">
+        <div class="rc-head">
+          <span class="rc-avatar">CH</span>
+          <span class="rc-id">
+            <span class="rc-name">Charlie</span>
+            <div class="rc-verb">tinfoil99 gets</div>
+          </span>
+          <span class="rc-grade b">B+</span>
+        </div>
+        <div class="rc-list">
+          <div class="rc-row">
+            <span class="rc-pos">WR</span>
+            <span class="rc-player">Jaxon Smith-Njigba</span>
+            <span class="rc-tm">SEA</span>
+            <span class="rc-rk">WR3</span>
+          </div>
+          <div class="rc-row">
+            <span class="rc-pos">RB</span>
+            <span class="rc-player">Chase Brown</span>
+            <span class="rc-tm">CIN</span>
+            <span class="rc-rk">RB14</span>
+          </div>
+          <div class="rc-row">
+            <span class="rc-pos">FAAB</span>
+            <span class="rc-player">$22</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="rc-recap">
+        <b>The Desk</b>
+        Consolidation is the whole story. The two starters Charlie shipped out
+        come back as one receiver who outscores either of them on his own, and
+        Sean was flexing a WR4 before this. Charlie is not robbed: Chase Brown
+        walks into a backfield split that has trended his way for three weeks,
+        and the FAAB covers the bench spot this opens. The grades separate
+        because a lineup only starts three receivers, and Sean's third one just
+        got much harder to beat.
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 3 · THE SCORECARD ═════════════════════════════ -->
+  <section class="concept">
+    <div class="concept-head">
+      <div class="concept-num">Concept 03</div>
+      <h2 class="concept-name">The Scorecard</h2>
+      <p class="concept-why">
+        Leads with the part people actually came for. <b>Grades head to head,
+        the reason directly under them, the rosters folded behind a tap.</b>
+        A season of trades becomes scrollable instead of a mile of player
+        lists you already knew about. Tap to open below.
+      </p>
+    </div>
+
+    <div class="sc">
+      <div class="sc-dateline">
+        <span>Oct 14, 2025</span><span class="wk">Week 6</span>
+        <span class="plat">Sleeper</span>
+      </div>
+
+      <div class="sc-verdict">
+        <div class="sc-party">
+          <div class="sc-letter a">A-</div>
+          <div class="sc-party-name">Sean</div>
+          <div class="sc-party-team">Sinkaroos</div>
+        </div>
+        <div class="sc-vs">VS</div>
+        <div class="sc-party right">
+          <div class="sc-letter b">B+</div>
+          <div class="sc-party-name">Charlie</div>
+          <div class="sc-party-team">tinfoil99</div>
+        </div>
+      </div>
+
+      <div class="sc-recap">
+        Consolidation is the whole story. The two starters Charlie shipped out
+        come back as one receiver who outscores either of them on his own, and
+        Sean was flexing a WR4 before this. Charlie is not robbed: Chase Brown
+        walks into a backfield split that has trended his way for three weeks.
+        The grades separate because a lineup only starts three receivers, and
+        Sean's third one just got much harder to beat.
+      </div>
+
+      <details class="sc-fold">
+        <summary class="sc-toggle">
+          <span>Who moved</span>
+          <span class="chev">▾</span>
+        </summary>
+
+        <div class="sc-body">
+          <div class="sc-group">
+            <div class="sc-group-label">Sean gets</div>
+            <span class="sc-chip"><span class="nm">Puka Nacua</span><span class="rk">WR2</span></span>
+          </div>
+          <div class="sc-group">
+            <div class="sc-group-label">Charlie gets</div>
+            <span class="sc-chip"><span class="nm">Jaxon Smith-Njigba</span><span class="rk">WR3</span></span>
+            <span class="sc-chip"><span class="nm">Chase Brown</span><span class="rk">RB14</span></span>
+            <span class="sc-chip"><span class="nm">$22 FAAB</span></span>
+          </div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ══ 4 · THE DISPATCH ══════════════════════════════ -->
+  <section class="concept">
+    <div class="concept-head">
+      <div class="concept-num">Concept 04</div>
+      <h2 class="concept-name">The Dispatch</h2>
+      <p class="concept-why">
+        The archive view. <b>One trade is one row: a headline, the exchange in a
+        single line, two grades.</b> Five deals on a screen instead of one and a
+        half. Tapping a row opens whichever full card wins above. Probably the
+        right answer for the Past tab regardless of what Current uses.
+      </p>
+    </div>
+
+    <div class="dp-feed">
+      <a class="dp" href="#">
+        <div class="dp-meta">
+          <span class="wk">Week 6</span><span>Oct 14</span>
+          <span class="dp-grades"><span class="dp-g a">A-</span><span class="dp-g b">B+</span></span>
+        </div>
+        <div class="dp-hed">Sean pays two starters for <em>one real WR1.</em></div>
+        <div class="dp-swap">
+          <span class="who">Sean</span><span class="arrow">&#8594;</span><span>Nacua</span>
+          <span>·</span>
+          <span class="who">Charlie</span><span class="arrow">&#8594;</span><span>JSN, Brown, $22</span>
+        </div>
+      </a>
+
+      <a class="dp" href="#">
+        <div class="dp-meta">
+          <span class="wk">Week 5</span><span>Oct 7</span>
+          <span class="dp-grades"><span class="dp-g b">B</span><span class="dp-g c">C+</span></span>
+        </div>
+        <div class="dp-hed">Connor buys the tight end, <em>and the bye week.</em></div>
+        <div class="dp-swap">
+          <span class="who">Connor</span><span class="arrow">&#8594;</span><span>Kraft</span>
+          <span>·</span>
+          <span class="who">Connie</span><span class="arrow">&#8594;</span><span>Odunze, $8</span>
+        </div>
+      </a>
+
+      <a class="dp" href="#">
+        <div class="dp-meta">
+          <span class="wk">Week 4</span><span>Sep 30</span>
+          <span class="dp-grades"><span class="dp-g a">A</span><span class="dp-g c">C</span></span>
+        </div>
+        <div class="dp-hed">The backfield sell-off <em>finally happens.</em></div>
+        <div class="dp-swap">
+          <span class="who">Joey</span><span class="arrow">&#8594;</span><span>Gibbs</span>
+          <span>·</span>
+          <span class="who">Sean</span><span class="arrow">&#8594;</span><span>Irving, Hampton</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <p class="doc-foot">
+    <b>What each one fixes.</b> 01 and 02 both kill the light/dark panel flip and
+    the uneven spacing. 02 removes nested boxes entirely, which is where most of
+    the border and padding problems came from. 03 changes what the page is about:
+    the verdict and the write-up, with the roster detail on request. 04 is a feed
+    row and pairs with any of the three. Say which one to build, or which pieces
+    to combine, and it goes in for real.
+  </p>
+
+</div>
+</body>
+</html>

@@ -156,15 +156,25 @@ async function writeBlurbs(leagueName: string, mode: string, trades: MockTrade[]
     '  • headline, a punchy tabloid-style header, 4–9 words. Vary the construction across trades (question, declaration, tease). Use player or team names. Do not put quotation marks inside the headline text.',
     '  • blurb, 2–3 sentences selling WHY the desk mocked this deal: who patches what hole, who is buying a window, what the risk is. Reference the starter-value gains and rank movements you are given. Playful but sharp; never neutral filler.',
     '',
+    'RANKS AND TIERS ARE GIVEN, NOT GUESSED. Every player is listed with his consensus position rank (WR2 = the 2nd-most-valuable WR on the market) and his market value. A LOWER rank number and a HIGHER value mean the BETTER player, always. Tier language must follow those numbers: ranks 1-12 at a position are elite starters, 13-24 are solid starters, 25-48 are filler, 49+ are depth. Never call a player "mid-tier" or "a downgrade" when the player he is being compared to ranks below him. If the two sides swap players at the same position, the better-ranked one is the better piece, and the side receiving him is the side getting the upgrade.',
+    '',
+    'DIRECTION. Each line says what a team SENDS. "Flips", "ships", "sends", "moves on from", "gives up" and "deals away" describe a player LEAVING that roster; "lands", "adds", "acquires" and "comes away with" describe one ARRIVING. Attaching the wrong verb to a player states the opposite of the deal.',
+    '',
     'BANNED: "win-win", "no-brainer", "blockbuster alert", "look no further", restating the player lists without analysis, and the em dash character (use commas, periods, or parentheses instead).',
     '',
     'OUTPUT: strict, valid JSON only, every key and string value double-quoted: { "trades": [ { "headline": "...", "blurb": "..." }, ... ] }, exactly one entry per trade, same order as given.',
   ].join('\n')
 
+  // Position rank goes in the prompt, not just on the chip. The column kept
+  // calling a WR2 a "mid-tier" piece next to a WR3 because the model only
+  // ever saw a raw value number and invented the tier language around it.
+  const fmtPlayer = (p: { name: string; position?: string | null; value: number; rank?: string | null }) =>
+    `${p.name} (${p.rank ? `${p.rank}, ` : ''}${p.position ?? '?'} · value ${Math.round(p.value)})`
+
   const user = trades.map((t, i) => [
     `Trade ${i + 1} [${t.tag}]:`,
-    `  ${t.teamA.name} sends: ${t.teamA.sends.map((p) => `${p.name} (${p.position ?? '?'} · ${Math.round(p.value)})`).join(', ')}`,
-    `  ${t.teamB.name} sends: ${t.teamB.sends.map((p) => `${p.name} (${p.position ?? '?'} · ${Math.round(p.value)})`).join(', ')}`,
+    `  ${t.teamA.name} sends: ${t.teamA.sends.map(fmtPlayer).join(', ')}`,
+    `  ${t.teamB.name} sends: ${t.teamB.sends.map(fmtPlayer).join(', ')}`,
     `  ${t.teamA.name} starter-value ${t.teamA.gain >= 0 ? 'gain' : 'loss'}: ${Math.round(t.teamA.gain)} (${(t.teamA.gainPct * 100).toFixed(1)}%) · ${fmtMovements(t.teamA.movements)}`,
     `  ${t.teamB.name} starter-value ${t.teamB.gain >= 0 ? 'gain' : 'loss'}: ${Math.round(t.teamB.gain)} (${(t.teamB.gainPct * 100).toFixed(1)}%) · ${fmtMovements(t.teamB.movements)}`,
   ].join('\n')).join('\n\n')

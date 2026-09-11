@@ -189,7 +189,10 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
 /* The cut. The site's gilded foil rule (new.module.css
    .mastFlourish): a metallic gradient whose ends dissolve rather
    than stop, with a bloom under it. */
-.foil { flex:0 0 4px; border-radius:2px;
+/* height as well as flex-basis: outside a flex container (the front
+   page, the plates, the back cover) flex-basis does nothing and the
+   rule collapsed to its glow. */
+.foil { flex:0 0 4px; height:4px; border-radius:2px;
         background: linear-gradient(90deg,
           rgba(168,138,74,0) 0%, #a88a4a 12%, #e8c889 36%, #f8e5b2 50%,
           #e8c889 64%, #a88a4a 88%, rgba(168,138,74,0) 100%);
@@ -199,10 +202,19 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
    new.module.css .agateTable. Mono figures, serif names, a hairline
    under every row, and no container: the rules do the containing. */
 .agate { flex:1; display:flex; flex-direction:column; }
-.agate .hd-row { display:flex; align-items:baseline; gap:14px; padding-bottom:7px;
-                 font-family:var(--mono); font-size:12px; letter-spacing:.16em;
-                 text-transform:uppercase; color:var(--faint); }
-.agate .r { flex:1; display:flex; align-items:center; gap:14px;
+/* The labels need a rule under them and room between them. Set tight
+   and unruled they butted into each other and "Record Points Titles"
+   read as one sentence running across the top of the table instead of
+   as three column heads. */
+.agate .hd-row { display:flex; align-items:baseline; gap:30px; padding-bottom:10px;
+                 margin-bottom:2px; border-bottom:1px solid var(--line);
+                 font-family:var(--mono); font-size:11px; letter-spacing:.22em;
+                 text-transform:uppercase; color:var(--mute); }
+/* Header cells must NOT carry .nm: `.agate .nm` sets serif 27px and
+   wins over the row's inherited mono, which turned a column label
+   into a headline sitting on top of its neighbour. */
+.agate .hd-row .lbl { flex:1; }
+.agate .r { flex:1; display:flex; align-items:center; gap:30px;
             border-bottom:1px solid var(--line-2); }
 .agate .r:last-child { border-bottom:0; }
 .agate .rk { width:30px; font-family:var(--mono); font-size:16px; color:var(--faint); }
@@ -215,10 +227,9 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
 .agate .w3 { width:62px; } .agate .w4 { width:150px; }
 .agate .r.lead .rk { color:var(--gold); }
 
-.pips { display:flex; gap:4px; justify-content:flex-end; width:62px; }
-.pips i { width:9px; height:9px; border-radius:50%; background:var(--gold); }
-.pips u { width:9px; height:9px; border-radius:50%; border:1px solid var(--line);
-          text-decoration:none; }
+.pips { display:flex; gap:4px; justify-content:flex-end; width:54px;
+        line-height:1; }
+.pips i { font-style:normal; font-size:15px; line-height:1; color:var(--gold); }
 
 /* ══ STAT ═════════════════════════════════════════════════════
    main.css .stat: 1px line, a 3px gold spine down the left edge,
@@ -278,7 +289,12 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
    differences between seasons are visible instead of all seven bars
    sitting at 90% of each other. */
 .cols { flex:1; display:flex; align-items:stretch; }
-.cols .c { flex:1; padding:0 11px; border-left:1px solid var(--line-2);
+/* min-width:0 so a column can shrink below its widest name. Without
+   it the seven columns refuse to compress, the rail runs wider than
+   the volume it is set in, and .vol's overflow:hidden slices the
+   leftmost season off the page. */
+.cols .c { flex:1; min-width:0; overflow:hidden; padding:0 11px;
+           border-left:1px solid var(--line-2);
            display:flex; flex-direction:column; justify-content:flex-end; }
 .cols .c:first-child { border-left:0; padding-left:0; }
 .cols .c .who { font-family:var(--serif); font-size:24px; line-height:1;
@@ -424,7 +440,10 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
 .mu .lines div b { margin-left:auto; font-weight:400; color:var(--soft); }
 
 /* ══ TRADE TICKET ═════════════════════════════════════════════ */
-.ticket { flex:1; display:flex; gap:26px; }
+/* Sides side by side, verdict beneath: the figure is a ticket, and
+   a ticket has a bottom line. */
+.ticket { flex:1; display:flex; flex-direction:column; }
+.ticket .sides { flex:1; display:flex; gap:26px; }
 .ticket .side { flex:1; display:flex; flex-direction:column;
                 border-left:3px solid var(--line); padding-left:15px; }
 .ticket .side.win { border-left-color:var(--gold); }
@@ -434,13 +453,26 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
 .ticket .side .who .g { margin-left:auto; font-family:var(--mono); font-size:15px;
                         letter-spacing:.10em; color:var(--mute); }
 .ticket .side.win .who .g { color:var(--gold); }
-.ticket .side ul { list-style:none; margin-top:13px; }
-.ticket .side li { padding:8px 0; border-bottom:1px solid var(--line-2);
+.ticket .side ul { flex:1; list-style:none; margin-top:13px;
+                   display:flex; flex-direction:column; }
+/* Items share out the side's height. Stacked at their natural size
+   the two pieces sat at the top of a 300px column. */
+.ticket .side li { flex:1; padding:8px 0; border-bottom:1px solid var(--line-2);
                    font-size:17px; line-height:1.3; color:var(--soft); }
 .ticket .side li:last-child { border-bottom:0; }
 .ticket .side li i { display:block; font-style:normal; font-family:var(--mono);
                      font-size:11px; letter-spacing:.12em; text-transform:uppercase;
                      color:var(--faint); margin-top:4px; }
+
+/* How the value actually split, under the two sides. The grades say
+   which side won; the bar says by how much, which is the argument. */
+.verdict { margin-top:18px; padding-top:16px; border-top:1px solid var(--line-2); }
+.verdict .bar { display:flex; height:9px; }
+.verdict .bar u.x { background:var(--gold); }
+.verdict .bar u.y { background:var(--line); }
+.verdict .lb { margin-top:9px; display:flex; font-family:var(--mono);
+               font-size:12px; letter-spacing:.10em; color:var(--mute); }
+.verdict .lb span:last-child { margin-left:auto; }
 
 /* ══ RULED LIST (games, clubhouse, contents) ══════════════════ */
 .list { flex:1; display:flex; flex-direction:column; }
@@ -565,19 +597,25 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
                 max-width:760px; }
 
 /* contents page */
-.toc { display:flex; gap:0; }
-.toc .col { flex:1; padding:0 26px; border-left:1px solid var(--line); }
+/* The two section columns share out the page. At their natural
+   height the list stopped two thirds down and left a quarter of the
+   sheet empty under it. */
+.toc { flex:1; min-height:0; display:flex; gap:0; }
+.toc.short { flex:0 0 auto; }
+.toc .col { flex:1; display:flex; flex-direction:column;
+            padding:0 26px; border-left:1px solid var(--line); }
 .toc .col:first-child { padding-left:0; border-left:0; }
 .toc .col:last-child { padding-right:0; }
 .toc .col h3 { font-family:var(--mono); font-size:13px; letter-spacing:.24em;
                text-transform:uppercase; color:var(--gold); font-weight:400;
                padding-bottom:11px; border-bottom:1px solid var(--line); }
-.toc .e { display:flex; align-items:baseline; gap:10px; padding:10px 0;
+.toc .e { flex:1; display:flex; align-items:baseline; gap:10px; padding:10px 0;
           border-bottom:1px solid var(--line-2); }
+.toc.short .e { flex:0 0 auto; padding:13px 0; }
 .toc .e:last-child { border-bottom:0; }
 .toc .e .no { width:26px; font-family:var(--mono); font-size:12px; color:var(--faint); }
 .toc .e .n { font-family:var(--serif); font-size:23px; line-height:1; color:var(--fg); }
-.toc .e .dots { flex:1; height:1px; margin:0 4px 6px; align-self:flex-end;
+.toc .e .dots { flex:1; height:1px; margin:0 6px; align-self:center;
                 background-image: radial-gradient(circle, var(--line) 1px, transparent 1px);
                 background-size:7px 2px; background-repeat:repeat-x; }
 .toc .e .p { font-family:var(--mono); font-size:12px; color:var(--mute); }
@@ -596,6 +634,380 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
 .coupon { margin-top:15px; border:2px dashed var(--deep); padding:13px 0;
           text-align:center; font-family:var(--mono); font-size:29px;
           letter-spacing:.24em; color:var(--gold); }
+
+/* ══ BOOKCLOTH, FOIL AND SHELVES ══════════════════════════════
+   The deck used to run navy on every almanac slide and moss on every
+   live slide, which is not what the site does: each page declares its
+   own ground in its own :root and they are wildly different stocks.
+   PAGES (in script) carries the real value and the file it came from.
+   Everything below is the binding those colours get dressed in. */
+
+/* Woven bookcloth. Two crossing hatches over the cover colour, fine
+   enough to read as texture at thumbnail size and not as a pattern. */
+.cloth { background-color:var(--cloth);
+  background-image:
+    repeating-linear-gradient( 46deg, rgba(255,255,255,.030) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(-46deg, rgba(0,0,0,.150) 0 1px, transparent 1px 4px); }
+
+/* Real foil, not flat gold: a raking metallic gradient clipped to the
+   letterforms with a hard shadow under them, which is what a stamped
+   cover does under a light. The shadow has to be a filter — the text
+   clip eats text-shadow. */
+.stampfoil {
+  background-image: linear-gradient(168deg,
+    #6f5312 0%, #c9a55f 17%, #fff1cd 37%, #e6c581 51%,
+    #8c6b24 67%, #dfbb71 83%, #f8e6ba 100%);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent; color:transparent;
+  filter: drop-shadow(0 2px 0 rgba(0,0,0,.58))
+          drop-shadow(0 0 30px rgba(232,200,137,.20)); }
+
+/* ── the closed book (slide 1) ───────────────────────────────── */
+.is-cover .l-ledger { display:none; }
+.cover { position:absolute; inset:0; z-index:20; }
+
+/* The spine, seen edge-on at the left of a front-facing cover, with
+   the hinge groove where it folds onto the board and five raised
+   bands across it. */
+.cover .spine { position:absolute; left:0; top:0; bottom:0; width:66px;
+  background-image:
+    linear-gradient(90deg, rgba(0,0,0,.60) 0%, rgba(255,255,255,.055) 30%,
+                    rgba(255,255,255,.015) 66%, rgba(0,0,0,.66) 100%),
+    repeating-linear-gradient(0deg,
+      transparent 0 196px, rgba(232,200,137,.10) 196px 197px,
+      rgba(0,0,0,.30) 197px 207px, rgba(232,200,137,.07) 207px 208px,
+      transparent 208px 404px); }
+/* the hinge: a hard dark crease between spine and board */
+.cover .hinge { position:absolute; left:66px; top:0; bottom:0; width:15px;
+  background:linear-gradient(90deg, rgba(0,0,0,.62), rgba(0,0,0,0)); }
+
+/* Gilt fore-edge. The stack of gilded page ends showing past the
+   board, which is the detail that says "book" faster than anything
+   printed on the front. */
+.cover .gilt { position:absolute; right:0; top:26px; bottom:26px; width:13px;
+  background-image:
+    linear-gradient(90deg, rgba(0,0,0,.55) 0%, #8a6a24 18%, #f2dca8 46%,
+                    #c9a55f 68%, #7a5c14 100%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px); }
+
+.cover .board { position:absolute; left:66px; right:13px; top:0; bottom:0; }
+/* Raking light across the cloth, top left, the way a cover is lit. */
+.cover .raking { position:absolute; inset:0;
+  background-image:
+    radial-gradient(ellipse 72% 52% at 22% 8%, rgba(255,236,196,.13), transparent 66%),
+    radial-gradient(ellipse 90% 70% at 62% 108%, rgba(0,0,0,.55), transparent 62%); }
+
+/* The blind-stamped frame: two rules, the outer one a shade brighter,
+   both with an inner shadow so they read as pressed into the cloth. */
+.cover .frame { position:absolute; inset:58px 62px;
+  border:1px solid rgba(232,200,137,.44);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.45), 0 1px 0 rgba(232,200,137,.08);
+  display:flex; flex-direction:column; padding:44px 52px 40px; }
+.cover .frame::after { content:''; position:absolute; inset:11px;
+  border:1px solid rgba(232,200,137,.17); }
+.cover .frame .corn { position:absolute; font-size:17px; color:var(--gold);
+  opacity:.72; line-height:1; }
+.cover .frame .corn.tl { top:-9px; left:-9px; }
+.cover .frame .corn.tr { top:-9px; right:-9px; }
+.cover .frame .corn.bl { bottom:-9px; left:-9px; }
+.cover .frame .corn.br { bottom:-9px; right:-9px; }
+
+.cover .edition { display:flex; justify-content:space-between;
+  font-family:var(--mono); font-size:14px; letter-spacing:.26em;
+  text-transform:uppercase; color:rgba(232,200,137,.55); }
+/* Pulled up off true centre: a cover reads better with more air over
+   the nameplate than under it, and the imprint band takes the foot. */
+.cover .mid { flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center;
+  padding-bottom:8px; }
+.cover .mid .over { font-family:var(--mono); font-size:15px; letter-spacing:.42em;
+  text-transform:uppercase; color:rgba(232,200,137,.62); }
+.cover .mid h1 { font-family:var(--serif); font-weight:400; font-size:146px;
+  line-height:.92; letter-spacing:-.022em; margin-top:32px; }
+.cover .mid h1 em { font-style:italic; }
+.cover .mid .line { margin-top:30px; font-family:var(--serif); font-style:italic;
+  font-size:31px; line-height:1.3; color:#e6dcc4; text-shadow:0 1px 0 rgba(0,0,0,.6); }
+
+/* The seal anchors the FOOT of the board rather than trailing the
+   deck. Hung directly under the nameplate it left a 250px field of
+   bare cloth beneath it and the air read as a mistake; pushed down
+   to sit over the imprint it turns the same air into the margin a
+   cover is supposed to have. */
+.cover .seal { align-self:center; margin:0 auto 34px;
+  width:126px; height:126px; border-radius:50%;
+  border:1px solid rgba(232,200,137,.52);
+  box-shadow: inset 0 0 0 6px rgba(232,200,137,.07),
+              inset 0 0 0 7px rgba(232,200,137,.30),
+              0 0 34px rgba(232,200,137,.10);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:6px; }
+.cover .seal i { font-style:normal; font-size:21px; line-height:1;
+  color:var(--gold); }
+.cover .seal b { font-family:var(--serif); font-weight:400; font-size:33px;
+  line-height:1; color:var(--gold); letter-spacing:.02em; }
+.cover .seal s { text-decoration:none; font-family:var(--mono); font-size:10px;
+  letter-spacing:.24em; text-transform:uppercase; color:rgba(232,200,137,.55); }
+
+/* The imprint band across the foot of the board. Four platform names
+   is not prose — it is the one fact a stranger needs off the cover,
+   and it stops the lower third being a field of bare cloth. */
+.cover .imprint { padding-top:22px; border-top:1px solid rgba(232,200,137,.20);
+  text-align:center; font-family:var(--mono); font-size:14px;
+  letter-spacing:.30em; text-transform:uppercase;
+  color:rgba(232,200,137,.68); }
+
+/* ══ THE SHELF (section plates) ═══════════════════════════════
+   A section is a shelf, not a bulleted list. Each chapter stands as
+   its own volume in its own cloth — the Record Book really is green
+   felt, the Draft Annual really is black, the Seasons really are
+   mahogany — so ten chapters read as ten different books in one
+   look, which a column of type never did. */
+/* No recess behind the books. A dark panel boxed in behind them made
+   the shelf look cut out and pasted onto the slide; standing straight
+   on the room's own wall they belong to the sheet they are on.
+   Centred and at a fixed width, too: stretched to fill the column the
+   spines went wide and flat and stopped reading as books. */
+.shelf { position:relative; flex:1; min-height:0; display:flex;
+         flex-direction:column; justify-content:flex-end; }
+.shelf .row { flex:1; min-height:0; display:flex; align-items:flex-end;
+              justify-content:center; gap:9px; }
+.shelf .bk { position:relative; flex:0 0 106px; min-width:0;
+  background-color:var(--cloth);
+  background-image:
+    linear-gradient(90deg, rgba(255,255,255,.17) 0 5%, rgba(255,255,255,.04) 16%,
+                    transparent 34%, transparent 66%, rgba(0,0,0,.30) 86%,
+                    rgba(0,0,0,.52) 100%),
+    repeating-linear-gradient(46deg, rgba(255,255,255,.026) 0 1px, transparent 1px 4px);
+  border-radius:3px 3px 1px 1px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.5), 0 -4px 18px rgba(0,0,0,.34);
+  display:flex; flex-direction:column; align-items:center;
+  padding:15px 0 13px; overflow:hidden; }
+/* the head of the page block, just visible over the top of the cloth */
+.shelf .bk::before { content:''; position:absolute; top:0; left:5px; right:5px;
+  height:4px; background:linear-gradient(90deg,
+    rgba(0,0,0,.4), rgba(214,196,158,.55) 35%, rgba(160,142,106,.4)); }
+.shelf .bk .no { font-family:var(--mono); font-size:11px; letter-spacing:.10em;
+  color:var(--foil); opacity:.78; }
+.shelf .bk .band { flex:none; width:76%; height:1px; margin:11px 0;
+  background:var(--foil); opacity:.42;
+  box-shadow:0 2px 0 rgba(0,0,0,.35); }
+.shelf .bk .ti { flex:1; min-height:0; display:grid; place-items:center;
+  padding:2px 0; }
+.shelf .bk .ti b { writing-mode:vertical-rl; font-family:var(--serif);
+  font-weight:400; font-size:23px; line-height:1; letter-spacing:.005em;
+  color:var(--foil); white-space:nowrap;
+  text-shadow:0 1px 0 rgba(0,0,0,.45); }
+.shelf .bk .ft { font-family:var(--mono); font-size:9px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--foil); opacity:.55;
+  writing-mode:vertical-rl; max-height:86px; overflow:hidden; }
+/* light-cloth volumes: the foil goes to ink or it disappears */
+.shelf .bk.pale { box-shadow:0 0 0 1px rgba(0,0,0,.3), 0 -4px 18px rgba(0,0,0,.30); }
+
+/* The board they stand on: walnut rail, gold lip, and the pooled
+   shadow the books throw back onto it. */
+.shelf .plank { flex:none; height:34px; position:relative;
+  background-image:
+    linear-gradient(180deg, #5a4126 0%, #402d14 18%, #2a1d0d 54%,
+                    #171007 82%, #090604 100%),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.13) 0 3px, transparent 3px 13px);
+  border-top:1px solid rgba(232,200,137,.34);
+  box-shadow: 0 -18px 30px -12px rgba(0,0,0,.78), 0 6px 22px rgba(0,0,0,.62); }
+/* the front lip, so the shelf has an edge and not just a face */
+.shelf .plank::after { content:''; position:absolute; left:0; right:0; bottom:0;
+  height:7px; background:linear-gradient(180deg, rgba(0,0,0,.5), rgba(0,0,0,.85)); }
+
+/* ══ THE ROOM ═════════════════════════════════════════════════
+   One room, carried from slide two to the end: the volumes stand on
+   a shelf on the section plates and lie open against the same wall
+   on the chapter pages. That continuity is the only reason a stack
+   of loose boards reads as one object rather than fourteen posters.
+
+   It was brown leather for one cut and that was wrong: there is
+   almost no brown anywhere on the site, so a walnut desk under every
+   slide made the deck look like somebody else's brand. The wall is
+   the section's OWN ink pushed a couple of stops darker than the
+   page, so the volumes stand off it, with the site's gold picture
+   light over the top of it. Wood is now only where wood belongs,
+   which is the shelf plank.
+
+   Sits at z-index 2: over .l-wash (0) and .l-vig (1), under .page
+   (20), the running head (30) and the grain (80). */
+.is-room .l-ledger { display:none; }
+.ground { position:absolute; inset:0; z-index:2; }
+
+/* ── the library (section plates) ─────────────────────────────
+   Dim room, warm pool of lamp light where the books are, the case
+   boards running behind them. Wood belongs under a shelf, which is
+   the one place this deck uses it. */
+/* No repeating rules of any kind. The first cut had a vertical wood
+   grain at 11px and horizontal case boards at 158px, and the two
+   together read as a grid laid over the whole sheet — far too much to
+   look at behind six books. Light and shadow only. */
+.g-shelf { background-color:#12100c;
+  background-image:
+    radial-gradient(ellipse 54% 28% at 50% 62%, rgba(244,212,146,.16), transparent 74%),
+    radial-gradient(ellipse 120% 46% at 50% 100%, rgba(0,0,0,.55), transparent 70%),
+    linear-gradient(180deg, #080705 0%, #17110a 42%, #231a10 72%, #0c0906 100%); }
+
+/* ── the reading table (Standings / Seasons) ──────────────────
+   Green baize with a tooled leather border, which is the surface an
+   almanac in cream boards and a mahogany annual actually get put
+   down on. Navy under those two was the wrong room entirely. */
+.g-baize { background-color:#16291d;
+  background-image:
+    repeating-linear-gradient( 38deg, rgba(255,255,255,.016) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(-38deg, rgba(0,0,0,.11) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse 66% 44% at 50% 38%, rgba(244,216,152,.14), transparent 70%),
+    radial-gradient(ellipse 104% 72% at 50% 116%, rgba(0,0,0,.60), transparent 62%),
+    linear-gradient(180deg, #20392a 0%, #16281c 54%, #0a150e 100%); }
+/* the leather band and its gold fillet, run round the table edge */
+.g-baize::after { content:''; position:absolute; inset:0;
+  border:38px solid #3b1d15;
+  box-shadow: inset 0 0 0 1px rgba(232,200,137,.34),
+              inset 0 0 22px rgba(0,0,0,.55),
+              0 0 0 1px rgba(0,0,0,.5) inset; }
+
+/* ── the bulletin board (Record Book / Draft) ─────────────────
+   Cork in a wood frame. A record board and a draft board are both
+   literally boards, and the volumes get a brass tack through the
+   corner (.pin) to say so. */
+/* Two speckle layers, dark grains over light ones, and both coarse.
+   A single fine-grained layer washed out completely: the deck renders
+   at 2x and downsamples, and anything near 1px of noise averages
+   itself into a flat gradient on the way down. */
+.g-cork { background-color:#6d5030;
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='a'><feTurbulence type='fractalNoise' baseFrequency='0.22' numOctaves='4' seed='9'/><feColorMatrix values='0 0 0 0 0.13 0 0 0 0 0.08 0 0 0 0 0.03 0 0 0 0.85 -0.18'/></filter><rect width='220' height='220' filter='url(%23a)'/></svg>"),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='b'><feTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='3' seed='3'/><feColorMatrix values='0 0 0 0 0.86 0 0 0 0 0.70 0 0 0 0 0.45 0 0 0 0.40 -0.10'/></filter><rect width='160' height='160' filter='url(%23b)'/></svg>"),
+    radial-gradient(ellipse 66% 42% at 50% 32%, rgba(255,228,172,.15), transparent 72%),
+    radial-gradient(ellipse 104% 74% at 50% 116%, rgba(0,0,0,.58), transparent 62%),
+    linear-gradient(180deg, #7d5c36 0%, #644827 52%, #402e19 100%); }
+.g-cork::after { content:''; position:absolute; inset:0;
+  border:30px solid #2b1d10;
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,.55),
+              inset 0 0 30px rgba(0,0,0,.50); }
+
+/* ── newsprint (Managers / Rivalries) ─────────────────────────
+   The deck changes key here. Fourteen dark boards in a row go flat
+   no matter how well each one is lit, so one section runs on paper
+   with the volumes as two dark slabs laid on it. The board takes
+   .is-ink so the running head and the foot print in ink. */
+.g-news { background-color:#d6cfbe;
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='np'><feTurbulence baseFrequency='0.75' numOctaves='2' seed='5'/><feColorMatrix values='0 0 0 0 0.14 0 0 0 0 0.12 0 0 0 0 0.08 0 0 0 0.17 0'/></filter><rect width='180' height='180' filter='url(%23np)'/></svg>"),
+    linear-gradient(90deg, transparent 46%, rgba(60,50,30,.13) 50%, transparent 54%),
+    radial-gradient(ellipse 76% 56% at 50% 36%, rgba(255,252,240,.42), transparent 72%),
+    linear-gradient(180deg, #e4decd 0%, #d3ccb9 58%, #b9b19c 100%); }
+.is-ink { --fg:#1c1812; --soft:#4a4336; --mute:#6f6653; --faint:#9a8f77;
+          --line:rgba(28,24,18,.28); --line-2:rgba(28,24,18,.13);
+          --gold:#8a6a24; --deep:#8a6a24; }
+.is-ink .l-vig, .is-ink .l-wash, .is-ink .l-ledger { display:none; }
+.is-ink .l-grain { opacity:.13; }
+
+/* ══ THE OPEN VOLUME ══════════════════════════════════════════
+   A chapter is a bound volume lying open on the desk, not type
+   floating on the board. Two to a sheet, mirrored, with the desk
+   showing through the gap between them: that gap is the cut the
+   gilded rule used to make, and it does the job better, because the
+   two halves are now visibly two different books in two different
+   cloths rather than one sheet with a line across it.
+
+   --cloth and --foil are set inline from PAGES. The volume then
+   overrides the ink roles so every figure inside it picks up the
+   page's own colours instead of the board's. */
+.vol { position:relative; flex:1; min-height:0; display:flex;
+  background-color:var(--cloth);
+  background-image:
+    linear-gradient(158deg, rgba(255,255,255,.055) 0%, transparent 34%,
+                    rgba(0,0,0,.20) 100%),
+    repeating-linear-gradient( 46deg, rgba(255,255,255,.022) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(-46deg, rgba(0,0,0,.10) 0 1px, transparent 1px 4px);
+  border-radius:3px; overflow:hidden;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.55),
+              0 22px 46px -14px rgba(0,0,0,.80),
+              inset 0 1px 0 rgba(255,255,255,.07);
+  --fg:#f4ebd8; --soft:#c9c0ad; --mute:#8b8271; --faint:#5d5748;
+  --line:rgba(244,235,216,.17); --line-2:rgba(244,235,216,.085);
+  --panel:rgba(255,255,255,.05);
+  --gold:var(--foil); --deep:var(--foil); }
+/* A volume printed on cream takes ink, or nothing on it is legible.
+   Its weave has to be re-cut too: the dark hatch that reads as a
+   whisper on navy reads as corduroy on cream. */
+.vol.pale { --fg:#241c0e; --soft:#55482e; --mute:#7f7154; --faint:#a1957a;
+  --line:rgba(40,30,12,.28); --line-2:rgba(40,30,12,.13);
+  --panel:rgba(255,255,255,.40);
+  background-image:
+    linear-gradient(158deg, rgba(255,255,255,.40) 0%, transparent 42%,
+                    rgba(40,30,12,.07) 100%),
+    repeating-linear-gradient( 46deg, rgba(255,255,255,.50) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(-46deg, rgba(40,30,12,.030) 0 1px, transparent 1px 4px);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.35),
+              0 22px 46px -14px rgba(0,0,0,.72); }
+.vol.right { flex-direction:row-reverse; }
+
+/* Inside a volume the header column loses the binding, the padding
+   and the gap — about 90px — so the wide figures overran the cloth.
+   A narrower column and tighter column rails buy it back. */
+.vol .hd { flex-basis:270px; }
+.vol .cols .c { padding:0 7px; }
+.vol .cols .c .who { font-size:20px; }
+
+/* the sewn binding down the inner edge */
+.vol .bind { flex:none; width:30px; position:relative;
+  background-image: linear-gradient(90deg, rgba(0,0,0,.52) 0%,
+    rgba(255,255,255,.075) 36%, rgba(0,0,0,.08) 70%, rgba(0,0,0,.40) 100%); }
+.vol.right .bind { transform:scaleX(-1); }
+.vol .bind::after { content:''; position:absolute; top:26px; bottom:26px;
+  left:50%; width:1px; margin-left:-.5px;
+  background-image: repeating-linear-gradient(180deg,
+    var(--foil) 0 7px, transparent 7px 20px); opacity:.36; }
+
+.vol .half { padding:26px 30px; }
+.vol .half.b { padding:26px 30px; }
+
+/* a brass tack through the cover, for the volumes on the cork board */
+.vol .pin { position:absolute; top:15px; left:15px; z-index:3;
+  width:22px; height:22px; border-radius:50%;
+  background-image: radial-gradient(circle at 34% 28%,
+    #fff0c4 0%, #e8c078 30%, #a67f2a 66%, #5a4213 100%);
+  box-shadow: 0 4px 7px rgba(0,0,0,.62), inset 0 -1px 2px rgba(0,0,0,.45); }
+.vol.right .pin { left:auto; right:15px; }
+
+/* Six .stat boxes at full size overran a volume: the value alone ran
+   145px in a 125px cell. */
+.vol .stat { padding:12px 13px 13px; }
+.vol .stat .v { font-size:30px; margin-top:7px; }
+.vol .stat .d { font-size:14px; margin-top:6px; }
+
+/* ══ LEDGER TAPE ══════════════════════════════════════════════
+   What a league gets, across the foot of the section plate, on the
+   same cream stock and hard offset shadow as .clipping so it reads
+   as paper put down rather than another row of boxes.
+
+   The label used to be a seventh cell on the left, narrower than the
+   six it was describing and in a brown that belonged to nothing else
+   on the sheet. It is a full-width head bar now, in the almanac's own
+   ink and gold, and the six cells below it are equal.
+
+   It also used to carry counts — "7 seasons", "812 picks" — which
+   read as a spec sheet and, worse, implied a league needs some number
+   of them to be worth reading. It says what is covered instead. */
+.tape { margin-top:20px; background:#efe5cd; color:#241c0e;
+  box-shadow:7px 7px 0 rgba(0,0,0,.38); }
+.tape .head { padding:9px 16px 10px; background:#101b27; color:var(--gold);
+  font-family:var(--mono); font-size:11px; letter-spacing:.30em;
+  text-transform:uppercase; }
+.tape .row { display:flex; align-items:stretch; }
+.tape .k { flex:1; min-width:0; padding:14px 14px 15px;
+  border-left:1px solid rgba(40,30,12,.20); }
+.tape .k:first-child { border-left:0; }
+/* One line each, or the cells hyphenate ("Trades re- / graded") and
+   the strip stops scanning. Keep new entries to two short words. */
+.tape .k .v { font-family:var(--serif); font-size:20px; line-height:1.12;
+  letter-spacing:-.01em; white-space:nowrap; }
+.tape .k .l { margin-top:8px; font-family:var(--mono); font-size:9px;
+  letter-spacing:.11em; text-transform:uppercase; color:#7f7154;
+  line-height:1.5; }
 
 /* the reversed panel: a cream half-page, the way a paper drops a
    boxed feature into the bottom of a broadsheet */
@@ -625,32 +1037,87 @@ const CAST = ['John', 'Matt', 'Bryce', 'Cole', 'Drew', 'Nate',
               'Owen', 'Jack', 'Reid', 'Tyler', 'Vince', 'Grant'];
 
 const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-const pips = (n, of) => `<span class="pips">${
-  Array.from({length: of}, (_, i) => i < n ? '<i></i>' : '<u></u>').join('')}</span>`;
+/* A star per title and nothing at all for none. The old version drew
+   an empty circle for every title a manager had NOT won, which turned
+   a column of achievements into a column of scorekeeping against a
+   target nobody set. */
+const pips = n => `<span class="pips">${'<i>&#9733;</i>'.repeat(n)}</span>`;
 
 /* ── themes ───────────────────────────────────────────────────
    Each is the ground its pages actually sit on. The almanac is
    main.css; the live season is the moss canvas the live dashboard
    declares in public/demo/live/index.html. */
 const THEMES = {
+  /* `wall` is the section's ink a couple of stops under its page, so
+     a volume set against it still stands off the ground. */
   almanac: {
     bg:'#0e1620', bg2:'#16202c', panel:'#1a2532', line:'#2a3645', line2:'#1e2937',
     fg:'#f4ebd8', soft:'#c9c0ad', mute:'#837b6a', faint:'#4e4838',
-    gold:'#e8c889', deep:'#a88a4a', rust:'#a04830',
+    gold:'#e8c889', deep:'#a88a4a', rust:'#a04830', wall:'#080d14',
     wash:.17, vig:.50, grain:.26,
   },
   live: {
     bg:'#15201b', bg2:'#1d2a23', panel:'#1d2a23', line:'#2e3d34', line2:'#22302a',
     fg:'#eff1e9', soft:'#b7c1b4', mute:'#7d8c81', faint:'#4a574e',
-    gold:'#d8b25a', deep:'#9b8442', rust:'#cf9163',
+    gold:'#d8b25a', deep:'#9b8442', rust:'#cf9163', wall:'#0d1510',
     wash:.15, vig:.48, grain:.26,
   },
   slate: {
     bg:'#101013', bg2:'#1a1a20', panel:'#1a1a20', line:'#2d2d36', line2:'#212128',
     fg:'#f2efe8', soft:'#aaa8a1', mute:'#76746d', faint:'#4a4843',
-    gold:'#e8c889', deep:'#a88a4a', rust:'#c9a9ea',
+    gold:'#e8c889', deep:'#a88a4a', rust:'#c9a9ea', wall:'#08080a',
     wash:.14, vig:.52, grain:.26,
   },
+};
+
+/* ── the real page colours ────────────────────────────────────
+   Every chapter page on the site declares its own ground, and they
+   are nothing like each other: the Record Book is green felt, the
+   Draft Annual is black cloth, the Seasons are mahogany, the
+   Rivalries are black and red, and Standings, the Manager File and
+   the Power Rankings are printed on cream. Running navy over all of
+   the almanac and moss over all of the live season — which is what
+   this deck did — threw away the one thing a rebuild in HTML can
+   get exactly right.
+
+   `cloth` is the page's own background, `foil` the accent it stamps
+   with, and `src` the file the pair came out of. Anything added here
+   must be read off the page, not picked. */
+const PAGES = {
+  /* the almanac */
+  standings: { cloth:'#e9ddc1', foil:'#6b5320', pale:1, src:'demo/standings.html body{--cream}' },
+  seasons:   { cloth:'#3a1d16', foil:'#e8c889',          src:'demo/seasons/index.html --mahog' },
+  records:   { cloth:'#0b1a0f', foil:'#e8c889',          src:'demo/records.html --rb-bg' },
+  draft:     { cloth:'#0c0c0b', foil:'#e8c889',          src:'demo/draft/index.html --an-bg' },
+  managers:  { cloth:'#16202c', foil:'#6b8aa8',          src:'main.css --ink-soft / --steel' },
+  file:      { cloth:'#efe5cd', foil:'#8c2b1e', pale:1,  src:'demo/managers/manager.html --paper' },
+  rivalries: { cloth:'#0a0a0a', foil:'#dc2626',          src:'demo/rivalries --rv-bg / --rv-red' },
+  chart:     { cloth:'#0e1620', foil:'#e8c889',          src:'demo/managers/visualizer.html' },
+  alltime:   { cloth:'#203042', foil:'#e8c889',          src:'demo/managers/all-time.html --an-card-hover' },
+  mock:      { cloth:'#0d0d0d', foil:'#e8c889',          src:'demo/draft-layouts --dg-bg' },
+  /* the live season */
+  live:      { cloth:'#15201b', foil:'#d8b25a',          src:'demo/live/index.html --ls-bg' },
+  matchup:   { cloth:'#0c1812', foil:'#c89d5c',          src:'live/matchup-preview --mp-bg / --mp-brass' },
+  pickems:   { cloth:'#160b1d', foil:'#f0c463',          src:'pickems.css --pk-bg / --pk-champagne' },
+  power:     { cloth:'#f0e5c8', foil:'#7a5a18', pale:1,  src:'powerrank.css' },
+  coach:     { cloth:'#28342f', foil:'#e8c850',          src:'live/best-coach --bc-slate / --bc-yellow' },
+  watch:     { cloth:'#0f0a0c', foil:'#7fa8bd',          src:'live/records-watch --rw-bg / --rw-steel' },
+  milestones:{ cloth:'#110a18', foil:'#b58cff',          src:'live/milestones --ml-bg / --ml-violet' },
+  trade:     { cloth:'#1a1612', foil:'#c8a464',          src:'assets/css/trades.css' },
+  /* and the rest */
+  games:     { cloth:'#0b1119', foil:'#e8c889',          src:'games.module.css --gp-ink' },
+  clubhouse: { cloth:'#0d0d0d', foil:'#e8c889',          src:'hub.css --hb-bg' },
+};
+
+/* one volume on a shelf */
+const spine = (key, no, title, foot, h) => {
+  const p = PAGES[key];
+  return `<div class="bk${p.pale ? ' pale' : ''}" style="height:${h}%;
+            --cloth:${p.cloth};--foil:${p.foil}">
+    <span class="no">${no}</span><span class="band"></span>
+    <span class="ti"><b>${title}</b></span>
+    <span class="band"></span><span class="ft">${foot}</span>
+  </div>`;
 };
 
 function applyTheme(name) {
@@ -662,7 +1129,7 @@ function applyTheme(name) {
   r.setProperty('--fg', t.fg);      r.setProperty('--soft', t.soft);
   r.setProperty('--mute', t.mute);  r.setProperty('--faint', t.faint);
   r.setProperty('--gold', t.gold);  r.setProperty('--deep', t.deep);
-  r.setProperty('--rust', t.rust);
+  r.setProperty('--rust', t.rust); r.setProperty('--wall', t.wall);
   r.setProperty('--wash', t.wash);  r.setProperty('--vig', t.vig);
   r.setProperty('--grain', t.grain);
 }
@@ -682,26 +1149,20 @@ const FIG = {
 standings: () => `
   <div class="agate">
     <div class="hd-row"><span class="rk"></span><span class="nm"></span>
-      <span class="c w1">Record</span><span class="c w3">Pct</span>
-      <span class="c w2">Points for</span><span class="c w3">Titles</span></div>
+      <span class="c w1">Record</span>
+      <span class="c w2">Points</span><span class="c w3">Titles</span></div>
     <div class="r lead"><span class="rk">1</span><span class="nm">Bryce</span>
-      <span class="c w1">78&ndash;40</span><span class="c w3 dim">.661</span>
-      <span class="c w2">14,982.4</span>${pips(2,2)}</div>
+      <span class="c w1">78&ndash;40</span><span class="c w2">14,982.4</span>${pips(2)}</div>
     <div class="r"><span class="rk">2</span><span class="nm">John</span>
-      <span class="c w1">74&ndash;44</span><span class="c w3 dim">.627</span>
-      <span class="c w2 on">15,204.1</span>${pips(1,2)}</div>
+      <span class="c w1">74&ndash;44</span><span class="c w2 on">15,204.1</span>${pips(1)}</div>
     <div class="r"><span class="rk">3</span><span class="nm">Matt</span>
-      <span class="c w1">71&ndash;47</span><span class="c w3 dim">.602</span>
-      <span class="c w2">14,556.8</span>${pips(1,2)}</div>
+      <span class="c w1">71&ndash;47</span><span class="c w2">14,556.8</span>${pips(1)}</div>
     <div class="r"><span class="rk">4</span><span class="nm">Drew</span>
-      <span class="c w1">66&ndash;52</span><span class="c w3 dim">.559</span>
-      <span class="c w2">14,201.3</span>${pips(1,2)}</div>
+      <span class="c w1">66&ndash;52</span><span class="c w2">14,201.3</span>${pips(1)}</div>
     <div class="r"><span class="rk">5</span><span class="nm">Nate</span>
-      <span class="c w1">62&ndash;56</span><span class="c w3 dim">.525</span>
-      <span class="c w2">13,884.9</span>${pips(1,2)}</div>
+      <span class="c w1">62&ndash;56</span><span class="c w2">13,884.9</span>${pips(1)}</div>
     <div class="r"><span class="rk">6</span><span class="nm">Tyler</span>
-      <span class="c w1">58&ndash;60</span><span class="c w3 dim">.492</span>
-      <span class="c w2">13,540.2</span>${pips(0,2)}</div>
+      <span class="c w1">58&ndash;60</span><span class="c w2">13,540.2</span>${pips(0)}</div>
   </div>`,
 
 seasons: () => {
@@ -713,8 +1174,12 @@ seasons: () => {
              ['23','Nate', '9&ndash;5',  1698.4, 0],
              ['24','Bryce','10&ndash;4', 1806.1, 1],
              ['25','Jack', '11&ndash;3', 1770.5, 0]];
-  const LO = 1600, HI = 1900, MAX = 168;
-  return `<div class="cols">${Y.map(([y, w, r, pf, rep]) => {
+  const LO = 1600, HI = 1900, MAX = 248;
+  /* A head over the rail. The bars are bottom-aligned, so without one
+     the top third of the volume was bare cloth. */
+  return `<div class="kick" style="margin-bottom:16px">Champions&nbsp;
+    <u></u>&nbsp;Points scored</div>
+    <div class="cols">${Y.map(([y, w, r, pf, rep]) => {
     const h = Math.round(((pf - LO) / (HI - LO)) * MAX);
     return `<div class="c${rep ? ' rep' : ''}">
       <div class="who">${esc(w)}</div>
@@ -731,7 +1196,7 @@ records: () => `
     <div class="stats">
       <div class="stat"><div class="k">Highest week ever</div>
         <div class="v">212.44</div>
-        <div class="d"><b>Drew</b>, 2022, week 9</div></div>
+        <div class="d"><b>Drew</b>, 2022</div></div>
       <div class="stat"><div class="k">Most points, one season</div>
         <div class="v">1,884.6</div>
         <div class="d"><b>John</b>, 2022</div></div>
@@ -742,13 +1207,13 @@ records: () => `
     <div class="stats">
       <div class="stat cool"><div class="k">Worst beat</div>
         <div class="v">178.90</div>
-        <div class="d">Most ever scored in a loss. <b>Tyler</b>, 2023.</div></div>
+        <div class="d">Most ever scored in a loss</div></div>
       <div class="stat cool"><div class="k">Biggest blowout</div>
         <div class="v">92.4</div>
-        <div class="d">The margin. <b>Nate</b> over <b>Vince</b>, 2021.</div></div>
+        <div class="d"><b>Nate</b> over <b>Vince</b>, 2021</div></div>
       <div class="stat cool"><div class="k">Boards in the book</div>
         <div class="v">41</div>
-        <div class="d">Each one with a first, second and third.</div></div>
+        <div class="d">Every one of them podiumed.</div></div>
     </div>
   </div>`,
 
@@ -768,58 +1233,43 @@ draft: () => `
       <span class="by">Nate</span><span class="g hi">A</span></div>
   </div>`,
 
+/* The clipping gets the whole art column. Split with the index
+   beside it, each row had about 140px for its label and the long
+   ones broke over three lines, which on cream stock reads as a
+   printing fault rather than a layout. */
 managers: () => `
-  <div style="flex:1;display:flex;gap:26px;min-height:0">
-    <div style="flex:1.05;display:flex;align-items:center">
-      <div class="clipping" style="width:100%">
-        <div class="ch"><b>Bryce</b><s>On file since 2019</s></div>
-        <div class="ln"><span class="t">Titles<i>2021 and 2024</i></span>
-          <span class="v">2</span></div>
-        <div class="ln"><span class="t">All-time<i>Seven seasons</i></span>
-          <span class="v">78&ndash;40</span></div>
-        <div class="ln"><span class="t">Playoff trips<i>Missed once</i></span>
-          <span class="v">6</span></div>
-        <div class="ln"><span class="t">Cannot beat<i>Lost the last three</i></span>
-          <span class="v">John</span></div>
-        <div class="stamp">The Manager File</div>
-      </div>
-    </div>
-    <div style="flex:.95;display:flex;flex-direction:column;
-                border-left:1px solid var(--line);padding-left:26px">
-      <div class="agate">
-        <div class="hd-row"><span class="rk"></span><span class="nm">The index</span>
-          <span class="c w1">All-time</span></div>
-        <div class="r lead"><span class="rk">01</span><span class="nm">Bryce</span>
-          <span class="c w1 dim">78&ndash;40</span></div>
-        <div class="r"><span class="rk">02</span><span class="nm">John</span>
-          <span class="c w1 dim">74&ndash;44</span></div>
-        <div class="r"><span class="rk">03</span><span class="nm">Matt</span>
-          <span class="c w1 dim">71&ndash;47</span></div>
-        <div class="r"><span class="rk">04</span><span class="nm">Drew</span>
-          <span class="c w1 dim">66&ndash;52</span></div>
-        <div class="r"><span class="rk">11</span><span class="nm">Vince</span>
-          <span class="c w1 dim">41&ndash;57</span></div>
-      </div>
-    </div>
+  <div class="clipping" style="margin:auto 0">
+    <div class="ch"><b>Bryce</b><s>On file since 2019</s></div>
+    <div class="ln"><span class="t">Titles<i>2021 and 2024</i></span>
+      <span class="v">2</span></div>
+    <div class="ln"><span class="t">All-time<i>Seven seasons</i></span>
+      <span class="v">78&ndash;40</span></div>
+    <div class="ln"><span class="t">Playoff trips<i>Missed once</i></span>
+      <span class="v">6</span></div>
+    <div class="ln"><span class="t">Owns<i>Nine of eleven</i></span>
+      <span class="v">Vince</span></div>
+    <div class="ln"><span class="t">Cannot beat<i>Lost the last three</i></span>
+      <span class="v">John</span></div>
+    <div class="stamp">The Manager File</div>
   </div>`,
 
 rivalries: () => `
   <div class="h2h">
     <div class="m"><span class="a">Bryce</span><span class="sc">12&ndash;9</span>
       <span class="mid"><span class="bar"><u class="x" style="flex:12"></u><u class="y" style="flex:9"></u></span>
-        <span class="lb">Bryce has won the last four. Closest ever: 0.86</span></span>
+        <span class="lb">Won the last four</span></span>
       <span class="b">John</span></div>
     <div class="m"><span class="a">Matt</span><span class="sc">11&ndash;11</span>
       <span class="mid"><span class="bar"><u class="x" style="flex:11"></u><u class="y" style="flex:11"></u></span>
-        <span class="lb">Dead even in six years. Three of them in the playoffs</span></span>
+        <span class="lb">Dead even, three in the playoffs</span></span>
       <span class="b">Drew</span></div>
     <div class="m"><span class="a">Nate</span><span class="sc">14&ndash;6</span>
       <span class="mid"><span class="bar"><u class="x" style="flex:14"></u><u class="y" style="flex:6"></u></span>
-        <span class="lb">Biggest margin in the league: 78.2</span></span>
+        <span class="lb">Biggest margin in the league</span></span>
       <span class="b">Owen</span></div>
     <div class="m"><span class="a">Tyler</span><span class="sc">13&ndash;8</span>
       <span class="mid"><span class="bar"><u class="x" style="flex:13"></u><u class="y" style="flex:8"></u></span>
-        <span class="lb">Five straight to Tyler, and Cole still leads on points</span></span>
+        <span class="lb">Five straight, Cole leads on points</span></span>
       <span class="b">Cole</span></div>
   </div>`,
 
@@ -853,18 +1303,24 @@ chart: () => {
   </div>`;
 },
 
+/* Drawn as bars rather than a row of figures. Eight text columns
+   overflowed their 520px and the last one crossed the column rule
+   into the header; seven bars fill the half and say "best week" in
+   one look. The total lives in the pulled figure, not in an eighth
+   column. */
 alltime: () => {
-  const L = [['QB','44.9','&rsquo;22 wk 9',1], ['RB','41.2','&rsquo;21 wk 4',0],
-             ['RB','38.6','&rsquo;24 wk 11',0], ['WR','39.4','&rsquo;23 wk 6',0],
-             ['WR','36.1','&rsquo;19 wk 13',0], ['TE','31.8','&rsquo;20 wk 2',0],
-             ['FLX','34.7','&rsquo;25 wk 8',0]];
-  return `<div class="lineup">${L.map(([p, v, w, top]) => `
-    <div class="s${top ? ' top' : ''}"><div class="pos">${p}</div>
-      <div class="pt">${v}</div><div class="wk">${w}</div></div>`).join('')}
-    <div class="s top" style="border-left:1px solid var(--line)">
-      <div class="pos" style="color:var(--gold)">Total</div>
-      <div class="pt">266.7</div><div class="wk">Career best</div></div>
-  </div>`;
+  const L = [['QB',44.9,'&rsquo;22',1], ['RB',41.2,'&rsquo;21',0],
+             ['RB',38.6,'&rsquo;24',0], ['WR',39.4,'&rsquo;23',0],
+             ['WR',36.1,'&rsquo;19',0], ['TE',31.8,'&rsquo;20',0],
+             ['FLX',34.7,'&rsquo;25',0]];
+  const LO = 24, HI = 48, MAX = 180;
+  return `<div class="cols">${L.map(([pos, v, w, top]) => `
+    <div class="c${top ? ' rep' : ''}">
+      <div class="who">${v}</div>
+      <div class="rec">${pos}</div>
+      <div class="bar" style="height:${Math.round(((v-LO)/(HI-LO))*MAX)}px"></div>
+      <div class="yr">${w}</div>
+    </div>`).join('')}</div>`;
 },
 
 /* ── the live season ─────────────────────────────────────────── */
@@ -880,8 +1336,8 @@ matchup: () => `
     <div class="lines">
       <div>All-time series<b>7&ndash;4 Bryce</b></div>
       <div>Last meeting<b>Reid by 1.2</b></div>
-      <div>Reid&rsquo;s last win in this fixture<b>2023</b></div>
-      <div>At stake<b>The last first-round bye</b></div>
+      <div>Reid&rsquo;s last win here<b>2023</b></div>
+      <div>At stake<b>The last bye</b></div>
     </div>
   </div>`,
 
@@ -939,7 +1395,7 @@ coach: () => `
       <span class="v">147.0 left</span></div><div class="bar"><i class="dim" style="width:90%"></i></div></div>
     <div class="m"><div class="l"><span class="k">Grant<small>82.7% optimal</small></span>
       <span class="v">264.3 left</span></div><div class="bar"><i class="dim" style="width:83%"></i></div>
-      <div class="note">Two of Grant&rsquo;s five losses were sitting on his bench</div></div>
+      <div class="note">Two of his five losses were sitting there</div></div>
   </div>`,
 
 watch: () => `
@@ -953,50 +1409,64 @@ watch: () => `
     <div class="m"><div class="l"><span class="k">Highest week ever</span>
       <span class="v">93%</span></div><div class="bar"><i class="dim" style="width:93%"></i></div>
       <div class="note">Best this year is 198.10. The record is 212.44</div></div>
+    <div class="m"><div class="l"><span class="k">Most points against</span>
+      <span class="v">88%</span></div><div class="bar"><i class="dim" style="width:88%"></i></div>
+      <div class="note">Cole has drawn 1,612.8. The record is 1,824.0</div></div>
   </div>`,
 
+/* The countdown, and how close it is, as a bar. Written out long
+   ("Three games from 100 started") each column wrapped to four
+   lines in 110px and the rail turned into a paragraph. */
 milestones: () => {
-  const M = [['Bryce','Two wins from<br>his 80th', 1], ['John','118 points<br>from 15,000', 0],
-             ['Nate','Three games from<br>100 started', 0], ['Matt','One win from 50<br>in the division', 0],
-             ['Drew','Four from 900<br>all-time', 0]];
-  return `<div class="rail">${M.map(([n, d, on]) => `
-    <div class="y${on ? ' rep' : ''}">
-      <div class="who" style="margin-top:0">${esc(n)}</div>
-      <div class="rec" style="line-height:1.5">${d}</div>
-      <div class="bar"></div>
+  const M = [['Bryce','2 from 80', 94, 1], ['John','118 from 15k', 71, 0],
+             ['Nate','3 from 100', 64, 0], ['Matt','1 from 50', 88, 0],
+             ['Drew','4 from 900', 52, 0]];
+  const MAX = 180;
+  return `<div class="cols">${M.map(([n, d, pct, on]) => `
+    <div class="c${on ? ' rep' : ''}">
+      <div class="who">${esc(n)}</div>
+      <div class="rec">${d}</div>
+      <div class="bar" style="height:${Math.round(pct/100*MAX)}px"></div>
+      <div class="yr">${pct}%</div>
     </div>`).join('')}</div>`;
 },
 
 trade: () => `
   <div class="ticket">
+    <div class="sides">
     <div class="side win">
       <div class="who"><span class="n">Bryce gets</span><span class="g">Grade A&minus;</span></div>
       <ul>
-        <li>A top-five receiver<i>Under contract two more years</i></li>
-        <li>A 2027 second<i>Projected pick 18</i></li>
+        <li>A top-five receiver<i>Two years left</i></li>
+        <li>A 2027 second<i>Projected 18th</i></li>
       </ul>
     </div>
     <div class="side">
       <div class="who"><span class="n">Reid gets</span><span class="g">Grade B</span></div>
       <ul>
-        <li>Volume at running back<i>Fourth in carries since week 4</i></li>
-        <li>A tight end<i>Has not missed a game in three years</i></li>
+        <li>Volume at running back<i>Fourth in carries</i></li>
+        <li>A tight end<i>Never missed a game</i></li>
       </ul>
+    </div>
+    </div>
+    <div class="verdict">
+      <div class="bar"><u class="x" style="flex:58"></u><u class="y" style="flex:42"></u></div>
+      <div class="lb"><span>58% of the value</span><span>42%</span></div>
     </div>
   </div>`,
 
 mill: () => `
   <div class="agate">
-    <div class="hd-row"><span class="nm">The rumor mill</span>
-      <span class="c w4">Offers started &middot; accepted</span></div>
+    <div class="hd-row"><span class="lbl">Offers started</span>
+      <span class="c w3">Sent</span><span class="c w3">Taken</span></div>
     <div class="r lead"><span class="nm">Grant</span>
-      <span class="c w4 on">17 sent &middot; 2 taken</span></div>
+      <span class="c w3 on">17</span><span class="c w3 dim">2</span></div>
     <div class="r"><span class="nm">Bryce</span>
-      <span class="c w4 dim">9 sent &middot; 6 taken</span></div>
+      <span class="c w3 dim">9</span><span class="c w3 dim">6</span></div>
     <div class="r"><span class="nm">Reid</span>
-      <span class="c w4 dim">6 sent &middot; 3 taken</span></div>
+      <span class="c w3 dim">6</span><span class="c w3 dim">3</span></div>
     <div class="r"><span class="nm">Vince</span>
-      <span class="c w4 dim">1 sent &middot; 0 taken</span></div>
+      <span class="c w3 dim">1</span><span class="c w3 dim">0</span></div>
   </div>`,
 
 dna: () => `
@@ -1019,10 +1489,10 @@ games: () => {
      colour. If a pitch changes there, change it here. */
   const G = [
     ['Roster <em>Roulette</em>', 'Can you go 17-0?', '#e8c889'],
-    ['Guess the <em>Draft</em>', 'A draft with the name blacked out', '#e29278'],
+    ['Guess the <em>Draft</em>', 'Name blacked out. Whose was it?', '#e29278'],
     ['The <em>Gauntlet</em>', 'Two teams, one week. Who won?', '#8fb3d6'],
     ['The <em>Over/Under</em>', 'Ten real weeks, ten lines', '#c9a9ea'],
-    ['The <em>Redraft</em>', 'A real slot. Pick again, with hindsight', '#9ec8a8'],
+    ['The <em>Redraft</em>', 'A real slot. Pick again', '#9ec8a8'],
     ['The Multiverse <em>Draft</em>', 'Every player is three players', '#5fc9bd'],
   ];
   return `<div class="list">${G.map(([n, d, c]) => `
@@ -1033,15 +1503,15 @@ games: () => {
 clubhouse: () => `
   <div class="list">
     <div class="r"><span class="no">01</span><span class="n">The Newsstand</span>
-      <span class="d">Every almanac anyone has published. 152 of them.</span></div>
+      <span class="d">152 published almanacs</span></div>
     <div class="r"><span class="no">02</span><span class="n">The Hall</span>
-      <span class="d">Every record on the network, raw or against the league average.</span></div>
+      <span class="d">Every record on the network</span></div>
     <div class="r"><span class="no">03</span><span class="n">The Census</span>
-      <span class="d">What 1.1 million games say about how the game is played.</span></div>
+      <span class="d">What 1.1 million games say</span></div>
     <div class="r"><span class="no">04</span><span class="n">The Trade Room</span>
-      <span class="d">Weigh a deal on real value, on any platform.</span></div>
+      <span class="d">Weigh a deal on real value</span></div>
     <div class="r"><span class="no">05</span><span class="n">The Dispatch</span>
-      <span class="d">What shipped, and what is being built next.</span></div>
+      <span class="d">What shipped, and what is next</span></div>
   </div>`,
 };
 
@@ -1052,76 +1522,95 @@ clubhouse: () => `
 const SLIDES = [
   /* 01 */ { kind:'front', theme:'almanac', run:'The tour' },
 
-  /* 02 */ { kind:'pitch', theme:'almanac', run:'What it is' },
-
-  /* 03 */ { kind:'plate', theme:'almanac', run:'Section one', num:'I',
+  /* 02 — the shelf, not a chapter list. Every spine is the colour of
+     the page it opens, straight out of PAGES. Seven volumes rather
+     than ten: at ten the spines were 85px wide and the shelf read as
+     a barcode. The figures that used to carry the deleted how-it-
+     works slide are the ledger tape under the platforms. */
+  /* 02 */ { kind:'plate', theme:'almanac', ground:'shelf', run:'Section one', num:'I',
              title:'The <em>Almanac.</em>',
-             kick:'Section one of three',
-             deck:'Everything your league has already done, walked back to the first season anybody can remember and bound in one book. Nobody has to remember anything.',
-             chapters:[
-               ['01','The Standings','All-time'], ['02','The Seasons','Year by year'],
-               ['03','The Record Book','41 boards'], ['04','The Draft','Every pick'],
-               ['05','The Managers','Careers'], ['06','The Manager File','One dossier'],
-               ['07','The Rivalries','66 pairings'], ['08','The Chart Room','Six charts'],
-               ['09','The All-Time Team','Best ever'], ['10','The Mock Room','Next year'],
+             deck:'Everything your league has already done, bound and shelved.',
+             shelf:[
+               ['standings','01','Standings','All-time',    81],
+               ['seasons',  '02','Seasons','Year by year',  90],
+               ['records',  '03','Record Book','41 boards', 85],
+               ['draft',    '04','Draft','Every pick',      76],
+               ['managers', '05','Managers','Careers',      88],
+               ['rivalries','06','Rivalries','66 pairings', 79],
              ],
-             stand:'Seven seasons nobody ever wrote down, and every one of them is in here.',
              /* The platforms belong on this plate rather than on their own
                 slide: the almanac is the thing they feed, and NFL.com being
                 dead is a reason to sign up rather than a gap to hide. */
-             bottom:`<div style="margin-top:30px">
-               <div class="kick" style="margin-bottom:14px">
-                 Read off &nbsp;<u></u></div>
-               <div class="plat">
+             bottom:`<div class="plat" style="margin-top:24px">
                  <div class="p"><div class="n">Sleeper</div><div class="s">Live sync</div></div>
                  <div class="p"><div class="n">ESPN</div><div class="s">Live sync</div></div>
                  <div class="p"><div class="n">Yahoo</div><div class="s">Live sync</div></div>
                  <div class="p off"><div class="n">NFL.com</div>
-                   <div class="s">Retired &middot; archived here</div></div>
+                   <div class="s">Retired</div></div>
                </div>
-             </div>` },
+               <div class="tape">
+                 <div class="head">What&rsquo;s in it</div>
+                 <div class="row">
+                   <div class="k"><div class="v">Every season</div>
+                     <div class="l">Right back to year one</div></div>
+                   <div class="k"><div class="v">Each matchup</div>
+                     <div class="l">Both sides, week by week</div></div>
+                   <div class="k"><div class="v">Entire drafts</div>
+                     <div class="l">Graded pick by pick</div></div>
+                   <div class="k"><div class="v">Trade grades</div>
+                     <div class="l">Scored on what came back</div></div>
+                   <div class="k"><div class="v">Every manager</div>
+                     <div class="l">Including the ones who left</div></div>
+                   <div class="k"><div class="v">Lost records</div>
+                     <div class="l">Most were never written down</div></div>
+                 </div>
+               </div>` },
 
-  /* 04 */ { kind:'spread', theme:'almanac', run:'The Almanac',
-             a:{ kick:'Chapter one', t:'The <em>Standings.</em>',
-                 dek:'Every win, loss and point ever scored, in one table that settles it.',
-                 pull:['15,204.1','John has the most points ever scored and one title to show for it'],
+  /* 03 */ { kind:'spread', theme:'almanac', ground:'baize', run:'The Almanac',
+             a:{ page:'standings', kick:'Chapter one', t:'The <em>Standings.</em>',
+                 dek:'Every win, loss and point ever scored.',
+                 pull:['15,204.1','Most points ever scored. One title to show for it'],
                  fig:'standings' },
-             b:{ kick:'Chapter two', t:'The <em>Seasons.</em>',
-                 dek:'And a front page for every year, carrying what it took to win that one.',
-                 pull:['7','Seasons, each opening to its own standings, bracket and draft'],
+             /* Not a count. A bare "7" read as a requirement, as though
+                a league needed some number of seasons on file before any
+                of this was worth having. It does not need replacing with
+                something cleverer either, just with the plain fact: every
+                year, not only the ones people still remember. */
+             b:{ page:'seasons', kick:'Chapter two', t:'The <em>Seasons.</em>',
+                 dek:'A front page for every year, and what it took to win it.',
+                 pull:['Every year','Back to your first season, not just the recent ones'],
                  fig:'seasons' } },
 
-  /* 05 */ { kind:'spread', theme:'almanac', run:'The Almanac',
-             a:{ kick:'Chapter three', t:'The Record <em>Book.</em>',
-                 dek:'The records of record, with a first, second and third for every mark.',
+  /* 04 */ { kind:'spread', theme:'almanac', ground:'cork', pin:1, run:'The Almanac',
+             a:{ page:'records', kick:'Chapter three', t:'The Record <em>Book.</em>',
+                 dek:'A first, second and third for every mark.',
                  fig:'records' },
-             b:{ kick:'Chapter four', t:'The <em>Draft.</em>',
-                 dek:'Every pick ever made, graded on what it actually returned.',
-                 pull:['A&minus; to F','Every manager gets a class grade for every draft'],
+             b:{ page:'draft', kick:'Chapter four', t:'The <em>Draft.</em>',
+                 dek:'Every pick, graded on what it returned.',
+                 pull:['A&minus; to F','A class grade for every draft'],
                  fig:'draft' } },
 
-  /* 06 */ { kind:'spread', theme:'almanac', run:'The Almanac',
-             a:{ kick:'Chapter five', t:'The <em>Managers.</em>',
-                 dek:'Everyone who ever ran a team, and a complete file on each of them.',
+  /* 05 */ { kind:'spread', theme:'almanac', ground:'news', run:'The Almanac',
+             a:{ page:'managers', kick:'Chapter five', t:'The <em>Managers.</em>',
+                 dek:'Everyone who ever ran a team, with a file on each.',
                  fig:'managers' },
-             b:{ kick:'Chapter seven', t:'The <em>Rivalries.</em>',
-                 dek:'Every grudge match tracked meeting by meeting, both directions.',
-                 pull:['66','Pairings, each with its own page of streaks and margins'],
+             b:{ page:'rivalries', kick:'Chapter seven', t:'The <em>Rivalries.</em>',
+                 dek:'Every grudge, tracked meeting by meeting.',
+                 pull:['Every pairing','All sixty-six of them, each on its own page'],
                  fig:'rivalries' } },
 
-  /* 07 */ { kind:'spread', theme:'almanac', run:'The Almanac',
-             a:{ kick:'Chapter eight', t:'The Chart <em>Room.</em>',
-                 dek:'The league drawn in ink: points races, standings trajectories and luck lines.',
+  /* 06 */ { kind:'spread', theme:'almanac', run:'The Almanac',
+             a:{ page:'chart', kick:'Chapter eight', t:'The Chart <em>Room.</em>',
+                 dek:'The league drawn in ink.',
                  fig:'chart' },
-             b:{ kick:'Chapter nine', t:'The All-Time <em>Team.</em>',
-                 dek:'The best lineup a career could field, one slot at a time.',
-                 pull:['266.7','What Bryce would have scored with his best week at every slot'],
+             b:{ page:'alltime', kick:'Chapter nine', t:'The All-Time <em>Team.</em>',
+                 dek:'The best lineup a career could field.',
+                 pull:['266.7','His best week at every slot, added up'],
                  fig:'alltime' } },
 
-  /* 08 */ { kind:'plate', theme:'live', run:'Section two', num:'II',
+  /* 07 */ { kind:'plate', theme:'live', run:'Section two', num:'II',
              title:'The Live <em>Season.</em>',
-             kick:'Section two of three',
-             deck:'The same league, running in real time. Pages that wake up in September, keep score against the record book all year, and go quiet again in January.',
+             deck:'The same league, running in real time. It wakes in September and sleeps in January.',
              chapters:[
                ['11','Matchup Preview','Every week'], ['12','Pick&rsquo;ems','All season'],
                ['13','Power Rankings','Every Tuesday'], ['14','Best Coach','The bench'],
@@ -1129,7 +1618,7 @@ const SLIDES = [
                ['17','The Trade Desk','Graded deals'], ['18','The Rumor Mill','Who asks'],
                ['19','Manager DNA','Habits'], ['20','Sunday Live','Game day'],
              ],
-             stand:'It wakes up on the first Thursday of September without being asked.',
+             stand:'It wakes up on the first Thursday of September on its own.',
              bottom:`<div style="margin-top:30px">
                <div class="kick" style="margin-bottom:14px">
                  The rhythm &nbsp;<u></u></div>
@@ -1145,61 +1634,61 @@ const SLIDES = [
                </div>
              </div>` },
 
-  /* 09 */ { kind:'spread', theme:'live', run:'The Live Season',
+  /* 08 */ { kind:'spread', theme:'live', run:'The Live Season',
              a:{ kick:'Every Thursday', t:'Matchup <em>Preview.</em>',
-                 dek:'What this week actually means, with the whole history of the two teams under it.',
+                 dek:'What this week actually means.',
                  fig:'matchup' },
              b:{ kick:'All season', t:'The <em>Pick&rsquo;ems.</em>',
-                 dek:'Everybody picks every game, and the board keeps the receipts until January.',
-                 pull:['12 of 12','Nobody gets to quietly forget the week they went one for six'],
+                 dek:'Everybody picks. The board remembers.',
+                 pull:['12 of 12','Nobody forgets the week they went one for six'],
                  fig:'pickems' } },
 
-  /* 10 */ { kind:'spread', theme:'live', run:'The Live Season',
+  /* 09 */ { kind:'spread', theme:'live', run:'The Live Season',
              a:{ kick:'Every Tuesday', t:'Power <em>Rankings.</em>',
-                 dek:'All twelve ranked off the results, or ranked by hand if you would rather argue.',
+                 dek:'All twelve, ranked every Tuesday.',
                  fig:'power' },
              b:{ kick:'The hard one', t:'Best <em>Coach.</em>',
-                 dek:'How much of your season went unplayed, sitting on your own bench.',
-                 pull:['264.3','Points Grant has left on the bench this year'],
+                 dek:'What you left on your own bench.',
+                 pull:['264.3','Points Grant has benched this year'],
                  fig:'coach' } },
 
-  /* 11 */ { kind:'spread', theme:'live', run:'The Live Season',
+  /* 10 */ { kind:'spread', theme:'live', run:'The Live Season',
              a:{ kick:'Live', t:'Records <em>Watch.</em>',
-                 dek:'The record book pointed at the current season, so you hear about it on the Thursday.',
+                 dek:'The record book, pointed at right now.',
+                 pull:['4','Chases live this week'],
                  fig:'watch' },
              b:{ kick:'Coming up', t:'The <em>Milestones.</em>',
-                 dek:'Told the week before it happens, not the March after.',
-                 pull:['Before','Every countdown fires ahead of the game, never after it'],
+                 dek:'Told the week before, not the March after.',
+                 pull:['Before','Every countdown fires ahead of the game'],
                  fig:'milestones' } },
 
-  /* 12 */ { kind:'trade', theme:'live', run:'The Live Season' },
+  /* 11 */ { kind:'trade', theme:'live', run:'The Live Season' },
 
-  /* 13 */ { kind:'rest', theme:'slate', run:'Section three' },
+  /* 12 */ { kind:'rest', theme:'slate', run:'Section three' },
 
-  /* 14 */ { kind:'toc', theme:'almanac', run:'Contents' },
+  /* 13 */ { kind:'toc', theme:'almanac', run:'Contents' },
 
-  /* 15 */ { kind:'close', theme:'almanac', run:'Start yours' },
+  /* 14 */ { kind:'close', theme:'almanac', run:'Start yours' },
 ];
 
 const TOTAL = SLIDES.length;
 
-/* ── the foot ─────────────────────────────────────────────────
-   Rotated so the imprint is not the same line fifteen times: the
-   URL, then the wordmark, then the edition line. The folio on the
-   right never changes, because that is the one thing a page number
-   is for. */
+/* ── the foot ───────────────────────────────────────────────── */
+/* Two imprints, alternating, and no page number.
+   The folio is gone from every sheet: "3 of 14" is furniture a bound
+   book needs and a carousel does not, and at thumbnail size it just
+   reads as a counter somebody forgot to take off.
+   "Vol. II, No. 118, compiled from seven seasons" went with it. It
+   meant nothing to the person who wrote the site, so it was never
+   going to mean anything to somebody seeing it for the first time. */
 const IMPRINTS = [
   () => `<span class="imp">thesundaychronicle.app</span>`,
   () => `<span class="mark"><b>The Sunday <em>Chronicle.</em></b>
            <s>Est. 2025</s></span>`,
-  () => `<span class="imp">Vol. II &middot; No. 118 &middot; Compiled from seven seasons</span>`,
 ];
 
 function foot(n) {
-  return `<div class="foot">
-    ${IMPRINTS[(n - 1) % IMPRINTS.length]()}
-    <span class="folio"><i>${n}</i> of ${TOTAL}</span>
-  </div>`;
+  return `<div class="foot">${IMPRINTS[(n - 1) % IMPRINTS.length]()}</div>`;
 }
 
 const runHead = label => `<div class="run">
@@ -1217,161 +1706,110 @@ const s = SLIDES[n - 1];
 applyTheme(s.theme);
 const body = document.getElementById('body');
 
-/* one half of a spread: header column on one side, figures on the
-   other, with a column rule between */
+/* Each slide names its own surface. Running one ground under the
+   whole deck is what made it read as fourteen of the same board, and
+   a surface is only right for what is standing on it: wood under a
+   shelf, baize under an almanac, cork under a record board. */
+if (s.ground) document.getElementById('board').classList.add('is-room');
+if (s.ground === 'news') document.getElementById('board').classList.add('is-ink');
+const room = () => s.ground ? `<div class="ground g-${s.ground}"></div>` : '';
+
+/* One chapter, as a bound volume lying on the desk: binding down the
+   inner edge, header column on one side, figures on the other. `page`
+   keys into PAGES, so the volume comes out in the real colours of the
+   page it is showing. */
 function half(cls, h) {
-  return `<div class="half ${cls}">
-    <div class="hd">
-      <div class="kick">${esc(h.kick)}</div>
-      <h2>${h.t}</h2>
-      <div class="dek">${esc(h.dek)}</div>
-      ${h.pull ? `<div class="pull"><div class="v">${h.pull[0]}</div>
-                   <div class="k">${esc(h.pull[1])}</div></div>` : ''}
+  const p = PAGES[h.page] || PAGES.chart;
+  return `<div class="vol${cls === 'b' ? ' right' : ''}${p.pale ? ' pale' : ''}"
+               style="--cloth:${p.cloth};--foil:${p.foil}">
+    <div class="bind"></div>${s.pin ? '<span class="pin"></span>' : ''}
+    <div class="half ${cls}">
+      <div class="hd">
+        <div class="kick">${esc(h.kick)}</div>
+        <h2>${h.t}</h2>
+        <div class="dek">${esc(h.dek)}</div>
+        ${h.pull ? `<div class="pull"><div class="v">${h.pull[0]}</div>
+                     <div class="k">${esc(h.pull[1])}</div></div>` : ''}
+      </div>
+      <div class="art">${FIG[h.fig]()}</div>
     </div>
-    <div class="art">${FIG[h.fig]()}</div>
   </div>`;
 }
 
-/* The front page fills the sheet rather than sitting in the top two
-   thirds of it: masthead block at the top, the issue strip pinned
-   above the foot, and the air distributed between them, which is
-   how a broadsheet lays out a front page. */
+/* Slide one is the closed book, not a front page.
+   The broadsheet version of it carried a masthead bar, a six-item
+   wire and a three column contents strip — about a hundred and
+   twenty words — and still left a band of dead cloth across its
+   middle, because none of that is what stops a thumb. This is the
+   binding seen head on: spine and hinge at the left, gilt fore-edge
+   at the right, a blind-stamped frame, the nameplate in actual foil
+   and five short lines in total. Everything that was cut is said
+   later in the deck anyway. It carries no running head and no folio
+   strap: a cover is not a page. */
 if (s.kind === 'front') {
-  body.innerHTML = runHead(s.run) + `
-    <div class="page" style="justify-content:space-between">
-      <div>
-        <div class="mastbar">
-          <span>Vol. II &middot; No. 118</span>
-          <span class="mid">Sleeper &middot; ESPN &middot; Yahoo &middot; NFL.com</span>
-          <span>Price: one league ID</span>
-        </div>
-        <div class="kick-c" style="margin-top:44px">A tour of the whole paper</div>
-        <div class="nameplate" style="font-size:126px;text-align:center;margin-top:24px">
-          The Sunday<br><em>Chronicle.</em></div>
-        <div class="foil" style="width:78%;margin:36px auto 0"></div>
-        <div class="deckrow"><p>The record book your league never kept.</p></div>
-      </div>
+  document.getElementById('board').classList.add('is-cover');
+  body.innerHTML = `
+    <div class="cover cloth" style="--cloth:#101b27">
+      <div class="raking"></div>
+      <div class="spine"></div>
+      <div class="hinge"></div>
+      <div class="gilt"></div>
+      <div class="board">
+        <div class="frame">
+          <span class="corn tl">&#10022;</span><span class="corn tr">&#10022;</span>
+          <span class="corn bl">&#10022;</span><span class="corn br">&#10022;</span>
 
-      <div>
-        <div class="wire">
-          <div class="c">
-            <div class="l"><i>&#9733;</i><span>Bryce takes sole possession of first</span></div>
-            <div class="l"><i>&#9733;</i><span>Reid comeback falls 1.2 short, still disputed</span></div>
-            <div class="l"><i>&#9733;</i><span>Record watch: 212.44 survives a fourth season</span></div>
+          <div class="edition"><span>Vol. II</span><span>No. 118</span></div>
+
+          <div class="mid">
+            <div class="over">The whole paper</div>
+            <h1 class="stampfoil">The Sunday<br><em>Chronicle.</em></h1>
+            <div class="foil" style="width:56%;margin-top:34px"></div>
+            <p class="line">The record book your league never kept.</p>
           </div>
-          <div class="c">
-            <div class="l"><i>&#9733;</i><span>Nate rides a four game heater into week 15</span></div>
-            <div class="l"><i>&#9733;</i><span>Grant benches the wrong quarterback again</span></div>
-            <div class="l"><i>&#9733;</i><span>Deadline passes without a single offer made</span></div>
-          </div>
-        </div>
-      </div>
 
-      <div>
-        <div class="kick" style="justify-content:center;color:var(--deep)">
-          Inside this issue</div>
-        <div class="issue">
-          <div class="c"><div class="rn">I</div>
-            <div class="n">The Almanac</div>
-            <div class="d">Everything the league has already done, walked back
-              to the first season anybody can remember.</div>
-            <div class="ct">Eleven chapters</div></div>
-          <div class="c"><div class="rn">II</div>
-            <div class="n">The Live Season</div>
-            <div class="d">The same league running in real time, keeping score
-              against the record book every week.</div>
-            <div class="ct">Ten pages</div></div>
-          <div class="c"><div class="rn">III</div>
-            <div class="n">And the rest</div>
-            <div class="d">Six games dealt out of your own seasons, and five
-              rooms open to anybody with an account.</div>
-            <div class="ct">Games and Clubhouse</div></div>
+          <div class="seal"><i>&#10022;</i><b>TSC</b><s>Est. 2025</s></div>
+          <div class="imprint">Sleeper &middot; ESPN &middot; Yahoo &middot; NFL.com</div>
+          <div class="edition" style="margin-top:22px">
+            <span>Est. 2025</span><span>Fantasy football</span></div>
         </div>
       </div>
-    </div>` + foot(n);
+    </div>`;
 
-} else if (s.kind === 'pitch') {
-  body.innerHTML = runHead(s.run) + `
-    <div class="page">
-      <div class="half a">
-        <div class="hd" style="flex-basis:352px">
-          <div class="kick">The whole idea</div>
-          <h2 style="font-size:48px">One league ID.<br><em>Everything after.</em></h2>
-          <div class="dek">The Chronicle reads your league off the platform you
-            already play on, walks it back to the first season anybody can
-            remember, and prints the paper trail as a book that keeps itself
-            current from there.</div>
-          <div class="pull"><div class="v">90 seconds</div>
-            <div class="k">From pasting the ID to reading the first chapter</div></div>
-        </div>
-        <div class="art">
-          <div class="clipping" style="margin:auto 0">
-            <div class="ch"><b>What came back</b><s>First sync</s></div>
-            <div class="ln"><span class="t">Seasons<i>Back to year one</i></span>
-              <span class="v">7</span></div>
-            <div class="ln"><span class="t">Games played<i>Every box score, both sides</i></span>
-              <span class="v">1,092</span></div>
-            <div class="ln"><span class="t">Managers on file<i>Including the ones who left</i></span>
-              <span class="v">14</span></div>
-            <div class="ln"><span class="t">Draft picks<i>Every one of them graded</i></span>
-              <span class="v">812</span></div>
-            <div class="ln"><span class="t">Trades<i>Re-graded on what they returned</i></span>
-              <span class="v">96</span></div>
-            <div class="ln"><span class="t">Records found<i>Nobody knew about most of them</i></span>
-              <span class="v">148</span></div>
-            <div class="stamp">Compiled</div>
-          </div>
-        </div>
-      </div>
-      <div class="foil"></div>
-      <div class="half b" style="flex:.52;display:block;padding-top:26px">
-        <div class="kick" style="margin-bottom:18px">How it goes
-          <u></u>
-          <span style="color:var(--mute);letter-spacing:.18em">No spreadsheet, ever</span>
-        </div>
-        <div class="steps">
-          <div class="s"><div class="n">I</div>
-            <div class="t">Paste the league ID</div>
-            <div class="d">The one already in the address bar of the league you
-              play in. Nothing to install, nothing to fill in.</div></div>
-          <div class="s"><div class="n">II</div>
-            <div class="t">It reads every season back</div>
-            <div class="d">Standings, box scores, drafts, trades and the managers
-              behind them, as far back as the platform kept them.</div></div>
-          <div class="s"><div class="n">III</div>
-            <div class="t">The paper prints itself</div>
-            <div class="d">Twenty-three chapters, and it stays current on its own
-              every week of the season after that.</div></div>
-        </div>
-      </div>
-    </div>` + foot(n);
-
+/* A section plate is a shelf when it has one (see PAGES). The
+   chapter list is kept for the plates not converted yet. */
 } else if (s.kind === 'plate') {
-  body.innerHTML = runHead(s.run) + `
+  body.innerHTML = room() + runHead(s.run) + `
     <div class="page">
-      <div style="display:flex;align-items:flex-start;gap:34px">
+      <div style="flex:none;display:flex;align-items:flex-start;gap:34px">
         <div class="roman">${s.num}</div>
-        <div style="flex:1;padding-top:6px">
-          <div class="kick-c" style="text-align:left">${esc(s.kick)}</div>
-          <div class="nameplate" style="font-size:96px;margin-top:18px">${s.title}</div>
+        <div style="flex:1;padding-top:10px">
+          <div class="nameplate" style="font-size:92px">${s.title}</div>
+          <div style="margin-top:20px;font-size:24px;line-height:1.4;color:var(--soft)">
+            ${esc(s.deck)}</div>
         </div>
       </div>
-      <div class="foil" style="margin:32px 0 28px"></div>
-      <div style="font-size:26px;line-height:1.46;color:var(--soft);max-width:860px">
-        ${esc(s.deck)}</div>
-      <div class="chaplist">
-        ${s.chapters.map(c => `<div class="c"><span class="no">${c[0]}</span>
-          <span class="n">${c[1]}</span><span class="d">${c[2]}</span></div>`).join('')}
-      </div>
-      <div class="standfirst"><p>${s.stand}</p></div>
+      <div class="foil" style="flex:none;margin:26px 0 24px"></div>
+      ${s.shelf ? `
+        <div class="shelf">
+          <div class="row">${s.shelf.map(b => spine(b[0], b[1], b[2], b[3], b[4])).join('')}</div>
+          <div class="plank"></div>
+        </div>`
+      : `<div class="chaplist">
+          ${s.chapters.map(c => `<div class="c"><span class="no">${c[0]}</span>
+            <span class="n">${c[1]}</span><span class="d">${c[2]}</span></div>`).join('')}
+        </div>
+        <div class="standfirst"><p>${s.stand}</p></div>`}
       ${s.bottom}
     </div>` + foot(n);
 
+/* Two volumes on the desk. No gilded rule between them any more: the
+   strip of desk showing through the gap is the cut, and it says the
+   two halves are separate books, which a line never did. */
 } else if (s.kind === 'spread') {
-  body.innerHTML = runHead(s.run) + `
-    <div class="page">
+  body.innerHTML = room() + runHead(s.run) + `
+    <div class="page" style="gap:24px">
       ${half('a', s.a)}
-      <div class="foil"></div>
       ${half('b', s.b)}
     </div>` + foot(n);
 
@@ -1385,30 +1823,23 @@ if (s.kind === 'front') {
         <div class="hd">
           <div class="kick">Chapter seventeen</div>
           <h2>The Trade <em>Desk.</em></h2>
-          <div class="dek">Every deal in the league graded from both sides on
-            what the pieces are actually worth, not on who shouted loudest in
-            the group chat.</div>
+          <div class="dek">Every deal graded from both sides, on what the
+            pieces are actually worth.</div>
           <div class="pull"><div class="v">14</div>
-            <div class="k">Trades this season, the most since 2021</div></div>
+            <div class="k">Trades this season. Most since 2021</div></div>
         </div>
         <div class="art">${FIG.trade()}</div>
       </div>
       <div class="foil"></div>
-      <div class="half b" style="align-items:stretch">
+      <div class="half b">
         <div class="hd">
-          <div class="kick">And underneath it</div>
-          <h2 style="font-size:44px">The Mill, and<br>the <em>Profile.</em></h2>
-          <div class="dek">Who keeps starting the conversations, and seven
-            years of habits read back at whoever made them.</div>
+          <div class="kick">Underneath it</div>
+          <h2>The Rumor <em>Mill.</em></h2>
+          <div class="dek">And who keeps asking.</div>
+          <div class="pull"><div class="v">17</div>
+            <div class="k">Offers Grant has sent. Two got taken</div></div>
         </div>
-        <div class="art" style="flex-direction:row;gap:26px">
-          <div style="flex:1;display:flex;flex-direction:column">${FIG.mill()}</div>
-          <div style="flex:1;display:flex;flex-direction:column;
-                      border-left:1px solid var(--line);padding-left:26px">
-            <div class="kick" style="margin-bottom:12px">Drew, since 2019</div>
-            ${FIG.dna()}
-          </div>
-        </div>
+        <div class="art">${FIG.mill()}</div>
       </div>
     </div>` + foot(n);
 
@@ -1422,11 +1853,9 @@ if (s.kind === 'front') {
         <div class="hd">
           <div class="kick">Section three</div>
           <h2>The <em>Games.</em></h2>
-          <div class="dek">Six of them, every one dealt out of seasons your
-            league actually played. Par graded, shareable, and there is a
-            leaderboard.</div>
+          <div class="dek">Dealt out of seasons your league actually played.</div>
           <div class="pull"><div class="v">Any league</div>
-            <div class="k">Playable on yours, on the demo, or across the whole site</div></div>
+            <div class="k">Yours, the demo, or the whole site</div></div>
         </div>
         <div class="art">${FIG.games()}</div>
       </div>
@@ -1434,8 +1863,7 @@ if (s.kind === 'front') {
         <div class="hd">
           <div class="kick">Free with any account</div>
           <h2 style="font-size:46px">The <em>Clubhouse.</em></h2>
-          <div class="dek">Five rooms outside your own league, open before
-            you have set one up.</div>
+          <div class="dek">Five rooms, open before you set anything up.</div>
         </div>
         <div class="art">${FIG.clubhouse()}</div>
       </div>
@@ -1456,46 +1884,45 @@ if (s.kind === 'front') {
       <span class="n">${r[1]}</span><span class="dots"></span>
       <span class="p">${p}</span></div>`).join('')}</div>`;
   body.innerHTML = runHead(s.run) + `
-    <div class="plate" style="top:150px">
+    <div class="page">
       <div class="kick-c" style="text-align:left">Everything in the paper</div>
       <div class="nameplate" style="font-size:78px;margin-top:18px">
         Twenty-three <em>chapters.</em></div>
-      <div class="foil" style="margin:28px 0 30px"></div>
+      <div class="foil" style="margin:26px 0 26px"></div>
       <div class="toc">
         ${col('Section I &middot; The Almanac', A, 'History')}
         ${col('Section II &middot; The Live Season', B, 'In season')}
       </div>
-      <div class="toc" style="margin-top:26px;padding-top:22px;
-                              border-top:1px solid var(--line)">
+      <div class="toc short" style="margin-top:24px;padding-top:22px;
+                                    border-top:1px solid var(--line)">
         ${col('Section III &middot; And the rest', C, 'Any time')}
-        <div class="col" style="display:flex;align-items:center">
-          <div style="font-family:var(--serif);font-style:italic;font-size:25px;
+        <div class="col" style="justify-content:center">
+          <div style="font-family:var(--serif);font-style:italic;font-size:26px;
                       line-height:1.4;color:var(--soft)">
-            Every one of them built out of games your league<br>
-            has already played.</div>
+            All of it built out of games your<br>league has already played.</div>
         </div>
       </div>
     </div>` + foot(n);
 
 } else if (s.kind === 'close') {
   body.innerHTML = runHead(s.run) + `
-    <div class="plate" style="top:132px">
+    <div class="page" style="justify-content:space-between">
+      <div>
       <div class="mastbar">
         <span>Vol. II &middot; No. 118</span>
         <span class="mid">Sleeper &middot; ESPN &middot; Yahoo &middot; NFL.com</span>
         <span>Price: one league ID</span>
       </div>
-    </div>
-    <div class="plate" style="top:250px">
-      <div class="kick-c" style="text-align:left">Start your chronicle</div>
+      <div class="kick-c" style="text-align:left;margin-top:46px">Start your chronicle</div>
       <div class="nameplate" style="font-size:88px;margin-top:20px">
         Your league has a<br><em>paper trail.</em><br>Go and read it.</div>
+      </div>
+
       <div class="offer">
         <div class="o">
           <div class="k">On signing up</div>
           <div class="v">30 days free</div>
-          <div class="d">The whole almanac, the live season and every game.
-            Nothing charged until it is over.</div>
+          <div class="d">The whole paper. Nothing charged until it is over.</div>
         </div>
         <div class="o">
           <div class="k">Then, on your first bill</div>
@@ -1507,8 +1934,20 @@ if (s.kind === 'front') {
       <div style="margin-top:26px;display:flex;align-items:baseline;
                   font-family:var(--mono);font-size:16px;letter-spacing:.18em;
                   text-transform:uppercase;color:var(--soft)">
-        <span>Ninety seconds to start it</span>
-        <span style="margin-left:auto;color:var(--mute)">Or read the demo league first</span>
+        <span>Ninety seconds to start</span>
+        <span style="margin-left:auto;color:var(--mute)">Or read the demo first</span>
+      </div>
+
+      <!-- The back cover. The offer used to end two thirds down the
+           sheet and the last slide of the deck closed on a quarter
+           page of nothing. -->
+      <div>
+        <div class="foil" style="width:64%;margin:0 auto 30px"></div>
+        <div class="nameplate" style="font-size:64px;text-align:center">
+          The Sunday <em>Chronicle.</em></div>
+        <div style="margin-top:20px;text-align:center;font-family:var(--mono);
+                    font-size:19px;letter-spacing:.30em;text-transform:uppercase;
+                    color:var(--gold)">thesundaychronicle.app</div>
       </div>
     </div>` + foot(n);
 }

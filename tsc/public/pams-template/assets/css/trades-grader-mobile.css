@@ -231,12 +231,18 @@
       0 1px 3px rgba(0, 0, 0, .25);
     position: relative;
   }
+  /* The copper rail runs the full height of the card. z-index matters:
+     .tr-summary sets position:relative (for its quote glyphs), which puts
+     its opaque background in the same paint layer as this pseudo-element
+     and, being later in tree order, on top of it. The rail visibly died
+     at the top of the write-up. z-index keeps it above every child. */
   body[data-trades-theme] .tr-card::before {
     content: '';
     position: absolute;
     left: 0; top: 0; bottom: 0;
     width: 3px;
     background: linear-gradient(180deg, var(--tg-text-em), var(--tg-gold));
+    z-index: 3;
   }
 
   /* Card head — date / week / season / platform */
@@ -373,9 +379,9 @@
   body[data-trades-theme] .tr-side:nth-of-type(1) { --side-accent: var(--tg-a); }
   body[data-trades-theme] .tr-side:nth-of-type(2) { --side-accent: var(--tg-b); }
   body[data-trades-theme] .tr-side:nth-of-type(3) { --side-accent: var(--tg-c); }
-  body[data-trades-theme] .tr-side + .tr-side {
-    border-top: 1px dashed var(--tg-line) !important;
-  }
+  /* No separator between the sides. They're two distinct cards with real
+     space between them now, so a dashed rule on B's top edge just fought
+     its own border. */
   /* No per-side decoration on the card edge — earlier passes had a
      colored rail, then a corner chip, then a colored avatar ring. All
      three competed visually and the user couldn't read the chip behind
@@ -422,9 +428,10 @@
   }
   /* Side-identity label. trades.js renders just "Received"; the prior
      pill version read as an empty colored strip — too much border,
-     not enough signal. Now it's a short horizontal accent rule
-     followed by the plain "Received" caption, both in the side
-     accent color. Reads as a small tagged section header. */
+     not enough signal. It then carried a short accent dash, which
+     hung outside the left edge of the asset rows it introduced and
+     over-ran their text. Plain caption in the side accent colour now,
+     flush with the rows below it. */
   body[data-trades-theme] .tr-side-label {
     font-family: var(--mono) !important;
     font-weight: 700 !important;
@@ -443,17 +450,9 @@
     width: fit-content;
   }
   body[data-trades-theme] .tr-side-label {
-    padding-left: .55rem;
+    padding-left: 0;
   }
-  body[data-trades-theme] .tr-side-label::before {
-    content: '';
-    display: inline-block;
-    width: 22px;
-    height: 2px;
-    background: var(--side-accent);
-    border-radius: 2px;
-    opacity: .9;
-  }
+  body[data-trades-theme] .tr-side-label::before { content: none !important; }
 
   /* ── Assets — clean rows with a position pill + name + team ── */
   body[data-trades-theme] .tr-assets {
@@ -472,15 +471,13 @@
     font-size: .85rem !important;
     color: var(--tg-text) !important;
   }
-  body[data-trades-theme] .tr-asset.kind-player {
-    border-left: 2px solid var(--side-accent) !important;
-  }
+  /* Rows carry no left rail. The side card is already ringed in its
+     accent and the position pill is tinted with it, so a third copy of
+     the same signal on every row was just weight. Picks and FAAB keep a
+     tint instead of a stripe. */
   body[data-trades-theme] .tr-asset.kind-pick {
-    border-left: 2px solid var(--tg-gold) !important;
+    border-color: rgba(216, 177, 90, .35) !important;
     background: rgba(216, 177, 90, .04) !important;
-  }
-  body[data-trades-theme] .tr-asset.kind-faab {
-    border-left: 2px solid var(--tg-mute) !important;
   }
   body[data-trades-theme] .tr-asset-pos {
     font-family: var(--mono) !important;
@@ -778,17 +775,22 @@ body[data-trades-theme] .tr-page-sub {
      plum card, B is a light one — and they're separate cards with real
      space between them rather than one enclosure. Nothing is labelled
      "A" or "B"; the surfaces carry it. */
+  /* Equal air on all four sides of the stack: the gap above side A, the
+     gap between the two sides, and the gap below side B are one value. */
   body[data-trades-theme] .tr-sides {
     display: grid !important;
     grid-template-columns: 1fr !important;
     gap: 1rem !important;
     background: transparent !important;
     border: none !important;
-    margin: 0 1rem 1.1rem !important;
+    margin: 1rem !important;
   }
+  /* One uniform border per side card. The accent used to be a 3px left
+     rail, which made each card look like it was leaning; the side colour
+     now rings the whole card instead, at about half strength so a full
+     perimeter of it doesn't shout. */
   body[data-trades-theme] .tr-side {
-    border: 1px solid var(--tg-line) !important;
-    border-left: 3px solid var(--side-accent) !important;
+    border: 1px solid var(--side-ring, var(--tg-line)) !important;
     border-radius: 8px !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, .28) !important;
     padding: 1rem !important;
@@ -800,15 +802,15 @@ body[data-trades-theme] .tr-page-sub {
      visibly on top of the card, in opposite directions from it. */
   body[data-trades-theme] .tr-side:nth-of-type(1) {
     background: #2a2140 !important;
-    border-color: #453764 !important;
+    --side-ring: rgba(158, 178, 128, .5);
   }
 
   /* Side B — the inverse. Light surface, dark ink. Every child that
      assumed a dark background has to be flipped or it disappears. */
   body[data-trades-theme] .tr-side:nth-of-type(2) {
     background: #e9e1f2 !important;
-    border-color: #cbbfe0 !important;
     color: #1c1526 !important;
+    --side-ring: rgba(150, 92, 160, .45);
   }
   body[data-trades-theme] .tr-side:nth-of-type(2) .tr-side-name { color: #16101f !important; }
   body[data-trades-theme] .tr-side:nth-of-type(2) .tr-side-team { color: #5b4f70 !important; }

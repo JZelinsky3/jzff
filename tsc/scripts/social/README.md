@@ -1,6 +1,6 @@
 # Instagram artboards
 
-Two things live here, both 1080x1350 (Instagram's 4:5), both rendered
+Four things live here, all 1080x1350 (Instagram's 4:5), all rendered
 from HTML with headless Chrome so they can be re-cut at any time
 instead of being one-off image files.
 
@@ -9,11 +9,11 @@ instead of being one-off image files.
 | `triptych.html` | the three pinned posts that read as one nameplate across the top of the profile |
 | `cover.html` | the reusable cover for every other post, with a swappable section label and accent colour |
 | `offseason.html` | the eight-slide offseason carousel, six things to run before Week 1 |
-| `tour.html` | the twenty-slide site tour, for somebody who has never heard of us |
+| `tour.html` | the fifteen-slide site tour, for somebody who has never heard of us |
 | `brand.css` | shared palette, surface layers and type roles, mirroring `src/styles/main.css` |
 | `render.sh` | renders to `out/` |
 
-Open either file in a browser to preview. Query params are listed at
+Open any of them in a browser to preview. Query params are listed at
 the top of each file.
 
 Rendering needs nothing installed: it uses the copy of Google Chrome
@@ -130,84 +130,288 @@ fixing at the source before leaning on `--phone` much.
 ## The site tour
 
 ```
-./render.sh tour            # all twenty
-./render.sh tour 7 13       # just those two, while iterating
+./render.sh tour            # all fifteen
+./render.sh tour 7 12       # just those two, while iterating
 ```
 
-Twenty slides for somebody who has never heard of the site. Cover,
-what it is, then three sections with a plate in front of each, then
-two contents pages as a refresher, then the offer.
-
-**Twenty is Instagram's hard cap on a carousel.** There is no room to
-add a slide without taking one out. The current run is:
+Fifteen slides for somebody who has never heard of the site.
 
 | | |
 |---|---|
-| 01 | cover |
-| 02 | what it is: one league ID, and what came back |
-| 03 | plate: The Almanac |
-| 04–09 | standings, record book, managers, chart room, draft, rivalries |
-| 10 | plate: The Live Season |
-| 11–15 | matchups, pick'ems, records watch, trade desk, Sunday Live |
-| 16 | The Games |
-| 17 | The Clubhouse |
-| 18–19 | contents, part one and part two |
-| 20 | 30 days free, `FIRST50` |
+| 01 | the cover |
+| 02 | section plate: The Almanac (the shelf, platforms, ledger tape) |
+| 03 | Standings / Seasons |
+| 04 | The Record Book / The Draft |
+| 05 | The Managers / The Rivalries |
+| 06 | The Chart Room / The All-Time Team |
+| 07 | section plate: The Live Season |
+| 08 | Matchup Preview / Pick'ems |
+| 09 | Power Rankings / Best Coach |
+| 10 | Records Watch / Milestones |
+| 11 | The Trade Desk / The Rumor Mill |
+| 12 | The Games / The Clubhouse — **to be split into two slides** |
+| 13 | contents |
+| 14 | 30 days free, `FIRST50` |
 
-### It wears the site's clothes, unlike the offseason deck
+Slides 4–14 are still on the old flat treatment. They are being
+reworked a few at a time; converting one means giving each half a
+`page` key from `PAGES` and checking the figure still fits the
+narrower volume. When 12 splits, `TOTAL` goes back to 15 and every
+folio changes, so re-render the whole deck on that pass and bump the
+`seq 1 14` default in `render.sh`.
 
-That deck was selling ideas, so it went poster black with condensed
-caps. This one is selling the site, and a stranger should recognise
-the pages when they land on them. So the type is the real thing (DM
-Serif nameplates with the second half italic gold, mono labels), and
-each section carries the ground its pages actually sit on:
+**There is no how-it-works slide.** An earlier cut had one at 02
+("one league ID, what came back, how it goes") and it was deleted: a
+tour does not need an instructions page, and the only part of it
+worth keeping — the first-sync figures — is now the ledger tape on
+the section plate.
 
-| section | ground | from |
+### Every page is its own colour
+
+The deck used to run navy over the whole almanac and moss over the
+whole live season. The site does not do that. Every chapter page
+declares its own ground in its own `:root`, and they are wildly
+different stocks: the Record Book is green felt, the Draft Annual is
+black cloth, the Seasons are mahogany, the Rivalries are black and
+red, and Standings, the Manager File and the Power Rankings are
+printed on cream. Running two colours over twenty pages threw away
+the one thing a rebuild in HTML can get exactly right.
+
+`PAGES` in `tour.html` carries the real pair — `cloth` (the page's own
+background) and `foil` (the accent it stamps with) — plus `src`, the
+file each came out of. **Anything added there is read off the page,
+never picked.** Grep the page's `:root` and copy the value.
+
+### Bookcloth, foil and shelves
+
+Three pieces of vocabulary, all of them binding rather than print:
+
+* **`.cloth`** — woven bookcloth, two crossing hatches over the cover
+  colour, fine enough to read as texture and not as a pattern.
+* **`.stampfoil`** — real foil instead of flat gold: a raking metallic
+  gradient clipped to the letterforms with a hard shadow under them.
+  The shadow has to be a `filter`; the text clip eats `text-shadow`.
+* **`.shelf`** — a section plate is a shelf, not a bulleted list. Each
+  chapter stands as its own volume in its own cloth, so the section
+  reads as a row of different books at a glance. `spine()` builds one
+  from a `PAGES` key, and the plate falls back to the old `.chaplist`
+  for any plate not converted yet. Light stocks take `.pale`.
+
+  **Six spines, not ten.** At ten they came out 85px wide and the
+  shelf read as a barcode. The four left off (the Manager File, the
+  Chart Room, the Mock Room, the All-Time Team) all open off volumes
+  that are on the shelf anyway. The deck line does not claim a count,
+  for the same reason the tape does not.
+
+  Spines are a **fixed width, centred**, not stretched to fill the
+  column: at full width they went wide and flat and stopped reading as
+  books. They carry no definite article either — *Standings*, *Record
+  Book* — because "The" six times down a shelf is just noise.
+
+  **No recess behind them.** A dark panel boxed in behind the books
+  made the shelf look cut out and pasted onto the slide. They stand on
+  the room's own wall now.
+
+### The cover
+
+Slide 1 is the closed book, not a front page. The broadsheet version
+carried a masthead bar, a six-item wire and a three-column contents
+strip — about a hundred and twenty words — and still left a band of
+dead cloth across its middle, because none of that is what stops a
+thumb. It is now the binding seen head on: spine and hinge at the
+left, gilt fore-edge at the right, a blind-stamped frame, the
+nameplate in actual foil, and five short lines in total. Everything
+cut from it is said later in the deck anyway.
+
+It carries no running head and no folio strap. A cover is not a page.
+
+The seal hangs at the **foot** of the board, not under the deck.
+Trailing the deck it left 250px of bare cloth beneath it and the air
+read as a mistake; pushed down over the imprint, the same air becomes
+the margin a cover is supposed to have.
+
+### Every slide names its own surface
+
+Each slide sets `ground:` and gets a `.ground.g-<name>` layer. **Do
+not run one ground under the whole deck.** Two cuts tried it — first a
+brown leather desk everywhere, then a panelled wall everywhere — and
+both made fourteen boards read as fourteen of the same board. The
+walnut version was doubly wrong: there is almost no brown anywhere on
+the site, so wood under every slide looked like somebody else's brand.
+
+A surface is only right for the thing standing on it. Pick one from
+where you would actually find a book, a newspaper or an almanac:
+
+| | | |
 |---|---|---|
-| almanac | navy `#0e1620` + gold | `src/styles/main.css` |
-| live season | moss `#15201b` + amber | `public/demo/live/index.html` |
-| Sunday Live | black `#0b0d0e` + amber | game day |
-| games | slate `#101013` + per-game accents | `src/app/games/gameDefs.ts` |
-| clubhouse | cream `#f3ead6` + brass | `src/styles/hub.css`, day theme |
+| `g-shelf` | 02 | dim library, warm lamp pool, case boards behind, the wooden plank |
+| `g-baize` | 03 | reading table: green baize, tooled oxblood border, gold fillet |
+| `g-cork` | 04 | bulletin board in a wood frame, volumes tacked through the corner |
+| `g-news` | 05 | newsprint, light, with a fold crease |
 
-The swipe therefore changes ground colour twice. That is the thing
-that tells somebody the site has rooms rather than pages, and it is
-worth more than any sentence on any of the slides. Slide 17 is the
-only light one; check it against its neighbours in the grid before
-posting, because it is the slide most likely to read as a mistake.
+`g-baize` exists because cream boards and a mahogany annual on navy
+was the wrong room entirely. `g-cork` because a record board and a
+draft board are both literally boards. Wood appears only under the
+shelf, which is the one place wood belongs.
 
-### Every number is invented, every board is real
+**One section runs light.** Fourteen dark boards in a row go flat no
+matter how well each is lit, so 05 is paper with the two volumes as
+dark slabs on it. `g-news` also puts `.is-ink` on the board, which
+flips the running head and foot to ink and kills the vignette, the
+wash and the ledger lines. The volumes carry their own ink so they are
+untouched.
 
-The artifacts are redraws of boards that exist: the all-time
-standings, the record book's podiums, the chart room's above-average
-lines, the draft grader's class grades, the live scoreboard. The data
-in them is fiction, and the cast (`CAST` in the file) is the same
-invented twelve the offseason deck used, so the two decks read as the
-same imaginary league. **No real league, manager or team name goes on
-a public post.**
+**Texture has to be coarse.** The first cork was one fine-grained
+noise layer and it rendered as a flat tan gradient: the deck draws at
+2x and downsamples, and anything near 1px of noise averages itself
+away on the way down. It is two layers now, dark grains over light
+ones, both well above 1px.
 
-Two things learned drawing them:
+* **`.vol`** — a chapter as a bound volume lying open on it:
+  its own cloth, a sewn binding down the inner edge, a soft shadow
+  cast on the leather. `--cloth` and `--foil` come from `PAGES`, and
+  the volume overrides the ink roles so every figure inside picks up
+  the page's colours. Cream stocks take `.pale`, which flips the ink
+  and re-cuts the weave — the dark hatch that whispers on navy reads
+  as corduroy on cream.
+* **`.tape`** — what a league gets, as a strip of till roll across the
+  foot of a section plate, with a full-width head bar in the almanac's
+  own ink and equal cells under it.
 
-* **A true chart can still be a useless one.** The chart room slide
-  first plotted cumulative points, which is what the page plots, and
-  it rendered as five near-parallel diagonals. Nobody can read a race
-  off that, and a board nobody can read is exactly what makes a
-  mockup look invented. It plots points above the league average now:
-  same data, but the lines cross.
-* **Half-empty cards are the tell.** Several artifacts were laid out
-  with two blocks in a card tall enough for four, and the voids read
-  as a template with the copy missing. Where that happened the answer
-  was always more real content (a third podium, the other games this
-  week, how each game plays), never bigger type.
+  **It does not carry counts.** It used to say "7 seasons, 1,092
+  games, 812 picks", which read as a spec sheet and, worse, implied a
+  league needs some number of them before any of this is worth having.
+  It says what is covered instead — *Every season, Each matchup,
+  Entire drafts* — and no two cells lead with the same quantifier.
+  Keep entries to two short words: `.v` is `nowrap`, and anything
+  longer hyphenates and stops the strip scanning.
 
-### The two contents pages
+  The same rule killed the bare **7** that used to be the Seasons pull
+  and the bare **66** on the Rivalries. A number alone on a line reads
+  as a requirement.
 
-They list *pages*, not slides, because the deck folds two or three
-pages onto some slides. They are numbered 01 to 23 straight through,
-which is why the numbering does not match the `§` marks in the deck.
-`TOC` in the file is the source; if a page is added to the site it
-goes there and in the matching section plate's `inside` list, and the
-counts in `kick` / `band` have to move with it.
+  It does not want replacing with something cleverer, either — "Its
+  own page" was a worse answer than the number. Say the plain fact:
+  **Every year**, *back to your first season, not just the recent
+  ones*. The point is that the record is not recent memory, so say
+  that.
+
+  Nobody outside the build knows what a "manager file" is, so that
+  cell reads **Every manager** now.
+
+**Figures have to be re-fitted when a slide becomes a volume.** A
+volume costs about 90px of usable width against the old full-bleed
+half (binding, padding, the gap between the two books), so `.vol .hd`
+runs narrower and the column rails tighten. The Standings lost its
+Pct column and the Seasons rail lost 4px a column and a point of type
+before either fit. `.cols .c` also carries `min-width: 0` now:
+without it seven columns refuse to compress, the rail runs wider than
+the volume, and `overflow: hidden` slices the leftmost season off.
+
+### The horizontal cut
+
+Two chapters share a page by being cut **across**, never down the
+middle. The top half runs its header column on the left and its
+figures on the right; the bottom half mirrors it, so the two titles
+sit on opposite edges and the eye zigzags down the sheet.
+
+The cut used to be a gilded rule. It is now the strip of desk showing
+between the two volumes, which does the job better: the gap says the
+two halves are separate books, which a line never did.
+
+Vertical splits are used only **inside** a half, where two things
+genuinely sit side by side. A slide split down the middle reads as
+two posts pasted together, which is what the first cut of this deck
+did and why it was thrown out.
+
+### Built out of the site's own furniture, not out of cards
+
+The first version drew every figure as a box with a border and a drop
+shadow, which is not what the site looks like anywhere. The real
+front page is a newspaper: regions divided by **column rules**, with
+almost nothing in a container. Each piece here is lifted from a real
+stylesheet and named after its source.
+
+| | from | |
+|---|---|---|
+| `.agate` | `new.module.css` `.agateTable` | mono figures, serif names, a hairline under every row, no box |
+| `.stat` | `main.css` `.stat` | 1px line with a 3px gold spine down the left edge |
+| `.clipping` | `new.module.css` `.ledger` | cream stock, tilted a degree, hard offset shadow, double-rule head, ink stamp hanging off the corner |
+| `.foil` | `new.module.css` `.mastFlourish` | the gilded rule, ends dissolving |
+| `.wire` | `NewLanding.tsx` `TICKER` | invented league headlines in two columns between rules |
+
+Before adding a figure, find the page it comes from and copy how that
+page draws it.
+
+### Page furniture
+
+**No crop marks.** Printer's corner marks were on an earlier cut of
+this deck and on the offseason deck before it, and were cut from
+both: at thumbnail size, four right angles in four corners is the
+single most AI-looking thing on a board. The edges carry a running
+head and a folio instead, which is what a bound almanac has.
+
+**No progress bar and no page number.** The offseason deck heads
+every slide with the wordmark left, section right, and a segmented
+rule under it. This one inverts that geometry so the two decks do not
+read as one template: the section name runs alone across the top on a
+hairline and the wordmark moves down to the foot.
+
+A folio ("3 of 14") sat on the right of every foot for one cut and
+was pulled. It is furniture a bound book needs and a carousel does
+not, and at thumbnail size it just reads as a counter somebody forgot
+to take off.
+
+**The foot rotates.** `IMPRINTS` alternates the URL and the wordmark
+lockup so the same strap does not print fourteen times. A third
+imprint — "Vol. II, No. 118, compiled from seven seasons" — went with
+the folio. It meant nothing to the person who wrote the site, so it
+was never going to mean anything to a first-time reader.
+
+**Section plates carry no kicker.** "Section one of three" under a
+running head already reading SECTION ONE is the same fact twice.
+
+**Titles are stars, and only wins.** `pips(n)` draws one ★ per title
+and nothing at all for none. It used to draw a hollow circle for every
+title a manager had *not* won, which turned a column of achievements
+into scorekeeping against a target nobody set.
+
+**Column heads need air.** Set tight and unruled, `Record Points
+Titles` ran together and read as one sentence across the top of the
+table. `.agate` now puts a rule under the head row and a 30px gap
+between columns, and the labels are one word each.
+
+**No page URLs.** An earlier cut ran `/leagues/your-league/records`
+across every headline row. Fifteen slugs is a sitemap, not a poster.
+
+### Keep the copy short
+
+The deck is read with a thumb. Every dek is one short sentence, every
+pulled figure is a number and a half-line, and nothing carries a
+caption repeating what the figure already shows. When a slide felt
+empty the fix was always more *figure* (a third podium, the other
+games that week, bars on a rail), never more prose.
+
+### Two things learned drawing the figures
+
+* **A true chart can still be unreadable.** The Chart Room slide first
+  plotted cumulative points, which is what the page plots, and it came
+  out as five near-parallel diagonals. Nobody reads a race off that,
+  and a board nobody can read is exactly what makes a mockup look
+  invented. It plots points above the league average now: same data,
+  lines that cross.
+* **Text columns overflow, bars do not.** Three figures were rows of
+  labelled text in 70px columns, and every one wrapped into a
+  paragraph or crossed the column rule into the header. The seasons,
+  the all-time team and the milestones are drawn as bar columns now:
+  they fill the height, survive a narrow column, and say their number
+  in one look.
+
+### Names
+
+Every figure is invented and `CAST` is the same fictional twelve the
+offseason deck uses, so the two read as one imaginary league. **No
+real league, manager or team name goes on a public post.**
 
 ---
 

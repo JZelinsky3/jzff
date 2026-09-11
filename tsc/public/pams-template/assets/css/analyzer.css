@@ -208,28 +208,22 @@ html, body { background: var(--td-bg, #1a1209); color: var(--td-text, #f5e9c8); 
     .an-side:nth-of-type(2) .an-pos-count { color: #4a5a6e !important; }
 
     /* Identity gets real weight, and the avatar moves to the opposite
-       edge on side B so the two headers are visibly mirrored. */
+       edge on side B so the two headers are visibly mirrored.
+
+       The header used to pin under the app bar while you scrolled a
+       roster. With the two panels now on opposite surfaces you always
+       know which team you're in, so the pinned copy was one more thing
+       floating over the list for no gain. It scrolls with the panel. */
     .an-side-head {
-        position: sticky;
-        top: calc(var(--m-appbar-h, 0px) + env(safe-area-inset-top, 0px));
-        z-index: 2;
-        background: inherit;
-        padding-top: .7rem;
+        padding-top: .2rem;
         padding-bottom: .6rem;
         flex-wrap: wrap;
-        /* A sticky header with only a bottom rule reads as the panel
-           running off the top of the screen. Boxing it closes the shape. */
-        border: 1px solid var(--td-line);
-        border-left: 3px solid var(--an-side-accent);
-        border-radius: 6px;
-        padding-left: .7rem;
-        padding-right: .7rem;
+        border-bottom: 1px solid var(--td-line-soft);
         margin-bottom: .9rem;
     }
     .an-side:nth-of-type(2) .an-side-head {
         flex-direction: row-reverse;
-        border-color: rgba(18, 26, 36, .18) !important;
-        border-left-color: var(--an-side-accent) !important;
+        border-bottom-color: rgba(18, 26, 36, .14) !important;
     }
     .an-side:nth-of-type(2) .an-side-name { text-align: left; }
 

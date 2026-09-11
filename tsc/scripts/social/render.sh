@@ -11,7 +11,7 @@
 # Everything is drawn at 2x (--force-device-scale-factor=2) and then
 # downsampled to 1080x1350 with sips. Rendering at 1x and rendering at
 # 2x-then-down are not the same picture: the second supersamples the
-# hairlines, the crop marks and the serif stems, all of which are
+# hairlines, the column rules and the serif stems, all of which are
 # sub-pixel at 1x and would otherwise alias. The 2x files are kept in
 # out/2x/ in case a crop or a larger placement is ever wanted.
 #
@@ -149,16 +149,18 @@ case "${1:-}" in
 
   # ./render.sh tour [slide-number ...]
   #
-  # The site tour. Twenty slides, which is Instagram's cap on a
-  # carousel. With no arguments it renders all twenty; with numbers it
-  # renders only those, which is what you want while iterating on one
-  # panel. Slide 17 is the only light one (the Clubhouse day theme) —
-  # check it against its neighbours before posting, since it is the
-  # slide most likely to look like a mistake in the grid.
+  # The site tour. Fifteen slides. With no arguments it renders all
+  # of them; with numbers it renders only those, which is what you
+  # want while iterating on one panel. See README.md for the running
+  # order and the layout rules.
+  concepts)
+    echo "Rendering the treatments review sheet:"
+    shot "file://$HERE/concepts.html" "concepts" 1620 2600
+    ;;
   tour)
     shift
     SLIDES=("$@")
-    [ ${#SLIDES[@]} -eq 0 ] && SLIDES=($(seq 1 15))
+    [ ${#SLIDES[@]} -eq 0 ] && SLIDES=($(seq 1 14))
     echo "Rendering site tour:"
     for i in "${SLIDES[@]}"; do
       shot "file://$HERE/tour.html?slide=$i" \
