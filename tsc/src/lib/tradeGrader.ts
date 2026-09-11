@@ -156,12 +156,46 @@ export function summaryViolations(
       out.push(`cited the exact rank "${label}" for a player who will not start; describe the role instead (e.g. "a bench receiver who won't crack the lineup")`)
     }
   }
+  // Negative space. The prompt tells the model which factors don't count in
+  // this league; the model then writes that down ("while the age gap is
+  // irrelevant in redraft..."). The reader never saw the instructions, so a
+  // clause about what does NOT matter is pure filler, and in practice it
+  // isn't even attached to a player.
+  const NON_FACTOR: Array<[RegExp, string]> = [
+    [/\birrelevant\b/i, 'irrelevant'],
+    [/\bmoot\b/i, 'moot'],
+    [/\bnon-?factor\b/i, 'non-factor'],
+    [/\b(does|do)(n'?t| not)\s+(really\s+)?(matter|count|apply)\b/i, "doesn't matter"],
+    [/\bmatters?\s+(little|less|not)\b/i, 'matters little'],
+    [/\b(worth|means)\s+nothing\b/i, 'worth nothing'],
+    [/\bno\s+(premium|bearing|impact here)\b/i, 'no premium'],
+    [/\bsetting\s+aside\b/i, 'setting aside'],
+    [/\bregardless\s+of\s+(age|youth|upside)\b/i, 'regardless of age'],
+  ]
+  const nonFactor = NON_FACTOR.filter(([re]) => re.test(text)).map(([, label]) => label)
+  if (nonFactor.length > 0) {
+    out.push(
+      `wrote about a factor that does NOT apply (${nonFactor.join(', ')}); ` +
+      'leave an inapplicable factor out silently instead of writing a clause negating it',
+    )
+  }
+
+  // Explaining the league's own format back to a manager who plays in it.
+  if (/\b(in|for)\s+(a\s+|this\s+)?(redraft|dynasty|keeper)\s+(league|format|setup)/i.test(text)
+      || /\bin\s+this\s+format\b/i.test(text)
+      || /\brosters?\s+reset\b/i.test(text)) {
+    out.push('explained the league format back to the reader; he already knows what league he is in')
+  }
+
   if (leagueType === 'redraft') {
     // Deliberately NOT 'upside': in redraft that means this week's ceiling,
     // which is exactly the right thing to talk about. Only terms that are
     // meaningless without a next season belong here.
     const dynastyTerms = [
       'younger', 'youth', 'youthful', 'ascending', 'age curve',
+      // "age gap" / "age difference" slipped past the original list, which
+      // is how "while the age gap is irrelevant in redraft" got printed.
+      'age gap', 'age difference', 'age profile',
       'contention window', 'long-term', 'long term', 'win-now', 'rebuilding',
       'future value', 'years of control',
     ]
@@ -1246,6 +1280,10 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '',
     '1. NEVER OPEN with "The X won this trade", "X won the trade", or any variation of who-won-the-trade as the first line. The user message names a LEAD ANGLE for this specific write-up: open from that angle, then broaden into the full rationale. This is a rule about the OPENING SENTENCE ONLY. Once you are past it, naming the winner outright is expected.',
       '',
+      'NEVER WRITE THE NEGATIVE SPACE. These instructions tell you which factors do not apply in this league. That is guidance for YOU. The reader has not seen it and does not need it. When a factor does not apply, LEAVE IT OUT SILENTLY. Never write a clause announcing that something is irrelevant, does not matter, is a non-factor, is moot, or is worth nothing here. "While the age gap is irrelevant in redraft" is exactly the sentence never to write: it spends a clause on a thing you are not allowed to use, it names no player, and it tells the reader nothing. Delete the thought, do not negate it.',
+      '',
+      'DO NOT EXPLAIN THE LEAGUE TO THE LEAGUE. The reader is a manager in this league. He knows whether it is redraft, keeper or dynasty, he knows how many teams there are, and he knows how the lineup works. Never write "in a redraft league", "in this format", "since rosters reset every year", or any other line explaining the rules back to him. Write only what he could not already know: what these specific players do for these specific rosters.',
+      '',
       'SAY IT STRAIGHT. When one side comes out ahead, write that, in those words: "Sean wins this trade", "Ricci takes the lower grade", "as of today this is Sean\'s deal". What is banned is gesturing at the verdict instead of stating it. NEVER write "the higher mark", "the better end of the ledger", "comes out ahead on paper", "gets the nod", "edges it out", "has the better of it", or any other phrase that describes a conclusion without saying what the conclusion is. If you find yourself reaching for a genteel substitute, use the plain word instead.',
       '',
       args.leagueType === 'redraft'
@@ -1279,7 +1317,7 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       'EXAMPLES. Study these carefully:',
       '',
       'GOOD (varied openings, real analysis):',
-      '• "Christian McCaffrey is the bet here: an elite RB1 ceiling if he stays healthy, but the Sinkaroos are paying full freight in 2026 picks for a 29-year-old with a calf history. Horsecocks come away with the cleaner long-term profile via two firsts and Jahmyr Gibbs, who has three years of cost control ahead of him. In a dynasty timeline that values youth and picks, Horsecocks built equity. A win-now manager would defend the McCaffrey side."',
+      '• "Christian McCaffrey is the bet here: an elite RB1 ceiling if he stays healthy, but the Sinkaroos are paying full freight in 2026 picks for a 29-year-old with a calf history. Horsecocks come away with two firsts and Jahmyr Gibbs, who has three years of cost control ahead of him. That is the side building equity, and the McCaffrey side is the one that has to win now."',
       '• "Trading down from a top-six pick for two thirds and a depth piece looks fine on paper, but the tier break at pick 6 is real: that\'s where the season-altering RBs go. Joey\'s thirds are lottery tickets, not equivalents. The Sinkaroos give up the most leverage they had at the deadline and walk away with role players."',
       '',
       'BAD (formulaic, restates the trade):',
@@ -1414,6 +1452,8 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
       'RANKS ARE GIVEN, NOT GUESSED. The better-ranked, higher-valued player on the lines you are given is the better asset. Never describe him as the lesser piece of a swap.',
       '',
       'NAME A RANK ONCE, AND ONLY WHERE IT MEANS SOMETHING. A player arriving on one side is a player the other side gave up; the reader can see that, so cite his rank once, on the side that received him, and refer to him in words from the other side ("the receiver they gave up"). Name an exact rank only for a player who actually starts: past roughly the top 24 at a position the number is noise, and "a bench receiver who will not crack the lineup" beats "the WR57".',
+      '',
+      'NEVER WRITE THE NEGATIVE SPACE, AND NEVER EXPLAIN THE LEAGUE TO THE LEAGUE. These instructions name factors that do not apply here; that is guidance for you, not material for the write-up. Leave an inapplicable factor out silently. Never write that something is irrelevant, does not matter, is a non-factor or is moot, and never write "in a redraft league", "in this format", or any line explaining the league\'s own rules back to a manager who plays in it.',
       '',
       'SAY IT STRAIGHT. If the grade moved, say it moved and say who it favours, in plain words: "this is Sean\'s trade now", "Ricci\'s grade comes down". Never gesture at a verdict with "the higher mark", "the better end of the ledger", "comes out ahead on paper", "gets the nod" or "edges it out". Say what the conclusion is.',
       '',
