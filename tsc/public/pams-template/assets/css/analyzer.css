@@ -204,6 +204,35 @@ html, body { background: var(--td-bg, #1a1209); color: var(--td-text, #f5e9c8); 
        they wash out, so darken them and the group totals too. */
     .an-side:nth-of-type(2) .an-row-value { color: #1d4f80 !important; }
     .an-side:nth-of-type(2) .an-row[aria-pressed="true"] .an-row-value { color: #7a4a12 !important; }
+
+    /* SELECTED ROWS ON SIDE B.
+       The selected state is a 13% translucent blue wash plus a blue border,
+       which reads fine on the dark panel. On this one it was invisible for
+       two reasons: a 13% pale-blue wash over an already pale-blue panel is
+       nothing, and side B's own .an-row background/border rules above carry
+       !important while the selected-state rule does not, so they overwrote
+       it outright. The only thing that survived was the value recolouring,
+       which is exactly what you could still see.
+
+       Side B therefore needs its own selected treatment, in the opposite
+       direction: a saturated fill and a real border, both dark enough to
+       register against a light surface. The second border is an inset
+       shadow rather than a wider border so the row doesn't shift when
+       picked (the starter/flex markers already own border-left). */
+    .an-side:nth-of-type(2) .an-row[aria-pressed="true"] {
+        background: rgba(31, 95, 158, .18) !important;
+        border-color: #2f6ba8 !important;
+        box-shadow: inset 0 0 0 1px #2f6ba8 !important;
+        color: #0e151f !important;
+    }
+    .an-side:nth-of-type(2) .an-row[aria-pressed="true"] .an-row-name {
+        color: #0b1119 !important;
+        font-weight: 600 !important;
+    }
+    .an-side:nth-of-type(2) .an-row[aria-pressed="true"] .an-row-meta,
+    .an-side:nth-of-type(2) .an-row[aria-pressed="true"] .an-row-team {
+        color: #2f4a66 !important;
+    }
     .an-side:nth-of-type(2) .an-row-value-zero { color: #6a7787 !important; }
     .an-side:nth-of-type(2) .an-pos-count { color: #4a5a6e !important; }
 
@@ -531,13 +560,32 @@ html, body { background: var(--td-bg, #1a1209); color: var(--td-text, #f5e9c8); 
 .an-result-bar-fill[data-tone="win"]  { background: var(--td-live); }
 .an-result-bar-fill[data-tone="lose"] { background: #c75847; }
 .an-result-bar-fill[data-tone="even"] { background: var(--td-mute); }
+/* Legend under the value bar. Three columns: team A pinned to the left
+   edge, the margin line centred, team B pinned to the right, so each end
+   sits over its own half of the bar. Both ends stack name over total. */
+/* Grid, not flex. With flex the middle span only got the slack LEFT OVER
+   between the two ends, so a short name on one side and a long one on the
+   other pushed the margin line off centre. minmax(0, 1fr) on the outer
+   columns makes them equal no matter what the names are, which puts the
+   middle column dead centre in the row. */
 .an-result-bar-legend {
     margin-top: .65rem;
-    display: flex; justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: start;
+    gap: .6rem;
     font-family: var(--mono); font-size: .62rem; letter-spacing: .18em;
     text-transform: uppercase; color: var(--td-mute);
 }
 .an-result-bar-legend strong { color: var(--td-text); font-weight: 500; }
+.an-legend-end {
+    display: flex; flex-direction: column; gap: .18rem;
+    min-width: 0;
+}
+.an-legend-a { align-items: flex-start; text-align: left; }
+.an-legend-b { align-items: flex-end; text-align: right; }
+.an-legend-mid { text-align: center; }
+.an-legend-total { letter-spacing: .1em; }
 
 .an-result-note {
     text-align: center;

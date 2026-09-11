@@ -696,14 +696,22 @@
     } else {
       deltaTxt = 'Even';
     }
-    // Both ends read name-then-total. They used to be mirrored (B was
-    // "total · name") so that on a phone, where these stack, side B's
-    // number sat above its name while side A's sat below, and the two
-    // halves looked like different things.
+    // Both ends read name over total, stacked. They were "name · total" on
+    // one line, where the separator dot was doing no work: the two facts
+    // are already distinct (a name and a number) and stacking them says so
+    // without punctuation. Each end aligns to its own outer edge so the
+    // legend mirrors the bar above it, A to the left, B to the right, and
+    // the margin line stays centred between them.
     $('an-result-bar-legend').innerHTML =
-      '<span><strong>' + escapeHtml(legendA) + '</strong> · ' + Math.round(totA) + '</span>' +
-      '<span>' + escapeHtml(deltaTxt) + '</span>' +
-      '<span><strong>' + escapeHtml(legendB) + '</strong> · ' + Math.round(totB) + '</span>';
+      '<span class="an-legend-end an-legend-a">' +
+        '<strong>' + escapeHtml(legendA) + '</strong>' +
+        '<span class="an-legend-total">' + Math.round(totA) + '</span>' +
+      '</span>' +
+      '<span class="an-legend-mid">' + escapeHtml(deltaTxt) + '</span>' +
+      '<span class="an-legend-end an-legend-b">' +
+        '<strong>' + escapeHtml(legendB) + '</strong>' +
+        '<span class="an-legend-total">' + Math.round(totB) + '</span>' +
+      '</span>';
 
     show(resultEl);
   }
