@@ -26,10 +26,9 @@
 
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sleeper } from '@/lib/platforms/sleeper'
 import { gradeTrade, revisitTrade, FIRST_GRADED_SEASON, verdictIsDue } from '@/lib/tradeGrader'
 import { leagueHasTradesAccess } from '@/lib/trades'
-import { computePositionRanks, stampRanks, resolveRankWindow, type PositionRanks } from '@/lib/positionRanks'
+import { computePositionRanks, stampRanks, buildCurrentRanks, type PositionRanks } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 
 export const maxDuration = 300
@@ -88,10 +87,9 @@ async function refreshRanksNow(
   const liveYear = nowDate.getMonth() >= 8 ? nowDate.getFullYear() : nowDate.getFullYear() - 1
   const seasonYears = [liveYear, liveYear - 1]
 
-  // Where "now" actually is for ranking purposes. Early in a season this
-  // resolves back to last season's final ranks rather than ranking everyone
-  // off one or two games; see MIN_RANK_WEEKS.
-  const rankWindow = resolveRankWindow(await sleeper.state())
+  // "Where does this player rank today" for the LIVE season: stats once
+  // week 1 is complete, the consensus draft board before that.
+  const liveRanks = await buildCurrentRanks({ scoring: DEFAULT_PPR_SCORING })
 
   const { data: rows, error } = await db
     .from('trades')
@@ -122,14 +120,15 @@ async function refreshRanksNow(
   const ranksByYear = new Map<number, PositionRanks | null>()
   for (const year of new Set([...metaByTrade.values()].map((m) => m.year))) {
     try {
-      // For the live season, rank through the resolved window instead of a
-      // flat week 18, which in September means "one game played".
-      const useWindow = rankWindow && year === liveYear
-      ranksByYear.set(year, await computePositionRanks({
-        season: useWindow ? rankWindow.season : year,
-        throughWeek: useWindow ? rankWindow.throughWeek : 18,
-        scoring: DEFAULT_PPR_SCORING,
-      }))
+      // The live season goes through buildCurrentRanks (stats or draft
+      // board); completed seasons rank over their full 18 weeks.
+      ranksByYear.set(year, year === liveYear && liveRanks.size > 0
+        ? liveRanks
+        : await computePositionRanks({
+            season: year,
+            throughWeek: 18,
+            scoring: DEFAULT_PPR_SCORING,
+          }))
     } catch (e) {
       warnings.push(`rank refresh: ranks for ${year}: ${e instanceof Error ? e.message : String(e)}`)
       ranksByYear.set(year, null)

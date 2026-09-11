@@ -360,7 +360,7 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
       // stays anchored. Lower values produced "X won this trade because..."
       // openings every time.
       temperature: 0.55,
-      maxTokens: 900,
+      maxTokens: 2500,
     })
     parsed = result.data
   } catch (e) {
@@ -556,7 +556,7 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
         { role: 'user', content: prompt.user },
       ],
       temperature: 0.55,
-      maxTokens: 900,
+      maxTokens: 2500,
     })
     parsed = result.data
   } catch (e) {

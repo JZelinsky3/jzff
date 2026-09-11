@@ -195,20 +195,42 @@
 }
 /* The headers it pins inside. Padding keeps a long title from running under
    the button on narrow screens. */
-.wire-hero, .tr-page-head { position: relative; }
+.wire-hero { position: relative; }
 @media (max-width: 560px) {
     .td-share-btn--corner { top: .7rem; right: .7rem; padding: .38rem .6rem; }
     /* Icon only once there isn't room for the word. */
     .td-share-btn--corner span { display: none; }
-    .wire-hero, .tr-page-head { padding-right: 3.4rem; }
+    .wire-hero { padding-right: 3.4rem; }
 }
 
 /* Rumor Mill: Share sits beside the commissioner's reroll control, under
    the column stamp. Members who never see the reroll just get Share on
    that row by itself. */
 .rm-actions {
-    display: flex; align-items: center; gap: .6rem;
+    display: flex;
+    /* stretch, not center: it makes the two pills the same HEIGHT even if
+       their text metrics differ slightly. */
+    align-items: stretch;
+    /* The Mill hero is centre-aligned, so the row is too. */
+    justify-content: center;
+    gap: .6rem;
     flex-wrap: wrap;
     margin-top: .9rem;
 }
-.rm-actions .td-share-btn { margin-top: 0; }
+/* Match the two controls exactly.
+   Reroll (.rm-dev-sim) and Share were drawn from different rules: .56rem vs
+   .6rem text, slightly different padding, and .rm-dev-sim carried
+   `margin: 1rem auto 0`, whose auto side-margins shoved it away from Share
+   inside this flex row. Normalising here keeps each button's own styling
+   (dashed gold vs solid) while making them one size and properly paired. */
+.rm-actions > .rm-dev-sim,
+.rm-actions > .td-share-btn {
+    margin: 0;
+    padding: .45rem .95rem;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .2em;
+    line-height: 1.15;
+    border-radius: 999px;
+    align-items: center;
+}

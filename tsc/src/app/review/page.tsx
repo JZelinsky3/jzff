@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { BackButton } from '@/components/BackButton'
 import { SiteFooter } from '@/components/SiteFooter'
 import { MobileReview } from '@/components/review/MobileReview'
 import { createClient } from '@/lib/supabase/server'
@@ -55,6 +56,12 @@ export default async function ReviewPage({
   return (
     <main>
       <nav className="nav">
+        {/* .nav is a three-column grid (1fr / auto / 1fr). Without an
+            element in the first column the title lands there instead of the
+            middle and the links slide into the centre slot, which is what
+            had this header shifted left with the nav off-centre. Back is
+            what every other page in this chrome puts here. */}
+        <BackButton fallbackHref="/" ariaLabel="Back" />
         <div className="nav-center">
           <div className="nav-kicker">Review · The Sunday Chronicle</div>
           <div className="nav-title">How did <em>it go?</em></div>

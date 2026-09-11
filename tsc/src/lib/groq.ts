@@ -24,6 +24,21 @@ const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
 // (GET /openai/v1/models) and confirm this id is still among them.
 export const DEFAULT_GROQ_MODEL = 'openai/gpt-oss-120b'
 
+// gpt-oss is a REASONING model: it emits internal reasoning tokens before
+// the answer, and they are billed against max_tokens like any other output.
+// On a long prompt (the trade grader ships rosters, every asset, values and
+// ranks) the reasoning alone can consume the whole budget, so the model
+// returns an empty completion and Groq rejects it with
+//   400 json_validate_failed ... "failed_generation": ""
+// which reads like a prompt bug and is actually a token-budget one.
+//
+// 'low' is the default here because every JSON call in this codebase wants
+// a short structured answer, not deliberation. Measured on a grader-shaped
+// prompt: 563 completion tokens at the default effort vs 232 at 'low'.
+function supportsReasoningEffort(model: string): boolean {
+  return /(^|\/)gpt-oss/i.test(model)
+}
+
 export type GroqMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 
 export type GroqChatArgs = {
@@ -35,6 +50,10 @@ export type GroqChatArgs = {
   json?: boolean
   temperature?: number
   maxTokens?: number
+  // Reasoning models (Groq's gpt-oss family) spend tokens thinking BEFORE
+  // they emit anything, and that spend counts against max_tokens. Leave
+  // unset to get the automatic 'low' default below.
+  reasoningEffort?: 'low' | 'medium' | 'high'
 }
 
 export type GroqUsage = {
@@ -82,6 +101,9 @@ export async function groqChat(args: GroqChatArgs): Promise<GroqResult> {
         temperature: args.temperature ?? 0.3,
         max_tokens: args.maxTokens ?? 1024,
         ...(args.json ? { response_format: { type: 'json_object' } } : {}),
+        ...(supportsReasoningEffort(args.model)
+          ? { reasoning_effort: args.reasoningEffort ?? 'low' }
+          : {}),
       }),
       cache: 'no-store',
     })

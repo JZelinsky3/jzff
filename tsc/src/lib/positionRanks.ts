@@ -23,37 +23,37 @@ import { applyNameAliases, NAME_ALIASES } from './values/nameAliases'
 
 export type PositionRanks = Map<string, string> // player_id -> "RB12"
 
-// How many weeks a season needs before its own stat ranks mean anything.
-//
-// These ranks are season-to-date POINTS SCORED, which is a different thing
-// from where a player is ranked as an asset. Over a full season the two
-// broadly agree; in September they do not agree at all, because one good
-// Thursday can make somebody the WR1. In week 1 of 2026 this produced
-// chips reading "Mike Evans · WR3" next to his own consensus value of
-// 3,742 (about WR30), while Ja'Marr Chase and Justin Jefferson had no rank
-// at all because their teams hadn't played yet.
-//
-// Four weeks is the usual point at which fantasy analysis stops treating
-// scoring as noise, and it's late enough that a single outlier game no
-// longer decides the ordering.
-export const MIN_RANK_WEEKS = 4
-
 /**
- * Which season and cutoff should "where does this player rank right now"
- * read from, given Sleeper's league clock?
+ * Where "what position rank is this player" should come from right now.
  *
- * Returns last season's final ranks whenever the current season is too
- * young to rank honestly, which is the same thing the offseason already
- * did. Returns null when the clock can't be read, and callers should then
- * stamp nothing rather than guess.
+ *   'stats'  season-to-date fantasy points, once real games have been played
+ *   'draft'  the preseason consensus draft board, before they have
  *
- * Not for retrospectives: a verdict asking "how did this player do in the
- * four weeks after the trade" wants that exact window and should call
- * computePositionRanks directly.
+ * Why two modes: these are position ranks by POINTS SCORED, which only
+ * exists once somebody has scored. Before week 1 there is nothing to rank.
+ * Ranking off a partial week 1 is worse than nothing — it briefly made
+ * whoever played Thursday the WR1 — and falling back to LAST season's final
+ * ranks is wrong in a subtler way: it looks current but describes a season
+ * that already ended, which is how Puka Nacua showed as WR1 and Ja'Marr
+ * Chase as WR4 for 2026, an ordering essentially no 2026 board agrees with.
+ *
+ * The honest preseason answer is the draft board, which is what everyone
+ * actually means by "he's the WR6" in August. Once week 1 is in the books
+ * the stat ranks take over and are allowed to disagree with value: a good
+ * player having a bad week genuinely is a low scoring rank, and that gap is
+ * the interesting part.
  */
-export function resolveRankWindow(
+export type RankSource =
+  | { kind: 'stats'; season: number; throughWeek: number }
+  | { kind: 'draft'; year: number }
+
+// Stat ranks start once week 1 is complete, i.e. the clock has moved on to
+// week 2. During week 1 itself the games are still being played.
+const FIRST_STATS_WEEK = 2
+
+export function resolveRankSource(
   clock: { season?: string | number | null; week?: string | number | null; season_type?: string | null } | null | undefined,
-): { season: number; throughWeek: number } | null {
+): RankSource | null {
   if (!clock) return null
   const season = Number(clock.season)
   if (!Number.isFinite(season) || season <= 0) return null
@@ -61,12 +61,12 @@ export function resolveRankWindow(
   const inSeason = clock.season_type === 'regular' || clock.season_type === 'post'
   const week = Number(clock.week)
 
-  if (inSeason && Number.isFinite(week) && week >= MIN_RANK_WEEKS) {
-    return { season, throughWeek: Math.min(18, week) }
+  if (inSeason && Number.isFinite(week) && week >= FIRST_STATS_WEEK) {
+    return { kind: 'stats', season, throughWeek: Math.min(18, week) }
   }
-  // Offseason, preseason, or a season still inside its first few weeks:
-  // last completed season's final ranks.
-  return { season: season - 1, throughWeek: 18 }
+  // Preseason, offseason, or week 1 still in progress: the draft board for
+  // the season about to be (or just being) played.
+  return { kind: 'draft', year: season }
 }
 
 type ScoringSettings = Record<string, number>
@@ -133,6 +133,62 @@ export async function computePositionRanks(opts: {
     })
   }
   return ranks
+}
+
+// Current position ranks, from whichever source resolveRankSource picks.
+//
+// One call so the Rumor Mill and the daily rank refresh can't drift into
+// two different definitions of "rank right now". Returns an empty map
+// rather than throwing: these ranks are decorative, and a chip with no rank
+// beats a chip with a wrong one.
+export async function buildCurrentRanks(opts: {
+  scoring: ScoringSettings
+  // Draft-board shape, used only in preseason. Defaults suit a standard
+  // 1-QB PPR league.
+  draftScoring?: 'ppr' | 'half'
+  qbStarters?: number
+}): Promise<PositionRanks> {
+  const { sleeper } = await import('./platforms/sleeper')
+  const source = resolveRankSource(await sleeper.state())
+  if (!source) return new Map()
+
+  if (source.kind === 'stats') {
+    return computePositionRanks({
+      season: source.season,
+      throughWeek: source.throughWeek,
+      scoring: opts.scoring,
+    })
+  }
+
+  // Preseason: rank within position off the consensus draft board.
+  //
+  // Deliberately NOT DraftBoardPlayer.tier — that is a positional TIER
+  // bucket in the fantasy sense ("he's a WR1", i.e. startable as your best
+  // receiver), so a board has a dozen different WR1s. Stat ranks are
+  // ordinals, so the preseason ranks have to be ordinals too or the same
+  // chip means two different things in September and October.
+  //
+  // board.players carries a rank-decayed `value`, so ordering by it
+  // reproduces the consensus overall ordering; counting down that list per
+  // position gives WR1, WR2, WR3...
+  const { buildDraftBoard } = await import('./values/draftRanks')
+  const board = await buildDraftBoard({
+    year: source.year,
+    scoring: opts.draftScoring ?? 'ppr',
+    qbStarters: opts.qbStarters ?? 1,
+  })
+
+  const ordered = [...board.players].sort((a, b) => b.value - a.value)
+  const seenPerPos = new Map<string, number>()
+  const out: PositionRanks = new Map()
+  for (const player of ordered) {
+    const pos = (player.pos ?? '').toUpperCase()
+    if (!RANKED_POSITIONS.has(pos)) continue
+    const next = (seenPerPos.get(pos) ?? 0) + 1
+    seenPerPos.set(pos, next)
+    out.set(player.id, `${pos}${next}`)
+  }
+  return out
 }
 
 // ──────────────────────────────────────────────────────────────────────

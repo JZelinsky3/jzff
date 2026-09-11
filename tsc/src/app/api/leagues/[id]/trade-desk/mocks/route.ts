@@ -24,7 +24,7 @@ import { generateMockTrades, type MockTrade } from '@/lib/tradeDesk/finder'
 import { valuateLeague } from '@/lib/values'
 import { groqChatJson, GroqError, DEFAULT_GROQ_MODEL } from '@/lib/groq'
 import { sleeper } from '@/lib/platforms/sleeper'
-import { computePositionRanks, resolveRankWindow } from '@/lib/positionRanks'
+import { buildCurrentRanks } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 
 // Roster fetch + valuation + ~1.4k bounded depth sims + one Groq call.
@@ -85,10 +85,10 @@ async function withVotes(
 // the fresh-generation and cache-hit paths so old cached payloads still
 // pick up rank pills retroactively. PPR scoring is the default — per-
 // league scoring translation is a follow-up.
-// The season/cutoff comes from resolveRankWindow, which falls back to last
-// season's final ranks whenever the current one is too young to rank
-// honestly (see MIN_RANK_WEEKS). Ranking off one Thursday made these chips
-// contradict the value printed beside them.
+// buildCurrentRanks picks the source: season-to-date stats once week 1 is
+// in the books, the consensus draft board before that. Ranking off a
+// partial week 1 made these chips contradict the value printed beside
+// them.
 // Current NFL week for the column's dateline. Null out of season, so the
 // stamp falls back to the date rather than printing a week that isn't
 // being played.
@@ -105,16 +105,17 @@ async function currentNflWeek(): Promise<number | null> {
   }
 }
 
-async function stampPositionRanks(trades: MockTrade[]): Promise<void> {
+async function stampPositionRanks(
+  trades: MockTrade[],
+  effective?: { scoringProfile?: string; qbStarters?: number },
+): Promise<void> {
   try {
-    const clock = await sleeper.state()
-    const window = resolveRankWindow(clock)
-    if (!window) return
-    const ranks = await computePositionRanks({
-      season: window.season,
-      throughWeek: window.throughWeek,
+    const ranks = await buildCurrentRanks({
       scoring: DEFAULT_PPR_SCORING,
+      draftScoring: effective?.scoringProfile === 'HALF' ? 'half' : 'ppr',
+      qbStarters: effective?.qbStarters ?? 1,
     })
+    if (ranks.size === 0) return
     const annotate = (p: { id: string; rank?: string | null }) => {
       const r = ranks.get(p.id)
       if (r) p.rank = r
@@ -329,7 +330,7 @@ export async function GET(
     excludeHashes,
   })
 
-  await stampPositionRanks(trades)
+  await stampPositionRanks(trades, data.effective)
 
   let narrativeSource: MocksPayload['narrativeSource'] = 'fallback'
   if (trades.length > 0) {

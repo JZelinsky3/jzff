@@ -708,3 +708,35 @@
   /* ── Spinner color anchor ─────────────────────────── */
   body[data-trades-theme] .tsc-spinner { color: var(--tg-text-em) !important; }
 }
+
+/* ── Page header ─────────────────────────────────────────────────────────
+   The header used to be a lone left-aligned title with a Share button
+   absolutely positioned over its top-right corner, which crowded the title
+   and left the row looking unfinished. Title and Share now share a flex
+   row, and the writeup the desktop wire always had finally appears here
+   too (shortened for a phone). */
+body[data-trades-theme] .tr-page-head-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+body[data-trades-theme] .tr-page-head-row .tr-page-title {
+    margin: 0 !important;
+    flex: 1;
+    min-width: 0;
+}
+body[data-trades-theme] .tr-page-head-row .td-share-btn {
+    margin-top: 0;
+    flex: none;
+    align-self: center;
+    color: var(--tg-mute);
+}
+body[data-trades-theme] .tr-page-sub {
+    margin: .55rem 0 0 !important;
+    max-width: 34rem;
+    font-family: var(--serif);
+    font-size: .84rem;
+    line-height: 1.5;
+    color: var(--tg-mute);
+}
