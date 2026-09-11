@@ -350,9 +350,10 @@ function sleeperRosterPlayerIds(r: SleeperRoster): string[] {
 // was valued as though it were standard PPR and every tight end came out
 // light. pams runs +0.5/rec, which is exactly the MILD band.
 //
-// Banding rather than a continuous scale because the value engine's
-// premium is a flat per-tier multiplier (see TE_PREMIUM_MULT): MILD is
-// sized for +0.5/rec, FULL for +1.0/rec.
+// Banding rather than a continuous scale because the value engine prices
+// two bands: MILD is sized for +0.5/rec, FULL for +1.0/rec. Each band is a
+// rank-decaying curve rather than one flat rate, so the lift lands mostly
+// on the top few tight ends (see TE_PREMIUM_PEAK in lib/values/index.ts).
 function detectSleeperTePremium(league: { scoring_settings?: Record<string, number> }): 'NONE' | 'MILD' | 'FULL' | null {
   const bonus = league.scoring_settings?.bonus_rec_te
   if (typeof bonus !== 'number' || !Number.isFinite(bonus) || bonus <= 0) return 'NONE'

@@ -378,46 +378,56 @@ function effectiveWeights(pref: 'EQUAL' | 'FC_WEIGHTED' | 'DP_WEIGHTED'): Record
 // the top of the position. A flat multiplier preserves every ratio
 // exactly, which is precisely the thing that should change.
 //
-// The lift now decays exponentially with TE rank (by blended value):
+// The lift scales with the TE's VALUE, not his rank:
 //
-//   FULL   TE1 ×1.55   TE2 ×1.47   TE3 ×1.39   TE5 ×1.28   TE12 ×1.09   TE24 ×1.01
-//   MILD   TE1 ×1.28   TE2 ×1.24   TE3 ×1.20   TE5 ×1.13   TE12 ×1.05   TE24 ×1.01
+//   mult = 1 + peak * (value / best TE's value)
 //
-// which matches how the position actually tiers: two tight ends clear of
-// the field, a second tier a step back, then a long flat tail where the
-// premium is worth close to nothing because the volume isn't there.
+// Rank was the wrong input. It's ordinal, so it can't see how far apart two
+// tight ends actually are: TE1 and TE2 a single point apart drew visibly
+// different multipliers purely from ordering, inventing a gap that wasn't
+// in the data, and a bunched middle tier got spread out for the same
+// reason. It was also jumpy in-season, since one TE passing another on a
+// rounding error swapped both their multipliers.
 //
-// Still monotonic within the position. Rank is derived from value and the
-// multiplier is non-increasing in rank, so a more valuable TE always takes
-// a multiplier at least as large: the ordering can never invert, the gaps
-// just widen.
-// Peak lift, applied to TE1 and decaying from there. Sized so the TOTAL
-// premium across a starting-TE pool is a little above the old flat rate
-// (the position was under-priced, not just mis-shaped) while most of it
-// lands on the two or three tight ends a manager would actually trade for.
+// Value share fixes all three. Two tight ends priced 6000 and 6500 take
+// almost the same lift because they ARE almost the same asset; a bunched
+// tier gets a bunched premium; and a TE climbing through the season sees
+// his multiplier move continuously with his value instead of stepping when
+// he crosses somebody.
+//
+//   share 1.00 (the best TE)   MILD ×1.32   FULL ×1.60
+//   share 0.90                 MILD ×1.29   FULL ×1.54
+//   share 0.70                 MILD ×1.22   FULL ×1.42
+//   share 0.50                 MILD ×1.16   FULL ×1.30
+//   share 0.25                 MILD ×1.08   FULL ×1.15
+//
+// Still strictly monotonic within the position: the multiplier rises with
+// value, so a more valuable TE is always multiplied by more. Ordering can
+// never invert, the gaps just widen.
 const TE_PREMIUM_PEAK: Record<'NONE' | 'MILD' | 'FULL', number> = {
   NONE: 0,
-  MILD: 0.28,
-  FULL: 0.55,
+  MILD: 0.32,
+  FULL: 0.60,
 }
-
-// Decay constant, in ranks. At K the lift is down to ~37% of peak, so the
-// curve is meaningful through the top handful of TEs and negligible by the
-// back of the TE2 range.
-const TE_PREMIUM_DECAY = 6
 
 function applyTePremium(values: Map<string, PlayerValue>, tePremium: 'NONE' | 'MILD' | 'FULL' | undefined): void {
   const peak = TE_PREMIUM_PEAK[tePremium ?? 'NONE']
   if (peak === 0) return
 
-  const tes = [...values.values()]
-    .filter((pv) => pv.position.toUpperCase() === 'TE')
-    .sort((a, b) => b.value - a.value)
+  const tes = [...values.values()].filter((pv) => pv.position.toUpperCase() === 'TE')
+  if (tes.length === 0) return
 
-  tes.forEach((pv, i) => {
-    const mult = 1 + peak * Math.exp(-i / TE_PREMIUM_DECAY)
-    pv.value = Math.round(pv.value * mult)
-  })
+  // Anchor on the most valuable TE. Everything is priced as a share of him,
+  // so the actual shape of the position drives the premium rather than a
+  // fixed schedule of ranks.
+  let top = 0
+  for (const pv of tes) if (pv.value > top) top = pv.value
+  if (top <= 0) return
+
+  for (const pv of tes) {
+    const share = Math.min(1, Math.max(0, pv.value / top))
+    pv.value = Math.round(pv.value * (1 + peak * share))
+  }
 }
 
 // Only drop a source when its value is more than 2x or less than 0.5x the
