@@ -9,9 +9,13 @@
 //   • Quiet wire → the Transaction Times front page: masthead, double
 //     rule, giant headline, grade stamps inked in the corner.
 //
-// Palette mirrors the grader page (wire-room dark, cream stock, siren
-// red, desk amber) so the share preview reads as a continuation of the
-// page, the same way the almanac chapter cards do.
+// Palette: one image serves both trees, so it can't be two things. It
+// used to mirror the DESKTOP wire room only (near-black + siren red),
+// which read as a different product next to the mobile grader's
+// aubergine and copper. The room is now aubergine and the accent copper,
+// which still sits in the desktop card's family (dark room, one warm
+// accent) while matching the phone page it is most often opened from.
+// The cream newsprint stock is common to both and doesn't move.
 
 import { ImageResponse } from 'next/og'
 import { readFile } from 'fs/promises'
@@ -22,21 +26,24 @@ export const runtime = 'nodejs'
 
 const FONT_DIR = path.join(process.cwd(), 'public', 'og', 'fonts')
 
-// Grader palette — kept in sync with grader/index.html :root tokens.
-const WIRE_BG    = '#101216'
-const WIRE_DEEP  = '#0a0c0f'
+// Grader palette — the aubergine + copper of trades-grader-mobile.css.
+const WIRE_BG    = '#14101c'
+const WIRE_DEEP  = '#0d0a14'
 const CREAM      = '#f0e8d2'
 const CREAM_2    = '#e6dcc0'
 const MANILA     = '#efe6cd'
 const MANILA_2   = '#e2d5b0'
-const SIREN      = '#d5382b'
-const SIREN_DIM  = '#8e2820'
+// SIREN is the card's one accent. Named for the old red; it is copper now.
+const SIREN      = '#e8a26c'
+const SIREN_DIM  = '#a2631f'
 const AMBER      = '#d9a441'
 const INK        = '#2c2417'
 const INK_SOFT   = '#554833'
 const INK_FAINT  = '#77684e'
-const GRADE_A    = '#2e6b4f'
-const GRADE_B    = '#3e639a'
+// Same green and blue the page stamps an A and a B with, darkened for
+// printing on cream rather than glowing on a dark panel.
+const GRADE_A    = '#2f7a42'
+const GRADE_B    = '#1f5f9e'
 
 async function loadFonts() {
   const [serif, serifItalic, mono, monoBold] = await Promise.all([
@@ -55,10 +62,14 @@ async function loadFonts() {
 type Fonts = Awaited<ReturnType<typeof loadFonts>>
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params
+  // Which scene renders depends on whether a deal cleared in the last 24h,
+  // so the sealed card is otherwise only previewable on a trade day.
+  // ?scene=sealed / ?scene=front forces one.
+  const scene = new URL(req.url).searchParams.get('scene')
 
   const db = createAdminClient()
   const { data: league } = await db
@@ -87,7 +98,8 @@ export async function GET(
   ])
 
   const fonts = await loadFonts()
-  return fresh && fresh.length > 0
+  const sealed = scene === 'sealed' || (scene !== 'front' && !!fresh && fresh.length > 0)
+  return sealed
     ? renderSealedCard(league.name, fonts)
     : renderFrontPageCard(league.name, count ?? 0, fonts)
 }
@@ -113,7 +125,7 @@ function wireRoom(children: React.ReactNode) {
           position: 'absolute',
           inset: 0,
           display: 'flex',
-          background: `radial-gradient(ellipse 70% 45% at 50% -8%, rgba(213,56,43,0.16) 0%, rgba(213,56,43,0) 60%), linear-gradient(180deg, #12151a 0%, ${WIRE_DEEP} 100%)`,
+          background: `radial-gradient(ellipse 70% 45% at 50% -8%, rgba(232,162,108,0.16) 0%, rgba(232,162,108,0) 60%), linear-gradient(180deg, #1c1626 0%, ${WIRE_DEEP} 100%)`,
         }}
       />
       {children}
@@ -133,7 +145,7 @@ function WireChip({ text }: { text: string }) {
         letterSpacing: '0.38em',
         textTransform: 'uppercase',
         color: SIREN,
-        border: `1px solid rgba(213,56,43,0.45)`,
+        border: `1px solid rgba(232,162,108,0.45)`,
         borderRadius: '999px',
         padding: '10px 22px 10px 16px',
       }}
@@ -145,7 +157,7 @@ function WireChip({ text }: { text: string }) {
           height: '11px',
           borderRadius: '50%',
           background: SIREN,
-          boxShadow: `0 0 12px rgba(213,56,43,0.9)`,
+          boxShadow: `0 0 12px rgba(232,162,108,0.9)`,
         }}
       />
       <span style={{ display: 'flex' }}>{text}</span>
@@ -181,6 +193,9 @@ function renderSealedCard(leagueName: string, fonts: Fonts) {
             border: `1px solid rgba(60,40,20,0.35)`,
             boxShadow: '0 4px 10px rgba(0,0,0,0.55), 0 40px 90px rgba(0,0,0,0.5)',
             position: 'relative',
+            // Off-square for the same reason as the front page: dead level,
+            // it read as a UI panel instead of something sitting on a desk.
+            transform: 'rotate(-0.7deg)',
           }}
         >
           {/* string-and-button envelope hatching */}
@@ -218,14 +233,22 @@ function renderSealedCard(leagueName: string, fonts: Fonts) {
               height: '104px',
               marginTop: '26px',
               borderRadius: '50%',
-              background: `radial-gradient(circle at 35% 30%, #e05244, ${SIREN} 55%, #99271d)`,
+              // Deeper than the page copper: a seal has to read as wax on
+              // manila, and the flat accent tone washed into the stock.
+              background: `radial-gradient(circle at 35% 30%, #e8a26c, #c0763a 55%, #8a4f18)`,
               boxShadow: '0 5px 14px rgba(0,0,0,0.35)',
               color: '#fdf3e4',
               fontFamily: 'DMSerif',
-              fontSize: '40px',
+              fontSize: '38px',
+              letterSpacing: '0.04em',
             }}
           >
-            ✦
+            {/* A monogram, not a dingbat. This was "✦", which is in neither
+                loaded font, so every sealed card shipped with a tofu box in
+                the middle of the seal. Only visible on a trade day, which is
+                why it survived. Anything drawn here must exist in DM Serif
+                or JetBrains Mono. */}
+            TT
           </div>
           <div
             style={{
@@ -316,14 +339,54 @@ function renderFrontPageCard(leagueName: string, tradeCount: number, fonts: Font
       <div
         style={{
           display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          position: 'relative',
+          width: '1200px',
+          height: '630px',
+        }}
+      >
+        {/* Two sheets under the front page, fanned a degree or two either
+            way. The card used to be one dead-square rectangle centred in
+            the frame, which read as a UI panel rather than a newspaper
+            sitting on a desk. These never show more than an edge; their
+            whole job is to break the silhouette. */}
+        <div
+          style={{
+            position: 'absolute',
+            display: 'flex',
+            width: '968px',
+            height: '498px',
+            background: '#cec4a6',
+            borderRadius: '3px',
+            transform: 'rotate(2.2deg)',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.45)',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            display: 'flex',
+            width: '968px',
+            height: '498px',
+            background: '#ddd3b6',
+            borderRadius: '3px',
+            transform: 'rotate(-1.4deg)',
+            boxShadow: '0 18px 44px rgba(0,0,0,0.4)',
+          }}
+        />
+      <div
+        style={{
+          display: 'flex',
           flexDirection: 'column',
-          width: '1020px',
-          padding: '38px 60px 34px',
+          width: '968px',
+          padding: '34px 54px 30px',
           background: `linear-gradient(180deg, #f2ecda, ${CREAM_2})`,
           borderRadius: '3px',
           boxShadow: '0 4px 10px rgba(0,0,0,0.55), 0 40px 90px rgba(0,0,0,0.5)',
           color: INK,
           position: 'relative',
+          transform: 'rotate(-0.5deg)',
         }}
       >
         {/* Red corner tag, like the page's "Deal of the season". Sits above
@@ -348,8 +411,11 @@ function renderFrontPageCard(leagueName: string, tradeCount: number, fonts: Font
         >
           The Grader
         </div>
-        <Stamp grade="A-" color={GRADE_A} rotate="8deg" top="150px" right="60px" />
-        <Stamp grade="B+" color={GRADE_B} rotate="-6deg" top="238px" right="96px" />
+        {/* Stamps sit beside the headline, not above it. At their old y the
+            pair floated up in the masthead and read as part of the
+            nameplate. */}
+        <Stamp grade="A-" color={GRADE_A} rotate="8deg" top="202px" right="60px" />
+        <Stamp grade="B+" color={GRADE_B} rotate="-6deg" top="290px" right="96px" />
 
         {/* masthead */}
         <div
@@ -371,7 +437,7 @@ function renderFrontPageCard(leagueName: string, tradeCount: number, fonts: Font
             justifyContent: 'center',
             marginTop: '10px',
             fontFamily: 'DMSerif',
-            fontSize: '52px',
+            fontSize: '48px',
             letterSpacing: '0.04em',
             color: INK,
           }}
@@ -385,15 +451,15 @@ function renderFrontPageCard(leagueName: string, tradeCount: number, fonts: Font
         <div
           style={{
             display: 'flex',
-            marginTop: '34px',
+            marginTop: '28px',
             fontFamily: 'DMSerif',
-            fontSize: '96px',
+            fontSize: '90px',
             lineHeight: 0.98,
             textTransform: 'uppercase',
             color: INK,
           }}
         >
-          Every deal, announced.
+          Every trade, graded.
         </div>
         <div
           style={{
@@ -405,7 +471,7 @@ function renderFrontPageCard(leagueName: string, tradeCount: number, fonts: Font
             color: INK_SOFT,
           }}
         >
-          Graded on arrival. Revisited four weeks later.
+          Graded the day it lands. Revisited four weeks later.
         </div>
 
         <div
@@ -424,6 +490,7 @@ function renderFrontPageCard(leagueName: string, tradeCount: number, fonts: Font
           <span style={{ display: 'flex' }}>{foot}</span>
           <span style={{ display: 'flex', color: SIREN_DIM }}>The Trade Desk · The Grader</span>
         </div>
+      </div>
       </div>,
     ),
     { width: 1200, height: 630, fonts },

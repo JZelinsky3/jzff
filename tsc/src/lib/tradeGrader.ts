@@ -89,6 +89,9 @@ export function summaryViolations(
   // for "Kyle's Foreskin" names a different team in a league with two
   // Kyles, and the reader can't tell which.
   sideNames: string[] = [],
+  // Every rank label in the trade, flagged when the player is deep enough
+  // that printing his exact rank is false precision. Optional.
+  rankLabels: Array<{ label: string; deep: boolean }> = [],
 ): string[] {
   const out: string[] = []
   const t = text.toLowerCase()
@@ -118,6 +121,40 @@ export function summaryViolations(
   if (/[\u2014\u2013]/.test(text)) out.push('used an em/en dash')
   if (/while the (added|acquired|included)\b/.test(t)) {
     out.push('used a "while the added X" clause to tack on a second player')
+  }
+
+  // Gesturing at the verdict instead of stating it. Naming a winner is
+  // encouraged now; these are the genteel substitutes that say a side came
+  // out ahead without ever saying so.
+  const HEDGES = [
+    'higher mark', 'lower mark', 'better mark',
+    'better end of', 'the better of it', 'the nod',
+    'ahead on paper', 'edges it out', 'edges out',
+    'right side of the ledger', 'comes out on top on balance',
+  ]
+  const hedged = HEDGES.filter((h) => t.includes(h))
+  if (hedged.length > 0) {
+    out.push(
+      `described the verdict instead of stating it (${hedged.join(', ')}); ` +
+      'say plainly who wins the trade or takes the higher grade',
+    )
+  }
+
+  // Rank labels. Two failures, both of which read as padding:
+  //   \u2022 the same rank printed twice, once for the side that got the player
+  //     and once for the side that gave him up, which the lists already say
+  //   \u2022 an exact rank for a player too deep to start, where the number is
+  //     precision about nothing
+  for (const { label, deep } of rankLabels) {
+    const esc = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const hits = text.match(new RegExp(`\\b${esc}\\b`, 'gi'))
+    if (!hits) continue
+    if (hits.length > 1) {
+      out.push(`printed the rank "${label}" ${hits.length} times; name a player's rank once, on the side that received him`)
+    }
+    if (deep) {
+      out.push(`cited the exact rank "${label}" for a player who will not start; describe the role instead (e.g. "a bench receiver who won't crack the lineup")`)
+    }
   }
   if (leagueType === 'redraft') {
     // Deliberately NOT 'upside': in redraft that means this week's ceiling,
@@ -537,6 +574,27 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
       return (m?.team_name as string | null) || (m?.display_name as string) || ''
     }).filter(Boolean)
 
+    // Every rank label in the deal, deduped, with the ones past DEEP_RANK
+    // flagged. The threshold matches the tier reference in the prompt
+    // (49+ is deep depth / waiver), and it's deliberately conservative:
+    // a WR35 can still be a flex start, so only numbers that can't be a
+    // starter anywhere get called out.
+    const DEEP_RANK = 48
+    const rankLabels = [...new Set(
+      sides.flatMap((sd) =>
+        ((sd.assets as Array<Record<string, unknown>>) ?? [])
+          .filter((a) => a.kind === 'player')
+          .map((a) => {
+            const sid = sidByAsset.get(a)
+            return sid ? bundle.rankLabels.get(sid) : undefined
+          })
+          .filter((r): r is string => !!r),
+      ),
+    )].map((label) => {
+      const n = Number(label.replace(/^[A-Za-z]+/, ''))
+      return { label, deep: Number.isFinite(n) && n > DEEP_RANK }
+    })
+
     // Keep correcting until the copy is clean, up to a small cap.
     //
     // One retry wasn't enough: the corrected answer kept reintroducing
@@ -548,7 +606,7 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     const MAX_FIXUPS = 2
     for (let fix = 0; fix < MAX_FIXUPS; fix++) {
       const violations = summaryViolations(
-        String(parsed?.summary ?? ''), leagueType, receivedTokens, sideNames,
+        String(parsed?.summary ?? ''), leagueType, receivedTokens, sideNames, rankLabels,
       )
       if (violations.length === 0) break
       if (fix === MAX_FIXUPS - 1) {
@@ -1186,7 +1244,9 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '',
       'WRITING THE RATIONALE. 3 to 4 sentences total. Follow these rules:',
       '',
-    '1. NEVER start with "The X won this trade", "X won the trade", or any variation of who-won-the-trade as the opening line. The user message names a LEAD ANGLE for this specific write-up: open from that angle, then broaden into the full rationale. Never open with a verdict statement.',
+    '1. NEVER OPEN with "The X won this trade", "X won the trade", or any variation of who-won-the-trade as the first line. The user message names a LEAD ANGLE for this specific write-up: open from that angle, then broaden into the full rationale. This is a rule about the OPENING SENTENCE ONLY. Once you are past it, naming the winner outright is expected.',
+      '',
+      'SAY IT STRAIGHT. When one side comes out ahead, write that, in those words: "Sean wins this trade", "Ricci takes the lower grade", "as of today this is Sean\'s deal". What is banned is gesturing at the verdict instead of stating it. NEVER write "the higher mark", "the better end of the ledger", "comes out ahead on paper", "gets the nod", "edges it out", "has the better of it", or any other phrase that describes a conclusion without saying what the conclusion is. If you find yourself reaching for a genteel substitute, use the plain word instead.',
       '',
       args.leagueType === 'redraft'
         ? '2. The rationale must EXPLAIN THE GRADE. The reader can already see who received what from the asset list. Your job is to say WHY one side\'s package is worth more (or less, or even) FOR THIS SEASON. Reference player tiers, weekly ceiling, opportunity and role, NFL team context, positional scarcity, and the receiving roster\'s depth at that position. Do not reference age, youth, or long-term upside.'
@@ -1202,10 +1262,13 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '',
       'RANKS AND TIERS ARE GIVEN, NOT GUESSED. Every player line carries a consensus position rank and market value. The better-ranked / higher-valued player is the better asset, full stop. Never call a player "mid-tier", "a depth piece", "a downgrade" or similar when the data on his line outranks the player he is being compared to. If you describe a swap at one position, the higher-ranked player must be the one described as the better side of it.',
       '',
+      'NAME A RANK ONCE. The two asset lists are two halves of ONE exchange: a player arriving on one side is a player the other side gave up, and the reader can see that from the lists. So cite a position rank at most ONCE per player, on the side that RECEIVED him. When the same player comes up again from the other side\'s point of view, use words instead of the number: "the top-end receiver they gave up", "their RB1", "the back end of their backfield". Never print the same rank label twice in one write-up, and never spend a sentence telling the reader that the side who gave a player up no longer has him.',
+      '',
+      'RANKS ONLY WHERE THEY MEAN SOMETHING. Name an exact rank when the player is going to start: roughly top 12 at a position for an every-week starter, top 24 for a usable one. Past that the number is noise dressed up as precision. A WR57 is "a bench receiver who will not crack the lineup", not "the WR57". Never hang any part of a grade on a precise rank in the 40s or 50s. If a throw-in piece matters, say what it actually does; if it does not, leave it out.',
+      '',
       'NAMING. Refer to a side by its EXACT full name as given ("Kyle\'s Foreskin", "Commisioner Goodhead"), character for character, every time. Never shorten it to the first word or the last word. "Kyle\'s" is not a team, and in a league with more than one Kyle it names the wrong person. If the full name feels repetitive, use a pronoun or "the other side" rather than a fragment.',
       '',
       'BANNED PHRASES. Never write any of these:',
-      '• "won this trade" / "won the trade" / "got the better end"',
       '• "primarily due to" / "primarily because"',
       '• "added depth" / "upgrades the position" / "addressed a need" as the entire reason',
       '• "solid move" / "great trade for both" / "win-win" / "fair deal" as the verdict',
@@ -1350,7 +1413,11 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
       '',
       'RANKS ARE GIVEN, NOT GUESSED. The better-ranked, higher-valued player on the lines you are given is the better asset. Never describe him as the lesser piece of a swap.',
       '',
-      'BANNED PHRASES (same as initial grading): "won this trade", "primarily due to", "added depth", "upgrades the position", "solid move", "fair deal". The em dash character is also banned everywhere; use commas, periods, or parentheses instead. Refer to each side by its EXACT full name every time, never shortened to one word.',
+      'NAME A RANK ONCE, AND ONLY WHERE IT MEANS SOMETHING. A player arriving on one side is a player the other side gave up; the reader can see that, so cite his rank once, on the side that received him, and refer to him in words from the other side ("the receiver they gave up"). Name an exact rank only for a player who actually starts: past roughly the top 24 at a position the number is noise, and "a bench receiver who will not crack the lineup" beats "the WR57".',
+      '',
+      'SAY IT STRAIGHT. If the grade moved, say it moved and say who it favours, in plain words: "this is Sean\'s trade now", "Ricci\'s grade comes down". Never gesture at a verdict with "the higher mark", "the better end of the ledger", "comes out ahead on paper", "gets the nod" or "edges it out". Say what the conclusion is.',
+      '',
+      'BANNED PHRASES (same as initial grading): "primarily due to", "added depth", "upgrades the position", "solid move", "fair deal". The em dash character is also banned everywhere; use commas, periods, or parentheses instead. Refer to each side by its EXACT full name every time, never shortened to one word.',
       '',
       'Reference managers by team name. Retrospective voice is optional and should be used sparingly, most sentences should be present-tense analysis.',
       '',

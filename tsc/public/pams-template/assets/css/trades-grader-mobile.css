@@ -78,6 +78,21 @@
   body[data-trades-theme] #theme-picker,
   body[data-trades-theme] .tr-theme-picker { display: none !important; }
 
+  /* Share dialog. share.css themes itself off these variables and defaults
+     to a red accent, which belongs to no Trade Desk room; on this page the
+     dialog opened in red over an aubergine page. Repointed at the grader's
+     own palette so the sheet reads as part of the page that opened it. */
+  body[data-trades-theme] {
+    --tsc-share-accent:     #e8a26c;
+    --tsc-share-accent-dim: rgba(232, 162, 108, .2);
+    --tsc-share-bg:         #1a1426;
+    --tsc-share-card:       #211a30;
+    --tsc-share-text:       #ede5f5;
+    --tsc-share-text-mute:  #968aa6;
+    --tsc-share-line:       #3a2e50;
+    --tsc-share-gold:       #d49260;
+  }
+
   /* ── Wrap ─────────────────────────────────────────── */
   body[data-trades-theme] .tr-wrap {
     max-width: 100%;
