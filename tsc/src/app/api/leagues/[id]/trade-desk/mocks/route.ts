@@ -147,10 +147,16 @@ async function writeBlurbs(leagueName: string, mode: string, trades: MockTrade[]
   const apiKey = process.env.GROQ_API_KEY_TRADES || process.env.GROQ_API_KEY
   if (!apiKey) return null
 
+  const redraft = mode === 'redraft'
   const system = [
     'You are the rumor columnist for The Sunday Chronicle, a fantasy football league paper. Each week you publish "The Rumor Mill", a column of MOCK trades the desk cooked up for league members to argue about. These trades have NOT happened; they are proposals invented by the value engine.',
     '',
     `League mode: ${mode}.`,
+    redraft
+      ? 'REDRAFT. This league lasts ONE season and resets completely afterward, so next year does not exist here. Age, youth, upside beyond this season, draft capital, "years of control", rebuilding and contention windows are all MEANINGLESS and must never appear. Every manager is trying to make the playoffs this season, every season, so nobody is a buyer, a seller, or tanking. Do not say a player is young, old, ascending or declining; the only question is who scores more points between now and the end of this season.'
+      : 'DYNASTY/KEEPER. Rosters carry across seasons, so age, long-term upside, draft picks and a manager\'s timeline are all fair game and worth naming when the deal turns on them.',
+    '',
+    'NEVER WRITE THE NEGATIVE SPACE, AND NEVER EXPLAIN THE LEAGUE TO THE LEAGUE. The rules above are guidance for YOU. The reader is a manager in this league and has not seen them. When a factor does not apply, leave it out silently: never write that something is irrelevant, does not matter, or is a non-factor, and never write "in a redraft league", "in this format" or "since rosters reset". Write only what he could not already know.',
     '',
     'For each trade you receive, write:',
     '  • headline, a punchy tabloid-style header, 4–9 words. Vary the construction across trades (question, declaration, tease). Use player or team names. Do not put quotation marks inside the headline text.',
@@ -158,7 +164,13 @@ async function writeBlurbs(leagueName: string, mode: string, trades: MockTrade[]
     '',
     'RANKS AND TIERS ARE GIVEN, NOT GUESSED. Every player is listed with his consensus position rank (WR2 = the 2nd-most-valuable WR on the market) and his market value. A LOWER rank number and a HIGHER value mean the BETTER player, always. Tier language must follow those numbers: ranks 1-12 at a position are elite starters, 13-24 are solid starters, 25-48 are filler, 49+ are depth. Never call a player "mid-tier" or "a downgrade" when the player he is being compared to ranks below him. If the two sides swap players at the same position, the better-ranked one is the better piece, and the side receiving him is the side getting the upgrade.',
     '',
-    'DIRECTION. Each line says what a team SENDS. "Flips", "ships", "sends", "moves on from", "gives up" and "deals away" describe a player LEAVING that roster; "lands", "adds", "acquires" and "comes away with" describe one ARRIVING. Attaching the wrong verb to a player states the opposite of the deal.',
+    'DIRECTION. Each trade below spells out, for BOTH teams, what they GIVE UP and what they RECEIVE. Read the right line: a player on a team\'s GIVES UP list is leaving that roster and is already on it today; a player on its RECEIVES list is arriving from the other team.',
+    '• THE HEADLINE IS THE EASIEST ONE TO GET BACKWARDS. "Nacua heads to the Predators" is only true if Nacua is on the Predators\' RECEIVES line. If he is on their GIVES UP line he is ALREADY THEIRS and he is leaving. Before writing any headline of the form "<player> to <team>", check that the player appears on that team\'s RECEIVES list.',
+    '• "Flips", "ships", "sends", "moves on from", "gives up", "deals away" and "parts with" describe a player LEAVING, so they only apply to that team\'s GIVES UP list. "Lands", "adds", "acquires", "gets" and "comes away with" describe one ARRIVING, so they only apply to its RECEIVES list.',
+    '',
+    'PLAIN VERBS. Use lands, adds, gets, acquires, sends, gives up. Do NOT reach for showy synonyms: "snaps up", "scoops up", "nabs", "reels in", "hauls in", "pries away", "plucks", "swoops for" and "inks" are all banned. If a reader has to stop and work out what a verb means, it was the wrong verb.',
+    '',
+    'NAME A RANK ONCE. A player leaving one team is arriving at the other; the lists already say that, so cite a position rank at most once per player and refer to him in words the second time ("the receiver they gave up"). Name an exact rank only for a player who will actually start: past roughly the top 24 at a position, say what his role is instead of printing a number nobody needs.',
     '',
     'BANNED: "win-win", "no-brainer", "blockbuster alert", "look no further", restating the player lists without analysis, and the em dash character (use commas, periods, or parentheses instead).',
     '',
@@ -171,10 +183,16 @@ async function writeBlurbs(leagueName: string, mode: string, trades: MockTrade[]
   const fmtPlayer = (p: { name: string; position?: string | null; value: number; rank?: string | null }) =>
     `${p.name} (${p.rank ? `${p.rank}, ` : ''}${p.position ?? '?'} · value ${Math.round(p.value)})`
 
+  // Both directions are spelled out per team. The prompt used to list only
+  // what each side SENDS and left the model to work out that A's sends are
+  // B's arrivals, which it regularly got backwards: one headline announced
+  // a player "heads to" the team he was actually leaving.
   const user = trades.map((t, i) => [
     `Trade ${i + 1} [${t.tag}]:`,
-    `  ${t.teamA.name} sends: ${t.teamA.sends.map(fmtPlayer).join(', ')}`,
-    `  ${t.teamB.name} sends: ${t.teamB.sends.map(fmtPlayer).join(', ')}`,
+    `  ${t.teamA.name} GIVES UP: ${t.teamA.sends.map(fmtPlayer).join(', ')}`,
+    `  ${t.teamA.name} RECEIVES: ${t.teamB.sends.map(fmtPlayer).join(', ')}`,
+    `  ${t.teamB.name} GIVES UP: ${t.teamB.sends.map(fmtPlayer).join(', ')}`,
+    `  ${t.teamB.name} RECEIVES: ${t.teamA.sends.map(fmtPlayer).join(', ')}`,
     `  ${t.teamA.name} starter-value ${t.teamA.gain >= 0 ? 'gain' : 'loss'}: ${Math.round(t.teamA.gain)} (${(t.teamA.gainPct * 100).toFixed(1)}%) · ${fmtMovements(t.teamA.movements)}`,
     `  ${t.teamB.name} starter-value ${t.teamB.gain >= 0 ? 'gain' : 'loss'}: ${Math.round(t.teamB.gain)} (${(t.teamB.gainPct * 100).toFixed(1)}%) · ${fmtMovements(t.teamB.movements)}`,
   ].join('\n')).join('\n\n')

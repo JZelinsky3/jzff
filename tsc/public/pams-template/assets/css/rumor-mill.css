@@ -279,9 +279,13 @@ html, body {
 
 /* ── Action row — Analyzer handoff left, Sign/Shred ballots right
    (vote controls live on the right like every voting system). ── */
+/* The link and the ballot used to be pinned to the card's outer edges
+   (the ballot carried margin-left:auto). Pulled in off both edges so the
+   row sits inside the card rather than spanning it corner to corner. */
 .rm-item-actions {
     display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;
     margin-top: 1.1rem;
+    padding: 0 1.1rem;
 }
 /* The ballot — one pill-shaped switch with two ends. Left end signs
    the deal (signature, green — same green the page uses for up-impacts
@@ -330,14 +334,19 @@ html, body {
     color: inherit;
     font-weight: 700;
 }
+/* No trailing arrow. The underline is what marks it as a link now: a
+   hairline set off the baseline, so it reads as a link without turning
+   into a default browser underline through the letter descenders. */
 .rm-run {
     font-family: var(--mono); font-size: .6rem; letter-spacing: .18em;
     text-transform: uppercase;
     color: var(--td-live);
     text-decoration: none;
-    transition: color .15s ease;
+    border-bottom: 1px solid rgba(200, 164, 100, .45);
+    padding-bottom: 2px;
+    transition: color .15s ease, border-color .15s ease;
 }
-.rm-run:hover { color: #f3ad8d; }
+.rm-run:hover { color: #f3ad8d; border-bottom-color: #f3ad8d; }
 
 /* ── Footer ─────────────────────────────────────────────────── */
 .rm-footer {

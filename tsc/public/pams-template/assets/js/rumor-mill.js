@@ -222,7 +222,7 @@
           sideHtml(t.teamB, true) +
         '</div>' +
         '<div class="rm-item-actions">' +
-          '<a class="rm-run" href="' + analyzerHref(t, payload) + '">Run it in the Analyzer →</a>' +
+          '<a class="rm-run" href="' + analyzerHref(t, payload) + '">View in Analyzer</a>' +
           votesHtml(t, payload) +
         '</div>' +
       '</article>';

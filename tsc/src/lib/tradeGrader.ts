@@ -185,6 +185,19 @@ export function summaryViolations(
     [/\bsetting\s+aside\b/i, 'setting aside'],
     [/\bregardless\s+of\s+(age|youth|upside)\b/i, 'regardless of age'],
   ]
+  // Showy acquisition verbs. All of these are direction-correct, so the
+  // DIRECTION rules never catch them; they're just dressed up. "Snaps up"
+  // is the one that prompted this: if the reader has to stop and work out
+  // what the verb means, it was the wrong verb.
+  const SHOWY_VERBS = [
+    /\bsnap(s|ped)?\s+up\b/i, /\bscoop(s|ed)?\s+up\b/i, /\bnab(s|bed)?\b/i,
+    /\breel(s|ed)?\s+in\b/i, /\bhaul(s|ed)?\s+in\b/i, /\bpr(y|ies|ied)\s+away\b/i,
+    /\bpluck(s|ed)?\b/i, /\bswoop(s|ed)?\b/i, /\bink(s|ed)\b/i,
+  ]
+  if (SHOWY_VERBS.some((re) => re.test(text))) {
+    out.push('used a showy acquisition verb (snaps up / nabs / reels in / similar); use lands, adds, gets or acquires')
+  }
+
   const nonFactor = NON_FACTOR.filter(([re]) => re.test(text)).map(([, label]) => label)
   if (nonFactor.length > 0) {
     out.push(
@@ -1426,6 +1439,8 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '• Verbs that mean GETTING a player: lands, adds, acquires, picks up, buys, comes away with, takes back, walks off with. These are the only verbs for a player on that side\'s own received list.',
       '• "X flips a high-end WR" says X GAVE ONE UP. If X is the side that received the high-end WR, that sentence is wrong. Write it from the assets actually leaving: "the two receivers Sean sent out came back as a genuine WR1", or simply "Sean lands a genuine WR1".',
       '• When you want to frame a package converting into one piece, name the outgoing pieces first and the incoming piece second: "<outgoing pieces> turn into <incoming player>". Never the reverse.',
+      '',
+      'PLAIN VERBS. Use lands, adds, gets, acquires, sends, gives up. Do NOT reach for showy synonyms: "snaps up", "scoops up", "nabs", "reels in", "hauls in", "pries away", "plucks", "swoops for" and "inks" are all banned. If a reader has to stop and work out what a verb means, it was the wrong verb.',
       '',
       'RANKS AND TIERS ARE GIVEN, NOT GUESSED. Every player line carries a consensus position rank and market value. The better-ranked / higher-valued player is the better asset, full stop. Never call a player "mid-tier", "a depth piece", "a downgrade" or similar when the data on his line outranks the player he is being compared to. If you describe a swap at one position, the higher-ranked player must be the one described as the better side of it.',
       '',
