@@ -50,6 +50,10 @@ export type GroqChatArgs = {
   json?: boolean
   temperature?: number
   maxTokens?: number
+  // Groq honours `seed` on a best-effort basis. Paired with a low
+  // temperature it makes a repeated identical request return the same
+  // answer, which is what re-running a job over unchanged input should do.
+  seed?: number
   // Reasoning models (Groq's gpt-oss family) spend tokens thinking BEFORE
   // they emit anything, and that spend counts against max_tokens. Leave
   // unset to get the automatic 'low' default below.
@@ -100,6 +104,7 @@ export async function groqChat(args: GroqChatArgs): Promise<GroqResult> {
         messages: args.messages,
         temperature: args.temperature ?? 0.3,
         max_tokens: args.maxTokens ?? 1024,
+        ...(args.seed != null ? { seed: args.seed } : {}),
         ...(args.json ? { response_format: { type: 'json_object' } } : {}),
         ...(supportsReasoningEffort(args.model)
           ? { reasoning_effort: args.reasoningEffort ?? 'low' }

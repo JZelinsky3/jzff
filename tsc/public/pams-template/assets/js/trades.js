@@ -90,13 +90,17 @@
     var v = n % 100;
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
   }
+  // F used to share the D class. It now carries BOTH, so the desktop
+  // themes (which only style g-a..g-d) are unchanged while mobile can
+  // paint an F red against D's orange.
   function gradeClass(g) {
     if (!g) return '';
     var first = g[0];
     if (first === 'A') return 'g-a';
     if (first === 'B') return 'g-b';
     if (first === 'C') return 'g-c';
-    if (first === 'D' || first === 'F') return 'g-d';
+    if (first === 'D') return 'g-d';
+    if (first === 'F') return 'g-d g-f';
     return '';
   }
 

@@ -613,25 +613,34 @@
     color: var(--tg-gold) !important;
     letter-spacing: 0 !important;
   }
+  /* Grade ramp: green, blue, yellow, orange, red. The old set ran
+     green / gold / sand / coral, which put three warm neutrals in a row
+     and made a B look like a C at a glance. B is the only cool colour on
+     the ramp, so it can't be confused with anything below it. */
   body[data-trades-theme] .tr-grade-letter.g-a {
     color: #79c285 !important;
     border-color: #79c285 !important;
     background: rgba(121, 194, 133, .1) !important;
   }
   body[data-trades-theme] .tr-grade-letter.g-b {
-    color: #d4a94c !important;
-    border-color: #d4a94c !important;
-    background: rgba(212, 169, 76, .1) !important;
+    color: #6fa8e0 !important;
+    border-color: #6fa8e0 !important;
+    background: rgba(111, 168, 224, .1) !important;
   }
   body[data-trades-theme] .tr-grade-letter.g-c {
-    color: #c4ad84 !important;
-    border-color: #c4ad84 !important;
-    background: rgba(196, 173, 132, .1) !important;
+    color: #e0b44c !important;
+    border-color: #e0b44c !important;
+    background: rgba(224, 180, 76, .1) !important;
   }
   body[data-trades-theme] .tr-grade-letter.g-d {
-    color: #e0816e !important;
-    border-color: #e0816e !important;
-    background: rgba(224, 129, 110, .1) !important;
+    color: #e08640 !important;
+    border-color: #e08640 !important;
+    background: rgba(224, 134, 64, .1) !important;
+  }
+  body[data-trades-theme] .tr-grade-letter.g-f {
+    color: #e05545 !important;
+    border-color: #e05545 !important;
+    background: rgba(224, 85, 69, .12) !important;
   }
   /* Revisit row — the "then → now" comparison stays inline */
   body[data-trades-theme] .tr-grade-then {
@@ -847,7 +856,12 @@ body[data-trades-theme] .tr-page-sub {
   body[data-trades-theme] .tr-side:nth-of-type(2) {
     background: #e9e1f2 !important;
     color: #2e2145 !important;
-    --side-ring: #2a2140;
+    /* Lifted off A's exact background (#2a2140). Set to the literal same
+       value the two didn't read as a pair: 2px of a dark colour against
+       lavender carries far more weight than the same colour spread over a
+       whole panel, so B's edge looked like a hard outline while A's fill
+       looked soft. Same hue, lightened until they balance. */
+    --side-ring: #4b3a72;
   }
   body[data-trades-theme] .tr-side:nth-of-type(2) .tr-side-name { color: #2a1d42 !important; }
   body[data-trades-theme] .tr-side:nth-of-type(2) .tr-side-team { color: #6a5a88 !important; }
@@ -899,16 +913,20 @@ body[data-trades-theme] .tr-page-sub {
     background: rgba(47, 122, 66, .1) !important;
   }
   body[data-trades-theme] .tr-side:nth-of-type(2) .tr-grade-letter.g-b {
-    color: #8a6512 !important; border-color: #8a6512 !important;
-    background: rgba(138, 101, 18, .1) !important;
+    color: #1f5f9e !important; border-color: #1f5f9e !important;
+    background: rgba(31, 95, 158, .1) !important;
   }
   body[data-trades-theme] .tr-side:nth-of-type(2) .tr-grade-letter.g-c {
-    color: #6f5a33 !important; border-color: #6f5a33 !important;
-    background: rgba(111, 90, 51, .1) !important;
+    color: #91700e !important; border-color: #91700e !important;
+    background: rgba(145, 112, 14, .1) !important;
   }
   body[data-trades-theme] .tr-side:nth-of-type(2) .tr-grade-letter.g-d {
-    color: #a53c26 !important; border-color: #a53c26 !important;
-    background: rgba(165, 60, 38, .1) !important;
+    color: #a75c18 !important; border-color: #a75c18 !important;
+    background: rgba(167, 92, 24, .1) !important;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-grade-letter.g-f {
+    color: #a8281c !important; border-color: #a8281c !important;
+    background: rgba(168, 40, 28, .12) !important;
   }
   body[data-trades-theme] .tr-side:nth-of-type(2) .tr-grade-arrow { color: #6a5a88 !important; }
   body[data-trades-theme] .tr-side:nth-of-type(2) .tr-grade-pending { color: #6a5a88 !important; }

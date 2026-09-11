@@ -502,8 +502,12 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
       // Temperature 0.55 — high enough to break out of formulaic openings
       // and produce varied vocabulary; low enough that grade calibration
       // stays anchored. Lower values produced "X won this trade because..."
-      // openings every time.
+      // openings every time. The variety it buys is in the PROSE; the
+      // grades are pinned by the anchors in the prompt, and the seed below
+      // keeps a re-grade of an unchanged trade from resampling into a
+      // different answer entirely.
       temperature: 0.55,
+      seed: hashTradeId(tradeId),
       maxTokens: 2500,
     })
     parsed = result.data
@@ -563,11 +567,12 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
               content:
                 `That response broke these rules: ${violations.join('; ')}. ` +
                 'Rewrite the summary so it breaks none of them. Use each side\'s ' +
-                'exact full name every time. Keep the same grades unless the ' +
-                'reasoning genuinely changes. Same strict JSON shape.',
+                'exact full name every time. This is a copy fix only: return the ' +
+                'grades you already gave, unchanged. Same strict JSON shape.',
             },
           ],
           temperature: 0.35,
+          seed: hashTradeId(tradeId),
           maxTokens: 2500,
         })
         if (retry.data?.summary) parsed = retry.data
@@ -770,6 +775,9 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
         { role: 'user', content: prompt.user },
       ],
       temperature: 0.55,
+      // Offset from the initial-grade seed so a revisit isn't just the
+      // first write-up resampled with the same roll.
+      seed: (hashTradeId(tradeId) ^ 0x5e71517) >>> 0,
       maxTokens: 2500,
     })
     parsed = result.data
@@ -1024,13 +1032,93 @@ const LEAD_ANGLES = [
   'what each manager is telling the league about their season by making this trade',
 ]
 
-function pickLeadAngle(tradeId: string): string {
+function hashTradeId(tradeId: string): number {
   let h = 2166136261
   for (let i = 0; i < tradeId.length; i++) {
     h ^= tradeId.charCodeAt(i)
     h = Math.imul(h, 16777619)
   }
-  return LEAD_ANGLES[(h >>> 0) % LEAD_ANGLES.length]
+  return h >>> 0
+}
+
+function pickLeadAngle(tradeId: string): string {
+  return LEAD_ANGLES[hashTradeId(tradeId) % LEAD_ANGLES.length]
+}
+
+// ── Deterministic grade anchors ──────────────────────────────────────────
+//
+// The model used to derive every grade from scratch, so re-grading an
+// unchanged trade could return C- one run and B+ the next while the other
+// side sat still. Temperature and a seed alone only freeze the sampling;
+// they don't give the model a stable read to freeze onto. This does: each
+// side gets a starting grade computed from the consensus values of what it
+// received, identical on every run, and the prompt limits how far the model
+// may move off it.
+const GRADE_SCALE = [
+  'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+',
+]
+// An even split grades B+ on both sides. Managers don't make trades they
+// think are bad, so the scale deliberately leaves three notches above that
+// point and nine below it.
+const EVEN_GRADE_INDEX = 9
+
+// Each piece past the best one counts for less. A lineup starts a fixed
+// number of players, so three pieces worth 3000 are not one worth 9000.
+// This is the "package shape beats raw total" paragraph the prompt has
+// always carried in words, computed instead of eyeballed.
+const PIECE_WEIGHTS = [1, 0.6, 0.35, 0.2]
+
+function weighPackage(values: number[]): number {
+  return [...values]
+    .sort((a, b) => b - a)
+    .reduce((acc, v, i) => acc + v * (PIECE_WEIGHTS[i] ?? 0.12), 0)
+}
+
+type GradeAnchor = { grade: string; confident: boolean }
+
+function computeGradeAnchors(
+  sides: Array<{ side_id: string; assets: Array<Record<string, unknown>> }>,
+  bundle: ValueBundle,
+  sidByAsset: Map<Record<string, unknown>, string>,
+): Map<string, GradeAnchor> {
+  const out = new Map<string, GradeAnchor>()
+  const weights: number[] = []
+  // Picks have no consensus value and some players don't resolve. A side
+  // holding either is being weighed on partial information, so its anchor
+  // is advisory and the prompt lets the model move further off it.
+  const partial: boolean[] = []
+
+  for (const s of sides) {
+    const vals: number[] = []
+    let missing = false
+    for (const a of s.assets) {
+      if (a.kind !== 'player') { missing = true; continue }
+      const sid = sidByAsset.get(a)
+      const cv = sid ? bundle.consensus.get(sid) : undefined
+      if (!cv) { missing = true; continue }
+      vals.push(cv.value)
+    }
+    weights.push(weighPackage(vals))
+    partial.push(missing || vals.length === 0)
+  }
+
+  const total = weights.reduce((a, b) => a + b, 0)
+  if (total <= 0) return out
+  const mean = total / sides.length
+
+  sides.forEach((s, i) => {
+    // ratio 1 means this side took an even share of the value on the table.
+    const ratio = weights[i] / mean
+    const d = (ratio - 1) / sides.length
+    // Asymmetric slope: three notches of headroom above B+ against nine
+    // below it, so the losing side has to fall twice as fast to use the
+    // bottom of the scale at all. Tuned so an even deal is B+/B+, a star
+    // for three depth pieces is A-/B-, and A+ needs a genuine fleecing.
+    const notches = d >= 0 ? Math.round(d * 7) : Math.round(d * 16)
+    const idx = Math.max(0, Math.min(GRADE_SCALE.length - 1, EVEN_GRADE_INDEX + notches))
+    out.set(s.side_id, { grade: GRADE_SCALE[idx], confident: !partial[i] })
+  })
+  return out
 }
 
 type PromptArgs = {
@@ -1081,6 +1169,11 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       typeNote,
       '',
       'GRADING SCALE (use only these grades): A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F.',
+      '',
+      'START FROM THE ANCHOR. Each side below carries an ANCHOR GRADE, computed from the consensus market values of what that side received, with pieces past the best one discounted (a lineup starts a fixed number of players). The anchor is the same on every run.',
+      '• Begin at the anchor and move off it only for a reason you can name in the write-up: roster fit, an injury on the player line, positional scarcity in this league.',
+      '• High-confidence anchor: you may move that side ONE notch, up or down. Low-confidence anchor: TWO notches.',
+      '• Never re-derive a grade from scratch and never exceed the allowed movement. The same trade graded twice must produce the same grades, so if nothing in the data justifies moving, return the anchor.',
       '',
       'GRADE CALIBRATION (value-anchored):',
       '• Use the consensus market value and position rank on each player line as your primary anchor. Values sit on a roughly 0-10000 scale blended from FantasyCalc, KeepTradeCut, DynastyProcess, and FantasyPros, calibrated to this league\'s format. Lower rank number = more valuable player.',
@@ -1148,6 +1241,8 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '{ "summary": "<grading rationale, 3-4 sentences>", "sides": [{ "side_id": "<uuid>", "grade": "<letter>" }, ...] }',
     ].join('\n')
 
+  const anchors = computeGradeAnchors(args.sides, args.bundle, args.sidByAsset)
+
   const sidesText = args.sides
     .map((s, idx) => {
       const assets = s.assets.length === 0
@@ -1155,7 +1250,13 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
         : s.assets.map((a) => `  - ${formatAssetWithValue(a, args.bundle, args.sidByAsset)}`).join('\n')
       const pkg = summarisePackage(s.assets, args.bundle, args.sidByAsset)
       const roster = s.roster_summary ? `\n   Roster BEFORE this trade: ${s.roster_summary}` : ''
-      return `Side ${idx + 1}, ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}${pkg ? `\n${pkg}` : ''}${roster}`
+      const a = anchors.get(s.side_id)
+      const anchor = a
+        ? `\n   ANCHOR GRADE: ${a.grade}${a.confident
+            ? ' (high confidence, move at most one notch)'
+            : ' (low confidence: this side holds picks or players the value engine could not price, move at most two notches)'}`
+        : ''
+      return `Side ${idx + 1}, ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}${pkg ? `\n${pkg}` : ''}${roster}${anchor}`
     })
     .join('\n\n')
 
