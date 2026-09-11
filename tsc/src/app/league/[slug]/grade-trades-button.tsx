@@ -12,6 +12,37 @@ import { useRouter } from 'next/navigation'
 //                         test the verdict section without waiting 4 weeks.
 // Each click grades 10 trades to stay under Vercel's serverless timeout.
 
+// Turn the route's raw counters into something that reads like an outcome.
+//
+// "Scanned 1 · graded 0" was the whole message, which is exactly what you
+// see both when every trade is already graded and when every trade failed.
+// The first is the normal, boring case and it looked like a failure.
+//
+// `scanned` counts eligible candidates, so 0 scanned means nothing even
+// qualified — which since the 2026 floor usually means the league's trades
+// are all older than that.
+function gradeMessage(scanned: number, graded: number, force: boolean): string {
+  if (scanned === 0) {
+    return 'Nothing eligible — grading only covers trades from 2026 on.'
+  }
+  if (graded === 0) {
+    return force
+      ? `Nothing re-graded (${scanned} scanned).`
+      : `Already graded — all ${scanned} ${scanned === 1 ? 'trade has' : 'trades have'} a grade. Use Re-grade to overwrite.`
+  }
+  return `Graded ${graded} of ${scanned} scanned.`
+}
+
+function verdictMessage(scanned: number, revisited: number): string {
+  if (scanned === 0) {
+    return 'Nothing eligible — a trade needs a grade before it can get a verdict.'
+  }
+  if (revisited === 0) {
+    return `Already settled — all ${scanned} graded ${scanned === 1 ? 'trade has' : 'trades have'} a verdict.`
+  }
+  return `Verdicts written for ${revisited} of ${scanned} scanned.`
+}
+
 export function GradeTradesButton({ leagueId }: { leagueId: string }) {
   const router = useRouter()
   const [state, setState] = useState<'idle' | 'working' | 'done' | 'error'>('idle')
@@ -37,7 +68,7 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
         return
       }
       setState('done')
-      setMsg(`Scanned ${body.scanned} · graded ${body.graded}`)
+      setMsg(gradeMessage(body.scanned ?? 0, body.graded ?? 0, force))
       if (Array.isArray(body.warnings)) setWarnings(body.warnings)
       router.refresh()
     } catch (e) {
@@ -87,7 +118,7 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
         return
       }
       setState('done')
-      setMsg(`Scanned ${body.scanned} · revisited ${body.revisited}`)
+      setMsg(verdictMessage(body.scanned ?? 0, body.revisited ?? 0))
       if (Array.isArray(body.warnings)) setWarnings(body.warnings)
       router.refresh()
     } catch (e) {

@@ -48,6 +48,62 @@ const MODEL = process.env.GROQ_MODEL_TRADE ?? DEFAULT_GROQ_MODEL
 // queries, so a manual backfill, a force re-grade, or some future caller
 // can't route around it. The queries filter too, but only to avoid loading
 // candidates that would be refused anyway.
+// Scrub dashes the model was told not to use.
+//
+// The system prompt bans the em dash explicitly and the model still emits
+// it ("contention windows—Goodhead buying a younger asset"). A prompt is a
+// request; this is the guarantee. Em and en dashes both become commas,
+// which is what they were standing in for, and doubled hyphens go with
+// them. Run on every summary before it is stored, so nothing reaches the
+// page without passing through here.
+export function stripDashes(text: string): string {
+  return text
+    // Spaced dash acting as a clause break: " — " → ", "
+    .replace(/\s*[\u2014\u2013]\s*/g, ', ')
+    // ASCII stand-in for the same thing.
+    .replace(/\s*--\s*/g, ', ')
+    // A comma may now sit next to punctuation that already ended the clause.
+    .replace(/,\s*([,.;:!?])/g, '$1')
+    .replace(/\s+,/g, ',')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
+// Which prompt rules did this summary actually break?
+//
+// The system prompt bans these outright and the model breaks them anyway:
+// across four consecutive gradings of the same trade it produced "the age
+// and contention-window mismatch" and "while the added Jakobi Meyers" in a
+// redraft league, both explicitly forbidden. Instructions are a request.
+// Detecting the violation and spending one more call is the enforcement.
+//
+// Dynasty vocabulary is only a violation in REDRAFT, where the roster
+// resets and youth is worth nothing. In dynasty it is the correct analysis.
+export function summaryViolations(text: string, leagueType: string): string[] {
+  const out: string[] = []
+  const t = text.toLowerCase()
+
+  if (/[\u2014\u2013]/.test(text)) out.push('used an em/en dash')
+  if (/while the (added|acquired|included)\b/.test(t)) {
+    out.push('used a "while the added X" clause to tack on a second player')
+  }
+  if (leagueType === 'redraft') {
+    // Deliberately NOT 'upside': in redraft that means this week's ceiling,
+    // which is exactly the right thing to talk about. Only terms that are
+    // meaningless without a next season belong here.
+    const dynastyTerms = [
+      'younger', 'youth', 'youthful', 'ascending', 'age curve',
+      'contention window', 'long-term', 'long term', 'win-now', 'rebuilding',
+      'future value', 'years of control',
+    ]
+    const hits = dynastyTerms.filter((w) => t.includes(w))
+    if (hits.length > 0) {
+      out.push(`used dynasty reasoning in a redraft league (${hits.join(', ')})`)
+    }
+  }
+  return out
+}
+
 export const FIRST_GRADED_SEASON = 2026
 
 // A verdict lands four weeks after the week the trade happened, not four
@@ -363,6 +419,37 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
       maxTokens: 2500,
     })
     parsed = result.data
+
+    // One corrective pass if the copy broke a rule the prompt already
+    // stated. Naming the specific violation back to the model works far
+    // better than restating the rule; a second failure is accepted rather
+    // than burning a third call, and stripDashes still cleans the dashes.
+    const violations = summaryViolations(String(parsed?.summary ?? ''), leagueType)
+    if (violations.length > 0) {
+      try {
+        const retry = await groqChatJson<typeof parsed>({
+          apiKey,
+          model: MODEL,
+          messages: [
+            { role: 'system', content: prompt.system },
+            { role: 'user', content: prompt.user },
+            { role: 'assistant', content: JSON.stringify(parsed) },
+            {
+              role: 'user',
+              content:
+                `That response broke these rules: ${violations.join('; ')}. ` +
+                'Rewrite the summary so it breaks none of them. Keep the same grades ' +
+                'unless the reasoning genuinely changes. Same strict JSON shape.',
+            },
+          ],
+          temperature: 0.4,
+          maxTokens: 2500,
+        })
+        if (retry.data?.summary) parsed = retry.data
+      } catch {
+        // Keep the first answer; it is imperfect, not broken.
+      }
+    }
   } catch (e) {
     const msg = e instanceof GroqError ? e.message : (e as Error).message
     warnings.push(`groq call for trade ${tradeId}: ${msg}`)
@@ -375,7 +462,7 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
   }
 
   // 6a. Write the trade-level summary first (one row update, not per-side).
-  const summary = (parsed.summary ?? '').toString().trim().slice(0, 1500)
+  const summary = stripDashes((parsed.summary ?? '').toString()).slice(0, 1500)
   if (summary) {
     const { error: sumErr } = await db
       .from('trades')
@@ -571,7 +658,7 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
   }
 
   const now = new Date().toISOString()
-  const summary = (parsed.summary ?? '').toString().trim().slice(0, 1500)
+  const summary = stripDashes((parsed.summary ?? '').toString()).slice(0, 1500)
   if (summary) {
     const { error: sumErr } = await db
       .from('trades')
@@ -845,7 +932,13 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       ? 'This is a DYNASTY league: weight long-term player value, draft picks (especially early-round), and youth heavily. Rest-of-season production matters less than future seasons.'
       : args.leagueType === 'keeper'
       ? 'This is a KEEPER league: players retained from year to year. Weight both rest-of-season production AND keeper value (cheap young talent is more valuable).'
-      : 'This is a REDRAFT league: only current-season value matters. Players reset every year. Draft picks (if present) are for next year only.'
+      : [
+          'This is a REDRAFT league: rosters reset every year and nobody keeps anyone.',
+          'Because of that, a player\'s age and long-term upside are WORTH NOTHING here. Acquiring a 23-year-old instead of a 27-year-old is not an advantage: the team only has him for this season either way.',
+          'NEVER credit or penalise a side for youth, age, "upside", "ascending", "win-now vs rebuilding", "contention window", or "long-term value". Those are dynasty concepts and do not exist in this league.',
+          'Age is worth mentioning ONLY as a durability or workload risk for the current season, and only when the player line actually flags an injury.',
+          'Grade purely on who scores more fantasy points for the rest of THIS season.',
+        ].join(' ')
 
   // Calibration matters: without explicit anchors the model tends to grade
   // every trade as a blowout (A on one side, D/F on the other). Real fantasy
@@ -875,7 +968,9 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '',
     '1. NEVER start with "The X won this trade", "X won the trade", or any variation of who-won-the-trade as the opening line. The user message names a LEAD ANGLE for this specific write-up: open from that angle, then broaden into the full rationale. Never open with a verdict statement.',
       '',
-      '2. The rationale must EXPLAIN THE GRADE. The reader can already see who received what from the asset list. Your job is to say WHY one side\'s package is worth more (or less, or even). Reference player tiers, age curves, opportunity, role, NFL team context, draft pick value if dynasty/keeper, positional scarcity. Be specific.',
+      args.leagueType === 'redraft'
+        ? '2. The rationale must EXPLAIN THE GRADE. The reader can already see who received what from the asset list. Your job is to say WHY one side\'s package is worth more (or less, or even) FOR THIS SEASON. Reference player tiers, weekly ceiling, opportunity and role, NFL team context, positional scarcity, and the receiving roster\'s depth at that position. Do not reference age, youth, or long-term upside.'
+        : '2. The rationale must EXPLAIN THE GRADE. The reader can already see who received what from the asset list. Your job is to say WHY one side\'s package is worth more (or less, or even). Reference player tiers, age curves, opportunity, role, NFL team context, draft pick value if dynasty/keeper, positional scarcity. Be specific.',
       '',
       '3. Vary sentence structure and vocabulary. Do not use the same opening template twice.',
       '',
@@ -886,6 +981,7 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '• "solid move" / "great trade for both" / "win-win" / "fair deal" as the verdict',
       '• Any sentence whose only purpose is to restate who received whom',
       '• The em dash character. Never use an em dash anywhere in your writing; use commas, periods, or parentheses instead.',
+      '• "while the added X is..." / "while the acquired X..." — do not tack a second player on with a "while the added" clause. Give that player their own sentence or leave them out.',
       '',
       'EXAMPLES. Study these carefully:',
       '',
@@ -906,7 +1002,7 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '  - One tier apart (RB8 vs RB22) → clear winner, A-/B range.',
       '  - Two+ tiers apart (RB4 vs RB28) → big swing, A/C+ or larger.',
       '• When BOTH sides acquired top-24 positional starters they can use, BOTH can earn A-range grades. A/A is correct when both teams hit a real need without overpaying. Mutual wins are real.',
-      '• Age matters more for dynasty/keeper than redraft. For dynasty: under-25 = ascending; 29+ = declining. Bump grades accordingly. For redraft: only current-year production matters.',
+      '• Age: for DYNASTY/KEEPER, under-25 = ascending and 29+ = declining, so bump grades accordingly. For REDRAFT, age is irrelevant to value and must not be cited as a reason for any grade; the roster resets in a year, so a younger player carries no premium.',
       '• Picks have no rank data: treat next-year 1st rounders as ~top-50 positional value, 2nds as ~top-100, 3rds as ~top-150, 4th+ as depth. Future-year picks (2027+) are worth ~70% of next-year picks.',
       '',
       'OUTPUT: strict JSON only, no prose before/after, no markdown fences. Shape:',
@@ -971,7 +1067,12 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
       ? 'This is a DYNASTY league: long-term value matters more than rest-of-season.'
       : args.leagueType === 'keeper'
       ? 'This is a KEEPER league: both rest-of-season and next-year value matter.'
-      : 'This is a REDRAFT league: only current-season value matters.'
+      : [
+          'This is a REDRAFT league: rosters reset every year and nobody keeps anyone.',
+          'A player\'s age and long-term upside are therefore worth nothing here.',
+          'Never credit or penalise a side for youth, "upside", "ascending", "contention window", or "long-term value"; those are dynasty concepts.',
+          'Judge only what each side has produced and will produce for the rest of THIS season.',
+        ].join(' ')
 
   const system =
     [

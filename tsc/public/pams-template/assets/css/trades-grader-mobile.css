@@ -740,3 +740,82 @@ body[data-trades-theme] .tr-page-sub {
     line-height: 1.5;
     color: var(--tg-mute);
 }
+
+/* ══ Card corrections ═══════════════════════════════════════════════════
+   Three fixes for desktop "cards"-theme rules leaking into this tree.
+   trades.css ships a walnut/cream theme whose selectors
+   (body[data-trades-theme="cards"] .x) carry the same specificity as this
+   sheet's (body[data-trades-theme] .x). This file loads later so it wins
+   ties, but only for properties it actually sets — anything it never
+   mentions falls through to the walnut theme. Both leaks below were
+   properties this sheet had no opinion on. */
+@media (max-width: 720px) {
+
+  /* 1 · The gold and coral bars.
+     cards theme draws a 28px full-width colour block above every side
+     (.tr-side::before, #c8a464 then #a04830). This sheet neutralised
+     ::after but never ::before, so the blocks survived and read as two
+     unexplained stripes. The side's colour is carried by its rail and
+     label instead. */
+  body[data-trades-theme] .tr-side::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  /* 2 · The brown grade panel.
+     cards theme sets .tr-grade { background: #2a1d11 } — walnut on a
+     cream card, which on this aubergine card is just a brown box. Also
+     drops its horizontal margins, which were pushing the row wider than
+     the card and clipping the letter. */
+  body[data-trades-theme] .tr-grade {
+    margin: .8rem 0 0 !important;
+    padding: .75rem 0 0 !important;
+    background: transparent !important;
+    color: inherit !important;
+    border-radius: 0 !important;
+    justify-content: flex-start !important;
+  }
+
+  /* 3 · One enclosure, two rooms.
+     Was: two free-floating panels. Now a single bordered block with a
+     dark break band between the sides, each side tagged by a rail in its
+     own colour — team A above the break, team B below. */
+  body[data-trades-theme] .tr-sides {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    /* The break area. The block's background shows through it. */
+    gap: 5px !important;
+    background: var(--tg-bg) !important;
+    border: 1px solid var(--tg-line) !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    margin: 0 1rem 1rem !important;
+  }
+  body[data-trades-theme] .tr-side {
+    border-left: 3px solid var(--side-accent) !important;
+    border-top: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  /* The dashed rule is redundant now the gap does the separating. */
+  body[data-trades-theme] .tr-side + .tr-side {
+    border-top: none !important;
+  }
+
+  /* 4 · Writeup last.
+     The markup order is head → summary → sides, so the grade explanation
+     landed above the teams it was explaining. Reordered visually rather
+     than in trades.js, which the desktop wire shares and already puts the
+     copy at the foot of its card. */
+  body[data-trades-theme] .tr-card {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  body[data-trades-theme] .tr-card-head { order: 1; }
+  body[data-trades-theme] .tr-sides     { order: 2; }
+  body[data-trades-theme] .tr-summary   { order: 3; }
+  body[data-trades-theme] .tr-summary {
+    border-bottom: none !important;
+    border-top: 1px solid var(--tg-line-soft) !important;
+  }
+}
