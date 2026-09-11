@@ -856,12 +856,13 @@ body[data-trades-theme] .tr-page-sub {
   body[data-trades-theme] .tr-side:nth-of-type(2) {
     background: #e9e1f2 !important;
     color: #2e2145 !important;
-    /* Lifted off A's exact background (#2a2140). Set to the literal same
-       value the two didn't read as a pair: 2px of a dark colour against
-       lavender carries far more weight than the same colour spread over a
-       whole panel, so B's edge looked like a hard outline while A's fill
-       looked soft. Same hue, lightened until they balance. */
-    --side-ring: #4b3a72;
+    /* A mid purple, deliberately between the two backgrounds it sits on:
+       lighter than the trade card behind it (#1f1830) and darker than its
+       own panel (#e9e1f2), so the edge is visible against both. Matching
+       A's background exactly (#2a2140) read as a hard black outline,
+       because 2px of a dark colour against lavender carries far more
+       weight than the same colour spread across a whole panel. */
+    --side-ring: #7a63ad;
   }
   body[data-trades-theme] .tr-side:nth-of-type(2) .tr-side-name { color: #2a1d42 !important; }
   body[data-trades-theme] .tr-side:nth-of-type(2) .tr-side-team { color: #6a5a88 !important; }

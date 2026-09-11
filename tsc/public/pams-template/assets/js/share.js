@@ -147,8 +147,18 @@
   // Rewire to this target and show the dialog. The pill's own handler is
   // what wire() binds, so clicking it is the one code path that opens the
   // dialog — hidden or not.
+  //
+  // The config is OPTIONAL. A page with only one thing worth sending (the
+  // Trade Grader, the Rumor Mill) calls open() bare and expects the
+  // server-injected __TSCShareConfig that bootFromConfig already wired.
+  // That used to hand wire() an undefined opts, which threw on
+  // `opts.ogPath` before reaching the dialog; the exception died inside
+  // the click handler, so the button did nothing at all. Only
+  // managers/all-time.html passed a config, which is why it was the one
+  // share control that worked.
   function open(opts) {
-    wire(opts);
+    var cfg = opts || window.__TSCShareConfig;
+    if (cfg) wire(cfg);
     var btn = document.getElementById('tsc-share-btn');
     if (btn) btn.click();
   }
