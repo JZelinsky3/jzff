@@ -754,45 +754,76 @@ body[data-trades-theme] .tr-page-sub {
     display: none !important;
   }
 
-  /* 2 · The brown grade panel.
-     cards theme sets .tr-grade { background: #2a1d11 } — walnut on a
-     cream card, which on this aubergine card is just a brown box. Also
-     drops its horizontal margins, which were pushing the row wider than
-     the card and clipping the letter. */
+  /* 2 · The grade panel.
+     The walnut theme paints this #2a1d11, a brown box on an aubergine
+     card. Keeping the box (it frames the verdict) and recolouring it to
+     the plum palette, rather than stripping it out. Each side gets a fill
+     that contrasts with ITS OWN surface, since side B is inverted below.
+     Horizontal margins dropped too: they pushed the row wider than the
+     card and clipped the letter. */
   body[data-trades-theme] .tr-grade {
-    margin: .8rem 0 0 !important;
-    padding: .75rem 0 0 !important;
-    background: transparent !important;
-    color: inherit !important;
-    border-radius: 0 !important;
-    justify-content: flex-start !important;
+    margin: .9rem 0 0 !important;
+    padding: .6rem .75rem !important;
+    background: var(--tg-card-head) !important;
+    color: var(--tg-text) !important;
+    border: 1px solid var(--tg-line) !important;
+    border-radius: 6px !important;
+    justify-content: space-between !important;
   }
+  body[data-trades-theme] .tr-grade::before { color: var(--tg-mute) !important; }
 
-  /* 3 · One enclosure, two rooms.
-     Was: two free-floating panels. Now a single bordered block with a
-     dark break band between the sides, each side tagged by a rail in its
-     own colour — team A above the break, team B below. */
+  /* 3 · Two cards, opposite surfaces.
+     Accent rails alone weren't enough: both sides still read as the same
+     panel. The two sides are now genuinely inverted — A keeps the dark
+     plum card, B is a light one — and they're separate cards with real
+     space between them rather than one enclosure. Nothing is labelled
+     "A" or "B"; the surfaces carry it. */
   body[data-trades-theme] .tr-sides {
     display: grid !important;
     grid-template-columns: 1fr !important;
-    /* The break area. The block's background shows through it. */
-    gap: 5px !important;
-    background: var(--tg-bg) !important;
-    border: 1px solid var(--tg-line) !important;
-    border-radius: 8px !important;
-    overflow: hidden !important;
-    margin: 0 1rem 1rem !important;
+    gap: 1rem !important;
+    background: transparent !important;
+    border: none !important;
+    margin: 0 1rem 1.1rem !important;
   }
   body[data-trades-theme] .tr-side {
+    border: 1px solid var(--tg-line) !important;
     border-left: 3px solid var(--side-accent) !important;
-    border-top: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .28) !important;
+    padding: 1rem !important;
   }
-  /* The dashed rule is redundant now the gap does the separating. */
-  body[data-trades-theme] .tr-side + .tr-side {
-    border-top: none !important;
+
+  /* Side A — the dark card. */
+  body[data-trades-theme] .tr-side:nth-of-type(1) {
+    background: var(--tg-card) !important;
   }
+
+  /* Side B — the inverse. Light surface, dark ink. Every child that
+     assumed a dark background has to be flipped or it disappears. */
+  body[data-trades-theme] .tr-side:nth-of-type(2) {
+    background: #e9e1f2 !important;
+    border-color: #cbbfe0 !important;
+    color: #1c1526 !important;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-side-name { color: #16101f !important; }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-side-team { color: #5b4f70 !important; }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-side-avatar {
+    border-color: #cbbfe0 !important;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-asset {
+    background: rgba(28, 21, 38, .05) !important;
+    border-color: rgba(28, 21, 38, .12) !important;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-asset-name { color: #16101f !important; }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-asset-pos,
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-asset-team { color: #6a5d80 !important; }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-grade {
+    background: rgba(28, 21, 38, .07) !important;
+    border-color: rgba(28, 21, 38, .14) !important;
+    color: #1c1526 !important;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-grade::before { color: #6a5d80 !important; }
 
   /* 4 · Writeup last.
      The markup order is head → summary → sides, so the grade explanation
@@ -806,8 +837,17 @@ body[data-trades-theme] .tr-page-sub {
   body[data-trades-theme] .tr-card-head { order: 1; }
   body[data-trades-theme] .tr-sides     { order: 2; }
   body[data-trades-theme] .tr-summary   { order: 3; }
+  /* The recap follows the light side-B card, so it needs to read as its
+     own section rather than colliding with the card above it. A labelled
+     rule plus breathing room does that; a bare border let the two blocks
+     run together. */
   body[data-trades-theme] .tr-summary {
-    border-bottom: none !important;
-    border-top: 1px solid var(--tg-line-soft) !important;
+    border: none !important;
+    border-top: 1px solid var(--tg-line) !important;
+    background: var(--tg-card-head) !important;
+    margin: 0 !important;
+    padding: 1.1rem 1.55rem 1.25rem !important;
+    color: var(--tg-text) !important;
   }
+  body[data-trades-theme] .tr-summary::before { top: .55rem; }
 }
