@@ -79,9 +79,29 @@ export function stripDashes(text: string): string {
 //
 // Dynasty vocabulary is only a violation in REDRAFT, where the roster
 // resets and youth is worth nothing. In dynasty it is the correct analysis.
-export function summaryViolations(text: string, leagueType: string): string[] {
+export function summaryViolations(
+  text: string,
+  leagueType: string,
+  // Player names each side RECEIVED in this trade, for the factual check
+  // below. Optional so existing callers keep working.
+  receivedNames: string[] = [],
+): string[] {
   const out: string[] = []
   const t = text.toLowerCase()
+
+  // "already had / already featured Tee Higgins" about a player acquired IN
+  // this trade. The roster context is now rewound to pre-trade so the data
+  // no longer suggests it, but the model still says it occasionally, and it
+  // is the single most confusing thing it can get wrong: it inverts who
+  // gave up whom. Cheap to detect because we know exactly who came in.
+  for (const name of receivedNames) {
+    const last = name.trim().split(/\s+/).slice(-1)[0]?.toLowerCase()
+    if (!last || last.length < 3) continue
+    const re = new RegExp(`already\\s+\\w*\\s*(had|has|held|rostered|featured|owned|carried|boasted)[^.]{0,60}${last}`, 'i')
+    if (re.test(text)) {
+      out.push(`claimed a side already had ${name}, who they RECEIVED in this trade`)
+    }
+  }
 
   if (/[\u2014\u2013]/.test(text)) out.push('used an em/en dash')
   if (/while the (added|acquired|included)\b/.test(t)) {
@@ -208,9 +228,25 @@ function consensusRankLabels(values: Map<string, ConsensusValue>): Map<string, s
 //
 // Returns Map<side_id, summary>. Sides whose manager can't be matched to
 // a live roster just get no summary line.
+// Roster context for each side, rewound to BEFORE this trade.
+//
+// data.rosters is the CURRENT roster, and for a trade that has already
+// executed that means the players acquired in it are sitting on the
+// receiving team. Handed to the model as "Current roster", it read them as
+// pre-existing depth and wrote things like "Goodhead already had a top-13
+// WR" about the exact player he had just traded for, then docked him for
+// buying a position he was supposedly already deep at.
+//
+// Rewinding is what makes the line mean what the prompt says it means:
+// drop what this side received, add back what it sent.
 function buildRosterSummaries(args: {
   data: AnalyzerLeagueData
-  sides: Array<{ side_id: string; manager_external_id: string | null }>
+  sides: Array<{
+    side_id: string
+    manager_external_id: string | null
+    receivedIds: string[]
+    sentIds: string[]
+  }>
   bundle: ValueBundle
 }): Map<string, string> {
   const POSITIONS = ['QB', 'RB', 'WR', 'TE'] as const
@@ -222,8 +258,14 @@ function buildRosterSummaries(args: {
     )
     if (!roster || roster.playerIds.length === 0) continue
 
+    const received = new Set(side.receivedIds)
+    const preTrade = roster.playerIds.filter((pid) => !received.has(pid))
+    for (const pid of side.sentIds) {
+      if (!preTrade.includes(pid)) preTrade.push(pid)
+    }
+
     const byPos = new Map<string, Array<{ value: number; label: string }>>()
-    for (const pid of roster.playerIds) {
+    for (const pid of preTrade) {
       const p = args.data.players[pid]
       const pos = (p?.position ?? '').toUpperCase()
       if (!(POSITIONS as readonly string[]).includes(pos)) continue
@@ -368,9 +410,20 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
         data: analyzerData,
         sides: sides.map((s) => {
           const mgr = Array.isArray(s.managers) ? s.managers[0] : s.managers
+          const own = ((s.assets as Array<Record<string, unknown>>) ?? [])
+            .map((a) => sidByAsset.get(a))
+            .filter((x): x is string => !!x)
+          // What this side SENT is what every other side received.
+          const others = sides
+            .filter((o) => o.id !== s.id)
+            .flatMap((o) => ((o.assets as Array<Record<string, unknown>>) ?? []))
+            .map((a) => sidByAsset.get(a))
+            .filter((x): x is string => !!x)
           return {
             side_id: s.id as string,
             manager_external_id: (mgr?.external_id as string | null) ?? null,
+            receivedIds: own,
+            sentIds: others,
           }
         }),
         bundle,
@@ -425,7 +478,12 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     // stated. Naming the specific violation back to the model works far
     // better than restating the rule; a second failure is accepted rather
     // than burning a third call, and stripDashes still cleans the dashes.
-    const violations = summaryViolations(String(parsed?.summary ?? ''), leagueType)
+    const receivedNames = sides.flatMap((sd) =>
+      ((sd.assets as Array<Record<string, unknown>>) ?? [])
+        .filter((a) => a.kind === 'player' && typeof a.name === 'string')
+        .map((a) => a.name as string),
+    )
+    const violations = summaryViolations(String(parsed?.summary ?? ''), leagueType, receivedNames)
     if (violations.length > 0) {
       try {
         const retry = await groqChatJson<typeof parsed>({
@@ -997,7 +1055,7 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '',
       'USING THE VALUE DATA + ROSTER CONTEXT:',
       '• Each player line shows the player\'s consensus position rank (e.g. "RB3" = the 3rd-most-valuable RB on the market), consensus market value, age, and injury status when known. Position rank is your primary anchor: a player with rank "RB12" is a strong starter; "RB48" is depth. Market value settles close calls: RB11 vs RB13 with near-equal values is a wash.',
-      '• Each side also has a "Current roster" line showing positional depth (e.g. "RB(4): McCaffrey (RB3), Hall (RB8), Mostert (RB42) +1 | WR(3): Chase (WR2)..."). Use this to weigh need: a side acquiring an RB while already deep at RB is paying retail; the same RB to a side thin at the position is a real win. NOTE: this is the current roster, which may differ from the at-trade roster for historical trades. When the trade is recent (within a week or two), trust the roster; for older trades, treat it as a rough proxy.',
+      '• Each side also has a "Roster BEFORE this trade" line showing positional depth (e.g. "RB(4): McCaffrey (RB3), Hall (RB8), Mostert (RB42) +1 | WR(3): Chase (WR2)..."). It is the roster as it stood BEFORE this deal: the players being received are NOT in it, and the players being sent still are. Use it to weigh need: a side acquiring an RB while already deep at RB is paying retail; the same RB to a side thin at the position is a real win. Never say a side "already had" a player they are receiving in this trade, and never count an incoming player as existing depth.',
       '• Tier reference: pos_rank 1-12 = elite starter at the position; 13-24 = solid starter; 25-48 = bye-week filler / handcuff; 49+ = deep depth / waiver.',
       '• PACKAGE SHAPE BEATS RAW TOTAL. Each side has a "Package:" line with its player count, total value, and best piece. Do NOT grade on total value alone. A lineup starts a fixed number of players, so consolidation wins: two starters worth 9000 combined beat three pieces worth 9000 combined, because the third piece rides the bench and contributes nothing on Sunday. If one side has the better BEST player and the totals are close, that side won. Only credit the quantity side when the receiving roster is genuinely thin enough to start those extra pieces (check its Current roster line), or when the total gap is large enough to outweigh the drop in top-end talent.',
       '• The reverse also holds: a side that turns one elite player into several mid pieces has usually lost, even at an even total, unless it had a glaring hole the depth actually fills.',
@@ -1019,7 +1077,7 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
         ? '  (nothing)'
         : s.assets.map((a) => `  - ${formatAssetWithValue(a, args.bundle, args.sidByAsset)}`).join('\n')
       const pkg = summarisePackage(s.assets, args.bundle, args.sidByAsset)
-      const roster = s.roster_summary ? `\n   Current roster: ${s.roster_summary}` : ''
+      const roster = s.roster_summary ? `\n   Roster BEFORE this trade: ${s.roster_summary}` : ''
       return `Side ${idx + 1}, ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}${pkg ? `\n${pkg}` : ''}${roster}`
     })
     .join('\n\n')
@@ -1124,7 +1182,7 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
         : s.assets.map((a) => `  - ${formatAssetWithValue(a, args.bundle, args.sidByAsset)}`).join('\n')
       const pkg = summarisePackage(s.assets, args.bundle, args.sidByAsset)
       const pkgLine = pkg ? `${pkg}\n` : ''
-      const rosterLine = s.roster_summary ? `   Current roster: ${s.roster_summary}\n` : ''
+      const rosterLine = s.roster_summary ? `   Roster BEFORE this trade: ${s.roster_summary}\n` : ''
       const originalGradeLine = s.original_grade ? `   Original grade: ${s.original_grade}\n` : ''
       return `Side ${idx + 1}, ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}\n${pkgLine}${rosterLine}${originalGradeLine}`
     })
