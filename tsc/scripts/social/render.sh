@@ -171,7 +171,7 @@ case "${1:-}" in
   pitch)
     shift
     SLIDES=("$@")
-    [ ${#SLIDES[@]} -eq 0 ] && SLIDES=($(seq 1 7))
+    [ ${#SLIDES[@]} -eq 0 ] && SLIDES=($(seq 1 5))
     echo "Rendering sign-up carousel:"
     for i in "${SLIDES[@]}"; do
       shot "file://$HERE/pitch.html?slide=$i" \

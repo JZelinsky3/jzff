@@ -10,6 +10,7 @@ instead of being one-off image files.
 | `cover.html` | the reusable cover for every other post, with a swappable section label and accent colour |
 | `offseason.html` | the eight-slide offseason carousel, six things to run before Week 1 |
 | `tour.html` | the fifteen-slide site tour, for somebody who has never heard of us |
+| `pitch.html` | the seven-slide sign-up carousel, for somebody who has to be sold |
 | `brand.css` | shared palette, surface layers and type roles, mirroring `src/styles/main.css` |
 | `render.sh` | renders to `out/` |
 
@@ -457,6 +458,149 @@ games that week, bars on a rail), never more prose.
 Every figure is invented and `CAST` is the same fictional twelve the
 offseason deck uses, so the two read as one imaginary league. **No
 real league, manager or team name goes on a public post.**
+
+---
+
+## The sign-up carousel
+
+```
+./render.sh pitch          # all five
+./render.sh pitch 3 4      # just those two, while iterating
+```
+
+Five slides for somebody who has to be **sold**. It keeps the tour's
+invented cast and its offer, and shares nothing else with it.
+
+| | | |
+|---|---|---|
+| 01 | the cover | main.css navy, chapters as coloured cards |
+| 02 | one record | records.html green felt + the cream plate |
+| 03 | one manager | manager.html navy + the cream index card |
+| 04 | one rivalry | rivalries black and red, the tale of the tape |
+| 05 | the offer | `30 days free`, `FIRST50` |
+
+### Nothing here was designed. It was lifted.
+
+The site is already built, so a post is a **crop of a real page**,
+the same way the OG link previews are. Every component in
+`pitch.html` is copied out of its source, class for class and token
+for token:
+
+| | |
+|---|---|
+| `.exh-plate` `.exh-value` `.exh-stamp` | `public/demo/records.html` |
+| `.id-card` `.fp-portrait` `.fp-stamp` `.fp-lede` `.agate-band` | `demo/managers/manager.html` |
+| `.plate` `.plate-slot` `.pdna-*` | `demo/managers/manager.html` |
+| `.rv-tape-*` | `demo/rivalries/index.html` |
+
+The board sets `font-size: 20px`, so the source's `rem` values scale
+to the artboard without being retyped. **If a component looks wrong,
+diff it against its source file** rather than tuning it here. If a
+new figure is needed, find the page that already draws it first.
+
+It does **not** copy `tour.html`'s stylesheet any more. It did for
+four cuts, and every one drifted back into being the tour, plus
+three bugs where an unscoped tour class (`.hd`, `.rec`) silently
+restyled something in here.
+
+## THE BRIEF
+
+**Read this before changing `pitch.html`. Every item on it has been
+asked for more than once.**
+
+1. **A slide carries modules from SEVERAL DIFFERENT PAGES.** Not one
+   page cropped. A standings block, a graded draft pick, a trade
+   ticket and a rivalry tape on one board, so a stranger sees four
+   things the site does in one image. This is the item that has been
+   missed the most; see "The rule that was not Joey's" below.
+2. **Lift, do not invent.** Every component comes out of the real
+   page, class for class and token for token, like the OG previews
+   do. Find the page that already draws it before drawing anything.
+3. **Figures go in cards.** No flat type on a flat field. A stat
+   lives in a plate, a felt card, a stamped index card, a tape row.
+4. **No dead air inside a card.** Space between cards is fine and
+   necessary. Inside one it reads as a mistake. If a card has room
+   left in it, it is missing a row, not missing padding.
+5. **Deep inside a module, not broad.** When a module is a manager,
+   a rivalry or a matchup, show ONE of them properly. A twelve-row
+   table of everybody says less than one filled card.
+6. **Vary the arrangement and the accent slide to slide** so five
+   boards do not read as one template.
+7. **Almost no copy.** A kicker, a title, and at most one short
+   line. The figures carry their own labels. No captions, no corner
+   notes, no paragraph across the foot.
+8. **Never promise what the site does not do.** No written weekly
+   recaps. No "why you lost". If it is not a real page, it is not on
+   a post.
+
+### The rule that was not Joey's
+
+For four rebuilds `pitch.html` carried this at the top of the file:
+
+> *"Every slide is a different page, so every slide is a different
+> colour."*
+
+Joey never said that. It came from welding the **tour's** rule
+("every chapter page declares its own ground", which is true of
+`tour.html`, where one slide genuinely is one chapter) onto his note
+about varying colour from slide to slide. The join is a
+non-sequitur: varying colour across a carousel never meant a board
+may only touch one page.
+
+Writing it into the file header is what made it survive. Every later
+pass reread it, obeyed it, and rebuilt the deck that had just been
+rejected, while reporting the box as ticked. **If a rule is in these
+files and not in the brief above, check it against Joey before
+following it.**
+
+The composition problem it was dodging has an answer: give the board
+one common ground, the site's own navy out of `main.css`, and let
+each module keep its own stock and accent as a card laid on it. The
+record keeps its cream plate and rust stamp, the rivalry its black
+and red, the draft its gold on near-black. The landing page and the
+Clubhouse already mix sections exactly that way, so it is still
+lifted rather than invented.
+
+### Two rules for working on this file
+
+* **Do not read the rendered PNGs back.** Render, and let Joey look.
+  Reading twenty slide images is the most expensive thing a session
+  can do and it is why the last one ran long.
+* **Targeted edits, not rewrites.** `pitch.html` is big. Patch the
+  block that is wrong.
+
+### Three implementation notes worth keeping
+
+**Card sizing.** A card is sized by its *content* and never
+stretches to fill a region: a stretched card spreads its own rows
+out and puts the gap in the one place it is not allowed. Leftover
+height is shared out between sections with
+`justify-content: space-between` on `.wrap.spread`. A single
+`margin-top: auto` is worse than none, because it collects all the
+slack into one hole in the middle of the sheet.
+
+**Holes mean missing modules.** Both gaps in the current deck were
+closed by adding content, never by spacing things out: slide 02 went
+from three record boards to nine, slide 03 gained the season and
+draft strips, slide 04 went to nine tape rows and ten rows a card.
+
+**Scale.** The board sets `font-size: 20px` so the source's `rem`
+values land at about 1.25x without being retyped. If a component
+looks wrong, diff it against its source file rather than tuning it
+here.
+
+### If a sheet has a hole in it, it is missing a module
+
+Both remaining gaps were closed by adding content, never by
+stretching what was there: slide 02 went from three record boards to
+nine, slide 03 gained the season-by-season and draft-grade strips,
+slide 04 went to nine tape rows and ten rows a card.
+
+### Names
+
+Every figure is invented and the cast is the same fictional twelve
+the tour and the offseason deck use. **No real league, manager or
+team name goes on a public post.**
 
 ---
 
