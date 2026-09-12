@@ -3,14 +3,25 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-// Three-button cluster for the Trade Grader.
-//   • Grade next 10    → grades ungraded trades only (skips already-graded)
-//   • Re-grade next 10 → force=true, overwrites existing grades (use after
-//                         the prompt has been tuned)
-//   • Verdict next 10  → runs the 4-week revisit on graded trades. Calls
-//                         /revisit-trades with eligibleOnly=false so you can
-//                         test the verdict section without waiting 4 weeks.
-// Each click grades 10 trades to stay under Vercel's serverless timeout.
+// Button cluster for the Trade Grader.
+//   • Grade     → grades ungraded trades only (skips already-graded)
+//   • Re-grade  → force=true, overwrites existing grades (use after the
+//                 prompt has been tuned)
+//   • Verdict   → runs the 4-week revisit on graded trades. Calls
+//                 /revisit-trades with eligibleOnly=false so you can test the
+//                 verdict section without waiting 4 weeks.
+//
+// HOW MANY is a control rather than a constant. It was pinned at 5, which
+// made tuning the prompt needlessly expensive: changing one line and wanting
+// to see its effect on the trade you just made meant re-grading four older
+// trades you did not care about, at ~5s of Groq pacing each, and overwriting
+// four good grades to inspect one.
+//
+// Candidates come back ordered by executed_at DESC and force mode takes the
+// first N, so a batch of 1 is exactly "the most recent trade" — no extra
+// server support needed for it. The cap stays small because every one of
+// these is a Groq call and the route has to finish inside maxDuration.
+const BATCH_SIZES = [1, 5, 10] as const
 
 // Turn the route's raw counters into something that reads like an outcome.
 //
@@ -50,6 +61,12 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
   const [warnings, setWarnings] = useState<string[]>([])
   const [showWarnings, setShowWarnings] = useState(false)
   const [lastAction, setLastAction] = useState<'grade' | 'regrade' | 'verdict' | 'refresh' | null>(null)
+  const [count, setCount] = useState<number>(5)
+
+  // "next 1" is a clumsy way to say what a batch of one actually does, and
+  // the distinction matters here: it is always the most recent trade, not an
+  // arbitrary one.
+  const nLabel = count === 1 ? 'latest' : `next ${count}`
 
   async function grade(force: boolean) {
     setState('working')
@@ -59,7 +76,7 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
       const res = await fetch(`/api/leagues/${leagueId}/grade-trades/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ limit: 5, force }),
+        body: JSON.stringify({ limit: count, force }),
       })
       const body = await res.json()
       if (!res.ok) {
@@ -109,7 +126,7 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
         headers: { 'Content-Type': 'application/json' },
         // eligibleOnly=false → revisit any graded trade regardless of age.
         // Lets you see the Verdict section populate without waiting.
-        body: JSON.stringify({ limit: 5, eligibleOnly: false }),
+        body: JSON.stringify({ limit: count, eligibleOnly: false }),
       })
       const body = await res.json()
       if (!res.ok) {
@@ -131,15 +148,41 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
 
   return (
     <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: '.5rem', maxWidth: '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem', fontSize: '.7rem', opacity: busy ? .5 : .75 }}>
+        <span style={{ letterSpacing: '.06em', textTransform: 'uppercase' }}>How many</span>
+        {BATCH_SIZES.map((n) => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => setCount(n)}
+            disabled={busy}
+            aria-pressed={count === n}
+            title={n === 1 ? 'Just the most recent trade' : `The ${n} most recent trades`}
+            style={{
+              padding: '.15rem .45rem',
+              fontSize: '.7rem',
+              lineHeight: 1.4,
+              cursor: busy ? 'default' : 'pointer',
+              background: count === n ? 'currentColor' : 'transparent',
+              color: count === n ? 'var(--dc-bg, #12100e)' : 'inherit',
+              border: '1px solid currentColor',
+              borderRadius: '2px',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
       <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
         <button onClick={() => grade(false)} disabled={busy} className="dc-btn">
-          {busy && lastAction === 'grade' ? 'Grading…' : 'Grade next 5 →'}
+          {busy && lastAction === 'grade' ? 'Grading…' : `Grade ${nLabel}`}
         </button>
         <button onClick={() => grade(true)} disabled={busy} className="dc-btn-ghost" title="Re-grade trades that already have grades (overwrites)">
-          {busy && lastAction === 'regrade' ? 'Re-grading…' : 'Re-grade next 5'}
+          {busy && lastAction === 'regrade' ? 'Re-grading…' : `Re-grade ${nLabel}`}
         </button>
         <button onClick={verdict} disabled={busy} className="dc-btn-ghost" title="Run the 4-week verdict on graded trades (test mode, no waiting)">
-          {busy && lastAction === 'verdict' ? 'Revisiting…' : 'Verdict next 5'}
+          {busy && lastAction === 'verdict' ? 'Revisiting…' : `Verdict ${nLabel}`}
         </button>
         <button onClick={refreshValues} disabled={busy} className="dc-btn-ghost" title="Pull the latest Sleeper player values into the grader. The weekly cron does this automatically; this button is for one-off testing.">
           {busy && lastAction === 'refresh' ? 'Refreshing…' : 'Refresh values'}
