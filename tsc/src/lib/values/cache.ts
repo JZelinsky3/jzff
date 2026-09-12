@@ -85,6 +85,21 @@ export function marketCache<T>(
   fetcher: () => Promise<T>,
   fresh?: boolean,
 ): Promise<T> {
-  if (fresh) return freshFetch(keyParts, fetcher)
-  return unstable_cache(fetcher, keyParts, { revalidate: MARKET_VALUE_TTL })()
+  const cached = () => unstable_cache(fetcher, keyParts, { revalidate: MARKET_VALUE_TTL })()
+  if (!fresh) return cached()
+  // Fresh, but never at the cost of a stable blend.
+  //
+  // A failed live pull used to mean the provider was simply dropped from the
+  // consensus for that run, because tryAttempt treats a throw as "no values".
+  // Browsing tolerates that. Grading does not: fewer sources is a DIFFERENT
+  // blend, so the anchor moves, and a player who fails to resolve at all also
+  // flags his side low-confidence, which widens how far the model may stray.
+  // The symptom was a trade re-grading to B, then B-, then C+ with nothing
+  // about it having changed, on a feature whose whole promise is that the
+  // same trade grades the same way twice.
+  //
+  // So a live pull that fails falls back to this provider's last cached
+  // value instead of vanishing. Fresh when it can be, last-known-good when
+  // it cannot, and the set of contributing sources stays constant either way.
+  return freshFetch(keyParts, fetcher).catch(() => cached())
 }

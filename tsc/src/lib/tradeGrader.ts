@@ -638,6 +638,12 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
       { fresh: true },
     )
     consensus = valuation.values
+    // A provider dropping out changes the blend, which moves the anchor,
+    // which moves the grade. Surface it rather than letting a trade quietly
+    // grade off four sources today and five tomorrow.
+    for (const a of valuation.attempts) {
+      if (!a.ok) warnings.push(`value source ${a.label} contributed nothing (${a.message ?? 'no reason given'}); the anchor was blended without it`)
+    }
   } catch (e) {
     warnings.push(`consensus values: ${(e as Error).message}`)
   }
@@ -874,6 +880,64 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
   // ai_summary is the prose. Existing rows with old per-side blurbs are
   // cleared on re-grade so the UI stays consistent.
   const sideIds = new Set(sides.map((s) => s.id as string))
+
+  // ── The model may move notches. It may NOT reorder the sides. ──────────
+  //
+  // The anchor is computed from the consensus values of what each side
+  // received, so its ORDERING is a fact about the trade: the side holding
+  // the more valuable package is ahead, full stop. How far ahead is a
+  // judgement call the model is allowed to shade by a notch or two. Which
+  // side is ahead is not.
+  //
+  // This is enforced here, in code, because three separate rounds of prompt
+  // rules failed to stop the same inversion. An injured star would be marked
+  // down in his live market value, the anchor would price that correctly,
+  // and the model would then dock the same side AGAIN for the injury it had
+  // just read on the player line, flipping the result:
+  //
+  //   anchor:  Charlie B+   Isaac B      (Charlie's package worth ~10% more)
+  //   model:   Charlie B    Isaac B+     (exactly inverted, one notch each)
+  //
+  // A prompt is a request. This is the guarantee. Any side the model placed
+  // below a side the anchor put beneath it is reset to its own anchor grade,
+  // which restores the true ordering while leaving every non-contradictory
+  // adjustment the model made intact.
+  const anchorsForClamp = computeGradeAnchors(
+    sides.map((s) => ({ side_id: s.id as string, assets: (s.assets as Array<Record<string, unknown>>) ?? [] })),
+    bundle,
+    sidByAsset,
+  )
+  const gradeRank = (g: string) => GRADE_SCALE.indexOf(g)
+  const modelGrades = new Map<string, string>()
+  for (const g of parsed.sides) {
+    if (sideIds.has(g.side_id) && (VALID_GRADES as readonly string[]).includes(g.grade)) {
+      modelGrades.set(g.side_id, g.grade)
+    }
+  }
+  const inverted = new Set<string>()
+  for (const [idA, gA] of modelGrades) {
+    for (const [idB, gB] of modelGrades) {
+      if (idA === idB) continue
+      const aA = anchorsForClamp.get(idA)?.grade
+      const aB = anchorsForClamp.get(idB)?.grade
+      if (!aA || !aB) continue
+      // A is anchored strictly above B, but the model put A at or below B.
+      if (gradeRank(aA) > gradeRank(aB) && gradeRank(gA) <= gradeRank(gB)) {
+        inverted.add(idA)
+        inverted.add(idB)
+      }
+    }
+  }
+  for (const id of inverted) {
+    const anchor = anchorsForClamp.get(id)?.grade
+    if (!anchor) continue
+    warnings.push(
+      `trade ${tradeId}: side ${id} graded ${modelGrades.get(id)} against an anchor of ${anchor}, ` +
+      'which reversed the value ordering; reset to the anchor',
+    )
+    modelGrades.set(id, anchor)
+  }
+
   let graded = 0
   for (const g of parsed.sides) {
     if (!sideIds.has(g.side_id)) {
@@ -887,7 +951,8 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     const { error: upErr } = await db.from('trade_grades').upsert(
       {
         trade_side_id: g.side_id,
-        grade: g.grade as Grade,
+        // Post-clamp value, so a reversed ordering never reaches the page.
+        grade: (modelGrades.get(g.side_id) ?? g.grade) as Grade,
         blurb: null,
         model: `groq:${MODEL}`,
         graded_at: new Date().toISOString(),
@@ -992,6 +1057,12 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
       { fresh: true },
     )
     consensus = valuation.values
+    // A provider dropping out changes the blend, which moves the anchor,
+    // which moves the grade. Surface it rather than letting a trade quietly
+    // grade off four sources today and five tomorrow.
+    for (const a of valuation.attempts) {
+      if (!a.ok) warnings.push(`value source ${a.label} contributed nothing (${a.message ?? 'no reason given'}); the anchor was blended without it`)
+    }
   } catch (e) {
     warnings.push(`consensus values: ${(e as Error).message}`)
   }
