@@ -1423,7 +1423,15 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       'GRADING SCALE (use only these grades): A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F.',
       '',
       'START FROM THE ANCHOR. Each side below carries an ANCHOR GRADE, computed from the consensus market values of what that side received, with pieces past the best one discounted (a lineup starts a fixed number of players). The anchor is the same on every run.',
-      '• Begin at the anchor and move off it only for a reason you can name in the write-up: roster fit, an injury on the player line, positional scarcity in this league.',
+      // "an injury on the player line" used to be listed here as a reason to
+      // move off the anchor. It was double-counting and it inverted trades:
+      // the consensus values are pulled LIVE at grading time, so an injured
+      // player is already marked down in the very number the anchor is built
+      // from. Letting the model dock the side a second time for the same
+      // fact meant the manager who acquired the higher-valued package could
+      // still be graded the loser, which is what happened the first time the
+      // injury detail got loud enough for the model to notice it.
+      '• Begin at the anchor and move off it only for a reason you can name in the write-up: roster fit, or positional scarcity in this league.',
       '• High-confidence anchor: you may move that side ONE notch, up or down. Low-confidence anchor: TWO notches.',
       '• Never re-derive a grade from scratch and never exceed the allowed movement. The same trade graded twice must produce the same grades, so if nothing in the data justifies moving, return the anchor.',
       '',
@@ -1507,9 +1515,11 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '• "on injured reserve" and "on the PUP list" mean an extended absence, so "out for some time" is fair. OUT means unavailable this week. DOUBTFUL and QUESTIONABLE mean week to week, and QUESTIONABLE in particular is a minor note, not a headline.',
       '• "injured, no game status listed" means a known injury with no official designation yet. Treat it as a real risk and say the status is unclear, rather than guessing at one.',
       '• A line reading "status:" rather than "injury:" is NOT an injury. A coach\'s decision, a personal matter or a suspension makes a player unavailable without anything being hurt. Never describe those as an injury or a knock.',
-      '• Do NOT re-grade for the injury on your own. The market values on the line already reflect the news, because they are pulled live at grading time. The injury explains the trade and belongs in the prose; it is not licence to move the grade a second time for the same fact.',
+      '• AN INJURY NEVER MOVES THE GRADE. The values on the player line are pulled live at grading time, so an injured player is ALREADY marked down in the number the anchor was built from. Docking that side again charges it twice for one fact. If the side holding the injured player still has the higher-valued package, that side still won the trade, and the write-up must say so while naming the injury as the risk attached to it. "He got hurt" is never a reason to flip, lower, or hedge a grade.',
       '• Each side also has a "Roster BEFORE this trade" line showing positional depth (e.g. "RB(4): McCaffrey (RB3), Hall (RB8), Mostert (RB42) +1 | WR(3): Chase (WR2)..."). It is the roster as it stood BEFORE this deal: the players being received are NOT in it, and the players being sent still are. Use it to weigh need: a side acquiring an RB while already deep at RB is paying retail; the same RB to a side thin at the position is a real win. Never say a side "already had" a player they are receiving in this trade, and never count an incoming player as existing depth.',
       '• Tier reference: pos_rank 1-12 = elite starter at the position; 13-24 = solid starter; 25-48 = bye-week filler / handcuff; 49+ = deep depth / waiver.',
+      '• TIER WORDS DESCRIBE A PLAYER, NOT A GAP. Those bands are where the numbers were cut, not cliffs in the players themselves. Two players at the same position within 5 ranks of each other are COMPARABLE and must be described that way: "a slightly lesser WR", "a small step down at RB", "close to a lateral move". Never place them in different classes because a band boundary happens to fall between them. RB12 and RB14 are two ranks apart, not a class apart, and calling one "proven" while calling the other "mid-tier" in the same sentence is a contradiction of the data you were given.',
+      '• Reserve tier language for gaps that are actually large: roughly 10 or more ranks at the position, or a starter traded for a bench piece. Describing a player in absolute terms is fine when nothing close is being compared to him ("no true RB1 in this deal"); using the bands to manufacture a gap between near-equal players is not.',
       '• PACKAGE SHAPE BEATS RAW TOTAL. Each side has a "Package:" line with its player count, total value, and best piece. Do NOT grade on total value alone. A lineup starts a fixed number of players, so consolidation wins: two starters worth 9000 combined beat three pieces worth 9000 combined, because the third piece rides the bench and contributes nothing on Sunday. If one side has the better BEST player and the totals are close, that side won. Only credit the quantity side when the receiving roster is genuinely thin enough to start those extra pieces (check its Current roster line), or when the total gap is large enough to outweigh the drop in top-end talent.',
       '• The reverse also holds: a side that turns one elite player into several mid pieces has usually lost, even at an even total, unless it had a glaring hole the depth actually fills.',
       '• Calibrate the grade gap to the rank gap:',
