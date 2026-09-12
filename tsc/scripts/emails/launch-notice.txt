@@ -15,38 +15,39 @@ Account Notice
 
 YOUR FREE ACCESS ENDS SEPTEMBER 17
 
-{{{FIRST_NAME|Hey}}}, Thursday September 17 is the last day of full access on
-your account.
+{{{FIRST_NAME|Hey}}}, Thursday, September 17th will be the last day of full
+access on your account.
 
-You signed up while this thing was half-built, found bugs nobody was paid to
-find, and used pages that changed under you without warning. That is most of
-the reason it works now. So you get the date a week early, instead of an email
-on the day telling you something already happened.
+Thank you for using our site while we were still building it. You helped us
+find bugs, test new pages, and understand what actually makes a league's
+history worth coming back to. We've made a lot of changes since the start, and
+we hope you'll stick around and keep using us as the season goes on.
 
 
 WHAT HAPPENS ON THE 17TH
 
-  Nothing is deleted. Not a season, not a draft.
-  Your almanac stays online, same address, still free.
-  You keep standings, rivalries, season archives, manager pages.
-  Pick'ems, power rankings, the live hub, records and drafts lock.
-  Free accounts keep one league. It all comes back if you subscribe.
+Nothing is deleted. Your almanac, season history, standings, rivalries, and
+manager profiles stay online and free, including the games.
+
+The live season features, including automatic syncing, pick'ems, power
+rankings, and weekly matchups, will move to paid plans. Free accounts will
+continue to support one league, and everything comes back if you subscribe.
 
 
-IF YOU WANT TO KEEP THE WHOLE THING
+IF YOU WANT TO KEEP FULL ACCESS
 
-Start a subscription by Sunday September 20 and your trial runs 30 days free
-instead of the usual 10. It does not start counting until the 17th, so the week
-you have left is not spent against it. Cancel before it ends and you are never
+Start a subscription by Sunday September 20th and you will receive a free 30
+day trial instead of the usual 10. It does not start until the 17th, so the
+week you have left is not wasted. Cancel before it ends and you won't be
 charged.
 
 
 ONE ASK
 
-Tap a star. That's the whole thing. It opens with your rating already filled
-in, so one tap is a finished review. Add a note if you feel like it. If
-something annoyed you, say that instead. I would rather know what is broken
-than collect five stars.
+Tap a star. That's the whole thing. If you have the time, a review would mean a
+lot to us and would make a real difference as we try to grow. If you've enjoyed
+using it, we'd really appreciate you taking a minute to share that with others.
+And if something didn't work properly for you, please let us know.
 
   1 star   https://thesundaychronicle.app/review?r=1&src=email
   2 stars  https://thesundaychronicle.app/review?r=2&src=email
@@ -57,7 +58,8 @@ than collect five stars.
 Or just hit reply. One line is fine.
 
 
-Week 1 is on. Go check your standings.
+Football is finally back! Wishing you a great season and good luck with your
+team(s).
 
 JZFF
 The Sunday Chronicle
