@@ -26,9 +26,12 @@ const schema = z.object({
   rating_navigation: star.nullish(),
   rating_speed: star.nullish(),
   rating_value: star.nullish(),
-  used_areas: z.array(z.string().trim().min(1).max(60)).max(20).nullish(),
-  favorite_area: z.string().trim().max(60).nullish(),
-  least_favorite_area: z.string().trim().max(60).nullish(),
+  // Favourite / least favourite, both multi-select over the same five
+  // section groups. The singular favorite_area / least_favorite_area columns
+  // they replace are still on the table and still hold the old rows; only
+  // the write path moved to arrays.
+  favorite_areas: z.array(z.string().trim().min(1).max(60)).max(20).nullish(),
+  least_favorite_areas: z.array(z.string().trim().min(1).max(60)).max(20).nullish(),
   wish: z.string().trim().max(3000).nullish(),
   best_part: z.string().trim().max(3000).nullish(),
   needs_work: z.string().trim().max(3000).nullish(),
@@ -77,10 +80,9 @@ async function notify(input: z.infer<typeof schema>, email: string | null): Prom
     `Design:      ${sub(input.rating_design)}`,
     `Navigation:  ${sub(input.rating_navigation)}`,
     `Speed:       ${sub(input.rating_speed)}`,
-    `Worth it:    ${sub(input.rating_value)}`,
-    `Used:        ${input.used_areas?.length ? input.used_areas.join(', ') : '(blank)'}`,
-    `Favorite:    ${input.favorite_area || '(blank)'}`,
-    `Least fav:   ${input.least_favorite_area || '(blank)'}`,
+    `Fair price:  ${sub(input.rating_value)}`,
+    `Favorite:    ${input.favorite_areas?.length ? input.favorite_areas.join(', ') : '(blank)'}`,
+    `Least fav:   ${input.least_favorite_areas?.length ? input.least_favorite_areas.join(', ') : '(blank)'}`,
     '',
     'BEST PART',
     input.best_part || '(blank)',
@@ -88,7 +90,7 @@ async function notify(input: z.infer<typeof schema>, email: string | null): Prom
     'NEEDS WORK',
     input.needs_work || '(blank)',
     '',
-    'MISSING / WANTED',
+    'WANTED ADDED',
     input.wish || '(blank)',
   ]
   try {
@@ -166,19 +168,36 @@ export async function POST(req: NextRequest): Promise<Response> {
     rating_navigation: input.rating_navigation ?? null,
     rating_speed: input.rating_speed ?? null,
     rating_value: input.rating_value ?? null,
-    used_areas: input.used_areas?.length ? input.used_areas : null,
-    favorite_area: input.favorite_area ?? null,
-    least_favorite_area: input.least_favorite_area ?? null,
     wish: input.wish ?? null,
   }
+  const grouped = {
+    favorite_areas: input.favorite_areas?.length ? input.favorite_areas : null,
+    least_favorite_areas: input.least_favorite_areas?.length ? input.least_favorite_areas : null,
+  }
+  // Same answers folded into the pre-0067 single-text columns, used only if
+  // the array columns aren't there yet.
+  const groupedLegacy = {
+    favorite_area: input.favorite_areas?.length ? input.favorite_areas.join(', ') : null,
+    least_favorite_area: input.least_favorite_areas?.length
+      ? input.least_favorite_areas.join(', ')
+      : null,
+  }
 
-  let { error } = await db.from('site_reviews').insert({ ...base, ...detail })
-  // If this deploy landed before migration 0065, the detail columns don't
-  // exist yet and the whole row is rejected. Save what the old schema can
-  // hold rather than losing the review: the overall rating and the prose are
-  // the parts worth keeping, and the full text still went out by email above.
-  if (error && (error.code === 'PGRST204' || error.code === '42703')) {
-    console.error('[review] detail columns missing — run migration 0065:', error.message)
+  // A column this deploy writes but the database doesn't have yet rejects the
+  // whole row, so each fallback drops the newest columns rather than the
+  // review: arrays first, then the legacy text pair, then the bare row the
+  // original schema can always hold. The full text went out by email above
+  // either way.
+  const missingColumn = (e: { code?: string } | null) =>
+    !!e && (e.code === 'PGRST204' || e.code === '42703')
+
+  let { error } = await db.from('site_reviews').insert({ ...base, ...detail, ...grouped })
+  if (missingColumn(error)) {
+    console.error('[review] area array columns missing — run migration 0067:', error!.message)
+    ;({ error } = await db.from('site_reviews').insert({ ...base, ...detail, ...groupedLegacy }))
+  }
+  if (missingColumn(error)) {
+    console.error('[review] detail columns missing — run migration 0065:', error!.message)
     ;({ error } = await db.from('site_reviews').insert(base))
   }
   if (error) {

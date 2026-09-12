@@ -22,8 +22,23 @@ export type PlayerValue = {
   age: number | null
   years_exp: number | null
   injury_status: string | null
+  // Sleeper's own words: 'Knee - Meniscus', 'Surgery'. Partial coverage, and
+  // NULL always means "Sleeper said nothing", never "healthy".
+  injury_body_part: string | null
+  injury_notes: string | null
   full_name: string | null
   updated_at: string
+}
+
+// Sleeper sends '' rather than null for some players, and an empty string is
+// not a designation. Tyreek Hill carried injury_status '' alongside a torn
+// ACL, which a plain truthiness check reads as a clean bill of health. Every
+// injury field goes through here so that can't happen field by field.
+function blankToNull(v: unknown): string | null {
+  if (typeof v !== 'string') return null
+  const t = v.trim()
+  if (t === '' || t.toLowerCase() === 'healthy') return null
+  return t
 }
 
 // Fantasy-relevant positions only. Sleeper's `fantasy_positions` array
@@ -88,6 +103,8 @@ export async function refreshSleeperPlayerValues(): Promise<{
     age?: number | null
     years_exp?: number | null
     injury_status?: string | null
+    injury_body_part?: string | null
+    injury_notes?: string | null
   }
   const now = new Date().toISOString()
   const rows: PlayerValue[] = []
@@ -102,7 +119,9 @@ export async function refreshSleeperPlayerValues(): Promise<{
       team: p.team ?? null,
       age: p.age ?? null,
       years_exp: p.years_exp ?? null,
-      injury_status: p.injury_status ?? null,
+      injury_status: blankToNull(p.injury_status),
+      injury_body_part: blankToNull(p.injury_body_part),
+      injury_notes: blankToNull(p.injury_notes),
       full_name: p.full_name ?? [p.first_name, p.last_name].filter(Boolean).join(' ') ?? null,
       updated_at: now,
     })
@@ -137,7 +156,7 @@ export async function getSleeperValuesForPlayerIds(
   const db = createAdminClient()
   const { data } = await db
     .from('player_values')
-    .select('player_id, source, overall_rank, position_rank, position, team, age, years_exp, injury_status, full_name, updated_at')
+    .select('player_id, source, overall_rank, position_rank, position, team, age, years_exp, injury_status, injury_body_part, injury_notes, full_name, updated_at')
     .eq('source', 'sleeper')
     .in('player_id', playerIds)
   const map = new Map<string, PlayerValue>()

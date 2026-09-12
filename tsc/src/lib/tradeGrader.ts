@@ -1497,6 +1497,17 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '',
       'USING THE VALUE DATA + ROSTER CONTEXT:',
       '• Each player line shows the player\'s consensus position rank (e.g. "RB3" = the 3rd-most-valuable RB on the market), consensus market value, age, and injury status when known. Position rank is your primary anchor: a player with rank "RB12" is a strong starter; "RB48" is depth. Market value settles close calls: RB11 vs RB13 with near-equal values is a wash.',
+      '',
+      'INJURIES. When a player line carries an "injury:" flag, that is current news and it is usually WHY the trade happened.',
+      '• If an injured player is one of the headline pieces, you MUST acknowledge the injury in the write-up. Describing a player who is OUT with a knee injury as simply "a top TE" is a failure, even when the grade itself is right.',
+      '• SAY WHAT IS WRONG. The parentheses on the line carry the body part and the nature of it. Use them: "out after knee surgery", "nursing a hamstring strain", "on IR with a foot injury". "Injured" on its own wastes the detail you were given.',
+      '• MATCH THE SPECIFICITY EXACTLY. Use the words on the line and do not sharpen them. "ankle, sprain" is an ankle sprain, NOT a high ankle sprain. "knee - meniscus, surgery" is knee surgery on the meniscus, NOT a meniscus trim or a repair. "knee" alone is a knee injury, NOT a torn ACL. Naming a more precise diagnosis than the line gives is inventing medical fact, and it reads exactly as authoritative as the real thing.',
+      '• "undisclosed" means the team did not say. Write it that way ("out with an undisclosed injury"); do not guess at a body part.',
+      '• AVAILABILITY, NOT TIMELINES. Keep it broad: "may miss some time", "could be out a while", "week to week", "unlikely to help this season". You may NOT invent a number of weeks, a return date, or a prognosis: no "out 4-6 weeks", no "expected back after the bye", no "season-ending" unless the line itself says so. There is no timeline in the data, so any timeline you write is fabricated.',
+      '• "on injured reserve" and "on the PUP list" mean an extended absence, so "out for some time" is fair. OUT means unavailable this week. DOUBTFUL and QUESTIONABLE mean week to week, and QUESTIONABLE in particular is a minor note, not a headline.',
+      '• "injured, no game status listed" means a known injury with no official designation yet. Treat it as a real risk and say the status is unclear, rather than guessing at one.',
+      '• A line reading "status:" rather than "injury:" is NOT an injury. A coach\'s decision, a personal matter or a suspension makes a player unavailable without anything being hurt. Never describe those as an injury or a knock.',
+      '• Do NOT re-grade for the injury on your own. The market values on the line already reflect the news, because they are pulled live at grading time. The injury explains the trade and belongs in the prose; it is not licence to move the grade a second time for the same fact.',
       '• Each side also has a "Roster BEFORE this trade" line showing positional depth (e.g. "RB(4): McCaffrey (RB3), Hall (RB8), Mostert (RB42) +1 | WR(3): Chase (WR2)..."). It is the roster as it stood BEFORE this deal: the players being received are NOT in it, and the players being sent still are. Use it to weigh need: a side acquiring an RB while already deep at RB is paying retail; the same RB to a side thin at the position is a real win. Never say a side "already had" a player they are receiving in this trade, and never count an incoming player as existing depth.',
       '• Tier reference: pos_rank 1-12 = elite starter at the position; 13-24 = solid starter; 25-48 = bye-week filler / handcuff; 49+ = deep depth / waiver.',
       '• PACKAGE SHAPE BEATS RAW TOTAL. Each side has a "Package:" line with its player count, total value, and best piece. Do NOT grade on total value alone. A lineup starts a fixed number of players, so consolidation wins: two starters worth 9000 combined beat three pieces worth 9000 combined, because the third piece rides the bench and contributes nothing on Sunday. If one side has the better BEST player and the totals are close, that side won. Only credit the quantity side when the receiving roster is genuinely thin enough to start those extra pieces (check its Current roster line), or when the total gap is large enough to outweigh the drop in top-end talent.',
@@ -1765,10 +1776,89 @@ function formatAssetWithValue(
   if (cv) traits.push(`market value ${cv.value}`)
   const age = cv?.age ?? meta?.age
   if (age != null) traits.push(`age ${age}`)
-  const injury = meta?.injury_status ?? null
-  if (injury && injury !== 'Healthy') traits.push(`injury: ${injury}`)
+  const injury = formatInjury(meta)
+  if (injury) traits.push(injury)
   if (traits.length === 0) return `${name}, ${pos} on ${team} (no value data)`
   return `${name}, ${pos} on ${team}, ${traits.join(', ')}`
+}
+
+// Sleeper's designations are abbreviations aimed at an app UI, not at a
+// reader. 'PUP' and 'DNR' mean nothing to a language model that has to turn
+// them into a sentence, and a model that half-knows an abbreviation will
+// confidently invent what it stands for. Spell them out here so the prompt
+// never has to guess.
+const INJURY_LABELS: Record<string, string> = {
+  ir: 'on injured reserve',
+  // No inline gloss for PUP: the detail is already parenthesised, and
+  // "on the PUP list (physically unable to perform) (ankle)" reads as a bug.
+  // The prompt explains what PUP means instead.
+  pup: 'on the PUP list',
+  out: 'OUT',
+  doubtful: 'DOUBTFUL',
+  questionable: 'QUESTIONABLE',
+  sus: 'suspended',
+  na: 'not active',
+  dnr: 'did not report',
+  cov: 'on the COVID list',
+}
+
+// Sleeper files non-medical absences in the same field as injuries. A healthy
+// scratch, a personal matter and a suspension are all reasons a player is
+// unavailable, and none of them are injuries. Labelling them "injury:" would
+// invite the write-up to invent a knock that doesn't exist.
+const NON_MEDICAL_REASONS = new Set([
+  "coach's decision",
+  'coaches decision',
+  'personal',
+  'suspension',
+  'not injury related',
+])
+
+// Render whatever availability signal exists into one phrase.
+//
+// The status alone is not the test. Sleeper leaves injury_status blank on
+// players who are plainly hurt (a torn ACL with an empty designation), so a
+// body part or a note is treated as a flag in its own right.
+//
+// The phrase reports Sleeper's own words and adds nothing. That is a real
+// constraint on how specific this can be, and it is worth naming: across the
+// league, injury_notes only ever takes five values (Surgery, Sprain, Strain,
+// Soreness, Fracture), and body parts are mostly bare ("Knee", "Ankle",
+// "Undisclosed") with occasional detail ("Knee - Meniscus", "Knee - ACL").
+// So "ankle sprain" is sayable and "high ankle sprain" is not; "knee surgery"
+// is sayable and "meniscus trim" is not. The prompt forbids upgrading one
+// into the other, because a fabricated diagnosis reads exactly as
+// authoritative as a sourced one.
+function formatInjury(meta: PlayerValue | undefined): string | null {
+  if (!meta) return null
+  const clean = (v: string | null | undefined): string | null => {
+    const t = (v ?? '').trim()
+    return t === '' || t.toLowerCase() === 'healthy' ? null : t
+  }
+  const status = clean(meta.injury_status)
+  const bodyPart = clean(meta.injury_body_part)
+  const notes = clean(meta.injury_notes)
+  if (!status && !bodyPart && !notes) return null
+
+  const label = status ? INJURY_LABELS[status.toLowerCase()] ?? status : null
+  const nonMedical = bodyPart != null && NON_MEDICAL_REASONS.has(bodyPart.toLowerCase())
+  // No designation but a known injury: say so rather than implying he is
+  // available, and rather than inventing a status Sleeper did not give.
+  const head = label ?? (nonMedical ? 'unavailable' : 'injured, no game status listed')
+
+  // Lowercased so it reads as prose inside the line rather than as a field
+  // dump, and de-duplicated: 'Sus' + 'Suspension' would otherwise render as
+  // "suspended (suspension)".
+  const detailParts = [bodyPart, notes]
+    .filter((p): p is string => !!p)
+    .map((p) => p.toLowerCase())
+    .filter((p) => !head.toLowerCase().includes(p))
+  const detail = detailParts.join(', ')
+
+  if (nonMedical) {
+    return detail ? `status: ${head} (${detail}, not an injury)` : `status: ${head} (not an injury)`
+  }
+  return detail ? `injury: ${head} (${detail})` : `injury: ${head}`
 }
 
 function ordinal(n: number): string {

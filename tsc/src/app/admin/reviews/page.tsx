@@ -22,8 +22,12 @@ type ReviewRow = {
   rating_speed: number | null
   rating_value: number | null
   used_areas: string[] | null
+  // Singular columns are pre-0067 rows; the arrays are what the form writes
+  // now. Read through `favs()` / `leasts()` rather than either one directly.
   favorite_area: string | null
   least_favorite_area: string | null
+  favorite_areas: string[] | null
+  least_favorite_areas: string[] | null
   wish: string | null
   best_part: string | null
   needs_work: string | null
@@ -38,8 +42,14 @@ const ASPECTS = [
   { col: 'rating_design', label: 'Design' },
   { col: 'rating_navigation', label: 'Getting around' },
   { col: 'rating_speed', label: 'Speed' },
-  { col: 'rating_value', label: 'Worth paying for' },
+  { col: 'rating_value', label: 'Fair price' },
 ] as const
+
+// Favourite / least favourite per row, new array column first and the
+// pre-0067 single-text column as the fallback.
+const favs = (r: ReviewRow) => r.favorite_areas ?? (r.favorite_area ? [r.favorite_area] : [])
+const leasts = (r: ReviewRow) =>
+  r.least_favorite_areas ?? (r.least_favorite_area ? [r.least_favorite_area] : [])
 
 const ADMIN_TZ = 'America/New_York'
 function fmt(iso: string) {
@@ -71,7 +81,7 @@ export default async function AdminReviewsPage() {
   const db = createAdminClient()
   const { data } = await db
     .from('site_reviews')
-    .select('id, created_at, email, rating, rating_design, rating_navigation, rating_speed, rating_value, used_areas, favorite_area, least_favorite_area, wish, best_part, needs_work, can_quote, quote_name, source')
+    .select('id, created_at, email, rating, rating_design, rating_navigation, rating_speed, rating_value, used_areas, favorite_area, least_favorite_area, favorite_areas, least_favorite_areas, wish, best_part, needs_work, can_quote, quote_name, source')
     .order('created_at', { ascending: false })
   const reviews = (data ?? []) as ReviewRow[]
 
@@ -106,8 +116,8 @@ export default async function AdminReviewsPage() {
   }
   for (const r of reviews) {
     for (const a of r.used_areas ?? []) bump(a, 'used')
-    if (r.favorite_area) bump(r.favorite_area, 'best')
-    if (r.least_favorite_area) bump(r.least_favorite_area, 'worst')
+    for (const a of favs(r)) bump(a, 'best')
+    for (const a of leasts(r)) bump(a, 'worst')
   }
   const areas = [...tally.entries()].sort(
     (a, b) => (b[1].used + b[1].best + b[1].worst) - (a[1].used + a[1].best + a[1].worst),
@@ -232,7 +242,7 @@ export default async function AdminReviewsPage() {
                     </td>
                     <td style={{ ...td, minWidth: 150 }}>
                       {ASPECTS.every(({ col }) => r[col] == null) && !r.used_areas?.length
-                        && !r.favorite_area && !r.least_favorite_area ? '·' : (
+                        && !favs(r).length && !leasts(r).length ? '·' : (
                         <>
                           {ASPECTS.filter(({ col }) => r[col] != null).map(({ col, label }) => (
                             <div key={col} style={{ whiteSpace: 'nowrap', fontSize: '.74rem' }}>
@@ -247,14 +257,14 @@ export default async function AdminReviewsPage() {
                               {r.used_areas.join(' · ')}
                             </div>
                           )}
-                          {r.favorite_area && (
+                          {!!favs(r).length && (
                             <div style={{ fontSize: '.68rem', marginTop: '.2rem', color: 'var(--gold)' }}>
-                              ♥ {r.favorite_area}
+                              ♥ {favs(r).join(' · ')}
                             </div>
                           )}
-                          {r.least_favorite_area && (
+                          {!!leasts(r).length && (
                             <div style={{ fontSize: '.68rem', marginTop: '.1rem', color: 'var(--rust, #a04830)' }}>
-                              ✗ {r.least_favorite_area}
+                              ✗ {leasts(r).join(' · ')}
                             </div>
                           )}
                         </>

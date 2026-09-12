@@ -223,7 +223,9 @@
 
   // ── Rendering ───────────────────────────────────────────────────────
   function renderModePill() {
-    if (!state.data) return;
+    // Mobile drops the settings line entirely — the settings still drive the
+    // grade, they just aren't printed under the hero.
+    if (!state.data || !modePill) return;
     var eff = state.data.effective;
     var parts = [
       (eff.mode || 'redraft').toUpperCase(),
