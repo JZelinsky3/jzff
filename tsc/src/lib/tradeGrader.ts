@@ -1533,6 +1533,12 @@ function weighPackage(values: number[]): number {
 // Carried out purely so a grading run can SHOW its work: the anchor was
 // previously invisible, which meant a disagreement about why a trade graded
 // the way it did could only be settled by guessing at the inputs.
+// How much of the raw starter-value swing carries into the grade. 1.0 is
+// the Analyzer's own sensitivity; lower compresses toward the middle. See
+// the note at the grading call for why a grade is damped and a quick
+// what-if in the Analyzer is not.
+const LINEUP_SENSITIVITY = 0.5
+
 type GradeAnchor = { grade: string; confident: boolean; eff: number; basis: 'lineup' | 'package'; detail?: string }
 
 // Roster context for the LINEUP basis. Without it the anchor falls back to
@@ -1586,13 +1592,24 @@ function computeGradeAnchors(
     if (usable) {
       for (const st of staged) {
         // Same rubric the Analyzer locks its grades to, so the two agree by
-        // construction rather than by coincidence of tuning.
+        // construction rather than by coincidence of tuning, but damped.
+        //
+        // The delta is a swing in the MARKET VALUE of your starters, and
+        // value is not linear in points. Losing an elite TE for a
+        // replacement one is a big value drop and a much smaller weekly
+        // scoring drop, because the replacement still plays and still
+        // scores. Graded raw, that read as a C for a side that had merely
+        // gotten worse, on a permanent public record of somebody's trade.
+        // Halving the swing keeps the ordering and the shape exactly as the
+        // Analyzer has them while pulling the letters back toward the middle
+        // where real trades live. The Analyzer stays the sharper instrument;
+        // it costs nothing to be wrong there.
         out.set(st.side_id, {
-          grade: gradeStarter(st.pct),
+          grade: gradeStarter(st.pct * LINEUP_SENSITIVITY),
           confident: true,
           eff: st.after,
           basis: 'lineup',
-          detail: `starters ${Math.round(st.before)} -> ${Math.round(st.after)}, ${(st.pct * 100).toFixed(1)}%`,
+          detail: `starters ${Math.round(st.before)} -> ${Math.round(st.after)}, ${(st.pct * 100).toFixed(1)}% raw / ${(st.pct * LINEUP_SENSITIVITY * 100).toFixed(1)}% graded`,
         })
       }
       return out
@@ -1792,6 +1809,7 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       'PLAIN VERBS. Use lands, adds, gets, acquires, sends, gives up. Do NOT reach for showy synonyms: "snaps up", "scoops up", "snags", "nabs", "snares", "poaches", "swipes", "reels in", "hauls in", "pries away", "plucks", "swoops for" and "inks" are all banned. If a reader has to stop and work out what a verb means, it was the wrong verb.',
       '',
       'RANKS AND TIERS ARE GIVEN, NOT GUESSED. Every player line carries a consensus position rank and market value. The better-ranked / higher-valued player is the better asset, full stop. Never call a player "mid-tier", "a depth piece", "a downgrade" or similar when the data on his line outranks the player he is being compared to. If you describe a swap at one position, the higher-ranked player must be the one described as the better side of it.',
+      'DIRECTION WORDS. "Flips", "deals away", "ships", "sends", "gives up", "moves on from" and "sheds" all describe what a side GAVE UP. Never use one for a player that side RECEIVED. "Charlie flips an injured TE" is wrong when Charlie is the one who acquired the injured TE; he flipped the pieces he sent to get him. If you are unsure which direction a verb runs, use plain "gets" and "gives up" instead.',
       'HOW TO WRITE A RANK. Never write the word "rank" inside parentheses. "a top-tier RB (rank RB12)" is wrong; it is "(RB12)". Better still, fold the rank into the noun and drop the parentheses entirely: write "a busted TE2", "a steady RB12", "a WR15 who starts most weeks". Only keep the parenthetical when you have already described the player in words and the number adds something the words did not, and even then use the bare form. Never attach a parenthetical rank to every player in the sentence: it reads like a spreadsheet, not a paragraph.',
       '',
       'NAME A RANK ONCE. The two asset lists are two halves of ONE exchange: a player arriving on one side is a player the other side gave up, and the reader can see that from the lists. So cite a position rank at most ONCE per player, on the side that RECEIVED him. When the same player comes up again from the other side\'s point of view, use words instead of the number: "the top-end receiver they gave up", "their RB1", "the back end of their backfield". Never print the same rank label twice in one write-up, and never spend a sentence telling the reader that the side who gave a player up no longer has him.',
@@ -1832,7 +1850,17 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '• A line reading "status:" rather than "injury:" is NOT an injury. A coach\'s decision, a personal matter or a suspension makes a player unavailable without anything being hurt. Never describe those as an injury or a knock.',
       '• AN INJURY NEVER MOVES THE GRADE. The values on the player line are pulled live at grading time, so an injured player is ALREADY marked down in the number the anchor was built from. Docking that side again charges it twice for one fact. If the side holding the injured player still has the higher-valued package, that side still won the trade, and the write-up must say so while naming the injury as the risk attached to it. "He got hurt" is never a reason to flip, lower, or hedge a grade.',
       '• Each side also has a "Roster BEFORE this trade" line showing positional depth (e.g. "RB(4): McCaffrey (RB3), Hall (RB8), Mostert (RB42) +1 | WR(3): Chase (WR2)..."). It is the roster as it stood BEFORE this deal: the players being received are NOT in it, and the players being sent still are. Use it to weigh need: a side acquiring an RB while already deep at RB is paying retail; the same RB to a side thin at the position is a real win. Never say a side "already had" a player they are receiving in this trade, and never count an incoming player as existing depth.',
-      '• Tier reference: pos_rank 1-12 = elite starter at the position; 13-24 = solid starter; 25-48 = bye-week filler / handcuff; 49+ = deep depth / waiver.',
+      // The old single band (1-12 elite, for every position) was wrong for
+      // the one-starter positions and produced a real factual error: it let
+      // a TE13 be described as a "premium TE". A league starting one TE has
+      // exactly twelve starting tight ends in it, so TE13 is by definition
+      // the first man who does NOT start. Elite at a one-slot position is a
+      // far narrower thing than elite at a position you start two or three
+      // of, and the bands have to say so.
+      '• TIER REFERENCE, AND IT DIFFERS BY POSITION. How many of a position a lineup starts changes what a rank means.',
+      '  - RB and WR (you start two or three, plus flex): 1-12 elite, 13-24 solid starter, 25-48 bye-week filler / handcuff, 49+ deep depth / waiver.',
+      '  - QB and TE (you start ONE): 1-5 elite, 6-12 starter, 13-24 replacement level / streamer, 25+ waiver. A twelve-team league starts twelve tight ends, so TE13 is the first tight end who does not start for anybody.',
+      '• "Premium", "elite" and "top-tier" at QB or TE mean TOP FIVE. Never apply them to a TE or QB ranked outside it: a TE13 is replacement level, and calling him premium is a factual error, not a stylistic one. At RB and WR those same words mean top twelve.',
       '• TIER WORDS DESCRIBE A PLAYER, NOT A GAP. Those bands are where the numbers were cut, not cliffs in the players themselves. Two players at the same position within 5 ranks of each other are COMPARABLE and must be described that way: "a slightly lesser WR", "a small step down at RB", "close to a lateral move". Never place them in different classes because a band boundary happens to fall between them. RB12 and RB14 are two ranks apart, not a class apart, and calling one "proven" while calling the other "mid-tier" in the same sentence is a contradiction of the data you were given.',
       '• Reserve tier language for gaps that are actually large: roughly 10 or more ranks at the position, or a starter traded for a bench piece. Describing a player in absolute terms is fine when nothing close is being compared to him ("no true RB1 in this deal"); using the bands to manufacture a gap between near-equal players is not.',
       '• PACKAGE SHAPE BEATS RAW TOTAL. Each side has a "Package:" line with its player count, total value, and best piece. Do NOT grade on total value alone. A lineup starts a fixed number of players, so consolidation wins: two starters worth 9000 combined beat three pieces worth 9000 combined, because the third piece rides the bench and contributes nothing on Sunday. If one side has the better BEST player and the totals are close, that side won. Only credit the quantity side when the receiving roster is genuinely thin enough to start those extra pieces (check its Current roster line), or when the total gap is large enough to outweigh the drop in top-end talent.',
