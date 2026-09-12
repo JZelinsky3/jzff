@@ -1,12 +1,20 @@
-// Vercel Cron — weekly player value refresh.
+// Cron — daily player value refresh.
 //
 // Pulls the full Sleeper /players/nfl dictionary, derives position ranks,
 // and upserts everything into player_values. The trade grader joins this
 // table at grade time to anchor its rationales in real numbers instead
 // of vibes.
 //
-// Schedule: Mondays at 13:00 UTC (~9 AM ET, after the NFL Sunday/Monday
-// slate so the next-week value shifts have settled). See vercel.json.
+// Schedule: daily, immediately after refresh-sleeper-players and before
+// grade-trades. See .github/workflows/cron.yml.
+//
+// This used to run weekly, on Mondays, which quietly made every trade grade
+// up to seven days behind on injuries. The dictionary underneath it already
+// refreshed daily; this job was the only thing standing between that fresh
+// data and player_values, so a player who had surgery on Wednesday was still
+// described as healthy in grades written through Sunday. It is a dictionary
+// read plus a chunked upsert against data we already hold, with no
+// third-party rate limit in play, so daily costs essentially nothing.
 //
 // Auth: when CRON_SECRET is set in env, Vercel sends it as a Bearer token.
 // We reject anything else so the endpoint isn't a free DoS surface.

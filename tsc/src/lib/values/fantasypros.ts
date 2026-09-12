@@ -25,6 +25,7 @@ import { type SleeperPlayer } from '@/lib/platforms/sleeper'
 import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 import { applyNameAliases } from './nameAliases'
 import type { LeagueValuationContext, PlayerValue, ValueSource } from './types'
+import { MARKET_VALUE_TTL } from './cache'
 
 const FP_URL_DYNASTY = 'https://www.fantasypros.com/nfl/rankings/dynasty-overall.php'
 const FP_URL_ROS_PPR = 'https://www.fantasypros.com/nfl/rankings/ros-ppr-overall.php'
@@ -133,7 +134,7 @@ function cachedFp(kind: 'dynasty' | 'ros'): Promise<FpEcrData> {
   return unstable_cache(
     () => fetchFp(url),
     ['fantasypros-ecr', 'v1', kind],
-    { revalidate: 12 * 60 * 60 },
+    { revalidate: MARKET_VALUE_TTL },
   )()
 }
 

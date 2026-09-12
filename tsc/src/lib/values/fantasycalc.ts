@@ -14,6 +14,7 @@
 
 import { unstable_cache } from 'next/cache'
 import type { LeagueValuationContext, PlayerValue, ValueSource } from './types'
+import { MARKET_VALUE_TTL } from './cache'
 
 const BASE = 'https://api.fantasycalc.com/values/current'
 
@@ -49,12 +50,13 @@ async function fetchValues(isDynasty: boolean, numQbs: number, numTeams: number,
   return json
 }
 
-// Cache 12h. FC updates daily; 12h is the freshness/cost sweet spot.
+// Cached at the shared market TTL (see ./cache). FC recomputes off real
+// trades continuously, so a shorter window genuinely buys fresher numbers.
 function cachedFetch(isDynasty: boolean, numQbs: number, numTeams: number, ppr: number): Promise<FCEntry[]> {
   return unstable_cache(
     () => fetchValues(isDynasty, numQbs, numTeams, ppr),
     ['fantasycalc-values', 'v2', String(isDynasty), String(numQbs), String(numTeams), String(ppr)],
-    { revalidate: 12 * 60 * 60 },
+    { revalidate: MARKET_VALUE_TTL },
   )()
 }
 

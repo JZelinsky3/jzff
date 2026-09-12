@@ -26,6 +26,7 @@ import { type SleeperPlayer } from '@/lib/platforms/sleeper'
 import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 import { applyNameAliases } from './nameAliases'
 import type { LeagueValuationContext, PlayerValue, ValueSource } from './types'
+import { MARKET_VALUE_TTL } from './cache'
 
 const KTC_DYNASTY_URL = 'https://keeptradecut.com/dynasty-rankings'
 
@@ -165,7 +166,7 @@ function cachedKtc(): Promise<RawKTC[]> {
   return unstable_cache(
     () => (useOverride ? fetchKtcOverride() : fetchKtcScrape()),
     ['ktc-values', 'v2', useOverride ? 'override' : 'scrape'],
-    { revalidate: 12 * 60 * 60 },
+    { revalidate: MARKET_VALUE_TTL },
   )()
 }
 

@@ -15,6 +15,7 @@
 // Cached 12h to match the other Sleeper-flavored caches in the app.
 
 import { unstable_cache } from 'next/cache'
+import { MARKET_VALUE_TTL } from './cache'
 
 const SLEEPER_PROJ_URL = (year: number) =>
   `https://api.sleeper.com/projections/nfl/${year}?season_type=regular`
@@ -86,7 +87,7 @@ const cachedYear = (year: number) =>
   unstable_cache(
     () => fetchAndShape(year),
     ['sleeper-projections', 'v2', String(year)],
-    { revalidate: 12 * 60 * 60 },
+    { revalidate: MARKET_VALUE_TTL },
   )
 
 export async function getProjectionsForYear(year: number): Promise<CachedProjectionMap> {

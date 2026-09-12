@@ -30,6 +30,7 @@ import { type SleeperPlayer } from '@/lib/platforms/sleeper'
 import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 import { applyNameAliases } from './nameAliases'
 import type { LeagueValuationContext, PlayerValue, ValueSource } from './types'
+import { MARKET_VALUE_TTL } from './cache'
 
 const FFC_BASE = 'https://fantasyfootballcalculator.com/api/v1/adp'
 
@@ -134,7 +135,7 @@ function cachedFfc(format: string, teams: number): Promise<FfcPlayer[]> {
   return unstable_cache(
     () => fetchFfcWithFallback(format, teams),
     ['ffc-adp', 'v1', format, String(teams)],
-    { revalidate: 12 * 60 * 60 },
+    { revalidate: MARKET_VALUE_TTL },
   )()
 }
 

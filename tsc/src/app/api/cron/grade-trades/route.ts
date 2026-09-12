@@ -1,9 +1,9 @@
-// Vercel Cron — daily automatic trade grading + 4-week revisits.
+// Cron — daily automatic trade grading + 4-week revisits.
 //
 // This is how grades happen in production: no buttons. Any ungraded trade
 // from FIRST_GRADED_SEASON (2026) on gets a grade on the next daily run, so
-// a Tuesday-night trade is marked up by Wednesday morning and a preseason
-// trade is marked up the day after it clears. Old archives imported with a
+// a trade is marked up within a day of being made and a preseason trade is
+// marked up the day after it clears. Old archives imported with a
 // new league are deliberately left alone: the season floor is the guard, so
 // imported history never picks up a grade even if a backfill or re-import
 // gives it a recent timestamp.
@@ -21,8 +21,12 @@
 // loop; MAX_GRADES + MAX_REVISITS keep the whole run safely inside
 // maxDuration. A backlog simply drains across consecutive days.
 //
-// Schedule: daily 14:00 UTC (see vercel.json), after the Monday value
-// refresh so grades quote fresh ranks.
+// Schedule: last step of the daily chain in .github/workflows/cron.yml. The
+// order there is load-bearing, not cosmetic: the player dictionary, then the
+// values derived from it, then the trades sweep, then this. Grading anything
+// before the values land would quote last week's ranks and injuries into a
+// permanent write-up, so the ordering is backed by a freshness guard below
+// rather than left to trust.
 
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -162,6 +166,33 @@ async function refreshRanksNow(
   return stamped
 }
 
+// A grade is a permanent, public artifact: it quotes a player's position
+// rank and injury designation in prose and then never re-reads them. Writing
+// one against a stale player_values table bakes last week's picture into the
+// record, and the failure is invisible because the grade still reads fine.
+//
+// The daily workflow refreshes values immediately before calling this route,
+// so in the normal case the table is minutes old. This guard is for the
+// abnormal case: the value refresh failed, or somebody hand-dispatched this
+// job on its own. A skipped day costs nothing since the backlog simply
+// drains on the next run, so refusing is strictly better than guessing.
+const MAX_VALUE_AGE_MS = 26 * 60 * 60 * 1000
+
+async function playerValuesAgeMs(
+  db: ReturnType<typeof createAdminClient>,
+): Promise<number | null> {
+  const { data } = await db
+    .from('player_values')
+    .select('updated_at')
+    .eq('source', 'sleeper')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (!data?.updated_at) return null
+  const t = Date.parse(data.updated_at)
+  return Number.isFinite(t) ? Date.now() - t : null
+}
+
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET
   if (!secret) {
@@ -172,6 +203,22 @@ export async function GET(req: Request) {
   }
 
   const db = createAdminClient()
+
+  // Freshness gate. `?force=1` is the manual-dispatch escape hatch for when
+  // you knowingly want grades out of a degraded state.
+  const force = new URL(req.url).searchParams.get('force') === '1'
+  const valueAgeMs = await playerValuesAgeMs(db)
+  if (!force && (valueAgeMs == null || valueAgeMs > MAX_VALUE_AGE_MS)) {
+    const age = valueAgeMs == null ? 'never populated' : `${Math.round(valueAgeMs / 3600000)}h old`
+    return NextResponse.json(
+      {
+        error: 'player values are stale; refusing to grade',
+        detail: `player_values is ${age}; run /api/cron/refresh-player-values first, or pass ?force=1`,
+        valueAgeHours: valueAgeMs == null ? null : Math.round(valueAgeMs / 3600000),
+      },
+      { status: 503 },
+    )
+  }
   const warnings: string[] = []
 
   // ── Fresh trades → initial grades ─────────────────────────────────────
