@@ -29,6 +29,7 @@ import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 import { loadAnalyzerData, type AnalyzerLeagueData, type AnalyzerRoster } from '@/lib/tradeDesk/analyzer'
 import { parseSettings, mergeEffective, type EffectiveSettings } from '@/lib/tradeDesk/settings'
 import { valuateLeague, type PlayerValue as ConsensusValue, type LeagueMode } from '@/lib/values'
+import { effectivePackageValue } from '@/lib/hub/verdict'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
 
 // Same env override the Analyzer + Rumor Mill use, so one var upgrades the
@@ -1310,16 +1311,32 @@ const GRADE_SCALE = [
 // point and nine below it.
 const EVEN_GRADE_INDEX = 9
 
-// Each piece past the best one counts for less. A lineup starts a fixed
-// number of players, so three pieces worth 3000 are not one worth 9000.
-// This is the "package shape beats raw total" paragraph the prompt has
-// always carried in words, computed instead of eyeballed.
-const PIECE_WEIGHTS = [1, 0.6, 0.35, 0.2]
-
+// Consolidation is priced by the SAME curve the Analyzer uses.
+//
+// This used to be a local weighting, PIECE_WEIGHTS = [1, 0.6, 0.35, 0.2],
+// while lib/hub/verdict priced the identical idea at [1.0, 0.9, 0.78, 0.66]
+// with an elite-peak premium on top. Two curves, one question, and they
+// disagreed hard enough to name different winners for the same trade off
+// the same consensus values:
+//
+//   Charlie  Williams 4729 + Bowers 4521 + Flowers 3763 + Diggs 1074
+//   Isaac    Henry 6345 + Olave 4880 + Goedert 736
+//
+//   raw:       Charlie 14087   Isaac 11961   (Charlie +2126)
+//   old curve: Charlie  8973   Isaac  9531   -> Isaac wins
+//   analyzer:  Charlie 12442   Isaac 11399   -> Charlie wins
+//
+// The old curve was the wrong one. Discounting the third piece to 35% of
+// face value treats a startable WR17 as near-worthless in a league that
+// starts three wideouts, so any side receiving depth lost on arrival no
+// matter how good the depth was. The Analyzer's curve calls itself "a
+// nudge, not a hammer" and is the one that matches how a lineup actually
+// works, so the grader defers to it and the two features stop contradicting
+// each other in public.
 function weighPackage(values: number[]): number {
-  return [...values]
-    .sort((a, b) => b - a)
-    .reduce((acc, v, i) => acc + v * (PIECE_WEIGHTS[i] ?? 0.12), 0)
+  return effectivePackageValue(
+    values.map((value, i) => ({ id: String(i), name: '', position: '', value })),
+  )
 }
 
 type GradeAnchor = { grade: string; confident: boolean }
