@@ -613,17 +613,33 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
 
   let consensus = new Map<string, ConsensusValue>()
   try {
-    const valuation = await valuateLeague({
-      mode: effective.mode,
-      qbStarters: effective.qbStarters,
-      teamCount: effective.teamCount,
-      scoringProfile: effective.scoringProfile,
-      tePremium: effective.tePremium,
-      sourcePreference: effective.valueSourcePreference,
-    })
+    const valuation = await valuateLeague(
+      {
+        mode: effective.mode,
+        qbStarters: effective.qbStarters,
+        teamCount: effective.teamCount,
+        scoringProfile: effective.scoringProfile,
+        tePremium: effective.tePremium,
+        sourcePreference: effective.valueSourcePreference,
+      },
+      // Live pull, not the 6h browse cache. Trades are usually made ON news,
+      // so pricing one off a pre-news snapshot doesn't just lose nuance, it
+      // argues the wrong side. Memoized per run in lib/values/cache, so the
+      // 40 calls a full grading run makes cost one fetch per provider.
+      { fresh: true },
+    )
     consensus = valuation.values
   } catch (e) {
     warnings.push(`consensus values: ${(e as Error).message}`)
+  }
+
+  // No values at all means every provider failed. The prompt would still
+  // produce a confident, readable grade off roster context alone, and that
+  // grade is permanent. Bail instead: the trade stays ungraded and the next
+  // daily run picks it up once the providers are answering again.
+  if (consensus.size === 0) {
+    warnings.push(`trade ${tradeId}: no consensus values available, not graded (will retry next run)`)
+    return { trade_id: tradeId, graded_sides: 0, warnings }
   }
 
   const bundle: ValueBundle = {
@@ -940,17 +956,26 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
   })
   let consensus = new Map<string, ConsensusValue>()
   try {
-    const valuation = await valuateLeague({
-      mode: effective.mode,
-      qbStarters: effective.qbStarters,
-      teamCount: effective.teamCount,
-      scoringProfile: effective.scoringProfile,
-      tePremium: effective.tePremium,
-      sourcePreference: effective.valueSourcePreference,
-    })
+    const valuation = await valuateLeague(
+      {
+        mode: effective.mode,
+        qbStarters: effective.qbStarters,
+        teamCount: effective.teamCount,
+        scoringProfile: effective.scoringProfile,
+        tePremium: effective.tePremium,
+        sourcePreference: effective.valueSourcePreference,
+      },
+      // Same reasoning as gradeTrade: a revisit's whole job is to say what
+      // the market thinks NOW, so a cached "now" is the one thing it can't use.
+      { fresh: true },
+    )
     consensus = valuation.values
   } catch (e) {
     warnings.push(`consensus values: ${(e as Error).message}`)
+  }
+  if (consensus.size === 0) {
+    warnings.push(`trade ${tradeId}: no consensus values available, not revisited (will retry next run)`)
+    return { trade_id: tradeId, graded_sides: 0, warnings }
   }
   const bundle: ValueBundle = {
     consensus,

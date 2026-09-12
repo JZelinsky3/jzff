@@ -33,6 +33,9 @@ export type ValuationOptions = {
   // forces that single provider; if it returns empty we fall back through
   // the normal preference order ending at Sleeper-derived.
   source?: ValueProviderId
+  // Skip the 6h provider cache and pull live values. For the trade grader,
+  // whose output is permanent and news-sensitive. See ./cache.
+  fresh?: boolean
 }
 
 export type ValuationResult = {
@@ -527,10 +530,13 @@ function consensusBlend(
 
 export async function valuateLeague(ctx: LeagueValuationContext, opts: ValuationOptions = {}): Promise<ValuationResult> {
   const requested = opts.source ?? 'consensus'
+  // Single entry point for the fresh flag: providers read it off ctx, so
+  // injecting it here means no caller can half-apply it to some sources.
+  const withFresh: LeagueValuationContext = opts.fresh ? { ...ctx, fresh: true } : ctx
   if (requested === 'consensus') {
-    return valuateConsensus(ctx)
+    return valuateConsensus(withFresh)
   }
-  return valuateSingle(ctx, requested)
+  return valuateSingle(withFresh, requested)
 }
 
 // Sources that only reflect PRESEASON expectations — ADP and draft rankings

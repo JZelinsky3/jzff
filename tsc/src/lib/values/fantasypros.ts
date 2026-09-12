@@ -20,12 +20,11 @@
 // Override: set FP_VALUES_URL (one or two URLs) to a custom JSON snapshot if
 // the scrape ever breaks. Same shape: { players: [{ player_name, ... }] }.
 
-import { unstable_cache } from 'next/cache'
 import { type SleeperPlayer } from '@/lib/platforms/sleeper'
 import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 import { applyNameAliases } from './nameAliases'
 import type { LeagueValuationContext, PlayerValue, ValueSource } from './types'
-import { MARKET_VALUE_TTL } from './cache'
+import { marketCache } from './cache'
 
 const FP_URL_DYNASTY = 'https://www.fantasypros.com/nfl/rankings/dynasty-overall.php'
 const FP_URL_ROS_PPR = 'https://www.fantasypros.com/nfl/rankings/ros-ppr-overall.php'
@@ -129,13 +128,9 @@ export async function fetchFp(url: string): Promise<FpEcrData> {
   return extractEcrData(await res.text())
 }
 
-function cachedFp(kind: 'dynasty' | 'ros'): Promise<FpEcrData> {
+function cachedFp(kind: 'dynasty' | 'ros', fresh?: boolean): Promise<FpEcrData> {
   const url = kind === 'dynasty' ? FP_URL_DYNASTY : FP_URL_ROS_PPR
-  return unstable_cache(
-    () => fetchFp(url),
-    ['fantasypros-ecr', 'v1', kind],
-    { revalidate: MARKET_VALUE_TTL },
-  )()
+  return marketCache(['fantasypros-ecr', 'v1', kind], () => fetchFp(url), fresh)
 }
 
 // ECR rank → trade value. Exponential decay with half-life ~55 ranks.
@@ -158,11 +153,10 @@ async function valueFromEcr(
 ): Promise<Map<string, PlayerValue>> {
   let data: FpEcrData
   try {
-    data = await cachedFp(kind)
+    data = await cachedFp(kind, ctx.fresh)
   } catch {
     return new Map()
   }
-  void ctx
 
   const players = await loadPlayersDict()
   const lookup = buildSleeperLookup(players)

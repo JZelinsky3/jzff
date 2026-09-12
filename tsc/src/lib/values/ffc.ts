@@ -25,12 +25,11 @@
 // name + position against the cached Sleeper /players/nfl dictionary, exactly
 // like the KTC and FantasyPros sources.
 
-import { unstable_cache } from 'next/cache'
 import { type SleeperPlayer } from '@/lib/platforms/sleeper'
 import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 import { applyNameAliases } from './nameAliases'
 import type { LeagueValuationContext, PlayerValue, ValueSource } from './types'
-import { MARKET_VALUE_TTL } from './cache'
+import { marketCache } from './cache'
 
 const FFC_BASE = 'https://fantasyfootballcalculator.com/api/v1/adp'
 
@@ -131,12 +130,12 @@ async function fetchFfcWithFallback(format: string, teams: number): Promise<FfcP
   return fetchFfc(format, teams, year - 1)
 }
 
-function cachedFfc(format: string, teams: number): Promise<FfcPlayer[]> {
-  return unstable_cache(
-    () => fetchFfcWithFallback(format, teams),
+function cachedFfc(format: string, teams: number, fresh?: boolean): Promise<FfcPlayer[]> {
+  return marketCache(
     ['ffc-adp', 'v1', format, String(teams)],
-    { revalidate: MARKET_VALUE_TTL },
-  )()
+    () => fetchFfcWithFallback(format, teams),
+    fresh,
+  )
 }
 
 export const ffcAdpSource: ValueSource = {
@@ -147,7 +146,7 @@ export const ffcAdpSource: ValueSource = {
 
     let entries: FfcPlayer[]
     try {
-      entries = await cachedFfc(format, teams)
+      entries = await cachedFfc(format, teams, ctx.fresh)
     } catch {
       // Network / parse failure → empty so consensus falls back to the other
       // redraft sources. The orchestrator surfaces the error in `attempts`.

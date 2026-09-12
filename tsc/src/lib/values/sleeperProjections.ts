@@ -32,7 +32,7 @@ export const sleeperProjectionsSource: ValueSource = {
   id: 'sleeper-projections',
   async valueAll(ctx: LeagueValuationContext): Promise<Map<string, PlayerValue>> {
     const year = new Date().getFullYear()
-    const [map, players] = await Promise.all([getProjectionsForYear(year), getPlayersNflDict()])
+    const [map, players] = await Promise.all([getProjectionsForYear(year, ctx.fresh), getPlayersNflDict()])
     if (map.rowCount === 0) return new Map()
 
     const scoring = scoringName(ctx.scoringProfile)

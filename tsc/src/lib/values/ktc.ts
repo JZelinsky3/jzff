@@ -21,12 +21,11 @@
 // by position. Rookie picks (position "PICK") are skipped — they have no
 // Sleeper roster entry and the analyzer only trades on rostered players.
 
-import { unstable_cache } from 'next/cache'
 import { type SleeperPlayer } from '@/lib/platforms/sleeper'
 import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 import { applyNameAliases } from './nameAliases'
 import type { LeagueValuationContext, PlayerValue, ValueSource } from './types'
-import { MARKET_VALUE_TTL } from './cache'
+import { marketCache } from './cache'
 
 const KTC_DYNASTY_URL = 'https://keeptradecut.com/dynasty-rankings'
 
@@ -161,13 +160,13 @@ async function fetchKtcOverride(): Promise<RawKTC[]> {
   return json as RawKTC[]
 }
 
-function cachedKtc(): Promise<RawKTC[]> {
+function cachedKtc(fresh?: boolean): Promise<RawKTC[]> {
   const useOverride = Boolean(process.env.KTC_VALUES_URL?.trim())
-  return unstable_cache(
-    () => (useOverride ? fetchKtcOverride() : fetchKtcScrape()),
+  return marketCache(
     ['ktc-values', 'v2', useOverride ? 'override' : 'scrape'],
-    { revalidate: MARKET_VALUE_TTL },
-  )()
+    () => (useOverride ? fetchKtcOverride() : fetchKtcScrape()),
+    fresh,
+  )
 }
 
 export const ktcDynastySource: ValueSource = {
@@ -175,7 +174,7 @@ export const ktcDynastySource: ValueSource = {
   async valueAll(ctx: LeagueValuationContext): Promise<Map<string, PlayerValue>> {
     let entries: RawKTC[]
     try {
-      entries = await cachedKtc()
+      entries = await cachedKtc(ctx.fresh)
     } catch {
       // Network / parse failure → return empty so consensus falls back to
       // whatever else has values. The orchestrator surfaces the error in

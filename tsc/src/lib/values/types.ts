@@ -75,6 +75,14 @@ export type LeagueValuationContext = {
   // default reliability weights; FC_WEIGHTED / DP_WEIGHTED tilt the
   // consensus toward that provider. Optional; default EQUAL.
   sourcePreference?: 'EQUAL' | 'FC_WEIGHTED' | 'DP_WEIGHTED'
+  // Bypass the 6h provider cache and pull live. Set by the trade grader,
+  // which writes permanent prose off these numbers and must not quote a
+  // market that predates the news the trade was made on. Every other caller
+  // leaves this unset: browsing does not need it and would pay for the
+  // pulls. See ./cache for why this is memoized rather than raw.
+  // NOT set by callers directly — valuateLeague injects it from
+  // ValuationOptions.fresh so the flag has one entry point.
+  fresh?: boolean
 }
 
 export type ValueSource = {

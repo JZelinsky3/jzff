@@ -15,12 +15,11 @@
 // Cached 12h. Failure → empty map, orchestrator falls through to whatever
 // other sources have data.
 
-import { unstable_cache } from 'next/cache'
 import { type SleeperPlayer } from '@/lib/platforms/sleeper'
 import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 import { applyNameAliases } from './nameAliases'
 import type { LeagueValuationContext, PlayerValue, ValueSource } from './types'
-import { MARKET_VALUE_TTL } from './cache'
+import { marketCache } from './cache'
 
 const DP_URL = 'https://github.com/dynastyprocess/data/raw/master/files/values-players.csv'
 
@@ -139,12 +138,8 @@ async function fetchDpCsv(): Promise<DPRow[]> {
   return parseCsv(text)
 }
 
-function cachedDp(): Promise<DPRow[]> {
-  return unstable_cache(
-    fetchDpCsv,
-    ['dynastyprocess-values', 'v1'],
-    { revalidate: MARKET_VALUE_TTL },
-  )()
+function cachedDp(fresh?: boolean): Promise<DPRow[]> {
+  return marketCache(['dynastyprocess-values', 'v1'], fetchDpCsv, fresh)
 }
 
 // Always available — public CSV, no env needed.
@@ -157,7 +152,7 @@ export const dynastyProcessSource: ValueSource = {
   async valueAll(ctx: LeagueValuationContext): Promise<Map<string, PlayerValue>> {
     let rows: DPRow[]
     try {
-      rows = await cachedDp()
+      rows = await cachedDp(ctx.fresh)
     } catch {
       return new Map()
     }

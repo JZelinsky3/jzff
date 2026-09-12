@@ -21,12 +21,26 @@
 // loop; MAX_GRADES + MAX_REVISITS keep the whole run safely inside
 // maxDuration. A backlog simply drains across consecutive days.
 //
-// Schedule: last step of the daily chain in .github/workflows/cron.yml. The
-// order there is load-bearing, not cosmetic: the player dictionary, then the
-// values derived from it, then the trades sweep, then this. Grading anything
-// before the values land would quote last week's ranks and injuries into a
-// permanent write-up, so the ordering is backed by a freshness guard below
-// rather than left to trust.
+// ── Freshness, which this job is unusually strict about ───────────────────
+// A grade is permanent public prose quoting a rank, a market value and an
+// injury designation. It is never revised, and a grade written off stale
+// inputs reads exactly as confident as a correct one. Trades are also
+// usually made BECAUSE of news, so "slightly stale" is precisely the case
+// that inverts the verdict. Two different inputs, two different mechanisms:
+//
+//   • Market values (KTC, FantasyCalc, ...) are pulled LIVE. gradeTrade
+//     passes { fresh: true } to valuateLeague, bypassing the 6h browse
+//     cache, memoized per run so this stays one fetch per provider rather
+//     than one per trade. See lib/values/cache.
+//   • Ranks / injury / age come from the player_values TABLE, so freshness
+//     there is a scheduling problem instead. Hence the chain ordering in
+//     .github/workflows/cron.yml (dictionary, then values, then trades,
+//     then this) plus the hard guard below for hand-dispatched runs.
+//
+// If every provider is down, gradeTrade declines to write a grade at all
+// rather than writing a value-free one. The trade stays in the queue.
+//
+// Schedule: last step of the daily chain in .github/workflows/cron.yml.
 
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'

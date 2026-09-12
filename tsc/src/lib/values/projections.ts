@@ -14,8 +14,7 @@
 //
 // Cached 12h to match the other Sleeper-flavored caches in the app.
 
-import { unstable_cache } from 'next/cache'
-import { MARKET_VALUE_TTL } from './cache'
+import { marketCache } from './cache'
 
 const SLEEPER_PROJ_URL = (year: number) =>
   `https://api.sleeper.com/projections/nfl/${year}?season_type=regular`
@@ -83,16 +82,13 @@ async function fetchAndShape(year: number): Promise<CachedProjectionMap> {
 
 // Per-year cache. unstable_cache key includes the year so different seasons
 // don't clobber each other.
-const cachedYear = (year: number) =>
-  unstable_cache(
-    () => fetchAndShape(year),
-    ['sleeper-projections', 'v2', String(year)],
-    { revalidate: MARKET_VALUE_TTL },
-  )
-
-export async function getProjectionsForYear(year: number): Promise<CachedProjectionMap> {
+export async function getProjectionsForYear(year: number, fresh?: boolean): Promise<CachedProjectionMap> {
   try {
-    return await cachedYear(year)()
+    return await marketCache(
+      ['sleeper-projections', 'v2', String(year)],
+      () => fetchAndShape(year),
+      fresh,
+    )
   } catch {
     return { ppgByPid: {}, totalByPid: {}, year, rowCount: 0 }
   }

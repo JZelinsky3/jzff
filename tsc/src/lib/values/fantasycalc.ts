@@ -12,9 +12,8 @@
 // produced by different query parameters, not different scoring of the same
 // payload. The orchestrator picks one based on league mode.
 
-import { unstable_cache } from 'next/cache'
 import type { LeagueValuationContext, PlayerValue, ValueSource } from './types'
-import { MARKET_VALUE_TTL } from './cache'
+import { marketCache } from './cache'
 
 const BASE = 'https://api.fantasycalc.com/values/current'
 
@@ -52,12 +51,12 @@ async function fetchValues(isDynasty: boolean, numQbs: number, numTeams: number,
 
 // Cached at the shared market TTL (see ./cache). FC recomputes off real
 // trades continuously, so a shorter window genuinely buys fresher numbers.
-function cachedFetch(isDynasty: boolean, numQbs: number, numTeams: number, ppr: number): Promise<FCEntry[]> {
-  return unstable_cache(
-    () => fetchValues(isDynasty, numQbs, numTeams, ppr),
+function cachedFetch(isDynasty: boolean, numQbs: number, numTeams: number, ppr: number, fresh?: boolean): Promise<FCEntry[]> {
+  return marketCache(
     ['fantasycalc-values', 'v2', String(isDynasty), String(numQbs), String(numTeams), String(ppr)],
-    { revalidate: MARKET_VALUE_TTL },
-  )()
+    () => fetchValues(isDynasty, numQbs, numTeams, ppr),
+    fresh,
+  )
 }
 
 // FC's API accepts ppr=0 / 0.5 / 1 (verified live 2026-07-19). Leagues that
@@ -112,7 +111,7 @@ function tierBucket(rank: number): number {
 export const fantasyCalcDynastySource: ValueSource = {
   id: 'fantasycalc-dynasty',
   async valueAll(ctx: LeagueValuationContext): Promise<Map<string, PlayerValue>> {
-    const entries = await cachedFetch(true, normalizeQbs(ctx.qbStarters), clampNumTeams(ctx.teamCount), pprParam(ctx.scoringProfile))
+    const entries = await cachedFetch(true, normalizeQbs(ctx.qbStarters), clampNumTeams(ctx.teamCount), pprParam(ctx.scoringProfile), ctx.fresh)
     const out = new Map<string, PlayerValue>()
     for (const e of entries) {
       const v = entryToValue(e, 'dynasty', true)
@@ -125,7 +124,7 @@ export const fantasyCalcDynastySource: ValueSource = {
 export const fantasyCalcRedraftSource: ValueSource = {
   id: 'fantasycalc-redraft',
   async valueAll(ctx: LeagueValuationContext): Promise<Map<string, PlayerValue>> {
-    const entries = await cachedFetch(false, normalizeQbs(ctx.qbStarters), clampNumTeams(ctx.teamCount), pprParam(ctx.scoringProfile))
+    const entries = await cachedFetch(false, normalizeQbs(ctx.qbStarters), clampNumTeams(ctx.teamCount), pprParam(ctx.scoringProfile), ctx.fresh)
     const out = new Map<string, PlayerValue>()
     for (const e of entries) {
       const v = entryToValue(e, 'redraft', false)
