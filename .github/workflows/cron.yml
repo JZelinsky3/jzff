@@ -1,0 +1,163 @@
+# Scheduled jobs for The Sunday Chronicle.
+#
+# These used to live in tsc/vercel.json. They never ran: the Vercel account is
+# on Hobby, which allows 2 cron jobs and fires them once a day at an
+# approximate time, and vercel.json declared 5. Nothing scheduled had ever
+# executed, so every sync in the database was somebody pressing a button.
+#
+# GitHub Actions runs them instead. It is free on public repos, honours the
+# exact schedule, and needs no Vercel plan change. The Vercel `crons` block
+# has been removed so these are the only driver and nothing double-fires.
+#
+# THIS FILE IS NOW THE ONLY SCHEDULER. tsc/vercel.json no longer records any
+# of it: Vercel's config schema rejects unknown keys, so the explanation
+# could not live there as a comment. If you later move to Vercel Pro and
+# want the crons back in vercel.json, delete this workflow in the same
+# commit or every job fires twice.
+#
+# ── ORDER IS THE POINT ────────────────────────────────────────────────────
+# The trade pipeline is a dependency chain, and it used to be scheduled as
+# five unrelated jobs at five unrelated times. That produced two silent bugs:
+#
+#   1. Player values refreshed WEEKLY (Mondays) while the Sleeper dictionary
+#      under them refreshed daily. Injury designations on the player lines
+#      the grader writes from were therefore up to seven days stale. A back
+#      injury on Wednesday still read as healthy in a Sunday grade.
+#   2. Trades only entered the database through the weekly Tuesday refresh,
+#      so a Wednesday trade was graded eight days later.
+#
+# Both are fixed by running the chain in order, in one job, every day:
+#
+#      sleeper players  →  player values  →  draft ranks
+#                                 ↓
+#                          trades sweep  →  grading
+#
+# A step that fails ABORTS the rest of the chain. That is deliberate: every
+# downstream step reads what an upstream step wrote, and grading in
+# particular writes a permanent, public, human-readable verdict. A grade
+# written against stale ranks looks perfectly fine and is wrong forever, so
+# skipping a day is the cheap outcome. Everything here is idempotent and
+# backlog-draining, so the next run picks up whatever was missed.
+#
+# grade-trades independently refuses to run if player_values is more than 26
+# hours old (HTTP 503). The ordering below is the mechanism; that guard is
+# the seatbelt for hand-dispatched runs.
+#
+# Note that the ordering only governs the player_values TABLE (ranks, injury
+# designation, age). The market values themselves are not scheduled at all:
+# grading pulls those live every run, bypassing the 6h browse cache, because
+# a trade made on Wednesday's news must not be priced off Tuesday's market.
+# So the evening sweep below is just as accurate on market values as the
+# morning chain, even though it does not refresh the table first.
+#
+# Setup (one time):
+#   1. Repo Settings > Secrets and variables > Actions > New repository secret
+#        CRON_SECRET   the same value set in Vercel's env vars
+#   2. Optional variable, if the domain ever changes:
+#        SITE_URL      defaults to https://thesundaychronicle.app
+#
+# Each endpoint checks `Authorization: Bearer $CRON_SECRET` and fails closed,
+# so a missing secret shows up as 401 rather than an open endpoint.
+#
+# Times are UTC. GitHub may delay a run when the platform is busy, which is
+# fine for all of these: every one is idempotent and simply picks up whatever
+# is still outstanding on its next pass.
+
+name: Scheduled jobs
+
+on:
+  schedule:
+    # Daily chain, 09:00 UTC (~5am ET). Everything the trade pipeline needs,
+    # in dependency order, finishing with grading.
+    - cron: '0 9 * * *'
+    # Evening trade sweep, 23:00 UTC (~7pm ET). Values are already fresh from
+    # the morning chain, so this only picks up trades made during the day and
+    # grades them, halving worst-case latency from a full day to about twelve
+    # hours. In-season this is the pass that makes the wire feel live.
+    - cron: '0 23 * * *'
+    # Weekly full live re-ingest, Tuesday 22:00 UTC (after Monday Night
+    # Football). This is the heavy one: every week's matchups, lineups and
+    # drafts for every live source. Too expensive to run daily, which is
+    # exactly why the trades stage was split out into its own sweep.
+    - cron: '0 22 * * 2'
+  # Lets you run any single job by hand from the Actions tab, which is also
+  # how you smoke-test that CRON_SECRET is correct without waiting a day.
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Which endpoint to run'
+        required: true
+        default: daily-chain
+        type: choice
+        options:
+          - daily-chain
+          - trade-sweep
+          - refresh
+          - refresh-player-values
+          - refresh-sleeper-players
+          - refresh-draft-ranks
+          - sync-trades
+          - grade-trades
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pick endpoints for this trigger
+        id: pick
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+          MANUAL: ${{ github.event.inputs.job }}
+        run: |
+          # Order within each list is the execution order. Do not reshuffle
+          # these without reading the ORDER IS THE POINT note at the top.
+          daily_chain='refresh-sleeper-players refresh-player-values refresh-draft-ranks sync-trades grade-trades'
+          trade_sweep='sync-trades grade-trades'
+
+          case "$SCHEDULE" in
+            '0 9 * * *')   paths="$daily_chain" ;;
+            '0 23 * * *')  paths="$trade_sweep" ;;
+            '0 22 * * 2')  paths='refresh' ;;
+            *)
+              # Manual dispatch.
+              case "$MANUAL" in
+                daily-chain) paths="$daily_chain" ;;
+                trade-sweep) paths="$trade_sweep" ;;
+                *)           paths="$MANUAL" ;;
+              esac
+              ;;
+          esac
+          echo "paths=$paths" >> "$GITHUB_OUTPUT"
+          echo "Running in order: $paths"
+
+      - name: Call endpoints
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://thesundaychronicle.app' }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRON_SECRET is not set. Add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+          for p in ${{ steps.pick.outputs.paths }}; do
+            url="$SITE_URL/api/cron/$p"
+            echo "::group::$p"
+            # These are long jobs (maxDuration 300 server-side); give curl room
+            # and capture the body so a failure explains itself in the log.
+            code=$(curl -sS -o /tmp/out.json -w '%{http_code}' \
+                        --max-time 600 \
+                        -H "Authorization: Bearer $CRON_SECRET" \
+                        "$url" || echo 000)
+            echo "HTTP $code"
+            head -c 4000 /tmp/out.json || true
+            echo
+            echo "::endgroup::"
+
+            if [ "$code" != "200" ]; then
+              # Abort the chain rather than running later steps against
+              # whatever half-state this one left behind.
+              echo "::error::$p returned HTTP $code - aborting the rest of the chain"
+              exit 1
+            fi
+          done
