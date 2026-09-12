@@ -27,6 +27,7 @@ import { getSleeperValuesForPlayerIds, type PlayerValue } from '@/lib/playerValu
 import { computePositionRanks, stampRanks, buildNameLookup, nameKey } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 import { loadAnalyzerData, type AnalyzerLeagueData, type AnalyzerRoster } from '@/lib/tradeDesk/analyzer'
+import { lineupValue, gradeStarter, DEFAULT_SLOTS, type HubLineupSlots } from '@/lib/hub/analyzer'
 import { parseSettings, mergeEffective, type EffectiveSettings } from '@/lib/tradeDesk/settings'
 import { valuateLeague, type PlayerValue as ConsensusValue, type LeagueMode } from '@/lib/values'
 import { effectivePackageValue } from '@/lib/hub/verdict'
@@ -91,6 +92,13 @@ export type SummaryCheckOpts = {
   // Every rank label in the trade, flagged when the player is deep enough
   // that printing his exact rank is false precision.
   rankLabels?: Array<{ label: string; deep: boolean }>
+  // The grades that will actually be stored, by side name. The prose has to
+  // argue THESE. Before this existed the clamp could correct an inverted
+  // grade after the model had already written a paragraph arguing the
+  // opposite, and the page shipped "IsAAcShake wins this trade" sitting next
+  // to a higher grade for tinfoil99. A grade and its own explanation
+  // disagreeing in public is worse than either being wrong alone.
+  finalGrades?: Array<{ name: string; grade: string }>
   // The week the trade happened, null for preseason. Standings language is
   // only legitimate once a record exists to talk about.
   week?: number | null
@@ -105,6 +113,7 @@ export function summaryViolations(
     receivedTokens = [],
     sideNames = [],
     rankLabels = [],
+    finalGrades = [],
     week = null,
   } = opts
   const out: string[] = []
@@ -146,6 +155,30 @@ export function summaryViolations(
     'ahead on paper', 'edges it out', 'edges out',
     'right side of the ledger', 'comes out on top on balance',
   ]
+  // The prose must name the side that actually holds the best grade. The
+  // model writes grades and summary in one breath, and the clamp may then
+  // correct a grade it got backwards; without this check the corrected
+  // number ships beside the original argument for the other side.
+  if (finalGrades.length > 1) {
+    const ranked = [...finalGrades].sort((a, b) => GRADE_SCALE.indexOf(b.grade) - GRADE_SCALE.indexOf(a.grade))
+    const top = ranked[0]
+    const tied = ranked.filter((g) => g.grade === top.grade).length > 1
+    if (!tied) {
+      for (const loser of ranked.slice(1)) {
+        // "<loser> wins/won this trade" in any spacing, with the winner's
+        // name absent from the same clause.
+        const esc = loser.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const claimsWin = new RegExp(`${esc}[^.]{0,60}?\\b(wins|won|takes|came away with|comes away with)\\b[^.]{0,40}?\\b(this trade|the trade|the deal)\\b`, 'i')
+        if (claimsWin.test(text)) {
+          out.push(
+            `wrote that ${loser.name} won the trade, but the stored grades are ` +
+            `${ranked.map((g) => `${g.name} ${g.grade}`).join(', ')}; the summary must argue the grade ${top.name} actually received`,
+          )
+        }
+      }
+    }
+  }
+
   const hedged = HEDGES.filter((h) => t.includes(h))
   if (hedged.length > 0) {
     out.push(
@@ -688,6 +721,32 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
       })
     : new Map<string, string>()
 
+  // Roster context for the lineup-basis anchor. Built from the same
+  // analyzerData the prose summaries use, so when the write-up can describe
+  // a roster the grade is computed against that roster too.
+  const anchorRosterCtx: AnchorRosterCtx | null = analyzerData
+    ? (() => {
+        const bySide = new Map<string, { after: string[]; received: string[]; sent: string[] }>()
+        for (const s of sides) {
+          const mgr = Array.isArray(s.managers) ? s.managers[0] : s.managers
+          const ext = (mgr?.external_id as string | null) ?? null
+          if (!ext) continue
+          const roster = analyzerData.rosters.find((r) => r.ownerId === ext)
+          if (!roster || roster.playerIds.length === 0) continue
+          const own = ((s.assets as Array<Record<string, unknown>>) ?? [])
+            .map((a) => sidByAsset.get(a))
+            .filter((x): x is string => !!x)
+          const others = sides
+            .filter((o) => o.id !== s.id)
+            .flatMap((o) => ((o.assets as Array<Record<string, unknown>>) ?? []))
+            .map((a) => sidByAsset.get(a))
+            .filter((x): x is string => !!x)
+          bySide.set(s.id as string, { after: roster.playerIds, received: own, sent: others })
+        }
+        return bySide.size > 0 ? { slots: DEFAULT_SLOTS, bySide } : null
+      })()
+    : null
+
   // Records as they stood going into this trade. Empty before week 7 by
   // design, so the model can't reach for a standings angle that doesn't
   // exist yet.
@@ -713,6 +772,7 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     }),
     bundle,
     sidByAsset,
+    rosterCtx: anchorRosterCtx,
   })
 
   // 5. Call Groq.
@@ -721,6 +781,12 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     warnings.push('GROQ_API_KEY_TRADES (or GROQ_API_KEY) not set')
     return { trade_id: tradeId, graded_sides: 0, warnings }
   }
+
+  // Shared by the clamp (which runs before the prose is validated) and the
+  // writer below, so the grades the linter checked are exactly the grades
+  // that get stored.
+  const sideIds = new Set(sides.map((s) => s.id as string))
+  const modelGrades = new Map<string, string>()
 
   let parsed: { summary: string; sides: Array<{ side_id: string; grade: string }> }
   try {
@@ -790,6 +856,80 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
       return { label, deep: Number.isFinite(n) && n > DEEP_RANK }
     })
 
+    // ── The model may move notches. It may NOT reorder the sides. ──────────
+    //
+    // The anchor is computed from the consensus values of what each side
+    // received, so its ORDERING is a fact about the trade: the side holding
+    // the more valuable package is ahead, full stop. How far ahead is a
+    // judgement call the model is allowed to shade by a notch or two. Which
+    // side is ahead is not.
+    //
+    // This is enforced here, in code, because three separate rounds of prompt
+    // rules failed to stop the same inversion. An injured star would be marked
+    // down in his live market value, the anchor would price that correctly,
+    // and the model would then dock the same side AGAIN for the injury it had
+    // just read on the player line, flipping the result:
+    //
+    //   anchor:  Charlie B+   Isaac B      (Charlie's package worth ~10% more)
+    //   model:   Charlie B    Isaac B+     (exactly inverted, one notch each)
+    //
+    // A prompt is a request. This is the guarantee. Any side the model placed
+    // below a side the anchor put beneath it is reset to its own anchor grade,
+    // which restores the true ordering while leaving every non-contradictory
+    // adjustment the model made intact.
+    const anchorsForClamp = computeGradeAnchors(
+      sides.map((s) => ({ side_id: s.id as string, assets: (s.assets as Array<Record<string, unknown>>) ?? [] })),
+      bundle,
+      sidByAsset,
+      anchorRosterCtx,
+    )
+    // Always report the anchor, even when nothing is wrong. This is the number
+    // the whole grade is built on and it never appeared anywhere a human could
+    // read it, so "why did this side lose?" was unanswerable from the outside.
+    {
+      const parts = sides.map((s) => {
+        const m = Array.isArray(s.managers) ? s.managers[0] : s.managers
+        const who = (m?.team_name as string | null) || (m?.display_name as string) || String(s.id).slice(0, 8)
+        const a = anchorsForClamp.get(s.id as string)
+        if (!a) return `${who} no anchor`
+        const how = a.detail ?? `package ${Math.round(a.eff)}`
+        return `${who} ${a.grade} (${how}${a.confident ? '' : ', low confidence'})`
+      })
+      const basis = anchorsForClamp.values().next().value?.basis ?? 'package'
+      warnings.push(`anchor [${basis} basis]: ${parts.join('  |  ')}`)
+    }
+
+    const gradeRank = (g: string) => GRADE_SCALE.indexOf(g)
+    modelGrades.clear()
+    for (const g of parsed.sides) {
+      if (sideIds.has(g.side_id) && (VALID_GRADES as readonly string[]).includes(g.grade)) {
+        modelGrades.set(g.side_id, g.grade)
+      }
+    }
+    const inverted = new Set<string>()
+    for (const [idA, gA] of modelGrades) {
+      for (const [idB, gB] of modelGrades) {
+        if (idA === idB) continue
+        const aA = anchorsForClamp.get(idA)?.grade
+        const aB = anchorsForClamp.get(idB)?.grade
+        if (!aA || !aB) continue
+        // A is anchored strictly above B, but the model put A at or below B.
+        if (gradeRank(aA) > gradeRank(aB) && gradeRank(gA) <= gradeRank(gB)) {
+          inverted.add(idA)
+          inverted.add(idB)
+        }
+      }
+    }
+    for (const id of inverted) {
+      const anchor = anchorsForClamp.get(id)?.grade
+      if (!anchor) continue
+      warnings.push(
+        `trade ${tradeId}: side ${id} graded ${modelGrades.get(id)} against an anchor of ${anchor}, ` +
+        'which reversed the value ordering; reset to the anchor',
+      )
+      modelGrades.set(id, anchor)
+    }
+
     // Keep correcting until the copy is clean, up to a small cap.
     //
     // One retry wasn't enough: the corrected answer kept reintroducing
@@ -809,7 +949,16 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     // ran, so a warning always describes the text that got saved.
     const checkSummary = () => summaryViolations(
       String(parsed?.summary ?? ''), leagueType,
-      { receivedTokens, sideNames, rankLabels, week: tradeWeek },
+      {
+        receivedTokens, sideNames, rankLabels, week: tradeWeek,
+        finalGrades: sides.map((sd) => {
+          const m = Array.isArray(sd.managers) ? sd.managers[0] : sd.managers
+          return {
+            name: (m?.team_name as string | null) || (m?.display_name as string) || '',
+            grade: modelGrades.get(sd.id as string) ?? '',
+          }
+        }).filter((g) => g.name && g.grade),
+      },
     )
     let violations = checkSummary()
     let fixupsRun = 0
@@ -828,7 +977,15 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
                 `That response broke these rules: ${violations.join('; ')}. ` +
                 'Rewrite the summary so it breaks none of them. Use each side\'s ' +
                 'exact full name every time. This is a copy fix only: return the ' +
-                'grades you already gave, unchanged. Same strict JSON shape.',
+                'grades you already gave, unchanged. Same strict JSON shape.' +
+                // The stored grades are already final by this point; the clamp
+                // may have corrected one. Say so plainly, or the rewrite keeps
+                // arguing the verdict the model originally reached.
+                ` The grades on record for this trade are: ${sides.map((sd) => {
+                  const m = Array.isArray(sd.managers) ? sd.managers[0] : sd.managers
+                  const who = (m?.team_name as string | null) || (m?.display_name as string) || 'Manager'
+                  return `${who} ${modelGrades.get(sd.id as string) ?? '?'}`
+                }).join(', ')}. Your summary must explain THOSE grades. If it currently argues that a different side won, that is the error to fix.`,
             },
           ],
           temperature: 0.35,
@@ -879,65 +1036,6 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
   // invented. blurb column is no longer populated — the trade-level
   // ai_summary is the prose. Existing rows with old per-side blurbs are
   // cleared on re-grade so the UI stays consistent.
-  const sideIds = new Set(sides.map((s) => s.id as string))
-
-  // ── The model may move notches. It may NOT reorder the sides. ──────────
-  //
-  // The anchor is computed from the consensus values of what each side
-  // received, so its ORDERING is a fact about the trade: the side holding
-  // the more valuable package is ahead, full stop. How far ahead is a
-  // judgement call the model is allowed to shade by a notch or two. Which
-  // side is ahead is not.
-  //
-  // This is enforced here, in code, because three separate rounds of prompt
-  // rules failed to stop the same inversion. An injured star would be marked
-  // down in his live market value, the anchor would price that correctly,
-  // and the model would then dock the same side AGAIN for the injury it had
-  // just read on the player line, flipping the result:
-  //
-  //   anchor:  Charlie B+   Isaac B      (Charlie's package worth ~10% more)
-  //   model:   Charlie B    Isaac B+     (exactly inverted, one notch each)
-  //
-  // A prompt is a request. This is the guarantee. Any side the model placed
-  // below a side the anchor put beneath it is reset to its own anchor grade,
-  // which restores the true ordering while leaving every non-contradictory
-  // adjustment the model made intact.
-  const anchorsForClamp = computeGradeAnchors(
-    sides.map((s) => ({ side_id: s.id as string, assets: (s.assets as Array<Record<string, unknown>>) ?? [] })),
-    bundle,
-    sidByAsset,
-  )
-  const gradeRank = (g: string) => GRADE_SCALE.indexOf(g)
-  const modelGrades = new Map<string, string>()
-  for (const g of parsed.sides) {
-    if (sideIds.has(g.side_id) && (VALID_GRADES as readonly string[]).includes(g.grade)) {
-      modelGrades.set(g.side_id, g.grade)
-    }
-  }
-  const inverted = new Set<string>()
-  for (const [idA, gA] of modelGrades) {
-    for (const [idB, gB] of modelGrades) {
-      if (idA === idB) continue
-      const aA = anchorsForClamp.get(idA)?.grade
-      const aB = anchorsForClamp.get(idB)?.grade
-      if (!aA || !aB) continue
-      // A is anchored strictly above B, but the model put A at or below B.
-      if (gradeRank(aA) > gradeRank(aB) && gradeRank(gA) <= gradeRank(gB)) {
-        inverted.add(idA)
-        inverted.add(idB)
-      }
-    }
-  }
-  for (const id of inverted) {
-    const anchor = anchorsForClamp.get(id)?.grade
-    if (!anchor) continue
-    warnings.push(
-      `trade ${tradeId}: side ${id} graded ${modelGrades.get(id)} against an anchor of ${anchor}, ` +
-      'which reversed the value ordering; reset to the anchor',
-    )
-    modelGrades.set(id, anchor)
-  }
-
   let graded = 0
   for (const g of parsed.sides) {
     if (!sideIds.has(g.side_id)) {
@@ -1431,14 +1529,78 @@ function weighPackage(values: number[]): number {
   )
 }
 
-type GradeAnchor = { grade: string; confident: boolean }
+// `eff` is the consolidation-adjusted package value this grade came from.
+// Carried out purely so a grading run can SHOW its work: the anchor was
+// previously invisible, which meant a disagreement about why a trade graded
+// the way it did could only be settled by guessing at the inputs.
+type GradeAnchor = { grade: string; confident: boolean; eff: number; basis: 'lineup' | 'package'; detail?: string }
+
+// Roster context for the LINEUP basis. Without it the anchor falls back to
+// raw package value, which is the measure that caused the whole problem:
+// it counts a WR38 you will never start as real value received.
+export type AnchorRosterCtx = {
+  slots: HubLineupSlots
+  // side_id -> the roster as it stands AFTER the trade, and the ids that
+  // came in / went out, so the pre-trade lineup can be reconstructed.
+  bySide: Map<string, { after: string[]; received: string[]; sent: string[] }>
+}
 
 function computeGradeAnchors(
   sides: Array<{ side_id: string; assets: Array<Record<string, unknown>> }>,
   bundle: ValueBundle,
   sidByAsset: Map<Record<string, unknown>, string>,
+  rosterCtx?: AnchorRosterCtx | null,
 ): Map<string, GradeAnchor> {
   const out = new Map<string, GradeAnchor>()
+
+  // ── LINEUP BASIS (preferred) ────────────────────────────────────────────
+  //
+  // The question a trade grade should answer is "did this make the team you
+  // actually field better", not "did more value change hands". Those come
+  // apart constantly: a WR38 is worth real market value and yet never enters
+  // a lineup, so counting him credits a side for a player who scores nothing
+  // for them, while an elite TE replacing a TE13 in the one TE slot is worth
+  // far more to a roster than the raw gap between two numbers suggests.
+  //
+  // Package value graded a trade B+/B that the Analyzer, which has always
+  // used this lineup lens, called decisive. Two tools on the same page
+  // disagreeing about the same trade was the symptom; measuring two
+  // different things was the cause. Both now ask the same question, on the
+  // same optimal-lineup fill, and grade it on the same rubric. The grader
+  // earns its keep on the DEPTH of the write-up, not by reaching a different
+  // verdict.
+  if (rosterCtx && rosterCtx.bySide.size === sides.length) {
+    let usable = true
+    const staged: Array<{ side_id: string; pct: number; before: number; after: number }> = []
+    for (const s of sides) {
+      const r = rosterCtx.bySide.get(s.side_id)
+      if (!r || r.after.length === 0) { usable = false; break }
+      const received = new Set(r.received)
+      const before = r.after.filter((id) => !received.has(id))
+      for (const id of r.sent) if (!before.includes(id)) before.push(id)
+      const beforeVal = lineupValue(before, bundle.consensus, rosterCtx.slots)
+      const afterVal = lineupValue(r.after, bundle.consensus, rosterCtx.slots)
+      if (beforeVal <= 0) { usable = false; break }
+      staged.push({ side_id: s.side_id, pct: (afterVal - beforeVal) / beforeVal, before: beforeVal, after: afterVal })
+    }
+    if (usable) {
+      for (const st of staged) {
+        // Same rubric the Analyzer locks its grades to, so the two agree by
+        // construction rather than by coincidence of tuning.
+        out.set(st.side_id, {
+          grade: gradeStarter(st.pct),
+          confident: true,
+          eff: st.after,
+          basis: 'lineup',
+          detail: `starters ${Math.round(st.before)} -> ${Math.round(st.after)}, ${(st.pct * 100).toFixed(1)}%`,
+        })
+      }
+      return out
+    }
+  }
+  // ── PACKAGE BASIS (fallback) ────────────────────────────────────────────
+  // Only when rosters are unavailable: an imported archive, a manager who
+  // can't be matched to a live roster, a failed roster fetch.
   const weights: number[] = []
   // Picks have no consensus value and some players don't resolve. A side
   // holding either is being weighed on partial information, so its anchor
@@ -1468,12 +1630,34 @@ function computeGradeAnchors(
     const ratio = weights[i] / mean
     const d = (ratio - 1) / sides.length
     // Asymmetric slope: three notches of headroom above B+ against nine
-    // below it, so the losing side has to fall twice as fast to use the
-    // bottom of the scale at all. Tuned so an even deal is B+/B+, a star
-    // for three depth pieces is A-/B-, and A+ needs a genuine fleecing.
-    const notches = d >= 0 ? Math.round(d * 7) : Math.round(d * 16)
+    // below it, so the losing side falls faster than the winner climbs and
+    // the bottom of the scale stays reachable at all.
+    //
+    // The UP slope used to be 7, which was not a calibration choice so much
+    // as an accident. d is already quartered on the way in (it is half the
+    // value gap, then divided by side count), so a slope of 7 meant the
+    // winning side needed a 29% edge to gain a single letter while the
+    // losing side dropped one at 12%. The visible symptom was every lopsided
+    // trade grading as "the loser lost a notch" with the winner pinned at
+    // B+ forever, no matter how far ahead he was.
+    //
+    // At 20 the winner moves a letter at a 10% gap. The gap between sides at
+    // a few reference points, against the Analyzer on the same values:
+    //
+    //          gap    analyzer   old (7/16)   now (20/40)
+    //          10%      A-/C       B+/B+         A-/B
+    //          20%      A+/F       B+/B          A-/B-
+    //          40%      A+/F       A-/B-         A/C
+    //
+    // Deliberately still flatter than the Analyzer at the extremes. The
+    // Analyzer is an exploratory tool where an F costs nothing; a grade is a
+    // permanent public record of somebody's trade, and handing out an F for
+    // a 20% value gap is a harsher claim than the data supports.
+    const UP_SLOPE = 7
+    const DOWN_SLOPE = 16
+    const notches = d >= 0 ? Math.round(d * UP_SLOPE) : Math.round(d * DOWN_SLOPE)
     const idx = Math.max(0, Math.min(GRADE_SCALE.length - 1, EVEN_GRADE_INDEX + notches))
-    out.set(s.side_id, { grade: GRADE_SCALE[idx], confident: !partial[i] })
+    out.set(s.side_id, { grade: GRADE_SCALE[idx], confident: !partial[i], eff: weights[i], basis: 'package' })
   })
   return out
 }
@@ -1496,6 +1680,10 @@ type PromptArgs = {
     // roster fetch failed.
     roster_summary: string | null
   }>
+  // Roster context for the lineup-basis anchor. When present the ANCHOR
+  // GRADE shown to the model is the same lineup-based number the clamp
+  // enforces, so the prompt and the guarantee can never disagree.
+  rosterCtx?: AnchorRosterCtx | null
   // Consensus values + rank labels + Sleeper meta, keyed by Sleeper id;
   // sidByAsset translates each asset object to its Sleeper id.
   bundle: ValueBundle
@@ -1661,7 +1849,7 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '{ "summary": "<grading rationale, 3-4 sentences>", "sides": [{ "side_id": "<uuid>", "grade": "<letter>" }, ...] }',
     ].join('\n')
 
-  const anchors = computeGradeAnchors(args.sides, args.bundle, args.sidByAsset)
+  const anchors = computeGradeAnchors(args.sides, args.bundle, args.sidByAsset, args.rosterCtx ?? null)
 
   const sidesText = args.sides
     .map((s, idx) => {

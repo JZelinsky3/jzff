@@ -125,7 +125,7 @@ function gradeRaw(p: number): string {
 
 // Starter-impact rubric (roster mode) — matches the in-league Analyzer's
 // grade lock scale.
-function gradeStarter(p: number): string {
+export function gradeStarter(p: number): string {
   if (p >= 0.25) return 'A+'
   if (p >= 0.15) return 'A'
   if (p >= 0.08) return 'A-'
@@ -146,7 +146,7 @@ function gradeStarter(p: number): string {
 
 // Greedy optimal-lineup value: fixed slots from most restrictive first,
 // then SF (QB-eligible), then FLEX. Mirrors the Best Coach fill order.
-function lineupValue(
+export function lineupValue(
   ids: string[],
   values: Map<string, PlayerValue>,
   slots: HubLineupSlots
