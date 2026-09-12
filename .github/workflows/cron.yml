@@ -140,12 +140,28 @@ jobs:
             exit 1
           fi
 
+          # Tolerate a SITE_URL set with a trailing slash. Without this a
+          # value like "https://example.com/" builds "...com//api/cron/x/",
+          # and a double slash is a different path to the router: it misses
+          # the route entirely and gets answered by something unrelated
+          # rather than failing in any way that names the real problem.
+          SITE_URL="${SITE_URL%/}"
+          echo "Base URL: $SITE_URL"
+
           for p in ${{ steps.pick.outputs.paths }}; do
-            url="$SITE_URL/api/cron/$p"
+            # The TRAILING SLASH is required, not cosmetic. next.config.ts sets
+            # `trailingSlash: true`, which applies to API routes too, so
+            # /api/cron/grade-trades answers 308 -> /api/cron/grade-trades/.
+            # curl does not follow redirects by default, so the slashless form
+            # fails the run with a redirect status and never reaches the
+            # handler. -L is kept as a backstop in case that config changes
+            # direction later; on a same-host redirect curl carries the
+            # Authorization header through, so auth still works either way.
+            url="$SITE_URL/api/cron/$p/"
             echo "::group::$p"
             # These are long jobs (maxDuration 300 server-side); give curl room
             # and capture the body so a failure explains itself in the log.
-            code=$(curl -sS -o /tmp/out.json -w '%{http_code}' \
+            code=$(curl -sSL -o /tmp/out.json -w '%{http_code}' \
                         --max-time 600 \
                         -H "Authorization: Bearer $CRON_SECRET" \
                         "$url" || echo 000)
