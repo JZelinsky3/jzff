@@ -1449,6 +1449,13 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       // still be graded the loser, which is what happened the first time the
       // injury detail got loud enough for the model to notice it.
       '• Begin at the anchor and move off it only for a reason you can name in the write-up: roster fit, or positional scarcity in this league.',
+      // Stated HERE, at the movement decision, not only down in the injury
+      // section. When the ban lived only beside the player lines the model
+      // obeyed its letter and broke it anyway, re-describing the same dock as
+      // scarcity: "eases the tight TE market by swapping an injured TE2 for a
+      // modest TE16", which calls giving away the better player a gain.
+      '• AN INJURY IS NEVER ONE OF THOSE REASONS. The market value and position rank on each line are pulled live and are ALREADY marked down for any injury, so the anchor has priced it in full. You may not cite "he is hurt", "sidelined", "out", "injury risk", "the only healthy option at the position", or a thinner position caused by an injury, as grounds for calling one package weaker or moving a grade. That double-charges the side and it is the single most common way this write-up goes wrong.',
+      '• SHEDDING AN INJURED PLAYER IS NOT A GAIN. A side that gave away the higher-ranked player got the worse end of that swap, hurt or not. Never present trading TE2 away for TE16 as relief, an upgrade, or a market being eased.',
       '• High-confidence anchor: you may move that side ONE notch, up or down. Low-confidence anchor: TWO notches.',
       '• Never re-derive a grade from scratch and never exceed the allowed movement. The same trade graded twice must produce the same grades, so if nothing in the data justifies moving, return the anchor.',
       '',
@@ -1464,6 +1471,16 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       'WRITING THE RATIONALE. 3 to 4 sentences total. Follow these rules:',
       '',
     '1. NEVER OPEN with "The X won this trade", "X won the trade", or any variation of who-won-the-trade as the first line. The user message names a LEAD ANGLE for this specific write-up: open from that angle, then broaden into the full rationale. This is a rule about the OPENING SENTENCE ONLY. Once you are past it, naming the winner outright is expected.',
+      '',
+      // The recap kept ending on a sentence that restated the sentence before
+      // it and then read the grades back out: "IsAAcShake comes away with the
+      // stronger overall package, and tinfoil99's haul falls short of the
+      // anchor value. tinfoil99 gets the lower grade and IsAAcShake the
+      // higher grade." The letters are printed next to the write-up, so the
+      // last clause is the reader being told what he is already looking at.
+      '1b. SAY WHO WON EXACTLY ONCE, AND NEVER RESTATE THE GRADES. The letter grades are displayed beside this write-up. Do NOT end with a sentence that maps sides to grades ("X gets the lower grade", "Y earns the higher mark", "hence the B"), and do NOT close by rephrasing a verdict you already delivered. If your final sentence would survive being deleted without the reader losing information, delete it. Spend the last sentence on something only you can add: the risk the winning side took on, what the losing side still solved, what to watch next.',
+      '',
+      '1c. NEVER MENTION THE ANCHOR. "Falls short of the anchor value" is internal machinery leaking into the page. The reader has never heard of the anchor. Say a package is worth less, not that it missed a number he cannot see.',
       '',
       'NEVER WRITE THE NEGATIVE SPACE. These instructions tell you which factors do not apply in this league. That is guidance for YOU. The reader has not seen it and does not need it. When a factor does not apply, LEAVE IT OUT SILENTLY. Never write a clause announcing that something is irrelevant, does not matter, is a non-factor, is moot, or is worth nothing here. "While the age gap is irrelevant in redraft" is exactly the sentence never to write: it spends a clause on a thing you are not allowed to use, it names no player, and it tells the reader nothing. Delete the thought, do not negate it.',
       '',
