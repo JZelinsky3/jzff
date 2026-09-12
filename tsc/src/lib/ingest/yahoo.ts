@@ -36,6 +36,7 @@ import { resolveStages, intersectRange, type IngestStages, type IngestYearRange 
 import { manualLocks, manualLockWarning } from './manualLocks'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
 import { getNflClock, weekIsFinal } from '@/lib/nflClock'
+import { writeTradeSides, type TradeSideWrite } from './tradeSides'
 
 export type IngestResult = {
   ok: boolean
@@ -748,30 +749,24 @@ export async function ingestYahooSource(
         continue
       }
 
-      await db.from('trade_sides').delete().eq('trade_id', tradeRow.id)
       // Yahoo's `ts` is epoch seconds; deriveWeek wants an ISO string.
       const executedIso = t.ts ? new Date(t.ts * 1000).toISOString() : null
       const week = deriveWeek(executedIso)
       const ranks = week ? await ranksForWeek(week) : null
 
-      let sidesInserted = 0
+      const sideWrites: TradeSideWrite[] = []
       for (const [teamKey, assets] of assetsByTeamKey) {
         const managerId = teamKeyToManagerId.get(teamKey)
         if (!managerId) continue
         const stampedAssets = ranks
           ? await stampRanks(assets, { ranks, platform: 'yahoo' })
           : assets
-        const { error: sideErr } = await db.from('trade_sides').insert({
-          trade_id: tradeRow.id,
-          manager_id: managerId,
-          assets: stampedAssets,
-        })
-        if (sideErr) {
-          warnings.push(`Season ${year} trade ${t.transaction_id} side ${teamKey}: ${sideErr.message}`)
-          continue
-        }
-        sidesInserted++
+        sideWrites.push({ managerId, assets: stampedAssets, label: teamKey })
       }
+      const sideResult = await writeTradeSides(db, tradeRow.id, sideWrites,
+        (label, message) => `Season ${year} trade ${t.transaction_id} side ${label}: ${message}`)
+      warnings.push(...sideResult.warnings)
+      const sidesInserted = sideResult.written
       if (sidesInserted >= 2) tradesIngested++
     }
     } // end stages.trades

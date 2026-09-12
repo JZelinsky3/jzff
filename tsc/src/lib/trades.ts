@@ -19,6 +19,7 @@ import { getLockReason } from '@/lib/leagueTier'
 import { buildNameLookup, nameKey } from '@/lib/positionRanks'
 import { parseSettings, mergeEffective } from '@/lib/tradeDesk/settings'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
+import { getNflClock } from '@/lib/nflClock'
 import { valuateLeague, type LeagueMode, type PlayerValue as ConsensusValue } from '@/lib/values'
 
 const MAX_TRADES = 100
@@ -327,21 +328,56 @@ export async function getTradesState(slug: string): Promise<TradesState | null> 
   // in Current for as long as the season hasn't gotten past week 1. Once
   // week 2 starts, the hold lifts and those trades age out on the normal
   // 7-day clock like everything else.
+  // The hold reads the real NFL clock, not the league's own settings.
+  //
+  // It used to derive the week from seasons.settings via resolveCurrentWeek,
+  // which returns null unless the commissioner has set `season_start_date`
+  // or pinned `current_week`. pams had neither, so `preseasonHoldActive` was
+  // false every time and the hold silently did nothing: a trade made on
+  // September 2nd sat in Current for seven days and then dropped into Past
+  // while the season still hadn't kicked off. A feature that depends on
+  // optional config, and fails quietly to "off" when it's missing, is a
+  // feature that is off.
+  //
+  // getNflClock is the same public /state/nfl read the ingests use to decide
+  // whether a week is final, cached for five minutes and null on failure.
+  const clock = await getNflClock()
   const liveSettings = liveSeason?.settings ?? {}
   const liveWeek = resolveCurrentWeek(liveSettings)
   const week1StartMs =
     typeof liveSettings.season_start_date === 'string'
       ? Date.parse(liveSettings.season_start_date)
       : NaN
-  const preseasonHoldActive =
-    liveSeason != null && liveWeek != null && liveWeek <= 1 && Number.isFinite(week1StartMs)
 
-  // Scoped to the live season so a genuinely old preseason trade from an
-  // imported archive can't be dragged back into Current.
-  const isPreseasonHold = (t: TradePublic) =>
-    preseasonHoldActive &&
-    t.season_year === liveSeason!.year &&
-    Date.parse(t.executed_at) < week1StartMs
+  // Preseason, or week 1 still being played. Once the clock moves to week 2,
+  // week 1 is over and the hold lifts.
+  const holdByClock =
+    clock != null &&
+    liveSeason != null &&
+    clock.season === liveSeason.year &&
+    (clock.seasonType === 'pre' || (clock.seasonType === 'regular' && clock.week <= 1))
+
+  // Only when the clock is unreachable. Same rule as before, config and all,
+  // so a Sleeper outage degrades to the old behaviour instead of no hold.
+  const holdBySettings =
+    clock == null &&
+    liveSeason != null &&
+    liveWeek != null &&
+    liveWeek <= 1 &&
+    Number.isFinite(week1StartMs)
+
+  // Always scoped to the live season, so a genuinely old preseason trade
+  // from an imported archive can't be dragged back into Current.
+  //
+  // No per-trade date cutoff on the clock path: if the NFL is still in
+  // preseason or week 1, every trade of the live season is by definition
+  // either a preseason trade or a week-1 one, and both belong in Current.
+  const isPreseasonHold = (t: TradePublic) => {
+    if (liveSeason == null || t.season_year !== liveSeason.year) return false
+    if (holdByClock) return true
+    if (holdBySettings) return Date.parse(t.executed_at) < week1StartMs
+    return false
+  }
 
   const isCurrent = (t: TradePublic) =>
     Date.parse(t.executed_at) >= sevenDaysAgo || isPreseasonHold(t)

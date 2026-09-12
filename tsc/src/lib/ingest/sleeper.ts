@@ -21,6 +21,7 @@ import { resolveStages, intersectRange, type IngestStages, type IngestYearRange 
 import { manualLocks, manualLockWarning } from './manualLocks'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
+import { writeTradeSides, type TradeSideWrite } from './tradeSides'
 
 export type IngestResult = {
   ok: boolean
@@ -774,14 +775,9 @@ export async function ingestSleeperSource(
         continue
       }
 
-      // Replace sides on every sync — assets are derived, never authored.
-      // Cascading FK on trade_grades means an existing grade survives the
-      // delete only if it's bound to a side we re-insert with the same id,
-      // which we don't — but that's fine because grades aren't generated in
-      // Phase 1, so there's nothing to lose yet. When grading lands in
-      // Phase 2 we'll switch this to per-side upsert keyed by (trade_id,
-      // manager_id) to preserve grade history across re-syncs.
-      await db.from('trade_sides').delete().eq('trade_id', tradeRow.id)
+      // Sides are upserted, not replaced: see lib/ingest/tradeSides. The
+      // assets payload is derived and refreshes every sync, but the side row
+      // keeps its id so the grade hanging off it survives.
 
       // Stamp season-to-date position rank on each player asset, scoped
       // to the trade's week. Trades with no week (rare — pre-season pick
@@ -789,7 +785,7 @@ export async function ingestSleeperSource(
       const weekForRanks = t.week ?? null
       const ranks = weekForRanks ? await ranksForWeek(weekForRanks) : null
 
-      let sidesInserted = 0
+      const sideWrites: TradeSideWrite[] = []
       for (const [rid, assets] of assetsByRoster) {
         const managerId = userIdToManagerId(rosterToUserId.get(rid) ?? null)
         if (!managerId) {
@@ -799,17 +795,12 @@ export async function ingestSleeperSource(
         const stamped = ranks
           ? await stampRanks(assets, { ranks, platform: 'sleeper' })
           : assets
-        const { error: sideErr } = await db.from('trade_sides').insert({
-          trade_id: tradeRow.id,
-          manager_id: managerId,
-          assets: stamped,
-        })
-        if (sideErr) {
-          warnings.push(`Trade ${t.transaction_id} side r${rid}: ${sideErr.message}`)
-          continue
-        }
-        sidesInserted++
+        sideWrites.push({ managerId, assets: stamped, label: `r${rid}` })
       }
+      const sideResult = await writeTradeSides(db, tradeRow.id, sideWrites,
+        (label, message) => `Trade ${t.transaction_id} side ${label}: ${message}`)
+      warnings.push(...sideResult.warnings)
+      const sidesInserted = sideResult.written
 
       if (sidesInserted >= 2) tradesIngested++
     }

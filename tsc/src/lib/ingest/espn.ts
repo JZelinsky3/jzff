@@ -40,6 +40,7 @@ import { checkSeasonIdentity, identityWarning } from './identityGuard'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 import { getNflClock, weekIsFinal } from '@/lib/nflClock'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
+import { writeTradeSides, type TradeSideWrite } from './tradeSides'
 
 export type IngestResult = {
   ok: boolean
@@ -975,11 +976,10 @@ async function ingestSeason(args: {
         continue
       }
 
-      await db.from('trade_sides').delete().eq('trade_id', tradeRow.id)
       const weekForRanks = typeof t.scoringPeriodId === 'number' ? t.scoringPeriodId : null
       const ranks = weekForRanks ? await ranksForWeek(weekForRanks) : null
 
-      let sidesInserted = 0
+      const sideWrites: TradeSideWrite[] = []
       for (const [tid, assets] of assetsByTeam) {
         const managerId = teamToManagerId(tid)
         if (!managerId) {
@@ -989,17 +989,12 @@ async function ingestSeason(args: {
         const stampedAssets = ranks
           ? await stampRanks(assets, { ranks, platform: 'espn' })
           : assets
-        const { error: sideErr } = await db.from('trade_sides').insert({
-          trade_id: tradeRow.id,
-          manager_id: managerId,
-          assets: stampedAssets,
-        })
-        if (sideErr) {
-          result.warnings.push(`Season ${year} trade ${externalTradeId} side team ${tid}: ${sideErr.message}`)
-          continue
-        }
-        sidesInserted++
+        sideWrites.push({ managerId, assets: stampedAssets, label: `team ${tid}` })
       }
+      const sideResult = await writeTradeSides(db, tradeRow.id, sideWrites,
+        (label, message) => `Season ${year} trade ${externalTradeId} side ${label}: ${message}`)
+      result.warnings.push(...sideResult.warnings)
+      const sidesInserted = sideResult.written
       if (sidesInserted >= 2) result.tradesIngested++
     }
   }

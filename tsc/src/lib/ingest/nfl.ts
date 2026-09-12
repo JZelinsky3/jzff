@@ -20,6 +20,7 @@ import { resolveStages, intersectRange, type IngestStages, type IngestYearRange 
 import { manualLocks, manualLockWarning } from './manualLocks'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
+import { writeTradeSides, type TradeSideWrite } from './tradeSides'
 
 export type IngestResult = {
   ok: boolean
@@ -683,27 +684,21 @@ async function ingestSeason(args: {
         result.warnings.push(`Season ${year} trade ${t.trade_id}: upsert failed: ${tradeErr?.message ?? 'no row'}`)
         continue
       }
-      await db.from('trade_sides').delete().eq('trade_id', tradeRow.id)
 
       // Stamp season-to-date position rank on each player asset.
       const ranks = t.week ? await ranksForWeek(t.week) : null
 
-      let sidesInserted = 0
+      const sideWrites: TradeSideWrite[] = []
       for (const side of sidesWithMgrs) {
         const stampedAssets = ranks
           ? await stampRanks(side.assets, { ranks, platform: 'nfl' })
           : side.assets
-        const { error: sideErr } = await db.from('trade_sides').insert({
-          trade_id: tradeRow.id,
-          manager_id: side.managerId,
-          assets: stampedAssets,
-        })
-        if (sideErr) {
-          result.warnings.push(`Season ${year} trade ${t.trade_id} side team ${side.teamId}: ${sideErr.message}`)
-          continue
-        }
-        sidesInserted++
+        sideWrites.push({ managerId: side.managerId, assets: stampedAssets, label: `team ${side.teamId}` })
       }
+      const sideResult = await writeTradeSides(db, tradeRow.id, sideWrites,
+        (label, message) => `Season ${year} trade ${t.trade_id} side ${label}: ${message}`)
+      result.warnings.push(...sideResult.warnings)
+      const sidesInserted = sideResult.written
       if (sidesInserted >= 2) result.tradesIngested++
     }
   } catch (err) {
