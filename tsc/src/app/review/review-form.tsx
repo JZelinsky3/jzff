@@ -218,19 +218,26 @@ function AspectStars({
 // got used, single-select for favourite, single-select for least favourite.
 // `accent` is what separates the last one visually — rust reads as the
 // negative answer without needing the word "worst" anywhere.
+//
+// `small` shrinks the two single-select rows. Three identically-sized rows of
+// the same eight words stacked down a phone was the actual complaint: the
+// eye had nothing to tell it where one question stopped and the next began.
+// Size is the cheapest of those signals and costs no vertical space.
 function ChipRow({
   options,
   isOn,
   onPick,
   accent,
+  small = false,
 }: {
   options: readonly string[]
   isOn: (name: string) => boolean
   onPick: (name: string) => void
   accent: string
+  small?: boolean
 }) {
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: small ? '.35rem' : '.4rem' }}>
       {options.map((name) => {
         const on = isOn(name)
         return (
@@ -240,8 +247,8 @@ function ChipRow({
             onClick={() => onPick(name)}
             aria-pressed={on}
             style={{
-              fontSize: '.75rem',
-              padding: '.4rem .7rem',
+              fontSize: small ? '.7rem' : '.75rem',
+              padding: small ? '.3rem .55rem' : '.4rem .7rem',
               cursor: 'pointer',
               background: on ? accent : 'transparent',
               color: on ? 'var(--ink, #0e1620)' : 'var(--cream, #f4ebd8)',
@@ -253,6 +260,50 @@ function ChipRow({
           </button>
         )
       })}
+    </div>
+  )
+}
+
+// The head of one question inside a section: the question on the left, and on
+// the right a two-word tag saying how many answers it wants. The tag is doing
+// real work, not decoration — with three chip rows in a row, "Pick any" vs
+// "Pick one" is the only thing that says the first is a checklist and the
+// other two are not.
+function QuestionHead({
+  children,
+  hint,
+  compact,
+}: {
+  children: React.ReactNode
+  hint: string
+  compact: boolean
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'baseline',
+        justifyContent: 'space-between',
+        gap: '.7rem',
+        marginBottom: compact ? '.5rem' : '.55rem',
+      }}
+    >
+      <span style={{ fontSize: compact ? '.85rem' : '.9rem', color: 'var(--cream, #f4ebd8)' }}>
+        {children}
+      </span>
+      <span
+        style={{
+          fontFamily: 'var(--font-jetbrains-mono), ui-monospace, monospace',
+          fontSize: '.6rem',
+          letterSpacing: '.14em',
+          textTransform: 'uppercase',
+          color: 'var(--cream-soft, #c9c0ad)',
+          opacity: 0.45,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {hint}
+      </span>
     </div>
   )
 }
@@ -288,6 +339,9 @@ export function ReviewForm({
   // the checklist, and forcing that order loses the answer that matters more.
   const [favorite, setFavorite] = useState<string | null>(null)
   const [leastFavorite, setLeastFavorite] = useState<string | null>(null)
+  // Escape hatches out of the narrowing described at `pickOptions`.
+  const [allForFavorite, setAllForFavorite] = useState(false)
+  const [allForLeast, setAllForLeast] = useState(false)
   const [wish, setWish] = useState('')
   const [bestPart, setBestPart] = useState('')
   const [needsWork, setNeedsWork] = useState('')
@@ -308,6 +362,24 @@ export function ReviewForm({
 
   function toggleArea(name: string) {
     setAreas((prev) => (prev.includes(name) ? prev.filter((a) => a !== name) : [...prev, name]))
+  }
+
+  // Once the checklist above has been answered, favourite and least favourite
+  // only have to offer what was actually opened — usually two or three chips
+  // instead of eight, which is most of what made this section a wall. The
+  // full list stays one tap away, because naming a favourite without first
+  // ticking the checklist has to keep working: that answer matters more than
+  // the checklist does, and the old code was right to refuse to derive one
+  // from the other. Below two ticks there is nothing to narrow to, so the
+  // whole list shows and no toggle appears.
+  const narrowing = areas.length >= 2
+  function pickOptions(current: string | null, showAll: boolean) {
+    if (showAll || !narrowing) return AREAS
+    const keep = new Set(areas)
+    // A chip that is currently chosen never disappears from under the
+    // choice, even if it gets unticked in the checklist afterwards.
+    if (current) keep.add(current)
+    return AREAS.filter((a) => keep.has(a))
   }
 
   async function submit(e: React.FormEvent) {
@@ -463,7 +535,7 @@ export function ReviewForm({
 
       {/* ── § 01 · The look ───────────────────────────────────────── */}
       <section style={sectionBox(compact)}>
-        <div style={kicker}>§ 01 · The look</div>
+        <div style={sectionHead(compact)}>§ 01 · The look</div>
         <AspectStars
           aspect={ASPECTS[0]}
           value={aspects.design}
@@ -484,7 +556,7 @@ export function ReviewForm({
 
       {/* ── § 02 · Getting around ─────────────────────────────────── */}
       <section style={sectionBox(compact)}>
-        <div style={kicker}>§ 02 · Getting around</div>
+        <div style={sectionHead(compact)}>§ 02 · Getting around</div>
         <AspectStars
           aspect={ASPECTS[1]}
           value={aspects.navigation}
@@ -505,7 +577,7 @@ export function ReviewForm({
 
       {/* ── § 03 · What you used ──────────────────────────────────── */}
       <section style={sectionBox(compact)}>
-        <div style={kicker}>§ 03 · What you used</div>
+        <div style={sectionHead(compact)}>§ 03 · What you used</div>
         <AspectStars
           aspect={ASPECTS[2]}
           value={aspects.speed}
@@ -513,43 +585,65 @@ export function ReviewForm({
           compact={compact}
         />
 
-        <div style={{ ...label(compact), marginTop: compact ? '1rem' : '1.2rem' }}>
-          Which parts did you use?
+        {/* Three questions, three ruled blocks. They used to run together as
+            one column of identically-weighted text and twenty-four identical
+            chips, which on a phone read as a single grey paragraph with no
+            visible question in it. */}
+        <div style={qBlock(compact)}>
+          <QuestionHead hint="Pick any" compact={compact}>
+            Which parts did you use?
+          </QuestionHead>
+          <ChipRow
+            options={AREAS}
+            isOn={(name) => areas.includes(name)}
+            onPick={toggleArea}
+            accent={GOLD}
+          />
         </div>
-        <ChipRow
-          options={AREAS}
-          isOn={(name) => areas.includes(name)}
-          onPick={toggleArea}
-          accent={GOLD}
-        />
 
         {/* Favourite and least favourite are the two answers that actually
             rank the sections against each other; the checklist above only
             says what got opened. Second click on a lit chip clears it. */}
-        <div style={{ ...label(compact), marginTop: compact ? '1rem' : '1.2rem' }}>
-          Favorite part?
+        <div style={qBlock(compact)}>
+          <QuestionHead hint="Pick one" compact={compact}>
+            Favorite part?
+          </QuestionHead>
+          <ChipRow
+            options={pickOptions(favorite, allForFavorite)}
+            isOn={(name) => favorite === name}
+            onPick={(name) => setFavorite((cur) => (cur === name ? null : name))}
+            accent={GOLD}
+            small
+          />
+          {narrowing && !allForFavorite && (
+            <button type="button" onClick={() => setAllForFavorite(true)} style={moreBtn}>
+              Show all {AREAS.length}
+            </button>
+          )}
         </div>
-        <ChipRow
-          options={AREAS}
-          isOn={(name) => favorite === name}
-          onPick={(name) => setFavorite((cur) => (cur === name ? null : name))}
-          accent={GOLD}
-        />
 
-        <div style={{ ...label(compact), marginTop: compact ? '1rem' : '1.2rem' }}>
-          Least favorite?
+        <div style={qBlock(compact)}>
+          <QuestionHead hint="Pick one" compact={compact}>
+            Least favorite?
+          </QuestionHead>
+          <ChipRow
+            options={pickOptions(leastFavorite, allForLeast)}
+            isOn={(name) => leastFavorite === name}
+            onPick={(name) => setLeastFavorite((cur) => (cur === name ? null : name))}
+            accent={RUST}
+            small
+          />
+          {narrowing && !allForLeast && (
+            <button type="button" onClick={() => setAllForLeast(true)} style={moreBtn}>
+              Show all {AREAS.length}
+            </button>
+          )}
         </div>
-        <ChipRow
-          options={AREAS}
-          isOn={(name) => leastFavorite === name}
-          onPick={(name) => setLeastFavorite((cur) => (cur === name ? null : name))}
-          accent={RUST}
-        />
       </section>
 
       {/* ── § 04 · Worth paying for ───────────────────────────────── */}
       <section style={sectionBox(compact)}>
-        <div style={kicker}>§ 04 · Worth paying for</div>
+        <div style={sectionHead(compact)}>§ 04 · Worth paying for</div>
         <AspectStars
           aspect={ASPECTS[3]}
           value={aspects.value}
@@ -664,6 +758,44 @@ const sectionBox = (compact: boolean): React.CSSProperties => ({
   background: 'var(--ink, #0e1620)',
   border: '1px solid var(--ink-line, #2a3645)',
 })
+
+// Section headers (§ 01 .. § 04). Deliberately NOT the same treatment as the
+// questions underneath them: mono, uppercase, gold, and sitting on a rule.
+// The questions are sentence-case cream sans. Two different typefaces, two
+// different colours and a line between them, so a section title can never be
+// mistaken for one more thing being asked.
+const sectionHead = (compact: boolean): React.CSSProperties => ({
+  fontFamily: 'var(--font-jetbrains-mono), ui-monospace, monospace',
+  fontSize: '.66rem',
+  letterSpacing: '.22em',
+  textTransform: 'uppercase',
+  color: GOLD,
+  borderBottom: '1px solid var(--ink-line, #2a3645)',
+  paddingBottom: compact ? '.5rem' : '.55rem',
+})
+
+// One question inside a section. The rule on top is what gives §03 three
+// visible bands instead of one run-on column.
+const qBlock = (compact: boolean): React.CSSProperties => ({
+  marginTop: compact ? '.9rem' : '1.1rem',
+  paddingTop: compact ? '.9rem' : '1rem',
+  borderTop: '1px solid var(--ink-line, #2a3645)',
+})
+
+const moreBtn: React.CSSProperties = {
+  background: 'none',
+  border: 0,
+  padding: '.45rem .1rem 0',
+  fontFamily: 'var(--font-jetbrains-mono), ui-monospace, monospace',
+  fontSize: '.62rem',
+  letterSpacing: '.12em',
+  textTransform: 'uppercase',
+  color: 'var(--cream-soft, #c9c0ad)',
+  opacity: 0.55,
+  cursor: 'pointer',
+  textDecoration: 'underline',
+  textUnderlineOffset: '3px',
+}
 
 const aspectRow = (compact: boolean): React.CSSProperties => ({
   display: 'flex',

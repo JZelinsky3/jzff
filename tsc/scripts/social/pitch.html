@@ -8,7 +8,7 @@
      THE PITCH: seven slides for Instagram, 1080x1350.
 
        pitch.html?slide=1   the closed book
-       pitch.html?slide=2   six questions, answers redacted
+       pitch.html?slide=2   your app vs ours, same league
        pitch.html?slide=3   a whole front page about one week
        pitch.html?slide=4   a manager's file
        pitch.html?slide=5   three exhibits
@@ -1104,41 +1104,147 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
              font-size:12px; letter-spacing:.18em; text-transform:uppercase;
              color:var(--mute); line-height:1.8; }
 
-/* ══ THE QUESTIONNAIRE (slide 2) ══════════════════════════════
-   Six questions with the answers struck out. The redaction is the
-   whole slide: at thumbnail size a column of black bars reads as
-   "something is being withheld" before a single word is read, which
-   is the one thing a feature list can never do.
+/* ══ THE SPLIT (slide 2) ══════════════════════════════════════
+   Two columns of the SAME league, ten seasons, from the same league
+   ID: what the platform shows, and what we show.
 
-   The bars are drawn with a fraction of rotation and a hard offset
-   under them so they read as marker laid on paper rather than as
-   CSS rectangles. Widths are set per row from the answer that is
-   actually under them, so the column is ragged. */
-.qs { flex:1; min-height:0; display:flex; flex-direction:column; }
-.qs .q { flex:1; display:flex; align-items:center; gap:26px;
-         border-bottom:1px solid var(--line-2); }
-.qs .q:last-child { border-bottom:0; }
-.qs .q .no { flex:none; width:44px; font-family:var(--mono); font-size:14px;
-             letter-spacing:.1em; color:var(--faint); }
-.qs .q .t { flex:1; font-family:var(--serif); font-size:31px; line-height:1.14;
-            color:var(--fg); }
-.qs .q .a { flex:none; width:270px; display:flex; flex-direction:column;
-            align-items:flex-end; gap:8px; }
+   This replaced a sheet of six questions with the answers struck out
+   in marker. That version withheld everything and so had nothing to
+   look at, and six redaction bars in a column is a joke that lands
+   once. The comparison is the argument anyway: the platform is not
+   missing the data, it is sitting on it.
 
-.redact { display:block; height:30px; border-radius:1px; background:#17130d;
-          transform:rotate(-.4deg); box-shadow:2px 3px 0 rgba(23,19,13,.20); }
-.redact.sm { height:14px; opacity:.82; transform:rotate(.5deg); }
+   ── THE SLIDE IS THE DENSITY, NOT THE WORDS ──────────────────
+   At thumbnail size nobody reads a headline. What has to carry is
+   that the left column stops a third of the way down and the right
+   column keeps going, in colour, for the rest of the sheet. So the
+   two columns are deliberately built to the SAME row height and the
+   standings on the left is aligned to end exactly where the grid on
+   the right ends. Everything under that line on the right is what
+   you do not have. Keep that alignment if you edit either side.
 
-/* The last row is left open, so the sheet pays something out instead
-   of only withholding. */
-.qs .q.open { border-bottom:0; }
-.qs .q.open .t { color:var(--gold); }
-.qs .q.open .v { font-family:var(--serif); font-size:42px; line-height:1;
-                 color:var(--gold); letter-spacing:-.02em; }
-.qs .q.open .k { margin-top:9px; font-family:var(--mono); font-size:12px;
-                 letter-spacing:.14em; text-transform:uppercase; color:var(--mute); }
-/* the rule under the open row, drawn in the accent so the eye lands */
-.qs .q.open { border-top:2px solid var(--gold); }
+   Left is drawn in --mute and --faint only. It never gets an accent,
+   because the moment the left column has colour in it the sheet
+   stops reading at a glance. */
+.vs { flex:1; min-height:0; display:flex; gap:34px; }
+.vs .col { min-width:0; display:flex; flex-direction:column; }
+.vs .col.app { flex:0 0 286px; }
+.vs .col.us  { flex:1; padding-left:34px; border-left:1px solid var(--line); }
+
+/* The column heads. A filled square for us, a hollow one for them:
+   at any size that is a "full / empty" pair before it is read. */
+.vs .ch { flex:none; display:flex; align-items:center; gap:10px;
+          padding-bottom:13px; margin-bottom:16px;
+          border-bottom:1px solid var(--line); }
+.vs .ch b { font-family:var(--mono); font-size:13px; letter-spacing:.2em;
+            font-weight:400; text-transform:uppercase; white-space:nowrap; }
+.vs .ch u { width:9px; height:9px; flex:none; }
+.vs .col.app .ch b { color:var(--mute); }
+.vs .col.app .ch u { border:1px solid var(--faint); }
+.vs .col.us  .ch b { color:var(--gold); }
+.vs .col.us  .ch u { background:var(--gold); }
+.vs .ch s { margin-left:auto; text-decoration:none; font-family:var(--mono);
+            font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+            color:var(--faint); }
+
+/* ── left: the standings table, and then nothing ──────────────
+   The one table every platform gives you. Row height is locked to
+   --rh so it lines up with the grid rows opposite. */
+.vs .tbl { flex:none; }
+.vs .tbl .r { display:flex; align-items:center; height:var(--rh);
+              gap:10px; border-bottom:1px solid var(--line-2); }
+.vs .tbl .r.h { height:26px; border-bottom:1px solid var(--line); }
+.vs .tbl .r.h span { font-family:var(--mono); font-size:10px; letter-spacing:.16em;
+                     text-transform:uppercase; color:var(--faint); }
+.vs .tbl .p { flex:none; width:20px; font-family:var(--mono); font-size:12px;
+              color:var(--faint); }
+.vs .tbl .n { flex:1; min-width:0; font-family:var(--serif); font-size:21px;
+              color:var(--soft); white-space:nowrap; }
+.vs .tbl .w { flex:none; width:54px; text-align:right; font-family:var(--mono);
+              font-size:13px; color:var(--mute); }
+.vs .tbl .f { flex:none; width:62px; text-align:right; font-family:var(--mono);
+              font-size:13px; color:var(--mute); }
+
+/* What the left column has instead of the other two figures: a
+   dashed stop and an empty half page. The space is the point, so
+   resist the urge to put anything in it. */
+.vs .stop { flex:none; margin-top:20px; padding-top:18px;
+            border-top:1px dashed var(--faint); font-family:var(--mono);
+            font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+            color:var(--faint); line-height:1.9; }
+.vs .stop b { display:block; font-weight:400; color:var(--mute); }
+
+/* ── right, figure 1: ten seasons as a grid ───────────────────
+   One cell per manager per season, shaded by where they finished.
+   Sequential, so ONE hue from the stock's oxblood down to a tint a
+   shade off the paper — never a rainbow, and never a hue that says
+   "good" at one end and "bad" at the other, because finishing 6th
+   is not a different KIND of thing from finishing 1st.
+
+   Championships also carry a star, so the top of the ramp is never
+   colour alone. */
+.grid10 { flex:none; }
+.grid10 .row { display:flex; align-items:center; height:var(--rh); gap:4px; }
+.grid10 .row.h { height:26px; }
+.grid10 .nm { flex:none; width:74px; font-family:var(--serif); font-size:19px;
+              color:var(--soft); white-space:nowrap; overflow:hidden; }
+.grid10 .row.h .nm { font-family:var(--mono); font-size:10px; letter-spacing:.16em;
+                     text-transform:uppercase; color:var(--faint); }
+.grid10 .c { flex:1; min-width:0; height:calc(var(--rh) - 5px);
+             display:flex; align-items:center; justify-content:center;
+             font-family:var(--mono); font-size:11px; }
+.grid10 .row.h .c { height:auto; font-size:10px; letter-spacing:.06em;
+                    color:var(--faint); }
+.grid10 .c i { font-style:normal; font-size:12px; color:#f7efe0; }
+
+/* ── right, figure 2: head to head, all time ──────────────────
+   Diverging off a centre rule: wins one way, losses the other, two
+   hues with a neutral middle. The counts are printed at both ends,
+   so the bar is a shape to compare and the number is the fact. */
+.h2h { flex:none; }
+.h2h .r { display:flex; align-items:center; gap:12px; height:46px; }
+.h2h .r .nm { flex:none; width:120px; font-family:var(--serif); font-size:19px;
+              color:var(--soft); text-align:right; white-space:nowrap; }
+.h2h .r .bar { flex:1; min-width:0; display:flex; align-items:center; }
+.h2h .r .bar .side { flex:1; display:flex; height:15px; }
+.h2h .r .bar .side.l { justify-content:flex-end; }
+.h2h .r .bar u { display:block; height:100%; }
+.h2h .r .bar .side.l u { background:var(--h2h-w); }
+.h2h .r .bar .side.r u { background:var(--h2h-l); }
+.h2h .r .bar .mid { flex:none; width:1px; height:24px; background:var(--fg);
+                    opacity:.45; }
+.h2h .r .v { flex:none; width:34px; font-family:var(--mono); font-size:13px;
+             color:var(--mute); }
+.h2h .r .v.l { text-align:right; }
+.h2h .sc { display:flex; align-items:center; gap:12px; margin-top:7px; }
+.h2h .sc .sp { flex:none; width:120px; }
+.h2h .sc .lg { flex:1; display:flex; font-family:var(--mono); font-size:10px;
+               letter-spacing:.16em; text-transform:uppercase; color:var(--faint); }
+.h2h .sc .lg span:last-child { margin-left:auto; }
+
+/* ── right, figure 3: one record, printed ─────────────────────
+   The sheet pays out. A hero number is the right form for a single
+   headline figure — a chart of one value is a waste of a chart. */
+.rec { flex:none; margin-top:auto; display:flex; align-items:flex-end; gap:20px;
+       padding-top:17px; border-top:2px solid var(--gold); }
+.rec .v { font-family:var(--serif); font-size:66px; line-height:.86;
+          letter-spacing:-.03em; color:var(--gold); }
+.rec .t { flex:1; padding-bottom:5px; }
+.rec .t b { display:block; font-family:var(--serif); font-weight:400;
+            font-size:22px; line-height:1.2; color:var(--fg); }
+.rec .t s { display:block; margin-top:6px; text-decoration:none;
+            font-family:var(--mono); font-size:11px; letter-spacing:.14em;
+            text-transform:uppercase; color:var(--mute); }
+
+/* A caption under a figure, so each one says what it is without a
+   second headline. */
+.figcap { flex:none; display:flex; align-items:baseline; gap:12px;
+          margin:0 0 11px; }
+.figcap b { font-family:var(--mono); font-size:11px; letter-spacing:.18em;
+            font-weight:400; text-transform:uppercase; color:var(--fg); }
+.figcap u { flex:1; height:1px; background:var(--line-2); text-decoration:none; }
+.figcap s { text-decoration:none; font-family:var(--mono); font-size:10px;
+            letter-spacing:.14em; text-transform:uppercase; color:var(--faint); }
 
 /* ══ THE FRONT PAGE (slide 3) ═════════════════════════════════
    A whole broadsheet page about one week of an invented league.
@@ -1445,8 +1551,8 @@ function seasonPM() {
    THE SLIDES
 
    Seven, and deliberately seven different KINDS of object: a closed
-   book, a redacted questionnaire, a front page, a personnel file, a
-   sheet of exhibits, a live board and a back cover.
+   book, a split sheet, a front page, a personnel file, a sheet of
+   exhibits, a live board and a back cover.
 
    The tour's problem was that it was an index: fifteen sheets of
    "here is another page we have". Nobody subscribes to a table of
@@ -1457,7 +1563,7 @@ function seasonPM() {
 
 const SLIDES = [
   { kind:'front', theme:'almanac', run:'The pitch' },
-  { kind:'blind', theme:'almanac', stock:'file',  run:'The blind spot' },
+  { kind:'split', theme:'almanac', stock:'file',  run:'The difference' },
   { kind:'paper', theme:'almanac',                run:'The front page' },
   { kind:'file',  theme:'almanac', stock:'file',  run:'The manager file' },
   /* Slate's `rust` is the milestones violet, which came out as lilac
@@ -1534,45 +1640,136 @@ if (s.kind === 'front') {
       </div>
     </div>`;
 
-/* ── 02 the questionnaire ────────────────────────────────────
-   Six things a league argues about and cannot settle, with the
-   answers struck out, and the sixth left open so the sheet pays out
-   instead of only teasing. Every question maps to a real page, and
-   none of them says which. */
-} else if (s.kind === 'blind') {
-  const Q = [
-    ['01', 'Who has scored the most points<br>and never won it?', [236, 132]],
-    ['02', 'Which draft was the worst one<br>anybody has ever had?', [198, 156]],
-    ['03', 'Who leaves the most points<br>sitting on their bench?', [170, 118]],
-    ['04', 'Which trade actually won,<br>a year after it was made?', [252, 144]],
-    ['05', 'Who owns who, all time,<br>and by how much?', [214, 166]],
+/* ── 02 the split ────────────────────────────────────────────
+   The same league on both sides of one rule. Left is the standings
+   table every platform gives you and then half a page of nothing;
+   right is ten seasons as a shaded grid, every rivalry settled, and
+   a record printed.
+
+   Nothing here is a feature list. Both columns are drawn from the
+   same fictional league, because the argument is not "we have more
+   pages", it is "your app already has this and does nothing with
+   it". */
+} else if (s.kind === 'split') {
+  const ROW = 38;             /* row height shared by both columns */
+  const SEASONS = [16,17,18,19,20,21,22,23,24,25];
+
+  /* Eight of the twelve, in this season's order. `fin` is where each
+     one finished in each of the ten seasons; 1 is a title.
+
+     THE LAST COLUMN IS THE TABLE ON THE LEFT. 2025 reads 1..8 down
+     the list on purpose, because the left column is that one column
+     and nothing else — which is the entire argument of the sheet. If
+     you reorder either side, reorder both. Every other season is a
+     distinct 1..9 so no two managers share a finish. */
+  const LEAGUE = [
+    { nm:'Bryce', fin:[4,2,1,3,1,5,2,4,1,1],  rec:'9-3',  pf:'1,482' },
+    { nm:'John',  fin:[7,5,4,2,3,1,6,2,4,2],  rec:'9-3',  pf:'1,551' },
+    { nm:'Nate',  fin:[2,8,6,7,4,3,1,5,7,3],  rec:'8-4',  pf:'1,404' },
+    { nm:'Drew',  fin:[9,4,8,5,6,7,3,1,5,4],  rec:'7-5',  pf:'1,398' },
+    { nm:'Matt',  fin:[1,6,3,9,8,4,7,6,2,5],  rec:'6-6',  pf:'1,361' },
+    { nm:'Reid',  fin:[5,9,7,4,9,8,5,3,8,6],  rec:'6-6',  pf:'1,338' },
+    { nm:'Cole',  fin:[8,3,9,6,5,9,8,9,6,7],  rec:'5-7',  pf:'1,295' },
+    { nm:'Vince', fin:[6,7,5,8,7,6,9,8,9,8],  rec:'3-9',  pf:'1,204' },
   ];
+
+  /* Sequential, one hue, dark = finished high. Six steps rather than
+     twelve: the eye cannot rank twelve tints, and the question the
+     grid answers is "were they good that year", not "was it 6th or
+     7th". The last step sits a shade off the paper so a bad season
+     reads as a gap in the sheet. */
+  const SHADE = ['#7a1c12','#a2402c','#c06e55','#d79d85','#e8c6b3','#f1e0d1'];
+  const shade = f => SHADE[Math.min(5, Math.floor((f - 1) / 2))];
+
+  /* Head to head, all time, against the four they have played most.
+     Scaled off the largest total so the rows share one scale. */
+  const H2H = [
+    { nm:'vs John',  w:14, l:6 },
+    { nm:'vs Nate',  w:11, l:9 },
+    { nm:'vs Drew',  w:13, l:5 },
+    { nm:'vs Vince', w:16, l:3 },
+  ];
+  const H2HMAX = Math.max(...H2H.map(r => Math.max(r.w, r.l)));
+
   body.innerHTML = runHead(s.run) + `
-    <div class="page">
-      <div class="head-x" style="--h2:66px;--rw:196px">
+    <div class="page" style="--rh:${ROW}px">
+      <div class="head-x" style="--h2:62px;--rw:210px">
         <div class="l">
-          <h2>Six questions your<br>league <em>cannot answer.</em></h2>
+          <h2>What your app shows.<br>And <em>what we show.</em></h2>
         </div>
-        <div class="r">Twelve managers<br>Ten seasons<br>Nothing written down</div>
+        <div class="r">One league<br>Ten seasons<br>The same league ID</div>
       </div>
-      <div class="foil" style="flex:none;margin:26px 0 8px"></div>
-      <div class="qs">
-        ${Q.map(([no, t, w]) => `<div class="q">
-          <span class="no">${no}</span>
-          <span class="t">${t}</span>
-          <span class="a"><i class="redact" style="width:${w[0]}px"></i>
-            <i class="redact sm" style="width:${w[1]}px"></i></span>
-        </div>`).join('')}
-        <div class="q open">
-          <span class="no">06</span>
-          <span class="t">What is the highest score<br>anyone has ever put up?</span>
-          <span class="a"><span class="v">212.44</span>
-            <span class="k">Drew &middot; Week 11 &middot; 2022</span></span>
+      <div class="foil" style="flex:none;margin:24px 0 22px"></div>
+
+      <div class="vs">
+        <div class="col app">
+          <div class="ch"><u></u><b>Your league app</b><s>2025</s></div>
+          <!-- The left column carries a caption for the same reason the
+               right one does, and at the same height: it is what puts
+               the eight standings rows on exactly the same baselines as
+               the eight grid rows opposite. Drop it and the comparison
+               goes soft. -->
+          <div class="figcap"><b>This season</b><u></u><s>Week 12</s></div>
+          <div class="tbl">
+            <div class="r h"><span style="width:20px"></span>
+              <span style="flex:1"></span>
+              <span style="width:54px;text-align:right">W&ndash;L</span>
+              <span style="width:62px;text-align:right">PF</span></div>
+            ${LEAGUE.map((m, i) => `<div class="r">
+              <span class="p">${i + 1}</span>
+              <span class="n">${esc(m.nm)}</span>
+              <span class="w">${m.rec}</span>
+              <span class="f">${m.pf}</span>
+            </div>`).join('')}
+          </div>
+          <div class="stop">
+            <b>That is the whole record.</b>
+            Last season is gone.<br>So is the one before it.
+          </div>
+        </div>
+
+        <div class="col us">
+          <div class="ch"><u></u><b>The Sunday Chronicle</b><s>2016&ndash;2025</s></div>
+
+          <div class="figcap"><b>Every finish, ten seasons</b><u></u><s>&#9733; title &middot; darker = better</s></div>
+          <div class="grid10">
+            <div class="row h"><span class="nm">Manager</span>
+              ${SEASONS.map(y => `<span class="c">${y}</span>`).join('')}</div>
+            ${LEAGUE.map(m => `<div class="row">
+              <span class="nm">${esc(m.nm)}</span>
+              ${m.fin.map(f => `<span class="c" style="background:${shade(f)}">${
+                f === 1 ? '<i>&#9733;</i>' : ''}</span>`).join('')}
+            </div>`).join('')}
+          </div>
+
+          <div class="figcap" style="margin-top:26px">
+            <b>Bryce, head to head, all time</b><u></u><s>Since 2016</s></div>
+          <div class="h2h" style="--h2h-w:#8c2b1e;--h2h-l:#0f6b96">
+            ${H2H.map(r => `<div class="r">
+              <span class="nm">${esc(r.nm)}</span>
+              <span class="v l">${r.w}</span>
+              <span class="bar">
+                <span class="side l"><u style="width:${(r.w / H2HMAX) * 100}%"></u></span>
+                <span class="mid"></span>
+                <span class="side r"><u style="width:${(r.l / H2HMAX) * 100}%"></u></span>
+              </span>
+              <span class="v">${r.l}</span>
+            </div>`).join('')}
+            <div class="sc"><span class="sp"></span>
+              <span class="lg"><span>Won</span><span>Lost</span></span></div>
+          </div>
+
+          <div class="rec">
+            <span class="v">212.44</span>
+            <span class="t"><b>The highest score anyone<br>has ever put up.</b>
+              <s>Drew &middot; Week 11 &middot; 2022</s></span>
+          </div>
         </div>
       </div>
-      ${strap(`We answered the sixth one. The site answers <em>all six</em>
-               about ninety seconds after you connect your league.`,
-              'One league ID<br>Nothing to fill in')}
+
+      ${strap(`Your app has had all of this the whole time.
+               It <em>just never did anything with it.</em>`,
+              'One league ID<br>Ninety seconds')}
     </div>` + foot(n);
 
 /* ── 03 the front page ───────────────────────────────────────

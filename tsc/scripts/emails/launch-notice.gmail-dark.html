@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
 <title>Your free access ends September 17</title>
 
 <!--
@@ -16,23 +18,53 @@
   own inbox after he went digging for it, so the real result was 0 of ~165.
   Three things in the old template are gone as a result:
 
-  1. NO color-scheme / supported-color-schemes metas. Those asked clients to
-     do their own dark-mode handling, which is how one email became several
-     unpredictable emails. This is ONE design at all times.
+  1. NO prefers-color-scheme media queries and no second palette. Shipping
+     two designs is how one email became several unpredictable emails. This
+     is ONE design at all times. (The color-scheme metas below are the
+     opposite of that: they declare "dark" only, which is a request to leave
+     the single design alone, not an offer to supply a second one.)
   2. NO Google Fonts <link> or @import. Web fonts do not load in Outlook,
      Gmail's web client, or most mobile clients, so the old file was already
      falling back for most readers while paying for an external request that
      some filters score against. Georgia and Arial are on every device.
-  3. NO hidden zero-width preheader padding (&#bb77aa;&zwnj; repeated). Hidden
+  3. NO hidden zero-width preheader padding (&#847;&zwnj; repeated). Hidden
      text is a textbook spam heuristic and it was buying a tidier inbox
      preview at the cost of the inbox.
 
-  Colours are the site's own: ink navy #dfe7f1, cream #271e0b, gold #765617.
-  Dark on purpose rather than by accident. A light email gets inverted by
-  dark-mode clients and often inverted badly; a dark one renders the same in
-  both, so this is the choice that yields ONE readable email everywhere.
-  Every table carries a bgcolor attribute as well as an inline style,
-  because Outlook ignores CSS backgrounds on some elements.
+  ── THE PALETTE IS WARM, AND THAT IS THE DARK-MODE FIX ────────────────────
+  This used to be the site's ink navy (#dfe7f1). In Gmail's dark theme it
+  arrived as a PALE BLUE email with muddy bronze stars. That is not a bug in
+  this file, it is Gmail doing what it always does.
+
+  Gmail ignores prefers-color-scheme and instead rewrites the message's own
+  colours in dark theme. The transform is a lightness inversion in HSL that
+  KEEPS HUE AND SATURATION: L becomes 1-L. Navy is a blue hue at 9% lightness,
+  so it came back as the same blue hue at 91% lightness, i.e. pale blue. The
+  light gold stars came back as the same gold hue gone dark.
+
+  You cannot stop the flip. You CAN choose the hue it lands on, because hue
+  survives it. So the ink ramp was rotated from blue to warm, at the same
+  lightness values it already had:
+
+      page   #e8eef5 -> #f8f2ea      muted  #546374 -> #72664f
+      card   #dfe7f1 -> #f6efe1      footer #738294 -> #7b6e57
+      panel  #d4e0ec -> #ede3d5      rules  #bac6d5 -> #dbceba
+
+  Light inboxes now see a warm near-black almanac instead of a navy one,
+  which at 9% lightness is a subtle change. Gmail dark theme inverts the card
+  to #1e1709 — cream, near enough the site's own — instead of pale blue.
+  Contrast was checked in BOTH directions; nothing drops below 4.4:1.
+
+  Cream #271e0b, gold #765617 and rust #b5452b are unchanged. They were
+  already warm, so they invert to dark ink, bronze and brick ON cream, which
+  reads as printing rather than as an accident.
+
+  To see the flip before sending:
+      node scripts/emails/gmail-dark-sim.mjs scripts/emails/launch-notice.html
+  then open the .gmail-dark.html it writes next to this file.
+
+  Every table carries a bgcolor attribute as well as an inline style, because
+  Outlook ignores CSS backgrounds on some elements.
 
   ── BEFORE YOU SEND ───────────────────────────────────────────────────────
   · From MUST be an address at thesundaychronicle.app, never
@@ -82,22 +114,22 @@
   a { text-decoration: none; }
 </style>
 </head>
-<body style="margin:0; padding:0; background-color:#e8eef5; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+<body style="margin:0; padding:0; background-color:#f8f2ea; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
 
 <!-- Inbox preview line. Plain words, no hidden padding characters. -->
-<div style="display:none; max-height:0; overflow:hidden; opacity:0; color:#e8eef5; font-size:1px; line-height:1px;">
+<div style="display:none; max-height:0; overflow:hidden; opacity:0; color:#f8f2ea; font-size:1px; line-height:1px;">
   Thursday September 17 is the last day of full access on your account. Nothing gets deleted.
 </div>
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#e8eef5" style="background-color:#e8eef5;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f8f2ea" style="background-color:#f8f2ea;">
 <tr><td align="center" style="padding:26px 12px;">
 
-  <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#dfe7f1" style="width:600px; max-width:600px; background-color:#dfe7f1; border:1px solid #bac6d5;">
+  <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#f6efe1" style="width:600px; max-width:600px; background-color:#f6efe1; border:1px solid #dbceba;">
 
     <!-- ═══ MASTHEAD ═══════════════════════════════════════════════ -->
     <tr>
-      <td class="pad" align="center" bgcolor="#dfe7f1" style="padding:34px 40px 24px; border-bottom:3px double #b59757;">
-        <div style="font-family:Arial,Helvetica,sans-serif; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:#546374; padding-bottom:12px;">
+      <td class="pad" align="center" bgcolor="#f6efe1" style="padding:34px 40px 24px; border-bottom:3px double #b59757;">
+        <div style="font-family:Arial,Helvetica,sans-serif; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:#72664f; padding-bottom:12px;">
           An almanac, kept faithfully
         </div>
         <div class="masthead" style="font-family:Georgia,'Times New Roman',serif; font-size:37px; line-height:1.1; letter-spacing:1px; color:#271e0b;">
@@ -111,7 +143,7 @@
 
     <!-- ═══ LEDE ═══════════════════════════════════════════════════ -->
     <tr>
-      <td class="pad" bgcolor="#dfe7f1" style="padding:32px 40px 0;">
+      <td class="pad" bgcolor="#f6efe1" style="padding:32px 40px 0;">
         <div style="font-family:Arial,Helvetica,sans-serif; font-size:11px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:#b5452b; padding-bottom:14px;">
           &#9733; Your free access ends September 17
         </div>
@@ -132,11 +164,11 @@
 
     <!-- ═══ WHAT HAPPENS ═══════════════════════════════════════════ -->
     <tr>
-      <td class="pad" bgcolor="#dfe7f1" style="padding:30px 40px 0;">
+      <td class="pad" bgcolor="#f6efe1" style="padding:30px 40px 0;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
-            <td bgcolor="#d4e0ec" style="background-color:#d4e0ec; border-left:3px solid #bac6d5; padding:20px 22px;">
-              <div style="font-family:Arial,Helvetica,sans-serif; font-size:11px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:#546374; padding-bottom:14px;">
+            <td bgcolor="#ede3d5" style="background-color:#ede3d5; border-left:3px solid #dbceba; padding:20px 22px;">
+              <div style="font-family:Arial,Helvetica,sans-serif; font-size:11px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:#72664f; padding-bottom:14px;">
                 What happens on the 17th
               </div>
               <div class="stand" style="font-family:Arial,Helvetica,sans-serif; font-size:15px; line-height:1.95; color:#453c27;">
@@ -156,10 +188,10 @@
          Described as a change to the trial length on their account,
          with a date. No price, no plans button, nothing deal-shaped. -->
     <tr>
-      <td class="pad" bgcolor="#dfe7f1" style="padding:14px 40px 0;">
+      <td class="pad" bgcolor="#f6efe1" style="padding:14px 40px 0;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
-            <td bgcolor="#d4e0ec" style="background-color:#d4e0ec; border-left:3px solid #b59757; padding:20px 22px;">
+            <td bgcolor="#ede3d5" style="background-color:#ede3d5; border-left:3px solid #b59757; padding:20px 22px;">
               <div style="font-family:Arial,Helvetica,sans-serif; font-size:11px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:#765617; padding-bottom:14px;">
                 If you want to keep the whole thing
               </div>
@@ -176,15 +208,15 @@
     </tr>
 
     <!-- ═══ RULE ═══════════════════════════════════════════════════ -->
-    <tr><td class="pad" bgcolor="#dfe7f1" style="padding:30px 40px 0;">
+    <tr><td class="pad" bgcolor="#f6efe1" style="padding:30px 40px 0;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-        <td style="border-top:1px solid #bac6d5; font-size:0; line-height:0;">&nbsp;</td>
+        <td style="border-top:1px solid #dbceba; font-size:0; line-height:0;">&nbsp;</td>
       </tr></table>
     </td></tr>
 
     <!-- ═══ THE ASK ════════════════════════════════════════════════ -->
     <tr>
-      <td class="pad" bgcolor="#dfe7f1" style="padding:26px 40px 0;">
+      <td class="pad" bgcolor="#f6efe1" style="padding:26px 40px 0;">
         <div style="font-family:Arial,Helvetica,sans-serif; font-size:11px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:#765617; padding-bottom:12px;">
           One ask
         </div>
@@ -202,7 +234,7 @@
     <!-- Star row. Each star is its own link carrying its rating, drawn as
          text so an images-off inbox still shows five gold stars. -->
     <tr>
-      <td align="center" bgcolor="#dfe7f1" style="padding:22px 12px 8px;">
+      <td align="center" bgcolor="#f6efe1" style="padding:22px 12px 8px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
           <td class="star" style="padding:0 8px; font-size:36px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=1&amp;src=email" style="color:#765617; text-decoration:none;">&#9733;</a></td>
           <td class="star" style="padding:0 8px; font-size:36px; line-height:1;"><a href="https://thesundaychronicle.app/review?r=2&amp;src=email" style="color:#765617; text-decoration:none;">&#9733;</a></td>
@@ -213,18 +245,18 @@
       </td>
     </tr>
     <tr>
-      <td align="center" bgcolor="#dfe7f1" style="padding:0 12px;">
+      <td align="center" bgcolor="#f6efe1" style="padding:0 12px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:270px;">
           <tr>
-            <td width="50%" align="left" style="font-family:Arial,Helvetica,sans-serif; font-size:10px; letter-spacing:1.4px; text-transform:uppercase; color:#546374;">Rough</td>
-            <td width="50%" align="right" style="font-family:Arial,Helvetica,sans-serif; font-size:10px; letter-spacing:1.4px; text-transform:uppercase; color:#546374;">Perfect</td>
+            <td width="50%" align="left" style="font-family:Arial,Helvetica,sans-serif; font-size:10px; letter-spacing:1.4px; text-transform:uppercase; color:#72664f;">Rough</td>
+            <td width="50%" align="right" style="font-family:Arial,Helvetica,sans-serif; font-size:10px; letter-spacing:1.4px; text-transform:uppercase; color:#72664f;">Perfect</td>
           </tr>
         </table>
       </td>
     </tr>
     <tr>
-      <td class="pad" align="center" bgcolor="#dfe7f1" style="padding:18px 40px 0;">
-        <div style="font-family:Arial,Helvetica,sans-serif; font-size:14px; line-height:1.6; color:#546374;">
+      <td class="pad" align="center" bgcolor="#f6efe1" style="padding:18px 40px 0;">
+        <div style="font-family:Arial,Helvetica,sans-serif; font-size:14px; line-height:1.6; color:#72664f;">
           Or just hit reply. One line is fine.
         </div>
       </td>
@@ -232,30 +264,30 @@
 
     <!-- ═══ SIGN-OFF ═══════════════════════════════════════════════ -->
     <tr>
-      <td class="pad" bgcolor="#dfe7f1" style="padding:32px 40px 34px;">
+      <td class="pad" bgcolor="#f6efe1" style="padding:32px 40px 34px;">
         <div style="font-family:Arial,Helvetica,sans-serif; font-size:16px; line-height:1.7; color:#453c27;">
           Week 1 is on. Go check your standings.
           <br><br>
           <span style="color:#271e0b;">JZFF</span><br>
-          <span style="font-family:Arial,Helvetica,sans-serif; font-size:11px; letter-spacing:1.8px; text-transform:uppercase; color:#546374;">The Sunday Chronicle</span>
+          <span style="font-family:Arial,Helvetica,sans-serif; font-size:11px; letter-spacing:1.8px; text-transform:uppercase; color:#72664f;">The Sunday Chronicle</span>
         </div>
       </td>
     </tr>
 
     <!-- ═══ FOOTER. No postal address in this variant, by design. ═══ -->
     <tr>
-      <td class="pad" align="center" bgcolor="#e8eef5" style="padding:24px 40px 28px; border-top:1px solid #bac6d5; background-color:#e8eef5;">
-        <div style="font-family:Arial,Helvetica,sans-serif; font-size:10px; letter-spacing:2.4px; text-transform:uppercase; color:#738294; padding-bottom:12px;">
-          The Sunday Chronicle &nbsp;&#77ee99;&nbsp; Built by JZFF
+      <td class="pad" align="center" bgcolor="#f8f2ea" style="padding:24px 40px 28px; border-top:1px solid #dbceba; background-color:#f8f2ea;">
+        <div style="font-family:Arial,Helvetica,sans-serif; font-size:10px; letter-spacing:2.4px; text-transform:uppercase; color:#7b6e57; padding-bottom:12px;">
+          The Sunday Chronicle &nbsp;&#183;&nbsp; Built by JZFF
         </div>
-        <div style="font-family:Arial,Helvetica,sans-serif; font-size:13px; line-height:1.7; color:#738294;">
+        <div style="font-family:Arial,Helvetica,sans-serif; font-size:13px; line-height:1.7; color:#7b6e57;">
           You're getting this because you made an account at thesundaychronicle.app.
           <br><br>
-          <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#546374; text-decoration:underline;">Unsubscribe</a>
-          &nbsp;&#77ee99;&nbsp;
-          <a href="https://thesundaychronicle.app/privacy" style="color:#546374; text-decoration:underline;">Privacy</a>
-          &nbsp;&#77ee99;&nbsp;
-          <a href="https://thesundaychronicle.app/terms" style="color:#546374; text-decoration:underline;">Terms</a>
+          <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#72664f; text-decoration:underline;">Unsubscribe</a>
+          &nbsp;&#183;&nbsp;
+          <a href="https://thesundaychronicle.app/privacy" style="color:#72664f; text-decoration:underline;">Privacy</a>
+          &nbsp;&#183;&nbsp;
+          <a href="https://thesundaychronicle.app/terms" style="color:#72664f; text-decoration:underline;">Terms</a>
         </div>
       </td>
     </tr>
