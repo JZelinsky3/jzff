@@ -159,6 +159,14 @@ export function summaryViolations(
   //     and once for the side that gave him up, which the lists already say
   //   \u2022 an exact rank for a player too deep to start, where the number is
   //     precision about nothing
+  // "(rank RB12)" — the word "rank" inside the parentheses is noise. The
+  // reader can see RB12 is a rank. Caught here rather than left to the prompt
+  // because it appeared in every sentence of both write-ups at once, which is
+  // exactly the kind of tic a deterministic check kills for good.
+  if (/\(\s*rank\s+[A-Za-z]{1,3}\d+\s*\)/i.test(text)) {
+    out.push('wrote "(rank RB12)" style parentheses; drop the word "rank" and write "(RB12)", or fold it into the noun as "a busted TE2"')
+  }
+
   for (const { label, deep } of rankLabels) {
     const esc = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const hits = text.match(new RegExp(`\\b${esc}\\b`, 'gi'))
@@ -785,15 +793,21 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     // extra calls is an acceptable ceiling on a job that runs once per
     // trade, and most trades never spend even one.
     const MAX_FIXUPS = 2
-    for (let fix = 0; fix < MAX_FIXUPS; fix++) {
-      const violations = summaryViolations(
-        String(parsed?.summary ?? ''), leagueType,
-        { receivedTokens, sideNames, rankLabels, week: tradeWeek },
-      )
-      if (violations.length === 0) break
-      if (fix === MAX_FIXUPS - 1) {
-        warnings.push(`summary still imperfect after ${MAX_FIXUPS} fixups: ${violations.join('; ')}`)
-      }
+    // The warning used to fire from INSIDE the loop, on the last iteration,
+    // BEFORE that iteration's retry had run. So it reported the state after
+    // one fixup while claiming two, and the final rewrite, the one actually
+    // stored, was never checked at all. The result was warnings about copy
+    // that the very next call had already cleaned up: a summary saved with
+    // each rank printed exactly once, filed under "printed the rank WR13 2
+    // times". Check after the loop instead, and report how many fixups truly
+    // ran, so a warning always describes the text that got saved.
+    const checkSummary = () => summaryViolations(
+      String(parsed?.summary ?? ''), leagueType,
+      { receivedTokens, sideNames, rankLabels, week: tradeWeek },
+    )
+    let violations = checkSummary()
+    let fixupsRun = 0
+    for (let fix = 0; fix < MAX_FIXUPS && violations.length > 0; fix++) {
       try {
         const retry = await groqChatJson<typeof parsed>({
           apiKey,
@@ -815,11 +829,18 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
           seed: hashTradeId(tradeId),
           maxTokens: 2500,
         })
-        if (retry.data?.summary) parsed = retry.data
-        else break
+        if (!retry.data?.summary) break
+        parsed = retry.data
+        fixupsRun++
       } catch {
         break // Keep the best answer so far; imperfect, not broken.
       }
+      violations = checkSummary()
+    }
+    if (violations.length > 0) {
+      warnings.push(
+        `summary still imperfect after ${fixupsRun} fixup${fixupsRun === 1 ? '' : 's'}: ${violations.join('; ')}`,
+      )
     }
   } catch (e) {
     const msg = e instanceof GroqError ? e.message : (e as Error).message
@@ -1512,6 +1533,7 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       'PLAIN VERBS. Use lands, adds, gets, acquires, sends, gives up. Do NOT reach for showy synonyms: "snaps up", "scoops up", "snags", "nabs", "snares", "poaches", "swipes", "reels in", "hauls in", "pries away", "plucks", "swoops for" and "inks" are all banned. If a reader has to stop and work out what a verb means, it was the wrong verb.',
       '',
       'RANKS AND TIERS ARE GIVEN, NOT GUESSED. Every player line carries a consensus position rank and market value. The better-ranked / higher-valued player is the better asset, full stop. Never call a player "mid-tier", "a depth piece", "a downgrade" or similar when the data on his line outranks the player he is being compared to. If you describe a swap at one position, the higher-ranked player must be the one described as the better side of it.',
+      'HOW TO WRITE A RANK. Never write the word "rank" inside parentheses. "a top-tier RB (rank RB12)" is wrong; it is "(RB12)". Better still, fold the rank into the noun and drop the parentheses entirely: write "a busted TE2", "a steady RB12", "a WR15 who starts most weeks". Only keep the parenthetical when you have already described the player in words and the number adds something the words did not, and even then use the bare form. Never attach a parenthetical rank to every player in the sentence: it reads like a spreadsheet, not a paragraph.',
       '',
       'NAME A RANK ONCE. The two asset lists are two halves of ONE exchange: a player arriving on one side is a player the other side gave up, and the reader can see that from the lists. So cite a position rank at most ONCE per player, on the side that RECEIVED him. When the same player comes up again from the other side\'s point of view, use words instead of the number: "the top-end receiver they gave up", "their RB1", "the back end of their backfield". Never print the same rank label twice in one write-up, and never spend a sentence telling the reader that the side who gave a player up no longer has him.',
       '',
