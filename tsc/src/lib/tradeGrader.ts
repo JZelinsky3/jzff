@@ -447,6 +447,24 @@ export function summaryViolations(
     out.push('wrote "(rank RB12)" style parentheses; drop the word "rank" and write "(RB12)", or fold it into the noun as "a busted TE2"')
   }
 
+  // "the WR1" is one player in the league. "a WR1" is a tier that holds
+  // twelve of them. The article carries the whole claim, and at low numbers
+  // the two are a single character apart: a receiver whose line reads WR8 is
+  // "a WR1" and is not "the WR1".
+  //
+  // Only the definite article is checked, and only against rank 1. "his WR1"
+  // is roster-relative and fine, and "a WR1" is the tier reading that this
+  // rule exists to protect.
+  for (const pos of ['QB', 'RB', 'WR', 'TE']) {
+    if (!new RegExp(`\\bthe\\s+${pos}1\\b`, 'i').test(text)) continue
+    if (rankLabels.some((r) => r.label.toUpperCase() === `${pos}1`)) continue
+    out.push(
+      `wrote "the ${pos}1", which names the single most valuable ${pos} in the league, and no player in ` +
+      `this trade holds that rank. If the point is that he is a top-tier starter, the tier reading takes ` +
+      `the indefinite article: "a ${pos}1"`,
+    )
+  }
+
   for (const { label, deep } of rankLabels) {
     const esc = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const hits = text.match(new RegExp(`\\b${esc}\\b`, 'gi'))
@@ -2314,6 +2332,13 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       // "loses the only TE2 on his roster" was written about a player nobody
       // else could have had: ranks are identities, and there is exactly one
       // holder of each. The sentence sounds like scarcity and contains none.
+      // "a WR1" and "the WR1" are one character apart and they are different
+      // claims. The article is the whole difference, and it matters most at
+      // the low numbers where it is easiest to slide between them.
+      '"A WR1" AND "THE WR1" ARE NOT THE SAME CLAIM. "A WR1" is a TIER: any top-12 receiver, the kind you start in your first receiver slot. Twelve players are a WR1 at any moment. "THE WR1" is an IDENTITY: the single most valuable receiver in the league, rank one, nobody else. The same holds at every position. So a receiver whose line reads WR8 is "a WR1" and is never "the WR1"; he is "the WR8" if you want the exact number.',
+      '• Write "the <position><number>" only with the exact number from that player\'s line, because that form states his rank. Reserve "the WR1", "the RB1", "the TE1" and "the QB1" for the player actually ranked first. "His WR1" is different again and is fine: that is the best receiver on one roster.',
+      '• The indefinite article is for tiers, and the tiers run in slots, not ranks: "a WR1" is roughly the top 12, "a WR2" 13 to 24, "a WR3" 25 to 36. Never reach for a tier phrase to describe an exact rank, and never let a low rank number turn into a claim about being first.',
+      '',
       'A RANK IS AN IDENTITY, NOT A COUNT. Exactly one player in the league holds each rank, so "the only TE2 on his roster" is true of every ranked player who has ever been traded and tells the reader nothing. Never attach "only" to a rank label. If the real point is that a position is now thin, say that about the POSITION and in words: "his last startable tight end", "the only tight end left worth a lineup spot".',
       '',
       'RANKS ONLY WHERE THEY MEAN SOMETHING. Name an exact rank when the player is going to start: roughly top 12 at a position for an every-week starter, top 24 for a usable one. Past that the number is noise dressed up as precision. A WR57 is "a bench receiver who will not crack the lineup", not "the WR57". Never hang any part of a grade on a precise rank in the 40s or 50s. If a throw-in piece matters, say what it actually does; if it does not, leave it out.',
@@ -2521,6 +2546,8 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
       'DIRECTION OF THE DEAL. The asset list under each side is what that side RECEIVED. "Flips", "ships", "sends", "moves on from", "deals away" and "gives up" describe a player LEAVING a roster, so they may only be used for players on the OTHER side\'s list. Use "lands", "adds", "acquires" or "comes away with" for a player on that side\'s own list. Getting this backwards states the opposite of what happened.',
       '',
       'RANKS ARE GIVEN, NOT GUESSED. The better-ranked, higher-valued player on the lines you are given is the better asset. Never describe him as the lesser piece of a swap. And a rank is an identity, not a count: exactly one player holds each one, so never write "the only TE2 on his roster". If a position is thin, say that about the position, in words.',
+      '',
+      '"A WR1" IS A TIER, "THE WR1" IS ONE PLAYER. "A WR1" means any top-12 receiver; "the WR1" means the most valuable receiver in the league and nobody else. A player whose line reads WR8 is "a WR1" and is never "the WR1". Use "the <position><number>" only with the exact number on his line.',
       '',
       'A HURT PLAYER FILLS NOTHING TODAY. Never write that an injured player instantly, immediately or right away fills or upgrades a slot. Four weeks on you can say what actually happened: whether he played, how much he missed, whether the wait was worth it.',
       '',
