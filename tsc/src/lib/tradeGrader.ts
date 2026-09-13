@@ -108,6 +108,13 @@ export type SummaryCheckOpts = {
   // the one it sent, which is the worst kind of error here: confidently
   // stated, and contradicted by the numbers printed on the same page.
   positionSwaps?: PositionSwap[]
+  // Surnames and rank labels of the players in this trade who carry an injury
+  // flag. A hurt player cannot be promised to do anything this week.
+  injuredTokens?: string[]
+  // Per side: the tokens (surnames, rank labels) for the pieces that came IN
+  // and the pieces that went OUT. "X for Y" always means Y arrived and X
+  // left, so naming them in the wrong order states the opposite trade.
+  sideTokens?: Array<{ side: string; received: string[]; gave: string[] }>
 }
 
 // Which side of a same-position swap got the better player. Built from the
@@ -151,6 +158,27 @@ const GOT_VERBS = /\b(gets|got|getting|lands|landed|adds|added|acquires|acquired
 const SUPERIOR = /\b(better|best|stronger|superior|more valuable|higher[- ]ranked|higher[- ]valued)\b/i
 const INFERIOR = /\b(downgrade|step down|worse|lesser|weaker)\b/i
 
+// Ways a write-up refers to the injury without naming the player. "out" on
+// its own is deliberately absent: "sends out", "out the door" and "out of the
+// gate" all contain it and none of them are injuries.
+const INJURY_WORDS = [
+  /\binjur(y|ies|ed)\b/i, /\bhurt\b/i, /\bsidelined\b/i, /\bbanged up\b/i,
+  /\bon (the )?(ir|pup)\b/i, /\binjured reserve\b/i, /\bpup list\b/i,
+  /\b(is|are|was|were|still|currently)\s+out\b/i, /\bout (for|with|until)\b/i,
+  /\bmiss(es|ing)?\s+(time|weeks|games)\b/i, /\bknee surgery\b/i,
+]
+
+// Promises of immediate impact. Fine for a healthy player, never true of one
+// who might not dress on Sunday.
+const IMMEDIACY = [
+  /\binstant(ly|aneous)?\b/i, /\bimmediate(ly)?\b/i, /\bright away\b/i,
+  /\bfrom day one\b/i, /\bday[- ]one\b/i, /\bfrom the jump\b/i,
+  /\bout of the gate\b/i, /\bstraight away\b/i, /\bon arrival\b/i,
+  /\bweek one\b/i, /\bthis week'?s? (lineup|starter)\b/i,
+  /\bplugs? (straight |right )?in\b/i, /\bslots? (straight |right )?in\b/i,
+  /\bstarting (today|now|this week)\b/i,
+]
+
 // Does this write-up print a letter grade? Exported so the verdict pass,
 // which runs no corrective loop of its own, can at least report one.
 export function hasLetterGradeInProse(text: string): boolean {
@@ -189,6 +217,8 @@ export function summaryViolations(
     finalGrades = [],
     week = null,
     positionSwaps = [],
+    injuredTokens = [],
+    sideTokens = [],
   } = opts
   const out: string[] = []
   const t = text.toLowerCase()
@@ -268,8 +298,9 @@ export function summaryViolations(
   // Scoped to sentences naming exactly ONE side: a sentence mentioning both
   // managers can attach its verb to either of them, and a false violation
   // costs a corrective Groq call on copy that was already right.
+  const sentences = text.split(/(?<=[.!?])\s+/)
+
   if (positionSwaps.length > 0 && sideNames.length > 0) {
-    const sentences = text.split(/(?<=[.!?])\s+/)
     for (const sentence of sentences) {
       const named = sideNames.filter((n) => n && sentence.toLowerCase().includes(n.toLowerCase()))
       if (named.length !== 1) continue
@@ -309,6 +340,92 @@ export function summaryViolations(
     }
   }
 
+  // "swapped a healthy TE16 for a TE2 who will miss time."
+  //
+  // "A for B" means A left and B arrived, in that order, every time. The side
+  // in that sentence received the TE16 and gave up the TE2, so the sentence
+  // states the trade backwards even though the two players named are right.
+  // The order is the claim, which is why no amount of getting the players
+  // right rescues it.
+  if (sideTokens.length > 0 && sideNames.length > 0) {
+    const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const has = (hay: string, toks: string[]) =>
+      toks.find((tk) => tk.length >= 2 && new RegExp(`\\b${esc(tk)}\\b`, 'i').test(hay))
+    for (const sentence of sentences) {
+      const named = sideNames.filter((n) => n && sentence.toLowerCase().includes(n.toLowerCase()))
+      if (named.length !== 1) continue
+      const tokens = sideTokens.find((s) => s.side.toLowerCase() === named[0].toLowerCase())
+      if (!tokens) continue
+      const re = /\b(swap(?:s|ped)?|trade[sd]?|flip(?:s|ped)?|deal[st]?|sends?|sent|ship(?:s|ped)?|exchange[sd]?|turn(?:s|ed)?|move[sd]?)\b([^.]{0,70}?)\bfor\b([^.]{0,70})/gi
+      let m: RegExpExecArray | null
+      while ((m = re.exec(sentence)) !== null) {
+        const gotFirst = has(m[2], tokens.received)
+        const gaveSecond = has(m[3], tokens.gave)
+        if (gotFirst && gaveSecond) {
+          out.push(
+            `wrote "${m[1]} ... ${gotFirst} ... for ... ${gaveSecond}", which says ${named[0]} gave up ${gotFirst} ` +
+            `and got ${gaveSecond}; it is the other way round. In "A for B", A is the piece leaving, so name ` +
+            `${gaveSecond} first and ${gotFirst} second`,
+          )
+          break
+        }
+      }
+    }
+  }
+
+  // Promising a hurt player will do something this week.
+  //
+  // "grabbing a top tier player despite his injury, instantly filling that
+  // premium slot" is the shape of it: the injury gets acknowledged in one
+  // clause and contradicted in the next. He might miss a month. Acquiring him
+  // can still be the right move, but the payoff is conditional and the
+  // write-up has to say when, not pretend it is already here.
+  //
+  // The gap between the player and the promise is checked for another
+  // player's name, because "Bowers is out, so Goedert starts immediately" is
+  // a true sentence with both an injured player and an immediacy word in it.
+  // The anchor is either the hurt player's name or the injury itself: the
+  // sentence that prompted this rule never named him ("a top tier player
+  // despite his injury, instantly filling that premium slot").
+  const escTok = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const otherTokens = receivedTokens.filter((tok) => !injuredTokens.includes(tok))
+  for (const sentence of sentences) {
+    const anchorsFound: Array<{ at: number; len: number; label: string }> = []
+    for (const tok of injuredTokens) {
+      if (tok.trim().length < 2) continue
+      const at = sentence.search(new RegExp(`\\b${escTok(tok)}\\b`, 'i'))
+      if (at >= 0) anchorsFound.push({ at, len: tok.length, label: tok })
+    }
+    for (const re of INJURY_WORDS) {
+      const m = sentence.match(re)
+      if (m && m.index != null) anchorsFound.push({ at: m.index, len: m[0].length, label: m[0] })
+    }
+    if (anchorsFound.length === 0) continue
+
+    let flagged = false
+    for (const anchor of anchorsFound) {
+      if (flagged) break
+      for (const re of IMMEDIACY) {
+        const hit = sentence.match(re)
+        if (!hit || hit.index == null) continue
+        const [from, to] = anchor.at < hit.index
+          ? [anchor.at + anchor.len, hit.index]
+          : [hit.index + hit[0].length, anchor.at]
+        const between = sentence.slice(Math.max(0, from), Math.max(0, to))
+        // "Bowers is out a while, which is why Goedert starts immediately" is
+        // a true sentence. Another player's name between the injury and the
+        // promise means the promise is about him.
+        if (otherTokens.some((o) => o.length >= 3 && new RegExp(`\\b${escTok(o)}\\b`, 'i').test(between))) continue
+        out.push(
+          `promised immediate impact ("${hit[0]}") about an injured player ("${anchor.label}"); he may miss time, ` +
+          'so write the payoff as conditional ("once he is back", "if he gets on the field") and never as a slot filled now',
+        )
+        flagged = true
+        break
+      }
+    }
+  }
+
   const hedged = HEDGES.filter((h) => t.includes(h))
   if (hedged.length > 0) {
     out.push(
@@ -334,6 +451,16 @@ export function summaryViolations(
     const esc = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const hits = text.match(new RegExp(`\\b${esc}\\b`, 'gi'))
     if (!hits) continue
+    // "loses the only TE2 on his roster". There is exactly one TE2 in the
+    // entire ranking, so "only" is true of every ranked player ever traded
+    // and reads as a fact about the roster when it is a fact about counting.
+    // A rank is an identity, not a quantity.
+    if (new RegExp(`\\bonly\\s+(?:\\w+\\s+){0,2}${esc}\\b`, 'i').test(text)) {
+      out.push(
+        `wrote "the only ${label}"; exactly one player in the league holds each rank, so "only" says nothing. ` +
+        'If the point is that the position is now thin, say that in words ("his last startable tight end")',
+      )
+    }
     if (hits.length > 1) {
       out.push(`printed the rank "${label}" ${hits.length} times; name a player's rank once, on the side that received him`)
     }
@@ -946,8 +1073,11 @@ async function loadGradingContext(
 
   // Surname + rank label for every incoming piece, so the factual check
   // catches both "already had Nabers" and "already stocked with a WR13".
-  const receivedTokens = ctxSides.flatMap((sd) =>
-    sd.assets
+  // The same tokens for the hurt players only feed the immediacy check: a
+  // promise about this week is only a lie when it is made about them.
+  const injuredTokens: string[] = []
+  const tokensFor = (assets: Array<Record<string, unknown>>): string[] =>
+    assets
       .filter((a) => a.kind === 'player')
       .flatMap((a) => {
         const toks: string[] = []
@@ -957,9 +1087,18 @@ async function loadGradingContext(
         const sid = sidByAsset.get(a)
         const rank = sid ? bundle.rankLabels.get(sid) : undefined
         if (rank) toks.push(rank)
+        if (sid && isInjured(bundle.meta.get(sid))) injuredTokens.push(...toks)
         return toks
-      }),
-  )
+      })
+
+  const receivedTokens = ctxSides.flatMap((sd) => tokensFor(sd.assets))
+  // Per side, in and out. What a side gave up is what every other side
+  // received, which is the same rewind the roster summaries do.
+  const sideTokens = ctxSides.map((sd) => ({
+    side: sd.manager_name,
+    received: tokensFor(sd.assets),
+    gave: ctxSides.filter((o) => o.side_id !== sd.side_id).flatMap((o) => tokensFor(o.assets)),
+  }))
 
   // Every rank label in the deal, deduped, with the ones past DEEP_RANK
   // flagged. The threshold matches the tier reference in the prompt
@@ -998,6 +1137,11 @@ async function loadGradingContext(
       rankLabels,
       week: tradeWeek,
       positionSwaps: computePositionSwaps(ctxSides, bundle, sidByAsset),
+      // tokensFor collects these as a side effect and runs once per side plus
+      // once for the whole trade, so the same surname lands in here several
+      // times over.
+      injuredTokens: [...new Set(injuredTokens)],
+      sideTokens,
     },
   }
 }
@@ -2154,6 +2298,10 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '• Verbs that mean GETTING a player: lands, adds, acquires, picks up, buys, comes away with, takes back, walks off with. These are the only verbs for a player on that side\'s own received list.',
       '• "X flips a high-end WR" says X GAVE ONE UP. If X is the side that received the high-end WR, that sentence is wrong. Write it from the assets actually leaving: "the two receivers Sean sent out came back as a genuine WR1", or simply "Sean lands a genuine WR1".',
       '• When you want to frame a package converting into one piece, name the outgoing pieces first and the incoming piece second: "<outgoing pieces> turn into <incoming player>". Never the reverse.',
+      // "Isaac swapped a healthy TE16 for a TE2 who will miss time" named both
+      // players correctly and still described the opposite trade, because in
+      // "A for B" the order IS the claim.
+      '• "A FOR B" MEANS A LEFT AND B ARRIVED. This holds for swapped, traded, flipped, dealt, sent, shipped and exchanged, every time. So the piece that LEFT is named first and the piece that ARRIVED second. "swapped a healthy TE16 for a TE2 who will miss time" says the TE16 went out; if that side is the one who RECEIVED the TE16, the sentence describes the opposite trade even though both players are named correctly. Getting the players right does not rescue the order. Write it as "swapped the TE2 for a healthy TE16", or avoid the construction and use plain gets and gives up.',
       '',
       'PLAIN VERBS. Use lands, adds, gets, acquires, sends, gives up. Do NOT reach for showy synonyms: "snaps up", "scoops up", "snags", "nabs", "snares", "poaches", "swipes", "reels in", "hauls in", "pries away", "plucks", "swoops for" and "inks" are all banned. If a reader has to stop and work out what a verb means, it was the wrong verb.',
       '',
@@ -2162,6 +2310,11 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       'HOW TO WRITE A RANK. Never write the word "rank" inside parentheses. "a top-tier RB (rank RB12)" is wrong; it is "(RB12)". Better still, fold the rank into the noun and drop the parentheses entirely: write "a busted TE2", "a steady RB12", "a WR15 who starts most weeks". Only keep the parenthetical when you have already described the player in words and the number adds something the words did not, and even then use the bare form. Never attach a parenthetical rank to every player in the sentence: it reads like a spreadsheet, not a paragraph.',
       '',
       'NAME A RANK ONCE. The two asset lists are two halves of ONE exchange: a player arriving on one side is a player the other side gave up, and the reader can see that from the lists. So cite a position rank at most ONCE per player, on the side that RECEIVED him. When the same player comes up again from the other side\'s point of view, use words instead of the number: "the top-end receiver they gave up", "their RB1", "the back end of their backfield". Never print the same rank label twice in one write-up, and never spend a sentence telling the reader that the side who gave a player up no longer has him.',
+      '',
+      // "loses the only TE2 on his roster" was written about a player nobody
+      // else could have had: ranks are identities, and there is exactly one
+      // holder of each. The sentence sounds like scarcity and contains none.
+      'A RANK IS AN IDENTITY, NOT A COUNT. Exactly one player in the league holds each rank, so "the only TE2 on his roster" is true of every ranked player who has ever been traded and tells the reader nothing. Never attach "only" to a rank label. If the real point is that a position is now thin, say that about the POSITION and in words: "his last startable tight end", "the only tight end left worth a lineup spot".',
       '',
       'RANKS ONLY WHERE THEY MEAN SOMETHING. Name an exact rank when the player is going to start: roughly top 12 at a position for an every-week starter, top 24 for a usable one. Past that the number is noise dressed up as precision. A WR57 is "a bench receiver who will not crack the lineup", not "the WR57". Never hang any part of a grade on a precise rank in the 40s or 50s. If a throw-in piece matters, say what it actually does; if it does not, leave it out.',
       '',
@@ -2201,6 +2354,11 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       // league with an injured starter in it, and the write-up kept treating
       // it as a mystery or, worse, as one manager fleecing the other.
       '• WHY AN INJURY TRADE HAPPENS, AND YOU SHOULD SAY IT. When one side sends out a hurt, better player and takes back a healthy, lesser one at the SAME position, the deal is almost always about availability rather than value. The manager giving up the injured star needs points out of that lineup slot NOW and is paying in quality to get them. The manager taking the injured star can usually afford to wait: check his "Roster BEFORE this trade" line, and if he has someone who can cover that position for a few weeks, say so, because that is exactly what makes the trade make sense for him. That is the most interesting true thing in a deal like this and it belongs in the write-up: a body who plays this week against the better player once he is back.',
+      // The injury gets acknowledged in one clause and contradicted in the
+      // next: "a top tier player despite his injury, instantly filling that
+      // premium slot". He is not filling anything this week; that is what
+      // injured means.
+      '• A HURT PLAYER FILLS NOTHING TODAY. Never write that acquiring an injured player instantly, immediately, right away, from day one or in week one fills, upgrades, solves or plugs a hole. He may miss time, and on injured reserve or the PUP list he will miss weeks. Acquiring him can still be the right move, but the payoff is in the future and the sentence has to say so: "once he is back", "when he returns", "if he gets on the field". Writing "despite the injury he instantly fills the slot" acknowledges the injury and then denies it in the same breath.',
       '• THAT MOTIVE EXPLAINS THE TRADE, IT DOES NOT CHANGE IT. Naming the need is allowed. Presenting it as a win is not. The side that gave up the better player still gave up the better player, and shedding an injured player is never relief, an upgrade, or a market being eased. Name the need, keep the verdict.',
       '• AN INJURY NEVER MOVES THE GRADE. The values on the player line are pulled live at grading time, so an injured player is ALREADY marked down in the number the anchor was built from. Docking that side again charges it twice for one fact. If the side holding the injured player still has the higher-valued package, that side still won the trade, and the write-up must say so while naming the injury as the risk attached to it. "He got hurt" is never a reason to flip, lower, or hedge a grade.',
       '• Each side also has a "Roster BEFORE this trade" line showing positional depth (e.g. "RB(4): McCaffrey (RB3), Hall (RB8), Mostert (RB42) +1 | WR(3): Chase (WR2)..."). It is the roster as it stood BEFORE this deal: the players being received are NOT in it, and the players being sent still are. Use it to weigh need: a side acquiring an RB while already deep at RB is paying retail; the same RB to a side thin at the position is a real win. Never say a side "already had" a player they are receiving in this trade, and never count an incoming player as existing depth.',
@@ -2362,7 +2520,9 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
       '',
       'DIRECTION OF THE DEAL. The asset list under each side is what that side RECEIVED. "Flips", "ships", "sends", "moves on from", "deals away" and "gives up" describe a player LEAVING a roster, so they may only be used for players on the OTHER side\'s list. Use "lands", "adds", "acquires" or "comes away with" for a player on that side\'s own list. Getting this backwards states the opposite of what happened.',
       '',
-      'RANKS ARE GIVEN, NOT GUESSED. The better-ranked, higher-valued player on the lines you are given is the better asset. Never describe him as the lesser piece of a swap.',
+      'RANKS ARE GIVEN, NOT GUESSED. The better-ranked, higher-valued player on the lines you are given is the better asset. Never describe him as the lesser piece of a swap. And a rank is an identity, not a count: exactly one player holds each one, so never write "the only TE2 on his roster". If a position is thin, say that about the position, in words.',
+      '',
+      'A HURT PLAYER FILLS NOTHING TODAY. Never write that an injured player instantly, immediately or right away fills or upgrades a slot. Four weeks on you can say what actually happened: whether he played, how much he missed, whether the wait was worth it.',
       '',
       'NAME A RANK ONCE, AND ONLY WHERE IT MEANS SOMETHING. A player arriving on one side is a player the other side gave up; the reader can see that, so cite his rank once, on the side that received him, and refer to him in words from the other side ("the receiver they gave up"). Name an exact rank only for a player who actually starts: past roughly the top 24 at a position the number is noise, and "a bench receiver who will not crack the lineup" beats "the WR57".',
       '',

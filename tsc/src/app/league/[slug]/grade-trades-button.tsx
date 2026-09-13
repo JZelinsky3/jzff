@@ -4,17 +4,19 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 // Button cluster for the Trade Grader.
-//   • Grade      → grades ungraded trades only (skips already-graded)
-//   • Re-grade   → force=true, overwrites existing grades (use after the
-//                  prompt has been tuned)
-//   • Re-letter  → recomputes the letter grades from the anchors and KEEPS
-//                  the write-ups. No Groq call, so it costs nothing and is
-//                  instant. This is the one to use when the paragraph reads
-//                  well and only the letters are off; a full re-grade would
-//                  rewrite good copy into different copy to move a notch.
-//   • Verdict    → runs the 4-week revisit on graded trades. Calls
-//                  /revisit-trades with eligibleOnly=false so you can test the
-//                  verdict section without waiting 4 weeks.
+//
+// Two of these spend AI calls and one does not, and that was the confusing
+// part: "Re-letter" read like it might be the AI writing new letters. Every
+// label now says what it touches, and the legend under the row spells out
+// which ones cost tokens.
+//   • Grade        → AI. Write-up + letters, for trades with no grade yet.
+//   • Re-grade     → AI. A NEW write-up AND new letters, overwriting both.
+//   • Letters only → no AI. Recomputes the letters from the player values and
+//                    leaves the write-up exactly as it is. Use it when the
+//                    paragraph reads well and only the letters are off; a
+//                    re-grade would throw away good copy to move one notch.
+//   • Verdict      → AI. The 4-week revisit on graded trades, with
+//                    eligibleOnly=false so it can be tested without waiting.
 //
 // HOW MANY is a control rather than a constant. It was pinned at 5, which
 // made tuning the prompt needlessly expensive: changing one line and wanting
@@ -54,9 +56,9 @@ function letterMessage(scanned: number, graded: number): string {
     return 'Nothing eligible — grading only covers trades from 2026 on.'
   }
   if (graded === 0) {
-    return `Nothing re-lettered (${scanned} scanned).`
+    return `No letters changed (${scanned} scanned).`
   }
-  return `Re-lettered ${graded} of ${scanned}, write-ups untouched.`
+  return `New letters on ${graded} of ${scanned}. Write-ups untouched, no AI call.`
 }
 
 function verdictMessage(scanned: number, revisited: number): string {
@@ -67,6 +69,137 @@ function verdictMessage(scanned: number, revisited: number): string {
     return `Already settled — all ${scanned} graded ${scanned === 1 ? 'trade has' : 'trades have'} a verdict.`
   }
   return `Verdicts written for ${revisited} of ${scanned} scanned.`
+}
+
+type EditableTrade = {
+  id: string
+  week: number | null
+  executed_at: string | null
+  season_year: number | null
+  summary: string
+  hand_edited: boolean
+  managers: string[]
+}
+
+// Edit one write-up by hand.
+//
+// Before this, fixing a single clause meant re-grading the trade: an AI call
+// that throws away the whole paragraph and returns a different one, to change
+// a sentence that was nearly right. The write-up is just a column, so it can
+// simply be edited.
+function WriteUpEditor({ leagueId, count }: { leagueId: string; count: number }) {
+  const router = useRouter()
+  const [open, setOpen] = useState(false)
+  const [trades, setTrades] = useState<EditableTrade[] | null>(null)
+  const [drafts, setDrafts] = useState<Record<string, string>>({})
+  const [saving, setSaving] = useState<string | null>(null)
+  const [note, setNote] = useState<string | null>(null)
+
+  async function load() {
+    setNote(null)
+    try {
+      const res = await fetch(`/api/leagues/${leagueId}/trade-summary/?limit=${Math.max(count, 5)}`)
+      const body = await res.json()
+      if (!res.ok) { setNote(body?.error ?? 'Could not load write-ups'); return }
+      setTrades(body.trades ?? [])
+      setDrafts(Object.fromEntries((body.trades ?? []).map((t: EditableTrade) => [t.id, t.summary])))
+    } catch (e) {
+      setNote((e as Error).message)
+    }
+  }
+
+  async function save(tradeId: string) {
+    setSaving(tradeId)
+    setNote(null)
+    try {
+      const res = await fetch(`/api/leagues/${leagueId}/trade-summary/`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tradeId, summary: drafts[tradeId] ?? '' }),
+      })
+      const body = await res.json()
+      if (!res.ok) { setNote(body?.error ?? 'Save failed'); return }
+      // The server strips em dashes, so the saved text can differ from what
+      // was typed. Show what actually landed rather than what was sent.
+      setDrafts((d) => ({ ...d, [tradeId]: body.summary }))
+      setTrades((ts) => (ts ?? []).map((t) => (
+        t.id === tradeId ? { ...t, summary: body.summary, hand_edited: true } : t
+      )))
+      setNote('Saved. The letters were not touched.')
+      router.refresh()
+    } catch (e) {
+      setNote((e as Error).message)
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  return (
+    <div style={{ width: '100%', textAlign: 'right' }}>
+      <button
+        type="button"
+        className="dc-btn-ghost"
+        style={{ fontSize: '.7rem', padding: '.2rem .5rem' }}
+        onClick={() => {
+          const next = !open
+          setOpen(next)
+          if (next && trades === null) load()
+        }}
+      >
+        {open ? 'Close write-up editor' : 'Edit a write-up by hand'}
+      </button>
+
+      {open && (
+        <div style={{ marginTop: '.5rem', textAlign: 'left', maxWidth: '38rem', marginLeft: 'auto' }}>
+          {note && <p className="dc-form-ok" style={{ margin: '0 0 .4rem' }}>{note}</p>}
+          {trades === null && <p style={{ fontSize: '.72rem', opacity: .6, margin: 0 }}>Loading…</p>}
+          {trades !== null && trades.length === 0 && (
+            <p style={{ fontSize: '.72rem', opacity: .6, margin: 0 }}>No trades to edit yet.</p>
+          )}
+          {(trades ?? []).map((t) => {
+            const dirty = (drafts[t.id] ?? '') !== t.summary
+            const when = t.executed_at
+              ? new Date(t.executed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+              : ''
+            return (
+              <div key={t.id} style={{ marginBottom: '.75rem', paddingBottom: '.75rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+                <div style={{ fontSize: '.68rem', opacity: .7, marginBottom: '.25rem', letterSpacing: '.04em' }}>
+                  {[when, t.week ? `W${t.week}` : null, t.season_year, t.managers.join(' / ')]
+                    .filter(Boolean).join(' · ')}
+                  {t.hand_edited ? ' · edited by hand' : ''}
+                </div>
+                <textarea
+                  value={drafts[t.id] ?? ''}
+                  onChange={(e) => setDrafts((d) => ({ ...d, [t.id]: e.target.value }))}
+                  rows={4}
+                  style={{
+                    width: '100%', fontSize: '.75rem', lineHeight: 1.5, padding: '.4rem',
+                    background: 'transparent', color: 'inherit',
+                    border: '1px solid rgba(255,255,255,.18)', borderRadius: '2px',
+                    fontFamily: 'inherit', resize: 'vertical',
+                  }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '.25rem' }}>
+                  <span style={{ fontSize: '.65rem', opacity: .5 }}>
+                    {(drafts[t.id] ?? '').length} / 1500
+                  </span>
+                  <button
+                    type="button"
+                    className="dc-btn-ghost"
+                    style={{ fontSize: '.7rem', padding: '.15rem .5rem' }}
+                    disabled={!dirty || saving === t.id}
+                    onClick={() => save(t.id)}
+                  >
+                    {saving === t.id ? 'Saving…' : dirty ? 'Save' : 'Saved'}
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function GradeTradesButton({ leagueId }: { leagueId: string }) {
@@ -217,14 +350,14 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
         ))}
       </div>
       <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-        <button onClick={() => grade(false)} disabled={busy} className="dc-btn">
+        <button onClick={() => grade(false)} disabled={busy} className="dc-btn" title="AI: writes the write-up and the letters for trades that have no grade yet. Skips anything already graded.">
           {busy && lastAction === 'grade' ? 'Grading…' : `Grade ${nLabel}`}
         </button>
-        <button onClick={() => grade(true)} disabled={busy} className="dc-btn-ghost" title="Re-grade trades that already have grades (overwrites)">
+        <button onClick={() => grade(true)} disabled={busy} className="dc-btn-ghost" title="AI: a brand new write-up AND new letters, overwriting both. Use after tuning the prompt.">
           {busy && lastAction === 'regrade' ? 'Re-grading…' : `Re-grade ${nLabel}`}
         </button>
-        <button onClick={reletter} disabled={busy} className="dc-btn-ghost" title="Recompute just the letter grades and keep the write-ups. No AI call, nothing rewritten.">
-          {busy && lastAction === 'letters' ? 'Re-lettering…' : `Re-letter ${nLabel}`}
+        <button onClick={reletter} disabled={busy} className="dc-btn-ghost" title="No AI: recomputes only the letter grades from the player values. The write-up is left exactly as it is.">
+          {busy && lastAction === 'letters' ? 'Working…' : `Letters only ${nLabel}`}
         </button>
         <button onClick={verdict} disabled={busy} className="dc-btn-ghost" title="Run the 4-week verdict on graded trades (test mode, no waiting)">
           {busy && lastAction === 'verdict' ? 'Revisiting…' : `Verdict ${nLabel}`}
@@ -233,6 +366,14 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
           {busy && lastAction === 'refresh' ? 'Refreshing…' : 'Refresh values'}
         </button>
       </div>
+      {/* Which buttons cost an AI call, in the layout rather than in a
+          tooltip: the difference between "Re-grade" and "Letters only" is the
+          whole point of having both, and it should not need a hover. */}
+      <p style={{ margin: 0, fontSize: '.68rem', opacity: .6, textAlign: 'right', maxWidth: '30rem', lineHeight: 1.5 }}>
+        Grade and Re-grade both call the AI and write a new write-up plus new letters.
+        Letters only recomputes the letters from the player values and leaves the write-up alone.
+      </p>
+      <WriteUpEditor leagueId={leagueId} count={count} />
       {msg && (
         <p className={state === 'error' ? 'dc-form-error' : 'dc-form-ok'} style={{ margin: 0 }}>
           {msg}
