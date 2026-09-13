@@ -31,7 +31,7 @@ const ASPECTS = [
   { key: 'design', label: 'Design and look', short: 'Design' },
   { key: 'navigation', label: 'Finding your way around', short: 'Getting around' },
   { key: 'speed', label: 'How fast it felt', short: 'Speed' },
-  { key: 'value', label: 'Is the price fair?', short: 'Fair price' },
+  { key: 'value', label: 'Are the subscriptions priced fairly?', short: 'Fair subscription pricing?' },
 ] as const
 
 type AspectKey = (typeof ASPECTS)[number]['key']
@@ -186,15 +186,15 @@ function AspectStars({
       {/* marginLeft:auto, not just space-between. On a narrow phone the row
           wraps and the stars land on a line of their own, where
           space-between has nothing to push against and leaves them adrift at
-          the left. The auto margin keeps them on the right edge either way. */}
+          the left. The auto margin keeps them on the right edge either way.
+
+          Clear sits BEFORE the stars, not after. Kept on the right it holds
+          its slot even when it's invisible, so the fifth star stopped about
+          40px short of the edge and the row read as centre-ish rather than
+          flush right. Ahead of them, the stars are the last thing in the row
+          and their right edge is the panel's right edge, while Clear still
+          reserves its space either way so nothing shifts when it lights up. */}
       <span style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginLeft: 'auto' }}>
-        <StarRow
-          value={value}
-          onChange={onChange}
-          size={compact ? 20 : 24}
-          gap=".18rem"
-          ariaLabel={aspect.label}
-        />
         <button
           type="button"
           onClick={() => onChange(null)}
@@ -211,6 +211,13 @@ function AspectStars({
         >
           Clear
         </button>
+        <StarRow
+          value={value}
+          onChange={onChange}
+          size={compact ? 20 : 24}
+          gap=".18rem"
+          ariaLabel={aspect.label}
+        />
       </span>
     </div>
   )

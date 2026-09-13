@@ -4,12 +4,17 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 // Button cluster for the Trade Grader.
-//   • Grade     → grades ungraded trades only (skips already-graded)
-//   • Re-grade  → force=true, overwrites existing grades (use after the
-//                 prompt has been tuned)
-//   • Verdict   → runs the 4-week revisit on graded trades. Calls
-//                 /revisit-trades with eligibleOnly=false so you can test the
-//                 verdict section without waiting 4 weeks.
+//   • Grade      → grades ungraded trades only (skips already-graded)
+//   • Re-grade   → force=true, overwrites existing grades (use after the
+//                  prompt has been tuned)
+//   • Re-letter  → recomputes the letter grades from the anchors and KEEPS
+//                  the write-ups. No Groq call, so it costs nothing and is
+//                  instant. This is the one to use when the paragraph reads
+//                  well and only the letters are off; a full re-grade would
+//                  rewrite good copy into different copy to move a notch.
+//   • Verdict    → runs the 4-week revisit on graded trades. Calls
+//                  /revisit-trades with eligibleOnly=false so you can test the
+//                  verdict section without waiting 4 weeks.
 //
 // HOW MANY is a control rather than a constant. It was pinned at 5, which
 // made tuning the prompt needlessly expensive: changing one line and wanting
@@ -44,6 +49,16 @@ function gradeMessage(scanned: number, graded: number, force: boolean): string {
   return `Graded ${graded} of ${scanned} scanned.`
 }
 
+function letterMessage(scanned: number, graded: number): string {
+  if (scanned === 0) {
+    return 'Nothing eligible — grading only covers trades from 2026 on.'
+  }
+  if (graded === 0) {
+    return `Nothing re-lettered (${scanned} scanned).`
+  }
+  return `Re-lettered ${graded} of ${scanned}, write-ups untouched.`
+}
+
 function verdictMessage(scanned: number, revisited: number): string {
   if (scanned === 0) {
     return 'Nothing eligible — a trade needs a grade before it can get a verdict.'
@@ -60,7 +75,7 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
   const [msg, setMsg] = useState<string | null>(null)
   const [warnings, setWarnings] = useState<string[]>([])
   const [showWarnings, setShowWarnings] = useState(false)
-  const [lastAction, setLastAction] = useState<'grade' | 'regrade' | 'verdict' | 'refresh' | null>(null)
+  const [lastAction, setLastAction] = useState<'grade' | 'regrade' | 'letters' | 'verdict' | 'refresh' | null>(null)
   const [count, setCount] = useState<number>(5)
 
   // "next 1" is a clumsy way to say what a batch of one actually does, and
@@ -86,6 +101,33 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
       }
       setState('done')
       setMsg(gradeMessage(body.scanned ?? 0, body.graded ?? 0, force))
+      if (Array.isArray(body.warnings)) setWarnings(body.warnings)
+      router.refresh()
+    } catch (e) {
+      setState('error')
+      setMsg((e as Error).message)
+    }
+  }
+
+  // Letters only: same route, no model call behind it.
+  async function reletter() {
+    setState('working')
+    setMsg(null); setWarnings([])
+    setLastAction('letters')
+    try {
+      const res = await fetch(`/api/leagues/${leagueId}/grade-trades/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limit: count, lettersOnly: true }),
+      })
+      const body = await res.json()
+      if (!res.ok) {
+        setState('error')
+        setMsg(body?.error ?? 'Re-letter failed')
+        return
+      }
+      setState('done')
+      setMsg(letterMessage(body.scanned ?? 0, body.graded ?? 0))
       if (Array.isArray(body.warnings)) setWarnings(body.warnings)
       router.refresh()
     } catch (e) {
@@ -180,6 +222,9 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
         </button>
         <button onClick={() => grade(true)} disabled={busy} className="dc-btn-ghost" title="Re-grade trades that already have grades (overwrites)">
           {busy && lastAction === 'regrade' ? 'Re-grading…' : `Re-grade ${nLabel}`}
+        </button>
+        <button onClick={reletter} disabled={busy} className="dc-btn-ghost" title="Recompute just the letter grades and keep the write-ups. No AI call, nothing rewritten.">
+          {busy && lastAction === 'letters' ? 'Re-lettering…' : `Re-letter ${nLabel}`}
         </button>
         <button onClick={verdict} disabled={busy} className="dc-btn-ghost" title="Run the 4-week verdict on graded trades (test mode, no waiting)">
           {busy && lastAction === 'verdict' ? 'Revisiting…' : `Verdict ${nLabel}`}

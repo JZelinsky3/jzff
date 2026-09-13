@@ -17,7 +17,7 @@ import { revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
-import { gradeUngradedForLeague } from '@/lib/tradeGrader'
+import { gradeUngradedForLeague, regradeLettersForLeague } from '@/lib/tradeGrader'
 import { devCacheBust } from '@/lib/devCache'
 
 // Vercel timeout — grading 25 trades at ~1.5s/call is well under this.
@@ -29,6 +29,11 @@ const Body = z.object({
   // force=true re-grades trades that already have grades (overwrites). Used
   // when the prompt has been tuned and the archive needs to be refreshed.
   force: z.boolean().optional(),
+  // lettersOnly=true recomputes the letter grades from the anchors and keeps
+  // every write-up, with no Groq call at all. For the common case where the
+  // prose reads fine and only the letters need moving; re-running the whole
+  // grade would spend tokens rewriting a paragraph that was already right.
+  lettersOnly: z.boolean().optional(),
 })
 
 export async function POST(
@@ -75,12 +80,18 @@ export async function POST(
   }
 
   try {
-    const result = await gradeUngradedForLeague({
-      leagueId: id,
-      limit: body.limit ?? 25,
-      seasonYear: body.seasonYear ?? null,
-      force: body.force ?? false,
-    })
+    const result = body.lettersOnly
+      ? await regradeLettersForLeague({
+          leagueId: id,
+          limit: body.limit ?? 25,
+          seasonYear: body.seasonYear ?? null,
+        })
+      : await gradeUngradedForLeague({
+          leagueId: id,
+          limit: body.limit ?? 25,
+          seasonYear: body.seasonYear ?? null,
+          force: body.force ?? false,
+        })
     revalidateTag(`league-${id}`, 'max')
     devCacheBust(id)
     return NextResponse.json(result)

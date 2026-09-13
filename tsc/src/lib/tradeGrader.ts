@@ -102,7 +102,80 @@ export type SummaryCheckOpts = {
   // The week the trade happened, null for preseason. Standings language is
   // only legitimate once a record exists to talk about.
   week?: number | null
+  // Per-position, per-side: the best piece that side received at a position
+  // against the best piece it gave up there. The model wrote that one side
+  // "gave up the better WR" when the WR it received outranked and outvalued
+  // the one it sent, which is the worst kind of error here: confidently
+  // stated, and contradicted by the numbers printed on the same page.
+  positionSwaps?: PositionSwap[]
 }
+
+// Which side of a same-position swap got the better player. Built from the
+// consensus values the anchor itself is computed from, so a violation is a
+// contradiction of the trade's own data, not a matter of opinion.
+export type PositionSwap = {
+  // Manager/team name, exactly as the prompt names the side.
+  side: string
+  // 'WR', 'RB', 'TE', 'QB'.
+  pos: string
+  received: SwapPiece
+  gave: SwapPiece
+  // 'received' = this side improved at the position, 'gave' = it gave up the
+  // better player, 'even' = the two are close enough that either reading is
+  // defensible.
+  better: 'received' | 'gave' | 'even'
+}
+
+export type SwapPiece = {
+  name: string
+  rank: string | null
+  value: number
+  injured: boolean
+}
+
+// Words that name a position in prose. Used to tie a claim in a sentence to
+// a computed swap. "back" alone is deliberately absent: "takes back", "the
+// back end of the roster" and "back-to-back" all contain it.
+const POSITION_NOUNS: Record<string, string[]> = {
+  QB: ['quarterback', 'quarterbacks', 'qb', 'qbs', 'passer'],
+  RB: ['running back', 'running backs', 'runningback', 'rb', 'rbs', 'rusher', 'backfield'],
+  WR: ['receiver', 'receivers', 'wideout', 'wideouts', 'wr', 'wrs', 'pass catcher', 'pass catchers', 'pass-catcher'],
+  TE: ['tight end', 'tight ends', 'te', 'tes'],
+}
+
+// Verbs that point out of a roster, and verbs that point into one. Same
+// vocabulary the DIRECTION rules in the prompt police, reused here so a
+// claim can be read as "gave the better X" or "got the better X".
+const GAVE_VERBS = /\b(gave|gives|giving|given|sent|sends|sending|shipped|ships|shipping|flipped|flips|dealt|deals|parted|parts|surrendered|surrenders|traded away|trades away|moved on from|moves on from|cashed in|out the door)\b/i
+const GOT_VERBS = /\b(gets|got|getting|lands|landed|adds|added|acquires|acquired|receives|received|picks up|picked up|takes back|took back|comes away with|came away with|walks off with|buys|bought|brings in|brought in)\b/i
+const SUPERIOR = /\b(better|best|stronger|superior|more valuable|higher[- ]ranked|higher[- ]valued)\b/i
+const INFERIOR = /\b(downgrade|step down|worse|lesser|weaker)\b/i
+
+// Does this write-up print a letter grade? Exported so the verdict pass,
+// which runs no corrective loop of its own, can at least report one.
+export function hasLetterGradeInProse(text: string): boolean {
+  return LETTER_GRADE_PATTERNS.some((re) => re.test(text))
+}
+
+// A letter grade written into the prose. The grades are printed directly
+// above the write-up, so "the stronger package (B+)" tells the reader
+// something he is already looking at, in the ugliest possible way.
+//
+// The signed forms are matched case-sensitively and bare letters only in
+// grade-shaped phrases, because "a B" and "a C" are cheap false positives
+// and a wrong violation costs a Groq call to "fix" copy that was fine.
+const LETTER_GRADE_PATTERNS: RegExp[] = [
+  // "(B+)", "(b-)", "( A )" — a grade parked in parentheses.
+  /\(\s*[A-DFa-df]\s*[+-]?\s*\)/,
+  // "B+", "A-" loose in a sentence. The sign makes it unambiguous.
+  /(?<![A-Za-z0-9])[A-DF][+-](?![A-Za-z0-9])/,
+  // "a B package", "the C side", "an A haul".
+  /\b(?:an?|the)\s+[A-DF][+-]?\s+(?:grade|mark|package|haul|side|deal|return|verdict|trade|write-?up)\b/,
+  // "grade of B", "graded a C+", "earns a B". The trailing class rules out
+  // "earned a D/ST" and "earns a D-line role", where the letter is the start
+  // of a word rather than a grade.
+  /\b(?:grade[sd]?|graded out at|earns|earned)\s+(?:of\s+|as\s+an?\s+|an?\s+)?[A-DF][+-]?(?![A-Za-z0-9/-])/,
+]
 
 export function summaryViolations(
   text: string,
@@ -115,6 +188,7 @@ export function summaryViolations(
     rankLabels = [],
     finalGrades = [],
     week = null,
+    positionSwaps = [],
   } = opts
   const out: string[] = []
   const t = text.toLowerCase()
@@ -173,6 +247,62 @@ export function summaryViolations(
           out.push(
             `wrote that ${loser.name} won the trade, but the stored grades are ` +
             `${ranked.map((g) => `${g.name} ${g.grade}`).join(', ')}; the summary must argue the grade ${top.name} actually received`,
+          )
+        }
+      }
+    }
+  }
+
+  // A letter grade in the prose. Checked before anything else about the
+  // sentence because it is unconditional: there is no context in which the
+  // write-up should contain one.
+  if (hasLetterGradeInProse(text)) {
+    out.push(
+      'printed a letter grade in the write-up (e.g. "the stronger package (B+)"); ' +
+      'the grades are displayed directly above this text, so never write a letter grade in the prose',
+    )
+  }
+
+  // Who got the better player at a position, checked against the values.
+  //
+  // Scoped to sentences naming exactly ONE side: a sentence mentioning both
+  // managers can attach its verb to either of them, and a false violation
+  // costs a corrective Groq call on copy that was already right.
+  if (positionSwaps.length > 0 && sideNames.length > 0) {
+    const sentences = text.split(/(?<=[.!?])\s+/)
+    for (const sentence of sentences) {
+      const named = sideNames.filter((n) => n && sentence.toLowerCase().includes(n.toLowerCase()))
+      if (named.length !== 1) continue
+      const who = named[0]
+      const gaveClaim = GAVE_VERBS.test(sentence)
+      const gotClaim = GOT_VERBS.test(sentence)
+      // Both directions in one sentence ("sent two picks and landed a WR1")
+      // makes the claim unattributable. Leave it alone.
+      if (gaveClaim === gotClaim) continue
+
+      for (const swap of positionSwaps) {
+        if (swap.side.toLowerCase() !== who.toLowerCase()) continue
+        if (swap.better === 'even') continue
+        const nouns = POSITION_NOUNS[swap.pos] ?? [swap.pos.toLowerCase()]
+        const mentionsPos = nouns.some((n) =>
+          new RegExp(`\\b${n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(sentence))
+        if (!mentionsPos) continue
+
+        const said = (piece: SwapPiece) =>
+          `${piece.name}${piece.rank ? ` (${piece.rank}, value ${piece.value})` : ` (value ${piece.value})`}`
+        // "gave up the better WR" / "a downgrade at receiver" while the data
+        // says the incoming player is the better one.
+        if (gaveClaim && swap.better === 'received' && (SUPERIOR.test(sentence) || INFERIOR.test(sentence))) {
+          out.push(
+            `wrote that ${who} gave up the better ${swap.pos} or came out worse there, but ${said(swap.received)} ` +
+            `is the ${swap.pos} ${who} RECEIVED and he outranks and outvalues ${said(swap.gave)}, the one ${who} sent away`,
+          )
+        }
+        // "lands the better receiver" while the data says the opposite.
+        if (gotClaim && swap.better === 'gave' && SUPERIOR.test(sentence)) {
+          out.push(
+            `wrote that ${who} got the better ${swap.pos}, but ${said(swap.received)} is what ${who} received and ` +
+            `${said(swap.gave)}, the one ${who} gave up, is the better player`,
           )
         }
       }
@@ -573,25 +703,53 @@ export type GradeResult = {
   warnings: string[]
 }
 
-// One-trade grade. Returns graded_sides=0 with a warning if the call fails
-// or the trade is malformed; never throws (callers loop over many trades and
-// shouldn't be killed by one bad one).
-export async function gradeTrade(tradeId: string): Promise<GradeResult> {
-  const db = createAdminClient()
-  const warnings: string[] = []
+// Everything a grading pass needs to know about one trade, gathered once.
+//
+// gradeTrade and regradeTrade both work from this. The letters-only regrade
+// exists exactly because the write-up is expensive and often already good, so
+// it has to land on the SAME anchors the full pass uses. A second copy of this
+// loading logic would drift, and the two flows would start grading the same
+// trade differently without anyone noticing.
+type GradingContext = {
+  leagueType: 'redraft' | 'keeper' | 'dynasty'
+  seasonYear: number
+  tradeWeek: number | null
+  // The write-up currently on the page, so a letters-only regrade can check
+  // whether the prose still argues the grades it is about to store.
+  aiSummary: string | null
+  sides: Array<{
+    side_id: string
+    manager_name: string
+    assets: Array<Record<string, unknown>>
+    roster_summary: string | null
+    record: string | null
+  }>
+  bundle: ValueBundle
+  sidByAsset: Map<Record<string, unknown>, string>
+  anchorRosterCtx: AnchorRosterCtx | null
+  anchors: Map<string, GradeAnchor>
+  // Everything summaryViolations needs except the grades themselves, which
+  // aren't known until the model (or the anchor) has produced them.
+  lint: SummaryCheckOpts
+}
 
+async function loadGradingContext(
+  db: ReturnType<typeof createAdminClient>,
+  tradeId: string,
+  warnings: string[],
+): Promise<GradingContext | null> {
   // 1. Load trade + sides + manager display + league type. We also pull
   // seasons.external_id (the platform's league ID for that season) so the
   // roster-context lookup can hit the right Sleeper league for historical
   // trades.
   const { data: trade, error: tErr } = await db
     .from('trades')
-    .select('id, league_id, season_id, week, executed_at, platform, leagues!inner(league_type, trade_desk_settings), seasons!inner(year, external_id)')
+    .select('id, league_id, season_id, week, executed_at, platform, ai_summary, leagues!inner(league_type, trade_desk_settings), seasons!inner(year, external_id)')
     .eq('id', tradeId)
     .maybeSingle()
   if (tErr || !trade) {
     warnings.push(`load trade ${tradeId}: ${tErr?.message ?? 'not found'}`)
-    return { trade_id: tradeId, graded_sides: 0, warnings }
+    return null
   }
 
   const { data: sides, error: sErr } = await db
@@ -600,7 +758,7 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     .eq('trade_id', tradeId)
   if (sErr || !sides || sides.length < 2) {
     warnings.push(`load sides for trade ${tradeId}: ${sErr?.message ?? 'fewer than 2 sides'}`)
-    return { trade_id: tradeId, graded_sides: 0, warnings }
+    return null
   }
 
   const league = Array.isArray(trade.leagues) ? trade.leagues[0] : trade.leagues
@@ -611,7 +769,7 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
 
   if (seasonYear == null || seasonYear < FIRST_GRADED_SEASON) {
     warnings.push(`trade ${tradeId}: season ${seasonYear ?? 'unknown'} is before ${FIRST_GRADED_SEASON}, not graded`)
-    return { trade_id: tradeId, graded_sides: 0, warnings }
+    return null
   }
 
   // 2. Resolve every player asset to a Sleeper id so value data attaches
@@ -687,7 +845,7 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
   // daily run picks it up once the providers are answering again.
   if (consensus.size === 0) {
     warnings.push(`trade ${tradeId}: no consensus values available, not graded (will retry next run)`)
-    return { trade_id: tradeId, graded_sides: 0, warnings }
+    return null
   }
 
   const bundle: ValueBundle = {
@@ -753,29 +911,122 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
   const tradeWeek = (trade.week as number | null) ?? null
   const records = await loadRecordsBefore(db, trade.season_id as string, tradeWeek)
 
-  // 4. Build the prompt.
+  const ctxSides = sides.map((s) => {
+    const mgr = Array.isArray(s.managers) ? s.managers[0] : s.managers
+    const rec = records.get(s.manager_id as string)
+    return {
+      side_id: s.id as string,
+      manager_name: (mgr?.team_name as string | null) || (mgr?.display_name as string) || 'Manager',
+      assets: (s.assets as Array<Record<string, unknown>>) ?? [],
+      roster_summary: rosterSummaries.get(s.id as string) ?? null,
+      record: rec ? formatRecord(rec) : null,
+    }
+  })
+
+  const anchors = computeGradeAnchors(ctxSides, bundle, sidByAsset, anchorRosterCtx)
+
+  // Always report the anchor, even when nothing is wrong. This is the number
+  // the whole grade is built on and it never appeared anywhere a human could
+  // read it, so "why did this side lose?" was unanswerable from the outside.
+  //
+  // It is labelled as a STARTING POINT because it is not the stored grade:
+  // the model may move a notch or two off it, and reading this line as the
+  // final letters (then finding different ones on the page) is a trap it set
+  // more than once. Every flow that writes grades also reports what it wrote.
+  {
+    const parts = ctxSides.map((s) => {
+      const a = anchors.get(s.side_id)
+      if (!a) return `${s.manager_name} no anchor`
+      const how = a.detail ?? `package ${Math.round(a.eff)}`
+      return `${s.manager_name} ${a.grade} (${how}${a.confident ? '' : ', low confidence'})`
+    })
+    const basis = anchors.values().next().value?.basis ?? 'package'
+    warnings.push(`anchor, the starting point before the model moves off it [${basis} basis]: ${parts.join('  |  ')}`)
+  }
+
+  // Surname + rank label for every incoming piece, so the factual check
+  // catches both "already had Nabers" and "already stocked with a WR13".
+  const receivedTokens = ctxSides.flatMap((sd) =>
+    sd.assets
+      .filter((a) => a.kind === 'player')
+      .flatMap((a) => {
+        const toks: string[] = []
+        const nm = typeof a.name === 'string' ? a.name.trim() : ''
+        const last = nm.split(/\s+/).slice(-1)[0]
+        if (last && last.length >= 3) toks.push(last)
+        const sid = sidByAsset.get(a)
+        const rank = sid ? bundle.rankLabels.get(sid) : undefined
+        if (rank) toks.push(rank)
+        return toks
+      }),
+  )
+
+  // Every rank label in the deal, deduped, with the ones past DEEP_RANK
+  // flagged. The threshold matches the tier reference in the prompt
+  // (49+ is deep depth / waiver), and it's deliberately conservative:
+  // a WR35 can still be a flex start, so only numbers that can't be a
+  // starter anywhere get called out.
+  const DEEP_RANK = 48
+  const rankLabels = [...new Set(
+    ctxSides.flatMap((sd) =>
+      sd.assets
+        .filter((a) => a.kind === 'player')
+        .map((a) => {
+          const sid = sidByAsset.get(a)
+          return sid ? bundle.rankLabels.get(sid) : undefined
+        })
+        .filter((r): r is string => !!r),
+    ),
+  )].map((label) => {
+    const n = Number(label.replace(/^[A-Za-z]+/, ''))
+    return { label, deep: Number.isFinite(n) && n > DEEP_RANK }
+  })
+
+  return {
+    leagueType,
+    seasonYear,
+    tradeWeek,
+    aiSummary: (trade.ai_summary as string | null) ?? null,
+    sides: ctxSides,
+    bundle,
+    sidByAsset,
+    anchorRosterCtx,
+    anchors,
+    lint: {
+      receivedTokens,
+      sideNames: ctxSides.map((s) => s.manager_name).filter(Boolean),
+      rankLabels,
+      week: tradeWeek,
+      positionSwaps: computePositionSwaps(ctxSides, bundle, sidByAsset),
+    },
+  }
+}
+
+// One-trade grade. Returns graded_sides=0 with a warning if the call fails
+// or the trade is malformed; never throws (callers loop over many trades and
+// shouldn't be killed by one bad one).
+export async function gradeTrade(tradeId: string): Promise<GradeResult> {
+  const db = createAdminClient()
+  const warnings: string[] = []
+
+  const ctx = await loadGradingContext(db, tradeId, warnings)
+  if (!ctx) return { trade_id: tradeId, graded_sides: 0, warnings }
+
+  const { leagueType, seasonYear, tradeWeek, sides, bundle, sidByAsset, anchors } = ctx
+
+  // Build the prompt off the loaded context.
   const prompt = buildPrompt({
     leagueType,
     seasonYear,
     week: tradeWeek,
     tradeId,
-    sides: sides.map((s) => {
-      const mgr = Array.isArray(s.managers) ? s.managers[0] : s.managers
-      const rec = records.get(s.manager_id as string)
-      return {
-        side_id: s.id as string,
-        manager_name: (mgr?.team_name as string | null) || (mgr?.display_name as string) || 'Manager',
-        assets: (s.assets as Array<Record<string, unknown>>) ?? [],
-        roster_summary: rosterSummaries.get(s.id as string) ?? null,
-        record: rec ? formatRecord(rec) : null,
-      }
-    }),
+    sides,
     bundle,
     sidByAsset,
-    rosterCtx: anchorRosterCtx,
+    rosterCtx: ctx.anchorRosterCtx,
   })
 
-  // 5. Call Groq.
+  // Call Groq.
   const apiKey = process.env.GROQ_API_KEY_TRADES || process.env.GROQ_API_KEY
   if (!apiKey) {
     warnings.push('GROQ_API_KEY_TRADES (or GROQ_API_KEY) not set')
@@ -785,7 +1036,7 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
   // Shared by the clamp (which runs before the prose is validated) and the
   // writer below, so the grades the linter checked are exactly the grades
   // that get stored.
-  const sideIds = new Set(sides.map((s) => s.id as string))
+  const sideIds = new Set(sides.map((s) => s.side_id))
   const modelGrades = new Map<string, string>()
 
   let parsed: { summary: string; sides: Array<{ side_id: string; grade: string }> }
@@ -810,52 +1061,6 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     })
     parsed = result.data
 
-    // One corrective pass if the copy broke a rule the prompt already
-    // stated. Naming the specific violation back to the model works far
-    // better than restating the rule; a second failure is accepted rather
-    // than burning a third call, and stripDashes still cleans the dashes.
-    // Surname + rank label for every incoming piece, so the factual check
-    // catches both "already had Nabers" and "already stocked with a WR13".
-    const receivedTokens = sides.flatMap((sd) =>
-      ((sd.assets as Array<Record<string, unknown>>) ?? [])
-        .filter((a) => a.kind === 'player')
-        .flatMap((a) => {
-          const toks: string[] = []
-          const nm = typeof a.name === 'string' ? a.name.trim() : ''
-          const last = nm.split(/\s+/).slice(-1)[0]
-          if (last && last.length >= 3) toks.push(last)
-          const sid = sidByAsset.get(a)
-          const rank = sid ? bundle.rankLabels.get(sid) : undefined
-          if (rank) toks.push(rank)
-          return toks
-        }),
-    )
-    const sideNames = sides.map((sd) => {
-      const m = Array.isArray(sd.managers) ? sd.managers[0] : sd.managers
-      return (m?.team_name as string | null) || (m?.display_name as string) || ''
-    }).filter(Boolean)
-
-    // Every rank label in the deal, deduped, with the ones past DEEP_RANK
-    // flagged. The threshold matches the tier reference in the prompt
-    // (49+ is deep depth / waiver), and it's deliberately conservative:
-    // a WR35 can still be a flex start, so only numbers that can't be a
-    // starter anywhere get called out.
-    const DEEP_RANK = 48
-    const rankLabels = [...new Set(
-      sides.flatMap((sd) =>
-        ((sd.assets as Array<Record<string, unknown>>) ?? [])
-          .filter((a) => a.kind === 'player')
-          .map((a) => {
-            const sid = sidByAsset.get(a)
-            return sid ? bundle.rankLabels.get(sid) : undefined
-          })
-          .filter((r): r is string => !!r),
-      ),
-    )].map((label) => {
-      const n = Number(label.replace(/^[A-Za-z]+/, ''))
-      return { label, deep: Number.isFinite(n) && n > DEEP_RANK }
-    })
-
     // ── The model may move notches. It may NOT reorder the sides. ──────────
     //
     // The anchor is computed from the consensus values of what each side
@@ -877,28 +1082,6 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     // below a side the anchor put beneath it is reset to its own anchor grade,
     // which restores the true ordering while leaving every non-contradictory
     // adjustment the model made intact.
-    const anchorsForClamp = computeGradeAnchors(
-      sides.map((s) => ({ side_id: s.id as string, assets: (s.assets as Array<Record<string, unknown>>) ?? [] })),
-      bundle,
-      sidByAsset,
-      anchorRosterCtx,
-    )
-    // Always report the anchor, even when nothing is wrong. This is the number
-    // the whole grade is built on and it never appeared anywhere a human could
-    // read it, so "why did this side lose?" was unanswerable from the outside.
-    {
-      const parts = sides.map((s) => {
-        const m = Array.isArray(s.managers) ? s.managers[0] : s.managers
-        const who = (m?.team_name as string | null) || (m?.display_name as string) || String(s.id).slice(0, 8)
-        const a = anchorsForClamp.get(s.id as string)
-        if (!a) return `${who} no anchor`
-        const how = a.detail ?? `package ${Math.round(a.eff)}`
-        return `${who} ${a.grade} (${how}${a.confident ? '' : ', low confidence'})`
-      })
-      const basis = anchorsForClamp.values().next().value?.basis ?? 'package'
-      warnings.push(`anchor [${basis} basis]: ${parts.join('  |  ')}`)
-    }
-
     const gradeRank = (g: string) => GRADE_SCALE.indexOf(g)
     modelGrades.clear()
     for (const g of parsed.sides) {
@@ -910,8 +1093,8 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     for (const [idA, gA] of modelGrades) {
       for (const [idB, gB] of modelGrades) {
         if (idA === idB) continue
-        const aA = anchorsForClamp.get(idA)?.grade
-        const aB = anchorsForClamp.get(idB)?.grade
+        const aA = anchors.get(idA)?.grade
+        const aB = anchors.get(idB)?.grade
         if (!aA || !aB) continue
         // A is anchored strictly above B, but the model put A at or below B.
         if (gradeRank(aA) > gradeRank(aB) && gradeRank(gA) <= gradeRank(gB)) {
@@ -921,7 +1104,7 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
       }
     }
     for (const id of inverted) {
-      const anchor = anchorsForClamp.get(id)?.grade
+      const anchor = anchors.get(id)?.grade
       if (!anchor) continue
       warnings.push(
         `trade ${tradeId}: side ${id} graded ${modelGrades.get(id)} against an anchor of ${anchor}, ` +
@@ -950,14 +1133,10 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     const checkSummary = () => summaryViolations(
       String(parsed?.summary ?? ''), leagueType,
       {
-        receivedTokens, sideNames, rankLabels, week: tradeWeek,
-        finalGrades: sides.map((sd) => {
-          const m = Array.isArray(sd.managers) ? sd.managers[0] : sd.managers
-          return {
-            name: (m?.team_name as string | null) || (m?.display_name as string) || '',
-            grade: modelGrades.get(sd.id as string) ?? '',
-          }
-        }).filter((g) => g.name && g.grade),
+        ...ctx.lint,
+        finalGrades: sides
+          .map((sd) => ({ name: sd.manager_name, grade: modelGrades.get(sd.side_id) ?? '' }))
+          .filter((g) => g.name && g.grade),
       },
     )
     let violations = checkSummary()
@@ -981,11 +1160,9 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
                 // The stored grades are already final by this point; the clamp
                 // may have corrected one. Say so plainly, or the rewrite keeps
                 // arguing the verdict the model originally reached.
-                ` The grades on record for this trade are: ${sides.map((sd) => {
-                  const m = Array.isArray(sd.managers) ? sd.managers[0] : sd.managers
-                  const who = (m?.team_name as string | null) || (m?.display_name as string) || 'Manager'
-                  return `${who} ${modelGrades.get(sd.id as string) ?? '?'}`
-                }).join(', ')}. Your summary must explain THOSE grades. If it currently argues that a different side won, that is the error to fix.`,
+                ` The grades on record for this trade are: ${sides
+                  .map((sd) => `${sd.manager_name} ${modelGrades.get(sd.side_id) ?? '?'}`)
+                  .join(', ')}. Your summary must explain THOSE grades. If it currently argues that a different side won, that is the error to fix. Never print those letters in the summary itself.`,
             },
           ],
           temperature: 0.35,
@@ -1016,7 +1193,7 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     return { trade_id: tradeId, graded_sides: 0, warnings }
   }
 
-  // 6a. Write the trade-level summary first (one row update, not per-side).
+  // Write the trade-level summary first (one row update, not per-side).
   const summary = stripDashes((parsed.summary ?? '').toString()).slice(0, 1500)
   if (summary) {
     const { error: sumErr } = await db
@@ -1032,25 +1209,38 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     warnings.push(`trade ${tradeId}: model returned no summary`)
   }
 
-  // 6b. Upsert per-side grades. Match by side_id; reject grades the model
-  // invented. blurb column is no longer populated — the trade-level
-  // ai_summary is the prose. Existing rows with old per-side blurbs are
-  // cleared on re-grade so the UI stays consistent.
-  let graded = 0
   for (const g of parsed.sides) {
     if (!sideIds.has(g.side_id)) {
       warnings.push(`trade ${tradeId}: model returned grade for unknown side ${g.side_id}`)
+    } else if (!(VALID_GRADES as readonly string[]).includes(g.grade)) {
+      warnings.push(`trade ${tradeId}: invalid grade "${g.grade}" for side ${g.side_id}`)
+    }
+  }
+
+  // Write one row per SIDE, not one per grade the model returned.
+  //
+  // It used to iterate the model's array, which meant a fixup retry that came
+  // back naming only one side left the other side's row exactly as it was: a
+  // grade from a previous run, sitting on the page beside a write-up and a
+  // warnings list that both described the new one. Every side the trade has
+  // gets written, and a side the model never graded falls back to its anchor
+  // rather than keeping a stale letter.
+  let graded = 0
+  const stored = new Map<string, string>()
+  for (const s of sides) {
+    const grade = modelGrades.get(s.side_id) ?? anchors.get(s.side_id)?.grade
+    if (!grade) {
+      warnings.push(`trade ${tradeId}: no grade and no anchor for ${s.manager_name}, left as it was`)
       continue
     }
-    if (!(VALID_GRADES as readonly string[]).includes(g.grade)) {
-      warnings.push(`trade ${tradeId}: invalid grade "${g.grade}" for side ${g.side_id}`)
-      continue
+    if (!modelGrades.has(s.side_id)) {
+      warnings.push(`trade ${tradeId}: the model returned no usable grade for ${s.manager_name}, stored its anchor ${grade}`)
     }
     const { error: upErr } = await db.from('trade_grades').upsert(
       {
-        trade_side_id: g.side_id,
+        trade_side_id: s.side_id,
         // Post-clamp value, so a reversed ordering never reaches the page.
-        grade: (modelGrades.get(g.side_id) ?? g.grade) as Grade,
+        grade: grade as Grade,
         blurb: null,
         model: `groq:${MODEL}`,
         graded_at: new Date().toISOString(),
@@ -1058,10 +1248,116 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
       { onConflict: 'trade_side_id' },
     )
     if (upErr) {
-      warnings.push(`upsert grade for side ${g.side_id}: ${upErr.message}`)
+      warnings.push(`upsert grade for side ${s.side_id}: ${upErr.message}`)
       continue
     }
+    stored.set(s.side_id, grade)
     graded++
+  }
+
+  // What actually reached the page. The anchor line above is a starting
+  // point, not a result, and reading it as the grades (then finding different
+  // letters on the trade) is a trap worth closing with one more line.
+  if (stored.size > 0) {
+    warnings.push(
+      `stored grades, these are what the page shows: ${sides
+        .filter((s) => stored.has(s.side_id))
+        .map((s) => `${s.manager_name} ${stored.get(s.side_id)}`)
+        .join('  |  ')}`,
+    )
+  }
+
+  return { trade_id: tradeId, graded_sides: graded, warnings }
+}
+
+// Re-letter a trade without touching the write-up, and without calling Groq.
+//
+// The prose is the expensive part and it is usually the part that is already
+// right: re-running the whole grade to nudge a letter burns tokens rewriting
+// a paragraph nobody asked to change, and the rewrite comes back different
+// every time. This recomputes the grades from the anchors, which are pure
+// arithmetic over the current consensus values, stores them, and leaves
+// ai_summary exactly where it was.
+//
+// The one thing it cannot do is notice that the existing prose now argues for
+// different letters, so it checks: the stored write-up is run back through
+// the same linter with the new grades, and any contradiction comes out as a
+// warning telling you this trade does need a real re-grade after all.
+export async function regradeTrade(tradeId: string): Promise<GradeResult> {
+  const db = createAdminClient()
+  const warnings: string[] = []
+
+  const ctx = await loadGradingContext(db, tradeId, warnings)
+  if (!ctx) return { trade_id: tradeId, graded_sides: 0, warnings }
+
+  const { sides, anchors } = ctx
+
+  // What the page shows right now, so the warning can say what moved.
+  const { data: existing } = await db
+    .from('trade_grades')
+    .select('trade_side_id, grade')
+    .in('trade_side_id', sides.map((s) => s.side_id))
+  const before = new Map<string, string>(
+    (existing ?? []).map((r) => [r.trade_side_id as string, r.grade as string]),
+  )
+
+  let graded = 0
+  const stored = new Map<string, string>()
+  for (const s of sides) {
+    const grade = anchors.get(s.side_id)?.grade
+    if (!grade) {
+      warnings.push(`trade ${tradeId}: no anchor for ${s.manager_name}, grade left as it was`)
+      continue
+    }
+    const { error: upErr } = await db.from('trade_grades').upsert(
+      {
+        trade_side_id: s.side_id,
+        grade: grade as Grade,
+        blurb: null,
+        // Tagged so a grade the model never saw can't be mistaken for one it
+        // wrote. The basis says which anchor produced it.
+        model: `anchor:${anchors.get(s.side_id)?.basis ?? 'package'}`,
+        graded_at: new Date().toISOString(),
+      },
+      { onConflict: 'trade_side_id' },
+    )
+    if (upErr) {
+      warnings.push(`upsert grade for side ${s.side_id}: ${upErr.message}`)
+      continue
+    }
+    stored.set(s.side_id, grade)
+    graded++
+  }
+
+  if (stored.size > 0) {
+    warnings.push(
+      `re-lettered, these are what the page shows: ${sides
+        .filter((s) => stored.has(s.side_id))
+        .map((s) => {
+          const now = stored.get(s.side_id)
+          const was = before.get(s.side_id)
+          return `${s.manager_name} ${now}${was && was !== now ? ` (was ${was})` : ''}`
+        })
+        .join('  |  ')}`,
+    )
+  }
+
+  // Does the write-up still argue these letters?
+  if (ctx.aiSummary) {
+    const violations = summaryViolations(ctx.aiSummary, ctx.leagueType, {
+      ...ctx.lint,
+      finalGrades: sides
+        .map((s) => ({ name: s.manager_name, grade: stored.get(s.side_id) ?? '' }))
+        .filter((g) => g.name && g.grade),
+    })
+    if (violations.length > 0) {
+      warnings.push(
+        `the write-up on this trade was kept as is and it now breaks: ${violations.join('; ')}. ` +
+        'Re-grade it if any of that is about the verdict rather than the wording.',
+      )
+    }
+  } else {
+    warnings.push(`trade ${tradeId}: no write-up on this trade, only the letters were set`)
   }
 
   return { trade_id: tradeId, graded_sides: graded, warnings }
@@ -1233,6 +1529,12 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
 
   const now = new Date().toISOString()
   const summary = stripDashes((parsed.summary ?? '').toString()).slice(0, 1500)
+  // No corrective pass on the revisit, so this is a report rather than a fix:
+  // the verdict sits beside the same letters the initial grade does, and a
+  // grade written into the sentence is the one thing it must never contain.
+  if (summary && hasLetterGradeInProse(summary)) {
+    warnings.push(`trade ${tradeId}: the verdict write-up prints a letter grade in the prose; run it again`)
+  }
   if (summary) {
     const { error: sumErr } = await db
       .from('trades')
@@ -1446,6 +1748,48 @@ export async function gradeUngradedForLeague(args: {
   for (let i = 0; i < ungraded.length; i++) {
     if (i > 0) await new Promise((r) => setTimeout(r, PER_CALL_DELAY_MS))
     const r = await gradeTrade(ungraded[i])
+    graded += r.graded_sides > 0 ? 1 : 0
+    warnings.push(...r.warnings)
+  }
+
+  return { scanned: candidateTrades.length, graded, warnings }
+}
+
+// Re-letter the `limit` most recent trades in a league, newest first, keeping
+// every write-up. No Groq call, so no pacing delay and no token spend: the
+// grades come straight off the anchors.
+export async function regradeLettersForLeague(args: {
+  leagueId: string
+  limit: number
+  seasonYear?: number | null
+}): Promise<{ scanned: number; graded: number; warnings: string[] }> {
+  const db = createAdminClient()
+  const warnings: string[] = []
+
+  let q = db
+    .from('trades')
+    .select('id, executed_at, seasons!inner(year)')
+    .eq('league_id', args.leagueId)
+    .eq('status', 'completed')
+    .gte('seasons.year', FIRST_GRADED_SEASON)
+    .order('executed_at', { ascending: false })
+  if (args.seasonYear != null) {
+    if (args.seasonYear < FIRST_GRADED_SEASON) {
+      warnings.push(`season ${args.seasonYear} is before ${FIRST_GRADED_SEASON}; grading only runs from ${FIRST_GRADED_SEASON} on`)
+      return { scanned: 0, graded: 0, warnings }
+    }
+    q = q.eq('seasons.year', args.seasonYear)
+  }
+
+  const { data: candidateTrades, error: cErr } = await q.limit(limit_cap(args.limit))
+  if (cErr || !candidateTrades) {
+    warnings.push(`load candidate trades: ${cErr?.message ?? 'no data'}`)
+    return { scanned: 0, graded: 0, warnings }
+  }
+
+  let graded = 0
+  for (const t of candidateTrades) {
+    const r = await regradeTrade(t.id as string)
     graded += r.graded_sides > 0 ? 1 : 0
     warnings.push(...r.warnings)
   }
@@ -1779,6 +2123,11 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '',
       '1c. NEVER MENTION THE ANCHOR. "Falls short of the anchor value" is internal machinery leaking into the page. The reader has never heard of the anchor. Say a package is worth less, not that it missed a number he cannot see.',
       '',
+      // The letters are rendered in large type immediately above this prose on
+      // the page. "the stronger package (B+)" is the write-up reading the
+      // scoreboard back to somebody who is looking at the scoreboard.
+      '1d. NEVER WRITE A LETTER GRADE IN THE PROSE. No "(B+)", no "an A- haul", no "the stronger package (B+)", no "earns a B". The letter grades are printed directly above your write-up in large type, so putting them in the sentence is redundant and it reads cheap. Describe the packages in words and let the letters speak for themselves.',
+      '',
       'NEVER WRITE THE NEGATIVE SPACE. These instructions tell you which factors do not apply in this league. That is guidance for YOU. The reader has not seen it and does not need it. When a factor does not apply, LEAVE IT OUT SILENTLY. Never write a clause announcing that something is irrelevant, does not matter, is a non-factor, is moot, or is worth nothing here. "While the age gap is irrelevant in redraft" is exactly the sentence never to write: it spends a clause on a thing you are not allowed to use, it names no player, and it tells the reader nothing. Delete the thought, do not negate it.',
       '',
       args.leagueType === 'redraft'
@@ -1848,6 +2197,11 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '• "on injured reserve" and "on the PUP list" mean an extended absence, so "out for some time" is fair. OUT means unavailable this week. DOUBTFUL and QUESTIONABLE mean week to week, and QUESTIONABLE in particular is a minor note, not a headline.',
       '• "injured, no game status listed" means a known injury with no official designation yet. Treat it as a real risk and say the status is unclear, rather than guessing at one.',
       '• A line reading "status:" rather than "injury:" is NOT an injury. A coach\'s decision, a personal matter or a suspension makes a player unavailable without anything being hurt. Never describe those as an injury or a knock.',
+      // Joey's note, and he is right: this is the most common real trade in a
+      // league with an injured starter in it, and the write-up kept treating
+      // it as a mystery or, worse, as one manager fleecing the other.
+      '• WHY AN INJURY TRADE HAPPENS, AND YOU SHOULD SAY IT. When one side sends out a hurt, better player and takes back a healthy, lesser one at the SAME position, the deal is almost always about availability rather than value. The manager giving up the injured star needs points out of that lineup slot NOW and is paying in quality to get them. The manager taking the injured star can usually afford to wait: check his "Roster BEFORE this trade" line, and if he has someone who can cover that position for a few weeks, say so, because that is exactly what makes the trade make sense for him. That is the most interesting true thing in a deal like this and it belongs in the write-up: a body who plays this week against the better player once he is back.',
+      '• THAT MOTIVE EXPLAINS THE TRADE, IT DOES NOT CHANGE IT. Naming the need is allowed. Presenting it as a win is not. The side that gave up the better player still gave up the better player, and shedding an injured player is never relief, an upgrade, or a market being eased. Name the need, keep the verdict.',
       '• AN INJURY NEVER MOVES THE GRADE. The values on the player line are pulled live at grading time, so an injured player is ALREADY marked down in the number the anchor was built from. Docking that side again charges it twice for one fact. If the side holding the injured player still has the higher-valued package, that side still won the trade, and the write-up must say so while naming the injury as the risk attached to it. "He got hurt" is never a reason to flip, lower, or hedge a grade.',
       '• Each side also has a "Roster BEFORE this trade" line showing positional depth (e.g. "RB(4): McCaffrey (RB3), Hall (RB8), Mostert (RB42) +1 | WR(3): Chase (WR2)..."). It is the roster as it stood BEFORE this deal: the players being received are NOT in it, and the players being sent still are. Use it to weigh need: a side acquiring an RB while already deep at RB is paying retail; the same RB to a side thin at the position is a real win. Never say a side "already had" a player they are receiving in this trade, and never count an incoming player as existing depth.',
       // The old single band (1-12 elite, for every position) was wrong for
@@ -1897,6 +2251,18 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
     })
     .join('\n\n')
 
+  // Same-position comparisons, decided here rather than left to the model.
+  // It read two receivers off the lists and named the wrong one as the better
+  // player, which is not a judgement it should be making at all: the values
+  // are right there and the answer is arithmetic.
+  const swaps = computePositionSwaps(
+    args.sides.map((s) => ({ side_id: s.side_id, manager_name: s.manager_name, assets: s.assets })),
+    args.bundle,
+    args.sidByAsset,
+  )
+  const swapLines = formatPositionSwaps(swaps)
+  const injuryNotes = formatInjurySwapNotes(swaps)
+
   const user =
     [
       `League type: ${args.leagueType}`,
@@ -1906,6 +2272,17 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '',
       sidesText,
       '',
+      swapLines.length > 0
+        ? [
+            'SAME-POSITION SWAPS (already worked out from the values above, these are facts, never contradict one):',
+            ...swapLines,
+          ].join('\n')
+        : null,
+      swapLines.length > 0 ? '' : null,
+      injuryNotes.length > 0
+        ? ['AVAILABILITY ANGLE (this is why the trade happened, work it into the write-up):', ...injuryNotes].join('\n')
+        : null,
+      injuryNotes.length > 0 ? '' : null,
       'Return JSON with this exact shape:',
       '{',
       '  "summary": "<3-4 sentence recap of the whole trade>",',
@@ -1992,6 +2369,13 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
       'NEVER WRITE THE NEGATIVE SPACE, AND NEVER EXPLAIN THE LEAGUE TO THE LEAGUE. These instructions name factors that do not apply here; that is guidance for you, not material for the write-up. Leave an inapplicable factor out silently. Never write that something is irrelevant, does not matter, is a non-factor or is moot, and never write "in a redraft league", "in this format", or any line explaining the league\'s own rules back to a manager who plays in it.',
       '',
       'SAY IT STRAIGHT. If the grade moved, say it moved and say who it favours, in plain words: "this is Sean\'s trade now", "Ricci\'s grade comes down". Never gesture at a verdict with "the higher mark", "the better end of the ledger", "comes out ahead on paper", "gets the nod" or "edges it out". Say what the conclusion is.',
+      '',
+      'NEVER WRITE A LETTER GRADE IN THE PROSE. The letters are printed beside this text in large type. No "(B+)", no "an A- haul", no "the grade drops to C+", no "earns a B". Say the grade held, came down, or went up, and let the letters say what to.',
+      '',
+      // The verdict pass is where the availability story actually resolves, so
+      // it gets the same licence the initial write-up has: name the motive,
+      // keep the verdict.
+      'INJURY TRADES HAVE A REASON. When one side sent out a hurt player and took back a healthy, lesser one at the same position, the deal was about availability: he needed points from that slot immediately and paid in quality for them. Four weeks on you can say whether that worked, whether the hurt player came back, and whether the manager who waited got what he was waiting for. That is the story. It is still not a licence to call shedding an injured player a win.',
       '',
       'BANNED PHRASES (same as initial grading): "primarily due to", "added depth", "upgrades the position", "solid move", "fair deal". The em dash character is also banned everywhere; use commas, periods, or parentheses instead. Refer to each side by its EXACT full name every time, never shortened to one word.',
       '',
@@ -2105,6 +2489,127 @@ function summarisePackage(
   if (vals.length > 1) parts.push(`rest ${total - best.v}`)
   if (picks > 0) parts.push(`plus ${picks} pick(s)`)
   return `   Package: ${parts.join(', ')}`
+}
+
+// Is this player carrying a real injury, as opposed to a suspension or a
+// coach's decision? Reuses formatInjury so "injured" here means exactly what
+// the player line says it means.
+function isInjured(meta: PlayerValue | undefined): boolean {
+  const line = formatInjury(meta)
+  return !!line && line.startsWith('injury:')
+}
+
+// Who got the better player at each position, per side.
+//
+// A trade is usually read one position at a time ("who won the WR swap"),
+// and that reading is the one the model got backwards: it wrote that a side
+// gave up the better receiver when the receiver it received outranked and
+// outvalued the one it sent. Computing the comparison here does two jobs:
+// it goes into the prompt as a stated fact, and it goes into the linter so a
+// write-up that contradicts it is caught before anyone reads it.
+//
+// Only positions where BOTH directions carry a player produce a swap. A side
+// that received a WR while sending none didn't make a WR swap, and "the
+// better receiver" is not a claim anyone can make about it.
+function computePositionSwaps(
+  sides: Array<{ side_id: string; manager_name: string; assets: Array<Record<string, unknown>> }>,
+  bundle: ValueBundle,
+  sidByAsset: Map<Record<string, unknown>, string>,
+): PositionSwap[] {
+  // Best valued player per position out of one asset list.
+  const bestByPos = (assets: Array<Record<string, unknown>>): Map<string, SwapPiece> => {
+    const out = new Map<string, SwapPiece>()
+    for (const a of assets) {
+      if (a.kind !== 'player') continue
+      const sid = sidByAsset.get(a)
+      const cv = sid ? bundle.consensus.get(sid) : undefined
+      if (!sid || !cv) continue
+      const pos = String((a.position as string) || cv.position || '').toUpperCase()
+      if (!pos) continue
+      const piece: SwapPiece = {
+        name: (a.name as string) || cv.name,
+        rank: bundle.rankLabels.get(sid) ?? null,
+        value: cv.value,
+        injured: isInjured(bundle.meta.get(sid)),
+      }
+      const prev = out.get(pos)
+      if (!prev || piece.value > prev.value) out.set(pos, piece)
+    }
+    return out
+  }
+
+  // Inside this band the two players are close enough that "the better one"
+  // is a judgement call, and the write-up gets to make it either way.
+  const EVEN_BAND = 0.02
+
+  const swaps: PositionSwap[] = []
+  for (const s of sides) {
+    const received = bestByPos(s.assets)
+    const gave = bestByPos(sides.filter((o) => o.side_id !== s.side_id).flatMap((o) => o.assets))
+    for (const [pos, gotPiece] of received) {
+      const gavePiece = gave.get(pos)
+      if (!gavePiece) continue
+      const base = Math.max(gotPiece.value, gavePiece.value)
+      const gap = base > 0 ? (gotPiece.value - gavePiece.value) / base : 0
+      swaps.push({
+        side: s.manager_name,
+        pos,
+        received: gotPiece,
+        gave: gavePiece,
+        better: Math.abs(gap) <= EVEN_BAND ? 'even' : gap > 0 ? 'received' : 'gave',
+      })
+    }
+  }
+  return swaps
+}
+
+// The swap block the prompt shows the model: one line per position, stating
+// outright which side ended up with the better player there.
+function formatPositionSwaps(swaps: PositionSwap[]): string[] {
+  // Each swap appears once from each side's point of view; one line per
+  // position is enough, so keep the first.
+  const seen = new Set<string>()
+  const lines: string[] = []
+  for (const s of swaps) {
+    if (seen.has(s.pos)) continue
+    seen.add(s.pos)
+    const piece = (p: SwapPiece) =>
+      `${p.name}${p.rank ? ` (${p.rank}, value ${p.value}${p.injured ? ', hurt' : ''})` : ` (value ${p.value})`}`
+    const verdict = s.better === 'even'
+      ? 'the two are close enough to call it a wash'
+      : s.better === 'received'
+      ? `${s.side} got the better ${s.pos}`
+      : `${s.side} gave up the better ${s.pos}`
+    lines.push(`• ${s.pos}: ${s.side} receives ${piece(s.received)} and sends ${piece(s.gave)}. ${verdict}.`)
+  }
+  return lines
+}
+
+// The availability story, when the shape of the deal tells one.
+//
+// A side that sends out a hurt, higher-valued player and takes back a
+// healthy lesser one at the same position is buying games he can start now.
+// That is usually the real reason the trade happened and the write-up should
+// say so; it is NOT a reason to move a grade, and the prompt says that too.
+function formatInjurySwapNotes(swaps: PositionSwap[]): string[] {
+  const seen = new Set<string>()
+  const notes: string[] = []
+  for (const s of swaps) {
+    if (seen.has(s.pos)) continue
+    // The side that RECEIVED the hurt player, so the sentence reads in one
+    // direction: he took on the injury, the other manager took the healthy body.
+    if (!s.received.injured || s.gave.injured) continue
+    if (s.better !== 'received') continue
+    seen.add(s.pos)
+    notes.push(
+      `• ${s.pos}: ${s.side} takes on ${s.received.name}, who is hurt, and sends back the healthy ` +
+      `${s.gave.name}. The likely reason this trade exists is availability: the other side needed a ` +
+      `${s.pos} who plays now, and ${s.side} can carry an absence if his roster line shows cover at the ` +
+      `position. Name that trade, a healthy body now against the better player once he is back. It ` +
+      `explains the deal; it does not change who won it.`,
+    )
+  }
+  return notes
 }
 
 function formatAssetWithValue(
