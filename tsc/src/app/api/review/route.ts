@@ -80,7 +80,7 @@ async function notify(input: z.infer<typeof schema>, email: string | null): Prom
     `Design:      ${sub(input.rating_design)}`,
     `Navigation:  ${sub(input.rating_navigation)}`,
     `Speed:       ${sub(input.rating_speed)}`,
-    `Fair price:  ${sub(input.rating_value)}`,
+    `Pricing:     ${sub(input.rating_value)}`,
     `Favorite:    ${input.favorite_areas?.length ? input.favorite_areas.join(', ') : '(blank)'}`,
     `Least fav:   ${input.least_favorite_areas?.length ? input.least_favorite_areas.join(', ') : '(blank)'}`,
     '',

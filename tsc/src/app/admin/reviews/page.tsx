@@ -42,7 +42,7 @@ const ASPECTS = [
   { col: 'rating_design', label: 'Design' },
   { col: 'rating_navigation', label: 'Getting around' },
   { col: 'rating_speed', label: 'Speed' },
-  { col: 'rating_value', label: 'Fair price' },
+  { col: 'rating_value', label: 'Fair pricing' },
 ] as const
 
 // Favourite / least favourite per row, new array column first and the

@@ -9,9 +9,10 @@
 // rating already chosen, and the fastest path from "clicked a star" to
 // "submitted" is one button. Prose is a bonus, not a toll.
 //
-// The four sub-ratings (design, finding your way around, speed, is the price
-// fair) are taps rather than typing, which is the only reason they earn a spot
-// in front of the submit button. They are deliberately NOT stacked as four
+// The four sub-ratings (design, finding your way around, speed, whether the
+// subscriptions are priced fairly) are taps rather than typing, which is the
+// only reason they earn a spot in front of the submit button. They are
+// deliberately NOT stacked as four
 // star rows in a column — that reads as a survey and gets one lazy pass of
 // identical scores. Each one heads a short numbered section and is followed
 // by the written question it belongs to, so the answers stay separated by
@@ -41,12 +42,14 @@ type AspectKey = (typeof ASPECTS)[number]['key']
 // of trivia. These are the sections someone actually spends time in, and the
 // note under each name is what makes a group legible without a legend.
 // Stored as text so retiring an option later doesn't strand old rows.
+// Title Case across the board so the five names read as the site's own
+// sections rather than as five sentence fragments.
 const AREAS = [
-  { name: 'The whole thing', note: 'Taken together, as one site' },
-  { name: 'History', note: 'Standings, seasons, drafts, records' },
+  { name: 'The Whole Site', note: 'All of it together, not one page' },
+  { name: 'League History', note: 'Standings, seasons, drafts, records' },
   { name: 'Live Season', note: "Pick'ems, power rankings, matchups" },
   { name: 'Trade Desk', note: 'Analyzer, finder, mock trades' },
-  { name: 'Games', note: 'Roulette, Gauntlet, Over/Under, Redraft' },
+  { name: 'The Games', note: 'Roulette, Gauntlet, Over/Under, Redraft' },
 ] as const
 
 const LABELS: Record<string, string> = {
