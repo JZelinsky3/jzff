@@ -8,17 +8,22 @@
      THE PITCH: the sign-up carousel, 1080x1350.
 
        pitch.html?slide=1   the cover                (the closed book)
-       pitch.html?slide=2   Standings + Seasons + Chart Room
-       pitch.html?slide=3   Managers + Rivalries + All-Time Team
+       pitch.html?slide=2   Standings + Seasons        (the shelf)
+       pitch.html?slide=3   Managers + Rivalries
        pitch.html?slide=4   Record Book + Draft Annual
-       pitch.html?slide=5   Matchup Preview + Power Rankings + Pick'ems
+       pitch.html?slide=5   Matchup + Power Rankings + Pick'ems
        pitch.html?slide=6   Records Watch + Milestones + Best Coach
        pitch.html?slide=7   The Trade Desk + The Rumor Mill
        pitch.html?slide=8   the offer
 
-     Eight slides covering seventeen pages of the site. The grouping
-     is Joey's: standings+seasons, managers+rivalries, records+drafts,
-     power rank+pick'ems+matchup, records watch+milestones, trades.
+     Eight slides covering thirteen pages. The grouping is Joey's:
+     standings+seasons, managers+rivalries, records+drafts, power
+     rank+pick'ems+matchup, records watch+milestones, trades.
+
+     Run ./render.sh fit before rendering. It prints how full each
+     sheet is and which modules are clipped or sitting on dead air,
+     which a screenshot cannot tell you because .mod and .wrap both
+     hide their overflow.
 
      ── THE PHONE TEST ───────────────────────────────────────────
      THIS IS THE RULE THAT KEEPS GETTING BROKEN. The board is 1080px
@@ -76,6 +81,7 @@
      league, manager or team name goes on a public post.
      ============================================================ -->
 
+<link rel="stylesheet" href="parts.css">
 <style>
 /* ══ TOKENS, READ OFF THE PAGES ═══════════════════════════════
    Each block is copied from the :root of the page it belongs to.
@@ -123,22 +129,40 @@
   --ml-line-soft:#221934; --ml-mute:#c2b6d6; --ml-violet:#b58cff;
   --ml-bronze:#d4a574;
   --td-bg:#2a1d11; --td-chip:#322217; --td-brass:#c8a464; --td-cream:#f5e9c8;
-  --td-line:#493venue; --td-line:#493a27;
+  --td-line:#493a27;
   --rm-bg:#2a1418; --rm-line:#553036; --rm-rust:#a8503c; --rm-warm:#e89a7a;
   --rm-cream:#f7e9dd;
 }
 
 * { box-sizing:border-box; margin:0; padding:0; }
+
+/* ══ THE SCALE KNOB ════════════════════════════════════════════
+   IT HAS TO BE ON html. THIS IS THE BUG THAT MADE FIVE CUTS OF
+   THIS DECK COME OUT UNREADABLE.
+
+   The file carried `.board { font-size:20px }` for five rebuilds
+   with a comment claiming it scaled the ported components, and it
+   never did: `rem` is the ROOT em. It resolves against <html> and
+   has never once looked at .board. So every rem in here — every
+   ported row, label, kick and pad — was silently resolving at the
+   browser's default 16px, which is why a figure lifted from a
+   1440px desktop page landed at 6pt in the hand and why raising
+   .board's font-size to 34 and then 44 changed nothing at all.
+
+   Set it here, and see THE PHONE TEST at the top of the file
+   before changing it. */
+html { font-size:32px; }
+
 html, body { background:#000; -webkit-font-smoothing:antialiased;
              text-rendering:geometricPrecision; }
 
-/* ══ THE SCALE KNOB ════════════════════════════════════════════
-   34px, not 20px. See THE PHONE TEST at the top of the file before
-   changing it, and remember that lowering it costs rows: this deck
-   is sized so three rows of a card are legible in a feed, and a
-   fourth row is worth less than the three being readable. */
+/* The artboard. The scale knob is on html, NOT here — see above.
+   Raising it costs rows, and that is the trade: at 44px a card holds
+   about four rows, not ten. Do not answer a hole by dropping the
+   knob and packing rows back in. Answer it with a bigger figure, a
+   picture, or one more module from one more page. */
 .board { position:relative; overflow:hidden; width:1080px; height:1350px;
-         font-size:34px; font-family:var(--sans); display:flex;
+         font-family:var(--sans); display:flex;
          flex-direction:column; }
 #body { position:relative; z-index:10; flex:1; min-height:0;
         display:flex; flex-direction:column; }
@@ -182,77 +206,86 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
 /* ══ PAGE CHROME ══════════════════════════════════════════════ */
 .mast { position:relative; z-index:10; flex:none; padding:1.5rem 1.5rem 0; }
 .mast-kick { display:flex; align-items:baseline; gap:.7rem;
-  font-family:var(--mono); font-weight:700; font-size:.7rem;
-  letter-spacing:.28em; text-transform:uppercase; color:var(--gold); }
+  font-family:var(--mono); font-weight:700; font-size:.72rem;
+  letter-spacing:.24em; text-transform:uppercase; color:var(--gold);
+  white-space:nowrap; }
 .mast-kick u { flex:1; height:1px; text-decoration:none; opacity:.32;
   background:currentColor; }
 .mast-title { margin-top:.6rem; font-family:var(--serif); font-weight:400;
-  font-size:1.82rem; line-height:1.02; letter-spacing:-.022em;
+  font-size:2.3rem; line-height:1.02; letter-spacing:-.022em;
   color:var(--cream); }
 .mast-title em { font-style:italic; color:var(--gold); }
 
 .wrap { position:relative; z-index:10; flex:1; min-height:0;
-        display:flex; flex-direction:column; padding:0 1.5rem; gap:.62rem; }
+        display:flex; flex-direction:column; padding:0 1.5rem; gap:.5rem; }
 .wrap.spread { justify-content:space-between; }
-.row { flex:none; display:flex; gap:.62rem; align-items:stretch; }
+.row { flex:none; display:flex; gap:.5rem; align-items:stretch; }
 .row > * { min-width:0; }
 
 .foot { position:relative; z-index:10; flex:none;
-        display:flex; align-items:baseline; padding:.75rem 1.5rem 1rem;
-        font-family:var(--mono); font-weight:700; font-size:.62rem;
-        letter-spacing:.22em; text-transform:uppercase;
+        display:flex; align-items:baseline; gap:1rem;
+        padding:.6rem 1.5rem .85rem;
+        font-family:var(--mono); font-weight:700; font-size:.58rem;
+        letter-spacing:.18em; text-transform:uppercase;
         color:var(--cream-mute); }
 .foot .r { margin-left:auto; opacity:.62; }
 
-/* ══ THE SECTION BOX ══════════════════════════════════════════
-   Joey: "keep the page's theme for its section, a nice way of
-   grouping a section into its own area/card/box."
-
-   Every module on a board is one of these. It carries the page's
-   OWN ground (--cloth) and accent (--foil), read off that page's
-   :root, so three pages on one board still read as three pages
-   rather than as one long sheet. The 3px accent spine down the left
-   is lifted from records-watch's .rw-block, which is the same idea
-   on the real site.
-
-   The header bar is not decoration — it is what tells a stranger
-   the board is showing them four different parts of a site rather
-   than one page scrolled. */
-.mod { position:relative; flex:none; display:flex; flex-direction:column;
-  background:var(--cloth); border:1px solid var(--edge, rgba(255,255,255,.11));
-  border-left:3px solid var(--foil); border-radius:4px; overflow:hidden;
-  box-shadow:0 14px 34px rgba(0,0,0,.42); }
-.mod.pale { --edge:rgba(40,30,12,.28); color:var(--ink-print);
-  box-shadow:0 14px 34px rgba(0,0,0,.46), 0 2px 0 var(--paper-shade); }
-.mod-hd { flex:none; display:flex; align-items:baseline; gap:.6rem;
-  padding:.5rem .72rem .44rem;
-  border-bottom:1px solid var(--hd-line, rgba(255,255,255,.10));
-  background:var(--hd-bg, rgba(255,255,255,.035));
-  font-family:var(--mono); font-weight:700; font-size:.66rem;
-  letter-spacing:.24em; text-transform:uppercase; color:var(--foil);
-  white-space:nowrap; }
-.mod.pale .mod-hd { --hd-line:rgba(40,30,12,.2); --hd-bg:rgba(40,30,12,.05); }
-.mod-hd s { text-decoration:none; margin-left:auto; letter-spacing:.16em;
-  opacity:.68; font-weight:400; }
-.mod-bd { flex:1; min-height:0; display:flex; flex-direction:column;
-  padding:.72rem .8rem .78rem; }
-
-/* ══ SHARED FIGURE IDIOMS ═════════════════════════════════════
-   new.module.css .agateTable: mono figures, serif names, a hairline
-   under every row, no box. Sized here for the phone test. */
-.ag { display:flex; flex-direction:column; }
-.ag .r { display:flex; align-items:baseline; gap:.55rem; padding:.4rem 0;
-  border-bottom:1px solid var(--hair, rgba(255,255,255,.09)); }
-.ag .r:last-child { border-bottom:0; }
-.ag .r .rk { width:1.15rem; flex:none; font-family:var(--serif);
-  font-style:italic; font-size:1rem; color:var(--foil); opacity:.85; }
-.ag .r .nm { flex:1; min-width:0; font-family:var(--serif); font-size:1.06rem;
-  line-height:1; white-space:nowrap; overflow:hidden; }
-.ag .r .c { font-family:var(--mono); font-weight:700; font-size:.84rem;
-  font-variant-numeric:tabular-nums; white-space:nowrap; text-align:right; }
-.ag .r .c.sm { font-weight:400; font-size:.7rem; opacity:.72; }
-.ag .r.lead .nm, .ag .r.lead .c { color:var(--foil); }
-.mod.pale .ag .r { --hair:rgba(40,30,12,.16); }
+/* ══ SMALL FIGURES THAT ARE NOT HEROES ════════════════════════
+   The live-season pages draw bars, pills and wires rather than
+   artifacts, so they sit straight on the band. */
+.h2h { flex:1; display:grid; grid-template-columns:1fr auto 1fr; gap:.5rem;
+  align-items:center; }
+.h2h .t { display:flex; flex-direction:column; gap:.06rem; }
+.h2h .t.b { text-align:right; }
+.h2h .t .n { font-family:var(--serif); font-size:1.3rem; line-height:1;
+  color:var(--cream); }
+.h2h .t .r { font-family:var(--mono); font-weight:700; font-size:.44rem;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--mp-mute); }
+.h2h .t .p { font-family:var(--mono); font-weight:700; font-size:.86rem;
+  color:var(--mp-brass-hi); }
+.h2h .vs { font-family:var(--serif); font-style:italic; font-size:.9rem;
+  color:var(--mp-brass); }
+.oddsbar { height:.42rem; border-radius:2px; overflow:hidden; display:flex;
+  border:1px solid var(--mp-line); }
+.oddsbar i.a { background:linear-gradient(90deg,#8d6a37,var(--mp-brass-hi)); }
+.oddsbar i.b { background:var(--mp-line); }
+.pill { width:.78rem; height:.78rem; border-radius:2px; display:inline-flex;
+  align-items:center; justify-content:center; font-family:var(--mono);
+  font-weight:700; font-size:.4rem; }
+.pill.w { background:rgba(111,169,113,.2); color:var(--mp-green);
+  border:1px solid rgba(111,169,113,.45); }
+.pill.l { background:rgba(184,90,58,.15); color:var(--mp-rust);
+  border:1px solid rgba(184,90,58,.4); }
+.split { height:.34rem; border-radius:2px; display:flex; overflow:hidden;
+  background:var(--pk-line); }
+.split i.a { background:var(--pk-champagne); } .split i.b { background:var(--pk-magenta); }
+.wire { flex:1; display:flex; flex-direction:column; justify-content:space-around; }
+.wire .w { border-bottom:1px solid var(--rm-line); padding-bottom:.14rem; }
+.wire .w:last-child { border-bottom:0; }
+.wire .w .t { font-family:var(--serif); font-size:.84rem; line-height:1.14;
+  color:var(--rm-cream); }
+.wire .w .m { font-family:var(--mono); font-weight:700; font-size:.4rem;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--rm-warm); }
+.chase { flex:1; display:grid; grid-template-columns:5.2rem 1fr; gap:.4rem;
+  align-items:center; border-bottom:1px solid var(--rw-line-soft);
+  padding-bottom:.12rem; }
+.chase:last-child { border-bottom:0; }
+.chase .mk .l { font-family:var(--mono); font-weight:700; font-size:.4rem;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--rw-steel); }
+.chase .mk .n { font-family:var(--serif); font-size:1.05rem; line-height:1;
+  color:var(--cream); }
+.chase .mk .b { font-family:var(--mono); font-size:.4rem; color:var(--rw-mute); }
+.chase .bd .w { display:flex; align-items:baseline; gap:.4rem;
+  font-family:var(--serif); font-size:.88rem; color:var(--cream); }
+.chase .bd .w s { text-decoration:none; margin-left:auto; font-family:var(--mono);
+  font-weight:700; font-size:.52rem; color:var(--rw-steel-hi); }
+.chase .bd .p { margin-top:.12rem; height:.3rem; border-radius:2px;
+  background:rgba(255,255,255,.08); overflow:hidden; }
+.chase .bd .p i { display:block; height:100%;
+  background:linear-gradient(90deg, rgba(127,168,189,.45), var(--rw-steel-hi)); }
+.chase .bd .nt { margin-top:.08rem; font-family:var(--mono); font-weight:700;
+  font-size:.4rem; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--rw-mute); }
 
 /* ── 01 THE COVER ─────────────────────────────────────────────
    Ported from tour.html slide 1, which Joey preferred to the flat
@@ -341,48 +374,83 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
 /* ══════════════════════════════════════════════════════════════
    02  THE STANDINGS · THE SEASONS · THE CHART ROOM
    ══════════════════════════════════════════════════════════════ */
-/* the year cards — demo/seasons/index.html, the shelf of years */
-.yrs { display:flex; gap:.32rem; flex:1; }
-.yrs .y { flex:1; min-width:0; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:.16rem;
-  border:1px solid rgba(232,200,137,.18); border-radius:3px;
-  background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.16));
-  padding:.5rem .1rem .55rem; }
-.yrs .y.won { border-color:rgba(232,200,137,.5);
-  background:linear-gradient(180deg, rgba(232,200,137,.16), rgba(232,200,137,.03)); }
-.yrs .y .yr { font-family:var(--mono); font-weight:700; font-size:.6rem;
-  letter-spacing:.06em; color:rgba(244,235,216,.52); }
-.yrs .y .who { font-family:var(--serif); font-size:1.12rem; line-height:1;
-  color:var(--cream); }
-.yrs .y.won .who { color:var(--gold); }
-.yrs .y .rec { font-family:var(--mono); font-size:.58rem; letter-spacing:.04em;
-  color:rgba(244,235,216,.5); }
+/* THE SHELF — lifted from tour.html, which lifted it from the site:
+   a season on this site IS a bound volume, so seven seasons are seven
+   books standing on a plank, not seven rows of a table. It is also
+   the one figure on the deck that survives any scale, because it is a
+   PICTURE. When a board is too dense, this is the shape to reach for.
 
-/* the chart — demo/managers/visualizer.html. Points ABOVE the league
-   average, never cumulative points: cumulative comes out as five
-   near-parallel diagonals and nobody can read a race off that. */
-.chart { flex:1; min-height:0; position:relative; display:flex;
-  flex-direction:column; }
-.chart svg { width:100%; flex:1; min-height:0; display:block; }
-.chart .zero { font-family:var(--mono); font-size:.56rem; letter-spacing:.16em;
-  text-transform:uppercase; color:var(--cream-mute); }
-.chart .key { display:flex; gap:.7rem; margin-top:.4rem; flex-wrap:wrap; }
-.chart .key span { display:inline-flex; align-items:center; gap:.28rem;
-  font-family:var(--mono); font-weight:700; font-size:.62rem;
-  letter-spacing:.1em; color:var(--cream-soft); }
-.chart .key i { width:.9rem; height:3px; border-radius:2px; background:currentColor; }
+   No recess behind the books and no box around them: a dark panel
+   behind the shelf makes it look cut out and pasted onto the slide.
+   They stand on the board's own ground, and the plank runs the full
+   width of the sheet so the board reads as a room rather than as a
+   card with books drawn in it. */
+.shelf { flex:none; display:flex; flex-direction:column; }
+.shelf .books { display:flex; align-items:flex-end; justify-content:center;
+  gap:11px; padding:0 .3rem; }
+.shelf .bk { position:relative; flex:0 0 116px; height:var(--h, 300px);
+  background-color:var(--cloth);
+  background-image:
+    linear-gradient(90deg, rgba(255,255,255,.17) 0 5%, rgba(255,255,255,.04) 16%,
+                    transparent 34%, transparent 66%, rgba(0,0,0,.30) 86%,
+                    rgba(0,0,0,.52) 100%),
+    repeating-linear-gradient(46deg, rgba(255,255,255,.026) 0 1px, transparent 1px 4px);
+  border-radius:3px 3px 1px 1px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.5), 0 -4px 18px rgba(0,0,0,.34);
+  display:flex; flex-direction:column; align-items:center;
+  padding:16px 0 14px; overflow:hidden; }
+/* the head of the page block, just visible over the top of the cloth */
+.shelf .bk::before { content:''; position:absolute; top:0; left:5px; right:5px;
+  height:4px; background:linear-gradient(90deg,
+    rgba(0,0,0,.4), rgba(214,196,158,.55) 35%, rgba(160,142,106,.4)); }
+.shelf .bk .no { font-family:var(--mono); font-weight:700; font-size:15px;
+  letter-spacing:.08em; color:var(--foil); opacity:.8; }
+.shelf .bk .band { flex:none; width:74%; height:1px; margin:10px 0;
+  background:var(--foil); opacity:.45; box-shadow:0 2px 0 rgba(0,0,0,.35); }
+.shelf .bk .ti { flex:1; min-height:0; display:grid; place-items:center; }
+.shelf .bk .ti b { writing-mode:vertical-rl; font-family:var(--serif);
+  font-weight:400; font-size:31px; line-height:1; color:var(--foil);
+  white-space:nowrap; text-shadow:0 1px 0 rgba(0,0,0,.45); }
+.shelf .bk .ft { font-family:var(--mono); font-weight:700; font-size:13px;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--foil);
+  opacity:.62; }
+/* the champion's volume: gilded, so the shelf shows who won at a
+   glance without a legend under it */
+.shelf .bk.won { box-shadow:0 0 0 1px rgba(232,200,137,.5),
+  0 -4px 22px rgba(232,200,137,.12), 0 -4px 18px rgba(0,0,0,.34); }
+.shelf .bk.won .ti b { font-style:italic; }
+/* The board they stand on: walnut rail and a gold lip. Wood is only
+   where wood belongs, which is the plank — the deck learned that the
+   hard way when it ran walnut under every slide. */
+.shelf .plank { flex:none; height:30px; position:relative;
+  margin:0 -1.5rem; background-image:
+    linear-gradient(180deg, #5a4126 0%, #402d14 18%, #2a1d0d 54%,
+                    #171007 82%, #090604 100%),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.13) 0 3px, transparent 3px 13px);
+  border-top:1px solid rgba(232,200,137,.34);
+  box-shadow:0 -18px 30px -12px rgba(0,0,0,.78), 0 6px 22px rgba(0,0,0,.62); }
+.shelf .plank::after { content:''; position:absolute; left:0; right:0; bottom:0;
+  height:7px; background:linear-gradient(180deg, rgba(0,0,0,.5), rgba(0,0,0,.85)); }
+/* the shelf's own label, set on the wall beside the books rather
+   than in a .mod header — the shelf is not a card */
+.shelf-lbl { display:flex; align-items:baseline; gap:.6rem; margin-bottom:.5rem;
+  font-family:var(--mono); font-weight:700; font-size:.6rem;
+  letter-spacing:.24em; text-transform:uppercase; color:var(--gold); }
+.shelf-lbl u { flex:1; height:1px; text-decoration:none; background:currentColor;
+  opacity:.3; }
+.shelf-lbl s { text-decoration:none; color:var(--cream-mute); letter-spacing:.16em; }
 
 /* ══════════════════════════════════════════════════════════════
    03  THE MANAGER FILE · THE RIVALRIES · THE ALL-TIME TEAM
    ══════════════════════════════════════════════════════════════ */
 .id-card { position:relative; flex:none; display:grid;
-  grid-template-columns:5.4rem 1fr auto; gap:.9rem; align-items:center;
+  grid-template-columns:4.3rem 1fr auto; gap:.8rem; align-items:center;
   background:linear-gradient(168deg, var(--paper) 0%, var(--paper) 78%, var(--paper-soft) 100%);
   color:var(--ink-print); border:1px solid #47402f;
   border-left:3px solid var(--rust-print); border-radius:4px;
-  padding:.85rem .95rem;
+  padding:.66rem .8rem;
   box-shadow:0 18px 44px rgba(0,0,0,.45), inset 0 0 42px rgba(60,44,16,.08); }
-.fp-portrait { position:relative; width:5.4rem; height:5.4rem;
+.fp-portrait { position:relative; width:4.3rem; height:4.3rem;
   border:1px solid var(--paper-line); border-radius:3px;
   background:var(--paper-soft); overflow:hidden;
   box-shadow:2px 3px 0 rgba(40,30,12,.12);
@@ -391,7 +459,7 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
 .fp-portrait::after { content:''; position:absolute; inset:0;
   background-image:radial-gradient(rgba(40,30,12,.26) 1px, transparent 1px);
   background-size:3.5px 3.5px; mix-blend-mode:overlay; }
-.fp-mono { font-family:var(--serif); font-style:italic; font-size:2.9rem;
+.fp-mono { font-family:var(--serif); font-style:italic; font-size:2.3rem;
   color:var(--gold-print); }
 .fp-name { font-family:var(--serif); font-size:1.95rem; line-height:.96;
   letter-spacing:-.02em; color:var(--ink-print); }
@@ -399,6 +467,11 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
 .fp-dateline { margin-top:.3rem; font-family:var(--mono); font-weight:700;
   font-size:.64rem; letter-spacing:.2em; text-transform:uppercase;
   color:var(--ink-print-mute); }
+/* The four figures the real page runs in its agate band, set as one
+   line on the card instead of as a strip under it. A separate band
+   cost 152px, which is a tape row and a half. */
+.fp-line { margin-top:.24rem; font-family:var(--serif); font-size:.86rem;
+  line-height:1.2; color:var(--ink-print-soft); }
 .fp-seals { display:flex; gap:.4rem; }
 .seal2 { width:3rem; height:3rem; border-radius:50%;
   border:2px solid var(--gold-print); display:flex; flex-direction:column;
@@ -408,35 +481,27 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
 .seal2 b { font-family:var(--mono); font-weight:700; font-size:.55rem;
   letter-spacing:.06em; color:var(--gold-print); }
 
-/* the stat strip under the card — manager.html .agate-band. FOUR
-   cells, not eight: at eight, every label was 17px. */
-.band { flex:none; display:grid; grid-template-columns:repeat(4,1fr);
-  border-top:1px solid var(--ink-line); border-bottom:1px solid var(--ink-line);
-  background:rgba(22,32,44,.45); }
-.band .cell { padding:.5rem .35rem .48rem; text-align:center;
-  border-right:1px solid var(--ink-line-soft); }
-.band .cell:last-child { border-right:0; }
-.band .lbl { font-family:var(--mono); font-weight:700; font-size:.6rem;
-  letter-spacing:.18em; text-transform:uppercase; color:var(--cream-mute); }
-.band .val { margin-top:.22rem; font-family:var(--serif); font-style:italic;
-  font-size:1.5rem; line-height:1; color:var(--gold); }
-.band .val.plain { color:var(--cream); font-style:normal; }
-
+/* NOTE: the old `.band` agate strip lived here and was deleted with
+   the module system. It is worth remembering why: the inline <style>
+   comes AFTER <link parts.css>, so a leftover unscoped .band rule
+   silently beat the band system and every band collapsed to
+   flex:none. If a band or a hero stops behaving, grep this file for
+   the class name before touching parts.css. */
 /* the tale of the tape — demo/rivalries/index.html */
 .tape-head { display:grid; grid-template-columns:1fr auto 1fr; gap:.9rem;
-  align-items:end; padding-bottom:.55rem; margin-bottom:.5rem;
+  align-items:end; padding-bottom:.36rem; margin-bottom:.34rem;
   border-bottom:1px solid var(--rv-line); }
 .tape-side { display:flex; flex-direction:column; gap:.14rem; }
 .tape-side.b { text-align:right; }
 .tape-corner { font-family:var(--mono); font-weight:700; font-size:.58rem;
   letter-spacing:.2em; text-transform:uppercase; color:var(--rv-grey-lt); }
-.tape-name { font-family:var(--serif); font-style:italic; font-size:2rem;
+.tape-name { font-family:var(--serif); font-style:italic; font-size:1.45rem;
   line-height:1; color:var(--rv-white); }
 .tape-side.leads .tape-name { color:var(--rv-red); }
 .tape-vs { font-family:var(--serif); font-style:italic; font-size:1.5rem;
   color:var(--rv-red); align-self:center; }
 .tape-row { display:grid; grid-template-columns:1fr minmax(7.4rem,auto) 1fr;
-  gap:.9rem; align-items:baseline; padding:.4rem .1rem;
+  gap:.9rem; align-items:baseline; padding:.24rem .1rem;
   border-bottom:1px dotted rgba(255,255,255,.09); }
 .tape-row:last-child { border-bottom:0; }
 .tape-val { font-family:var(--mono); font-weight:700; font-size:1.2rem;
@@ -467,7 +532,7 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
   background:linear-gradient(160deg, rgba(255,255,255,.35) 0%, transparent 30%), var(--paper);
   border:1px solid var(--paper-line); border-left:3px solid var(--rust-print);
   box-shadow:0 16px 42px rgba(0,0,0,.48), 0 2px 0 var(--paper-shade);
-  padding:.95rem 1.1rem 1rem; color:var(--ink-print);
+  padding:.6rem .8rem .62rem; color:var(--ink-print);
   display:grid; grid-template-columns:minmax(0,5fr) minmax(0,4fr);
   gap:0 1.3rem; overflow:hidden; }
 .exh-plate::before { content:''; position:absolute; inset:8px;
@@ -477,7 +542,7 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
   letter-spacing:.24em; text-transform:uppercase; color:var(--gold-print); }
 .exh-kick .no { color:var(--ink-print-mute); letter-spacing:.14em; margin-left:auto; }
 .exh-value { margin-top:.15rem; font-family:var(--serif); font-style:italic;
-  font-size:4.3rem; line-height:.94; letter-spacing:-.03em; color:var(--ink-print); }
+  font-size:2.7rem; line-height:.94; letter-spacing:-.03em; color:var(--ink-print); }
 .exh-name { margin-top:.1rem; font-family:var(--serif); font-size:1.2rem;
   color:var(--ink-print-soft); }
 .exh-name em { font-style:italic; color:var(--rust-print); }
@@ -518,7 +583,7 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
 .g-c { color:#c9a86a; background:rgba(201,168,106,.10); }
 .g-d { color:#c05a4a; background:rgba(192,90,74,.12); }
 .picks { display:flex; flex-direction:column; }
-.picks .p { display:flex; align-items:baseline; gap:.5rem; padding:.38rem 0;
+.picks .p { display:flex; align-items:baseline; gap:.5rem; padding:.22rem 0;
   border-bottom:1px solid var(--an-line-soft); }
 .picks .p:last-child { border-bottom:0; }
 .picks .p u { text-decoration:none; font-family:var(--mono); font-weight:700;
@@ -535,10 +600,10 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
    05  MATCHUP PREVIEW · POWER RANKINGS · PICK'EMS
    ══════════════════════════════════════════════════════════════ */
 .mp-head { display:grid; grid-template-columns:1fr auto 1fr; gap:.8rem;
-  align-items:center; margin-bottom:.55rem; }
+  align-items:center; margin-bottom:.36rem; }
 .mp-team { display:flex; flex-direction:column; gap:.15rem; }
 .mp-team.b { text-align:right; align-items:flex-end; }
-.mp-team .nm { font-family:var(--serif); font-size:1.9rem; line-height:1;
+.mp-team .nm { font-family:var(--serif); font-size:1.38rem; line-height:1;
   color:var(--cream); }
 .mp-team .rec { font-family:var(--mono); font-weight:700; font-size:.62rem;
   letter-spacing:.18em; text-transform:uppercase; color:var(--mp-mute); }
@@ -559,7 +624,7 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
 .mp-odds-row b { color:var(--mp-brass-hi); }
 .mp-odds-row .r { margin-left:auto; }
 /* .mp-form-pills, off the real page */
-.mp-form { display:flex; align-items:center; gap:.45rem; padding:.4rem 0 0; }
+.mp-form { display:flex; align-items:center; gap:.45rem; padding:.28rem 0 0; }
 .mp-form .who { font-family:var(--mono); font-weight:700; font-size:.62rem;
   letter-spacing:.16em; text-transform:uppercase; color:var(--mp-mute);
   width:3.6rem; flex:none; }
@@ -574,13 +639,14 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
   font-size:.66rem; color:var(--mp-mute); }
 
 /* power rankings — powerrank.css, which prints on cream */
-.pr-row { display:flex; align-items:center; gap:.5rem; padding:.4rem 0;
+.pr-row { display:flex; align-items:center; gap:.5rem; padding:.26rem 0;
   border-bottom:1px solid rgba(14,22,32,.15); }
 .pr-row:last-child { border-bottom:0; }
 .pr-row .rk { width:1.5rem; flex:none; font-family:var(--serif);
   font-size:1.3rem; line-height:1; color:var(--pr-foil); }
 .pr-row .nm { flex:1; min-width:0; font-family:var(--serif); font-size:1.08rem;
-  line-height:1; color:var(--ink-print); white-space:nowrap; }
+  line-height:1; color:var(--ink-print); white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis; }
 .pr-move { font-family:var(--mono); font-weight:700; font-size:.68rem;
   letter-spacing:.06em; white-space:nowrap; }
 .pr-move.up { color:var(--pr-good); } .pr-move.dn { color:var(--pr-bad); }
@@ -589,7 +655,7 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
   color:var(--ink-print-soft); width:3.1rem; text-align:right; }
 
 /* pick'ems — pickems.css, plum and champagne */
-.pk-game { padding:.46rem 0; border-bottom:1px solid var(--pk-line-soft); }
+.pk-game { padding:.36rem 0; border-bottom:1px solid var(--pk-line-soft); }
 .pk-game:last-child { border-bottom:0; }
 .pk-names { display:flex; align-items:baseline; font-family:var(--serif);
   font-size:1.02rem; color:var(--pk-chalk); }
@@ -614,20 +680,21 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
 .rw-chase { display:grid; grid-template-columns:7.3rem 1fr; align-items:stretch;
   border:1px solid var(--rw-line); border-radius:3px; overflow:hidden;
   background:linear-gradient(160deg, var(--rw-card) 0%, var(--rw-soft) 100%); }
-.rw-chase + .rw-chase { margin-top:.5rem; }
-.rw-mark { padding:.5rem .6rem; border-right:1px solid var(--rw-line-soft);
+.rw-chase + .rw-chase { margin-top:.34rem; }
+.rw-mark { padding:.36rem .5rem; border-right:1px solid var(--rw-line-soft);
   background:rgba(0,0,0,.2); display:flex; flex-direction:column;
   justify-content:center; }
 .rw-mark .lbl { font-family:var(--mono); font-weight:700; font-size:.58rem;
   letter-spacing:.22em; text-transform:uppercase; color:var(--rw-steel); }
-.rw-mark .num { font-family:var(--serif); font-size:1.7rem; line-height:1;
+.rw-mark .num { font-family:var(--serif); font-size:1.45rem; line-height:1;
   color:var(--cream); font-variant-numeric:tabular-nums; margin-top:.1rem; }
 .rw-mark .by { font-family:var(--mono); font-size:.58rem; letter-spacing:.1em;
   color:var(--rw-mute); }
-.rw-body { padding:.5rem .7rem .55rem; display:flex; flex-direction:column;
+.rw-body { padding:.36rem .58rem .4rem; display:flex; flex-direction:column;
   justify-content:center; }
-.rw-who { display:flex; align-items:baseline; gap:.5rem;
-  font-family:var(--serif); font-size:1.08rem; color:var(--cream); }
+.rw-who { display:flex; align-items:baseline; gap:.5rem; min-width:0;
+  font-family:var(--serif); font-size:1.08rem; color:var(--cream);
+  white-space:nowrap; overflow:hidden; }
 .rw-who s { text-decoration:none; margin-left:auto; font-family:var(--mono);
   font-weight:700; font-size:.7rem; color:var(--rw-steel-hi); }
 .rw-plot { margin-top:.34rem; height:12px; border-radius:2px;
@@ -639,7 +706,7 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
   color:var(--rw-mute); }
 
 /* .ml-approach-* — the meter and the ETA */
-.ml-row { padding:.44rem 0; border-bottom:1px solid var(--ml-line-soft); }
+.ml-row { padding:.34rem 0; border-bottom:1px solid var(--ml-line-soft); }
 .ml-row:last-child { border-bottom:0; }
 .ml-top { display:flex; align-items:baseline; gap:.5rem; }
 .ml-nm { flex:1; min-width:0; font-family:var(--serif); font-size:1.05rem;
@@ -654,15 +721,16 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
   letter-spacing:.12em; text-transform:uppercase; color:var(--ml-mute); }
 
 /* best coach — live/best-coach, slate and yellow */
-.bc-row { display:flex; align-items:baseline; gap:.5rem; padding:.44rem 0;
+.bc-row { display:flex; align-items:baseline; gap:.5rem; padding:.34rem 0;
   border-bottom:1px solid var(--bc-line); }
 .bc-row:last-child { border-bottom:0; }
 .bc-row .nm { flex:1; min-width:0; font-family:var(--serif); font-size:1.05rem;
-  color:var(--cream); white-space:nowrap; }
+  color:var(--cream); white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis; }
 .bc-row .pc { font-family:var(--mono); font-weight:700; font-size:.84rem;
   color:var(--bc-yellow); }
-.bc-row .lo { font-family:var(--mono); font-size:.64rem; letter-spacing:.1em;
-  color:var(--bc-mute); width:4.6rem; text-align:right; }
+.bc-row .lo { font-family:var(--mono); font-size:.58rem; letter-spacing:.06em;
+  color:var(--bc-mute); width:3.5rem; text-align:right; flex:none; }
 
 /* ══════════════════════════════════════════════════════════════
    07  THE TRADE DESK · THE RUMOR MILL
@@ -675,14 +743,14 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
   border-left:3px solid var(--td-brass); border-radius:4px; overflow:hidden;
   box-shadow:0 16px 40px rgba(0,0,0,.48), 0 2px 0 var(--paper-shade); }
 .ticket .hd { display:flex; align-items:baseline; gap:.6rem;
-  padding:.46rem .8rem .42rem; border-bottom:1px solid var(--paper-line);
+  padding:.34rem .62rem .3rem; border-bottom:1px solid var(--paper-line);
   background:rgba(40,30,12,.06); font-family:var(--mono); font-weight:700;
   font-size:.66rem; letter-spacing:.24em; text-transform:uppercase;
   color:var(--gold-print); }
 .ticket .hd s { text-decoration:none; margin-left:auto; font-weight:400;
   letter-spacing:.16em; color:var(--ink-print-mute); }
 .tr-sides { display:grid; grid-template-columns:1fr 1fr; }
-.tr-side { padding:.6rem .8rem .68rem; display:flex; flex-direction:column; }
+.tr-side { padding:.45rem .7rem .5rem; display:flex; flex-direction:column; }
 .tr-side + .tr-side { border-left:1px dashed var(--paper-line); }
 .tr-side .who { font-family:var(--mono); font-weight:700; font-size:.64rem;
   letter-spacing:.2em; text-transform:uppercase; color:var(--ink-print-mute);
@@ -698,7 +766,7 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
   overflow:hidden; text-overflow:ellipsis; }
 .tr-grade { margin-top:.44rem; padding-top:.4rem; display:flex;
   align-items:center; gap:.5rem; border-top:1px solid var(--paper-line); }
-.tr-grade-letter { font-family:var(--serif); font-size:1.75rem; line-height:1; }
+.tr-grade-letter { font-family:var(--serif); font-size:1.45rem; line-height:1; }
 .tr-grade-letter.win { color:#2f7a44; } .tr-grade-letter.lose { color:#8c2b1e; }
 .tr-grade .then { margin-left:auto; text-align:right; font-family:var(--mono);
   font-weight:700; font-size:.64rem; letter-spacing:.1em;
@@ -708,9 +776,9 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
 
 /* the wire — the Rumor Mill, which runs on its own wine ground */
 .wire { display:flex; flex-direction:column; }
-.wire .w { padding:.42rem 0; border-bottom:1px solid var(--rm-line); }
+.wire .w { padding:.32rem 0; border-bottom:1px solid var(--rm-line); }
 .wire .w:last-child { border-bottom:0; }
-.wire .w .t { font-family:var(--serif); font-size:1.04rem; line-height:1.15;
+.wire .w .t { font-family:var(--serif); font-size:.92rem; line-height:1.18;
   color:var(--rm-cream); }
 .wire .w .m { margin-top:.14rem; font-family:var(--mono); font-weight:700;
   font-size:.58rem; letter-spacing:.18em; text-transform:uppercase;
@@ -724,34 +792,34 @@ html, body { background:#000; -webkit-font-smoothing:antialiased;
 .nameplate { font-family:var(--serif); font-weight:400; line-height:.96;
   letter-spacing:-.022em; color:var(--cream); }
 .nameplate em { font-style:italic; color:var(--gold); }
-.deck-row { flex:none; padding:.8rem 0; border-top:1px solid var(--ink-line);
+.deck-row { flex:none; padding:.6rem 0; border-top:1px solid var(--ink-line);
   border-bottom:1px solid var(--ink-line); text-align:center; }
-.deck-row p { font-family:var(--serif); font-style:italic; font-size:1.05rem;
+.deck-row p { font-family:var(--serif); font-style:italic; font-size:1.35rem;
   line-height:1.4; color:var(--cream-soft); }
 .offer { flex:none; display:flex; gap:.7rem; }
 .offer .o { flex:1; display:flex; flex-direction:column;
   background:var(--ink-card); border:1px solid var(--ink-line); border-radius:5px;
-  padding:.8rem .85rem .85rem; }
+  padding:.6rem .68rem .66rem; }
 .offer .o.gold { border-color:rgba(232,200,137,.38); }
-.offer .o .k { font-family:var(--mono); font-weight:700; font-size:.64rem;
+.offer .o .k { font-family:var(--mono); font-weight:700; font-size:.8rem;
   letter-spacing:.2em; text-transform:uppercase; color:var(--cream-mute); }
-.offer .o .v { margin-top:.32rem; font-family:var(--serif); font-size:1.85rem;
+.offer .o .v { margin-top:.34rem; font-family:var(--serif); font-size:2.05rem;
   line-height:1; letter-spacing:-.02em; color:var(--gold); }
-.offer .o .d { margin-top:.36rem; font-size:.72rem; line-height:1.45;
+.offer .o .d { margin-top:.38rem; font-size:.84rem; line-height:1.45;
   color:var(--cream-soft); }
 .coupon { margin-top:auto; padding-top:.6rem; }
 .coupon .c { border:2px dashed var(--gold-deep); border-radius:3px;
-  padding:.46rem 0; text-align:center; font-family:var(--mono); font-weight:700;
-  font-size:1.2rem; letter-spacing:.2em; color:var(--gold); }
+  padding:.6rem 0; text-align:center; font-family:var(--mono); font-weight:700;
+  font-size:1.6rem; letter-spacing:.2em; color:var(--gold); }
 /* what a board covered, as a row of chapter cards in each page's
    own colour — the contents strip, moved to the back of the book */
 .chips { flex:none; display:flex; gap:.36rem; }
 .chip { flex:1; min-width:0; border:1px solid var(--ink-line); border-radius:3px;
   padding:.42rem .4rem .46rem; background:var(--ink-card);
   border-top:3px solid var(--sw, var(--gold)); }
-.chip .t { font-family:var(--serif); font-size:.88rem; line-height:1.05;
+.chip .t { font-family:var(--serif); font-size:1.12rem; line-height:1.05;
   color:var(--cream); white-space:nowrap; }
-.chip .d { margin-top:.14rem; font-family:var(--mono); font-size:.54rem;
+.chip .d { margin-top:.18rem; font-family:var(--mono); font-size:.68rem;
   letter-spacing:.1em; text-transform:uppercase; color:var(--cream-mute);
   white-space:nowrap; }
 </style>
@@ -780,7 +848,6 @@ const CAST = ['John', 'Matt', 'Bryce', 'Cole', 'Drew', 'Nate',
 const P = {
   standings: { cloth:'#e9ddc1', foil:'#6b5320', pale:1, src:'demo/standings.html' },
   seasons:   { cloth:'#3a1d16', foil:'#e8c889',          src:'demo/seasons --mahog' },
-  chart:     { cloth:'#0e1620', foil:'#e8c889',          src:'demo/managers/visualizer.html' },
   file:      { cloth:'#efe5cd', foil:'#8c2b1e', pale:1,  src:'demo/managers/manager.html' },
   rivalries: { cloth:'#0a0a0a', foil:'#dc2626',          src:'demo/rivalries --rv-bg' },
   alltime:   { cloth:'#efe5cd', foil:'#7a5c14', pale:1,  src:'demo/managers/all-time.html' },
@@ -796,14 +863,21 @@ const P = {
   mill:      { cloth:'#2a1418', foil:'#e89a7a',          src:'api/og/mill' },
 };
 
-/* One section box. `key` is a page in P, so the box comes out in
-   that page's own stock and accent whatever board it lands on. */
-const mod = (key, label, note, body, style) => {
+/* ONE BAND — one page's region of a board, printed in that page's
+   own stock and running off both edges of the sheet.
+
+   `mirror` flips the hero to the right, which is how consecutive
+   bands avoid stacking their heroes down one rail. `body` is
+   expected to contain a .hero and a .bento; the flex ratio between
+   them is set inline per band, because a ledger wants two thirds
+   and a trading card wants a quarter. */
+const band = (key, label, note, body, mirror, cloth) => {
   const p = P[key];
-  return `<div class="mod${p.pale ? ' pale' : ''}" style="--cloth:${p.cloth};
-            --foil:${p.foil};${style || ''}">
-    <div class="mod-hd">${label}${note ? `<s>${note}</s>` : ''}</div>
-    <div class="mod-bd">${body}</div>
+  return `<div class="band${p.pale ? ' pale' : ''}${mirror ? ' mirror' : ''}"
+            style="--cloth:${cloth || p.cloth};--foil:${p.foil}${
+              p.pale ? ';--lift:.3' : ''}">
+    <div class="band-lbl">${label}<u></u>${note ? `<s>${note}</s>` : ''}</div>
+    <div class="band-body">${body}</div>
   </div>`;
 };
 
@@ -877,348 +951,414 @@ if (s.kind === 'cover') {
       </div>
     </div>`;
 
-/* ── 02 THE LEAGUE ────────────────────────────────────────────
-   Standings, Seasons and the Chart Room. Three pages: the all-time
-   table, the shelf of years, and the race drawn as a chart.
-   Cream and mahogany, so the ground is warm charcoal. */
+/* ── 02 THE ALMANAC · STANDINGS + SEASONS ─────────────────────
+   Band one is the Standings printed as a LEDGER on its own cream;
+   band two is the Seasons as a shelf of volumes, mirrored so the
+   eye zigzags. Two bento tiles ride beside each. */
 } else if (s.kind === 'league') {
-  const ST = [['1','Bryce','78&ndash;40','14,982.4','&#9733;&#9733;'],
-              ['2','John','74&ndash;44','15,204.1','&#9733;'],
-              ['3','Matt','71&ndash;47','14,556.8','&#9733;'],
-              ['4','Drew','66&ndash;52','14,201.3','&#9733;'],
-              ['5','Nate','62&ndash;56','13,884.9','&#9733;'],
-              ['6','Tyler','58&ndash;60','13,540.2','']];
-  const YR = [['2019','Matt','9&ndash;5',0], ['2020','Drew','10&ndash;4',0],
-              ['2021','Bryce','11&ndash;3',1], ['2022','John','12&ndash;2',0],
-              ['2023','Nate','10&ndash;4',0], ['2024','Bryce','10&ndash;4',1],
-              ['2025','Matt','11&ndash;3',0]];
-  /* Points above the league average, week by week. Cumulative points
-     came out as five near-parallel diagonals and nobody can read a
-     race off that; above-average crosses. */
-  const LINES = [['#e8c889','Bryce','0,118 56,96 112,74 168,88 224,52 280,44 336,26 392,18'],
-                 ['#6b8aa8','John', '0,150 56,128 112,140 168,104 224,116 280,70 336,62 392,40'],
-                 ['#a04830','Matt', '0,96 56,124 112,110 168,134 224,120 280,108 336,96 392,84'],
-                 ['#7fc98d','Drew', '0,132 56,146 112,158 168,150 224,164 280,146 336,152 392,140']];
+  const ST = [['1','Bryce','78&ndash;40','14,982.4','&#9733;&#9733;',1],
+              ['2','John','74&ndash;44','15,204.1','&#9733;',0],
+              ['3','Matt','71&ndash;47','14,556.8','&#9733;',0],
+              ['4','Drew','66&ndash;52','14,201.3','&#9733;',0],
+              ['5','Nate','62&ndash;56','13,884.9','&#9733;',0],
+              ['6','Tyler','58&ndash;60','13,540.2','',0]];
+  const YR = [['2019','Matt','9&ndash;5',0,72], ['2020','Drew','10&ndash;4',0,80],
+              ['2021','Bryce','11&ndash;3',1,92], ['2022','John','12&ndash;2',0,76],
+              ['2023','Nate','10&ndash;4',0,84], ['2024','Bryce','10&ndash;4',1,92],
+              ['2025','Matt','11&ndash;3',0,78]];
   body.innerHTML = mast('The Almanac &nbsp;&middot;&nbsp; Standings &amp; Seasons',
                         'Every season you have played, <em>back to the first one.</em>') + `
-    <div class="wrap spread" style="padding-top:.85rem">
-      ${mod('standings', 'The Standings', 'All-time &middot; twelve managers', `
-        <div class="ag" style="--hair:rgba(40,30,12,.16)">
-          ${ST.map(([r, nm, rec, pts, ti], i) => `<div class="r${i === 0 ? ' lead' : ''}">
-            <span class="rk">${r}</span><span class="nm">${nm}</span>
-            <span class="c" style="width:4.6rem">${rec}</span>
-            <span class="c sm" style="width:5.4rem">${pts}</span>
-            <span class="c" style="width:2.6rem;color:var(--gold-print)">${ti}</span>
-          </div>`).join('')}
+    <div class="wrap spread" style="padding-top:.5rem">
+
+      ${band('standings', 'The Standings', 'All-time &middot; twelve managers', `
+        <div class="hero h-ledger" style="flex:2.5;--hdbg:#6b5320;--hdink:#f1e7cd">
+          <div class="rw hd"><span>#</span><span class="n">Manager</span>
+            <span>Record</span><span>Points for</span><span>Ttl</span></div>
+          ${ST.map(([r, nm, rec, pts, ti, ld], x) => `
+            <div class="rw${x % 2 ? ' stripe' : ''}${ld ? ' lead' : ''}">
+              <span>${r}</span><span class="n">${nm}</span><span>${rec}</span>
+              <span>${pts}</span><span>${ti || '&middot;'}</span></div>`).join('')}
+          <div class="rw tot"><span>&mdash;</span><span class="n">Seven seasons</span>
+            <span>504 gms</span><span>171,402</span><span>7</span></div>
+        </div>
+        <div class="bento" style="flex:1;grid-template-rows:1fr 1fr 1fr">
+          <div class="bt"><div class="k">Most points</div>
+            <div class="v">15,204.1</div><div class="d">John &middot; all-time</div></div>
+          <div class="bt"><div class="k">Longest streak</div>
+            <div class="v">11</div><div class="d">Bryce &middot; 2021&ndash;22</div></div>
+          <div class="bt"><div class="k">Never missed</div>
+            <div class="v on">3</div><div class="d">Play every week</div></div>
         </div>`)}
 
-      <div class="row" style="flex:1;min-height:0">
-        ${mod('seasons', 'The Seasons', 'Seven', `
-          <div class="yrs">
-            ${YR.map(([y, w, r, won]) => `<div class="y${won ? ' won' : ''}">
-              <div class="yr">${y}</div><div class="who">${w}</div>
-              <div class="rec">${r}</div></div>`).join('')}
-          </div>`, 'flex:1')}
-      </div>
-
-      ${mod('chart', 'The Chart Room', 'Points over league average', `
-        <div class="chart">
-          <svg viewBox="0 0 392 180" preserveAspectRatio="none">
-            <line x1="0" y1="118" x2="392" y2="118" stroke="rgba(244,235,216,.22)"
-                  stroke-width="1.5" stroke-dasharray="5 5"/>
-            ${LINES.map(([c, , pts]) => `<polyline points="${pts}" fill="none"
-              stroke="${c}" stroke-width="3.2" stroke-linejoin="round"
-              stroke-linecap="round"/>`).join('')}
-          </svg>
-          <div class="key">
-            ${LINES.map(([c, nm]) => `<span style="color:${c}"><i></i>${nm}</span>`).join('')}
+      ${band('seasons', 'The Seasons', 'One bound volume a year', `
+        <div class="bento" style="flex:.62;grid-template-rows:1fr 1fr">
+          <div class="bt"><div class="k">Champions</div>
+            <div class="v">5</div><div class="d">Different winners</div>
+            <div class="u2">Repeat<s>Bryce</s></div></div>
+          <div class="bt"><div class="k">Best season</div>
+            <div class="v on">12&ndash;2</div><div class="d">John &middot; 2022</div>
+            <div class="u2">Worst<s>2&ndash;12</s></div></div>
+        </div>
+        <div class="hero h-shelf" style="flex:2.4">
+          <div class="books">
+            ${YR.map(([y, w, r, won, h]) => `<div class="bk${won ? ' won' : ''}"
+                style="--h:${h}%;--bkcloth:${P.seasons.cloth};
+                       --bkfoil:${won ? '#f4d9a4' : P.seasons.foil}">
+              <span class="no">${y}</span><span class="bd"></span>
+              <span class="ti"><b>${w}</b></span>
+              <span class="bd"></span><span class="ft">${r}</span></div>`).join('')}
           </div>
-        </div>`, 'flex:1.15;min-height:0')}
+          <div class="plank"></div>
+        </div>`, 1, '#1d0d08')}
     </div>` + foot();
 
-/* ── 03 THE PEOPLE ────────────────────────────────────────────
-   The Manager File, the Rivalries and the All-Time Team. One
-   manager shown properly, then the pairing he cannot shake. */
+/* ── 03 MANAGERS + RIVALRIES ──────────────────────────────────
+   The dossier is the hero of band one, because the page is called
+   the Manager File. Four bento tiles carry what the folder has no
+   room for. Band two is the tale of the tape, mirrored. */
 } else if (s.kind === 'people') {
-  const BAND = [['Record','78&ndash;40',1], ['Win pct','.661',0],
-                ['Titles','2',0], ['Best week','212.44',1]];
-  const TAPE = [['12','All-time','9','a'],
-                ['3','Playoff meetings','1','a'],
-                ['1.2','Closest game','1.2',''],
-                ['W4','Current streak','L4','a']];
-  const LU = [['QB','44.9','&rsquo;22'], ['RB','41.2','&rsquo;21'],
-              ['RB','38.6','&rsquo;24'], ['WR','39.4','&rsquo;23'],
-              ['WR','36.1','&rsquo;19'], ['TE','31.8','&rsquo;20'],
-              ['FLX','34.7','&rsquo;25']];
+  const FILE = [['Record', '78&ndash;40'], ['Win pct', '.661'],
+                ['Points for', '14,982.4'], ['Playoffs', '6 of 7'],
+                ['Draft grade', 'B+'], ['Lineups set', '91.4%']];
+  const TAPE = [['12','All-time','9','a'], ['3','Playoff meetings','1','a'],
+                ['1.2','Closest game','1.2',''], ['W4','Current streak','L4','a']];
   body.innerHTML = mast('The Almanac &nbsp;&middot;&nbsp; Managers &amp; Rivalries',
                         'Everyone who ever played, <em>and who they cannot beat.</em>') + `
-    <div class="wrap spread" style="padding-top:.85rem">
-      <div class="id-card">
-        <div class="fp-portrait"><span class="fp-mono">B</span></div>
-        <div>
-          <div class="fp-name">Bryce <em>Holland</em></div>
-          <div class="fp-dateline">Manager file no. 04 &middot; since 2019</div>
-        </div>
-        <div class="fp-seals">
-          <div class="seal2"><i>&#9733;</i><b>2021</b></div>
-          <div class="seal2"><i>&#9733;</i><b>2024</b></div>
-        </div>
-      </div>
+    <div class="wrap spread" style="padding-top:.5rem">
 
-      <div class="band">
-        ${BAND.map(([l, v, plain]) => `<div class="cell">
-          <div class="lbl">${l}</div>
-          <div class="val${plain ? ' plain' : ''}">${v}</div></div>`).join('')}
-      </div>
-
-      ${mod('rivalries', 'The Rivalries', 'Pairing 14 of 66', `
-        <div class="tape-head">
-          <div class="tape-side a leads">
-            <div class="tape-corner">Two titles</div>
-            <div class="tape-name">Bryce</div>
+      ${band('file', 'The Manager File', 'No. 04 of 12', `
+        <div class="hero h-dossier">
+          <div class="tab">FILE 04 &middot; HOLLAND</div>
+          <div class="holes"><i></i><i></i><i></i></div>
+          <div class="in">
+            <div class="top">
+              <div class="photo"><div class="clip"></div>
+                <div class="im">B</div><div class="cp">SINCE 2019</div></div>
+              <div class="who">
+                <div class="l">Opened 2019 &middot; seven seasons</div>
+                <h3>Bryce <em>Holland</em></h3>
+                <div class="l" style="margin-top:.14rem">Champion 2021, 2024
+                  &middot; never under .500</div>
+              </div>
+            </div>
+            <div class="rows2">
+              ${FILE.map(([l, v]) => `<div class="rw"><u>${l}</u><s>${v}</s></div>`).join('')}
+            </div>
           </div>
-          <div class="tape-vs">vs</div>
-          <div class="tape-side b">
-            <div class="tape-corner">Most points ever</div>
-            <div class="tape-name">John</div>
-          </div>
+          <div class="stamp">CHAMPION &times;2</div>
         </div>
-        ${TAPE.map(([a, l, b, w]) => `<div class="tape-row">
-          <div class="tape-val a${w === 'a' ? ' wins' : ''}">${a}</div>
-          <div class="tape-lbl">${l}</div>
-          <div class="tape-val b${w === 'b' ? ' wins' : ''}">${b}</div>
-        </div>`).join('')}`)}
-
-      ${mod('alltime', 'The All-Time Team', 'His best week at every slot &middot; 266.7', `
-        <div class="slots">
-          ${LU.map(([p, v, y]) => `<div class="s"><div class="p">${p}</div>
-            <div class="v">${v}</div><div class="y">${y}</div></div>`).join('')}
+        <div class="bento" style="flex:1;grid-template-columns:1fr 1fr;
+                                  grid-template-rows:1fr 1fr">
+          <div class="bt"><div class="k">Titles</div>
+            <div class="v on">&#9733;&#9733;</div><div class="d">2021, 2024</div></div>
+          <div class="bt"><div class="k">Best week</div>
+            <div class="v">212.44</div><div class="d">League record</div></div>
+          <div class="bt"><div class="k">Where he finished</div>
+            <div class="spark">${[46,70,100,70,30,100,58].map((h, x) =>
+              `<i class="${[2,5].includes(x) ? 'on' : ''}" style="height:${h}%"></i>`).join('')}</div>
+            <div class="d">1st twice, never under .500</div></div>
+          <div class="bt"><div class="k">Manager DNA</div>
+            <div class="v" style="font-size:.96rem">The Closer</div>
+            <div class="bars">${['#4fd1ff','#ffcb6b','#7a83a6','#ff5db1','#d8ff5d','#4fd1ff']
+              .map(c => `<i style="background:${c}"></i>`).join('')}</div></div>
         </div>`)}
+
+      ${band('rivalries', 'The Rivalries', 'Pairing 14 of 66', `
+        <div class="bento" style="flex:.72;grid-template-rows:1fr 1fr">
+          <div class="bt"><div class="k">Met in the playoffs</div>
+            <div class="v on">4</div><div class="d">3&ndash;1 Bryce</div>
+            <div class="u2">Finals<s>2024</s></div></div>
+          <div class="bt"><div class="k">Next</div>
+            <div class="v">Wk 14</div><div class="d">A bye at stake</div>
+            <div class="u2">Total points<s>+36</s></div></div>
+        </div>
+        <div class="hero h-tape" style="flex:2.3">
+          <div class="hd">
+            <div class="sd a lead"><div class="c">Two titles</div>
+              <div class="n">Bryce</div></div>
+            <div class="vs">vs</div>
+            <div class="sd b"><div class="c">Most points ever</div>
+              <div class="n">John</div></div>
+          </div>
+          ${TAPE.map(([x, l, y, w]) => `<div class="r">
+            <div class="val a${w === 'a' ? ' w' : ''}">${x}</div>
+            <div class="lb">${l}</div>
+            <div class="val b${w === 'b' ? ' w' : ''}">${y}</div></div>`).join('')}
+        </div>`, 1)}
     </div>` + foot();
 
-/* ── 04 THE RECORDS ───────────────────────────────────────────
-   The Record Book and the Draft Annual. Green felt beside black
-   cloth, which is why this board's ground is mid-tone: two
-   near-blacks on a dark ground swallow each other. */
+/* ── 04 RECORDS + DRAFTS ──────────────────────────────────────
+   The record prints on its cream plate; the draft class prints as
+   a graded ledger on the Annual's black cloth. */
 } else if (s.kind === 'records') {
-  const PICKS = [['1.03', 'Jonathan Taylor', '+118', 'up'],
-                 ['2.10', 'Deebo Samuel', '+96', 'up'],
-                 ['4.03', 'Amon-Ra St. Brown', '+141', 'up'],
-                 ['7.08', 'Rachaad White', '&minus;34', 'dn']];
-  const BOARDS = [['Most in a defeat', 'Bryce', '178.90'],
-                  ['Biggest blowout', 'Nate', '92.4'],
-                  ['Longest streak', 'Bryce', '11']];
+  const BOARDS = [['Most in a defeat','Bryce','178.90','John','174.22'],
+                  ['Biggest blowout','Nate','92.4','Bryce','88.1'],
+                  ['Longest streak','Bryce','11','John','9'],
+                  ['Best record','John','12&ndash;2','Bryce','11&ndash;3']];
+  const PICKS = [['1.03','Jonathan Taylor','RB','+118','A'],
+                 ['2.10','Deebo Samuel','WR','+96','B'],
+                 ['4.03','Amon-Ra St. Brown','WR','+141','A'],
+                 ['7.08','Rachaad White','RB','&minus;34','D']];
   body.innerHTML = mast('The Almanac &nbsp;&middot;&nbsp; Records &amp; Drafts',
                         'The best week anyone has had, <em>and the draft behind it.</em>') + `
-    <div class="wrap spread" style="padding-top:.85rem">
-      <div class="exh-plate">
-        <div class="exh-kick">Highest score, one week <span class="no">Board 01 of 41</span></div>
-        <div class="exh-value">212.44</div>
-        <div class="exh-name"><em>Drew</em>, week eleven</div>
-        <div class="exh-detail">2022 &middot; beat Nate by 71.4 &middot; still standing</div>
-        <div class="exh-side">
-          <div class="h">The board</div>
-          <div class="r"><i>1</i><b>Drew</b><s>212.44</s></div>
-          <div class="r"><i>2</i><b>Bryce</b><s>206.10</s></div>
-          <div class="r"><i>3</i><b>John</b><s>201.88</s></div>
-        </div>
-        <div class="exh-stamp">League record</div>
-      </div>
+    <div class="wrap spread" style="padding-top:.5rem">
 
-      <div class="row" style="flex:1;min-height:0">
-        ${mod('draft', 'The Draft Annual', 'Bryce &middot; 2022', `
-          <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem">
-            <span class="chip-g g-a">A&minus;</span>
-            <span style="font-family:var(--mono);font-weight:700;font-size:.64rem;
-                         letter-spacing:.14em;text-transform:uppercase;
-                         color:var(--an-mute)">88th percentile<br>of all classes</span>
-            <span style="margin-left:auto;font-family:var(--serif);font-style:italic;
-                         font-size:1.7rem;color:var(--gold)">+288</span>
+      ${band('records', 'The Record Book', '41 boards', `
+        <div class="hero h-plate">
+          <div class="k">Highest score, one week</div>
+          <div class="v">212.44</div>
+          <div class="n"><em>Drew</em>, week eleven &middot; 2022</div>
+          <div class="dt">Beat Nate by 71.4 &middot; still standing</div>
+          <div class="pod">
+            <div class="r"><i>1</i><b>Drew</b><s>212.44</s></div>
+            <div class="r"><i>2</i><b>Bryce</b><s>206.10</s></div>
+            <div class="r"><i>3</i><b>John</b><s>201.88</s></div>
+            <div class="r"><i>4</i><b>Matt</b><s>198.02</s></div>
+            <div class="r"><i>5</i><b>Nate</b><s>196.40</s></div>
           </div>
-          <div class="picks">
-            ${PICKS.map(([r, nm, v, d]) => `<div class="p"><u>${r}</u><b>${nm}</b>
-              <s class="${d}">${v}</s></div>`).join('')}
-          </div>`, 'flex:1.32')}
+          <div class="stamp">Record</div>
+        </div>
+        <div class="bento" style="flex:1;grid-template-columns:1fr 1fr;
+                                  grid-template-rows:1fr 1fr">
+          ${BOARDS.map(([l, who, v, who2, v2]) => `<div class="bt">
+            <div class="k">${l}</div>
+            <div class="v">${v}</div><div class="d">${who}</div>
+            <div class="u2">${who2}<s>${v2}</s></div></div>`).join('')}
+        </div>`)}
 
-        ${mod('records', 'The Record Book', '41 boards', `
-          <div class="ag">
-            ${BOARDS.map(([l, who, v]) => `<div class="r" style="flex-direction:column;
-              align-items:stretch;gap:.1rem;padding:.44rem 0">
-              <span style="font-family:var(--mono);font-weight:700;font-size:.6rem;
-                letter-spacing:.16em;text-transform:uppercase;color:var(--gold)">${l}</span>
-              <span style="display:flex;align-items:baseline;gap:.5rem">
-                <b style="flex:1;font-family:var(--serif);font-weight:400;
-                   font-size:1.05rem;color:var(--cream)">${who}</b>
-                <s style="text-decoration:none;font-family:var(--mono);font-weight:700;
-                   font-size:.82rem;color:var(--rb-mute)">${v}</s></span>
+      ${band('draft', 'The Draft Annual', 'Bryce &middot; the 2022 class', `
+        <div class="bento" style="flex:.78;grid-template-rows:1fr 1fr">
+          <div class="bt"><div class="k">Class grade</div>
+            <div class="v on" style="font-size:1.7rem">A&minus;</div>
+            <div class="d">88th percentile</div>
+            <div class="u2">Career<s>B+</s></div></div>
+          <div class="bt"><div class="k">Value over slot</div>
+            <div class="v">+288</div><div class="d">Seven picks</div>
+            <div class="u2">Best pick<s>4.03</s></div></div>
+        </div>
+        <div class="hero h-ledger" style="flex:2.2;--rule:rgba(232,200,137,.3);
+             --rule-soft:rgba(232,200,137,.13);--stripe:rgba(255,255,255,.035);
+             --hdbg:rgba(232,200,137,.14);--hdink:#e8c889;
+             --totbg:rgba(232,200,137,.08);--cols:1.9rem 1fr 1.5rem 2.6rem">
+          <div class="rw hd"><span>Pick</span><span class="n">Player</span>
+            <span>Pos</span><span>Value</span></div>
+          ${PICKS.map(([pk, nm, pos, v, g], x) => `
+            <div class="rw${x % 2 ? ' stripe' : ''}">
+              <span>${pk}</span><span class="n">${nm}</span>
+              <span>${pos}</span>
+              <span style="color:${v.startsWith('&minus;') ? '#c05a4a' : '#7fc98d'}">${v}</span>
             </div>`).join('')}
-          </div>`, 'flex:1')}
-      </div>
+          <div class="rw tot"><span>&mdash;</span><span class="n">Class of 2022</span>
+            <span>7</span><span>+288</span></div>
+        </div>`, 1)}
     </div>` + foot();
 
 /* ── 05 SUNDAY ────────────────────────────────────────────────
-   Matchup Preview, Power Rankings and Pick'ems: the three pages
-   that run before a week is played. Plum beside deep green, so the
-   ground is neutral near-black to keep the two hues apart. */
+   Three live pages, so three shallower bands: the preview, the
+   rankings ledger and the pick'ems board. */
 } else if (s.kind === 'sunday') {
-  const PR = [['1','Bryce','&#9650; 2','94.1','up'], ['2','John','&#9660; 1','91.8','dn'],
-              ['3','Matt','&mdash;','88.4','flat'], ['4','Nate','&#9650; 4','85.0','up'],
-              ['5','Drew','&#9660; 2','81.6','dn']];
-  const PK = [['Bryce', 'John', 74], ['Nate', 'Tyler', 41], ['Matt', 'Drew', 62]];
+  const PR = [['1','Bryce','&#9650;2','94.1','#4a9c5c'], ['2','John','&#9660;1','91.8','#c05a4a'],
+              ['3','Matt','&mdash;','88.4','#7f7154'], ['4','Nate','&#9650;4','85.0','#4a9c5c'],
+              ['5','Drew','&#9660;2','81.6','#c05a4a']];
+  const PK = [['Bryce','John',74], ['Nate','Tyler',41], ['Matt','Drew',62]];
   body.innerHTML = mast('The Live Season &nbsp;&middot;&nbsp; Week Fourteen',
                         'Every week, <em>called before it is played.</em>') + `
-    <div class="wrap spread" style="padding-top:.85rem">
-      ${mod('matchup', 'Matchup Preview', 'Game of the week', `
-        <div class="mp-head">
-          <div class="mp-team a">
-            <div class="nm">Bryce</div>
-            <div class="rec">9&ndash;4 &middot; 2nd</div>
-            <div class="proj">128.4 proj</div>
+    <div class="wrap spread" style="padding-top:.5rem">
+
+      ${band('matchup', 'Matchup Preview', 'Game of the week', `
+        <div class="hero" style="flex:1.7;display:flex;flex-direction:column;gap:.24rem">
+          <div class="h2h">
+            <div class="t"><div class="n">Bryce</div><div class="r">9&ndash;4 &middot; 2nd</div>
+              <div class="p">128.4 proj</div></div>
+            <div class="vs">vs</div>
+            <div class="t b"><div class="n">John</div><div class="r">10&ndash;3 &middot; 1st</div>
+              <div class="p">121.9 proj</div></div>
           </div>
-          <div class="mp-at">vs</div>
-          <div class="mp-team b">
-            <div class="nm">John</div>
-            <div class="rec">10&ndash;3 &middot; 1st</div>
-            <div class="proj">121.9 proj</div>
-          </div>
-        </div>
-        <div class="mp-odds">
-          <div class="mp-bar"><i class="a" style="width:58%"></i>
+          <div class="oddsbar"><i class="a" style="width:58%"></i>
             <i class="b" style="width:42%"></i></div>
-          <div class="mp-odds-row"><span><b>58%</b> Bryce</span>
-            <span class="r">42% John</span></div>
+          <div style="display:flex;font-family:var(--mono);font-weight:700;
+                      font-size:.44rem;letter-spacing:.14em;text-transform:uppercase;
+                      color:var(--mp-mute)">
+            <span style="color:var(--mp-brass-hi)">58% Bryce</span>
+            <span style="margin-left:auto">42% John</span></div>
         </div>
-        <div class="mp-form"><span class="who">Bryce</span>
-          <span class="pill w">W</span><span class="pill w">W</span>
-          <span class="pill l">L</span><span class="pill w">W</span>
-          <span class="pill w">W</span>
-          <span class="hi">High 178.9</span></div>
-        <div class="mp-form"><span class="who">John</span>
-          <span class="pill w">W</span><span class="pill l">L</span>
-          <span class="pill w">W</span><span class="pill w">W</span>
-          <span class="pill l">L</span>
-          <span class="hi">High 166.2</span></div>`)}
+        <div class="bento" style="flex:1;grid-template-rows:1fr 1fr">
+          <div class="bt"><div class="k">Bryce &middot; last five</div>
+            <div class="v" style="font-size:.8rem;display:flex;gap:.18rem">
+              <span class="pill w">W</span><span class="pill w">W</span>
+              <span class="pill l">L</span><span class="pill w">W</span>
+              <span class="pill w">W</span></div>
+            <div class="d">High 178.9</div></div>
+          <div class="bt"><div class="k">John &middot; last five</div>
+            <div class="v" style="font-size:.8rem;display:flex;gap:.18rem">
+              <span class="pill w">W</span><span class="pill l">L</span>
+              <span class="pill w">W</span><span class="pill w">W</span>
+              <span class="pill l">L</span></div>
+            <div class="d">High 166.2</div></div>
+        </div>`)}
 
-      <div class="row" style="flex:1;min-height:0">
-        ${mod('power', 'Power Rankings', 'Wk 14', `
-          ${PR.map(([r, nm, mv, sc, d]) => `<div class="pr-row">
-            <span class="rk">${r}</span><span class="nm">${nm}</span>
-            <span class="pr-move ${d}">${mv}</span>
-            <span class="sc">${sc}</span></div>`).join('')}`, 'flex:1.04')}
+      ${band('power', 'Power Rankings', 'Week 14', `
+        <div class="bento" style="flex:.68;grid-template-rows:1fr 1fr">
+          <div class="bt"><div class="k">Biggest riser</div>
+            <div class="v on">Nate</div><div class="d">Up four</div></div>
+          <div class="bt"><div class="k">Computed</div>
+            <div class="v">Weekly</div><div class="d">No vote</div></div>
+        </div>
+        <div class="hero h-ledger" style="flex:2.3;--hdbg:#7a5a18;--hdink:#f4ebd8;
+             --cols:1.5rem 1fr 2.2rem 2.6rem">
+          <div class="rw hd"><span>#</span><span class="n">Manager</span>
+            <span>Move</span><span>Rating</span></div>
+          ${PR.map(([r, nm, mv, sc, c], x) => `
+            <div class="rw${x % 2 ? ' stripe' : ''}">
+              <span>${r}</span><span class="n">${nm}</span>
+              <span style="color:${c}">${mv}</span><span>${sc}</span></div>`).join('')}
+        </div>`, 1)}
 
-        ${mod('pickems', "Pick'ems", 'The league picked', `
-          ${PK.map(([a, b, pc]) => `<div class="pk-game">
-            <div class="pk-names">${a} <s>${pc}% &middot; ${100 - pc}%</s></div>
-            <div class="pk-split"><i class="a" style="width:${pc}%"></i>
-              <i class="b" style="width:${100 - pc}%"></i></div>
-          </div>`).join('')}
-          <div class="pk-foot">Leader &middot; Nate <b>71 of 96</b></div>`, 'flex:1')}
-      </div>
+      ${band('pickems', "Pick'ems", 'How the league picked', `
+        <div class="hero" style="flex:2;display:flex;flex-direction:column;
+                                 justify-content:space-around">
+          ${PK.map(([a, b, pc]) => `<div>
+            <div style="display:flex;align-items:baseline;font-family:var(--serif);
+                        font-size:.84rem;color:var(--pk-chalk)">
+              ${a} <span style="margin-left:auto;font-family:var(--mono);
+                font-weight:700;font-size:.46rem;letter-spacing:.1em;
+                color:var(--pk-chalk-mute)">${pc}% &middot; ${100 - pc}%</span></div>
+            <div class="split" style="margin-top:.1rem">
+              <i class="a" style="width:${pc}%"></i><i class="b" style="width:${100 - pc}%"></i>
+            </div></div>`).join('')}
+        </div>
+        <div class="bento" style="flex:1;grid-template-rows:1fr 1fr">
+          <div class="bt"><div class="k">Leader</div>
+            <div class="v on">71 of 96</div><div class="d">Nate</div></div>
+          <div class="bt"><div class="k">Consensus</div>
+            <div class="v">.640</div><div class="d">When the room agrees</div></div>
+        </div>`)}
     </div>` + foot();
 
-/* ── 06 THE WATCH ─────────────────────────────────────────────
-   Records Watch, Milestones and Best Coach. Three dark pages of
-   three different hues, so the ground goes mid-tone to separate
-   them rather than letting them all sink into it. */
+/* ── 06 THE WATCH ─────────────────────────────────────────────*/
 } else if (s.kind === 'watch') {
-  const CHASE = [['212.44', 'Drew, 2022', 'Bryce', '4.1 away', 96,
-                  'Live &middot; needs a 4.2 from his flex'],
-                 ['11 straight', 'Bryce, 2021', 'Nate', '2 wins away', 82,
-                  'Wins out and it is his']];
-  const ML = [['John', '96 pts', 'to 15,000 career points', 91, '2 weeks'],
-              ['Matt', '4 wins', 'to 75 career wins', 78, 'This season'],
-              ['Drew', '1 game', 'to 100 games played', 94, 'Sunday']];
-  const BC = [['Bryce', '91.4%', '18.2 left'], ['Matt', '88.0%', '26.4 left'],
-              ['Drew', '79.6%', '48.1 left']];
+  const CHASE = [['212.44','Drew, 2022','Bryce','4.1 away',96,'Needs a 4.2 from his flex'],
+                 ['11 straight','Bryce, 2021','Nate','2 wins away',82,'Wins out and it is his']];
+  const ML = [['John','96 pts to 15,000',91,'2 weeks'],
+              ['Matt','4 wins to 75 career',78,'This season'],
+              ['Drew','1 game to 100 played',94,'Sunday']];
   body.innerHTML = mast('The Live Season &nbsp;&middot;&nbsp; The Watch',
                         'What is about to be <em>broken.</em>') + `
-    <div class="wrap spread" style="padding-top:.85rem">
-      ${mod('watch', 'Records Watch', 'Two marks in range', `
-        ${CHASE.map(([mark, by, who, away, pc, note]) => `<div class="rw-chase">
-          <div class="rw-mark"><div class="lbl">The mark</div>
-            <div class="num">${mark}</div><div class="by">${by}</div></div>
-          <div class="rw-body">
-            <div class="rw-who">${who}<s>${away}</s></div>
-            <div class="rw-plot"><i style="width:${pc}%"></i></div>
-            <div class="rw-note">${note}</div>
-          </div>
-        </div>`).join('')}`)}
+    <div class="wrap spread" style="padding-top:.5rem">
 
-      <div class="row" style="flex:1;min-height:0">
-        ${mod('milestones', 'Milestones', 'Approaching', `
-          ${ML.map(([nm, gap, what, pc, eta]) => `<div class="ml-row">
-            <div class="ml-top"><span class="ml-nm">${nm}</span>
-              <span class="ml-eta">${eta}</span></div>
-            <div class="ml-meter"><i style="width:${pc}%"></i></div>
-            <div class="ml-sub">${gap} ${what}</div>
-          </div>`).join('')}`, 'flex:1.26')}
+      ${band('watch', 'Records Watch', 'Two marks in range', `
+        <div class="hero" style="flex:2.4;display:flex;flex-direction:column;gap:.24rem">
+          ${CHASE.map(([mk, by, who, away, pc, nt]) => `<div class="chase">
+            <div class="mk"><div class="l">The mark</div><div class="n">${mk}</div>
+              <div class="b">${by}</div></div>
+            <div class="bd"><div class="w">${who}<s>${away}</s></div>
+              <div class="p"><i style="width:${pc}%"></i></div>
+              <div class="nt">${nt}</div></div>
+          </div>`).join('')}
+        </div>
+        <div class="bento" style="flex:.85;grid-template-rows:1fr 1fr">
+          <div class="bt"><div class="k">Broken this year</div>
+            <div class="v on">3</div><div class="d">Of forty-one</div></div>
+          <div class="bt"><div class="k">Oldest mark</div>
+            <div class="v">2019</div><div class="d">Still standing</div></div>
+        </div>`)}
 
-        ${mod('coach', 'Best Coach', 'Of his ceiling', `
-          ${BC.map(([nm, pc, lo]) => `<div class="bc-row">
-            <span class="nm">${nm}</span><span class="pc">${pc}</span>
-            <span class="lo">${lo}</span></div>`).join('')}`, 'flex:1')}
-      </div>
+      ${band('milestones', 'Milestones', 'Approaching', `
+        <div class="bento" style="flex:.7;grid-template-rows:1fr 1fr">
+          <div class="bt"><div class="k">Crossed in 2025</div>
+            <div class="v on">7</div><div class="d">League-wide</div>
+            <div class="u2">Chasing<s>9</s></div></div>
+          <div class="bt"><div class="k">Next up</div>
+            <div class="v">Sunday</div><div class="d">Drew, 100 games</div>
+            <div class="u2">Then<s>John</s></div></div>
+        </div>
+        <div class="hero" style="flex:2.3;display:flex;flex-direction:column;
+                                 justify-content:space-around">
+          ${ML.map(([nm, what, pc, eta]) => `<div>
+            <div style="display:flex;align-items:baseline;gap:.4rem">
+              <span style="flex:1;font-family:var(--serif);font-size:.88rem;
+                color:var(--cream)">${nm}</span>
+              <span style="font-family:var(--mono);font-weight:700;font-size:.5rem;
+                color:var(--ml-violet)">${eta}</span></div>
+            <div style="margin-top:.1rem;height:.3rem;border-radius:2px;
+                        background:rgba(255,255,255,.08);overflow:hidden">
+              <i style="display:block;height:100%;width:${pc}%;
+                background:linear-gradient(90deg,rgba(181,140,255,.4),var(--ml-violet))"></i></div>
+            <div style="margin-top:.06rem;font-family:var(--mono);font-size:.42rem;
+              letter-spacing:.1em;text-transform:uppercase;
+              color:var(--ml-mute)">${what}</div></div>`).join('')}
+        </div>`, 1)}
+
+      ${band('coach', 'Best Coach', 'Of his ceiling', `
+        <div class="hero h-ledger" style="flex:2.2;--rule:rgba(232,200,80,.3);
+             --rule-soft:rgba(232,200,80,.14);--stripe:rgba(255,255,255,.035);
+             --hdbg:rgba(232,200,80,.15);--hdink:#e8c850;
+             --cols:1fr 2.6rem 3.4rem">
+          <div class="rw hd"><span class="n">Manager</span><span>Ceiling</span>
+            <span>Left on bench</span></div>
+          ${[['Bryce','91.4%','18.2'], ['Matt','88.0%','26.4'], ['Drew','79.6%','48.1']]
+            .map(([nm, pc, lo], x) => `<div class="rw${x % 2 ? ' stripe' : ''}">
+              <span class="n">${nm}</span>
+              <span style="color:var(--bc-yellow)">${pc}</span>
+              <span>${lo}</span></div>`).join('')}
+        </div>
+        <div class="bento" style="flex:1;grid-template-rows:1fr 1fr">
+          <div class="bt"><div class="k">League average</div>
+            <div class="v">84.1%</div><div class="d">Of the best lineup</div></div>
+          <div class="bt"><div class="k">Left on benches</div>
+            <div class="v on">1,904</div><div class="d">Points, all-time</div></div>
+        </div>`)}
     </div>` + foot();
 
 /* ── 07 THE DESK ──────────────────────────────────────────────
-   The Trade Desk and the Rumor Mill. The ticket prints on paper,
-   which is what gives this board its light card against navy. */
+   A trade is a receipt, so the ticket is the hero and it is the
+   one light object on the board. */
 } else if (s.kind === 'trades') {
-  const WIRE = [['Bryce is shopping the running back he traded for in October.',
-                 'Two offers on file'],
-                ['Nate has not made a waiver claim in five weeks.', 'Quietest desk'],
-                ['John and Tyler have talked three times since the bye.',
-                 'Nothing filed yet'],
-                ['Drew is a win from a bye and holding both firsts.', 'Buyer']];
-  const LEDGER = [['Oct 2024', 'Bryce &harr; John', 'B+ / D'],
-                  ['Aug 2024', 'Nate &harr; Matt', 'A&minus; / B'],
-                  ['Nov 2023', 'Drew &harr; Tyler', 'C / C+'],
-                  ['Sep 2023', 'Bryce &harr; Reid', 'B / B&minus;']];
+  const WIRE = [['Bryce is shopping the back he traded for.','Two offers in'],
+                ['Nate has not claimed since week nine.','Quietest desk'],
+                ['Drew is holding both firsts.','Buying']];
+  const LED = [['Oct 2024','Bryce &harr; John','B+ / D'],
+               ['Aug 2024','Nate &harr; Matt','A&minus; / B'],
+               ['Nov 2023','Drew &harr; Tyler','C / C+']];
   body.innerHTML = mast('The Live Season &nbsp;&middot;&nbsp; The Desk',
                         'Every trade you ever made, <em>graded a year later.</em>') + `
-    <div class="wrap spread" style="padding-top:.85rem">
-      <div class="ticket">
-        <div class="hd">The Trade Desk <s>Filed 14 Oct 2024 &middot; still argued about</s></div>
-        <div class="tr-sides">
-          <div class="tr-side">
-            <div class="who">Bryce received</div>
-            <div class="tr-asset"><u>RB</u><b>Jonathan Taylor</b></div>
-            <div class="tr-asset"><u>WR</u><b>Jaylen Waddle</b></div>
-            <div class="tr-grade"><span class="tr-grade-letter win">B+</span>
-              <span class="then"><b>+186</b><em>Points since</em></span></div>
-          </div>
-          <div class="tr-side">
-            <div class="who">John received</div>
-            <div class="tr-asset"><u>WR</u><b>Chris Olave</b></div>
-            <div class="tr-asset"><u>PICK</u><b>2025 first</b></div>
-            <div class="tr-grade"><span class="tr-grade-letter lose">D</span>
-              <span class="then"><b>&minus;94</b><em>Points since</em></span></div>
+    <div class="wrap spread" style="padding-top:.5rem">
+
+      ${band('trade', 'The Trade Desk', '38 on file', `
+        <div class="hero h-ticket" style="flex:2.3">
+          <div class="hd">Filed 14 Oct 2024 <s>Still argued about</s></div>
+          <div class="sides">
+            <div class="sd"><div class="w">Bryce received</div>
+              <div class="a"><u>RB</u><b>Jonathan Taylor</b></div>
+              <div class="a"><u>WR</u><b>Jaylen Waddle</b></div>
+              <div class="g"><i class="win">B+</i>
+                <s>+186<em>Points since</em></s></div></div>
+            <div class="sd"><div class="w">John received</div>
+              <div class="a"><u>WR</u><b>Chris Olave</b></div>
+              <div class="a"><u>PICK</u><b>2025 first</b></div>
+              <div class="g"><i class="lose">D</i>
+                <s>&minus;94<em>Points since</em></s></div></div>
           </div>
         </div>
-      </div>
+        <div class="bento" style="flex:1;grid-template-rows:1fr 1fr 1fr">
+          ${LED.map(([d, who, g]) => `<div class="bt"><div class="k">${d}</div>
+            <div class="v" style="font-size:.86rem">${who}</div>
+            <div class="d">Graded ${g}</div></div>`).join('')}
+        </div>`)}
 
-      <div class="row" style="flex:1;min-height:0">
-        ${mod('mill', 'The Rumor Mill', 'This week', `
-          <div class="wire">
-            ${WIRE.map(([t, m]) => `<div class="w"><div class="t">${t}</div>
-              <div class="m">${m}</div></div>`).join('')}
-          </div>`, 'flex:1.42')}
-
-        ${mod('trade', 'The Ledger', '38 on file', `
-          <div class="ag" style="--hair:rgba(245,233,200,.12)">
-            ${LEDGER.map(([d, who, g]) => `<div class="r" style="flex-direction:column;
-              align-items:stretch;gap:.08rem">
-              <span style="font-family:var(--mono);font-weight:700;font-size:.58rem;
-                letter-spacing:.16em;text-transform:uppercase;
-                color:var(--td-brass)">${d}</span>
-              <span style="display:flex;align-items:baseline;gap:.4rem">
-                <b style="flex:1;font-family:var(--serif);font-weight:400;
-                   font-size:.98rem;color:var(--td-cream)">${who}</b>
-                <s style="text-decoration:none;font-family:var(--mono);font-weight:700;
-                   font-size:.74rem;color:var(--td-brass)">${g}</s></span>
-            </div>`).join('')}
-          </div>`, 'flex:1')}
-      </div>
+      ${band('mill', 'The Rumor Mill', 'This week', `
+        <div class="bento" style="flex:.72;grid-template-rows:1fr 1fr">
+          <div class="bt"><div class="k">Deadline</div>
+            <div class="v on">Wk 12</div><div class="d">Two weeks out</div>
+            <div class="u2">Filed since<s>6</s></div></div>
+          <div class="bt"><div class="k">Talking</div>
+            <div class="v">7 of 12</div><div class="d">Desks open</div>
+            <div class="u2">Quietest<s>Nate</s></div></div>
+        </div>
+        <div class="hero wire" style="flex:2.3">
+          ${WIRE.map(([t, m]) => `<div class="w"><div class="t">${t}</div>
+            <div class="m">${m}</div></div>`).join('')}
+        </div>`, 1)}
     </div>` + foot();
 
 /* ── 08 THE OFFER ─────────────────────────────────────────────*/
@@ -1227,6 +1367,12 @@ if (s.kind === 'cover') {
               ['Records','41 boards','#2f7a44'], ['Drafts','Every pick','#e8c889'],
               ['Managers','Careers','#6b8aa8'], ['Rivalries','66 pairings','#dc2626'],
               ['Sunday','Live','#c89d5c']];
+  /* the pages the eight boards did not have room for: a contents
+     strip at the back of the book, so nothing goes unmentioned */
+  const CH2 = [['All-Time Team','Best XI','#efe5cd'], ['Chart Room','Charted','#6b8aa8'],
+               ['Trade Desk','Graded','#c8a464'], ['Rumor Mill','The wire','#a8503c'],
+               ['Best Coach','Ceilings','#e8c850'], ['Milestones','Chased','#b58cff'],
+               ['The Games','Play','#e8c889']];
   body.innerHTML = `
     <div class="wrap spread" style="padding-top:1.6rem;gap:1rem">
       <div>
@@ -1239,7 +1385,7 @@ if (s.kind === 'cover') {
         </div>
       </div>
 
-      <div class="nameplate" style="font-size:2.7rem">
+      <div class="nameplate" style="font-size:2.2rem">
         Your league has a<br><em>paper trail.</em><br>Go and read it.</div>
 
       <div class="offer">
@@ -1260,19 +1406,79 @@ if (s.kind === 'cover') {
         ${CH.map(([t, d, sw]) => `<div class="chip" style="--sw:${sw}">
           <div class="t">${t}</div><div class="d">${d}</div></div>`).join('')}
       </div>
+      <div class="chips">
+        ${CH2.map(([t, d, sw]) => `<div class="chip" style="--sw:${sw}">
+          <div class="t">${t}</div><div class="d">${d}</div></div>`).join('')}
+      </div>
 
       <div>
-        <div class="deck-row"><p>Ninety seconds, one league ID, and every
-          season you have ever played comes back in print.</p></div>
-        <div style="margin-top:.8rem;text-align:center;font-family:var(--mono);
-                    font-weight:700;font-size:.8rem;letter-spacing:.28em;
+        <div class="deck-row"><p>One league ID, and every season you have
+          played comes back in print.</p></div>
+        <div style="margin-top:.55rem;text-align:center;font-family:var(--mono);
+                    font-weight:700;font-size:.72rem;letter-spacing:.26em;
                     text-transform:uppercase;color:var(--gold)">
           thesundaychronicle.app</div>
       </div>
     </div>` + foot();
 }
+
+/* ══ THE FIT REPORT  (pitch.html?slide=N&measure=1) ═══════════
+   Eyeballing a 1080x1350 thumbnail cannot tell you whether a card
+   is stretched or a column is clipped, because .mod and .wrap both
+   hide their overflow — a board that has lost two rows off the
+   bottom looks exactly like one that fits.
+
+   So: ./render.sh fit  prints, for every slide, how much of the
+   sheet is filled and which modules are over-tall or spilling.
+
+     FILLED   content height over the available height. Under about
+              92% means a hole, and a hole means a MISSING MODULE
+              or missing rows, never more padding.
+     SPILL    a module whose content is taller than the module. Any
+              spill at all means rows are being clipped.
+     STRETCH  a module taller than its own content wants to be,
+              which is where dead air inside a card comes from. */
+if (params.get('measure')) {
+  const wrap = document.querySelector('.wrap');
+  const out = [];
+  if (wrap) {
+    const avail = wrap.clientHeight;
+    const gap = parseFloat(getComputedStyle(wrap).rowGap || 0);
+    let used = 0;
+    const kids = [...wrap.children];
+    kids.forEach(el => { used += el.offsetHeight; });
+    used += (kids.length - 1) * gap;
+    out.push(`SLIDE ${n} ${s.kind}  ${Math.round(used / avail * 100)}% ` +
+             `(${Math.round(used)} of ${avail})` +
+             (used > avail + 4 ? `  OVER by ${Math.round(used - avail)}` :
+              used < avail - 90 ? `  HOLE of ${Math.round(avail - used)}` : '  fits'));
+    kids.forEach(el => {
+      const name = (el.querySelector('.mod-hd, .hd, .shelf-lbl') || el)
+        .textContent.trim().replace(/\s+/g, ' ').slice(0, 30) || el.className;
+      out.push(`   ${String(el.offsetHeight).padStart(5)}px  ${name}`);
+      /* a card must be sized by its CONTENT: any slack inside one is
+         dead air, which is the one place the deck is not allowed to
+         put it. Padding is not slack, so it comes off first. */
+      const bd = el.querySelector('.mod-bd');
+      if (bd) {
+        const cs = getComputedStyle(bd);
+        let inner = 0;
+        [...bd.children].forEach(c => { inner += c.offsetHeight; });
+        const slack = bd.clientHeight - parseFloat(cs.paddingTop) -
+                      parseFloat(cs.paddingBottom) - inner;
+        if (bd.scrollHeight > bd.clientHeight + 2) {
+          out.push(`          SPILL ${bd.scrollHeight - bd.clientHeight}px clipped`);
+        } else if (slack > 30) {
+          out.push(`          AIR   ${Math.round(slack)}px`);
+        }
+      }
+    });
+  }
+  const pre = document.createElement('pre');
+  pre.id = 'fit';
+  pre.textContent = out.join('\n');
+  document.body.appendChild(pre);
+}
 </script>
 </body>
 </html>
-</content>
-</invoke>

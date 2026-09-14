@@ -57,6 +57,11 @@ type MocksPayload = {
   season?: string
   trades: MockTrade[]
   narrativeSource: 'ai' | 'fallback'
+  // Why the copy pass fell back, when it did. Every Groq caller in this
+  // codebase degrades quietly, which is correct for members but meant a
+  // dead model or an exhausted rate limit looked identical to working
+  // software. The column surfaces this on the dateline stamp.
+  narrativeNote?: string
   // Trade deadline has passed for this season — no column gets printed.
   deskClosed?: true
   deadlineWeek?: number | null
@@ -143,9 +148,13 @@ function fmtMovements(m: MockTrade['teamA']['movements']): string {
   return m.map((x) => `${x.position} ${x.before}→${x.after}`).join(', ')
 }
 
-async function writeBlurbs(leagueName: string, mode: string, trades: MockTrade[]): Promise<MockTrade[] | null> {
+type BlurbResult =
+  | { ok: true; trades: MockTrade[] }
+  | { ok: false; note: string }
+
+async function writeBlurbs(leagueName: string, mode: string, trades: MockTrade[]): Promise<BlurbResult> {
   const apiKey = process.env.GROQ_API_KEY_TRADES || process.env.GROQ_API_KEY
-  if (!apiKey) return null
+  if (!apiKey) return { ok: false, note: 'no Groq API key configured' }
 
   const redraft = mode === 'redraft'
   const system = [
@@ -207,17 +216,47 @@ async function writeBlurbs(leagueName: string, mode: string, trades: MockTrade[]
       ],
       temperature: 0.8,
       maxTokens: 1600,
+      // One column costs ~2.4k tokens against an 8k tokens-per-minute
+      // ceiling, so three generations inside a minute is the whole budget
+      // and a fourth 429s. That is invisible on the weekly path (one call
+      // per league per week) and constant when rerolling, which is how a
+      // working Mill came to print nothing but fallback copy. Groq's
+      // suggested wait for a TPM trip is short (~2s), so a couple of extra
+      // attempts ride it out well inside the 60s function budget.
+      maxRetries: 5,
     })
     const parsed = BlurbsOut.safeParse(result.data)
-    if (!parsed.success || parsed.data.trades.length !== trades.length) return null
-    return trades.map((t, i) => ({
-      ...t,
-      headline: parsed.data.trades[i].headline,
-      blurb: parsed.data.trades[i].blurb,
-    }))
+    if (!parsed.success) {
+      return { ok: false, note: 'copy came back in an unexpected shape' }
+    }
+    if (parsed.data.trades.length !== trades.length) {
+      return {
+        ok: false,
+        note: `copy covered ${parsed.data.trades.length} of ${trades.length} trades`,
+      }
+    }
+    return {
+      ok: true,
+      trades: trades.map((t, i) => ({
+        ...t,
+        headline: parsed.data.trades[i].headline,
+        blurb: parsed.data.trades[i].blurb,
+      })),
+    }
   } catch (e) {
-    if (e instanceof GroqError) return null
-    return null
+    if (e instanceof GroqError) {
+      // Name the two failures that have actually happened, because they
+      // need opposite responses: a rate limit clears on its own, a dead
+      // model id needs DEFAULT_GROQ_MODEL updated.
+      if (e.status === 429) {
+        return { ok: false, note: 'Groq rate limit reached, try again in a minute' }
+      }
+      if (/model_not_found|does not exist|decommissioned/i.test(e.body)) {
+        return { ok: false, note: 'Groq model unavailable, check DEFAULT_GROQ_MODEL' }
+      }
+      return { ok: false, note: `Groq error ${e.status}` }
+    }
+    return { ok: false, note: e instanceof Error ? e.message : 'copy pass failed' }
   }
 }
 
@@ -338,17 +377,33 @@ export async function GET(
     )
   }
 
-  // Never reprint a deal from the trailing 10 weeks.
+  // Never reprint a deal from the trailing 10 weeks, and discount the
+  // teams that carried the last few columns.
+  //
+  // Hash exclusion alone only stops the exact same player set coming back.
+  // It did nothing about the same two rosters winning the ranking again
+  // with one piece swapped, which is what made three trades print the same
+  // four teams week after week. The recency weights below push those teams
+  // down the board without barring them outright.
   const excludeHashes = new Set<string>()
+  const recentOwners = new Map<string, number>()
+  const RECENCY_WEIGHTS = [1, 0.6, 0.3]
   const { data: pastRows } = await db
     .from('trade_desk_mock_trades')
-    .select('trade_hashes')
+    .select('trade_hashes, payload')
     .eq('league_id', id)
     .order('created_at', { ascending: false })
     .limit(10)
-  for (const r of pastRows ?? []) {
+  ;(pastRows ?? []).forEach((r, columnsBack) => {
     for (const h of (r.trade_hashes as string[]) ?? []) excludeHashes.add(h)
-  }
+    const weight = RECENCY_WEIGHTS[columnsBack]
+    if (!weight) return
+    for (const t of (r.payload as MocksPayload | null)?.trades ?? []) {
+      for (const ownerId of [t.teamA.ownerId, t.teamB.ownerId]) {
+        recentOwners.set(ownerId, Math.max(recentOwners.get(ownerId) ?? 0, weight))
+      }
+    }
+  })
 
   let trades = generateMockTrades({
     data,
@@ -356,16 +411,21 @@ export async function GET(
     // Reroll salts the seed so the regenerated column differs — DEV ONLY.
     seedKey: `${id}|${weekKey}${reroll ? '|r' + Date.now() : ''}`,
     excludeHashes,
+    recentOwners,
   })
 
   await stampPositionRanks(trades, data.effective)
 
   let narrativeSource: MocksPayload['narrativeSource'] = 'fallback'
+  let narrativeNote: string | undefined
   if (trades.length > 0) {
-    const withBlurbs = await writeBlurbs(data.leagueName, data.effective.mode, trades)
-    if (withBlurbs) {
-      trades = withBlurbs
+    const written = await writeBlurbs(data.leagueName, data.effective.mode, trades)
+    if (written.ok) {
+      trades = written.trades
       narrativeSource = 'ai'
+    } else {
+      narrativeNote = written.note
+      console.warn(`[rumor-mill] ${id} ${weekKey}: copy pass fell back — ${written.note}`)
     }
   }
 
@@ -377,6 +437,7 @@ export async function GET(
     season: data.season,
     trades,
     narrativeSource,
+    ...(narrativeNote ? { narrativeNote } : {}),
   }
 
   // ── DEV ONLY — remove before release ──────────────────────────────────

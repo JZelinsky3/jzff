@@ -135,6 +135,20 @@ const USER_POOL = 14
 // normal and expected.
 const MAX_VARIANTS = 3
 
+// Rumor Mill publish bands: neither side may lose more than this share of
+// its own starting-lineup value, and one side must gain at least this
+// much. Both are PERCENTAGES of that team's starters, not raw points.
+//
+// They replace a raw -10 / +15. A full league's starters sum to roughly
+// 34,000, so those constants worked out to -0.03% and +0.04% — in effect
+// "neither side may lose a single point", a bar only a handful of
+// perfectly complementary roster pairs in any league can clear. That, not
+// the weekly seed, is why three trades kept printing the same four teams:
+// the candidate pool genuinely had nobody else in it. The Finder, for
+// comparison, calls a partner losing 2.5% a fair deal.
+const MILL_LOSS_FLOOR_PCT = -0.0075
+const MILL_WINNER_PCT = 0.005
+
 // ── Small helpers ────────────────────────────────────────────────────────
 
 function combos<T>(items: T[], maxSize: number): T[][] {
@@ -687,6 +701,45 @@ function hashSeed(s: string): number {
   return h >>> 0
 }
 
+function ordinal(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd']
+  const v = n % 100
+  return n + (s[(v - 20) % 10] ?? s[v] ?? s[0])
+}
+
+// Deterministic column copy, used whenever the Groq pass fails.
+//
+// This has to read like a column and not like one sentence printed three
+// times. An AI failure is silent by design (every caller degrades quietly),
+// so a page of identical blurbs is the only symptom anyone ever sees, and
+// it reads as a broken page rather than a degraded one. Each line is built
+// from that trade's own rank movements and the opener rotates with the slot.
+function fallbackBlurb(a: MockTradeSide, b: MockTradeSide, slot: number): string {
+  const namesA = a.sends.map((p) => p.name).join(' + ')
+  const namesB = b.sends.map((p) => p.name).join(' + ')
+
+  const opener =
+    slot % 3 === 0
+      ? `${a.name} puts ${namesA} on the block and ${b.name} answers with ${namesB}.`
+      : slot % 3 === 1
+        ? `The desk has ${namesB} going to ${a.name}, with ${namesA} heading back.`
+        : `${b.name} would be moving ${namesB} here, and ${namesA} is the package that gets it done.`
+
+  // Lead with whichever side actually climbs the league at a position —
+  // that's the part of the deal worth arguing about.
+  const climb = [a, b]
+    .flatMap((side) => side.movements.map((m) => ({ side, m })))
+    .filter((x) => x.m.after < x.m.before)
+    .sort((x, y) => (x.m.after - x.m.before) - (y.m.after - y.m.before))[0]
+  const movement = climb
+    ? ` ${climb.side.name} goes from ${ordinal(climb.m.before)} to ${ordinal(climb.m.after)} at ${climb.m.position}.`
+    : ''
+
+  const ledger = (side: MockTradeSide) =>
+    `${side.name} ${side.gain >= 0 ? 'gains' : 'gives up'} ${Math.abs(Math.round(side.gain))}`
+  return `${opener}${movement} On starter value, ${ledger(a)} and ${ledger(b)}.`
+}
+
 export type GenerateMocksArgs = {
   data: AnalyzerLeagueData
   values: Map<string, PlayerValue>
@@ -695,6 +748,12 @@ export type GenerateMocksArgs = {
   seedKey: string
   // Trade hashes already published in past weeks; never repeat one.
   excludeHashes: Set<string>
+  // ownerId → how heavily to discount that team for having appeared in a
+  // recent column (1 = last column, decaying to 0). Excluding repeat
+  // HASHES alone was never enough: the same two rosters kept winning the
+  // ranking with a slightly different player attached, so the column read
+  // as the same four teams every week.
+  recentOwners?: Map<string, number>
   count?: number
 }
 
@@ -726,14 +785,44 @@ export function generateMockTrades(args: GenerateMocksArgs): MockTrade[] {
   // the ones that do. The per-pair eval budget still bounds the work.
   const samplePairs = pairs.slice(0, 80)
 
-  // League-wide p85 single-player value — a trade headlined by a player
-  // above this line reads as a blockbuster.
+  // League-wide single-player value line — a trade headlined by a player
+  // above it reads as a blockbuster.
+  //
+  // This was the 85th percentile, which in a 12-team league is roughly the
+  // 27th-most-valuable player. Since the Mill only ever shops each roster's
+  // top 7, nearly every candidate cleared that line and every trade on the
+  // column printed the BLOCKBUSTER tag. The 96th is about the top 7
+  // leaguewide: genuinely the players whose name in a rumor is the story.
   const allValues = rosters
     .flatMap((r) => r.playerIds)
     .map((id) => values.get(id)?.value ?? 0)
     .filter((v) => v > 0)
     .sort((a, b) => a - b)
-  const p85 = allValues.length > 0 ? allValues[Math.floor(allValues.length * 0.85)] : Infinity
+  const blockbusterLine =
+    allValues.length > 0 ? allValues[Math.floor(allValues.length * 0.96)] : Infinity
+
+  // Weekly spotlight draw. Every roster gets a seeded weight for this
+  // column, and deals involving high-weight rosters get a nudge up the
+  // board. Without it the ranking below is a pure function of the current
+  // rosters, so whichever two teams have the most fixable lineups won
+  // every single week and the seed changed nothing about who appeared.
+  const spotlight = new Map<string, number>()
+  for (const r of rosters) spotlight.set(r.ownerId, rand())
+  const recentOwners = args.recentOwners ?? new Map<string, number>()
+
+  // A second seeded draw, one per PAIRING. Drawing this per candidate
+  // instead hands the lottery to whichever pairing produced the most
+  // candidates: two rosters that fit together in forty different ways get
+  // forty tickets, and the best of forty draws beats a well-matched pair
+  // that only fits one way. Per pairing, every candidate between the same
+  // two teams shares a ticket and quality picks which of them runs.
+  const pairKey = (x: string, y: string) => (x < y ? `${x}|${y}` : `${y}|${x}`)
+  const pairDraw = new Map<string, number>()
+  for (let i = 0; i < rosters.length; i++) {
+    for (let j = i + 1; j < rosters.length; j++) {
+      pairDraw.set(pairKey(rosters[i].ownerId, rosters[j].ownerId), rand())
+    }
+  }
 
   type Scored = {
     a: typeof rosters[number]
@@ -801,52 +890,106 @@ export function generateMockTrades(args: GenerateMocksArgs): MockTrade[] {
         // The Mill only publishes deals both sides could plausibly say
         // yes to — at least one side clearly wins and the other is no
         // worse than roughly even.
-        if (Math.min(gainA, gainB) < -10) continue
-        if (Math.max(gainA, gainB) <= 15) continue
+        const pctA = beforeA > 0 ? gainA / beforeA : 0
+        const pctB = beforeB > 0 ? gainB / beforeB : 0
+        if (Math.min(pctA, pctB) < MILL_LOSS_FLOOR_PCT) continue
+        if (Math.max(pctA, pctB) <= MILL_WINNER_PCT) continue
         const maxPiece = Math.max(
           ...sends.map((id) => values.get(id)?.value ?? 0),
           ...receives.map((id) => values.get(id)?.value ?? 0),
         )
         scored.push({
           a, b, sends, receives,
-          gainA, gainAPct: beforeA > 0 ? gainA / beforeA : 0,
-          gainB, gainBPct: beforeB > 0 ? gainB / beforeB : 0,
+          gainA, gainAPct: pctA,
+          gainB, gainBPct: pctB,
           movA: dA.rankMovements.slice(0, 3),
           movB: dB.rankMovements.slice(0, 3),
-          mutual: Math.min(gainA, gainB),
-          blockbuster: maxPiece >= p85,
+          // Mutual benefit as a PERCENTAGE of each side's starting lineup,
+          // not raw starter value. A full league's starters sum to ~34k, so
+          // the raw number scales with how big a roster already is: the
+          // same 1.5% improvement prints as 585 for one team and 300 for
+          // another, and ranking on that quietly reserved the column for
+          // whichever rosters happened to carry the largest bases.
+          mutual: Math.min(pctA, pctB),
+          blockbuster: maxPiece >= blockbusterLine,
           hash,
         })
       }
     }
   }
 
-  // Prefer mutual wins, with a seeded jitter so equal-quality deals rotate
-  // week to week; blockbusters get a thumb on the scale because they're
-  // the fun ones.
-  scored.sort((x, y) => {
-    const score = (s: Scored) =>
-      s.mutual + (s.blockbuster ? 40 : 0) + rand() * 20
-    return score(y) - score(x)
+  // ── Ranking ─────────────────────────────────────────────────────────
+  //
+  // Everything still in `scored` already cleared the publish bands above
+  // (neither side down more than MILL_LOSS_FLOOR_PCT, one side up more
+  // than MILL_WINNER_PCT), so every candidate here is a deal the Mill is
+  // happy to print. That matters: rotating among them costs no quality,
+  // it only changes WHICH publishable deal runs.
+  //
+  // Quality enters the score as a PERCENTILE of the field rather than a
+  // normalised magnitude. Min-max normalisation leaves the distribution
+  // whatever shape it had, and in a real league that shape is a long tail:
+  // a handful of deals sit near the top and everything else bunches near
+  // zero, so no per-week draw could ever reorder the leaders. A percentile
+  // is uniform by construction, so a deal in the 70th percentile with a
+  // good weekly draw can outrank a 95th with a poor one.
+  const byMutual = [...scored].sort((x, y) => x.mutual - y.mutual)
+  const quality = new Map<Scored, number>()
+  byMutual.forEach((s, i) => {
+    quality.set(s, byMutual.length > 1 ? i / (byMutual.length - 1) : 1)
   })
 
-  // Diversity: a team appears in at most 2 of the published mocks, and a
-  // player appears in at most 1.
+  // Weight budget, all on the same 0–1 scale as the quality percentile:
+  //   blockbuster  +0.08  the fun ones still get a thumb on the scale
+  //   spotlight    +0.30  seeded per-team draw, rotates the cast weekly
+  //   pairing      +0.35  seeded per-pairing draw, rotates the matchups
+  //   recency      −0.45  a team that just ran has to be clearly better
+  //
+  // The blockbuster thumb is deliberately light. The figure it replaces
+  // was a flat +40 against a raw spread of several hundred, i.e. about 7%
+  // of the range; carrying that intent across to the 0–1 scale keeps the
+  // tag meaning something. Anything heavier and the ranking simply selects
+  // for star names, and every deal on the column prints BLOCKBUSTER.
+  const rankScore = (s: Scored) =>
+    (quality.get(s) ?? 0)
+    + (s.blockbuster ? 0.08 : 0)
+    + ((spotlight.get(s.a.ownerId) ?? 0) + (spotlight.get(s.b.ownerId) ?? 0)) / 2 * 0.30
+    + (pairDraw.get(pairKey(s.a.ownerId, s.b.ownerId)) ?? 0) * 0.35
+    - Math.max(recentOwners.get(s.a.ownerId) ?? 0, recentOwners.get(s.b.ownerId) ?? 0) * 0.45
+
+  const ranked = scored
+    .map((s) => ({ s, score: rankScore(s) }))
+    .sort((x, y) => y.score - x.score)
+    .map((e) => e.s)
+
+  // Diversity. A player appears in at most one mock, and teams are dealt
+  // out in two passes: the first lets every roster appear ONCE, so a
+  // three-deal column introduces six different teams. Only if that pass
+  // can't fill the slate do we come back around and allow a second
+  // appearance. The old single pass capped teams at 2 with no preference
+  // for fresh ones, so the top-ranked rosters took two slots each and
+  // three trades routinely printed just four teams.
   const teamUse = new Map<string, number>()
   const usedPlayers = new Set<string>()
+  const pickedHashes = new Set<string>()
   const picked: Scored[] = []
-  for (const s of scored) {
-    if ((teamUse.get(s.a.ownerId) ?? 0) >= 2) continue
-    if ((teamUse.get(s.b.ownerId) ?? 0) >= 2) continue
-    if ([...s.sends, ...s.receives].some((id) => usedPlayers.has(id))) continue
-    picked.push(s)
-    teamUse.set(s.a.ownerId, (teamUse.get(s.a.ownerId) ?? 0) + 1)
-    teamUse.set(s.b.ownerId, (teamUse.get(s.b.ownerId) ?? 0) + 1)
-    for (const id of [...s.sends, ...s.receives]) usedPlayers.add(id)
+  for (const maxPerTeam of [1, 2]) {
+    for (const s of ranked) {
+      if (picked.length >= want) break
+      if (pickedHashes.has(s.hash)) continue
+      if ((teamUse.get(s.a.ownerId) ?? 0) >= maxPerTeam) continue
+      if ((teamUse.get(s.b.ownerId) ?? 0) >= maxPerTeam) continue
+      if ([...s.sends, ...s.receives].some((id) => usedPlayers.has(id))) continue
+      picked.push(s)
+      pickedHashes.add(s.hash)
+      teamUse.set(s.a.ownerId, (teamUse.get(s.a.ownerId) ?? 0) + 1)
+      teamUse.set(s.b.ownerId, (teamUse.get(s.b.ownerId) ?? 0) + 1)
+      for (const id of [...s.sends, ...s.receives]) usedPlayers.add(id)
+    }
     if (picked.length >= want) break
   }
 
-  return picked.map((s) => {
+  return picked.map((s, slot) => {
     const sideA: MockTradeSide = {
       ownerId: s.a.ownerId,
       name: s.a.teamName ?? s.a.ownerName,
@@ -874,12 +1017,7 @@ export function generateMockTrades(args: GenerateMocksArgs): MockTrade[] {
       // Deterministic fallbacks — the route overwrites these with Groq
       // copy when the call succeeds.
       headline: `${headB} for ${headA}?`,
-      blurb:
-        `${sideA.name} sends ${sideA.sends.map((p) => p.name).join(' + ')} to ` +
-        `${sideB.name} for ${sideB.sends.map((p) => p.name).join(' + ')}. ` +
-        `Both lineups move: ${sideA.name} ${s.gainA >= 0 ? 'gains' : 'gives up'} ` +
-        `${Math.abs(Math.round(s.gainA))} starter value, ${sideB.name} ` +
-        `${s.gainB >= 0 ? 'gains' : 'gives up'} ${Math.abs(Math.round(s.gainB))}.`,
+      blurb: fallbackBlurb(sideA, sideB, slot),
     }
   })
 }

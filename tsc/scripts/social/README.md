@@ -10,7 +10,7 @@ instead of being one-off image files.
 | `cover.html` | the reusable cover for every other post, with a swappable section label and accent colour |
 | `offseason.html` | the eight-slide offseason carousel, six things to run before Week 1 |
 | `tour.html` | the fifteen-slide site tour, for somebody who has never heard of us |
-| `pitch.html` | the seven-slide sign-up carousel, for somebody who has to be sold |
+| `pitch.html` | the eight-slide sign-up carousel, for somebody who has to be sold |
 | `brand.css` | shared palette, surface layers and type roles, mirroring `src/styles/main.css` |
 | `render.sh` | renders to `out/` |
 
@@ -464,74 +464,138 @@ real league, manager or team name goes on a public post.**
 ## The sign-up carousel
 
 ```
-./render.sh pitch          # all five
+./render.sh pitch          # all eight
 ./render.sh pitch 3 4      # just those two, while iterating
+./render.sh fit            # the fit report — read this before looking
 ```
 
-Five slides for somebody who has to be **sold**. It keeps the tour's
-invented cast and its offer, and shares nothing else with it.
+Eight slides for somebody who has to be **sold**, covering thirteen
+pages of the site. It keeps the tour's invented cast, its cover and
+its offer, and shares nothing else with it.
 
 | | | |
 |---|---|---|
-| 01 | the cover | main.css navy, chapters as coloured cards |
-| 02 | one record | records.html green felt + the cream plate |
-| 03 | one manager | manager.html navy + the cream index card |
-| 04 | one rivalry | rivalries black and red, the tale of the tape |
-| 05 | the offer | `30 days free`, `FIRST50` |
+| 01 | the cover | the closed book, ported from `tour.html` |
+| 02 | Standings + Seasons | standings ledger, then the shelf of volumes |
+| 03 | Managers + Rivalries | the dossier, then the tale of the tape |
+| 04 | Records + Drafts | the cream record plate, a graded class ledger |
+| 05 | Matchup Preview + Power Rankings + Pick'ems | the week before it is played |
+| 06 | Records Watch + Milestones + Best Coach | what is about to break |
+| 07 | Trade Desk + Rumor Mill | the ticket, graded a year later |
+| 08 | the offer | `30 days free`, `FIRST50` |
 
-### Nothing here was designed. It was lifted.
+The grouping is Joey's, not a scheme: standings and seasons work
+together, managers and rivalries, records and drafts; the live pages
+were already organised, so power rank / pick'ems / matchup ride
+together, records watch with milestones, and trades get their own.
 
-The site is already built, so a post is a **crop of a real page**,
-the same way the OG link previews are. Every component in
-`pitch.html` is copied out of its source, class for class and token
-for token:
+### THE PHONE TEST
 
-| | |
-|---|---|
-| `.exh-plate` `.exh-value` `.exh-stamp` | `public/demo/records.html` |
-| `.id-card` `.fp-portrait` `.fp-stamp` `.fp-lede` `.agate-band` | `demo/managers/manager.html` |
-| `.plate` `.plate-slot` `.pdna-*` | `demo/managers/manager.html` |
-| `.rv-tape-*` | `demo/rivalries/index.html` |
+**Read this before setting a single size.**
 
-The board sets `font-size: 20px`, so the source's `rem` values scale
-to the artboard without being retyped. **If a component looks wrong,
-diff it against its source file** rather than tuning it here. If a
-new figure is needed, find the page that already draws it first.
+The board is 1080px wide and it is looked at on a phone about 390pt
+wide, so **everything on it is seen at 0.36x**:
 
-It does **not** copy `tour.html`'s stylesheet any more. It did for
-four cuts, and every one drifted back into being the tour, plus
-three bugs where an unscoped tour class (`.hd`, `.rec`) silently
-restyled something in here.
+| board px | in the hand | |
+|---|---|---|
+| 14px | 5pt | invisible. grey noise. |
+| 20px | 7pt | "why is this so zoomed out" |
+| 24px | 9pt | the floor, and only for tracked caps |
+| 30px | 11pt | a figure, readable |
+| 36px | 13pt | a name, comfortable |
+| 60px | 22pt | a title |
+| 150px | 54pt | a hero number |
 
-## THE BRIEF
+Check a render the way it will be seen, not at full size:
+`sips -Z 420 out/pitch-02.png`.
 
-**Read this before changing `pitch.html`. Every item on it has been
-asked for more than once.**
+**The knob is `html { font-size: 32px }`.** It has been three
+numbers and both wrong ones taught something:
 
-1. **A slide carries modules from SEVERAL DIFFERENT PAGES.** Not one
-   page cropped. A standings block, a graded draft pick, a trade
-   ticket and a rivalry tape on one board, so a stranger sees four
-   things the site does in one image. This is the item that has been
-   missed the most; see "The rule that was not Joey's" below.
-2. **Lift, do not invent.** Every component comes out of the real
-   page, class for class and token for token, like the OG previews
-   do. Find the page that already draws it before drawing anything.
-3. **Figures go in cards.** No flat type on a flat field. A stat
-   lives in a plate, a felt card, a stamped index card, a tape row.
-4. **No dead air inside a card.** Space between cards is fine and
-   necessary. Inside one it reads as a mistake. If a card has room
-   left in it, it is missing a row, not missing padding.
-5. **Deep inside a module, not broad.** When a module is a manager,
-   a rivalry or a matchup, show ONE of them properly. A twelve-row
-   table of everybody says less than one filled card.
-6. **Vary the arrangement and the accent slide to slide** so five
-   boards do not read as one template.
-7. **Almost no copy.** A kicker, a title, and at most one short
-   line. The figures carry their own labels. No captions, no corner
-   notes, no paragraph across the foot.
-8. **Never promise what the site does not do.** No written weekly
-   recaps. No "why you lost". If it is not a real page, it is not on
-   a post.
+* **16px (accidental).** The file set `.board { font-size:20px }` for
+  five rebuilds with a comment claiming it scaled the ported
+  components. It never did: `rem` is the *root* em and resolves
+  against `<html>`, so every ported row was silently running at the
+  browser default. Raising `.board` to 34 and then 44 changed
+  nothing at all.
+* **44px.** Fixed the bug and overshot — "some fonts are way too big
+  running out of their portions of the slide", and the boards could
+  only hold four rows, so the manager module showed almost nothing.
+* **32px** is the middle. A data row lands at ~12pt in the hand and
+  a name at ~14pt.
+
+**The extra room goes into more figures, not bigger ones.** That is
+the whole lesson of the two bad cuts: density is a LAYOUT problem,
+not a type-size problem. See the band system below.
+
+### The band / hero / bento system
+
+`parts.css`. The deck used to draw every page as a rounded rectangle
+with a coloured header bar, and Joey's verdict was the right one:
+"nothing is exciting about a box." Three rules replaced it.
+
+**1. A page is a BAND, not a box.** Each page owns a horizontal band
+that runs off both edges of the sheet in that page's own stock. A
+band reads as a region of a newspaper; a floating rounded rect reads
+as a slide deck. Two pages on a board means two bands, cut across,
+never down. Consecutive bands set `mirror` so the heroes alternate
+sides and the eye zigzags.
+
+A band is a **region**, so unlike a card it is `flex:1` and divides
+the sheet. That is not a contradiction of the no-stretch rule: a
+ledger's rows are `flex:1` and a bento's tiles are `1fr`, so extra
+height becomes taller rows and taller tiles, never a hole.
+
+**2. Every band has a HERO and a BENTO.** The hero is the physical
+artifact that page already is; the bento beside it is 2-4 tiles
+carrying what the hero has no room for. Bento is the asymmetric-tile
+pattern every product site uses now (Apple from the iPhone 14 page
+on, then Stripe, Linear, Vercel, Notion, Framer, Raycast) and it
+carries 6-9 discrete things in the space a flat stack uses for 3.
+
+**3. A hero has to work at HALF A BOARD.** This is the constraint
+that broke the previous cut. A hero gets about 976x470; an artifact
+designed at full board size either overflows or squeezes everything
+else to 6pt. The trading card is portrait for exactly this reason.
+
+The heroes, chosen off a ten-treatment review sheet (`./render.sh
+cards`): **dossier** (manila folder, tab, punch holes, clipped
+photo, rubber stamp), **trading card**, **ledger** (ruled columns,
+stamped total, in the page's own stock), **specimen** (the real
+Manager DNA barcode), **plate**, **tape**, **ticket**, **shelf**.
+
+### No blank that could hold data
+
+Joey's standing note, and the reason for three specific fixes:
+
+* the dossier put its figures in the column beside the photo and
+  left the bottom half of the folder empty. They run full width
+  under the top row now, two columns.
+* every bento tile anchored its label to the top and its figure to
+  the bottom, which opened a hole down the middle as the band grew.
+  The figure block centres now, and tiles carry a `.u2` runner-up
+  line so a tile is a small board rather than one number in a box.
+* the record plate's podium was pinned under a stamp that sat on top
+  of it. The stamp moved to the top corner and the podium went from
+  three names to five.
+
+### The fit report
+
+`./render.sh fit` loads every slide with `?measure=1` and prints how
+full each sheet is, band by band, plus SPILL (content clipped) and
+AIR (slack inside a card). A screenshot cannot show either, because
+`.band` and `.wrap` both hide overflow. Use it before rendering.
+
+### Two collisions worth remembering
+
+* **Inline beats a class.** `band()` writes `--cloth` inline, so a
+  `.band.wall { --cloth: ... }` rule never applied. The shelf's
+  darker wall is passed to `band()` as a cloth override instead.
+* **The inline `<style>` beats `<link parts.css>`.** A leftover
+  unscoped `.band` rule from the old agate strip silently beat the
+  whole band system and collapsed every band to `flex:none`. If a
+  band or hero stops behaving, grep `pitch.html` for the class name
+  before touching `parts.css`.
 
 ### The rule that was not Joey's
 
@@ -543,64 +607,81 @@ For four rebuilds `pitch.html` carried this at the top of the file:
 Joey never said that. It came from welding the **tour's** rule
 ("every chapter page declares its own ground", which is true of
 `tour.html`, where one slide genuinely is one chapter) onto his note
-about varying colour from slide to slide. The join is a
-non-sequitur: varying colour across a carousel never meant a board
-may only touch one page.
+about varying colour from slide to slide. Varying colour across a
+carousel never meant a board may only touch one page.
 
 Writing it into the file header is what made it survive. Every later
 pass reread it, obeyed it, and rebuilt the deck that had just been
 rejected, while reporting the box as ticked. **If a rule is in these
-files and not in the brief above, check it against Joey before
+files and not in the brief below, check it against Joey before
 following it.**
 
-The composition problem it was dodging has an answer: give the board
-one common ground, the site's own navy out of `main.css`, and let
-each module keep its own stock and accent as a card laid on it. The
-record keeps its cream plate and rust stamp, the rivalry its black
-and red, the draft its gold on near-black. The landing page and the
-Clubhouse already mix sections exactly that way, so it is still
-lifted rather than invented.
+## THE BRIEF
+
+**Read this before changing `pitch.html`. Every item on it has been
+asked for more than once.**
+
+1. **It has to be readable on a phone without zooming.** See THE
+   PHONE TEST above. This is the item that gets broken the most and
+   it is the only one a stranger will ever notice.
+2. **A slide carries modules from SEVERAL DIFFERENT PAGES.** Not one
+   page cropped. Standings and a shelf of seasons; a graded draft
+   pick beside a record; a trade ticket and a wire.
+3. **Lift, do not invent.** Every component comes out of the real
+   page, class for class and token for token, like the OG previews
+   do. Find the page that already draws it before drawing anything.
+4. **Figures go in cards.** No flat type on a flat field. A stat
+   lives in a plate, a felt card, a stamped index card, a tape row.
+5. **Keep the page's theme for its section** — its own ground and
+   accent, grouped into its own box, so three pages on one board
+   still read as three pages.
+6. **No dead air inside a card.** Space *between* cards is fine and
+   necessary. Inside one it reads as a mistake. If a card has room
+   left in it, it is missing a row, not missing padding.
+7. **Deep inside a module, not broad.** When a module is a manager,
+   a rivalry or a matchup, show ONE of them properly. A twelve-row
+   table of everybody says less than one filled card.
+8. **Vary the arrangement and the accent slide to slide** so eight
+   boards do not read as one template.
+9. **Almost no copy.** A kicker, a title, and at most one short
+   line. The figures carry their own labels. No captions, no corner
+   notes, no paragraph across the foot.
+10. **Never promise what the site does not do.** No written weekly
+    recaps. No "why you lost". If it is not a real page, it is not
+    on a post.
 
 ### Two rules for working on this file
 
-* **Do not read the rendered PNGs back.** Render, and let Joey look.
-  Reading twenty slide images is the most expensive thing a session
-  can do and it is why the last one ran long.
+* **Render, run `fit`, and let Joey look.** Reading twenty slide
+  images back is the most expensive thing a session can do. One
+  420px-wide check of a slide you have just rescaled is worth it;
+  a full read of the deck is not.
 * **Targeted edits, not rewrites.** `pitch.html` is big. Patch the
   block that is wrong.
 
-### Three implementation notes worth keeping
+### Things that were tried and cut
 
-**Card sizing.** A card is sized by its *content* and never
-stretches to fill a region: a stretched card spreads its own rows
-out and puts the gap in the one place it is not allowed. Leftover
-height is shared out between sections with
-`justify-content: space-between` on `.wrap.spread`. A single
-`margin-top: auto` is worse than none, because it collects all the
-slack into one hole in the middle of the sheet.
-
-**Holes mean missing modules.** Both gaps in the current deck were
-closed by adding content, never by spacing things out: slide 02 went
-from three record boards to nine, slide 03 gained the season and
-draft strips, slide 04 went to nine tape rows and ten rows a card.
-
-**Scale.** The board sets `font-size: 20px` so the source's `rem`
-values land at about 1.25x without being retyped. If a component
-looks wrong, diff it against its source file rather than tuning it
-here.
-
-### If a sheet has a hole in it, it is missing a module
-
-Both remaining gaps were closed by adding content, never by
-stretching what was there: slide 02 went from three record boards to
-nine, slide 03 gained the season-by-season and draft-grade strips,
-slide 04 went to nine tape rows and ten rows a card.
+* **The Chart Room.** It had a third of slide 02 for one cut. It is
+  the smallest page on the site and close to a throwaway; the shelf
+  took its place.
+* **Nine felt cards of four rows each** on the old slide 02. At 20px
+  that was thirty-six rows of 13px type, and it rendered as grey
+  noise at thumbnail size.
+* **A flat navy masthead as slide 01.** The tour's closed book is
+  better and was ported over it.
+* **An eight-cell agate band** under the manager card. Every label
+  came out at 17px; the four figures run on the card itself now.
+* **`flex:1` on a row or a module.** Cards are sized by their
+  *content* and never stretch to fill a region — a stretched card
+  spreads its own rows out and puts the gap in the one place it is
+  not allowed.
 
 ### Names
 
-Every figure is invented and the cast is the same fictional twelve
-the tour and the offseason deck use. **No real league, manager or
-team name goes on a public post.**
+Every league figure is invented and the cast is the same fictional
+twelve the tour and the offseason deck use. **No real league,
+manager or team name goes on a public post.** NFL player names are
+real, because the site itself prints them.
 
 ---
 

@@ -58,6 +58,10 @@ export type GroqChatArgs = {
   // they emit anything, and that spend counts against max_tokens. Leave
   // unset to get the automatic 'low' default below.
   reasoningEffort?: 'low' | 'medium' | 'high'
+  // Total attempts on a retryable failure (429 / 5xx). Callers with room
+  // in their function budget can buy more patience through a rate-limit
+  // window; see MAX_RETRIES below for the default.
+  maxRetries?: number
 }
 
 export type GroqUsage = {
@@ -91,8 +95,9 @@ const MAX_RETRIES = 3
 
 export async function groqChat(args: GroqChatArgs): Promise<GroqResult> {
   let lastErr: GroqError | null = null
+  const maxRetries = Math.max(1, args.maxRetries ?? MAX_RETRIES)
 
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
     const res = await fetch(GROQ_URL, {
       method: 'POST',
       headers: {
@@ -140,7 +145,7 @@ export async function groqChat(args: GroqChatArgs): Promise<GroqResult> {
     // sees a clear "out for the day" message.
     if (res.status === 429 && /tokens per day|\bTPD\b/i.test(body)) throw lastErr
 
-    if (attempt === MAX_RETRIES - 1) throw lastErr
+    if (attempt === maxRetries - 1) throw lastErr
 
     const waitMs = parseRetryDelayMs(res.headers.get('retry-after'), body)
     await sleep(waitMs)

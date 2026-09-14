@@ -157,6 +157,16 @@ case "${1:-}" in
     echo "Rendering the treatments review sheet:"
     shot "file://$HERE/concepts.html" "concepts" 1440 3010
     ;;
+
+  # ./render.sh cards
+  #
+  # The card-treatment review sheet: ten ways to draw ONE page's
+  # module, same content in every tile, so only the design language
+  # is being compared. Pick one and it goes on all eight boards.
+  cards)
+    echo "Rendering the card-treatment review sheet:"
+    shot "file://$HERE/cards.html" "cards" 1480 2620
+    ;;
   tour)
     shift
     SLIDES=("$@")
@@ -171,11 +181,47 @@ case "${1:-}" in
   pitch)
     shift
     SLIDES=("$@")
-    [ ${#SLIDES[@]} -eq 0 ] && SLIDES=($(seq 1 5))
+    [ ${#SLIDES[@]} -eq 0 ] && SLIDES=($(seq 1 8))
     echo "Rendering sign-up carousel:"
     for i in "${SLIDES[@]}"; do
       shot "file://$HERE/pitch.html?slide=$i" \
            "pitch-$(printf '%02d' "$i")" 1080 1350
+    done
+    ;;
+
+  # ./render.sh fit [slide-number ...]
+  #
+  # The fit report. Loads each pitch slide with ?measure=1 and prints
+  # how full the sheet is and which modules are stretched or clipped.
+  # A screenshot cannot tell you either of those — .mod and .wrap both
+  # hide their overflow, so a board that has lost two rows off the
+  # bottom looks exactly like one that fits.
+  fit)
+    shift
+    SLIDES=("$@")
+    [ ${#SLIDES[@]} -eq 0 ] && SLIDES=($(seq 1 8))
+    # --dump-dom does NOT make this Chrome build exit, the same way
+    # --screenshot does not: it prints the DOM and then sits holding
+    # the profile. So it goes to a file in the background and gets
+    # killed once the file has stopped growing, exactly like shot().
+    for i in "${SLIDES[@]}"; do
+      profile="$(mktemp -d)"; dom="$(mktemp)"
+      "$CHROME" --headless=new --disable-gpu --hide-scrollbars \
+        --window-size=1080,1350 --user-data-dir="$profile" \
+        --virtual-time-budget=3000 --dump-dom \
+        "file://$HERE/pitch.html?slide=$i&measure=1" >"$dom" 2>/dev/null &
+      pid=$!
+      last=-1
+      for _ in $(seq 1 12); do
+        sleep .5
+        size=$(stat -f%z "$dom" 2>/dev/null || echo 0)
+        [ "$size" = "$last" ] && [ "$size" -gt 0 ] && break
+        last="$size"
+      done
+      kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true
+      sed -n '/<pre id="fit">/,/<\/pre>/p' "$dom" \
+        | sed -e 's/<[^>]*>//g' -e 's/&lt;/</g' -e '/^$/d'
+      rm -rf "$profile" "$dom"
     done
     ;;
 

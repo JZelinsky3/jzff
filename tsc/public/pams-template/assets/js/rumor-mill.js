@@ -199,8 +199,17 @@
     $('rm-stamp-week').textContent = stampWeek(payload);
     // 'Desk column' = full write-up landed; 'Desk notes' = deterministic
     // fallback copy. Reads the same to members, tells us which path ran.
-    $('rm-stamp-src').textContent =
+    // narrativeNote carries WHY it fell back (dead model, rate limit) —
+    // without it a silent copy failure is indistinguishable from a normal
+    // column, which is how the Mill ran on fallback copy unnoticed.
+    var srcEl = $('rm-stamp-src');
+    srcEl.textContent =
       payload.narrativeSource === 'ai' ? 'Desk column' : 'Desk notes';
+    if (payload.narrativeNote) {
+      srcEl.title = 'Desk copy fell back: ' + payload.narrativeNote;
+    } else {
+      srcEl.removeAttribute('title');
+    }
     show(stampEl);
 
     var trades = payload.trades || [];

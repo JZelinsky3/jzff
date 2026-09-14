@@ -1,0 +1,395 @@
+/* ══════════════════════════════════════════════════════════════
+   THE BAND / HERO / BENTO SYSTEM
+
+   Joey's verdict on the last cut: "they are just simple boxes with
+   colors matching site theme, but nothing is exciting about a box."
+   He is right, and the fix is structural rather than decorative.
+
+   THREE RULES THIS SYSTEM ENCODES
+
+   1. A PAGE IS A BAND, NOT A BOX. Each page owns a horizontal band
+      that runs off BOTH edges of the sheet, printed in that page's
+      own stock. A band reads as a region of a newspaper; a rounded
+      rectangle floating on a ground reads as a slide deck. Two
+      pages on a board means two bands, cut across, never down.
+
+   2. EVERY BAND HAS A HERO AND A BENTO. The hero is the physical
+      artifact that page already is — a dossier, a card, a ledger,
+      a specimen label, a ticket, a plate. The bento beside it is
+      2-4 tiles carrying everything the hero has no room for. That
+      split is what fixes "not enough detail" without making the
+      type bigger: DEPTH COMES FROM TILE COUNT, NOT TYPE SIZE.
+
+   3. A HERO HAS TO WORK AT HALF A BOARD. This is the constraint
+      that broke the previous cut. Two pages share a sheet, so a
+      hero gets about 976x470, and an artifact designed at full
+      board size either overflows or forces everything else down to
+      6pt. Every hero below is drawn to the half-board box.
+
+   AND: no blank that could hold data. `.bento` stretches its tiles
+   to fill the band, so an empty corner is a missing tile, not a
+   margin. ./render.sh fit reports any band under 92% filled.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── the band ─────────────────────────────────────────────────
+   Full-bleed: the negative margin cancels .wrap's padding so the
+   page's stock runs to the edge of the sheet, then the padding is
+   put back on the inside. */
+/* A band is a REGION of the sheet, not a card, so unlike a card it
+   is allowed — required — to grow and divide the board between the
+   pages on it. Nothing inside it stretches badly, because ledger
+   rows are flex:1 and bento tiles are 1fr: the extra height becomes
+   taller rows and taller tiles, never a hole. */
+.band { position:relative; flex:1; min-height:0; display:flex; flex-direction:column;
+  margin:0 -1.5rem; padding:.34rem 1.5rem .5rem;
+  background:var(--cloth); color:var(--bandink, var(--cream));
+  box-shadow:inset 0 1px 0 var(--foil), 0 10px 26px rgba(0,0,0,.4); }
+.band.pale { --bandink:var(--ink-print); }
+/* the page's own light, so a band is lit rather than filled flat */
+.band::before { content:''; position:absolute; inset:0; pointer-events:none;
+  background-image:radial-gradient(ellipse 74% 120% at 26% 0%,
+    rgba(255,255,255,var(--lift, .07)), transparent 68%); }
+.band > * { position:relative; z-index:1; }
+
+/* the label: a strip across the top of the band, not a header bar
+   around a box */
+.band-lbl { flex:none; display:flex; align-items:baseline; gap:.5rem;
+  margin-bottom:.3rem; font-family:var(--mono); font-weight:700;
+  font-size:.56rem; letter-spacing:.24em; text-transform:uppercase;
+  color:var(--foil); white-space:nowrap; }
+.band-lbl u { flex:1; height:1px; text-decoration:none; background:currentColor;
+  opacity:.3; }
+.band-lbl s { text-decoration:none; opacity:.62; letter-spacing:.14em;
+  font-size:.9em; font-weight:400; min-width:0; overflow:hidden;
+  text-overflow:ellipsis; }
+
+/* hero on the left, bento on the right — and mirrored on the band
+   below it, so the eye zigzags down the sheet instead of running
+   down one rail */
+.band-body { flex:1; min-height:0; display:flex; gap:.5rem; align-items:stretch; }
+.band.mirror .band-body { flex-direction:row-reverse; }
+.hero { flex:none; position:relative; }
+.bento { flex:1; min-width:0; display:grid; gap:.34rem; }
+.bt { position:relative; overflow:hidden; padding:.34rem .44rem .38rem;
+  border:1px solid var(--tile, rgba(255,255,255,.13)); border-radius:3px;
+  background:var(--tilebg, rgba(255,255,255,.045));
+  display:flex; flex-direction:column; }
+.band.pale .bt { --tile:rgba(40,30,12,.24); --tilebg:rgba(40,30,12,.05); }
+.bt .k { font-family:var(--mono); font-weight:700; font-size:.44rem;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--foil);
+  opacity:.9; white-space:nowrap; }
+.bt .v { margin-top:auto; margin-bottom:auto; font-family:var(--serif);
+  font-style:italic; font-size:1.35rem; line-height:1;
+  color:var(--bandink, var(--cream)); }
+/* a runner-up line under the figure, so a tile is a small board
+   rather than a single number floating in a box */
+.bt .u2 { flex:none; margin-top:.2rem; padding-top:.16rem;
+  border-top:1px solid var(--tile, rgba(255,255,255,.13));
+  display:flex; align-items:baseline; gap:.4rem; font-family:var(--mono);
+  font-size:.42rem; letter-spacing:.1em; text-transform:uppercase; opacity:.7; }
+.bt .u2 s { text-decoration:none; margin-left:auto; font-weight:700; }
+.bt .v.on { color:var(--foil); font-style:normal; }
+.bt .d { flex:none; margin-top:.08rem; font-family:var(--mono); font-size:.42rem;
+  letter-spacing:.12em; text-transform:uppercase; opacity:.62;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* a tile that carries rows instead of one figure */
+.bt .rows { margin-top:.2rem; display:flex; flex-direction:column; flex:1;
+  justify-content:space-around; }
+.bt .rows .r { display:flex; align-items:baseline; gap:.4rem; }
+.bt .rows .r b { flex:1; min-width:0; font-family:var(--serif); font-weight:400;
+  font-size:.82rem; white-space:nowrap; overflow:hidden; }
+.bt .rows .r s { text-decoration:none; font-family:var(--mono); font-weight:700;
+  font-size:.56rem; opacity:.85; white-space:nowrap; }
+/* the season-finish sparkline, and the DNA barcode */
+.bt .spark { margin-top:auto; display:flex; align-items:flex-end; gap:2px;
+  height:1.2rem; }
+.bt .spark i { flex:1; border-radius:1px; background:var(--foil); opacity:.34; }
+.bt .spark i.on { opacity:1; }
+.bt .bars { margin-top:auto; display:flex; gap:2px; height:.4rem; }
+.bt .bars i { flex:1; border-radius:1px; }
+.bt .meter { margin-top:auto; height:.34rem; border-radius:2px;
+  background:rgba(255,255,255,.12); overflow:hidden; }
+.bt .meter i { display:block; height:100%; background:var(--foil); }
+
+/* ── HERO 01 · THE DOSSIER ────────────────────────────────────
+   The page is literally called the Manager File, so it is a manila
+   folder: tab, punch holes, a clipped photograph and a stamp. */
+.h-dossier { width:16.4rem; background:linear-gradient(168deg,#e4d3a6,#d9c79f 62%,#cdbb8e);
+  border-radius:2px 9px 2px 2px; color:var(--ink-print);
+  box-shadow:0 12px 28px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.4); }
+.h-dossier .tab { position:absolute; top:-.42rem; left:2.1rem; height:.44rem;
+  padding:0 .5rem; background:linear-gradient(180deg,#e4d3a6,#dccba2);
+  border-radius:4px 4px 0 0; box-shadow:0 -2px 6px rgba(0,0,0,.3);
+  display:flex; align-items:center; font-family:var(--mono); font-weight:700;
+  font-size:.38rem; letter-spacing:.2em; color:#6d5a2c; }
+.h-dossier .holes { position:absolute; left:.28rem; top:.7rem; bottom:.5rem;
+  width:.4rem; display:flex; flex-direction:column; justify-content:space-around; }
+.h-dossier .holes i { width:.38rem; height:.38rem; border-radius:50%;
+  background:#1b1710; box-shadow:inset 0 2px 3px rgba(0,0,0,.8),
+  0 1px 0 rgba(255,255,255,.22); }
+.h-dossier .in { padding:.6rem .6rem .5rem 1rem; height:100%;
+  display:flex; flex-direction:column; }
+.h-dossier .top { flex:none; display:flex; gap:.5rem; align-items:flex-start; }
+.h-dossier .photo { position:relative; width:3.4rem; flex:none;
+  background:var(--paper-soft); border:1px solid rgba(40,30,12,.3);
+  padding:.12rem .12rem .42rem; box-shadow:2px 3px 0 rgba(40,30,12,.16);
+  transform:rotate(-1.4deg); }
+.h-dossier .photo .im { position:relative; height:2.8rem; background:#cdbb96;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--serif); font-style:italic; font-size:1.8rem; color:#7a5c14; }
+.h-dossier .photo .cp { position:absolute; left:0; right:0; bottom:.1rem;
+  text-align:center; font-family:var(--mono); font-size:.32rem;
+  letter-spacing:.12em; color:#6d5a2c; }
+.h-dossier .clip { position:absolute; top:-.3rem; left:50%; margin-left:-.2rem;
+  width:.4rem; height:.8rem; border:2px solid #8b8f96; border-radius:5px 5px 2px 2px;
+  border-bottom-color:transparent; }
+.h-dossier .who { flex:1; min-width:0; }
+.h-dossier .who .l { font-family:var(--mono); font-weight:700; font-size:.4rem;
+  letter-spacing:.14em; text-transform:uppercase; color:#7f6b3c; }
+.h-dossier .who h3 { font-family:var(--serif); font-size:1.26rem; line-height:.98;
+  margin:.1rem 0 .2rem; }
+.h-dossier .who h3 em { font-style:italic; color:var(--gold-print); }
+.h-dossier .rows2 { flex:1; margin-top:.4rem; display:grid;
+  grid-template-columns:1fr 1fr; gap:0 .7rem; align-content:space-around; }
+.h-dossier .rows2 .rw { display:flex; align-items:baseline; gap:.4rem;
+  border-bottom:1px dotted rgba(40,30,12,.3); padding-bottom:.08rem; }
+.h-dossier .rows2 .rw u { text-decoration:none; flex:1; font-family:var(--mono);
+  font-size:.4rem; letter-spacing:.12em; text-transform:uppercase; color:#7f6b3c; }
+.h-dossier .rows2 .rw s { text-decoration:none; font-family:var(--mono);
+  font-weight:700; font-size:.56rem; }
+.h-dossier .stamp { position:absolute; right:.5rem; bottom:.42rem;
+  transform:rotate(-10deg); border:2px double var(--rust-print);
+  color:var(--rust-print); border-radius:3px; padding:.1rem .34rem;
+  font-family:var(--mono); font-weight:700; font-size:.4rem;
+  letter-spacing:.14em; opacity:.78; }
+
+/* ── HERO 02 · THE TRADING CARD ───────────────────────────────
+   Portrait card with a foil edge. Portrait suits a half board:
+   it is the one artifact that WANTS to be tall and narrow. */
+.h-card { width:8.6rem; border-radius:7px; padding:.14rem;
+  background:linear-gradient(150deg,#e8c889,#a88a4a 38%,#f4d9a4 60%,#7a5c14);
+  box-shadow:0 12px 28px rgba(0,0,0,.55); }
+.h-card .face { height:100%; border-radius:4px; background:var(--paper);
+  display:flex; flex-direction:column; overflow:hidden; }
+.h-card .art { flex:1; position:relative; margin:.14rem .14rem 0; overflow:hidden;
+  background:radial-gradient(ellipse 70% 50% at 50% 106%, rgba(232,200,137,.32), transparent 62%),
+             linear-gradient(175deg,#6b8aa8,#3d5871);
+  display:flex; align-items:flex-end; justify-content:center; }
+.h-card .art .mono { font-family:var(--serif); font-style:italic; font-size:3.2rem;
+  line-height:.86; color:rgba(255,255,255,.92); }
+.h-card .art .no { position:absolute; top:.16rem; left:.2rem;
+  font-family:var(--mono); font-weight:700; font-size:.34rem; letter-spacing:.18em;
+  color:rgba(255,255,255,.72); }
+.h-card .art .st { position:absolute; top:.12rem; right:.2rem;
+  font-family:var(--serif); font-size:.6rem; color:var(--gold-bright); }
+.h-card .plate { margin:.14rem; padding:.16rem .3rem; background:var(--ink);
+  border-radius:2px; }
+.h-card .plate b { display:block; font-family:var(--serif); font-weight:400;
+  font-size:.86rem; line-height:1; color:var(--cream); }
+.h-card .plate s { text-decoration:none; font-family:var(--mono); font-weight:700;
+  font-size:.36rem; letter-spacing:.14em; color:var(--gold); }
+
+/* ── HERO 03 · THE LEDGER ─────────────────────────────────────
+   Ruled columns and a stamped total, for any page that is really a
+   list of transactions: standings, seasons, drafts, trades. It
+   takes the page's own stock rather than green-bar, so the
+   Standings ledger prints on the Standings' cream. */
+.h-ledger { flex:1; display:flex; flex-direction:column;
+  border:1px solid var(--rule, rgba(40,30,12,.4)); border-radius:2px;
+  overflow:hidden; box-shadow:0 10px 24px rgba(0,0,0,.35); }
+.h-ledger .rw { flex:1; display:grid; align-items:center;
+  grid-template-columns:var(--cols, 1.6rem 1fr 3.4rem 4rem 2.2rem); }
+.h-ledger .rw > span { padding:.1rem .34rem; font-family:var(--mono);
+  font-size:.58rem; text-align:right; white-space:nowrap;
+  border-right:1px solid var(--rule-soft, rgba(40,30,12,.16)); }
+.h-ledger .rw > span:last-child { border-right:0; }
+.h-ledger .rw .n { text-align:left; font-family:var(--serif); font-size:.9rem;
+  overflow:hidden; text-overflow:ellipsis; }
+.h-ledger .rw .i { text-align:left; font-family:var(--serif); font-style:italic;
+  font-size:.8rem; opacity:.7; }
+.h-ledger .rw.stripe { background:var(--stripe, rgba(40,30,12,.06)); }
+.h-ledger .rw.hd { flex:none; background:var(--hdbg, rgba(40,30,12,.5));
+  color:var(--hdink, var(--paper)); }
+.h-ledger .rw.hd > span { font-weight:700; font-size:.4rem; letter-spacing:.12em;
+  text-transform:uppercase; border-right-color:rgba(255,255,255,.18); }
+.h-ledger .rw.tot { flex:none; border-top:2px solid var(--rule, rgba(40,30,12,.4));
+  background:var(--totbg, rgba(40,30,12,.11)); }
+.h-ledger .rw.tot > span { font-weight:700; }
+.h-ledger .rw.lead .n, .h-ledger .rw.lead > span { color:var(--foil); }
+
+/* ── HERO 04 · THE SPECIMEN ───────────────────────────────────
+   The lab identity Manager DNA already has on the site: a pinned
+   label, the real barcode, trait chips. */
+.h-spec { width:12.4rem; padding:.46rem .55rem; border-radius:3px;
+  background:rgba(8,14,20,.55); border:1px solid rgba(79,209,255,.24);
+  display:flex; flex-direction:column;
+  box-shadow:0 12px 28px rgba(0,0,0,.5); }
+.h-spec .pin { position:absolute; top:-.18rem; left:50%; margin-left:-.2rem;
+  width:.4rem; height:.4rem; border-radius:50%;
+  background:radial-gradient(circle at 36% 32%, #fff, #9aa6b5 45%, #4c5866);
+  box-shadow:0 3px 6px rgba(0,0,0,.7); }
+.h-spec .l { font-family:var(--mono); font-weight:700; font-size:.4rem;
+  letter-spacing:.24em; text-transform:uppercase; color:#4fd1ff; }
+.h-spec h3 { font-family:var(--serif); font-style:italic; font-size:1.2rem;
+  line-height:1; color:#f0f2ff; margin:.1rem 0 .04rem; }
+.h-spec .tx { font-family:var(--mono); font-size:.4rem; letter-spacing:.14em;
+  text-transform:uppercase; color:rgba(255,93,177,.85); }
+.h-spec .bc { display:flex; height:.8rem; gap:2px; margin:.3rem 0 .26rem; }
+.h-spec .bc i { flex:1; border-radius:1px; }
+.h-spec .tr { display:flex; flex-wrap:wrap; gap:.16rem; }
+.h-spec .tr span { font-family:var(--mono); font-size:.36rem; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--cream-soft); padding:.08rem .24rem;
+  border:1px solid rgba(79,209,255,.25); background:rgba(79,209,255,.06);
+  border-radius:2px; }
+.h-spec .sg { margin-top:auto; display:grid; grid-template-columns:1fr 1fr;
+  gap:.06rem .5rem; padding-top:.26rem;
+  border-top:1px dashed rgba(79,209,255,.2); }
+.h-spec .sg div { display:flex; justify-content:space-between; align-items:baseline; }
+.h-spec .sg u { text-decoration:none; font-family:var(--mono); font-size:.36rem;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--cream-mute); }
+.h-spec .sg b { font-family:var(--mono); font-weight:700; font-size:.5rem;
+  color:#82e0ff; }
+
+/* ── HERO 05 · THE PLATE ──────────────────────────────────────
+   demo/records.html prints a record on a cream plate with a double
+   rule inset and a rust stamp hanging off the corner. */
+.h-plate { width:15.2rem; padding:.5rem .62rem .55rem; color:var(--ink-print);
+  background:linear-gradient(160deg, rgba(255,255,255,.34) 0%, transparent 30%), var(--paper);
+  border:1px solid var(--paper-line);
+  box-shadow:0 14px 32px rgba(0,0,0,.5), 0 2px 0 var(--paper-shade);
+  display:flex; flex-direction:column; }
+.h-plate::before { content:''; position:absolute; inset:.16rem;
+  border:3px double var(--paper-line); pointer-events:none; }
+.h-plate .k { font-family:var(--mono); font-weight:700; font-size:.44rem;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--gold-print); }
+.h-plate .v { font-family:var(--serif); font-style:italic; font-size:2.7rem;
+  line-height:.92; letter-spacing:-.03em; margin-top:.06rem; }
+.h-plate .n { font-family:var(--serif); font-size:.92rem; color:var(--ink-print-soft); }
+.h-plate .n em { font-style:italic; color:var(--rust-print); }
+.h-plate .dt { font-family:var(--mono); font-weight:700; font-size:.42rem;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-print-mute);
+  margin-top:.12rem; }
+.h-plate .pod { flex:1; margin-top:.3rem; padding-top:.24rem;
+  border-top:1px solid var(--paper-line); display:flex; flex-direction:column;
+  justify-content:space-around; }
+.h-plate .pod .r { display:flex; align-items:baseline; gap:.4rem; padding:.09rem 0; }
+.h-plate .pod .r i { font-style:italic; font-family:var(--serif); font-size:.72rem;
+  color:var(--ink-print-mute); width:.6rem; }
+.h-plate .pod .r b { flex:1; font-family:var(--serif); font-weight:400;
+  font-size:.84rem; }
+.h-plate .pod .r s { text-decoration:none; font-family:var(--mono); font-weight:700;
+  font-size:.56rem; color:var(--ink-print-soft); }
+.h-plate .stamp { position:absolute; right:.42rem; top:.42rem;
+  transform:rotate(-9deg); border:2px solid var(--rust-print);
+  color:var(--rust-print); border-radius:3px; padding:.1rem .34rem;
+  font-family:var(--mono); font-weight:700; font-size:.4rem;
+  letter-spacing:.18em; text-transform:uppercase; opacity:.8;
+  background:rgba(239,229,205,.7); }
+
+/* ── HERO 06 · THE TAPE ───────────────────────────────────────
+   The rivalry's tale of the tape, which is already a fight card. */
+.h-tape { flex:1; display:flex; flex-direction:column;
+  border:1px solid var(--rv-line); border-radius:3px; background:rgba(0,0,0,.34);
+  padding:.36rem .5rem .4rem; box-shadow:0 10px 24px rgba(0,0,0,.45); }
+.h-tape .hd { display:grid; grid-template-columns:1fr auto 1fr; gap:.6rem;
+  align-items:end; padding-bottom:.24rem; border-bottom:1px solid var(--rv-line); }
+.h-tape .sd .c { font-family:var(--mono); font-weight:700; font-size:.4rem;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--rv-grey-lt); }
+.h-tape .sd .n { font-family:var(--serif); font-style:italic; font-size:1.3rem;
+  line-height:1; color:var(--rv-white); }
+.h-tape .sd.b { text-align:right; }
+.h-tape .sd.lead .n { color:var(--rv-red); }
+.h-tape .vs { font-family:var(--serif); font-style:italic; font-size:.96rem;
+  color:var(--rv-red); align-self:center; }
+.h-tape .r { flex:1; display:grid; grid-template-columns:1fr minmax(5.6rem,auto) 1fr;
+  gap:.6rem; align-items:center; border-bottom:1px dotted rgba(255,255,255,.09); }
+.h-tape .r:last-child { border-bottom:0; }
+.h-tape .r .val { font-family:var(--mono); font-weight:700; font-size:.92rem;
+  font-variant-numeric:tabular-nums; color:var(--rv-grey-lt); }
+.h-tape .r .val.a { text-align:right; } .h-tape .r .val.b { text-align:left; }
+.h-tape .r .val.w { color:var(--rv-white); text-shadow:0 0 14px rgba(220,38,38,.4); }
+.h-tape .r .lb { font-family:var(--mono); font-weight:700; font-size:.44rem;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--rv-red);
+  text-align:center; white-space:nowrap; }
+
+/* ── HERO 07 · THE TICKET ─────────────────────────────────────
+   A trade is a receipt, so it prints on paper with a perforated
+   stub — and it gives the trade band its one light object. */
+.h-ticket { flex:1; background:var(--paper); color:var(--ink-print);
+  border:1px solid var(--paper-line); border-radius:3px; overflow:hidden;
+  display:flex; flex-direction:column;
+  box-shadow:0 12px 28px rgba(0,0,0,.5), 0 2px 0 var(--paper-shade); }
+.h-ticket .hd { flex:none; display:flex; align-items:baseline; gap:.4rem;
+  padding:.22rem .5rem .2rem; border-bottom:1px dashed var(--paper-line);
+  background:rgba(40,30,12,.07); font-family:var(--mono); font-weight:700;
+  font-size:.44rem; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--gold-print); }
+.h-ticket .hd s { text-decoration:none; margin-left:auto; font-weight:400;
+  letter-spacing:.12em; color:var(--ink-print-mute); }
+.h-ticket .sides { flex:1; display:grid; grid-template-columns:1fr 1fr; }
+.h-ticket .sd { padding:.3rem .5rem .34rem; display:flex; flex-direction:column; }
+.h-ticket .sd + .sd { border-left:2px dashed var(--paper-line); }
+.h-ticket .sd .w { font-family:var(--mono); font-weight:700; font-size:.42rem;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--ink-print-mute); }
+.h-ticket .sd .a { display:flex; align-items:baseline; gap:.34rem; padding:.1rem 0;
+  border-bottom:1px solid var(--paper-line-soft); }
+.h-ticket .sd .a u { text-decoration:none; font-family:var(--mono); font-weight:700;
+  font-size:.38rem; letter-spacing:.06em; color:var(--gold-print);
+  width:1.5rem; flex:none; }
+.h-ticket .sd .a b { flex:1; min-width:0; font-family:var(--serif); font-weight:400;
+  font-size:.82rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.h-ticket .sd .g { margin-top:auto; padding-top:.2rem; display:flex;
+  align-items:center; gap:.4rem; border-top:1px solid var(--paper-line); }
+.h-ticket .sd .g i { font-style:normal; font-family:var(--serif); font-size:1.3rem;
+  line-height:1; }
+.h-ticket .sd .g i.win { color:#2f7a44; } .h-ticket .sd .g i.lose { color:#8c2b1e; }
+.h-ticket .sd .g s { text-decoration:none; margin-left:auto; text-align:right;
+  font-family:var(--mono); font-weight:700; font-size:.5rem; }
+.h-ticket .sd .g s em { display:block; font-style:normal; font-size:.36rem;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-print-mute); }
+
+/* ── HERO 08 · THE SHELF ──────────────────────────────────────
+   A season on this site IS a bound volume. Kept from the last cut
+   because it was the one thing that worked. */
+/* The wall behind the books is passed to band() as a cloth OVERRIDE,
+   not set as a class: the band writes --cloth inline for itself and
+   inline always beats a class rule. The volumes keep the Seasons'
+   true mahogany; the wall is that stock pushed darker so the shelf
+   does not dissolve into it. */
+.h-shelf { flex:1; display:flex; flex-direction:column; justify-content:flex-end; }
+.h-shelf .books { display:flex; align-items:flex-end; justify-content:center;
+  gap:8px; flex:1; }
+.h-shelf .bk { position:relative; flex:0 0 3rem; height:var(--h, 80%);
+  background-color:var(--bkcloth, #3a1d16);
+  background-image:
+    linear-gradient(90deg, rgba(255,255,255,.17) 0 5%, rgba(255,255,255,.04) 16%,
+                    transparent 34%, transparent 66%, rgba(0,0,0,.30) 86%,
+                    rgba(0,0,0,.52) 100%),
+    repeating-linear-gradient(46deg, rgba(255,255,255,.026) 0 1px, transparent 1px 4px);
+  border-radius:3px 3px 1px 1px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.5), 0 -4px 16px rgba(0,0,0,.34);
+  display:flex; flex-direction:column; align-items:center;
+  padding:.24rem 0 .2rem; overflow:hidden; }
+.h-shelf .bk::before { content:''; position:absolute; top:0; left:4px; right:4px;
+  height:3px; background:linear-gradient(90deg,
+    rgba(0,0,0,.4), rgba(214,196,158,.55) 35%, rgba(160,142,106,.4)); }
+.h-shelf .bk .no { font-family:var(--mono); font-weight:700; font-size:.36rem;
+  letter-spacing:.06em; color:var(--bkfoil, var(--gold)); opacity:.82; }
+.h-shelf .bk .bd { flex:none; width:72%; height:1px; margin:.18rem 0;
+  background:var(--bkfoil, var(--gold)); opacity:.45; }
+.h-shelf .bk .ti { flex:1; min-height:0; display:grid; place-items:center; }
+.h-shelf .bk .ti b { writing-mode:vertical-rl; font-family:var(--serif);
+  font-weight:400; font-size:.78rem; line-height:1; color:var(--bkfoil, var(--gold));
+  white-space:nowrap; text-shadow:0 1px 0 rgba(0,0,0,.45); }
+.h-shelf .bk .ft { font-family:var(--mono); font-weight:700; font-size:.32rem;
+  letter-spacing:.06em; color:var(--bkfoil, var(--gold)); opacity:.6; }
+.h-shelf .bk.won { box-shadow:0 0 0 1px rgba(232,200,137,.5),
+  0 -4px 20px rgba(232,200,137,.12), 0 -4px 16px rgba(0,0,0,.34); }
+.h-shelf .bk.won .ti b { font-style:italic; }
+.h-shelf .plank { flex:none; height:.5rem; margin:0 -1.5rem; position:relative;
+  background-image:
+    linear-gradient(180deg, #5a4126 0%, #402d14 18%, #2a1d0d 54%,
+                    #171007 82%, #090604 100%),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.13) 0 3px, transparent 3px 13px);
+  border-top:1px solid rgba(232,200,137,.34);
+  box-shadow:0 -14px 24px -10px rgba(0,0,0,.78), 0 5px 18px rgba(0,0,0,.6); }

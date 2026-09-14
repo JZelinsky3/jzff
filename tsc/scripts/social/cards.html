@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TSC &middot; ten ways to draw a page</title>
+
+<!-- ============================================================
+     REVIEW SHEET, NOT A POST.
+
+     TEN WAYS TO DRAW ONE PAGE'S MODULE.
+
+     Every tile below carries the SAME page (the Manager File) with
+     the SAME figures on it. The only thing changing tile to tile is
+     the design language. Pick one and it gets applied to all eight
+     boards of the pitch carousel.
+
+     WHY THIS SHEET EXISTS
+
+     The deck currently draws every page as a rounded rectangle with
+     a coloured header bar. That is a container, not a design — the
+     colours are right and nothing else is happening, and a box is
+     not interesting no matter whose palette it is in. It also shows
+     too little: the manager module was a name, a portrait and three
+     figures, which is nothing for the one page a stranger would
+     actually care about.
+
+     WHAT THE RESEARCH SAID
+
+     * BENTO. Asymmetric tiles — one hero tile plus smaller ones —
+       is the dominant product-showcase pattern (Apple iPhone 14 on,
+       now Stripe/Linear/Vercel/Notion/Framer/Raycast). It carries
+       6-9 discrete things in the vertical space a flat stack uses
+       for 3, because the asymmetry gives the eye an entry point and
+       then secondary paths. That is the answer to "went from super
+       zoomed out to super zoomed in": DEPTH COMES FROM TILE SIZE,
+       not from type size.
+     * EPHEMERA. Tickets, stamps, punch holes, perforations, tape,
+       a crooked angle, a torn edge. A layout of 3-5 overlapping
+       artifacts reads as evidence; the same content in a box reads
+       as a slide.
+     * REAL SCREENSHOTS beat designed graphics for authenticity, so
+       every treatment here still lifts its type and tokens from the
+       actual page.
+
+     SCALE. The board runs html{font-size:32px} here. The deck has
+     been 16 effective (unreadable), then 44 (too big, things ran
+     out of their panels). 32 is the middle: a data row lands at
+     ~12pt in the hand, a name at ~14pt, and the extra room goes
+     into MORE FIGURES rather than bigger ones.
+
+     Each tile is a real module at real post width (976px) scaled
+     to 0.62 for the sheet. Nothing is drawn smaller "for review".
+     ============================================================ -->
+
+<style>
+:root {
+  --serif:'DM Serif Display', Georgia, serif;
+  --sans:'Inter','Helvetica Neue',-apple-system, Arial, sans-serif;
+  --mono:'JetBrains Mono','SF Mono', Menlo, monospace;
+
+  --ink:#0e1620; --ink-soft:#16202c; --ink-card:#1a2532;
+  --ink-line:#2a3645; --ink-line-soft:#1e2937;
+  --cream:#f4ebd8; --cream-soft:#c9c0ad; --cream-mute:#837b6a;
+  --gold:#e8c889; --gold-bright:#f4d9a4; --gold-deep:#a88a4a;
+  --rust:#a04830; --steel:#6b8aa8;
+
+  --paper:#efe5cd; --paper-soft:#e6dabd; --paper-shade:#d7c9a6;
+  --paper-line:rgba(40,30,12,.22); --paper-line-soft:rgba(40,30,12,.11);
+  --ink-print:#241c0e; --ink-print-soft:#55482e; --ink-print-mute:#7f7154;
+  --gold-print:#7a5c14; --rust-print:#8c2b1e;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { width:1480px; background:#08090c; color:var(--cream);
+       font-family:var(--sans); -webkit-font-smoothing:antialiased; }
+.sheet { padding:44px 48px 60px; }
+
+.masthead { display:flex; align-items:flex-end; gap:20px;
+  padding-bottom:16px; border-bottom:2px solid #26313f; margin-bottom:12px; }
+.masthead h1 { font-family:var(--serif); font-size:40px; line-height:1;
+  font-weight:400; }
+.masthead h1 em { font-style:italic; color:var(--gold); }
+.masthead p { margin-left:auto; max-width:640px; text-align:right;
+  font-size:13px; line-height:1.5; color:var(--cream-soft); }
+
+.legend { display:flex; gap:26px; padding:12px 0 26px;
+  font-family:var(--mono); font-size:11px; letter-spacing:.06em;
+  color:var(--cream-mute); border-bottom:1px solid #1b2430; margin-bottom:26px; }
+.legend b { color:var(--gold); font-weight:700; }
+
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:34px 32px; }
+.cell { display:flex; flex-direction:column; gap:10px; }
+.cap { display:flex; align-items:baseline; gap:10px; }
+.cap .no { font-family:var(--mono); font-weight:700; font-size:12px;
+  letter-spacing:.2em; color:var(--gold); }
+.cap .nm { font-family:var(--serif); font-size:24px; line-height:1; }
+.cap .tag { margin-left:auto; font-family:var(--mono); font-size:10px;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--cream-mute);
+  border:1px solid #2a3645; border-radius:2px; padding:3px 7px; }
+.note { font-size:12.5px; line-height:1.5; color:var(--cream-soft);
+  min-height:38px; }
+
+/* Each stage is a real module at post width, scaled down for the
+   sheet. The inner board sets the root-relative scale so every rem
+   below is exactly what would render on a 1080 board. */
+.stage { width:100%; aspect-ratio:976 / 430; overflow:hidden;
+  border:1px solid #1b2430; border-radius:3px; position:relative;
+  background:#11161d; }
+.m { position:absolute; top:0; left:0; width:976px; height:430px;
+  font-size:32px; transform-origin:0 0; }
+.m * { font-size:inherit; }
+
+/* ══ SHARED PIECES ════════════════════════════════════════════ */
+.k { font-family:var(--mono); font-weight:700; font-size:.6rem;
+  letter-spacing:.22em; text-transform:uppercase; }
+.halftone { position:absolute; inset:0;
+  background-image:radial-gradient(rgba(40,30,12,.28) 1px, transparent 1px);
+  background-size:3.5px 3.5px; mix-blend-mode:overlay; }
+.figs { display:flex; flex-direction:column; }
+.figs .r { display:flex; align-items:baseline; gap:.5rem; padding:.26rem 0;
+  border-bottom:1px solid var(--hair, rgba(255,255,255,.09)); }
+.figs .r:last-child { border-bottom:0; }
+.figs .r b { flex:1; min-width:0; font-family:var(--serif); font-weight:400;
+  font-size:.95rem; white-space:nowrap; overflow:hidden; }
+.figs .r s { text-decoration:none; font-family:var(--mono); font-weight:700;
+  font-size:.72rem; white-space:nowrap; }
+
+/* ── 01 THE DOSSIER ───────────────────────────────────────────
+   A manila file: tab, punch holes, a clipped photograph, typed
+   labels and a rubber stamp. The page is literally called the
+   Manager FILE. */
+.c1 { position:absolute; inset:0; background:#241f17;
+  background-image:radial-gradient(ellipse 80% 60% at 30% 0%,
+    rgba(255,240,210,.07), transparent 70%); padding:14px 18px; }
+.c1 .folder { position:absolute; inset:14px 18px;
+  background:linear-gradient(168deg,#e4d3a6,#d9c79f 60%,#cdbb8e);
+  border-radius:2px 10px 2px 2px;
+  box-shadow:0 14px 34px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.35); }
+.c1 .tab { position:absolute; top:-20px; left:56px; width:190px; height:22px;
+  background:linear-gradient(180deg,#e4d3a6,#dccba2); border-radius:5px 5px 0 0;
+  box-shadow:0 -3px 8px rgba(0,0,0,.3);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-weight:700; font-size:.4rem;
+  letter-spacing:.22em; color:#6d5a2c; }
+.c1 .holes { position:absolute; left:16px; top:44px; bottom:30px; width:16px;
+  display:flex; flex-direction:column; justify-content:space-around; }
+.c1 .holes i { width:15px; height:15px; border-radius:50%; background:#1b1710;
+  box-shadow:inset 0 2px 3px rgba(0,0,0,.8), 0 1px 0 rgba(255,255,255,.25); }
+.c1 .inner { position:absolute; inset:34px 26px 24px 48px; display:flex; gap:18px;
+  color:var(--ink-print); }
+.c1 .photo { width:5rem; flex:none; position:relative; background:var(--paper-soft);
+  border:1px solid rgba(40,30,12,.3); padding:6px 6px 22px;
+  box-shadow:2px 3px 0 rgba(40,30,12,.16); transform:rotate(-1.6deg); }
+.c1 .photo .im { position:relative; height:4.1rem; background:#cdbb96;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--serif); font-style:italic; font-size:2.4rem; color:#7a5c14; }
+.c1 .photo .cap2 { position:absolute; left:0; right:0; bottom:5px; text-align:center;
+  font-family:var(--mono); font-size:.34rem; letter-spacing:.14em; color:#6d5a2c; }
+.c1 .clip { position:absolute; top:-12px; left:50%; margin-left:-9px; width:18px;
+  height:34px; border:3px solid #8b8f96; border-radius:9px 9px 3px 3px;
+  border-bottom-color:transparent; }
+.c1 .typed { flex:1; min-width:0; }
+.c1 .typed .l { font-family:var(--mono); font-size:.46rem; letter-spacing:.14em;
+  text-transform:uppercase; color:#7f6b3c; }
+.c1 .typed h3 { font-family:var(--serif); font-size:1.62rem; line-height:1;
+  margin:.12rem 0 .3rem; }
+.c1 .typed h3 em { font-style:italic; color:var(--gold-print); }
+.c1 .rows { display:grid; grid-template-columns:1fr 1fr; gap:0 1.1rem; }
+.c1 .rows .rw { display:flex; align-items:baseline; gap:.4rem; padding:.2rem 0;
+  border-bottom:1px dotted rgba(40,30,12,.3); }
+.c1 .rows .rw u { text-decoration:none; font-family:var(--mono); font-size:.42rem;
+  letter-spacing:.12em; text-transform:uppercase; color:#7f6b3c; flex:1; }
+.c1 .rows .rw s { text-decoration:none; font-family:var(--mono); font-weight:700;
+  font-size:.56rem; color:var(--ink-print); }
+.c1 .stamp { position:absolute; right:30px; bottom:26px; transform:rotate(-11deg);
+  border:3px double var(--rust-print); color:var(--rust-print); border-radius:3px;
+  padding:.2rem .5rem; font-family:var(--mono); font-weight:700; font-size:.5rem;
+  letter-spacing:.16em; opacity:.8; }
+
+/* ── 02 THE BENTO ─────────────────────────────────────────────
+   The modern product-page pattern: one hero tile, then smaller
+   tiles that each say one thing. Depth without shrinking type. */
+.c2 { position:absolute; inset:0; background:var(--ink); padding:.5rem;
+  display:grid; grid-template-columns:1.5fr 1fr 1fr; grid-template-rows:1fr 1fr;
+  gap:.4rem; }
+.c2 .t { background:linear-gradient(155deg, var(--ink-card), #141d28);
+  border:1px solid var(--ink-line); border-radius:9px; padding:.5rem .6rem;
+  display:flex; flex-direction:column; position:relative; overflow:hidden; }
+.c2 .t .k { color:var(--cream-mute); font-size:.44rem; }
+.c2 .hero { grid-row:1 / 3; }
+.c2 .hero .nm { font-family:var(--serif); font-size:1.7rem; line-height:.98;
+  margin-top:.2rem; }
+.c2 .hero .nm em { font-style:italic; color:var(--gold); }
+.c2 .hero .sub { font-family:var(--mono); font-size:.44rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--cream-mute); margin-top:.24rem; }
+.c2 .hero .big { margin-top:auto; font-family:var(--serif); font-style:italic;
+  font-size:2.5rem; line-height:1; color:var(--gold); }
+.c2 .hero .bigl { font-family:var(--mono); font-size:.42rem; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--cream-mute); }
+.c2 .v { margin-top:auto; font-family:var(--serif); font-style:italic;
+  font-size:1.5rem; line-height:1; color:var(--cream); }
+.c2 .v.on { color:var(--gold); }
+.c2 .d { font-family:var(--mono); font-size:.4rem; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--cream-mute); margin-top:.1rem; }
+.c2 .spark { margin-top:auto; display:flex; align-items:flex-end; gap:2px;
+  height:1.5rem; }
+.c2 .spark i { flex:1; background:rgba(232,200,137,.32); border-radius:1px; }
+.c2 .spark i.on { background:var(--gold); }
+.c2 .bars { margin-top:auto; display:flex; gap:2px; height:.42rem; }
+.c2 .bars i { flex:1; border-radius:1px; }
+
+/* ── 03 THE TRADING CARD ──────────────────────────────────────
+   The front and the back of one card, side by side: portrait and
+   nameplate on the left, the stat block on the right. */
+.c3 { position:absolute; inset:0; background:#1a1d24; padding:.42rem;
+  display:flex; gap:.42rem;
+  background-image:radial-gradient(ellipse 70% 60% at 50% 0%,
+    rgba(232,200,137,.08), transparent 70%); }
+.c3 .card { flex:1; border-radius:8px; padding:7px; position:relative;
+  background:linear-gradient(150deg,#e8c889,#a88a4a 40%,#f4d9a4 62%,#7a5c14);
+  box-shadow:0 12px 30px rgba(0,0,0,.55); }
+.c3 .face { height:100%; border-radius:4px; background:var(--paper);
+  position:relative; overflow:hidden; display:flex; flex-direction:column; }
+.c3 .art { flex:1; position:relative; margin:5px 5px 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 105%, rgba(232,200,137,.3), transparent 60%),
+    linear-gradient(175deg,#6b8aa8,#3d5871);
+  display:flex; align-items:flex-end; justify-content:center; overflow:hidden; }
+.c3 .art .mono { font-family:var(--serif); font-style:italic; font-size:4.2rem;
+  line-height:.86; color:rgba(255,255,255,.9); }
+.c3 .plate { margin:5px; padding:.24rem .4rem; background:var(--ink);
+  border-radius:2px; display:flex; align-items:baseline; gap:.4rem; }
+.c3 .plate b { font-family:var(--serif); font-weight:400; font-size:.95rem;
+  color:var(--cream); }
+.c3 .plate s { text-decoration:none; margin-left:auto; font-family:var(--mono);
+  font-weight:700; font-size:.44rem; letter-spacing:.14em; color:var(--gold); }
+.c3 .back { flex:1.15; border-radius:6px; background:var(--paper);
+  border:1px solid var(--paper-line); padding:.5rem .62rem; color:var(--ink-print);
+  box-shadow:0 12px 30px rgba(0,0,0,.5); display:flex; flex-direction:column; }
+.c3 .back .hd { display:flex; align-items:baseline; gap:.4rem;
+  padding-bottom:.24rem; border-bottom:2px solid var(--ink-print); }
+.c3 .back .hd b { font-family:var(--serif); font-size:1rem; }
+.c3 .back .hd s { text-decoration:none; margin-left:auto; font-family:var(--mono);
+  font-weight:700; font-size:.42rem; letter-spacing:.16em; color:var(--rust-print); }
+.c3 .tbl { margin-top:.24rem; display:grid;
+  grid-template-columns:auto repeat(4, 1fr); gap:0 .3rem; }
+.c3 .tbl span { font-family:var(--mono); font-size:.44rem; padding:.14rem 0;
+  border-bottom:1px solid var(--paper-line-soft); text-align:right;
+  color:var(--ink-print-soft); }
+.c3 .tbl span.h { font-weight:700; font-size:.38rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-print-mute);
+  border-bottom:1px solid var(--paper-line); }
+.c3 .tbl span.y { text-align:left; font-weight:700; color:var(--ink-print); }
+.c3 .tbl span.on { color:var(--gold-print); font-weight:700; }
+.c3 .back .blurb { margin-top:auto; font-family:var(--serif); font-size:.6rem;
+  line-height:1.35; color:var(--ink-print-soft); border-top:1px solid var(--paper-line);
+  padding-top:.26rem; }
+
+/* ── 04 THE SCORECARD ─────────────────────────────────────────
+   Ruled boxes and printed column heads, the way a scorecard or an
+   almanac page actually prints a career. */
+.c4 { position:absolute; inset:0; background:var(--paper); color:var(--ink-print);
+  padding:.55rem .7rem; display:flex; flex-direction:column;
+  background-image:repeating-linear-gradient(0deg,
+    transparent 0 27px, rgba(40,30,12,.05) 27px 28px); }
+.c4 .hd { display:flex; align-items:flex-end; gap:.6rem;
+  border-bottom:3px double var(--ink-print); padding-bottom:.24rem; }
+.c4 .hd h3 { font-family:var(--serif); font-size:1.5rem; line-height:1; }
+.c4 .hd h3 em { font-style:italic; color:var(--rust-print); }
+.c4 .hd .k { margin-left:auto; color:var(--ink-print-mute); font-size:.44rem; }
+.c4 .grid2 { margin-top:.3rem; flex:1; display:grid;
+  grid-template-columns:2.3rem repeat(7, 1fr) 2.6rem;
+  border:1px solid var(--ink-print); }
+.c4 .grid2 span { padding:.24rem .1rem; text-align:center; display:flex;
+  align-items:center; justify-content:center; font-family:var(--mono);
+  font-size:.5rem; border-right:1px solid var(--paper-line);
+  border-bottom:1px solid var(--paper-line); }
+.c4 .grid2 span:nth-child(9n) { border-right:0; }
+.c4 .grid2 .h { font-weight:700; font-size:.4rem; letter-spacing:.1em;
+  text-transform:uppercase; background:rgba(40,30,12,.08);
+  color:var(--ink-print-mute); }
+.c4 .grid2 .lbl { text-align:left; padding-left:.24rem; font-weight:700;
+  font-size:.4rem; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-print-mute); background:rgba(40,30,12,.04); }
+.c4 .grid2 .win { background:rgba(122,92,20,.15); color:var(--gold-print);
+  font-weight:700; }
+.c4 .foot { margin-top:.3rem; display:flex; align-items:baseline; gap:.5rem;
+  font-family:var(--mono); font-size:.46rem; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink-print-mute); }
+.c4 .foot b { font-family:var(--serif); font-style:italic; font-size:1.1rem;
+  color:var(--rust-print); letter-spacing:0; text-transform:none; }
+
+/* ── 05 THE BROADSHEET ────────────────────────────────────────
+   A newspaper profile: deck, halftone cut, and agate down a rule. */
+.c5 { position:absolute; inset:0; background:var(--paper); color:var(--ink-print);
+  padding:.5rem .7rem; display:flex; flex-direction:column; }
+.c5 .rail { display:flex; align-items:baseline; gap:.5rem;
+  font-family:var(--mono); font-weight:700; font-size:.42rem;
+  letter-spacing:.26em; text-transform:uppercase; color:var(--rust-print);
+  border-bottom:1px solid var(--ink-print); padding-bottom:.2rem; }
+.c5 .rail s { text-decoration:none; margin-left:auto; color:var(--ink-print-mute); }
+.c5 h3 { font-family:var(--serif); font-size:1.75rem; line-height:1.02;
+  margin:.3rem 0 .2rem; }
+.c5 h3 em { font-style:italic; color:var(--rust-print); }
+.c5 .body { flex:1; min-height:0; display:grid;
+  grid-template-columns:5.4rem 1fr 1px 1fr; gap:.6rem; padding-top:.34rem;
+  border-top:1px solid var(--paper-line); }
+.c5 .cut { position:relative; background:#c9b997; overflow:hidden;
+  border:1px solid var(--paper-line);
+  display:flex; align-items:center; justify-content:center; }
+.c5 .cut span { font-family:var(--serif); font-style:italic; font-size:2.4rem;
+  color:#6d5a2c; }
+.c5 .col { font-family:var(--serif); font-size:.62rem; line-height:1.4;
+  color:var(--ink-print-soft); }
+.c5 .col::first-letter { float:left; font-size:2.1rem; line-height:.8;
+  padding:.16rem .22rem 0 0; color:var(--rust-print); }
+.c5 .vr { background:var(--paper-line); }
+.c5 .agate .r { display:flex; align-items:baseline; gap:.3rem; padding:.14rem 0;
+  border-bottom:1px solid var(--paper-line-soft); }
+.c5 .agate .r u { text-decoration:none; flex:1; font-family:var(--mono);
+  font-size:.4rem; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-print-mute); }
+.c5 .agate .r s { text-decoration:none; font-family:var(--mono); font-weight:700;
+  font-size:.54rem; }
+.c5 .agate .hh { font-family:var(--mono); font-weight:700; font-size:.4rem;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--rust-print);
+  border-bottom:1px solid var(--ink-print); padding-bottom:.12rem; }
+
+/* ── 06 THE CREDENTIAL ────────────────────────────────────────
+   A laminated pass: lanyard slot, hologram band, barcode, photo. */
+.c6 { position:absolute; inset:0; background:#0f1218; padding:.5rem;
+  display:flex; align-items:center; justify-content:center;
+  background-image:radial-gradient(ellipse 60% 70% at 50% 0%,
+    rgba(107,138,168,.16), transparent 70%); }
+.c6 .pass { width:100%; height:100%; border-radius:10px; position:relative;
+  background:linear-gradient(158deg,#fbf6ea,#e4dcc6 55%,#cfc4a6);
+  box-shadow:0 16px 38px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.6);
+  color:var(--ink-print); display:flex; overflow:hidden; }
+.c6 .slot { position:absolute; top:9px; left:50%; margin-left:-30px; width:60px;
+  height:9px; border-radius:5px; background:#0f1218;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.9); }
+.c6 .holo { position:absolute; top:0; bottom:0; right:0; width:1.5rem;
+  background:linear-gradient(150deg,#f5b8d0,#bfe4f5 28%,#d8f5c2 52%,#f7e2a8 74%,#e0bff5);
+  opacity:.78; }
+.c6 .lft { width:5.4rem; flex:none; padding:.9rem .4rem .4rem .6rem; }
+.c6 .ph { position:relative; height:4.3rem; background:#b9c7d4;
+  border:1px solid rgba(40,30,12,.3);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--serif); font-style:italic; font-size:2.5rem; color:#3d5871; }
+.c6 .sig { margin-top:.24rem; font-family:var(--serif); font-style:italic;
+  font-size:.75rem; color:#3a4a5c; border-top:1px solid rgba(40,30,12,.3);
+  padding-top:.1rem; text-align:center; }
+.c6 .rgt { flex:1; min-width:0; padding:.9rem 2rem .5rem .2rem;
+  display:flex; flex-direction:column; }
+.c6 .rgt .org { font-family:var(--mono); font-weight:700; font-size:.42rem;
+  letter-spacing:.3em; text-transform:uppercase; color:var(--steel); }
+.c6 .rgt h3 { font-family:var(--serif); font-size:1.6rem; line-height:1;
+  margin:.1rem 0 .06rem; }
+.c6 .rgt .role { font-family:var(--mono); font-weight:700; font-size:.46rem;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--rust-print); }
+.c6 .fields { margin-top:.34rem; display:grid; grid-template-columns:1fr 1fr;
+  gap:.16rem .6rem; }
+.c6 .fields div { display:flex; align-items:baseline; gap:.4rem;
+  border-bottom:1px dotted rgba(40,30,12,.28); padding-bottom:.08rem; }
+.c6 .fields div b { margin-left:auto; }
+.c6 .fields div u { text-decoration:none; font-family:var(--mono);
+  font-size:.36rem; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-print-mute); }
+.c6 .fields div b { font-family:var(--serif); font-weight:400; font-size:.8rem; }
+.c6 .barcode { margin-top:auto; display:flex; align-items:flex-end; gap:1.4px;
+  height:1rem; }
+.c6 .barcode i { width:2px; background:#241c0e; }
+.c6 .barcode i.w { width:4px; } .c6 .barcode i.s { opacity:.35; }
+
+/* ── 07 THE LEDGER ────────────────────────────────────────────
+   Accountant's green-bar paper: ruled columns, a stamped total. */
+.c7 { position:absolute; inset:0; background:#e9ecdd; color:#1d2419;
+  padding:.5rem .6rem; display:flex; flex-direction:column; }
+.c7 .rows2 { border:1px solid #5d6b52; flex:1; display:flex;
+  flex-direction:column; }
+.c7 .rows2 .rw { flex:1; }
+.c7 .rw { display:grid; grid-template-columns:2.4rem 1fr repeat(3, 3.1rem);
+  align-items:baseline; }
+.c7 .rw:nth-child(odd) { background:#cfdcc2; }
+.c7 .rw span { display:flex; align-items:center; justify-content:flex-end;
+  padding:.1rem .3rem; font-family:var(--mono); font-size:.5rem;
+  text-align:right; border-right:1px solid rgba(29,36,25,.18); }
+.c7 .rw span:last-child { border-right:0; }
+.c7 .rw .y { justify-content:flex-start; font-weight:700; }
+.c7 .rw .nm2 { justify-content:flex-start; font-family:var(--serif);
+  font-size:.8rem; }
+.c7 .rw.h span { font-weight:700; font-size:.38rem; letter-spacing:.12em;
+  text-transform:uppercase; background:#5d6b52; color:#eef2e6;
+  border-right-color:rgba(255,255,255,.2); }
+.c7 .rw.tot { background:#bccdad; border-top:2px solid #5d6b52; }
+.c7 .rw.tot span { font-weight:700; }
+.c7 .top { display:flex; align-items:baseline; gap:.5rem; margin-bottom:.3rem; }
+.c7 .top h3 { font-family:var(--serif); font-size:1.35rem; line-height:1; }
+.c7 .top .k { margin-left:auto; color:#5d6b52; font-size:.42rem; }
+.c7 .paid { position:absolute; right:1.1rem; bottom:.7rem; transform:rotate(-9deg);
+  border:3px double #2f7a44; color:#2f7a44; border-radius:4px; padding:.18rem .5rem;
+  font-family:var(--mono); font-weight:700; font-size:.52rem; letter-spacing:.2em;
+  opacity:.72; }
+
+/* ── 08 THE SPECIMEN ──────────────────────────────────────────
+   Museum/lab: a numbered specimen label pinned to board, with the
+   Manager DNA barcode the site already draws. */
+.c8 { position:absolute; inset:0; background:#0b0f14; padding:.5rem .6rem;
+  display:flex; gap:.5rem;
+  background-image:radial-gradient(ellipse 70% 60% at 50% 0%,
+    rgba(79,209,255,.1), transparent 72%); }
+.c8 .plateau { flex:1.2; background:rgba(12,20,28,.8);
+  border:1px solid rgba(79,209,255,.22); border-radius:3px; padding:.5rem .6rem;
+  display:flex; flex-direction:column; position:relative; }
+.c8 .pin { position:absolute; top:-6px; left:50%; margin-left:-7px; width:14px;
+  height:14px; border-radius:50%;
+  background:radial-gradient(circle at 36% 32%, #fff, #9aa6b5 45%, #4c5866);
+  box-shadow:0 3px 6px rgba(0,0,0,.7); }
+.c8 .lbl2 { font-family:var(--mono); font-weight:700; font-size:.42rem;
+  letter-spacing:.26em; text-transform:uppercase; color:#4fd1ff; }
+.c8 h3 { font-family:var(--serif); font-style:italic; font-size:1.5rem;
+  line-height:1; color:#f0f2ff; margin:.14rem 0 .06rem; }
+.c8 .taxo { font-family:var(--mono); font-size:.44rem; letter-spacing:.16em;
+  text-transform:uppercase; color:rgba(255,93,177,.85); }
+.c8 .bc { display:flex; height:1.1rem; gap:2px; margin:.4rem 0 .34rem; }
+.c8 .bc i { flex:1; border-radius:1px; }
+.c8 .traits { display:flex; flex-wrap:wrap; gap:.22rem; }
+.c8 .traits span { font-family:var(--mono); font-size:.4rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--cream-soft); padding:.12rem .3rem;
+  border:1px solid rgba(79,209,255,.25); background:rgba(79,209,255,.06);
+  border-radius:2px; }
+.c8 .sigs { margin-top:auto; display:grid; grid-template-columns:1fr 1fr;
+  gap:.14rem .6rem; padding-top:.3rem;
+  border-top:1px dashed rgba(79,209,255,.2); }
+.c8 .sigs div { display:flex; justify-content:space-between; align-items:baseline; }
+.c8 .sigs u { text-decoration:none; font-family:var(--mono); font-size:.38rem;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--cream-mute); }
+.c8 .sigs b { font-family:var(--mono); font-weight:700; font-size:.52rem;
+  color:#82e0ff; }
+.c8 .jar { flex:.85; background:rgba(12,20,28,.8);
+  border:1px solid rgba(79,209,255,.15); border-radius:3px; padding:.5rem .55rem;
+  display:flex; flex-direction:column; }
+.c8 .jar .ttl { font-family:var(--mono); font-weight:700; font-size:.4rem;
+  letter-spacing:.22em; text-transform:uppercase; color:var(--cream-mute);
+  margin-bottom:.24rem; }
+
+/* ── 09 THE TELEGRAM ──────────────────────────────────────────
+   Perforated edge, monospace throughout, pasted tape strips. */
+.c9 { position:absolute; inset:0; background:#2a2620; padding:.42rem .5rem; }
+.c9 .tg { height:100%; background:#f1e9d6; color:#2b2415; border-radius:2px;
+  position:relative; padding:.55rem .7rem; overflow:hidden;
+  box-shadow:0 12px 30px rgba(0,0,0,.5); }
+.c9 .perf { position:absolute; left:0; right:0; height:10px;
+  background-image:radial-gradient(circle at 5px 5px, #2a2620 3.5px, transparent 4px);
+  background-size:14px 10px; }
+.c9 .perf.t { top:0; } .c9 .perf.b { bottom:0; }
+.c9 .tg-hd { display:flex; align-items:baseline; gap:.5rem; padding-top:.3rem;
+  border-bottom:2px solid #2b2415; padding-bottom:.2rem;
+  font-family:var(--mono); font-weight:700; font-size:.44rem; letter-spacing:.24em;
+  text-transform:uppercase; }
+.c9 .tg-hd s { text-decoration:none; margin-left:auto; color:#7a6a48; }
+.c9 .tape { margin-top:.34rem; display:flex; flex-direction:column; gap:.16rem; }
+.c9 .tape .ln { background:#fffaf0; border-top:1px solid rgba(43,36,21,.15);
+  border-bottom:1px solid rgba(43,36,21,.15); padding:.18rem .34rem;
+  font-family:var(--mono); font-weight:700; font-size:.6rem; letter-spacing:.1em;
+  text-transform:uppercase; box-shadow:0 1px 0 rgba(0,0,0,.12);
+  transform:rotate(var(--rot, 0deg)); }
+.c9 .tape .ln b { color:var(--rust-print); }
+.c9 .tape .ln s { text-decoration:none; float:right; color:#7a6a48; }
+.c9 .tg-ft { position:absolute; left:.7rem; right:.7rem; bottom:.5rem;
+  display:flex; align-items:baseline; font-family:var(--mono); font-size:.4rem;
+  letter-spacing:.18em; text-transform:uppercase; color:#7a6a48;
+  border-top:1px solid rgba(43,36,21,.25); padding-top:.2rem; }
+
+/* ── 10 THE FLAT LAY ──────────────────────────────────────────
+   Several artifacts overlapping on a surface at angles, casting
+   shadows: the index card, a ticket stub, a polaroid, a note. */
+.c10 { position:absolute; inset:0; background:#171922;
+  background-image:
+    radial-gradient(ellipse 70% 60% at 42% 8%, rgba(255,240,210,.10), transparent 70%),
+    repeating-linear-gradient(92deg, rgba(255,255,255,.014) 0 2px, transparent 2px 9px); }
+.c10 .it { position:absolute; box-shadow:0 12px 26px rgba(0,0,0,.58); }
+.c10 .idx { left:2.5%; top:9%; width:47%; background:var(--paper);
+  color:var(--ink-print); padding:.42rem .55rem; transform:rotate(-2.2deg);
+  border:1px solid rgba(40,30,12,.25); }
+.c10 .idx .rule { height:1px; background:var(--rust-print); opacity:.4;
+  margin:.2rem 0 .24rem; }
+.c10 .idx h3 { font-family:var(--serif); font-size:1.35rem; line-height:1; }
+.c10 .idx h3 em { font-style:italic; color:var(--gold-print); }
+.c10 .idx .k { font-size:.4rem; color:var(--ink-print-mute); }
+.c10 .idx .rows3 { margin-top:.2rem; }
+.c10 .idx .rows3 .r { display:flex; gap:.4rem; padding:.13rem 0;
+  border-bottom:1px dotted rgba(40,30,12,.25); }
+.c10 .idx .rows3 .r u { text-decoration:none; flex:1; font-family:var(--mono);
+  font-size:.4rem; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-print-mute); }
+.c10 .idx .rows3 .r s { text-decoration:none; font-family:var(--mono);
+  font-weight:700; font-size:.52rem; }
+.c10 .pola { right:3%; top:5%; width:26%; background:#fbf7ee; padding:5px 5px 20px;
+  transform:rotate(3.4deg); }
+.c10 .pola .im { height:3.4rem; background:linear-gradient(175deg,#6b8aa8,#2f4356);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--serif); font-style:italic; font-size:2rem;
+  color:rgba(255,255,255,.92); }
+.c10 .pola .cp { position:absolute; left:0; right:0; bottom:4px; text-align:center;
+  font-family:var(--mono); font-size:.34rem; letter-spacing:.12em; color:#7a6a48; }
+.c10 .stub { left:6%; bottom:6%; width:44%; background:#f3e7c9;
+  color:var(--ink-print); transform:rotate(1.3deg); display:flex;
+  border:1px solid rgba(40,30,12,.25); }
+.c10 .stub .l { flex:1; padding:.3rem .45rem; }
+.c10 .stub .r2 { width:3.4rem; flex:none; border-left:2px dashed rgba(40,30,12,.4);
+  padding:.3rem .3rem; text-align:center; }
+.c10 .stub .k { font-size:.36rem; color:var(--ink-print-mute); }
+.c10 .stub b { font-family:var(--serif); font-size:1rem; display:block;
+  line-height:1.05; }
+.c10 .stub .r2 i { font-style:italic; font-family:var(--serif); font-size:1.4rem;
+  color:var(--rust-print); }
+.c10 .note2 { right:4%; bottom:8%; width:25%; background:#e8dfa6;
+  transform:rotate(-4deg); padding:.4rem .45rem; color:#3a3218;
+  box-shadow:0 10px 20px rgba(0,0,0,.5); }
+.c10 .note2 .k { font-size:.36rem; color:#7a6a2c; }
+.c10 .note2 p { font-family:var(--serif); font-style:italic; font-size:.72rem;
+  line-height:1.25; margin-top:.16rem; }
+.c10 .tapebit { position:absolute; width:3.2rem; height:.72rem;
+  background:rgba(245,238,214,.5); box-shadow:0 1px 3px rgba(0,0,0,.35);
+  border-left:1px solid rgba(255,255,255,.35); border-right:1px solid rgba(255,255,255,.35); }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="masthead">
+    <h1>Ten ways to draw <em>one page.</em></h1>
+    <p>Every tile is the <b>Manager File</b> with the same figures on it.
+       Only the design language changes. Pick one and it goes on all eight
+       boards. Drawn at post scale, <b>html 32px</b> — the middle between the
+       16px the deck was accidentally running at and the 44px that overflowed.</p>
+  </div>
+  <div class="legend">
+    <span><b>BENTO</b> asymmetric tiles, depth without shrinking type</span>
+    <span><b>EPHEMERA</b> an object, not a container</span>
+    <span><b>PRINT</b> the almanac's own idiom</span>
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+'use strict';
+
+/* The same manager, the same figures, ten times. */
+const M = {
+  first:'Bryce', last:'Holland', mono:'B', no:'04', since:2019,
+  rec:'78&ndash;40', pct:'.661', pf:'14,982.4', titles:'2',
+  best:'212.44', playoffs:'6 of 7', draft:'B+', lineup:'91.4%',
+  years:[['2019','4th','9&ndash;5',0], ['2020','2nd','10&ndash;4',0],
+         ['2021','1st','11&ndash;3',1], ['2022','2nd','12&ndash;2',0],
+         ['2023','6th','7&ndash;7',0], ['2024','1st','10&ndash;4',1],
+         ['2025','3rd','9&ndash;5',0]],
+};
+const F = [['Record', M.rec], ['Win pct', M.pct], ['Points for', M.pf],
+           ['Titles', M.titles], ['Playoffs', M.playoffs], ['Best week', M.best],
+           ['Draft grade', M.draft], ['Lineups set', M.lineup]];
+
+const bars = n => Array.from({length:n}, (_, i) =>
+  `<i class="${[1,3,4,6,9].includes(i) ? 'on' : ''}"></i>`).join('');
+
+const ART = {
+
+/* 01 the dossier */
+dossier: () => `<div class="c1"><div class="folder"></div>
+  <div class="tab">FILE 04 &middot; HOLLAND</div>
+  <div class="holes"><i></i><i></i><i></i></div>
+  <div class="inner">
+    <div class="photo"><div class="clip"></div>
+      <div class="im">${M.mono}</div><div class="cap2">SINCE ${M.since}</div></div>
+    <div class="typed">
+      <div class="l">Manager file no. ${M.no} &middot; opened ${M.since}</div>
+      <h3>${M.first} <em>${M.last}</em></h3>
+      <div class="rows">
+        ${F.map(([l, v]) => `<div class="rw"><u>${l}</u><s>${v}</s></div>`).join('')}
+      </div>
+    </div>
+  </div>
+  <div class="stamp">CHAMPION &times;2</div></div>`,
+
+/* 02 the bento */
+bento: () => `<div class="c2">
+  <div class="t hero">
+    <div class="k">Manager file no. ${M.no}</div>
+    <div class="nm">${M.first}<br><em>${M.last}</em></div>
+    <div class="sub">Since ${M.since} &middot; seven seasons</div>
+    <div class="big">${M.rec}</div><div class="bigl">All-time record</div>
+  </div>
+  <div class="t"><div class="k">Titles</div><div class="v on">&#9733;&#9733;</div>
+    <div class="d">2021, 2024</div></div>
+  <div class="t"><div class="k">Best week</div><div class="v">${M.best}</div>
+    <div class="d">League record</div></div>
+  <div class="t"><div class="k">Season finishes</div>
+    <div class="spark">${bars(7)}</div><div class="d">1st twice</div></div>
+  <div class="t"><div class="k">Manager DNA</div>
+    <div class="v" style="font-size:1.05rem">The Closer</div>
+    <div class="bars">
+      <i style="background:#4fd1ff"></i><i style="background:#ffcb6b"></i>
+      <i style="background:#7a83a6"></i><i style="background:#ff5db1"></i>
+      <i style="background:#d8ff5d"></i><i style="background:#4fd1ff"></i></div>
+  </div>
+</div>`,
+
+/* 03 the trading card */
+card: () => `<div class="c3">
+  <div class="card"><div class="face">
+    <div class="art"><span class="mono">${M.mono}</span>
+    <div class="halftone"></div>
+    <span style="position:absolute;top:6px;left:7px;font-family:var(--mono);
+      font-weight:700;font-size:.36rem;letter-spacing:.2em;
+      color:rgba(255,255,255,.7)">FILE 04</span>
+    <span style="position:absolute;top:6px;right:7px;font-family:var(--serif);
+      font-style:italic;font-size:.7rem;
+      color:var(--gold-bright)">&#9733;&#9733;</span></div>
+    <div class="plate"><b>${M.first} ${M.last}</b><s>MGR &middot; ${M.since}</s></div>
+  </div></div>
+  <div class="back">
+    <div class="hd"><b>Career</b><s>Seven seasons</s></div>
+    <div class="tbl">
+      <span class="h y">Yr</span><span class="h">Fin</span><span class="h">Rec</span>
+      <span class="h">PF</span><span class="h">Ttl</span>
+      ${M.years.map(([y, f, r, w]) => `<span class="y">${y}</span>
+        <span class="${w ? 'on' : ''}">${f}</span><span>${r}</span>
+        <span>${(1700 + Math.round(Math.random() * 190))}</span>
+        <span class="${w ? 'on' : ''}">${w ? '&#9733;' : '&middot;'}</span>`).join('')}
+    </div>
+    <div class="blurb">Won it in 2021 and again in 2024, has missed the playoffs
+      once, and has never finished a season under .500.</div>
+  </div></div>`,
+
+/* 04 the scorecard */
+scorecard: () => `<div class="c4">
+  <div class="hd"><h3>${M.first} <em>${M.last}</em></h3>
+    <span class="k">Manager file ${M.no} &middot; ${M.since}&ndash;2025</span></div>
+  <div class="grid2">
+    <span class="h lbl">Season</span>
+    ${M.years.map(([y]) => `<span class="h">${y.slice(2)}</span>`).join('')}
+    <span class="h">Car</span>
+    <span class="lbl">Finish</span>
+    ${M.years.map(([, f, , w]) => `<span class="${w ? 'win' : ''}">${f}</span>`).join('')}
+    <span>&mdash;</span>
+    <span class="lbl">Record</span>
+    ${M.years.map(([, , r]) => `<span>${r}</span>`).join('')}
+    <span>${M.rec}</span>
+    <span class="lbl">Points for</span>
+    ${M.years.map(() => `<span>${1700 + Math.round(Math.random() * 190)}</span>`).join('')}
+    <span>15.0k</span>
+    <span class="lbl">High week</span>
+    ${M.years.map(() => `<span>${(150 + Math.random() * 60).toFixed(1)}</span>`).join('')}
+    <span>${M.best}</span>
+    <span class="lbl">Playoffs</span>
+    ${M.years.map(([, f]) => `<span>${f === '6th' ? '&mdash;' : '&#10003;'}</span>`).join('')}
+    <span>6</span>
+    <span class="lbl">Draft</span>
+    ${['B','A&minus;','C+','A&minus;','D','B+','B'].map(g => `<span>${g}</span>`).join('')}
+    <span>${M.draft}</span>
+    <span class="lbl">Title</span>
+    ${M.years.map(([, , , w]) => `<span class="${w ? 'win' : ''}">${w ? '&#9733;' : '&middot;'}</span>`).join('')}
+    <span>${M.titles}</span>
+  </div>
+  <div class="foot">Win pct <b>${M.pct}</b> &middot; Points for <b>${M.pf}</b>
+    &middot; Best week <b>${M.best}</b></div></div>`,
+
+/* 05 the broadsheet */
+broadsheet: () => `<div class="c5">
+  <div class="rail">The Manager File<s>No. ${M.no} of 12</s></div>
+  <h3>${M.first} ${M.last} has missed <em>the playoffs once.</em></h3>
+  <div class="body">
+    <div class="cut"><span>${M.mono}</span><div class="halftone"></div></div>
+    <div class="col">Won it in 2021 and again in 2024, has never finished a
+      season under .500, and holds the highest single week anyone has put up.
+      <span style="display:block;margin-top:.3rem;font-family:var(--mono);
+        font-size:.4rem;letter-spacing:.14em;text-transform:uppercase;
+        color:var(--ink-print-mute);border-top:1px solid rgba(40,30,12,.2);
+        padding-top:.2rem">Seven seasons &middot; twelve managers</span></div>
+    <div class="vr"></div>
+    <div class="agate">
+      <div class="hh">The career</div>
+      ${F.map(([l, v]) => `<div class="r"><u>${l}</u><s>${v}</s></div>`).join('')}
+    </div>
+  </div></div>`,
+
+/* 06 the credential */
+credential: () => `<div class="c6"><div class="pass">
+  <div class="slot"></div><div class="holo"></div>
+  <div class="lft"><div class="ph">${M.mono}<div class="halftone"></div></div>
+    <div class="sig">${M.first} ${M.last}</div></div>
+  <div class="rgt">
+    <div class="org">The Sunday Chronicle</div>
+    <h3>${M.first} ${M.last}</h3>
+    <div class="role">Manager &middot; file no. ${M.no} &middot; since ${M.since}</div>
+    <div class="fields">
+      ${F.map(([l, v]) => `<div><u>${l}</u><b>${v}</b></div>`).join('')}
+    </div>
+    <div class="barcode">${Array.from({length:34}, (_, i) =>
+      `<i class="${i % 3 ? '' : 'w'}${i % 5 ? '' : ' s'}"></i>`).join('')}</div>
+  </div></div></div>`,
+
+/* 07 the ledger */
+ledger: () => `<div class="c7">
+  <div class="top"><h3>${M.first} ${M.last}</h3>
+    <span class="k">Account 04 &middot; opened ${M.since}</span></div>
+  <div class="rows2">
+    <div class="rw h"><span class="y">Yr</span><span class="nm2">Season</span>
+      <span>W&ndash;L</span><span>Points</span><span>Fin</span></div>
+    ${M.years.map(([y, f, r, w]) => `<div class="rw">
+      <span class="y">${y}</span>
+      <span class="nm2">${w ? 'Champion' : 'Season ' + y}</span>
+      <span>${r}</span><span>${1700 + Math.round(Math.random() * 190)}</span>
+      <span>${f}</span></div>`).join('')}
+    <div class="rw tot"><span class="y">All</span><span class="nm2">Career</span>
+      <span>${M.rec}</span><span>${M.pf}</span><span>${M.titles} &#9733;</span></div>
+  </div>
+  <div class="paid">IN GOOD STANDING</div></div>`,
+
+/* 08 the specimen */
+specimen: () => `<div class="c8">
+  <div class="plateau"><div class="pin"></div>
+    <div class="lbl2">Specimen ${M.no} &middot; Manager DNA</div>
+    <h3>The Closer</h3>
+    <div class="taxo">Wins the weeks that count</div>
+    <div class="bc">
+      ${['#4fd1ff','#ffcb6b','#7a83a6','#ff5db1','#d8ff5d','#4fd1ff','#ffcb6b',
+         '#7a83a6','#ff5db1','#4fd1ff'].map(c =>
+        `<i style="background:${c}"></i>`).join('')}
+    </div>
+    <div class="traits"><span>Rides the hot hand</span><span>Never streams</span>
+      <span>Buys in October</span><span>Drafts running backs</span></div>
+    <div class="sigs">
+      <div><u>One-score</u><b>19&ndash;7</b></div><div><u>Bench</u><b>${M.lineup}</b></div>
+      <div><u>Trades</u><b>14</b></div><div><u>Streak</u><b>W11</b></div>
+    </div>
+  </div>
+  <div class="jar"><div class="ttl">${M.first} ${M.last} &middot; the record</div>
+    <div class="figs">
+      ${F.slice(0, 6).map(([l, v]) => `<div class="r"><b>${l}</b><s>${v}</s></div>`).join('')}
+    </div>
+  </div></div>`,
+
+/* 09 the telegram */
+telegram: () => `<div class="c9"><div class="tg">
+  <div class="perf t"></div><div class="perf b"></div>
+  <div class="tg-hd">The Manager File<s>No. ${M.no} &middot; filed ${M.since}</s></div>
+  <div class="tape">
+    <div class="ln" style="--rot:-.35deg">${M.first} ${M.last} <s>SEVEN SEASONS</s></div>
+    <div class="ln" style="--rot:.25deg">RECORD <b>${M.rec}</b> <s>PCT ${M.pct}</s></div>
+    <div class="ln" style="--rot:-.2deg">TITLES <b>${M.titles}</b> <s>2021 AND 2024</s></div>
+    <div class="ln" style="--rot:.3deg">BEST WEEK <b>${M.best}</b> <s>LEAGUE RECORD</s></div>
+    <div class="ln" style="--rot:-.28deg">PLAYOFFS <b>${M.playoffs}</b> <s>MISSED ONCE</s></div>
+    <div class="ln" style="--rot:.22deg">POINTS FOR <b>${M.pf}</b> <s>SECOND ALL-TIME</s></div>
+    <div class="ln" style="--rot:-.3deg">DRAFT GRADE <b>${M.draft}</b> <s>CAREER AVERAGE</s></div>
+    <div class="ln" style="--rot:.26deg">LINEUPS SET <b>${M.lineup}</b> <s>OF HIS CEILING</s></div>
+    <div class="ln" style="--rot:-.24deg">DNA <b>THE CLOSER</b> <s>WINS THE ONES THAT COUNT</s></div>
+  </div>
+  <div class="tg-ft">Never under .500<span style="margin-left:auto">STOP</span></div>
+</div></div>`,
+
+/* 10 the flat lay */
+flatlay: () => `<div class="c10">
+  <div class="it idx">
+    <div class="k">MANAGER FILE NO. ${M.no}</div>
+    <h3>${M.first} <em>${M.last}</em></h3>
+    <div class="rule"></div>
+    <div class="rows3">
+      ${F.slice(0, 5).map(([l, v]) => `<div class="r"><u>${l}</u><s>${v}</s></div>`).join('')}
+    </div>
+  </div>
+  <div class="it pola"><div class="im">${M.mono}</div>
+    <div class="cp">SINCE ${M.since}</div></div>
+  <div class="it stub">
+    <div class="l"><div class="k">CHAMPIONSHIP &middot; 2024</div>
+      <b>${M.first} ${M.last}</b><div class="k">BEAT JOHN BY 1.2</div></div>
+    <div class="r2"><div class="k">TTL</div><i>2</i></div>
+  </div>
+  <div class="it note2"><div class="k">MANAGER DNA</div>
+    <p>The Closer &mdash; wins the weeks that count.</p></div>
+</div>`,
+};
+
+const CONCEPTS = [
+  ['01', 'The dossier', 'EPHEMERA',
+   'A manila file with a tab, punch holes, a clipped photo and a rubber stamp. ' +
+   'The page is literally called the Manager File. Carries all eight figures.'],
+  ['02', 'The bento', 'BENTO',
+   'One hero tile plus four small ones. This is the pattern every product site ' +
+   'uses now, and it is the direct answer to "not enough detail": depth comes ' +
+   'from tile size, not type size.'],
+  ['03', 'The trading card', 'EPHEMERA',
+   'Front and back side by side — foil edge, portrait, nameplate, and the full ' +
+   'seven-season table on the back where a card actually prints it.'],
+  ['04', 'The scorecard', 'PRINT',
+   'Ruled boxes and printed column heads. Every season across, three stats down, ' +
+   'career in the last column. The most figures of any tile here.'],
+  ['05', 'The broadsheet', 'PRINT',
+   'A newspaper profile: headline, halftone cut, drop cap, agate down a column ' +
+   'rule. Closest to what the site already looks like.'],
+  ['06', 'The credential', 'EPHEMERA',
+   'A laminated pass: lanyard slot, hologram band, photo, signature strip and a ' +
+   'barcode. Reads as an object instantly at thumbnail size.'],
+  ['07', 'The ledger', 'PRINT',
+   'Green-bar accounting paper, ruled columns, a stamped total row. Good for any ' +
+   'page that is really a list of transactions — trades, drafts, seasons.'],
+  ['08', 'The specimen', 'BENTO',
+   'The lab identity Manager DNA already has on the site: pinned specimen label, ' +
+   'the real barcode, trait chips, and the record in a second panel.'],
+  ['09', 'The telegram', 'EPHEMERA',
+   'Perforated edge and pasted tape strips, all monospace. Forces the copy short, ' +
+   'which the brief wants anyway. Probably too one-note for eight boards.'],
+  ['10', 'The flat lay', 'EPHEMERA',
+   'Four artifacts overlapping on a desk at angles with real shadows: index card, ' +
+   'polaroid, ticket stub, sticky note. The most "scrapbook" of the ten.'],
+];
+
+const KEYS = ['dossier','bento','card','scorecard','broadsheet',
+              'credential','ledger','specimen','telegram','flatlay'];
+
+document.getElementById('grid').innerHTML = CONCEPTS.map(([no, nm, tag, note], i) => `
+  <div class="cell">
+    <div class="cap"><span class="no">${no}</span><span class="nm">${nm}</span>
+      <span class="tag">${tag}</span></div>
+    <div class="stage"><div class="m" data-fit>${ART[KEYS[i]]()}</div></div>
+    <div class="note">${note}</div>
+  </div>`).join('');
+
+/* Each stage holds a real 976px-wide module; scale it to the column. */
+const fit = () => document.querySelectorAll('.stage').forEach(st => {
+  const m = st.querySelector('.m');
+  m.style.transform = `scale(${st.clientWidth / 976})`;
+});
+fit();
+window.addEventListener('resize', fit);
+</script>
+</body>
+</html>
