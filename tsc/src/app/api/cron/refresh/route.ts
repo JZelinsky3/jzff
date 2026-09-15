@@ -81,7 +81,14 @@ export async function GET(req: Request) {
     .eq('is_live', true)
     .order('id', { ascending: true })
 
-  const results: Array<{ source: string; league_id: string; ok: boolean; error?: string }> = []
+  const results: Array<{
+    source: string
+    league_id: string
+    ok: boolean
+    seasons?: number
+    warnings?: string[]
+    error?: string
+  }> = []
   const skipped: Array<{ source: string; league_id: string; reason: string }> = []
   const touchedLeagues = new Set<string>()
 
@@ -124,10 +131,11 @@ export async function GET(req: Request) {
       continue
     }
     try {
+      let out
       if (src.platform === 'sleeper') {
-        await ingestSleeperSource(src.league_id, src.external_id, src.walk_history, range)
+        out = await ingestSleeperSource(src.league_id, src.external_id, src.walk_history, range)
       } else if (src.platform === 'espn') {
-        await ingestEspnSource(
+        out = await ingestEspnSource(
           src.league_id,
           src.external_id,
           (src.settings ?? {}) as EspnSourceSettings,
@@ -140,13 +148,24 @@ export async function GET(req: Request) {
         const { data: lg } = await db.from('leagues').select('owner_id').eq('id', src.league_id).maybeSingle()
         if (!lg?.owner_id) throw new Error('Yahoo league has no owner; cannot refresh.')
         const token = await getYahooAccessToken(lg.owner_id, db)
-        await ingestYahooSource(src.league_id, src.external_id, src.walk_history, token, range)
+        out = await ingestYahooSource(src.league_id, src.external_id, src.walk_history, token, range)
       } else {
         throw new Error(`${src.platform} sync not implemented`)
       }
       await db.from('league_sources').update({ last_synced_at: new Date().toISOString() }).eq('id', src.id)
       touchedLeagues.add(src.league_id)
-      results.push({ source: src.external_id, league_id: src.league_id, ok: true })
+      // `seasons` and `warnings` are the difference between "this ran" and
+      // "this did anything". A source can throw nothing, return ok, and have
+      // ingested zero seasons — a stale source year range does exactly that —
+      // and without these the workflow log looks identical to a good run.
+      // The ingests' own warnings were being discarded here entirely.
+      results.push({
+        source: src.external_id,
+        league_id: src.league_id,
+        ok: true,
+        seasons: out.seasonsIngested,
+        ...(out.warnings.length ? { warnings: out.warnings } : {}),
+      })
     } catch (err) {
       results.push({
         source: src.external_id,

@@ -153,8 +153,23 @@ export async function ingestEspnSource(
 
   // Narrow the walk to the request's year window (chunked sync). An empty
   // intersection means this source has nothing to do for this chunk.
+  //
+  // Say so. This used to return in silence, which was harmless while the only
+  // caller was a chunked manual sync deliberately splitting work up. The
+  // weekly cron now asks every live source for the current season only, so an
+  // ESPN source whose season_end was never bumped past last year intersects to
+  // nothing and quietly syncs zero rows, reporting success. The sleeper and
+  // yahoo ingests already warn in this exact situation; this makes all three
+  // agree. See [[project_tsc_sync_504]].
   const window = intersectRange(settings.season_start, settings.season_end, range)
-  if (!window) return result
+  if (!window) {
+    result.warnings.push(
+      `ESPN source ${externalId}: nothing to do — its season range ` +
+      `${settings.season_start}–${settings.season_end} doesn't overlap the requested ` +
+      `${range?.from ?? '*'}–${range?.to ?? '*'}. Widen season_end on the source if this season should sync.`
+    )
+    return result
+  }
   const startYear = window.start!
   const endYear = window.end!
 
