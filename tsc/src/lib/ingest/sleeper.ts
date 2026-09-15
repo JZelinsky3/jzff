@@ -19,6 +19,7 @@ import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 import { getNflClock, weekIsFinal } from '@/lib/nflClock'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
 import { manualLocks, manualLockWarning } from './manualLocks'
+import { mergeSeasonSettings } from './seasonSettings'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 import { writeTradeSides, type TradeSideWrite } from './tradeSides'
@@ -230,7 +231,10 @@ export async function ingestSleeperSource(
           year,
           external_id: lg.league_id,
           playoff_weeks: playoffWeeks,
-          settings: { status: lg.status, total_rosters: lg.total_rosters },
+          settings: await mergeSeasonSettings(db, leagueRow.id, year, {
+            status: lg.status,
+            total_rosters: lg.total_rosters,
+          }),
         },
         { onConflict: 'league_id,year' }
       )

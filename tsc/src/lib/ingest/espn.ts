@@ -36,6 +36,7 @@ import {
 } from '@/lib/platforms/espn'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
 import { manualLocks, manualLockWarning } from './manualLocks'
+import { mergeSeasonSettings } from './seasonSettings'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 import { getNflClock, weekIsFinal } from '@/lib/nflClock'
@@ -407,12 +408,12 @@ async function ingestSeason(args: {
         year,
         external_id: String(lg.id),
         playoff_weeks: playoffWeeks,
-        settings: {
+        settings: await mergeSeasonSettings(db, archiveLeagueId, year, {
           playoff_week_start: playoffStart,
           playoff_team_count: lg.settings?.scheduleSettings?.playoffTeamCount ?? null,
           division_names: divisionNames,
           latest_scoring_period: lg.status?.latestScoringPeriod ?? null,
-        },
+        }),
       },
       { onConflict: 'league_id,year' }
     )

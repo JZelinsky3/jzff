@@ -34,6 +34,7 @@ import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
 import { manualLocks, manualLockWarning } from './manualLocks'
+import { mergeSeasonSettings } from './seasonSettings'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
 import { getNflClock, weekIsFinal } from '@/lib/nflClock'
 import { writeTradeSides, type TradeSideWrite } from './tradeSides'
@@ -244,12 +245,12 @@ export async function ingestYahooSource(
           year,
           external_id: lg.league_key,
           playoff_weeks: playoffWeeks,
-          settings: {
+          settings: await mergeSeasonSettings(db, archiveLeagueId, year, {
             num_teams: lg.num_teams,
             start_week: lg.start_week,
             end_week: lg.end_week,
             num_playoff_teams: detail?.num_playoff_teams ?? null,
-          },
+          }),
         },
         { onConflict: 'league_id,year' }
       )

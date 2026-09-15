@@ -18,6 +18,7 @@ import {
 } from '@/lib/platforms/nfl'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
 import { manualLocks, manualLockWarning } from './manualLocks'
+import { mergeSeasonSettings } from './seasonSettings'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 import { writeTradeSides, type TradeSideWrite } from './tradeSides'
@@ -294,7 +295,10 @@ async function ingestSeason(args: {
         year,
         external_id: String(year),
         playoff_weeks: Array.from({ length: playoffRounds }, (_, i) => playoffStart + i),
-        settings: { playoff_week_start: playoffStart, playoff_team_count: playoffTeams },
+        settings: await mergeSeasonSettings(db, leagueId, year, {
+          playoff_week_start: playoffStart,
+          playoff_team_count: playoffTeams,
+        }),
       },
       { onConflict: 'league_id,year' }
     )
