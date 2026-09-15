@@ -35,6 +35,7 @@ import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
 import { manualLocks, manualLockWarning } from './manualLocks'
 import { mergeSeasonSettings } from './seasonSettings'
+import { autoStartLiveSeason } from './autoStartSeason'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
 import { getNflClock, weekIsFinal } from '@/lib/nflClock'
 import { writeTradeSides, type TradeSideWrite } from './tradeSides'
@@ -261,6 +262,15 @@ export async function ingestYahooSource(
       continue
     }
     const seasonId = seasonRow.id
+
+    // Once the NFL is playing, the current year promotes itself to live.
+    warnings.push(...await autoStartLiveSeason(db, {
+      leagueId: archiveLeagueId,
+      year,
+      seasonId,
+      platform: 'yahoo',
+      sourceExternalId: startLeagueKey,
+    }))
 
     // Wipe rebuildable per-season aggregates. Matchups are NOT wiped — they
     // upsert by (season_id, week, manager_a_id, manager_b_id) so re-syncs

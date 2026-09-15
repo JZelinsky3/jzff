@@ -20,6 +20,7 @@ import { getNflClock, weekIsFinal } from '@/lib/nflClock'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
 import { manualLocks, manualLockWarning } from './manualLocks'
 import { mergeSeasonSettings } from './seasonSettings'
+import { autoStartLiveSeason } from './autoStartSeason'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 import { writeTradeSides, type TradeSideWrite } from './tradeSides'
@@ -245,6 +246,15 @@ export async function ingestSleeperSource(
       continue
     }
     const seasonId = seasonRow.id
+
+    // Once the NFL is playing, the current year promotes itself to live.
+    warnings.push(...await autoStartLiveSeason(db, {
+      leagueId: leagueRow.id,
+      year,
+      seasonId,
+      platform: 'sleeper',
+      sourceExternalId: startLeagueId,
+    }))
 
     // Rebuild per-season aggregates. Matchups are NOT wiped — they're upserted
     // with a deterministic a/b key so re-syncs update rows in place, keeping

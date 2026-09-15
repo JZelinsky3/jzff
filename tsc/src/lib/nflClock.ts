@@ -21,6 +21,8 @@ export type NflClock = {
   week: number
   /** 'pre' | 'regular' | 'post' | 'off' */
   seasonType: string
+  /** ISO date week 1 opened ("2026-09-09"), when Sleeper reports one. */
+  seasonStartDate?: string
 }
 
 const TTL_MS = 5 * 60 * 1000
@@ -36,7 +38,12 @@ export async function getNflClock(): Promise<NflClock | null> {
     const st = await sleeper.state()
     const season = parseInt(st?.season ?? '', 10)
     if (st && Number.isFinite(season) && typeof st.week === 'number') {
-      clock = { season, week: st.week, seasonType: st.season_type }
+      clock = {
+        season,
+        week: st.week,
+        seasonType: st.season_type,
+        seasonStartDate: typeof st.season_start_date === 'string' ? st.season_start_date : undefined,
+      }
     }
   } catch {
     clock = null

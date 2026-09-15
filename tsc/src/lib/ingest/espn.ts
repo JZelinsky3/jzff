@@ -37,6 +37,7 @@ import {
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
 import { manualLocks, manualLockWarning } from './manualLocks'
 import { mergeSeasonSettings } from './seasonSettings'
+import { autoStartLiveSeason } from './autoStartSeason'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 import { getNflClock, weekIsFinal } from '@/lib/nflClock'
@@ -256,6 +257,7 @@ export async function ingestEspnSource(
       await ingestSeason({
         db,
         archiveLeagueId,
+        sourceExternalId: externalId,
         year,
         lg,
         managerIdBySwid,
@@ -278,6 +280,9 @@ export async function ingestEspnSource(
 async function ingestSeason(args: {
   db: ReturnType<typeof createAdminClient>
   archiveLeagueId: string
+  /** league_sources.external_id of the source being walked — needed to pick
+   *  the live source in autoStartLiveSeason. */
+  sourceExternalId: string
   year: number
   lg: EspnLeague
   managerIdBySwid: Map<string, string>
@@ -286,7 +291,7 @@ async function ingestSeason(args: {
   stages: Required<IngestStages>
   allowIdentityReplace: boolean
 }): Promise<void> {
-  const { db, archiveLeagueId, year, lg, managerIdBySwid, auth, result, stages, allowIdentityReplace } = args
+  const { db, archiveLeagueId, sourceExternalId, year, lg, managerIdBySwid, auth, result, stages, allowIdentityReplace } = args
 
   // team_id → SWID (this season only — ESPN recycles team_ids across years).
   // Some old seasons return teams whose owners[0] points at a SWID that was
@@ -421,6 +426,15 @@ async function ingestSeason(args: {
     .single()
   if (seasonErr || !seasonRow) throw new Error(`upsert season: ${seasonErr?.message}`)
   const seasonId = seasonRow.id
+
+  // Once the NFL is playing, the current year promotes itself to live.
+  result.warnings.push(...await autoStartLiveSeason(db, {
+    leagueId: archiveLeagueId,
+    year,
+    seasonId,
+    platform: 'espn',
+    sourceExternalId,
+  }))
 
   // Rebuild per-season aggregates. Matchups are NOT wiped — they're upserted
   // with a deterministic a/b key so re-syncs update rows in place, keeping

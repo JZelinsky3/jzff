@@ -205,6 +205,9 @@ export type SleeperState = {
   display_week?: number
   season: string
   season_type: string // 'pre' | 'regular' | 'post' | 'off'
+  /** ISO date of week 1, e.g. "2026-09-09". Sleeper's own answer for when
+   *  the season opened, which is what autoStartLiveSeason anchors to. */
+  season_start_date?: string
 }
 
 export const sleeper = {

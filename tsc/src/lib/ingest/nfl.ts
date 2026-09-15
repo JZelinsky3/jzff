@@ -307,6 +307,11 @@ async function ingestSeason(args: {
   if (seasonErr || !seasonRow) throw new Error(`upsert season: ${seasonErr?.message}`)
   const seasonId = seasonRow.id
 
+  // No autoStartLiveSeason() call here, unlike the other three ingests. NFL.com
+  // is retired and fantasy.nfl.com serves nothing, so promoting a season to
+  // live off an NFL source would point every live feature at a source that can
+  // never refresh again. See lib/ingest/autoStartSeason.ts.
+
   // Stages a commissioner filled in by hand are left exactly as they are. This
   // matters most here: NFL.com is retired, so for these seasons the hand-typed
   // rows are the only record that exists.
