@@ -99,6 +99,7 @@
         'live': 'live', 'matchup-preview': 'live', pickems: 'live',
         powerrank: 'live', 'best-coach': 'live', 'records-watch': 'live',
         milestones: 'live', trades: 'live', 'manager-dna': 'live',
+        weekly: 'live',
     };
 
     // Live-season chapter gets its own bar (paid tiers only — UDFA keeps the
@@ -110,6 +111,7 @@
     var LIVE_TAB_OF_PAGE = {
         'live': 'live',
         'matchup-preview': 'week', powerrank: 'week', pickems: 'week',
+        weekly: 'week',
         'records-watch': 'desk', 'best-coach': 'desk', milestones: 'desk',
         trades: 'desk', 'manager-dna': 'desk',
     };
@@ -128,6 +130,7 @@
         'live': 'more', 'matchup-preview': 'more', pickems: 'more',
         powerrank: 'more', 'best-coach': 'more', 'records-watch': 'more',
         milestones: 'more', trades: 'more', 'manager-dna': 'more',
+        weekly: 'more',
     };
 
     // Chapters that lock on the free tier. KEEP IN SYNC with
@@ -588,6 +591,7 @@
             week.innerHTML =
                 '<div class="m-sheet-handle" aria-hidden></div>' +
                 '<div class="m-sheet-title">The Weekly Slate</div>' +
+                sheetRow('live/weekly/', 'The Weekly', { sub: 'Start here' }) +
                 sheetRow('live/matchup-preview/', 'Matchup Preview') +
                 sheetRow('live/powerrank/', 'Power Rankings') +
                 sheetRow('live/pickems/', "Weekly Pick'ems");

@@ -35,6 +35,15 @@ const TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams')
 // it exists; anything not yet rebuilt falls back to the desktop template, so
 // the tree can fill in page by page without breaking partial coverage.
 const MOBILE_TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams-mobile')
+// Pages that exist ONLY in the mobile tree and are served from there to
+// every viewer, desktop included. The Weekly is built to be sent into a
+// league group chat, so it cannot 404 for whoever opens it on a laptop —
+// and it has no desktop counterpart to fall back to (the desktop Live
+// Season hub covers that ground already). The mobile shell centres itself
+// at 640px on wide screens, so the column reads fine there.
+const MOBILE_ONLY_PAGES = new Set<string>([
+  'live/weekly/index.html',
+])
 // 'desktop' | 'mobile' — explicit user choice ("View desktop site" link /
 // switch-back pill). Beats user-agent sniffing in both directions.
 const VIEW_COOKIE = 'dc_view'
@@ -668,6 +677,20 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
       description: `${meta.name}'s pick'em pool, every matchup, plus Highest and Lowest scorer. Lock in your picks before kickoff.`,
     }
   }
+  // The Weekly: /leagues/<slug>/live/weekly/
+  // The one link that actually gets sent into the league chat, so the card
+  // has to carry the week's contents, not just the page's name: the game of
+  // the week, the pick'ems deadline, and what's on the wire.
+  if (file === 'live/weekly/index.html') {
+    const url = new URL(`/api/og/weekly/${meta.slug}`, req.nextUrl.origin).toString()
+    return {
+      url,
+      title: `${meta.name} · The Weekly`,
+      description: `This week in ${meta.name}: your pick'ems, the board, the power rankings, the trade wire, and every record within reach.`,
+      downloadName: `${meta.slug}-the-weekly`,
+      shareSub: 'The Weekly',
+    }
+  }
   // Milestones: /leagues/<slug>/live/milestones/
   // Features the most recent crossing (or closest imminent chase) plus the
   // meter strip footer.
@@ -1149,7 +1172,7 @@ export async function GET(
     let servedMobile = false
     let file = resolved.file
     for (const cand of candidates) {
-      if (viewPref === 'mobile') {
+      if (viewPref === 'mobile' || MOBILE_ONLY_PAGES.has(cand)) {
         const mobilePath = safeTemplatePath(cand, MOBILE_TEMPLATE_ROOT)
         if (mobilePath) {
           try {

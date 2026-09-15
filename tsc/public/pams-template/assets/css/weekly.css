@@ -1,0 +1,593 @@
+/* ============================================================
+   THE WEEKLY — /leagues/<slug>/live/weekly/
+   Template: src/templates/pams-mobile/live/weekly/index.html
+   Script:   /pams-template/assets/js/weekly.js
+
+   HOUSE: "Night Edition". The page is a container for six other
+   chapters (pick'ems magenta, matchup amber, power gold, trades
+   brass, records slate, milestones violet) — carrying all six
+   accents at once turns into mud on a 390px column, so the house
+   is deliberately neutral and the only colours that mean anything
+   are functional:
+
+     signal (vermilion) — something wants you: picks not in,
+                          deadline close, a record just fell
+     go     (green)     — settled: picks in, you're favoured, moved up
+     note   (violet)    — the history register: records + milestones
+
+   Everything else is bone on ink-navy. Not the moss/amber of the
+   Live Season hub on purpose — this is its own edition, not a
+   chapter of that one.
+   ============================================================ */
+
+:root {
+    --wk-bg:        #0b0f16;
+    --wk-bg2:       #10161f;
+    --wk-card:      #141b26;
+    --wk-card-hi:   #1a2331;
+    --wk-line:      #23303f;
+    --wk-line-soft: #1a2430;
+
+    --wk-ink:       #efe8da;   /* bone — body + headlines */
+    --wk-ink-soft:  #b7c0cc;
+    --wk-mute:      #76818f;
+    --wk-num:       #dee6f0;   /* cool white — numerals only */
+
+    --wk-signal:    #ff5a3c;
+    --wk-signal-dk: #b23a22;
+    --wk-go:        #5fbf8f;
+    --wk-note:      #9d8cff;
+
+    /* Fixed chrome re-points to the page ground. */
+    --m-chrome-bg:  rgb(9, 13, 19);
+    --m-chrome-bg2: rgb(12, 17, 24);
+}
+
+body { background: var(--wk-bg); }
+
+/* The identity bar and several rows below swap between states with the
+   `hidden` attribute, and every one of them carries a display rule that
+   would otherwise beat the UA's low-specificity `[hidden] { display:none }`
+   — leaving both states on screen and pushing the column past the
+   viewport. Reassert it once, here, rather than per selector. */
+[hidden] { display: none !important; }
+
+/* Faint newsprint tooth + two cold corner washes. Keeps the large flat
+   panels from reading as a flat app screen. */
+.wk-glow {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+        radial-gradient(circle at 12% 4%,  rgba(255, 90, 60, .07) 0%, transparent 46%),
+        radial-gradient(circle at 88% 96%, rgba(157, 140, 255, .06) 0%, transparent 52%);
+}
+
+/* ── Masthead ──────────────────────────────────────────────── */
+.wk-head { text-align: center; padding: 1.1rem 0 0; }
+.wk-head-sup {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--wk-signal);
+}
+.wk-title {
+    font-family: var(--serif);
+    font-size: 2.1rem; line-height: 1;
+    color: var(--wk-ink);
+    margin-top: .3rem;
+}
+.wk-title em { font-style: italic; color: var(--wk-signal); }
+.wk-strap {
+    margin-top: .4rem;
+    font-size: .74rem; line-height: 1.4;
+    color: var(--wk-mute);
+}
+/* Double rule — the masthead's only ornament. */
+.wk-rule {
+    margin: .85rem 0 0;
+    border-top: 2px solid var(--wk-signal);
+    border-bottom: 1px solid var(--wk-line);
+    height: 3px;
+}
+.wk-dateline {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: .6rem;
+    padding: .45rem .1rem 0;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--wk-mute);
+}
+.wk-dateline .hot { color: var(--wk-signal); }
+
+/* ── Identity bar ──────────────────────────────────────────── */
+.wk-id {
+    display: flex; align-items: center; gap: .45rem; flex-wrap: wrap;
+    margin-top: .9rem;
+    padding: .6rem;
+    background: var(--wk-card);
+    border: 1px solid var(--wk-line);
+    border-radius: 10px;
+}
+.wk-id-lbl {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--wk-mute);
+    width: 100%;
+}
+select.wk-select {
+    -webkit-appearance: none; -moz-appearance: none; appearance: none;
+    flex: 1; min-width: 150px;
+    background-color: var(--wk-card-hi);
+    /* Redrawn chevron so Safari renders a native-looking control instead of
+       its own pill + system font. */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2376818f' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right .7rem center;
+    border: 1px solid var(--wk-line);
+    border-radius: 4px;
+    color: var(--wk-ink);
+    font-family: var(--sans); font-size: .85rem;
+    padding: .55rem 1.9rem .55rem .7rem;
+}
+select.wk-select:focus {
+    outline: none;
+    border-color: var(--wk-signal);
+    box-shadow: 0 0 0 3px rgba(255, 90, 60, .16);
+}
+.wk-whoami-name {
+    flex: 1; min-width: 0;
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.15rem; line-height: 1.6; color: var(--wk-ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wk-btn {
+    flex: none;
+    background: none;
+    border: 1px solid var(--wk-line);
+    border-radius: 4px;
+    color: var(--wk-ink-soft);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .18em; text-transform: uppercase;
+    padding: .5rem .65rem;
+    display: inline-flex; align-items: center; gap: .35rem;
+}
+.wk-btn:active { background: var(--wk-card-hi); }
+.wk-btn svg { display: block; width: 10px; height: 10px; }
+.wk-btn.is-signal { border-color: rgba(255, 90, 60, .5); color: var(--wk-signal); }
+.wk-btn.is-signal:active { background: rgba(255, 90, 60, .12); }
+
+/* ── Section scaffolding ───────────────────────────────────── */
+.wk-sec { margin-top: 1.5rem; }
+.wk-sec-head {
+    display: flex; align-items: baseline; gap: .55rem;
+    margin-bottom: .55rem;
+}
+.wk-sec-num {
+    flex: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .2em;
+    color: var(--wk-signal);
+}
+.wk-sec-title {
+    font-family: var(--serif);
+    font-size: 1.22rem; line-height: 1;
+    color: var(--wk-ink);
+}
+.wk-sec-title em { font-style: italic; color: var(--wk-ink-soft); }
+.wk-sec-rule { flex: 1; height: 1px; background: var(--wk-line); }
+.wk-sec-link {
+    flex: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--wk-mute);
+    text-decoration: none;
+    white-space: nowrap;
+}
+.wk-sec-link:active { color: var(--wk-signal); }
+
+.wk-panel {
+    background: var(--wk-card);
+    border: 1px solid var(--wk-line);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.wk-empty {
+    padding: 1rem .85rem;
+    font-size: .74rem; line-height: 1.5;
+    color: var(--wk-mute);
+    text-align: center;
+}
+
+/* ── §01 Duty rows — the actual checklist ──────────────────── */
+.wk-duty {
+    display: flex; align-items: center; gap: .65rem;
+    padding: .7rem .8rem;
+    border-bottom: 1px solid var(--wk-line-soft);
+    color: inherit; text-decoration: none;
+}
+.wk-duty:last-child { border-bottom: none; }
+a.wk-duty:active { background: var(--wk-card-hi); }
+/* Status lamp. Hollow = nothing needed, filled signal = you're on the
+   hook, filled green = settled. */
+.wk-lamp {
+    flex: none; width: 9px; height: 9px; border-radius: 50%;
+    border: 1.5px solid var(--wk-mute);
+}
+.wk-duty[data-state="todo"] .wk-lamp {
+    background: var(--wk-signal); border-color: var(--wk-signal);
+    box-shadow: 0 0 8px rgba(255, 90, 60, .6);
+    animation: wkPulse 1.9s ease-in-out infinite;
+}
+.wk-duty[data-state="done"] .wk-lamp { background: var(--wk-go); border-color: var(--wk-go); }
+@keyframes wkPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .35; }
+}
+.wk-duty-body { flex: 1; min-width: 0; }
+.wk-duty-lbl {
+    display: block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--wk-mute);
+}
+.wk-duty-line {
+    display: block;
+    margin-top: .16rem;
+    font-size: .86rem; line-height: 1.3;
+    color: var(--wk-ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wk-duty-line strong { color: var(--wk-num); font-weight: 600; }
+.wk-duty-line em { font-family: var(--serif); font-style: italic; }
+.wk-duty-sub {
+    display: block;
+    margin-top: .12rem;
+    font-family: var(--mono);
+    font-size: .54rem; letter-spacing: .06em;
+    color: var(--wk-mute);
+}
+.wk-duty-sub.hot { color: var(--wk-signal); }
+.wk-duty-sub.good { color: var(--wk-go); }
+.wk-chev { flex: none; display: flex; color: var(--wk-mute); }
+
+/* Big right-hand readout on the rank / matchup rows. */
+.wk-duty-val {
+    flex: none; text-align: right;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .95rem; color: var(--wk-num);
+    line-height: 1;
+}
+.wk-duty-val small {
+    display: block; margin-top: .18rem;
+    font-size: .5rem; font-weight: 700; letter-spacing: .1em;
+    color: var(--wk-mute);
+}
+.wk-duty-val small.up   { color: var(--wk-go); }
+.wk-duty-val small.down { color: var(--wk-signal); }
+
+/* Pre-claim prompt where §01 would be. */
+.wk-claim {
+    padding: 1.1rem .9rem;
+    text-align: center;
+}
+.wk-claim-title {
+    font-family: var(--serif); font-size: 1.15rem; color: var(--wk-ink);
+}
+.wk-claim-title em { font-style: italic; color: var(--wk-signal); }
+.wk-claim-body {
+    margin-top: .35rem;
+    font-size: .76rem; line-height: 1.5; color: var(--wk-mute);
+}
+
+/* ── §02 The board ─────────────────────────────────────────── */
+.wk-game {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: .5rem;
+    padding: .6rem .7rem;
+    border-bottom: 1px solid var(--wk-line-soft);
+    color: inherit; text-decoration: none;
+}
+.wk-game:last-child { border-bottom: none; }
+a.wk-game:active { background: var(--wk-card-hi); }
+.wk-game.is-gotw { background: rgba(255, 90, 60, .05); }
+.wk-game.is-mine { background: rgba(95, 191, 143, .06); }
+.wk-game-team { min-width: 0; }
+.wk-game-team.right { text-align: right; }
+/* The favourite has to be readable at a glance, and bone-vs-cool-white was
+   not a difference anyone could see. The underdog dims instead. */
+.wk-game-name {
+    display: block;
+    font-size: .78rem; font-weight: 500; line-height: 1.2;
+    color: var(--wk-ink-soft);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wk-game-name.fav { color: var(--wk-num); font-weight: 700; }
+.wk-game-rec {
+    display: block; margin-top: .1rem;
+    font-family: var(--mono);
+    font-size: .52rem; letter-spacing: .08em;
+    color: var(--wk-mute);
+}
+/* Middle column is `auto`-width, so anything long in here steals room from
+   both team names on a 390px screen. Capped, and the tag copy is kept to
+   one short token for the same reason. */
+.wk-game-mid {
+    flex: none; text-align: center;
+    min-width: 46px; max-width: 74px;
+    display: flex; flex-direction: column; align-items: center; gap: .1rem;
+}
+.wk-game-spread {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .04em;
+    color: var(--wk-ink-soft);
+    white-space: nowrap;
+}
+.wk-game-tag {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .42rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--wk-signal);
+}
+.wk-game-tag.mine { color: var(--wk-go); }
+
+/* ── §03 Pecking order ─────────────────────────────────────── */
+.wk-rank {
+    display: grid;
+    grid-template-columns: 1.7rem minmax(0, 1fr) auto 2.6rem;
+    align-items: center;
+    gap: .45rem;
+    padding: .42rem .75rem;
+    border-bottom: 1px solid var(--wk-line-soft);
+}
+.wk-rank:last-child { border-bottom: none; }
+.wk-rank.is-mine { background: rgba(95, 191, 143, .07); }
+.wk-rank-num {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.05rem; line-height: 1;
+    color: var(--wk-num);
+}
+.wk-rank.is-mine .wk-rank-num { color: var(--wk-go); }
+.wk-rank-name {
+    font-size: .76rem; font-weight: 600;
+    color: var(--wk-ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wk-rank-name small {
+    display: block; font-weight: 400; font-size: .54rem;
+    color: var(--wk-mute);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wk-rank-rec {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; color: var(--wk-ink-soft);
+    font-variant-numeric: tabular-nums;
+}
+.wk-rank-delta {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; text-align: right;
+}
+.wk-rank-delta.up   { color: var(--wk-go); }
+.wk-rank-delta.down { color: var(--wk-signal); }
+.wk-rank-delta.same { color: var(--wk-mute); }
+.m-move-arrow { display: inline-block; vertical-align: -1px; margin-right: .1em; }
+
+/* Riser / faller strip under the table. */
+.wk-movers {
+    display: grid; grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--wk-line);
+    background: rgba(0, 0, 0, .22);
+}
+.wk-mover { padding: .5rem .7rem; }
+.wk-mover + .wk-mover { border-left: 1px solid var(--wk-line-soft); }
+.wk-mover-lbl {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .46rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--wk-mute);
+}
+.wk-mover-name {
+    display: block; margin-top: .16rem;
+    font-size: .74rem; font-weight: 600; color: var(--wk-ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wk-mover-val { font-family: var(--mono); font-weight: 700; font-size: .58rem; }
+.wk-mover-val.up   { color: var(--wk-go); }
+.wk-mover-val.down { color: var(--wk-signal); }
+
+/* ── §04 The wire ──────────────────────────────────────────── */
+.wk-trade {
+    padding: .7rem .8rem;
+    border-bottom: 1px solid var(--wk-line-soft);
+    color: inherit; text-decoration: none; display: block;
+}
+.wk-trade:last-child { border-bottom: none; }
+a.wk-trade:active { background: var(--wk-card-hi); }
+.wk-trade-top {
+    display: flex; align-items: baseline; gap: .5rem;
+}
+.wk-trade-head {
+    flex: 1; min-width: 0;
+    font-family: var(--serif);
+    font-size: .98rem; line-height: 1.15; color: var(--wk-ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wk-trade-age {
+    flex: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--wk-mute);
+}
+.wk-trade-age.fresh { color: var(--wk-signal); }
+.wk-trade-sides { margin-top: .4rem; display: grid; gap: .28rem; }
+.wk-trade-side {
+    display: grid; grid-template-columns: 4.6rem minmax(0, 1fr);
+    gap: .5rem; align-items: baseline;
+}
+.wk-trade-who {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--wk-mute);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wk-trade-gets {
+    font-size: .72rem; line-height: 1.35; color: var(--wk-ink-soft);
+}
+.wk-trade-flag {
+    display: inline-block; margin-top: .45rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .44rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--wk-signal);
+    border: 1px solid rgba(255, 90, 60, .45);
+    border-radius: 3px;
+    padding: 3px 5px 2px;
+}
+
+/* ── §05 The record room ───────────────────────────────────── */
+.wk-note-row {
+    display: flex; gap: .6rem; align-items: flex-start;
+    padding: .62rem .8rem;
+    border-bottom: 1px solid var(--wk-line-soft);
+}
+.wk-note-row:last-child { border-bottom: none; }
+.wk-note-glyph {
+    flex: none; width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .68rem;
+    background: rgba(157, 140, 255, .12);
+    border: 1px solid rgba(157, 140, 255, .3);
+    color: var(--wk-note);
+}
+.wk-note-row.is-broken .wk-note-glyph {
+    background: rgba(255, 90, 60, .12);
+    border-color: rgba(255, 90, 60, .35);
+    color: var(--wk-signal);
+}
+.wk-note-body { flex: 1; min-width: 0; }
+/* These three are <span>s inside a flex item, so they stay inline and run
+   into each other unless they're blockified — the rubric, the headline and
+   the stat line each need their own line. */
+.wk-note-cat {
+    display: block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .46rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--wk-mute);
+}
+.wk-note-cat .flag { color: var(--wk-signal); margin-left: .35rem; }
+.wk-note-line {
+    display: block;
+    margin-top: .14rem;
+    font-size: .78rem; line-height: 1.35; color: var(--wk-ink);
+}
+.wk-note-line strong { color: var(--wk-num); }
+.wk-note-line em { font-style: normal; color: var(--wk-note); font-weight: 600; }
+.wk-note-row.is-broken .wk-note-line em { color: var(--wk-signal); }
+.wk-note-sub {
+    display: block;
+    margin-top: .16rem;
+    font-family: var(--mono);
+    font-size: .52rem; letter-spacing: .04em; line-height: 1.4;
+    color: var(--wk-mute);
+}
+/* stats_html / meta_html come from the milestones feed and ship their own
+   inner spans; keep them from inheriting anything loud. */
+.wk-note-sub strong { color: var(--wk-ink-soft); font-weight: 700; }
+.wk-note-sub .h2h { margin-left: .4rem; color: var(--wk-mute); }
+.wk-note-eta {
+    flex: none; text-align: right;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .7rem; color: var(--wk-note);
+    line-height: 1;
+}
+.wk-note-eta small {
+    display: block; margin-top: .16rem;
+    font-size: .44rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--wk-mute);
+}
+
+/* Sub-heading inside a panel (Broken / On the brink / Just achieved). */
+.wk-sub-label {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .45rem .8rem;
+    background: rgba(0, 0, 0, .25);
+    border-bottom: 1px solid var(--wk-line-soft);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .48rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--wk-mute);
+}
+.wk-sub-label .count {
+    margin-left: auto;
+    color: var(--wk-ink-soft);
+}
+.wk-sub-label.is-broken { color: var(--wk-signal); }
+
+/* Two-up links out of the record room. */
+.wk-outlinks {
+    display: grid; grid-template-columns: 1fr 1fr; gap: .5rem;
+    margin-top: .5rem;
+}
+.wk-outlink {
+    display: block; text-align: center;
+    padding: .6rem .5rem;
+    background: var(--wk-card);
+    border: 1px solid var(--wk-line);
+    border-radius: 8px;
+    color: var(--wk-ink-soft);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .16em; text-transform: uppercase;
+    text-decoration: none;
+}
+.wk-outlink:active { background: var(--wk-card-hi); color: var(--wk-ink); }
+
+/* ── Pool line + footer ────────────────────────────────────── */
+.wk-pool {
+    display: flex; align-items: center; gap: .55rem;
+    padding: .52rem .8rem;
+    border-top: 1px solid var(--wk-line);
+    background: rgba(0, 0, 0, .22);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--wk-mute);
+}
+.wk-pool-track {
+    flex: 1; height: 3px; border-radius: 2px;
+    background: var(--wk-line);
+    overflow: hidden;
+}
+.wk-pool-fill { height: 100%; background: var(--wk-go); }
+.wk-pool-val { flex: none; color: var(--wk-ink-soft); }
+
+.wk-foot {
+    margin: 1.8rem 0 .5rem;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: .5rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--wk-mute);
+}
+
+/* Copy-link toast (share falls back to the clipboard off-HTTPS or where
+   navigator.share is missing). */
+.wk-toast {
+    position: fixed; left: 50%; transform: translateX(-50%) translateY(8px);
+    bottom: calc(var(--m-tab-h) + env(safe-area-inset-bottom) + .9rem);
+    z-index: 240;
+    background: var(--wk-ink); color: var(--wk-bg);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .16em; text-transform: uppercase;
+    padding: .55rem .9rem; border-radius: 999px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+}
+.wk-toast.is-on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Skeleton while the digest resolves. */
+.wk-skel {
+    height: 74px;
+    background: linear-gradient(90deg, var(--wk-card) 0%, var(--wk-card-hi) 50%, var(--wk-card) 100%);
+    background-size: 200% 100%;
+    animation: wkShimmer 1.3s linear infinite;
+}
+@keyframes wkShimmer {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .wk-skel, .wk-duty[data-state="todo"] .wk-lamp { animation: none; }
+}
