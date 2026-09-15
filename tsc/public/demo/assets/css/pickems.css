@@ -26,6 +26,15 @@
   --pk-champagne-bright: #f9d98a;
   --pk-champagne-deep:   #b48a2e;
 
+  /* Aqua — the RESULT colour, and nothing else. Magenta means "home side"
+     and champagne means "away side", so the winner used to borrow
+     champagne and a card could end up with both buttons lit. Aqua belongs
+     to no side. Keep in sync with
+     /pams-template/assets/css/pickems.css. */
+  --pk-aqua:        #2fe3d0;
+  --pk-aqua-bright: #6ff2e4;
+  --pk-aqua-deep:   #0f8d7f;   /* readable on the cream GOTW card */
+
   /* GOTW cream-card ambers — edit these to retune the yellow on the cream
      Game-of-the-Week card. The light value is the bar fill, the dark value
      is the text/vote-button color (needs to be readable on cream). */
@@ -542,6 +551,33 @@ body {
 }
 .match[data-gotw="true"] .bar2 .right { background: var(--pk-gotw-amber-light); }
 
+/* GOTW result state on cream — same rule as the dark cards. */
+.match[data-gotw="true"][data-winner] .vote-btn[data-picked="true"]:not([data-winner="true"]) {
+  background: transparent;
+  color: #8c1746;
+  box-shadow: inset 0 5px 0 var(--pk-magenta);
+}
+.match[data-gotw="true"][data-winner] .vote-btn:last-child[data-picked="true"]:not([data-winner="true"]) {
+  background: transparent;
+  color: #7a5310;
+  box-shadow: inset 0 5px 0 var(--pk-gotw-amber);
+}
+/* A dark field still reads as a badge on cream; tinted teal, ringed aqua. */
+.match[data-gotw="true"] .vote-btn[data-winner="true"],
+.match[data-gotw="true"] .vote-btn:last-child[data-winner="true"] {
+  background: #0c2b28;
+  color: var(--pk-aqua-bright);
+  box-shadow: inset 0 0 0 2px var(--pk-aqua), inset 0 4px 0 var(--pk-aqua-bright);
+}
+.match[data-gotw="true"] .vote-btn[data-winner="true"] .vote-pct,
+.match[data-gotw="true"] .vote-btn:last-child[data-winner="true"] .vote-pct {
+  color: var(--pk-aqua-bright);
+  text-shadow: none;
+}
+/* Light aqua disappears on cream, so the name takes the deep value. */
+.match[data-gotw="true"] .team-name.win { color: var(--pk-aqua-deep); }
+.match[data-gotw="true"] .team-name.win .record { color: rgba(15,141,127,.75); }
+
 /* Recolor the corner GOTW badge for cream — dark plum block reads
    cleanly on the cream card like a magazine callout */
 .match[data-gotw="true"]::after {
@@ -614,8 +650,10 @@ body {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   max-width: 100%;
 }
+/* The winning team's name agrees with its vote button — aqua, not the
+   away-side champagne it used to borrow. */
 .team-name.win {
-  color: var(--pk-champagne-bright);
+  color: var(--pk-aqua-bright);
 }
 .team-name .record {
   display: inline-block;
@@ -630,7 +668,7 @@ body {
   margin-left: 0;
   margin-right: .4rem;
 }
-.team-name.win .record { color: var(--pk-champagne); }
+.team-name.win .record { color: var(--pk-aqua); }
 
 .manager {
   font-family: var(--mono); font-weight: 600;
@@ -748,13 +786,55 @@ body {
   color: var(--pk-champagne-bright);
   box-shadow: inset 0 0 0 1px var(--pk-champagne), inset 0 3px 0 var(--pk-champagne);
 }
-.vote-btn[data-winner="true"] {
-  background: rgba(240,196,99,.16);
-  color: var(--pk-champagne-bright);
-  box-shadow: inset 0 0 0 1px var(--pk-champagne), inset 0 3px 0 var(--pk-champagne);
+/* ── Result state ──────────────────────────────────────────────
+   Once a game is decided the winner owns the loud fill; a pick that is NOT
+   the winner steps back to a top stripe only, so two filled buttons never
+   compete on the same card. */
+.match[data-winner] .vote-btn[data-picked="true"]:not([data-winner="true"]) {
+  background: transparent;
+  color: var(--pk-magenta-bright);
+  box-shadow: inset 0 3px 0 var(--pk-magenta);
 }
-.vote-btn[data-winner="true"] .vote-pct { color: var(--pk-champagne-bright); }
+.match[data-winner] .vote-btn:last-child[data-picked="true"]:not([data-winner="true"]) {
+  background: transparent;
+  color: var(--pk-champagne-bright);
+  box-shadow: inset 0 3px 0 var(--pk-champagne);
+}
+
+/* Winner. After the picked rules so it wins on equal specificity. */
+.vote-btn[data-winner="true"],
+.vote-btn:last-child[data-winner="true"] {
+  background: rgba(47,227,208,.17);
+  color: var(--pk-aqua-bright);
+  box-shadow: inset 0 0 0 1px var(--pk-aqua), inset 0 3px 0 var(--pk-aqua);
+}
+.vote-btn[data-winner="true"] .vote-pct,
+.vote-btn:last-child[data-winner="true"] .vote-pct {
+  color: var(--pk-aqua-bright);
+  text-shadow: 0 0 8px rgba(47,227,208,.5);
+}
 .vote-btn:disabled { cursor: default; }
+
+/* ── "Your pick" marker ────────────────────────────────────────
+   Carries the picked state on its own so the fill underneath is free to
+   mean "won". Inherits the button's colour, and goes solid aqua when the
+   pick was the winner. */
+.vote-mark { display: none; }
+.vote-btn[data-picked="true"] .vote-mark {
+  flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px;
+  margin: 0 .45rem;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: .55rem; font-weight: 700; line-height: 1;
+  letter-spacing: 0;
+}
+.vote-btn[data-winner="true"][data-picked="true"] .vote-mark {
+  background: var(--pk-aqua-bright);
+  border-color: var(--pk-aqua-bright);
+  color: var(--pk-bg);
+}
 
 /* One continuous proportional bar — JS sets widths inline.
    Flex (not grid) so the inline width:64% / width:36% actually controls

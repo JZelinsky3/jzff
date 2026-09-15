@@ -522,12 +522,18 @@
       +     '</div>'
       +     '<div class="vote">'
       +       '<div class="buttons">'
+      // .vote-mark is the "your pick" indicator — hidden until the button
+      // carries data-picked. It exists so the button's FILL is free to mean
+      // "this side won" once a game is decided; see the result-state block
+      // in pickems.css.
       +         '<button class="vote-btn" data-matchup="' + esc(m.id) + '" data-team="' + esc(m.home) + '">'
       +           '<span class="vote-name">' + esc(A ? A.name : m.home) + '</span>'
+      +           '<span class="vote-mark" title="Your pick">✓</span>'
       +           '<span class="vote-pct" id="vp-' + esc(w.id) + '-' + esc(m.id) + '-' + esc(m.home) + '">—</span>'
       +         '</button>'
       +         '<button class="vote-btn" data-matchup="' + esc(m.id) + '" data-team="' + esc(m.away) + '">'
       +           '<span class="vote-name">' + esc(B ? B.name : m.away) + '</span>'
+      +           '<span class="vote-mark" title="Your pick">✓</span>'
       +           '<span class="vote-pct" id="vp-' + esc(w.id) + '-' + esc(m.id) + '-' + esc(m.away) + '">—</span>'
       +         '</button>'
       +       '</div>'

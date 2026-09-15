@@ -28,28 +28,44 @@ body {
 .pk-title { font-family: var(--serif); font-size: 1.7rem; line-height: 1.05; color: var(--pk-chalk); }
 .pk-title em { font-style: italic; color: var(--pk-champagne); }
 
-/* Identity row gains the Records + Share buttons (lived in the desktop
-   masthead). Share gets a champagne outline so it reads as the secondary
-   action — Records is the primary informational button here. */
-.pe-auth { flex-wrap: wrap; }
-.pk-action-group { margin-left: auto; display: inline-flex; gap: .4rem; align-items: center; }
-.pk-records-btn,
-.pk-share-btn {
+/* Identity row: just the name control (and Change once claimed), centered.
+   Share moved up into the app bar's right slot — the same place Power
+   Rankings and the Trade Desk put theirs — so the row underneath stays a
+   single idea, and Records gets its own centered line below it. */
+.pe-auth { flex-wrap: wrap; margin-bottom: .75rem; }
+.pk-records-row {
+    display: flex; justify-content: center;
+    margin-bottom: 1.5rem;
+}
+.pk-records-btn {
     background: none;
     border: 1px solid var(--pk-line);
     border-radius: 2px;
     color: var(--pk-champagne);
     font-family: var(--mono); font-weight: 700;
     font-size: .54rem; letter-spacing: .18em; text-transform: uppercase;
-    padding: .45rem .7rem;
+    padding: .5rem 1.4rem;
     display: inline-flex; align-items: center; gap: .35rem;
 }
-.pk-share-btn {
-    border-color: rgba(255,61,139,.55);
-    color: var(--pk-magenta-bright);
+.pk-records-btn:active { background: var(--pk-card-2); }
+/* pickems.js owns the share behaviour and binds it to #shareBtn, so the
+   button stays in the DOM (off-screen) and the app-bar button just
+   forwards a click to it. Duplicating the handler here would be a second
+   copy of the title/text/fallback logic to keep in sync. */
+.pk-share-proxy {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; border: 0;
+    overflow: hidden; clip-path: inset(50%);
+    pointer-events: none;
 }
-.pk-share-btn:active { background: var(--pk-magenta); color: #fff; }
-.pk-share-btn svg { display: block; width: 10px; height: 10px; }
+/* The shell's app-bar Share is gold; on plum chrome it should be the
+   page's champagne. */
+.m-appbar-share {
+    border-color: rgba(240, 196, 99, .5);
+    background: rgba(240, 196, 99, .08);
+    color: var(--pk-champagne);
+}
+.m-appbar-share:active { background: var(--pk-champagne); color: var(--pk-bg); }
 
 /* Submit bar rides above the fixed tab bar instead of the viewport edge */
 .pe-submitbar {
@@ -82,7 +98,7 @@ body {
         <h1 class="pk-title">Weekly <em>Pick'ems.</em></h1>
     </header>
 
-    <!-- IDENTITY (no login — profile dropdown) + records -->
+    <!-- IDENTITY (no login — profile dropdown) -->
     <div class="pe-auth" id="authBox">
         <div class="pe-login">
             <select id="profileSelect" class="pe-select" aria-label="Pick your name">
@@ -91,13 +107,14 @@ body {
         </div>
         <div id="whoami" class="pe-pill" hidden></div>
         <button id="changeUserBtn" class="pe-btn pe-btn-ghost" hidden>Change</button>
-        <div class="pk-action-group">
-            <button id="shareBtn" class="pk-share-btn" type="button" aria-label="Share the pool">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 9.5 9.5 6.5"/><path d="M7 4.5h-1.5a3 3 0 0 0 0 6h1.5"/><path d="M9 11.5h1.5a3 3 0 0 0 0-6h-1.5"/></svg>
-                Share
-            </button>
-            <button id="recordsBtn" class="pk-records-btn" type="button">Records</button>
-        </div>
+    </div>
+
+    <!-- Off-screen; the app-bar Share button forwards its clicks here so
+         pickems.js's own share handler stays the only implementation. -->
+    <button id="shareBtn" class="pk-share-proxy" type="button" tabindex="-1" aria-hidden="true">Share</button>
+
+    <div class="pk-records-row">
+        <button id="recordsBtn" class="pk-records-btn" type="button">Voting Records</button>
     </div>
 
     <!-- Toast for share fallback (clipboard confirmation). -->
@@ -164,5 +181,24 @@ select.pe-select:focus {
 </style>
 
 <script src="/pams-template/assets/js/pickems.js"></script>
+
+<script>
+// Share in the app bar's right slot, matching Power Rankings and the Trade
+// Desk. The click is forwarded synchronously to the off-screen #shareBtn
+// that pickems.js already wired, which keeps the user-activation intact for
+// navigator.share and leaves the share copy in one place.
+(function () {
+    if (!window.__MA || !window.__MA.setAppbarRight) return;
+    var html =
+        '<button type="button" class="m-appbar-share" aria-label="Share the pool">' +
+            '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 9.5 9.5 6.5"/><path d="M7 4.5h-1.5a3 3 0 0 0 0 6h1.5"/><path d="M9 11.5h1.5a3 3 0 0 0 0-6h-1.5"/></svg>' +
+            'Share' +
+        '</button>';
+    window.__MA.setAppbarRight(html, function () {
+        var btn = document.getElementById('shareBtn');
+        if (btn) btn.click();
+    });
+})();
+</script>
 </body>
 </html>
