@@ -26,16 +26,18 @@
   --pk-champagne-bright: #f9d98a;
   --pk-champagne-deep:   #b48a2e;
 
-  /* Aqua — the RESULT colour, and nothing else. Magenta means "home side"
-     and champagne means "away side", so before this existed the winner had
-     to borrow champagne: a card where you picked the away team and the home
+  /* The RESULT colour, and nothing else. Magenta means "home side" and
+     champagne means "away side", so before this existed the winner had to
+     borrow champagne: a card where you picked the away team and the home
      team won lit both buttons gold, and picking home against an away winner
-     lit one pink and one gold. Neither said who actually won. Aqua belongs
-     to no side, completes the neon triad on velvet plum, and is the only
-     thing on the card that ever uses it. */
-  --pk-aqua:        #2fe3d0;
-  --pk-aqua-bright: #6ff2e4;
-  --pk-aqua-deep:   #0f8d7f;   /* readable on the cream GOTW card */
+     lit one pink and one gold. Neither said who actually won. This belongs
+     to no side and is the only thing on the card that ever uses it.
+     Was aqua (#2fe3d0) — correct in function, but a cyan on velvet plum
+     read as a fourth accent rather than a verdict. Green is the same idea
+     in a value the rest of the page already speaks (--pk-good). */
+  --pk-win:        #3fd98a;
+  --pk-win-bright: #7cecb0;
+  --pk-win-deep:   #147a52;   /* readable on the cream GOTW card */
 
   /* GOTW cream-card ambers — edit these to retune the yellow on the cream
      Game-of-the-Week card. The light value is the bar fill, the dark value
@@ -742,20 +744,20 @@ body {
    won; aqua says who won. */
 .match[data-gotw="true"] .vote-btn[data-winner="true"],
 .match[data-gotw="true"] .vote-btn:last-child[data-winner="true"] {
-  background: #0c2b28;
-  color: var(--pk-aqua-bright);
-  box-shadow: inset 0 0 0 2px var(--pk-aqua), inset 0 4px 0 var(--pk-aqua-bright);
+  background: #0d2a1c;
+  color: var(--pk-win-bright);
+  box-shadow: inset 0 0 0 2px var(--pk-win), inset 0 4px 0 var(--pk-win-bright);
 }
 .match[data-gotw="true"] .vote-btn[data-winner="true"] .vote-pct,
 .match[data-gotw="true"] .vote-btn:last-child[data-winner="true"] .vote-pct {
-  color: var(--pk-aqua-bright);
+  color: var(--pk-win-bright);
   text-shadow: none;
 }
 /* Cream card: light aqua on the winning team name would disappear, so the
    name takes the deep value. (It used to inherit champagne-bright here and
    was simply invisible — the GOTW winner got no name highlight at all.) */
-.match[data-gotw="true"] .team-name.win { color: var(--pk-aqua-deep); }
-.match[data-gotw="true"] .team-name.win .record { color: rgba(15,141,127,.75); }
+.match[data-gotw="true"] .team-name.win { color: var(--pk-win-deep); }
+.match[data-gotw="true"] .team-name.win .record { color: rgba(20,122,82,.75); }
 
 /* Bar2 on cream: keep pink, swap champagne for deep amber */
 .match[data-gotw="true"] .bar2 {
@@ -839,7 +841,7 @@ body {
 /* The winning team's name agrees with its vote button — aqua, not the
    away-side champagne it used to borrow. */
 .team-name.win {
-  color: var(--pk-aqua-bright);
+  color: var(--pk-win-bright);
 }
 /* Record sits inline with the name — right of it on the home side, left of
    it on the away side — so it reads toward the center of the card on both
@@ -856,7 +858,7 @@ body {
   margin-left: 0;
   margin-right: .4rem;
 }
-.team-name.win .record { color: var(--pk-aqua); }
+.team-name.win .record { color: var(--pk-win); }
 
 .manager {
   font-family: var(--mono); font-weight: 600;
@@ -1001,14 +1003,14 @@ body {
    when the same button is both. */
 .vote-btn[data-winner="true"],
 .vote-btn:last-child[data-winner="true"] {
-  background: rgba(47,227,208,.17);
-  color: var(--pk-aqua-bright);
-  box-shadow: inset 0 0 0 1px var(--pk-aqua), inset 0 3px 0 var(--pk-aqua);
+  background: rgba(63,217,138,.17);
+  color: var(--pk-win-bright);
+  box-shadow: inset 0 0 0 1px var(--pk-win), inset 0 3px 0 var(--pk-win);
 }
 .vote-btn[data-winner="true"] .vote-pct,
 .vote-btn:last-child[data-winner="true"] .vote-pct {
-  color: var(--pk-aqua-bright);
-  text-shadow: 0 0 8px rgba(47,227,208,.5);
+  color: var(--pk-win-bright);
+  text-shadow: 0 0 8px rgba(63,217,138,.5);
 }
 .vote-btn:disabled { cursor: default; }
 
@@ -1017,21 +1019,32 @@ body {
    mean "won". Sits between the team name and the percentage; the away
    button's row-reverse mirrors it to the same inner edge. Inherits the
    button's colour, so it reads pink on a home pick, champagne on an away
-   pick, and goes solid aqua when the pick was the winner. */
+   pick, and goes solid green when the pick was the winner.
+
+   Drawn as a filled radio dot, not a tick: a checkmark is the universal
+   glyph for "correct", which is the one thing this mark never means — the
+   fill under it is what says whether the pick was right. A selected-dot
+   says "this is the one you chose" and nothing else. */
 .vote-mark { display: none; }
 .vote-btn[data-picked="true"] .vote-mark {
   flex: none;
   display: inline-flex; align-items: center; justify-content: center;
-  width: 14px; height: 14px;
+  width: 13px; height: 13px;
   margin: 0 .45rem;
-  border: 1px solid currentColor;
+  border: 1.5px solid currentColor;
   border-radius: 50%;
-  font-size: .55rem; font-weight: 700; line-height: 1;
-  letter-spacing: 0;
+  /* Any glyph still in the markup stays out of the box. */
+  font-size: 0; line-height: 0; letter-spacing: 0;
+}
+.vote-btn[data-picked="true"] .vote-mark::after {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: currentColor;
 }
 .vote-btn[data-winner="true"][data-picked="true"] .vote-mark {
-  background: var(--pk-aqua-bright);
-  border-color: var(--pk-aqua-bright);
+  background: var(--pk-win-bright);
+  border-color: var(--pk-win-bright);
   color: var(--pk-bg);
 }
 
@@ -1374,8 +1387,13 @@ body {
     text-overflow: clip;
     max-width: 100%;
   }
-  .team-name .record { font-size: .36rem; letter-spacing: .12em; margin-left: .18rem; white-space: nowrap; }
-  .team[data-team]:last-of-type .team-name .record { margin-left: 0; margin-right: .18rem; }
+  /* em, not rem: fitVoteNames() shrinks .team-name in px when a long name
+     overflows its column, and a rem-sized record just sat there at full
+     width while the name got smaller — so the thing that fell off the end
+     of the box was the record. Sized off the parent, the pair scales
+     together and the loop can actually make the line fit. */
+  .team-name .record { font-size: .6em; letter-spacing: .08em; margin-left: .16rem; white-space: nowrap; }
+  .team[data-team]:last-of-type .team-name .record { margin-left: 0; margin-right: .16rem; }
   .manager { font-size: .38rem; letter-spacing: .14em; }
   .lwk { font-size: .38rem; gap: .18rem; }
   .lwk .lbl { font-size: .32rem; letter-spacing: .14em; }
@@ -1442,8 +1460,9 @@ body {
   /* Narrower buttons — the pick marker shrinks so it can't squeeze the
      team name into an ellipsis. */
   .vote-btn[data-picked="true"] .vote-mark {
-    width: 12px; height: 12px; margin: 0 .3rem; font-size: .48rem;
+    width: 11px; height: 11px; margin: 0 .3rem; border-width: 1.5px;
   }
+  .vote-btn[data-picked="true"] .vote-mark::after { width: 4px; height: 4px; }
 
   /* Login / PIN inputs and button — shrunk for mobile */
   .pe-auth { gap: .4rem; margin-bottom: 1.25rem; }

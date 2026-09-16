@@ -133,6 +133,18 @@
         weekly: 'more',
     };
 
+    // ── Referring-page back targets ─────────────────────────────────────
+    // A page like Power Rankings has one declared parent (live/), but it is
+    // also a destination: The Weekly links out to six chapters and "back"
+    // from any of them should land on The Weekly, not the live hub. Rather
+    // than guess from the referrer (dropped on some navigations, and wrong
+    // when the reader moved sideways), the linking page stamps ?from=<key>
+    // on the hrefs it builds and we resolve the key here.
+    // Values are relative hrefs; <base> resolves them against the league root.
+    var BACK_FROM = {
+        weekly: 'live/weekly/',
+    };
+
     // Chapters that lock on the free tier. KEEP IN SYNC with
     // UDFA_LOCKED_PAGE_PATTERNS in src/lib/leagueTier.ts (and nav.js's
     // UDFA_LOCKED_CHAPTER_KEYS) — this is the badge-only mirror of that list.
@@ -856,6 +868,15 @@
         // returning to wherever the reader actually came from instead of the
         // single declared parent. Set data-back-smart="1" to enable.
         var smartBack = nav.dataset.backSmart === '1';
+        // An explicit ?from= beats both the declared parent and smartBack:
+        // the reader told us where they came from on the way in.
+        var fromKey = '';
+        try { fromKey = new URLSearchParams(window.location.search).get('from') || ''; }
+        catch (_) { /* no URLSearchParams — keep the declared parent */ }
+        if (backHref && fromKey && BACK_FROM[fromKey]) {
+            backHref = BACK_FROM[fromKey];
+            smartBack = false;
+        }
         var liveMode = ctx.leagueTier !== 'udfa'
             && Object.prototype.hasOwnProperty.call(LIVE_TAB_OF_PAGE, page);
         var activeTab = liveMode
@@ -898,8 +919,10 @@
         // Right slot: live "Wk N" pill on the live hub. Bookmark star used to
         // live here for signed-in non-commish viewers — moved to the left
         // slot to match desktop and to make room for the live week.
+        // The Weekly carries it too: the masthead already says which week it
+        // is, but the pill is where readers have learned to look for it.
         var right = '<span></span>';
-        if (page === 'live') {
+        if (page === 'live' || page === 'weekly') {
             var lw = Number(ctx.liveWeek);
             if (lw >= 1 && lw <= 18) {
                 right = '<span class="m-appbar-week" aria-label="Current week">Wk ' + lw + '</span>';

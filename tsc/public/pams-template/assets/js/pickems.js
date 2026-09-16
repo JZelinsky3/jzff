@@ -362,7 +362,14 @@
     grid.querySelectorAll(sel).forEach(function (el) {
       el.style.fontSize = ''; // reset prior fit (e.g. on re-hydrate)
       var size = parseFloat(window.getComputedStyle(el).fontSize);
-      var min = 8;
+      // Mobile team names start at .6rem (9.6px), so an 8px floor gave the
+      // loop barely a pixel and a half to work with — long names hit the
+      // floor still overflowing and the box clipped the tail of the name or
+      // the record after it. 7px is the smallest the name is still readable
+      // at, and the record scales with it (see the .record em rule in
+      // pickems.css). Vote-button names and every desktop case keep 8.
+      var isMobileTeamName = isMobile && el.classList.contains('team-name');
+      var min = isMobileTeamName ? 7 : 8;
       var guard = 24; // hard cap so we can't loop forever
       var isMobileGotwName = isMobile
         && el.classList.contains('team-name')
@@ -386,15 +393,18 @@
           // length). Canvas returns 0 / fallback metrics while web fonts
           // are still loading — the retry loop in retryFitActive() will
           // re-run this once they've painted.
+          // Math.max clamps the last step: sizes start fractional (.6rem is
+          // 9.6px), so a bare `size -= 1` overshoots the floor by up to a
+          // pixel on the final pass.
           while (measureTextPx(el) > maxWidth && size > min && guard-- > 0) {
-            size -= 1;
+            size = Math.max(min, size - 1);
             el.style.fontSize = size + 'px';
           }
         }
       } else {
         // Original behavior (desktop, and non-GOTW everywhere).
         while (el.scrollWidth > el.clientWidth && size > min && guard-- > 0) {
-          size -= 1;
+          size = Math.max(min, size - 1);
           el.style.fontSize = size + 'px';
         }
       }
@@ -528,12 +538,12 @@
       // in pickems.css.
       +         '<button class="vote-btn" data-matchup="' + esc(m.id) + '" data-team="' + esc(m.home) + '">'
       +           '<span class="vote-name">' + esc(A ? A.name : m.home) + '</span>'
-      +           '<span class="vote-mark" title="Your pick">✓</span>'
+      +           '<span class="vote-mark" title="Your pick" aria-hidden="true"></span>'
       +           '<span class="vote-pct" id="vp-' + esc(w.id) + '-' + esc(m.id) + '-' + esc(m.home) + '">—</span>'
       +         '</button>'
       +         '<button class="vote-btn" data-matchup="' + esc(m.id) + '" data-team="' + esc(m.away) + '">'
       +           '<span class="vote-name">' + esc(B ? B.name : m.away) + '</span>'
-      +           '<span class="vote-mark" title="Your pick">✓</span>'
+      +           '<span class="vote-mark" title="Your pick" aria-hidden="true"></span>'
       +           '<span class="vote-pct" id="vp-' + esc(w.id) + '-' + esc(m.id) + '-' + esc(m.away) + '">—</span>'
       +         '</button>'
       +       '</div>'

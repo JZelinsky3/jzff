@@ -833,7 +833,9 @@ function getBundle(leagueId: string, slug: string): Promise<ExportBundle> {
   // v81: current_form.json stopped counting half-played weeks, so every
   // league that synced mid-week is holding a Form Sheet full of phantom
   // 1-0 records until its bundle is rebuilt.
-  const BUNDLE_VERSION = 'v81'
+  // v82: records_watch.json's Quickest-to-X chaser_sub carries points + ppg
+  // on the points tiers instead of a W-L that had nothing to do with the race.
+  const BUNDLE_VERSION = 'v82'
   // Single-flight, the same reason dev does it: a hub landing fires the
   // page plus five preloaded data/*.json files at once, and on a cold
   // cache unstable_cache has nothing to hand back yet, so all six run

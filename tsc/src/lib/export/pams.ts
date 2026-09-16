@@ -5190,11 +5190,19 @@ function buildLiveSeasonPreviews(
         //     Quickest-to-X is fundamentally a games-count race; the bar
         //     shows progress toward the tier (cum / T), the label shows
         //     how many games it took to get there.
-        //   recordDisplay — chaser's career W-L through current games.
-        //     Rides on chaser_sub so the brink/on-pace cards print it
-        //     just below the manager name.
+        //   subDisplay — the chaser's standing in the thing being chased,
+        //     printed just below their name on the brink/on-pace cards.
+        //     A wins tier is a W-L race, so W-L is the standing. A points
+        //     tier is not: the card was showing "58-39" under a games count
+        //     and never said how many points the chaser actually had or
+        //     what they were averaging, which is the whole basis of the
+        //     projection. Both figures are career-to-date, on the same
+        //     games denominator as the games count beside them.
         const gamesDisplay = `${bestChaser.gamesPlayed} Games`
-        const recordDisplay = `${bestChaser.cumWins}-${bestChaser.cumLosses}`
+        const subDisplay = cfg.kind === 'points'
+          ? `${Math.round(bestChaser.currentVal).toLocaleString()} pts · ` +
+            `${(bestChaser.currentVal / Math.max(1, bestChaser.gamesPlayed)).toFixed(1)} ppg`
+          : `${bestChaser.cumWins}-${bestChaser.cumLosses}`
 
         accumItems.push({
           category: cfg.label(T),
@@ -5217,7 +5225,7 @@ function buildLiveSeasonPreviews(
           // unit. The chaser's current W-L record rides on
           // chaser_sub for context.
           chaser_value: broke ? `${projGames} games` : gamesDisplay,
-          chaser_sub: recordDisplay,
+          chaser_sub: subDisplay,
           // Numeric triple — for Quickest the brink meter switches to a
           // games-axis so the gold projection line can land BEFORE the
           // mark (since fewer games is faster). Template treats Quickest

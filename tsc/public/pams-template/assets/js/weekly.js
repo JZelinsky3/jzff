@@ -25,6 +25,14 @@
   }
   function show(el, on) { if (el) el.hidden = !on; }
 
+  // Every link out of this page is stamped ?from=weekly so the chapter it
+  // opens sends its back arrow here instead of to the live hub. The shell
+  // (mobile-app.js, BACK_FROM) resolves the key.
+  function L(href) {
+    if (!href || /^(https?:|mailto:|tel:|#)/i.test(href)) return href;
+    return href + (href.indexOf('?') === -1 ? '?' : '&') + 'from=weekly';
+  }
+
   boot();
 
   function boot() {
@@ -184,7 +192,7 @@
         '<span class="wk-sec-num">' + esc(num) + '</span>' +
         '<span class="wk-sec-title">' + esc(title) + ' <em>' + esc(titleEm) + '</em></span>' +
         '<span class="wk-sec-rule"></span>' +
-        (link ? '<a class="wk-sec-link" href="' + esc(link) + '">' + esc(linkLabel) + '</a>' : '') +
+        (link ? '<a class="wk-sec-link" href="' + esc(L(link)) + '">' + esc(linkLabel) + '</a>' : '') +
       '</div>' + body +
     '</section>';
   }
@@ -221,11 +229,15 @@
     return find(d.power.rows, function (r) { return r.managerId === state.user.managerId; });
   }
 
-  function dutyRow(state_, href, label, line, sub, subClass, val) {
-    return '<a class="wk-duty" data-state="' + state_ + '" href="' + esc(href) + '">' +
+  // `tone` tints the row's label with the accent of the chapter it opens
+  // (pick'ems magenta, matchup green, power gold) so the three rows read as
+  // three different destinations at a glance. The house stays neutral —
+  // these are the only borrowed colours on the page.
+  function dutyRow(state_, href, label, line, sub, subClass, val, tone) {
+    return '<a class="wk-duty" data-state="' + state_ + '" href="' + esc(L(href)) + '">' +
       '<span class="wk-lamp" aria-hidden></span>' +
       '<span class="wk-duty-body">' +
-        '<span class="wk-duty-lbl">' + esc(label) + '</span>' +
+        '<span class="wk-duty-lbl' + (tone ? ' ' + tone : '') + '">' + esc(label) + '</span>' +
         '<span class="wk-duty-line">' + line + '</span>' +
         (sub ? '<span class="wk-duty-sub' + (subClass ? ' ' + subClass : '') + '">' + esc(sub) + '</span>' : '') +
       '</span>' +
@@ -239,7 +251,7 @@
     if (!slot) return;
 
     if (!state.user) {
-      slot.innerHTML = sectionHTML('§ 01', 'Your', 'week.', null, null,
+      slot.innerHTML = sectionHTML('§ 01', 'Your', 'Week.', null, null,
         '<div class="wk-panel"><div class="wk-claim">' +
           '<div class="wk-claim-title">Who’s <em>reading?</em></div>' +
           '<div class="wk-claim-body">Pick your name up top and this turns into your week: ' +
@@ -261,7 +273,7 @@
             ? 'Week ' + d.week + ' locked — <strong>no picks on file</strong>'
             : 'You haven’t picked week ' + d.week + ' <strong>yet</strong>');
       rows += dutyRow(lamp, 'live/pickems/', 'Pick’ems', line, dl.text,
-        dl.hot && !isIn ? 'hot' : (isIn ? 'good' : ''), null);
+        dl.hot && !isIn ? 'hot' : (isIn ? 'good' : ''), null, 'tone-picks');
     }
 
     // Your matchup. The readout carries the line and which way it cuts; the
@@ -279,7 +291,7 @@
           (pk ? 'Even' : favMe ? 'Favoured' : 'Underdog') + '</small></span>';
       var href = 'live/matchup-preview/' + (state.user.uid ? '?m=' + encodeURIComponent(state.user.uid) : '');
       rows += dutyRow('idle', href, 'Your game',
-        'vs <strong>' + esc(mine.opp.team) + '</strong>', mSub, '', mVal);
+        'vs <strong>' + esc(mine.opp.team) + '</strong>', mSub, '', mVal, 'tone-game');
     }
 
     // Power ranking. Same split: the numeral is the rank, the line is who
@@ -295,7 +307,7 @@
         '<small>of ' + d.power.rows.length + '</small></span>';
       rows += dutyRow('idle', 'live/powerrank/', 'Power ranking',
         '<strong>' + esc(rank.team) + '</strong> at ' + esc(rank.record),
-        moveSub, rank.delta > 0 ? 'good' : rank.delta < 0 ? 'hot' : '', rVal);
+        moveSub, rank.delta > 0 ? 'good' : rank.delta < 0 ? 'hot' : '', rVal, 'tone-rank');
     }
 
     if (!rows) {
@@ -315,7 +327,7 @@
       '</div>';
     }
 
-    slot.innerHTML = sectionHTML('§ 01', 'Your', 'week.', null, null,
+    slot.innerHTML = sectionHTML('§ 01', 'Your', 'Week.', null, null,
       '<div class="wk-panel">' + rows + pool + '</div>');
   }
 
@@ -327,7 +339,7 @@
     if (!slot) return;
 
     if (!d.board || !d.board.games.length) {
-      slot.innerHTML = sectionHTML('§ 02', 'The', 'board.', 'live/matchup-preview/', 'Full preview',
+      slot.innerHTML = sectionHTML('§ 02', 'The', 'Board.', 'live/matchup-preview/', 'Full preview',
         '<div class="wk-panel"><div class="wk-empty">No games scheduled for this week yet.</div></div>');
       return;
     }
@@ -338,10 +350,10 @@
       var pk = g.favorite === 'pp' || g.spread === 0;
       // Short tokens on purpose — this sits in the narrow middle column
       // between two team names that both need the room.
-      var tag = mine ? '<span class="wk-game-tag mine">★ Yours</span>'
-        : g.gotw ? '<span class="wk-game-tag">★ GOTW</span>' : '';
+      var tag = mine ? '<span class="wk-game-tag mine">Yours</span>'
+        : g.gotw ? '<span class="wk-game-tag">GOTW</span>' : '';
       var href = 'live/matchup-preview/' + (g.a.uid ? '?m=' + encodeURIComponent(g.a.uid) : '');
-      return '<a class="wk-game' + (mine ? ' is-mine' : g.gotw ? ' is-gotw' : '') + '" href="' + esc(href) + '">' +
+      return '<a class="wk-game' + (mine ? ' is-mine' : g.gotw ? ' is-gotw' : '') + '" href="' + esc(L(href)) + '">' +
         team(g.a, g.favorite === 'a', false) +
         '<span class="wk-game-mid">' +
           '<span class="wk-game-spread">' + (pk ? 'PK' : g.spread.toFixed(1)) + '</span>' +
@@ -351,15 +363,31 @@
       '</a>';
     }).join('');
 
-    slot.innerHTML = sectionHTML('§ 02', 'The', 'board.', 'live/matchup-preview/', 'Full preview',
+    slot.innerHTML = sectionHTML('§ 02', 'The', 'Board.', 'live/matchup-preview/', 'Full preview',
       '<div class="wk-panel">' + rows + '</div>');
   }
 
+  // Wins and losses only. The bundle hands over "6-3" or "6-3-1" depending on
+  // whether the league has ever tied; the board reads as a column of numbers
+  // and a third figure on some rows and not others breaks the scan.
+  function wl(record) {
+    var parts = String(record || '').split('-');
+    return parts.length > 2 ? parts.slice(0, 2).join('-') : String(record || '');
+  }
+
+  // The right-hand side is mirrored: ppg first, then record. Both teams end
+  // up with their average nearest the spread in the middle and their record
+  // on the outside edge, so the two columns read as one symmetrical row
+  // instead of two lists running the same direction.
   function team(s, fav, right) {
+    var rec = esc(wl(s.record) || '·');
+    var ppg = s.ppg ? s.ppg.toFixed(1) : '';
+    var line = right
+      ? (ppg ? ppg + ' · ' : '') + rec
+      : rec + (ppg ? ' · ' + ppg : '');
     return '<span class="wk-game-team' + (right ? ' right' : '') + '">' +
       '<span class="wk-game-name' + (fav ? ' fav' : '') + '">' + esc(s.team) + '</span>' +
-      '<span class="wk-game-rec">' + esc(s.record || '·') +
-        (s.ppg ? ' · ' + s.ppg.toFixed(1) : '') + '</span>' +
+      '<span class="wk-game-rec">' + line + '</span>' +
     '</span>';
   }
 
@@ -371,7 +399,7 @@
     if (!slot) return;
 
     if (!d.power || !d.power.rows.length) {
-      slot.innerHTML = sectionHTML('§ 03', 'The pecking', 'order.', 'live/powerrank/', 'Full board',
+      slot.innerHTML = sectionHTML('§ 03', 'The Pecking', 'Order.', 'live/powerrank/', 'Full board',
         '<div class="wk-panel"><div class="wk-empty">The board hasn’t been scored yet this season.</div></div>');
       return;
     }
@@ -403,7 +431,7 @@
       '</div>';
     }
 
-    slot.innerHTML = sectionHTML('§ 03', 'The pecking', 'order.', 'live/powerrank/', 'Full board',
+    slot.innerHTML = sectionHTML('§ 03', 'The Pecking', 'Order.', 'live/powerrank/', 'Full board',
       '<div class="wk-panel">' + rows + movers + '</div>');
   }
 
@@ -429,13 +457,13 @@
     var t = d.trades || { locked: false, recent: [], newThisWeek: 0, verdicts: 0 };
 
     if (t.locked) {
-      slot.innerHTML = sectionHTML('§ 04', 'The', 'wire.', null, null,
+      slot.innerHTML = sectionHTML('§ 04', 'The', 'Wire.', null, null,
         '<div class="wk-panel"><div class="wk-empty">The Trade Desk is a Veteran feature. ' +
           'Upgrade the league and every deal lands here, graded.</div></div>');
       return;
     }
     if (!t.recent.length) {
-      slot.innerHTML = sectionHTML('§ 04', 'The', 'wire.', 'live/trades/', 'Trade desk',
+      slot.innerHTML = sectionHTML('§ 04', 'The', 'Wire.', 'live/trades/', 'Trade desk',
         '<div class="wk-panel"><div class="wk-empty">No trades in the last three weeks. Quiet market.</div></div>');
       return;
     }
@@ -448,9 +476,9 @@
           '<span class="wk-trade-gets">' + (s.gets.length ? esc(s.gets.join(', ')) : '·') + '</span>' +
         '</span>';
       }).join('');
-      return '<a class="wk-trade" href="live/trades/grader/">' +
+      return '<a class="wk-trade" href="' + esc(L('live/trades/grader/')) + '">' +
         '<span class="wk-trade-top">' +
-          '<span class="wk-trade-head">' + esc(tr.headline) + '</span>' +
+          '<span class="wk-trade-head">' + headline(tr.headline) + '</span>' +
           '<span class="wk-trade-age' + (tr.daysAgo <= 7 ? ' fresh' : '') + '">' + esc(age) + '</span>' +
         '</span>' +
         '<span class="wk-trade-sides">' + sides + '</span>' +
@@ -469,8 +497,18 @@
       ? t.newThisWeek + (t.newThisWeek === 1 ? ' new deal' : ' new deals')
       : 'Trade desk';
 
-    slot.innerHTML = sectionHTML('§ 04', 'The', 'wire.', 'live/trades/', label,
+    slot.innerHTML = sectionHTML('§ 04', 'The', 'Wire.', 'live/trades/', label,
       '<div class="wk-panel">' + rows + note + '</div>');
+  }
+
+  // "Connie ⇄ Charlie" — the swap glyph is punctuation between two names,
+  // not a third name, so it gets its own span to sit smaller and quieter
+  // with a space of air on either side.
+  function headline(text) {
+    return String(text == null ? '' : text)
+      .split(' ⇄ ')
+      .map(esc)
+      .join('<span class="wk-trade-x" aria-hidden>⇄</span>');
   }
 
   // ── §05 The record room ──────────────────────────────────────────────
@@ -482,7 +520,7 @@
 
     var w = d.watch;
     if (!w) {
-      slot.innerHTML = sectionHTML('§ 05', 'The record', 'room.', 'live/records-watch/', 'Records watch',
+      slot.innerHTML = sectionHTML('§ 05', 'The Record', 'Room.', 'live/records-watch/', 'Records watch',
         '<div class="wk-panel"><div class="wk-empty">Nothing on the board yet. ' +
           'Records and milestones start showing up once a few weeks are in the books.</div></div>');
       return;
@@ -511,11 +549,11 @@
       blocks = '<div class="wk-empty">No records within reach this week.</div>';
     }
 
-    slot.innerHTML = sectionHTML('§ 05', 'The record', 'room.', null, null,
+    slot.innerHTML = sectionHTML('§ 05', 'The Record', 'Room.', null, null,
       '<div class="wk-panel">' + blocks + '</div>' +
       '<div class="wk-outlinks">' +
-        '<a class="wk-outlink" href="live/records-watch/">Records watch</a>' +
-        '<a class="wk-outlink" href="live/milestones/">Milestones</a>' +
+        '<a class="wk-outlink" href="' + esc(L('live/records-watch/')) + '">Records watch</a>' +
+        '<a class="wk-outlink" href="' + esc(L('live/milestones/')) + '">Milestones</a>' +
       '</div>');
   }
 
@@ -526,9 +564,18 @@
     '</div>';
   }
 
+  // A record still being chased used to sit under '◌' — a dotted-circle
+  // glyph that renders at a couple of pixels in most system fonts and read
+  // as an empty disc. Drawn instead, so it's the same weight as the ✦ the
+  // broken rows and the milestone feed use.
+  var WATCH_GLYPH = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" ' +
+    'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden>' +
+    '<circle cx="12" cy="12" r="8.5"/>' +
+    '<circle cx="12" cy="12" r="2.6" fill="currentColor" stroke="none"/></svg>';
+
   function watchRow(it, broken) {
     return '<div class="wk-note-row' + (broken ? ' is-broken' : '') + '">' +
-      '<span class="wk-note-glyph">' + (broken ? '✦' : '◌') + '</span>' +
+      '<span class="wk-note-glyph">' + (broken ? '✦' : WATCH_GLYPH) + '</span>' +
       '<span class="wk-note-body">' +
         '<span class="wk-note-cat">' + esc(it.category) +
           (it.flag ? '<span class="flag">' + esc(it.flag) + '</span>' : '') + '</span>' +

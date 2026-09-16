@@ -41,9 +41,30 @@
     /* Fixed chrome re-points to the page ground. */
     --m-chrome-bg:  rgb(9, 13, 19);
     --m-chrome-bg2: rgb(12, 17, 24);
+
+    /* …and to the page's accent. mobile-app.css hangs every chrome accent
+       off the --gold family (back arrow, title tail, active tab + its
+       marker, the Wk N pill, sheet headings). Re-pointing the three tokens
+       here re-tints the app bar and tab bar in one move, so the fixed
+       furniture belongs to this edition instead of importing the almanac's
+       gold. Nothing in this file reads --gold directly. */
+    --gold:        #ff5a3c;
+    --gold-bright: #ff8462;
+    --gold-deep:   #b23a22;
+
+    /* Borrowed chapter accents — used ONLY on the §01 duty labels, where
+       the point is that three rows open three different pages. */
+    --wk-tone-picks: #ff5c9c;   /* Pick'ems, magenta */
+    --wk-tone-game:  #7fc98a;   /* Matchup Preview, green */
+    --wk-tone-rank:  #e0b968;   /* Power Rankings, chart gold */
 }
 
 body { background: var(--wk-bg); }
+
+/* The "Wk N" pill takes its border and text from --gold (re-pointed above),
+   but its wash is a hardcoded gold rgba in mobile-app.css — the one chrome
+   value the token swap can't reach. */
+.m-appbar-week { background: rgba(255, 90, 60, .1); }
 
 /* The identity bar and several rows below swap between states with the
    `hidden` attribute, and every one of them carries a display rule that
@@ -244,6 +265,9 @@ a.wk-duty:active { background: var(--wk-card-hi); }
     font-size: .54rem; letter-spacing: .06em;
     color: var(--wk-mute);
 }
+.wk-duty-lbl.tone-picks { color: var(--wk-tone-picks); }
+.wk-duty-lbl.tone-game  { color: var(--wk-tone-game); }
+.wk-duty-lbl.tone-rank  { color: var(--wk-tone-rank); }
 .wk-duty-sub.hot { color: var(--wk-signal); }
 .wk-duty-sub.good { color: var(--wk-go); }
 .wk-chev { flex: none; display: flex; color: var(--wk-mute); }
@@ -409,6 +433,16 @@ a.wk-trade:active { background: var(--wk-card-hi); }
     font-size: .98rem; line-height: 1.15; color: var(--wk-ink);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* The swap glyph between the two names. Dropped well under the serif
+   headline so it reads as punctuation rather than a third party to the
+   deal, with a full space of air on each side. */
+.wk-trade-head .wk-trade-x {
+    font-family: var(--mono); font-weight: 400;
+    font-size: .58em;
+    color: var(--wk-mute);
+    padding: 0 .55em;
+    vertical-align: .08em;
+}
 .wk-trade-age {
     flex: none;
     font-family: var(--mono); font-weight: 700;
@@ -455,6 +489,10 @@ a.wk-trade:active { background: var(--wk-card-hi); }
     border: 1px solid rgba(157, 140, 255, .3);
     color: var(--wk-note);
 }
+/* Records Watch rows draw their mark (see WATCH_GLYPH in weekly.js) instead
+   of setting a character — the dotted-circle glyph it replaced rendered at
+   a few pixels and read as an empty disc. */
+.wk-note-glyph svg { display: block; }
 .wk-note-row.is-broken .wk-note-glyph {
     background: rgba(255, 90, 60, .12);
     border-color: rgba(255, 90, 60, .35);

@@ -227,7 +227,9 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
 .rw-plot-head { flex: 1 1 auto; min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: .05rem .45rem; }
 .rw-plot-head .chaser-lbl { flex: 0 0 100%; font-family: var(--mono); font-weight: 700; font-size: .48rem; letter-spacing: .18em; text-transform: uppercase; color: var(--rw-ember); }
 .rw-plot-head .chaser { font-family: var(--serif); font-size: 1.7rem; line-height: 1.05; font-weight: 400; color: var(--rw-cream); }
-.rw-plot-head .chaser-sub { font-family: var(--mono); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--rw-mute); margin-left: .1rem; }
+/* nowrap so a two-part sub ("12,438 pts · 118.4 ppg" on the points tiers)
+   drops to its own line as one unit instead of breaking across the middot. */
+.rw-plot-head .chaser-sub { font-family: var(--mono); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--rw-mute); margin-left: .1rem; white-space: nowrap; }
 .rw-plot-labels { position: relative; height: .72rem; margin-bottom: .3rem; }
 .rw-plot-label {
     position: absolute; bottom: 0;
