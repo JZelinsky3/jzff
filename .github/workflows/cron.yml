@@ -75,11 +75,17 @@ on:
     # grades them, halving worst-case latency from a full day to about twelve
     # hours. In-season this is the pass that makes the wire feel live.
     - cron: '0 23 * * *'
-    # Weekly full live re-ingest, Tuesday 22:00 UTC (after Monday Night
-    # Football). This is the heavy one: every week's matchups, lineups and
-    # drafts for every live source. Too expensive to run daily, which is
-    # exactly why the trades stage was split out into its own sweep.
-    - cron: '0 22 * * 2'
+    # Weekly full live re-ingest, Tuesday 12:00 UTC (~8am ET). This is the
+    # heavy one: every week's matchups, lineups and drafts for every live
+    # source. Too expensive to run daily, which is exactly why the trades
+    # stage was split out into its own sweep.
+    #
+    # Tuesday morning, not Tuesday evening: the week's scores are final once
+    # Monday Night Football ends, and waiting until 22:00 UTC (6pm ET) meant
+    # the archive sat a day behind the league all through Tuesday. GitHub
+    # routinely starts these runs several hours late, so 8am ET is also the
+    # only start that reliably still lands on Tuesday.
+    - cron: '0 12 * * 2'
   # Lets you run any single job by hand from the Actions tab, which is also
   # how you smoke-test that CRON_SECRET is correct without waiting a day.
   workflow_dispatch:
@@ -117,7 +123,7 @@ jobs:
           case "$SCHEDULE" in
             '0 9 * * *')   paths="$daily_chain" ;;
             '0 23 * * *')  paths="$trade_sweep" ;;
-            '0 22 * * 2')  paths='refresh' ;;
+            '0 12 * * 2')  paths='refresh' ;;
             *)
               # Manual dispatch.
               case "$MANUAL" in
@@ -127,6 +133,17 @@ jobs:
               esac
               ;;
           esac
+          # A schedule with no matching case arm above falls through to the
+          # manual branch, where $MANUAL is empty, so `paths` ends up empty,
+          # the loop below runs zero times and the run finishes GREEN having
+          # done absolutely nothing. That is the worst possible failure mode
+          # for a job whose only symptom is stale data, and it is one typo
+          # away any time a cron line is edited. Fail loudly instead.
+          if [ -z "$paths" ]; then
+            echo "::error::No endpoints resolved for schedule='$SCHEDULE' input='$MANUAL'. Every 'on.schedule' cron must have a matching case arm above, character for character."
+            exit 1
+          fi
+
           echo "paths=$paths" >> "$GITHUB_OUTPUT"
           echo "Running in order: $paths"
 
@@ -149,31 +166,74 @@ jobs:
           echo "Base URL: $SITE_URL"
 
           for p in ${{ steps.pick.outputs.paths }}; do
-            # The TRAILING SLASH is required, not cosmetic. next.config.ts sets
-            # `trailingSlash: true`, which applies to API routes too, so
-            # /api/cron/grade-trades answers 308 -> /api/cron/grade-trades/.
-            # curl does not follow redirects by default, so the slashless form
-            # fails the run with a redirect status and never reaches the
-            # handler. -L is kept as a backstop in case that config changes
-            # direction later; on a same-host redirect curl carries the
-            # Authorization header through, so auth still works either way.
-            url="$SITE_URL/api/cron/$p/"
             echo "::group::$p"
-            # These are long jobs (maxDuration 300 server-side); give curl room
-            # and capture the body so a failure explains itself in the log.
-            code=$(curl -sSL -o /tmp/out.json -w '%{http_code}' \
-                        --max-time 600 \
-                        -H "Authorization: Bearer $CRON_SECRET" \
-                        "$url" || echo 000)
-            echo "HTTP $code"
-            head -c 4000 /tmp/out.json || true
-            echo
-            echo "::endgroup::"
+            offset=""
+            pass=0
 
-            if [ "$code" != "200" ]; then
-              # Abort the chain rather than running later steps against
-              # whatever half-state this one left behind.
-              echo "::error::$p returned HTTP $code - aborting the rest of the chain"
-              exit 1
-            fi
+            # An endpoint may not finish its work in one request. `refresh`
+            # walks every live source in the system inside a 300s function,
+            # and on 2026-09-15 it hit that cap and 504'd, killing the chain.
+            # It now stops on its own time budget and answers 200 with
+            # {"done": false, "nextOffset": N}; this loop calls it back from
+            # N until it reports done. Endpoints that finish in one pass
+            # simply never send nextOffset and break out immediately, so
+            # nothing here is special-cased by path name.
+            while : ; do
+              pass=$((pass + 1))
+
+              # The TRAILING SLASH is required, not cosmetic. next.config.ts
+              # sets `trailingSlash: true`, which applies to API routes too, so
+              # /api/cron/grade-trades answers 308 -> /api/cron/grade-trades/.
+              # curl does not follow redirects by default, so the slashless
+              # form fails the run with a redirect status and never reaches the
+              # handler. -L is kept as a backstop in case that config changes
+              # direction later; on a same-host redirect curl carries the
+              # Authorization header through, so auth still works either way.
+              url="$SITE_URL/api/cron/$p/"
+              if [ -n "$offset" ]; then
+                url="$url?offset=$offset"
+              fi
+
+              # These are long jobs (maxDuration 300 server-side); give curl
+              # room and capture the body so a failure explains itself here.
+              code=$(curl -sSL -o /tmp/out.json -w '%{http_code}' \
+                          --max-time 600 \
+                          -H "Authorization: Bearer $CRON_SECRET" \
+                          "$url" || echo 000)
+              echo "pass $pass: HTTP $code  $url"
+              head -c 4000 /tmp/out.json || true
+              echo
+
+              if [ "$code" != "200" ]; then
+                echo "::endgroup::"
+                # Abort the chain rather than running later steps against
+                # whatever half-state this one left behind.
+                echo "::error::$p returned HTTP $code - aborting the rest of the chain"
+                exit 1
+              fi
+
+              # Prints the number, or nothing at all when the endpoint is done
+              # (nextOffset null/absent) or the body isn't JSON. Empty means
+              # stop, so a garbled body ends the loop rather than spinning.
+              # One line on purpose: this sits inside a YAML block scalar, and
+              # a real multi-line heredoc here either breaks the YAML or
+              # arrives at python with the block's indentation still attached.
+              offset=$(python3 -c "import json,sys;d=json.load(sys.stdin);v=d.get('nextOffset');print(v if isinstance(v,int) else '')" < /tmp/out.json 2>/dev/null || true)
+
+              if [ -z "$offset" ]; then
+                break
+              fi
+
+              # Safety net. Every pass must consume at least one source, so a
+              # correct implementation converges in a handful; 20 means the
+              # cursor is not advancing and this would otherwise spin until
+              # the job timeout with nothing to show for it.
+              if [ "$pass" -ge 20 ]; then
+                echo "::endgroup::"
+                echo "::error::$p still reporting work after $pass passes (nextOffset=$offset); giving up."
+                exit 1
+              fi
+            done
+
+            echo "::endgroup::"
           done
