@@ -57,8 +57,18 @@ export async function setLiveSeason(
       .eq('id', parsed.data.seasonId)
       .maybeSingle()
     const settings = { ...(seasonRow?.settings ?? {}) } as Record<string, unknown>
-    if (parsed.data.currentWeek != null) settings.current_week = parsed.data.currentWeek
-    else delete settings.current_week
+    // The override is stamped with when it was set: on a dated season that
+    // moment turns it into an offset that keeps advancing (see liveSeason.ts).
+    // Re-saving the same week keeps the old stamp so the offset doesn't move.
+    if (parsed.data.currentWeek != null) {
+      if (settings.current_week !== parsed.data.currentWeek || typeof settings.current_week_set_at !== 'string') {
+        settings.current_week_set_at = new Date().toISOString()
+      }
+      settings.current_week = parsed.data.currentWeek
+    } else {
+      delete settings.current_week
+      delete settings.current_week_set_at
+    }
     if (parsed.data.seasonStartDate) settings.season_start_date = parsed.data.seasonStartDate
     else delete settings.season_start_date
 

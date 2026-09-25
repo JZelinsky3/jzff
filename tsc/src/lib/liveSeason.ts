@@ -1,31 +1,58 @@
 // Resolving the current pick'ems / power-rankings week for a live season.
 //
-// Two modes, stored in seasons.settings:
-//  - `season_start_date` (ISO date) — the week the season opens. When set, the
-//    current week auto-advances from the calendar: one week per 7 days.
-//  - `current_week` (number) — a manual pin. When set, it always wins, so the
-//    commissioner can override a delayed/odd week (and it's how mock testing
-//    against an old season works).
+// Stored in seasons.settings:
+//  - `season_start_date` (ISO date) — the Tuesday that opens week 1. When
+//    set, the calendar drives: the week advances one per 7 days, and every
+//    week gets a Thursday pick'ems deadline.
+//  - `current_week` (number) + `current_week_set_at` (ISO instant) — the
+//    commissioner's override. With a start date it is an OFFSET, not a
+//    freeze: "it's week 3 right now" shifts the calendar by however far it
+//    was off, and the week keeps advancing from there.
+//  - `current_week` with no start date — a true freeze. That's how mock
+//    testing against an old, fully scored season works.
 //
-// Resolution order: manual pin → calendar-derived → null (not configured).
+// The pin used to win outright even when a start date was set. pams pinned
+// week 2 once and the season stopped: the week never rolled to 3, pick'ems
+// and power rankings sat on week 2, and because a pin also switched the
+// deadline off, pick'ems stayed open all week. A pin saved before
+// `current_week_set_at` existed has no moment to measure from, so with a
+// start date it is ignored rather than allowed to freeze the season again.
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 const MAX_WEEK = 18 // NFL regular season
 
+function startMsOf(s: Record<string, unknown>): number | null {
+  if (typeof s.season_start_date !== 'string') return null
+  const ms = Date.parse(s.season_start_date)
+  return Number.isNaN(ms) ? null : ms
+}
+
+// Unclamped calendar week at an instant, counted from the start date.
+function calendarWeekAt(startMs: number, at: number): number {
+  return Math.floor((at - startMs) / WEEK_MS) + 1
+}
+
+// How many weeks the commissioner's override shifts the calendar. 0 when
+// there is no override, or it's a legacy pin with no timestamp.
+function pinOffset(s: Record<string, unknown>, startMs: number): number {
+  if (typeof s.current_week !== 'number') return 0
+  if (typeof s.current_week_set_at !== 'string') return 0
+  const setAt = Date.parse(s.current_week_set_at)
+  if (Number.isNaN(setAt)) return 0
+  return s.current_week - calendarWeekAt(startMs, setAt)
+}
+
 export function resolveCurrentWeek(settings: Record<string, unknown> | null | undefined): number | null {
   const s = settings ?? {}
 
-  // Manual pin / mock-testing value — always wins.
-  if (typeof s.current_week === 'number') return s.current_week
-
-  // Calendar-derived.
-  if (typeof s.season_start_date === 'string') {
-    const startMs = Date.parse(s.season_start_date)
-    if (!Number.isNaN(startMs)) {
-      const weeks = Math.floor((Date.now() - startMs) / WEEK_MS) + 1
-      return Math.min(MAX_WEEK, Math.max(1, weeks))
-    }
+  const startMs = startMsOf(s)
+  if (startMs != null) {
+    const week = calendarWeekAt(startMs, Date.now()) + pinOffset(s, startMs)
+    return Math.min(MAX_WEEK, Math.max(1, week))
   }
+
+  // No calendar: a pin is a freeze (mock testing against an old season).
+  if (typeof s.current_week === 'number') return s.current_week
 
   return null
 }
@@ -82,26 +109,26 @@ function wallClockToInstant(
   return ts
 }
 
-// Only derivable from the calendar. A manual `current_week` pin overrides
-// the date maths entirely, so any deadline would be fiction — it returns
-// null, the UI shows no deadline, and nothing enforces one. That is what
-// keeps mock-testing against an old season submittable.
+// Only derivable from the calendar. With no start date there is nothing to
+// hang a deadline on (a frozen mock-testing pin), so it returns null, the UI
+// shows no deadline, and nothing enforces one. That is what keeps
+// mock-testing against an old season submittable. A commissioner override
+// on a dated season shifts the deadlines along with the week.
 export function resolveWeekLockAt(
   settings: Record<string, unknown> | null | undefined,
   week: number,
 ): string | null {
   const s = settings ?? {}
-  if (typeof s.current_week === 'number') return null
-  if (typeof s.season_start_date !== 'string') return null
   if (!Number.isFinite(week) || week < 1 || week > MAX_WEEK) return null
-  const startMs = Date.parse(s.season_start_date)
-  if (Number.isNaN(startMs)) return null
+  const startMs = startMsOf(s)
+  if (startMs == null) return null
+  const calWeek = week - pinOffset(s, startMs)
 
   // season_start_date is the Tuesday that opens week 1 (fantasy weeks roll
   // over after Monday Night Football), so this lands on the Tuesday that
   // opens the requested week. Bare YYYY-MM-DD parses as UTC midnight, and
   // the getUTC* reads below keep it there.
-  const weekStart = new Date(startMs + (week - 1) * WEEK_MS)
+  const weekStart = new Date(startMs + (calWeek - 1) * WEEK_MS)
 
   // Walk forward to that week's Thursday. Written as a search rather than
   // "+2 days" so a start date saved on some other weekday still resolves to

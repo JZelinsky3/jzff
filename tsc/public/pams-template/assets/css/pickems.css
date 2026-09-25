@@ -725,31 +725,28 @@ body {
 }
 .match[data-gotw="true"] .vote-btn:last-child[data-picked="true"] .vote-pct { color: #7a5310; }
 
-/* GOTW result state on cream. Same rule as the dark cards: a pick that
-   lost drops to its top stripe so only the winner carries a field. */
-.match[data-gotw="true"][data-winner] .vote-btn[data-picked="true"]:not([data-winner="true"]) {
-  background: transparent;
-  color: #8c1746;
-  box-shadow: inset 0 5px 0 var(--pk-magenta);
-}
+/* GOTW result state on cream. Same rule as the dark cards: only your pick
+   is highlighted, pink if it lost, green if it won. */
+.match[data-gotw="true"][data-winner] .vote-btn[data-picked="true"]:not([data-winner="true"]),
 .match[data-gotw="true"][data-winner] .vote-btn:last-child[data-picked="true"]:not([data-winner="true"]) {
-  background: transparent;
-  color: #7a5310;
-  box-shadow: inset 0 5px 0 var(--pk-gotw-amber);
+  background: linear-gradient(180deg, rgba(184,32,95,.36), rgba(184,32,95,.22));
+  color: #1a0f23;
+  box-shadow: inset 0 0 0 2px var(--pk-magenta), inset 0 5px 0 var(--pk-magenta-bright), 0 0 24px rgba(184,32,95,.45);
+}
+.match[data-gotw="true"][data-winner] .vote-btn[data-picked="true"]:not([data-winner="true"]) .vote-pct,
+.match[data-gotw="true"][data-winner] .vote-btn:last-child[data-picked="true"]:not([data-winner="true"]) .vote-pct {
+  color: #8c1746;
 }
 
-/* GOTW winner override — a dark field still reads as a badge on cream, but
-   it's tinted teal and ringed in aqua now instead of taking the side accent.
-   The side accent said which HALF of the card you were looking at, not who
-   won; aqua says who won. */
-.match[data-gotw="true"] .vote-btn[data-winner="true"],
-.match[data-gotw="true"] .vote-btn:last-child[data-winner="true"] {
+/* GOTW correct pick: a dark green field still reads as a badge on cream. */
+.match[data-gotw="true"] .vote-btn[data-picked="true"][data-winner="true"],
+.match[data-gotw="true"] .vote-btn:last-child[data-picked="true"][data-winner="true"] {
   background: #0d2a1c;
   color: var(--pk-win-bright);
   box-shadow: inset 0 0 0 2px var(--pk-win), inset 0 4px 0 var(--pk-win-bright);
 }
-.match[data-gotw="true"] .vote-btn[data-winner="true"] .vote-pct,
-.match[data-gotw="true"] .vote-btn:last-child[data-winner="true"] .vote-pct {
+.match[data-gotw="true"] .vote-btn[data-picked="true"][data-winner="true"] .vote-pct,
+.match[data-gotw="true"] .vote-btn:last-child[data-picked="true"][data-winner="true"] .vote-pct {
   color: var(--pk-win-bright);
   text-shadow: none;
 }
@@ -983,70 +980,37 @@ body {
 }
 
 /* ── Result state ──────────────────────────────────────────────
-   Once a game is decided, the winner owns the loud fill and a pick that
-   is NOT the winner steps back to a top stripe only. Two filled buttons
-   never compete on the same card, so the aqua one is always the answer
-   to "who won" and the stripe is always the answer to "what did I take".
-   The :not() keeps this off the winner itself. */
-.match[data-winner] .vote-btn[data-picked="true"]:not([data-winner="true"]) {
-  background: transparent;
-  color: var(--pk-magenta-bright);
-  box-shadow: inset 0 3px 0 var(--pk-magenta);
-}
+   Once a game is decided, only YOUR pick is highlighted, and its colour
+   is the verdict: green if it won, pink if it lost. The team you didn't
+   pick gets nothing, even when it won (the green team name above the
+   buttons already says who won). So a card carries at most one fill, and
+   that fill answers "did I get it right". No separate "your pick" mark. */
+.match[data-winner] .vote-btn[data-picked="true"]:not([data-winner="true"]),
 .match[data-winner] .vote-btn:last-child[data-picked="true"]:not([data-winner="true"]) {
-  background: transparent;
-  color: var(--pk-champagne-bright);
-  box-shadow: inset 0 3px 0 var(--pk-champagne);
+  background: rgba(255,61,139,.17);
+  color: var(--pk-magenta-bright);
+  box-shadow: inset 0 0 0 1px var(--pk-magenta), inset 0 3px 0 var(--pk-magenta);
+}
+.match[data-winner] .vote-btn[data-picked="true"]:not([data-winner="true"]) .vote-pct,
+.match[data-winner] .vote-btn:last-child[data-picked="true"]:not([data-winner="true"]) .vote-pct {
+  color: var(--pk-magenta-bright);
+  text-shadow: 0 0 8px rgba(255,106,166,.5);
 }
 
-/* Winner. Declared after the picked rules so it wins on equal specificity
-   when the same button is both. */
-.vote-btn[data-winner="true"],
-.vote-btn:last-child[data-winner="true"] {
+/* Correct pick. Declared after the picked rules so it wins on equal
+   specificity. */
+.vote-btn[data-picked="true"][data-winner="true"],
+.vote-btn:last-child[data-picked="true"][data-winner="true"] {
   background: rgba(63,217,138,.17);
   color: var(--pk-win-bright);
   box-shadow: inset 0 0 0 1px var(--pk-win), inset 0 3px 0 var(--pk-win);
 }
-.vote-btn[data-winner="true"] .vote-pct,
-.vote-btn:last-child[data-winner="true"] .vote-pct {
+.vote-btn[data-picked="true"][data-winner="true"] .vote-pct,
+.vote-btn:last-child[data-picked="true"][data-winner="true"] .vote-pct {
   color: var(--pk-win-bright);
   text-shadow: 0 0 8px rgba(63,217,138,.5);
 }
 .vote-btn:disabled { cursor: default; }
-
-/* ── "Your pick" marker ────────────────────────────────────────
-   Carries the picked state on its own, so the fill underneath is free to
-   mean "won". Sits between the team name and the percentage; the away
-   button's row-reverse mirrors it to the same inner edge. Inherits the
-   button's colour, so it reads pink on a home pick, champagne on an away
-   pick, and goes solid green when the pick was the winner.
-
-   Drawn as a filled radio dot, not a tick: a checkmark is the universal
-   glyph for "correct", which is the one thing this mark never means — the
-   fill under it is what says whether the pick was right. A selected-dot
-   says "this is the one you chose" and nothing else. */
-.vote-mark { display: none; }
-.vote-btn[data-picked="true"] .vote-mark {
-  flex: none;
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 13px; height: 13px;
-  margin: 0 .45rem;
-  border: 1.5px solid currentColor;
-  border-radius: 50%;
-  /* Any glyph still in the markup stays out of the box. */
-  font-size: 0; line-height: 0; letter-spacing: 0;
-}
-.vote-btn[data-picked="true"] .vote-mark::after {
-  content: '';
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-}
-.vote-btn[data-winner="true"][data-picked="true"] .vote-mark {
-  background: var(--pk-win-bright);
-  border-color: var(--pk-win-bright);
-  color: var(--pk-bg);
-}
 
 /* One continuous proportional bar — JS sets widths inline.
    Flex (not grid) so the inline width:64% / width:36% actually controls
@@ -1457,12 +1421,6 @@ body {
   .match[data-gotw="true"] .vs-pts { font-size: .84rem; }
   .match[data-gotw="true"] .vote-btn { padding: 1.05rem .75rem; font-size: .62rem; }
   .bar2 { height: 5px; }
-  /* Narrower buttons — the pick marker shrinks so it can't squeeze the
-     team name into an ellipsis. */
-  .vote-btn[data-picked="true"] .vote-mark {
-    width: 11px; height: 11px; margin: 0 .3rem; border-width: 1.5px;
-  }
-  .vote-btn[data-picked="true"] .vote-mark::after { width: 4px; height: 4px; }
 
   /* Login / PIN inputs and button — shrunk for mobile */
   .pe-auth { gap: .4rem; margin-bottom: 1.25rem; }

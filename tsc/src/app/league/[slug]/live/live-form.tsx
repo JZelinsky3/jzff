@@ -177,7 +177,7 @@ export function LiveSeasonForm({
               style={{ ...inputStyle, width: '5rem' }}
             />
             <span style={{ fontSize: '.75rem', opacity: 0.5 }}>
-              Leave blank to auto-advance · fill to pin a specific week
+              Usually blank · only if the date is off: enter this week and it keeps advancing from there
               {resolvedWeek != null && <> · now resolving to <strong>Week {resolvedWeek}</strong></>}
             </span>
           </label>
