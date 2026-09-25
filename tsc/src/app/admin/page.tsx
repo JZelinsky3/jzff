@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { REFERRAL_LABELS } from '@/lib/referralChannels'
 import { isSiteAdmin, compIsActive } from '@/lib/siteAdmin'
-import { isLifetimeUser, TIER_LABELS } from '@/lib/stripe'
+import { isLifetimeUser, TIER_LABELS, trialSlotActive } from '@/lib/stripe'
 import { GrantCompButton, RevokeCompButton, PagedRows } from './controls'
 
 type ProfileRow = {
@@ -96,7 +96,9 @@ export default async function AdminPage() {
   // returned leagues newest-first, so iterating forward and overwriting
   // leaves the *last* (i.e. oldest, smallest created_at) league id in the
   // map. Mirrors the trial-resolution rule in resolveLeagueTier without
-  // running N round-trips.
+  // running N round-trips. That includes its expiry: once the preview window
+  // shuts there is no trial slot, so nothing reads 'testing'.
+  const previewOpen = trialSlotActive()
   const earliestLeagueByOwner = new Map<string, string>()
   for (const l of leagues) {
     leagueCountByOwner.set(l.owner_id, (leagueCountByOwner.get(l.owner_id) ?? 0) + 1)
@@ -297,7 +299,8 @@ export default async function AdminPage() {
                 const grace = l.grace_period_ends_at
                 // Per-league state — mirrors resolveLeagueTier:
                 //   • Comp owner → no state badge (full access, uninteresting).
-                //   • Owner's earliest league → 'testing' (trial slot).
+                //   • Owner's earliest league → 'testing' (trial slot),
+                //     only while the preview window is open.
                 //   • Non-trial league of an un-subscribed owner → 'udfa'.
                 //   • Non-trial league of a paid owner → no state badge;
                 //     subscription tier already shows in the upper table.
@@ -305,7 +308,7 @@ export default async function AdminPage() {
                 const ownerHasSub = !!sub && (sub.status === 'active' || sub.status === 'trialing')
                 const ownerComp = compByUser.has(l.owner_id) || isLifetimeUser(l.owner_id)
                 const isOwnersEarliest = earliestLeagueByOwner.get(l.owner_id) === l.id
-                const isTrial = !ownerComp && isOwnersEarliest
+                const isTrial = previewOpen && !ownerComp && isOwnersEarliest
 
                 // Veteran (tier2), All-Pro (tier3), and comp all share the
                 // premium feature set, so they collapse to a single
@@ -322,7 +325,7 @@ export default async function AdminPage() {
                 const tags: string[] = []
                 if (isTrial) tags.push('testing')
                 else tags.push(planBadge)
-                if (!ownerComp && !isOwnersEarliest && !ownerHasSub) tags.push('udfa')
+                if (!ownerComp && !isTrial && !ownerHasSub) tags.push('udfa')
                 if (grace) tags.push('grace')
                 if (l.published_at) tags.push('published')
                 return (
