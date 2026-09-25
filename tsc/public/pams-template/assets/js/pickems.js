@@ -471,6 +471,17 @@
     var B = state.teams[m.away];
     var recA = w.records ? (w.records[m.home] || '') : '';
     var recB = w.records ? (w.records[m.away] || '') : '';
+    // LAST WK and PPG as of THIS week, so a past week's card doesn't show
+    // today's numbers. The team-level values are the fallback for payloads
+    // without per-week snapshots.
+    function lastWkOf(id, team) {
+      if (w.lastWeek) return w.lastWeek[id] != null ? w.lastWeek[id] : null;
+      return team && team.last_week_points != null ? team.last_week_points : null;
+    }
+    function ppgOf(id, team) {
+      if (w.ppg) return w.ppg[id] != null ? w.ppg[id] : null;
+      return team && team.projected_points != null ? team.projected_points : null;
+    }
 
     function teamBlock(side, team, rec, isAway) {
       var champ = team && team.isChampion ? '<span title="Defending Champion">👑</span>' : '';
@@ -480,8 +491,9 @@
       // card on both sides (matches the demo layout).
       var recHTML = rec ? '<span class="record">' + esc(rec) + '</span>' : '';
       var nameLine = isAway ? (recHTML + ' ' + name + ' ' + champ) : (name + ' ' + champ + ' ' + recHTML);
-      var lwk = team && team.last_week_points != null
-        ? '<div class="lwk"><span class="lbl">LAST WK</span> <strong>' + team.last_week_points.toFixed(1) + '</strong></div>'
+      var lastPts = lastWkOf(side, team);
+      var lwk = lastPts != null
+        ? '<div class="lwk"><span class="lbl">LAST WK</span> <strong>' + lastPts.toFixed(1) + '</strong></div>'
         : '';
       return ''
         + '<div class="team" data-team="' + esc(side) + '">'
@@ -494,11 +506,13 @@
         + '</div>';
     }
 
-    var haveProj = A && B && A.projected_points != null && B.projected_points != null;
+    var ppgA = ppgOf(m.home, A);
+    var ppgB = ppgOf(m.away, B);
+    var haveProj = ppgA != null && ppgB != null;
     var projCell = haveProj
-      ? '<div class="vs"><span class="vs-pts home">' + A.projected_points.toFixed(1) + '</span>'
+      ? '<div class="vs"><span class="vs-pts home">' + ppgA.toFixed(1) + '</span>'
         + '<span class="vs-mid">PPG</span>'
-        + '<span class="vs-pts away">' + B.projected_points.toFixed(1) + '</span></div>'
+        + '<span class="vs-pts away">' + ppgB.toFixed(1) + '</span></div>'
       : '<div class="vs"><span class="vs-mid">vs</span></div>';
 
     var previewUrl = previewHref(m);

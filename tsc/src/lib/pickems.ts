@@ -35,6 +35,11 @@ export type PickemsWeek = {
   is_current: boolean
   matchups: { id: string; home: string; away: string }[]
   records: Record<string, string> // manager_id -> "W-L" going into this week
+  // Going into this week, like `records`. The team-level last_week_points /
+  // projected_points are as of the CURRENT week, so past weeks' cards can't
+  // use them: week 1 would show week 2's score.
+  lastWeek: Record<string, number> // manager_id -> most recent score before this week
+  ppg: Record<string, number> // manager_id -> season PPG before this week
   winners: Record<string, string> // matchup_id -> winning manager_id
   gameOfWeek: string | null
   hlWinners: { highest: string[]; lowest: string[] } | null
@@ -222,16 +227,31 @@ export async function getPickemsState(slug: string): Promise<PickemsState | null
     return r
   }
 
+  // Scoring going into each week, advanced alongside `cum`.
+  const cumPts = new Map<string, { pf: number; games: number; last: number }>()
+  const addPts = (id: string, score: number) => {
+    const p = cumPts.get(id) ?? { pf: 0, games: 0, last: 0 }
+    p.pf += score; p.games++; p.last = score
+    cumPts.set(id, p)
+  }
+
   const weeks: PickemsWeek[] = []
   for (const wk of weekNums) {
     const wkMatchups = (allMatchups ?? []).filter((m) => m.week === wk)
 
-    // Record snapshot BEFORE this week.
+    // Record + scoring snapshot BEFORE this week.
     const records: Record<string, string> = {}
+    const lastWeek: Record<string, number> = {}
+    const ppg: Record<string, number> = {}
     for (const m of wkMatchups) {
       for (const id of [m.manager_a_id, m.manager_b_id]) {
         const r = cum.get(id) ?? { w: 0, l: 0, t: 0 }
         records[id] = `${r.w}-${r.l}${r.t > 0 ? `-${r.t}` : ''}`
+        const p = cumPts.get(id)
+        if (p && p.games > 0) {
+          lastWeek[id] = p.last
+          ppg[id] = Math.round((p.pf / p.games) * 10) / 10
+        }
       }
     }
 
@@ -251,6 +271,8 @@ export async function getPickemsState(slug: string): Promise<PickemsState | null
         else if (sb > sa) { rb.w++; ra.l++ }
         else { ra.t++; rb.t++ }
         weekScores.push({ id: m.manager_a_id, score: sa }, { id: m.manager_b_id, score: sb })
+        addPts(m.manager_a_id, sa)
+        addPts(m.manager_b_id, sb)
       } else {
         allScored = false
       }
@@ -282,6 +304,8 @@ export async function getPickemsState(slug: string): Promise<PickemsState | null
       is_current: isCurrent,
       matchups: wkMatchups.map((m) => ({ id: m.id, home: m.manager_a_id, away: m.manager_b_id })),
       records,
+      lastWeek,
+      ppg,
       winners: isCurrent ? {} : winners,
       gameOfWeek: gotwMap[String(wk)] ?? null,
       hlWinners: isCurrent ? null : hlWinners,
