@@ -166,11 +166,17 @@ body { background: var(--rb-bg); }
 .rbf-seg button:hover { color: var(--gold); }
 .rbf-seg button.on { background: var(--gold); color: rgb(11,26,15); }
 .rbf-select {
-    background: rgb(11,26,15); border: 1px solid var(--rb-line);
+    /* Without appearance:none Safari paints its own pop-up button. */
+    -webkit-appearance: none; -moz-appearance: none; appearance: none;
+    background-color: rgb(11,26,15);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none' stroke='%23e8c889' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='1 1 5 5 9 1'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right .55rem center;
+    border: 1px solid var(--rb-line); border-radius: 0;
     color: var(--cream-soft);
     font-family: var(--mono); font-weight: 700;
     font-size: .56rem; letter-spacing: .12em; text-transform: uppercase;
-    padding: .5rem .55rem; cursor: pointer;
+    padding: .5rem 1.7rem .5rem .6rem; cursor: pointer;
 }
 .rbf-select:hover, .rbf-select:focus { border-color: var(--gold); outline: none; }
 .rbf-range { display: inline-flex; align-items: center; gap: .45rem; }

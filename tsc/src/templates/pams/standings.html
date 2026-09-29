@@ -55,11 +55,17 @@
     color: var(--gold-deep);
 }
 .st-filter select {
-    background: transparent; border: 1px solid rgba(14,22,32,.3);
+    /* Without appearance:none Safari paints its own pop-up button. */
+    -webkit-appearance: none; -moz-appearance: none; appearance: none;
+    background-color: transparent;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none' stroke='%23a88a4a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='1 1 5 5 9 1'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right .55rem center;
+    border: 1px solid rgba(14,22,32,.3); border-radius: 0;
     color: var(--ink);
     font-family: var(--mono); font-weight: 700;
     font-size: .6rem; letter-spacing: .12em; text-transform: uppercase;
-    padding: .45rem .55rem; cursor: pointer;
+    padding: .45rem 1.7rem .45rem .6rem; cursor: pointer;
 }
 .st-filter select:hover, .st-filter select:focus { border-color: var(--gold-deep); outline: none; }
 .st-filter .to { font-family: var(--serif); font-style: italic; color: var(--ink-soft); }

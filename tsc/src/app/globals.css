@@ -28643,7 +28643,7 @@ body.tsc-hdr-collapsed .mlsub-bar {
     font-family: var(--mono); font-size: .42rem; letter-spacing: .18em; text-transform: uppercase;
     color: var(--cream-mute);
 }
-.msrc-rule-field .dc-select { width: 100%; font-size: .72rem; padding: .45rem .5rem; }
+.msrc-rule-field .dc-select { width: 100%; font-size: .72rem; padding: .45rem 1.7rem .45rem .5rem; background-position: right .6rem center; }
 .msrc-rule-field .dc-select.edited { border-color: var(--gold); color: var(--gold); }
 .msrc-rule-tools { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .1rem 1rem; }
 .msrc-rule-tools .lo-btn-quiet { font-size: .5rem; }

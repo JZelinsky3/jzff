@@ -1020,13 +1020,20 @@ a.lo-billboard:hover::before { border-color: rgba(232, 200, 137, .45); }
 }
 .lo-rules-select {
     width: 100%; min-width: 6.2rem;
-    background: var(--ink-soft); border: 1px solid var(--ink-line); border-radius: 0;
+    /* appearance:none or Safari draws its own glossy pop-up button over
+       every one of these; the chevron comes back as an inline SVG. */
+    -webkit-appearance: none; -moz-appearance: none; appearance: none;
+    background-color: var(--ink-soft);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none' stroke='%23e8c889' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='1 1 5 5 9 1'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right .5rem center;
+    border: 1px solid var(--ink-line); border-radius: 0;
     color: var(--cream-soft);
     font-family: var(--mono); font-size: .64rem;
-    padding: .46rem .4rem; cursor: pointer;
+    padding: .46rem 1.6rem .46rem .5rem; cursor: pointer;
 }
 .lo-rules-select:hover:not(:disabled), .lo-rules-select:focus { outline: none; border-color: var(--accent-dim); }
-.lo-rules-select.edited { border-color: var(--accent); color: var(--accent); background: var(--accent-wash); }
+.lo-rules-select.edited { border-color: var(--accent); color: var(--accent); background-color: var(--accent-wash); }
 .lo-rules-tools { white-space: nowrap; text-align: right; }
 .lo-rules-tools button {
     background: none; border: none; padding: .3rem .35rem; cursor: pointer;
