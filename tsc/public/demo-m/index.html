@@ -577,7 +577,7 @@
         document.getElementById('seasonsList').innerHTML = list.map(function (s) {
             return '<a class="m-list-row" href="seasons/season.html?year=' + s.year + '">' +
                 '<span class="m-season-year">' + s.year + '</span>' +
-                '<span class="m-standrow-name">' + esc(s.champion_name) + '<small>' + esc(s.champion_team_name || '') + ' · champion</small></span>' +
+                '<span class="m-standrow-name">' + esc(s.champion_name) + '<small>' + esc(s.champion_team_name || '') + ' · Champion</small></span>' +
                 '<span class="m-standrow-rec">' + esc(s.champion_record || '') + '</span>' +
                 '<svg class="m-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 5 16 12 9 19"/></svg>' +
             '</a>';

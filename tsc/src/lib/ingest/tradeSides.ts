@@ -60,9 +60,22 @@ export async function writeTradeSides(
   const keptManagerIds: string[] = []
   let written = 0
 
+  // Rank stamps outlive the sync. `rank_now` is written by the daily grading
+  // job and `rank_at_trade` can come from a pass the platform payload knows
+  // nothing about, so an ingest rebuilding the assets from scratch used to
+  // erase both on every sync. That is why pams' trade cards showed no ranks
+  // at all. Carry them over from what's stored whenever the fresh asset
+  // doesn't bring its own.
+  const { data: stored } = await db.from('trade_sides').select('manager_id, assets').eq('trade_id', tradeId)
+  const storedByManager = new Map<string, Array<Record<string, unknown>>>()
+  for (const row of stored ?? []) {
+    if (Array.isArray(row.assets)) storedByManager.set(row.manager_id as string, row.assets as Array<Record<string, unknown>>)
+  }
+
   for (const side of sides) {
+    const assets = carryRanks(side.assets, storedByManager.get(side.managerId))
     const { error } = await db.from('trade_sides').upsert(
-      { trade_id: tradeId, manager_id: side.managerId, assets: side.assets },
+      { trade_id: tradeId, manager_id: side.managerId, assets },
       { onConflict: 'trade_id,manager_id' },
     )
     if (error) {
@@ -87,4 +100,34 @@ export async function writeTradeSides(
   }
 
   return { written, warnings }
+}
+
+const RANK_KEYS = ['rank_at_trade', 'rank_now'] as const
+
+function assetKey(a: Record<string, unknown>): string | null {
+  if (a.kind !== 'player') return null
+  if (typeof a.player_id === 'string' && a.player_id) return `id:${a.player_id}`
+  if (typeof a.name === 'string' && a.name) return `name:${a.name.toLowerCase()}`
+  return null
+}
+
+function carryRanks(fresh: unknown, stored: Array<Record<string, unknown>> | undefined): unknown {
+  if (!Array.isArray(fresh) || !stored?.length) return fresh
+  const byKey = new Map<string, Record<string, unknown>>()
+  for (const a of stored) {
+    const k = assetKey(a)
+    if (k) byKey.set(k, a)
+  }
+  return fresh.map((a) => {
+    if (!a || typeof a !== 'object') return a
+    const asset = a as Record<string, unknown>
+    const k = assetKey(asset)
+    const old = k ? byKey.get(k) : undefined
+    if (!old) return asset
+    let out = asset
+    for (const field of RANK_KEYS) {
+      if (out[field] == null && typeof old[field] === 'string') out = { ...out, [field]: old[field] }
+    }
+    return out
+  })
 }

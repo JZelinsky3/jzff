@@ -266,6 +266,52 @@
 .rb-pod-more { margin-top: .95rem; padding-top: .7rem; border-top: 1px solid var(--ink-line-soft); display: none; }
 .rb-card.is-open .rb-pod-more { display: block; }
 
+/* ── Filter row: which games, which years ─────────────────────── */
+/* Sits under the chapter seg as one quieter line: a small three-way
+   games switch and a years chip (native picker). A custom range opens two
+   year pickers below it. */
+.rb-filter { display: flex; align-items: center; gap: .45rem; margin: 0 0 .5rem; }
+.rb-scope { flex: 1; display: flex; border: 1px solid var(--ink-line); border-radius: 999px; padding: 2px; gap: 2px; background: var(--ink-soft); }
+.rb-scope button {
+    flex: 1; padding: .38rem .2rem;
+    background: none; border: none; border-radius: 999px;
+    color: var(--cream-mute);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .12em; text-transform: uppercase;
+}
+.rb-scope button.is-active { background: var(--ink-line); color: var(--rec); }
+.rb-years {
+    flex: none; max-width: 44%;
+    -webkit-appearance: none; appearance: none;
+    background: var(--ink-soft); border: 1px solid var(--ink-line); border-radius: 999px;
+    color: var(--cream-soft);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .1em; text-transform: uppercase;
+    padding: .46rem 1.4rem .46rem .7rem;
+    background-image: linear-gradient(45deg, transparent 50%, var(--rec) 50%), linear-gradient(135deg, var(--rec) 50%, transparent 50%);
+    background-position: calc(100% - 12px) 52%, calc(100% - 8px) 52%;
+    background-size: 4px 4px, 4px 4px; background-repeat: no-repeat;
+    text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
+}
+.rb-years.is-set { border-color: var(--rec-deep); color: var(--rec); }
+.rb-range { display: flex; align-items: center; justify-content: flex-end; gap: .4rem; margin: -.1rem 0 .55rem; }
+.rb-range[hidden] { display: none; }
+.rb-range .rb-years { max-width: none; }
+.rb-range span { font-family: var(--serif); font-style: italic; font-size: .8rem; color: var(--cream-mute); }
+.rb-fnote {
+    display: flex; align-items: baseline; justify-content: space-between; gap: .6rem;
+    margin: 0 .15rem .8rem;
+    font-family: var(--mono); font-size: .52rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.rb-fnote[hidden] { display: none; }
+.rb-fnote b { color: var(--rec); font-weight: 700; }
+.rb-fnote button {
+    flex: none; background: none; border: none; padding: 0;
+    color: var(--rec); font: inherit; font-weight: 700;
+    border-bottom: 1px solid var(--rec-deep);
+}
+
 /* ── Careers: no-podiums roll ──────────────────────────────────── */
 .rb-nopod-note { margin-top: .5rem; font-family: var(--mono); font-size: .54rem; letter-spacing: .04em; color: var(--cream-mute); }
 .rb-nopod-rows { display: flex; flex-direction: column; margin-top: .7rem; }
@@ -296,6 +342,21 @@
         <button data-sec="feats">Feats</button>
     </div>
 
+    <div class="rb-filter" id="rb-filter" hidden>
+        <div class="rb-scope" id="rb-scope" role="group" aria-label="Which games">
+            <button data-scope="all" class="is-active">All</button>
+            <button data-scope="reg">Regular</button>
+            <button data-scope="post">Playoffs</button>
+        </div>
+        <select class="rb-years" id="rb-years" aria-label="Which years"></select>
+    </div>
+    <div class="rb-range" id="rb-range" hidden>
+        <select class="rb-years" id="rb-from" aria-label="From"></select>
+        <span>to</span>
+        <select class="rb-years" id="rb-to" aria-label="To"></select>
+    </div>
+    <div class="rb-fnote" id="rb-fnote" hidden></div>
+
     <div id="cards"><div class="m-empty">Dusting off the ledgers…</div></div>
 </main>
 
@@ -325,14 +386,117 @@
 
     var book = null;
     var section = 'weekly';
+    var meta = null;
 
-    fetch('data/record_book.json')
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .catch(function () { return null; })
-        .then(function (data) {
-            book = data && data.full_book;
+    // The filter lives in the URL (?scope=, ?era=, ?years=) and rides on the
+    // data fetch; the server hands back the book for just those games/years.
+    var FILTER = (function () {
+        var p = new URLSearchParams(location.search);
+        var sc = p.get('scope');
+        return { scope: sc === 'reg' || sc === 'post' ? sc : 'all', era: p.get('era') || '', years: p.get('years') || '' };
+    })();
+    function filterQs() {
+        var p = new URLSearchParams();
+        if (FILTER.scope !== 'all') p.set('scope', FILTER.scope);
+        if (FILTER.era) p.set('era', FILTER.era);
+        else if (FILTER.years) p.set('years', FILTER.years);
+        var q = p.toString();
+        return q ? '?' + q : '';
+    }
+
+    function load() {
+        var qs = filterQs();
+        return Promise.all([
+            fetch('data/record_book.json' + qs).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+            fetch('data/league.json' + qs).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+        ]).then(function (res) {
+            book = res[0] && res[0].full_book;
+            meta = res[1];
+            renderFilter();
             render();
         });
+    }
+    load();
+
+    function yearSpan(ys) {
+        return ys.length > 1 ? ys[0] + '–' + ys[ys.length - 1] : String(ys[0]);
+    }
+    function renderFilter() {
+        var bar = document.getElementById('rb-filter');
+        if (!meta) return;
+        var eras = meta.eras || [];
+        var years = (meta.all_seasons || []).slice().sort(function (a, b) { return a - b; });
+        if (years.length < 2 && !eras.length) { bar.hidden = true; return; }
+        bar.hidden = false;
+        document.querySelectorAll('#rb-scope button').forEach(function (b) {
+            b.classList.toggle('is-active', b.dataset.scope === FILTER.scope);
+        });
+        var custom = !FILTER.era && !!FILTER.years;
+        var sel = document.getElementById('rb-years');
+        sel.innerHTML = '<option value="all">All years</option>' +
+            eras.map(function (e) {
+                return '<option value="era:' + esc(e.id) + '"' + (FILTER.era === e.id ? ' selected' : '') + '>' + esc(e.name) + '</option>';
+            }).join('') +
+            '<option value="custom"' + (custom ? ' selected' : '') + '>Pick years</option>';
+        if (!FILTER.era && !FILTER.years) sel.value = 'all';
+        sel.classList.toggle('is-set', !!(FILTER.era || FILTER.years));
+
+        var m = (FILTER.years || '').match(/^(\d{4})(?:-(\d{4}))?$/);
+        var fromY = m ? Number(m[1]) : years[0];
+        var toY = m ? Number(m[2] || m[1]) : years[years.length - 1];
+        var opts = function (pick) {
+            return years.map(function (y) { return '<option value="' + y + '"' + (y === pick ? ' selected' : '') + '>' + y + '</option>'; }).join('');
+        };
+        document.getElementById('rb-from').innerHTML = opts(fromY);
+        document.getElementById('rb-to').innerHTML = opts(toY);
+        document.getElementById('rb-range').hidden = !custom;
+
+        var f = meta.filter;
+        var note = document.getElementById('rb-fnote');
+        if (f && (f.scope !== 'all' || f.years)) {
+            var words = { all: 'All games', reg: 'Regular season', post: 'Playoffs' };
+            var where = f.era_name ? f.era_name : (f.years ? yearSpan(f.years) : 'All years');
+            note.innerHTML = '<span><b>' + esc(words[f.scope]) + '</b> · ' + esc(where) +
+                (f.era_name && f.years ? ' · ' + esc(yearSpan(f.years)) : '') + '</span>' +
+                '<button type="button" data-clear>Clear</button>';
+            note.hidden = false;
+        } else {
+            note.hidden = true;
+        }
+    }
+    function applyFilter(patch) {
+        Object.keys(patch).forEach(function (k) { FILTER[k] = patch[k]; });
+        var url = new URL(location.href);
+        ['scope', 'era', 'years'].forEach(function (k) { url.searchParams.delete(k); });
+        new URLSearchParams(filterQs()).forEach(function (v, k) { url.searchParams.set(k, v); });
+        history.replaceState(null, '', url);
+        document.getElementById('cards').innerHTML = '<div class="m-empty">Turning the pages…</div>';
+        load();
+    }
+    document.getElementById('rb-scope').addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-scope]');
+        if (!b || b.dataset.scope === FILTER.scope) return;
+        applyFilter({ scope: b.dataset.scope });
+    });
+    document.getElementById('rb-years').addEventListener('change', function () {
+        var v = this.value;
+        if (v === 'custom') { document.getElementById('rb-range').hidden = false; pickRange(); return; }
+        document.getElementById('rb-range').hidden = true;
+        if (v === 'all') applyFilter({ era: '', years: '' });
+        else applyFilter({ era: v.slice(4), years: '' });
+    });
+    function pickRange() {
+        var a = Number(document.getElementById('rb-from').value);
+        var b = Number(document.getElementById('rb-to').value);
+        if (!a || !b) return;
+        if (a > b) { var t = a; a = b; b = t; }
+        applyFilter({ era: '', years: a === b ? String(a) : a + '-' + b });
+    }
+    document.getElementById('rb-from').addEventListener('change', pickRange);
+    document.getElementById('rb-to').addEventListener('change', pickRange);
+    document.getElementById('rb-fnote').addEventListener('click', function (e) {
+        if (e.target.closest('[data-clear]')) applyFilter({ scope: 'all', era: '', years: '' });
+    });
 
     // Per-record config: label + how to read value/context out of an entry.
     function gameCtx(e) {
@@ -365,6 +529,9 @@
             // season totals unfairly stack the bottom of this list.
             ['lowest_ppg', 'Lowest PPG', function (e) { return num(e.reg_ppg); }, seasonCtx],
             ['most_points_against', 'Most Points Against', function (e) { return num(e.reg_pa, 0); }, seasonCtx],
+            // Playoffs view: one postseason at a time.
+            ['best_playoff_runs', 'Biggest Playoff Run', function (e) { return num(e.playoff_pf, 0); }, runCtx],
+            ['best_playoff_ppg', 'Hottest Playoff Run', function (e) { return num(e.playoff_ppg); }, runCtx],
         ],
         career: [
             ['longest_win_streaks', 'Longest Win Streak', function (e) { return e.length + 'W'; }, streakCtx],
@@ -394,6 +561,7 @@
     var TONE_GOOD = {
         highest_single_week_score: 1, biggest_blowouts: 1, luckiest_wins: 1, highest_combined_score: 1,
         highest_season_pf: 1, highest_total_season_pf: 1, highest_ppg: 1, best_reg_season_records: 1,
+        best_playoff_runs: 1, best_playoff_ppg: 1,
     };
     var TONE_BAD = {
         lowest_single_week_score: 1, unluckiest_losses: 1, lowest_combined_score: 1,
@@ -414,8 +582,10 @@
     // which would grow the card taller than its rail siblings.
     function seasonSubHtml(e) {
         var head = e.season + (e.team_name ? ' · ' + e.team_name : '');
+        // Playoff-run cards show the bracket record, not the regular season's.
+        var r = FILTER.scope === 'post' ? e.playoff_record : e.reg_record;
         return '<span class="rb-sub-head">' + esc(head) + '</span>' +
-            (e.reg_record ? '<span class="rb-sub-rec">' + esc(rec(e.reg_record)) + '</span>' : '');
+            (r ? '<span class="rb-sub-rec">' + esc(rec(r)) + '</span>' : '');
     }
     // Secondary stat shown ON the value (right side), mirroring how each
     // name carries a small year/season tag beneath it. `below` stacks under
@@ -459,6 +629,7 @@
         var p = String(r).split('-').map(Number);
         return (p[0] || 0) + (p[1] || 0) + (p[2] || 0);
     }
+    function runCtx(e) { return e.season + ' · ' + rec(e.playoff_record) + ' in the playoffs'; }
     function streakCtx(e) {
         var span = e.start_season === e.end_season
             ? e.start_season + ' · W' + e.start_week + '–W' + e.end_week
@@ -600,6 +771,8 @@
         return ' <i class="rb-name-g">' + e.total_games + 'g</i>';
     }
     function seasonBasis(key, e) {
+        if (key === 'best_playoff_runs') return e.playoff_pf || 0;
+        if (key === 'best_playoff_ppg') return e.playoff_ppg || 0;
         if (key === 'highest_total_season_pf') return e.total_pf || 0;
         if (key === 'highest_ppg' || key === 'lowest_ppg') return e.reg_ppg || 0;
         if (key === 'most_points_against') return e.reg_pa || 0;
@@ -848,6 +1021,15 @@
         if (section === 'feats') { renderFeats(box); return; }
 
         var groups = GROUPS[section] || [];
+        // The Seasons chapter reads differently per filter: playoff runs for
+        // the Playoffs view, and no "full season" total in the regular one.
+        if (section === 'season' && FILTER.scope === 'post') {
+            groups = [{ title: 'Playoff Runs', keys: ['best_playoff_runs', 'best_playoff_ppg'] }];
+        } else if (section === 'season' && FILTER.scope === 'reg') {
+            groups = groups.map(function (g) {
+                return { title: g.title, keys: g.keys.filter(function (k) { return k !== 'highest_total_season_pf'; }) };
+            });
+        }
         var html = groups.map(function (g, gi) {
             var slides = g.keys.map(function (key) {
                 var def = DEF_BY_KEY[section][key];

@@ -52,6 +52,48 @@ export async function getNflClock(): Promise<NflClock | null> {
   return clock
 }
 
+// ── The calendar ─────────────────────────────────────────────────────────
+//
+// Week 1 opens on the Tuesday after Labor Day (the first Monday of
+// September), every year since the league went to Thursday openers: 2019
+// Sep 3, 2021 Sep 7, 2024 Sep 3, 2026 Sep 8. Every later week opens seven
+// days after the one before. So the whole calendar for any season follows
+// from the year alone and nobody has to type one in.
+const DAY_MS = 24 * 60 * 60 * 1000
+const WEEK_MS = 7 * DAY_MS
+
+export function week1TuesdayUtc(year: number): number {
+  const sept1 = new Date(Date.UTC(year, 8, 1)).getUTCDay() // 0 = Sunday
+  const laborDay = 1 + ((1 - sept1 + 7) % 7)
+  return Date.UTC(year, 8, laborDay + 1)
+}
+
+// Which fantasy week a moment belongs to: 0 before week 1 opens (the
+// preseason), then 1 through 18. A week rolls over once Monday night is
+// finished; 07:00 UTC Tuesday is 3 AM Eastern, past even a late Monday
+// doubleheader. A trade at 1 AM after the last game was made with that
+// week in the books, so it belongs to the next one.
+// `seasonStartDate` (the stored Tuesday that opens week 1) wins over the
+// computed one when a season has it.
+export function nflWeekAt(year: number, at: string | number | Date, seasonStartDate?: string | null): number {
+  const parsedStart = seasonStartDate ? Date.parse(seasonStartDate) : NaN
+  const start = Number.isFinite(parsedStart) ? parsedStart : week1TuesdayUtc(year)
+  const t = at instanceof Date ? at.getTime() : typeof at === 'number' ? at : Date.parse(at)
+  if (!Number.isFinite(t)) return 0
+  const rollover = start + 7 * 60 * 60 * 1000
+  if (t < rollover) return 0
+  return Math.min(18, Math.floor((t - rollover) / WEEK_MS) + 1)
+}
+
+// Can `year` have a champion yet? Only once its last fantasy week is over.
+// Fails CLOSED, unlike weekIsFinal: with no clock, only a season from an
+// earlier calendar year counts, because naming a champion early is exactly
+// the bug this guards (an ESPN league crowned its 2-0 team in week 3).
+export function seasonIsDecided(year: number, lastWeek: number | null | undefined, clock: NflClock | null): boolean {
+  if (!clock) return year < new Date().getUTCFullYear()
+  return weekIsFinal(year, Math.min(18, lastWeek ?? 17), clock)
+}
+
 // Has every NFL game counting toward `week` of `year` been played?
 //
 // Fails OPEN (true) when the clock is unavailable. A failed state fetch

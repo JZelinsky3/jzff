@@ -139,7 +139,7 @@
                 var partial = !s.has_complete_data;
                 var sub = partial
                     ? '<i>Partial records</i>'
-                    : esc(s.champion_team_name || '') + ' · champion';
+                    : esc(s.champion_team_name || '') + ' · Champion';
                 return '<a class="m-list-row se-row' + (partial ? ' se-row-partial' : '') + '" href="seasons/season.html?year=' + s.year + '">' +
                     '<span class="se-year">' + s.year + '</span>' +
                     '<span class="se-row-name">' + esc(s.champion_name || '·') + '<small>' + sub + '</small></span>' +

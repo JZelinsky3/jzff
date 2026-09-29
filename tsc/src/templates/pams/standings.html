@@ -43,6 +43,32 @@
     max-width: 540px; margin: 0 auto;
 }
 
+/* ── Years filter: the whole ledger for one era, or any range ── */
+.st-filter {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+    gap: .5rem .7rem; margin: 1.4rem auto 0;
+}
+.st-filter[hidden] { display: none; }
+.st-filter-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--gold-deep);
+}
+.st-filter select {
+    background: transparent; border: 1px solid rgba(14,22,32,.3);
+    color: var(--ink);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .12em; text-transform: uppercase;
+    padding: .45rem .55rem; cursor: pointer;
+}
+.st-filter select:hover, .st-filter select:focus { border-color: var(--gold-deep); outline: none; }
+.st-filter .to { font-family: var(--serif); font-style: italic; color: var(--ink-soft); }
+.st-filter-note {
+    flex-basis: 100%; text-align: center;
+    font-family: var(--serif); font-style: italic; font-size: 1rem; color: var(--ink-soft);
+}
+.st-filter-note a { color: var(--gold-deep); font-family: var(--mono); font-style: normal; font-size: .56rem; letter-spacing: .16em; text-transform: uppercase; margin-left: .5rem; }
+
 /* ── Full-page cream override ── */
 body { background: var(--cream); }
 .site-glow, .site-grain { display: none; }
@@ -515,6 +541,7 @@ tr.detail-row > td {
         Every win, every loss, every chip, ranked across <span id="page-sub-seasons">every season</span> of the league.
         Click any manager to open their line.
     </p>
+    <div class="st-filter" id="st-filter" hidden></div>
 </div>
 
 <div class="section" style="margin-top: 0;">
@@ -655,11 +682,64 @@ function parseRec(str) {
     return { w: p[0] || 0, l: p[1] || 0, t: p[2] || 0 };
 }
 
+// Years filter (?era= or ?years=), carried on every data file the page
+// reads so the whole ledger narrows to those seasons.
+const YEARS_FILTER = (() => {
+    const p = new URLSearchParams(location.search);
+    const q = new URLSearchParams();
+    if (p.get('era')) q.set('era', p.get('era'));
+    else if (p.get('years')) q.set('years', p.get('years'));
+    const s = q.toString();
+    return { era: p.get('era') || '', years: p.get('years') || '', qs: s ? '?' + s : '' };
+})();
+
+function renderYearsFilter() {
+    const bar = document.getElementById('st-filter');
+    if (!bar || !leagueMeta) return;
+    const eras = leagueMeta.eras || [];
+    const years = [...(leagueMeta.all_seasons || [])].sort((a, b) => a - b);
+    if (years.length < 2 && !eras.length) return;
+    const custom = !YEARS_FILTER.era && !!YEARS_FILTER.years;
+    const m = (YEARS_FILTER.years || '').match(/^(\d{4})(?:-(\d{4}))?$/);
+    const fromY = m ? Number(m[1]) : years[0], toY = m ? Number(m[2] || m[1]) : years[years.length - 1];
+    const opts = sel => years.map(y => `<option value="${y}"${y === sel ? ' selected' : ''}>${y}</option>`).join('');
+    const span = ys => ys.length > 1 ? `${ys[0]}–${ys[ys.length - 1]}` : `${ys[0]}`;
+    const f = leagueMeta.filter;
+    bar.innerHTML = `
+        <span class="st-filter-label">Years</span>
+        <select id="st-years" aria-label="Which years">
+            <option value="all"${!YEARS_FILTER.era && !YEARS_FILTER.years ? ' selected' : ''}>All years</option>
+            ${eras.map(e => `<option value="era:${e.id}"${YEARS_FILTER.era === e.id ? ' selected' : ''}>${e.name} · ${span(e.years)}</option>`).join('')}
+            <option value="custom"${custom ? ' selected' : ''}>Pick a range</option>
+        </select>
+        <span id="st-range"${custom ? '' : ' hidden'}>
+            <select id="st-from" aria-label="From">${opts(fromY)}</select>
+            <span class="to">to</span>
+            <select id="st-to" aria-label="To">${opts(toY)}</select>
+        </span>
+        ${f && f.years ? `<div class="st-filter-note">The ledger for ${f.era_name ? `<strong>${f.era_name}</strong> (${span(f.years)})` : span(f.years)} only.<a href="standings">All years</a></div>` : ''}`;
+    bar.hidden = false;
+    const go = (q) => { location.search = q; };
+    document.getElementById('st-years').addEventListener('change', e => {
+        const v = e.target.value;
+        if (v === 'custom') { document.getElementById('st-range').hidden = false; return; }
+        if (v === 'all') go('');
+        else go('?era=' + encodeURIComponent(v.slice(4)));
+    });
+    const pickRange = () => {
+        let a = Number(document.getElementById('st-from').value), b = Number(document.getElementById('st-to').value);
+        if (a > b) [a, b] = [b, a];
+        go('?years=' + (a === b ? a : `${a}-${b}`));
+    };
+    document.getElementById('st-from').addEventListener('change', pickRange);
+    document.getElementById('st-to').addEventListener('change', pickRange);
+}
+
 async function loadData() {
     try {
         const [dirRes, leagueRes] = await Promise.all([
-            fetch('data/managers_directory.json'),
-            fetch('data/league.json'),
+            fetch('data/managers_directory.json' + YEARS_FILTER.qs),
+            fetch('data/league.json' + YEARS_FILTER.qs),
         ]);
         if (!dirRes.ok) throw new Error(`HTTP ${dirRes.status}`);
         const dir = await dirRes.json();
@@ -669,11 +749,12 @@ async function loadData() {
         // season ledgers (sparklines + race chart).
         const details = await Promise.all(
             dir.managers.map(m =>
-                fetch(`data/managers/${m.user_id}.json`)
+                fetch(`data/managers/${m.user_id}.json${YEARS_FILTER.qs}`)
                     .then(r => r.ok ? r.json() : null)
                     .catch(() => null)
             )
         );
+        renderYearsFilter();
 
         allManagers = dir.managers.map((m, i) => {
             const d = details[i] || {};

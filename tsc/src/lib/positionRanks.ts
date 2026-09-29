@@ -135,6 +135,15 @@ export async function computePositionRanks(opts: {
   return ranks
 }
 
+// Which week's ranks describe a player "at the time of the trade": the last
+// week that was finished when it was made. A trade during week 3 happened
+// with weeks 1 and 2 in the books, so it ranks through week 2. Ranking
+// through the trade's own week counted games that hadn't been played yet.
+// Preseason and week-1 trades have no finished week, so they get no chip.
+export function rankWeekForTrade(tradeWeek: number | null | undefined): number | null {
+  return typeof tradeWeek === 'number' && tradeWeek > 1 ? Math.min(18, tradeWeek - 1) : null
+}
+
 // Current position ranks, from whichever source resolveRankSource picks.
 //
 // One call so the Rumor Mill and the daily rank refresh can't drift into

@@ -136,6 +136,63 @@ body { background: var(--rb-bg); }
 }
 .mast-watch .mw-link { color: var(--gold); border-bottom: 1px solid rgba(232,200,137,.4); }
 
+/* ══ The filter: which slice of history the book is reading ═══
+   Its own row under the masthead, not another chapter tab: it changes
+   every chapter at once. Games (all / regular season / playoffs) and
+   years (an era the commissioner named, or any range). */
+.rb-filter {
+    position: relative; z-index: 10;
+    max-width: 980px; margin: 1.2rem auto 0; padding: 0 1.5rem;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+    gap: .7rem 1.6rem;
+}
+.rb-filter[hidden] { display: none; }
+.rbf-group { display: inline-flex; align-items: center; gap: .6rem; }
+.rbf-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--rb-mute);
+}
+.rbf-seg { display: inline-flex; border: 1px solid var(--rb-line); background: rgba(0,0,0,.14); }
+.rbf-seg button {
+    background: transparent; border: none; border-right: 1px solid var(--rb-line);
+    color: var(--cream-soft);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .16em; text-transform: uppercase;
+    padding: .52rem .85rem .48rem;
+    cursor: pointer; transition: color .15s, background .15s;
+}
+.rbf-seg button:last-child { border-right: none; }
+.rbf-seg button:hover { color: var(--gold); }
+.rbf-seg button.on { background: var(--gold); color: rgb(11,26,15); }
+.rbf-select {
+    background: rgb(11,26,15); border: 1px solid var(--rb-line);
+    color: var(--cream-soft);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .12em; text-transform: uppercase;
+    padding: .5rem .55rem; cursor: pointer;
+}
+.rbf-select:hover, .rbf-select:focus { border-color: var(--gold); outline: none; }
+.rbf-range { display: inline-flex; align-items: center; gap: .45rem; }
+.rbf-range[hidden] { display: none; }
+.rbf-range .rbf-to { font-family: var(--serif); font-style: italic; font-size: .9rem; color: var(--rb-mute); }
+.rbf-note {
+    flex-basis: 100%; text-align: center;
+    font-family: var(--serif); font-style: italic;
+    font-size: .98rem; color: var(--cream-soft);
+}
+.rbf-note[hidden] { display: none; }
+.rbf-note strong { color: var(--gold); font-weight: 400; font-style: normal; }
+.rbf-clear {
+    margin-left: .55rem;
+    background: none; border: none; border-bottom: 1px solid rgba(232,200,137,.4);
+    color: var(--gold);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .18em; text-transform: uppercase;
+    cursor: pointer; padding: 0 0 .1rem;
+}
+.loading-state.soft { opacity: .7; }
+
 /* ══ Exhibit plate ═══════════════════════════════════════════ */
 .exhibit {
     position: relative; z-index: 10;
@@ -1407,6 +1464,9 @@ table.ledger tbody tr:hover { background: rgba(46,120,58,.06); }
     <a class="mast-watch" id="mast-watch" href="live/records-watch/" aria-label="Record watch report" hidden></a>
 </header>
 
+<!-- THE FILTER -->
+<div class="rb-filter" id="rb-filter" hidden></div>
+
 <!-- THE EXHIBIT -->
 <section class="exhibit" id="exhibit" style="display:none">
     <div class="exh-plate" id="exh-plate"></div>
@@ -1444,13 +1504,36 @@ const CHAPTERS = [
     { id: 'career',  num: 'VII', title: 'Career Ledger',  note: 'All-time · alumni' },
 ];
 
+/* ── The filter. Lives in the URL (?scope=, ?era=, ?years=) so a filtered
+      book can be linked, and rides along on every data file the book reads;
+      the server narrows those files and leaves the rest alone. ── */
+const FILTER = (() => {
+    const p = new URLSearchParams(location.search);
+    const scope = p.get('scope');
+    return {
+        scope: scope === 'reg' || scope === 'post' ? scope : 'all',
+        era: p.get('era') || '',
+        years: p.get('years') || '',
+    };
+})();
+function filterQs() {
+    const p = new URLSearchParams();
+    if (FILTER.scope !== 'all') p.set('scope', FILTER.scope);
+    if (FILTER.era) p.set('era', FILTER.era);
+    else if (FILTER.years) p.set('years', FILTER.years);
+    const q = p.toString();
+    return q ? '?' + q : '';
+}
+const SCOPE_WORDS = { all: 'every game', reg: 'the regular season', post: 'the playoffs' };
+
 async function load() {
     try {
+        const qs = filterQs();
         const [dirRes, rbRes, mhRes, leagueRes] = await Promise.all([
-            fetch('data/managers_directory.json'),
-            fetch('data/record_book.json'),
-            fetch('data/manager_highs.json'),
-            fetch('data/league.json'),
+            fetch('data/managers_directory.json' + qs),
+            fetch('data/record_book.json' + qs),
+            fetch('data/manager_highs.json' + qs),
+            fetch('data/league.json' + qs),
         ]);
         if (!dirRes.ok) throw new Error(`HTTP ${dirRes.status}`);
         const dir = await dirRes.json();
@@ -1460,7 +1543,7 @@ async function load() {
 
         const details = await Promise.all(
             dir.managers.map(m =>
-                fetch(`data/managers/${m.user_id}.json`)
+                fetch(`data/managers/${m.user_id}.json${qs}`)
                     .then(r => r.ok ? r.json() : null)
                     .catch(() => null)
             )
@@ -1475,6 +1558,7 @@ async function load() {
         DIRMAP = new Map(managers.map(m => [String(m.user_id), m]));
 
         render(managers, recordBook, managerHighs);
+        renderFilterBar();
         populateChrome(managers);
         buildExhibit(recordBook?.hub_records || []);
         buildTraceBar(managers);
@@ -1499,6 +1583,91 @@ function measureStick() {
 }
 window.addEventListener('resize', measureStick);
 window.addEventListener('load', measureStick);
+
+function renderFilterBar() {
+    const bar = document.getElementById('rb-filter');
+    if (!bar || !leagueMeta) return;
+    const eras = leagueMeta.eras || [];
+    const years = [...(leagueMeta.all_seasons || [])].sort((a, b) => a - b);
+    if (years.length < 2 && !eras.length) { bar.hidden = true; return; }
+
+    const custom = !FILTER.era && !!FILTER.years;
+    const [fromY, toY] = (() => {
+        const m = (FILTER.years || '').match(/^(\d{4})(?:-(\d{4}))?$/);
+        return m ? [Number(m[1]), Number(m[2] || m[1])] : [years[0], years[years.length - 1]];
+    })();
+    const yearOpts = sel => years.map(y => `<option value="${y}"${y === sel ? ' selected' : ''}>${y}</option>`).join('');
+    const eraSpan = e => e.years.length > 1 ? `${e.years[0]}–${e.years[e.years.length - 1]}` : `${e.years[0]}`;
+
+    bar.innerHTML = `
+        <div class="rbf-group">
+            <span class="rbf-label">Games</span>
+            <div class="rbf-seg" role="group" aria-label="Which games count">
+                ${[['all', 'All'], ['reg', 'Regular season'], ['post', 'Playoffs']].map(([k, l]) =>
+                    `<button type="button" class="${FILTER.scope === k ? 'on' : ''}" onclick="applyFilter({ scope: '${k}' })">${l}</button>`).join('')}
+            </div>
+        </div>
+        <div class="rbf-group">
+            <span class="rbf-label">Years</span>
+            <select class="rbf-select" id="rbf-years" onchange="onYearsPick(this.value)" aria-label="Which years count">
+                <option value="all"${!FILTER.era && !FILTER.years ? ' selected' : ''}>All years</option>
+                ${eras.map(e => `<option value="era:${e.id}"${FILTER.era === e.id ? ' selected' : ''}>${e.name} · ${eraSpan(e)}</option>`).join('')}
+                <option value="custom"${custom ? ' selected' : ''}>Pick a range</option>
+            </select>
+            <span class="rbf-range" id="rbf-range"${custom ? '' : ' hidden'}>
+                <select class="rbf-select" id="rbf-from" onchange="onRangePick()" aria-label="From">${yearOpts(fromY)}</select>
+                <span class="rbf-to">to</span>
+                <select class="rbf-select" id="rbf-to" onchange="onRangePick()" aria-label="To">${yearOpts(toY)}</select>
+            </span>
+        </div>
+        <div class="rbf-note" id="rbf-note"${filterNote() ? '' : ' hidden'}>${filterNote()}</div>`;
+    bar.hidden = false;
+}
+
+function filterNote() {
+    const f = leagueMeta?.filter;
+    if (!f || (f.scope === 'all' && !f.years)) return '';
+    const span = f.years && f.years.length
+        ? (f.years.length > 1 ? `${f.years[0]}–${f.years[f.years.length - 1]}` : `${f.years[0]}`)
+        : null;
+    const where = f.era_name ? `<strong>${f.era_name}</strong> (${span})` : span ? `<strong>${span}</strong>` : 'every season';
+    const tail = f.scope !== 'all' ? ' Titles, finishes and career ledgers count whole seasons.' : '';
+    return `Reading <strong>${SCOPE_WORDS[f.scope]}</strong> in ${where}.${tail}<button type="button" class="rbf-clear" onclick="applyFilter({ scope: 'all', era: '', years: '' })">Clear</button>`;
+}
+
+window.onYearsPick = function(v) {
+    const range = document.getElementById('rbf-range');
+    if (v === 'custom') { if (range) range.hidden = false; onRangePick(); return; }
+    if (range) range.hidden = true;
+    if (v === 'all') applyFilter({ era: '', years: '' });
+    else if (v.startsWith('era:')) applyFilter({ era: v.slice(4), years: '' });
+};
+window.onRangePick = function() {
+    let a = Number(document.getElementById('rbf-from')?.value);
+    let b = Number(document.getElementById('rbf-to')?.value);
+    if (!a || !b) return;
+    if (a > b) [a, b] = [b, a];
+    applyFilter({ era: '', years: a === b ? String(a) : `${a}-${b}` });
+};
+
+window.applyFilter = async function(patch) {
+    Object.assign(FILTER, patch);
+    const url = new URL(location.href);
+    ['scope', 'era', 'years'].forEach(k => url.searchParams.delete(k));
+    new URLSearchParams(filterQs()).forEach((v, k) => url.searchParams.set(k, v));
+    history.replaceState(null, '', url);
+    const openId = document.querySelector('.strip-tab.active')?.dataset.chap || 'honors';
+    const body = document.getElementById('page-body');
+    const top = body ? body.getBoundingClientRect().top + window.scrollY : 0;
+    if (body) body.innerHTML = '<div class="loading-state soft">Turning to that part of the book…</div>';
+    // A name being traced stays traced through the new pages.
+    const traced = NF_ACTIVE;
+    NF_ACTIVE = null;
+    await load();
+    openChapter(openId);
+    if (traced != null) setNameFilter(traced);
+    if (window.scrollY > top) window.scrollTo({ top: Math.max(0, top - 160) });
+};
 
 function populateChrome(managers) {
     if (!leagueMeta) return;
@@ -1810,10 +1979,13 @@ function buildSeasonsChapter(allSeasons, book) {
         </div>`;
 
     const season = book.season || {};
+    // The Playoffs view files playoff runs instead: most bracket points in
+    // one postseason, and the best scoring rate across one.
+    if (FILTER.scope === 'post') return buildRunsChapter(season, fig);
     const tabs = [
         { id: 'sl-dynasty', label: 'Dynasty Years', rows: season.highest_season_pf, foot: 'Regular-season points only',
           cols: seasonColsPF() },
-        { id: 'sl-deep', label: 'Deep Runs', rows: season.highest_total_season_pf, foot: 'Reg season + championship-bracket playoff points',
+        { id: 'sl-deep', label: 'Deep Runs', rows: FILTER.scope === 'reg' ? [] : season.highest_total_season_pf, foot: 'Reg season + championship-bracket playoff points',
           cols: seasonColsTotalPF() },
         { id: 'sl-iron', label: 'Iron Records', rows: season.best_reg_season_records, foot: 'Best regular-season records',
           cols: seasonColsRecord() },
@@ -1849,6 +2021,60 @@ function buildSeasonsChapter(allSeasons, book) {
             ${figures}
         </div>
         ${ledgers}`;
+}
+
+function buildRunsChapter(season, fig) {
+    const runs = season.best_playoff_runs || [];
+    const hot = season.best_playoff_ppg || [];
+    const asSeason = r => r ? { year: r.season, user_id: r.user_id, name: r.owner } : null;
+    const figures = `
+        <div class="figures">
+            ${fig('Biggest Run', asSeason(runs[0]), fmtPts(runs[0]?.playoff_pf || 0), `${(runs[0]?.playoff_record || '').replace(/-0$/, '')} in the bracket`)}
+            ${fig('Hottest Run', asSeason(hot[0]), (hot[0]?.playoff_ppg || 0).toFixed(1), `points a playoff week`)}
+        </div>`;
+    const tabs = [
+        { id: 'sl-runs', label: 'Biggest Runs', rows: runs, foot: 'Championship-bracket points in one postseason', cols: seasonColsRun() },
+        { id: 'sl-hotruns', label: 'Hottest Runs', rows: hot, foot: 'Points per playoff week', cols: seasonColsRunPace() },
+    ].filter(t => t.rows.length);
+    const ledgers = tabs.length ? `
+        <div class="chap-sec">
+            ${secHead('¶', 'The Filing Drawer', 'Playoff runs · pull a folder')}
+            <div class="folder-tabs" data-group="seasonledgers">
+                ${tabs.map((t, i) => `<button class="folder-tab${i === 0 ? ' active' : ''}" data-panel="${t.id}" onclick="switchLedgTab(this,'${t.id}')">${t.label}<span class="tab-badge"></span></button>`).join('')}
+            </div>
+            ${tabs.map((t, i) => `
+                <div class="ledg-panel${i === 0 ? ' active' : ''}" id="${t.id}" data-group="seasonledgers">
+                    ${buildSeasonTable(t.rows, t.cols)}
+                    <div class="foot-note">★ ${t.foot}</div>
+                </div>`).join('')}
+        </div>` : `<div class="milestone-empty">No playoff runs on file for these years.</div>`;
+    return `
+        ${chapHead('seasons')}
+        <div class="chap-sec">
+            ${secHead('§', 'Notable Figures', 'Single-postseason marks')}
+            ${figures}
+        </div>
+        ${ledgers}`;
+}
+function seasonColsRun() {
+    return [
+        { h: 'Manager', cls: 'name-link', cell: r => mgrLink(r.user_id, r.owner) },
+        { h: 'Playoff PF', cls: 'num hi', cell: r => fmtPts(r.playoff_pf) },
+        { h: 'Record', cls: 'num', cell: r => (r.playoff_record || '·').replace(/-0$/, '') },
+        { h: 'Year', cls: 'num', cell: r => r.season },
+        { h: 'Team', cls: '', cell: r => r.team_name || '·' },
+        { h: 'Finish', cls: 'num', cell: r => r.final_rank ? ordinal(r.final_rank) : '·' },
+    ];
+}
+function seasonColsRunPace() {
+    return [
+        { h: 'Manager', cls: 'name-link', cell: r => mgrLink(r.user_id, r.owner) },
+        { h: 'Per Week', cls: 'num hi', cell: r => (r.playoff_ppg ?? 0).toFixed(1) },
+        { h: 'Playoff PF', cls: 'num', cell: r => fmtPts(r.playoff_pf) },
+        { h: 'Record', cls: 'num', cell: r => (r.playoff_record || '·').replace(/-0$/, '') },
+        { h: 'Year', cls: 'num', cell: r => r.season },
+        { h: 'Finish', cls: 'num', cell: r => r.final_rank ? ordinal(r.final_rank) : '·' },
+    ];
 }
 
 function seasonColsPF() {
@@ -2912,14 +3138,19 @@ window.switchLedgTab = function(btn, panelId) {
 /* ════════════════ THE EXHIBIT ════════════════ */
 let EXH = { items: [], idx: 0, timer: null };
 function buildExhibit(hubRecords) {
-    if (!hubRecords.length) return;
-    EXH.items = hubRecords;
     const wrap = document.getElementById('exhibit');
+    // Rebuilt whenever the filter changes, so drop the old rotation first.
+    if (EXH.timer) { clearInterval(EXH.timer); EXH.timer = null; }
+    if (!hubRecords.length) { wrap.style.display = 'none'; return; }
+    EXH.items = hubRecords;
+    EXH.idx = 0;
     wrap.style.display = '';
     document.getElementById('exh-dots').innerHTML = hubRecords.map((_, i) =>
         `<button class="exh-dot${i === 0 ? ' active' : ''}" onclick="exhGo(${i})" aria-label="Record ${i + 1}"></button>`).join('');
     exhRender();
     EXH.timer = setInterval(() => exhStep(1), 7000);
+    if (EXH.bound) return;
+    EXH.bound = true;
     wrap.addEventListener('mouseenter', () => { clearInterval(EXH.timer); EXH.timer = null; });
     wrap.addEventListener('mouseleave', () => {
         if (!EXH.timer) EXH.timer = setInterval(() => exhStep(1), 7000);
@@ -2936,9 +3167,16 @@ function exhRender() {
             <div class="exh-detail">${r.detail ?? ''}</div>
         </div>
         <div class="exh-prose">${r.prose ?? ''}</div>
-        <div class="exh-stamp inked">★ League Record · Certified</div>`;
+        <div class="exh-stamp inked">${exhStampText()}</div>`;
     document.querySelectorAll('.exh-dot').forEach((d, i) =>
         d.classList.toggle('active', i === EXH.idx));
+}
+function exhStampText() {
+    const f = leagueMeta?.filter;
+    if (!f || (f.scope === 'all' && !f.years)) return '★ League Record · Certified';
+    if (f.era_name) return `★ ${f.era_name} Record`;
+    if (f.years && f.years.length) return `★ ${f.years[0]}${f.years.length > 1 ? '–' + f.years[f.years.length - 1] : ''} Record`;
+    return f.scope === 'post' ? '★ Playoff Record' : '★ Regular-Season Record';
 }
 window.exhGo = function(i) { EXH.idx = i; exhRender(); };
 window.exhStep = function(dir) {

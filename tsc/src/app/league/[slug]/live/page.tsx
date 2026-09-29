@@ -7,6 +7,7 @@ import { getViewMode } from '@/lib/viewMode'
 import { LiveSeasonForm, type SeasonRow } from './live-form'
 import { SourcePicker, type SourceRow } from './source-picker'
 import { GotwPicker, type GotwWeek } from './gotw-picker'
+import { CommishPower } from './commish-power'
 
 export default async function LiveSeasonPage({
   params,
@@ -108,6 +109,7 @@ export default async function LiveSeasonPage({
     return (
       <MobileLiveSeason
         leagueId={league.id}
+        slug={league.slug}
         seasons={rows}
         weekOverride={weekOverride}
         seasonStartDate={seasonStartDate}
@@ -191,6 +193,21 @@ export default async function LiveSeasonPage({
         ) : (
           <div className="lo-empty">
             <div className="lo-empty-text">Pick a live season above to choose Games of the Week.</div>
+          </div>
+        )}
+      </div>
+
+      <div className="lo-band">
+        <div className="lo-folio">
+          <span className="lo-folio-no">04</span>
+          <span className="lo-folio-title">Your power rankings</span>
+          <span className="lo-folio-meta">Shown beside the model&apos;s</span>
+        </div>
+        {liveRaw ? (
+          <CommishPower leagueId={league.id} seasonId={liveRaw.id} slug={league.slug} />
+        ) : (
+          <div className="lo-empty">
+            <div className="lo-empty-text">Pick a live season above to rank the league yourself.</div>
           </div>
         )}
       </div>

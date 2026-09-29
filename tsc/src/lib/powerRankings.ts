@@ -76,10 +76,29 @@ export type PowerTeam = {
   conf_win_pct?: number
 }
 
+// The commissioner's own order for a week, next to the model's. `model_rank`
+// is where the formula put the same team; `gap` is how far apart they are
+// (positive = the commish ranks them higher than the model does).
+export type CommishPowerEntry = {
+  team_id: string
+  rank: number
+  model_rank: number
+  gap: number
+  // A team the commish's saved order doesn't mention (a roster change since
+  // it was published) is appended in model order.
+  unranked?: boolean
+}
+export type CommishPower = {
+  note: string | null
+  updated_at: string | null
+  order: CommishPowerEntry[]
+}
+
 export type PowerWeek = {
   id: string // "preseason" | "1" | "2" ...
   week: number // 0 = preseason
   label: string
+  commish?: CommishPower | null
   // In-season factor max-points used for this snapshot. Varies week 1–3 (form
   // / conf phased in, lore present) and matches INSEASON_*_W from week 4 on.
   // The UI uses this to size the factor bars and to hide bars whose max is 0.
@@ -599,6 +618,26 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
       divisions,
     }
   })
+
+  // ── The commissioner's board ─────────────────────────────────────────────
+  const commishAll = (((liveSeason.settings ?? {}) as Record<string, unknown>).commish_power ?? {}) as
+    Record<string, { order?: unknown; note?: unknown; updated_at?: unknown }>
+  for (const wk of weeks) {
+    const saved = commishAll[String(wk.week)]
+    const ids = Array.isArray(saved?.order) ? saved.order.filter((x): x is string => typeof x === 'string') : []
+    if (!ids.length) { wk.commish = null; continue }
+    const modelRank = new Map(wk.overall.map((t) => [t.team_id, t.rank]))
+    const listed = ids.filter((id) => modelRank.has(id))
+    const missing = wk.overall.map((t) => t.team_id).filter((id) => !listed.includes(id))
+    wk.commish = {
+      note: typeof saved?.note === 'string' && saved.note.trim() ? saved.note.trim() : null,
+      updated_at: typeof saved?.updated_at === 'string' ? saved.updated_at : null,
+      order: [...listed, ...missing].map((id, i) => {
+        const m = modelRank.get(id)!
+        return { team_id: id, rank: i + 1, model_rank: m, gap: m - (i + 1), ...(missing.includes(id) ? { unranked: true } : {}) }
+      }),
+    }
+  }
 
   // ── Monte Carlo projections ──────────────────────────────────────────────
   const playoffWeeks: number[] = Array.isArray(liveSeason.playoff_weeks) ? liveSeason.playoff_weeks : []

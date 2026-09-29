@@ -843,3 +843,58 @@ body {
   }
   .pr-conf-grid { gap: 1rem; }
 }
+
+
+/* ══════════════════════════════════════════════════════
+   THE COMMISSIONER'S BOARD
+   A second order beside the model's: a two-way switch above the
+   podium, and a comparison section with the commish's note, the two
+   loudest calls, and a diverging gap bar per team (up = the commish
+   is higher on them than the model, down = lower).
+══════════════════════════════════════════════════════ */
+.pr-board-tabs { display: inline-flex; margin: -4px 0 16px; border: 1px solid rgba(14,22,32,.22); background: rgba(14,22,32,.04); }
+.pr-board-tabs[hidden] { display: none; }
+.pr-board-tab {
+  padding: 6px 14px; border: none; background: transparent; cursor: pointer;
+  font-family: var(--mono); font-weight: 700; font-size: .62rem; letter-spacing: .16em; text-transform: uppercase;
+  color: #837b6a;
+}
+.pr-board-tab + .pr-board-tab { border-left: 1px solid rgba(14,22,32,.22); }
+.pr-board-tab.active { background: var(--ink); color: var(--gold); }
+.rank-model {
+  font-family: var(--mono); font-weight: 700; font-size: 9px; letter-spacing: .04em;
+  color: var(--cream-mute); border: 1px solid var(--ink-line); border-radius: 2px; padding: 1px 3px;
+}
+.cm-note {
+  margin: 0 0 1.1rem; padding: .2rem 0 .2rem 1.1rem;
+  border-left: 3px solid var(--gold-deep);
+  font-family: var(--serif); font-style: italic; font-size: 1.15rem; line-height: 1.5; color: var(--ink);
+  max-width: 860px;
+}
+.cm-note cite {
+  display: block; margin-top: .35rem; font-style: normal;
+  font-family: var(--mono); font-weight: 700; font-size: .6rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--gold-deep);
+}
+.cm-calls { display: flex; flex-wrap: wrap; gap: .75rem 2.2rem; margin: 0 0 1.1rem; }
+.cm-call { display: flex; align-items: baseline; flex-wrap: wrap; gap: .25rem .6rem; }
+.cm-call-k { font-family: var(--mono); font-weight: 700; font-size: .6rem; letter-spacing: .2em; text-transform: uppercase; color: #837b6a; }
+.cm-call b { font-family: var(--serif); font-weight: 400; font-size: 1.15rem; color: var(--ink); }
+.cm-call span:last-child { font-family: var(--mono); font-size: .65rem; letter-spacing: .08em; color: #837b6a; }
+.cm-model-head, .cm-model { width: 70px; text-align: center; }
+.cm-model { font-family: var(--serif); font-size: 1.15rem; color: var(--cream-mute); }
+.cm-bar-head { width: 38%; }
+.cm-bar-cell { display: flex; align-items: center; gap: .7rem; }
+.cm-bar { position: relative; flex: 1; height: 8px; background: rgba(255,255,255,.04); border-radius: 4px; }
+.cm-bar-mid { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--ink-line); }
+.cm-bar-fill { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+.cm-bar-fill.up { left: 50%; background: var(--good); }
+.cm-bar-fill.down { right: 50%; background: var(--bad); }
+.cm-gap { flex: none; min-width: 2.2rem; text-align: right; font-family: var(--mono); font-weight: 800; font-size: .72rem; }
+.cm-gap.up { color: var(--good); }
+.cm-gap.down { color: var(--bad); }
+.cm-gap.even { color: var(--cream-mute); }
+@media (max-width: 720px) {
+  .cm-bar-head { width: auto; }
+  .cm-model-head, .cm-model { width: 48px; }
+}

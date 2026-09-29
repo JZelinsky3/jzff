@@ -1,9 +1,11 @@
 import { MobileLiveForm, type SeasonOption } from './MobileLiveForm'
 import { MobileSourcePicker, type SourceOption } from './MobileSourcePicker'
 import { GotwPicker, type GotwWeek } from '@/app/league/[slug]/live/gotw-picker'
+import { CommishPower } from '@/app/league/[slug]/live/commish-power'
 
 export function MobileLiveSeason({
   leagueId,
+  slug,
   seasons,
   weekOverride,
   seasonStartDate,
@@ -17,6 +19,7 @@ export function MobileLiveSeason({
   gotwManagers,
 }: {
   leagueId: string
+  slug: string
   seasons: SeasonOption[]
   weekOverride: number | null
   seasonStartDate: string | null
@@ -75,6 +78,16 @@ export function MobileLiveSeason({
             currentGotw={gotwMap}
             managers={gotwManagers}
           />
+        ) : (
+          <div className="mliv-card-empty">Pick a live season above first.</div>
+        )}
+      </div>
+
+      <div className="mliv-section">
+        <div className="mliv-section-label">Your power rankings</div>
+        <div className="mliv-section-desc">Your order next to the model&apos;s, on the Power Rankings page.</div>
+        {liveSeasonId ? (
+          <CommishPower leagueId={leagueId} seasonId={liveSeasonId} slug={slug} variant="mobile" />
         ) : (
           <div className="mliv-card-empty">Pick a live season above first.</div>
         )}

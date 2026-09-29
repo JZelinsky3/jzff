@@ -16,13 +16,14 @@ import {
   type SleeperTransaction,
 } from '@/lib/platforms/sleeper'
 import { getPlayersNflDict } from '@/lib/sleeperPlayers'
-import { getNflClock, weekIsFinal } from '@/lib/nflClock'
+import { getNflClock, weekIsFinal, seasonIsDecided, nflWeekAt } from '@/lib/nflClock'
+import { bracketRounds, commishRulesFor, playoffRoundWeeks, scoringFromSleeper } from '@/lib/seasonRules'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
 import { manualLocks, manualLockWarning } from './manualLocks'
 import { mergeSeasonSettings } from './seasonSettings'
 import { autoStartLiveSeason } from './autoStartSeason'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
-import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
+import { computePositionRanks, stampRanks, rankWeekForTrade } from '@/lib/positionRanks'
 import { writeTradeSides, type TradeSideWrite } from './tradeSides'
 
 export type IngestResult = {
@@ -125,6 +126,7 @@ export async function ingestSleeperSource(
     .maybeSingle()
   const allowIdentityReplace =
     (leagueSettingsRow?.settings as { allow_identity_replace?: boolean } | null)?.allow_identity_replace === true
+  const leagueSettings = leagueSettingsRow?.settings ?? null
 
   const fullHistory = walkHistory
     ? await fetchLeagueHistory(startLeagueId)
@@ -219,9 +221,35 @@ export async function ingestSleeperSource(
       continue
     }
 
-    const playoffStart = lg.settings.playoff_week_start ?? PLAYOFF_DEFAULT_START
-    const playoffWeeks: number[] = []
-    for (let w = playoffStart; w <= playoffStart + 3; w++) playoffWeeks.push(w)
+    // Playoff shape. Sleeper's playoff_round_type: 0 = one week per round,
+    // 1 = a two-week championship, 2 = every round two weeks. The
+    // commissioner's season rules (Sources page) win over what Sleeper says.
+    // Getting this right decides which weeks are fetched at all: the old
+    // fixed "start + 3" window never reached the second half of a two-week
+    // final in a league with two-week rounds.
+    const commish = commishRulesFor(leagueSettings, year)
+    const rawStart = Number(lg.settings.playoff_week_start ?? 0)
+    const playoffStart = commish.playoff_week_start ?? (rawStart >= 1 ? rawStart : PLAYOFF_DEFAULT_START)
+    const roundType = Number(lg.settings.playoff_round_type ?? 0)
+    const playoffTeams = commish.playoff_team_count
+      ?? (typeof lg.settings.playoff_teams === 'number' ? lg.settings.playoff_teams : null)
+    const roundWeeksPer = commish.playoff_round_weeks ?? (roundType === 2 ? 2 : 1)
+    const champWeeks = commish.championship_weeks ?? (roundType === 1 ? 2 : roundWeeksPer)
+
+    // The bracket is fetched before the weeks so its round count sizes the
+    // playoff window; a missing bracket falls back to the team count.
+    const bracket = await sleeper.winnersBracket(lg.league_id)
+    const bracketMaxRound = (bracket ?? []).reduce((max, m) => Math.max(max, m.r ?? 0), 0)
+    const rounds = bracketMaxRound > 0 ? bracketMaxRound : bracketRounds(playoffTeams)
+    const roundWeekList = playoffRoundWeeks({
+      start: playoffStart,
+      rounds,
+      roundWeeks: roundWeeksPer,
+      championshipWeeks: champWeeks,
+    })
+    const playoffWeeks = roundWeekList.flat()
+    const championshipWeeks = new Set(roundWeekList[roundWeekList.length - 1] ?? [])
+    const lastPlayoffWeek = playoffWeeks.length ? playoffWeeks[playoffWeeks.length - 1] : playoffStart + 2
 
     // 4a. Upsert season row (champion/runner-up filled in later)
     const { data: seasonRow, error: seasonErr } = await db
@@ -235,6 +263,12 @@ export async function ingestSleeperSource(
           settings: await mergeSeasonSettings(db, leagueRow.id, year, {
             status: lg.status,
             total_rosters: lg.total_rosters,
+            playoff_week_start: rawStart >= 1 ? rawStart : PLAYOFF_DEFAULT_START,
+            playoff_team_count: typeof lg.settings.playoff_teams === 'number' ? lg.settings.playoff_teams : null,
+            playoff_round_weeks: roundType === 2 ? 2 : 1,
+            championship_weeks: roundType === 1 || roundType === 2 ? 2 : 1,
+            playoff_rounds: roundWeekList,
+            scoring: scoringFromSleeper(lg.scoring_settings),
           }),
         },
         { onConflict: 'league_id,year' }
@@ -330,9 +364,14 @@ export async function ingestSleeperSource(
     // with real wins/PF/division, and final_rank (bracket placement, falling
     // back to regular-season rank) rides along instead of needing a
     // per-manager UPDATE loop afterward.
-    const bracket = await sleeper.winnersBracket(lg.league_id)
-    const { championRosterId, runnerUpRosterId } = deriveChampions(bracket)
-    const bracketPlacements = deriveBracketPlacements(bracket)
+    // Champion and placements only once the title game is over. Sleeper
+    // leaves `w` empty until then, but a season mid-flight must never be
+    // able to crown anyone, whatever a platform hands back.
+    const decided = seasonIsDecided(year, lastPlayoffWeek, nflClock)
+    const { championRosterId, runnerUpRosterId } = decided
+      ? deriveChampions(bracket)
+      : { championRosterId: null, runnerUpRosterId: null }
+    const bracketPlacements = decided ? deriveBracketPlacements(bracket) : new Map<number, number>()
 
     const seasonRowsByManager = new Map<string, Record<string, unknown>>()
     for (const u of usersThis ?? []) {
@@ -367,7 +406,9 @@ export async function ingestSleeperSource(
         points_for: rosterPoints(r, 'for'),
         points_against: rosterPoints(r, 'against'),
         regular_rank: regRank.get(r.roster_id) ?? null,
-        final_rank: placement ?? regRank.get(r.roster_id) ?? null,
+        // A season still being played has no finish yet; today's standing
+        // belongs in regular_rank, not here.
+        final_rank: decided ? placement ?? regRank.get(r.roster_id) ?? null : null,
         // Sleeper rosters store division as a 1-indexed number; we store 0-indexed (null if no divisions)
         division_index: r.settings.division != null ? Math.max(0, r.settings.division - 1) : null,
       })
@@ -421,7 +462,7 @@ export async function ingestSleeperSource(
     // Weeks are needed for both matchups + lineups; trades reuses the same
     // `weeks` array further down too. Skip the actual fetch only if none
     // of those three stages are requested.
-    const maxWeek = playoffStart + 3
+    const maxWeek = Math.min(18, Math.max(lastPlayoffWeek, playoffStart + 2))
     const weeks = Array.from({ length: maxWeek }, (_, i) => i + 1)
     const needWeeklyMatchups = stages.matchups || stages.lineups
     const weeklyMatchups: Array<{ week: number; rows: SleeperMatchup[] }> = needWeeklyMatchups
@@ -478,8 +519,13 @@ export async function ingestSleeperSource(
         if (aMgr === bMgr) { seasonSameManager++; continue }
 
         const isPlayoff = week >= playoffStart
+        // The title game is the champion vs the runner-up in the final
+        // round's week(s). This used to test `week === start + 3`, a week
+        // past the final of a normal three-round bracket, so no Sleeper
+        // league had a championship game on record at all; with a two-week
+        // final both weeks are flagged and the almanac folds them into one.
         const isChampionship =
-          week === playoffStart + 3 &&
+          championshipWeeks.has(week) &&
           championRosterId != null &&
           (a.roster_id === championRosterId || b.roster_id === championRosterId) &&
           runnerUpRosterId != null &&
@@ -686,6 +732,10 @@ export async function ingestSleeperSource(
       const tx = await sleeper.transactions(lg.league_id, w)
       return tx ?? []
     })
+    // Sleeper calls the week `leg`, not `week`, so every Sleeper trade used
+    // to land with a null week: read as a preseason deal, ranks never
+    // stamped, and every verdict due in week 4 at once. The week comes from
+    // the NFL calendar instead, the same way on every platform.
     const seasonTrades: SleeperTransaction[] = []
     for (const wk of tradeWeekly) {
       for (const t of wk) {
@@ -767,6 +817,7 @@ export async function ingestSleeperSource(
       }
 
       // Upsert the trade. status_updated is in milliseconds since epoch.
+      const tradeWeek = nflWeekAt(year, t.status_updated) || null
       const { data: tradeRow, error: tradeErr } = await db
         .from('trades')
         .upsert(
@@ -775,7 +826,7 @@ export async function ingestSleeperSource(
             season_id: seasonId,
             platform: 'sleeper',
             external_id: t.transaction_id,
-            week: t.week ?? null,
+            week: tradeWeek,
             executed_at: new Date(t.status_updated).toISOString(),
             status: 'completed',
             raw_payload: t,
@@ -793,10 +844,11 @@ export async function ingestSleeperSource(
       // assets payload is derived and refreshes every sync, but the side row
       // keeps its id so the grade hanging off it survives.
 
-      // Stamp season-to-date position rank on each player asset, scoped
-      // to the trade's week. Trades with no week (rare — pre-season pick
-      // swaps) skip rank stamping; pick/FAAB-only sides still pass through.
-      const weekForRanks = t.week ?? null
+      // Stamp season-to-date position rank on each player asset as it stood
+      // when the trade was made (through the last finished week). Preseason
+      // and week-1 trades have no finished week and skip it; pick/FAAB-only
+      // sides still pass through.
+      const weekForRanks = rankWeekForTrade(tradeWeek)
       const ranks = weekForRanks ? await ranksForWeek(weekForRanks) : null
 
       const sideWrites: TradeSideWrite[] = []

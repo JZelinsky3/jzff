@@ -19,6 +19,19 @@ body { background: var(--cream); color: var(--ink); }
 }
 
 .st-head { text-align: center; padding: 1.1rem 0 .9rem; }
+/* Years filter: one chip under the title (native picker), a range row
+   when "Pick years" is chosen. */
+.st-years-row { display: flex; justify-content: center; gap: .4rem; margin: -.3rem 0 .75rem; }
+.st-years-row[hidden] { display: none; }
+.st-years {
+    -webkit-appearance: none; appearance: none;
+    background: rgba(14, 22, 32, .05); border: 1px solid rgba(14, 22, 32, .2); border-radius: 999px;
+    color: var(--ink);
+    font-family: var(--mono); font-weight: 700; font-size: .52rem; letter-spacing: .1em; text-transform: uppercase;
+    padding: .42rem .8rem;
+    max-width: 70vw; text-overflow: ellipsis;
+}
+.st-years.is-set { border-color: var(--rust); color: var(--rust); }
 .st-head .m-kicker { color: var(--rust); }
 .st-title {
     font-family: var(--serif);
@@ -190,6 +203,14 @@ body { background: var(--cream); color: var(--ink); }
         <div class="m-mono st-sub" id="stSub"></div>
     </header>
 
+    <div class="st-years-row" id="stYears" hidden>
+        <select class="st-years" id="stYearsSel" aria-label="Which years"></select>
+    </div>
+    <div class="st-years-row" id="stRange" hidden>
+        <select class="st-years" id="stFrom" aria-label="From"></select>
+        <select class="st-years" id="stTo" aria-label="To"></select>
+    </div>
+
     <div class="m-seg" id="viewSeg" style="margin-bottom:.7rem">
         <button data-view="record" class="is-active">Record</button>
         <button data-view="points">Points</button>
@@ -274,19 +295,65 @@ body { background: var(--cream); color: var(--ink); }
         return fetch(path).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
     };
 
+    // Years filter (?era= / ?years=) rides on the data fetches.
+    var YF = (function () {
+        var p = new URLSearchParams(location.search);
+        var q = new URLSearchParams();
+        if (p.get('era')) q.set('era', p.get('era'));
+        else if (p.get('years')) q.set('years', p.get('years'));
+        var s = q.toString();
+        return { era: p.get('era') || '', years: p.get('years') || '', qs: s ? '?' + s : '' };
+    })();
+
     Promise.all([
-        grab('data/managers_directory.json'),
-        grab('data/league.json'),
+        grab('data/managers_directory.json' + YF.qs),
+        grab('data/league.json' + YF.qs),
     ]).then(function (res) {
         var dir = res[0], league = res[1];
         managers = (dir && dir.managers) || [];
         if (league) {
+            var f = league.filter;
+            var span = f && f.years ? (f.years.length > 1 ? f.years[0] + '–' + f.years[f.years.length - 1] : String(f.years[0])) : null;
             document.getElementById('stSub').textContent =
+                (span ? (f.era_name ? f.era_name + ' · ' : '') + span + ' · ' : '') +
                 league.total_seasons + (league.total_seasons === 1 ? ' season · ' : ' seasons · ') +
-                league.total_matchups + ' matchups · est. ' + league.founded;
+                league.total_matchups + ' matchups' + (span ? '' : ' · est. ' + league.founded);
+            renderYears(league);
         }
         render();
     });
+
+    function renderYears(league) {
+        var eras = league.eras || [];
+        var years = (league.all_seasons || []).slice().sort(function (a, b) { return a - b; });
+        if (years.length < 2 && !eras.length) return;
+        var custom = !YF.era && !!YF.years;
+        var sel = document.getElementById('stYearsSel');
+        sel.innerHTML = '<option value="all">All years</option>' +
+            eras.map(function (e) { return '<option value="era:' + e.id + '"' + (YF.era === e.id ? ' selected' : '') + '>' + e.name + '</option>'; }).join('') +
+            '<option value="custom"' + (custom ? ' selected' : '') + '>Pick years</option>';
+        if (!YF.era && !YF.years) sel.value = 'all';
+        sel.classList.toggle('is-set', !!(YF.era || YF.years));
+        document.getElementById('stYears').hidden = false;
+        var m = (YF.years || '').match(/^(\d{4})(?:-(\d{4}))?$/);
+        var fromY = m ? Number(m[1]) : years[0], toY = m ? Number(m[2] || m[1]) : years[years.length - 1];
+        var opts = function (pick) { return years.map(function (y) { return '<option value="' + y + '"' + (y === pick ? ' selected' : '') + '>' + y + '</option>'; }).join(''); };
+        document.getElementById('stFrom').innerHTML = opts(fromY);
+        document.getElementById('stTo').innerHTML = opts(toY);
+        document.getElementById('stRange').hidden = !custom;
+        sel.addEventListener('change', function () {
+            var v = sel.value;
+            if (v === 'custom') { document.getElementById('stRange').hidden = false; return; }
+            location.search = v === 'all' ? '' : '?era=' + encodeURIComponent(v.slice(4));
+        });
+        var pick = function () {
+            var a = Number(document.getElementById('stFrom').value), b = Number(document.getElementById('stTo').value);
+            if (a > b) { var t = a; a = b; b = t; }
+            location.search = '?years=' + (a === b ? a : a + '-' + b);
+        };
+        document.getElementById('stFrom').addEventListener('change', pick);
+        document.getElementById('stTo').addEventListener('change', pick);
+    }
 
     function comparatorFor(key) {
         if (key === 'name') {

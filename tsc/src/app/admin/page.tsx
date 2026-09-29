@@ -310,21 +310,23 @@ export default async function AdminPage() {
                 const isOwnersEarliest = earliestLeagueByOwner.get(l.owner_id) === l.id
                 const isTrial = previewOpen && !ownerComp && isOwnersEarliest
 
-                // Veteran (tier2), All-Pro (tier3), and comp all share the
-                // premium feature set, so they collapse to a single
-                // "Veteran+" chip. Everything else is the Rookie feature
-                // set (same as paid tier1).
-                let planBadge: 'rookie' | 'veteran+' = 'rookie'
+                // The plan chip names what the owner actually pays for.
+                // Rookie is the paid tier1 plan; Veteran (tier2), All-Pro
+                // (tier3) and comp share the premium feature set and
+                // collapse to one "Veteran+" chip. A free owner has no plan
+                // chip at all, just UDFA: this used to default everyone
+                // below Veteran to "rookie", so free leagues read
+                // "ROOKIE UDFA" as if they were on the paid plan.
+                let planBadge: 'rookie' | 'veteran+' | null = null
                 if (ownerComp) planBadge = 'veteran+'
-                else if (ownerHasSub && (sub!.tier === 'tier2' || sub!.tier === 'tier3')) planBadge = 'veteran+'
+                else if (ownerHasSub) planBadge = sub!.tier === 'tier1' ? 'rookie' : 'veteran+'
 
                 // Order: plan/testing badge on the inside, then UDFA,
                 // then grace, with `published` always furthest right.
-                // testing and rookie are mutually exclusive — trial
-                // leagues show 'testing' instead of a plan badge.
+                // Trial leagues show 'testing' instead of a plan badge.
                 const tags: string[] = []
                 if (isTrial) tags.push('testing')
-                else tags.push(planBadge)
+                else if (planBadge) tags.push(planBadge)
                 if (!ownerComp && !isTrial && !ownerHasSub) tags.push('udfa')
                 if (grace) tags.push('grace')
                 if (l.published_at) tags.push('published')
@@ -352,10 +354,8 @@ export default async function AdminPage() {
                             udfa:       { color: 'var(--cream)',     border: 'var(--ink-line)' },
                             published:  { color: 'var(--cream-soft)', border: 'var(--ink-line)' },
                             grace:      { color: 'rgba(220,120,80,.85)', border: 'rgba(220,120,80,.4)' },
-                            // Plan-feature badges: rookie = the basic free
-                            // feature set (UDFA / trial / tier1); veteran+
-                            // = everything from Veteran tier on up plus
-                            // comp grants.
+                            // Plan badges: rookie = paid tier1; veteran+ =
+                            // Veteran tier on up plus comp grants.
                             rookie:     { color: 'var(--cream)',     border: 'var(--ink-line)' },
                             'veteran+': { color: 'var(--gold)',      border: 'rgba(232,200,137,.55)' },
                           }

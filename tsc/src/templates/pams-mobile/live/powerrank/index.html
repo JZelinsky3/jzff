@@ -286,6 +286,56 @@ body { background: #f0e5c8; color: var(--ink); }
    header still reads as a section divider. */
 .pr-formula-section > summary > .m-sheet-label { padding: 0; }
 
+/* The commissioner's board: a two-way switch (model / commish) and a
+   comparison card with the commish's note, the loudest calls, and a gap
+   bar per team (green right = the commish is higher on them, red left =
+   lower). */
+.pr-board { margin-top: -.2rem; }
+.pr-model {
+    font-family: var(--mono); font-weight: 700; font-size: .48rem; letter-spacing: .04em;
+    color: var(--pr-mute); border: 1px solid var(--pr-line); border-radius: 4px; padding: 0 .2rem;
+}
+.cm-note {
+    margin: 0 0 .6rem; padding: .1rem 0 .1rem .7rem;
+    border-left: 2px solid var(--rust);
+    font-family: var(--serif); font-style: italic; font-size: .92rem; line-height: 1.4; color: var(--ink);
+}
+.cm-note cite {
+    display: block; margin-top: .2rem; font-style: normal;
+    font-family: var(--mono); font-weight: 700; font-size: .46rem; letter-spacing: .18em; text-transform: uppercase; color: var(--rust);
+}
+.cm-sum { font-family: var(--mono); font-weight: 700; font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--pr-mute); margin: 0 0 .5rem; }
+.cm-calls { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; margin-bottom: .55rem; }
+.cm-call { background: rgba(255, 252, 244, .65); border: 1px solid var(--pr-line); border-radius: 10px; padding: .45rem .55rem; min-width: 0; }
+.cm-call-k { display: block; font-family: var(--mono); font-weight: 700; font-size: .44rem; letter-spacing: .16em; text-transform: uppercase; color: var(--pr-mute); }
+.cm-call b { display: block; font-family: var(--serif); font-weight: 400; font-size: .95rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cm-call span:last-child { font-family: var(--mono); font-size: .5rem; color: var(--pr-mute); }
+.cm-row {
+    display: grid; grid-template-columns: 1.6rem minmax(0, 1fr) 2.2rem minmax(0, .9fr) 1.9rem;
+    align-items: center; gap: .4rem;
+    padding: .45rem .65rem; border-bottom: 1px solid var(--pr-line-soft); min-height: 42px;
+}
+.cm-row:last-child { border-bottom: none; }
+.cm-rank { font-family: var(--serif); font-style: italic; font-size: 1.05rem; color: var(--ink); }
+.cm-name { font-weight: 600; font-size: .74rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cm-model { font-family: var(--mono); font-weight: 700; font-size: .56rem; color: var(--pr-mute); text-align: center; }
+.cm-bar { position: relative; height: 7px; background: rgba(14, 22, 32, .08); border-radius: 999px; }
+.cm-bar-mid { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--pr-line); }
+.cm-bar-fill { position: absolute; top: 0; bottom: 0; border-radius: 999px; }
+.cm-bar-fill.up { left: 50%; background: var(--pr-good); }
+.cm-bar-fill.down { right: 50%; background: var(--pr-bad); }
+.cm-gap { font-family: var(--mono); font-weight: 700; font-size: .58rem; text-align: right; }
+.cm-gap.up { color: var(--pr-good); }
+.cm-gap.down { color: var(--pr-bad); }
+.cm-gap.even { color: var(--pr-mute); }
+.cm-head {
+    display: grid; grid-template-columns: 1.6rem minmax(0, 1fr) 2.2rem minmax(0, .9fr) 1.9rem; gap: .4rem;
+    padding: .4rem .65rem .3rem; background: rgba(14, 22, 32, .05); border-bottom: 1px solid var(--ink);
+    font-family: var(--mono); font-weight: 700; font-size: .46rem; letter-spacing: .12em; text-transform: uppercase; color: var(--pr-mute);
+}
+.cm-head span:nth-child(3) { text-align: center; }
+.cm-head span:last-child { text-align: right; }
+
 .pr-foot { margin: 1.6rem 0 .4rem; text-align: center; color: var(--pr-mute); }
 .m-empty { color: var(--pr-mute); }
 </style>
@@ -313,6 +363,7 @@ body { background: #f0e5c8; color: var(--ink); }
     <div id="mainContent" hidden>
         <div class="pr-weeks" id="weekTabs"></div>
         <div class="m-seg" id="viewTabs" hidden></div>
+        <div class="m-seg pr-board" id="boardTabs" hidden></div>
 
         <div id="podium"></div>
 
@@ -322,6 +373,8 @@ body { background: #f0e5c8; color: var(--ink); }
             <button type="button" class="info-btn" id="formulaBtn" aria-label="How scores are calculated">i</button>
         </div>
         <div class="pr-table" id="rankBody"></div>
+
+        <section id="commishSection" hidden></section>
 
         <section id="projSection" hidden>
             <div class="pr-label"><span class="star">★</span> Season Outlook · Monte Carlo</div>
@@ -426,7 +479,7 @@ body { background: #f0e5c8; color: var(--ink); }
         });
     }
 
-    var state = { data: null, weeks: [], activeWk: null, view: 'overall' };
+    var state = { data: null, weeks: [], activeWk: null, view: 'overall', board: 'model' };
 
     fetch('live/powerrank/data', { cache: 'no-store' })
         .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
@@ -547,8 +600,15 @@ body { background: #f0e5c8; color: var(--ink); }
         var isOverall = state.view === 'overall';
         var viewDiv = isOverall ? null : (week.divisions || []).find(function (d) { return d.key === state.view; });
         var teams = isOverall ? week.overall : (viewDiv ? viewDiv.teams : []);
+        var cm = commishOf(week);
+        renderBoardTabs(cm, isOverall);
+        var commishView = !!(cm && isOverall && state.board === 'commish');
+        if (commishView) teams = commishTeams(week, cm);
 
-        byId('rankingsTitle').textContent = week.week === 0 ? 'Pre-Season Rankings' : 'Week ' + week.week + ' Rankings';
+        byId('rankingsTitle').textContent = commishView
+            ? 'The Commish’s Board'
+            : (week.week === 0 ? 'Pre-Season Rankings' : 'Week ' + week.week + ' Rankings');
+        renderCommish(week, cm);
         byId('prSub').textContent = week.week === 0 ? 'Career history only' : 'Through week ' + week.week;
 
         renderPodium(teams.slice(0, 3));
@@ -558,6 +618,76 @@ body { background: #f0e5c8; color: var(--ink); }
         // Shrink-to-fit runs after the DOM swap settles, otherwise the
         // measurements come from a 0-width container during init.
         requestAnimationFrame(fitAllTeamNames);
+    }
+
+    // ── The commissioner's board ────────────────────────────────────
+    function commishOf(week) {
+        return week && week.commish && week.commish.order && week.commish.order.length ? week.commish : null;
+    }
+    function commishTeams(week, cm) {
+        var byTeam = {};
+        week.overall.forEach(function (t) { byTeam[t.team_id] = t; });
+        return cm.order.map(function (o) {
+            var t = byTeam[o.team_id];
+            return t ? Object.assign({}, t, { rank: o.rank, delta: 0, _model: o.model_rank }) : null;
+        }).filter(Boolean);
+    }
+    function renderBoardTabs(cm, isOverall) {
+        var bt = byId('boardTabs');
+        if (!cm || !isOverall) { bt.hidden = true; return; }
+        bt.hidden = false;
+        bt.innerHTML =
+            '<button type="button" data-board="model"' + (state.board === 'model' ? ' class="is-active"' : '') + '>The Model</button>' +
+            '<button type="button" data-board="commish"' + (state.board === 'commish' ? ' class="is-active"' : '') + '>The Commish</button>';
+        if (bt._wired) return;
+        bt._wired = true;
+        bt.addEventListener('click', function (e) {
+            var b = e.target.closest('button[data-board]');
+            if (!b || b.dataset.board === state.board) return;
+            state.board = b.dataset.board;
+            render();
+        });
+    }
+    function ordinalOf(n) {
+        var s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+    function renderCommish(week, cm) {
+        var sec = byId('commishSection');
+        if (!cm) { sec.hidden = true; sec.innerHTML = ''; return; }
+        sec.hidden = false;
+        var byTeam = {};
+        week.overall.forEach(function (t) { byTeam[t.team_id] = t; });
+        var rows = cm.order.filter(function (o) { return byTeam[o.team_id]; });
+        var same = rows.filter(function (o) { return o.gap === 0; }).length;
+        var high = rows.filter(function (o) { return o.gap > 0; }).sort(function (a, b) { return b.gap - a.gap; })[0];
+        var low = rows.filter(function (o) { return o.gap < 0; }).sort(function (a, b) { return a.gap - b.gap; })[0];
+        var maxGap = Math.max(1, rows.reduce(function (m, o) { return Math.max(m, Math.abs(o.gap)); }, 0));
+        function call(o, word) {
+            return '<div class="cm-call"><span class="cm-call-k">' + word + '</span><b>' + esc(byTeam[o.team_id].manager) + '</b>' +
+                '<span>Commish ' + ordinalOf(o.rank) + ' · model ' + ordinalOf(o.model_rank) + '</span></div>';
+        }
+        sec.innerHTML =
+            '<div class="pr-label"><span class="star">★</span> The Commish vs. the Model</div>' +
+            (cm.note ? '<blockquote class="cm-note">' + esc(cm.note) + '<cite>The Commissioner</cite></blockquote>' : '') +
+            '<div class="cm-sum">' + same + ' of ' + rows.length + ' in the same spot</div>' +
+            ((high || low) ? '<div class="cm-calls">' + (high ? call(high, 'Higher on') : '') + (low ? call(low, 'Lower on') : '') + '</div>' : '') +
+            '<div class="pr-table">' +
+                '<div class="cm-head"><span>#</span><span>Manager</span><span>Model</span><span>Gap</span><span></span></div>' +
+                rows.map(function (o) {
+                    var w = (Math.abs(o.gap) / maxGap) * 50;
+                    var gapTxt = o.gap ? (o.gap > 0 ? '+' : '−') + Math.abs(o.gap) : '=';
+                    return '<div class="cm-row">' +
+                        '<span class="cm-rank">' + o.rank + '</span>' +
+                        '<span class="cm-name">' + esc(byTeam[o.team_id].manager) + '</span>' +
+                        '<span class="cm-model">' + o.model_rank + '</span>' +
+                        '<span class="cm-bar"><span class="cm-bar-mid"></span>' +
+                            (o.gap ? '<span class="cm-bar-fill ' + (o.gap > 0 ? 'up' : 'down') + '" style="width:' + w.toFixed(1) + '%"></span>' : '') +
+                        '</span>' +
+                        '<span class="cm-gap ' + (o.gap > 0 ? 'up' : o.gap < 0 ? 'down' : 'even') + '">' + gapTxt + '</span>' +
+                    '</div>';
+                }).join('') +
+            '</div>';
     }
 
     function logoImg(t, cls) {
@@ -628,7 +758,8 @@ body { background: #f0e5c8; color: var(--ink); }
             var conf = t.division_name ? '<span class="conf">' + esc(t.division_name) + '</span>' : '';
             return '<div class="pr-row' + (rank === 1 ? ' top' : '') + '">' +
                 '<button class="pr-row-main" aria-expanded="false">' +
-                    '<span class="pr-rank"><span class="pr-rank-num">' + rank + '</span>' + deltaHTML(t.delta) + '</span>' +
+                    '<span class="pr-rank"><span class="pr-rank-num">' + rank + '</span>' +
+                        (t._model != null ? '<span class="pr-model">M' + t._model + '</span>' : deltaHTML(t.delta)) + '</span>' +
                     '<span class="pr-team">' +
                         logoImg(t, 'pr-logo') +
                         '<span class="pr-team-body">' +

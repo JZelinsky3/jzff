@@ -30,14 +30,14 @@ import {
   type YahooLeagueMeta,
 } from '@/lib/platforms/yahoo'
 import { parallelLimit } from '@/lib/platforms/sleeper'
-import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
+import { computePositionRanks, stampRanks, rankWeekForTrade } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
 import { manualLocks, manualLockWarning } from './manualLocks'
 import { mergeSeasonSettings } from './seasonSettings'
 import { autoStartLiveSeason } from './autoStartSeason'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
-import { getNflClock, weekIsFinal } from '@/lib/nflClock'
+import { getNflClock, weekIsFinal, seasonIsDecided, nflWeekAt } from '@/lib/nflClock'
 import { writeTradeSides, type TradeSideWrite } from './tradeSides'
 
 export type IngestResult = {
@@ -316,7 +316,9 @@ export async function ingestYahooSource(
       seasonInPast ||
       lg.current_week == null ||
       lg.current_week >= lg.end_week
-    const treatRankAsFinal = seasonHasGames && seasonOver
+    // And never before the final week has actually been played: Yahoo sets
+    // current_week to end_week the moment championship week opens.
+    const treatRankAsFinal = seasonHasGames && seasonOver && seasonIsDecided(year, lg.end_week ?? null, nflClock)
 
     // Compute regular-season rank from wins (tiebreaker: points-for) so we
     // have something to write even when Yahoo's `rank` is mid-season.
@@ -659,9 +661,8 @@ export async function ingestYahooSource(
     // asset list via destination_team_key.
     if (stages.trades) {
     // Per-(year, week) rank cache. Yahoo doesn't surface the league-week
-    // for trades so we derive it from executed_at — rough but accurate to
-    // a few days. NFL regular-season weeks start around Labor Day; week 1
-    // is roughly the first 7 days after Sept 1.
+    // on trades, so the week comes from executed_at against the NFL
+    // calendar (lib/nflClock nflWeekAt).
     const ranksByWeek = new Map<number, Awaited<ReturnType<typeof computePositionRanks>>>()
     async function ranksForWeek(week: number) {
       let r = ranksByWeek.get(week)
@@ -674,15 +675,6 @@ export async function ingestYahooSource(
       }
       ranksByWeek.set(week, r)
       return r
-    }
-    function deriveWeek(executedAtIso: string | null): number | null {
-      if (!executedAtIso) return null
-      const ts = Date.parse(executedAtIso)
-      if (!Number.isFinite(ts)) return null
-      const seasonStart = Date.parse(`${year}-09-01T00:00:00Z`)
-      const daysSince = (ts - seasonStart) / 86400000
-      if (daysSince < 0) return null
-      return Math.min(17, Math.max(1, Math.floor(daysSince / 7) + 1))
     }
 
     // rank_now is owned by the verdict revisit pass (tradeGrader.ts),
@@ -737,6 +729,9 @@ export async function ingestYahooSource(
       }
 
       const executedAt = t.ts ? new Date(t.ts * 1000).toISOString() : new Date().toISOString()
+      // Stored as null for every Yahoo trade until now, which read as a
+      // preseason deal whatever the date.
+      const tradeWeek = t.ts ? nflWeekAt(year, t.ts * 1000) || null : null
 
       const { data: tradeRow, error: tradeErr } = await db
         .from('trades')
@@ -746,7 +741,7 @@ export async function ingestYahooSource(
             season_id: seasonId,
             platform: 'yahoo',
             external_id: t.transaction_key || t.transaction_id,
-            week: null,        // Yahoo doesn't surface the league-week on trades
+            week: tradeWeek,
             executed_at: executedAt,
             status: 'completed',
             raw_payload: t.raw,
@@ -760,10 +755,9 @@ export async function ingestYahooSource(
         continue
       }
 
-      // Yahoo's `ts` is epoch seconds; deriveWeek wants an ISO string.
-      const executedIso = t.ts ? new Date(t.ts * 1000).toISOString() : null
-      const week = deriveWeek(executedIso)
-      const ranks = week ? await ranksForWeek(week) : null
+      // Ranks as they stood when the trade was made.
+      const rankWeek = rankWeekForTrade(tradeWeek)
+      const ranks = rankWeek ? await ranksForWeek(rankWeek) : null
 
       const sideWrites: TradeSideWrite[] = []
       for (const [teamKey, assets] of assetsByTeamKey) {

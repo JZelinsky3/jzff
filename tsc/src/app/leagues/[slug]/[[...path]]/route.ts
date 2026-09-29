@@ -17,7 +17,15 @@ import path from 'path'
 import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { exportLeague, type ExportBundle } from '@/lib/export/pams'
+import {
+  exportLeague,
+  exportFiltered,
+  exportFilterKey,
+  parseExportFilter,
+  FILTERED_FILES,
+  type ExportBundle,
+  type ExportFilter,
+} from '@/lib/export/pams'
 import { devBundleGet, devBundleSet, devMetaGet, devMetaSet } from '@/lib/devCache'
 import { resolveLeagueTier, getLockReason, classifyLockedPath } from '@/lib/leagueTier'
 import {
@@ -835,7 +843,10 @@ function getBundle(leagueId: string, slug: string): Promise<ExportBundle> {
   // 1-0 records until its bundle is rebuilt.
   // v82: records_watch.json's Quickest-to-X chaser_sub carries points + ppg
   // on the points tiers instead of a W-L that had nothing to do with the race.
-  const BUNDLE_VERSION = 'v82'
+  // v83: multi-week playoff rounds fold into one game with per-week legs,
+  // league.json carries eras + season_rules, and the ESPN seed "champions"
+  // of 2026 are gone.
+  const BUNDLE_VERSION = BUNDLE_VERSION_TAG
   // Single-flight, the same reason dev does it: a hub landing fires the
   // page plus five preloaded data/*.json files at once, and on a cold
   // cache unstable_cache has nothing to hand back yet, so all six run
@@ -864,6 +875,42 @@ function getBundle(leagueId: string, slug: string): Promise<ExportBundle> {
 // Concurrent callers awaiting the same league bundle build. Keyed by
 // version|leagueId|slug and cleared the moment the build settles.
 const bundleInFlight = new Map<string, Promise<ExportBundle>>()
+
+const BUNDLE_VERSION_TAG = 'v83'
+
+// The record book and standings narrowed to an era and/or one side of the
+// season (?era=, ?years=, ?scope=). Built on demand from the same snapshot
+// and cached per filter under the league's tag, so a sync busts these along
+// with the full bundle.
+function getFilteredBundle(leagueId: string, filter: ExportFilter): Promise<ExportBundle> {
+  const fkey = exportFilterKey(filter)
+  if (process.env.NODE_ENV !== 'production') {
+    const cacheKey = `${leagueId}|filtered|${fkey}`
+    const inflight = devBundleGet(cacheKey)
+    if (inflight) return inflight
+    const fresh = exportFiltered(leagueId, filter)
+    devBundleSet(cacheKey, fresh)
+    return fresh
+  }
+  const key = `${BUNDLE_VERSION_TAG}|${leagueId}|f|${fkey}`
+  const inflight = bundleInFlight.get(key)
+  if (inflight) return inflight
+  const build = unstable_cache(
+    async () => exportFiltered(leagueId, filter),
+    ['pams-bundle-filtered', BUNDLE_VERSION_TAG, leagueId, fkey],
+    { tags: [`league-${leagueId}`], revalidate: 3600 }
+  )()
+  bundleInFlight.set(key, build)
+  const release = () => {
+    if (bundleInFlight.get(key) === build) bundleInFlight.delete(key)
+  }
+  build.then(release, release)
+  return build
+}
+
+function isFilterableFile(file: string): boolean {
+  return FILTERED_FILES.includes(file) || /^managers\/[^/]+\.json$/.test(file)
+}
 
 // Phone detection. Chromium ships an explicit client hint; everything else
 // falls back to a deliberately narrow UA regex: iPadOS 13+ presents as
@@ -1294,9 +1341,12 @@ export async function GET(
   // data/<file> — serve from the export bundle. The bundle build runs in
   // parallel with the lock lookup: it's per-league shared work that the
   // page's unlocked data fetches need warm anyway.
+  // An era / regular-season / playoffs view of the record book and
+  // standings files. Anything else ignores the query and gets the full bundle.
+  const filter = isFilterableFile(resolved.file) ? parseExportFilter(req.nextUrl.searchParams) : null
   const [dataLockReason, bundle] = await Promise.all([
     lockReasonPromise,
-    getBundle(meta.id, meta.slug),
+    filter ? getFilteredBundle(meta.id, filter) : getBundle(meta.id, meta.slug),
   ])
   if (classifyLockedPath(resolved.file, dataLockReason) === 'data') {
     return new NextResponse('Locked', { status: 404 })

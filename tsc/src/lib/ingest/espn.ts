@@ -23,6 +23,8 @@ import {
   teamDisplayName,
   memberDisplayName,
   deriveChampions,
+  periodWeeksOf,
+  scoringFromEspn,
   positionFromId,
   nflTeamFromId,
   espnSlotName,
@@ -39,9 +41,9 @@ import { manualLocks, manualLockWarning } from './manualLocks'
 import { mergeSeasonSettings } from './seasonSettings'
 import { autoStartLiveSeason } from './autoStartSeason'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
-import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
-import { getNflClock, weekIsFinal } from '@/lib/nflClock'
-import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
+import { computePositionRanks, stampRanks, rankWeekForTrade } from '@/lib/positionRanks'
+import { getNflClock, weekIsFinal, seasonIsDecided, nflWeekAt } from '@/lib/nflClock'
+import { scoringSettingsFor } from '@/lib/seasonRules'
 import { writeTradeSides, type TradeSideWrite } from './tradeSides'
 
 export type IngestResult = {
@@ -343,6 +345,7 @@ async function ingestSeason(args: {
   // gets mis-classified.
   const flat = flattenSchedule(lg)
   const ss = lg.settings?.scheduleSettings
+  const weeksOf = periodWeeksOf(lg)
   const firstWinnersBracket = flat
     .filter((m) => m.playoff_tier === 'WINNERS_BRACKET')
     .reduce((min, m) => Math.min(min, m.week), Infinity)
@@ -351,8 +354,12 @@ async function ingestSeason(args: {
     .reduce((max, m) => Math.max(max, m.week), 0)
   const distinctWeeks = [...new Set(flat.map((m) => m.week))]
   const maxScheduleWeek = distinctWeeks.length > 0 ? Math.max(...distinctWeeks) : 0
+  const maxPeriod = flat.reduce((max, m) => Math.max(max, m.period), 0)
+  const regPeriods = ss?.matchupPeriodCount ?? 0
   const playoffTeamsCount = ss?.playoffTeamCount ?? 6
-  const playoffRoundLen = ss?.playoffMatchupPeriodLength ?? 1
+  // ESPN reports 0 here for a league whose rounds vary in length (a
+  // one-week semifinal, a two-week final); treat anything below 1 as 1.
+  const playoffRoundLen = Math.max(1, ss?.playoffMatchupPeriodLength ?? 1)
   // rounds = ceil(log2(teams)). 2→1, 3-4→2, 5-8→3, 9-16→4.
   const playoffRounds = playoffTeamsCount <= 2 ? 1
     : playoffTeamsCount <= 4 ? 2
@@ -367,6 +374,10 @@ async function ingestSeason(args: {
   } else if (lastNoneTier > 0) {
     playoffStart = Math.max(11, lastNoneTier + 1)
     playoffStartSource = 'NONE-tag'
+  } else if (regPeriods > 0 && regPeriods < maxPeriod) {
+    // The period after the last regular-season one, in NFL weeks.
+    playoffStart = Math.max(11, weeksOf(regPeriods + 1)[0])
+    playoffStartSource = `period-count(${regPeriods})`
   } else if (maxScheduleWeek > 0) {
     // No tier info — derive from the schedule's actual length, not from the
     // settings field. ESPN's history endpoint frequently returns a tiny
@@ -377,9 +388,25 @@ async function ingestSeason(args: {
     playoffStart = 15
     playoffStartSource = 'fallback-15'
   }
-  const allWeeks = flat.length > 0
-    ? Math.max(...flat.map((m) => m.week))
-    : (ss?.matchupPeriodCount ?? 17)
+
+  // The playoff rounds as NFL weeks, one entry per matchup period from the
+  // first playoff period on: [[15], [16, 17]] for a one-week semifinal and a
+  // two-week final. The almanac merges a multi-week round's weekly rows back
+  // into one game with this. legGroups is every multi-week period, playoff
+  // or not, for the same merge.
+  const periodOfWeek = new Map<number, number>()
+  for (const m of flat) periodOfWeek.set(m.week, m.period)
+  const firstPlayoffPeriod = periodOfWeek.get(playoffStart) ?? playoffStart
+  const playoffRoundList: number[][] = []
+  for (let p = firstPlayoffPeriod; p <= maxPeriod; p++) playoffRoundList.push(weeksOf(p))
+  const legGroups = [...new Set(flat.map((m) => m.period))]
+    .map((p) => weeksOf(p))
+    .filter((w) => w.length > 1)
+  const lastRoundLen = playoffRoundList.length ? playoffRoundList[playoffRoundList.length - 1].length : 1
+  const allRoundsTwo = playoffRoundList.length > 0 && playoffRoundList.every((r) => r.length === 2)
+  const lastScheduledWeek = flat.reduce((max, m) => Math.max(max, m.legs ? m.legs[m.legs.length - 1].week : m.week), 0)
+
+  const allWeeks = lastScheduledWeek > 0 ? lastScheduledWeek : (ss?.matchupPeriodCount ?? 17)
   const playoffWeeks = Array.from({ length: allWeeks - playoffStart + 1 }, (_, i) => playoffStart + i)
 
   // Belt-and-suspenders consolation filter. The tier-based filter in
@@ -413,9 +440,17 @@ async function ingestSeason(args: {
   divisions.forEach((d, i) => divisionIdxById.set(d.id, i))
   const divisionNames = divisions.map((d) => d.name)
 
-  // Champion / runner-up from rankCalculatedFinal (1 / 2). Mid-season seasons
-  // won't have these set yet — that's fine, the season row simply omits them.
-  const { championTeamId, runnerUpTeamId } = deriveChampions(lg)
+  // The NFL clock decides both whether a season can have a champion yet and
+  // which weeks' scores are settled. See lib/nflClock.ts.
+  const nflClock = await getNflClock()
+  const decided = seasonIsDecided(year, lg.status?.finalScoringPeriod ?? (lastScheduledWeek || null), nflClock)
+
+  // Champion / runner-up, only once the season is over. Mid-season ESPN has
+  // no final ranks, and the fallback inside deriveChampions would crown the
+  // current 1 seed.
+  const { championTeamId, runnerUpTeamId } = decided
+    ? deriveChampions(lg)
+    : { championTeamId: null, runnerUpTeamId: null }
   const champManager = championTeamId != null ? teamToManagerId(championTeamId) : null
   const runnerUpManager = runnerUpTeamId != null ? teamToManagerId(runnerUpTeamId) : null
 
@@ -431,6 +466,11 @@ async function ingestSeason(args: {
         settings: await mergeSeasonSettings(db, archiveLeagueId, year, {
           playoff_week_start: playoffStart,
           playoff_team_count: lg.settings?.scheduleSettings?.playoffTeamCount ?? null,
+          playoff_rounds: playoffRoundList,
+          playoff_round_weeks: allRoundsTwo ? 2 : 1,
+          championship_weeks: lastRoundLen,
+          leg_groups: legGroups,
+          scoring: scoringFromEspn(lg),
           division_names: divisionNames,
           latest_scoring_period: lg.status?.latestScoringPeriod ?? null,
         }),
@@ -502,7 +542,13 @@ async function ingestSeason(args: {
     // where the rank fields aren't populated). Without SOME rank value here,
     // the exporter's "playoff games where someone finished top 4" filter
     // excludes all postseason matchups, undercounting total_matchups badly.
-    const finalRank = team.rankCalculatedFinal ?? team.rankFinal ?? team.playoffSeed ?? null
+    //
+    // Only for a finished season: mid-season ESPN reports 0 for both rank
+    // fields and the seed is today's standing, not a finish.
+    const positive = (v: number | undefined) => (typeof v === 'number' && v > 0 ? v : null)
+    const finalRank = decided
+      ? positive(team.rankCalculatedFinal) ?? positive(team.rankFinal) ?? positive(team.playoffSeed)
+      : null
     seasonRowsByManager.set(managerId, {
       season_id: seasonId,
       manager_id: managerId,
@@ -552,12 +598,10 @@ async function ingestSeason(args: {
 
   // ESPN's status.latestScoringPeriod is the most recent week that has been
   // (or is being) scored. Used by both matchups and lineups, so compute once
-  // outside the stage gates.
+  // outside the stage gates. "or is being" is the catch: mid-week this points
+  // at a week that is still in progress, whose scores are partial, so the
+  // NFL clock (fetched above) decides which of those weeks is settled.
   const latestScored = lg.status?.latestScoringPeriod ?? 0
-  // "or is being" is the catch: mid-week this points at a week that is still
-  // in progress, whose scores are partial. The NFL clock decides which of
-  // those weeks is actually settled. See lib/nflClock.ts.
-  const nflClock = await getNflClock()
 
   // ─── matchups ───────────────────────────────────────────────────────────
   // Stage-gated: trades-only / lineups-only sync skips the matchup write
@@ -611,10 +655,6 @@ async function ingestSeason(args: {
 
     matchupsCount++
 
-    const played = m.week <= latestScored && weekIsFinal(year, m.week, nflClock)
-    const aScore = played ? m.a_score : null
-    const bScore = played ? m.b_score : null
-
     // Championship: a playoff matchup in the final playoff week between the
     // derived champion and runner-up. Works for both modern (rankCalculatedFinal)
     // and old (winners-bracket-fallback) detection paths.
@@ -625,24 +665,41 @@ async function ingestSeason(args: {
       ((m.a_team_id === championTeamId && m.b_team_id === runnerUpTeamId) ||
        (m.a_team_id === runnerUpTeamId && m.b_team_id === championTeamId))
 
-    // Deterministic a/b ordering — smaller manager UUID is always a — so the
-    // upsert key is stable across re-syncs and matchup ids persist.
-    let mA = aMgr, mB = bMgr, sA: number | null = aScore, sB: number | null = bScore
-    if (mA > mB) { [mA, mB] = [mB, mA]; [sA, sB] = [sB, sA] }
-    validKeys.add(`${m.week}|${mA}|${mB}`)
+    // A matchup period that spans two NFL weeks is stored as one row per
+    // week, each holding that week's points. Stored whole, a two-week final
+    // read as one 280-point "week" and took over every single-week record.
+    // The almanac folds the weeks back into one game for the result (see
+    // lib/seasonRules). Old history payloads without the per-week split keep
+    // the single combined row, as before.
+    const legsHavePoints = !!m.legs?.some((l) => l.a != null || l.b != null)
+    const pieces = m.legs && legsHavePoints
+      ? m.legs.map((l) => ({ week: l.week, lastWeek: l.week, a: l.a, b: l.b }))
+      : [{ week: m.week, lastWeek: m.legs ? m.legs[m.legs.length - 1].week : m.week, a: m.a_score, b: m.b_score }]
 
-    // Batched below — keyed by the conflict identity so a duplicate schedule
-    // entry can't make one bulk upsert touch the same row twice.
-    matchupRows.set(`${m.week}|${mA}|${mB}`, {
-      season_id: seasonId,
-      week: m.week,
-      manager_a_id: mA,
-      manager_b_id: mB,
-      score_a: sA,
-      score_b: sB,
-      is_playoff: isPlayoff,
-      is_championship: isChampGame,
-    })
+    for (const piece of pieces) {
+      const played = piece.lastWeek <= latestScored && weekIsFinal(year, piece.lastWeek, nflClock)
+      const aScore = played ? piece.a : null
+      const bScore = played ? piece.b : null
+
+      // Deterministic a/b ordering — smaller manager UUID is always a — so the
+      // upsert key is stable across re-syncs and matchup ids persist.
+      let mA = aMgr, mB = bMgr, sA: number | null = aScore, sB: number | null = bScore
+      if (mA > mB) { [mA, mB] = [mB, mA]; [sA, sB] = [sB, sA] }
+      validKeys.add(`${piece.week}|${mA}|${mB}`)
+
+      // Batched below — keyed by the conflict identity so a duplicate schedule
+      // entry can't make one bulk upsert touch the same row twice.
+      matchupRows.set(`${piece.week}|${mA}|${mB}`, {
+        season_id: seasonId,
+        week: piece.week,
+        manager_a_id: mA,
+        manager_b_id: mB,
+        score_a: sA,
+        score_b: sB,
+        is_playoff: isPlayoff,
+        is_championship: isChampGame,
+      })
+    }
   }
   if (matchupRows.size > 0 && !locks.has('matchups')) {
     const { error } = await db.from('matchups').upsert([...matchupRows.values()], {
@@ -884,16 +941,16 @@ async function ingestSeason(args: {
   // is one transaction with N items spanning ≥2 distinct teams; we group items
   // by team-as-receiver to build the per-side asset list.
   if (stages.trades) {
-  // Per-(year, week) position-rank cache for trade ingest. ESPN's per-
-  // league scoring rules don't 1:1 to Sleeper's scoring_settings; the
-  // default PPR profile covers most leagues. Per-platform scoring
-  // translation is a follow-up.
+  // Per-(year, week) position-rank cache for trade ingest, scored the way
+  // this league scores (receptions, pass TDs, TE premium from ESPN's own
+  // settings) rather than assuming full PPR.
+  const tradeScoring = scoringSettingsFor(scoringFromEspn(lg))
   const ranksByWeek = new Map<number, Awaited<ReturnType<typeof computePositionRanks>>>()
   async function ranksForWeek(week: number) {
     let r = ranksByWeek.get(week)
     if (r) return r
     try {
-      r = await computePositionRanks({ season: year, throughWeek: week, scoring: DEFAULT_PPR_SCORING })
+      r = await computePositionRanks({ season: year, throughWeek: week, scoring: tradeScoring })
     } catch (e) {
       result.warnings.push(`Season ${year} W${week} ranks: ${e instanceof Error ? e.message : String(e)}`)
       r = new Map()
@@ -983,6 +1040,10 @@ async function ingestSeason(args: {
 
       const externalTradeId = String(t.id ?? `${seasonId}|${t.processDate ?? t.proposedDate ?? Date.now()}|${[...assetsByTeam.keys()].sort().join(',')}`)
       const executedAtMs = t.processDate ?? t.proposedDate ?? Date.now()
+      // The week comes from the NFL calendar, not ESPN's scoringPeriodId,
+      // which reads 1 for a trade made the week before the opener. 0 means
+      // the preseason and is stored as null.
+      const tradeWeek = nflWeekAt(year, executedAtMs) || null
 
       const { data: tradeRow, error: tradeErr } = await db
         .from('trades')
@@ -992,7 +1053,7 @@ async function ingestSeason(args: {
             season_id: seasonId,
             platform: 'espn',
             external_id: externalTradeId,
-            week: typeof t.scoringPeriodId === 'number' ? t.scoringPeriodId : null,
+            week: tradeWeek,
             executed_at: new Date(executedAtMs).toISOString(),
             status: 'completed',
             raw_payload: t,
@@ -1006,7 +1067,9 @@ async function ingestSeason(args: {
         continue
       }
 
-      const weekForRanks = typeof t.scoringPeriodId === 'number' ? t.scoringPeriodId : null
+      // Ranks as they stood when the trade was made: through the last week
+      // that was finished by then.
+      const weekForRanks = rankWeekForTrade(tradeWeek)
       const ranks = weekForRanks ? await ranksForWeek(weekForRanks) : null
 
       const sideWrites: TradeSideWrite[] = []

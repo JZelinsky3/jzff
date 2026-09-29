@@ -16,7 +16,9 @@
       .replaceAll('"', '&quot;').replaceAll("'", '&#39;')
   }
 
-  var state = { data: null, weeks: [], activeWk: null, view: 'overall' }
+  // board: whose order the podium + table show, the model's or the
+  // commissioner's (when one is published for the week).
+  var state = { data: null, weeks: [], activeWk: null, view: 'overall', board: 'model' }
 
   boot().catch(function (e) { console.error(e); showMessage('Couldn’t load power rankings.', String(e)) })
   // Wired regardless of data state — the page URL is shareable even before
@@ -120,14 +122,111 @@
     var isOverall = state.view === 'overall'
     var viewDiv = isOverall ? null : (week.divisions || []).find(function (d) { return d.key === state.view })
     var teams = isOverall ? week.overall : (viewDiv ? viewDiv.teams : [])
+    var cm = commishOf(week)
+    renderBoardTabs(cm, isOverall)
+    var commishView = !!(cm && isOverall && state.board === 'commish')
+    if (commishView) teams = commishTeams(week, cm)
 
     var titleEl = byId('rankingsTitle')
-    if (titleEl) titleEl.textContent = week.week === 0 ? 'Pre-Season Rankings' : 'Week ' + week.week + ' Rankings'
+    if (titleEl) {
+      var when = week.week === 0 ? 'Pre-Season' : 'Week ' + week.week
+      titleEl.textContent = commishView ? 'The Commish’s ' + when + ' Board' : when + ' Rankings'
+    }
 
     renderPodium(teams.slice(0, 3))
     renderTable(teams, !isOverall)
+    renderCommish(week, cm)
     renderProjections(week.overall)
     renderConfGrid(week.divisions || [])
+    var projNum = byId('projNum')
+    if (projNum) projNum.textContent = (cm ? '§ 03' : '§ 02') + ' · Projections'
+  }
+
+  // ── The commissioner's board ────────────────────────────────────────────
+  function commishOf(week) {
+    return week && week.commish && week.commish.order && week.commish.order.length ? week.commish : null
+  }
+  // The model's team rows, reordered to the commissioner's ranking. Each
+  // carries the model's rank so the table can show the disagreement.
+  function commishTeams(week, cm) {
+    var byTeam = {}
+    week.overall.forEach(function (t) { byTeam[t.team_id] = t })
+    return cm.order.map(function (o) {
+      var t = byTeam[o.team_id]
+      if (!t) return null
+      return Object.assign({}, t, { rank: o.rank, delta: 0, _model: o.model_rank, _gap: o.gap })
+    }).filter(Boolean)
+  }
+  function renderBoardTabs(cm, isOverall) {
+    var bt = byId('boardTabs')
+    if (!bt) return
+    if (!cm || !isOverall) { bt.hidden = true; return }
+    bt.hidden = false
+    bt.innerHTML =
+      '<button type="button" class="pr-board-tab' + (state.board === 'model' ? ' active' : '') + '" data-board="model">The Model</button>' +
+      '<button type="button" class="pr-board-tab' + (state.board === 'commish' ? ' active' : '') + '" data-board="commish">The Commish</button>'
+    if (!bt._wired) {
+      bt._wired = true
+      bt.addEventListener('click', function (e) {
+        var b = e.target.closest('.pr-board-tab')
+        if (!b || b.dataset.board === state.board) return
+        state.board = b.dataset.board
+        render()
+      })
+    }
+  }
+  function gapHTML(gap) {
+    if (!gap) return '<span class="cm-gap even">=</span>'
+    return '<span class="cm-gap ' + (gap > 0 ? 'up' : 'down') + '">' + (gap > 0 ? '↑' : '↓') + Math.abs(gap) + '</span>'
+  }
+  function renderCommish(week, cm) {
+    var sec = byId('commishSection')
+    if (!sec) return
+    if (!cm) { sec.hidden = true; sec.innerHTML = ''; return }
+    sec.hidden = false
+    var byTeam = {}
+    week.overall.forEach(function (t) { byTeam[t.team_id] = t })
+    var rows = cm.order.filter(function (o) { return byTeam[o.team_id] })
+    var same = rows.filter(function (o) { return o.gap === 0 }).length
+    var avg = rows.length ? rows.reduce(function (s, o) { return s + Math.abs(o.gap) }, 0) / rows.length : 0
+    // The two loudest disagreements, one each way when there are both.
+    var high = rows.filter(function (o) { return o.gap > 0 }).sort(function (a, b) { return b.gap - a.gap })[0]
+    var low = rows.filter(function (o) { return o.gap < 0 }).sort(function (a, b) { return a.gap - b.gap })[0]
+    var call = function (o, word) {
+      var t = byTeam[o.team_id]
+      return '<div class="cm-call"><span class="cm-call-k">' + word + '</span><b>' + esc(t.manager) + '</b>' +
+        '<span>Commish ' + ordinal(o.rank) + ' · model ' + ordinal(o.model_rank) + '</span></div>'
+    }
+    var updated = cm.updated_at ? new Date(cm.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''
+    var maxGap = Math.max(1, rows.reduce(function (m, o) { return Math.max(m, Math.abs(o.gap)) }, 0))
+    sec.innerHTML =
+      '<div class="pr-section-header">' +
+        '<span class="pr-section-num">§ 02 · The Commish</span>' +
+        '<span class="pr-section-title">The commish vs. <em>the model ·</em></span>' +
+        '<span class="pr-section-meta">' + same + ' of ' + rows.length + ' in the same spot · off by ' + avg.toFixed(1) + ' on average' + (updated ? ' · ' + esc(updated) : '') + '</span>' +
+      '</div>' +
+      (cm.note ? '<blockquote class="cm-note">' + esc(cm.note) + '<cite>The Commissioner</cite></blockquote>' : '') +
+      ((high || low) ? '<div class="cm-calls">' + (high ? call(high, 'Higher on') : '') + (low ? call(low, 'Lower on') : '') + '</div>' : '') +
+      '<div class="pr-table-wrap"><table class="pr-table cm-table"><thead><tr>' +
+        '<th class="col-rank">Commish</th><th class="col-team">Team</th><th class="cm-model-head">Model</th><th class="cm-bar-head">The gap</th>' +
+      '</tr></thead><tbody>' +
+      rows.map(function (o) {
+        var t = byTeam[o.team_id]
+        var w = (Math.abs(o.gap) / maxGap) * 50
+        return '<tr>' +
+          '<td class="col-rank"><span class="rank-num">' + o.rank + '</span></td>' +
+          '<td class="col-team">' + teamCell(t) + '</td>' +
+          '<td class="cm-model">' + o.model_rank + '</td>' +
+          '<td class="cm-bar-cell"><div class="cm-bar"><span class="cm-bar-mid"></span>' +
+            (o.gap ? '<span class="cm-bar-fill ' + (o.gap > 0 ? 'up' : 'down') + '" style="width:' + w.toFixed(1) + '%"></span>' : '') +
+          '</div>' + gapHTML(o.gap) + '</td>' +
+        '</tr>'
+      }).join('') +
+      '</tbody></table></div>'
+  }
+  function ordinal(n) {
+    var s = ['th', 'st', 'nd', 'rd'], v = n % 100
+    return n + (s[(v - 20) % 10] || s[v] || s[0])
   }
 
   // ── Shared team cell ────────────────────────────────────────────────────
@@ -194,8 +293,13 @@
     var body = byId('rankBody')
     body.innerHTML = teams.map(function (t, i) {
       var rank = confView ? (t.conf_rank != null ? t.conf_rank : i + 1) : t.rank
+      // On the commish's board the small mark beside the rank is where the
+      // model has the team, not last week's move.
+      var mark = t._model != null
+        ? '<span class="rank-model" title="The model has them ' + t._model + '">M' + t._model + '</span>'
+        : deltaHTML(t.delta)
       return '<tr class="' + (rank <= 3 ? 'top-row' : '') + '">'
-        + '<td class="col-rank"><div class="rank-cell"><span class="rank-num">' + rank + '</span>' + deltaHTML(t.delta) + '</div></td>'
+        + '<td class="col-rank"><div class="rank-cell"><span class="rank-num">' + rank + '</span>' + mark + '</div></td>'
         + '<td class="col-team">' + teamCell(t) + '</td>'
         + '<td class="col-record rec-cell">' + t.wins + '-' + t.losses + '</td>'
         + '<td class="col-pf pf-cell">' + t.pf.toFixed(1) + '</td>'

@@ -599,7 +599,7 @@ export function AddSourceForm({
 
       {state && 'ok' in state && !state.ok && <p className="dc-form-error">{state.error}</p>}
       {state && 'ok' in state && state.ok && (
-        <p className="dc-form-ok">Source added. Click &quot;Sync&quot; on it to import.</p>
+        <p className="dc-form-ok">Source added. Check each season&apos;s scoring and playoffs under Season by season, then sync everything at once.</p>
       )}
     </form>
   )

@@ -421,6 +421,12 @@
 .bg-team.winner { color: var(--cream); }
 .bg-team.winner .tn { font-weight: 600; }
 .bg-team.winner .sc { color: var(--gold); }
+/* Two-week games: each week's score, small, under the manager's name. */
+.bg-team .bg-legs {
+    display: block;
+    font-family: var(--mono); font-weight: 400; font-size: .56rem;
+    letter-spacing: .06em; color: var(--cream-mute);
+}
 
 /* ─── Standings table ─── */
 .standings-table-wrap {
@@ -803,6 +809,24 @@ function gamesByTeam(s) {
     return map;
 }
 
+// A two-week playoff game (a two-week final, or two-week rounds) arrives
+// as ONE matchup whose scores are the totals, with its weeks in `legs`.
+function isMultiWeek(m) { return !!(m.legs && m.legs.length > 1) || (m.span || 1) > 1; }
+function weekSpan(m) {
+    if (m.legs && m.legs.length > 1) return `${m.legs[0].week}–${m.legs[m.legs.length - 1].week}`;
+    if ((m.span || 1) > 1) return `${m.week}–${m.week + m.span - 1}`;
+    return String(m.week);
+}
+// Single-week scores, for high/low marks: a two-week game offers each week,
+// and a two-week total with no weekly split offers nothing.
+function weekScores(m) {
+    if (m.legs && m.legs.length > 1) {
+        return m.legs.filter(l => l.a_score != null && l.b_score != null)
+            .map(l => ({ week: l.week, a_user_id: m.a_user_id, b_user_id: m.b_user_id, a_score: l.a_score, b_score: l.b_score }));
+    }
+    return isMultiWeek(m) ? [] : [m];
+}
+
 function regWeeksOf(s) {
     return [...new Set((s.matchups || []).filter(m => !m.is_playoff).map(m => m.week))].sort((a, b) => a - b);
 }
@@ -973,26 +997,32 @@ function buildBracketSection(s) {
 
         const cards = classified.map(({ g, thirdGame }) => {
             const cls = g.is_championship ? 'final-game' : thirdGame ? 'third-game' : '';
-            const tag = g.is_championship ? '★ The Final' : thirdGame ? 'Third-Place Game' : 'Title Bracket';
-            const teamRow = (uid, sc, oppSc) => {
+            const tag = (g.is_championship ? '★ The Final' : thirdGame ? 'Third-Place Game' : 'Title Bracket') +
+                (isMultiWeek(g) ? ' · two weeks' : '');
+            // Two-week games show each week under the total.
+            const legLine = side => g.legs && g.legs.length > 1
+                ? `<span class="bg-legs">${g.legs.map(l => (side === 'a' ? l.a_score : l.b_score)).map(v => v == null ? '·' : v.toFixed(1)).join(' + ')}</span>`
+                : '';
+            const teamRow = (uid, sc, oppSc, side) => {
                 const t = byUid[String(uid)];
                 const seed = seedOf(uid);
                 return `<div class="bg-team${sc > oppSc ? ' winner' : ''}">
                     <span class="seed">${seed ? '#' + seed : ''}</span>
-                    <span class="tn">${t?.owner_name ?? '?'}</span>
+                    <span class="tn">${t?.owner_name ?? '?'}${legLine(side)}</span>
                     <span class="sc">${sc.toFixed(1)}</span>
                 </div>`;
             };
             return `<div class="bracket-game ${cls}">
                 <div class="bg-tag">${tag}</div>
-                ${teamRow(g.a_user_id, g.a_score, g.b_score)}
-                ${teamRow(g.b_user_id, g.b_score, g.a_score)}
+                ${teamRow(g.a_user_id, g.a_score, g.b_score, 'a')}
+                ${teamRow(g.b_user_id, g.b_score, g.a_score, 'b')}
             </div>`;
         }).join('');
 
         if (!cards) return '';
+        const spanned = inWeek.find(isMultiWeek);
         return `<div class="round-col">
-            <div class="round-head">${roundName(wk)} <span class="rh-week">· W${wk}</span></div>
+            <div class="round-head">${roundName(wk)} <span class="rh-week">· W${spanned ? weekSpan(spanned) : wk}</span></div>
             ${cards}
         </div>`;
     }).filter(Boolean).join('');
@@ -1014,9 +1044,12 @@ function buildWeeksSection(s) {
     const weeks = [...new Set(s.matchups.map(m => m.week))].sort((a, b) => a - b);
     const poWeeks = new Set(s.matchups.filter(m => m.is_playoff).map(m => m.week));
 
+    // A two-week game sits in the column of its first week, headed W16–17.
+    const spanOf = {};
+    for (const m of s.matchups) if (isMultiWeek(m)) spanOf[m.week] = weekSpan(m);
     const heads = weeks.map(wk =>
         `<th class="wk-head${poWeeks.has(wk) ? ' po' : ''}" data-week="${wk}" title="Click for the full week">
-            ${poWeeks.has(wk) ? 'P·' : ''}W${wk}</th>`).join('');
+            ${poWeeks.has(wk) ? 'P·' : ''}W${spanOf[wk] || wk}</th>`).join('');
 
     const rows = [...s.standings].sort((a, b) => (a.final_rank ?? 99) - (b.final_rank ?? 99)).map(t => {
         const u = String(t.owner_user_id);
@@ -1029,7 +1062,7 @@ function buildWeeksSection(s) {
             const cls = [g.tie ? 't' : (g.win ? 'w' : 'l'), g.title ? 'title-cell' : ''].filter(Boolean).join(' ');
             const oppName = byUid[g.opp]?.owner_name ?? '?';
             const verb = g.tie ? 'tied' : (g.win ? 'def.' : 'lost to');
-            return `<td class="${cls}" title="W${wk} · ${verb} ${oppName} · ${g.score.toFixed(1)} to ${g.opp_score.toFixed(1)}">${Math.round(g.score)}</td>`;
+            return `<td class="${cls}" title="W${spanOf[wk] || wk} · ${verb} ${oppName} · ${g.score.toFixed(1)} to ${g.opp_score.toFixed(1)}${spanOf[wk] ? ' over two weeks' : ''}">${Math.round(g.score)}</td>`;
         }).join('');
         return `<tr><th class="mgr-head">${t.owner_name}</th>${cells}</tr>`;
     }).join('');
@@ -1062,8 +1095,9 @@ function wireWeekDetail(s) {
             const games = s.matchups.filter(m => m.week === wk)
                 .sort((a, b) => (b.is_championship - a.is_championship) || (b.is_playoff - a.is_playoff) ||
                     (Math.max(b.a_score, b.b_score) - Math.max(a.a_score, a.b_score)));
+            const two = games.find(isMultiWeek);
             detail.innerHTML = `
-                <div class="week-detail-head">★ Week ${wk} · ${games.length} game${games.length === 1 ? '' : 's'}</div>
+                <div class="week-detail-head">★ ${two ? 'Weeks ' + weekSpan(two) : 'Week ' + wk} · ${games.length} game${games.length === 1 ? '' : 's'}</div>
                 ${games.map(g => {
                     const aWin = g.a_score >= g.b_score;
                     const w = aWin ? g : { a_user_id: g.b_user_id, a_score: g.b_score, b_user_id: g.a_user_id, b_score: g.a_score };
@@ -1091,13 +1125,15 @@ function buildSuperSection(s) {
     const byUid = teamIndex(s);
     const nameOf = uid => byUid[String(uid)]?.owner_name ?? '?';
 
-    const withMargin = ms.map(m => ({ ...m, margin: Math.abs(m.a_score - m.b_score), combined: m.a_score + m.b_score }));
+    // One-week games only for margins and combined totals, and single weeks
+    // for the high and low marks: a two-week total isn't one week's score.
+    const withMargin = ms.filter(m => !isMultiWeek(m)).map(m => ({ ...m, margin: Math.abs(m.a_score - m.b_score), combined: m.a_score + m.b_score }));
     const goty = [...withMargin].sort((a, b) => b.combined - a.combined)[0];
     const blowout = [...withMargin].sort((a, b) => b.margin - a.margin)[0];
     const closest = [...withMargin].filter(m => m.margin > 0).sort((a, b) => a.margin - b.margin)[0];
 
     let high = null, low = null;
-    for (const m of ms) {
+    for (const m of ms.flatMap(weekScores)) {
         for (const [uid, sc] of [[m.a_user_id, m.a_score], [m.b_user_id, m.b_score]]) {
             if (!high || sc > high.sc) high = { uid, sc, wk: m.week };
             if (!low  || sc < low.sc)  low  = { uid, sc, wk: m.week };

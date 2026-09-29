@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
 import { AddSourcePanel } from '@/app/league/[slug]/sources/add-source-panel'
 import { SourceRow } from '@/app/league/[slug]/sources/source-row'
+import { SeasonRules } from '@/app/league/[slug]/sources/season-rules'
 import { SetupList, type ProfileRow } from '@/app/league/[slug]/setup/setup-list'
 import { publishLeague } from '@/app/league/[slug]/setup/actions'
 import { setLatestSeasonLive, createRivalryInWizard, deleteRivalryInWizard } from './actions'
@@ -283,11 +284,12 @@ function StepSources({
           </div>
         </div>
         <div className="lo-note rust">
-          <div className="lo-note-head"><span className="pin">✦</span> The 2021 playoff shift</div>
+          <div className="lo-note-head"><span className="pin">✦</span> Rules that changed</div>
           <div className="lo-note-body">
-            The NFL added a 17th game in <strong>2021</strong>, which pushed a lot
-            of fantasy playoffs a week later. If your history crosses that year
-            and the playoff week changed, split it into two sources below.
+            Switched to PPR, moved the playoffs in <strong>2021</strong>, play a
+            two-week final? Every season your league ID covers is listed below
+            with what the platform reports. Fix any year that was different,
+            then sync it all at once.
           </div>
         </div>
       </div>
@@ -312,6 +314,20 @@ function StepSources({
       <div style={{ marginBottom: hasOne ? '1.75rem' : '1.5rem' }}>
         <AddSourcePanel leagueId={leagueId} slug={slug} yahooConnected={yahooConnected} />
       </div>
+
+      {hasOne && (
+        <div id="season-rules" style={{ marginBottom: '2rem' }}>
+          <div className="lo-folio">
+            <span className="lo-folio-title">Season by season</span>
+            <span className="lo-folio-meta">Scoring · playoffs · eras</span>
+          </div>
+          <SeasonRules
+            leagueId={leagueId}
+            sources={sources.map((s) => ({ id: s.id, label: s.label?.trim() || `${s.platform.toUpperCase()} ${s.external_id}` }))}
+            onSynced={onSynced}
+          />
+        </div>
+      )}
 
       {hasOne && (
         <>

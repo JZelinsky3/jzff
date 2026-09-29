@@ -78,6 +78,10 @@
       <!-- View switcher (Overall + divisions; hidden if no divisions) -->
       <div class="pr-view-tabs" id="viewTabs"></div>
 
+      <!-- Whose order: the model's, or the commissioner's (only when the
+           commish has published one for this week) -->
+      <div class="pr-board-tabs" id="boardTabs" hidden></div>
+
       <!-- Podium -->
       <div class="pr-podium" id="podium"></div>
 
@@ -106,10 +110,13 @@
         </table>
       </div>
 
+      <!-- ── The Commish vs the model (only when the commish published) ── -->
+      <section class="pr-section" id="commishSection" hidden></section>
+
       <!-- ── Season Projections ── -->
       <section class="pr-section" id="projSection" hidden>
         <div class="pr-section-header">
-          <span class="pr-section-num">§ 02 · Projections</span>
+          <span class="pr-section-num" id="projNum">§ 02 · Projections</span>
           <span class="pr-section-title">Season <em>outlook ·</em></span>
           <span class="pr-section-meta">8,000-run Monte Carlo · projected from scoring</span>
         </div>

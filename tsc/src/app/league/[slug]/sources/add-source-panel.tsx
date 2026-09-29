@@ -42,9 +42,13 @@ export function AddSourcePanel({
   function handleSuccess() {
     setOpen(false)
     onOpenChange?.(false)
-    const target = document.getElementById('sources-ledger')
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    else window.scrollTo({ top: 0, behavior: 'smooth' })
+    // Next step after attaching a league is checking its seasons' rules,
+    // which render once the refreshed source list lands.
+    setTimeout(() => {
+      const target = document.getElementById('season-rules') ?? document.getElementById('sources-ledger')
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      else window.scrollTo({ top: 0, behavior: 'smooth' })
+    }, 450)
   }
 
   if (!open) {

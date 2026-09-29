@@ -28610,6 +28610,113 @@ body.tsc-hdr-collapsed .mlsub-bar {
 .msr-msg.ok { color: var(--sage, #7fa97f); background: rgba(127,169,127,.08); }
 .msr-msg.err { color: var(--fire, #d65a3c); background: rgba(214,90,60,.08); }
 
+/* ── Season rules on mobile (msrc-rules-, season-rules.tsx) ──
+   One card per season, folded to a one-line summary; tap to change its
+   scoring and playoff format. Eras below, then save + sync. */
+.msrc-rules-intro { font-size: .64rem; color: var(--cream-mute); margin-bottom: .55rem; line-height: 1.45; }
+.msrc-rules-empty { font-family: var(--serif); font-size: .85rem; color: var(--cream-mute); padding: .8rem 0; }
+.msrc-rule {
+    background: var(--ink-soft); border: 1px solid var(--ink-line); border-radius: 10px;
+    margin-bottom: .35rem; overflow: hidden;
+}
+.msrc-rule.changed { border-color: rgba(203,166,82,.55); }
+.msrc-rule-head {
+    width: 100%; display: flex; align-items: baseline; gap: .55rem;
+    padding: .6rem .7rem; background: none; border: none; color: inherit; text-align: left;
+}
+.msrc-rule-year { flex: none; font-family: var(--serif); font-size: 1rem; color: var(--cream); }
+.msrc-rule.changed .msrc-rule-year { color: var(--gold); }
+.msrc-rule-sum {
+    flex: 1; min-width: 0;
+    font-family: var(--mono); font-size: .5rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--cream-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.msrc-rule-new {
+    flex: none; font-family: var(--mono); font-size: .42rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--gold); border: 1px solid rgba(203,166,82,.4); border-radius: 20px; padding: .08rem .35rem;
+}
+.msrc-rule-chev { flex: none; font-size: .6rem; color: var(--cream-mute); transition: transform .2s; }
+.msrc-rule.open .msrc-rule-chev { transform: rotate(180deg); }
+.msrc-rule-body { display: grid; grid-template-columns: 1fr 1fr; gap: .45rem .5rem; padding: 0 .7rem .7rem; }
+.msrc-rule-field { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+.msrc-rule-field > span {
+    font-family: var(--mono); font-size: .42rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.msrc-rule-field .dc-select { width: 100%; font-size: .72rem; padding: .45rem .5rem; }
+.msrc-rule-field .dc-select.edited { border-color: var(--gold); color: var(--gold); }
+.msrc-rule-tools { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .1rem 1rem; }
+.msrc-rule-tools .lo-btn-quiet { font-size: .5rem; }
+.msrc-rules-eras { margin-top: 1rem; }
+.msrc-rules-eras-head { margin-bottom: .45rem; }
+.msrc-rules-eras-title { display: block; font-family: var(--serif); font-size: 1rem; color: var(--cream); }
+.msrc-rules-eras-note { display: block; font-size: .6rem; color: var(--cream-mute); margin-top: .15rem; }
+.msrc-rules-era {
+    background: var(--ink-soft); border: 1px solid var(--ink-line); border-radius: 10px;
+    padding: .55rem; margin-bottom: .35rem;
+    display: flex; flex-direction: column; gap: .45rem;
+}
+.msrc-rules-era .dc-input { font-size: .8rem; }
+.msrc-rules-era .lo-btn-quiet { align-self: flex-end; padding: .1rem 0; font-size: .5rem; }
+.msrc-rules-era-years { display: flex; flex-wrap: wrap; gap: .25rem; }
+.msrc-rules-chip {
+    background: transparent; border: 1px solid var(--ink-line); border-radius: 20px;
+    color: var(--cream-mute); font-family: var(--mono); font-weight: 700; font-size: .52rem;
+    padding: .28rem .5rem;
+}
+.msrc-rules-chip.on { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+.msrc-rules-era-tools { display: flex; gap: .4rem; }
+.msrc-rules-era-tools .lo-btn-ghost { flex: 1; padding: .6rem .4rem; font-size: .5rem; letter-spacing: .12em; }
+.msrc-rules-actions { display: flex; flex-direction: column; gap: .4rem; margin-top: 1rem; }
+.msrc-rules-actions .lo-btn, .msrc-rules-actions .lo-btn-ghost { width: 100%; padding: .75rem .6rem; font-size: .58rem; }
+.msrc-rules-status {
+    font-family: var(--mono); font-size: .5rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--cream-mute); text-align: center; line-height: 1.5;
+}
+.msrc-rules-status .ok { color: #9dc79d; }
+.msrc-rules-status .err { color: #d08a76; }
+
+/* ── Commissioner power board on mobile (mcp-, commish-power.tsx) ── */
+.mcp-empty { font-size: .7rem; color: var(--cream-mute); padding: .5rem 0; }
+.mcp-bar { display: flex; flex-direction: column; gap: .35rem; margin-bottom: .55rem; }
+.mcp-week { display: flex; align-items: center; gap: .5rem; }
+.mcp-week > span { font-family: var(--mono); font-size: .42rem; letter-spacing: .18em; text-transform: uppercase; color: var(--cream-mute); }
+.mcp-week .dc-select { flex: 1; }
+.mcp-hint { font-size: .6rem; color: var(--cream-mute); }
+.mcp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .3rem; }
+.mcp-row {
+    display: grid; grid-template-columns: 1.5rem minmax(0, 1fr) auto auto;
+    grid-template-areas: "rank team gap arrows" "rank model model arrows";
+    align-items: center; column-gap: .5rem;
+    background: var(--ink-soft); border: 1px solid var(--ink-line); border-radius: 10px;
+    padding: .45rem .5rem;
+}
+.mcp-rank { grid-area: rank; font-family: var(--serif); font-size: 1.1rem; color: var(--gold); text-align: center; }
+.mcp-team { grid-area: team; min-width: 0; }
+.mcp-team b { display: block; font-weight: 600; font-size: .78rem; color: var(--cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mcp-team small { display: none; }
+.mcp-model { grid-area: model; font-family: var(--mono); font-size: .44rem; letter-spacing: .12em; text-transform: uppercase; color: var(--cream-mute); }
+.mcp-gap { grid-area: gap; font-family: var(--mono); font-weight: 700; font-size: .62rem; }
+.mcp-gap.up { color: #9dc79d; }
+.mcp-gap.down { color: #d08a76; }
+.mcp-gap.even { color: var(--cream-mute); }
+.mcp-arrows { grid-area: arrows; display: flex; flex-direction: column; gap: 2px; }
+.mcp-arrows button {
+    width: 1.9rem; height: 1.35rem;
+    background: var(--ink); border: 1px solid var(--ink-line); border-radius: 6px;
+    color: var(--cream-soft); font-size: .5rem;
+}
+.mcp-arrows button:disabled { opacity: .3; }
+.mcp-note { display: flex; flex-direction: column; gap: .25rem; margin-top: .7rem; }
+.mcp-note > span { font-family: var(--mono); font-size: .42rem; letter-spacing: .18em; text-transform: uppercase; color: var(--cream-mute); }
+.mcp-note .dc-input { font-size: .8rem; }
+.mcp-actions { display: flex; flex-direction: column; gap: .4rem; margin-top: .7rem; }
+.mcp-actions .lo-btn, .mcp-actions .lo-btn-ghost { width: 100%; padding: .75rem .6rem; font-size: .58rem; }
+.mcp-actions .lo-btn-quiet { align-self: center; font-size: .5rem; }
+.mcp-msg { text-align: center; font-family: var(--mono); font-size: .5rem; letter-spacing: .08em; text-transform: uppercase; line-height: 1.5; }
+.mcp-msg.ok { color: #9dc79d; }
+.mcp-msg.err { color: #d08a76; }
+
 
 /* ============================================================
    MOBILE RIVALRIES  (MobileRivalries.tsx)

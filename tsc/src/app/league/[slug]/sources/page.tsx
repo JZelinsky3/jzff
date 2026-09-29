@@ -112,21 +112,20 @@ export default async function SourcesPage({
             </div>
           </div>
           <div className="lo-note rust">
-            <div className="lo-note-head"><span className="pin">✦</span> The 2021 playoff shift</div>
+            <div className="lo-note-head"><span className="pin">✦</span> Rules that changed</div>
             <div className="lo-note-body">
-              The NFL added a 17th regular-season game in <strong>2021</strong>,
-              and a lot of leagues pushed their fantasy playoffs a week later
-              that year. If your league&apos;s playoff week changed, split your
-              history into two sources: one for the old format, one for the new.
+              Went from standard to PPR, moved the playoffs a week later in
+              <strong> 2021</strong>, added a two-week final? One league ID is
+              enough. Set each year&apos;s scoring and playoffs under
+              <strong> Season by season</strong>, then sync everything at once.
             </div>
           </div>
           <div className="lo-note steel">
-            <div className="lo-note-head"><span className="pin">✦</span> Splitting by playoffs</div>
+            <div className="lo-note-head"><span className="pin">✦</span> Eras</div>
             <div className="lo-note-body">
-              Split at whatever changed: playoff start week, playoff team count,
-              even scoring. Each source gets its own year range and its own
-              rules, and they sync independently, so nothing overlaps or
-              double-counts as long as the ranges don&apos;t.
+              Group seasons into eras (Non-PPR years, 13-game seasons) and the
+              record book and standings can read just those years, so a
+              scoring change never buries the old marks.
             </div>
           </div>
           <div className="lo-note">

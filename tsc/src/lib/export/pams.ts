@@ -8,6 +8,15 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { canonicalDraftBySeason } from '@/lib/canonicalDraft'
 import { simulateSeason, type SimTeam } from '@/lib/powerSim'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
+import {
+  commishRulesFor,
+  effectivePlayoffRounds,
+  effectiveRules,
+  readEras,
+  scoringLabel,
+  type Era,
+  type SeasonRules,
+} from '@/lib/seasonRules'
 
 // ============================================================
 // In-memory league snapshot
@@ -81,6 +90,18 @@ type MatchupRow = {
   score_b: number | null
   is_playoff: boolean
   is_championship: boolean
+  // ── Multi-week games (in memory only, see normalizeSeasonMatchups) ──
+  // A two-week playoff round is stored as one row per week. The snapshot
+  // folds them into one game whose scores are the totals; `legs` keeps the
+  // weeks so single-week records can still see each one.
+  legs?: Array<{ week: number; score_a: number | null; score_b: number | null }>
+  // Weeks this game covers, when more than one. Set without `legs` on a
+  // game stored as a single combined row (an ESPN season synced before the
+  // per-week split existed): its total is real, its weekly split unknown.
+  span?: number
+  // Weekly view only: this row is one week of a multi-week game, and these
+  // are the whole game's totals, which decide the result.
+  leg_of?: { score_a: number | null; score_b: number | null }
 }
 
 type DraftRow = {
@@ -154,9 +175,17 @@ type Snapshot = {
   // Trade participation, one row per (trade, manager-side). Empty if the
   // league predates migration 0022 or the platform isn't Sleeper.
   tradeParticipationByManager: Map<string, TradeParticipationRow[]>
+  // leagues.settings: the commissioner's per-season rules and eras.
+  leagueSettings: Record<string, unknown> | null
+  eras: Era[]
+  // A year-filtered snapshot (an era view) still has to know who is in the
+  // league TODAY, or every manager who left after the era reads as current.
+  currentIdsOverride?: Set<string>
 }
 
-async function loadSnapshot(leagueId: string): Promise<Snapshot> {
+// `lite` skips the heavy per-player tables (weekly lineups, draft picks,
+// trades) for views that never read them: the era / scope record book.
+async function loadSnapshot(leagueId: string, opts: { lite?: boolean } = {}): Promise<Snapshot> {
   const db = createAdminClient()
 
   // League row: try with division columns first (migration 0003), fall back to
@@ -226,6 +255,7 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
   const [
     { data: seasons },
     { data: managers },
+    { data: leagueSettingsRow },
   ] = await Promise.all([
     db
       .from('seasons')
@@ -246,8 +276,25 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
         }
         return res
       }),
+    db.from('leagues').select('settings').eq('id', leagueId).maybeSingle(),
   ])
+  const leagueSettings = (leagueSettingsRow?.settings ?? null) as Record<string, unknown> | null
 
+  // The commissioner's playoff format beats the platform's everywhere the
+  // almanac asks "did he make the playoffs" or "when did they start", so it
+  // is folded into each season's settings once, here.
+  const seasonsEff: SeasonRow[] = ((seasons ?? []) as SeasonRow[]).map((sn) => {
+    const c = commishRulesFor(leagueSettings, sn.year)
+    if (c.playoff_team_count == null && c.playoff_week_start == null) return sn
+    return {
+      ...sn,
+      settings: {
+        ...(sn.settings ?? {}),
+        ...(c.playoff_team_count != null ? { playoff_team_count: c.playoff_team_count } : {}),
+        ...(c.playoff_week_start != null ? { playoff_week_start: c.playoff_week_start } : {}),
+      },
+    }
+  })
   const seasonIds = new Set((seasons ?? []).map((s) => s.id))
   const seasonIdList = Array.from(seasonIds)
   const managerIds = new Set((managers ?? []).map((m) => m.id))
@@ -268,7 +315,7 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
     seasonIdList.length === 0 ? Promise.resolve([] as DraftRow[]) : selectAllPaged<DraftRow>(db, 'drafts',
       'id, season_id, external_id, draft_type, rounds',
       seasonIdList),
-    seasonIdList.length === 0 ? Promise.resolve([] as WeeklyLineupRow[]) : selectAllPaged<WeeklyLineupRow>(db, 'weekly_lineups',
+    seasonIdList.length === 0 || opts.lite ? Promise.resolve([] as WeeklyLineupRow[]) : selectAllPaged<WeeklyLineupRow>(db, 'weekly_lineups',
       'season_id, week, manager_id, player_external_id, player_name, position, nfl_team, slot, is_starter, points, proj_points',
       seasonIdList).catch(() => [] as WeeklyLineupRow[]),
   ])
@@ -276,7 +323,16 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
   // Both queries are already filtered by season_id, but keep the manager
   // check on manager_seasons in case the seeding ever leaves orphan rows.
   const msFiltered = managerSeasonsAll.filter((r) => managerIds.has(r.manager_id))
-  const mFiltered = matchupsAll
+  // Every season's games pass through the league's playoff rules once, here,
+  // so every builder downstream sees the same shape: the commissioner's
+  // playoff start week, and multi-week rounds folded into single games.
+  const seasonRowById = new Map(seasonsEff.map((sn) => [sn.id, sn]))
+  const mFiltered: MatchupRow[] = []
+  for (const [sid, rows] of groupBy(matchupsAll, (r) => r.season_id)) {
+    const sn = seasonRowById.get(sid)
+    if (!sn) continue
+    mFiltered.push(...normalizeSeasonMatchups(sn, rows, commishRulesFor(leagueSettings, sn.year)))
+  }
   const drafts = draftsAll
 
   // Page through draft_picks — Supabase caps each .select() at 1000 rows by
@@ -284,7 +340,7 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
   // × 15 rounds = 1260 picks).
   const draftIds = (drafts ?? []).filter((d) => seasonIds.has(d.season_id)).map((d) => d.id)
   let picks: DraftPickRow[] = []
-  if (draftIds.length > 0) {
+  if (draftIds.length > 0 && !opts.lite) {
     const PAGE = 1000
     let from = 0
     for (;;) {
@@ -352,7 +408,7 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
 
   // Trade participation — join trades + trade_sides so Manager DNA can count
   // trade volume per profile. Pre-0022 leagues return error → empty.
-  const tradeParticipation: TradeParticipationRow[] = await (async () => {
+  const tradeParticipation: TradeParticipationRow[] = opts.lite ? [] : await (async () => {
     const { data, error } = await db
       .from('trade_sides')
       .select('trade_id, manager_id, trades!inner(season_id, week, status, league_id)')
@@ -380,7 +436,7 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
 
   return {
     league: league as LeagueRow,
-    seasons: (seasons ?? []) as SeasonRow[],
+    seasons: seasonsEff,
     managers: managersById,
     managerByExternal: managersByExternal,
     profilesById,
@@ -398,7 +454,165 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
     rivalries,
     weeklyLineupsBySeason: groupBy(weeklyLineupsAll, (r) => r.season_id),
     tradeParticipationByManager: groupBy(tradeParticipation, (r) => r.manager_id),
+    leagueSettings,
+    eras: readEras(leagueSettings),
   }
+}
+
+// ============================================================
+// Playoff rules applied to a season's games
+// ============================================================
+
+// A season's games as the almanac should read them.
+//
+//  • A playoff start week the commissioner typed in redraws the line between
+//    regular season and playoffs, so a platform that tagged it wrong (or a
+//    league that changed its format) doesn't need its history re-synced.
+//  • A multi-week round (a two-week championship, or two-week rounds
+//    throughout) is stored one row per week. Those rows fold into ONE game:
+//    one result, decided on the total, which is how the league decided it.
+//    The weeks ride along as `legs` for single-week records. A combined row
+//    with no weekly split (an old ESPN sync) keeps its total but is marked
+//    with `span`, so it never poses as one week's score.
+function normalizeSeasonMatchups(season: SeasonRow, rows: MatchupRow[], commish: SeasonRules): MatchupRow[] {
+  let out = rows
+  if (commish.playoff_week_start != null) {
+    const pws = commish.playoff_week_start
+    out = out.map((r) => ((r.week >= pws) === r.is_playoff ? r : { ...r, is_playoff: r.week >= pws }))
+  }
+
+  const groups: number[][] = []
+  const seenGroup = new Set<string>()
+  const addGroup = (weeks: number[]) => {
+    if (weeks.length < 2) return
+    const key = weeks.join(',')
+    if (seenGroup.has(key)) return
+    seenGroup.add(key)
+    groups.push(weeks)
+  }
+  for (const r of effectivePlayoffRounds(season.settings, commish) ?? []) addGroup(r)
+  const legGroups = season.settings?.leg_groups
+  if (Array.isArray(legGroups)) {
+    for (const g of legGroups) {
+      if (Array.isArray(g)) addGroup(g.filter((w): w is number => typeof w === 'number').sort((a, b) => a - b))
+    }
+  }
+  if (groups.length === 0) return out
+
+  const groupOf = new Map<number, number[]>()
+  for (const g of groups) for (const w of g) if (!groupOf.has(w)) groupOf.set(w, g)
+  const buckets = new Map<string, MatchupRow[]>()
+  const result: MatchupRow[] = []
+  for (const r of out) {
+    const g = groupOf.get(r.week)
+    if (!g) { result.push(r); continue }
+    pushTo(buckets, `${g[0]}|${r.manager_a_id}|${r.manager_b_id}`, r)
+  }
+  for (const bucket of buckets.values()) {
+    const g = groupOf.get(bucket[0].week)!
+    if (bucket.length === 1) {
+      result.push({ ...bucket[0], span: g.length })
+      continue
+    }
+    bucket.sort((a, b) => a.week - b.week)
+    const legs = bucket.map((r) => ({ week: r.week, score_a: r.score_a, score_b: r.score_b }))
+    const complete = legs.every((l) => l.score_a != null && l.score_b != null)
+    const sum = (k: 'score_a' | 'score_b') => round2(legs.reduce((t, l) => t + Number(l[k] ?? 0), 0))
+    result.push({
+      ...bucket[0],
+      score_a: complete ? sum('score_a') : null,
+      score_b: complete ? sum('score_b') : null,
+      is_playoff: bucket.some((r) => r.is_playoff),
+      is_championship: bucket.some((r) => r.is_championship),
+      legs,
+      span: legs.length,
+    })
+  }
+  return result
+}
+
+// ── Derived snapshots ──────────────────────────────────────────────────────
+
+function withMatchups(s: Snapshot, rows: MatchupRow[]): Snapshot {
+  const bySeason = groupBy(rows, (r) => r.season_id)
+  const byManager = new Map<string, MatchupRow[]>()
+  for (const m of rows) {
+    pushTo(byManager, m.manager_a_id, m)
+    pushTo(byManager, m.manager_b_id, m)
+  }
+  return { ...s, matchupsBySeason: bySeason, matchupsByManager: byManager }
+}
+
+function allMatchups(s: Snapshot): MatchupRow[] {
+  const out: MatchupRow[] = []
+  for (const rows of s.matchupsBySeason.values()) out.push(...rows)
+  return out
+}
+
+// One row per WEEK: a multi-week game becomes its weeks (each carrying the
+// whole game's totals for the result), and a combined row with no weekly
+// split drops out. For anything that asks "what did he score that week".
+function weeklyView(s: Snapshot): Snapshot {
+  const rows: MatchupRow[] = []
+  for (const m of allMatchups(s)) {
+    if (m.legs) {
+      for (const l of m.legs) {
+        rows.push({
+          ...m,
+          week: l.week,
+          score_a: l.score_a,
+          score_b: l.score_b,
+          legs: undefined,
+          span: undefined,
+          leg_of: { score_a: m.score_a, score_b: m.score_b },
+        })
+      }
+    } else if (m.span && m.span > 1) {
+      continue
+    } else {
+      rows.push(m)
+    }
+  }
+  return withMatchups(s, rows)
+}
+
+export type RecordScope = 'all' | 'reg' | 'post'
+
+// Regular season or playoffs only. 'all' is the snapshot itself.
+function scopeSnapshot(s: Snapshot, scope: RecordScope): Snapshot {
+  if (scope === 'all') return s
+  return withMatchups(s, allMatchups(s).filter((m) => (scope === 'post' ? m.is_playoff : !m.is_playoff)))
+}
+
+// An era: only these years, everywhere. Membership ("is he still in the
+// league") is still judged on the whole history.
+function yearsSnapshot(s: Snapshot, years: Set<number>): Snapshot {
+  const seasons = s.seasons.filter((sn) => years.has(sn.year))
+  const keep = new Set(seasons.map((sn) => sn.id))
+  const inSeason = <T extends { season_id: string }>(rows: T[]) => rows.filter((r) => keep.has(r.season_id))
+  const filterMap = <K, T extends { season_id: string }>(m: Map<K, T[]>) => {
+    const out = new Map<K, T[]>()
+    for (const [k, rows] of m) {
+      const kept = inSeason(rows)
+      if (kept.length) out.set(k, kept)
+    }
+    return out
+  }
+  const draftsBySeason = new Map<string, DraftRow>()
+  for (const [sid, d] of s.draftsBySeason) if (keep.has(sid)) draftsBySeason.set(sid, d)
+  const lineups = new Map<string, WeeklyLineupRow[]>()
+  for (const [sid, rows] of s.weeklyLineupsBySeason) if (keep.has(sid)) lineups.set(sid, rows)
+  const base: Snapshot = {
+    ...s,
+    seasons,
+    managerSeasonsBySeason: filterMap(s.managerSeasonsBySeason),
+    managerSeasonsByManager: filterMap(s.managerSeasonsByManager),
+    draftsBySeason,
+    weeklyLineupsBySeason: lineups,
+    tradeParticipationByManager: filterMap(s.tradeParticipationByManager),
+    currentIdsOverride: s.currentIdsOverride ?? currentManagerIdSet(s),
+  }
+  return withMatchups(base, inSeason(allMatchups(s)))
 }
 
 // ============================================================
@@ -534,6 +748,7 @@ function latestSeasonWithData(s: Snapshot): SeasonRow | undefined {
 // Then UNION in any seasons newer than the anchor so brand-new joiners in
 // an in-progress draft still count as current the moment they land.
 function currentManagerIdSet(s: Snapshot): Set<string> {
+  if (s.currentIdsOverride) return s.currentIdsOverride
   if (s.seasons.length === 0) return new Set()
   let maxRoster = 0
   for (const sn of s.seasons) {
@@ -769,6 +984,19 @@ type ManagerGame = {
   opp_score: number
   result: 'W' | 'L' | 'T'
   margin: number
+  // Weeks the game covers (1 for a normal game). See MatchupRow.legs.
+  span: number
+  // The per-week split of a multi-week game, from this manager's side. Null
+  // for a one-week game; EMPTY when the game spans weeks but the split is
+  // unknown, so it contributes no single-week score at all.
+  weeks: Array<{ week: number; self: number; opp: number }> | null
+  // Weekly view: one week of a multi-week game. Its result is the game's.
+  is_leg: boolean
+}
+
+// A game's single-week scores: itself, or each week of a multi-week game.
+function weeklyScoresOf(g: ManagerGame): Array<{ week: number; self: number; opp: number }> {
+  return g.weeks ?? [{ week: g.week, self: g.self_score, opp: g.opp_score }]
 }
 
 function asManagerGame(m: MatchupRow, self: string): ManagerGame | null {
@@ -781,9 +1009,23 @@ function asManagerGame(m: MatchupRow, self: string): ManagerGame | null {
   const selfScore = isA ? Number(m.score_a) : Number(m.score_b)
   const oppScore = isA ? Number(m.score_b) : Number(m.score_a)
   const oppId = isA ? m.manager_b_id : m.manager_a_id
+  // One week of a two-week final won or lost nothing on its own: the result
+  // is the whole game's, once both weeks are in.
+  const whole = m.leg_of && m.leg_of.score_a != null && m.leg_of.score_b != null ? m.leg_of : null
+  const resSelf = whole ? Number(isA ? whole.score_a : whole.score_b) : selfScore
+  const resOpp = whole ? Number(isA ? whole.score_b : whole.score_a) : oppScore
   let result: 'W' | 'L' | 'T' = 'T'
-  if (selfScore > oppScore) result = 'W'
-  else if (selfScore < oppScore) result = 'L'
+  if (resSelf > resOpp) result = 'W'
+  else if (resSelf < resOpp) result = 'L'
+  const weeks = m.legs
+    ? m.legs
+        .filter((l) => l.score_a != null && l.score_b != null)
+        .map((l) => ({
+          week: l.week,
+          self: Number(isA ? l.score_a : l.score_b),
+          opp: Number(isA ? l.score_b : l.score_a),
+        }))
+    : m.span && m.span > 1 ? [] : null
   return {
     season_id: m.season_id,
     week: m.week,
@@ -795,6 +1037,9 @@ function asManagerGame(m: MatchupRow, self: string): ManagerGame | null {
     opp_score: oppScore,
     result,
     margin: round2(selfScore - oppScore),
+    span: m.span ?? 1,
+    weeks,
+    is_leg: !!m.leg_of,
   }
 }
 
@@ -925,7 +1170,30 @@ function buildLeagueJson(s: Snapshot): unknown {
     defending_champion: defendingChampion,
     draft_scoring_profile: s.league.draft_scoring_profile,
     superflex: s.league.superflex,
+    // Named sets of years the commissioner grouped ("Non-PPR years"). The
+    // record book and standings filter on these.
+    eras: s.eras,
+    // Each season's scoring + playoff format, commissioner's word first.
+    season_rules: buildSeasonRulesSummary(s),
   }
+}
+
+function buildSeasonRulesSummary(s: Snapshot): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const sn of s.seasons) {
+    const commish = commishRulesFor(s.leagueSettings, sn.year)
+    const eff = effectiveRules(sn.settings, commish)
+    const rounds = effectivePlayoffRounds(sn.settings, commish)
+    out[String(sn.year)] = {
+      scoring: eff.scoring,
+      scoring_label: scoringLabel(eff.scoring),
+      playoff_week_start: eff.playoff_week_start,
+      playoff_team_count: eff.playoff_team_count,
+      playoff_rounds: rounds,
+      two_week_final: !!rounds && (rounds[rounds.length - 1]?.length ?? 1) > 1,
+    }
+  }
+  return out
 }
 
 function abbreviate(name: string): string {
@@ -1095,6 +1363,10 @@ function buildSeasonFile(s: Snapshot, season: SeasonRow): unknown {
         b_score: round2(Number(m.score_b)),
         is_playoff: m.is_playoff,
         is_championship: m.is_championship,
+        // A two-week game: the scores above are totals, these are its weeks.
+        ...(m.legs
+          ? { legs: m.legs.map((l) => ({ week: l.week, a_score: l.score_a == null ? null : round2(Number(l.score_a)), b_score: l.score_b == null ? null : round2(Number(l.score_b)) })) }
+          : m.span && m.span > 1 ? { span: m.span } : {}),
       }
     })
     .filter((r): r is NonNullable<typeof r> => r != null)
@@ -1247,6 +1519,9 @@ type ManagerAggregate = {
   playoff_pf: number
   playoff_pa: number
   high_score: number
+  // Weeks behind total_pf_all, for points per game: a two-week final is
+  // one game but two weeks of scoring.
+  total_weeks: number
   low_score: number
   total_pf_all: number
   longest_win_streak: { length: number; when: string } | null
@@ -1322,12 +1597,17 @@ function aggregateProfile(s: Snapshot, g: ProfileGroup): ManagerAggregate {
   let playoff_wins = 0, playoff_losses = 0, playoff_ties = 0, playoff_pf = 0, playoff_pa = 0
   let high_score = -Infinity, low_score = Infinity
   let total_pf_all = 0
+  let total_weeks = 0
 
   for (const gm of games) {
     if (gm.is_playoff && !isChampionshipBracketGame(s, gm)) continue  // skip 5th/7th-place games
     total_pf_all += gm.self_score
-    if (gm.self_score > high_score) high_score = gm.self_score
-    if (gm.self_score < low_score) low_score = gm.self_score
+    total_weeks += gm.span
+    // Highs and lows are single weeks, so a two-week final offers its weeks.
+    for (const w of weeklyScoresOf(gm)) {
+      if (w.self > high_score) high_score = w.self
+      if (w.self < low_score) low_score = w.self
+    }
     if (gm.is_playoff) {
       playoff_pf += gm.self_score
       playoff_pa += gm.opp_score
@@ -1377,6 +1657,7 @@ function aggregateProfile(s: Snapshot, g: ProfileGroup): ManagerAggregate {
     high_score: high_score === -Infinity ? 0 : round2(high_score),
     low_score: low_score === Infinity ? 0 : round2(low_score),
     total_pf_all: round2(total_pf_all),
+    total_weeks,
     longest_win_streak: longestWin,
     longest_loss_streak: longestLoss,
   }
@@ -1510,7 +1791,7 @@ function buildManagersDirectory(s: Snapshot): unknown {
           : 0,
         playoff_wins: agg.playoff_wins,
         avg_finish,
-        ppg: totalGames > 0 ? Math.round((agg.total_pf_all / totalGames) * 100) / 100 : 0,
+        ppg: agg.total_weeks > 0 ? Math.round((agg.total_pf_all / agg.total_weeks) * 100) / 100 : 0,
         user_id: userId(g.primary),
         name,
         nfl_display_name: g.primary.display_name,
@@ -1597,15 +1878,17 @@ function buildManagerFile(s: Snapshot, g: ProfileGroup): unknown {
     let high = -Infinity, low = Infinity, highWeek: number | null = null
     let playoff_pf = 0, playoff_wins = 0, playoff_losses = 0, playoff_ties = 0, playoff_games = 0
     let total_pf = 0
-    let counted_games = 0
+    let counted_weeks = 0
     for (const g of games) {
       // Skip 5th/7th-place placement games — they exist in matchups but
       // shouldn't inflate the year's PF or avg PPG.
       if (g.is_playoff && !isChampionshipBracketGame(s, g)) continue
       total_pf += g.self_score
-      counted_games++
-      if (g.self_score > high) { high = g.self_score; highWeek = g.week }
-      if (g.self_score < low) low = g.self_score
+      counted_weeks += g.span
+      for (const w of weeklyScoresOf(g)) {
+        if (w.self > high) { high = w.self; highWeek = w.week }
+        if (w.self < low) low = w.self
+      }
       if (g.is_playoff) {
         playoff_pf += g.self_score
         playoff_games++
@@ -1626,7 +1909,7 @@ function buildManagerFile(s: Snapshot, g: ProfileGroup): unknown {
       playoff_games,
       playoff_pf: round2(playoff_pf),
       total_pf: round2(total_pf),
-      avg_ppg: counted_games > 0 ? round2(total_pf / counted_games) : 0,
+      avg_ppg: counted_weeks > 0 ? round2(total_pf / counted_weeks) : 0,
       high_week_score: high === -Infinity ? 0 : round2(high),
       low_week_score: low === Infinity ? 0 : round2(low),
     }
@@ -1741,7 +2024,7 @@ function buildManagerFile(s: Snapshot, g: ProfileGroup): unknown {
     playoff_pa: agg.playoff_pa,
     high_score: agg.high_score,
     low_score: agg.low_score,
-    avg_ppg: totalGames > 0 ? round2(agg.total_pf_all / totalGames) : 0,
+    avg_ppg: agg.total_weeks > 0 ? round2(agg.total_pf_all / agg.total_weeks) : 0,
     longest_win_streak: agg.longest_win_streak,
     longest_loss_streak: agg.longest_loss_streak,
     season_ledger,
@@ -2383,8 +2666,10 @@ function emptyRivalrySide(g: ProfileGroup) {
   }
 }
 
-function buildManagerHighs(s: Snapshot): unknown {
+function buildManagerHighs(full: Snapshot, scope: RecordScope = 'all'): unknown {
   // Top-5 single-week scores per profile (merged identities pool their scores).
+  // Weeks, not games: each week of a two-week final stands on its own.
+  const s = weeklyView(scopeSnapshot(full, scope))
   const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
   const managerToGroup = buildManagerToGroup(groups)
   const currentIds = currentManagerIdSet(s)
@@ -2450,6 +2735,7 @@ type WeeklyExtreme = {
   result: 'W' | 'L' | 'T'
   margin: number
   combined_score?: number
+  is_leg?: boolean
 }
 
 // Per-profile-group chronological career games (regular + championship-bracket
@@ -2891,7 +3177,17 @@ function buildBoomBustBook(s: Snapshot): {
   }
 }
 
-function buildRecordBook(s: Snapshot): unknown {
+function buildRecordBook(s: Snapshot, scope: RecordScope = 'all'): unknown {
+  // Three views of the same history:
+  //   s        every game, for season ledgers and career honors, which the
+  //            regular season / playoffs switch doesn't change
+  //   scoped   only the games in scope, for streaks, milestones, clutch
+  //   weekly   the scoped games one WEEK per row, for every single-week
+  //            board: a two-week final is two weeks of scoring, never one
+  //            280-point "week" sitting on top of the book
+  const scoped = scopeSnapshot(s, scope)
+  const weekly = weeklyView(scoped)
+
   // Resolve every manager.id → its profile group's canonical name so renaming
   // a profile (manager_profiles.canonical_name) propagates to every line of the
   // record book without re-sync.
@@ -2905,7 +3201,7 @@ function buildRecordBook(s: Snapshot): unknown {
   // Flatten every (manager, week) result, then sort/slice for each category.
   const flat: WeeklyExtreme[] = []
   for (const m of s.managers.values()) {
-    const games = (s.matchupsByManager.get(m.id) ?? [])
+    const games = (weekly.matchupsByManager.get(m.id) ?? [])
       .map((mt) => asManagerGame(mt, m.id))
       .filter((g): g is ManagerGame => g != null)
     for (const g of games) {
@@ -2930,17 +3226,22 @@ function buildRecordBook(s: Snapshot): unknown {
         result: g.result,
         margin: g.margin,
         combined_score: round2(g.self_score + g.opp_score),
+        ...(g.is_leg ? { is_leg: true } : {}),
       })
     }
   }
 
   const N = 10
+  // Boards about a RESULT (margins, lucky wins, unlucky losses) use one-week
+  // games only. A single week of a two-week final won or lost nothing by
+  // itself, so its margin isn't a margin of victory.
+  const decided = flat.filter((g) => !g.is_leg)
   const highest_single_week_score = [...flat].sort((a, b) => b.score - a.score).slice(0, N).map(stripCombined)
   const lowest_single_week_score = [...flat].sort((a, b) => a.score - b.score).slice(0, N).map(stripCombined)
-  const biggest_blowouts = [...flat].filter((g) => g.result === 'W').sort((a, b) => b.margin - a.margin).slice(0, N)
-  const closest_games = dedupePairs(flat).filter((g) => g.result === 'W').sort((a, b) => a.margin - b.margin).slice(0, N)
-  const unluckiest_losses = [...flat].filter((g) => g.result === 'L').sort((a, b) => b.score - a.score).slice(0, N).map(stripCombined)
-  const luckiest_wins = [...flat].filter((g) => g.result === 'W').sort((a, b) => a.score - b.score).slice(0, N).map(stripCombined)
+  const biggest_blowouts = [...decided].filter((g) => g.result === 'W').sort((a, b) => b.margin - a.margin).slice(0, N)
+  const closest_games = dedupePairs(decided).filter((g) => g.result === 'W').sort((a, b) => a.margin - b.margin).slice(0, N)
+  const unluckiest_losses = [...decided].filter((g) => g.result === 'L').sort((a, b) => b.score - a.score).slice(0, N).map(stripCombined)
+  const luckiest_wins = [...decided].filter((g) => g.result === 'W').sort((a, b) => a.score - b.score).slice(0, N).map(stripCombined)
   const highest_combined_score = dedupePairs(flat).sort((a, b) => (b.combined_score ?? 0) - (a.combined_score ?? 0)).slice(0, N)
   const lowest_combined_score = dedupePairs(flat).sort((a, b) => (a.combined_score ?? 0) - (b.combined_score ?? 0)).slice(0, N)
 
@@ -2970,6 +3271,8 @@ function buildRecordBook(s: Snapshot): unknown {
     high_week_when: string
     low_week_score: number
     low_week_when: string
+    playoff_ppg: number
+    playoff_weeks: number
   }
   const seasonRows: SeasonExtreme[] = []
   for (const m of s.managers.values()) {
@@ -2985,6 +3288,7 @@ function buildRecordBook(s: Snapshot): unknown {
       let low = Infinity, lowWeek = 0, lowOpp = ''
       let pl_w = 0, pl_l = 0, pl_t = 0, pl_pf = 0, pl_games = 0, total_pf = 0
       let counted = 0
+      let countedWeeks = 0, plWeeks = 0
       // Full-season points follow the championship bracket: one loss ends the
       // run, so games played after it (the 3rd-place game, which the semifinal
       // losers play) don't count. Regular-season games always count, so walk
@@ -3000,12 +3304,15 @@ function buildRecordBook(s: Snapshot): unknown {
         }
         total_pf += g.self_score
         counted++
+        countedWeeks += g.span
         const opp = s.managers.get(g.opp_id)
         const oppName = ownerName(opp)
-        if (g.self_score > high) { high = g.self_score; highWeek = g.week; highOpp = oppName }
-        if (g.self_score < low) { low = g.self_score; lowWeek = g.week; lowOpp = oppName }
+        for (const w of weeklyScoresOf(g)) {
+          if (w.self > high) { high = w.self; highWeek = w.week; highOpp = oppName }
+          if (w.self < low) { low = w.self; lowWeek = w.week; lowOpp = oppName }
+        }
         if (g.is_playoff) {
-          pl_games++; pl_pf += g.self_score
+          pl_games++; pl_pf += g.self_score; plWeeks += g.span
           if (g.result === 'W') pl_w++
           else if (g.result === 'L') { pl_l++; eliminated = true }
           else pl_t++
@@ -3030,7 +3337,7 @@ function buildRecordBook(s: Snapshot): unknown {
         playoff_pf: round2(pl_pf),
         total_record: recordStr(ms.wins + pl_w, ms.losses + pl_l, ms.ties + pl_t),
         total_pf: round2(total_pf),
-        avg_ppg: counted > 0 ? round2(total_pf / counted) : 0,
+        avg_ppg: countedWeeks > 0 ? round2(total_pf / countedWeeks) : 0,
         reg_ppg: totalReg > 0 ? round2(Number(ms.points_for) / totalReg) : 0,
         // Game counts + PA-per-game so the record book can show a rate
         // beside/below each season total (reg games for the PF/PA titles,
@@ -3039,10 +3346,12 @@ function buildRecordBook(s: Snapshot): unknown {
         reg_games: totalReg,
         total_games: counted,
         reg_pa_ppg: totalReg > 0 ? round2(Number(ms.points_against) / totalReg) : 0,
-        high_week_score: round2(high),
-        high_week_when: `W${highWeek} vs ${highOpp}`,
-        low_week_score: round2(low),
-        low_week_when: `W${lowWeek} vs ${lowOpp}`,
+        high_week_score: high === -Infinity ? 0 : round2(high),
+        high_week_when: high === -Infinity ? '' : `W${highWeek} vs ${highOpp}`,
+        low_week_score: low === Infinity ? 0 : round2(low),
+        low_week_when: low === Infinity ? '' : `W${lowWeek} vs ${lowOpp}`,
+        playoff_ppg: plWeeks > 0 ? round2(pl_pf / plWeeks) : 0,
+        playoff_weeks: plWeeks,
       })
     }
   }
@@ -3068,6 +3377,11 @@ function buildRecordBook(s: Snapshot): unknown {
   // different schedule lengths (e.g. 13-game 2019/2020 vs 14-game years).
   const lowest_ppg = [...seasonRows].filter((r) => r.reg_ppg > 0).sort((a, b) => a.reg_ppg - b.reg_ppg).slice(0, N)
   const most_points_against = [...seasonRows].sort((a, b) => b.reg_pa - a.reg_pa).slice(0, N)
+  // Playoff runs, for the Playoffs view of the ledger: most points and best
+  // scoring rate across a bracket run (championship bracket only).
+  const playoffRuns = seasonRows.filter((r) => r.playoff_games > 0)
+  const best_playoff_runs = [...playoffRuns].sort((a, b) => b.playoff_pf - a.playoff_pf).slice(0, N)
+  const best_playoff_ppg = [...playoffRuns].sort((a, b) => b.playoff_ppg - a.playoff_ppg).slice(0, N)
 
   // Career
   type Streak = {
@@ -3085,7 +3399,7 @@ function buildRecordBook(s: Snapshot): unknown {
   const winStreaks: Streak[] = []
   const lossStreaks: Streak[] = []
   for (const m of s.managers.values()) {
-    const games = (s.matchupsByManager.get(m.id) ?? [])
+    const games = (scoped.matchupsByManager.get(m.id) ?? [])
       .map((mt) => asManagerGame(mt, m.id))
       .filter((g): g is ManagerGame => g != null)
       // Consolation / placement games don't extend OR break a streak —
@@ -3150,7 +3464,7 @@ function buildRecordBook(s: Snapshot): unknown {
   const stretchWindows: Stretch[] = []
   for (const m of s.managers.values()) {
     const bySeason = new Map<string, ManagerGame[]>()
-    for (const mt of s.matchupsByManager.get(m.id) ?? []) {
+    for (const mt of weekly.matchupsByManager.get(m.id) ?? []) {
       const g = asManagerGame(mt, m.id)
       if (!g) continue
       if (g.is_playoff && !isChampionshipBracketGame(s, g)) continue
@@ -3330,6 +3644,8 @@ function buildRecordBook(s: Snapshot): unknown {
         highest_ppg,
         lowest_ppg,
         most_points_against,
+        best_playoff_runs,
+        best_playoff_ppg,
       },
       career: {
         longest_win_streaks,
@@ -3345,12 +3661,13 @@ function buildRecordBook(s: Snapshot): unknown {
         hottest_5: hottest_stretches,
         coldest_5: coldest_stretches,
       },
-      milestones: buildMilestonesBook(s),
-      gauntlet: buildGauntletBook(s),
-      clutch: buildClutchBook(s),
-      boom_bust: buildBoomBustBook(s),
-      margins: buildMarginsBook(s),
+      milestones: buildMilestonesBook(scoped),
+      gauntlet: buildGauntletBook(scoped),
+      clutch: buildClutchBook(scoped),
+      boom_bust: buildBoomBustBook(weekly),
+      margins: buildMarginsBook(scoped),
     },
+    scope,
   }
 }
 
@@ -3517,6 +3834,74 @@ function buildHubRecords(top: {
 // ============================================================
 
 export type ExportBundle = Record<string, unknown>
+
+// A narrowed view of the almanac: an era (or any set of years) and/or one
+// side of the season. Only the files the record book and standings read are
+// rebuilt; everything else stays on the full bundle.
+export type ExportFilter = {
+  scope: RecordScope
+  years: number[] | null
+  eraId: string | null
+}
+
+// Read ?scope=reg|post, ?era=<id> and ?years=2019-2021 (or 2019,2021) off a
+// request. Null when nothing narrows the view, so callers serve the full bundle.
+export function parseExportFilter(params: URLSearchParams): ExportFilter | null {
+  const rawScope = params.get('scope')
+  const scope: RecordScope = rawScope === 'reg' || rawScope === 'post' ? rawScope : 'all'
+  const eraId = params.get('era')?.trim() || null
+  let years: number[] | null = null
+  const rawYears = params.get('years')?.trim()
+  if (rawYears) {
+    const set = new Set<number>()
+    for (const part of rawYears.split(',')) {
+      const m = part.trim().match(/^(\d{4})(?:-(\d{4}))?$/)
+      if (!m) continue
+      const a = Number(m[1]), b = Number(m[2] ?? m[1])
+      for (let y = Math.min(a, b); y <= Math.max(a, b) && set.size < 60; y++) set.add(y)
+    }
+    if (set.size) years = [...set].sort((x, y) => x - y)
+  }
+  if (scope === 'all' && !eraId && !years) return null
+  return { scope, years, eraId }
+}
+
+export function exportFilterKey(f: ExportFilter): string {
+  return `${f.scope}|${f.eraId ?? ''}|${f.years?.join(',') ?? ''}`
+}
+
+export const FILTERED_FILES = ['league.json', 'managers_directory.json', 'record_book.json', 'manager_highs.json']
+
+export async function exportFiltered(leagueId: string, filter: ExportFilter): Promise<ExportBundle> {
+  const full = await loadSnapshot(leagueId, { lite: true })
+  const era = filter.eraId ? full.eras.find((e) => e.id === filter.eraId) ?? null : null
+  const years = era?.years ?? filter.years
+  const s = years && years.length ? yearsSnapshot(full, new Set(years)) : full
+  const out: ExportBundle = {}
+  out['league.json'] = {
+    ...(buildLeagueJson(s) as Record<string, unknown>),
+    // The filter itself, so a page can label what it's showing.
+    filter: {
+      scope: filter.scope,
+      years: years && years.length ? [...years].sort((a, b) => a - b) : null,
+      era_id: era?.id ?? null,
+      era_name: era?.name ?? null,
+    },
+    // Keep the league-wide lists so the filter controls can still offer
+    // every era and year from a filtered page.
+    eras: full.eras,
+    all_seasons: full.seasons.map((sn) => sn.year),
+  }
+  out['managers_directory.json'] = buildManagersDirectory(s)
+  out['record_book.json'] = buildRecordBook(s, filter.scope)
+  out['manager_highs.json'] = buildManagerHighs(s, filter.scope)
+  for (const g of buildProfileGroups(s)) {
+    if (isGroupHidden(g)) continue
+    const uid = userId(g.primary)
+    if (uid != null) out[`managers/${uid}.json`] = buildManagerFile(s, g)
+  }
+  return out
+}
 
 export async function exportLeague(
   leagueId: string,

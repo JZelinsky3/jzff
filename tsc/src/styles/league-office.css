@@ -987,6 +987,144 @@ a.lo-billboard:hover::before { border-color: rgba(232, 200, 137, .45); }
     margin-bottom: .8rem;
 }
 
+/* ---------------------------------------- season rules
+   The season-by-season ledger on Sources: one ruled row per year,
+   the platform's reading in each select, the commissioner's edits
+   inked in the page accent. Eras sit under it as year chips. */
+.lo-rules-intro {
+    max-width: 780px; margin: 0 0 1.3rem;
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.02rem; line-height: 1.55; color: var(--cream-soft);
+}
+.lo-rules-empty { font-family: var(--serif); font-style: italic; color: var(--cream-mute); padding: 1.2rem 0; }
+.lo-rules-wrap { overflow-x: auto; border-top: 1px solid var(--ink-line); border-bottom: 1px solid var(--ink-line); }
+.lo-rules-table { width: 100%; min-width: 1000px; border-collapse: collapse; }
+.lo-rules-table thead th {
+    text-align: left; white-space: nowrap;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--cream-mute);
+    padding: .8rem .45rem .65rem;
+    border-bottom: 1px solid var(--ink-line);
+}
+.lo-rules-table tbody th,
+.lo-rules-table td { padding: .5rem .45rem; border-bottom: 1px solid var(--ink-line-soft); vertical-align: middle; }
+.lo-rules-table tbody tr:last-child > * { border-bottom: none; }
+.lo-rules-table tbody th { text-align: left; white-space: nowrap; padding-right: 1rem; }
+.lo-rules-year { display: block; font-family: var(--serif); font-size: 1.35rem; line-height: 1; color: var(--cream); }
+.lo-rules-table tr.changed .lo-rules-year { color: var(--accent); }
+.lo-rules-src {
+    display: block; margin-top: .28rem;
+    font-family: var(--mono); font-size: .5rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.lo-rules-select {
+    width: 100%; min-width: 6.2rem;
+    background: var(--ink-soft); border: 1px solid var(--ink-line); border-radius: 0;
+    color: var(--cream-soft);
+    font-family: var(--mono); font-size: .64rem;
+    padding: .46rem .4rem; cursor: pointer;
+}
+.lo-rules-select:hover:not(:disabled), .lo-rules-select:focus { outline: none; border-color: var(--accent-dim); }
+.lo-rules-select.edited { border-color: var(--accent); color: var(--accent); background: var(--accent-wash); }
+.lo-rules-tools { white-space: nowrap; text-align: right; }
+.lo-rules-tools button {
+    background: none; border: none; padding: .3rem .35rem; cursor: pointer;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.lo-rules-tools button:hover:not(:disabled) { color: var(--accent); }
+.lo-rules-tools button:disabled { opacity: .4; cursor: default; }
+.lo-rules-eras { margin-top: 2.2rem; }
+.lo-rules-eras-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: .4rem 1.1rem; margin-bottom: .8rem; }
+.lo-rules-eras-title { font-family: var(--serif); font-style: italic; font-size: 1.35rem; color: var(--cream); }
+.lo-rules-eras-note {
+    font-family: var(--mono); font-size: .56rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.lo-rules-era {
+    display: grid; grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr) auto;
+    gap: .9rem; align-items: center;
+    padding: .75rem 0; border-top: 1px solid var(--ink-line-soft);
+}
+.lo-rules-era-years { display: flex; flex-wrap: wrap; gap: .3rem; }
+.lo-rules-chip {
+    background: transparent; border: 1px solid var(--ink-line);
+    color: var(--cream-mute);
+    font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .06em;
+    padding: .34rem .52rem; cursor: pointer;
+    transition: color .15s, border-color .15s, background .15s;
+}
+.lo-rules-chip:hover:not(:disabled) { color: var(--cream); border-color: var(--accent-dim); }
+.lo-rules-chip.on { background: var(--accent); border-color: var(--accent); color: var(--ink); }
+.lo-rules-era-tools { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .9rem; }
+.lo-rules-actions {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .8rem 1rem;
+    margin-top: 2rem; padding-top: 1.3rem;
+    border-top: 3px double var(--ink-line);
+}
+.lo-rules-status {
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.lo-rules-status .ok { color: #9dc79d; }
+.lo-rules-status .err { color: #d08a76; }
+.lo-rules-foot { margin-top: .9rem; font-family: var(--serif); font-style: italic; font-size: .95rem; color: var(--cream-mute); }
+@media (max-width: 760px) { .lo-rules-era { grid-template-columns: minmax(0, 1fr); } }
+
+/* ------------------------------------- commish power board
+   The commissioner's ranking on Current Season: a ruled, numbered
+   list that drags, with the model's rank and the gap beside each
+   team. Up is green, down is clay, even is a quiet equals. */
+.lo-cp-empty { font-family: var(--serif); font-style: italic; color: var(--cream-mute); padding: 1rem 0; }
+.lo-cp-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem 1.4rem; margin-bottom: 1rem; }
+.lo-cp-week { display: inline-flex; align-items: center; gap: .6rem; }
+.lo-cp-week > span {
+    font-family: var(--mono); font-weight: 700; font-size: .56rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.lo-cp-week .dc-select { min-width: 12rem; }
+.lo-cp-hint { font-family: var(--serif); font-style: italic; font-size: .95rem; color: var(--cream-mute); }
+.lo-cp-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ink-line); max-width: 860px; }
+.lo-cp-row {
+    display: grid; grid-template-columns: 2.4rem minmax(0, 1fr) 6.5rem 3.2rem auto;
+    align-items: center; gap: .9rem;
+    padding: .55rem .4rem;
+    border-bottom: 1px solid var(--ink-line-soft);
+    background: var(--ink);
+    cursor: grab;
+    transition: background .15s;
+}
+.lo-cp-row:hover { background: var(--accent-wash); }
+.lo-cp-row:active { cursor: grabbing; }
+.lo-cp-rank { font-family: var(--serif); font-size: 1.5rem; line-height: 1; color: var(--accent); text-align: right; }
+.lo-cp-team { min-width: 0; }
+.lo-cp-team b { display: block; font-family: var(--serif); font-weight: 400; font-size: 1.1rem; color: var(--cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lo-cp-team small { display: block; font-family: var(--mono); font-size: .54rem; letter-spacing: .12em; text-transform: uppercase; color: var(--cream-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lo-cp-model { font-family: var(--mono); font-size: .58rem; letter-spacing: .14em; text-transform: uppercase; color: var(--cream-mute); }
+.lo-cp-gap { font-family: var(--mono); font-weight: 700; font-size: .72rem; text-align: center; }
+.lo-cp-gap.up { color: #9dc79d; }
+.lo-cp-gap.down { color: #d08a76; }
+.lo-cp-gap.even { color: var(--cream-mute); }
+.lo-cp-arrows { display: inline-flex; gap: .25rem; }
+.lo-cp-arrows button {
+    width: 1.9rem; height: 1.9rem;
+    background: transparent; border: 1px solid var(--ink-line);
+    color: var(--cream-mute); font-size: .55rem; cursor: pointer;
+}
+.lo-cp-arrows button:hover:not(:disabled) { color: var(--accent); border-color: var(--accent-dim); }
+.lo-cp-arrows button:disabled { opacity: .3; cursor: default; }
+.lo-cp-note { display: flex; flex-direction: column; gap: .4rem; max-width: 860px; margin-top: 1.3rem; }
+.lo-cp-note > span {
+    font-family: var(--mono); font-weight: 700; font-size: .56rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.lo-cp-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem 1rem; margin-top: 1.2rem; }
+.lo-cp-msg { font-family: var(--mono); font-size: .58rem; letter-spacing: .12em; text-transform: uppercase; }
+.lo-cp-msg.ok { color: #9dc79d; }
+.lo-cp-msg.err { color: #d08a76; }
+
 /* ----------------------------------------- platform tiles */
 .lo-tiles {
     display: grid;

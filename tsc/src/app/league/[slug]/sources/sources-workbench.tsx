@@ -7,6 +7,7 @@ import { SourceRow } from './source-row'
 import { syncSource } from './actions'
 import { STAGE_KEYS, type StageKey } from '@/lib/ingest/stages'
 import type { SourcePrefill } from './add-source-form'
+import { SeasonRules } from './season-rules'
 
 type SourceLite = {
   id: string
@@ -238,9 +239,23 @@ export function SourcesWorkbench({
         )}
       </div>
 
+      {sources.length > 0 && (
+        <div className="lo-band" id="season-rules" style={{ maxWidth: 'none', padding: 0, margin: '2.4rem 0 0' }}>
+          <div className="lo-folio">
+            <span className="lo-folio-no">02</span>
+            <span className="lo-folio-title">Season by season</span>
+            <span className="lo-folio-meta">Scoring · playoffs · eras</span>
+          </div>
+          <SeasonRules
+            leagueId={leagueId}
+            sources={sources.map((s) => ({ id: s.id, label: s.label?.trim() || `${s.platform.toUpperCase()} ${s.external_id}` }))}
+          />
+        </div>
+      )}
+
       <div className="lo-band" style={{ maxWidth: 'none', padding: 0, margin: '2.4rem 0 0' }}>
         <div className="lo-folio">
-          <span className="lo-folio-no">02</span>
+          <span className="lo-folio-no">{sources.length > 0 ? '03' : '02'}</span>
           <span className="lo-folio-title">Add another</span>
           <span className="lo-folio-meta">Walk history, or a single season</span>
         </div>

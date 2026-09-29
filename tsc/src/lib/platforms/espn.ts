@@ -74,6 +74,9 @@ export type EspnMatchupSide = {
   teamId: number
   totalPoints?: number
   totalPointsLive?: number
+  // Per NFL week, keyed by scoringPeriodId. Only more than one key when the
+  // matchup period spans several weeks (two-week playoff rounds).
+  pointsByScoringPeriod?: Record<string, number>
 }
 
 export type EspnScheduleItem = {
@@ -98,6 +101,12 @@ export type EspnSettings = {
     playoffMatchupPeriodLength?: number
     playoffTeamCount?: number
     divisions?: EspnDivision[]
+    // matchupPeriodId -> the NFL weeks (scoring periods) it covers, e.g.
+    // { "15": [15], "16": [16, 17] } for a two-week championship.
+    matchupPeriods?: Record<string, number[]>
+  }
+  scoringSettings?: {
+    scoringItems?: Array<{ statId: number; points?: number; pointsOverrides?: Record<string, number> }>
   }
 }
 
@@ -223,9 +232,18 @@ export async function fetchSeason(
   return fetchLeaguePayload(
     leagueId,
     season,
-    ['mTeam', 'mMatchup', 'mSettings', 'mStandings', 'mDraftDetail'],
+    // mMatchupScore is what carries playoffTierType on the modern endpoint;
+    // mMatchup alone returns schedule rows with no tier, which made every
+    // playoff and consolation game look like a regular-season one.
+    ['mTeam', 'mMatchup', 'mMatchupScore', 'mSettings', 'mStandings', 'mDraftDetail'],
     auth
   )
+}
+
+// Lightweight: settings only (scoring + schedule shape), for the Sources
+// page's season-rules table before a season has ever been synced.
+export async function fetchSettingsOnly(leagueId: string, season: number, auth?: EspnAuth): Promise<EspnLeague> {
+  return fetchLeaguePayload(leagueId, season, ['mSettings', 'mTeam'], auth)
 }
 
 // Lightweight: just teams + members (for source label / metadata).
@@ -555,11 +573,14 @@ function isConsolationTier(tier: string | undefined): boolean {
   return tier !== 'NONE' && tier !== 'WINNERS_BRACKET'
 }
 
-// Sum schedule sides into a flat per-week array. ESPN matchups can span
-// multiple scoring periods (rare; H2H_POINTS leagues only do single-week),
-// but matchupPeriodId is the canonical "week" everywhere we care about.
+// Flatten the schedule into one row per matchup. `week` is the NFL week the
+// matchup period opens on, which is the same number as the period until a
+// league plays a two-week round; after that ESPN's period ids fall behind the
+// calendar. `legs` carries the per-week split for those multi-week periods,
+// from pointsByScoringPeriod, so the ingest can store each week on its own.
 export type EspnFlatMatchup = {
   week: number
+  period: number
   a_team_id: number
   a_score: number | null
   b_team_id: number
@@ -571,10 +592,24 @@ export type EspnFlatMatchup = {
   // Consolation tiers are filtered out before this is populated.
   playoff_tier: string | undefined
   winner: 'HOME' | 'AWAY' | 'TIE' | null   // null = undecided / not yet played
+  legs: Array<{ week: number; a: number | null; b: number | null }> | null
+}
+
+// matchupPeriodId -> the NFL weeks it covers, ascending. Periods ESPN doesn't
+// list are one week long and share their number with the week.
+export function periodWeeksOf(lg: EspnLeague): (period: number) => number[] {
+  const raw = lg.settings?.scheduleSettings?.matchupPeriods ?? {}
+  const map = new Map<number, number[]>()
+  for (const [k, v] of Object.entries(raw)) {
+    const weeks = (v ?? []).filter((w) => typeof w === 'number').sort((a, b) => a - b)
+    if (weeks.length) map.set(Number(k), weeks)
+  }
+  return (period) => map.get(period) ?? [period]
 }
 
 export function flattenSchedule(lg: EspnLeague): EspnFlatMatchup[] {
   const out: EspnFlatMatchup[] = []
+  const weeksOf = periodWeeksOf(lg)
   for (const item of lg.schedule ?? []) {
     if (!item.home || !item.away) continue   // ESPN occasionally has BYE rows on odd team counts
     // Skip ESPN's consolation/losers/placement ladders. These are exhibition
@@ -584,8 +619,14 @@ export function flattenSchedule(lg: EspnLeague): EspnFlatMatchup[] {
     const a = item.home, b = item.away
     const aScore = typeof a.totalPoints === 'number' ? a.totalPoints : null
     const bScore = typeof b.totalPoints === 'number' ? b.totalPoints : null
+    const weeks = weeksOf(item.matchupPeriodId)
+    const pick = (side: EspnMatchupSide, w: number) => {
+      const v = side.pointsByScoringPeriod?.[String(w)]
+      return typeof v === 'number' ? v : null
+    }
     out.push({
-      week: item.matchupPeriodId,
+      week: weeks[0],
+      period: item.matchupPeriodId,
       a_team_id: a.teamId,
       a_score: aScore,
       b_team_id: b.teamId,
@@ -593,9 +634,26 @@ export function flattenSchedule(lg: EspnLeague): EspnFlatMatchup[] {
       is_playoff: !isRegularSeasonMatchup(item),
       playoff_tier: item.playoffTierType,
       winner: item.winner && item.winner !== 'UNDECIDED' ? item.winner : null,
+      legs: weeks.length > 1 ? weeks.map((w) => ({ week: w, a: pick(a, w), b: pick(b, w) })) : null,
     })
   }
   return out
+}
+
+// ESPN scoring into our three knobs. statId 53 is a reception, 4 a passing
+// touchdown; a TE premium is a per-slot override on receptions (slot 6 is TE).
+export function scoringFromEspn(lg: EspnLeague): { ppr: number; pass_td: number | null; te_premium: number | null } | null {
+  const items = lg.settings?.scoringSettings?.scoringItems
+  if (!items?.length) return null
+  const rec = items.find((i) => i.statId === 53)
+  const passTd = items.find((i) => i.statId === 4)
+  const ppr = typeof rec?.points === 'number' ? rec.points : 0
+  const teRec = rec?.pointsOverrides?.['6']
+  return {
+    ppr,
+    pass_td: typeof passTd?.points === 'number' ? passTd.points : null,
+    te_premium: typeof teRec === 'number' && teRec > ppr ? Math.round((teRec - ppr) * 100) / 100 : null,
+  }
 }
 
 // Derive champion + runner-up. Primary source is `rankCalculatedFinal` (1 =
@@ -603,6 +661,11 @@ export function flattenSchedule(lg: EspnLeague): EspnFlatMatchup[] {
 // that omit it, fall back to scanning the schedule for the final
 // WINNERS_BRACKET game and using its winner/loser as champ/runner-up. Both
 // fall back further to playoffSeed if the schedule is empty too.
+//
+// ONLY call this for a season that is over (seasonIsDecided). The seed
+// fallback is a guess about an old, finished season; run mid-season it
+// crowns whoever is 2-0, which put a "reigning champion" on ten 2026 ESPN
+// leagues in week 3.
 export function deriveChampions(lg: EspnLeague): {
   championTeamId: number | null
   runnerUpTeamId: number | null
@@ -610,7 +673,8 @@ export function deriveChampions(lg: EspnLeague): {
   const teams = lg.teams ?? []
 
   // Primary: explicit final ranks from ESPN.
-  const ranked = teams.filter((t) => typeof t.rankCalculatedFinal === 'number')
+  // ESPN reports 0 for every team until the season is ranked.
+  const ranked = teams.filter((t) => typeof t.rankCalculatedFinal === 'number' && t.rankCalculatedFinal > 0)
   if (ranked.length >= 2) {
     const first = ranked.find((t) => t.rankCalculatedFinal === 1) ?? null
     const second = ranked.find((t) => t.rankCalculatedFinal === 2) ?? null

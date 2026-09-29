@@ -1,5 +1,6 @@
 import { MobileSourceRow } from './MobileSourceRow'
 import { AddSourcePanel } from '@/app/league/[slug]/sources/add-source-panel'
+import { SeasonRules } from '@/app/league/[slug]/sources/season-rules'
 
 type SourceData = {
   id: string
@@ -50,6 +51,17 @@ export function MobileSources({
               syncedRange={syncedRange}
             />
           ))}
+        </div>
+      )}
+
+      {sources.length > 0 && (
+        <div className="msrc-add" id="season-rules">
+          <div className="msrc-add-label">Season by season</div>
+          <SeasonRules
+            leagueId={leagueId}
+            variant="mobile"
+            sources={sources.map((s) => ({ id: s.id, label: s.label?.trim() || `${s.platform.toUpperCase()} ${s.external_id}` }))}
+          />
         </div>
       )}
 

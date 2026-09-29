@@ -185,3 +185,67 @@ export async function setGotw(
   revalidatePath(`/league/${league.slug}/live`)
   return { ok: true }
 }
+
+const CommishPowerSchema = z.object({
+  leagueId: z.string().uuid(),
+  seasonId: z.string().uuid(),
+  week: z.number().int().min(0).max(25),
+  order: z.array(z.string().uuid()).max(40),
+  note: z.string().trim().max(400).nullable(),
+})
+
+// The commissioner's own power ranking for one week, stored beside the
+// model's in seasons.settings.commish_power as { [week]: { order, note } }.
+// Week 0 is the preseason, matching the power rankings page. An empty order
+// removes the week's ranking. Syncs merge settings, so this survives them.
+export async function saveCommishPower(
+  leagueId: string,
+  seasonId: string,
+  week: number,
+  order: string[],
+  note: string | null,
+): Promise<Result> {
+  const parsed = CommishPowerSchema.safeParse({ leagueId, seasonId, week, order, note })
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid input' }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Not signed in.' }
+
+  const { data: league } = await supabase
+    .from('leagues')
+    .select('id, slug, owner_id')
+    .eq('id', parsed.data.leagueId)
+    .maybeSingle()
+  if (!league) return { ok: false, error: 'League not found.' }
+  if (league.owner_id !== user.id && !(await isSiteAdmin(user.id))) {
+    return { ok: false, error: 'Only the commissioner can publish power rankings.' }
+  }
+
+  const { data: seasonRow } = await supabase
+    .from('seasons')
+    .select('settings')
+    .eq('league_id', league.id)
+    .eq('id', parsed.data.seasonId)
+    .maybeSingle()
+  if (!seasonRow) return { ok: false, error: 'Season not found.' }
+
+  const settings = { ...(seasonRow.settings ?? {}) } as Record<string, unknown>
+  const all = { ...((settings.commish_power as Record<string, unknown>) ?? {}) }
+  const key = String(parsed.data.week)
+  const ids = [...new Set(parsed.data.order)]
+  if (ids.length === 0) delete all[key]
+  else all[key] = { order: ids, note: parsed.data.note || null, updated_at: new Date().toISOString() }
+  settings.commish_power = all
+
+  const { error } = await supabase
+    .from('seasons')
+    .update({ settings })
+    .eq('league_id', league.id)
+    .eq('id', parsed.data.seasonId)
+  if (error) return { ok: false, error: error.message }
+
+  revalidateTag(`league-${league.id}`, 'max')
+  revalidatePath(`/league/${league.slug}/live`)
+  return { ok: true }
+}
