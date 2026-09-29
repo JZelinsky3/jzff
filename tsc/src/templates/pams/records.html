@@ -1603,7 +1603,7 @@ function renderFilterBar() {
         <div class="rbf-group">
             <span class="rbf-label">Games</span>
             <div class="rbf-seg" role="group" aria-label="Which games count">
-                ${[['all', 'All'], ['reg', 'Regular season'], ['post', 'Playoffs']].map(([k, l]) =>
+                ${[['all', 'All'], ['reg', 'Reg Season'], ['post', 'Playoffs']].map(([k, l]) =>
                     `<button type="button" class="${FILTER.scope === k ? 'on' : ''}" onclick="applyFilter({ scope: '${k}' })">${l}</button>`).join('')}
             </div>
         </div>
