@@ -28,14 +28,15 @@ export const viewport: Viewport = {
 // Keep this list fresh-ish: it's the slim marquee every Clubhouse page
 // carries. New = shipped; Soon = on the bench warming up.
 const STRIP_ITEMS = [
+  'New · Season rules + eras: filter the record book by era or years',
+  'New · Commish power rankings, side by side with the model',
+  'New · The Weekly: your league’s week on one page',
+  'New · The Games Page: six games off your league’s history',
+  'New · Hand-entry importer for the seasons no platform kept',
   'New · The Trade Room: analyze + post trades, no league required',
-  'New · Trade Desk: Grader, Analyzer, Finder, Rumor Mill',
-  'New · Sunday Live: five-page game-day companion',
-  'New · Manager DNA: tendencies + tells, per manager',
-  'New · UDFA free tier: one league, forever',
-  'Soon · Weekly Recap: Monday-morning paper',
+  'Soon · Sunday Live: back in the booth',
   'Soon · The Field: cross-league player trends',
-  'Sleeper · ESPN · Yahoo · NFL.com',
+  'Live sync · Sleeper · ESPN',
 ]
 
 // Theme note: night mode is keyed off <html data-hub-theme="night">, set
