@@ -4275,6 +4275,18 @@ body {
           .sort(function (a, b) { return (b.win_pct || 0) - (a.win_pct || 0); })
           .slice(0, 5);
       }
+      // Ties break the way the Records page does: whoever reached the count
+      // first, i.e. the earlier latest title.
+      function topRings(arr) {
+        function reached(m) {
+          var ys = m.championship_seasons || [];
+          return ys.length ? Math.max.apply(null, ys) : Infinity;
+        }
+        return arr.slice()
+          .filter(function (m) { return m.championships > 0; })
+          .sort(function (a, b) { return b.championships - a.championships || reached(a) - reached(b); })
+          .slice(0, 5);
+      }
       function fmtPct(p) { return p != null ? Number(p).toFixed(3).replace(/^0\./, '.') : '·'; }
       function fmtPF(p) { return p != null ? Math.round(Number(p)).toLocaleString() : '·'; }
 
@@ -4283,7 +4295,7 @@ body {
       var boards = [
         {
           tab: 'Rings', title: 'Most Championships', foot: 'Trophies in the case',
-          rows: top5(managers, 'championships').filter(function (m) { return m.championships > 0; }),
+          rows: topRings(managers),
           val: function (m) { return String(m.championships); },
         },
         {
@@ -4408,13 +4420,18 @@ body {
             listWrap.classList.remove('is-turn');
             void listWrap.offsetWidth;
           }
+          // Equal values share a rank ("T-1"), so a tie at the top doesn't
+          // read as the first-listed manager holding it alone.
+          var vals = b.rows.map(function (r) { return b.val(r); });
           rowsHost.innerHTML = b.rows.map(function (r, i) {
+            var first = vals.indexOf(vals[i]);
+            var rankLabel = first !== vals.lastIndexOf(vals[i]) ? 'T-' + (first + 1) : '№ ' + (i + 1);
             var name = b.isStreak ? r.owner : r.name;
             var sub = b.isStreak
               ? ('W' + r.start_week + ' ' + r.start_season + ' to W' + r.end_week + ' ' + r.end_season)
               : (r.team_latest || '');
             return '<button type="button" class="lrow' + (i === selIdx ? ' is-on' : '') + '" data-i="' + i + '">' +
-                     '<span class="lrow-rank">№ ' + (i + 1) + '</span>' +
+                     '<span class="lrow-rank">' + rankLabel + '</span>' +
                      '<span class="lrow-name">' + escapeAttr(name || '·') +
                        (sub ? '<span class="lrow-sub">' + escapeAttr(sub) + '</span>' : '') +
                      '</span>' +

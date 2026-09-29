@@ -1603,7 +1603,7 @@ function renderFilterBar() {
         <div class="rbf-group">
             <span class="rbf-label">Games</span>
             <div class="rbf-seg" role="group" aria-label="Which games count">
-                ${[['all', 'All'], ['reg', 'Reg Season'], ['post', 'Playoffs']].map(([k, l]) =>
+                ${[['all', 'Overall'], ['reg', 'Reg Season'], ['post', 'Playoffs']].map(([k, l]) =>
                     `<button type="button" class="${FILTER.scope === k ? 'on' : ''}" onclick="applyFilter({ scope: '${k}' })">${l}</button>`).join('')}
             </div>
         </div>
@@ -2500,8 +2500,21 @@ function buildCareerChapter(managers, active, alumni, book, managerHighs) {
     const atPF      = [...managers].sort((a, b) => (b.total_pf||0) - (a.total_pf||0))[0];
     const atHigh    = (book.weekly?.highest_single_week_score || [])[0];
     const atLow     = (book.weekly?.lowest_single_week_score  || [])[0];
-    const atChips   = [...managers].sort((a, b) => (b.championships||0) - (a.championships||0))[0];
-    const atPlayoff = [...managers].sort((a, b) => (b.playoff_appearances||0) - (a.playoff_appearances||0))[0];
+    // Count stats tie often. Everyone sharing the top number is named, so the
+    // card never hands a shared record to whoever sorts first.
+    const leadersBy = (key) => {
+        const top = Math.max(0, ...managers.map(m => m[key] || 0));
+        return top > 0 ? managers.filter(m => (m[key] || 0) === top) : [];
+    };
+    const sharedHolder = (rows) => {
+        if (rows.length > 3) return `${rows.length} managers`;
+        const links = rows.map(m => mgrLink(m.user_id, m.name));
+        return links.slice(0, -1).join(', ') + ' &amp; ' + links[links.length - 1];
+    };
+    const chipLeaders    = leadersBy('championships');
+    const playoffLeaders = leadersBy('playoff_appearances');
+    const atChips   = chipLeaders[0];
+    const atPlayoff = playoffLeaders[0];
 
     const icard = (label, value, name, detail, userId) => `
         <div class="icard"${mgrAttr(userId)}>
@@ -2521,10 +2534,14 @@ function buildCareerChapter(managers, active, alumni, book, managerHighs) {
                 atHigh ? `${whenStr(atHigh.season, atHigh.week)} · vs ${atHigh.opp_owner}` : '', atHigh?.user_id)}
             ${icard('Lowest Game Ever', (atLow?.score || 0).toFixed(2), atLow?.owner,
                 atLow ? `${whenStr(atLow.season, atLow.week)}${atLow.opp_owner ? ' · vs ' + atLow.opp_owner : ''}` : '', atLow?.user_id)}
-            ${icard('Most Championships', atChips?.championships ?? '·', atChips?.name,
-                atChips?.championship_seasons?.join(', ') || '·', atChips?.user_id)}
-            ${icard('Most Playoff Trips', atPlayoff?.playoff_appearances ?? '·', atPlayoff?.name,
-                `${atPlayoff?.seasons_played || '·'} seasons`, atPlayoff?.user_id)}
+            ${chipLeaders.length > 1
+                ? icard('Most Championships', atChips.championships, sharedHolder(chipLeaders), 'Tied for the most')
+                : icard('Most Championships', atChips?.championships ?? '·', atChips?.name,
+                    atChips?.championship_seasons?.join(', ') || '·', atChips?.user_id)}
+            ${playoffLeaders.length > 1
+                ? icard('Most Playoff Trips', atPlayoff.playoff_appearances, sharedHolder(playoffLeaders), 'Tied for the most')
+                : icard('Most Playoff Trips', atPlayoff?.playoff_appearances ?? '·', atPlayoff?.name,
+                    `${atPlayoff?.seasons_played || '·'} seasons`, atPlayoff?.user_id)}
         </div>`;
 
     const byWins = [...active].sort((a, b) => b.wins - a.wins);

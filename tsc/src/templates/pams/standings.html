@@ -1337,9 +1337,11 @@ function buildDistinctions() {
     const link = m => `managers/manager?id=${m.user_id}`;
     const maxSeasonYear = Math.max(...(leagueMeta?.all_seasons ?? [0]));
 
-    // The Dynasty: most chips, needs 2+.
+    // The Dynasty: most chips, needs 2+ and an outright lead. On a tie the
+    // win% tiebreak would crown one of them and the blurb below would claim
+    // nobody else has as many.
     const byChips = [...allManagers].sort((a, b) => b.championships - a.championships || b.win_pct - a.win_pct);
-    if (byChips[0] && byChips[0].championships >= 2) {
+    if (byChips[0] && byChips[0].championships >= 2 && byChips[0].championships > (byChips[1]?.championships ?? 0)) {
         const m = byChips[0];
         cards.push({ k: 'The Dynasty', m, stat: `${m.championships} titles · ${m.championship_seasons.join(', ')}`,
             blurb: `${m.championships} championships in ${m.seasons_played} seasons. Nobody else has more than ${byChips[1]?.championships ?? 0}.` });

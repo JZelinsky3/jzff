@@ -655,11 +655,14 @@ async function ingestSeason(args: {
 
     matchupsCount++
 
-    // Championship: a playoff matchup in the final playoff week between the
+    // Championship: a playoff matchup in the final playoff period between the
     // derived champion and runner-up. Works for both modern (rankCalculatedFinal)
-    // and old (winners-bracket-fallback) detection paths.
+    // and old (winners-bracket-fallback) detection paths. The period check
+    // matters when the two finalists also met in an earlier round: without
+    // it both games were flagged as the title game.
     const isChampGame =
       isPlayoff &&
+      m.period === maxPeriod &&
       championTeamId != null &&
       runnerUpTeamId != null &&
       ((m.a_team_id === championTeamId && m.b_team_id === runnerUpTeamId) ||

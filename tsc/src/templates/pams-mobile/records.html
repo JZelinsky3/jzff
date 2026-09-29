@@ -266,44 +266,60 @@
 .rb-pod-more { margin-top: .95rem; padding-top: .7rem; border-top: 1px solid var(--ink-line-soft); display: none; }
 .rb-card.is-open .rb-pod-more { display: block; }
 
-/* ── Filter line: which games, which years ─────────────────────── */
-/* Not a second row of pills under the chapter seg: one quiet sentence,
-   "Counting [All games] in [All years]", where each underlined phrase is a
-   native picker laid invisibly over its label. A phrase turns green when it
-   narrows the book; Clear only shows once years are narrowed. */
+/* ── Filter bar: which games, which years ──────────────────────── */
+/* A second level under the chapter pills, so it is deliberately not
+   pills: plain words with a green underline under the active one (the
+   games), and on the same line a years phrase that opens the phone's own
+   picker. Only when the years are narrowed does a small line appear under
+   it with the span (or From / To pickers) and Clear. */
 .rb-filter {
-    display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center;
-    gap: .15rem .4rem;
-    margin: -.1rem 0 .85rem;
+    display: flex; align-items: flex-end; justify-content: space-between; gap: .8rem;
+    margin: 0 .15rem .8rem;
+    border-bottom: 1px solid var(--ink-line-soft);
 }
-.rb-filter[hidden], .rb-range[hidden] { display: none; }
-.rb-f-lead {
-    font-family: var(--serif); font-style: italic;
-    font-size: .88rem; color: var(--cream-mute);
-}
-.rb-f-pick {
-    position: relative; display: inline-flex; align-items: baseline; gap: .25rem;
-    padding: .2rem 0 .1rem;
-    border-bottom: 1px dotted var(--rec-deep);
+.rb-filter[hidden], .rb-sub[hidden], .rb-range[hidden] { display: none; }
+.rb-scope { display: flex; gap: 1.05rem; min-width: 0; }
+.rb-scope button {
+    flex: none; background: none; border: 0;
+    padding: .35rem 0 .45rem; margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
     font-family: var(--mono); font-weight: 700;
-    font-size: .58rem; letter-spacing: .12em; text-transform: uppercase;
-    color: var(--cream-soft);
+    font-size: .56rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--cream-mute);
 }
-.rb-f-pick::after { content: '▾'; font-size: .55rem; color: var(--rec-deep); }
-.rb-f-pick.is-set { color: var(--rec); border-bottom-color: var(--rec); }
-.rb-f-pick.is-set::after { color: var(--rec); }
+.rb-scope button.is-active { color: var(--cream); border-bottom-color: var(--rec); }
+.rb-f-pick {
+    position: relative; display: inline-block;
+    min-width: 0; max-width: 42%;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cream-soft);
+    text-decoration: underline dotted var(--rec-deep);
+    text-underline-offset: 3px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rb-filter > .rb-f-pick { flex: none; padding: .35rem 0 .5rem; }
+.rb-f-pick.is-set { color: var(--rec); text-decoration-color: var(--rec); }
 .rb-f-pick select {
     position: absolute; inset: 0; width: 100%; height: 100%;
     opacity: 0; font-size: 16px; /* 16px keeps iOS from zooming on tap */
     -webkit-appearance: none; appearance: none;
 }
-.rb-f-clear {
-    background: none; border: none; padding: .2rem 0 .1rem .35rem;
+.rb-sub {
+    display: flex; align-items: baseline; justify-content: flex-end; gap: .5rem;
+    margin: -.45rem .15rem .85rem;
     font-family: var(--mono); font-weight: 700;
-    font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
+    font-size: .5rem; letter-spacing: .1em; text-transform: uppercase;
     color: var(--cream-mute);
 }
-.rb-range { display: flex; align-items: baseline; justify-content: center; gap: .4rem; margin: -.45rem 0 .85rem; }
+.rb-range { display: inline-flex; align-items: baseline; gap: .4rem; }
+.rb-range .rb-f-pick { max-width: none; overflow: visible; }
+.rb-f-to { font-family: var(--serif); font-style: italic; font-size: .82rem; letter-spacing: 0; text-transform: none; }
+.rb-f-clear {
+    background: none; border: 0; padding: 0 0 0 .3rem;
+    font: inherit; color: var(--cream-mute);
+    text-decoration: underline; text-underline-offset: 3px;
+}
 
 /* ── Careers: no-podiums roll ──────────────────────────────────── */
 .rb-nopod-note { margin-top: .5rem; font-family: var(--mono); font-size: .54rem; letter-spacing: .04em; color: var(--cream-mute); }
@@ -336,26 +352,24 @@
     </div>
 
     <div class="rb-filter" id="rb-filter" hidden>
-        <span class="rb-f-lead">Counting</span>
-        <label class="rb-f-pick" id="rb-scope-pick">
-            <span id="rb-scope-text">All games</span>
-            <select id="rb-scope" aria-label="Which games">
-                <option value="all">All games</option>
-                <option value="reg">Reg Season</option>
-                <option value="post">Playoffs</option>
-            </select>
-        </label>
-        <span class="rb-f-lead">in</span>
+        <div class="rb-scope" id="rb-scope" role="group" aria-label="Which games">
+            <button type="button" data-scope="all" class="is-active">Overall</button>
+            <button type="button" data-scope="reg">Reg Season</button>
+            <button type="button" data-scope="post">Playoffs</button>
+        </div>
         <label class="rb-f-pick" id="rb-years-pick">
             <span id="rb-years-text">All years</span>
             <select id="rb-years" aria-label="Which years"></select>
         </label>
-        <button type="button" class="rb-f-clear" id="rb-clear" hidden>Clear</button>
     </div>
-    <div class="rb-range" id="rb-range" hidden>
-        <label class="rb-f-pick is-set"><span id="rb-from-text"></span><select id="rb-from" aria-label="From"></select></label>
-        <span class="rb-f-lead">to</span>
-        <label class="rb-f-pick is-set"><span id="rb-to-text"></span><select id="rb-to" aria-label="To"></select></label>
+    <div class="rb-sub" id="rb-sub" hidden>
+        <span id="rb-span"></span>
+        <span class="rb-range" id="rb-range" hidden>
+            <label class="rb-f-pick is-set"><span id="rb-from-text"></span><select id="rb-from" aria-label="From"></select></label>
+            <span class="rb-f-to">to</span>
+            <label class="rb-f-pick is-set"><span id="rb-to-text"></span><select id="rb-to" aria-label="To"></select></label>
+        </span>
+        <button type="button" class="rb-f-clear" id="rb-clear">Clear</button>
     </div>
 
     <div id="cards"><div class="m-empty">Dusting off the ledgers…</div></div>
@@ -430,10 +444,9 @@
         if (years.length < 2 && !eras.length) { bar.hidden = true; return; }
         bar.hidden = false;
 
-        var scopeSel = document.getElementById('rb-scope');
-        scopeSel.value = FILTER.scope;
-        document.getElementById('rb-scope-text').textContent = scopeSel.options[scopeSel.selectedIndex].text;
-        document.getElementById('rb-scope-pick').classList.toggle('is-set', FILTER.scope !== 'all');
+        document.querySelectorAll('#rb-scope button').forEach(function (b) {
+            b.classList.toggle('is-active', b.dataset.scope === FILTER.scope);
+        });
 
         var custom = !FILTER.era && !!FILTER.years;
         var era = FILTER.era ? eras.find(function (e) { return e.id === FILTER.era; }) : null;
@@ -448,13 +461,11 @@
         var m = (FILTER.years || '').match(/^(\d{4})(?:-(\d{4}))?$/);
         var fromY = m ? Number(m[1]) : years[0];
         var toY = m ? Number(m[2] || m[1]) : years[years.length - 1];
-        var yearsText = era ? era.name : custom ? (fromY === toY ? String(fromY) : fromY + '–' + toY) : 'All years';
-        document.getElementById('rb-years-text').textContent = yearsText;
+        document.getElementById('rb-years-text').textContent = era ? era.name : custom ? 'Pick years' : 'All years';
         document.getElementById('rb-years-pick').classList.toggle('is-set', !!(FILTER.era || FILTER.years));
-        // Clear only means something once the years are narrowed; the games
-        // phrase is its own obvious way back.
-        document.getElementById('rb-clear').hidden = !(FILTER.era || FILTER.years);
 
+        // The line under the bar only exists once the years are narrowed:
+        // an era's span, or From / To pickers for a range, then Clear.
         var opts = function (pick) {
             return years.map(function (y) { return '<option value="' + y + '"' + (y === pick ? ' selected' : '') + '>' + y + '</option>'; }).join('');
         };
@@ -463,6 +474,8 @@
         document.getElementById('rb-from-text').textContent = fromY;
         document.getElementById('rb-to-text').textContent = toY;
         document.getElementById('rb-range').hidden = !custom;
+        document.getElementById('rb-span').textContent = era ? yearSpan(era.years) : '';
+        document.getElementById('rb-sub').hidden = !(FILTER.era || FILTER.years);
     }
     function applyFilter(patch) {
         Object.keys(patch).forEach(function (k) { FILTER[k] = patch[k]; });
@@ -473,13 +486,14 @@
         document.getElementById('cards').innerHTML = '<div class="m-empty">Turning the pages…</div>';
         load();
     }
-    document.getElementById('rb-scope').addEventListener('change', function () {
-        if (this.value !== FILTER.scope) applyFilter({ scope: this.value });
+    document.getElementById('rb-scope').addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-scope]');
+        if (!b || b.dataset.scope === FILTER.scope) return;
+        applyFilter({ scope: b.dataset.scope });
     });
     document.getElementById('rb-years').addEventListener('change', function () {
         var v = this.value;
         if (v === 'custom') {
-            document.getElementById('rb-range').hidden = false;
             document.getElementById('rb-years-text').textContent = 'Pick years';
             pickRange();
             return;
@@ -910,17 +924,29 @@
                 '<div class="rb-step-sub">' + (sub ? esc(sub) : '&nbsp;') + '</div>' +
             '</div>';
         }
+        // Equal values share a rank, so a 2-2 tie reads T-1ST twice instead
+        // of handing one of them 2ND.
+        var vals = entries.map(function (e) { return val(e); });
+        function rankOf(i) {
+            var first = vals.indexOf(vals[i]);
+            return { n: first + 1, tied: first !== vals.lastIndexOf(vals[i]) };
+        }
+        function medal(i) {
+            var r = rankOf(i);
+            return (r.tied ? 'T-' : '') + ({ 1: '1ST', 2: '2ND', 3: '3RD' }[r.n]);
+        }
         var podium = '<div class="rb-podium">' +
-            step(entries[1], 'rb-s2', '2ND') +
-            step(entries[0], 'rb-s1', '1ST') +
-            step(entries[2], 'rb-s3', '3RD') +
+            step(entries[1], 'rb-s2', entries[1] ? medal(1) : '2ND') +
+            step(entries[0], 'rb-s1', entries[0] ? medal(0) : '1ST') +
+            step(entries[2], 'rb-s3', entries[2] ? medal(2) : '3RD') +
         '</div>';
         var rest = entries.slice(3);
         var more = rest.length
             ? '<div class="rb-others rb-pod-more">' + rest.map(function (e, i) {
                 var sub = ctx ? ctx(e) : '';
+                var r = rankOf(i + 3);
                 return '<div class="rb-other">' +
-                    '<span class="rb-other-rank">' + (i + 4) + '</span>' +
+                    '<span class="rb-other-rank">' + (r.tied ? 'T-' : '') + r.n + '</span>' +
                     '<span class="rb-other-name">' + holderHtmlFor(key, e) +
                         (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
                     '<span class="rb-other-val">' + esc(val(e)) + '</span>' +
