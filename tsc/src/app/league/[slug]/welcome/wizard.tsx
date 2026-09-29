@@ -292,6 +292,15 @@ function StepSources({
             then sync it all at once.
           </div>
         </div>
+        <div className="lo-note steel">
+          <div className="lo-note-head"><span className="pin">✦</span> Years no platform has</div>
+          <div className="lo-note-body">
+            Seasons from before your league ID, or from NFL.com, can be{' '}
+            <Link href={`/league/${slug}/import`}>entered by hand</Link>: type in
+            the standings, champion, draft or weekly scores, or paste them from
+            a spreadsheet.
+          </div>
+        </div>
       </div>
 
       {hasOne && (

@@ -245,6 +245,22 @@ export function MobileLeagueHub({
             </span>
           </Link>
 
+          <Link href={`/league/${slug}/import`} className="mlh-config-row">
+            <span className="mlh-config-icon">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.5 2.5l3 3L6 13H3v-3z" />
+                <line x1="9" y1="4" x2="12" y2="7" />
+              </svg>
+            </span>
+            <span className="mlh-config-body">
+              <span className="mlh-config-name">Hand entry</span>
+              <span className="mlh-config-desc">Type in seasons no platform has</span>
+            </span>
+            <span className="mlh-config-arrow">
+              <svg viewBox="0 0 8 14" width="7" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 1 7 7 1 13" /></svg>
+            </span>
+          </Link>
+
           <Link href={`/league/${slug}/rivalries`} className="mlh-config-row">
             <span className="mlh-config-icon">
               <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">

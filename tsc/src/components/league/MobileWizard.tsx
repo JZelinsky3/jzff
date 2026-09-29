@@ -364,6 +364,14 @@ function StepSources({
         </div>
       )}
 
+      <Link
+        href={`/league/${slug}/import`}
+        className="mwiz-ghost-pill"
+        style={{ textDecoration: 'none', marginTop: '.65rem' }}
+      >
+        Enter a season by hand
+      </Link>
+
       {hasOne && phase !== 'idle' && rows.length > 0 && (
         <div className="mwiz-progress-card">
           <div className="mwiz-progress-track">

@@ -21,6 +21,7 @@ export function AdminNavMenu({
   const allAdmin = [
     { href: `${hub}/setup`,     label: 'Members'        },
     { href: `${hub}/sources`,   label: 'Sources'        },
+    { href: `${hub}/import`,    label: 'Hand entry'     },
     { href: `${hub}/rivalries`, label: 'Rivalries'      },
     { href: `${hub}/settings`,  label: 'Settings'       },
     { href: `${hub}/live`,      label: 'Current Season' },

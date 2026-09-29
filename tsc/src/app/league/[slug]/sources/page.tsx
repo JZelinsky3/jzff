@@ -133,8 +133,8 @@ export default async function SourcesPage({
             <div className="lo-note-body">
               NFL.com is gone and other platforms drop old years. You can
               still <Link href={`/league/${slug}/import`}>enter a season by hand</Link>:
-              paste standings, a draft board or weekly scores from a
-              spreadsheet. Syncs leave hand-entered seasons alone.
+              type in standings, a draft board or weekly scores, or paste
+              them from a spreadsheet. Syncs leave hand-entered seasons alone.
             </div>
           </div>
         </div>

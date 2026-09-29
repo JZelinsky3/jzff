@@ -1169,6 +1169,45 @@ a.lo-billboard:hover::before { border-color: rgba(232, 200, 137, .45); }
     color: var(--cream-mute);
 }
 
+/* ----------------------------------------- hand-entry grid */
+/* The type-it-in table on /import. Scrolls sideways inside its own frame so a
+   wide draft or matchup row never pushes the page past the viewport. */
+.lo-entry {
+    overflow-x: auto;
+    border: 1px solid var(--ink-line);
+}
+.lo-entry table { border-collapse: collapse; min-width: 100%; }
+.lo-entry th {
+    padding: .55rem .3rem .45rem;
+    border-bottom: 1px solid var(--ink-line);
+    font-family: var(--mono); font-weight: 400;
+    font-size: .55rem; letter-spacing: .15em; text-transform: uppercase;
+    color: var(--cream-mute);
+    text-align: left;
+    white-space: nowrap;
+}
+.lo-entry td { padding: .18rem .3rem; }
+.lo-entry tbody tr + tr td { border-top: 1px solid var(--ink-line); }
+.lo-entry .dc-input { padding: .45rem .55rem; font-size: .84rem; }
+.lo-entry .dc-input.mono { font-size: .8rem; }
+.lo-entry-no {
+    width: 2.2rem;
+    padding-left: .6rem !important;
+    font-family: var(--mono); font-size: .6rem;
+    color: var(--cream-mute);
+}
+.lo-entry-check { text-align: center; }
+.lo-entry-check input { accent-color: var(--accent, var(--gold)); width: 1rem; height: 1rem; }
+.lo-entry-x {
+    background: none; border: none;
+    padding: .3rem .55rem;
+    font-size: 1rem; line-height: 1;
+    color: var(--cream-mute);
+    cursor: pointer;
+    transition: color .2s;
+}
+.lo-entry-x:hover { color: #d08a76; }
+
 /* Per-platform setup help under the platform tiles. Someone this deep in the
    league office has no route back to the guides index, so the guide for the
    platform they just picked comes to them. */

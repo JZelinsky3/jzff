@@ -388,6 +388,72 @@ export const TEMPLATES: Record<ImportKind, string> = {
   ].join('\n'),
 }
 
+// ─── Typed-in rows ────────────────────────────────────────────────────────
+//
+// The import page also has a grid to type a season into. It is not a second
+// write path: the grid is serialized to the same CSV the paste box takes and
+// goes through parseImport, so typed and pasted data are validated and
+// written identically. Column keys are the CSV headers, matching TEMPLATES.
+
+export type GridColumn = {
+  key: string
+  label: string
+  input: 'team' | 'number' | 'text' | 'check'
+  /** Filled in for the user (a carried-over week) so it alone does not make a row count. */
+  positional?: boolean
+}
+
+export const GRID_COLUMNS: Record<ImportKind, GridColumn[]> = {
+  standings: [
+    { key: 'team', label: 'Team', input: 'team' },
+    { key: 'wins', label: 'W', input: 'number' },
+    { key: 'losses', label: 'L', input: 'number' },
+    { key: 'ties', label: 'T', input: 'number' },
+    { key: 'points_for', label: 'PF', input: 'number' },
+    { key: 'points_against', label: 'PA', input: 'number' },
+    { key: 'final_rank', label: 'Finish', input: 'number' },
+    { key: 'regular_rank', label: 'Seed', input: 'number' },
+  ],
+  drafts: [
+    { key: 'round', label: 'Rd', input: 'number', positional: true },
+    { key: 'pick', label: 'Pick', input: 'number', positional: true },
+    { key: 'team', label: 'Team', input: 'team' },
+    { key: 'player', label: 'Player', input: 'text' },
+    { key: 'position', label: 'Pos', input: 'text' },
+    { key: 'nfl_team', label: 'NFL', input: 'text' },
+  ],
+  matchups: [
+    { key: 'week', label: 'Wk', input: 'number', positional: true },
+    { key: 'team_a', label: 'Team', input: 'team' },
+    { key: 'score_a', label: 'Score', input: 'number' },
+    { key: 'team_b', label: 'Team', input: 'team' },
+    { key: 'score_b', label: 'Score', input: 'number' },
+    { key: 'playoff', label: 'Playoff', input: 'check' },
+    { key: 'championship', label: 'Title', input: 'check' },
+  ],
+}
+
+export type GridRow = Record<string, string>
+
+const csvField = (v: string) => (/[",]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v)
+
+/**
+ * Serializes grid rows to the CSV parseImport reads. Blank rows are dropped,
+ * so `rowOfLine[n]` gives the 1-based grid row behind text line n and a parse
+ * issue can point at the row the user typed instead of a line they never saw.
+ */
+export function gridToText(kind: ImportKind, rows: GridRow[]): { text: string; rowOfLine: number[] } {
+  const cols = GRID_COLUMNS[kind]
+  const lines = [cols.map((c) => c.key).join(',')]
+  const rowOfLine = [0, 0]
+  rows.forEach((row, i) => {
+    if (!cols.some((c) => !c.positional && (row[c.key] ?? '').trim())) return
+    lines.push(cols.map((c) => csvField((row[c.key] ?? '').replace(/[\r\n]+/g, ' ').trim())).join(','))
+    rowOfLine.push(i + 1)
+  })
+  return { text: lines.length > 1 ? lines.join('\n') : '', rowOfLine }
+}
+
 export const KIND_LABELS: Record<ImportKind, string> = {
   standings: 'Season standings',
   drafts: 'Draft board',

@@ -5,14 +5,21 @@
 // land, including which manager every team name resolved to. The server
 // re-parses the same text when committing; this is a display, not the source
 // of truth. See ./actions.ts.
+//
+// Two ways to enter a stage: type it into a grid, or paste / drop a file. The
+// grid is turned into the same CSV the paste box takes (gridToText), so from
+// the preview onward both modes are one code path.
 
 import { useMemo, useRef, useState, useTransition } from 'react'
 import {
   parseImport,
   matchNames,
   nameKey,
+  gridToText,
+  GRID_COLUMNS,
   KIND_LABELS,
   TEMPLATES,
+  type GridRow,
   type ImportKind,
   type KnownManager,
   type StandingsRow,
@@ -36,22 +43,62 @@ const KIND_HINTS: Record<ImportKind, string> = {
   matchups: 'One row per game: week, both teams, both scores.',
 }
 
+const GRID_HINTS: Record<ImportKind, string> = {
+  standings: 'Finish 1 is the champion and 2 the runner-up. Seed 1 is the regular-season winner. PF and PA can stay blank.',
+  drafts: 'Leave Rd and Pick blank and the picks are numbered in the order you type them.',
+  matchups: 'Tick Playoff for postseason games and Title for the championship game.',
+}
+
+// Input widths by column key; anything unlisted is a narrow number cell.
+const CELL_WIDTH: Record<string, string> = {
+  team: '13rem',
+  team_a: '12rem',
+  team_b: '12rem',
+  player: '13rem',
+  points_for: '6rem',
+  points_against: '6rem',
+  score_a: '5.5rem',
+  score_b: '5.5rem',
+  nfl_team: '4.2rem',
+}
+
+// Stable row ids so removing a row does not shift focus onto its neighbour.
+// Never rendered, and ignored by gridToText, which reads column keys only.
+let rowSeq = 0
+const newRow = (init: GridRow = {}): GridRow => ({ _id: `r${rowSeq++}`, ...init })
+const blankRows = (n: number, init: GridRow = {}) => Array.from({ length: n }, () => newRow(init))
+
+function initialGrid(kind: ImportKind, teamCount: number): GridRow[] {
+  if (kind === 'matchups') return blankRows(Math.max(1, Math.ceil(teamCount / 2)), { week: '1' })
+  return blankRows(teamCount)
+}
+
 export function ImportWorkbench({
   leagueId,
   slug,
   seasons,
   managers,
+  teamCount,
   existing,
 }: {
   leagueId: string
   slug: string
   seasons: Array<{ id: string; year: number }>
   managers: KnownManager[]
+  /** Teams in the latest season on file; sizes the blank grid. */
+  teamCount: number
   existing: ExistingImport[]
 }) {
   const [kind, setKind] = useState<ImportKind>('standings')
   const [year, setYear] = useState<string>(String(seasons.at(-1)?.year ?? new Date().getFullYear() - 1))
+  const [mode, setMode] = useState<'type' | 'paste'>('type')
   const [text, setText] = useState('')
+  // One grid per stage, so switching stages does not throw away typing.
+  const [grids, setGrids] = useState<Record<ImportKind, GridRow[]>>(() => ({
+    standings: initialGrid('standings', teamCount),
+    drafts: initialGrid('drafts', teamCount),
+    matchups: initialGrid('matchups', teamCount),
+  }))
   const [note, setNote] = useState('')
   // nameKey → manager id or 'new'. Only holds the user's explicit choices;
   // automatic matches are recomputed from the text every render.
@@ -65,7 +112,42 @@ export function ImportWorkbench({
   const fileRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
 
-  const parsed = useMemo(() => (text.trim() ? parseImport(kind, text) : null), [kind, text])
+  const grid = grids[kind]
+  const typed = useMemo(() => gridToText(kind, grid), [kind, grid])
+  const source = mode === 'type' ? typed.text : text
+  const parsed = useMemo(() => (source.trim() ? parseImport(kind, source) : null), [kind, source])
+
+  // Parse issues carry text line numbers; in the grid those mean nothing, so
+  // point at the grid row instead.
+  const where = (line: number, rowOfLine = typed.rowOfLine) =>
+    mode === 'type' ? `Row ${rowOfLine[line] ?? line}` : `Line ${line}`
+
+  const teamOptions = useMemo(() => {
+    const seen = new Set<string>()
+    const out: string[] = []
+    for (const m of managers) {
+      for (const name of [m.displayName, m.teamName]) {
+        if (!name || seen.has(nameKey(name))) continue
+        seen.add(nameKey(name))
+        out.push(name)
+      }
+    }
+    return out
+  }, [managers])
+
+  function updateGrid(fn: (rows: GridRow[]) => GridRow[]) {
+    setGrids((prev) => ({ ...prev, [kind]: fn(prev[kind]) }))
+    setResult(null)
+  }
+  const setCell = (id: string, key: string, value: string) =>
+    updateGrid((rows) => rows.map((r) => (r._id === id ? { ...r, [key]: value } : r)))
+  const removeRow = (id: string) =>
+    updateGrid((rows) => (rows.length > 1 ? rows.filter((r) => r._id !== id) : [newRow(kind === 'matchups' ? { week: rows[0]?.week ?? '1' } : {})]))
+  const lastWeek = () => Number(grid.at(-1)?.week) || 1
+  const addGame = () => updateGrid((rows) => [...rows, newRow({ week: String(lastWeek()) })])
+  const addWeek = () => updateGrid((rows) => [...rows, ...blankRows(Math.max(1, Math.ceil(teamCount / 2)), { week: String(lastWeek() + 1) })])
+  const addRows = (n: number) => updateGrid((rows) => [...rows, ...blankRows(n)])
+  const resetGrid = () => updateGrid(() => initialGrid(kind, teamCount))
 
   const matches = useMemo(() => {
     if (!parsed) return []
@@ -93,17 +175,29 @@ export function ImportWorkbench({
       const key = nameKey(m.name)
       mapping[key] = overrides[key] ?? m.managerId ?? 'new'
     }
+    // Captured now: the grid is cleared on success, and the server's issue
+    // lines still have to point at the rows as they were typed.
+    const rowOfLine = typed.rowOfLine
     startTransition(async () => {
       const res = await commitManualImport({
         leagueId,
         year: Number(year),
         kind,
-        text,
+        text: source,
         mapping,
         note,
       })
-      setResult(res)
-      if (res.ok) { setText(''); setOverrides({}); setNote('') }
+      setResult(
+        res.ok && mode === 'type'
+          ? { ...res, issues: res.issues.map((i) => i.replace(/^Line (\d+):/, (_, n) => `${where(Number(n), rowOfLine)}:`)) }
+          : res
+      )
+      if (res.ok) {
+        if (mode === 'type') setGrids((prev) => ({ ...prev, [kind]: initialGrid(kind, teamCount) }))
+        else setText('')
+        setOverrides({})
+        setNote('')
+      }
     })
   }
 
@@ -121,7 +215,7 @@ export function ImportWorkbench({
               onClick={() => { setKind(k); setResult(null) }}
             >
               <span className="lo-tile-name">{KIND_LABELS[k]}</span>
-              <span className="lo-tile-sub">{k === 'standings' ? 'records + points' : k === 'drafts' ? 'pick by pick' : 'week by week'}</span>
+              <span className="lo-tile-sub">{k === 'standings' ? 'records + champion' : k === 'drafts' ? 'pick by pick' : 'week by week'}</span>
             </button>
           ))}
         </div>
@@ -150,75 +244,196 @@ export function ImportWorkbench({
         </span>
       </div>
 
-      {/* ── The data ──────────────────────────────────────────────────── */}
+      {/* ── How ───────────────────────────────────────────────────────── */}
       <div className="dc-field">
-        <label className="dc-label" htmlFor="mi-text">Paste rows, or drop a file</label>
-        <div
-          onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault()
-            setDragging(false)
-            const file = e.dataTransfer.files?.[0]
-            if (file) readFile(file)
-          }}
-          style={{
-            border: `1px dashed ${dragging ? 'var(--accent)' : 'var(--ink-line)'}`,
-            padding: '.5rem',
-            background: dragging ? 'var(--accent-wash)' : 'transparent',
-          }}
-        >
-          <textarea
-            id="mi-text"
-            className="dc-input mono"
-            value={text}
-            onChange={(e) => { setText(e.target.value); setResult(null) }}
-            rows={10}
-            spellCheck={false}
-            placeholder={TEMPLATES[kind]}
-            style={{ width: '100%', resize: 'vertical' }}
-          />
-        </div>
-        <div style={{ display: 'flex', gap: '.6rem', alignItems: 'center', marginTop: '.5rem', flexWrap: 'wrap' }}>
-          <button type="button" className="lo-btn sm" onClick={() => fileRef.current?.click()}>
-            Choose a file
+        <label className="dc-label">How</label>
+        <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className={mode === 'type' ? 'lo-btn sm' : 'lo-btn-ghost sm'}
+            onClick={() => { setMode('type'); setResult(null) }}
+          >
+            Type it in
           </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".csv,.tsv,.txt,text/csv,text/plain"
-            style={{ display: 'none' }}
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) readFile(f) }}
-          />
-          <button type="button" className="lo-btn-ghost sm" onClick={() => { setText(TEMPLATES[kind]); setResult(null) }}>
-            Fill in the example
+          <button
+            type="button"
+            className={mode === 'paste' ? 'lo-btn sm' : 'lo-btn-ghost sm'}
+            onClick={() => { setMode('paste'); setResult(null) }}
+          >
+            Paste or upload
           </button>
-          {text && (
-            <button type="button" className="lo-btn-ghost sm" onClick={() => { setText(''); setOverrides({}); setResult(null) }}>
-              Clear
-            </button>
-          )}
         </div>
       </div>
+
+      {/* ── The data: typed ───────────────────────────────────────────── */}
+      {mode === 'type' && (
+        <div className="dc-field">
+          <label className="dc-label">{KIND_LABELS[kind]}</label>
+          <datalist id="mi-teams">
+            {teamOptions.map((n) => <option key={n} value={n} />)}
+          </datalist>
+          <div className="lo-entry">
+            <table>
+              <thead>
+                <tr>
+                  <th aria-hidden />
+                  {GRID_COLUMNS[kind].map((c) => <th key={c.key}>{c.label}</th>)}
+                  <th aria-hidden />
+                </tr>
+              </thead>
+              <tbody>
+                {(() => {
+                  // Placeholder pick numbers follow the parser's fallback:
+                  // the order of the rows that actually have something in them.
+                  let running = 0
+                  return grid.map((row, i) => {
+                    const filled = GRID_COLUMNS[kind].some((c) => !c.positional && (row[c.key] ?? '').trim())
+                    if (filled) running++
+                    return (
+                      <tr key={row._id}>
+                        <td className="lo-entry-no">{i + 1}</td>
+                        {GRID_COLUMNS[kind].map((c) => (
+                          <td key={c.key} className={c.input === 'check' ? 'lo-entry-check' : undefined}>
+                            {c.input === 'check' ? (
+                              <input
+                                type="checkbox"
+                                checked={row[c.key] === 'yes'}
+                                onChange={(e) => setCell(row._id, c.key, e.target.checked ? 'yes' : '')}
+                                aria-label={`${c.label}, row ${i + 1}`}
+                              />
+                            ) : (
+                              <input
+                                className={`dc-input${c.input === 'number' ? ' mono' : ''}`}
+                                value={row[c.key] ?? ''}
+                                onChange={(e) => setCell(row._id, c.key, e.target.value)}
+                                list={c.input === 'team' ? 'mi-teams' : undefined}
+                                inputMode={c.input === 'number' ? 'decimal' : undefined}
+                                autoComplete="off"
+                                spellCheck={false}
+                                placeholder={
+                                  c.key === 'pick' && filled ? String(running)
+                                  : c.key === 'round' && filled ? 'auto'
+                                  : c.input === 'team' ? 'Team or manager'
+                                  : undefined
+                                }
+                                aria-label={`${c.label}, row ${i + 1}`}
+                                style={{ width: CELL_WIDTH[c.key] ?? '3.6rem' }}
+                              />
+                            )}
+                          </td>
+                        ))}
+                        <td>
+                          <button
+                            type="button"
+                            className="lo-entry-x"
+                            onClick={() => removeRow(row._id)}
+                            aria-label={`Remove row ${i + 1}`}
+                          >
+                            ×
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })
+                })()}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ display: 'flex', gap: '.6rem', alignItems: 'center', marginTop: '.5rem', flexWrap: 'wrap' }}>
+            {kind === 'standings' && (
+              <button type="button" className="lo-btn sm" onClick={() => addRows(1)}>Add a team</button>
+            )}
+            {kind === 'drafts' && (
+              <>
+                <button type="button" className="lo-btn sm" onClick={() => addRows(teamCount)}>Add a round</button>
+                <button type="button" className="lo-btn-ghost sm" onClick={() => addRows(1)}>Add a pick</button>
+              </>
+            )}
+            {kind === 'matchups' && (
+              <>
+                <button type="button" className="lo-btn sm" onClick={addWeek}>Add a week</button>
+                <button type="button" className="lo-btn-ghost sm" onClick={addGame}>Add a game</button>
+              </>
+            )}
+            <button type="button" className="lo-btn-ghost sm" onClick={resetGrid}>Clear</button>
+          </div>
+          <span className="dc-checkbox-hint">{GRID_HINTS[kind]}</span>
+        </div>
+      )}
+
+      {/* ── The data: pasted ──────────────────────────────────────────── */}
+      {mode === 'paste' && (
+        <div className="dc-field">
+          <label className="dc-label" htmlFor="mi-text">Paste rows, or drop a file</label>
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault()
+              setDragging(false)
+              const file = e.dataTransfer.files?.[0]
+              if (file) readFile(file)
+            }}
+            style={{
+              border: `1px dashed ${dragging ? 'var(--accent)' : 'var(--ink-line)'}`,
+              padding: '.5rem',
+              background: dragging ? 'var(--accent-wash)' : 'transparent',
+            }}
+          >
+            <textarea
+              id="mi-text"
+              className="dc-input mono"
+              value={text}
+              onChange={(e) => { setText(e.target.value); setResult(null) }}
+              rows={10}
+              spellCheck={false}
+              placeholder={TEMPLATES[kind]}
+              style={{ width: '100%', resize: 'vertical' }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: '.6rem', alignItems: 'center', marginTop: '.5rem', flexWrap: 'wrap' }}>
+            <button type="button" className="lo-btn sm" onClick={() => fileRef.current?.click()}>
+              Choose a file
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".csv,.tsv,.txt,text/csv,text/plain"
+              style={{ display: 'none' }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) readFile(f) }}
+            />
+            <button type="button" className="lo-btn-ghost sm" onClick={() => { setText(TEMPLATES[kind]); setResult(null) }}>
+              Fill in the example
+            </button>
+            {text && (
+              <button type="button" className="lo-btn-ghost sm" onClick={() => { setText(''); setOverrides({}); setResult(null) }}>
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── What was read ─────────────────────────────────────────────── */}
       {parsed && (
         <div className="dc-field">
-          <label className="dc-label">What we read</label>
+          <label className="dc-label">{mode === 'type' ? 'Check' : 'What we read'}</label>
           <p className="dc-checkbox-hint" style={{ marginTop: 0 }}>
-            {parsed.rows.length} row{parsed.rows.length === 1 ? '' : 's'} understood
+            {parsed.rows.length} row{parsed.rows.length === 1 ? '' : 's'} {mode === 'type' ? 'ready' : 'understood'}
             {parsed.issues.length > 0 ? `, ${parsed.issues.length} problem${parsed.issues.length === 1 ? '' : 's'}` : ''}.
           </p>
 
           {parsed.issues.length > 0 && (
             <ul className="dc-form-error" style={{ margin: '.4rem 0 .8rem', paddingLeft: '1.1rem' }}>
               {parsed.issues.slice(0, 12).map((issue, i) => (
-                <li key={i}>{issue.line ? `Line ${issue.line}: ` : ''}{issue.message}</li>
+                <li key={i}>{issue.line ? `${where(issue.line)}: ` : ''}{issue.message}</li>
               ))}
             </ul>
           )}
 
-          {parsed.rows.length > 0 && (
+          {/* The grid already shows what was typed; only a paste needs the
+              read-back table. */}
+          {mode === 'paste' && parsed.rows.length > 0 && (
             <div style={{ overflowX: 'auto', maxHeight: '18rem', overflowY: 'auto', border: '1px solid var(--ink-line)' }}>
               <PreviewTable parsed={parsed} />
             </div>
@@ -281,7 +496,7 @@ export function ImportWorkbench({
       </div>
 
       <button type="button" className="lo-btn" disabled={!canSubmit} onClick={submit}>
-        {pending ? 'Writing…' : `Import ${parsed?.rows.length ?? 0} row${parsed?.rows.length === 1 ? '' : 's'} into ${year}`}
+        {pending ? 'Writing…' : `${mode === 'type' ? 'Save' : 'Import'} ${parsed?.rows.length ?? 0} row${parsed?.rows.length === 1 ? '' : 's'} into ${year}`}
       </button>
 
       {result && (

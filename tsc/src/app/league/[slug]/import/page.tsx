@@ -36,12 +36,16 @@ export default async function ImportPage({
   // team name still lands on the right person without the user mapping it.
   const seasonIds = seasons.map((s) => s.id)
   const aliasByManager = new Map<string, string[]>()
+  // Teams in the most recent season on file: how many blank rows the
+  // type-it-in grid opens with.
+  const teamsBySeason = new Map<string, number>()
   if (seasonIds.length > 0) {
     const { data: aliasRows } = await supabase
       .from('manager_seasons')
-      .select('manager_id, team_name')
+      .select('season_id, manager_id, team_name')
       .in('season_id', seasonIds)
     for (const row of aliasRows ?? []) {
+      teamsBySeason.set(row.season_id as string, (teamsBySeason.get(row.season_id as string) ?? 0) + 1)
       const name = (row.team_name as string | null)?.trim()
       if (!name) continue
       const list = aliasByManager.get(row.manager_id as string) ?? []
@@ -56,6 +60,9 @@ export default async function ImportPage({
     teamName: (m.team_name as string | null) ?? null,
     aliases: aliasByManager.get(m.id as string) ?? [],
   }))
+
+  const latestWithTeams = [...seasons].reverse().find((s) => (teamsBySeason.get(s.id) ?? 0) > 0)
+  const teamCount = latestWithTeams ? teamsBySeason.get(latestWithTeams.id)! : 10
 
   const yearBySeason = new Map(seasons.map((s) => [s.id, s.year]))
   const existing = (importRows ?? []).map((r) => ({
@@ -73,9 +80,10 @@ export default async function ImportPage({
         <div className="lo-hero-kicker">Chapter I</div>
         <h1 className="lo-hero-title">By <em>Hand.</em></h1>
         <p className="lo-hero-standfirst">
-          For the seasons no platform will give back. Paste a table or drop a
-          file and it becomes real history: standings, draft boards, weekly
-          scores. Once a season is entered here, syncs leave it alone.
+          For the seasons no platform will give back. Type it in, paste a
+          table, or drop a file and it becomes real history: standings and
+          champions, draft boards, weekly scores. Once a season is entered
+          here, syncs leave it alone.
         </p>
         <div className="lo-hero-rules" aria-hidden />
       </section>
@@ -83,12 +91,12 @@ export default async function ImportPage({
       <div className="lo-band">
         <div className="lo-note-grid" style={{ marginBottom: '2.4rem' }}>
           <div className="lo-note">
-            <div className="lo-note-head"><span className="pin">✦</span> Where the text comes from</div>
+            <div className="lo-note-head"><span className="pin">✦</span> Two ways in</div>
             <div className="lo-note-body">
-              Anything a spreadsheet can produce. Copy rows straight out of
-              Excel or Google Sheets and paste them in, or drop a
-              <strong> .csv</strong>. Column order does not matter and the
-              headers can be worded however you like.
+              <strong>Type it in</strong> one row per team, pick or game.
+              Or <strong>paste</strong> rows straight out of Excel or Google
+              Sheets, or drop a <strong>.csv</strong>. Column order does not
+              matter and the headers can be worded however you like.
             </div>
           </div>
           <div className="lo-note steel">
@@ -121,6 +129,7 @@ export default async function ImportPage({
           slug={slug}
           seasons={seasons}
           managers={managers}
+          teamCount={teamCount}
           existing={existing}
         />
 

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { MobileSourceRow } from './MobileSourceRow'
 import { AddSourcePanel } from '@/app/league/[slug]/sources/add-source-panel'
 import { SeasonRules } from '@/app/league/[slug]/sources/season-rules'
@@ -68,6 +69,10 @@ export function MobileSources({
       <div className="msrc-add">
         <div className="msrc-add-label">Add another source</div>
         <AddSourcePanel leagueId={leagueId} slug={slug} yahooConnected={yahooConnected} />
+      </div>
+
+      <div className="msrc-hint" style={{ marginTop: '1rem' }}>
+        A season no platform has? <Link href={`/league/${slug}/import`}>Enter it by hand</Link>.
       </div>
     </div>
   )
