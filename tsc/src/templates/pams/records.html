@@ -1632,7 +1632,10 @@ function filterNote() {
         : null;
     const where = f.era_name ? `<strong>${f.era_name}</strong> (${span})` : span ? `<strong>${span}</strong>` : 'every season';
     const tail = f.scope !== 'all' ? ' Titles, finishes and career ledgers count whole seasons.' : '';
-    return `Reading <strong>${SCOPE_WORDS[f.scope]}</strong> in ${where}.${tail}<button type="button" class="rbf-clear" onclick="applyFilter({ scope: 'all', era: '', years: '' })">Clear</button>`;
+    // Clear only once the years are narrowed; the Games switch is its own
+    // obvious way back to every game.
+    const clear = f.years ? `<button type="button" class="rbf-clear" onclick="applyFilter({ era: '', years: '' })">Clear</button>` : '';
+    return `Reading <strong>${SCOPE_WORDS[f.scope]}</strong> in ${where}.${tail}${clear}`;
 }
 
 window.onYearsPick = function(v) {

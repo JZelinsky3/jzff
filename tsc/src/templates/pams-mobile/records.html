@@ -266,51 +266,44 @@
 .rb-pod-more { margin-top: .95rem; padding-top: .7rem; border-top: 1px solid var(--ink-line-soft); display: none; }
 .rb-card.is-open .rb-pod-more { display: block; }
 
-/* ── Filter row: which games, which years ─────────────────────── */
-/* Sits under the chapter seg as one quieter line: a small three-way
-   games switch and a years chip (native picker). A custom range opens two
-   year pickers below it. */
-.rb-filter { display: flex; align-items: center; gap: .45rem; margin: 0 0 .5rem; }
-.rb-scope { flex: 1; display: flex; border: 1px solid var(--ink-line); border-radius: 999px; padding: 2px; gap: 2px; background: var(--ink-soft); }
-.rb-scope button {
-    flex: 1; padding: .38rem .2rem;
-    background: none; border: none; border-radius: 999px;
-    color: var(--cream-mute);
-    font-family: var(--mono); font-weight: 700;
-    font-size: .5rem; letter-spacing: .12em; text-transform: uppercase;
+/* ── Filter line: which games, which years ─────────────────────── */
+/* Not a second row of pills under the chapter seg: one quiet sentence,
+   "Counting [All games] in [All years]", where each underlined phrase is a
+   native picker laid invisibly over its label. A phrase turns green when it
+   narrows the book; Clear only shows once years are narrowed. */
+.rb-filter {
+    display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center;
+    gap: .15rem .4rem;
+    margin: -.1rem 0 .85rem;
 }
-.rb-scope button.is-active { background: var(--ink-line); color: var(--rec); }
-.rb-years {
-    flex: none; max-width: 44%;
-    -webkit-appearance: none; appearance: none;
-    background: var(--ink-soft); border: 1px solid var(--ink-line); border-radius: 999px;
+.rb-filter[hidden], .rb-range[hidden] { display: none; }
+.rb-f-lead {
+    font-family: var(--serif); font-style: italic;
+    font-size: .88rem; color: var(--cream-mute);
+}
+.rb-f-pick {
+    position: relative; display: inline-flex; align-items: baseline; gap: .25rem;
+    padding: .2rem 0 .1rem;
+    border-bottom: 1px dotted var(--rec-deep);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .12em; text-transform: uppercase;
     color: var(--cream-soft);
-    font-family: var(--mono); font-weight: 700;
-    font-size: .5rem; letter-spacing: .1em; text-transform: uppercase;
-    padding: .46rem 1.4rem .46rem .7rem;
-    background-image: linear-gradient(45deg, transparent 50%, var(--rec) 50%), linear-gradient(135deg, var(--rec) 50%, transparent 50%);
-    background-position: calc(100% - 12px) 52%, calc(100% - 8px) 52%;
-    background-size: 4px 4px, 4px 4px; background-repeat: no-repeat;
-    text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
 }
-.rb-years.is-set { border-color: var(--rec-deep); color: var(--rec); }
-.rb-range { display: flex; align-items: center; justify-content: flex-end; gap: .4rem; margin: -.1rem 0 .55rem; }
-.rb-range[hidden] { display: none; }
-.rb-range .rb-years { max-width: none; }
-.rb-range span { font-family: var(--serif); font-style: italic; font-size: .8rem; color: var(--cream-mute); }
-.rb-fnote {
-    display: flex; align-items: baseline; justify-content: space-between; gap: .6rem;
-    margin: 0 .15rem .8rem;
-    font-family: var(--mono); font-size: .52rem; letter-spacing: .08em; text-transform: uppercase;
+.rb-f-pick::after { content: '▾'; font-size: .55rem; color: var(--rec-deep); }
+.rb-f-pick.is-set { color: var(--rec); border-bottom-color: var(--rec); }
+.rb-f-pick.is-set::after { color: var(--rec); }
+.rb-f-pick select {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; font-size: 16px; /* 16px keeps iOS from zooming on tap */
+    -webkit-appearance: none; appearance: none;
+}
+.rb-f-clear {
+    background: none; border: none; padding: .2rem 0 .1rem .35rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
     color: var(--cream-mute);
 }
-.rb-fnote[hidden] { display: none; }
-.rb-fnote b { color: var(--rec); font-weight: 700; }
-.rb-fnote button {
-    flex: none; background: none; border: none; padding: 0;
-    color: var(--rec); font: inherit; font-weight: 700;
-    border-bottom: 1px solid var(--rec-deep);
-}
+.rb-range { display: flex; align-items: baseline; justify-content: center; gap: .4rem; margin: -.45rem 0 .85rem; }
 
 /* ── Careers: no-podiums roll ──────────────────────────────────── */
 .rb-nopod-note { margin-top: .5rem; font-family: var(--mono); font-size: .54rem; letter-spacing: .04em; color: var(--cream-mute); }
@@ -343,19 +336,27 @@
     </div>
 
     <div class="rb-filter" id="rb-filter" hidden>
-        <div class="rb-scope" id="rb-scope" role="group" aria-label="Which games">
-            <button data-scope="all" class="is-active">All</button>
-            <button data-scope="reg">Regular</button>
-            <button data-scope="post">Playoffs</button>
-        </div>
-        <select class="rb-years" id="rb-years" aria-label="Which years"></select>
+        <span class="rb-f-lead">Counting</span>
+        <label class="rb-f-pick" id="rb-scope-pick">
+            <span id="rb-scope-text">All games</span>
+            <select id="rb-scope" aria-label="Which games">
+                <option value="all">All games</option>
+                <option value="reg">Regular season</option>
+                <option value="post">Playoffs</option>
+            </select>
+        </label>
+        <span class="rb-f-lead">in</span>
+        <label class="rb-f-pick" id="rb-years-pick">
+            <span id="rb-years-text">All years</span>
+            <select id="rb-years" aria-label="Which years"></select>
+        </label>
+        <button type="button" class="rb-f-clear" id="rb-clear" hidden>Clear</button>
     </div>
     <div class="rb-range" id="rb-range" hidden>
-        <select class="rb-years" id="rb-from" aria-label="From"></select>
-        <span>to</span>
-        <select class="rb-years" id="rb-to" aria-label="To"></select>
+        <label class="rb-f-pick is-set"><span id="rb-from-text"></span><select id="rb-from" aria-label="From"></select></label>
+        <span class="rb-f-lead">to</span>
+        <label class="rb-f-pick is-set"><span id="rb-to-text"></span><select id="rb-to" aria-label="To"></select></label>
     </div>
-    <div class="rb-fnote" id="rb-fnote" hidden></div>
 
     <div id="cards"><div class="m-empty">Dusting off the ledgers…</div></div>
 </main>
@@ -428,41 +429,40 @@
         var years = (meta.all_seasons || []).slice().sort(function (a, b) { return a - b; });
         if (years.length < 2 && !eras.length) { bar.hidden = true; return; }
         bar.hidden = false;
-        document.querySelectorAll('#rb-scope button').forEach(function (b) {
-            b.classList.toggle('is-active', b.dataset.scope === FILTER.scope);
-        });
+
+        var scopeSel = document.getElementById('rb-scope');
+        scopeSel.value = FILTER.scope;
+        document.getElementById('rb-scope-text').textContent = scopeSel.options[scopeSel.selectedIndex].text;
+        document.getElementById('rb-scope-pick').classList.toggle('is-set', FILTER.scope !== 'all');
+
         var custom = !FILTER.era && !!FILTER.years;
+        var era = FILTER.era ? eras.find(function (e) { return e.id === FILTER.era; }) : null;
         var sel = document.getElementById('rb-years');
         sel.innerHTML = '<option value="all">All years</option>' +
             eras.map(function (e) {
-                return '<option value="era:' + esc(e.id) + '"' + (FILTER.era === e.id ? ' selected' : '') + '>' + esc(e.name) + '</option>';
+                return '<option value="era:' + esc(e.id) + '"' + (FILTER.era === e.id ? ' selected' : '') + '>' + esc(e.name) + ' · ' + esc(yearSpan(e.years)) + '</option>';
             }).join('') +
             '<option value="custom"' + (custom ? ' selected' : '') + '>Pick years</option>';
         if (!FILTER.era && !FILTER.years) sel.value = 'all';
-        sel.classList.toggle('is-set', !!(FILTER.era || FILTER.years));
 
         var m = (FILTER.years || '').match(/^(\d{4})(?:-(\d{4}))?$/);
         var fromY = m ? Number(m[1]) : years[0];
         var toY = m ? Number(m[2] || m[1]) : years[years.length - 1];
+        var yearsText = era ? era.name : custom ? (fromY === toY ? String(fromY) : fromY + '–' + toY) : 'All years';
+        document.getElementById('rb-years-text').textContent = yearsText;
+        document.getElementById('rb-years-pick').classList.toggle('is-set', !!(FILTER.era || FILTER.years));
+        // Clear only means something once the years are narrowed; the games
+        // phrase is its own obvious way back.
+        document.getElementById('rb-clear').hidden = !(FILTER.era || FILTER.years);
+
         var opts = function (pick) {
             return years.map(function (y) { return '<option value="' + y + '"' + (y === pick ? ' selected' : '') + '>' + y + '</option>'; }).join('');
         };
         document.getElementById('rb-from').innerHTML = opts(fromY);
         document.getElementById('rb-to').innerHTML = opts(toY);
+        document.getElementById('rb-from-text').textContent = fromY;
+        document.getElementById('rb-to-text').textContent = toY;
         document.getElementById('rb-range').hidden = !custom;
-
-        var f = meta.filter;
-        var note = document.getElementById('rb-fnote');
-        if (f && (f.scope !== 'all' || f.years)) {
-            var words = { all: 'All games', reg: 'Regular season', post: 'Playoffs' };
-            var where = f.era_name ? f.era_name : (f.years ? yearSpan(f.years) : 'All years');
-            note.innerHTML = '<span><b>' + esc(words[f.scope]) + '</b> · ' + esc(where) +
-                (f.era_name && f.years ? ' · ' + esc(yearSpan(f.years)) : '') + '</span>' +
-                '<button type="button" data-clear>Clear</button>';
-            note.hidden = false;
-        } else {
-            note.hidden = true;
-        }
     }
     function applyFilter(patch) {
         Object.keys(patch).forEach(function (k) { FILTER[k] = patch[k]; });
@@ -473,14 +473,17 @@
         document.getElementById('cards').innerHTML = '<div class="m-empty">Turning the pages…</div>';
         load();
     }
-    document.getElementById('rb-scope').addEventListener('click', function (e) {
-        var b = e.target.closest('button[data-scope]');
-        if (!b || b.dataset.scope === FILTER.scope) return;
-        applyFilter({ scope: b.dataset.scope });
+    document.getElementById('rb-scope').addEventListener('change', function () {
+        if (this.value !== FILTER.scope) applyFilter({ scope: this.value });
     });
     document.getElementById('rb-years').addEventListener('change', function () {
         var v = this.value;
-        if (v === 'custom') { document.getElementById('rb-range').hidden = false; pickRange(); return; }
+        if (v === 'custom') {
+            document.getElementById('rb-range').hidden = false;
+            document.getElementById('rb-years-text').textContent = 'Pick years';
+            pickRange();
+            return;
+        }
         document.getElementById('rb-range').hidden = true;
         if (v === 'all') applyFilter({ era: '', years: '' });
         else applyFilter({ era: v.slice(4), years: '' });
@@ -494,8 +497,8 @@
     }
     document.getElementById('rb-from').addEventListener('change', pickRange);
     document.getElementById('rb-to').addEventListener('change', pickRange);
-    document.getElementById('rb-fnote').addEventListener('click', function (e) {
-        if (e.target.closest('[data-clear]')) applyFilter({ scope: 'all', era: '', years: '' });
+    document.getElementById('rb-clear').addEventListener('click', function () {
+        applyFilter({ era: '', years: '' });
     });
 
     // Per-record config: label + how to read value/context out of an entry.
