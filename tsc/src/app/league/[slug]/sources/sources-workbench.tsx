@@ -257,7 +257,7 @@ export function SourcesWorkbench({
         <div className="lo-folio">
           <span className="lo-folio-no">{sources.length > 0 ? '03' : '02'}</span>
           <span className="lo-folio-title">Add another</span>
-          <span className="lo-folio-meta">Walk history, or a single season</span>
+          <span className="lo-folio-meta">A league ID, or a season by hand</span>
         </div>
         <AddSourcePanel
           key={prefillKey}

@@ -3,14 +3,16 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-const CHAPTERS = [
-  { key: 'sources', seg: 'sources', numeral: 'I', label: 'Sources' },
+// `also` lists sub-pages that belong to a chapter, so its tab stays lit
+// there: hand entry (/import) is part of Sources.
+const CHAPTERS: ReadonlyArray<{ key: string; seg: string; numeral: string; label: string; also?: string[] }> = [
+  { key: 'sources', seg: 'sources', numeral: 'I', label: 'Sources', also: ['import'] },
   { key: 'members', seg: 'setup', numeral: 'II', label: 'Members' },
   { key: 'rivalries', seg: 'rivalries', numeral: 'III', label: 'Feuds' },
   { key: 'season', seg: 'live', numeral: 'IV', label: 'Season' },
   { key: 'settings', seg: 'settings', numeral: 'V', label: 'Settings' },
   { key: 'present', seg: 'present', numeral: 'VI', label: 'Present' },
-] as const
+]
 
 // The thumb index: fore-edge tabs down the right side of the volume, one
 // per chapter, so you can turn straight to any department without going
@@ -23,7 +25,10 @@ export function SpineRail({ slug, canManage }: { slug: string; canManage: boolea
     <nav className="lo-spine" aria-label="Chapters">
       {chapters.map((c) => {
         const href = `/league/${slug}/${c.seg}`
-        const active = pathname === href || pathname.startsWith(`${href}/`)
+        const active = [c.seg, ...(c.also ?? [])].some((seg) => {
+          const base = `/league/${slug}/${seg}`
+          return pathname === base || pathname.startsWith(`${base}/`)
+        })
         return (
           <Link
             key={c.key}

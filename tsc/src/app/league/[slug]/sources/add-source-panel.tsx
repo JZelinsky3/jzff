@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { AddSourceForm, type SourcePrefill } from './add-source-form'
 
@@ -52,8 +53,10 @@ export function AddSourcePanel({
   }
 
   if (!open) {
+    // Hand entry sits beside "Add a source" because this is the moment a
+    // commissioner finds out a platform cannot give them a season.
     return (
-      <div>
+      <div style={{ display: 'flex', gap: '.7rem', flexWrap: 'wrap', alignItems: 'center' }}>
         <button
           type="button"
           onClick={() => { setOpen(true); onOpenChange?.(true) }}
@@ -61,6 +64,9 @@ export function AddSourcePanel({
         >
           + Add a source
         </button>
+        <Link href={`/league/${slug}/import`} className="lo-btn-ghost">
+          Enter a season by hand
+        </Link>
       </div>
     )
   }
