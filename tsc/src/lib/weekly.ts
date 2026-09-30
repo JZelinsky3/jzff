@@ -310,11 +310,18 @@ function buildPicks(
     if (sub && Object.keys(sub.picks ?? {}).length > 0) submitted.push(profileId)
   }
 
+  // The pool is the managers with a team this season, not every name on
+  // the dropdown: alumni stay pickable but nobody expects them, so counting
+  // them read "9 of 17" in a twelve-team league. An alumnus who does submit
+  // joins the count so it can never read "13 of 12".
+  const pool = new Set(pickems.profiles.filter((p) => p.teamId).map((p) => p.profileId))
+  for (const profileId of submitted) pool.add(profileId)
+
   return {
     locked: thisWeek?.locked ?? false,
     locksAt: thisWeek?.locks_at ?? resolveWeekLockAt(settings, week),
     submitted,
-    total: pickems.profiles.length,
+    total: pool.size,
     standings: buildPickemsStandings(pickems),
   }
 }

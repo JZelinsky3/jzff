@@ -763,7 +763,7 @@
   function renderRecords() {
     var byUser = new Map();
     state.profiles.forEach(function (p) {
-      byUser.set(p.profileId, { name: p.name, teamId: p.teamId, right: 0, wrong: 0 });
+      byUser.set(p.profileId, { name: p.name, teamId: p.teamId, right: 0, wrong: 0, hi: 0, lo: 0 });
     });
 
     state.weeks.forEach(function (w) {
@@ -780,6 +780,12 @@
           if (row.teamId && m && (m.home === row.teamId || m.away === row.teamId)) return; // own game
           if (sub.picks[mid] === win) row.right++; else row.wrong++;
         });
+        // Highest / lowest scorer hits. A tie at the top (or bottom) pays
+        // everyone who named any of the tied teams.
+        if (w.hlWinners && sub.hl) {
+          if (sub.hl.highest && (w.hlWinners.highest || []).indexOf(sub.hl.highest) > -1) row.hi++;
+          if (sub.hl.lowest && (w.hlWinners.lowest || []).indexOf(sub.hl.lowest) > -1) row.lo++;
+        }
       });
     });
 
@@ -793,7 +799,11 @@
       return;
     }
     list.innerHTML = rows.map(function (r) {
-      return '<li><span class="name">' + esc(r.name) + '</span><span class="rw">' + r.right + '-' + r.wrong + '</span></li>';
+      return '<li><span class="name">' + esc(r.name) + '</span>'
+        + '<span class="hl" title="Highest / lowest scorer called">'
+        +   '<span class="hl-h">H: ' + r.hi + '</span><span class="hl-l">L: ' + r.lo + '</span>'
+        + '</span>'
+        + '<span class="rw">' + r.right + '-' + r.wrong + '</span></li>';
     }).join('');
   }
 

@@ -234,16 +234,19 @@
     return '<img class="' + cls + '" src="' + esc(t.logo || '') + '" alt="' + esc(t.team_name) + '"'
       + ' onerror="this.style.opacity=0" />'
   }
-  function confBadge(name) {
-    if (!name) return ''
-    return '<span class="conf-badge">' + esc(name) + '</span>'
+  // Each division gets its own ink, keyed off its place in the league's
+  // division list (t.division is 1-indexed); powerrank.css holds eight.
+  function confBadge(t) {
+    if (!t.division_name) return ''
+    var tone = t.division ? ' conf-c' + ((t.division - 1) % 8) : ''
+    return '<span class="conf-badge' + tone + '">' + esc(t.division_name) + '</span>'
   }
   function teamCell(t) {
     return '<div class="team-cell">'
       + logoImg(t, 'team-logo')
       + '<div class="team-info">'
       +   '<div class="team-name-main">' + esc(t.team_name) + '</div>'
-      +   '<div class="team-mgr">' + esc(t.manager) + confBadge(t.division_name) + '</div>'
+      +   '<div class="team-mgr">' + esc(t.manager) + confBadge(t) + '</div>'
       + '</div></div>'
   }
 

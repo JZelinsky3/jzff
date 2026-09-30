@@ -184,6 +184,15 @@ body { background: #f0e5c8; color: var(--ink); }
 .pr-team-name { font-weight: 600; font-size: .8rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pr-team-mgr { font-size: .62rem; color: var(--pr-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: .1rem; }
 .pr-team-mgr .conf { font-family: var(--mono); font-size: .48rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--rust); margin-left: .3rem; }
+/* Same eight division inks as the desktop badges (powerrank.css). */
+.pr-team-mgr .conf-c0 { color: #a04830; }
+.pr-team-mgr .conf-c1 { color: #35597d; }
+.pr-team-mgr .conf-c2 { color: #3d6b3d; }
+.pr-team-mgr .conf-c3 { color: #74406f; }
+.pr-team-mgr .conf-c4 { color: #80601a; }
+.pr-team-mgr .conf-c5 { color: #2a6a6a; }
+.pr-team-mgr .conf-c6 { color: #4a4a8c; }
+.pr-team-mgr .conf-c7 { color: #a13a60; }
 .pr-rec { font-family: var(--mono); font-weight: 700; font-size: .6rem; color: var(--pr-mute); text-align: right; }
 .pr-score { font-family: var(--mono); font-weight: 700; font-size: .7rem; color: var(--gold-deep); text-align: right; }
 
@@ -770,7 +779,10 @@ body { background: #f0e5c8; color: var(--ink); }
         var prevFactors = previousFactorsByTeam();
         byId('rankBody').innerHTML = teams.map(function (t, i) {
             var rank = confView ? (t.conf_rank != null ? t.conf_rank : i + 1) : t.rank;
-            var conf = t.division_name ? '<span class="conf">' + esc(t.division_name) + '</span>' : '';
+            // One ink per division, by its place in the league's list.
+            var conf = t.division_name
+                ? '<span class="conf' + (t.division ? ' conf-c' + ((t.division - 1) % 8) : '') + '">' + esc(t.division_name) + '</span>'
+                : '';
             return '<div class="pr-row' + (rank === 1 ? ' top' : '') + '">' +
                 '<button class="pr-row-main" aria-expanded="false">' +
                     '<span class="pr-rank"><span class="pr-rank-num">' + rank + '</span>' +

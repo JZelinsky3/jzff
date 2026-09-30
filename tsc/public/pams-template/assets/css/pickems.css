@@ -1270,7 +1270,7 @@ body {
 .records-list li {
   counter-increment: rank;
   display: grid;
-  grid-template-columns: 2.25rem 1fr auto;
+  grid-template-columns: 2.25rem 1fr auto auto;
   align-items: center;
   gap: .8rem;
   padding: .6rem .25rem;
@@ -1306,6 +1306,19 @@ body {
   background: rgba(240,196,99,.10);
   border: 1px solid rgba(240,196,99,.3);
   border-radius: 2px;
+}
+/* High / low scorer hits, in the same accents as the high/low picker. */
+.records-list .hl {
+  display: flex; gap: .55rem;
+  font-family: var(--mono); font-weight: 700;
+  font-size: .7rem; letter-spacing: .04em;
+  white-space: nowrap;
+}
+.records-list .hl-h { color: var(--pk-champagne); }
+.records-list .hl-l { color: var(--pk-magenta-bright); }
+@media (max-width: 640px) {
+  .records-list li { gap: .6rem; }
+  .records-list .hl { gap: .4rem; font-size: .64rem; }
 }
 
 /* ══════════════════════════════════════════════════════════════════

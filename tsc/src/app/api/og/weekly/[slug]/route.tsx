@@ -116,7 +116,7 @@ function buildEntries(state: Extract<Awaited<ReturnType<typeof getWeeklyState>>,
     const total = state.picks.total
     const owed = Math.max(0, total - inCount)
     // Green only once the pool is actually filling up. A card that reads
-    // "0 of 17 are in" in the same colour as "16 of 17 are in" is telling
+    // "0 of 12 are in" in the same colour as "11 of 12 are in" is telling
     // the league the opposite of what it means.
     out.push({
       label: 'Pick’ems',

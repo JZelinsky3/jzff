@@ -330,16 +330,6 @@ body {
   font-family: var(--mono); letter-spacing: .1em; font-weight: 700;
   margin-left: 5px; vertical-align: middle;
 }
-.conf-badge-whole {
-  background: rgba(232,200,137,.1);
-  border-color: rgba(232,200,137,.3);
-  color: var(--gold);
-}
-.conf-badge-skim {
-  background: rgba(107,138,168,.1);
-  border-color: rgba(107,138,168,.3);
-  color: var(--steel);
-}
 
 /* Score / record / PF cells */
 .score-cell { font-family: var(--mono); font-weight: 700; font-size: .85rem; color: var(--gold); }
@@ -775,17 +765,24 @@ body {
 .team-name-main { color: var(--ink); }
 .team-mgr       { color: rgba(14,22,32,.55); }
 
-/* Conference badges (inline, inside team-info) */
-.conf-badge-whole {
-  background: rgba(139,109,56,.14);
-  border-color: rgba(139,109,56,.4);
-  color: var(--gold-deep);
+/* Conference badges (inline, inside team-info). One ink per division, by
+   its place in the league's list (powerrank.js adds conf-c0..c7), so any
+   league up to eight divisions gets eight distinct colours. All clear
+   4.5:1 on the cream paper. */
+.conf-badge {
+  --conf: currentColor;
+  color: var(--conf);
+  border-color: color-mix(in srgb, var(--conf) 42%, transparent);
+  background: color-mix(in srgb, var(--conf) 11%, transparent);
 }
-.conf-badge-skim {
-  background: rgba(107,138,168,.14);
-  border-color: rgba(107,138,168,.45);
-  color: #3d5670;
-}
+.conf-c0 { --conf: #a04830; } /* rust */
+.conf-c1 { --conf: #35597d; } /* steel */
+.conf-c2 { --conf: #3d6b3d; } /* forest */
+.conf-c3 { --conf: #74406f; } /* plum */
+.conf-c4 { --conf: #80601a; } /* ochre */
+.conf-c5 { --conf: #2a6a6a; } /* teal */
+.conf-c6 { --conf: #4a4a8c; } /* indigo */
+.conf-c7 { --conf: #a13a60; } /* raspberry */
 
 /* Score / record / PF cells */
 .score-cell { color: var(--gold-deep); }
