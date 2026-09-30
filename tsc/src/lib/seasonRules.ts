@@ -24,9 +24,27 @@ export type ScoringRules = {
   te_premium?: number | null
 }
 
+// Who makes the playoffs in a league with divisions (conferences):
+//   record            the best records overall, divisions ignored
+//   division_winners  every division winner is in and seeded first, the
+//                     rest of the field by record (Sleeper's rule)
+//   per_division      the top N of each division, N = playoff teams split
+//                     evenly (pams: top 3 of each conference); the winners
+//                     are seeded first
+// Unset means the platform's rule: division_winners when the league has
+// divisions, record when it doesn't.
+export type PlayoffFormat = 'record' | 'division_winners' | 'per_division'
+export const PLAYOFF_FORMATS: PlayoffFormat[] = ['record', 'division_winners', 'per_division']
+
+export function resolvePlayoffFormat(format: PlayoffFormat | null | undefined, hasDivisions: boolean): PlayoffFormat {
+  if (!hasDivisions) return 'record'
+  return format ?? 'division_winners'
+}
+
 export type SeasonRules = {
   playoff_week_start?: number | null
   playoff_team_count?: number | null
+  playoff_format?: PlayoffFormat | null
   /** Weeks every playoff round lasts (1, or 2 for two-week rounds). */
   playoff_round_weeks?: number | null
   /** Weeks the championship alone lasts, when only the final is two weeks. */
@@ -40,6 +58,10 @@ export const ROUND_WEEK_CHOICES = [1, 2] as const
 
 function num(v: unknown): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null
+}
+
+function readFormat(v: unknown): PlayoffFormat | null {
+  return typeof v === 'string' && (PLAYOFF_FORMATS as string[]).includes(v) ? (v as PlayoffFormat) : null
 }
 
 function readScoring(v: unknown): ScoringRules | null {
@@ -61,6 +83,7 @@ export function readRules(v: unknown): SeasonRules {
   return {
     playoff_week_start: num(o.playoff_week_start),
     playoff_team_count: num(o.playoff_team_count),
+    playoff_format: readFormat(o.playoff_format),
     playoff_round_weeks: num(o.playoff_round_weeks),
     championship_weeks: num(o.championship_weeks),
     scoring: readScoring(o.scoring),
@@ -104,6 +127,7 @@ export function effectiveRules(platform: unknown, commish: SeasonRules): SeasonR
   return {
     playoff_week_start: pick('playoff_week_start'),
     playoff_team_count: pick('playoff_team_count'),
+    playoff_format: pick('playoff_format'),
     playoff_round_weeks: pick('playoff_round_weeks'),
     championship_weeks: pick('championship_weeks'),
     scoring,

@@ -33,7 +33,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
 import { simulateSeason, standingsNow, type SimGame, type SimTeam, type TieKey } from '@/lib/powerSim'
 import { getLockReason } from '@/lib/leagueTier'
-import { commishRulesFor, effectiveRules } from '@/lib/seasonRules'
+import { commishRulesFor, effectiveRules, resolvePlayoffFormat, type PlayoffFormat } from '@/lib/seasonRules'
 
 export type PowerFactors = {
   // preseason (weeks 0–3, blended down)
@@ -135,6 +135,8 @@ export type PowerRankings =
       hasProjections: boolean
       playoffTeams: number
       byeTeams: number
+      // Who gets in (lib/seasonRules PlayoffFormat), resolved: never null.
+      playoffFormat: PlayoffFormat
       weights: { preseason: Record<string, number>; inseason: Record<string, number> }
       weeks: PowerWeek[]
     }
@@ -387,6 +389,7 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
   const teamCount = bases.length
   const playoffTeams = rules.playoff_team_count ?? (teamCount >= 10 ? 6 : Math.max(2, Math.round(teamCount / 2)))
   const byeTeams = playoffTeams === 6 ? 2 : 0
+  const playoffFormat = resolvePlayoffFormat(rules.playoff_format, hasDivisions)
 
   // Settled regular-season games through a week: what the standings (and
   // the sim's head-to-head and division records) are built from.
@@ -508,7 +511,7 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
     // The standings as of this week. The conference factor reads the
     // division place off them, so it agrees with the table readers see.
     const played = playedThrough(throughWeek)
-    const standings = standingsNow(simTeamsFor(played), played)
+    const standings = standingsNow(simTeamsFor(played), played, { playoffTeams, format: playoffFormat })
 
     const blend = preseasonBlend(throughWeek)
 
@@ -710,7 +713,7 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
   let hasProjections = false
   if (remaining.length > 0 && weeks.length > 0) {
     const played = playedThrough(currentWeek)
-    const projections = simulateSeason(simTeamsFor(played), remaining, { playoffTeams, byeTeams, runs: 8000, played })
+    const projections = simulateSeason(simTeamsFor(played), remaining, { playoffTeams, byeTeams, runs: 8000, played, format: playoffFormat })
 
     const attach = (t: PowerTeam) => {
       const p = projections.get(t.team_id)
@@ -740,6 +743,7 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
     hasProjections,
     playoffTeams,
     byeTeams,
+    playoffFormat,
     // Canonical W4+ in-season maxes for fallback/UI labels. Per-snapshot
     // weights live on each PowerWeek as `inseasonWeights`.
     weights: { preseason: PRESEASON_W, inseason: hasDivisions ? INSEASON_DIV_W : INSEASON_NODIV_W },

@@ -396,7 +396,7 @@ body { background: #f0e5c8; color: var(--ink); }
                 <div class="pj-head"><span>Seed · Now</span><span>Proj</span><span>Playoffs</span><span>%</span></div>
                 <div id="projBody"></div>
             </div>
-            <p class="pj-note">Conference winners take the top seeds. Ties go to head-to-head, conference record, then points.</p>
+            <p class="pj-note" id="projNote"></p>
         </section>
 
         <div id="confGrid" hidden></div>
@@ -908,6 +908,17 @@ body { background: #f0e5c8; color: var(--ink); }
     function latestWeek() { return state.weeks[state.weeks.length - 1]; }
     var TB_WORDS = { h2h: 'H2H', div: 'Conf', pf: 'PF' };
     function recStr(w, l, t) { return w + '-' + l + (t ? '-' + t : ''); }
+    // The league's own playoff rule, in as few words as it takes.
+    function formatNote() {
+        var d = state.data;
+        var divs = (latestWeek().divisions || []).length;
+        var who = d.playoffFormat === 'per_division' && divs
+            ? 'Top ' + Math.floor(d.playoffTeams / divs) + ' in each conference make it' + (d.byeTeams ? ', winners get byes.' : '.')
+            : d.playoffFormat === 'division_winners'
+                ? 'Conference winners are in and seeded first.'
+                : 'Best ' + d.playoffTeams + ' records make it.';
+        return who + ' Ties: head-to-head, ' + (d.hasDivisions ? 'conference record, ' : '') + 'then points.';
+    }
     function renderProjections() {
         var section = byId('projSection');
         if (!state.data.hasProjections) { section.hidden = true; return; }
@@ -918,6 +929,7 @@ body { background: #f0e5c8; color: var(--ink); }
         var teams = latest.overall.slice().sort(function (a, b) {
             return live ? (a.seed || 99) - (b.seed || 99) : (b.playoff_pct || 0) - (a.playoff_pct || 0);
         });
+        byId('projNote').textContent = formatNote();
         byId('projLabel').textContent = live ? 'Season Outlook · Thru Wk ' + latest.week : 'Season Outlook';
         byId('projBody').innerHTML = teams.map(function (t, i) {
             var projWL = t.proj_wins != null && t.proj_losses != null ? t.proj_wins + '–' + t.proj_losses : '·';

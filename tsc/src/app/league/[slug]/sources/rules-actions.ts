@@ -21,7 +21,9 @@ import {
   readEras,
   readRules,
   scoringFromSleeper,
+  PLAYOFF_FORMATS,
   type Era,
+  type PlayoffFormat,
   type SeasonRules,
 } from '@/lib/seasonRules'
 
@@ -32,6 +34,8 @@ export type RuleSeason = {
   /** Where the detected values came from, for the row's small print. */
   source: string | null
   teams: number | null
+  /** Division (conference) count the platform reports, when it was read. */
+  divisions: number | null
   detected: SeasonRules
   commish: SeasonRules
 }
@@ -76,6 +80,7 @@ function fillGaps(a: SeasonRules, b: SeasonRules): SeasonRules {
   return {
     playoff_week_start: a.playoff_week_start ?? b.playoff_week_start ?? null,
     playoff_team_count: a.playoff_team_count ?? b.playoff_team_count ?? null,
+    playoff_format: a.playoff_format ?? b.playoff_format ?? null,
     playoff_round_weeks: a.playoff_round_weeks ?? b.playoff_round_weeks ?? null,
     championship_weeks: a.championship_weeks ?? b.championship_weeks ?? null,
     scoring,
@@ -100,7 +105,7 @@ export async function loadSeasonRules(leagueId: string): Promise<Loaded> {
   ])
   const leagueSettings = league?.settings ?? null
 
-  type Found = { detected: SeasonRules; source: string; teams: number | null }
+  type Found = { detected: SeasonRules; source: string; teams: number | null; divisions: number | null }
   const found = new Map<number, Found>()
   const note = (year: number, f: Found) => {
     const prev = found.get(year)
@@ -125,12 +130,16 @@ export async function loadSeasonRules(leagueId: string): Promise<Loaded> {
           if (Number.isFinite(year) && inWindow(year, settings)) {
             const rt = Number(lg.settings.playoff_round_type ?? 0)
             const pws = Number(lg.settings.playoff_week_start ?? 0)
+            const divisions = Number(lg.settings.divisions ?? 0)
             note(year, {
               source: 'Sleeper',
               teams: lg.total_rosters ?? null,
+              divisions,
               detected: {
                 playoff_week_start: pws >= 1 ? pws : null,
                 playoff_team_count: typeof lg.settings.playoff_teams === 'number' ? lg.settings.playoff_teams : null,
+                // Sleeper's own rule: division winners are in and seeded first.
+                playoff_format: divisions >= 2 ? 'division_winners' : 'record',
                 playoff_round_weeks: rt === 2 ? 2 : 1,
                 championship_weeks: rt === 1 || rt === 2 ? 2 : 1,
                 scoring: scoringFromSleeper(lg.scoring_settings),
@@ -157,12 +166,15 @@ export async function loadSeasonRules(leagueId: string): Promise<Loaded> {
             const lastPeriod = Math.max(0, ...Object.keys(ss?.matchupPeriods ?? {}).map(Number))
             const rounds: number[][] = []
             for (let p = regPeriods + 1; regPeriods > 0 && p <= lastPeriod; p++) rounds.push(weeksOf(p))
+            const divisions = ss?.divisions?.length ?? 0
             note(year, {
               source: 'ESPN',
               teams: lg.teams?.length ?? null,
+              divisions,
               detected: {
                 playoff_week_start: regPeriods > 0 ? weeksOf(regPeriods + 1)[0] : null,
                 playoff_team_count: ss?.playoffTeamCount ?? null,
+                playoff_format: divisions >= 2 ? 'division_winners' : 'record',
                 playoff_round_weeks: rounds.length && rounds.every((r) => r.length === 2) ? 2 : 1,
                 championship_weeks: rounds.length ? rounds[rounds.length - 1].length : 1,
                 scoring: scoringFromEspn(lg),
@@ -189,6 +201,7 @@ export async function loadSeasonRules(leagueId: string): Promise<Loaded> {
       year: sn.year,
       synced: true,
       source: live?.source ?? null,
+      divisions: live?.divisions ?? null,
       teams: live?.teams ?? (typeof (sn.settings as Record<string, unknown> | null)?.total_rosters === 'number'
         ? ((sn.settings as Record<string, unknown>).total_rosters as number)
         : null),
@@ -203,6 +216,7 @@ export async function loadSeasonRules(leagueId: string): Promise<Loaded> {
       synced: false,
       source: f.source,
       teams: f.teams,
+      divisions: f.divisions,
       detected: f.detected,
       commish: commishRulesFor(leagueSettings, year),
     })
@@ -242,6 +256,9 @@ function cleanRules(raw: unknown): SeasonRules | null {
   const rules: SeasonRules = {
     playoff_week_start: clampInt(o.playoff_week_start, 8, 18),
     playoff_team_count: clampInt(o.playoff_team_count, 2, 16),
+    playoff_format: typeof o.playoff_format === 'string' && (PLAYOFF_FORMATS as string[]).includes(o.playoff_format)
+      ? (o.playoff_format as PlayoffFormat)
+      : null,
     playoff_round_weeks: clampInt(o.playoff_round_weeks, 1, 2),
     championship_weeks: clampInt(o.championship_weeks, 1, 2),
     scoring: scoring.ppr == null && scoring.pass_td == null && scoring.te_premium == null ? null : scoring,

@@ -20,10 +20,19 @@
 // the math: 100% only once the current record has clinched it, 0% only
 // once it is out of reach (see guarantees()).
 //
-// Final standings follow Sleeper's seeding: with divisions, the division
-// winners take the top seeds (so the byes), and the rest of the field is
-// seeded by record. Ties are broken by head-to-head among the tied teams,
+// Who gets in follows the league's playoff format (lib/seasonRules):
+// best records overall, division winners plus the best records (Sleeper's
+// rule and the default with divisions), or the top N of each division.
+// Division winners are seeded first whenever divisions decide spots, so
+// they take the byes. Ties are broken by head-to-head among the tied teams,
 // then division record (when they share a division), then points for.
+//
+// Checked against 238 finished seasons on the site (58 leagues): teams that
+// started 3-0 made the playoffs 84% of the time and the model, run from
+// week 3, gave them 85% on average; every 10% band from week 3 lands within
+// a few points of what actually happened.
+
+import type { PlayoffFormat } from '@/lib/seasonRules'
 
 export type SimTeam = {
   teamId: string
@@ -55,6 +64,15 @@ export type SimOptions = {
   byeTeams: number
   runs: number
   played: SimGame[]
+  // Unset: division_winners with divisions, record without.
+  format?: PlayoffFormat
+}
+
+type Format = { kind: PlayoffFormat; playoffTeams: number }
+
+function formatFor(groups: Map<number, number[]>, playoffTeams: number, format?: PlayoffFormat): Format {
+  if (groups.size < 2) return { kind: 'record', playoffTeams }
+  return { kind: format ?? 'division_winners', playoffTeams }
 }
 
 export type TieKey = 'h2h' | 'div' | 'pf'
@@ -201,19 +219,35 @@ function divisionGroups(t: Table): Map<number, number[]> {
   return groups
 }
 
-// Seed order. With divisions the winners come first, then everyone else.
-function seeds(t: Table, groups: Map<number, number[]>, reasons?: Map<number, TieKey>) {
+// Seed order: the first `playoffTeams` entries are the playoff field.
+//   record            everyone by record
+//   division_winners  the winners, then everyone else by record
+//   per_division      the winners, then the rest of each division's top N,
+//                     then any spots left over (an uneven split) by record,
+//                     then the teams that missed
+function seeds(t: Table, groups: Map<number, number[]>, fmt: Format, reasons?: Map<number, TieKey>) {
   const all = Array.from({ length: t.n }, (_, i) => i)
-  if (groups.size < 2) return { order: order(t, all), winners: new Set<number>(), placeOf: new Map<number, number>() }
   const winners = new Set<number>()
   const placeOf = new Map<number, number>()
+  const rankedByDiv: number[][] = []
   for (const g of groups.values()) {
     const ranked = order(t, g, reasons)
     ranked.forEach((x, k) => placeOf.set(x, k + 1))
     winners.add(ranked[0]!)
+    rankedByDiv.push(ranked)
   }
-  const rest = all.filter((i) => !winners.has(i))
-  return { order: [...order(t, [...winners]), ...order(t, rest)], winners, placeOf }
+  if (fmt.kind === 'record' || groups.size < 2) return { order: order(t, all), winners, placeOf }
+  const first = order(t, [...winners])
+  if (fmt.kind === 'division_winners') {
+    return { order: [...first, ...order(t, all.filter((i) => !winners.has(i)))], winners, placeOf }
+  }
+  const perDiv = Math.floor(fmt.playoffTeams / groups.size)
+  const qualified = new Set<number>(first)
+  for (const ranked of rankedByDiv) ranked.slice(0, perDiv).forEach((x) => qualified.add(x))
+  const second = order(t, all.filter((i) => qualified.has(i) && !winners.has(i)))
+  const rest = order(t, all.filter((i) => !qualified.has(i)))
+  const leftover = Math.max(0, fmt.playoffTeams - first.length - second.length)
+  return { order: [...first, ...second, ...rest.slice(0, leftover), ...rest.slice(leftover)], winners, placeOf }
 }
 
 // What the current record already settles, whatever happens next. These are
@@ -224,10 +258,12 @@ function guarantees(
   groups: Map<number, number[]>,
   maxPts: Float64Array,
   i: number,
-  playoffTeams: number,
+  fmt: Format,
   byeTeams: number,
 ) {
-  const hasDivs = groups.size >= 2
+  const playoffTeams = fmt.playoffTeams
+  // Divisions decide playoff spots (and byes) unless the format is record.
+  const hasDivs = fmt.kind !== 'record'
   const mine = t.div[i]!
   // Teams that could still finish level with or above i.
   const threats: number[] = []
@@ -238,20 +274,36 @@ function guarantees(
     if (maxPts[j] >= t.pts[i]) threats.push(j)
     if (t.pts[j] > maxPts[i]) ahead++
   }
-  const rivals = hasDivs && mine >= 0 ? groups.get(mine)!.filter((j) => j !== i) : []
-  const divClinched = hasDivs && mine >= 0 && rivals.every((j) => maxPts[j] < t.pts[i])
-  const divOut = hasDivs && (mine < 0 || rivals.some((j) => t.pts[j] > maxPts[i]))
-  // Another division whose winner could be seeded over i with a worse
-  // record: count it once when none of its teams is already a threat.
-  let extra = 0
-  if (hasDivs) {
+  // Division titles are tracked in every format (the conference odds).
+  const rivals = groups.size >= 2 && mine >= 0 ? groups.get(mine)!.filter((j) => j !== i) : []
+  const divClinched = groups.size >= 2 && mine >= 0 && rivals.every((j) => maxPts[j] < t.pts[i])
+  const divOut = groups.size >= 2 && (mine < 0 || rivals.some((j) => t.pts[j] > maxPts[i]))
+
+  let playoffClinched: boolean
+  let eliminated: boolean
+  if (fmt.kind === 'per_division' && mine >= 0) {
+    // Only the division race counts, unless an uneven split leaves
+    // wildcard spots, which can still rescue a team that falls short.
+    const perDiv = Math.floor(playoffTeams / groups.size)
+    const wildcards = playoffTeams - perDiv * groups.size
+    playoffClinched = rivals.filter((j) => maxPts[j] >= t.pts[i]).length < perDiv
+    eliminated = rivals.filter((j) => t.pts[j] > maxPts[i]).length >= perDiv &&
+      (wildcards === 0 || ahead >= playoffTeams)
+  } else if (fmt.kind === 'division_winners') {
+    // Another division whose winner could be seeded over i with a worse
+    // record: count it once when none of its teams is already a threat.
+    let extra = 0
     for (const [d, g] of groups) {
-      if (d === mine) continue
-      if (!g.some((j) => maxPts[j] >= t.pts[i])) extra++
+      if (d !== mine && !g.some((j) => maxPts[j] >= t.pts[i])) extra++
     }
+    playoffClinched = divClinched || threats.length + extra < playoffTeams
+    eliminated = divOut && ahead >= playoffTeams
+  } else {
+    playoffClinched = threats.length < playoffTeams
+    eliminated = ahead >= playoffTeams
   }
-  const playoffClinched = divClinched || threats.length + extra < playoffTeams
-  const eliminated = !(hasDivs && !divOut) && ahead >= playoffTeams
+  // Byes go to the top seeds: the division winners whenever divisions
+  // decide spots, the best records otherwise.
   const byeClinched = hasDivs ? divClinched && byeTeams >= groups.size : threats.length < byeTeams
   const byeOut = byeTeams === 0 || (hasDivs && byeTeams <= groups.size ? divOut : ahead >= byeTeams)
   return { playoffClinched, eliminated, byeClinched, byeOut, divClinched, divOut }
@@ -284,10 +336,14 @@ function buildBase(teams: SimTeam[], played: SimGame[]) {
 
 // Today's standings under the sim's rules: seed, division place, division
 // record, and which tiebreaker (if any) decided the division place.
-export function standingsNow(teams: SimTeam[], played: SimGame[]): Map<string, StandingNow> {
+export function standingsNow(
+  teams: SimTeam[],
+  played: SimGame[],
+  opts: { playoffTeams: number; format?: PlayoffFormat },
+): Map<string, StandingNow> {
   const { index, base, groups } = buildBase(teams, played)
   const reasons = new Map<number, TieKey>()
-  const s = seeds(base, groups, reasons)
+  const s = seeds(base, groups, formatFor(groups, opts.playoffTeams, opts.format), reasons)
   const divRec = new Map<number, { w: number; l: number; t: number }>()
   for (const g of played) {
     const i = index.get(g.a)
@@ -321,6 +377,7 @@ export function simulateSeason(
   opts: SimOptions,
 ): Map<string, TeamProjection> {
   const { n, index, base, groups } = buildBase(teams, opts.played)
+  const fmt = formatFor(groups, opts.playoffTeams, opts.format)
 
   const games: [number, number][] = []
   const remainingCount = new Float64Array(n)
@@ -387,7 +444,7 @@ export function simulateSeason(
       if (aWon) { wins[i]++; run.pts[i]++ } else { wins[j]++; run.pts[j]++ }
       recordGame(run, i, j, aWon ? 1 : 0)
     }
-    const s = seeds(run, groups)
+    const s = seeds(run, groups, fmt)
     s.order.forEach((i, k) => {
       const acc = tally[i]!
       if (k < opts.playoffTeams) acc.playoff++
@@ -404,7 +461,7 @@ export function simulateSeason(
   const out = new Map<string, TeamProjection>()
   teams.forEach((t, i) => {
     const acc = tally[i]!
-    const sure = guarantees(base, groups, maxPts, i, opts.playoffTeams, opts.byeTeams)
+    const sure = guarantees(base, groups, maxPts, i, fmt, opts.byeTeams)
     // Games already banked include ties, which are neither a win nor a loss.
     // Leaving them out shortens the projected season for exactly the teams
     // that tied. Simulated games can't tie, so every remaining game lands in

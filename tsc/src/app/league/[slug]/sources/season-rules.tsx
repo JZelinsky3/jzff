@@ -12,12 +12,12 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadSeasonRules, saveSeasonRules, type RuleSeason } from './rules-actions'
 import { syncSource } from './actions'
-import { scoringKey, scoringLabel, type Era, type SeasonRules } from '@/lib/seasonRules'
+import { scoringKey, scoringLabel, type Era, type PlayoffFormat, type SeasonRules } from '@/lib/seasonRules'
 
 type SourceRef = { id: string; label: string }
 
-type Flat = { ppr: string; pass_td: string; te: string; pws: string; ptc: string; rw: string; cw: string }
-const FIELDS: (keyof Flat)[] = ['ppr', 'pass_td', 'te', 'pws', 'ptc', 'rw', 'cw']
+type Flat = { ppr: string; pass_td: string; te: string; pws: string; ptc: string; fmt: string; rw: string; cw: string }
+const FIELDS: (keyof Flat)[] = ['ppr', 'pass_td', 'te', 'pws', 'ptc', 'fmt', 'rw', 'cw']
 
 const str = (v: number | null | undefined) => (v == null ? '' : String(v))
 function flatOf(r: SeasonRules): Flat {
@@ -27,6 +27,7 @@ function flatOf(r: SeasonRules): Flat {
     te: r.scoring ? str(r.scoring.te_premium ?? 0) : '',
     pws: str(r.playoff_week_start),
     ptc: str(r.playoff_team_count),
+    fmt: r.playoff_format ?? '',
     rw: str(r.playoff_round_weeks),
     cw: str(r.championship_weeks),
   }
@@ -54,6 +55,7 @@ function overridesOf(values: Flat, detected: Flat): SeasonRules | null {
   const out: SeasonRules = {
     playoff_week_start: diff('pws') ? n(values.pws) : null,
     playoff_team_count: diff('ptc') ? n(values.ptc) : null,
+    playoff_format: diff('fmt') ? (values.fmt as PlayoffFormat) : null,
     playoff_round_weeks: diff('rw') ? n(values.rw) : null,
     championship_weeks: diff('cw') ? n(values.cw) : null,
     scoring,
@@ -63,6 +65,7 @@ function overridesOf(values: Flat, detected: Flat): SeasonRules | null {
 const asRules = (v: Flat): SeasonRules => ({
   playoff_week_start: n(v.pws),
   playoff_team_count: n(v.ptc),
+  playoff_format: (v.fmt || null) as PlayoffFormat | null,
   playoff_round_weeks: n(v.rw),
   championship_weeks: n(v.cw),
   scoring: v.ppr === '' && v.pass_td === '' ? null : { ppr: n(v.ppr), pass_td: n(v.pass_td), te_premium: n(v.te) },
@@ -77,6 +80,7 @@ const OPTIONS: Record<keyof Flat, [string, string][]> = {
   te: [['0', 'None'], ['0.5', '+0.5'], ['1', '+1']],
   pws: [10, 11, 12, 13, 14, 15, 16, 17].map((w) => [String(w), `Week ${w}`] as [string, string]),
   ptc: [2, 4, 6, 8, 10, 12].map((t) => [String(t), `${t} teams`] as [string, string]),
+  fmt: [['record', 'Best records'], ['division_winners', 'Division winners, then records'], ['per_division', 'Top of each division']],
   rw: [['1', '1 week'], ['2', '2 weeks']],
   cw: [['1', '1 week'], ['2', '2 weeks']],
 }
@@ -86,6 +90,7 @@ const FMT: Record<keyof Flat, (v: string) => string> = {
   te: (v) => `+${v}`,
   pws: (v) => `Week ${v}`,
   ptc: (v) => `${v} teams`,
+  fmt: (v) => v,
   rw: (v) => `${v} weeks`,
   cw: (v) => `${v} weeks`,
 }
@@ -95,6 +100,7 @@ const LABELS: Record<keyof Flat, string> = {
   te: 'TE premium',
   pws: 'Playoffs start',
   ptc: 'Playoff teams',
+  fmt: 'Who gets in',
   rw: 'Each round',
   cw: 'Final',
 }
@@ -280,6 +286,16 @@ export function SeasonRules({
   const intro = `${rows.length} season${rows.length === 1 ? '' : 's'}${platforms ? ` found on ${platforms}` : ''}` +
     (unsynced ? `, ${unsynced} not synced yet` : '') + '.'
 
+  // Who gets in only matters with divisions, so leagues without them never
+  // see the column.
+  const shown = FIELDS.filter((f) => f !== 'fmt' || rows.some((r) => (r.divisions ?? 0) >= 2 || r.values.fmt === 'per_division'))
+  // "Top of each division" names its number when the row can work it out.
+  const optionsFor = (r: RowState, f: keyof Flat): [string, string][] => {
+    if (f !== 'fmt') return OPTIONS[f]
+    const per = (r.divisions ?? 0) >= 2 && r.values.ptc ? Math.floor(Number(r.values.ptc) / r.divisions!) : 0
+    return OPTIONS.fmt.map(([v, l]) => [v, v === 'per_division' && per > 0 ? `Top ${per} of each division` : l] as [string, string])
+  }
+
   const select = (r: RowState, f: keyof Flat, cls: string) => (
     <select
       className={`${cls}${edited(r, f) ? ' edited' : ''}`}
@@ -289,7 +305,7 @@ export function SeasonRules({
       aria-label={`${r.year} ${LABELS[f]}`}
     >
       {r.values[f] === '' && <option value="">Not set</option>}
-      {withCurrent(OPTIONS[f], r.values[f], FMT[f]).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      {withCurrent(optionsFor(r, f), r.values[f], FMT[f]).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
     </select>
   )
 
@@ -367,6 +383,7 @@ export function SeasonRules({
             rules.playoff_week_start ? `Wk ${rules.playoff_week_start}` : null,
             rules.playoff_team_count ? `${rules.playoff_team_count} teams` : null,
             rules.championship_weeks === 2 || rules.playoff_round_weeks === 2 ? '2-wk final' : null,
+            rules.playoff_format === 'per_division' ? 'Top of each division' : null,
           ].filter(Boolean).join(' · ')
           return (
             <div key={r.year} className={`msrc-rule${open ? ' open' : ''}${changed ? ' changed' : ''}`}>
@@ -378,7 +395,7 @@ export function SeasonRules({
               </button>
               {open && (
                 <div className="msrc-rule-body">
-                  {FIELDS.map((f) => (
+                  {shown.map((f) => (
                     <label key={f} className="msrc-rule-field">
                       <span>{LABELS[f]}</span>
                       {select(r, f, 'dc-select')}
@@ -418,7 +435,7 @@ export function SeasonRules({
           <thead>
             <tr>
               <th>Season</th>
-              {FIELDS.map((f) => <th key={f}>{LABELS[f]}</th>)}
+              {shown.map((f) => <th key={f}>{LABELS[f]}</th>)}
               <th aria-label="Row tools" />
             </tr>
           </thead>
@@ -433,7 +450,7 @@ export function SeasonRules({
                       {[r.source, r.teams ? `${r.teams} teams` : null, r.synced ? null : 'not synced'].filter(Boolean).join(' · ')}
                     </span>
                   </th>
-                  {FIELDS.map((f) => <td key={f}>{select(r, f, 'lo-rules-select')}</td>)}
+                  {shown.map((f) => <td key={f}>{select(r, f, 'lo-rules-select')}</td>)}
                   <td className="lo-rules-tools">
                     {i < rows.length - 1 && (
                       <button type="button" onClick={() => copyDown(r.year)} disabled={busy !== null} title="Use these rules for every later season">

@@ -349,6 +349,18 @@
     return w ? '<span class="tb-tag" title="' + w[1] + '">' + w[0] + '</span>' : ''
   }
   function recStr(w, l, t) { return w + '-' + l + (t ? '-' + t : '') }
+  // The league's own playoff rule (Sources > Season by season), in words.
+  function formatNote() {
+    var d = state.data
+    var divs = (latestWeek().divisions || []).length
+    var who = d.playoffFormat === 'per_division' && divs
+      ? 'The top ' + Math.floor(d.playoffTeams / divs) + ' in each conference make the playoffs' + (d.byeTeams ? ', and the conference winners take the byes.' : '.')
+      : d.playoffFormat === 'division_winners'
+        ? 'Conference winners are in and take the top seeds, then the best records fill the field.'
+        : 'The best ' + d.playoffTeams + ' records make the playoffs.'
+    var tb = d.hasDivisions ? 'head-to-head, then conference record, then points for' : 'head-to-head, then points for'
+    return who + ' Ties go to ' + tb + '.'
+  }
   function pctStr(p) { return p == null ? '·' : p + '%' }
   function renderProjections() {
     var section = byId('projSection')
@@ -361,6 +373,8 @@
     var teams = latest.overall.slice().sort(function (a, b) {
       return live ? (a.seed || 99) - (b.seed || 99) : (b.playoff_pct || 0) - (a.playoff_pct || 0)
     })
+    var note = byId('projNote')
+    if (note) note.textContent = formatNote() + ' The odds play every remaining game 8,000 times. Early on, a team\'s scoring so far counts for less, so a hot start doesn\'t read as a sure thing.'
     var meta = byId('projMeta')
     if (meta) meta.textContent = (live ? 'Through week ' + latest.week + ' · ' : '') + '8,000 simulated seasons'
     byId('projBody').innerHTML = teams.map(function (t, i) {
