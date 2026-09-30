@@ -10,7 +10,7 @@ import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getLockReason } from '@/lib/leagueTier'
 import { getNflClock, weekIsFinal } from '@/lib/nflClock'
-import { buildRecapFacts, recapTierFor, type RecapFacts, type RecapTier } from './facts'
+import { buildRecapFacts, recapTierFor, RECAP_FACTS_VERSION, type RecapFacts, type RecapTier } from './facts'
 import { templateIntro } from './intro'
 
 export type LoadedRecap =
@@ -37,8 +37,10 @@ export async function loadRecap(
     .eq('week', week)
     .maybeSingle()
 
+  // An older shape (a recap stored before the facts changed) is rebuilt below
+  // rather than rendered with sections missing.
   const facts = stored?.facts as RecapFacts | null | undefined
-  if (facts && facts.v === 1) {
+  if (facts && facts.v === RECAP_FACTS_VERSION) {
     return { status: 'ok', facts, intro: (stored?.intro as string | null) || templateIntro(facts), tier }
   }
 
@@ -46,7 +48,7 @@ export async function loadRecap(
 
   const built = await unstable_cache(
     () => buildRecapFacts({ leagueId: league.id, year, week, tier }),
-    ['recap-live', league.id, String(year), String(week), tier],
+    ['recap-live', `v${RECAP_FACTS_VERSION}`, league.id, String(year), String(week), tier],
     { tags: [`league-${league.id}`], revalidate: 3600 },
   )()
   if (built.status === 'ok') return { status: 'ok', facts: built.facts, intro: templateIntro(built.facts), tier }

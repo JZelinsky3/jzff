@@ -6398,6 +6398,68 @@ function computeOptimalLineup(
   return { total, lineup }
 }
 
+// One team's week: the points it started against the best legal lineup it
+// could have started from the same roster. The Best Coach board and the
+// weekly recap both call this, so the two can never disagree about who set
+// the best lineup. Null when no starter has scored yet (an unplayed or
+// in-progress week).
+export type LineupWeekRow = Pick<
+  WeeklyLineupRow,
+  'player_external_id' | 'player_name' | 'position' | 'slot' | 'is_starter' | 'points'
+>
+export function lineupWeekEfficiency(rows: LineupWeekRow[]): { actual: number; optimal: number } | null {
+  const starters = rows.filter((r) => r.is_starter)
+  if (!starters.some((r) => r.points != null)) return null
+
+  const actual = starters.reduce((sum, r) => sum + (r.points ?? 0), 0)
+
+  // Slot template = exactly what they started. Empty starter rows (slot
+  // present but no player) would be tracked here too, but ingest skips
+  // those — so any zero-player slot the manager left empty just doesn't
+  // exist in our pool and can't be optimally filled either.
+  const slotCounts = new Map<string, number>()
+  for (const r of starters) {
+    slotCounts.set(r.slot, (slotCounts.get(r.slot) ?? 0) + 1)
+  }
+
+  // Optimal pool: every player on the roster that week with a position
+  // and points. Bench players with null points get treated as 0 — they
+  // had a bye or weren't active. Starters whose position the parser
+  // couldn't extract (or whose position sits outside the standard
+  // QB/RB/WR/TE/K/DEF set — IDP, niche platform slots) get pushed as
+  // wildcards pinned to the slot they actually started in. Without this,
+  // their points landed in the actual sum but they couldn't fill any
+  // optimal slot, producing actual > optimal weeks.
+  const pool: Array<{ player_external_id: string; name: string | null; pos: string; pts: number; forceSlot?: string }> = []
+  for (const r of rows) {
+    const pos = r.position ?? ''
+    const eligibleAny = pos ? slotsEligibleForPosition(pos).size > 0 : false
+    if (!eligibleAny) {
+      // Bench players with no position are dropped (they couldn't have
+      // helped anyway); starters get a wildcard entry so they fill
+      // their own slot in the optimal lineup.
+      if (!r.is_starter) continue
+      pool.push({
+        player_external_id: r.player_external_id,
+        name: r.player_name,
+        pos: pos,
+        pts: r.points ?? 0,
+        forceSlot: r.slot,
+      })
+      continue
+    }
+    pool.push({
+      player_external_id: r.player_external_id,
+      name: r.player_name,
+      pos: pos,
+      pts: r.points ?? 0,
+    })
+  }
+
+  const { total: optimal } = computeOptimalLineup(pool, slotCounts)
+  return { actual, optimal }
+}
+
 function buildBestCoach(s: Snapshot): unknown {
   // Prefer the live season; otherwise fall back to the most recent season
   // that has lineup data so the page is useful year-round (and so leagues
@@ -6482,56 +6544,10 @@ function buildBestCoach(s: Snapshot): unknown {
     for (const [week, bucket] of sortedWeeks) {
       // Skip the week entirely if no starter has scored points yet — that's
       // an unplayed-future or in-progress week and including it would
-      // bias the season totals.
-      const anyStarterScored = bucket.starters.some((r) => r.points != null)
-      if (!anyStarterScored) continue
-
-      const actual = bucket.starters.reduce((sum, r) => sum + (r.points ?? 0), 0)
-
-      // Slot template = exactly what they started. Empty starter rows (slot
-      // present but no player) would be tracked here too, but ingest skips
-      // those — so any zero-player slot the manager left empty just doesn't
-      // exist in our pool and can't be optimally filled either.
-      const slotCounts = new Map<string, number>()
-      for (const r of bucket.starters) {
-        slotCounts.set(r.slot, (slotCounts.get(r.slot) ?? 0) + 1)
-      }
-
-      // Optimal pool: every player on the roster that week with a position
-      // and points. Bench players with null points get treated as 0 — they
-      // had a bye or weren't active. Starters whose position the parser
-      // couldn't extract (or whose position sits outside the standard
-      // QB/RB/WR/TE/K/DEF set — IDP, niche platform slots) get pushed as
-      // wildcards pinned to the slot they actually started in. Without this,
-      // their points landed in the actual sum but they couldn't fill any
-      // optimal slot, producing actual > optimal weeks.
-      const pool: Array<{ player_external_id: string; name: string | null; pos: string; pts: number; forceSlot?: string }> = []
-      for (const r of bucket.all) {
-        const pos = r.position ?? ''
-        const eligibleAny = pos ? slotsEligibleForPosition(pos).size > 0 : false
-        if (!eligibleAny) {
-          // Bench players with no position are dropped (they couldn't have
-          // helped anyway); starters get a wildcard entry so they fill
-          // their own slot in the optimal lineup.
-          if (!r.is_starter) continue
-          pool.push({
-            player_external_id: r.player_external_id,
-            name: r.player_name,
-            pos: pos,
-            pts: r.points ?? 0,
-            forceSlot: r.slot,
-          })
-          continue
-        }
-        pool.push({
-          player_external_id: r.player_external_id,
-          name: r.player_name,
-          pos: pos,
-          pts: r.points ?? 0,
-        })
-      }
-
-      const { total: optimal } = computeOptimalLineup(pool, slotCounts)
+      // bias the season totals. lineupWeekEfficiency returns null for it.
+      const eff = lineupWeekEfficiency(bucket.all)
+      if (!eff) continue
+      const { actual, optimal } = eff
       const left = Math.max(0, optimal - actual)
       seasonActual += actual
       seasonOptimal += optimal

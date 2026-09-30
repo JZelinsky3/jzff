@@ -1,20 +1,19 @@
 // The words on top of a recap: the subject line and the two or three
 // sentences that open it.
 //
-// The subject is always built here from the facts, never by a model, because
-// it is the one line everybody reads and it has to be right.
+// Both lead with history when there is any, because history is the one
+// thing the platforms' own recaps can't say. The subject is always built
+// here from the facts, never by a model: it is the one line everybody reads.
 //
 // The intro is written by Groq, but on a short leash. The model sees only the
 // fact lines below, and its answer is thrown away (in favour of a template
-// sentence built from the same facts) if it contains a single number that is
-// not in those lines, or breaks the house rules on punctuation. A model that
-// is down, rate limited or decommissioned (it has happened, see groq.ts)
-// therefore costs a slightly plainer email, never a wrong one.
+// built from the same facts) if it contains a single number that is not in
+// those lines, or breaks the house rules on punctuation. A model that is
+// down, rate limited or decommissioned (it has happened, see groq.ts) costs a
+// slightly plainer email, never a wrong one.
 
 import { groqChatJson, DEFAULT_GROQ_MODEL } from '@/lib/groq'
-import { ordinal, pts, type RecapFacts, type RecapGame } from './facts'
-
-// ── Subject ───────────────────────────────────────────────────────────────
+import { ordinal, pts, recordStr, seriesLine, type RecapFacts, type RecapGame } from './facts'
 
 const winnerOf = (g: RecapGame) => (g.winner === 'a' ? g.a : g.b)
 const loserOf = (g: RecapGame) => (g.winner === 'a' ? g.b : g.a)
@@ -23,19 +22,17 @@ function leagueLabel(f: RecapFacts): string {
   return f.league.name.length > 24 && f.league.abbr ? f.league.abbr : f.league.name
 }
 
+// ── Subject ───────────────────────────────────────────────────────────────
+
 export function recapSubject(f: RecapFacts): string {
   const who = leagueLabel(f)
-
-  const final = f.games.find((g) => g.kind === 'championship' && (g.winner === 'a' || g.winner === 'b'))
-  if (final) return `${winnerOf(final).name} wins the ${f.year} ${who} title`
+  const hooks = f.hooks ?? []
+  const title = hooks.find((h) => h.endsWith(' title'))
+  if (title) return `${title}. ${who}, week ${f.week}`
 
   const lead = f.phase === 'playoffs' ? `Playoffs, week ${f.week}` : `Week ${f.week}`
-  const bits: string[] = []
-  if (f.top) bits.push(`${f.top.name} puts up ${pts(f.top.score)}`)
-  if (f.upset) bits.push(`${f.upset.winner} pulls the upset`)
-  else if (f.closest && f.closest.margin < 3) bits.push(`${winnerOf(f.closest).name} wins by ${pts(f.closest.margin)}`)
-  else if (f.low) bits.push(`${f.low.name} held to ${pts(f.low.score)}`)
-
+  const fallback = f.top ? [`${f.top.name} puts up ${pts(f.top.score)}`] : []
+  const bits = hooks.length ? hooks.slice(0, 2) : fallback
   const full = `${lead} in ${who}: ${bits.join(', ')}`
   return full.length > 80 && bits.length > 1 ? `${lead} in ${who}: ${bits[0]}` : full
 }
@@ -51,25 +48,42 @@ export function templateIntro(f: RecapFacts): string {
     parts.push(`${winnerOf(final).name} is the ${f.year} champion, beating ${loserOf(final).name} by ${pts(final.margin)}.`)
   }
   if (f.records?.length) parts.push(f.records[0])
-  if (f.upset) {
+  const snap = f.games.find((g) => g.seriesNote && / snaps | has now won /.test(g.seriesNote))
+  if (snap?.seriesNote) parts.push(snap.seriesNote)
+  if (f.upset && parts.length < 3) {
     parts.push(`${f.upset.winner} came in at ${f.upset.winnerRecord} and beat ${f.upset.loser}, who came in at ${f.upset.loserRecord}.`)
   }
-  if (f.top && parts.length < 2) parts.push(`${f.top.name} put up ${pts(f.top.score)}, the best score of week ${f.week}.`)
+  if (f.top && parts.length < 3) {
+    const card = f.teams.find((t) => t.managerId === f.top!.managerId)
+    const note = card?.note && /since|Career/.test(card.note) ? ` ${card.note.replace(/\.$/, '')} for ${f.top.name}.` : ''
+    parts.push(`${f.top.name} put up ${pts(f.top.score)}, the best score of week ${f.week}.${note}`)
+  }
   if (f.closest && parts.length < 3) {
     parts.push(`${winnerOf(f.closest).name} beat ${loserOf(f.closest).name} by ${pts(f.closest.margin)}, the closest game of the week.`)
   }
-  if (f.low && parts.length < 3) parts.push(`${f.low.name} scored ${pts(f.low.score)}, the lowest of the week.`)
   return parts.slice(0, 3).join(' ')
 }
 
 // ── Model intro ───────────────────────────────────────────────────────────
 
-// Everything the model is allowed to know, one fact per line. Every number in
-// here is formatted exactly the way the email prints it, which is what lets
-// checkIntro compare the model's numbers against these as plain strings.
+// Everything the model is allowed to know, one fact per line, history first.
+// Every number in here is formatted exactly the way the email prints it,
+// which is what lets checkIntro compare the model's numbers against these as
+// plain strings.
 export function factLines(f: RecapFacts): string[] {
   const out: string[] = []
   out.push(`League: ${f.league.name}. Week ${f.week} of the ${f.year} season${f.phase === 'playoffs' ? ', playoffs' : ''}.`)
+
+  const final = f.games.find((g) => g.kind === 'championship' && (g.winner === 'a' || g.winner === 'b'))
+  if (final) out.push(`${winnerOf(final).name} won the ${f.year} championship over ${loserOf(final).name}.`)
+  for (const r of f.records ?? []) out.push(r)
+  for (const g of f.games) if (g.seriesNote && !g.seriesNote.startsWith('First meeting')) out.push(g.seriesNote)
+  for (const t of f.teams) {
+    if (t.note && /Career|since/.test(t.note)) out.push(`${t.name} scored ${pts(t.score)}: ${t.note}`)
+  }
+  if (f.upset) {
+    out.push(`Upset: ${f.upset.winner} (${f.upset.winnerRecord} going in) beat ${f.upset.loser} (${f.upset.loserRecord} going in).`)
+  }
 
   for (const g of f.games) {
     const label =
@@ -85,30 +99,27 @@ export function factLines(f: RecapFacts): string[] {
         g.leg?.n === 2 && g.leg.totalA != null && g.leg.totalB != null
           ? ` Two-week total ${pts(g.winner === 'a' ? g.leg.totalA : g.leg.totalB)} to ${pts(g.winner === 'a' ? g.leg.totalB : g.leg.totalA)}.`
           : ''
-      out.push(`${label}${w.name} ${pts(w.score)} beat ${l.name} ${pts(l.score)}, margin ${pts(g.margin)}.${totals}`)
+      const series = g.series ? ` Series: ${seriesLine(g.a.name, g.b.name, g.series)}.` : ''
+      out.push(`${label}${w.name} ${pts(w.score)} beat ${l.name} ${pts(l.score)}, margin ${pts(g.margin)}.${totals}${series}`)
     }
   }
 
-  if (f.top) out.push(`Top score of the week: ${f.top.name}, ${pts(f.top.score)}.`)
-  if (f.low) out.push(`Lowest score of the week: ${f.low.name}, ${pts(f.low.score)}.`)
-  if (f.closest) out.push(`Closest game: ${winnerOf(f.closest).name} over ${loserOf(f.closest).name} by ${pts(f.closest.margin)}.`)
-  if (f.blowout) out.push(`Biggest win: ${winnerOf(f.blowout).name} over ${loserOf(f.blowout).name} by ${pts(f.blowout.margin)}.`)
-  if (f.upset) {
-    out.push(`Upset: ${f.upset.winner} (${f.upset.winnerRecord} going in) beat ${f.upset.loser} (${f.upset.loserRecord} going in).`)
-  }
+  for (const a of f.awards) out.push(`${a.title}: ${a.who}, ${a.value}.`)
   for (const s of f.streaks) out.push(`${s.name} has ${s.kind === 'W' ? 'won' : 'lost'} ${s.length} straight.`)
   if (f.standings?.length) {
     const s = f.standings[0]
-    out.push(`First place: ${s.name}, ${s.ties ? `${s.wins}-${s.losses}-${s.ties}` : `${s.wins}-${s.losses}`}.`)
+    out.push(`First place: ${s.name}, ${recordStr(s.wins, s.losses, s.ties)}.`)
   }
-  for (const r of f.records ?? []) out.push(r)
   if (f.power?.length) {
     const up = [...f.power].sort((a, b) => b.delta - a.delta)[0]
-    const down = [...f.power].sort((a, b) => a.delta - b.delta)[0]
     if (up && up.delta > 0) out.push(`Power rankings: ${up.name} climbed ${up.delta} to ${ordinal(up.rank)}.`)
-    if (down && down.delta < 0) out.push(`Power rankings: ${down.name} fell ${-down.delta} to ${ordinal(down.rank)}.`)
   }
-  if (f.bench?.worst) out.push(`${f.bench.worst.name} left ${pts(f.bench.worst.left)} points on the bench.`)
+  if (f.lineups?.efficiency) {
+    const w = f.lineups.efficiency.worst
+    out.push(`${w.name} left ${pts(w.left)} points on the bench.`)
+  }
+  const gotw = f.next?.games.find((g) => g.gotw) ?? null
+  if (gotw) out.push(`Next week's game of the week: ${gotw.a.name} against ${gotw.b.name}.`)
   return out
 }
 
@@ -118,12 +129,12 @@ const SYSTEM = [
   '',
   'Rules:',
   '- Two or three sentences, under 70 words in total.',
+  '- Lead with league history when the facts have any (a record, a snapped run in a matchup, a career high, a best score in years). That is the part people have not already seen in their app.',
   '- Use only the facts given. Do not invent players, injuries, history, rivalries or anything else.',
   '- Any number you use must appear in the facts exactly as written there. Write numbers as digits.',
   "- Use the managers' names exactly as given.",
   '- Say things plainly, like a league-mate who read the box score. Dry humour is fine, hype is not.',
   '- No em dashes, no exclamation marks, no emojis, no hashtags, no questions.',
-  '- Lead with the most interesting thing: a title, a league record, an upset, a blowout or a very close game.',
   '',
   'Return JSON: {"intro": "..."}',
 ].join('\n')

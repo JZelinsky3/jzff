@@ -24,7 +24,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getLockReason } from '@/lib/leagueTier'
 import { getNflClock, weekIsFinal } from '@/lib/nflClock'
-import { buildRecapFacts, recapTierFor, type RecapFacts } from './facts'
+import { buildRecapFacts, recapTierFor, RECAP_FACTS_VERSION, type RecapFacts } from './facts'
 import { recapSubject, writeIntro } from './intro'
 import { renderRecapEmail } from './email'
 import { SITE_URL, recapPageUrl, unsubscribeApiUrl, unsubscribePageUrl, unsubscribeToken } from './links'
@@ -154,7 +154,7 @@ async function runLeague(
 
   const { data: existing } = await db
     .from('weekly_recaps')
-    .select('id, status, intro, intro_source')
+    .select('id, status, intro, intro_source, version:facts->v')
     .eq('league_id', league.id)
     .eq('season_year', year)
     .eq('week', week)
@@ -183,7 +183,9 @@ async function runLeague(
   let intro: string
   let introSource: 'ai' | 'template'
   let introNote: string | undefined
-  if (existing?.intro && existing.status !== 'held' && !ctx.force) {
+  // Only when it was written from the current facts shape: an intro written
+  // from last version's facts may lean on lines the new ones don't carry.
+  if (existing?.intro && existing.status !== 'held' && !ctx.force && Number(existing.version) === RECAP_FACTS_VERSION) {
     intro = existing.intro as string
     introSource = (existing.intro_source as 'ai' | 'template') ?? 'template'
   } else {

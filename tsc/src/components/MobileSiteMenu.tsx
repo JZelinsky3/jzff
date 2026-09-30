@@ -172,7 +172,8 @@ export function MobileSiteMenu({
     pathname.startsWith('/goat') ||
     pathname.startsWith('/ballot') ||
     pathname.startsWith('/exam') ||
-    /^\/leagues\/[^/]+\/awards(\/|$)/.test(pathname)
+    pathname.startsWith('/recap') ||
+    /^\/leagues\/[^/]+\/(awards|recap)(\/|$)/.test(pathname)
   if (bare) return null
 
   return (
