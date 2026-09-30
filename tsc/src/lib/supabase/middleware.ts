@@ -62,12 +62,17 @@ const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/g
 // so a /login bounce is not a hardening, it is the feature failing. Anything
 // new of that shape has to be added here or the link dies silently: the build
 // succeeds, the route exists, and every visitor lands on the login page.
+// `/recap/` and `/api/recap/` are the weekly recap email's unsubscribe page,
+// its one-click endpoint, and the Resend webhook. Mail clients POST the
+// one-click request with no session, and people unsubscribe from a phone's
+// mail app, not a signed-in browser. Both handlers check a signed token or a
+// webhook signature themselves.
 // `/old/` used to be here for the original hand-built JZ Fantasy Football
 // site. That tree was 137 MB of logo PNGs riding along in every deployment
 // for a page nothing linked to, so it moved to tsc/archive/old (still in
 // git, no longer served). Nothing answers on /old/ now, so the exemption
 // went with it.
-const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/demo-m/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/api/mock-board', '/api/support', '/hub/', '/api/hub/', '/see/', '/games/', '/api/games/', '/ballot/', '/goat/', '/exam/']
+const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/demo-m/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/api/mock-board', '/api/support', '/hub/', '/api/hub/', '/see/', '/games/', '/api/games/', '/ballot/', '/goat/', '/exam/', '/recap/', '/api/recap/']
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })

@@ -51,9 +51,10 @@ export const PLAN_FEATURES: PlanFeature[] = [
   },
   {
     label: 'Weekly recaps',
-    detail: "A short written recap of each week's slate, drawn from your league's data.",
-    included: { tier1: false, tier2: true, tier3: true },
-    includedFree: false,
+    detail: "Every Tuesday, your league's week in your inbox, with a page to send to the group chat. Veteran adds the bench and trade sections.",
+    detailFree: "The short version every Tuesday: final scores, standings and the week's headlines.",
+    included: { tier1: true, tier2: true, tier3: true },
+    includedFree: true,
   },
   {
     label: 'Trade recaps',

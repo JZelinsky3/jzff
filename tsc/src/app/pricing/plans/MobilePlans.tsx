@@ -19,7 +19,7 @@ const FEATURES: Feature[] = [
   { label: 'In-season auto-sync', detail: 'Standings + weekly matchups refresh automatically through the playoffs.', included: { tier1: true, tier2: true, tier3: true } },
   { label: "Pick'ems & Power Rankings", detail: "Weekly pick'em board and power-ranking ballots, scored automatically.", included: { tier1: true, tier2: true, tier3: true } },
   { label: '7-day free trial', detail: 'Every plan. Cancel anytime before the trial ends. No charge.', included: { tier1: true, tier2: true, tier3: true } },
-  { label: 'Weekly recaps', detail: "A short written recap of each week's slate, drawn from your league's data.", included: { tier1: false, tier2: true, tier3: true } },
+  { label: 'Weekly recaps', detail: "Your league's week in your inbox every Tuesday. Veteran adds bench and trades.", included: { tier1: true, tier2: true, tier3: true } },
   { label: 'Trade recaps', detail: 'A recap of every trade when it happens, plus a four-week revisit checking how it actually played out.', included: { tier1: false, tier2: true, tier3: true } },
   { label: 'Full Trade Desk', detail: 'Grader, analyzer, finder, and rumor mill. Every trade lens, unlocked.', included: { tier1: false, tier2: true, tier3: true } },
   { label: 'Manager DNA', detail: 'Every manager auto-classified into an archetype from their actual transactions, lineups, and draft history.', included: { tier1: false, tier2: true, tier3: true } },

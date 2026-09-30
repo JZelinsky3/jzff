@@ -1,0 +1,350 @@
+/* The weekly recap. A Tuesday paper: cream stock, black ink, and one red,
+   used only for the things that moved (a winner, a climb, a kicker). Built
+   for a phone held in one hand, because it is opened from a group chat. */
+
+.page {
+  --paper: #f3eee2;
+  --paper-2: #ebe4d3;
+  --card: #fbf8f1;
+  --ink: #1d1a15;
+  --ink-2: #4f4a3f;
+  --ink-3: #857d6d;
+  --rule: #d9d1bf;
+  --rule-strong: #1d1a15;
+  --red: #b3342a;
+  --red-wash: rgba(179, 52, 42, 0.08);
+
+  --rc-serif: "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --rc-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --rc-sans: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", sans-serif;
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--rc-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  min-height: 100vh;
+  min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.page * {
+  box-sizing: border-box;
+}
+
+.shell {
+  width: 100%;
+  max-width: 38rem;
+  margin: 0 auto;
+  padding: 0 16px 3rem;
+}
+
+/* ── Masthead ── */
+.head {
+  padding: calc(1.2rem + env(safe-area-inset-top)) 0 0.9rem;
+  text-align: center;
+  border-bottom: 3px double var(--rule-strong);
+}
+.kicker {
+  font-family: var(--rc-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--red);
+  text-decoration: none;
+}
+.head h1 {
+  margin: 0.4rem 0 0.25rem;
+  font-family: var(--rc-serif);
+  font-weight: 400;
+  font-size: clamp(2.3rem, 13vw, 3.4rem);
+  line-height: 1;
+  letter-spacing: -0.015em;
+}
+.head h1 em {
+  font-style: italic;
+  color: var(--red);
+}
+.dateline {
+  font-family: var(--rc-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.lede {
+  margin: 1.2rem 0 0.4rem;
+  font-family: var(--rc-serif);
+  font-size: 1.14rem;
+  line-height: 1.55;
+}
+.lede::first-letter {
+  font-size: 2.6em;
+  float: left;
+  line-height: 0.85;
+  padding: 0.06em 0.08em 0 0;
+  color: var(--red);
+}
+
+.empty {
+  margin: 2rem 0;
+  text-align: center;
+  color: var(--ink-2);
+}
+
+/* ── Sections ── */
+.section {
+  margin-top: 1.8rem;
+}
+.h2 {
+  margin: 0 0 0.6rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--rule-strong);
+  font-family: var(--rc-mono);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* ── Scores ── */
+.games {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+.game {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  padding: 0.6rem 0.8rem 0.5rem;
+}
+.gameTag {
+  font-family: var(--rc-mono);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 0.2rem;
+}
+.side {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.15rem 0;
+  color: var(--ink-2);
+}
+.side + .side {
+  border-top: 1px dotted var(--rule);
+}
+.won {
+  color: var(--ink);
+  font-weight: 700;
+}
+.won .score {
+  color: var(--red);
+}
+.sideName {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.team {
+  display: block;
+  font-weight: 400;
+  font-size: 0.74rem;
+  color: var(--ink-3);
+}
+.score {
+  font-family: var(--rc-serif);
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.gameFoot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.8rem;
+  margin-top: 0.2rem;
+  font-family: var(--rc-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+/* ── The week ── */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-top: 2px solid var(--ink);
+  padding: 0.6rem 0.7rem;
+}
+.cardLabel {
+  font-family: var(--rc-mono);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.cardValue {
+  margin-top: 0.2rem;
+  font-family: var(--rc-serif);
+  font-size: 1.35rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.cardNote {
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--ink-2);
+}
+
+/* ── Lists and tables ── */
+.notes {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+}
+.notes li::marker {
+  color: var(--red);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+.table th {
+  font-family: var(--rc-mono);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-align: right;
+  padding: 0 0 0.3rem 0.5rem;
+}
+.table td {
+  text-align: right;
+  padding: 0.4rem 0 0.4rem 0.5rem;
+  border-top: 1px solid var(--rule);
+  vertical-align: top;
+  white-space: nowrap;
+}
+.table .left {
+  text-align: left;
+  white-space: normal;
+  width: 100%;
+}
+.rank {
+  font-family: var(--rc-serif);
+  color: var(--ink-3);
+  padding-left: 0 !important;
+  width: 1.6rem;
+  text-align: left !important;
+}
+.up {
+  color: var(--red);
+  font-weight: 700;
+}
+.down {
+  color: var(--ink-2);
+}
+.flat {
+  color: var(--ink-3);
+}
+
+.fine {
+  margin: 0.5rem 0 0;
+  font-size: 0.76rem;
+  color: var(--ink-3);
+}
+.fine a,
+.foot a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ── Trades ── */
+.trade + .trade {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dotted var(--rule);
+}
+.tradeHead {
+  font-family: var(--rc-serif);
+  font-size: 1.1rem;
+  margin-bottom: 0.3rem;
+}
+.tradeSummary {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+
+/* ── Upgrade, share, footer ── */
+.upsell {
+  margin-top: 2rem;
+  padding: 1rem 1rem 1.1rem;
+  background: var(--red-wash);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--red);
+}
+.upsell p {
+  margin: 0 0 0.8rem;
+  font-size: 0.95rem;
+}
+
+.button {
+  display: inline-block;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  padding: 0.75rem 1.3rem;
+  background: var(--ink);
+  color: var(--card);
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.share {
+  margin-top: 2rem;
+  text-align: center;
+}
+.share .button {
+  width: 100%;
+  max-width: 22rem;
+}
+
+.foot {
+  margin-top: 2rem;
+  padding-top: 0.9rem;
+  border-top: 3px double var(--rule-strong);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.86rem;
+}
+
+@media (min-width: 640px) {
+  .cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

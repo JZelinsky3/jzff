@@ -159,9 +159,10 @@ const UDFA_LOCKED_DATA_PATTERNS: RegExp[] = [
 
 // Veteran-only pages — locked for Rookie (tier1) paid subs. The cards
 // for these features carry a "Veteran" ribbon on the live hub,
-// so the hub stays accessible and only the destinations gate. Weekly
-// Recap isn't here because it's not a built page yet (status="pro-soon"
-// on the hub).
+// so the hub stays accessible and only the destinations gate. The weekly
+// recap (/leagues/<slug>/recap/) isn't here: it's a React page outside this
+// template tree, and src/lib/recap/facts.ts leaves the bench and trade
+// sections out of the facts for anything below Veteran.
 const VETERAN_LOCKED_PAGE_PATTERNS: RegExp[] = [
   /^live\/best-coach(\/|$)/,
   /^live\/manager-dna(\/|$)/,

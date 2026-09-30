@@ -8,7 +8,7 @@ import { ingestYahooSource } from '@/lib/ingest/yahoo'
 import { getValidAccessToken as getYahooAccessToken } from '@/lib/platforms/yahoo'
 import { devCacheBust } from '@/lib/devCache'
 import { isLeagueLocked } from '@/lib/leagueTier'
-import type { IngestYearRange } from '@/lib/ingest/stages'
+import type { IngestStages, IngestYearRange } from '@/lib/ingest/stages'
 import { getNflClock } from '@/lib/nflClock'
 
 export const maxDuration = 300
@@ -52,6 +52,9 @@ export const maxDuration = 300
 // 504 that would lose the results collected so far.
 const START_BUDGET_MS = 180_000
 
+// What a free league's live source syncs each week. See leagueIsLocked below.
+const SCORES_ONLY: IngestStages = { matchups: true, lineups: false, drafts: false, trades: false }
+
 export async function GET(req: Request) {
   const startedAt = Date.now()
   const secret = process.env.CRON_SECRET
@@ -92,10 +95,12 @@ export async function GET(req: Request) {
   const skipped: Array<{ source: string; league_id: string; reason: string }> = []
   const touchedLeagues = new Set<string>()
 
-  // UDFA leagues don't get cron refreshes — live data is a paid
-  // feature and we don't want to spend cron budget on free-tier archives
-  // that can't display it anyway. Cache the per-league lock result so we
-  // only pay the tier lookup once per league per run.
+  // UDFA (free) leagues get a scores-only refresh: matchups, nothing else.
+  // That is exactly what their weekly recap needs (final scores, standings)
+  // and it is small, about six matchup rows a league a week. Weekly lineups,
+  // drafts and trades feed the paid pages and are by far the heavy tables,
+  // so they are still skipped. Cache the per-league lock result so we only
+  // pay the tier lookup once per league per run.
   const lockedCache = new Map<string, boolean>()
   async function leagueIsLocked(leagueId: string): Promise<boolean> {
     const cached = lockedCache.get(leagueId)
@@ -119,10 +124,7 @@ export async function GET(req: Request) {
     // than pressing on into a 504 that would discard every result above.
     if (Date.now() - startedAt > START_BUDGET_MS) break
     cursor++
-    if (await leagueIsLocked(src.league_id)) {
-      skipped.push({ source: src.external_id, league_id: src.league_id, reason: 'udfa-locked' })
-      continue
-    }
+    const stages = (await leagueIsLocked(src.league_id)) ? SCORES_ONLY : undefined
     // NFL Fantasy was retired ahead of 2026 and fantasy.nfl.com no longer
     // serves league pages, so there is nothing left to refresh. Skipping here
     // (rather than letting the ingest throw) keeps the run quiet and cheap.
@@ -133,13 +135,13 @@ export async function GET(req: Request) {
     try {
       let out
       if (src.platform === 'sleeper') {
-        out = await ingestSleeperSource(src.league_id, src.external_id, src.walk_history, range)
+        out = await ingestSleeperSource(src.league_id, src.external_id, src.walk_history, range, stages)
       } else if (src.platform === 'espn') {
         out = await ingestEspnSource(
           src.league_id,
           src.external_id,
           (src.settings ?? {}) as EspnSourceSettings,
-          undefined,
+          stages,
           espnRange,
         )
       } else if (src.platform === 'yahoo') {
@@ -148,7 +150,7 @@ export async function GET(req: Request) {
         const { data: lg } = await db.from('leagues').select('owner_id').eq('id', src.league_id).maybeSingle()
         if (!lg?.owner_id) throw new Error('Yahoo league has no owner; cannot refresh.')
         const token = await getYahooAccessToken(lg.owner_id, db)
-        out = await ingestYahooSource(src.league_id, src.external_id, src.walk_history, token, range)
+        out = await ingestYahooSource(src.league_id, src.external_id, src.walk_history, token, range, stages)
       } else {
         throw new Error(`${src.platform} sync not implemented`)
       }
