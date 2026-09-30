@@ -41,7 +41,7 @@ import { manualLocks, manualLockWarning, headlinePatch } from './manualLocks'
 import { mergeSeasonSettings } from './seasonSettings'
 import { autoStartLiveSeason } from './autoStartSeason'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
-import { computePositionRanks, stampRanks, rankWeekForTrade } from '@/lib/positionRanks'
+import { computePositionRanks, stampRanks, tradeRankWeek, FIRST_GRADED_SEASON } from '@/lib/positionRanks'
 import { getNflClock, weekIsFinal, seasonIsDecided, nflWeekAt } from '@/lib/nflClock'
 import { scoringSettingsFor } from '@/lib/seasonRules'
 import { writeTradeSides, type TradeSideWrite } from './tradeSides'
@@ -1066,10 +1066,12 @@ async function ingestSeason(args: {
         continue
       }
 
-      // Ranks as they stood when the trade was made: through the last week
-      // that was finished by then.
-      const weekForRanks = rankWeekForTrade(tradeWeek)
-      const ranks = weekForRanks ? await ranksForWeek(weekForRanks) : null
+      // Ranks as they stood when the trade was made, through the finished
+      // week lib/positionRanks tradeRankWeek picks. From FIRST_GRADED_SEASON
+      // on, the grade-trades cron owns these stamps (lib/tradeRanks), so a
+      // sync leaves them alone rather than fighting it.
+      const weekForRanks = year < FIRST_GRADED_SEASON ? tradeRankWeek(year, executedAtMs) : 0
+      const ranks = weekForRanks >= 1 ? await ranksForWeek(weekForRanks) : null
 
       const sideWrites: TradeSideWrite[] = []
       for (const [tid, assets] of assetsByTeam) {

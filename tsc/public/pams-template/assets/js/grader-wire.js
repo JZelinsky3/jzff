@@ -202,16 +202,17 @@
   // ── Shared bulletin pieces ─────────────────────────────────────────────
   // Asset rows and side headers carry the .rv class so a sealed dispatch
   // can reveal them piece by piece; outside .opening the class is inert.
-  function renderAsset(a) {
+  function renderAsset(a, ruled) {
     if (a.kind === 'player') {
-      // rank_now is refreshed daily by the grading cron, so it reads as
-      // "where they sit in the points race today". When the at-trade rank
-      // differs, show the drift; otherwise a single current chip.
+      // One chip, the rank at trade, until the four-week verdict is in.
+      // After it, rank_now is the verdict's rank and the chip shows the
+      // move. (rank_now used to be refreshed daily, so a deal made Monday
+      // showed a "then → now" by Tuesday that no verdict had written.)
       var rank = '';
-      if (a.rank_now && a.rank_at_trade && a.rank_now !== a.rank_at_trade) {
+      if (ruled && a.rank_now && a.rank_at_trade && a.rank_now !== a.rank_at_trade) {
         rank = '<span class="rk"><span class="then">' + escapeHtml(a.rank_at_trade) + '</span>' + escapeHtml(a.rank_now) + '</span>';
-      } else if (a.rank_now || a.rank_at_trade) {
-        rank = '<span class="rk">' + escapeHtml(a.rank_now || a.rank_at_trade) + '</span>';
+      } else if (a.rank_at_trade || (ruled && a.rank_now)) {
+        rank = '<span class="rk">' + escapeHtml(a.rank_at_trade || a.rank_now) + '</span>';
       }
       return '<div class="bl-asset rv">' +
         '<span class="pos">' + escapeHtml(a.position || '?') + '</span>' +
@@ -244,7 +245,8 @@
   }
 
   function renderSide(s, held) {
-    var assets = (s.assets || []).map(renderAsset).join('') ||
+    var ruled = !!s.revisit_grade;
+    var assets = (s.assets || []).map(function (a) { return renderAsset(a, ruled); }).join('') ||
       '<div class="bl-asset rv"><span class="nm" style="color:var(--ink-faint);font-style:italic;">Nothing received</span></div>';
     var avatar = s.manager.avatar_url
       ? '<img class="bl-side-avatar" src="' + escapeHtml(s.manager.avatar_url) + '" alt="">'

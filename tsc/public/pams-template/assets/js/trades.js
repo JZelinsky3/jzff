@@ -123,7 +123,7 @@
   }
 
   // ── Card rendering ─────────────────────────────────────────────────────
-  function renderAsset(a) {
+  function renderAsset(a, ruled) {
     if (a.kind === 'player') {
       var pos = a.position || '—';
       var team = a.team ? ' · ' + escapeHtml(a.team) : '';
@@ -133,7 +133,8 @@
       // couldn't resolve (deep bench, kickers/defs in non-scoring leagues)
       // just show without a chip — silent beats wrong.
       var rankChip = '';
-      if (a.rank_now && a.rank_at_trade && a.rank_now !== a.rank_at_trade) {
+      // The "then → now" pair is the verdict's; before it, one chip.
+      if (ruled && a.rank_now && a.rank_at_trade && a.rank_now !== a.rank_at_trade) {
         rankChip =
           '<span class="tr-asset-rank tr-asset-rank-revisit">' +
             '<span class="tr-asset-rank-then">' + escapeHtml(a.rank_at_trade) + '</span>' +
@@ -184,7 +185,8 @@
   }
 
   function renderSide(s, opts) {
-    var assets = (s.assets || []).map(renderAsset).join('');
+    var ruled = !!s.revisit_grade;
+    var assets = (s.assets || []).map(function (a) { return renderAsset(a, ruled); }).join('');
     if (!assets) {
       assets = '<div class="tr-asset"><span class="tr-asset-name" style="color:var(--cream-mute);font-style:italic;">Nothing received</span></div>';
     }

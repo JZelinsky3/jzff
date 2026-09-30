@@ -898,3 +898,33 @@ body {
   .cm-bar-head { width: auto; }
   .cm-model-head, .cm-model { width: 48px; }
 }
+
+
+/* ══════════════════════════════════════════════════════
+   THE OUTLOOK
+   Standings today beside the projected finish: the seed each team holds
+   now, a rule under the last playoff seed, and a tiebreaker chip where a
+   tie decided a conference place.
+══════════════════════════════════════════════════════ */
+.seed-num { font-family: var(--serif); font-size: 1.15rem; color: var(--gold-deep); }
+.seed-tag, .tb-tag, .proj-status {
+  display: inline-block; margin-left: 6px; padding: 1px 4px; border-radius: 2px;
+  font-family: var(--mono); font-weight: 700; font-size: 8px; letter-spacing: .12em; text-transform: uppercase;
+  vertical-align: middle;
+}
+.seed-tag { color: var(--gold-deep); border: 1px solid rgba(139,109,56,.45); }
+.tb-tag { color: #6b614e; border: 1px solid rgba(14,22,32,.22); cursor: help; }
+.proj-status.in { color: var(--good); border: 1px solid currentColor; }
+.proj-status.out { color: var(--bad); border: 1px solid currentColor; }
+.proj-now-head, .proj-now-cell { white-space: nowrap; }
+.proj-now-cell { font-family: var(--mono); font-size: .82rem; font-weight: 700; color: var(--ink); }
+.pr-table tr.pr-cut td { border-top: 2px solid rgba(14,22,32,.55); }
+.conf-rec-cell { color: #6b614e; }
+.pr-outlook-note {
+  margin: -8px 0 0; max-width: 860px;
+  font-family: var(--mono); font-size: .62rem; line-height: 1.6; letter-spacing: .04em; color: #6b614e;
+}
+@media (max-width: 640px) {
+  .seed-tag { display: none; }
+  .proj-now-head, .proj-now-cell { display: none; }
+}

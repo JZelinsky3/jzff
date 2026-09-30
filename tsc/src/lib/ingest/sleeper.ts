@@ -23,7 +23,7 @@ import { manualLocks, manualLockWarning, headlinePatch } from './manualLocks'
 import { mergeSeasonSettings } from './seasonSettings'
 import { autoStartLiveSeason } from './autoStartSeason'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
-import { computePositionRanks, stampRanks, rankWeekForTrade } from '@/lib/positionRanks'
+import { computePositionRanks, stampRanks, tradeRankWeek, FIRST_GRADED_SEASON } from '@/lib/positionRanks'
 import { writeTradeSides, type TradeSideWrite } from './tradeSides'
 
 export type IngestResult = {
@@ -840,12 +840,12 @@ export async function ingestSleeperSource(
       // assets payload is derived and refreshes every sync, but the side row
       // keeps its id so the grade hanging off it survives.
 
-      // Stamp season-to-date position rank on each player asset as it stood
-      // when the trade was made (through the last finished week). Preseason
-      // and week-1 trades have no finished week and skip it; pick/FAAB-only
-      // sides still pass through.
-      const weekForRanks = rankWeekForTrade(tradeWeek)
-      const ranks = weekForRanks ? await ranksForWeek(weekForRanks) : null
+      // Ranks as they stood when the trade was made, through the finished
+      // week lib/positionRanks tradeRankWeek picks. From FIRST_GRADED_SEASON
+      // on, the grade-trades cron owns these stamps (lib/tradeRanks), so a
+      // sync leaves them alone rather than fighting it.
+      const weekForRanks = year < FIRST_GRADED_SEASON ? tradeRankWeek(year, t.status_updated) : 0
+      const ranks = weekForRanks >= 1 ? await ranksForWeek(weekForRanks) : null
 
       const sideWrites: TradeSideWrite[] = []
       for (const [rid, assets] of assetsByRoster) {

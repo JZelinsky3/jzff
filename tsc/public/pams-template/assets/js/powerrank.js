@@ -136,8 +136,8 @@
     renderPodium(teams.slice(0, 3))
     renderTable(teams, !isOverall)
     renderCommish(week, cm)
-    renderProjections(week.overall)
-    renderConfGrid(week.divisions || [])
+    renderProjections()
+    renderConfGrid()
     var projNum = byId('projNum')
     if (projNum) projNum.textContent = (cm ? '§ 03' : '§ 02') + ' · Projections'
   }
@@ -336,56 +336,88 @@
     }).join('') + '</div>'
   }
 
-  // ── Projections (§ 02) ──────────────────────────────────────────────────
-  function renderProjections(teams) {
+  // ── Outlook (§ 02): standings now, finish projected ─────────────────────
+  // Always the latest week, whichever week tab is open: this is where the
+  // league stands today and where the sims say it ends up. Rows run in
+  // today's seed order (division winners first, then record, ties broken
+  // head-to-head, conference record, points for) with a rule at the
+  // playoff line.
+  function latestWeek() { return state.weeks[state.weeks.length - 1] }
+  var TB_WORDS = { h2h: ['H2H', 'Tiebreaker: head-to-head'], div: ['Conf', 'Tiebreaker: conference record'], pf: ['PF', 'Tiebreaker: points for'] }
+  function tbTag(t) {
+    var w = t.tb && TB_WORDS[t.tb]
+    return w ? '<span class="tb-tag" title="' + w[1] + '">' + w[0] + '</span>' : ''
+  }
+  function recStr(w, l, t) { return w + '-' + l + (t ? '-' + t : '') }
+  function pctStr(p) { return p == null ? '·' : p + '%' }
+  function renderProjections() {
     var section = byId('projSection')
     if (!state.data.hasProjections) { if (section) section.hidden = true; return }
     if (section) section.hidden = false
-    byId('projBody').innerHTML = teams.map(function (t) {
-      var projWL = t.proj_wins != null && t.proj_losses != null ? t.proj_wins + '–' + t.proj_losses : '—'
+    var latest = latestWeek()
+    var live = latest.week > 0
+    var cut = state.data.playoffTeams || 0
+    var byes = state.data.byeTeams || 0
+    var teams = latest.overall.slice().sort(function (a, b) {
+      return live ? (a.seed || 99) - (b.seed || 99) : (b.playoff_pct || 0) - (a.playoff_pct || 0)
+    })
+    var meta = byId('projMeta')
+    if (meta) meta.textContent = (live ? 'Through week ' + latest.week + ' · ' : '') + '8,000 simulated seasons'
+    byId('projBody').innerHTML = teams.map(function (t, i) {
+      var projWL = t.proj_wins != null && t.proj_losses != null ? t.proj_wins + '–' + t.proj_losses : '·'
       var pp = t.playoff_pct
-      var playStr = pp != null ? pp + '%' : '—'
-      var byeStr = t.bye_pct != null ? t.bye_pct + '%' : '—'
       var barW = pp != null ? Math.min(100, pp) : 0
       var barCls = pp >= 60 ? 'bar-elite' : pp >= 50 ? 'bar-good' : pp >= 38 ? 'bar-mid' : 'bar-low'
-      return '<tr>'
+      var status = t.clinched ? '<span class="proj-status in">Clinched</span>' : t.eliminated ? '<span class="proj-status out">Out</span>' : ''
+      var seed = live
+        ? '<span class="seed-num">' + t.seed + '</span>' + (t.seed <= byes ? '<span class="seed-tag">Bye</span>' : '')
+        : '<span class="seed-num">·</span>'
+      return '<tr class="' + (live && cut && i === cut ? 'pr-cut' : '') + '">'
+        + '<td class="col-rank">' + seed + '</td>'
         + '<td class="col-team">' + teamCell(t) + '</td>'
+        + '<td class="proj-now-cell">' + recStr(t.wins, t.losses, t.ties) + '</td>'
         + '<td class="proj-wl-cell">' + projWL + '</td>'
-        + '<td class="proj-pct-cell"><div class="proj-bar-wrap"><div class="proj-bar ' + barCls + '" style="width:' + barW + '%"></div></div><span class="proj-pct-val">' + playStr + '</span></td>'
-        + '<td class="proj-bye-cell">' + byeStr + '</td>'
+        + '<td class="proj-pct-cell"><div class="proj-bar-wrap"><div class="proj-bar ' + barCls + '" style="width:' + barW + '%"></div></div><span class="proj-pct-val">' + pctStr(pp) + '</span>' + status + '</td>'
+        + '<td class="proj-bye-cell">' + pctStr(t.bye_pct) + '</td>'
         + '</tr>'
     }).join('')
   }
 
-  // ── Conference odds (§ 03) ──────────────────────────────────────────────
-  function renderConfGrid(divisions) {
+  // ── Conferences (§ 03): standings + title odds ──────────────────────────
+  function renderConfGrid() {
     var grid = byId('confGrid')
     if (!grid) return
+    var latest = latestWeek()
+    var divisions = latest.divisions || []
     if (!state.data.hasDivisions || !state.data.hasProjections || !divisions.length) {
       grid.hidden = true
       return
     }
+    var live = latest.week > 0
     grid.hidden = false
     grid.innerHTML = divisions.map(function (d, idx) {
-      var sorted = d.teams.slice().sort(function (a, b) { return (b.conf_win_pct || 0) - (a.conf_win_pct || 0) })
+      var sorted = d.teams.slice().sort(function (a, b) {
+        return live ? (a.div_place || 99) - (b.div_place || 99) : (b.conf_win_pct || 0) - (a.conf_win_pct || 0)
+      })
       var rows = sorted.map(function (t, i) {
         var cp = t.conf_win_pct != null ? t.conf_win_pct : 0
         var barCls = cp >= 30 ? 'bar-elite' : cp >= 16 ? 'bar-good' : 'bar-low'
         return '<tr>'
-          + '<td class="col-rank"><span class="rank-num conf-rank-num">' + (i + 1) + '</span></td>'
+          + '<td class="col-rank"><span class="rank-num conf-rank-num">' + (live ? t.div_place : i + 1) + '</span></td>'
           + '<td class="col-team">' + teamCell(t) + '</td>'
-          + '<td class="score-cell">' + t.score.toFixed(1) + '</td>'
+          + '<td class="rec-cell">' + recStr(t.wins, t.losses, t.ties) + tbTag(t) + '</td>'
+          + '<td class="rec-cell conf-rec-cell">' + recStr(t.div_w || 0, t.div_l || 0, t.div_t || 0) + '</td>'
           + '<td class="proj-pct-cell"><div class="proj-bar-wrap"><div class="proj-bar ' + barCls + '" style="width:' + Math.min(100, cp) + '%"></div></div><span class="proj-pct-val">' + cp + '%</span></td>'
           + '</tr>'
       }).join('')
       return '<section class="pr-section">'
         + '<div class="pr-section-header">'
         +   '<span class="pr-section-num">§ 03' + String.fromCharCode(97 + idx) + ' · ' + esc(d.name) + '</span>'
-        +   '<span class="pr-section-title">' + esc(d.name) + ' <em> —</em></span>'
-        +   '<span class="pr-section-meta">title odds</span>'
+        +   '<span class="pr-section-title">' + esc(d.name) + ' <em>·</em></span>'
+        +   '<span class="pr-section-meta">standings + title odds</span>'
         + '</div>'
         + '<div class="pr-table-wrap"><table class="pr-table"><thead><tr>'
-        +   '<th class="col-rank">#</th><th class="col-team">Team</th><th class="col-score">Score</th>'
+        +   '<th class="col-rank">#</th><th class="col-team">Team</th><th class="col-record">Record</th><th class="col-record">Conf</th>'
         +   '<th class="proj-pct-head">Win ' + esc(d.name) + ' %</th>'
         + '</tr></thead><tbody>' + rows + '</tbody></table></div>'
         + '</section>'

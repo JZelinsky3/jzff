@@ -118,13 +118,15 @@
         <div class="pr-section-header">
           <span class="pr-section-num" id="projNum">§ 02 · Projections</span>
           <span class="pr-section-title">Season <em>outlook ·</em></span>
-          <span class="pr-section-meta">8,000-run Monte Carlo · projected from scoring</span>
+          <span class="pr-section-meta" id="projMeta">8,000 simulated seasons</span>
         </div>
         <div class="pr-table-wrap">
           <table class="pr-table">
             <thead>
               <tr>
+                <th class="col-rank">Seed</th>
                 <th class="col-team">Manager</th>
+                <th class="proj-now-head">Now</th>
                 <th class="proj-wl-head">Proj W–L</th>
                 <th class="proj-pct-head">Playoff %</th>
                 <th class="proj-bye-head">Bye %</th>
@@ -133,6 +135,7 @@
             <tbody id="projBody"></tbody>
           </table>
         </div>
+        <p class="pr-outlook-note">Seeded as things stand: conference winners take the top seeds, then best record. Ties go to head-to-head, then conference record, then points for. The odds play every remaining game 8,000 times. Early on, a team's scoring so far counts for less, so a hot start doesn't read as a sure thing.</p>
       </section>
 
       <!-- ── Conference Odds (one section per division; JS-filled) ── -->

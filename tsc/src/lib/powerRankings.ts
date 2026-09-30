@@ -31,8 +31,9 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
-import { simulateSeason } from '@/lib/powerSim'
+import { simulateSeason, standingsNow, type SimGame, type SimTeam, type TieKey } from '@/lib/powerSim'
 import { getLockReason } from '@/lib/leagueTier'
+import { commishRulesFor, effectiveRules } from '@/lib/seasonRules'
 
 export type PowerFactors = {
   // preseason (weeks 0–3, blended down)
@@ -68,12 +69,25 @@ export type PowerTeam = {
   delta: number // rank change vs the previous snapshot (+ = moved up)
   factors: PowerFactors
   conf_rank?: number
+  // The standings as of this snapshot, under the same rules the sim seeds
+  // by: division winners first, ties broken head-to-head, then division
+  // record, then points for. `tb` names the tiebreaker that decided the
+  // division place, when one did.
+  seed?: number
+  div_place?: number | null
+  div_winner?: boolean
+  div_w?: number
+  div_l?: number
+  div_t?: number
+  tb?: TieKey | null
   // Monte Carlo projections — attached when a remaining schedule exists.
   proj_wins?: number
   proj_losses?: number
   playoff_pct?: number
   bye_pct?: number
   conf_win_pct?: number
+  clinched?: boolean
+  eliminated?: boolean
 }
 
 // The commissioner's own order for a week, next to the model's. `model_rank`
@@ -119,6 +133,8 @@ export type PowerRankings =
       currentWeek: number
       hasDivisions: boolean
       hasProjections: boolean
+      playoffTeams: number
+      byeTeams: number
       weights: { preseason: Record<string, number>; inseason: Record<string, number> }
       weeks: PowerWeek[]
     }
@@ -181,7 +197,7 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
 
   const { data: league } = await db
     .from('leagues')
-    .select('id, division_names, owner_id')
+    .select('id, division_names, owner_id, settings')
     .eq('slug', slug)
     .maybeSingle()
   if (!league) return null
@@ -363,6 +379,55 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
     if (settledWeeks.has(w)) completedWeeks.push(w)
   }
 
+  // ── Playoff format ───────────────────────────────────────────────────────
+  // Commissioner overrides from the Sources page win over the platform's.
+  const rules = effectiveRules(liveSeason.settings, commishRulesFor(league.settings, liveSeason.year))
+  const playoffWeeks: number[] = Array.isArray(liveSeason.playoff_weeks) ? liveSeason.playoff_weeks : []
+  const playoffStart = rules.playoff_week_start ?? (playoffWeeks.length > 0 ? Math.min(...playoffWeeks) : 15)
+  const teamCount = bases.length
+  const playoffTeams = rules.playoff_team_count ?? (teamCount >= 10 ? 6 : Math.max(2, Math.round(teamCount / 2)))
+  const byeTeams = playoffTeams === 6 ? 2 : 0
+
+  // Settled regular-season games through a week: what the standings (and
+  // the sim's head-to-head and division records) are built from.
+  const playedThrough = (w: number): SimGame[] => {
+    const out: SimGame[] = []
+    for (let wk = 1; wk <= w && wk < playoffStart; wk++) {
+      if (!settledWeeks.has(wk)) continue
+      for (const g of byWeek.get(wk) ?? []) {
+        out.push({ a: g.manager_a_id, b: g.manager_b_id, sa: Number(g.score_a), sb: Number(g.score_b) })
+      }
+    }
+    return out
+  }
+  const simTeamsFor = (played: SimGame[]): SimTeam[] => {
+    const acc = new Map(bases.map((b) => [b.teamId, { w: 0, l: 0, t: 0, pf: 0, g: 0 }]))
+    for (const g of played) {
+      const a = acc.get(g.a)
+      const b = acc.get(g.b)
+      if (!a || !b) continue
+      a.pf += g.sa; b.pf += g.sb; a.g++; b.g++
+      if (g.sa > g.sb) { a.w++; b.l++ } else if (g.sa < g.sb) { b.w++; a.l++ } else { a.t++; b.t++ }
+    }
+    return bases.map((b) => {
+      const r = acc.get(b.teamId)!
+      return {
+        teamId: b.teamId,
+        division: hasDivisions ? b.divisionIdx : null,
+        ppg: r.g > 0 ? r.pf / r.g : 0,
+        games: r.g,
+        startWins: r.w,
+        startLosses: r.l,
+        startTies: r.t,
+        startPf: r.pf,
+      }
+    })
+  }
+  const divisionSize = new Map<number, number>()
+  for (const b of bases) {
+    if (b.divisionIdx != null) divisionSize.set(b.divisionIdx, (divisionSize.get(b.divisionIdx) ?? 0) + 1)
+  }
+
   // ── Compute one snapshot (week N; 0 = preseason) ─────────────────────────
 
   function snapshot(throughWeek: number): PowerTeam[] {
@@ -440,29 +505,10 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
       )
     }
 
-    // Division rank (by season win%, then PF) for the conference factor.
-    const divRank = new Map<string, { rank: number; size: number }>()
-    if (hasDivisions) {
-      const byDiv = new Map<number, Base[]>()
-      for (const b of bases) {
-        const d = b.divisionIdx ?? -1
-        const arr = byDiv.get(d) ?? []
-        arr.push(b)
-        byDiv.set(d, arr)
-      }
-      for (const [, group] of byDiv) {
-        const ranked = [...group].sort((x, y) => {
-          const ax = agg.get(x.teamId)!
-          const ay = agg.get(y.teamId)!
-          const gx = ax.w + ax.l + ax.t
-          const gy = ay.w + ay.l + ay.t
-          const wpx = gx > 0 ? (ax.w + 0.5 * ax.t) / gx : 0
-          const wpy = gy > 0 ? (ay.w + 0.5 * ay.t) / gy : 0
-          return wpy - wpx || ay.pf - ax.pf
-        })
-        ranked.forEach((b, i) => divRank.set(b.teamId, { rank: i + 1, size: group.length }))
-      }
-    }
+    // The standings as of this week. The conference factor reads the
+    // division place off them, so it agrees with the table readers see.
+    const played = playedThrough(throughWeek)
+    const standings = standingsNow(simTeamsFor(played), played)
 
     const blend = preseasonBlend(throughWeek)
 
@@ -526,8 +572,11 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
         topHalfRate = credit / a.games.length
       }
 
-      const dr = divRank.get(b.teamId)
-      const confNorm = dr && dr.size > 1 ? (dr.size - dr.rank) / (dr.size - 1) : 0
+      const st = standings.get(b.teamId)
+      const divSize = b.divisionIdx != null ? divisionSize.get(b.divisionIdx) ?? 0 : 0
+      const confNorm = hasDivisions && st?.div_place != null && divSize > 1
+        ? (divSize - st.div_place) / (divSize - 1)
+        : 0
 
       const inFactors: PowerFactors = {
         record: recordSos * inSeasonW.record,
@@ -571,7 +620,14 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
         factors: Object.fromEntries(
           Object.entries(factors).map(([k, v]) => [k, Math.round((v as number) * 100) / 100]),
         ),
-        conf_rank: dr?.rank,
+        conf_rank: hasDivisions ? st?.div_place ?? undefined : undefined,
+        seed: st?.seed,
+        div_place: st?.div_place ?? null,
+        div_winner: st?.div_winner ?? false,
+        div_w: st?.div_w ?? 0,
+        div_l: st?.div_l ?? 0,
+        div_t: st?.div_t ?? 0,
+        tb: st?.tb ?? null,
       }
     })
 
@@ -629,6 +685,10 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
     const modelRank = new Map(wk.overall.map((t) => [t.team_id, t.rank]))
     const listed = ids.filter((id) => modelRank.has(id))
     const missing = wk.overall.map((t) => t.team_id).filter((id) => !listed.includes(id))
+    // A board saved in the model's own order says nothing the page doesn't
+    // already show, so it reads as no board at all: no Model / Commish
+    // switch, no comparison section.
+    if ([...listed, ...missing].every((id, i) => modelRank.get(id) === i + 1)) { wk.commish = null; continue }
     wk.commish = {
       note: typeof saved?.note === 'string' && saved.note.trim() ? saved.note.trim() : null,
       updated_at: typeof saved?.updated_at === 'string' ? saved.updated_at : null,
@@ -640,8 +700,6 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
   }
 
   // ── Monte Carlo projections ──────────────────────────────────────────────
-  const playoffWeeks: number[] = Array.isArray(liveSeason.playoff_weeks) ? liveSeason.playoff_weeks : []
-  const playoffStart = playoffWeeks.length > 0 ? Math.min(...playoffWeeks) : 15
   // Still to be played: every regular-season game outside a settled week.
   // Keyed off the same set the snapshots use, so games are counted exactly
   // once — as a banked result or as a game left on the schedule.
@@ -651,51 +709,8 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
 
   let hasProjections = false
   if (remaining.length > 0 && weeks.length > 0) {
-    const latest = weeks[weeks.length - 1]!.overall
-    const baseById = new Map(bases.map((b) => [b.teamId, b]))
-    const teamPpg = new Map<string, number>()
-    const ppgVals: number[] = []
-    for (const t of latest) {
-      const games = t.wins + t.losses + t.ties
-      let ppg = games > 0 ? t.pf / games : 0
-      if (ppg === 0) {
-        const b = baseById.get(t.team_id)
-        ppg = b && b.pfPerSeason > 0 ? b.pfPerSeason / 14 : 0
-      }
-      teamPpg.set(t.team_id, ppg)
-      if (ppg > 0) ppgVals.push(ppg)
-    }
-    const leagueAvgPpg = ppgVals.length > 0 ? ppgVals.reduce((s, v) => s + v, 0) / ppgVals.length : 105
-
-    const scores: number[] = []
-    for (const w of completedWeeks) {
-      for (const g of byWeek.get(w) ?? []) {
-        if (g.score_a != null) scores.push(Number(g.score_a))
-        if (g.score_b != null) scores.push(Number(g.score_b))
-      }
-    }
-    let scoreSd = 22
-    if (scores.length >= 4) {
-      const mean = scores.reduce((s, v) => s + v, 0) / scores.length
-      scoreSd = Math.sqrt(scores.reduce((s, v) => s + (v - mean) ** 2, 0) / scores.length)
-    }
-
-    const teamCount = bases.length
-    const playoffTeams =
-      (((liveSeason.settings ?? {}) as Record<string, unknown>).playoff_team_count as number | undefined) ??
-      (teamCount >= 10 ? 6 : Math.max(2, Math.round(teamCount / 2)))
-    const byeTeams = playoffTeams === 6 ? 2 : 0
-
-    const simTeams = latest.map((t) => ({
-      teamId: t.team_id,
-      division: t.division,
-      ppg: teamPpg.get(t.team_id) || leagueAvgPpg,
-      startWins: t.wins,
-      startLosses: t.losses,
-      startTies: t.ties,
-      startPf: t.pf,
-    }))
-    const projections = simulateSeason(simTeams, remaining, { scoreSd, playoffTeams, byeTeams, runs: 8000 })
+    const played = playedThrough(currentWeek)
+    const projections = simulateSeason(simTeamsFor(played), remaining, { playoffTeams, byeTeams, runs: 8000, played })
 
     const attach = (t: PowerTeam) => {
       const p = projections.get(t.team_id)
@@ -705,6 +720,8 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
       t.playoff_pct = p.playoff_pct
       t.bye_pct = p.bye_pct
       t.conf_win_pct = p.conf_win_pct
+      t.clinched = p.clinched_playoff
+      t.eliminated = p.eliminated
     }
     for (const wk of weeks) {
       wk.overall.forEach(attach)
@@ -721,6 +738,8 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
     currentWeek,
     hasDivisions,
     hasProjections,
+    playoffTeams,
+    byeTeams,
     // Canonical W4+ in-season maxes for fallback/UI labels. Per-snapshot
     // weights live on each PowerWeek as `inseasonWeights`.
     weights: { preseason: PRESEASON_W, inseason: hasDivisions ? INSEASON_DIV_W : INSEASON_NODIV_W },

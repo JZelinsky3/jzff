@@ -85,6 +85,15 @@ export function nflWeekAt(year: number, at: string | number | Date, seasonStartD
   return Math.min(18, Math.floor((t - rollover) / WEEK_MS) + 1)
 }
 
+// The moment `week` of `year` is over: its rollover into the next week,
+// 07:00 UTC on the Tuesday after its Monday night. Week 0 (the preseason)
+// is over when week 1 opens.
+export function weekOverAt(year: number, week: number, seasonStartDate?: string | null): number {
+  const parsedStart = seasonStartDate ? Date.parse(seasonStartDate) : NaN
+  const start = Number.isFinite(parsedStart) ? parsedStart : week1TuesdayUtc(year)
+  return start + 7 * 60 * 60 * 1000 + Math.max(0, week) * WEEK_MS
+}
+
 // Can `year` have a champion yet? Only once its last fantasy week is over.
 // Fails CLOSED, unlike weekIsFinal: with no clock, only a season from an
 // earlier calendar year counts, because naming a champion early is exactly

@@ -252,6 +252,20 @@ body { background: #f0e5c8; color: var(--ink); }
     color: var(--pr-mute);
 }
 .pj-head span:nth-child(2) { text-align: center; }
+/* Outlook: seed + today's record ride in the name cell; a rule marks the
+   playoff line; tiebreaker chips sit beside conference places. */
+.pj-seed { display: inline-block; min-width: 1.05rem; font-family: var(--serif); font-style: italic; font-weight: 400; font-size: .86rem; color: var(--gold-deep); }
+.pj-name small { margin-left: .3rem; font-family: var(--mono); font-weight: 700; font-size: .5rem; color: var(--pr-mute); }
+.pj-wl small { display: block; font-weight: 400; font-size: .44rem; letter-spacing: .04em; margin-top: 1px; }
+.pj-pct small.in { color: var(--pr-good); font-weight: 700; }
+.pj-pct small.out { color: var(--pr-bad); font-weight: 700; }
+.pj-row.pj-cut { border-top: 2px solid var(--ink); }
+.pj-tb {
+    margin-left: .3rem; padding: 0 .2rem; border: 1px solid var(--pr-line); border-radius: 3px;
+    font-family: var(--mono); font-weight: 700; font-size: .42rem; letter-spacing: .08em; color: var(--pr-mute);
+    vertical-align: .1em;
+}
+.pj-note { margin: .45rem .15rem 0; font-family: var(--mono); font-size: .5rem; line-height: 1.5; letter-spacing: .03em; color: var(--pr-mute); }
 .pj-head span:last-child { text-align: right; }
 
 /* Formula sheet (native dialog, reuses m-sheet look) */
@@ -377,11 +391,12 @@ body { background: #f0e5c8; color: var(--ink); }
         <section id="commishSection" hidden></section>
 
         <section id="projSection" hidden>
-            <div class="pr-label"><span class="star">★</span> Season Outlook · Monte Carlo</div>
+            <div class="pr-label"><span class="star">★</span> <span id="projLabel">Season Outlook</span></div>
             <div class="pr-table">
-                <div class="pj-head"><span>Manager</span><span>W–L</span><span>Playoffs</span><span>%</span></div>
+                <div class="pj-head"><span>Seed · Now</span><span>Proj</span><span>Playoffs</span><span>%</span></div>
                 <div id="projBody"></div>
             </div>
+            <p class="pj-note">Conference winners take the top seeds. Ties go to head-to-head, conference record, then points.</p>
         </section>
 
         <div id="confGrid" hidden></div>
@@ -613,8 +628,8 @@ body { background: #f0e5c8; color: var(--ink); }
 
         renderPodium(teams.slice(0, 3));
         renderTable(teams, !isOverall);
-        renderProjections(week.overall);
-        renderConfGrid(week.divisions || []);
+        renderProjections();
+        renderConfGrid();
         // Shrink-to-fit runs after the DOM swap settles, otherwise the
         // measurements come from a 0-width container during init.
         requestAnimationFrame(fitAllTeamNames);
@@ -887,48 +902,71 @@ body { background: #f0e5c8; color: var(--ink); }
         }).join('');
     }
 
-    function renderProjections(teams) {
+    // The outlook and the conference tables always read the latest week,
+    // whichever week tab is open: where the league stands today (seed
+    // order, a rule at the playoff line) and where the sims say it ends.
+    function latestWeek() { return state.weeks[state.weeks.length - 1]; }
+    var TB_WORDS = { h2h: 'H2H', div: 'Conf', pf: 'PF' };
+    function recStr(w, l, t) { return w + '-' + l + (t ? '-' + t : ''); }
+    function renderProjections() {
         var section = byId('projSection');
         if (!state.data.hasProjections) { section.hidden = true; return; }
         section.hidden = false;
-        byId('projBody').innerHTML = teams.map(function (t) {
+        var latest = latestWeek();
+        var live = latest.week > 0;
+        var cut = state.data.playoffTeams || 0;
+        var teams = latest.overall.slice().sort(function (a, b) {
+            return live ? (a.seed || 99) - (b.seed || 99) : (b.playoff_pct || 0) - (a.playoff_pct || 0);
+        });
+        byId('projLabel').textContent = live ? 'Season Outlook · Thru Wk ' + latest.week : 'Season Outlook';
+        byId('projBody').innerHTML = teams.map(function (t, i) {
             var projWL = t.proj_wins != null && t.proj_losses != null ? t.proj_wins + '–' + t.proj_losses : '·';
             var pp = t.playoff_pct;
             var barW = pp != null ? Math.min(100, pp) : 0;
             var barCls = pp >= 60 ? 'bar-elite' : pp >= 50 ? 'bar-good' : pp >= 38 ? 'bar-mid' : 'bar-low';
-            var bye = t.bye_pct != null ? '<small>Bye ' + t.bye_pct + '%</small>' : '';
-            return '<div class="pj-row">' +
-                '<span class="pj-name">' + esc(t.manager) + '</span>' +
+            var sub = t.clinched ? '<small class="in">Clinched</small>'
+                : t.eliminated ? '<small class="out">Out</small>'
+                : (t.bye_pct != null ? '<small>Bye ' + t.bye_pct + '%</small>' : '');
+            return '<div class="pj-row' + (live && cut && i === cut ? ' pj-cut' : '') + '">' +
+                '<span class="pj-name">' + (live ? '<span class="pj-seed">' + t.seed + '</span>' : '') + esc(t.manager) +
+                    '<small>' + recStr(t.wins, t.losses, t.ties) + '</small></span>' +
                 '<span class="pj-wl">' + projWL + '</span>' +
                 '<span class="pj-bar-wrap"><span class="pj-bar ' + barCls + '" style="width:' + barW + '%"></span></span>' +
-                '<span class="pj-pct">' + (pp != null ? pp + '%' : '·') + bye + '</span>' +
+                '<span class="pj-pct">' + (pp != null ? pp + '%' : '·') + sub + '</span>' +
             '</div>';
         }).join('');
     }
 
-    function renderConfGrid(divisions) {
+    function renderConfGrid() {
         var grid = byId('confGrid');
+        var latest = latestWeek();
+        var divisions = latest.divisions || [];
         if (!state.data.hasDivisions || !state.data.hasProjections || !divisions.length) {
             grid.hidden = true;
             return;
         }
+        var live = latest.week > 0;
         grid.hidden = false;
         grid.innerHTML = divisions.map(function (d) {
-            var sorted = d.teams.slice().sort(function (a, b) { return (b.conf_win_pct || 0) - (a.conf_win_pct || 0); });
+            var sorted = d.teams.slice().sort(function (a, b) {
+                return live ? (a.div_place || 99) - (b.div_place || 99) : (b.conf_win_pct || 0) - (a.conf_win_pct || 0);
+            });
             var rows = sorted.map(function (t, i) {
                 var cp = t.conf_win_pct != null ? t.conf_win_pct : 0;
                 var barCls = cp >= 30 ? 'bar-elite' : cp >= 16 ? 'bar-good' : 'bar-low';
+                var tb = t.tb && TB_WORDS[t.tb] ? '<span class="pj-tb">' + TB_WORDS[t.tb] + '</span>' : '';
                 return '<div class="pj-row">' +
-                    '<span class="pj-name">' + (i + 1) + '. ' + esc(t.manager) + '</span>' +
-                    '<span class="pj-wl">' + t.score.toFixed(1) + '</span>' +
+                    '<span class="pj-name"><span class="pj-seed">' + (live ? t.div_place : i + 1) + '</span>' + esc(t.manager) + tb + '</span>' +
+                    '<span class="pj-wl">' + recStr(t.wins, t.losses, t.ties) +
+                        '<small>' + recStr(t.div_w || 0, t.div_l || 0, t.div_t || 0) + ' conf</small></span>' +
                     '<span class="pj-bar-wrap"><span class="pj-bar ' + barCls + '" style="width:' + Math.min(100, cp) + '%"></span></span>' +
                     '<span class="pj-pct">' + cp + '%</span>' +
                 '</div>';
             }).join('');
             return '<section>' +
-                '<div class="pr-label"><span class="star">★</span> ' + esc(d.name) + ' · Title Odds</div>' +
+                '<div class="pr-label"><span class="star">★</span> ' + esc(d.name) + ' · Standings</div>' +
                 '<div class="pr-table">' +
-                    '<div class="pj-head"><span>Manager</span><span>Score</span><span>Win ' + esc(d.name) + '</span><span>%</span></div>' +
+                    '<div class="pj-head"><span>Manager</span><span>Record</span><span>Win ' + esc(d.name) + '</span><span>%</span></div>' +
                     rows +
                 '</div>' +
             '</section>';

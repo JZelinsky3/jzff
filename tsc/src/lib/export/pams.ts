@@ -6,7 +6,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { canonicalDraftBySeason } from '@/lib/canonicalDraft'
-import { simulateSeason, type SimTeam } from '@/lib/powerSim'
+import { simulateSeason, type SimGame, type SimTeam } from '@/lib/powerSim'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
 import {
   commishRulesFor,
@@ -4826,6 +4826,7 @@ function buildPlayoffOddsPreview(
   const teamPf = new Map<string, number>()
   const teamGames = new Map<string, number>()
   const scores: number[] = []
+  const played: SimGame[] = []
 
   for (const m of matchups) {
     if (m.is_playoff) continue
@@ -4834,6 +4835,7 @@ function buildPlayoffOddsPreview(
     const sa = Number(m.score_a)
     const sb = Number(m.score_b)
     scores.push(sa, sb)
+    played.push({ a: m.manager_a_id, b: m.manager_b_id, sa, sb })
     teamPf.set(m.manager_a_id, (teamPf.get(m.manager_a_id) ?? 0) + sa)
     teamPf.set(m.manager_b_id, (teamPf.get(m.manager_b_id) ?? 0) + sb)
     teamGames.set(m.manager_a_id, (teamGames.get(m.manager_a_id) ?? 0) + 1)
@@ -4858,12 +4860,6 @@ function buildPlayoffOddsPreview(
     .map((m) => ({ a: m.manager_a_id, b: m.manager_b_id }))
   if (remaining.length === 0) return null
 
-  // Score SD across every completed regular-season point total.
-  const mean = scores.reduce((a, b) => a + b, 0) / scores.length
-  const scoreSd = Math.sqrt(
-    scores.reduce((a, v) => a + (v - mean) ** 2, 0) / scores.length,
-  )
-
   // Per-team PPG (fall back to league avg for any team with no completed
   // games — shouldn't happen at W10 but guard anyway).
   const ppgVals: number[] = []
@@ -4886,6 +4882,7 @@ function buildPlayoffOddsPreview(
       teamId: ms.manager_id,
       division: ms.division_index ?? null,
       ppg: gp > 0 ? pf / gp : leagueAvgPpg,
+      games: gp,
       startWins: teamWins.get(ms.manager_id) ?? 0,
       startLosses: teamLosses.get(ms.manager_id) ?? 0,
       // teamGames counts every scored game; only decisive ones landed in
@@ -4900,7 +4897,7 @@ function buildPlayoffOddsPreview(
   })
 
   const projections = simulateSeason(simTeams, remaining, {
-    scoreSd, playoffTeams, byeTeams, runs: 8000,
+    playoffTeams, byeTeams, runs: 8000, played,
   })
 
   const teams = simTeams.map((t) => {

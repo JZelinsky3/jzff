@@ -24,14 +24,13 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { groqChatJson, GroqError, DEFAULT_GROQ_MODEL } from '@/lib/groq'
 import { getSleeperValuesForPlayerIds, type PlayerValue } from '@/lib/playerValues'
-import { computePositionRanks, stampRanks, buildNameLookup, nameKey } from '@/lib/positionRanks'
-import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
+import { buildNameLookup, nameKey, FIRST_GRADED_SEASON, tradeRankWeek, tradeRankWeekOver, VERDICT_LAG_WEEKS } from '@/lib/positionRanks'
+import { loadRankTrades, stampTradeRanks } from '@/lib/tradeRanks'
 import { loadAnalyzerData, type AnalyzerLeagueData, type AnalyzerRoster } from '@/lib/tradeDesk/analyzer'
 import { lineupValue, gradeStarter, DEFAULT_SLOTS, type HubLineupSlots } from '@/lib/hub/analyzer'
 import { parseSettings, mergeEffective, type EffectiveSettings } from '@/lib/tradeDesk/settings'
 import { valuateLeague, type PlayerValue as ConsensusValue, type LeagueMode } from '@/lib/values'
 import { effectivePackageValue } from '@/lib/hub/verdict'
-import { resolveCurrentWeek } from '@/lib/liveSeason'
 
 // Same env override the Analyzer + Rumor Mill use, so one var upgrades the
 // whole desk's writing model at once.
@@ -606,7 +605,9 @@ export function summaryViolations(
 // a playoff push" says nothing except that the model needed a sentence.
 export const STANDINGS_TALK_FROM_WEEK = 7
 
-export const FIRST_GRADED_SEASON = 2026
+// Lives beside the rank rules, since from this season on the grading cron
+// also owns every trade's rank chips.
+export { FIRST_GRADED_SEASON }
 
 // Each manager's record through the week BEFORE a trade, plus where that
 // put them in the league. The grader had no standings data at all, which
@@ -670,35 +671,28 @@ function formatRecord(r: RecordLine): string {
   return `${wl}, ${ordinal(r.rank)} of ${r.of} by record`
 }
 
-// A verdict lands four weeks after the week the trade happened, not four
+// A verdict lands once four more weeks have been played past the week the
+// trade's ranks read through (lib/positionRanks tradeRankWeek), not four
 // weeks after the grade was written. Grading time is an artifact of when the
 // cron ran, so every trade from a given week gets its verdict on the same
 // week this way, which is what makes the verdict desk read like a scheduled
-// column rather than a trickle.
-export const REVISIT_LAG_WEEKS = 4
+// column rather than a trickle. It also means the verdict's "now" rank is
+// always four finished weeks on from the rank at trade.
+export const REVISIT_LAG_WEEKS = VERDICT_LAG_WEEKS
 
-// Is this trade's verdict week here yet?
-//
-// Preseason trades carry no week and sit at week 0, so their verdicts land in
-// week 4, the week before a week-1 trade's. Shared by the daily cron and the
-// manual per-league revisit tool so "due" means one thing in both.
+// Is this trade's verdict week over yet? Read off the NFL calendar, same as
+// the trade's own week. Shared by the daily cron and the manual per-league
+// revisit tool so "due" means one thing in both.
 export function verdictIsDue(args: {
-  tradeWeek: number | null
-  seasonIsLive: boolean
+  year: number
+  executedAt: string | null
   seasonSettings: Record<string, unknown> | null | undefined
+  now?: number
 }): boolean {
-  const tradeWeek = typeof args.tradeWeek === 'number' && args.tradeWeek > 0 ? args.tradeWeek : 0
-  const dueWeek = tradeWeek + REVISIT_LAG_WEEKS
-
-  // A season that is no longer live has finished: there is nothing left to
-  // wait for, so any outstanding verdict is due.
-  if (!args.seasonIsLive) return true
-
-  const current = resolveCurrentWeek(args.seasonSettings ?? {})
-  // No resolvable week means no schedule to judge against. Wait rather than
-  // guess, so a misconfigured season doesn't hand out early verdicts.
-  if (current == null) return false
-  return current >= dueWeek
+  if (!args.executedAt) return false
+  const start = typeof args.seasonSettings?.season_start_date === 'string' ? args.seasonSettings.season_start_date : null
+  const rankWeek = tradeRankWeek(args.year, args.executedAt, start)
+  return tradeRankWeekOver(args.year, Math.min(18, rankWeek + REVISIT_LAG_WEEKS), start, args.now)
 }
 
 type TradePlatform = 'sleeper' | 'espn' | 'yahoo' | 'nfl'
@@ -1739,36 +1733,10 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
     revised++
   }
 
-  // Stamp `rank_now` on each side's player assets — the 4-week verdict
-  // snapshot. computePositionRanks fetches Sleeper weekly stats up to
-  // (trade.week + 4) and ranks within position, same as ingest does for
-  // rank_at_trade. Default PPR scoring is used here regardless of the
-  // league's actual ruleset; matching exact custom scoring is a follow-up
-  // when we surface platform-specific scoring extraction.
-  if (trade.week && season?.year) {
-    const verdictWeek = Math.min(18, Number(trade.week) + 4)
-    const platform = (trade.platform as 'sleeper' | 'espn' | 'yahoo' | 'nfl') ?? 'sleeper'
-    try {
-      const ranks = await computePositionRanks({
-        season: Number(season.year),
-        throughWeek: verdictWeek,
-        scoring: DEFAULT_PPR_SCORING,
-      })
-      for (const s of sides) {
-        const original = (s.assets as Array<Record<string, unknown>>) ?? []
-        const stamped = await stampRanks(original, { ranks, platform, field: 'rank_now' })
-        const { error: stampErr } = await db
-          .from('trade_sides')
-          .update({ assets: stamped })
-          .eq('id', s.id as string)
-        if (stampErr) {
-          warnings.push(`stamp rank_now for side ${s.id}: ${stampErr.message}`)
-        }
-      }
-    } catch (e) {
-      warnings.push(`revisit ranks for trade ${tradeId}: ${e instanceof Error ? e.message : String(e)}`)
-    }
-  }
+  // The verdict's "now" rank (and the rank at trade, if it was missing)
+  // come from the one writer both chips share. revisited_at is set above,
+  // so this reads the trade as a verdict.
+  await stampTradeRanks(db, await loadRankTrades(db, { tradeIds: [tradeId] }, warnings), warnings)
 
   return { trade_id: tradeId, graded_sides: revised, warnings }
 }
@@ -1789,7 +1757,7 @@ export async function revisitForLeague(args: {
   // revisit yet, newest first.
   const q = db
     .from('trades')
-    .select('id, ai_summary_at, revisited_at, week, seasons!inner(year, is_live, settings)')
+    .select('id, ai_summary_at, revisited_at, executed_at, seasons!inner(year, settings)')
     .eq('league_id', args.leagueId)
     .eq('status', 'completed')
     .not('ai_summary', 'is', null)
@@ -1803,14 +1771,15 @@ export async function revisitForLeague(args: {
     return { scanned: 0, revisited: 0, warnings }
   }
 
-  // Same due rule the cron uses (trade week + 4), not age-since-grading.
+  // Same due rule the cron uses (four weeks past the rank week), not
+  // age-since-grading.
   const eligible = (args.eligibleOnly ?? true)
     ? rows.filter((r) => {
         const season = Array.isArray(r.seasons) ? r.seasons[0] : r.seasons
-        return verdictIsDue({
-          tradeWeek: r.week as number | null,
-          seasonIsLive: !!season?.is_live,
-          seasonSettings: season?.settings as Record<string, unknown> | null,
+        return !!season && verdictIsDue({
+          year: season.year as number,
+          executedAt: r.executed_at as string | null,
+          seasonSettings: season.settings as Record<string, unknown> | null,
         })
       })
     : rows

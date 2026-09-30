@@ -30,7 +30,7 @@ import {
   type YahooLeagueMeta,
 } from '@/lib/platforms/yahoo'
 import { parallelLimit } from '@/lib/platforms/sleeper'
-import { computePositionRanks, stampRanks, rankWeekForTrade } from '@/lib/positionRanks'
+import { computePositionRanks, stampRanks, tradeRankWeek, FIRST_GRADED_SEASON } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
 import { manualLocks, manualLockWarning, headlinePatch } from './manualLocks'
@@ -751,9 +751,12 @@ export async function ingestYahooSource(
         continue
       }
 
-      // Ranks as they stood when the trade was made.
-      const rankWeek = rankWeekForTrade(tradeWeek)
-      const ranks = rankWeek ? await ranksForWeek(rankWeek) : null
+      // Ranks as they stood when the trade was made, through the finished
+      // week lib/positionRanks tradeRankWeek picks. From FIRST_GRADED_SEASON
+      // on, the grade-trades cron owns these stamps (lib/tradeRanks), so a
+      // sync leaves them alone rather than fighting it.
+      const rankWeek = year < FIRST_GRADED_SEASON && t.ts ? tradeRankWeek(year, t.ts * 1000) : 0
+      const ranks = rankWeek >= 1 ? await ranksForWeek(rankWeek) : null
 
       const sideWrites: TradeSideWrite[] = []
       for (const [teamKey, assets] of assetsByTeamKey) {

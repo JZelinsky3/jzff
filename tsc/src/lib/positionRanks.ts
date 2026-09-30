@@ -20,6 +20,7 @@ import { fetchSeasonByWeek } from './playerStats'
 import { scoreSeason } from './scoring'
 import { getPlayersMap } from './sleeperPlayers'
 import { applyNameAliases, NAME_ALIASES } from './values/nameAliases'
+import { nflWeekAt, weekOverAt } from './nflClock'
 
 export type PositionRanks = Map<string, string> // player_id -> "RB12"
 
@@ -62,7 +63,11 @@ export function resolveRankSource(
   const week = Number(clock.week)
 
   if (inSeason && Number.isFinite(week) && week >= FIRST_STATS_WEEK) {
-    return { kind: 'stats', season, throughWeek: Math.min(18, week) }
+    // `week` is the week being PLAYED. Ranking through it counted whatever
+    // half of a Sunday had happened so far, so the ranks moved by the hour
+    // all weekend. Rank through the last finished week instead.
+    const throughWeek = clock.season_type === 'post' ? 18 : week - 1
+    return { kind: 'stats', season, throughWeek: Math.min(18, throughWeek) }
   }
   // Preseason, offseason, or week 1 still in progress: the draft board for
   // the season about to be (or just being) played.
@@ -135,13 +140,83 @@ export async function computePositionRanks(opts: {
   return ranks
 }
 
-// Which week's ranks describe a player "at the time of the trade": the last
-// week that was finished when it was made. A trade during week 3 happened
-// with weeks 1 and 2 in the books, so it ranks through week 2. Ranking
-// through the trade's own week counted games that hadn't been played yet.
-// Preseason and week-1 trades have no finished week, so they get no chip.
-export function rankWeekForTrade(tradeWeek: number | null | undefined): number | null {
-  return typeof tradeWeek === 'number' && tradeWeek > 1 ? Math.min(18, tradeWeek - 1) : null
+// ── Which finished week a trade's ranks describe ──────────────────────────
+//
+// "Rank at trade" is where a player sat in the points race when the deal was
+// made, read through a FINISHED week so the chip never moves afterwards:
+//
+//   • Tuesday to Saturday of week N: week N-1 was in the books, so N-1.
+//     (A Thursday game may have started; one game is not a week.)
+//   • Sunday, Monday, or the small hours of Tuesday before the rollover:
+//     week N is being played. Ranks read mid-weekend move by the hour and
+//     look absurd a day later, so these wait for week N to finish and rank
+//     through N. Grading waits with them (the grade-trades cron checks
+//     tradeRankWeekOver), which is what holds a Sunday trade until Tuesday.
+//   • Before week 1 opens: 0, the preseason draft board.
+//
+// The verdict four weeks later reads through rank week + 4, so every trade
+// gets four finished weeks of games between its two chips.
+export const VERDICT_LAG_WEEKS = 4
+// Trades are graded from this season on, and from it on the grade-trades
+// cron is the one writer of their rank chips (rank_at_trade and the
+// verdict's rank_now). Ingest still stamps older seasons' trades.
+export const FIRST_GRADED_SEASON = 2026
+const DAY_MS = 24 * 60 * 60 * 1000
+
+function etWeekday(ms: number): string {
+  return new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short' }).format(ms)
+}
+
+export function tradeRankWeek(
+  year: number,
+  executedAt: string | number | Date,
+  seasonStartDate?: string | null,
+): number {
+  const t = executedAt instanceof Date ? executedAt.getTime() : typeof executedAt === 'number' ? executedAt : Date.parse(executedAt)
+  if (!Number.isFinite(t)) return 0
+  const week = nflWeekAt(year, t, seasonStartDate)
+  if (week === 0) return 0
+  const day = etWeekday(t)
+  const midWeekend = day === 'Sun' || day === 'Mon' ||
+    // Tuesday before the rollover still belongs to the week just played.
+    (day === 'Tue' && nflWeekAt(year, t - DAY_MS, seasonStartDate) === week)
+  return Math.min(18, midWeekend ? week : week - 1)
+}
+
+// Is that week finished, so its ranks can be read and frozen?
+export function tradeRankWeekOver(year: number, rankWeek: number, seasonStartDate?: string | null, now = Date.now()): boolean {
+  return now >= weekOverAt(year, rankWeek, seasonStartDate)
+}
+
+// The week a verdict's ranks read through: four finished weeks past the
+// rank at trade, or the last finished week if the verdict ran sooner (a
+// hand-run revisit, or one written before this rule existed).
+export function verdictRankWeek(
+  year: number,
+  rankWeek: number,
+  verdictAt: string | number | Date,
+  seasonStartDate?: string | null,
+): number {
+  const lastFinished = Math.max(0, nflWeekAt(year, verdictAt, seasonStartDate) - 1)
+  return Math.min(18, rankWeek + VERDICT_LAG_WEEKS, lastFinished)
+}
+
+// Ranks through a rank week: season-to-date stats, or for week 0 the
+// preseason draft board. The board is live, so it only stands in for the
+// preseason of the season being played now; week 0 of an older season
+// gets no ranks rather than this year's board.
+export async function ranksThroughWeek(opts: {
+  season: number
+  week: number
+  scoring: ScoringSettings
+}): Promise<PositionRanks> {
+  if (opts.week >= 1) {
+    return computePositionRanks({ season: opts.season, throughWeek: opts.week, scoring: opts.scoring })
+  }
+  const now = new Date()
+  const draftSeason = now.getUTCMonth() >= 5 ? now.getUTCFullYear() : now.getUTCFullYear() - 1
+  if (opts.season !== draftSeason) return new Map()
+  return draftBoardRanks({ year: opts.season })
 }
 
 // Current position ranks, from whichever source resolveRankSource picks.
@@ -169,8 +244,19 @@ export async function buildCurrentRanks(opts: {
     })
   }
 
-  // Preseason: rank within position off the consensus draft board.
-  //
+  return draftBoardRanks({
+    year: source.year,
+    draftScoring: opts.draftScoring,
+    qbStarters: opts.qbStarters,
+  })
+}
+
+// Preseason position ranks off the consensus draft board.
+async function draftBoardRanks(opts: {
+  year: number
+  draftScoring?: 'ppr' | 'half'
+  qbStarters?: number
+}): Promise<PositionRanks> {
   // Deliberately NOT DraftBoardPlayer.tier — that is a positional TIER
   // bucket in the fantasy sense ("he's a WR1", i.e. startable as your best
   // receiver), so a board has a dozen different WR1s. Stat ranks are
@@ -182,7 +268,7 @@ export async function buildCurrentRanks(opts: {
   // position gives WR1, WR2, WR3...
   const { buildDraftBoard } = await import('./values/draftRanks')
   const board = await buildDraftBoard({
-    year: source.year,
+    year: opts.year,
     scoring: opts.draftScoring ?? 'ppr',
     qbStarters: opts.qbStarters ?? 1,
   })
@@ -240,7 +326,20 @@ export function nameKey(name: string, position?: string | null): string {
 // — the dict is large and rebuilding per asset would be wasteful. Also
 // used by the trade grader to resolve ESPN/Yahoo/NFL asset ids to Sleeper
 // ids so value data attaches on every platform.
+let lookupMemo: { at: number; map: Promise<Map<string, string>> } | null = null
+const LOOKUP_TTL_MS = 10 * 60 * 1000
+
 export async function buildNameLookup(): Promise<Map<string, string>> {
+  // Memoized briefly: stamping a batch of trades used to rebuild this map
+  // (a pass over the whole player dict) once per trade side.
+  if (lookupMemo && Date.now() - lookupMemo.at < LOOKUP_TTL_MS) return lookupMemo.map
+  const map = buildNameLookupFresh()
+  lookupMemo = { at: Date.now(), map }
+  map.catch(() => { lookupMemo = null })
+  return map
+}
+
+async function buildNameLookupFresh(): Promise<Map<string, string>> {
   const playersMap = await getPlayersMap()
   const out = new Map<string, string>()
   // Name-only keys ("name|") are registered when the name is UNIQUE across

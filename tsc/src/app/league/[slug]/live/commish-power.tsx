@@ -174,9 +174,12 @@ export function CommishPower({
       </label>
 
       <div className={`${cls}-actions`}>
-        <button type="button" className="lo-btn" onClick={() => publish(false)} disabled={busy}>
+        {/* The page hides a board in the model's own order, so there is
+            nothing to publish until a team moves. */}
+        <button type="button" className="lo-btn" onClick={() => publish(false)} disabled={busy || sameAsModel}>
           {busy ? 'Saving…' : published ? 'Update my ranking' : 'Publish my ranking'}
         </button>
+        {sameAsModel && !msg && <span className={`${cls}-msg`}>Matches the model. Move a team to publish your own.</span>}
         {!sameAsModel && (
           <button type="button" className="lo-btn-ghost" onClick={() => setOrder(modelOrder)} disabled={busy}>
             Start over from the model

@@ -271,13 +271,15 @@
    pills: plain words with a green underline under the active one (the
    games), and on the same line a years phrase that opens the phone's own
    picker. Only when the years are narrowed does a small line appear under
-   it with the span (or From / To pickers) and Clear. */
+   it with the span (or From / To pickers) and Clear. Its class is
+   .rb-fsub, not .rb-sub: .rb-sub is the year/team line under each season
+   bar, and sharing the name dragged that line up over the bars. */
 .rb-filter {
     display: flex; align-items: flex-end; justify-content: space-between; gap: .8rem;
     margin: 0 .15rem .8rem;
     border-bottom: 1px solid var(--ink-line-soft);
 }
-.rb-filter[hidden], .rb-sub[hidden], .rb-range[hidden] { display: none; }
+.rb-filter[hidden], .rb-fsub[hidden], .rb-range[hidden], .rb-scope[hidden] { display: none; }
 .rb-scope { display: flex; gap: 1.05rem; min-width: 0; }
 .rb-scope button {
     flex: none; background: none; border: 0;
@@ -298,14 +300,15 @@
     text-underline-offset: 3px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.rb-filter > .rb-f-pick { flex: none; padding: .35rem 0 .5rem; }
+/* margin-left keeps the years on the right when Careers hides the switch. */
+.rb-filter > .rb-f-pick { flex: none; margin-left: auto; padding: .35rem 0 .5rem; }
 .rb-f-pick.is-set { color: var(--rec); text-decoration-color: var(--rec); }
 .rb-f-pick select {
     position: absolute; inset: 0; width: 100%; height: 100%;
     opacity: 0; font-size: 16px; /* 16px keeps iOS from zooming on tap */
     -webkit-appearance: none; appearance: none;
 }
-.rb-sub {
+.rb-fsub {
     display: flex; align-items: baseline; justify-content: flex-end; gap: .5rem;
     margin: -.45rem .15rem .85rem;
     font-family: var(--mono); font-weight: 700;
@@ -362,7 +365,7 @@
             <select id="rb-years" aria-label="Which years"></select>
         </label>
     </div>
-    <div class="rb-sub" id="rb-sub" hidden>
+    <div class="rb-fsub" id="rb-fsub" hidden>
         <span id="rb-span"></span>
         <span class="rb-range" id="rb-range" hidden>
             <label class="rb-f-pick is-set"><span id="rb-from-text"></span><select id="rb-from" aria-label="From"></select></label>
@@ -410,21 +413,38 @@
         var sc = p.get('scope');
         return { scope: sc === 'reg' || sc === 'post' ? sc : 'all', era: p.get('era') || '', years: p.get('years') || '' };
     })();
-    function filterQs() {
+    function filterQs(scope) {
         var p = new URLSearchParams();
-        if (FILTER.scope !== 'all') p.set('scope', FILTER.scope);
+        if (scope == null) scope = FILTER.scope;
+        if (scope !== 'all') p.set('scope', scope);
         if (FILTER.era) p.set('era', FILTER.era);
         else if (FILTER.years) p.set('years', FILTER.years);
         var q = p.toString();
         return q ? '?' + q : '';
     }
 
+    // Careers ignore the Games switch. Titles, podiums, trips and average
+    // finish count whole seasons whatever it says, so under Reg Season or
+    // Playoffs those cards only repeated Overall. The chapter always reads
+    // every game and the switch hides while it is open.
+    function dataScope() { return section === 'career' ? 'all' : FILTER.scope; }
+    var loadedQs = null;
+    var fetched = {};
+    function fetchBook(qs) {
+        if (!fetched[qs]) {
+            fetched[qs] = Promise.all([
+                fetch('data/record_book.json' + qs).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+                fetch('data/league.json' + qs).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+            ]);
+        }
+        return fetched[qs];
+    }
     function load() {
-        var qs = filterQs();
-        return Promise.all([
-            fetch('data/record_book.json' + qs).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
-            fetch('data/league.json' + qs).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
-        ]).then(function (res) {
+        var qs = filterQs(dataScope());
+        loadedQs = qs;
+        return fetchBook(qs).then(function (res) {
+            // A tab or filter change started a newer load; let that one draw.
+            if (qs !== loadedQs) return;
             book = res[0] && res[0].full_book;
             meta = res[1];
             renderFilter();
@@ -444,6 +464,7 @@
         if (years.length < 2 && !eras.length) { bar.hidden = true; return; }
         bar.hidden = false;
 
+        document.getElementById('rb-scope').hidden = section === 'career';
         document.querySelectorAll('#rb-scope button').forEach(function (b) {
             b.classList.toggle('is-active', b.dataset.scope === FILTER.scope);
         });
@@ -475,7 +496,7 @@
         document.getElementById('rb-to-text').textContent = toY;
         document.getElementById('rb-range').hidden = !custom;
         document.getElementById('rb-span').textContent = era ? yearSpan(era.years) : '';
-        document.getElementById('rb-sub').hidden = !(FILTER.era || FILTER.years);
+        document.getElementById('rb-fsub').hidden = !(FILTER.era || FILTER.years);
     }
     function applyFilter(patch) {
         Object.keys(patch).forEach(function (k) { FILTER[k] = patch[k]; });
@@ -1122,6 +1143,13 @@
         if (!btn) return;
         section = btn.dataset.sec;
         this.querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+        // Into or out of Careers under a Reg / Playoffs filter swaps books.
+        if (filterQs(dataScope()) !== loadedQs) {
+            document.getElementById('cards').innerHTML = '<div class="m-empty">Turning the pages…</div>';
+            load();
+            return;
+        }
+        renderFilter();
         render();
     });
 })();

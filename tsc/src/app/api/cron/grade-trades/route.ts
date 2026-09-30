@@ -8,10 +8,22 @@
 // imported history never picks up a grade even if a backfill or re-import
 // gives it a recent timestamp.
 //
-// Revisits ride the same run: a graded trade gets its verdict pass once the
-// season reaches four weeks past the week the trade happened (preseason
-// trades count as week 0, so they land in week 4 and week-1 trades in
-// week 5). Tied to the trade's week, not to when the grade was written.
+// Grading waits for the week a trade's ranks read through to finish (see
+// tradeRankWeek in lib/positionRanks). A Tuesday-to-Saturday trade reads
+// through last week and is graded on the next run; one made Sunday or
+// Monday, mid-slate, is held until the week is over and graded Tuesday.
+//
+// Revisits ride the same run: a graded trade gets its verdict pass once four
+// more weeks are finished past that rank week (a preseason trade's verdict
+// comes after week 4). Tied to the trade's week, not to when the grade was
+// written.
+//
+// Last, every recent trade's rank chips are brought in line (lib/tradeRanks):
+// the rank at trade once its week is over, the verdict's rank once there is
+// a verdict, and no second chip before that.
+//
+// Manual backfill: ?only=ranks runs just that last pass (no grading, no
+// Groq), and &league=<slug> narrows it to one league.
 //
 // Eligibility: the league owner must have Veteran-tier trades access
 // (tier2+/comp) — same gate the trades page enforces — so free leagues
@@ -46,17 +58,17 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { gradeTrade, revisitTrade, FIRST_GRADED_SEASON, verdictIsDue } from '@/lib/tradeGrader'
 import { leagueHasTradesAccess } from '@/lib/trades'
-import { computePositionRanks, stampRanks, buildCurrentRanks, type PositionRanks } from '@/lib/positionRanks'
-import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
+import { tradeRankWeek, tradeRankWeekOver } from '@/lib/positionRanks'
+import { loadRankTrades, stampTradeRanks } from '@/lib/tradeRanks'
 
 export const maxDuration = 300
 
 const MAX_GRADES = 25
 const MAX_REVISITS = 15
 const PER_CALL_DELAY_MS = 5000
-// Rank refresh: newest trades first, drains across days if a backlog
-// ever exceeds the cap. Sides, not trades, are the write unit.
-const MAX_RANK_TRADES = 150
+// Rank pass: newest trades first. Every graded-season trade is cheap to
+// re-check (no LLM, stats cached per week), so the cap is generous.
+const MAX_RANK_TRADES = 400
 
 type TradeRow = { id: string; league_id: string }
 
@@ -84,100 +96,6 @@ async function filterEligible(
     eligible: rows.filter((r) => accessByLeague.get(r.league_id) === true),
     leaguesChecked: leagueIds.length,
   }
-}
-
-// Keep every player asset's `rank_now` current for recent seasons, so the
-// wire shows where a traded player sits in the points race TODAY (and the
-// verdict desk can show "at trade → now"). Revisits used to be the only
-// thing stamping rank_now, frozen at trade week + 4; this pass refreshes
-// it daily instead. Ranks are computed once per season year (through week
-// 18 — season-to-date under default PPR, same convention as revisits) and
-// stamped across every eligible trade of that season. Costs zero LLM
-// calls; the Sleeper stat fetches are cached in-process.
-async function refreshRanksNow(
-  db: ReturnType<typeof createAdminClient>,
-  warnings: string[],
-): Promise<number> {
-  // The season whose stats are still "live" flips over in September; the
-  // previous year rides along so a just-finished season keeps its final
-  // ranks and pre-pipeline trades get backfilled.
-  const nowDate = new Date()
-  const liveYear = nowDate.getMonth() >= 8 ? nowDate.getFullYear() : nowDate.getFullYear() - 1
-  const seasonYears = [liveYear, liveYear - 1]
-
-  // "Where does this player rank today" for the LIVE season: stats once
-  // week 1 is complete, the consensus draft board before that.
-  const liveRanks = await buildCurrentRanks({ scoring: DEFAULT_PPR_SCORING })
-
-  const { data: rows, error } = await db
-    .from('trades')
-    .select('id, league_id, platform, seasons!inner(year)')
-    .eq('status', 'completed')
-    .in('seasons.year', seasonYears)
-    .order('executed_at', { ascending: false })
-    .limit(MAX_RANK_TRADES)
-  if (error) {
-    warnings.push(`rank refresh: load trades: ${error.message}`)
-    return 0
-  }
-
-  const { eligible } = await filterEligible(db, (rows ?? []) as TradeRow[])
-  if (eligible.length === 0) return 0
-  const eligibleIds = new Set(eligible.map((r) => r.id))
-
-  const metaByTrade = new Map<string, { platform: 'sleeper' | 'espn' | 'yahoo' | 'nfl'; year: number }>()
-  for (const t of rows ?? []) {
-    if (!eligibleIds.has(t.id)) continue
-    const season = Array.isArray(t.seasons) ? t.seasons[0] : t.seasons
-    metaByTrade.set(t.id, {
-      platform: (t.platform as 'sleeper' | 'espn' | 'yahoo' | 'nfl') ?? 'sleeper',
-      year: season?.year ?? liveYear,
-    })
-  }
-
-  const ranksByYear = new Map<number, PositionRanks | null>()
-  for (const year of new Set([...metaByTrade.values()].map((m) => m.year))) {
-    try {
-      // The live season goes through buildCurrentRanks (stats or draft
-      // board); completed seasons rank over their full 18 weeks.
-      ranksByYear.set(year, year === liveYear && liveRanks.size > 0
-        ? liveRanks
-        : await computePositionRanks({
-            season: year,
-            throughWeek: 18,
-            scoring: DEFAULT_PPR_SCORING,
-          }))
-    } catch (e) {
-      warnings.push(`rank refresh: ranks for ${year}: ${e instanceof Error ? e.message : String(e)}`)
-      ranksByYear.set(year, null)
-    }
-  }
-
-  const { data: sides, error: sidesErr } = await db
-    .from('trade_sides')
-    .select('id, trade_id, assets')
-    .in('trade_id', [...metaByTrade.keys()])
-  if (sidesErr) {
-    warnings.push(`rank refresh: load sides: ${sidesErr.message}`)
-    return 0
-  }
-
-  let stamped = 0
-  for (const s of sides ?? []) {
-    const meta = metaByTrade.get(s.trade_id)
-    const ranks = meta ? ranksByYear.get(meta.year) : null
-    if (!meta || !ranks || ranks.size === 0) continue
-    const original = (s.assets as Array<Record<string, unknown>>) ?? []
-    const updated = await stampRanks(original, { ranks, platform: meta.platform, field: 'rank_now' })
-    if (JSON.stringify(updated) === JSON.stringify(original)) continue
-    const { error: upErr } = await db
-      .from('trade_sides')
-      .update({ assets: updated })
-      .eq('id', s.id)
-    if (upErr) warnings.push(`rank refresh: side ${s.id}: ${upErr.message}`)
-    else stamped++
-  }
-  return stamped
 }
 
 // A grade is a permanent, public artifact: it quotes a player's position
@@ -217,10 +135,25 @@ export async function GET(req: Request) {
   }
 
   const db = createAdminClient()
+  const params = new URL(req.url).searchParams
+
+  if (params.get('only') === 'ranks') {
+    const warnings: string[] = []
+    let leagueId: string | undefined
+    const slug = params.get('league')
+    if (slug) {
+      const { data: lg } = await db.from('leagues').select('id').eq('slug', slug).maybeSingle()
+      if (!lg) return NextResponse.json({ error: `no league ${slug}` }, { status: 404 })
+      leagueId = lg.id
+    }
+    const trades = await loadRankTrades(db, { leagueId, limit: MAX_RANK_TRADES }, warnings)
+    const ranksStamped = await stampTradeRanks(db, trades, warnings)
+    return NextResponse.json({ trades: trades.length, ranksStamped, warnings })
+  }
 
   // Freshness gate. `?force=1` is the manual-dispatch escape hatch for when
   // you knowingly want grades out of a degraded state.
-  const force = new URL(req.url).searchParams.get('force') === '1'
+  const force = params.get('force') === '1'
   const valueAgeMs = await playerValuesAgeMs(db)
   if (!force && (valueAgeMs == null || valueAgeMs > MAX_VALUE_AGE_MS)) {
     const age = valueAgeMs == null ? 'never populated' : `${Math.round(valueAgeMs / 3600000)}h old`
@@ -246,7 +179,7 @@ export async function GET(req: Request) {
   // across consecutive days.
   const { data: freshRows, error: freshErr } = await db
     .from('trades')
-    .select('id, league_id, seasons!inner(year)')
+    .select('id, league_id, executed_at, seasons!inner(year, settings)')
     .eq('status', 'completed')
     .is('ai_summary', null)
     .gte('seasons.year', FIRST_GRADED_SEASON)
@@ -254,7 +187,17 @@ export async function GET(req: Request) {
     .limit(MAX_GRADES * 3)
   if (freshErr) warnings.push(`load fresh trades: ${freshErr.message}`)
 
-  const fresh = await filterEligible(db, (freshRows ?? []) as TradeRow[])
+  // Held until the week its ranks read through is over: a trade made on
+  // Sunday or Monday waits for Tuesday.
+  const readyRows = (freshRows ?? []).filter((t) => {
+    const season = Array.isArray(t.seasons) ? t.seasons[0] : t.seasons
+    if (!season || !t.executed_at) return false
+    const settings = (season.settings ?? {}) as Record<string, unknown>
+    const start = typeof settings.season_start_date === 'string' ? settings.season_start_date : null
+    return tradeRankWeekOver(season.year, tradeRankWeek(season.year, t.executed_at, start), start)
+  })
+
+  const fresh = await filterEligible(db, readyRows as TradeRow[])
   const toGrade = fresh.eligible.slice(0, MAX_GRADES)
 
   let graded = 0
@@ -268,7 +211,7 @@ export async function GET(req: Request) {
   // ── Graded trades → verdicts, four weeks after the trade's week ───────
   const { data: staleRows, error: staleErr } = await db
     .from('trades')
-    .select('id, league_id, week, seasons!inner(year, is_live, settings)')
+    .select('id, league_id, executed_at, seasons!inner(year, settings)')
     .eq('status', 'completed')
     .not('ai_summary', 'is', null)
     .is('revisited_at', null)
@@ -279,10 +222,10 @@ export async function GET(req: Request) {
 
   const dueRows = (staleRows ?? []).filter((t) => {
     const season = Array.isArray(t.seasons) ? t.seasons[0] : t.seasons
-    return verdictIsDue({
-      tradeWeek: t.week as number | null,
-      seasonIsLive: !!season?.is_live,
-      seasonSettings: season?.settings as Record<string, unknown> | null,
+    return !!season && verdictIsDue({
+      year: season.year,
+      executedAt: t.executed_at as string | null,
+      seasonSettings: season.settings as Record<string, unknown> | null,
     })
   })
 
@@ -297,8 +240,8 @@ export async function GET(req: Request) {
     warnings.push(...r.warnings)
   }
 
-  // ── Current-rank refresh on every recent trade ────────────────────────
-  const ranksStamped = await refreshRanksNow(db, warnings)
+  // ── Rank chips on every recent trade ──────────────────────────────────
+  const ranksStamped = await stampTradeRanks(db, await loadRankTrades(db, { limit: MAX_RANK_TRADES }, warnings), warnings)
 
   return NextResponse.json({
     graded,
