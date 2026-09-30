@@ -245,10 +245,10 @@ async function summarizeLeague(
   // manager names in parallel.
   const { data: seasonRows } = await supabase
     .from('seasons')
-    .select('id, year, champion_manager_id, runner_up_manager_id, settings')
+    .select('id, year, champion_manager_id, runner_up_manager_id, third_place_manager_id, settings')
     .eq('league_id', lg.id)
 
-  type SeasonMeta = { year: number; champion: string | null; runnerUp: string | null; playoffTeamCount: number | null }
+  type SeasonMeta = { year: number; champion: string | null; runnerUp: string | null; third: string | null; playoffTeamCount: number | null }
   const seasonById = new Map<string, SeasonMeta>()
   for (const s of seasonRows ?? []) {
     const ptcRaw = (s.settings as { playoff_team_count?: unknown } | null)?.playoff_team_count
@@ -257,6 +257,7 @@ async function summarizeLeague(
       year: s.year as number,
       champion: (s.champion_manager_id as string | null) ?? null,
       runnerUp: (s.runner_up_manager_id as string | null) ?? null,
+      third: (s.third_place_manager_id as string | null) ?? null,
       playoffTeamCount: ptc,
     })
   }
@@ -296,8 +297,8 @@ async function summarizeLeague(
     if (base.lastYear == null || season.year > base.lastYear) base.lastYear = season.year
   }
 
-  // Titles / runner-ups / bronze (3rd-place is a trophy too — derived from
-  // my final_rank since seasons table only stores champion + runner_up ids).
+  // Titles / runner-ups / bronze. Third place is the season's hand-entered
+  // podium when there is one, otherwise my final_rank.
   for (const [seasonId, season] of seasonById) {
     if (season.champion === mid) {
       base.championships += 1
@@ -306,7 +307,7 @@ async function summarizeLeague(
     } else if (season.runnerUp === mid) {
       base.runnerUps += 1
       trophyCase.push({ leagueName: displayName, year: season.year, kind: 'runner-up' })
-    } else if (myFinalRankBySeason.get(seasonId) === 3) {
+    } else if (season.third === mid || (!season.third && myFinalRankBySeason.get(seasonId) === 3)) {
       base.thirdPlaces += 1
       base.thirdPlaceYears.push(season.year)
       trophyCase.push({ leagueName: displayName, year: season.year, kind: 'third-place' })

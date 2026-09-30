@@ -477,8 +477,8 @@ async function ingestSeason(args: {
   // a blank standings scrape must not null out a champion we already know.
   const regularSeasonWinner = ranked[0] ? teamToManagerId(ranked[0][0]) : null
   const seasonPatch: Record<string, string> = {}
-  if (champManager) seasonPatch.champion_manager_id = champManager
-  if (runnerUpManager) seasonPatch.runner_up_manager_id = runnerUpManager
+  if (champManager && !locks.has('podium')) seasonPatch.champion_manager_id = champManager
+  if (runnerUpManager && !locks.has('podium')) seasonPatch.runner_up_manager_id = runnerUpManager
   if (regularSeasonWinner) seasonPatch.regular_season_winner_id = regularSeasonWinner
   if (Object.keys(seasonPatch).length > 0) {
     await db.from('seasons').update(seasonPatch).eq('id', seasonId)

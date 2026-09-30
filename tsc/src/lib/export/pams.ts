@@ -43,6 +43,9 @@ type SeasonRow = {
   external_id: string | null
   champion_manager_id: string | null
   runner_up_manager_id: string | null
+  // Set only for a hand-entered podium (0069); otherwise third place is
+  // derived from the third-place game, see deriveThirdPlace.
+  third_place_manager_id: string | null
   regular_season_winner_id: string | null
   playoff_weeks: number[] | null
   is_live: boolean | null
@@ -259,7 +262,7 @@ async function loadSnapshot(leagueId: string, opts: { lite?: boolean } = {}): Pr
   ] = await Promise.all([
     db
       .from('seasons')
-      .select('id, year, external_id, champion_manager_id, runner_up_manager_id, regular_season_winner_id, playoff_weeks, is_live, settings')
+      .select('id, year, external_id, champion_manager_id, runner_up_manager_id, third_place_manager_id, regular_season_winner_id, playoff_weeks, is_live, settings')
       .eq('league_id', leagueId)
       .order('year', { ascending: true }),
     db
@@ -908,6 +911,14 @@ function pickPrimary(s: Snapshot, mgrs: ManagerRow[]): ManagerRow {
 //
 // The rule also does the right thing mid-season: a year in progress has
 // no champion yet, so partial W/L never leaks into career records.
+/** 1, 2 or 3 when one of `managerIds` holds that place on the season row. */
+function podiumPlace(season: SeasonRow, managerIds: Set<string>): 1 | 2 | 3 | null {
+  if (season.champion_manager_id != null && managerIds.has(season.champion_manager_id)) return 1
+  if (season.runner_up_manager_id != null && managerIds.has(season.runner_up_manager_id)) return 2
+  if (season.third_place_manager_id != null && managerIds.has(season.third_place_manager_id)) return 3
+  return null
+}
+
 function completedSeasonIds(s: Snapshot): Set<string> {
   return new Set(
     s.seasons.filter((sn) => sn.champion_manager_id != null).map((sn) => sn.id),
@@ -1376,20 +1387,22 @@ function buildSeasonFile(s: Snapshot, season: SeasonRow): unknown {
     year: season.year,
     total_teams: standings.length,
     matchups,
-    champion: champ && champMs && !champResolved?.hidden
+    // A podium entered by hand has no standings row behind it, so record and
+    // points are null there; the templates print only what is present.
+    champion: champ && !champResolved?.hidden
       ? {
-          team_name: champMs.team_name ?? champ.team_name ?? champResolved?.name ?? champ.display_name,
+          team_name: champMs?.team_name ?? champ.team_name ?? champResolved?.name ?? champ.display_name,
           owner_name: champResolved?.name ?? champ.display_name,
           owner_user_id: userId(champResolved?.primary ?? champ),
-          record: recordStr(champMs.wins, champMs.losses, champMs.ties),
-          points_for: round2(Number(champMs.points_for)),
+          record: champMs ? recordStr(champMs.wins, champMs.losses, champMs.ties) : null,
+          points_for: champMs ? round2(Number(champMs.points_for)) : null,
           title_score_for,
           title_score_against,
         }
       : null,
-    runner_up: runnerUp && runnerUpMs && !runnerUpResolved?.hidden
+    runner_up: runnerUp && !runnerUpResolved?.hidden
       ? {
-          team_name: runnerUpMs.team_name ?? runnerUp.team_name ?? runnerUpResolved?.name ?? runnerUp.display_name,
+          team_name: runnerUpMs?.team_name ?? runnerUp.team_name ?? runnerUpResolved?.name ?? runnerUp.display_name,
           owner_name: runnerUpResolved?.name ?? runnerUp.display_name,
           owner_user_id: userId(runnerUpResolved?.primary ?? runnerUp),
         }
@@ -1412,6 +1425,8 @@ function deriveThirdPlace(
   season: SeasonRow,
   resolveByManagerId: (mid: string | null | undefined) => { primary: ManagerRow; name: string; hidden: boolean } | null,
 ): Record<string, unknown> | null {
+  // A hand-entered third place wins over anything derived from the games.
+  if (season.third_place_manager_id) return podiumEntry(s, season, season.third_place_manager_id, resolveByManagerId)
   const matchups = s.matchupsBySeason.get(season.id) ?? []
   const champGame = matchups.find((m) => m.is_championship)
   if (!champGame) return null
@@ -1426,15 +1441,24 @@ function deriveThirdPlace(
   if (!thirdGame || thirdGame.score_a == null || thirdGame.score_b == null) return null
   const winnerId =
     Number(thirdGame.score_a) > Number(thirdGame.score_b) ? thirdGame.manager_a_id : thirdGame.manager_b_id
-  const winner = s.managers.get(winnerId)
-  if (!winner) return null
-  const resolved = resolveByManagerId(winnerId)
+  return podiumEntry(s, season, winnerId, resolveByManagerId)
+}
+
+function podiumEntry(
+  s: Snapshot,
+  season: SeasonRow,
+  managerId: string,
+  resolveByManagerId: (mid: string | null | undefined) => { primary: ManagerRow; name: string; hidden: boolean } | null,
+): Record<string, unknown> | null {
+  const mgr = s.managers.get(managerId)
+  if (!mgr) return null
+  const resolved = resolveByManagerId(managerId)
   if (resolved?.hidden) return null
-  const ms = (s.managerSeasonsBySeason.get(season.id) ?? []).find((r) => r.manager_id === winnerId)
+  const ms = (s.managerSeasonsBySeason.get(season.id) ?? []).find((r) => r.manager_id === managerId)
   return {
-    team_name: ms?.team_name ?? winner.team_name ?? resolved?.name ?? winner.display_name,
-    owner_name: resolved?.name ?? winner.display_name,
-    owner_user_id: userId(resolved?.primary ?? winner),
+    team_name: ms?.team_name ?? mgr.team_name ?? resolved?.name ?? mgr.display_name,
+    owner_name: resolved?.name ?? mgr.display_name,
+    owner_user_id: userId(resolved?.primary ?? mgr),
   }
 }
 
@@ -1623,16 +1647,22 @@ function aggregateProfile(s: Snapshot, g: ProfileGroup): ManagerAggregate {
     }
   }
 
+  // Titles and podiums read the season row, not a standings row: a year
+  // entered as just its podium, or with standings but no weekly games, has a
+  // champion and nothing in mss, and that title still counts.
   const championship_seasons: number[] = []
-  let top_three_finishes = 0
+  const podiumSeasonIds = new Set<string>()
+  for (const season of s.seasons) {
+    if (!completedIds.has(season.id)) continue
+    const place = podiumPlace(season, g.managerIds)
+    if (place === 1) championship_seasons.push(season.year)
+    if (place != null) podiumSeasonIds.add(season.id)
+  }
   let playoff_appearances = 0
   for (const ms of mss) {
     const season = s.seasons.find((sn) => sn.id === ms.season_id)
     if (!season) continue
-    if (season.champion_manager_id != null && g.managerIds.has(season.champion_manager_id)) {
-      championship_seasons.push(season.year)
-    }
-    if (ms.final_rank != null && ms.final_rank <= 3) top_three_finishes++
+    if (ms.final_rank != null && ms.final_rank <= 3) podiumSeasonIds.add(season.id)
     const hadPlayoff = (s.matchupsBySeason.get(season.id) ?? []).some(
       (m) => m.is_playoff && (g.managerIds.has(m.manager_a_id) || g.managerIds.has(m.manager_b_id))
     )
@@ -1646,7 +1676,7 @@ function aggregateProfile(s: Snapshot, g: ProfileGroup): ManagerAggregate {
     total_games: games.length,
     championships: championship_seasons.length,
     championship_seasons: championship_seasons.sort((a, b) => a - b),
-    top_three_finishes,
+    top_three_finishes: podiumSeasonIds.size,
     playoff_appearances,
     reg_wins, reg_losses, reg_ties,
     reg_pf: round2(reg_pf),
@@ -3537,19 +3567,17 @@ function buildRecordBook(s: Snapshot, scope: RecordScope = 'all'): unknown {
     const mss: ManagerSeasonRow[] = []
     for (const mid of g.managerIds) mss.push(...(s.managerSeasonsByManager.get(mid) ?? []))
     const ranks = mss.map((r) => r.final_rank).filter((r): r is number => r != null)
-    const championshipAppearances = mss.filter((r) => {
-      const season = s.seasons.find((sn) => sn.id === r.season_id)
-      if (!season) return false
-      return (season.champion_manager_id != null && g.managerIds.has(season.champion_manager_id))
-          || (season.runner_up_manager_id != null && g.managerIds.has(season.runner_up_manager_id))
-    }).length
+    // Title games, titles and podiums come off the season row so a podium-only
+    // year counts; see podiumPlace. A standings finish in the top 3 still
+    // counts as a podium when the season row does not name all three.
+    const places = s.seasons.map((sn) => ({ season: sn, place: podiumPlace(sn, g.managerIds) }))
+    const championshipAppearances = places.filter((p) => p.place === 1 || p.place === 2).length
     // Championships actually WON (not just title-game appearances). Collect the
     // years so the record book can show when each crown came.
-    const championshipYears = mss.filter((r) => {
-      const season = s.seasons.find((sn) => sn.id === r.season_id)
-      return !!season && season.champion_manager_id != null && g.managerIds.has(season.champion_manager_id)
-    }).map((r) => s.seasons.find((sn) => sn.id === r.season_id)!.year).sort((a, b) => a - b)
-    const top3 = mss.filter((r) => r.final_rank != null && r.final_rank <= 3).length
+    const championshipYears = places.filter((p) => p.place === 1).map((p) => p.season.year).sort((a, b) => a - b)
+    const podiumSeasonIds = new Set(places.filter((p) => p.place != null).map((p) => p.season.id))
+    for (const r of mss) if (r.final_rank != null && r.final_rank <= 3) podiumSeasonIds.add(r.season_id)
+    const top3 = podiumSeasonIds.size
     let playoffAppearances = 0
     const perfectYears: number[] = []
     const winlessYears: number[] = []

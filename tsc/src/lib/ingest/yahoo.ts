@@ -33,7 +33,7 @@ import { parallelLimit } from '@/lib/platforms/sleeper'
 import { computePositionRanks, stampRanks, rankWeekForTrade } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
-import { manualLocks, manualLockWarning } from './manualLocks'
+import { manualLocks, manualLockWarning, headlinePatch } from './manualLocks'
 import { mergeSeasonSettings } from './seasonSettings'
 import { autoStartLiveSeason } from './autoStartSeason'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
@@ -398,11 +398,7 @@ export async function ingestYahooSource(
     }
     await db
       .from('seasons')
-      .update({
-        champion_manager_id: championId,
-        runner_up_manager_id: runnerUpId,
-        regular_season_winner_id: regWinnerId,
-      })
+      .update(headlinePatch(locks, { champion: championId, runnerUp: runnerUpId, regularSeasonWinner: regWinnerId }))
       .eq('id', seasonId)
 
     // Final-rank lookup for bracket attribution. Only populated once the

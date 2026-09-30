@@ -13,6 +13,9 @@
 
 export type ImportKind = 'standings' | 'drafts' | 'matchups'
 
+/** Everything that can be entered by hand: the three table stages, plus a season's podium on its own. */
+export type ManualKind = ImportKind | 'podium'
+
 export type ParseIssue = {
   // 1-based line number in the pasted text, counting the header, so the number
   // matches what the user sees in their spreadsheet.
@@ -332,8 +335,22 @@ export type KnownManager = {
   id: string
   displayName: string
   teamName: string | null
+  /** What the league calls them: their profile name after a rename on the Members page. */
+  nickname: string | null
   /** Every team name this manager has used, across seasons. */
   aliases: string[]
+}
+
+/**
+ * A person as the pickers offer them: one entry per profile, however many
+ * platform accounts it merges, labelled with the name the league uses. `id`
+ * is the account that stands in for the person; `managerIds` is all of them.
+ */
+export type LeaguePerson = {
+  id: string
+  label: string
+  managerIds: string[]
+  hidden: boolean
 }
 
 export type NameMatch = {
@@ -356,6 +373,7 @@ export function matchNames(names: string[], managers: KnownManager[]): NameMatch
   for (const m of managers) {
     if (m.teamName) byTeam.set(nameKey(m.teamName), m.id)
     byDisplay.set(nameKey(m.displayName), m.id)
+    if (m.nickname) byDisplay.set(nameKey(m.nickname), m.id)
     for (const a of m.aliases) if (a) byAlias.set(nameKey(a), m.id)
   }
   return names.map((name) => {

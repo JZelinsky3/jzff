@@ -19,7 +19,7 @@ import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 import { getNflClock, weekIsFinal, seasonIsDecided, nflWeekAt } from '@/lib/nflClock'
 import { bracketRounds, commishRulesFor, playoffRoundWeeks, scoringFromSleeper } from '@/lib/seasonRules'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
-import { manualLocks, manualLockWarning } from './manualLocks'
+import { manualLocks, manualLockWarning, headlinePatch } from './manualLocks'
 import { mergeSeasonSettings } from './seasonSettings'
 import { autoStartLiveSeason } from './autoStartSeason'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
@@ -451,11 +451,7 @@ export async function ingestSleeperSource(
 
     await db
       .from('seasons')
-      .update({
-        champion_manager_id: champManager,
-        runner_up_manager_id: runnerUpManager,
-        regular_season_winner_id: regularSeasonWinner,
-      })
+      .update(headlinePatch(locks, { champion: champManager, runnerUp: runnerUpManager, regularSeasonWinner }))
       .eq('id', seasonId)
 
     // 4e. Matchups — fetch all weeks in parallel (limit 5 concurrent).

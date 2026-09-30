@@ -37,7 +37,7 @@ import {
   type EspnTransaction,
 } from '@/lib/platforms/espn'
 import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
-import { manualLocks, manualLockWarning } from './manualLocks'
+import { manualLocks, manualLockWarning, headlinePatch } from './manualLocks'
 import { mergeSeasonSettings } from './seasonSettings'
 import { autoStartLiveSeason } from './autoStartSeason'
 import { checkSeasonIdentity, identityWarning } from './identityGuard'
@@ -589,11 +589,7 @@ async function ingestSeason(args: {
 
   await db
     .from('seasons')
-    .update({
-      champion_manager_id: champManager,
-      runner_up_manager_id: runnerUpManager,
-      regular_season_winner_id: regularSeasonWinner,
-    })
+    .update(headlinePatch(locks, { champion: champManager, runnerUp: runnerUpManager, regularSeasonWinner }))
     .eq('id', seasonId)
 
   // ESPN's status.latestScoringPeriod is the most recent week that has been

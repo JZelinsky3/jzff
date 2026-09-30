@@ -988,7 +988,7 @@ function buildEntry(s, isFeatured, volNum, colors, boutHTML) {
                 ${runner}
                 ${third}
                 ${regLine}
-                <div class="entry-meta">${s.total_teams} teams</div>
+                <div class="entry-meta">${s.total_teams ? `${s.total_teams} teams` : 'Podium only'}</div>
                 <div class="entry-arrow">→</div>
             </div>
             ${boutHTML}

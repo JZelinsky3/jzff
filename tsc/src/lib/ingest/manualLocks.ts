@@ -11,8 +11,12 @@
 // leave locked stages alone. Drafts are already safe by a different mechanism
 // (curated- external ids, see canonicalDraft) but are included so the rule
 // reads the same everywhere.
+//
+// 'podium' is the season's champion / runner-up (/ third place) typed in on
+// their own. Ingests write champion and runner-up on every sync, often null
+// for a year the platform never finished, so a locked podium is skipped there.
 
-export type ManualLock = 'standings' | 'drafts' | 'matchups'
+export type ManualLock = 'standings' | 'drafts' | 'matchups' | 'podium'
 
 type MinimalDb = {
   from: (table: string) => {
@@ -35,7 +39,7 @@ export async function manualLocks(db: unknown, seasonId: string): Promise<Set<Ma
       .eq('season_id', seasonId)
     const locks = new Set<ManualLock>()
     for (const row of data ?? []) {
-      if (row.kind === 'standings' || row.kind === 'drafts' || row.kind === 'matchups') {
+      if (row.kind === 'standings' || row.kind === 'drafts' || row.kind === 'matchups' || row.kind === 'podium') {
         locks.add(row.kind)
       }
     }
@@ -47,6 +51,23 @@ export async function manualLocks(db: unknown, seasonId: string): Promise<Set<Ma
 
 /** Warning text for the sync report, so a skipped stage is never silent. */
 export function manualLockWarning(year: number | string, kind: ManualLock): string {
+  if (kind === 'podium') return `Season ${year}: the champion was entered by hand, so the sync left it as it is.`
   const what = kind === 'standings' ? 'standings' : kind === 'drafts' ? 'draft' : 'matchups'
   return `Season ${year}: ${what} were entered by hand, so the sync left them as they are.`
+}
+
+/**
+ * The season's headline ids as an ingest should write them: without champion
+ * and runner-up when the podium was typed in by hand.
+ */
+export function headlinePatch(
+  locks: Set<ManualLock>,
+  ids: { champion: string | null; runnerUp: string | null; regularSeasonWinner: string | null },
+): Record<string, string | null> {
+  const patch: Record<string, string | null> = { regular_season_winner_id: ids.regularSeasonWinner }
+  if (!locks.has('podium')) {
+    patch.champion_manager_id = ids.champion
+    patch.runner_up_manager_id = ids.runnerUp
+  }
+  return patch
 }

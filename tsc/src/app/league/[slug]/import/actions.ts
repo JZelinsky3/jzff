@@ -10,20 +10,29 @@
 // row, which is what the ingests consult before replacing a stage. See
 // src/lib/ingest/manualLocks.ts.
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isSiteAdmin } from '@/lib/siteAdmin'
+import { devCacheBust } from '@/lib/devCache'
 import {
   parseImport,
   nameKey,
   type ImportKind,
+  type ManualKind,
   type StandingsRow,
   type DraftRow,
   type MatchupRow,
 } from '@/lib/manualImport'
 
 type Result<T> = ({ ok: true } & T) | { ok: false; error: string }
+
+// The public almanac memoizes each league's export under this tag; without the
+// bust, hand-entered data took up to the cache's hour to appear there.
+function bustExportCache(leagueId: string): void {
+  revalidateTag(`league-${leagueId}`, 'max')
+  devCacheBust(leagueId)
+}
 
 async function assertWriteAccess(leagueId: string) {
   const supabase = await createClient()
@@ -88,31 +97,36 @@ async function resolveManagers(
     const choice = mapping[nameKey(name)] ?? mapping[name]
     if (!choice) throw new Error(`"${name}" is not matched to a manager yet.`)
     if (choice !== 'new') { byName.set(nameKey(name), choice); continue }
-    // A manual manager still needs a stable external_id: it is the unique key
-    // per league, and it keeps a second import of the same name idempotent.
-    const externalId = `manual-${nameKey(name)}`
-    const { data: existing } = await db
-      .from('managers')
-      .select('id')
-      .eq('league_id', leagueId)
-      .eq('external_id', externalId)
-      .maybeSingle()
-    if (existing) { byName.set(nameKey(name), existing.id); continue }
-    const { data: row, error } = await db
-      .from('managers')
-      .insert({ league_id: leagueId, external_id: externalId, display_name: name, team_name: name })
-      .select('id')
-      .single()
-    if (error || !row) throw new Error(`Could not create a manager for "${name}": ${error?.message}`)
-    byName.set(nameKey(name), row.id)
-    created++
+    const made = await manualManager(db, leagueId, name)
+    byName.set(nameKey(name), made.id)
+    if (made.created) created++
   }
   return { byName, created }
 }
 
+// A manager added by hand still needs a stable external_id: it is the unique
+// key per league, and it keeps entering the same name twice idempotent.
+async function manualManager(db: ReturnType<typeof createAdminClient>, leagueId: string, name: string) {
+  const externalId = `manual-${nameKey(name)}`
+  const { data: existing } = await db
+    .from('managers')
+    .select('id')
+    .eq('league_id', leagueId)
+    .eq('external_id', externalId)
+    .maybeSingle()
+  if (existing) return { id: existing.id as string, created: false }
+  const { data: row, error } = await db
+    .from('managers')
+    .insert({ league_id: leagueId, external_id: externalId, display_name: name, team_name: name })
+    .select('id')
+    .single()
+  if (error || !row) throw new Error(`Could not create a manager for "${name}": ${error?.message}`)
+  return { id: row.id as string, created: true }
+}
+
 async function recordImport(
   db: ReturnType<typeof createAdminClient>,
-  args: { leagueId: string; seasonId: string; kind: ImportKind; rowCount: number; userId: string; note: string | null }
+  args: { leagueId: string; seasonId: string; kind: ManualKind; rowCount: number; userId: string; note: string | null }
 ) {
   await db.from('manual_imports').upsert(
     {
@@ -193,9 +207,11 @@ export async function commitManualImport(input: {
       const patch: Record<string, string> = {}
       const champ = rows.find((r) => r.finalRank === 1)
       const second = rows.find((r) => r.finalRank === 2)
+      const third = rows.find((r) => r.finalRank === 3)
       const regular = rows.find((r) => r.regularRank === 1)
       if (champ) patch.champion_manager_id = idFor(champ.team)
       if (second) patch.runner_up_manager_id = idFor(second.team)
+      if (third) patch.third_place_manager_id = idFor(third.team)
       if (regular) patch.regular_season_winner_id = idFor(regular.team)
       if (Object.keys(patch).length > 0) {
         await db.from('seasons').update(patch).eq('id', season.id)
@@ -276,6 +292,7 @@ export async function commitManualImport(input: {
 
     revalidatePath(`/league/${access.slug}/import`)
     revalidatePath(`/league/${access.slug}`)
+    bustExportCache(input.leagueId)
     return {
       ok: true,
       written,
@@ -287,11 +304,91 @@ export async function commitManualImport(input: {
   }
 }
 
+/** One podium place: an existing manager, a name to add as a new one, or unknown. */
+export type PodiumPick = { managerId: string } | { newName: string } | null
+
+/**
+ * Sets a season's champion, runner-up and third place directly, with or
+ * without standings behind them. Only the champion is required: plenty of
+ * leagues remember who won a year and nothing else about it.
+ *
+ * Writes the ids onto the season row (creating the season if the year is new)
+ * and records a 'podium' lock so syncs stop overwriting the champion.
+ */
+export async function savePodium(input: {
+  leagueId: string
+  year: number
+  champion: PodiumPick
+  runnerUp: PodiumPick
+  third: PodiumPick
+}): Promise<Result<{ seasonId: string; ids: { champion: string; runnerUp: string | null; third: string | null } }>> {
+  const access = await assertWriteAccess(input.leagueId)
+  if (!access.ok) return access
+
+  const year = Math.trunc(input.year)
+  if (!Number.isFinite(year) || year < 1980 || year > 2100) {
+    return { ok: false, error: 'Pick a season year between 1980 and 2100.' }
+  }
+  if (!input.champion) return { ok: false, error: 'Pick the champion. Runner-up and third place are optional.' }
+
+  const db = createAdminClient()
+  try {
+    // Every id must belong to this league: the admin client skips RLS, so a
+    // stray id would otherwise attach another league's manager to this season.
+    const picked = [input.champion, input.runnerUp, input.third]
+      .flatMap((p) => (p && 'managerId' in p ? [p.managerId] : []))
+    if (picked.length > 0) {
+      const { data: owned } = await db.from('managers').select('id').eq('league_id', input.leagueId).in('id', picked)
+      const ownedIds = new Set((owned ?? []).map((m) => m.id as string))
+      if (picked.some((id) => !ownedIds.has(id))) return { ok: false, error: 'That manager is not in this league.' }
+    }
+
+    const resolve = async (p: PodiumPick): Promise<string | null> => {
+      if (!p) return null
+      if ('managerId' in p) return p.managerId
+      const name = p.newName.trim()
+      if (!name) return null
+      return (await manualManager(db, input.leagueId, name)).id
+    }
+    const champion = await resolve(input.champion)
+    const runnerUp = await resolve(input.runnerUp)
+    const third = await resolve(input.third)
+    if (!champion) return { ok: false, error: 'Pick the champion. Runner-up and third place are optional.' }
+    const placed = [champion, runnerUp, third].filter((id): id is string => !!id)
+    if (new Set(placed).size !== placed.length) {
+      return { ok: false, error: 'The same manager is in two places.' }
+    }
+
+    const season = await resolveSeason(db, input.leagueId, year)
+    const { error } = await db
+      .from('seasons')
+      .update({ champion_manager_id: champion, runner_up_manager_id: runnerUp, third_place_manager_id: third })
+      .eq('id', season.id)
+    if (error) throw new Error(`Saving the ${year} podium failed: ${error.message}`)
+
+    await recordImport(db, {
+      leagueId: input.leagueId,
+      seasonId: season.id,
+      kind: 'podium',
+      rowCount: placed.length,
+      userId: access.userId,
+      note: null,
+    })
+
+    revalidatePath(`/league/${access.slug}/import`)
+    revalidatePath(`/league/${access.slug}`)
+    bustExportCache(input.leagueId)
+    return { ok: true, seasonId: season.id, ids: { champion, runnerUp, third } }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Saving failed.' }
+  }
+}
+
 /** Drops a hand-entered stage and its lock, so a platform sync can own it again. */
 export async function removeManualImport(input: {
   leagueId: string
   seasonId: string
-  kind: ImportKind
+  kind: ManualKind
   deleteRows: boolean
 }): Promise<Result<unknown>> {
   const access = await assertWriteAccess(input.leagueId)
@@ -299,6 +396,12 @@ export async function removeManualImport(input: {
   const db = createAdminClient()
 
   if (input.deleteRows) {
+    if (input.kind === 'podium') {
+      await db
+        .from('seasons')
+        .update({ champion_manager_id: null, runner_up_manager_id: null, third_place_manager_id: null })
+        .eq('id', input.seasonId)
+    }
     if (input.kind === 'standings') await db.from('manager_seasons').delete().eq('season_id', input.seasonId)
     if (input.kind === 'matchups') await db.from('matchups').delete().eq('season_id', input.seasonId)
     if (input.kind === 'drafts') {
@@ -307,5 +410,6 @@ export async function removeManualImport(input: {
   }
   await db.from('manual_imports').delete().eq('season_id', input.seasonId).eq('kind', input.kind)
   revalidatePath(`/league/${access.slug}/import`)
+  if (input.deleteRows) bustExportCache(input.leagueId)
   return { ok: true }
 }

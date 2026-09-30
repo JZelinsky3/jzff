@@ -1298,7 +1298,7 @@ async function loadSeason() {
         document.getElementById(id).innerHTML = `
             <span class="ticker-item"><span class="ticker-star">★</span> ${year} SEASON · {{LEAGUE_NAME_UPPER}}</span>
             <span class="ticker-item"><span class="ticker-star">★</span> ${champLine}</span>
-            <span class="ticker-item"><span class="ticker-star">★</span> ${s.total_teams} TEAMS · VOL. ${toRoman(volNum)}</span>
+            <span class="ticker-item"><span class="ticker-star">★</span> ${s.total_teams ? `${s.total_teams} TEAMS · ` : ''}VOL. ${toRoman(volNum)}</span>
         `;
     });
 
@@ -1321,17 +1321,21 @@ async function loadSeason() {
         { cls: 'second', roman: 'II',  label: '● Runner-Up',   rank: 2 },
         { cls: 'third',  roman: 'III', label: '▲ Third Place', rank: 3 },
     ];
+    // A year entered as just its podium has no standings, so fall back to the
+    // named champion / runner-up / third place (no record line for those).
+    const podiumNamed = [s.champion, s.runner_up, s.third_place];
     const podiumHTML = podiumDefs.map(p => {
-        const t = s.standings.find(r => r.final_rank === p.rank);
+        const t = s.standings.find(r => r.final_rank === p.rank) || podiumNamed[p.rank - 1];
         if (!t) return '';
         return `<a href="managers/manager?id=${t.owner_user_id}" class="podium-card ${p.cls}">
             <div class="podium-medal-label">${p.label}</div>
             <div class="podium-place-num">${p.roman}</div>
             <div class="podium-team">${t.team_name}</div>
             <div class="podium-owner">${t.owner_name}</div>
-            <div class="podium-record">${t.wins}–${t.losses} · ${t.points_for.toFixed(1)} PF</div>
+            ${t.wins != null ? `<div class="podium-record">${t.wins}–${t.losses} · ${t.points_for.toFixed(1)} PF</div>` : ''}
         </a>`;
     }).join('');
+    const hasTable = s.standings.length > 0;
 
     const blurb = s.champion
         ? `<strong>${s.champion.owner_name}</strong> claimed the ${year} title with ${s.champion.team_name}.`
@@ -1378,7 +1382,7 @@ async function loadSeason() {
     const race = buildRaceSection(s);      if (race) chapters.push(race);
     const bracket = buildBracketSection(s); if (bracket) chapters.push(bracket);
 
-    chapters.push({
+    if (hasTable) chapters.push({
         num: 'Standings', title: 'Final table.', meta: `${s.total_teams} managers`,
         html: buildStandingsSection(s, luck),
     });
@@ -1396,7 +1400,7 @@ async function loadSeason() {
             <div class="hero-right">${yearNavHTML}</div>
         </div>
 
-        <div class="season-strip">
+        ${hasTable ? `<div class="season-strip">
             <div class="strip-inner">
                 <div class="strip-cell">
                     <div class="strip-label">Teams</div>
@@ -1425,7 +1429,7 @@ async function loadSeason() {
                     <div class="strip-val">${s.champion?.record ?? '·'}</div>
                 </div>
             </div>
-        </div>
+        </div>` : ''}
 
         ${chapters.map((c, i) => `
         <div class="section" style="margin-top: 3rem;${i === chapters.length - 1 ? ' margin-bottom: 4rem;' : ''}">
