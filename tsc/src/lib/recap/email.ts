@@ -3,7 +3,7 @@
 //
 // The email's job is to get the league onto the page, not to replace it. So
 // it carries the front page only up to the jump ("Continued inside"), the
-// scores with each game's headline as a link into its story, a box of quick
+// scores in two tight columns (no blurbs, the score says it), a box of quick
 // hits that are fun to read in ten seconds, next week's headliner, and an
 // index of what else is inside. The game stories, the standings and the
 // record book are on the page.
@@ -102,9 +102,9 @@ function leadTeaser(paragraphs: string[]): string {
 // ── Pieces ──
 
 function flagHead(tag: string, title: string, o: { ink: string; flag: string; onFlag: string; bg: string }): string {
-  return `<tr><td class="pad" bgcolor="${o.bg}" style="background-color:${o.bg}; padding:28px 32px 10px;">
-<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${o.flag}" style="background-color:${o.flag}; padding:4px 9px 3px; font-family:${SANS}; font-size:10px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:${o.onFlag};">${esc(tag)}</td></tr></table>
-<div style="font-family:${SERIF}; font-size:26px; line-height:1.15; color:${o.ink}; padding:10px 0 10px; border-bottom:2px solid ${o.ink};">${esc(title)}</div>
+  return `<tr><td class="pad" bgcolor="${o.bg}" style="background-color:${o.bg}; padding:22px 32px 8px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${o.flag}" style="background-color:${o.flag}; padding:3px 8px 2px; font-family:${SANS}; font-size:10px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:${o.onFlag};">${esc(tag)}</td></tr></table>
+<div style="font-family:${SERIF}; font-size:22px; line-height:1.15; color:${o.ink}; padding:7px 0 7px; border-bottom:2px solid ${o.ink};">${esc(title)}</div>
 </td></tr>`
 }
 
@@ -112,12 +112,15 @@ function flagHead(tag: string, title: string, o: { ink: string; flag: string; on
 // already told it.
 type Tile = { label: string; big: string; line: string; text: string; names?: string[] }
 
+// A quick hit: the label on top, the number beside its one line.
 function tileCell(t: Tile, span = false): string {
-  return `<td class="col" ${span ? 'colspan="2"' : 'width="50%"'} valign="top" style="padding:6px;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.salmonCard}" style="background-color:${C.salmonCard}; border:1px solid ${C.salmonRule};"><tr><td style="padding:14px 16px 15px;">
-<div style="font-family:${SANS}; font-size:10px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:${C.rust};">${esc(t.label)}</div>
-<div style="font-family:${SERIF}; font-size:30px; font-weight:bold; line-height:1.1; color:${C.ink}; padding-top:6px;">${esc(t.big)}</div>
-<div style="font-family:${SERIF}; font-size:14px; line-height:1.45; color:${C.ink2}; padding-top:5px;">${esc(t.line)}</div>
+  return `<td class="col" ${span ? 'colspan="2"' : 'width="50%"'} valign="top" style="padding:3px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.salmonCard}" style="background-color:${C.salmonCard}; border:1px solid ${C.salmonRule};"><tr><td style="padding:9px 12px 10px;">
+<div style="font-family:${SANS}; font-size:9px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:${C.rust}; padding-bottom:4px;">${esc(t.label)}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+<td valign="middle" style="padding-right:10px; font-family:${SERIF}; font-size:21px; font-weight:bold; line-height:1.1; color:${C.ink}; white-space:nowrap;">${esc(t.big)}</td>
+<td valign="middle" width="100%" style="font-family:${SERIF}; font-size:13px; line-height:1.35; color:${C.ink2};">${esc(t.line)}</td>
+</tr></table>
 </td></tr></table>
 </td>`
 }
@@ -291,29 +294,25 @@ export function renderRecapEmail(
   const edition = writeEdition(f)
   const { front } = edition
 
-  // ── Masthead: two ears, the nameplate, the dateline ──
-  const ear = (lines: string[], align: 'left' | 'right') =>
-    `<td valign="top" align="${align}" style="padding:0;">
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${C.ink};"><tr><td align="center" style="padding:7px 10px; font-family:${SANS}; font-size:10px; line-height:1.5; letter-spacing:1px; text-transform:uppercase; color:${C.ink};">${lines.join('<br>')}</td></tr></table>
-</td>`
-  const forecast = f.top && f.low
-    ? [`<b style="color:${C.red};">Forecast</b>`, `High ${pts(f.top.score)}`, `Low ${pts(f.low.score)}`]
-    : [`<b style="color:${C.red};">Late final</b>`, `${f.games.length} games`, 'All final']
-  rows.push(`<tr><td class="pad" bgcolor="${C.paper}" style="background-color:${C.paper}; padding:24px 32px 0;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-${ear(forecast, 'left')}
-${ear([`<b style="color:${C.red};">${esc(volume)}</b>`, 'Late final', 'Price: one click'], 'right')}
-</tr></table>
-</td></tr>`)
-  rows.push(`<tr><td class="pad" align="center" bgcolor="${C.paper}" style="background-color:${C.paper}; padding:18px 32px 0;">
+  // ── Masthead: the nameplate, the dateline, the forecast strip ──
+  const band = `font-family:${SANS}; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:${C.ink};`
+  const forecast = [
+    ...(f.top && f.low
+      ? [`<b style="color:${C.red};">Forecast</b> &nbsp;High ${pts(f.top.score)}, ${esc(f.top.name)}`, `Low ${pts(f.low.score)}, ${esc(f.low.name)}`]
+      : [`<b style="color:${C.red};">Late final</b>`]),
+    'Price: one click',
+  ]
+  rows.push(`<tr><td class="pad" align="center" bgcolor="${C.paper}" style="background-color:${C.paper}; padding:26px 32px 0;">
 <div style="font-family:${SANS}; font-size:10px; letter-spacing:4px; text-transform:uppercase; color:${C.mute};">The Sunday Chronicle</div>
 <div class="hed" style="font-family:${SERIF}; font-size:38px; font-weight:bold; line-height:1.1; color:${C.ink}; padding-top:8px;">${esc(f.league.name)}</div>
 </td></tr>
 <tr><td class="pad" bgcolor="${C.paper}" style="background-color:${C.paper}; padding:14px 32px 0;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:3px double ${C.ink}; border-bottom:1px solid ${C.ink};"><tr>
-<td style="padding:6px 0; font-family:${SANS}; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:${C.ink};">${esc(editionDate(f.generatedAt))}</td>
-<td align="right" style="padding:6px 0; font-family:${SANS}; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:${C.ink};">${esc(weekLabel)}</td>
+<td style="padding:6px 0; ${band} white-space:nowrap;"><b style="color:${C.red};">${esc(volume)}</b></td>
+<td class="dl" align="center" style="padding:6px 8px; ${band}">${esc(editionDate(f.generatedAt))}</td>
+<td align="right" style="padding:6px 0; ${band} white-space:nowrap;">${esc(weekLabel)}</td>
 </tr></table>
+<div style="padding:7px 0; border-bottom:1px solid ${C.rule}; text-align:center; ${band} line-height:1.6; color:${C.ink2};">${forecast.map((x) => `<span style="white-space:nowrap;">${x}</span>`).join(` &nbsp;<span style="color:${C.red};">&#9733;</span>&nbsp; `)}</div>
 </td></tr>`)
 
   // ── Front page, up to the jump ──
@@ -337,30 +336,41 @@ ${front.deck ? `<div style="font-family:${SERIF}; font-style:italic; font-size:1
     '',
   )
 
-  // ── Final scores, each with its story's headline ──
+  // ── Final scores: two columns, winner on top ──
   rows.push(flagHead('Results', 'Final Scores', { ink: C.ink, flag: C.red, onFlag: '#ffffff', bg: C.games }))
   text.push('FINAL SCORES')
-  const storyOf = new Map(edition.stories.map((s) => [s.game, s]))
-  const scoreRows = f.games
-    .map((g) => {
-      const decided = isDecided(g)
-      const first = decided ? winnerOf(g) : g.a
-      const second = decided ? loserOf(g) : g.b
-      const tag = g.kind === 'championship' ? 'Final' : g.leg?.n === 1 ? 'Leg 1 of 2' : g.winner === 'tie' ? 'Tie' : null
-      const story = storyOf.get(g)
-      text.push(`${first.name} ${pts(first.score)}, ${second.name} ${pts(second.score)}${tag ? ` (${tag})` : ''}`, ...(story ? [`  ${story.headline}`] : []))
-      return `<tr><td style="padding:0 0 8px;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.card}" style="background-color:${C.card}; border:1px solid ${C.gamesRule};"><tr><td style="padding:12px 14px 13px;">
+  const gameBlock = (g: RecapGame, last: boolean) => {
+    const decided = isDecided(g)
+    const first = decided ? winnerOf(g) : g.a
+    const second = decided ? loserOf(g) : g.b
+    const tag = g.kind === 'championship' ? 'Final' : g.leg?.n === 1 ? 'Leg 1 of 2' : g.winner === 'tie' ? 'Tie' : null
+    text.push(`${first.name} ${pts(first.score)}, ${second.name} ${pts(second.score)}${tag ? ` (${tag})` : ''}`)
+    const name = `font-family:${SERIF}; font-size:14px; line-height:1.35;`
+    const num = `font-family:${SANS}; font-size:13px; line-height:1.35; white-space:nowrap; padding-left:8px;`
+    return `<tr><td style="padding:7px 0;${last ? '' : ` border-bottom:1px dotted ${C.gamesRule};`}">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-<tr><td style="font-family:${SERIF}; font-size:16px; line-height:1.4; color:${C.ink};">${decided ? `<b>${esc(first.name)}</b>` : esc(first.name)}</td><td align="right" style="font-family:${SANS}; font-size:15px; color:${C.ink}; white-space:nowrap;">${decided ? `<b>${pts(first.score)}</b>` : pts(first.score)}</td></tr>
-<tr><td style="font-family:${SERIF}; font-size:16px; line-height:1.4; color:${C.mute};">${esc(second.name)}${tag ? `<span style="font-family:${SANS}; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:${C.red};"> &nbsp;${esc(tag)}</span>` : ''}</td><td align="right" style="font-family:${SANS}; font-size:15px; color:${C.mute}; white-space:nowrap;">${pts(second.score)}</td></tr>
+<tr><td style="${name} color:${C.ink};">${decided ? `<b>${esc(first.name)}</b>` : esc(first.name)}</td><td align="right" style="${num} color:${C.ink};">${decided ? `<b>${pts(first.score)}</b>` : pts(first.score)}</td></tr>
+<tr><td style="${name} color:${C.mute};">${esc(second.name)}${tag ? `<span style="font-family:${SANS}; font-size:9px; letter-spacing:1px; text-transform:uppercase; color:${C.red};"> &nbsp;${esc(tag)}</span>` : ''}</td><td align="right" style="${num} color:${C.mute};">${pts(second.score)}</td></tr>
 </table>
-${story ? `<div style="padding-top:8px; margin-top:8px; border-top:1px dotted ${C.gamesRule}; font-family:${SERIF}; font-style:italic; font-size:15px; line-height:1.4;"><a href="${esc(at(links, story.anchor))}" style="color:${C.red}; text-decoration:none;">${esc(story.headline)}</a></div>` : ''}
-</td></tr></table>
 </td></tr>`
-    })
-    .join('')
-  rows.push(`<tr><td class="pad" bgcolor="${C.games}" style="background-color:${C.games}; padding:6px 32px 22px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${scoreRows}</table></td></tr>`)
+  }
+  const half = Math.ceil(f.games.length / 2)
+  const column = (games: RecapGame[]) =>
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.card}" style="background-color:${C.card}; border:1px solid ${C.gamesRule};"><tr><td style="padding:2px 12px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${games.map((g, i) => gameBlock(g, i === games.length - 1)).join('')}</table>
+</td></tr></table>`
+  const left = f.games.slice(0, half)
+  const right = f.games.slice(half)
+  // Two columns fit a phone only with short names. Sleeper usernames like
+  // "anthonycapobianco" would break mid-word, so those leagues stack there.
+  const longest = Math.max(...f.games.flatMap((g) => [g.a.name.length, g.b.name.length]))
+  const stack = longest > 11 ? 'sc' : ''
+  rows.push(`<tr><td class="pad" bgcolor="${C.games}" style="background-color:${C.games}; padding:4px 32px 20px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+<td class="${stack}" width="50%" valign="top" style="padding-right:${right.length ? 4 : 0}px;">${column(left)}</td>
+${right.length ? `<td class="${stack} sc2" width="50%" valign="top" style="padding-left:4px;">${column(right)}</td>` : ''}
+</tr></table>
+</td></tr>`)
   text.push('')
 
   // ── Quick hits ──
@@ -372,7 +382,7 @@ ${story ? `<div style="padding-top:8px; margin-top:8px; border-top:1px dotted ${
       const pair = hits.slice(i, i + 2)
       cells.push(`<tr>${pair.length === 2 ? pair.map((t) => tileCell(t)).join('') : tileCell(pair[0], true)}</tr>`)
     }
-    rows.push(`<tr><td class="pad tiles" bgcolor="${C.salmon}" style="background-color:${C.salmon}; padding:6px 26px 24px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${cells.join('')}</table></td></tr>`)
+    rows.push(`<tr><td class="pad tiles" bgcolor="${C.salmon}" style="background-color:${C.salmon}; padding:4px 29px 20px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${cells.join('')}</table></td></tr>`)
     text.push('ODDS AND ENDS', ...hits.map((t) => `${t.label}: ${t.text}.`), '')
   }
 
@@ -509,6 +519,9 @@ ${why}<br>
     .tiles { padding-left: 12px !important; padding-right: 12px !important; }
     .col  { display: block !important; width: 100% !important; box-sizing: border-box; }
     .hed  { font-size: 30px !important; }
+    .dl   { font-size: 9px !important; letter-spacing: 0 !important; }
+    .sc   { display: block !important; width: 100% !important; padding: 0 !important; box-sizing: border-box; }
+    .sc.sc2 { padding-top: 6px !important; }
     .big  { font-size: 27px !important; }
   }
   a { text-decoration: none; }
