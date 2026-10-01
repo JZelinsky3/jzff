@@ -413,6 +413,24 @@ export function ordinal(n: number): string {
   return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`
 }
 
+// The masthead's "Vol. VIII": one volume per season of league history.
+export function roman(n: number): string {
+  const table: [number, string][] = [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']]
+  let out = ''
+  for (const [v, r] of table) while (n >= v) { out += r; n -= v }
+  return out || String(n)
+}
+
+export function editionDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'America/New_York',
+  })
+}
+
 // "Connie leads Luke 5-4 since 2020", from `me`'s side of the series.
 export function seriesLine(me: string, them: string, s: RecapSeries): string {
   const since = `since ${s.since}`

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { loadRecap, recapViewable } from '@/lib/recap/load'
-import { ordinal, pts, recapSections, recordStr, type RecapGame } from '@/lib/recap/facts'
+import { editionDate, ordinal, pts, recapSections, recordStr, roman, type RecapGame } from '@/lib/recap/facts'
 import { bookLine, poss, totalLine, writeEdition } from '@/lib/recap/story'
 import { SITE_URL, recapPageUrl } from '@/lib/recap/links'
 import { recapFromAddress } from '@/lib/recap/resend'
@@ -169,24 +169,6 @@ function DivKey({ labels, names }: { labels: string[] | null; names: string[] | 
       ))}
     </div>
   )
-}
-
-// Vol. VIII, No. 3: the league's eighth season, third paper.
-function roman(n: number): string {
-  const table: [number, string][] = [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']]
-  let out = ''
-  for (const [v, r] of table) while (n >= v) { out += r; n -= v }
-  return out || String(n)
-}
-
-function editionDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'America/New_York',
-  })
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────
