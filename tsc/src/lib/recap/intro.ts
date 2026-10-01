@@ -13,95 +13,28 @@
 // slightly plainer email, never a wrong one.
 
 import { groqChatJson, DEFAULT_GROQ_MODEL } from '@/lib/groq'
-import { pts, type RecapFacts, type RecapGame } from './facts'
-
-const winnerOf = (g: RecapGame) => (g.winner === 'a' ? g.a : g.b)
-const loserOf = (g: RecapGame) => (g.winner === 'a' ? g.b : g.a)
-
-function leagueLabel(f: RecapFacts): string {
-  return f.league.name.length > 24 && f.league.abbr ? f.league.abbr : f.league.name
-}
+import type { RecapFacts } from './facts'
+import { leagueLabel, writeEdition } from './story'
 
 // ── Subject ───────────────────────────────────────────────────────────────
 
+// The paper's own headline, so the inbox and the page lead with the same
+// story.
 export function recapSubject(f: RecapFacts): string {
   const who = leagueLabel(f)
-  const hooks = f.hooks ?? []
-  const title = hooks.find((h) => h.endsWith(' title'))
-  if (title) return `${title}. ${who}, week ${f.week}`
-
+  const headline = writeEdition(f).front.headline
+  if (/ wins the \d{4} title$/.test(headline)) return `${headline}. ${who}, week ${f.week}`
   const lead = f.phase === 'playoffs' ? `Playoffs, week ${f.week}` : `Week ${f.week}`
-  const fallback = f.top ? [`${f.top.name} puts up ${pts(f.top.score)}`] : []
-  const bits = hooks.length ? hooks.slice(0, 2) : fallback
-  const full = `${lead} in ${who}: ${bits.join(', ')}`
-  return full.length > 80 && bits.length > 1 ? `${lead} in ${who}: ${bits[0]}` : full
+  return `${lead} in ${who}: ${headline}`
 }
 
 // ── Written intro ─────────────────────────────────────────────────────────
 
-// The default intro: two or three sentences picked from the facts by how
-// strong a story they are, then put back in reading order. Every word comes
-// from this file and every number from facts.ts, so it can't misstate
-// anything. (The model version below kept doing exactly that: "Connie
-// snapping CAT's run" when Connie extended her own; "a personal best" for a
-// best-since-2024.)
+// The default intro: the opening paragraph of the paper's lead story
+// (./story.ts). It is what the page's link preview and the stored recap
+// carry, so the inbox, the preview and the page all open on the same words.
 export function templateIntro(f: RecapFacts): string {
-  type Line = { text: string; weight: number; order: number }
-  const lines: Line[] = []
-  const final = f.games.find((g) => g.kind === 'championship' && (g.winner === 'a' || g.winner === 'b'))
-  if (final) {
-    lines.push({
-      text: `${winnerOf(final).name} won the ${f.year} title, beating ${loserOf(final).name} ${pts(winnerOf(final).score)} to ${pts(loserOf(final).score)}.`,
-      weight: 100,
-      order: 0,
-    })
-  }
-  const leagueRecord = (f.records ?? []).find((r) => /in league history/.test(r))
-  if (leagueRecord) lines.push({ text: leagueRecord, weight: 88, order: 1 })
-
-  if (f.top) {
-    const card = f.teams.find((t) => t.managerId === f.top!.managerId)
-    const note = card?.note ?? ''
-    const extra = /^Career high/.test(note)
-      ? `, a career high for ${f.top.name}`
-      : /^Best score since/.test(note)
-        ? `, ${f.top.name}'s best since ${note.replace(/\D+/g, '')}`
-        : ''
-    const covered = !!leagueRecord && leagueRecord.startsWith(`${f.top.name}'s`)
-    if (!covered) {
-      lines.push({ text: `${f.top.name} put up ${pts(f.top.score)}, the best score of week ${f.week}${extra}.`, weight: extra ? 60 : 25, order: 2 })
-    }
-  }
-
-  const snap = f.games.find((g) => g.seriesNote && / snaps /.test(g.seriesNote))
-  if (snap?.seriesNote) lines.push({ text: snap.seriesNote, weight: 72, order: 3 })
-  const run = f.games.find((g) => g.seriesNote && / has now won /.test(g.seriesNote))
-  if (run?.seriesNote) lines.push({ text: run.seriesNote, weight: 45, order: 4 })
-
-  if (f.upset) {
-    lines.push({
-      text: `${f.upset.winner} came in at ${f.upset.winnerRecord} and beat ${f.upset.loser}, who came in at ${f.upset.loserRecord}.`,
-      weight: 50,
-      order: 5,
-    })
-  }
-  const start = (f.records ?? []).find((r) => /teams that started/.test(r))
-  if (start) lines.push({ text: start, weight: 40, order: 6 })
-
-  if (f.closest && f.closest.margin < 2) {
-    lines.push({
-      text: `${winnerOf(f.closest).name} beat ${loserOf(f.closest).name} by ${pts(f.closest.margin)}.`,
-      weight: 35,
-      order: 7,
-    })
-  }
-
-  return lines
-    .sort((a, b) => b.weight - a.weight)
-    .slice(0, 3)
-    .sort((a, b) => a.order - b.order)
-    .map((l) => l.text)
-    .join(' ')
+  return writeEdition(f).front.paragraphs[0] ?? ''
 }
 
 // ── Model intro ───────────────────────────────────────────────────────────
@@ -114,36 +47,11 @@ export function templateIntro(f: RecapFacts): string {
 // here is formatted the way the email prints it, which is what lets
 // checkIntro compare the model's numbers against these as plain strings.
 export function factLines(f: RecapFacts): string[] {
-  const out: string[] = []
-  const final = f.games.find((g) => g.kind === 'championship' && (g.winner === 'a' || g.winner === 'b'))
-  if (final) {
-    out.push(`${winnerOf(final).name} won the ${f.year} championship, beating ${loserOf(final).name} ${pts(winnerOf(final).score)} to ${pts(loserOf(final).score)}.`)
-  }
-  for (const r of (f.records ?? []).slice(0, 2)) out.push(r)
-  for (const g of f.games) {
-    if (out.length >= 4) break
-    if (g.seriesNote && / snaps | has now won /.test(g.seriesNote)) out.push(g.seriesNote)
-  }
-  const marks = f.teams
-    .filter((t) => t.note && /Career|since/.test(t.note))
-    .slice(0, 2)
-    .map((t) => {
-      const note = t.note!.replace(/\.$/, '')
-      return /^Career/.test(note)
-        ? `${t.name} scored ${pts(t.score)}, ${t.name}'s own ${note.toLowerCase()}.`
-        : `${t.name} scored ${pts(t.score)}, ${t.name}'s own ${note.charAt(0).toLowerCase()}${note.slice(1)}.`
-    })
-  out.push(...marks)
-  if (f.upset) {
-    out.push(`The upset: ${f.upset.winner}, ${f.upset.winnerRecord} going in, beat ${f.upset.loser}, ${f.upset.loserRecord} going in, ${pts(f.upset.winnerScore)} to ${pts(f.upset.loserScore)}.`)
-  }
-  if (f.top && !out.some((l) => l.startsWith(`${f.top!.name} scored`))) {
-    out.push(`${f.top.name} had the top score of the week, ${pts(f.top.score)}.`)
-  }
-  if (f.closest && out.length < 6) {
-    out.push(`The closest game: ${winnerOf(f.closest).name} beat ${loserOf(f.closest).name} by ${pts(f.closest.margin)}.`)
-  }
-  return out.slice(0, 7)
+  const front = writeEdition(f).front
+  return front.paragraphs
+    .flatMap((p) => p.split(/(?<=\.)\s+(?=[A-Z0-9])/))
+    .filter((l) => !/^Up next/.test(l))
+    .slice(0, 7)
 }
 
 const SYSTEM = [

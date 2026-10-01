@@ -3,7 +3,9 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import styles from './recap.module.css'
 
-// "Your week": the reader's own card, lifted to the top of the recap.
+// "Your week": the reader's own result at the top of the paper, and a link
+// down to the story about their game. It deliberately repeats none of that
+// story, only points at it.
 //
 // Identity is the same name claim The Weekly and Pick'ems use, under the same
 // localStorage key and in pick'ems' shape ({ profileId, name, teamId }), so a
@@ -14,12 +16,14 @@ export type YourWeekTeam = {
   managerId: string
   profileId: string | null
   name: string
-  team: string | null
   avatar: string | null
   score: string
   result: 'W' | 'L' | 'T' | null
-  line: string
-  note: string | null
+  // "2-1 · 4th place"
+  standing: string | null
+  // The story about their game.
+  anchor: string | null
+  headline: string | null
   next: string | null
 }
 
@@ -64,13 +68,14 @@ export function YourWeek({ slug, teams }: { slug: string; teams: YourWeekTeam[] 
     } catch {}
   }
 
-  // Mark the matching card in Every Team so it carries the "You" treatment.
+  // Mark the story about their game so it carries the "You" treatment.
+  const anchor = mine ? teams.find((x) => x.managerId === mine)?.anchor : null
   useEffect(() => {
-    if (!mine) return
-    const el = document.getElementById(`team-${mine}`)
+    if (!anchor) return
+    const el = document.getElementById(anchor)
     el?.setAttribute('data-you', 'true')
     return () => el?.removeAttribute('data-you')
-  }, [mine])
+  }, [anchor])
 
   function claim(managerId: string) {
     const t = teams.find((x) => x.managerId === managerId)
@@ -117,7 +122,7 @@ export function YourWeek({ slug, teams }: { slug: string; teams: YourWeekTeam[] 
           Not {t.name}?
         </button>
       </div>
-      <a className={styles.yourBody} href={`#team-${t.managerId}`}>
+      <div className={styles.yourBody}>
         {t.avatar ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img className={styles.yourAvatar} src={t.avatar} alt="" loading="lazy" referrerPolicy="no-referrer" />
@@ -128,15 +133,20 @@ export function YourWeek({ slug, teams }: { slug: string; teams: YourWeekTeam[] 
         )}
         <span className={styles.yourMain}>
           <span className={styles.yourName}>{t.name}</span>
-          <span className={styles.yourLine}>{t.line}</span>
-          {t.note ? <span className={styles.yourNote}>{t.note}</span> : null}
-          {t.next ? <span className={styles.yourNext}>{t.next}</span> : null}
+          {t.standing ? <span className={styles.yourLine}>{t.standing}</span> : null}
         </span>
         <span className={styles.yourScore} data-result={t.result ?? undefined}>
-          {t.score}
           {t.result ? <em>{t.result}</em> : null}
+          {t.score}
         </span>
-      </a>
+      </div>
+      {t.anchor && t.headline ? (
+        <a className={styles.yourStory} href={`#${t.anchor}`}>
+          <span>Your game</span>
+          {t.headline}
+        </a>
+      ) : null}
+      {t.next ? <div className={styles.yourNext}>{t.next}</div> : null}
     </div>
   )
 }

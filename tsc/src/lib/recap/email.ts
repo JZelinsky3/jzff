@@ -9,12 +9,14 @@
 //   · No hidden zero-width preheader padding; the preview line is plain words.
 //   · Every table carries bgcolor as well as an inline style, for Outlook.
 //
-// The email is the trailer, the page is the film: scores with the history
-// behind each one, the week's awards, the best of the history lines, and
-// next week's marquee game. Everything else is a tap away.
+// The email is the front page of the paper: the headline, the lead story,
+// the scoreboard, the best of the record book and next week's headliner. The
+// game stories, the standings and the rest are on the page. The words come
+// from ./story.ts, so the email and the page say exactly the same thing.
 
 import { TIER_PRICES } from '@/lib/stripe'
-import { ordinal, pts, recapSections, seriesLine, type RecapFacts, type RecapGame } from './facts'
+import { pts, recapSections, type RecapFacts, type RecapGame } from './facts'
+import { bookLine, writeEdition } from './story'
 
 const C = {
   page: '#150f07',
@@ -52,46 +54,6 @@ function sectionHead(label: string): string {
 </td></tr>`
 }
 
-function labelRows(rows: [string, string][]): string {
-  const body = rows
-    .map(
-      ([k, v]) => `<tr>
-<td valign="top" style="padding:5px 12px 5px 0; font-family:${SANS}; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:${C.muted}; white-space:nowrap;">${esc(k)}</td>
-<td valign="top" style="padding:5px 0; font-family:${SERIF}; font-size:15px; line-height:1.45; color:${C.ink};">${v}</td>
-</tr>`,
-    )
-    .join('')
-  return `<tr><td class="pad" bgcolor="${C.card}" style="padding:4px 40px;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${body}</table>
-</td></tr>`
-}
-
-function bullets(lines: string[]): string {
-  const body = lines
-    .map(
-      (l) => `<tr><td valign="top" style="padding:5px 10px 5px 0; font-family:${SERIF}; font-size:15px; color:${C.gold};">&#9733;</td>
-<td style="padding:5px 0; font-family:${SERIF}; font-size:15px; line-height:1.5; color:${C.ink};">${esc(l)}</td></tr>`,
-    )
-    .join('')
-  return `<tr><td class="pad" bgcolor="${C.card}" style="padding:4px 40px;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${body}</table>
-</td></tr>`
-}
-
-// The best few lines of history in the recap: records first, then snapped
-// runs and career marks. These are the lines no platform email can carry.
-export function historyLines(f: RecapFacts, max: number): string[] {
-  const out: string[] = [...(f.records ?? [])]
-  for (const g of f.games) {
-    if (g.seriesNote && / snaps | has now won /.test(g.seriesNote)) out.push(g.seriesNote)
-  }
-  const marks = f.teams
-    .filter((t) => t.note && /Career|since/.test(t.note))
-    .map((t) => `${t.name}, ${pts(t.score)}: ${t.note!.replace(/\.$/, '')}.`)
-  out.push(...marks)
-  return out.slice(0, max)
-}
-
 export function renderRecapEmail(
   f: RecapFacts,
   intro: string,
@@ -104,16 +66,28 @@ export function renderRecapEmail(
 
   const weekLabel = f.phase === 'playoffs' ? `Playoffs, week ${f.week}` : `Week ${f.week}`
 
-  // ── Masthead + intro ──
-  rows.push(`<tr><td class="pad" align="center" bgcolor="${C.card}" style="padding:28px 40px 20px; border-bottom:3px double #a88a4a;">
+  const edition = writeEdition(f)
+  const { front } = edition
+
+  // ── Masthead ──
+  rows.push(`<tr><td class="pad" align="center" bgcolor="${C.card}" style="padding:28px 40px 18px; border-bottom:3px double #a88a4a;">
 <div style="font-family:${SANS}; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:${C.muted}; padding-bottom:10px;">The Sunday Chronicle</div>
 <div class="hed" style="font-family:${SERIF}; font-size:30px; line-height:1.15; color:${C.ink};">${esc(f.league.name)}</div>
-<div style="font-family:${SANS}; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:${C.gold}; padding-top:10px;">${esc(weekLabel)} recap · ${f.year}</div>
+<div style="font-family:${SANS}; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:${C.gold}; padding-top:10px;">${esc(weekLabel)} · ${f.year}</div>
 </td></tr>`)
-  rows.push(`<tr><td class="pad" bgcolor="${C.card}" style="padding:22px 40px 4px; font-family:${SERIF}; font-size:17px; line-height:1.6; color:${C.ink};">${esc(intro)}</td></tr>`)
-  text.push(`${f.league.name}: ${weekLabel} recap, ${f.year}`, '', intro, '')
 
-  // ── Scores, each with the series behind it ──
+  // ── Front page: headline, deck, the lead story ──
+  rows.push(`<tr><td class="pad" bgcolor="${C.card}" style="padding:24px 40px 0;">
+<div style="font-family:${SERIF}; font-size:28px; line-height:1.15; color:${C.ink};">${esc(front.headline)}</div>
+${front.deck ? `<div style="font-family:${SERIF}; font-style:italic; font-size:17px; line-height:1.45; color:${C.muted}; padding-top:10px;">${esc(front.deck)}</div>` : ''}
+<div style="font-family:${SANS}; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:${C.gold}; padding:14px 0 4px; border-bottom:1px solid ${C.rule};">By the Chronicle staff</div>
+</td></tr>`)
+  for (const para of front.paragraphs) {
+    rows.push(`<tr><td class="pad" bgcolor="${C.card}" style="padding:14px 40px 0; font-family:${SERIF}; font-size:16px; line-height:1.6; color:${C.ink};">${esc(para)}</td></tr>`)
+  }
+  text.push(`${f.league.name}: ${weekLabel}, ${f.year}`, '', front.headline.toUpperCase(), ...(front.deck ? [front.deck] : []), '', ...front.paragraphs.flatMap((p) => [p, '']))
+
+  // ── Final scores ──
   rows.push(sectionHead('Final scores'))
   text.push('FINAL SCORES')
   const scoreRows = f.games
@@ -121,106 +95,78 @@ export function renderRecapEmail(
       const decided = g.winner === 'a' || g.winner === 'b'
       const first = decided ? winnerOf(g) : g.a
       const second = decided ? loserOf(g) : g.b
-      const joiner = decided ? 'over' : 'and'
-      const kind = g.kind === 'championship' ? 'Championship' : g.kind === 'consolation' ? 'Consolation' : null
-      const legNote = g.leg?.n === 1 ? 'First leg of two, decided next week' : g.winner === 'tie' ? 'Tie' : null
-      const series = g.series ? seriesLine(g.a.name, g.b.name, g.series) : null
-      const sub = [kind, legNote, g.seriesNote && / snaps | has now won /.test(g.seriesNote) ? g.seriesNote.replace(/\.$/, '') : series]
-        .filter(Boolean)
-        .join(' · ')
-      text.push(`${first.name} ${pts(first.score)} ${joiner} ${second.name} ${pts(second.score)}${sub ? `  (${sub})` : ''}`)
+      const tag = g.kind === 'championship' ? 'Final' : g.leg?.n === 1 ? 'Leg 1 of 2' : g.winner === 'tie' ? 'Tie' : null
+      text.push(`${first.name} ${pts(first.score)}, ${second.name} ${pts(second.score)}${tag ? ` (${tag})` : ''}`)
       return `<tr>
-<td style="padding:8px 0; font-family:${SERIF}; font-size:15px; color:${C.ink}; border-bottom:1px solid ${C.rule};">${decided ? `<b>${esc(first.name)}</b>` : esc(first.name)} ${pts(first.score)}<span style="color:${C.muted};"> ${joiner} </span>${esc(second.name)} ${pts(second.score)}${sub ? `<div style="font-family:${SANS}; font-size:11px; line-height:1.5; color:${C.muted}; padding-top:3px;">${esc(sub)}</div>` : ''}</td>
+<td style="padding:7px 0; font-family:${SERIF}; font-size:15px; color:${C.ink}; border-bottom:1px solid ${C.rule};">${decided ? `<b>${esc(first.name)}</b>` : esc(first.name)}<span style="color:${C.muted};">, </span>${esc(second.name)}${tag ? `<span style="font-family:${SANS}; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:${C.gold};"> &nbsp;${esc(tag)}</span>` : ''}</td>
+<td align="right" style="padding:7px 0; font-family:${SANS}; font-size:14px; color:${C.ink}; border-bottom:1px solid ${C.rule}; white-space:nowrap;">${decided ? `<b>${pts(first.score)}</b>` : pts(first.score)}<span style="color:${C.muted};"> - </span>${pts(second.score)}</td>
 </tr>`
     })
     .join('')
   rows.push(`<tr><td class="pad" bgcolor="${C.card}" style="padding:2px 40px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${scoreRows}</table></td></tr>`)
   text.push('')
 
-  // ── The week's awards ──
-  if (f.awards.length) {
-    rows.push(sectionHead('The week'))
-    rows.push(labelRows(f.awards.map((a) => [a.title, `${esc(a.who)}, ${esc(a.value)}`])))
-    text.push('THE WEEK', ...f.awards.map((a) => `${a.title}: ${a.who}, ${a.value}`), '')
+  // ── The record book: only the rows that mean something ──
+  const book = show.paid ? (f.book ?? []).filter((r) => r.rank <= 10 || (r.seasonRank === 1 && f.week > 1)).slice(0, 3) : []
+  if (book.length) {
+    rows.push(sectionHead('From the record book'))
+    text.push('FROM THE RECORD BOOK')
+    const bookRows = book
+      .map((r) => {
+        const value = r.key === 'closest' || r.key === 'blowout' ? `by ${pts(r.value)}` : pts(r.value)
+        const who = r.vs ? `${r.who} ${r.key === 'heartbreak' ? 'vs' : 'over'} ${r.vs}` : r.who
+        text.push(`${r.label}: ${who}, ${value}. ${bookLine(r, f)}.`)
+        return `<tr><td style="padding:7px 0; border-bottom:1px solid ${C.rule};">
+<div style="font-family:${SANS}; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:${C.muted};">${esc(r.label)}</div>
+<div style="font-family:${SERIF}; font-size:15px; line-height:1.45; color:${C.ink};">${esc(who)}, <b>${esc(value)}</b></div>
+<div style="font-family:${SERIF}; font-style:italic; font-size:14px; line-height:1.45; color:${r.rank <= 10 ? C.gold : C.muted};">${esc(bookLine(r, f))}</div>
+</td></tr>`
+      })
+      .join('')
+    rows.push(`<tr><td class="pad" bgcolor="${C.card}" style="padding:2px 40px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${bookRows}</table></td></tr>`)
+    text.push('')
   }
 
-  // ── History: the part the platform's email can't send ──
-  const hist = historyLines(f, 4)
-  if (hist.length) {
-    rows.push(sectionHead('From the history books'))
-    rows.push(bullets(hist))
-    text.push('FROM THE HISTORY BOOKS', ...hist, '')
-  }
-
-  // ── Paid extras, one line each ──
-  if (show.paid) {
-    const extra: [string, string][] = []
-    const extraText: string[] = []
-    const add = (k: string, v: string) => {
-      extra.push([k, esc(v)])
-      extraText.push(`${k}: ${v}`)
-    }
-    if (f.power?.length) {
-      add('Power top 3', f.power.slice(0, 3).map((p) => `${p.rank}. ${p.name}`).join(', '))
-      const up = [...f.power].sort((a, b) => b.delta - a.delta)[0]
-      if (up && up.delta > 0) add('Biggest riser', `${up.name}, up ${up.delta} to ${ordinal(up.rank)}`)
-    }
-    if (f.lineups?.mvps.length) {
-      const top2 = [...f.lineups.mvps].sort((a, b) => b.points - a.points).slice(0, 2)
-      add('Top players', top2.map((m) => `${m.player} ${pts(m.points)} (${m.manager})`).join(', '))
-    }
-    if (f.lineups?.efficiency) {
-      const e = f.lineups.efficiency
-      add('Lineups', `${e.best.name} started ${e.best.pct}% of the best possible. ${e.worst.name} left ${pts(e.worst.left)} on the bench.`)
-    }
-    if (f.pickems?.best.length) {
-      const b = f.pickems.best
-      add("Pick'ems", `${b.map((r) => r.name).join(', ')} went ${b[0].right}-${b[0].wrong}${f.pickems.crowd ? `. ${f.pickems.crowd.replace(/\.$/, '')}` : ''}`)
-    }
-    if (show.veteran && f.trades?.length) add(f.trades.length === 1 ? 'Trade' : 'Trades', f.trades.map((t) => t.headline).join('; '))
-    if (extra.length) {
-      rows.push(sectionHead('Around the league'))
-      rows.push(labelRows(extra))
-      text.push('AROUND THE LEAGUE', ...extraText, '')
-    }
-  }
-
-  // ── Next week ──
-  if (f.next?.games.length) {
-    const lines = f.next.games.slice(0, 3).map((g) => {
-      const fav =
-        show.paid && g.spread != null && g.favorite ? ` ${g.favorite === 'a' ? g.a.name : g.b.name} by ${pts(g.spread)}.` : ''
-      const series = g.series ? ` ${seriesLine(g.a.name, g.b.name, g.series)}.` : ' First meeting.'
-      return `${g.gotw ? 'Game of the week: ' : ''}${g.a.name} vs ${g.b.name}.${fav}${series}`
-    })
-    rows.push(sectionHead(`Week ${f.next.week}`))
-    rows.push(bullets(lines))
-    text.push(`WEEK ${f.next.week}`, ...lines, '')
+  // ── Coming up: the headliner ──
+  const head = edition.previews[0]
+  if (head && f.next) {
+    const g = head.game
+    const rec = (s: typeof g.a) => (s.record ? ` (${s.record})` : '')
+    const line = show.paid && g.spread != null && g.favorite ? `${(g.favorite === 'a' ? g.a : g.b).name} by ${pts(g.spread)}. ` : ''
+    const label = g.gotw && show.paid ? 'Game of the week' : 'Headliner'
+    rows.push(sectionHead(`Coming up: week ${f.next.week}`))
+    rows.push(`<tr><td class="pad" bgcolor="${C.card}" style="padding:6px 40px 0;">
+<div style="font-family:${SANS}; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:${C.gold};">${label}</div>
+<div style="font-family:${SERIF}; font-size:19px; line-height:1.3; color:${C.ink}; padding-top:4px;">${esc(g.a.name)}${esc(rec(g.a))} vs. ${esc(g.b.name)}${esc(rec(g.b))}</div>
+<div style="font-family:${SERIF}; font-size:15px; line-height:1.5; color:${C.muted}; padding-top:4px;">${esc(line + (head.note ?? ''))}</div>
+</td></tr>`)
+    text.push(`COMING UP: WEEK ${f.next.week}`, `${label}: ${g.a.name}${rec(g.a)} vs. ${g.b.name}${rec(g.b)}. ${line}${head.note ?? ''}`, '')
   }
 
   if (!show.paid) {
     const price = `$${(TIER_PRICES.tier1.yearly.amountCents / 100).toFixed(0)} a year`
+    const pitch = `This is the short edition. The full paper adds the record book, how teams with this start have finished, a year ago this week, the players behind each result, power rankings and playoff odds, pick'ems and next week's lines. Rookie is ${price} for your league.`
     rows.push(`<tr><td class="pad" bgcolor="${C.card}" style="padding:22px 40px 4px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.panel}" style="background-color:${C.panel}; border:1px solid ${C.rule};">
 <tr><td style="padding:16px 18px; font-family:${SERIF}; font-size:15px; line-height:1.55; color:${C.ink};">
-This is the short version. The full recap adds league records, power rankings and playoff odds, pick'ems, the lineup desk, and next week's lines. Rookie is ${price} for your league.
+${esc(pitch)}
 <div style="padding-top:10px; font-family:${SANS}; font-size:13px;"><a href="${esc(links.pricing)}" style="color:${C.gold}; text-decoration:underline;">See plans</a></div>
 </td></tr></table></td></tr>`)
-    text.push(`This is the short version. The full recap adds league records, power rankings and playoff odds, pick'ems, the lineup desk and next week's lines. Rookie is ${price} for your league: ${links.pricing}`, '')
+    text.push(`${pitch} ${links.pricing}`, '')
   }
 
   // ── Button + share ──
   rows.push(`<tr><td class="pad" align="center" bgcolor="${C.card}" style="padding:28px 40px 8px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
 <td align="center" bgcolor="${C.gold}" style="background-color:${C.gold}; border-radius:2px;">
-<a href="${esc(links.page)}" style="display:inline-block; padding:13px 28px; font-family:${SANS}; font-size:14px; font-weight:bold; letter-spacing:1px; color:${C.page}; text-decoration:none;">Open the full recap</a>
+<a href="${esc(links.page)}" style="display:inline-block; padding:13px 28px; font-family:${SANS}; font-size:14px; font-weight:bold; letter-spacing:1px; color:${C.page}; text-decoration:none;">Read the full paper</a>
 </td></tr></table>
 </td></tr>`)
   rows.push(`<tr><td class="pad" align="center" bgcolor="${C.card}" style="padding:10px 40px 26px; font-family:${SANS}; font-size:13px; line-height:1.6; color:${C.muted};">
-Every team's week, the lineup desk and all of next week are on the page.<br>
+A story for every game, the standings and all of next week are on the page.<br>
 Send it to the league: <a href="${esc(links.share)}" style="color:${C.gold}; text-decoration:underline; word-break:break-all;">${esc(links.share)}</a>
 </td></tr>`)
-  text.push(`Open the full recap: ${links.page}`, `Send it to the league: ${links.share}`, '')
+  text.push(`Read the full paper: ${links.page}`, `Send it to the league: ${links.share}`, '')
 
   // ── Footer ──
   rows.push(`<tr><td class="pad" bgcolor="${C.card}" style="padding:18px 40px 26px; border-top:1px solid ${C.rule}; font-family:${SANS}; font-size:11px; line-height:1.7; color:${C.foot};">
@@ -234,7 +180,7 @@ You're getting this because you run ${esc(f.league.name)} on The Sunday Chronicl
     `Account settings: ${links.account}`,
   )
 
-  const preheader = (f.hooks?.[0] ? `${f.hooks[0]}.` : intro.split(/(?<=\.)\s/)[0]) ?? intro
+  const preheader = front.deck ? `${front.deck}.` : (intro.split(/(?<=\.)\s/)[0] ?? intro)
 
   const html = `<!doctype html>
 <html lang="en">

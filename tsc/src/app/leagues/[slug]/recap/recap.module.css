@@ -1,449 +1,310 @@
-/* The weekly recap. A run of full-bleed regions, each in the colours of the
-   site page it summarises, so the recap reads as a tour of the league's site:
-
-     masthead, scoreboard, footer   the site navy (main.css --ink/--cream/--gold)
-     awards                         the awards sheet's buff stock + ledger green
-     record book                    records watch, near-black and ember blue
-     every team                     the Manager DNA lab, indigo and cyan
-     lineup desk                    the Best Coach chalkboard, slate and yellow
-     the table                      the power rankings' tan paper
-     pick'ems                       pick'ems plum and magenta
-     trades                         the trade desk's leather and gold
-     next week                      the matchup preview's forest and brass
-
-   Every region sets the same handful of variables (--bg, --card, --line,
-   --text, --mute, --accent, --on-accent) and the shared pieces read them,
-   so a header, a card or a link looks right in any region without its own
-   rule. Phone first; wider screens get grids, not a wider single column. */
+/* The weekly recap, printed as the league's paper. One newsprint house from
+   masthead to footer: cream stock, black ink, one red for kickers and
+   records. Headlines in DM Serif, body copy in a book serif, agate (scores,
+   tables) in the mono. Phone first; wider screens get newspaper columns with
+   rules between them, not a wider single column. */
 
 .page {
-  --rc-serif: var(--font-dm-serif), 'DM Serif Display', Georgia, serif;
+  --paper: #f6f1e4;
+  --paper-2: #ece4d0;
+  --desk: #ddd4bf;
+  --ink: #1c1915;
+  --ink-2: #463f35;
+  --mute: #776e5f;
+  --rule: #cdc2a8;
+  --red: #a3302a;
+  --up: #2f7a4a;
+  --down: #a3302a;
+
+  --rc-display: var(--font-dm-serif), 'DM Serif Display', Georgia, serif;
+  --rc-body: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
   --rc-sans: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
   --rc-mono: var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, Menlo, monospace;
-  --up: #6fbf8a;
-  --down: #e07a68;
 
-  font-family: var(--rc-sans);
+  min-height: 100vh;
+  background: var(--desk);
+  color: var(--ink);
+  font-family: var(--rc-body);
   font-size: 16px;
   line-height: 1.5;
-  background: #0e1620;
   -webkit-tap-highlight-color: transparent;
 }
 .page * {
   box-sizing: border-box;
 }
-
-/* ── Regions ─────────────────────────────────────────────────────────── */
-
-.band {
-  background: var(--bg);
-  color: var(--text);
-  padding: 2.2rem 0 2.4rem;
-  position: relative;
+.page a {
+  color: inherit;
 }
-.bandInner {
+
+.sheet {
   width: 100%;
-  max-width: 70rem;
+  max-width: 74rem;
   margin: 0 auto;
-  padding: 0 16px;
+  padding: calc(0.8rem + env(safe-area-inset-top)) 16px 2.5rem;
+  background: var(--paper);
 }
 
-.bandMast {
-  --bg: #0e1620;
-  --card: #1a2532;
-  --line: #2a3645;
-  --text: #f4ebd8;
-  --mute: #c9c0ad;
-  --accent: #e8c889;
-  --on-accent: #0e1620;
-  background:
-    radial-gradient(120% 70% at 85% -10%, rgba(232, 200, 137, 0.13), transparent 60%),
-    radial-gradient(90% 60% at -10% 110%, rgba(160, 72, 48, 0.12), transparent 60%),
-    var(--bg);
-  padding-top: calc(0.9rem + env(safe-area-inset-top));
-  border-bottom: 3px double rgba(232, 200, 137, 0.45);
-}
-.bandScores {
-  --bg: #16202c;
-  --card: #1a2532;
-  --line: #2a3645;
-  --text: #f4ebd8;
-  --mute: #a99f8c;
-  --accent: #e8c889;
-  --on-accent: #0e1620;
-}
-.bandAwards {
-  --bg: #e6e3d5;
-  --card: #f5f3e9;
-  --line: #c3c1af;
-  --text: #1f221c;
-  --mute: #4a4d43;
-  --accent: #2d6146;
-  --on-accent: #fff;
-}
-.bandRecords {
-  --bg: #0f0a0c;
-  --card: #1d141a;
-  --line: #3a2128;
-  --text: #f4ebd8;
-  --mute: #c6a89e;
-  --accent: #7fa8bd;
-  --on-accent: #0f0a0c;
-  --violet: #b58cff;
-}
-.bandTeams {
-  --bg: #0c0d18;
-  --card: #14172a;
-  --line: #232844;
-  --text: #e8eaff;
-  --mute: #b5b9d6;
-  --accent: #4fd1ff;
-  --on-accent: #0c0d18;
-  --up: #d8ff5d;
-  --down: #ff5db1;
-}
-.bandLineups {
-  --bg: #28342f;
-  --card: #233029;
-  --line: #38463f;
-  --text: #ece4cc;
-  --mute: #8da193;
-  --accent: #e8c850;
-  --on-accent: #1d2622;
-  /* Chalk dust: two faint grains, no image. */
-  background:
-    repeating-linear-gradient(115deg, rgba(236, 228, 204, 0.025) 0 2px, transparent 2px 9px),
-    repeating-linear-gradient(25deg, rgba(236, 228, 204, 0.02) 0 1px, transparent 1px 7px),
-    var(--bg);
-}
-.bandTable {
-  --bg: #f0e5c8;
-  --card: #f7f0dc;
-  --line: rgba(14, 22, 32, 0.18);
-  --text: #0e1620;
-  --mute: rgba(14, 22, 32, 0.6);
-  --accent: #a04830;
-  --on-accent: #f7f0dc;
-  --up: #3f8a50;
-  --down: #b44c3c;
-}
-.bandPickems {
-  --bg: #160b1d;
-  --card: #241531;
-  --line: #3a2549;
-  --text: #f6e7f0;
-  --mute: #c7a9c9;
-  --accent: #ff3d8b;
-  --on-accent: #160b1d;
-  --gold: #f0c463;
-}
-.bandTrades {
-  --bg: #261810;
-  --card: #322314;
-  --line: #523c25;
-  --text: #f5e9c8;
-  --mute: #c9b08a;
-  --accent: #f0c878;
-  --on-accent: #261810;
-}
-.bandNext {
-  --bg: #0c1812;
-  --card: #142a20;
-  --line: #2a4234;
-  --text: #f4ebd8;
-  --mute: #9eb5a2;
-  --accent: #c89d5c;
-  --on-accent: #0c1812;
-  --amber: #e8b047;
-}
-.bandUpsell {
-  --bg: #1a2532;
-  --text: #f4ebd8;
-  --accent: #e8c889;
-  --on-accent: #0e1620;
-  border-top: 1px solid #2a3645;
-}
-.bandUpsell p {
-  margin: 0 0 1rem;
-  max-width: 40rem;
-  font-family: var(--rc-serif);
-  font-size: 1.15rem;
-  line-height: 1.45;
-}
-.bandFoot {
-  --bg: #0e1620;
-  --text: #f4ebd8;
-  --mute: #9a917f;
-  --accent: #e8c889;
-  --on-accent: #0e1620;
-  border-top: 3px double rgba(232, 200, 137, 0.45);
-  padding-bottom: calc(2.6rem + env(safe-area-inset-bottom));
-}
-
-/* ── Shared pieces ───────────────────────────────────────────────────── */
-
-.bandHead {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.1rem;
-  padding-bottom: 0.7rem;
-  border-bottom: 1px solid var(--line);
-}
-.bandKicker {
-  font-family: var(--rc-mono);
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-.bandTitle {
-  margin: 0.25rem 0 0;
-  font-family: var(--rc-serif);
-  font-weight: 400;
-  font-size: clamp(1.7rem, 7vw, 2.4rem);
-  line-height: 1.05;
-  letter-spacing: -0.01em;
-}
-.bandTitle em {
-  font-style: italic;
-  color: var(--accent);
-}
-.bandLink {
-  flex: none;
-  display: inline-block;
-  font-family: var(--rc-mono);
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent);
-  text-decoration: none;
-  padding: 0.45rem 0.65rem;
-  border: 1px solid var(--accent);
-  border-radius: 2px;
-  white-space: nowrap;
-}
-.bandLink:active {
-  background: var(--accent);
-  color: var(--on-accent);
-}
-
-.avatar {
-  flex: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--line);
-  color: var(--text);
-  display: inline-grid;
-  place-items: center;
-  font-family: var(--rc-mono);
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-.avatarSm {
-  width: 26px;
-  height: 26px;
-  font-size: 0.66rem;
-}
-.avatarLg {
-  width: 56px;
-  height: 56px;
-  font-size: 1.1rem;
-}
-
-.up {
-  color: var(--up);
-  font-weight: 700;
-}
-.down {
-  color: var(--down);
-}
-.flat {
-  color: var(--mute);
-}
-.fine {
-  margin: 0.6rem 0 0;
-  font-size: 0.74rem;
-  color: var(--mute);
-}
-
-/* ── Masthead ────────────────────────────────────────────────────────── */
+/* ── Top bar ─────────────────────────────────────────────────────────── */
 
 .topBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding-bottom: 1.3rem;
+  padding-bottom: 0.9rem;
 }
 .topLeague {
   min-width: 0;
-  font-family: var(--rc-mono);
-  font-size: 0.66rem;
+  font-family: var(--rc-sans);
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--mute);
   text-decoration: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .viewLeague {
   flex: none;
   display: inline-block;
   padding: 0.6rem 0.95rem;
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--ink);
+  color: var(--paper) !important;
   font-family: var(--rc-sans);
   font-size: 0.86rem;
   font-weight: 700;
   text-decoration: none;
   border-radius: 2px;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--ink);
 }
 .viewLeague:active {
-  filter: brightness(0.92);
+  opacity: 0.85;
 }
 .viewLeagueBig {
   padding: 0.95rem 1.4rem;
   font-size: 1rem;
   text-align: center;
 }
+
+/* ── Masthead ────────────────────────────────────────────────────────── */
+
+.mast {
+  text-align: center;
+  border-top: 3px solid var(--ink);
+  padding-top: 0.9rem;
+}
 .mastKicker {
-  font-family: var(--rc-mono);
-  font-size: 0.64rem;
+  font-family: var(--rc-sans);
+  font-size: 0.66rem;
   font-weight: 700;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--red);
 }
-.mastTitle {
-  margin: 0.2rem 0 0.9rem;
-  font-family: var(--rc-serif);
+.nameplate {
+  margin: 0.15rem 0 0.7rem;
+  font-family: var(--rc-display);
   font-weight: 400;
-  font-size: clamp(3.2rem, 17vw, 6.4rem);
-  line-height: 0.95;
-  letter-spacing: -0.02em;
+  font-size: clamp(2.3rem, 11vw, 5.4rem);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
 }
-.mastTitle em {
-  font-style: italic;
-  color: var(--accent);
-}
-.emptyNote {
-  margin: 0 0 1.2rem;
-  color: var(--mute);
-  max-width: 34rem;
-}
-.hooks {
-  list-style: none;
-  margin: 0 0 1rem;
-  padding: 0;
-  display: grid;
-  gap: 0.35rem;
-}
-.hooks li {
-  position: relative;
-  padding-left: 1.3rem;
-  font-family: var(--rc-serif);
-  font-size: 1.12rem;
-  line-height: 1.3;
-}
-.hooks li::before {
-  content: '★';
-  position: absolute;
-  left: 0;
-  top: 0.05em;
-  font-size: 0.85em;
-  color: var(--accent);
-}
-.lede {
-  margin: 0 0 1.2rem;
-  max-width: 42rem;
-  font-size: 1rem;
-  line-height: 1.6;
-  color: var(--mute);
-}
-.jumps {
+.dateline {
   display: flex;
-  gap: 0.4rem;
-  overflow-x: auto;
-  margin: 1.2rem -16px 0;
-  padding: 0 16px 0.1rem;
-  scrollbar-width: none;
-}
-.jumps::-webkit-scrollbar {
-  display: none;
-}
-.jumps a {
-  flex: none;
-  font-family: var(--rc-mono);
-  font-size: 0.64rem;
-  font-weight: 700;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.2rem 1rem;
+  padding: 0.45rem 0;
+  border-top: 1px solid var(--ink);
+  border-bottom: 3px double var(--ink);
+  font-family: var(--rc-sans);
+  font-size: 0.7rem;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text);
+  color: var(--ink-2);
+}
+.emptyNote {
+  font-size: 1.15rem;
+  margin: 1.6rem 0 1rem;
+}
+
+/* ── Front page ──────────────────────────────────────────────────────── */
+
+.front {
+  display: grid;
+  gap: 1.6rem;
+  padding: 1.4rem 0 1.6rem;
+}
+.headline {
+  margin: 0;
+  font-family: var(--rc-display);
+  font-weight: 400;
+  font-size: clamp(2.05rem, 8.4vw, 3.9rem);
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.deck {
+  margin: 0.7rem 0 0;
+  font-size: 1.16rem;
+  line-height: 1.4;
+  font-style: italic;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+.byline {
+  margin: 0.9rem 0 1rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--rule);
+  font-family: var(--rc-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.byline span {
+  font-weight: 500;
+  color: var(--mute);
+}
+.leadBody p {
+  margin: 0 0 0.9rem;
+  font-size: 1.08rem;
+  line-height: 1.62;
+  text-wrap: pretty;
+}
+.leadBody p:first-child::first-letter {
+  float: left;
+  font-family: var(--rc-display);
+  font-size: 3.6em;
+  line-height: 0.85;
+  padding: 0.06em 0.08em 0 0;
+  color: var(--red);
+}
+
+/* The rail: your week, the scoreboard, player of the week. */
+.rail {
+  display: grid;
+  gap: 1.1rem;
+  align-content: start;
+}
+.boxHead {
+  font-family: var(--rc-sans);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.45rem 0 0.4rem;
+  border-top: 3px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+.scoreRow {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px dotted var(--rule);
   text-decoration: none;
-  padding: 0.5rem 0.7rem;
-  border: 1px solid var(--line);
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.02);
+}
+.scoreRow:hover .scoreName {
+  text-decoration: underline;
+}
+.scoreLine {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-family: var(--rc-sans);
+  font-size: 0.92rem;
+  color: var(--ink-2);
+}
+.scoreLine.won {
+  color: var(--ink);
+  font-weight: 700;
+}
+.scoreName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scoreNum {
+  font-family: var(--rc-mono);
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+}
+.scoreTag {
+  font-family: var(--rc-sans);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.starBox {
+  background: var(--paper-2);
+  padding: 0 0.8rem 0.8rem;
+}
+.starBox .boxHead {
+  border-top-color: var(--red);
+}
+.starName {
+  margin-top: 0.55rem;
+  font-family: var(--rc-display);
+  font-size: 1.5rem;
+  line-height: 1.1;
+}
+.starMeta {
+  margin-top: 0.2rem;
+  font-family: var(--rc-sans);
+  font-size: 0.84rem;
+  color: var(--ink-2);
 }
 
 /* Your week */
 .findTeam {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-  font-family: var(--rc-mono);
-  font-size: 0.64rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.7rem 0.8rem;
+  background: var(--paper-2);
+  font-family: var(--rc-sans);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--red);
 }
 .findTeam select {
-  font: inherit;
   font-family: var(--rc-sans);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   letter-spacing: 0;
   text-transform: none;
   font-weight: 500;
-  color: var(--text);
-  background: var(--card);
-  border: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
   border-radius: 2px;
-  padding: 0.5rem 0.6rem;
+  padding: 0.55rem 0.6rem;
 }
 .yourWeek {
-  max-width: 34rem;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--accent);
+  background: var(--paper-2);
+  border-top: 3px solid var(--red);
+  font-family: var(--rc-sans);
 }
 .yourHead {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.55rem 0.8rem 0;
+  padding: 0.5rem 0.8rem 0;
 }
 .yourKicker {
-  font-family: var(--rc-mono);
-  font-size: 0.6rem;
-  font-weight: 700;
+  font-size: 0.66rem;
+  font-weight: 800;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--red);
 }
 .yourSwitch {
   font: inherit;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   color: var(--mute);
   background: none;
   border: 0;
@@ -453,474 +314,368 @@
 }
 .yourBody {
   display: flex;
-  gap: 0.75rem;
-  align-items: flex-start;
-  padding: 0.6rem 0.8rem 0.8rem;
-  color: inherit;
-  text-decoration: none;
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.55rem 0.8rem 0.6rem;
 }
 .yourAvatar {
   flex: none;
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   object-fit: cover;
-  background: var(--line);
-  color: var(--text);
+  background: var(--rule);
+  color: var(--ink);
   display: inline-grid;
   place-items: center;
-  font-family: var(--rc-mono);
   font-weight: 700;
 }
 .yourMain {
   flex: 1;
   min-width: 0;
   display: grid;
-  gap: 0.2rem;
 }
 .yourName {
-  font-family: var(--rc-serif);
-  font-size: 1.25rem;
-  line-height: 1.1;
+  font-weight: 700;
+  font-size: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.yourLine,
-.yourNext {
-  font-size: 0.84rem;
-  color: var(--mute);
-}
-.yourNote {
-  font-size: 0.86rem;
-  color: var(--accent);
+.yourLine {
+  font-size: 0.8rem;
+  color: var(--ink-2);
 }
 .yourScore {
   flex: none;
-  font-family: var(--rc-serif);
-  font-size: 1.8rem;
-  line-height: 1;
-  text-align: right;
-}
-.yourScore em,
-.teamScore em {
-  display: block;
-  margin-top: 0.3rem;
+  display: grid;
+  justify-items: end;
   font-family: var(--rc-mono);
-  font-style: normal;
-  font-size: 0.62rem;
+  font-size: 1.15rem;
   font-weight: 700;
+  line-height: 1.1;
+}
+.yourScore em {
+  font-style: normal;
+  font-family: var(--rc-sans);
+  font-size: 0.66rem;
   letter-spacing: 0.14em;
   color: var(--mute);
 }
-.yourScore[data-result='W'] em,
-.teamScore[data-result='W'] em {
+.yourScore[data-result='W'] em {
   color: var(--up);
 }
-.yourScore[data-result='L'] em,
-.teamScore[data-result='L'] em {
-  color: var(--down);
+.yourScore[data-result='L'] em {
+  color: var(--red);
 }
-
-/* ── Scoreboard ──────────────────────────────────────────────────────── */
-
-.games {
+.yourStory {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.1rem;
+  margin: 0 0.8rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--rule);
+  font-family: var(--rc-display);
+  font-size: 1.05rem;
+  line-height: 1.2;
+  text-decoration: none;
 }
-.game {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-top: 2px solid var(--accent);
-  padding: 0.7rem 0.85rem 0.6rem;
-  display: flex;
-  flex-direction: column;
-}
-.gameTag {
-  font-family: var(--rc-mono);
-  font-size: 0.58rem;
-  font-weight: 700;
+.yourStory span {
+  font-family: var(--rc-sans);
+  font-size: 0.62rem;
+  font-weight: 800;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 0.3rem;
-}
-.gameSide {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.3rem 0;
   color: var(--mute);
 }
-.gameSide + .gameSide {
-  border-top: 1px dotted var(--line);
+.yourStory:hover {
+  text-decoration: underline;
 }
-.won {
-  color: var(--text);
+.yourNext {
+  margin: 0 0.8rem;
+  padding: 0.5rem 0 0.65rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.82rem;
+  color: var(--ink-2);
 }
-.won .gameName {
-  font-weight: 700;
-}
-.won .gameScore {
-  color: var(--accent);
-}
-.gameName {
-  flex: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.gameName small {
-  display: block;
-  font-size: 0.72rem;
-  font-weight: 400;
-  color: var(--mute);
-}
-.gameScore {
-  font-family: var(--rc-serif);
-  font-size: 1.45rem;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.gameFoot {
+
+/* ── Section jumps ───────────────────────────────────────────────────── */
+
+.jumps {
   display: flex;
+  gap: 0.4rem 1.2rem;
   flex-wrap: wrap;
-  gap: 0.15rem 0.8rem;
-  margin-top: 0.35rem;
-  padding-top: 0.45rem;
-  border-top: 1px solid var(--line);
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  font-family: var(--rc-sans);
   font-size: 0.74rem;
-  color: var(--mute);
-}
-.margin {
-  font-family: var(--rc-mono);
   font-weight: 700;
-  color: var(--text);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
-.gameNote {
-  margin: 0.45rem 0 0;
-  padding-left: 1.1rem;
+.jumps a {
+  text-decoration: none;
+}
+.jumps a:hover {
+  color: var(--red);
+}
+
+/* ── Sections ────────────────────────────────────────────────────────── */
+
+.section {
+  padding: 1.8rem 0 0.4rem;
+}
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 3px double var(--ink);
+  scroll-margin-top: 1rem;
+}
+.sectionHead h2 {
+  margin: 0;
+  font-family: var(--rc-display);
+  font-weight: 400;
+  font-size: clamp(1.6rem, 5.5vw, 2.2rem);
+  line-height: 1.1;
+}
+.sectionLink {
+  flex: none;
+  font-family: var(--rc-sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--red) !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Avatars */
+.avatar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--rule);
+  color: var(--ink);
+  display: inline-grid;
+  place-items: center;
+  font-family: var(--rc-sans);
+  font-weight: 700;
+  font-size: 0.9rem;
+  filter: grayscale(0.25);
+}
+.avatarSm {
+  width: 24px;
+  height: 24px;
+  font-size: 0.7rem;
+}
+
+/* ── The games ───────────────────────────────────────────────────────── */
+
+.stories {
+  display: grid;
+}
+.story {
   position: relative;
-  font-size: 0.86rem;
-  color: var(--text);
+  padding: 1rem 0 1.1rem;
+  border-bottom: 1px solid var(--rule);
+  scroll-margin-top: 1rem;
 }
-.gameNote::before {
-  content: '★';
+.story:first-child {
+  padding-top: 0;
+}
+.story[data-you='true'] {
+  background: var(--paper-2);
+  box-shadow: -10px 0 0 var(--paper-2), 10px 0 0 var(--paper-2);
+}
+.story[data-you='true']::after {
+  content: 'Your game';
   position: absolute;
-  left: 0;
-  color: var(--accent);
-  font-size: 0.8em;
-  top: 0.15em;
-}
-
-/* ── Awards ──────────────────────────────────────────────────────────── */
-
-.awards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.6rem;
-}
-.award {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-top: 3px solid var(--text);
-  padding: 0.7rem 0.75rem 0.75rem;
-  display: grid;
-  align-content: start;
-  gap: 0.15rem;
-}
-.awardLead {
-  grid-column: span 2;
-  border-top-color: var(--accent);
-  background: linear-gradient(180deg, rgba(45, 97, 70, 0.08), transparent 70%), var(--card);
-}
-.awardTitle {
-  font-family: var(--rc-mono);
-  font-size: 0.58rem;
-  font-weight: 700;
+  top: 1rem;
+  right: 0;
+  font-family: var(--rc-sans);
+  font-size: 0.6rem;
+  font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--red);
 }
-.awardValue {
-  font-family: var(--rc-serif);
-  font-size: 1.6rem;
-  line-height: 1.05;
-  overflow-wrap: anywhere;
+.kicker {
+  font-family: var(--rc-sans);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 0.25rem;
 }
-.awardLead .awardValue {
-  font-size: 2.6rem;
+/* Stories sit side by side on wider screens; an empty kicker keeps its
+   line there so the headlines in a row line up. */
+.kickerEmpty {
+  display: none;
 }
-.awardWho {
+.storyHead {
+  margin: 0 0 0.6rem;
+  font-family: var(--rc-display);
+  font-weight: 400;
+  font-size: 1.5rem;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+.storyScore {
+  display: grid;
+  margin-bottom: 0.65rem;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+.storySide {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.32rem 0;
+  font-family: var(--rc-sans);
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+.storySide + .storySide {
+  border-top: 1px dotted var(--rule);
+}
+.storySide.won {
+  color: var(--ink);
   font-weight: 700;
-  font-size: 0.92rem;
 }
-.awardDetail {
-  font-size: 0.8rem;
-  line-height: 1.35;
+.storyName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.storyName small {
+  margin-left: 0.4rem;
+  font-weight: 500;
+  font-size: 0.76rem;
   color: var(--mute);
+}
+.storyNum {
+  font-family: var(--rc-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+}
+.storyBody {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.58;
+  text-wrap: pretty;
 }
 
 /* ── Record book ─────────────────────────────────────────────────────── */
 
-.recordList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.book {
   display: grid;
-  gap: 0.6rem;
 }
-.recordList li {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--accent);
-  padding: 0.75rem 0.9rem;
-  font-family: var(--rc-serif);
-  font-size: 1.1rem;
-  line-height: 1.35;
-}
-.milestones {
+.bookRow {
   display: grid;
-  gap: 0.5rem;
-  margin-top: 0.8rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.1rem 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px dotted var(--rule);
 }
-.milestone {
-  background: rgba(181, 140, 255, 0.08);
-  border: 1px solid rgba(181, 140, 255, 0.3);
-  padding: 0.6rem 0.8rem;
-  font-size: 0.92rem;
-}
-.milestoneKicker {
-  display: block;
-  font-family: var(--rc-mono);
-  font-size: 0.56rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--violet);
-  margin-bottom: 0.15rem;
-}
-
-/* ── Every team ──────────────────────────────────────────────────────── */
-
-.teams {
-  display: grid;
-  gap: 0.7rem;
-}
-.team {
-  position: relative;
-  background: var(--card);
-  border: 1px solid var(--line);
-  padding: 0.8rem 0.85rem 0.75rem;
-  scroll-margin-top: 1rem;
-}
-.team[data-you='true'] {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent), 0 8px 28px rgba(79, 209, 255, 0.12);
-}
-.team[data-you='true']::after {
-  content: 'You';
-  position: absolute;
-  top: -0.55rem;
-  left: 0.8rem;
-  padding: 0.1rem 0.45rem;
-  background: var(--accent);
-  color: var(--on-accent);
-  font-family: var(--rc-mono);
-  font-size: 0.56rem;
-  font-weight: 700;
+.bookLabel {
+  font-family: var(--rc-sans);
+  font-size: 0.68rem;
+  font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+  color: var(--ink-2);
 }
-.teamHead {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-}
-.teamWho {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-}
-.teamName {
-  font-family: var(--rc-serif);
-  font-size: 1.3rem;
-  line-height: 1.1;
-  overflow-wrap: anywhere;
-}
-.teamTeam {
-  font-size: 0.74rem;
-  color: var(--mute);
-  overflow-wrap: anywhere;
-}
-.archetype {
-  justify-self: start;
-  margin-top: 0.25rem;
+.bookValue {
+  grid-row: span 2;
+  align-self: center;
   font-family: var(--rc-mono);
-  font-size: 0.56rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent);
-  border: 1px solid rgba(79, 209, 255, 0.4);
-  padding: 0.12rem 0.4rem;
-}
-.teamScore {
-  flex: none;
-  text-align: right;
-  font-family: var(--rc-serif);
-  font-size: 1.9rem;
-  line-height: 1;
   font-variant-numeric: tabular-nums;
+  text-align: right;
 }
-.teamLine {
-  margin: 0.6rem 0 0;
-  font-size: 0.84rem;
-  color: var(--mute);
-}
-.teamNote {
-  margin: 0.35rem 0 0;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--accent);
-}
-.teamStats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin: 0.65rem 0 0;
-}
-.teamStats div {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--line);
-  padding: 0.3rem 0.5rem;
-}
-.teamStats dt {
-  font-family: var(--rc-mono);
-  font-size: 0.52rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--mute);
-}
-.teamStats dd {
-  margin: 0;
-  font-family: var(--rc-mono);
-  font-size: 0.86rem;
-  font-weight: 700;
-}
-.teamStats small {
-  font-weight: 400;
-  color: var(--mute);
-}
-.teamSeries,
-.teamNext {
-  margin: 0.55rem 0 0;
-  font-size: 0.8rem;
-  color: var(--mute);
-}
-.teamNext {
-  padding-top: 0.5rem;
-  border-top: 1px dotted var(--line);
-  color: var(--text);
-}
-
-/* ── Lineup desk ─────────────────────────────────────────────────────── */
-
-.mvps {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.55rem;
-}
-.mvp {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-top: 3px solid var(--pos);
-  padding: 0.6rem 0.7rem;
-  display: grid;
-  gap: 0.1rem;
-}
-.mvpPos {
-  font-family: var(--rc-mono);
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  color: var(--pos);
-}
-.mvpPlayer {
-  font-weight: 700;
-  font-size: 0.92rem;
+.bookWho {
+  font-family: var(--rc-display);
+  font-size: 1.15rem;
   line-height: 1.2;
 }
-.mvpPts {
-  font-family: var(--rc-serif);
-  font-size: 1.5rem;
-  line-height: 1.1;
-  color: var(--accent);
+.bookLine {
+  grid-column: 1 / -1;
+  font-size: 0.92rem;
+  font-style: italic;
+  color: var(--ink-2);
 }
-.mvpMgr {
-  font-size: 0.74rem;
-  color: var(--mute);
+.bookHot .bookValue,
+.bookHot .bookLine {
+  color: var(--red);
 }
-.desk {
+.milestones {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
   display: grid;
-  gap: 0.55rem;
-  margin-top: 0.8rem;
+  gap: 0.4rem;
+  font-size: 0.98rem;
 }
-.deskItem {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: baseline;
-  gap: 0.1rem 0.8rem;
-  padding: 0.65rem 0.75rem;
-  border: 1px dashed var(--line);
-}
-.deskLabel {
-  font-family: var(--rc-mono);
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--mute);
-}
-.deskValue {
-  grid-row: span 2;
-  font-family: var(--rc-serif);
-  font-size: 1.7rem;
-  color: var(--accent);
-}
-.deskWho {
-  font-size: 0.88rem;
+.milestones li::before {
+  content: '★ ';
+  color: var(--red);
 }
 
-/* ── The table ───────────────────────────────────────────────────────── */
+/* ── Standings ───────────────────────────────────────────────────────── */
 
-.tableGrid {
-  display: grid;
-  gap: 1.4rem;
+.tableWrap {
+  overflow-x: auto;
+  margin: 0 -16px;
+  padding: 0 16px;
 }
 .table {
   width: 100%;
   border-collapse: collapse;
+  font-family: var(--rc-sans);
   font-size: 0.88rem;
   font-variant-numeric: tabular-nums;
 }
 .table th {
-  font-family: var(--rc-mono);
-  font-size: 0.54rem;
-  font-weight: 700;
+  font-size: 0.62rem;
+  font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--mute);
   text-align: right;
-  padding: 0 0 0.35rem 0.45rem;
+  padding: 0 0.5rem 0.4rem;
+  border-bottom: 1px solid var(--ink);
+  white-space: nowrap;
 }
 .table td {
   text-align: right;
-  padding: 0.42rem 0 0.42rem 0.45rem;
-  border-top: 1px solid var(--line);
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px dotted var(--rule);
   white-space: nowrap;
+}
+.table td:not(.left):not(.rank) {
+  font-family: var(--rc-mono);
+  font-size: 0.82rem;
 }
 .table .left {
   text-align: left;
-  width: 100%;
-  white-space: normal;
+}
+.rank {
+  font-weight: 800;
+  width: 2.6rem;
+  text-align: left !important;
+}
+.rank small {
+  margin-left: 0.2rem;
+  font-size: 0.6rem;
 }
 .tableTeam {
   display: inline-flex;
@@ -928,277 +683,191 @@
   gap: 0.45rem;
   font-weight: 600;
 }
-.rank {
-  font-family: var(--rc-serif);
-  font-size: 1.05rem;
-  color: var(--mute);
-  padding-left: 0 !important;
-  text-align: left !important;
-  width: 1.6rem;
-}
 .cutLine td {
-  border-bottom: 2px solid var(--accent);
+  border-bottom: 2px solid var(--red);
 }
-.powerCol {
-  display: grid;
-  gap: 0.8rem;
-  align-content: start;
+.up {
+  color: var(--up);
 }
-.podium {
-  display: grid;
-  grid-template-columns: 1fr 1.15fr 1fr;
-  align-items: end;
-  gap: 0.4rem;
+.down {
+  color: var(--down);
 }
-.podiumStep {
-  display: grid;
-  justify-items: center;
-  gap: 0.2rem;
-  padding: 0.7rem 0.3rem;
-  background: var(--card);
-  border: 1px solid var(--line);
-  text-align: center;
+.odds {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
 }
-.podiumStep[data-rank='1'] {
-  order: 2;
-  padding-top: 1rem;
-  padding-bottom: 1.2rem;
-  border-top: 3px solid var(--accent);
+.oddsBar {
+  display: inline-block;
+  width: 4.5rem;
+  height: 6px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
 }
-.podiumStep[data-rank='2'] {
-  order: 1;
+.oddsBar span {
+  display: block;
+  height: 100%;
+  background: var(--ink);
 }
-.podiumStep[data-rank='3'] {
-  order: 3;
-}
-.podiumRank {
-  font-family: var(--rc-serif);
-  font-size: 1.5rem;
-  line-height: 1;
-}
-.podiumName {
-  font-weight: 700;
-  font-size: 0.86rem;
-  overflow-wrap: anywhere;
-}
-.podiumRec {
-  font-family: var(--rc-mono);
-  font-size: 0.7rem;
+.fine {
+  margin: 0.7rem 0 0;
+  font-family: var(--rc-sans);
+  font-size: 0.74rem;
+  line-height: 1.5;
   color: var(--mute);
 }
-.powerList {
-  margin: 0;
-  padding-left: 1.6rem;
-  display: grid;
-  gap: 0.15rem;
-  font-size: 0.88rem;
-}
-.powerList li {
-  padding: 0.3rem 0;
-  border-top: 1px solid var(--line);
-}
-.powerList li span:first-child {
-  display: inline-block;
-  min-width: 70%;
-}
-.streakLine {
-  margin: 1.1rem 0 0;
-  font-family: var(--rc-serif);
-  font-size: 1.05rem;
-}
 
-/* ── Pick'ems ────────────────────────────────────────────────────────── */
+/* ── Notebook ────────────────────────────────────────────────────────── */
 
-.pickGrid {
+.notebook {
   display: grid;
-  gap: 0.7rem;
+  gap: 1.4rem;
 }
-.pickBest,
-.pickLeaders {
-  background: var(--card);
-  border: 1px solid var(--line);
-  padding: 0.8rem 0.9rem;
-  display: grid;
-  gap: 0.2rem;
+.column p {
+  margin: 0.6rem 0;
+  font-size: 1rem;
+  line-height: 1.55;
 }
-.pickBest {
-  border-top: 3px solid var(--accent);
-}
-.pickLabel {
-  font-family: var(--rc-mono);
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
+.columnHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--rc-sans);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--accent);
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--ink);
 }
-.pickNames {
-  font-family: var(--rc-serif);
-  font-size: 1.5rem;
-  line-height: 1.15;
+.columnHead a {
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--red) !important;
 }
-.pickRec {
+.leaders {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: l;
+  font-family: var(--rc-sans);
+  font-size: 0.9rem;
+}
+.leaders li {
+  counter-increment: l;
+  display: flex;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+  border-bottom: 1px dotted var(--rule);
+}
+.leaders li span:first-child::before {
+  content: counter(l) '. ';
+  font-weight: 800;
+}
+.leaders li span:last-child {
   font-family: var(--rc-mono);
-  font-weight: 700;
-  color: var(--gold);
 }
-.pickLeaders ol {
-  margin: 0.2rem 0 0;
-  padding-left: 1.3rem;
-}
-.pickLeaders li {
-  padding: 0.25rem 0;
-}
-.pickLeaders li span:last-child {
-  float: right;
-  font-family: var(--rc-mono);
-  color: var(--gold);
-}
-.pickCrowd {
-  margin: 0.9rem 0 0;
-  font-family: var(--rc-serif);
-  font-size: 1.15rem;
-}
-
-/* ── Trades ──────────────────────────────────────────────────────────── */
-
 .trade {
-  background: var(--card);
-  border: 1px solid var(--line);
-  padding: 0.8rem 0.9rem;
-}
-.trade + .trade {
-  margin-top: 0.7rem;
-}
-.trade h3 {
-  margin: 0 0 0.4rem;
-  font-family: var(--rc-serif);
-  font-weight: 400;
-  font-size: 1.3rem;
-  color: var(--accent);
+  margin: 0.7rem 0;
 }
 .trade ul {
-  margin: 0;
+  margin: 0.3rem 0;
   padding-left: 1.1rem;
-  font-size: 0.9rem;
-}
-.trade p {
-  margin: 0.55rem 0 0;
-  font-size: 0.86rem;
-  color: var(--mute);
-}
-.verdicts {
-  margin-top: 1rem;
-  display: grid;
-  gap: 0.4rem;
-}
-.verdicts p {
-  margin: 0;
-  font-size: 0.88rem;
-  color: var(--mute);
-}
-.verdicts b {
-  color: var(--text);
 }
 
-/* ── Next week: the departures board ─────────────────────────────────── */
+/* ── Coming up ───────────────────────────────────────────────────────── */
 
-.board {
+.previews {
   display: grid;
-  gap: 0.6rem;
+  gap: 0;
 }
-.departure {
-  background: var(--card);
-  border: 1px solid var(--line);
-  padding: 0.65rem 0.8rem;
+.preview {
+  padding: 0.75rem 0;
+  border-bottom: 1px dotted var(--rule);
+}
+.previewLead {
+  padding-top: 0;
+  border-bottom: 1px solid var(--ink);
+}
+.previewTeams {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.2rem 0.8rem;
+  gap: 0.25rem;
 }
-.gotw {
-  border-color: var(--amber);
-  box-shadow: inset 3px 0 0 var(--amber);
-  background: linear-gradient(90deg, rgba(232, 176, 71, 0.1), transparent 60%), var(--card);
-}
-.depCode {
-  grid-row: span 2;
-  font-family: var(--rc-mono);
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--accent);
-  padding-top: 0.2rem;
-}
-.depCode span {
-  display: block;
-  margin-top: 0.25rem;
-  font-size: 0.5rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--amber);
-  max-width: 4.5rem;
-  line-height: 1.3;
-}
-.depTeams {
-  display: grid;
-  gap: 0.2rem;
-}
-.depSide {
+.previewSide {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-.depName {
-  flex: 1;
-  min-width: 0;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-.depRec {
-  font-family: var(--rc-mono);
-  font-size: 0.78rem;
-  color: var(--mute);
-}
-.depFoot {
-  grid-column: 2;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.1rem 0.8rem;
-  font-size: 0.76rem;
-  color: var(--mute);
-  padding-top: 0.35rem;
-  border-top: 1px dotted var(--line);
-}
-.depLine {
-  font-family: var(--rc-mono);
+  font-family: var(--rc-sans);
   font-weight: 700;
-  color: var(--accent);
+  font-size: 0.95rem;
+}
+.previewLead .previewSide {
+  font-family: var(--rc-display);
+  font-weight: 400;
+  font-size: 1.45rem;
+}
+.previewName small {
+  margin-left: 0.45rem;
+  font-family: var(--rc-mono);
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--mute);
+}
+.previewNote {
+  margin: 0.35rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.previewNote b {
+  color: var(--ink);
 }
 .nextNotes {
   margin-top: 1rem;
   display: grid;
-  gap: 0.5rem;
-  justify-items: start;
+  gap: 0.4rem;
+  font-size: 0.95rem;
 }
 .nextNotes p {
   margin: 0;
-  font-family: var(--rc-serif);
-  font-size: 1.05rem;
+}
+
+/* ── Free edition ────────────────────────────────────────────────────── */
+
+.upsell {
+  margin-top: 2rem;
+  padding: 1.1rem;
+  background: var(--paper-2);
+  border-top: 3px solid var(--red);
+  display: grid;
+  gap: 0.8rem;
+  justify-items: start;
+}
+.upsell p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
 }
 
 /* ── Footer ──────────────────────────────────────────────────────────── */
 
+.foot {
+  margin-top: 2.2rem;
+  padding-top: 1.2rem;
+  border-top: 3px double var(--ink);
+}
 .footActions {
   display: grid;
   gap: 0.6rem;
 }
 .shareBtn {
-  font: inherit;
+  font-family: var(--rc-sans);
   font-size: 0.95rem;
   font-weight: 700;
   padding: 0.9rem 1.2rem;
   background: transparent;
-  color: var(--text);
-  border: 1px solid var(--accent);
+  color: var(--ink);
+  border: 1px solid var(--ink);
   border-radius: 2px;
   cursor: pointer;
 }
@@ -1208,95 +877,97 @@
   justify-content: space-between;
   gap: 0.6rem 1.2rem;
   margin-top: 1.2rem;
+  font-family: var(--rc-sans);
   font-size: 0.86rem;
 }
 .footNav a {
-  color: var(--text);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-/* ── Wider screens: grids, not a wider column ─────────────────────────── */
+/* ── Wider screens: columns, with rules between them ─────────────────── */
 
-@media (min-width: 720px) {
-  .band {
-    padding: 3rem 0 3.2rem;
+@media (min-width: 760px) {
+  .page {
+    padding: 1.5rem 1rem 3rem;
   }
-  .games,
-  .teams {
+  .sheet {
+    padding: 1.2rem 2.2rem 2.8rem;
+    box-shadow: 0 1px 0 var(--rule), 0 18px 40px -24px rgba(40, 30, 10, 0.35);
+  }
+  .front {
+    grid-template-columns: minmax(0, 1fr) 18.5rem;
+    gap: 0 2rem;
+  }
+  .rail {
+    padding-left: 2rem;
+    border-left: 1px solid var(--rule);
+  }
+  .stories {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 2rem;
   }
-  .awards {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .story:nth-child(2) {
+    padding-top: 0;
   }
-  .awardLead {
-    grid-row: span 2;
-    grid-column: span 1;
-    align-content: center;
+  .kickerEmpty {
+    display: block;
+    min-height: 1.05em;
   }
-  .mvps {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .bookRow {
+    grid-template-columns: 13rem minmax(0, 1fr) 7rem;
+    align-items: baseline;
   }
-  .desk {
+  .bookValue {
+    grid-row: auto;
+    grid-column: 3;
+    grid-row-start: 1;
+  }
+  .bookLabel {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+  .bookWho {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .bookLine {
+    grid-column: 2 / -1;
+    grid-row: 2;
+  }
+  .notebook {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem;
   }
-  .pickGrid {
-    grid-template-columns: 1fr 1fr;
-  }
-  .board {
+  .previews {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 2rem;
+  }
+  .previewLead {
+    grid-column: 1 / -1;
   }
   .footActions {
-    grid-template-columns: auto auto;
+    grid-auto-flow: column;
     justify-content: start;
-  }
-  .lede {
-    font-size: 1.08rem;
   }
 }
 
-@media (min-width: 1040px) {
-  .games,
-  .teams {
+@media (min-width: 1080px) {
+  .leadBody {
+    columns: 2;
+    column-gap: 2rem;
+    column-rule: 1px solid var(--rule);
+  }
+  .leadBody p {
+    break-inside: avoid-column;
+  }
+  .stories {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  .awards {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+  .story:nth-child(3) {
+    padding-top: 0;
   }
-  .mvps {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-  .desk {
+  .previews {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .tableGrid {
-    grid-template-columns: 1.5fr 1fr;
-    align-items: start;
-  }
-  .board {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  /* The masthead gets a margin rail: title and hooks on the left, the
-     reader's own week on the right. */
-  .bandMast .bandInner {
-    display: grid;
-    grid-template-columns: 1.3fr 1fr;
-    column-gap: 2.5rem;
-  }
-  .bandMast .topBar,
-  .bandMast .jumps {
-    grid-column: 1 / -1;
-  }
-  .bandMast .mastKicker,
-  .bandMast .mastTitle,
-  .bandMast .hooks,
-  .bandMast .lede {
-    grid-column: 1;
-  }
-  .bandMast .yourWeek,
-  .bandMast .findTeam {
-    grid-column: 2;
-    grid-row: 2 / span 4;
-    align-self: center;
   }
 }

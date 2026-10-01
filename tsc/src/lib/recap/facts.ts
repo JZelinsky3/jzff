@@ -5,20 +5,21 @@
 // (./intro.ts) may only repeat numbers produced here, so when a figure is
 // wrong it is wrong in exactly one place.
 //
-// The bar is Sleeper's own weekly recap (top and low score, best at each
-// position, best bench player, efficiency, best score in a loss, worst in a
-// win, blowout, closest, projections, standings). This covers all of that
-// where the data exists, and then the part no platform can do because none
-// of them keeps a league's history: the all-time series behind every game,
-// career highs and lows, how past teams with the same start finished, and a
-// card for every manager with next week already lined up.
+// Sleeper already sends a weekly recap with the top score, best at each
+// position, efficiency and so on, so this doesn't try to be a second copy of
+// it. The numbers here are the raw material for a written paper (./story.ts):
+// the all-time series and last meeting behind every game, career highs and
+// lows, titles, how this start compares to the manager's own past starts and
+// to every team that ever had it, and where each of the week's superlatives
+// ranks in league history.
 //
 // What goes in depends on the league owner's plan when the recap is built:
-//   free    scores, the week's awards, every team's card, standings, series,
+//   free    scores, series and last meetings, career marks, standings,
 //           next week's slate
-//   rookie  + record book, power rankings and odds, pick'ems, milestones,
-//           the lineup desk, next week's lines
-//   full    + trades, trade verdicts, Manager DNA archetypes
+//   rookie  + the record book (history ranks, start history, a year ago),
+//           power rankings and odds, pick'ems, milestones, the players
+//           behind each result, next week's lines
+//   full    + trades, trade verdicts
 // A free league's facts never contain the paid sections at all, so there is
 // nothing on its page or in its email to unlock.
 
@@ -52,10 +53,26 @@ export function recapSections(tier: RecapTier): { paid: boolean; veteran: boolea
 
 // ── Shape ─────────────────────────────────────────────────────────────────
 
-export const RECAP_FACTS_VERSION = 2
+export const RECAP_FACTS_VERSION = 3
 
 // An all-time series between two people, from one side's point of view.
 export type RecapSeries = { w: number; l: number; t: number; since: number }
+
+// The previous time two people met, before the game being described.
+export type RecapMeeting = {
+  year: number
+  week: number
+  kind: 'regular' | 'playoff' | 'championship'
+  winner: string
+  loser: string
+  ws: number
+  ls: number
+}
+
+// Who has won the last n meetings in a row (n >= 2).
+export type RecapRun = { name: string; n: number }
+
+export type RecapPlayer = { player: string; pos: string | null; points: number }
 
 export type RecapSide = {
   managerId: string
@@ -63,7 +80,22 @@ export type RecapSide = {
   team: string | null
   avatar: string | null
   score: number
+  // Seasons this person won the title, before this one.
+  titles: number[]
+  // Rookie and up, from the week's lineups: the best starter, the best
+  // player left on the bench, and how many points the bench cost them.
+  star?: RecapPlayer | null
+  bench?: RecapPlayer | null
+  left?: number | null
 }
+
+// What this game did to the all-time series, from the winner's side.
+export type RecapSeriesEvent =
+  | { kind: 'first' }
+  | { kind: 'snap'; run: number }
+  | { kind: 'extend'; run: number }
+  | { kind: 'even' }
+  | { kind: 'lead' }
 
 export type RecapGame = {
   a: RecapSide
@@ -80,6 +112,9 @@ export type RecapGame = {
   series: RecapSeries | null
   // One line of history about this meeting, when there is one worth saying.
   seriesNote: string | null
+  seriesEvent: RecapSeriesEvent | null
+  // The meeting before this one.
+  last: RecapMeeting | null
 }
 
 export type RecapLine = {
@@ -92,7 +127,51 @@ export type RecapLine = {
   won: boolean
 }
 
-export type RecapAward = { key: string; title: string; value: string; who: string; detail: string }
+// Where one of the week's superlatives sits in league history. rank/of are
+// against every score (or game) the league has on record; seasonRank is
+// against this season so far.
+export type RecapBookRow = {
+  key: 'top' | 'low' | 'heartbreak' | 'robbery' | 'closest' | 'blowout'
+  label: string
+  who: string
+  // The other side, for the game rows (who lost the closest game, etc.).
+  vs: string | null
+  managerId: string
+  value: number
+  rank: number
+  of: number
+  seasonRank: number
+  // The best other entry on record: the record itself when this isn't it,
+  // the old record when it is.
+  record: { who: string; value: number; year: number } | null
+}
+
+// A personal mark: where this score sits in the manager's own history.
+export type RecapMark =
+  | { kind: 'career-high'; old: number; oldYear: number }
+  | { kind: 'career-low' }
+  | { kind: 'best-since'; year: number }
+  | { kind: 'low-since'; year: number }
+  | { kind: 'season-high' }
+  | { kind: 'season-low' }
+
+// How this team's start compares with its own past starts. Only for an
+// unbeaten or winless record, week 2 on.
+export type RecapStartMark =
+  | { kind: 'first-ever'; seasons: number }
+  | { kind: 'first-since'; year: number }
+  | { kind: 'straight'; years: number }
+
+// "Of the 11 teams to start 3-0 in league history, none won the title."
+export type RecapStart = {
+  record: string
+  who: string[]
+  teams: number
+  champs: number
+  lastChamp: { name: string; year: number } | null
+  from: number
+  to: number
+}
 
 export type RecapTeamCard = {
   managerId: string
@@ -114,14 +193,15 @@ export type RecapTeamCard = {
   streak: { kind: 'W' | 'L'; length: number } | null
   // One line of personal history: career high, best since a year, and so on.
   note: string | null
+  mark: RecapMark | null
+  startMark: RecapStartMark | null
+  titles: number[]
   // All-time series against this week's opponent, after this game.
   series: RecapSeries | null
   next: { opponent: string; series: RecapSeries | null; favored: boolean | null; spread: number | null } | null
   // Rookie and up.
   power?: { rank: number; delta: number } | null
   odds?: { now: number; change: number | null } | null
-  // Veteran and up.
-  archetype?: string | null
 }
 
 export type RecapStanding = {
@@ -174,22 +254,6 @@ export type RecapPickems = {
 
 export type RecapMilestone = { name: string; text: string }
 
-export type RecapLineups = {
-  // Best starter at each position this week.
-  mvps: { pos: string; player: string; nfl: string | null; points: number; manager: string }[]
-  benchBest: { player: string; pos: string | null; points: number; manager: string } | null
-  efficiency: {
-    best: { name: string; pct: number; left: number }
-    worst: { name: string; pct: number; left: number }
-  } | null
-  // Only where the platform supplies projections (ESPN and Yahoo do, Sleeper
-  // doesn't through its league API).
-  projections: {
-    over: { name: string; actual: number; projected: number }
-    under: { name: string; actual: number; projected: number }
-  } | null
-}
-
 export type RecapTrade = {
   headline: string
   sides: { manager: string; gets: string[] }[]
@@ -199,9 +263,11 @@ export type RecapTrade = {
 export type RecapVerdict = { headline: string; summary: string }
 
 export type RecapNextGame = {
-  a: { name: string; avatar: string | null; record: string | null }
-  b: { name: string; avatar: string | null; record: string | null }
+  a: { name: string; avatar: string | null; record: string | null; place: number | null }
+  b: { name: string; avatar: string | null; record: string | null; place: number | null }
   series: RecapSeries | null
+  last: RecapMeeting | null
+  run: RecapRun | null
   // Rookie and up, off the matchup preview.
   spread?: number | null
   favorite?: 'a' | 'b' | null
@@ -218,7 +284,7 @@ export type RecapNext = {
 }
 
 export type RecapFacts = {
-  v: 2
+  v: 3
   generatedAt: string
   league: { id: string; slug: string; name: string; abbr: string | null }
   year: number
@@ -228,7 +294,6 @@ export type RecapFacts = {
   history: { firstYear: number; seasons: number }
 
   games: RecapGame[]
-  awards: RecapAward[]
   top: RecapLine | null
   low: RecapLine | null
   closest: RecapGame | null
@@ -245,12 +310,19 @@ export type RecapFacts = {
   hooks: string[]
 
   // Rookie and up.
-  records?: string[]
+  book?: RecapBookRow[]
+  starts?: RecapStart[]
+  // Where the league stood after this week a year ago, and how it ended.
+  yearAgo?: { record: string; leaders: { name: string; finish: string | null }[] } | null
+  // This week's number in the league's history: the best score ever posted
+  // in this week of a season.
+  weekRecord?: { who: string; value: number; year: number; isNew: boolean } | null
+  // The best starter of the week, anywhere in the league.
+  star?: (RecapPlayer & { manager: string }) | null
   power?: RecapPowerRow[] | null
   playoffTeams?: number | null
   pickems?: RecapPickems | null
   milestones?: RecapMilestone[]
-  lineups?: RecapLineups | null
 
   // Veteran and up.
   trades?: RecapTrade[]
@@ -313,11 +385,27 @@ type SeasonRow = {
 // platform accounts) on each side. pams was on NFL.com for six years and
 // Sleeper for one, so the same person has two manager ids; the profile is
 // what joins them.
-type HistGame = { year: number; week: number; aId: string; bId: string; aP: string; bP: string; sa: number; sb: number }
+type HistGame = {
+  year: number
+  week: number
+  aId: string
+  bId: string
+  aP: string
+  bP: string
+  sa: number
+  sb: number
+  kind: 'regular' | 'playoff' | 'championship'
+}
 
 // A line of history plus the short form of it that can lead a subject line.
 // Weight orders hooks: a title beats a league record beats a snapped run.
 type Note = { text: string; hook: string | null; weight: number }
+
+const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve']
+// Headline style: small counts as words ("five-game run").
+export function numberWord(n: number): string {
+  return NUMBER_WORDS[n] ?? String(n)
+}
 
 const round2 = (n: number) => Math.round(n * 100) / 100
 const round1 = (n: number) => Math.round(n * 10) / 10
@@ -384,12 +472,22 @@ export async function buildRecapFacts(args: {
   const nameOf = (id: string) => names.get(id) ?? 'Unknown'
   const personOf = (id: string) => personOfId.get(id) ?? id
   const avatarOf = (id: string) => seasonAvatar.get(id) || managerAvatar.get(id) || null
+  // Titles by person, before this season. A season with no champion on
+  // record (an unfinished import) simply has no title to hand out.
+  const titlesByPerson = new Map<string, number[]>()
+  for (const s of [...seasons].sort((x, y) => x.year - y.year)) {
+    if (s.year >= year || !s.champion_manager_id) continue
+    const p = personOf(s.champion_manager_id)
+    titlesByPerson.set(p, [...(titlesByPerson.get(p) ?? []), s.year])
+  }
+  const titlesOf = (id: string) => titlesByPerson.get(personOf(id)) ?? []
   const side = (id: string, score: number): RecapSide => ({
     managerId: id,
     name: nameOf(id),
     team: teams.get(id) ?? null,
     avatar: avatarOf(id),
     score: round2(score),
+    titles: titlesOf(id),
   })
 
   const all = ((matchupRows ?? []) as MatchupRow[]).map((m) => ({
@@ -475,6 +573,31 @@ export async function buildRecapFacts(args: {
     }
     return { s: { w, l, t, since: Math.min(...games.map((g) => g.year)) }, games }
   }
+  const byDate = (x: HistGame, y: HistGame) => x.year - y.year || x.week - y.week
+  // The newest meeting in a set of games between two people.
+  const meetingOf = (games: HistGame[]): RecapMeeting | null => {
+    const g = [...games].sort(byDate).pop()
+    if (!g || g.sa === g.sb) return null
+    const [w, l, ws, ls] = g.sa > g.sb ? [g.aId, g.bId, g.sa, g.sb] : [g.bId, g.aId, g.sb, g.sa]
+    return { year: g.year, week: g.week, kind: g.kind, winner: nameOf(w), loser: nameOf(l), ws: round2(ws), ls: round2(ls) }
+  }
+  // Who has won the most recent meetings in a row.
+  const runOf = (games: HistGame[]): RecapRun | null => {
+    const ordered = [...games].sort(byDate)
+    let holder: string | null = null
+    let n = 0
+    for (let i = ordered.length - 1; i >= 0; i--) {
+      const g = ordered[i]
+      if (g.sa === g.sb) break
+      const p = g.sa > g.sb ? g.aP : g.bP
+      if (holder == null) holder = p
+      if (p !== holder) break
+      n++
+    }
+    if (!holder || n < 2) return null
+    const g = ordered[ordered.length - 1]
+    return { name: nameOf(g.aP === holder ? g.aId : g.bId), n }
+  }
 
   // ── The games ──
   const round = playoffWeek ? rounds.find((r) => r.includes(week)) ?? null : null
@@ -522,6 +645,7 @@ export async function buildRecapFacts(args: {
     }
 
     const after = seriesBetween(a.managerId, b.managerId)
+    const before = seriesBetween(a.managerId, b.managerId, true)
     const note = winner === 'a' || winner === 'b'
       ? seriesNoteFor(
           winner === 'a' ? a : b,
@@ -532,7 +656,13 @@ export async function buildRecapFacts(args: {
       : null
 
     if (note) hookPool.push(note)
-    return { a, b, winner, margin, kind, leg, series: after?.s ?? null, seriesNote: note?.text ?? null }
+    return {
+      a, b, winner, margin, kind, leg,
+      series: after?.s ?? null,
+      seriesNote: note?.text ?? null,
+      seriesEvent: note?.event ?? null,
+      last: before ? meetingOf(before.games) : null,
+    }
   })
 
   // Championship first, then the rest by margin so the page opens on the
@@ -664,9 +794,7 @@ export async function buildRecapFacts(args: {
   }
   const placeOf = new Map(standings?.map((s) => [s.managerId, s]) ?? [])
 
-  // ── The week's awards ──
   const weekScores = lines.map((l) => l.score)
-  const awards = buildAwards({ lines, closest, blowout, upset, weekScores, games })
 
   // ── Next week ──
   const nextWeek = week + 1
@@ -681,7 +809,7 @@ export async function buildRecapFacts(args: {
   const noteFor = (id: string, name: string, score: number) => {
     const n = careerNote(id, name, score, history, personOf, year, week)
     if (n) hookPool.push(n)
-    return n?.text ?? null
+    return n
   }
   const teamCards: RecapTeamCard[] = []
   for (const g of games) {
@@ -696,6 +824,11 @@ export async function buildRecapFacts(args: {
       const vs = seriesBetween(me.managerId, them.managerId)
       const nextId = nextByManager.get(me.managerId)
       const nextSeries = nextId ? seriesBetween(me.managerId, nextId) : null
+      const career = noteFor(me.managerId, me.name, me.score)
+      const rec = recordsNow.get(me.managerId)
+      const startMark = !playoffWeek && rec && rec.t === 0 && rec.w + rec.l === week
+        ? startMarkFor(personOf(me.managerId), rec.w, rec.l, week, year, history)
+        : null
       teamCards.push({
         managerId: me.managerId,
         profileId: profileOfId.get(me.managerId) ?? null,
@@ -712,7 +845,10 @@ export async function buildRecapFacts(args: {
         place: standing?.rank ?? null,
         placeChange: standing?.change ?? null,
         streak: streakOf.get(me.managerId) ?? null,
-        note: noteFor(me.managerId, me.name, me.score),
+        note: career?.text ?? null,
+        mark: career?.mark ?? null,
+        startMark,
+        titles: me.titles,
         series: vs?.s ?? null,
         next: nextId
           ? { opponent: nameOf(nextId), series: nextSeries?.s ?? null, favored: null, spread: null }
@@ -725,16 +861,27 @@ export async function buildRecapFacts(args: {
   const next: RecapNext | null = nextRows.length
     ? {
         week: nextWeek,
-        games: nextRows.map((m) => ({
-          a: { name: nameOf(m.manager_a_id), avatar: avatarOf(m.manager_a_id), record: recordOf(m.manager_a_id) },
-          b: { name: nameOf(m.manager_b_id), avatar: avatarOf(m.manager_b_id), record: recordOf(m.manager_b_id) },
-          series: seriesBetween(m.manager_a_id, m.manager_b_id)?.s ?? null,
-        })),
+        games: nextRows.map((m) => {
+          const s = seriesBetween(m.manager_a_id, m.manager_b_id)
+          const card = (id: string) => ({
+            name: nameOf(id),
+            avatar: avatarOf(id),
+            record: recordOf(id),
+            place: placeOf.get(id)?.rank ?? null,
+          })
+          return {
+            a: card(m.manager_a_id),
+            b: card(m.manager_b_id),
+            series: s?.s ?? null,
+            last: s ? meetingOf(s.games) : null,
+            run: s ? runOf(s.games) : null,
+          }
+        }),
       }
     : null
 
   const facts: RecapFacts = {
-    v: 2,
+    v: 3,
     generatedAt: new Date().toISOString(),
     league: {
       id: league.id as string,
@@ -748,7 +895,6 @@ export async function buildRecapFacts(args: {
     phase: playoffWeek ? 'playoffs' : 'regular',
     history: { firstYear, seasons: seasonsWithGames.length },
     games,
-    awards,
     top,
     low,
     closest,
@@ -805,12 +951,14 @@ export async function buildRecapFacts(args: {
     soft('lineups', loadLineups(db, season.id, week)),
   ])
 
-  // Record book: where this week's numbers sit in league history, and how
-  // past teams with this week's best and worst records finished.
-  facts.records = [
-    ...buildRecords({ history, top, low, blowout, year, week, firstYear, nameOf: (p) => personName(p, nameOf, history), hooks: hookPool }),
-    ...(standings ? buildStartHistory({ standings, week, year, seasons, history }) : []),
-  ]
+  // Record book: where this week's numbers sit in league history, how past
+  // teams with this week's best and worst records finished, and where the
+  // league stood a year ago tonight.
+  const nameOfPerson = (p: string) => personName(p, nameOf, history)
+  facts.book = buildBook({ history, games, year, week, nameOf: nameOfPerson, hooks: hookPool })
+  facts.starts = standings ? buildStartHistory({ standings, week, year, seasons, history, nameOf: nameOfPerson }) : []
+  facts.weekRecord = playoffWeek ? null : buildWeekRecord(history, year, week, top, nameOfPerson, hookPool)
+  facts.yearAgo = playoffWeek ? null : await buildYearAgo(db, seasons, history, year, week, nameOfPerson, personOf)
 
   // Power rankings and playoff odds.
   facts.power = null
@@ -860,7 +1008,20 @@ export async function buildRecapFacts(args: {
 
   facts.pickems = buildPickems(pickems, year, week, nameOf)
   facts.milestones = buildMilestones(bundle?.['milestones.json'], week)
-  facts.lineups = buildLineups(lineupRows, seen, nameOf)
+  // The players behind each result: the best starter on each side, the best
+  // player left on a bench, and what the bench cost.
+  const lineups = buildLineups(lineupRows, seen)
+  if (lineups) {
+    for (const g of facts.games) {
+      for (const s of [g.a, g.b]) {
+        const l = lineups.byTeam.get(s.managerId)
+        s.star = l?.star ?? null
+        s.bench = l?.bench ?? null
+        s.left = l?.left ?? null
+      }
+    }
+    facts.star = lineups.star ? { ...lineups.star.player, manager: nameOf(lineups.star.managerId) } : null
+  }
 
   // Next week's lines, off the matchup preview, which the bundle builds for
   // the week about to be played. Only trusted when that is the week after
@@ -919,16 +1080,6 @@ export async function buildRecapFacts(args: {
     const nameFor = (id: string, fallback: string) => names.get(id) ?? fallback
     facts.trades = buildTrades(trades, year, week, startDate, nameFor)
     facts.verdicts = buildVerdicts(trades, nameFor)
-
-    const dna = (bundle?.['manager_dna.json'] as { managers?: { manager_id?: string; archetype?: { name?: string } | string }[] } | null)?.managers
-    if (Array.isArray(dna)) {
-      const byPerson = new Map<string, string>()
-      for (const d of dna) {
-        const label = typeof d.archetype === 'string' ? d.archetype : d.archetype?.name
-        if (d.manager_id && label) byPerson.set(personOf(d.manager_id), label)
-      }
-      for (const card of facts.teams) card.archetype = byPerson.get(personOf(card.managerId)) ?? null
-    }
   }
 
   finishHooks()
@@ -951,7 +1102,7 @@ async function loadHistory(
   for (let from = 0; ; from += page) {
     const { data, error } = await db
       .from('matchups')
-      .select('id, season_id, week, manager_a_id, manager_b_id, score_a, score_b')
+      .select('id, season_id, week, manager_a_id, manager_b_id, score_a, score_b, is_playoff, is_championship')
       .in('season_id', [...yearOf.keys()])
       .order('id', { ascending: true })
       .range(from, from + page - 1)
@@ -974,6 +1125,7 @@ async function loadHistory(
         bP: personOf(m.manager_b_id as string),
         sa,
         sb,
+        kind: m.is_championship ? 'championship' : m.is_playoff ? 'playoff' : 'regular',
       })
     }
     if (data.length < page) break
@@ -998,8 +1150,8 @@ function seriesNoteFor(
   loser: RecapSide,
   before: { s: RecapSeries; games: HistGame[] } | null,
   personOf: (id: string) => string,
-): Note | null {
-  if (!before) return { text: `First meeting. ${winner.name} takes it.`, hook: null, weight: 0 }
+): (Note & { event: RecapSeriesEvent }) | null {
+  if (!before) return { text: `First meeting. ${winner.name} takes it.`, hook: null, weight: 0, event: { kind: 'first' } }
   const wp = personOf(winner.managerId)
   const ordered = [...before.games].sort((x, y) => x.year - y.year || x.week - y.week)
   // The streak going into this game, by whoever held it.
@@ -1019,22 +1171,24 @@ function seriesNoteFor(
   if (holder === 'loser' && run >= 3) {
     return {
       text: `${winner.name} snaps ${loser.name}'s ${run}-game run in this matchup.`,
-      hook: `${winner.name} snaps ${loser.name}'s ${run}-game run`,
+      hook: `${winner.name} snaps ${loser.name}'s ${numberWord(run)}-game run`,
       weight: 70 + run,
+      event: { kind: 'snap', run },
     }
   }
   if (holder === 'winner' && run + 1 >= 4) {
     return {
       text: `${winner.name} has now won ${run + 1} straight against ${loser.name}.`,
-      hook: `${winner.name} makes it ${run + 1} straight over ${loser.name}`,
+      hook: `${winner.name} makes it ${numberWord(run + 1)} straight over ${loser.name}`,
       weight: 45 + run,
+      event: { kind: 'extend', run: run + 1 },
     }
   }
   if (before.s.w < before.s.l && after.w === after.l) {
-    return { text: `${winner.name} evens the series at ${recordStr(after.w, after.l, after.t)}.`, hook: null, weight: 0 }
+    return { text: `${winner.name} evens the series at ${recordStr(after.w, after.l, after.t)}.`, hook: null, weight: 0, event: { kind: 'even' } }
   }
   if (before.s.w === before.s.l && before.s.w + before.s.l > 0) {
-    return { text: `${winner.name} takes the series lead, ${recordStr(after.w, after.l, after.t)}.`, hook: null, weight: 0 }
+    return { text: `${winner.name} takes the series lead, ${recordStr(after.w, after.l, after.t)}.`, hook: null, weight: 0, event: { kind: 'lead' } }
   }
   return null
 }
@@ -1048,7 +1202,7 @@ function careerNote(
   personOf: (id: string) => string,
   year: number,
   week: number,
-): Note | null {
+): (Note & { mark: RecapMark }) | null {
   const me = personOf(managerId)
   const prior: { year: number; week: number; score: number }[] = []
   for (const g of history) {
@@ -1060,186 +1214,208 @@ function careerNote(
     const best = prior.reduce((a, b) => (b.score > a.score ? b : a))
     const worst = prior.reduce((a, b) => (b.score < a.score ? b : a))
     if (score > best.score) {
-      return { text: `Career high. The old best was ${pts(best.score)} in ${best.year}.`, hook: `${name}'s career high`, weight: 75 }
+      return {
+        text: `Career high. The old best was ${pts(best.score)} in ${best.year}.`,
+        hook: `${name}'s career high`,
+        weight: 75,
+        mark: { kind: 'career-high', old: round2(best.score), oldYear: best.year },
+      }
     }
-    if (score < worst.score) return { text: 'Career low.', hook: `${name}'s career low`, weight: 60 }
+    if (score < worst.score) return { text: 'Career low.', hook: `${name}'s career low`, weight: 60, mark: { kind: 'career-low' } }
     const byDate = [...prior].sort((a, b) => b.year - a.year || b.week - a.week)
     const lastHigher = byDate.find((p) => p.score > score)
     if (lastHigher && lastHigher.year <= year - 2) {
       const gap = year - lastHigher.year
-      return { text: `Best score since ${lastHigher.year}.`, hook: gap >= 3 ? `${name}'s best score since ${lastHigher.year}` : null, weight: 40 + gap * 3 }
+      return {
+        text: `Best score since ${lastHigher.year}.`,
+        hook: gap >= 3 ? `${name}'s best score since ${lastHigher.year}` : null,
+        weight: 40 + gap * 3,
+        mark: { kind: 'best-since', year: lastHigher.year },
+      }
     }
     const lastLower = byDate.find((p) => p.score < score)
     if (lastLower && lastLower.year <= year - 2) {
       const gap = year - lastLower.year
-      return { text: `Lowest score since ${lastLower.year}.`, hook: gap >= 3 ? `${name}'s lowest score since ${lastLower.year}` : null, weight: 25 + gap * 3 }
+      return {
+        text: `Lowest score since ${lastLower.year}.`,
+        hook: gap >= 3 ? `${name}'s lowest score since ${lastLower.year}` : null,
+        weight: 25 + gap * 3,
+        mark: { kind: 'low-since', year: lastLower.year },
+      }
     }
   }
   const season = prior.filter((p) => p.year === year)
   if (season.length >= 2) {
-    if (score > Math.max(...season.map((p) => p.score))) return { text: 'Season high.', hook: null, weight: 0 }
-    if (score < Math.min(...season.map((p) => p.score))) return { text: 'Season low.', hook: null, weight: 0 }
+    if (score > Math.max(...season.map((p) => p.score))) return { text: 'Season high.', hook: null, weight: 0, mark: { kind: 'season-high' } }
+    if (score < Math.min(...season.map((p) => p.score))) return { text: 'Season low.', hook: null, weight: 0, mark: { kind: 'season-low' } }
   }
   return null
 }
 
-// ── Awards ────────────────────────────────────────────────────────────────
-
-function buildAwards(args: {
-  lines: RecapLine[]
-  closest: RecapGame | null
-  blowout: RecapGame | null
-  upset: RecapUpset | null
-  weekScores: number[]
-  games: RecapGame[]
-}): RecapAward[] {
-  const { lines, closest, blowout, upset, weekScores } = args
-  const out: RecapAward[] = []
-  const decidedLines = lines.filter((l) => {
-    const g = args.games.find((x) => x.a.managerId === l.managerId || x.b.managerId === l.managerId)
-    return g && (g.winner === 'a' || g.winner === 'b')
-  })
-  const beats = (s: number) => weekScores.filter((x) => x < s).length
-
-  const top = lines.reduce<RecapLine | null>((b, l) => (!b || l.score > b.score ? l : b), null)
-  if (top) {
-    out.push({
-      key: 'top', title: 'Top score', value: pts(top.score), who: top.name,
-      detail: `${top.won ? 'Beat' : 'Lost to'} ${top.opponent}, ${pts(top.opponentScore)}.`,
-    })
+// How an unbeaten or winless start compares with the same person's starts
+// in earlier seasons, counting only the first `week` games of each.
+function startMarkFor(
+  person: string,
+  wins: number,
+  losses: number,
+  week: number,
+  year: number,
+  history: HistGame[],
+): RecapStartMark | null {
+  if (week < 2 || (wins !== week && losses !== week)) return null
+  const unbeaten = wins === week
+  const years = [...new Set(history.filter((g) => g.year < year && (g.aP === person || g.bP === person)).map((g) => g.year))].sort(
+    (a, b) => a - b,
+  )
+  if (!years.length) return null
+  const same: number[] = []
+  for (const y of years) {
+    const mine = history
+      .filter((g) => g.year === y && g.kind === 'regular' && (g.aP === person || g.bP === person))
+      .sort((a, b) => a.week - b.week)
+      .slice(0, week)
+    if (mine.length < week) continue
+    const won = mine.filter((g) => (g.aP === person ? g.sa > g.sb : g.sb > g.sa)).length
+    const lost = mine.filter((g) => (g.aP === person ? g.sa < g.sb : g.sb < g.sa)).length
+    if (unbeaten ? won === week : lost === week) same.push(y)
   }
-  const low = lines.reduce<RecapLine | null>((b, l) => (!b || l.score < b.score ? l : b), null)
-  if (low) {
-    out.push({
-      key: 'low', title: 'Low score', value: pts(low.score), who: low.name,
-      detail: `${low.won ? 'Beat' : 'Lost to'} ${low.opponent}, ${pts(low.opponentScore)}.`,
-    })
-  }
-  const heartbreak = decidedLines.filter((l) => !l.won).reduce<RecapLine | null>((b, l) => (!b || l.score > b.score ? l : b), null)
-  if (heartbreak) {
-    const n = beats(heartbreak.score)
-    out.push({
-      key: 'heartbreak', title: 'Best score in a loss', value: pts(heartbreak.score), who: heartbreak.name,
-      detail: `Would have beaten ${n} of ${weekScores.length - 1} teams. Drew ${heartbreak.opponent}.`,
-    })
-  }
-  const robbery = decidedLines.filter((l) => l.won).reduce<RecapLine | null>((b, l) => (!b || l.score < b.score ? l : b), null)
-  if (robbery) {
-    out.push({
-      key: 'robbery', title: 'Worst score in a win', value: pts(robbery.score), who: robbery.name,
-      detail: `Beat ${robbery.opponent}, who managed ${pts(robbery.opponentScore)}.`,
-    })
-  }
-  const won = (g: RecapGame) => (g.winner === 'a' ? g.a : g.b)
-  const lost = (g: RecapGame) => (g.winner === 'a' ? g.b : g.a)
-  if (closest) {
-    out.push({
-      key: 'closest', title: 'Closest game', value: `by ${pts(closest.margin)}`, who: `${won(closest).name} over ${lost(closest).name}`,
-      detail: `${pts(won(closest).score)} to ${pts(lost(closest).score)}.`,
-    })
-  }
-  if (blowout) {
-    out.push({
-      key: 'blowout', title: 'Biggest win', value: `by ${pts(blowout.margin)}`, who: `${won(blowout).name} over ${lost(blowout).name}`,
-      detail: `${pts(won(blowout).score)} to ${pts(lost(blowout).score)}.`,
-    })
-  }
-  if (upset) {
-    out.push({
-      key: 'upset', title: 'Upset', value: `${upset.winnerRecord} over ${upset.loserRecord}`, who: `${upset.winner} over ${upset.loser}`,
-      detail: `${pts(upset.winnerScore)} to ${pts(upset.loserScore)}.`,
-    })
-  }
-  return out
+  if (!same.length) return { kind: 'first-ever', seasons: years.length + 1 }
+  let straight = 1
+  for (let y = year - 1; same.includes(y); y--) straight++
+  if (straight >= 2) return { kind: 'straight', years: straight }
+  const last = same[same.length - 1]
+  return { kind: 'first-since', year: last }
 }
 
 // ── Record book ───────────────────────────────────────────────────────────
 
-function buildRecords(args: {
+// Where the week's superlatives sit in league history. Ranked against every
+// score (or game) on record, this week's included, so "3rd" means two
+// scores in the league's whole history were better. Wins and losses here
+// are by the week's own scores, the same way the history counts them, so a
+// two-week playoff leg is ranked like any other week.
+function buildBook(args: {
   history: HistGame[]
-  top: RecapLine | null
-  low: RecapLine | null
-  blowout: RecapGame | null
+  games: RecapGame[]
   year: number
   week: number
-  firstYear: number
   nameOf: (person: string) => string
   hooks: Note[]
-}): string[] {
-  const { history, top, low, blowout, year, week, firstYear, nameOf, hooks } = args
-  // "League history" means nothing in a first season or on a thin archive.
+}): RecapBookRow[] {
+  const { history, games, year, week, nameOf, hooks } = args
+  // A first season or a thin archive has nothing to rank against.
   if (new Set(history.map((g) => g.year)).size < 2 || history.length < 30) return []
-  const since = `since ${firstYear}`
   const isThis = (g: { year: number; week: number }) => g.year === year && g.week === week
 
+  type Entry = { year: number; week: number; person: string; id: string; value: number; vs: string | null }
   const teamWeeks = history.flatMap((g) => [
-    { year: g.year, week: g.week, person: g.aP, id: g.aId, score: g.sa },
-    { year: g.year, week: g.week, person: g.bP, id: g.bId, score: g.sb },
+    { year: g.year, week: g.week, person: g.aP, id: g.aId, value: g.sa, won: g.sa === g.sb ? null : g.sa > g.sb, vs: g.bP },
+    { year: g.year, week: g.week, person: g.bP, id: g.bId, value: g.sb, won: g.sa === g.sb ? null : g.sb > g.sa, vs: g.aP },
   ])
-  const out: string[] = []
+  const margins = history
+    .filter((g) => g.sa !== g.sb)
+    .map((g) => ({
+      year: g.year,
+      week: g.week,
+      person: g.sa > g.sb ? g.aP : g.bP,
+      id: g.sa > g.sb ? g.aId : g.bId,
+      value: round2(Math.abs(g.sa - g.sb)),
+      vs: g.sa > g.sb ? g.bP : g.aP,
+    }))
 
-  if (top) {
-    const others = teamWeeks.filter((t) => !(isThis(t) && t.id === top.managerId))
-    const rank = others.filter((t) => t.score > top.score).length + 1
-    const tied = others.some((t) => t.score === top.score)
-    if (rank === 1 && !tied) {
-      out.push(`${top.name}'s ${pts(top.score)} is the highest score in league history (${since}).`)
-      hooks.push({ text: '', hook: `${top.name} sets the league scoring record`, weight: 90 })
-    } else if (rank <= 5) {
-      hooks.push({ text: '', hook: `${top.name} posts the ${ordinal(rank)}-best score in league history`, weight: 85 - rank })
-      const best = [...others].sort((a, b) => b.score - a.score)[0]
-      out.push(
-        `${top.name}'s ${pts(top.score)} is the ${ordinal(rank)}-highest score in league history (${since}). The record is ${nameOf(best.person)}'s ${pts(best.score)} in ${best.year}.`,
-      )
+  const rows: RecapBookRow[] = []
+  const add = (
+    key: RecapBookRow['key'],
+    label: string,
+    pool: Entry[],
+    pick: 'max' | 'min',
+    dir: 'high' | 'low',
+    withVs: boolean,
+  ) => {
+    const mine = pool.filter(isThis)
+    if (!mine.length) return null
+    const entry = mine.reduce((b, e) => (pick === 'max' ? (e.value > b.value ? e : b) : e.value < b.value ? e : b))
+    const others = pool.filter((e) => e !== entry)
+    const better = (e: Entry) => (dir === 'high' ? e.value > entry.value : e.value < entry.value)
+    const rank = others.filter(better).length + 1
+    const seasonRank = others.filter((e) => e.year === year && better(e)).length + 1
+    const best = others.length
+      ? others.reduce((b, e) => (dir === 'high' ? (e.value > b.value ? e : b) : e.value < b.value ? e : b))
+      : null
+    const row: RecapBookRow = {
+      key,
+      label,
+      who: nameOf(entry.person),
+      vs: withVs && entry.vs ? nameOf(entry.vs) : null,
+      managerId: entry.id,
+      value: round2(entry.value),
+      rank,
+      of: pool.length,
+      seasonRank,
+      record: best ? { who: nameOf(best.person), value: round2(best.value), year: best.year } : null,
     }
+    rows.push(row)
+    return row
   }
 
-  if (low) {
-    const others = teamWeeks.filter((t) => !(isThis(t) && t.id === low.managerId))
-    const rank = others.filter((t) => t.score < low.score).length + 1
-    const tied = others.some((t) => t.score === low.score)
-    if (rank === 1 && !tied) {
-      out.push(`${low.name}'s ${pts(low.score)} is the lowest score in league history (${since}).`)
-      hooks.push({ text: '', hook: `${low.name} sets the league's low-score record`, weight: 82 })
-    } else if (rank <= 5) {
-      out.push(`${low.name}'s ${pts(low.score)} is the ${ordinal(rank)}-lowest score in league history (${since}).`)
-    }
-  }
+  const top = add('top', 'Top score', teamWeeks, 'max', 'high', false)
+  const low = add('low', 'Low score', teamWeeks, 'min', 'low', false)
+  const heartbreak = add('heartbreak', 'Most points in a loss', teamWeeks.filter((t) => t.won === false), 'max', 'high', true)
+  add('robbery', 'Fewest points in a win', teamWeeks.filter((t) => t.won === true), 'min', 'low', true)
+  const closest = add('closest', 'Closest game', margins, 'min', 'low', true)
+  const decided = games.filter((g) => g.a.score !== g.b.score)
+  const blowout = decided.length > 1 ? add('blowout', 'Biggest win', margins, 'max', 'high', true) : null
 
-  if (blowout && (blowout.winner === 'a' || blowout.winner === 'b') && !blowout.leg) {
-    const winnerId = blowout.winner === 'a' ? blowout.a.managerId : blowout.b.managerId
-    const margins = history
-      .filter((g) => g.sa !== g.sb && !(isThis(g) && (g.aId === winnerId || g.bId === winnerId)))
-      .map((g) => Math.abs(g.sa - g.sb))
-    const rank = margins.filter((m) => m > blowout.margin).length + 1
-    if (rank <= 5) {
-      const who = blowout.winner === 'a' ? blowout.a.name : blowout.b.name
-      out.push(
-        rank === 1
-          ? `${who}'s ${pts(blowout.margin)}-point win is the biggest margin in league history (${since}).`
-          : `${who}'s ${pts(blowout.margin)}-point win is the ${ordinal(rank)}-biggest margin in league history (${since}).`,
-      )
-    }
+  if (top && top.rank === 1) hooks.push({ text: '', hook: `${top.who} sets the league scoring record`, weight: 90 })
+  else if (top && top.rank <= 5) hooks.push({ text: '', hook: `${top.who} posts the ${ordinal(top.rank)}-best score in league history`, weight: 85 - top.rank })
+  if (low && low.rank === 1) hooks.push({ text: '', hook: `${low.who} sets the league's low-score record`, weight: 82 })
+  if (heartbreak && heartbreak.rank <= 3) {
+    hooks.push({
+      text: '',
+      hook: `${heartbreak.who} scores ${pts(heartbreak.value)} and loses`,
+      weight: 64 - heartbreak.rank,
+    })
   }
-  return out
+  if (closest && closest.rank <= 3) {
+    hooks.push({
+      text: '',
+      hook: `${closest.who} beats ${closest.vs} by ${pts(closest.value)}, the ${closest.rank === 1 ? 'closest' : `${ordinal(closest.rank)}-closest`} game ever`,
+      weight: 58 - closest.rank,
+    })
+  }
+  if (blowout && blowout.rank <= 3) {
+    hooks.push({
+      text: '',
+      hook: `${blowout.who} wins by ${pts(blowout.value)}, the ${blowout.rank === 1 ? 'biggest' : `${ordinal(blowout.rank)}-biggest`} margin ever`,
+      weight: 60 - blowout.rank,
+    })
+  }
+  return rows
 }
 
-// "Isaac and Sean are 3-0. Of the 9 teams to start 3-0 since 2019, 3 won the
-// title." Only for the best and worst records, only once a record means
-// something (week 2 on), and only when history has enough of them to count.
+// Isaac and Sean are 3-0; of the 11 teams to start 3-0 before them, how
+// many won the title. Only for the best and worst records, only once a
+// record means something (week 2 on), and only when history has enough of
+// them to count.
 function buildStartHistory(args: {
   standings: RecapStanding[]
   week: number
   year: number
   seasons: SeasonRow[]
   history: HistGame[]
-}): string[] {
-  const { standings, week, year, seasons, history } = args
+  nameOf: (person: string) => string
+}): RecapStart[] {
+  const { standings, week, year, seasons, history, nameOf } = args
   if (week < 2 || !standings.length) return []
-  const past = seasons.filter((s) => s.year < year && s.champion_manager_id)
+  const past = seasons.filter((s) => s.year < year && s.champion_manager_id).sort((a, b) => a.year - b.year)
   if (past.length < 3) return []
+  const personOfId = new Map<string, string>()
+  for (const g of history) {
+    personOfId.set(g.aId, g.aP)
+    personOfId.set(g.bId, g.bP)
+  }
 
-  const out: string[] = []
+  const out: RecapStart[] = []
   const undefeated = standings.filter((s) => s.wins === week && s.losses === 0 && s.ties === 0)
   const winless = standings.filter((s) => s.losses === week && s.wins === 0 && s.ties === 0)
 
@@ -1250,10 +1426,11 @@ function buildStartHistory(args: {
     if (!group.length) continue
     let teams = 0
     let champs = 0
+    let lastChamp: RecapStart['lastChamp'] = null
     for (const s of past) {
       const counts = new Map<string, { w: number; l: number; t: number }>()
       for (const g of history) {
-        if (g.year !== s.year || g.week > week) continue
+        if (g.year !== s.year || g.week > week || g.kind !== 'regular') continue
         for (const [id, mine, theirs] of [
           [g.aId, g.sa, g.sb],
           [g.bId, g.sb, g.sa],
@@ -1269,19 +1446,101 @@ function buildStartHistory(args: {
         if (r.w + r.l + r.t !== week || r.t) continue
         if (r.w !== wins) continue
         teams++
-        if (id === s.champion_manager_id) champs++
+        if (id === s.champion_manager_id) {
+          champs++
+          lastChamp = { name: nameOf(personOfId.get(id) ?? id), year: s.year }
+        }
       }
     }
     if (teams < 3) continue
-    const rec = recordStr(wins, week - wins)
-    const who = group.map((s) => s.name)
-    const whoText = who.length === 1 ? `${who[0]} is` : `${who.slice(0, -1).join(', ')} and ${who[who.length - 1]} are`
-    const since = Math.min(...past.map((s) => s.year))
-    out.push(
-      `${whoText} ${rec}. Of the ${teams} teams that started ${rec} in earlier seasons (since ${since}), ${champs === 0 ? 'none' : champs} won the title.`,
-    )
+    out.push({
+      record: recordStr(wins, week - wins),
+      who: group.map((s) => s.name),
+      teams,
+      champs,
+      lastChamp,
+      from: past[0].year,
+      to: past[past.length - 1].year,
+    })
   }
   return out
+}
+
+// The best score ever posted in this week of a regular season, and whether
+// this week just beat it. Needs three earlier seasons to mean anything.
+function buildWeekRecord(
+  history: HistGame[],
+  year: number,
+  week: number,
+  top: RecapLine | null,
+  nameOf: (person: string) => string,
+  hooks: Note[],
+): RecapFacts['weekRecord'] {
+  const prior = history.filter((g) => g.week === week && g.year < year && g.kind === 'regular')
+  if (new Set(prior.map((g) => g.year)).size < 3) return null
+  let best = { person: '', value: -1, year: 0 }
+  for (const g of prior) {
+    if (g.sa > best.value) best = { person: g.aP, value: g.sa, year: g.year }
+    if (g.sb > best.value) best = { person: g.bP, value: g.sb, year: g.year }
+  }
+  if (top && top.score > best.value) {
+    hooks.push({ text: '', hook: `${top.name} sets the week ${week} record`, weight: 52 })
+    return { who: top.name, value: top.score, year, isNew: true }
+  }
+  return { who: nameOf(best.person), value: round2(best.value), year: best.year, isNew: false }
+}
+
+// Who led the league after this many weeks last season, and how their
+// season ended. Skipped when more than two teams shared the lead.
+async function buildYearAgo(
+  db: ReturnType<typeof createAdminClient>,
+  seasons: SeasonRow[],
+  history: HistGame[],
+  year: number,
+  week: number,
+  nameOf: (person: string) => string,
+  personOf: (id: string) => string,
+): Promise<RecapFacts['yearAgo']> {
+  const prev = seasons.find((s) => s.year === year - 1)
+  if (!prev) return null
+  const counts = new Map<string, { w: number; l: number; t: number }>()
+  for (const g of history) {
+    if (g.year !== prev.year || g.week > week || g.kind !== 'regular') continue
+    for (const [id, mine, theirs] of [
+      [g.aId, g.sa, g.sb],
+      [g.bId, g.sb, g.sa],
+    ] as const) {
+      const r = counts.get(id) ?? { w: 0, l: 0, t: 0 }
+      if (mine > theirs) r.w++
+      else if (mine < theirs) r.l++
+      else r.t++
+      counts.set(id, r)
+    }
+  }
+  const full = [...counts.entries()].filter(([, r]) => r.w + r.l + r.t === week)
+  if (full.length < 4) return null
+  const bestW = Math.max(...full.map(([, r]) => r.w))
+  const leaders = full.filter(([, r]) => r.w === bestW)
+  if (leaders.length > 2) return null
+
+  const { data: finals } = await db
+    .from('manager_seasons')
+    .select('manager_id, final_rank')
+    .eq('season_id', prev.id)
+    .in('manager_id', leaders.map(([id]) => id))
+  const rankOf = new Map((finals ?? []).map((r) => [r.manager_id as string, r.final_rank as number | null]))
+  const r0 = leaders[0][1]
+  return {
+    record: recordStr(r0.w, r0.l, r0.t),
+    leaders: leaders.map(([id]) => {
+      const champ = prev.champion_manager_id && personOf(prev.champion_manager_id) === personOf(id)
+      const rank = rankOf.get(id)
+      return {
+        name: nameOf(personOf(id)),
+        finish: champ ? 'won the title' : rank ? `finished ${ordinal(rank)}` : null,
+      }
+    }),
+  }
 }
 
 // ── Pick'ems ──────────────────────────────────────────────────────────────
@@ -1433,55 +1692,38 @@ async function loadLineups(db: ReturnType<typeof createAdminClient>, seasonId: s
   return out
 }
 
-const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF']
 const NOT_BENCH = new Set(['IR', 'RES', 'TAXI', 'NA'])
+
+type TeamLineup = { star: RecapPlayer | null; bench: RecapPlayer | null; left: number | null }
 
 function buildLineups(
   rows: LineupRow[] | null,
   played: Set<string>,
-  nameOf: (id: string) => string,
-): RecapLineups | null {
+): { byTeam: Map<string, TeamLineup>; star: { player: RecapPlayer; managerId: string } | null } | null {
   if (!rows?.length) return null
-  const scored = rows.map((r) => ({ ...r, points: Number(r.points ?? 0), proj: r.proj_points == null ? null : Number(r.proj_points) }))
-  const starters = scored.filter((r) => r.is_starter)
-  if (!starters.length) return null
+  if (!rows.some((r) => r.is_starter)) return null
+  const player = (r: LineupRow): RecapPlayer => ({ player: r.player_name!, pos: r.position, points: round2(Number(r.points ?? 0)) })
+  const pts0 = (r: LineupRow) => Number(r.points ?? 0)
 
-  const bestAt = new Map<string, (typeof scored)[number]>()
-  for (const r of starters) {
-    if (!r.position || !r.player_name) continue
-    const cur = bestAt.get(r.position)
-    if (!cur || r.points > cur.points) bestAt.set(r.position, r)
-  }
-  const positions = [...bestAt.keys()].sort((a, b) => {
-    const ia = POSITION_ORDER.indexOf(a)
-    const ib = POSITION_ORDER.indexOf(b)
-    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b)
-  })
-  const mvps = positions.map((pos) => {
-    const r = bestAt.get(pos)!
-    return { pos, player: r.player_name!, nfl: r.nfl_team, points: round2(r.points), manager: nameOf(r.manager_id) }
-  })
-
-  const bench = scored.filter((r) => !r.is_starter && r.player_name && !NOT_BENCH.has((r.slot ?? '').toUpperCase()))
-  const topBench = bench.reduce<(typeof scored)[number] | null>((b, r) => (!b || r.points > b.points ? r : b), null)
-  const benchBest = topBench && topBench.points > 0
-    ? { player: topBench.player_name!, pos: topBench.position, points: round2(topBench.points), manager: nameOf(topBench.manager_id) }
-    : null
-
-  // Efficiency through the Best Coach board's own function, on this week's
-  // rows, so the recap and that page can never disagree about who set the
-  // best lineup. Only teams that played this week count (playoff byes and
-  // eliminated teams still carry rosters).
-  let efficiency: RecapLineups['efficiency'] = null
-  const eff: { name: string; pct: number; left: number }[] = []
   const rowsByTeam = new Map<string, LineupRow[]>()
   for (const r of rows) {
+    // Only teams that played this week (playoff byes and eliminated teams
+    // still carry rosters).
     if (!played.has(r.manager_id)) continue
     const list = rowsByTeam.get(r.manager_id) ?? []
     list.push(r)
     rowsByTeam.set(r.manager_id, list)
   }
+
+  const byTeam = new Map<string, TeamLineup>()
+  let star: { player: RecapPlayer; managerId: string } | null = null
   for (const [id, list] of rowsByTeam) {
+    const starters = list.filter((r) => r.is_starter && r.player_name)
+    const bench = list.filter((r) => !r.is_starter && r.player_name && !NOT_BENCH.has((r.slot ?? '').toUpperCase()))
+    const topStarter = starters.reduce<LineupRow | null>((b, r) => (!b || pts0(r) > pts0(b) ? r : b), null)
+    const topBench = bench.reduce<LineupRow | null>((b, r) => (!b || pts0(r) > pts0(b) ? r : b), null)
+    // What the bench cost, through the Best Coach board's own function so
+    // the recap and that page can never disagree.
     const e = lineupWeekEfficiency(
       list.map((r) => ({
         player_external_id: r.player_external_id,
@@ -1492,42 +1734,17 @@ function buildLineups(
         points: r.points == null ? null : Number(r.points),
       })),
     )
-    if (!e || !(e.optimal > 0)) continue
-    eff.push({ name: nameOf(id), pct: round1((e.actual / e.optimal) * 100), left: round2(Math.max(0, e.optimal - e.actual)) })
+    byTeam.set(id, {
+      star: topStarter && pts0(topStarter) > 0 ? player(topStarter) : null,
+      bench: topBench && pts0(topBench) > 0 ? player(topBench) : null,
+      left: e && e.optimal > 0 ? round2(Math.max(0, e.optimal - e.actual)) : null,
+    })
+    if (topStarter && (!star || pts0(topStarter) > star.player.points)) star = { player: player(topStarter), managerId: id }
   }
   // Half the league missing lineups means the numbers describe some other
   // week than the one people played. Say nothing rather than half a thing.
-  if (eff.length >= Math.max(2, played.size / 2)) {
-    const sorted = [...eff].sort((a, b) => b.pct - a.pct || a.left - b.left)
-    efficiency = { best: sorted[0], worst: sorted[sorted.length - 1] }
-  }
-
-  // Projections: a team counts only when nearly all of its starters carry
-  // one, and the section only shows when most teams do.
-  let projections: RecapLineups['projections'] = null
-  const byTeam = new Map<string, (typeof scored)[number][]>()
-  for (const r of starters) {
-    const list = byTeam.get(r.manager_id) ?? []
-    list.push(r)
-    byTeam.set(r.manager_id, list)
-  }
-  const proj: { name: string; actual: number; projected: number }[] = []
-  for (const [id, list] of byTeam) {
-    const withProj = list.filter((r) => r.proj != null)
-    if (withProj.length < list.length * 0.9) continue
-    proj.push({
-      name: nameOf(id),
-      actual: round2(list.reduce((a, r) => a + r.points, 0)),
-      projected: round2(withProj.reduce((a, r) => a + (r.proj ?? 0), 0)),
-    })
-  }
-  if (proj.length >= Math.max(2, byTeam.size / 2)) {
-    const diff = (p: { actual: number; projected: number }) => p.actual - p.projected
-    const sorted = [...proj].sort((a, b) => diff(b) - diff(a))
-    projections = { over: sorted[0], under: sorted[sorted.length - 1] }
-  }
-
-  return { mvps, benchBest, efficiency, projections }
+  if (byTeam.size < Math.max(2, played.size / 2)) return null
+  return { byTeam, star }
 }
 
 // ── Trades ────────────────────────────────────────────────────────────────
