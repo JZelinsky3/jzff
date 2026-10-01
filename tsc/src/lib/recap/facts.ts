@@ -53,7 +53,7 @@ export function recapSections(tier: RecapTier): { paid: boolean; veteran: boolea
 
 // ── Shape ─────────────────────────────────────────────────────────────────
 
-export const RECAP_FACTS_VERSION = 4
+export const RECAP_FACTS_VERSION = 5
 
 // An all-time series between two people, from one side's point of view.
 export type RecapSeries = { w: number; l: number; t: number; since: number }
@@ -250,13 +250,19 @@ export type RecapPickems = {
   leaders: RecapPickRow[]
   // The game the room got most wrong, when one stands out.
   crowd: string | null
+  // Who called the week's high and low scorers. Null when nobody made a
+  // high/low pick this week.
+  high: { team: string; right: string[]; pickers: number } | null
+  low: { team: string; right: string[]; pickers: number } | null
 }
 
 export type RecapMilestone = { name: string; text: string }
 
+export type RecapTradeAsset = { label: string; pos: string | null; team: string | null }
+
 export type RecapTrade = {
   headline: string
-  sides: { manager: string; gets: string[] }[]
+  sides: { manager: string; gets: string[]; assets?: RecapTradeAsset[] }[]
   summary: string | null
 }
 
@@ -289,7 +295,7 @@ export type RecapNext = {
 }
 
 export type RecapFacts = {
-  v: 4
+  v: 5
   generatedAt: string
   league: { id: string; slug: string; name: string; abbr: string | null }
   year: number
@@ -905,7 +911,7 @@ export async function buildRecapFacts(args: {
     : null
 
   const facts: RecapFacts = {
-    v: 4,
+    v: 5,
     generatedAt: new Date().toISOString(),
     league: {
       id: league.id as string,
@@ -1638,12 +1644,30 @@ function buildPickems(
     }
   }
 
+  // High and low calls, against the week's actual high and low scorers
+  // (ties count for everyone tied).
+  const hlCall = (key: 'highest' | 'lowest') => {
+    const winners = thisWeek.hlWinners?.[key] ?? []
+    if (!winners.length) return null
+    let pickers = 0
+    const right: string[] = []
+    for (const p of state.profiles) {
+      const pick = state.submissions[p.profileId]?.[thisWeek.id]?.hl?.[key]
+      if (!pick) continue
+      pickers++
+      if (winners.includes(pick)) right.push(p.name)
+    }
+    return pickers ? { team: winners.map(nameOf).join(' and '), right, pickers } : null
+  }
+
   const topRight = weekRows[0].right
   return {
     pickers: weekRows.length,
     best: weekRows.filter((r) => r.right === topRight).slice(0, 3),
     leaders: seasonRows.slice(0, 3),
     crowd,
+    high: hlCall('highest'),
+    low: hlCall('lowest'),
   }
 }
 
@@ -1806,6 +1830,13 @@ function buildTrades(
       const sides = t.sides.map((s) => ({
         manager: nameFor(s.manager.id, s.manager.display_name),
         gets: s.assets.map(assetLabel).filter(Boolean),
+        assets: s.assets
+          .map((a) => ({
+            label: assetLabel(a),
+            pos: a.kind === 'player' ? a.position : null,
+            team: a.kind === 'player' ? a.team : null,
+          }))
+          .filter((a) => a.label),
       }))
       return { headline: sides.map((s) => s.manager).join(' and '), sides, summary: t.ai_summary }
     })

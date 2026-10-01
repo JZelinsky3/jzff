@@ -85,6 +85,15 @@
     var left = byId('wkDateLeft');
     if (left) left.textContent = 'Updated ' + shortStamp(d.generatedAt);
 
+    // Last week's paper, at the foot of the Reading as card.
+    var recap = byId('wkRecap');
+    if (recap && d.recap) {
+      recap.href = 'recap/' + d.recap.year + '/' + d.recap.week + '/';
+      byId('wkRecapK').textContent = 'Week ' + d.recap.week + ' is in the books';
+      byId('wkRecapT').innerHTML = 'Read the Week ' + esc(d.recap.week) + ' <em>Recap</em>';
+      show(recap, true);
+    }
+
     var right = byId('wkDateRight');
     if (right && d.picks) {
       var dl = deadline(d.picks);

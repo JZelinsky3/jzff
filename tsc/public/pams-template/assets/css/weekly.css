@@ -175,6 +175,32 @@ select.wk-select:focus {
 .wk-btn.is-signal { border-color: rgba(255, 90, 60, .5); color: var(--wk-signal); }
 .wk-btn.is-signal:active { background: rgba(255, 90, 60, .12); }
 
+/* Recap link: the Reading as card extends down into it, divided off by a
+   rule, centred so it reads as the card's footer rather than another
+   control in the row. */
+.wk-recap {
+    display: grid; justify-items: center; gap: .2rem;
+    margin: .2rem -.6rem -.6rem; width: calc(100% + 1.2rem);
+    padding: .7rem .6rem .75rem;
+    border-top: 1px solid var(--wk-line);
+    border-radius: 0 0 10px 10px;
+    background: linear-gradient(180deg, rgba(255, 90, 60, .08), rgba(255, 90, 60, .02));
+    text-decoration: none;
+    color: var(--wk-ink);
+}
+.wk-recap[hidden] { display: none; }
+.wk-recap-k {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--wk-mute);
+}
+.wk-recap-t {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 1.2rem; line-height: 1.1;
+}
+.wk-recap-t em { color: var(--wk-signal); }
+.wk-recap:active { background: rgba(255, 90, 60, .14); }
+
 /* ── Section scaffolding ───────────────────────────────────── */
 .wk-sec { margin-top: 1.5rem; }
 .wk-sec-head {

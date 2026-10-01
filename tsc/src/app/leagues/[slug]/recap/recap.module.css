@@ -84,6 +84,19 @@
   border-radius: 2px;
   border: 1px solid var(--ink);
 }
+/* Up top it stays out of the nameplate's way: small, quiet, outlined. */
+.topBar .viewLeague {
+  padding: 0.32rem 0.6rem;
+  background: transparent;
+  color: var(--ink) !important;
+  border-color: var(--rule);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.topBar .viewLeague:hover {
+  border-color: var(--ink);
+}
 .viewLeague:active {
   opacity: 0.85;
 }
@@ -206,23 +219,33 @@
   border-top: 3px solid var(--ink);
   border-bottom: 1px solid var(--ink);
 }
-.starBox {
+/* Player of the week: a ruled strip between the deck and the byline. */
+.starStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.7rem;
+  margin-top: 0.95rem;
+  padding: 0.55rem 0.75rem;
   background: var(--paper-2);
-  padding: 0 0.8rem 0.8rem;
+  border-left: 3px solid var(--red);
 }
-.starBox .boxHead {
-  border-top-color: var(--red);
+.starLabel {
+  font-family: var(--rc-sans);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--red);
 }
 .starName {
-  margin-top: 0.55rem;
   font-family: var(--rc-display);
-  font-size: 1.5rem;
-  line-height: 1.1;
+  font-size: 1.25rem;
+  line-height: 1.15;
 }
 .starMeta {
-  margin-top: 0.2rem;
   font-family: var(--rc-sans);
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   color: var(--ink-2);
 }
 
@@ -367,6 +390,12 @@
 
 /* ── Section nav: one line, sticks to the top, scrolls sideways on a phone ── */
 
+.jumpsMarker {
+  height: 0;
+}
+/* In the page: a red rule on top to match the one under it (the next
+   section's). Stuck to the top of the screen: no rule. Drawn as an inset
+   shadow so dropping it doesn't shift the bar. */
 .jumps {
   position: sticky;
   top: 0;
@@ -376,11 +405,16 @@
   align-items: center;
   gap: 0.45rem;
   margin: 0 calc(-1 * var(--gutter));
-  padding: 0.55rem var(--gutter);
+  padding: calc(0.55rem + 4px) var(--gutter) 0.55rem;
+  box-shadow: inset 0 4px 0 var(--red);
+  transition: box-shadow 0.15s;
   background: var(--ink);
   overflow-x: auto;
   scrollbar-width: none;
   font-family: var(--rc-sans);
+}
+.jumps[data-stuck='true'] {
+  box-shadow: none;
 }
 .jumps::-webkit-scrollbar {
   display: none;
@@ -415,7 +449,7 @@
 
 .section {
   margin: 0 calc(-1 * var(--gutter));
-  padding: 1.7rem var(--gutter) 1.9rem;
+  padding: 1rem var(--gutter) 1.9rem;
   background: var(--paper);
   color: var(--ink);
   border-top: 4px solid var(--red);
@@ -479,6 +513,7 @@
 .sectionHead {
   display: flex;
   align-items: flex-end;
+  align-items: last baseline;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1.1rem;
@@ -486,7 +521,7 @@
 }
 .sectionTag {
   display: inline-block;
-  margin-bottom: 0.35rem;
+  margin-bottom: 1rem;
   padding: 0.18rem 0.5rem;
   background: var(--red);
   color: var(--on-red);
@@ -644,11 +679,14 @@
 .bookRow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.1rem 1rem;
-  padding: 0.75rem 0;
+  gap: 0 1rem;
+  align-items: center;
+  padding: 0.85rem 0;
   border-bottom: 1px solid var(--rule);
 }
 .bookLabel {
+  grid-column: 1 / -1;
+  margin-bottom: 0.4rem;
   font-family: var(--rc-sans);
   font-size: 0.68rem;
   font-weight: 800;
@@ -657,7 +695,8 @@
   color: var(--mute);
 }
 .bookValue {
-  grid-row: span 2;
+  grid-column: 2;
+  grid-row: 2;
   align-self: center;
   font-family: var(--rc-mono);
   font-size: 1.25rem;
@@ -666,12 +705,21 @@
   text-align: right;
 }
 .bookWho {
+  grid-column: 1;
+  grid-row: 2;
   font-family: var(--rc-display);
   font-size: 1.15rem;
   line-height: 1.2;
 }
+.bookWho small {
+  margin-left: 0.35rem;
+  font-family: var(--rc-mono);
+  font-size: 0.75rem;
+  color: var(--mute);
+}
 .bookLine {
   grid-column: 1 / -1;
+  margin-top: 0.3rem;
   font-size: 0.92rem;
   font-style: italic;
   color: var(--ink-2);
@@ -679,6 +727,21 @@
 .bookHot .bookValue,
 .bookHot .bookLine {
   color: var(--red);
+}
+/* The all-time week record isn't from this week: its own colour and a
+   tinted band so it can't be read as one of the week's numbers. */
+.bookAllTime {
+  margin-top: 0.6rem;
+  padding-left: 0.85rem;
+  padding-right: 0.85rem;
+  background: rgba(143, 193, 232, 0.08);
+  border-left: 3px solid #8fc1e8;
+  border-bottom: 0;
+}
+.bookAllTime .bookLabel,
+.bookAllTime .bookValue,
+.bookAllTime .bookLine {
+  color: #8fc1e8;
 }
 .milestones {
   margin: 1rem 0 0;
@@ -702,6 +765,7 @@
 }
 .table {
   width: 100%;
+  min-width: 40rem;
   border-collapse: collapse;
   font-family: var(--rc-sans);
   font-size: 0.88rem;
@@ -750,8 +814,7 @@
   padding-right: 0.75rem;
 }
 .tableName {
-  min-width: 0;
-  max-width: 11rem;
+  max-width: 14rem;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -824,12 +887,31 @@
   font-family: var(--rc-display);
   font-size: 1.2rem;
 }
-.pickCrowd {
-  margin: 0.5rem 0 0;
-  padding-top: 0.5rem;
+.pickNotes {
+  margin: 0.6rem 0 0;
+  padding: 0.6rem 0 0;
   border-top: 1px solid var(--rule);
-  font-style: italic;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+  font-size: 0.95rem;
+  line-height: 1.45;
   color: var(--ink-2);
+}
+.pickNotes li {
+  display: flex;
+  gap: 0.55rem;
+  align-items: baseline;
+}
+.pickTag {
+  flex: none;
+  min-width: 3.4rem;
+  font-family: var(--rc-sans);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--red);
 }
 .leaders {
   margin: 0.4rem 0 0;
@@ -897,6 +979,22 @@
   font-family: var(--rc-display);
   font-size: 1.1rem;
   line-height: 1.25;
+}
+.assetPos,
+.assetTeam {
+  font-family: var(--rc-sans);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--mute);
+}
+.assetPos {
+  display: inline-block;
+  min-width: 2rem;
+  margin-right: 0.35rem;
+}
+.assetTeam {
+  margin-left: 0.4rem;
 }
 .tradeNote {
   margin: 0;
@@ -985,6 +1083,55 @@
   margin: 0;
 }
 
+/* ── The Weekly: night-edition card, the to-do half of the week ──────── */
+
+.weeklyCta {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: start;
+  margin: 2rem 0 0;
+  padding: 1.3rem 1.2rem 1.4rem;
+  background: #10161f;
+  color: #f4ebd8 !important;
+  border-top: 4px solid #ff5a3c;
+  text-decoration: none;
+}
+.weeklyKicker {
+  font-family: var(--rc-sans);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #ff5a3c;
+}
+.weeklyTitle {
+  font-family: var(--rc-display);
+  font-size: clamp(2rem, 7vw, 2.8rem);
+  line-height: 1;
+}
+.weeklyTitle em {
+  color: #ff5a3c;
+}
+.weeklyText {
+  max-width: 44ch;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #c9c0ad;
+}
+.weeklyBtn {
+  margin-top: 0.6rem;
+  padding: 0.7rem 1.1rem;
+  background: #ff5a3c;
+  color: #10161f;
+  font-family: var(--rc-sans);
+  font-size: 0.86rem;
+  font-weight: 800;
+  border-radius: 2px;
+}
+.weeklyCta:hover .weeklyBtn {
+  filter: brightness(1.08);
+}
+
 /* ── Free edition ────────────────────────────────────────────────────── */
 
 .upsell {
@@ -1005,6 +1152,7 @@
 /* ── Footer ──────────────────────────────────────────────────────────── */
 
 .foot {
+  margin-top: 2rem;
   padding-top: 1.4rem;
   border-top: 4px solid var(--ink);
 }
@@ -1058,8 +1206,11 @@
     border-left: 1px solid var(--rule);
   }
   .section {
-    padding-top: 2.1rem;
+    padding-top: 1.2rem;
     padding-bottom: 2.3rem;
+  }
+  .sectionTag {
+    margin-bottom: 1.2rem;
   }
   .stories {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1071,7 +1222,6 @@
   }
   .bookRow {
     grid-template-columns: 13rem minmax(0, 1fr) 7rem;
-    align-items: baseline;
   }
   .bookValue {
     grid-row: 1;
@@ -1080,6 +1230,8 @@
   .bookLabel {
     grid-column: 1;
     grid-row: 1 / span 2;
+    align-self: start;
+    margin: 0.3rem 0 0;
   }
   .bookWho {
     grid-column: 2;

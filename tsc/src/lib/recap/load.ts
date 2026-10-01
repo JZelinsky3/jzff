@@ -8,6 +8,8 @@
 
 import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 import { getLockReason } from '@/lib/leagueTier'
 import { getNflClock, weekIsFinal } from '@/lib/nflClock'
 import { buildRecapFacts, recapTierFor, RECAP_FACTS_VERSION, type RecapFacts, type RecapTier } from './facts'
@@ -95,4 +97,16 @@ export async function latestRecapWeek(leagueId: string): Promise<{ year: number;
     }
   }
   return stored ? { year: stored.season_year as number, week: stored.week as number } : null
+}
+
+// Who may open a league's recap. Published leagues: anyone, like the
+// almanac. Unpublished: only the owner (and site admins), so a commissioner
+// on day one of a trial can read their recap before they've gone public,
+// and nobody else can.
+export async function recapViewable(league: { owner_id: string | null; published_at: string | null }): Promise<boolean> {
+  if (league.published_at) return true
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+  return user.id === league.owner_id || (await isSiteAdmin(user.id))
 }

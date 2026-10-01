@@ -2,13 +2,14 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { loadRecap } from '@/lib/recap/load'
+import { loadRecap, recapViewable } from '@/lib/recap/load'
 import { ordinal, pts, recapSections, recordStr, type RecapGame } from '@/lib/recap/facts'
 import { bookLine, poss, writeEdition } from '@/lib/recap/story'
 import { recapPageUrl } from '@/lib/recap/links'
 import { TIER_PRICES } from '@/lib/stripe'
 import { ShareButton } from '../../ShareButton'
 import { YourWeek, type YourWeekTeam } from '../../YourWeek'
+import { SectionNav } from '../../SectionNav'
 import styles from '../../recap.module.css'
 
 export const dynamic = 'force-dynamic'
@@ -27,10 +28,10 @@ async function loadLeague(slug: string) {
   const db = createAdminClient()
   const { data } = await db.from('leagues').select('id, name, slug, owner_id, published_at').eq('slug', slug).maybeSingle()
   // Same rule as the almanac: until the owner publishes, nothing about the
-  // league is public. A 404 also keeps the name and scores out of link
-  // previews for a league that hasn't gone live.
-  if (!data || !data.published_at) notFound()
-  return data as { id: string; name: string; slug: string; owner_id: string | null }
+  // league is public, except to the owner. A 404 also keeps the name and
+  // scores out of link previews for a league that hasn't gone live.
+  if (!data || !(await recapViewable(data))) notFound()
+  return data as { id: string; name: string; slug: string; owner_id: string | null; published_at: string | null }
 }
 
 function parseParams(rawYear: string, rawWeek: string): { year: number; week: number } {
@@ -63,6 +64,7 @@ export async function generateMetadata({
   return {
     title,
     description,
+    ...(league.published_at ? {} : { robots: { index: false, follow: false } }),
     alternates: { canonical: recapPageUrl(slug, year, week) },
     openGraph: { type: 'article', title, description, siteName: 'The Sunday Chronicle', url: recapPageUrl(slug, year, week) },
     twitter: { card: 'summary', title, description },
@@ -234,7 +236,7 @@ export default async function RecapPage({
   const hasPower = show.paid && f.teams.some((t) => t.power)
   const book = show.paid ? (facts.book ?? []) : []
   const jumps: { id: string; label: string }[] = [
-    { id: 'games', label: 'The Games' },
+    { id: 'games', label: 'Results' },
     ...(book.length ? [{ id: 'book', label: 'Record book' }] : []),
     ...(hasStandings ? [{ id: 'standings', label: 'Standings' }] : []),
     ...(show.paid && facts.pickems ? [{ id: 'pickems', label: "Pick'ems" }] : []),
@@ -254,7 +256,6 @@ export default async function RecapPage({
           <div className={styles.dateline}>
             <span>{editionDate(f.generatedAt)}</span>
             <span>{weekLabel}</span>
-            <span>{f.year} season</span>
           </div>
         </header>
 
@@ -263,6 +264,16 @@ export default async function RecapPage({
           <article className={styles.lead}>
             <h2 className={styles.headline}>{front.headline}</h2>
             {front.deck ? <p className={styles.deck}>{front.deck}</p> : null}
+            {show.paid && facts.star ? (
+              <div className={styles.starStrip}>
+                <span className={styles.starLabel}>Player of the week</span>
+                <span className={styles.starName}>{facts.star.player}</span>
+                <span className={styles.starMeta}>
+                  {facts.star.pos ? `${facts.star.pos} · ` : ''}
+                  {pts(facts.star.points)} pts · {facts.star.manager}
+                </span>
+              </div>
+            ) : null}
             <div className={styles.byline}>
               By the Chronicle staff <span>· Filed after Monday night</span>
             </div>
@@ -275,26 +286,10 @@ export default async function RecapPage({
 
           <aside className={styles.rail}>
             <YourWeek slug={slug} teams={yourTeams} />
-            {show.paid && facts.star ? (
-              <div className={styles.starBox}>
-                <div className={styles.boxHead}>Player of the week</div>
-                <div className={styles.starName}>{facts.star.player}</div>
-                <div className={styles.starMeta}>
-                  {pts(facts.star.points)} points{facts.star.pos ? `, ${facts.star.pos}` : ''}, for {facts.star.manager}
-                </div>
-              </div>
-            ) : null}
           </aside>
         </section>
 
-        <nav className={styles.jumps} aria-label="Sections">
-          <span className={styles.jumpsLabel}>Inside</span>
-          {jumps.map((j) => (
-            <a key={j.id} href={`#${j.id}`}>
-              {j.label}
-            </a>
-          ))}
-        </nav>
+        <SectionNav links={jumps} />
 
         {/* ── The games ── */}
         <section className={`${styles.section} ${styles.sGames}`}>
@@ -351,12 +346,12 @@ export default async function RecapPage({
                 </div>
               ))}
               {show.paid && facts.weekRecord && !facts.weekRecord.isNew ? (
-                <div className={styles.bookRow}>
-                  <span className={styles.bookLabel}>Week {week} record</span>
+                <div className={`${styles.bookRow} ${styles.bookAllTime}`}>
+                  <span className={styles.bookLabel}>All-time week {week} record</span>
                   <span className={styles.bookValue}>{pts(facts.weekRecord.value)}</span>
                   <span className={styles.bookWho}>{facts.weekRecord.who}</span>
                   <span className={styles.bookLine}>
-                    The best week {week} score in league history, set in {facts.weekRecord.year}
+                    Set in {facts.weekRecord.year} and still standing.{f.top ? ` This week's best was ${pts(f.top.score)}.` : ''}
                   </span>
                 </div>
               ) : null}
@@ -464,8 +459,32 @@ export default async function RecapPage({
                 <span className={styles.pickRecord}>
                   {facts.pickems.best[0].right}-{facts.pickems.best[0].wrong}
                 </span>
-                <span className={styles.pickNames}>{facts.pickems.best.map((b) => b.name).join(', ')}</span>
-                {facts.pickems.crowd ? <p className={styles.pickCrowd}>{facts.pickems.crowd}</p> : null}
+                <span className={styles.pickNames}>{andList(facts.pickems.best.map((b) => b.name))}</span>
+                {facts.pickems.high || facts.pickems.low || facts.pickems.crowd ? (
+                  <ul className={styles.pickNotes}>
+                    {[
+                      { k: 'High', c: facts.pickems.high },
+                      { k: 'Low', c: facts.pickems.low },
+                    ].map(({ k, c }) =>
+                      c ? (
+                        <li key={k}>
+                          <span className={styles.pickTag}>{k}</span>
+                          {c.right.length === 1 && c.right[0] === c.team
+                            ? `${c.team} called their own ${k.toLowerCase()} score.`
+                            : c.right.length
+                              ? `${andList(c.right)} called ${c.team} for the ${k.toLowerCase()} score.`
+                              : `Nobody called ${c.team} for the ${k.toLowerCase()} score.`}
+                        </li>
+                      ) : null,
+                    )}
+                    {facts.pickems.crowd ? (
+                      <li>
+                        <span className={styles.pickTag}>Missed</span>
+                        {facts.pickems.crowd}
+                      </li>
+                    ) : null}
+                  </ul>
+                ) : null}
               </div>
               <div>
                 <span className={styles.pickLabel}>Season leaders</span>
@@ -496,7 +515,17 @@ export default async function RecapPage({
                       <div key={side.manager} className={styles.tradeSide}>
                         <div className={styles.tradeWho}>{side.manager} gets</div>
                         <ul>
-                          {side.gets.length ? side.gets.map((a) => <li key={a}>{a}</li>) : <li>Nothing listed</li>}
+                          {(side.assets ?? side.gets.map((label) => ({ label, pos: null, team: null }))).length ? (
+                            (side.assets ?? side.gets.map((label) => ({ label, pos: null, team: null }))).map((a) => (
+                              <li key={a.label}>
+                                {a.pos ? <span className={styles.assetPos}>{a.pos}</span> : null}
+                                {a.label}
+                                {a.team ? <span className={styles.assetTeam}>{a.team}</span> : null}
+                              </li>
+                            ))
+                          ) : (
+                            <li>Nothing listed</li>
+                          )}
                         </ul>
                       </div>
                     ))}
@@ -571,6 +600,21 @@ export default async function RecapPage({
           </section>
         ) : null}
 
+        {/* ── Onward to The Weekly: the to-do side of the same week ── */}
+        {show.paid && f.next ? (
+          <a className={styles.weeklyCta} href={`/leagues/${slug}/live/weekly/`}>
+            <span className={styles.weeklyKicker}>Before week {f.next.week} kicks off</span>
+            <span className={styles.weeklyTitle}>
+              The <em>Weekly</em>
+            </span>
+            <span className={styles.weeklyText}>
+              Make your pick&apos;ems, check the board, the wire and the records in reach. Everything to do this week,
+              on one page.
+            </span>
+            <span className={styles.weeklyBtn}>Open The Weekly</span>
+          </a>
+        ) : null}
+
         {/* ── Free: what the full paper adds ── */}
         {!show.paid ? (
           <section className={styles.upsell}>
@@ -605,4 +649,11 @@ export default async function RecapPage({
       </div>
     </div>
   )
+}
+
+// "CAT and Evan", "CAT, Evan, and Mason".
+function andList(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? ''
+  if (names.length === 2) return `${names[0]} and ${names[1]}`
+  return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
 }

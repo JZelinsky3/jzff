@@ -8,6 +8,8 @@ import { LiveSeasonForm, type SeasonRow } from './live-form'
 import { SourcePicker, type SourceRow } from './source-picker'
 import { GotwPicker, type GotwWeek } from './gotw-picker'
 import { CommishPower } from './commish-power'
+import { RecapCard } from './recap-card'
+import { latestRecapWeek } from '@/lib/recap/load'
 
 export default async function LiveSeasonPage({
   params,
@@ -19,12 +21,12 @@ export default async function LiveSeasonPage({
 
   const { data: league } = await supabase
     .from('leagues')
-    .select('id, name, slug')
+    .select('id, name, slug, published_at')
     .eq('slug', slug)
     .maybeSingle()
   if (!league) notFound()
 
-  const [{ data: seasons }, { data: sources }] = await Promise.all([
+  const [{ data: seasons }, { data: sources }, recapWeek] = await Promise.all([
     supabase
       .from('seasons')
       .select('id, year, is_live, settings')
@@ -35,7 +37,9 @@ export default async function LiveSeasonPage({
       .select('id, platform, external_id, label, is_live')
       .eq('league_id', league.id)
       .order('created_at', { ascending: true }),
+    latestRecapWeek(league.id),
   ])
+  const published = !!league.published_at
 
   const rows: SeasonRow[] = (seasons ?? []).map((s) => ({
     id: s.id,
@@ -121,6 +125,8 @@ export default async function LiveSeasonPage({
         gotwWeeks={gotwWeeks}
         gotwMap={gotwMap}
         gotwManagers={gotwManagers}
+        recapWeek={recapWeek}
+        published={published}
       />
     )
   }
@@ -210,6 +216,15 @@ export default async function LiveSeasonPage({
             <div className="lo-empty-text">Pick a live season above to rank the league yourself.</div>
           </div>
         )}
+      </div>
+
+      <div className="lo-band">
+        <div className="lo-folio">
+          <span className="lo-folio-no">05</span>
+          <span className="lo-folio-title">The weekly recap</span>
+          <span className="lo-folio-meta">Every Tuesday, or right now</span>
+        </div>
+        <RecapCard leagueId={league.id} slug={league.slug} latest={recapWeek} published={published} />
       </div>
 
       <SiteFooter />

@@ -2019,3 +2019,32 @@ a.lo-billboard:hover::before { border-color: rgba(232, 200, 137, .45); }
     .lo-idx-no { font-size: 6rem; }
     .lo-board-cell { padding: 1.4rem 1.3rem; }
 }
+
+/* ------------------------------------------------- weekly recap card
+   Current Season §05: read this week's recap or send a copy now. */
+.lo-rc {
+    display: grid; gap: 1.1rem 2rem; align-items: center;
+    padding: 1.4rem 1.5rem;
+    border: 1px solid var(--ink-line);
+    border-left: 3px solid var(--accent, var(--gold));
+    background: rgba(244, 235, 216, .02);
+}
+@media (min-width: 900px) {
+    .lo-rc { grid-template-columns: minmax(0, 1fr) auto; }
+    .lo-rc > .lo-msg-ok, .lo-rc > .lo-msg-err { grid-column: 1 / -1; }
+}
+.lo-rc-title {
+    font-family: var(--serif); font-size: 1.5rem; line-height: 1.15; color: var(--cream);
+}
+.lo-rc-title em { color: var(--accent, var(--gold)); }
+.lo-rc-text {
+    margin: .45rem 0 0; max-width: 62ch;
+    font-size: .9rem; line-height: 1.6; color: var(--cream-mute);
+}
+.lo-rc-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+.lo-rc-empty {
+    padding: 1.4rem 1.5rem;
+    border: 1px dashed var(--ink-line);
+    font-family: var(--serif); font-style: italic; font-size: 1rem;
+    color: var(--cream-mute);
+}

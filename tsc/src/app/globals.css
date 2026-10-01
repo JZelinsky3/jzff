@@ -28713,6 +28713,14 @@ body.tsc-hdr-collapsed .mlsub-bar {
 .mcp-actions { display: flex; flex-direction: column; gap: .4rem; margin-top: .7rem; }
 .mcp-actions .lo-btn, .mcp-actions .lo-btn-ghost { width: 100%; padding: .75rem .6rem; font-size: .58rem; }
 .mcp-actions .lo-btn-quiet { align-self: center; font-size: .5rem; }
+/* Weekly recap card on the mobile Current Season page. */
+.mrc { display: grid; gap: .7rem; padding: .85rem .8rem; background: var(--ink-soft); border: 1px solid var(--ink-line); border-left: 3px solid var(--gold); border-radius: 10px; }
+.mrc-title { font-family: var(--serif); font-size: 1.15rem; line-height: 1.2; color: var(--cream); }
+.mrc-title em { color: var(--gold); }
+.mrc-text { margin: .3rem 0 0; font-size: .72rem; line-height: 1.5; color: var(--cream-mute); }
+.mrc-actions { display: flex; flex-direction: column; gap: .4rem; }
+.mrc-actions .lo-btn, .mrc-actions .lo-btn-ghost { width: 100%; padding: .75rem .6rem; font-size: .58rem; }
+.mrc-empty { text-align: center; padding: 1.1rem .75rem; font-size: .72rem; line-height: 1.5; color: var(--cream-mute); background: var(--ink-soft); border: 1px dashed var(--ink-line); border-radius: 10px; }
 .mcp-msg { text-align: center; font-family: var(--mono); font-size: .5rem; letter-spacing: .08em; text-transform: uppercase; line-height: 1.5; }
 .mcp-msg.ok { color: #9dc79d; }
 .mcp-msg.err { color: #d08a76; }

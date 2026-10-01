@@ -2,6 +2,7 @@ import { MobileLiveForm, type SeasonOption } from './MobileLiveForm'
 import { MobileSourcePicker, type SourceOption } from './MobileSourcePicker'
 import { GotwPicker, type GotwWeek } from '@/app/league/[slug]/live/gotw-picker'
 import { CommishPower } from '@/app/league/[slug]/live/commish-power'
+import { RecapCard } from '@/app/league/[slug]/live/recap-card'
 
 export function MobileLiveSeason({
   leagueId,
@@ -17,6 +18,8 @@ export function MobileLiveSeason({
   gotwWeeks,
   gotwMap,
   gotwManagers,
+  recapWeek,
+  published,
 }: {
   leagueId: string
   slug: string
@@ -31,6 +34,8 @@ export function MobileLiveSeason({
   gotwWeeks: GotwWeek[]
   gotwMap: Record<string, string>
   gotwManagers: string[]
+  recapWeek: { year: number; week: number } | null
+  published: boolean
 }) {
   return (
     <div className="mliv">
@@ -91,6 +96,12 @@ export function MobileLiveSeason({
         ) : (
           <div className="mliv-card-empty">Pick a live season above first.</div>
         )}
+      </div>
+
+      <div className="mliv-section">
+        <div className="mliv-section-label">Weekly recap</div>
+        <div className="mliv-section-desc">Every Tuesday in your inbox. Read it or send a copy now.</div>
+        <RecapCard leagueId={leagueId} slug={slug} latest={recapWeek} published={published} variant="mobile" />
       </div>
     </div>
   )

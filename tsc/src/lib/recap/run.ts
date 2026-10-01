@@ -25,7 +25,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getLockReason } from '@/lib/leagueTier'
 import { getNflClock, weekIsFinal } from '@/lib/nflClock'
 import { buildRecapFacts, recapTierFor, RECAP_FACTS_VERSION, type RecapFacts } from './facts'
-import { recapSubject, writeIntro } from './intro'
+import { recapSubject, templateIntro, writeIntro } from './intro'
 import { renderRecapEmail } from './email'
 import { SITE_URL, recapPageUrl, unsubscribeApiUrl, unsubscribePageUrl, unsubscribeToken } from './links'
 
@@ -262,6 +262,50 @@ async function runLeague(
 
   await db.from('weekly_recaps').update({ status: 'sent', updated_at: now }).eq('id', recapId)
   return out('sent', introInfo)
+}
+
+// ── On request ────────────────────────────────────────────────────────────
+
+// An owner asking for their recap now, from the Current Season page. A
+// league that signs up on a Wednesday shouldn't have to wait until the next
+// Tuesday to see what it is paying for. This never touches weekly_recaps or
+// recap_sends, so it can neither stand in for nor block the real Tuesday
+// send; it is a copy, built fresh, sent to the person who asked.
+export async function sendRecapNow(args: {
+  leagueId: string
+  userId: string
+  year: number
+  week: number
+}): Promise<{ ok: true; to: string } | { ok: false; error: string }> {
+  if (recapMode() === 'off') return { ok: false, error: 'Recap email is switched off right now. The page still works.' }
+  const db = createAdminClient()
+  const { data: league } = await db.from('leagues').select('id, owner_id').eq('id', args.leagueId).maybeSingle()
+  if (!league) return { ok: false, error: 'League not found.' }
+
+  const to = await confirmedEmail(db, args.userId)
+  if (!to) return { ok: false, error: 'Confirm your email address first, then try again.' }
+  // An explicit request outranks the "product email" toggle, but not a
+  // bounce or a spam complaint: those addresses stay untouched.
+  const { data: suppressed } = await db.from('email_suppressions').select('reason').eq('email', to).maybeSingle()
+  if (suppressed && suppressed.reason !== 'unsubscribed') {
+    return { ok: false, error: `We can't send to ${to} (${suppressed.reason}). Reach out through the support button.` }
+  }
+
+  const tier = recapTierFor(await getLockReason(league.id, league.owner_id))
+  const built = await buildRecapFacts({ leagueId: league.id, year: args.year, week: args.week, tier })
+  if (built.status === 'incomplete') return { ok: false, error: `Week ${args.week} isn't fully scored yet (${built.reason}).` }
+  if (built.status !== 'ok') return { ok: false, error: `No week ${args.week} games on file yet. Sync the league, then try again.` }
+
+  const facts = built.facts
+  const r = await sendRecapEmail({
+    facts,
+    intro: templateIntro(facts),
+    subject: recapSubject(facts),
+    userId: args.userId,
+    to,
+    idempotencyKey: null,
+  })
+  return r.ok ? { ok: true, to } : { ok: false, error: 'The email did not go out. Try again in a minute.' }
 }
 
 // ── Recipients ────────────────────────────────────────────────────────────

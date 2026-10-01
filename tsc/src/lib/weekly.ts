@@ -24,6 +24,7 @@ import { getLockReason } from '@/lib/leagueTier'
 import { getPickemsState, type PickemsState } from '@/lib/pickems'
 import { getPowerRankings } from '@/lib/powerRankings'
 import { getTradesState, type TradeAsset, type TradePublic } from '@/lib/trades'
+import { latestRecapWeek } from '@/lib/recap/load'
 import { getLeagueBundle } from '@/lib/leagueBundleCache'
 import { resolveCurrentWeek, resolveWeekLockAt } from '@/lib/liveSeason'
 
@@ -109,6 +110,11 @@ export type WeeklyState =
       generatedAt: string
       league: { name: string; abbr: string | null }
       profiles: WeeklyProfile[]
+      // The newest finished week's recap, linked from the top of the page so
+      // the league can read it even if the commissioner never forwards the
+      // email. Null until a week is final, or while the league is unpublished
+      // (the recap page is owner-only then).
+      recap: { year: number; week: number } | null
 
       picks: {
         // Deadline has passed / the week is closed to new submissions.
@@ -224,7 +230,7 @@ export async function getWeeklyState(slug: string): Promise<WeeklyState> {
 
   const { data: league } = await db
     .from('leagues')
-    .select('id, name, abbreviation, owner_id')
+    .select('id, name, abbreviation, owner_id, published_at')
     .eq('slug', slug)
     .maybeSingle()
   if (!league) return { status: 'no-league' }
@@ -248,11 +254,12 @@ export async function getWeeklyState(slug: string): Promise<WeeklyState> {
 
   // Everything below is independent, and each source does its own I/O, so
   // they run together rather than stacking four round-trips end to end.
-  const [pickems, power, trades, bundle] = await Promise.all([
+  const [pickems, power, trades, bundle, recap] = await Promise.all([
     getPickemsState(slug),
     getPowerRankings(slug),
     getTradesState(slug),
     getLeagueBundle(league.id, slug),
+    league.published_at ? latestRecapWeek(league.id).catch(() => null) : Promise.resolve(null),
   ])
 
   const profiles = buildProfiles(pickems)
@@ -264,6 +271,7 @@ export async function getWeeklyState(slug: string): Promise<WeeklyState> {
     generatedAt: new Date().toISOString(),
     league: { name: league.name, abbr: league.abbreviation ?? null },
     profiles,
+    recap,
     picks: buildPicks(pickems, liveSeason.settings ?? null, week),
     board: buildBoard(bundle['matchup_preview.json'] as BundleMatchupPreview | null),
     power: buildPower(power),

@@ -4,6 +4,9 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { latestRecapWeek } from '@/lib/recap/load'
+import { sendRecapNow } from '@/lib/recap/run'
 
 const Schema = z.object({
   leagueId: z.string().uuid(),
@@ -248,4 +251,44 @@ export async function saveCommishPower(
   revalidateTag(`league-${league.id}`, 'max')
   revalidatePath(`/league/${league.slug}/live`)
   return { ok: true }
+}
+
+// ── Weekly recap, on request ────────────────────────────────────────────
+
+// "Email me a copy" on the Current Season page. The week is worked out here,
+// never taken from the client, and one league can ask once every five
+// minutes: the button sends real email from our domain, so it must not be a
+// way to fire off a hundred of them.
+const RECAP_REQUEST_GAP_MS = 5 * 60 * 1000
+
+export async function emailMeTheRecap(leagueId: string): Promise<{ ok: true; to: string; week: number } | { ok: false; error: string }> {
+  if (!z.string().uuid().safeParse(leagueId).success) return { ok: false, error: 'Invalid league.' }
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Not signed in.' }
+
+  const db = createAdminClient()
+  const { data: league } = await db.from('leagues').select('id, owner_id, settings').eq('id', leagueId).maybeSingle()
+  if (!league) return { ok: false, error: 'League not found.' }
+  if (league.owner_id !== user.id && !(await isSiteAdmin(user.id))) {
+    return { ok: false, error: 'Only the owner can send the recap.' }
+  }
+
+  const settings = (league.settings ?? {}) as Record<string, unknown>
+  const last = typeof settings.recap_requested_at === 'string' ? Date.parse(settings.recap_requested_at) : NaN
+  if (Number.isFinite(last) && Date.now() - last < RECAP_REQUEST_GAP_MS) {
+    return { ok: false, error: 'One just went out. Give it a few minutes, and check your spam folder.' }
+  }
+
+  const latest = await latestRecapWeek(league.id)
+  if (!latest) return { ok: false, error: 'No finished week is synced yet. Once one is, its recap is ready.' }
+
+  // Stamp before sending, so two quick taps can't both get through.
+  await db
+    .from('leagues')
+    .update({ settings: { ...settings, recap_requested_at: new Date().toISOString() } })
+    .eq('id', league.id)
+
+  const sent = await sendRecapNow({ leagueId: league.id, userId: user.id, year: latest.year, week: latest.week })
+  return sent.ok ? { ok: true, to: sent.to, week: latest.week } : sent
 }
