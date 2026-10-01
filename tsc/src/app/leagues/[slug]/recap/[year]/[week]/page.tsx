@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { loadRecap, recapViewable } from '@/lib/recap/load'
 import { ordinal, pts, recapSections, recordStr, type RecapGame } from '@/lib/recap/facts'
 import { bookLine, poss, totalLine, writeEdition } from '@/lib/recap/story'
-import { recapPageUrl } from '@/lib/recap/links'
+import { SITE_URL, recapPageUrl } from '@/lib/recap/links'
 import { TIER_PRICES } from '@/lib/stripe'
 import { ShareButton } from '../../ShareButton'
 import { YourWeek, type YourWeekTeam } from '../../YourWeek'
@@ -58,7 +58,9 @@ export async function generateMetadata({
     .eq('season_year', year)
     .eq('week', week)
     .maybeSingle()
-  const title = `Week ${week} recap · ${league.name}`
+  const title = `Week ${week} Recap · ${league.name}`
+  // The paper's front page as the preview: nameplate, headline, scores.
+  const image = { url: `${SITE_URL}/api/og/recap/${slug}/${year}/${week}/?v=1`, width: 1200, height: 630, alt: title }
   const description =
     (data?.intro as string | undefined) ?? `The week ${week} paper for ${league.name}: every game, the history behind it, and what's next.`
   return {
@@ -66,8 +68,8 @@ export async function generateMetadata({
     description,
     ...(league.published_at ? {} : { robots: { index: false, follow: false } }),
     alternates: { canonical: recapPageUrl(slug, year, week) },
-    openGraph: { type: 'article', title, description, siteName: 'The Sunday Chronicle', url: recapPageUrl(slug, year, week) },
-    twitter: { card: 'summary', title, description },
+    openGraph: { type: 'article', title, description, siteName: 'The Sunday Chronicle', url: recapPageUrl(slug, year, week), images: [image] },
+    twitter: { card: 'summary_large_image', title, description, images: [image.url] },
   }
 }
 
@@ -647,7 +649,7 @@ export default async function RecapPage({
             <a className={`${styles.viewLeague} ${styles.viewLeagueBig}`} href={leagueHref}>
               View the {league.name} almanac
             </a>
-            <ShareButton className={styles.shareBtn} url={shareUrl} title={`Week ${week} recap · ${league.name}`} />
+            <ShareButton className={styles.shareBtn} url={shareUrl} title={`Week ${week} Recap · ${league.name}`} />
           </div>
           <nav className={styles.footNav}>
             {week > 1 ? <a href={`/leagues/${slug}/recap/${year}/${week - 1}/`}>Week {week - 1} paper</a> : <span />}

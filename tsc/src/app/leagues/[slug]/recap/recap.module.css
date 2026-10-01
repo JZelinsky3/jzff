@@ -826,10 +826,10 @@
   font-weight: 600;
   padding-right: 0.75rem;
 }
+/* Never clipped: the team column is sized to its names (see .teamCol), and
+   a league of long names gets a wider table that scrolls on a phone. */
 .tableName {
-  max-width: 14rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .pDelta {
   display: inline-block;
