@@ -999,6 +999,9 @@
 .tableName {
   white-space: nowrap;
 }
+.tableTeam .divBadge {
+  margin-left: 0;
+}
 .pDelta {
   display: inline-block;
   min-width: 1.5rem;
@@ -1125,6 +1128,24 @@
 }
 .leaders li span:last-child {
   font-family: var(--rc-mono);
+}
+/* Six leaders read down two columns, 1-3 then 4-6, instead of one long
+   column with a canyon between each name and its record. */
+.leaders[data-split='true'] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(3, auto);
+  grid-auto-flow: column;
+  column-gap: 1.6rem;
+}
+.leaders[data-split='true'] li {
+  gap: 0.6rem;
+  min-width: 0;
+}
+.leaders[data-split='true'] li span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── The wire ────────────────────────────────────────────────────────── */
@@ -1448,7 +1469,8 @@
    button). */
 .backTiles {
   display: grid;
-  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
 }
 .backTile {
   display: grid;
@@ -1521,6 +1543,8 @@
 /* The index: where else to go, as newspaper jump lines. */
 .backIndex {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 1rem;
   border-top: 2px solid var(--ink);
 }
 .backIndex a {
@@ -1565,6 +1589,31 @@
   line-height: 1.6;
   letter-spacing: 0.04em;
   color: var(--mute);
+}
+
+/* Side by side on a phone: smaller titles, full-width buttons, and the
+   blurb dropped so the two tiles stay short and even. */
+@media (max-width: 559px) {
+  .backTile {
+    padding: 0.85rem 0.8rem 0.9rem;
+  }
+  .backTile p {
+    display: none;
+  }
+  .backTitle {
+    margin-bottom: 0.6rem;
+    font-size: 1.2rem;
+  }
+  .backBtnGold,
+  .backBtnInk {
+    justify-self: stretch;
+    padding: 0.7rem 0.5rem;
+    font-size: 0.82rem;
+    text-align: center;
+  }
+  .backIndex a {
+    font-size: 1.02rem;
+  }
 }
 
 /* ── Wider screens ───────────────────────────────────────────────────── */
@@ -1655,11 +1704,9 @@
     padding: 1.6rem 1.8rem 1.5rem;
   }
   .backTiles {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1.4rem;
   }
   .backIndex {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 2rem;
   }
 }

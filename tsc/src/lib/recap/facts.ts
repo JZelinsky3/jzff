@@ -56,7 +56,7 @@ export function recapSections(tier: RecapTier): { paid: boolean; veteran: boolea
 
 // ── Shape ─────────────────────────────────────────────────────────────────
 
-export const RECAP_FACTS_VERSION = 9
+export const RECAP_FACTS_VERSION = 10
 
 // An all-time series between two people, from one side's point of view.
 export type RecapSeries = { w: number; l: number; t: number; since: number }
@@ -336,7 +336,7 @@ export type RecapNext = {
 }
 
 export type RecapFacts = {
-  v: 9
+  v: 10
   generatedAt: string
   league: { id: string; slug: string; name: string; abbr: string | null }
   year: number
@@ -972,7 +972,7 @@ export async function buildRecapFacts(args: {
     : null
 
   const facts: RecapFacts = {
-    v: 9,
+    v: 10,
     generatedAt: new Date().toISOString(),
     league: {
       id: league.id as string,
@@ -1960,7 +1960,7 @@ function buildPickems(
   return {
     pickers: weekRows.length,
     best: weekRows.filter((r) => r.right === topRight).slice(0, 3),
-    leaders: seasonRows.slice(0, 3),
+    leaders: seasonRows.slice(0, 6),
     crowd,
     high: hlCall('highest'),
     low: hlCall('lowest'),

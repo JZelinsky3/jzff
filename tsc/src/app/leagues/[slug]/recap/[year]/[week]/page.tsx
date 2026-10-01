@@ -422,12 +422,10 @@ export default async function RecapPage({
                           <span className={styles.tableTeam}>
                             <Avatar src={s.avatar} name={s.name} size="sm" />
                             <span className={styles.tableName}>{s.name}</span>
+                            <DivBadge div={s.div} labels={divLabels} names={divNames} />
                           </span>
                         </td>
-                        <td>
-                          {recordStr(s.wins, s.losses, s.ties)}
-                          {divLabels ? <DivBadge div={s.div} labels={divLabels} names={divNames} /> : null}
-                        </td>
+                        <td>{recordStr(s.wins, s.losses, s.ties)}</td>
                         <td>{pts(s.pf)}</td>
                         <td>{card?.streak ? `${card.streak.kind}${card.streak.length}` : <span className={styles.noStreak}>-</span>}</td>
                         {hasPower ? (
@@ -619,7 +617,7 @@ export default async function RecapPage({
               </div>
               <div>
                 <span className={styles.pickLabel}>Season leaders</span>
-                <ol className={styles.leaders}>
+                <ol className={styles.leaders} data-split={facts.pickems.leaders.length > 3 ? 'true' : undefined}>
                   {facts.pickems.leaders.map((l) => (
                     <li key={l.name}>
                       <span>{l.name}</span>
