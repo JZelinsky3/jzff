@@ -161,6 +161,16 @@ export default async function AdminPage() {
             >
               Reviews
             </Link>
+            <Link
+              href="/admin/mailing-lists"
+              style={{
+                fontFamily: 'var(--mono)', fontSize: '.65rem', letterSpacing: '.16em',
+                textTransform: 'uppercase', color: 'var(--gold)', textDecoration: 'none',
+                border: '1px solid var(--ink-line)', padding: '.45rem .9rem',
+              }}
+            >
+              Mailing lists
+            </Link>
             {/* Audience export for Resend broadcasts. Confirmed addresses only. */}
             <a
               href="/api/admin/audience"
