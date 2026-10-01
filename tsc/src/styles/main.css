@@ -654,7 +654,17 @@ table.data tbody tr.highlight {
 }
 .tsc-rev-link:hover { background: rgba(232, 200, 137, .1); color: var(--gold); }
 
-.tsc-rev-stars { color: var(--gold); letter-spacing: .05em; font-size: .62rem; }
+/* The stars come from a system font with a line box of their own: in the
+   mono they sat on the baseline, visibly lower than the capitals beside
+   them. */
+.tsc-rev-stars {
+    display: inline-flex; align-items: center;
+    color: var(--gold);
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: .7rem; line-height: 1; letter-spacing: .06em;
+    position: relative; top: -.05em;
+}
+.tsc-rev-text { display: inline-flex; align-items: center; line-height: 1; }
 .tsc-rev-text-short { display: none; }
 
 .tsc-rev-x {
@@ -668,20 +678,29 @@ table.data tbody tr.highlight {
 .tsc-rev-x:hover { color: var(--cream); background: rgba(255, 255, 255, .05); }
 
 @media (max-width: 940px) {
+    /* A proper band rather than a footnote: a warm gold wash through the
+       middle, a gold rule under it, bigger stars set off from the words by
+       a hairline. */
     .tsc-rev {
         position: static;
         display: flex; align-items: stretch; justify-content: center;
-        border: 0; border-bottom: 1px solid var(--ink-line);
+        border: 0; border-bottom: 1px solid var(--gold-deep);
         border-radius: 0;
         box-shadow: none;
-        background: var(--ink-soft);
+        background: linear-gradient(90deg, var(--ink-soft), rgba(232, 200, 137, .1) 50%, var(--ink-soft));
         padding-top: env(safe-area-inset-top);
     }
     .tsc-rev-link {
         flex: 1;
         justify-content: center;
-        padding: .42rem .6rem;
-        font-size: .6rem; letter-spacing: .1em;
+        gap: .65rem;
+        padding: .62rem .6rem;
+        font-size: .66rem; font-weight: 700; letter-spacing: .14em;
+    }
+    .tsc-rev-stars { font-size: .82rem; letter-spacing: .1em; }
+    .tsc-rev-text {
+        padding-left: .65rem;
+        border-left: 1px solid rgba(232, 200, 137, .4);
     }
     /* The long sentence wraps to two lines at 360px and doubles the strip's
        height, which is the one thing this was asked not to do. */

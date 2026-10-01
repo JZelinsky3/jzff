@@ -406,7 +406,7 @@ async function sendRecapEmail(args: {
       unsubscribe: unsubscribePageUrl(token),
       account: `${SITE_URL}/account/`,
       pricing: `${SITE_URL}/pricing/?utm_source=recap&utm_medium=email`,
-      newLeague: `${SITE_URL}/?utm_source=recap&utm_medium=email&utm_campaign=new-league`,
+      newLeague: `${SITE_URL}/dashboard/new/?utm_source=recap&utm_medium=email&utm_campaign=new-league`,
       league: `${SITE_URL}/leagues/${facts.league.slug}/?utm_source=recap&utm_medium=email`,
       join: `${recapPageUrl(facts.league.slug, facts.year, facts.week, 'email')}#join`,
     },

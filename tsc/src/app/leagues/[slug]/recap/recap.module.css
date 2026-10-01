@@ -586,18 +586,25 @@
    each readable on every stock (the thin ring keeps them visible on the
    dark ones). */
 .divBadge {
-  display: inline-grid;
-  place-items: center;
-  min-width: 1.35em;
-  height: 1.35em;
+  /* No letter-spacing: it adds space after the last letter and pushes a
+     one-letter badge off centre. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  box-sizing: border-box;
+  min-width: 1.55em;
+  height: 1.45em;
   margin-left: 0.4rem;
-  padding: 0 0.3em;
+  padding: 0 0.32em;
   border-radius: 3px;
   font-family: var(--rc-sans);
   font-size: 0.62rem;
   font-weight: 800;
   font-style: normal;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
+  text-align: center;
+  text-indent: 0;
   line-height: 1;
   color: #fff;
   vertical-align: 0.12em;
@@ -1473,10 +1480,12 @@
   gap: 0.75rem;
 }
 .backTile {
-  display: grid;
+  /* A column with the button pushed to the bottom, so the two tiles'
+     buttons sit level however long each title runs. */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 0.35rem;
-  align-content: start;
-  justify-items: start;
   padding: 1.1rem 1.15rem 1.2rem;
   background: var(--card);
   color: var(--ink) !important;
@@ -1606,7 +1615,7 @@
   }
   .backBtnGold,
   .backBtnInk {
-    justify-self: stretch;
+    align-self: stretch;
     padding: 0.7rem 0.5rem;
     font-size: 0.82rem;
     text-align: center;

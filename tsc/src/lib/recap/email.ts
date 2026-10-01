@@ -192,7 +192,7 @@ Want the rest of the league getting this too? Anyone can add their own email at 
 ${why}<br>
 <a href="${esc(links.league)}" style="color:${C.foot}; text-decoration:underline;">View the league</a> · <a href="${esc(links.unsubscribe)}" style="color:${C.foot}; text-decoration:underline;">${stop}</a>${
     audience === 'owner' ? ` · <a href="${esc(links.account)}" style="color:${C.foot}; text-decoration:underline;">Account settings</a>` : ''
-  } · <a href="${esc(links.newLeague)}" style="color:${C.foot}; text-decoration:underline;">Run another league? Start its book free</a>
+  } · <a href="${esc(links.newLeague)}" style="color:${C.foot}; text-decoration:underline;">Add another league? Start the book free</a>
 </td></tr>`)
   text.push(
     audience === 'owner'

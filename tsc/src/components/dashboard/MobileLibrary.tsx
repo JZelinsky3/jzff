@@ -131,8 +131,10 @@ export function MobileLibrary({
                 <>Free tier, <strong>no card</strong></>
               )}
             </span>
-            <Link href="/review" className="mlib-udfa-link">Review</Link>
-            <Link href="/pricing" className="mlib-udfa-link">Plans</Link>
+            <span className="mlib-udfa-links">
+              <Link href="/review" className="mlib-udfa-link mlib-udfa-link-alt">Leave a review</Link>
+              <Link href="/pricing" className="mlib-udfa-link">Plans</Link>
+            </span>
           </div>
         </div>
       )}

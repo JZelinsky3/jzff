@@ -85,11 +85,30 @@ export function ReferralPrompt() {
           gap: '.5rem .9rem', paddingRight: '1.5rem',
         }}
       >
-        <div className="dc-label" style={{ marginBottom: 0 }}>
-          One quick thing: where did you hear about us?
-        </div>
+        <label className="dc-label" htmlFor="ref-select" style={{ marginBottom: 0 }}>
+          Where did you hear about us?
+        </label>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem' }}>
+        {/* On a phone, eleven chips wrapped to half the screen. A select is
+            one line there; wider screens keep the one-tap chips. */}
+        <select
+          id="ref-select"
+          className="dc-select dc-ref-select"
+          value={picked}
+          disabled={pending}
+          onChange={(e) => e.target.value && choose(e.target.value)}
+        >
+          <option value="" disabled>
+            Pick one
+          </option>
+          {choices.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+
+        <div className="dc-ref-chips" style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem' }}>
           {choices.map((o) => (
             <button
               key={o.value}

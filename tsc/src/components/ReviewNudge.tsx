@@ -74,7 +74,7 @@ export function ReviewNudge() {
         </span>
         <span className="tsc-rev-text">
           <span className="tsc-rev-text-full">Enjoying the Chronicle? Leave a review</span>
-          <span className="tsc-rev-text-short">Rate the Chronicle</span>
+          <span className="tsc-rev-text-short">Review the Chronicle</span>
         </span>
       </Link>
       <button type="button" className="tsc-rev-x" onClick={dismiss} aria-label="Dismiss">

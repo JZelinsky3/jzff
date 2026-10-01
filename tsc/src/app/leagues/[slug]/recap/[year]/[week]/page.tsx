@@ -785,9 +785,11 @@ export default async function RecapPage({
                 The week {week - 1} paper
               </a>
             ) : null}
-            <Link href="/?utm_source=recap&utm_medium=page&utm_campaign=new-league">
-              <small>Run another league?</small>
-              Start its book free
+            {/* Straight to the new-archive page; signed-out readers are sent
+                through sign in or sign up and land back on it. */}
+            <Link href="/dashboard/new/?utm_source=recap&utm_medium=page&utm_campaign=new-league">
+              <small>Add another league</small>
+              Start the book free
             </Link>
           </nav>
 

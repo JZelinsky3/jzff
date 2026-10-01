@@ -10030,6 +10030,9 @@ body.tsc-hdr-collapsed .mlib-bar {
     color: var(--cream-mute);
 }
 .mlib-tier {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
     font-family: var(--mono);
     font-size: .52rem;
     font-weight: 700;
@@ -10041,7 +10044,15 @@ body.tsc-hdr-collapsed .mlib-bar {
     padding: .3rem .65rem;
     white-space: nowrap;
 }
-.mlib-tier-icon { margin-right: .15rem; }
+/* The mono font draws the star on its baseline, low against the capitals
+   beside it. A system font, its own line box and a nudge centre it. */
+.mlib-tier-icon {
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: .7rem;
+    line-height: 1;
+    position: relative;
+    top: -.06em;
+}
 
 /* ── UDFA explainer ── */
 .mlib-udfa {
@@ -10068,6 +10079,7 @@ body.tsc-hdr-collapsed .mlib-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: .6rem;
     margin-top: .55rem;
     padding-top: .5rem;
     border-top: 1px solid rgba(232,200,137,.12);
@@ -10085,6 +10097,17 @@ body.tsc-hdr-collapsed .mlib-bar {
     border: 1px solid var(--gold-deep);
     border-radius: 999px;
     padding: .2rem .55rem;
+}
+/* Review and Plans sit together on the right, not spread across the row. */
+.mlib-udfa-links {
+    display: inline-flex;
+    gap: .4rem;
+    flex: none;
+}
+/* Cream, so "Leave a review" doesn't read as a second plans button. */
+.mlib-udfa-link-alt {
+    color: var(--cream);
+    border-color: rgba(244, 235, 216, .55);
 }
 
 /* ── Quick actions ── */
@@ -26681,6 +26704,9 @@ body.tsc-hdr-collapsed .mlib-bar {
     color: var(--cream-mute);
 }
 .mlib-tier {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
     font-family: var(--mono);
     font-size: .52rem;
     font-weight: 700;
@@ -26692,7 +26718,15 @@ body.tsc-hdr-collapsed .mlib-bar {
     padding: .3rem .65rem;
     white-space: nowrap;
 }
-.mlib-tier-icon { margin-right: .15rem; }
+/* The mono font draws the star on its baseline, low against the capitals
+   beside it. A system font, its own line box and a nudge centre it. */
+.mlib-tier-icon {
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: .7rem;
+    line-height: 1;
+    position: relative;
+    top: -.06em;
+}
 
 /* ── UDFA explainer ── */
 .mlib-udfa {
@@ -26719,6 +26753,7 @@ body.tsc-hdr-collapsed .mlib-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: .6rem;
     margin-top: .55rem;
     padding-top: .5rem;
     border-top: 1px solid rgba(232,200,137,.12);
@@ -26736,6 +26771,17 @@ body.tsc-hdr-collapsed .mlib-bar {
     border: 1px solid var(--gold-deep);
     border-radius: 999px;
     padding: .2rem .55rem;
+}
+/* Review and Plans sit together on the right, not spread across the row. */
+.mlib-udfa-links {
+    display: inline-flex;
+    gap: .4rem;
+    flex: none;
+}
+/* Cream, so "Leave a review" doesn't read as a second plans button. */
+.mlib-udfa-link-alt {
+    color: var(--cream);
+    border-color: rgba(244, 235, 216, .55);
 }
 
 /* ── Quick actions ── */
@@ -34978,4 +35024,11 @@ a.acct-plan-btn:hover { background: var(--gold); color: var(--ink); }
     color: var(--cream-soft);
     font-family: var(--serif);
     font-style: italic;
+}
+
+/* ── Referral prompt: chips on wide screens, a select on a phone ── */
+.dc-ref-select { display: none; }
+@media (max-width: 640px) {
+    .dc-ref-chips { display: none !important; }
+    .dc-ref-select { display: block; width: 100%; }
 }
