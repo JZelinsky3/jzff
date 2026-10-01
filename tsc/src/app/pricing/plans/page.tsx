@@ -62,7 +62,7 @@ const FEATURES: Feature[] = [
   },
   {
     label: 'Weekly recaps',
-    detail: "Every Tuesday, your league's week in your inbox, with a page to send to the group chat. Veteran adds the bench and trade sections.",
+    detail: "Every Tuesday, your league's week in your inbox, with a page to send to the group chat. Veteran adds the trade wire and Manager DNA.",
     included: { tier1: true, tier2: true, tier3: true },
   },
   {

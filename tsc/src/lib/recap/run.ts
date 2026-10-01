@@ -319,6 +319,7 @@ async function sendRecapEmail(args: {
     account: `${SITE_URL}/account/`,
     pricing: `${SITE_URL}/pricing/?utm_source=recap&utm_medium=email`,
     newLeague: `${SITE_URL}/?utm_source=recap&utm_medium=email&utm_campaign=new-league`,
+    league: `${SITE_URL}/leagues/${facts.league.slug}/?utm_source=recap&utm_medium=email`,
   })
 
   const res = await fetch('https://api.resend.com/emails', {

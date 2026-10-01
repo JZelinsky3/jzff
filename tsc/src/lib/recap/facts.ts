@@ -767,7 +767,12 @@ export async function buildRecapFacts(args: {
       pool.push({ text: '', hook: `${(title.winner === 'a' ? title.a : title.b).name} wins the ${year} title`, weight: 100 })
     }
     if (upset) pool.push({ text: '', hook: `${upset.winner} pulls the upset`, weight: 50 })
-    if (top) pool.push({ text: '', hook: `${top.name} puts up ${pts(top.score)}`, weight: 10 })
+    // The last unbeaten team is a story from week 3 on.
+    const perfect = (standings ?? []).filter((s) => s.wins === week && s.losses === 0 && s.ties === 0)
+    if (week >= 3 && perfect.length === 1) {
+      pool.push({ text: '', hook: `${perfect[0].name} is the last unbeaten team`, weight: 38 })
+    }
+    if (top) pool.push({ text: '', hook: `${top.name} puts up ${pts(top.score)}`, weight: 20 })
     const seenHook = new Set<string>()
     facts.hooks = pool
       .filter((n): n is Note & { hook: string } => !!n.hook)
@@ -1061,11 +1066,13 @@ function careerNote(
     const byDate = [...prior].sort((a, b) => b.year - a.year || b.week - a.week)
     const lastHigher = byDate.find((p) => p.score > score)
     if (lastHigher && lastHigher.year <= year - 2) {
-      return { text: `Best score since ${lastHigher.year}.`, hook: `${name}'s best score since ${lastHigher.year}`, weight: 40 + (year - lastHigher.year) * 3 }
+      const gap = year - lastHigher.year
+      return { text: `Best score since ${lastHigher.year}.`, hook: gap >= 3 ? `${name}'s best score since ${lastHigher.year}` : null, weight: 40 + gap * 3 }
     }
     const lastLower = byDate.find((p) => p.score < score)
     if (lastLower && lastLower.year <= year - 2) {
-      return { text: `Lowest score since ${lastLower.year}.`, hook: `${name}'s lowest score since ${lastLower.year}`, weight: 30 + (year - lastLower.year) * 3 }
+      const gap = year - lastLower.year
+      return { text: `Lowest score since ${lastLower.year}.`, hook: gap >= 3 ? `${name}'s lowest score since ${lastLower.year}` : null, weight: 25 + gap * 3 }
     }
   }
   const season = prior.filter((p) => p.year === year)
@@ -1271,7 +1278,7 @@ function buildStartHistory(args: {
     const whoText = who.length === 1 ? `${who[0]} is` : `${who.slice(0, -1).join(', ')} and ${who[who.length - 1]} are`
     const since = Math.min(...past.map((s) => s.year))
     out.push(
-      `${whoText} ${rec}. Of the ${teams} teams to start ${rec} since ${since}, ${champs === 0 ? 'none' : champs} won the title.`,
+      `${whoText} ${rec}. Of the ${teams} teams that started ${rec} in earlier seasons (since ${since}), ${champs === 0 ? 'none' : champs} won the title.`,
     )
   }
   return out
