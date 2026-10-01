@@ -53,7 +53,7 @@ export function recapSections(tier: RecapTier): { paid: boolean; veteran: boolea
 
 // ── Shape ─────────────────────────────────────────────────────────────────
 
-export const RECAP_FACTS_VERSION = 3
+export const RECAP_FACTS_VERSION = 4
 
 // An all-time series between two people, from one side's point of view.
 export type RecapSeries = { w: number; l: number; t: number; since: number }
@@ -262,12 +262,17 @@ export type RecapTrade = {
 
 export type RecapVerdict = { headline: string; summary: string }
 
+export type RecapNextSide = { name: string; avatar: string | null; record: string | null; place: number | null; ppg: number | null }
+
 export type RecapNextGame = {
-  a: { name: string; avatar: string | null; record: string | null; place: number | null }
-  b: { name: string; avatar: string | null; record: string | null; place: number | null }
+  a: RecapNextSide
+  b: RecapNextSide
   series: RecapSeries | null
   last: RecapMeeting | null
   run: RecapRun | null
+  // Who has the better of the last four meetings, when someone has won at
+  // least three of them.
+  recent: { name: string; w: number; of: number } | null
   // Rookie and up, off the matchup preview.
   spread?: number | null
   favorite?: 'a' | 'b' | null
@@ -284,7 +289,7 @@ export type RecapNext = {
 }
 
 export type RecapFacts = {
-  v: 3
+  v: 4
   generatedAt: string
   league: { id: string; slug: string; name: string; abbr: string | null }
   year: number
@@ -581,6 +586,19 @@ export async function buildRecapFacts(args: {
     const [w, l, ws, ls] = g.sa > g.sb ? [g.aId, g.bId, g.sa, g.sb] : [g.bId, g.aId, g.sb, g.sa]
     return { year: g.year, week: g.week, kind: g.kind, winner: nameOf(w), loser: nameOf(l), ws: round2(ws), ls: round2(ls) }
   }
+  // The better side of the last four meetings, when it is 3-1 or 4-0.
+  const recentOf = (games: HistGame[]): RecapNextGame['recent'] => {
+    const last = [...games].sort(byDate).slice(-4)
+    if (last.length < 4) return null
+    const wins = new Map<string, { id: string; n: number }>()
+    for (const g of last) {
+      if (g.sa === g.sb) continue
+      const [p, id] = g.sa > g.sb ? [g.aP, g.aId] : [g.bP, g.bId]
+      wins.set(p, { id, n: (wins.get(p)?.n ?? 0) + 1 })
+    }
+    const best = [...wins.values()].sort((x, y) => y.n - x.n)[0]
+    return best && best.n >= 3 ? { name: nameOf(best.id), w: best.n, of: last.length } : null
+  }
   // Who has won the most recent meetings in a row.
   const runOf = (games: HistGame[]): RecapRun | null => {
     const ordered = [...games].sort(byDate)
@@ -863,25 +881,31 @@ export async function buildRecapFacts(args: {
         week: nextWeek,
         games: nextRows.map((m) => {
           const s = seriesBetween(m.manager_a_id, m.manager_b_id)
-          const card = (id: string) => ({
-            name: nameOf(id),
-            avatar: avatarOf(id),
-            record: recordOf(id),
-            place: placeOf.get(id)?.rank ?? null,
-          })
+          const card = (id: string): RecapNextSide => {
+            const r = recordsNow.get(id)
+            const played = r ? r.w + r.l + r.t : 0
+            return {
+              name: nameOf(id),
+              avatar: avatarOf(id),
+              record: recordOf(id),
+              place: placeOf.get(id)?.rank ?? null,
+              ppg: r && played ? round1(r.pf / played) : null,
+            }
+          }
           return {
             a: card(m.manager_a_id),
             b: card(m.manager_b_id),
             series: s?.s ?? null,
             last: s ? meetingOf(s.games) : null,
             run: s ? runOf(s.games) : null,
+            recent: s ? recentOf(s.games) : null,
           }
         }),
       }
     : null
 
   const facts: RecapFacts = {
-    v: 3,
+    v: 4,
     generatedAt: new Date().toISOString(),
     league: {
       id: league.id as string,

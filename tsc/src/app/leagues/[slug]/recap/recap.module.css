@@ -1,20 +1,28 @@
-/* The weekly recap, printed as the league's paper. One newsprint house from
-   masthead to footer: cream stock, black ink, one red for kickers and
-   records. Headlines in DM Serif, body copy in a book serif, agate (scores,
-   tables) in the mono. Phone first; wider screens get newspaper columns with
-   rules between them, not a wider single column. */
+/* The weekly recap, printed as the league's paper. The front page is cream
+   newsprint; every section after it is its own stock (the games on a
+   lighter sheet with each story boxed, the record book in black and gold,
+   the standings on salmon, pick'ems on blue, the wire on kraft, next week in
+   green), so a change of topic is visible at a glance. Each section just
+   redefines the house tokens (--paper, --ink, --rule, --red...) and every
+   piece inside reads them.
+
+   Headlines in DM Serif, body copy in a book serif, agate (scores, tables)
+   in the mono. Phone first; wider screens get columns. */
 
 .page {
   --paper: #f6f1e4;
   --paper-2: #ece4d0;
+  --card: #fffbf2;
   --desk: #ddd4bf;
   --ink: #1c1915;
   --ink-2: #463f35;
   --mute: #776e5f;
   --rule: #cdc2a8;
   --red: #a3302a;
+  --on-red: #fff;
   --up: #2f7a4a;
   --down: #a3302a;
+  --gutter: 16px;
 
   --rc-display: var(--font-dm-serif), 'DM Serif Display', Georgia, serif;
   --rc-body: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
@@ -40,7 +48,7 @@
   width: 100%;
   max-width: 74rem;
   margin: 0 auto;
-  padding: calc(0.8rem + env(safe-area-inset-top)) 16px 2.5rem;
+  padding: calc(0.8rem + env(safe-area-inset-top)) var(--gutter) 2.5rem;
   background: var(--paper);
 }
 
@@ -182,7 +190,7 @@
   color: var(--red);
 }
 
-/* The rail: your week, the scoreboard, player of the week. */
+/* The rail: your week and the player of the week. */
 .rail {
   display: grid;
   gap: 1.1rem;
@@ -197,47 +205,6 @@
   padding: 0.45rem 0 0.4rem;
   border-top: 3px solid var(--ink);
   border-bottom: 1px solid var(--ink);
-}
-.scoreRow {
-  display: grid;
-  gap: 0.1rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px dotted var(--rule);
-  text-decoration: none;
-}
-.scoreRow:hover .scoreName {
-  text-decoration: underline;
-}
-.scoreLine {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.6rem;
-  font-family: var(--rc-sans);
-  font-size: 0.92rem;
-  color: var(--ink-2);
-}
-.scoreLine.won {
-  color: var(--ink);
-  font-weight: 700;
-}
-.scoreName {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.scoreNum {
-  font-family: var(--rc-mono);
-  font-size: 0.86rem;
-  font-variant-numeric: tabular-nums;
-}
-.scoreTag {
-  font-family: var(--rc-sans);
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--red);
 }
 .starBox {
   background: var(--paper-2);
@@ -398,49 +365,143 @@
   color: var(--ink-2);
 }
 
-/* ── Section jumps ───────────────────────────────────────────────────── */
+/* ── Section nav: one line, sticks to the top, scrolls sideways on a phone ── */
 
 .jumps {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   display: flex;
-  gap: 0.4rem 1.2rem;
-  flex-wrap: wrap;
-  padding: 0.55rem 0;
-  border-top: 1px solid var(--ink);
-  border-bottom: 1px solid var(--ink);
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 calc(-1 * var(--gutter));
+  padding: 0.55rem var(--gutter);
+  background: var(--ink);
+  overflow-x: auto;
+  scrollbar-width: none;
   font-family: var(--rc-sans);
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+}
+.jumps::-webkit-scrollbar {
+  display: none;
+}
+.jumpsLabel {
+  flex: none;
+  margin-right: 0.2rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
+  color: #e2b866;
 }
 .jumps a {
+  flex: none;
+  white-space: nowrap;
+  padding: 0.38rem 0.75rem;
+  border: 1px solid rgba(246, 241, 228, 0.4);
+  border-radius: 999px;
+  color: var(--paper) !important;
+  font-size: 0.78rem;
+  font-weight: 700;
   text-decoration: none;
 }
-.jumps a:hover {
-  color: var(--red);
+.jumps a:hover,
+.jumps a:active {
+  background: var(--paper);
+  color: var(--ink) !important;
 }
 
-/* ── Sections ────────────────────────────────────────────────────────── */
+/* ── Sections: each one its own stock ────────────────────────────────── */
 
 .section {
-  padding: 1.8rem 0 0.4rem;
+  margin: 0 calc(-1 * var(--gutter));
+  padding: 1.7rem var(--gutter) 1.9rem;
+  background: var(--paper);
+  color: var(--ink);
+  border-top: 4px solid var(--red);
+  scroll-margin-top: 3rem;
 }
+.sGames {
+  --paper: #efe8d6;
+  --card: #fffbf2;
+  --rule: #c9bda1;
+}
+.sBook {
+  --paper: #1e1b17;
+  --paper-2: #2b2620;
+  --card: #26221c;
+  --ink: #f3ead6;
+  --ink-2: #d6cbb3;
+  --mute: #a99e88;
+  --rule: #4a4236;
+  --red: #e2b866;
+  --on-red: #1e1b17;
+}
+.sTable {
+  --paper: #f3dfcf;
+  --paper-2: #e9cdb8;
+  --card: #fbeee3;
+  --rule: #d6b49c;
+  --red: #9b3a26;
+}
+.sPicks {
+  --paper: #dde6ec;
+  --paper-2: #cbd8e1;
+  --card: #f2f6f8;
+  --ink: #16232d;
+  --ink-2: #3b4c58;
+  --mute: #627480;
+  --rule: #afc1cd;
+  --red: #2c5a7e;
+}
+.sWire {
+  --paper: #e6d3b0;
+  --paper-2: #d9c196;
+  --card: #fbf5ea;
+  --ink: #241a10;
+  --ink-2: #4c3c28;
+  --mute: #7a6548;
+  --rule: #c2a77d;
+  --red: #7a4a1c;
+}
+.sNext {
+  --paper: #1d3a2c;
+  --paper-2: #264a39;
+  --card: #234536;
+  --ink: #f1ead7;
+  --ink-2: #d2cbb6;
+  --mute: #a3b2a3;
+  --rule: #3e5f4e;
+  --red: #d8b45e;
+  --on-red: #1d3a2c;
+}
+
 .sectionHead {
   display: flex;
-  align-items: baseline;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.35rem;
-  border-bottom: 3px double var(--ink);
-  scroll-margin-top: 1rem;
+  margin-bottom: 1.1rem;
+  scroll-margin-top: 3.5rem;
+}
+.sectionTag {
+  display: inline-block;
+  margin-bottom: 0.35rem;
+  padding: 0.18rem 0.5rem;
+  background: var(--red);
+  color: var(--on-red);
+  font-family: var(--rc-sans);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 .sectionHead h2 {
   margin: 0;
   font-family: var(--rc-display);
   font-weight: 400;
-  font-size: clamp(1.6rem, 5.5vw, 2.2rem);
-  line-height: 1.1;
+  font-size: clamp(1.75rem, 6vw, 2.4rem);
+  line-height: 1.05;
 }
 .sectionLink {
   flex: none;
@@ -466,7 +527,6 @@
   font-family: var(--rc-sans);
   font-weight: 700;
   font-size: 0.9rem;
-  filter: grayscale(0.25);
 }
 .avatarSm {
   width: 24px;
@@ -474,35 +534,37 @@
   font-size: 0.7rem;
 }
 
-/* ── The games ───────────────────────────────────────────────────────── */
+/* ── The games: every story in its own box ───────────────────────────── */
 
 .stories {
   display: grid;
+  gap: 0.9rem;
 }
 .story {
   position: relative;
-  padding: 1rem 0 1.1rem;
-  border-bottom: 1px solid var(--rule);
-  scroll-margin-top: 1rem;
-}
-.story:first-child {
-  padding-top: 0;
+  padding: 0.9rem 1rem 1rem;
+  background: var(--card);
+  border: 1px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--rule);
+  scroll-margin-top: 3.5rem;
 }
 .story[data-you='true'] {
-  background: var(--paper-2);
-  box-shadow: -10px 0 0 var(--paper-2), 10px 0 0 var(--paper-2);
+  border: 2px solid var(--red);
+  box-shadow: 3px 3px 0 var(--red);
 }
-.story[data-you='true']::after {
+/* In the flow, above the kicker, so it never sits on the headline. */
+.story[data-you='true']::before {
   content: 'Your game';
-  position: absolute;
-  top: 1rem;
-  right: 0;
+  display: inline-block;
+  margin-bottom: 0.45rem;
+  padding: 0.15rem 0.45rem;
+  background: var(--red);
+  color: #fff;
   font-family: var(--rc-sans);
   font-size: 0.6rem;
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--red);
 }
 .kicker {
   font-family: var(--rc-sans);
@@ -513,8 +575,8 @@
   color: var(--red);
   margin-bottom: 0.25rem;
 }
-/* Stories sit side by side on wider screens; an empty kicker keeps its
-   line there so the headlines in a row line up. */
+/* Side by side on wider screens, an empty kicker keeps its line so the
+   headlines in a row line up. */
 .kickerEmpty {
   display: none;
 }
@@ -522,27 +584,27 @@
   margin: 0 0 0.6rem;
   font-family: var(--rc-display);
   font-weight: 400;
-  font-size: 1.5rem;
+  font-size: 1.45rem;
   line-height: 1.12;
   text-wrap: balance;
 }
 .storyScore {
   display: grid;
   margin-bottom: 0.65rem;
-  border-top: 1px solid var(--ink);
-  border-bottom: 1px solid var(--ink);
+  border-top: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
 }
 .storySide {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.32rem 0;
+  padding: 0.35rem 0;
   font-family: var(--rc-sans);
   font-size: 0.9rem;
   color: var(--ink-2);
 }
 .storySide + .storySide {
-  border-top: 1px dotted var(--rule);
+  border-top: 1px solid var(--rule);
 }
 .storySide.won {
   color: var(--ink);
@@ -577,13 +639,14 @@
 
 .book {
   display: grid;
+  border-top: 1px solid var(--rule);
 }
 .bookRow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.1rem 1rem;
-  padding: 0.7rem 0;
-  border-bottom: 1px dotted var(--rule);
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--rule);
 }
 .bookLabel {
   font-family: var(--rc-sans);
@@ -591,7 +654,7 @@
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-2);
+  color: var(--mute);
 }
 .bookValue {
   grid-row: span 2;
@@ -634,8 +697,8 @@
 
 .tableWrap {
   overflow-x: auto;
-  margin: 0 -16px;
-  padding: 0 16px;
+  margin: 0 calc(-1 * var(--gutter));
+  padding: 0 var(--gutter);
 }
 .table {
   width: 100%;
@@ -652,14 +715,16 @@
   color: var(--mute);
   text-align: right;
   padding: 0 0.5rem 0.4rem;
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
   white-space: nowrap;
 }
 .table td {
   text-align: right;
+  vertical-align: middle;
   padding: 0.45rem 0.5rem;
-  border-bottom: 1px dotted var(--rule);
+  border-bottom: 1px solid var(--rule);
   white-space: nowrap;
+  line-height: 1.2;
 }
 .table td:not(.left):not(.rank) {
   font-family: var(--rc-mono);
@@ -678,10 +743,21 @@
   font-size: 0.6rem;
 }
 .tableTeam {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 0.45rem;
   font-weight: 600;
+  padding-right: 0.75rem;
+}
+.tableName {
+  min-width: 0;
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.noStreak {
+  font-size: 0.7rem;
+  color: var(--mute);
 }
 .cutLine td {
   border-bottom: 2px solid var(--red);
@@ -701,7 +777,7 @@
   display: inline-block;
   width: 4.5rem;
   height: 6px;
-  background: var(--paper-2);
+  background: var(--card);
   border: 1px solid var(--rule);
 }
 .oddsBar span {
@@ -717,48 +793,59 @@
   color: var(--mute);
 }
 
-/* ── Notebook ────────────────────────────────────────────────────────── */
+/* ── Pick'ems ────────────────────────────────────────────────────────── */
 
-.notebook {
+.picks {
   display: grid;
-  gap: 1.4rem;
+  gap: 1rem;
 }
-.column p {
-  margin: 0.6rem 0;
-  font-size: 1rem;
-  line-height: 1.55;
+.pickBest {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.9rem 1rem;
+  background: var(--card);
+  border: 1px solid var(--ink);
 }
-.columnHead {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+.pickLabel {
   font-family: var(--rc-sans);
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   font-weight: 800;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  padding-bottom: 0.35rem;
-  border-bottom: 1px solid var(--ink);
+  color: var(--red);
 }
-.columnHead a {
-  letter-spacing: 0.04em;
-  text-transform: none;
-  color: var(--red) !important;
+.pickRecord {
+  font-family: var(--rc-mono);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.pickNames {
+  font-family: var(--rc-display);
+  font-size: 1.2rem;
+}
+.pickCrowd {
+  margin: 0.5rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--rule);
+  font-style: italic;
+  color: var(--ink-2);
 }
 .leaders {
-  margin: 0;
+  margin: 0.4rem 0 0;
   padding: 0;
   list-style: none;
   counter-reset: l;
   font-family: var(--rc-sans);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  border-top: 2px solid var(--ink);
 }
 .leaders li {
   counter-increment: l;
   display: flex;
   justify-content: space-between;
-  padding: 0.35rem 0;
-  border-bottom: 1px dotted var(--rule);
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--rule);
 }
 .leaders li span:first-child::before {
   content: counter(l) '. ';
@@ -767,44 +854,99 @@
 .leaders li span:last-child {
   font-family: var(--rc-mono);
 }
-.trade {
-  margin: 0.7rem 0;
+
+/* ── The wire ────────────────────────────────────────────────────────── */
+
+.trades {
+  display: grid;
+  gap: 0.9rem;
 }
-.trade ul {
-  margin: 0.3rem 0;
-  padding-left: 1.1rem;
+.trade {
+  background: var(--card);
+  border: 1px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--rule);
+}
+.tradeSides {
+  display: grid;
+}
+.tradeSide {
+  padding: 0.75rem 1rem;
+}
+.tradeSide + .tradeSide {
+  border-top: 2px dashed var(--rule);
+}
+.tradeWho {
+  font-family: var(--rc-sans);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.trade > .tradeWho {
+  padding: 0.75rem 1rem 0;
+}
+.tradeSide ul {
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.25rem;
+}
+.tradeSide li {
+  font-family: var(--rc-display);
+  font-size: 1.1rem;
+  line-height: 1.25;
+}
+.tradeNote {
+  margin: 0;
+  padding: 0.7rem 1rem 0.85rem;
+  border-top: 1px solid var(--ink);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--ink-2);
 }
 
 /* ── Coming up ───────────────────────────────────────────────────────── */
 
 .previews {
   display: grid;
-  gap: 0;
+  gap: 0.9rem;
 }
 .preview {
-  padding: 0.75rem 0;
-  border-bottom: 1px dotted var(--rule);
+  padding: 0.8rem 1rem 0.9rem;
+  background: var(--card);
+  border: 1px solid var(--rule);
 }
 .previewLead {
-  padding-top: 0;
-  border-bottom: 1px solid var(--ink);
+  border: 2px solid var(--red);
 }
 .previewTeams {
   display: grid;
-  gap: 0.25rem;
 }
 .previewSide {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding: 0.3rem 0;
   font-family: var(--rc-sans);
   font-weight: 700;
   font-size: 0.95rem;
 }
+.previewSide + .previewSide {
+  border-top: 1px solid var(--rule);
+}
 .previewLead .previewSide {
   font-family: var(--rc-display);
   font-weight: 400;
-  font-size: 1.45rem;
+  font-size: 1.4rem;
+}
+.previewName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .previewName small {
   margin-left: 0.45rem;
@@ -813,14 +955,25 @@
   font-weight: 500;
   color: var(--mute);
 }
+.previewPpg {
+  flex: none;
+  font-family: var(--rc-mono);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.previewPpg small {
+  font-family: var(--rc-sans);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  color: var(--mute);
+}
 .previewNote {
-  margin: 0.35rem 0 0;
+  margin: 0.45rem 0 0;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--rule);
   font-size: 0.95rem;
   line-height: 1.5;
   color: var(--ink-2);
-}
-.previewNote b {
-  color: var(--ink);
 }
 .nextNotes {
   margin-top: 1rem;
@@ -852,9 +1005,8 @@
 /* ── Footer ──────────────────────────────────────────────────────────── */
 
 .foot {
-  margin-top: 2.2rem;
-  padding-top: 1.2rem;
-  border-top: 3px double var(--ink);
+  padding-top: 1.4rem;
+  border-top: 4px solid var(--ink);
 }
 .footActions {
   display: grid;
@@ -885,14 +1037,16 @@
   text-underline-offset: 3px;
 }
 
-/* ── Wider screens: columns, with rules between them ─────────────────── */
+/* ── Wider screens ───────────────────────────────────────────────────── */
 
 @media (min-width: 760px) {
   .page {
+    --gutter: 2.2rem;
     padding: 1.5rem 1rem 3rem;
   }
   .sheet {
-    padding: 1.2rem 2.2rem 2.8rem;
+    padding-top: 1.2rem;
+    padding-bottom: 2.8rem;
     box-shadow: 0 1px 0 var(--rule), 0 18px 40px -24px rgba(40, 30, 10, 0.35);
   }
   .front {
@@ -903,12 +1057,13 @@
     padding-left: 2rem;
     border-left: 1px solid var(--rule);
   }
+  .section {
+    padding-top: 2.1rem;
+    padding-bottom: 2.3rem;
+  }
   .stories {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 2rem;
-  }
-  .story:nth-child(2) {
-    padding-top: 0;
+    gap: 1.1rem;
   }
   .kickerEmpty {
     display: block;
@@ -919,9 +1074,8 @@
     align-items: baseline;
   }
   .bookValue {
-    grid-row: auto;
+    grid-row: 1;
     grid-column: 3;
-    grid-row-start: 1;
   }
   .bookLabel {
     grid-column: 1;
@@ -935,13 +1089,22 @@
     grid-column: 2 / -1;
     grid-row: 2;
   }
-  .notebook {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .picks {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 2rem;
+    align-items: start;
+  }
+  .tradeSides {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+  .tradeSide + .tradeSide {
+    border-top: 0;
+    border-left: 2px dashed var(--rule);
   }
   .previews {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 2rem;
+    gap: 1.1rem;
   }
   .previewLead {
     grid-column: 1 / -1;
@@ -963,9 +1126,6 @@
   }
   .stories {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .story:nth-child(3) {
-    padding-top: 0;
   }
   .previews {
     grid-template-columns: repeat(3, minmax(0, 1fr));

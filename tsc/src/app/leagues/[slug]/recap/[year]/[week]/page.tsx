@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { loadRecap } from '@/lib/recap/load'
-import { ordinal, pts, recapSections, recordStr, type RecapGame, type RecapNextGame } from '@/lib/recap/facts'
+import { ordinal, pts, recapSections, recordStr, type RecapGame } from '@/lib/recap/facts'
 import { bookLine, poss, writeEdition } from '@/lib/recap/story'
 import { recapPageUrl } from '@/lib/recap/links'
 import { TIER_PRICES } from '@/lib/stripe'
@@ -91,10 +91,25 @@ function Avatar({ src, name, size = 'md' }: { src: string | null; name: string; 
   return <img className={cls} src={src} alt="" loading="lazy" referrerPolicy="no-referrer" />
 }
 
-function SectionHead({ id, title, link }: { id?: string; title: string; link?: { href: string; label: string } | null }) {
+// Every section opens on a flag (the small tag over the title) and its own
+// stock, so the eye can tell where one topic stops and the next starts.
+function SectionHead({
+  id,
+  tag,
+  title,
+  link,
+}: {
+  id?: string
+  tag: string
+  title: string
+  link?: { href: string; label: string } | null
+}) {
   return (
     <header className={styles.sectionHead} id={id}>
-      <h2>{title}</h2>
+      <div>
+        <div className={styles.sectionTag}>{tag}</div>
+        <h2>{title}</h2>
+      </div>
       {link ? (
         <a className={styles.sectionLink} href={link.href}>
           {link.label}
@@ -187,7 +202,6 @@ export default async function RecapPage({
   const shareUrl = recapPageUrl(slug, year, week, 'share')
   const rookiePrice = `$${(TIER_PRICES.tier1.yearly.amountCents / 100).toFixed(0)} a year`
   const weekLabel = f.phase === 'playoffs' ? `Playoffs, week ${week}` : `Week ${week}`
-  const storyOf = new Map(edition.stories.map((s) => [s.game, s]))
   const cardOf = new Map(f.teams.map((t) => [t.managerId, t]))
 
   const yourTeams: YourWeekTeam[] = f.teams.map((t) => {
@@ -220,9 +234,11 @@ export default async function RecapPage({
   const hasPower = show.paid && f.teams.some((t) => t.power)
   const book = show.paid ? (facts.book ?? []) : []
   const jumps: { id: string; label: string }[] = [
-    { id: 'games', label: 'The games' },
+    { id: 'games', label: 'The Games' },
     ...(book.length ? [{ id: 'book', label: 'Record book' }] : []),
     ...(hasStandings ? [{ id: 'standings', label: 'Standings' }] : []),
+    ...(show.paid && facts.pickems ? [{ id: 'pickems', label: "Pick'ems" }] : []),
+    ...(show.veteran && (facts.trades?.length || facts.verdicts?.length) ? [{ id: 'trades', label: 'Trades' }] : []),
     ...(edition.previews.length ? [{ id: 'next', label: `Week ${f.next!.week}` }] : []),
   ]
 
@@ -259,30 +275,6 @@ export default async function RecapPage({
 
           <aside className={styles.rail}>
             <YourWeek slug={slug} teams={yourTeams} />
-            <div className={styles.scoreboard}>
-              <div className={styles.boxHead}>Final scores</div>
-              {f.games.map((g, i) => {
-                const decided = isDecided(g)
-                const first = decided ? winnerOf(g) : g.a
-                const second = decided ? loserOf(g) : g.b
-                const story = storyOf.get(g)
-                return (
-                  <a key={i} className={styles.scoreRow} href={story ? `#${story.anchor}` : undefined}>
-                    {[first, second].map((s, j) => (
-                      <span key={s.managerId} className={`${styles.scoreLine} ${decided && j === 0 ? styles.won : ''}`}>
-                        <span className={styles.scoreName}>{s.name}</span>
-                        <span className={styles.scoreNum}>{pts(s.score)}</span>
-                      </span>
-                    ))}
-                    {g.kind !== 'regular' || g.leg ? (
-                      <span className={styles.scoreTag}>
-                        {g.leg?.n === 1 ? 'Leg 1 of 2' : g.kind === 'championship' ? 'Final' : g.kind === 'playoff' ? 'Playoffs' : g.kind === 'consolation' ? 'Consolation' : 'Leg 2 of 2'}
-                      </span>
-                    ) : null}
-                  </a>
-                )
-              })}
-            </div>
             {show.paid && facts.star ? (
               <div className={styles.starBox}>
                 <div className={styles.boxHead}>Player of the week</div>
@@ -296,6 +288,7 @@ export default async function RecapPage({
         </section>
 
         <nav className={styles.jumps} aria-label="Sections">
+          <span className={styles.jumpsLabel}>Inside</span>
           {jumps.map((j) => (
             <a key={j.id} href={`#${j.id}`}>
               {j.label}
@@ -304,8 +297,8 @@ export default async function RecapPage({
         </nav>
 
         {/* ── The games ── */}
-        <section className={styles.section}>
-          <SectionHead id="games" title="The games" />
+        <section className={`${styles.section} ${styles.sGames}`}>
+          <SectionHead id="games" tag="Results" title="The Games" />
           <div className={styles.stories}>
             {edition.stories.map((s) => {
               const g = s.game
@@ -338,8 +331,8 @@ export default async function RecapPage({
 
         {/* ── Record book ── */}
         {book.length || (show.paid && facts.weekRecord) || (show.paid && facts.milestones?.length) ? (
-          <section className={styles.section}>
-            <SectionHead id="book" title="The record book" link={{ href: `/leagues/${slug}/live/records-watch/`, label: 'Records watch' }} />
+          <section className={`${styles.section} ${styles.sBook}`}>
+            <SectionHead id="book" tag="History" title="The Record Book" link={{ href: `/leagues/${slug}/live/records-watch/`, label: 'Records watch' }} />
             <div className={styles.book}>
               {book.map((r) => (
                 <div key={r.key} className={`${styles.bookRow} ${r.rank <= 10 ? styles.bookHot : ''}`}>
@@ -382,10 +375,11 @@ export default async function RecapPage({
 
         {/* ── Standings, with the power rankings folded in ── */}
         {hasStandings ? (
-          <section className={styles.section}>
+          <section className={`${styles.section} ${styles.sTable}`}>
             <SectionHead
               id="standings"
-              title="The standings"
+              tag="The table"
+              title="The Standings"
               link={hasPower ? { href: `/leagues/${slug}/live/powerrank/`, label: 'Power rankings' } : { href: `/leagues/${slug}/standings`, label: 'Standings' }}
             />
             <div className={styles.tableWrap}>
@@ -414,12 +408,12 @@ export default async function RecapPage({
                         <td className={styles.left}>
                           <span className={styles.tableTeam}>
                             <Avatar src={s.avatar} name={s.name} size="sm" />
-                            {s.name}
+                            <span className={styles.tableName}>{s.name}</span>
                           </span>
                         </td>
                         <td>{recordStr(s.wins, s.losses, s.ties)}</td>
                         <td>{pts(s.pf)}</td>
-                        <td>{card?.streak ? `${card.streak.kind}${card.streak.length}` : ''}</td>
+                        <td>{card?.streak ? `${card.streak.kind}${card.streak.length}` : <span className={styles.noStreak}>-</span>}</td>
                         {hasPower ? (
                           <td>
                             {card?.power ? (
@@ -460,67 +454,73 @@ export default async function RecapPage({
           </section>
         ) : null}
 
-        {/* ── Notebook: pick'ems and the wire ── */}
-        {show.paid && (facts.pickems || facts.trades?.length || facts.verdicts?.length) ? (
-          <section className={styles.section}>
-            <SectionHead title="Notebook" />
-            <div className={styles.notebook}>
-              {facts.pickems ? (
-                <div className={styles.column}>
-                  <div className={styles.columnHead}>
-                    Pick&apos;ems <a href={`/leagues/${slug}/live/pickems/`}>Board</a>
-                  </div>
-                  <p>
-                    <b>{facts.pickems.best.map((b) => b.name).join(', ')}</b> had the best week at {facts.pickems.best[0].right}-
-                    {facts.pickems.best[0].wrong}.{facts.pickems.crowd ? ` ${facts.pickems.crowd}` : ''}
-                  </p>
-                  <ol className={styles.leaders}>
-                    {facts.pickems.leaders.map((l) => (
-                      <li key={l.name}>
-                        <span>{l.name}</span>
-                        <span>
-                          {l.right}-{l.wrong}
-                        </span>
-                      </li>
+        {/* ── Pick'ems ── */}
+        {show.paid && facts.pickems ? (
+          <section className={`${styles.section} ${styles.sPicks}`}>
+            <SectionHead id="pickems" tag="Pick'ems" title="Who Called It" link={{ href: `/leagues/${slug}/live/pickems/`, label: "Pick'ems board" }} />
+            <div className={styles.picks}>
+              <div className={styles.pickBest}>
+                <span className={styles.pickLabel}>Best of week {week}</span>
+                <span className={styles.pickRecord}>
+                  {facts.pickems.best[0].right}-{facts.pickems.best[0].wrong}
+                </span>
+                <span className={styles.pickNames}>{facts.pickems.best.map((b) => b.name).join(', ')}</span>
+                {facts.pickems.crowd ? <p className={styles.pickCrowd}>{facts.pickems.crowd}</p> : null}
+              </div>
+              <div>
+                <span className={styles.pickLabel}>Season leaders</span>
+                <ol className={styles.leaders}>
+                  {facts.pickems.leaders.map((l) => (
+                    <li key={l.name}>
+                      <span>{l.name}</span>
+                      <span>
+                        {l.right}-{l.wrong}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {/* ── The wire: trades, each side in its own box ── */}
+        {show.veteran && (facts.trades?.length || facts.verdicts?.length) ? (
+          <section className={`${styles.section} ${styles.sWire}`}>
+            <SectionHead id="trades" tag="The wire" title="Trades" link={{ href: `/leagues/${slug}/live/trades/`, label: 'Trade desk' }} />
+            <div className={styles.trades}>
+              {facts.trades?.map((t, i) => (
+                <article key={i} className={styles.trade}>
+                  <div className={styles.tradeSides}>
+                    {t.sides.map((side) => (
+                      <div key={side.manager} className={styles.tradeSide}>
+                        <div className={styles.tradeWho}>{side.manager} gets</div>
+                        <ul>
+                          {side.gets.length ? side.gets.map((a) => <li key={a}>{a}</li>) : <li>Nothing listed</li>}
+                        </ul>
+                      </div>
                     ))}
-                  </ol>
-                </div>
-              ) : null}
-              {facts.trades?.length || facts.verdicts?.length ? (
-                <div className={styles.column}>
-                  <div className={styles.columnHead}>
-                    The wire <a href={`/leagues/${slug}/live/trades/`}>Trade desk</a>
                   </div>
-                  {facts.trades?.map((t, i) => (
-                    <div key={i} className={styles.trade}>
-                      <b>{t.headline}</b>
-                      <ul>
-                        {t.sides.map((s) => (
-                          <li key={s.manager}>
-                            {s.manager} gets {s.gets.join(', ') || 'nothing listed'}
-                          </li>
-                        ))}
-                      </ul>
-                      {t.summary ? <p>{t.summary}</p> : null}
-                    </div>
-                  ))}
-                  {facts.verdicts?.map((v, i) => (
-                    <p key={i}>
-                      <b>Four weeks later, {v.headline}.</b> {v.summary}
-                    </p>
-                  ))}
-                </div>
-              ) : null}
+                  {t.summary ? <p className={styles.tradeNote}>{t.summary}</p> : null}
+                </article>
+              ))}
+              {facts.verdicts?.map((v, i) => (
+                <article key={`v${i}`} className={styles.trade}>
+                  <div className={styles.tradeWho}>Four weeks later: {v.headline}</div>
+                  <p className={styles.tradeNote}>{v.summary}</p>
+                </article>
+              ))}
             </div>
           </section>
         ) : null}
 
         {/* ── Coming up ── */}
         {edition.previews.length ? (
-          <section className={styles.section}>
+          <section className={`${styles.section} ${styles.sNext}`}>
             <SectionHead
               id="next"
-              title={`Coming up: week ${f.next!.week}`}
+              tag="Next week"
+              title={`Coming Up: Week ${f.next!.week}`}
               link={show.paid ? { href: `/leagues/${slug}/live/matchup-preview/`, label: 'Matchup preview' } : null}
             />
             <div className={styles.previews}>
@@ -535,11 +535,15 @@ export default async function RecapPage({
                           {s.name}
                           {s.record ? <small>{s.record}</small> : null}
                         </span>
+                        {s.ppg != null ? (
+                          <span className={styles.previewPpg}>
+                            {s.ppg.toFixed(1)} <small>PPG</small>
+                          </span>
+                        ) : null}
                       </span>
                     ))}
                   </div>
                   <p className={styles.previewNote}>
-                    {show.paid && g.spread != null && g.favorite ? <b>{favoriteLine(g)}. </b> : null}
                     {note}
                   </p>
                 </article>
@@ -601,8 +605,4 @@ export default async function RecapPage({
       </div>
     </div>
   )
-}
-
-function favoriteLine(g: RecapNextGame): string {
-  return `${(g.favorite === 'a' ? g.a : g.b).name} by ${pts(g.spread!)}`
 }

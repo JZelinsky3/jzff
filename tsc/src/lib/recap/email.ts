@@ -88,7 +88,7 @@ ${front.deck ? `<div style="font-family:${SERIF}; font-style:italic; font-size:1
   text.push(`${f.league.name}: ${weekLabel}, ${f.year}`, '', front.headline.toUpperCase(), ...(front.deck ? [front.deck] : []), '', ...front.paragraphs.flatMap((p) => [p, '']))
 
   // ── Final scores ──
-  rows.push(sectionHead('Final scores'))
+  rows.push(sectionHead('Final Scores'))
   text.push('FINAL SCORES')
   const scoreRows = f.games
     .map((g) => {
@@ -109,7 +109,7 @@ ${front.deck ? `<div style="font-family:${SERIF}; font-style:italic; font-size:1
   // ── The record book: only the rows that mean something ──
   const book = show.paid ? (f.book ?? []).filter((r) => r.rank <= 10 || (r.seasonRank === 1 && f.week > 1)).slice(0, 3) : []
   if (book.length) {
-    rows.push(sectionHead('From the record book'))
+    rows.push(sectionHead('From the Record Book'))
     text.push('FROM THE RECORD BOOK')
     const bookRows = book
       .map((r) => {
@@ -132,15 +132,14 @@ ${front.deck ? `<div style="font-family:${SERIF}; font-style:italic; font-size:1
   if (head && f.next) {
     const g = head.game
     const rec = (s: typeof g.a) => (s.record ? ` (${s.record})` : '')
-    const line = show.paid && g.spread != null && g.favorite ? `${(g.favorite === 'a' ? g.a : g.b).name} by ${pts(g.spread)}. ` : ''
     const label = g.gotw && show.paid ? 'Game of the week' : 'Headliner'
-    rows.push(sectionHead(`Coming up: week ${f.next.week}`))
+    rows.push(sectionHead(`Coming Up: Week ${f.next.week}`))
     rows.push(`<tr><td class="pad" bgcolor="${C.card}" style="padding:6px 40px 0;">
 <div style="font-family:${SANS}; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:${C.gold};">${label}</div>
 <div style="font-family:${SERIF}; font-size:19px; line-height:1.3; color:${C.ink}; padding-top:4px;">${esc(g.a.name)}${esc(rec(g.a))} vs. ${esc(g.b.name)}${esc(rec(g.b))}</div>
-<div style="font-family:${SERIF}; font-size:15px; line-height:1.5; color:${C.muted}; padding-top:4px;">${esc(line + (head.note ?? ''))}</div>
+<div style="font-family:${SERIF}; font-size:15px; line-height:1.5; color:${C.muted}; padding-top:4px;">${esc(head.note ?? '')}</div>
 </td></tr>`)
-    text.push(`COMING UP: WEEK ${f.next.week}`, `${label}: ${g.a.name}${rec(g.a)} vs. ${g.b.name}${rec(g.b)}. ${line}${head.note ?? ''}`, '')
+    text.push(`COMING UP: WEEK ${f.next.week}`, `${label}: ${g.a.name}${rec(g.a)} vs. ${g.b.name}${rec(g.b)}. ${head.note ?? ''}`, '')
   }
 
   if (!show.paid) {

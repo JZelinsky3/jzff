@@ -92,17 +92,19 @@ function seriesFrom(g: RecapGame | RecapNextGame, name: string, s: RecapSeries):
   return g.a.name === name ? { w: s.w, l: s.l, t: s.t } : { w: s.l, l: s.w, t: s.t }
 }
 
-// "Connie leads the series 5-4 since 2019", as a sentence of its own.
-function seriesState(me: string, them: string, r: { w: number; l: number; t: number }, since: number): string {
-  if (r.w > r.l) return `${me} leads the series ${recordStr(r.w, r.l, r.t)} since ${since}`
-  if (r.w < r.l) return `${them} leads the series ${recordStr(r.l, r.w, r.t)} since ${since}`
-  return `the series is even at ${recordStr(r.w, r.l, r.t)} since ${since}`
+// "Connie leads the series 5-4", as a sentence of its own. No "since 2019":
+// the series starts when the two of them were first in the league together,
+// and saying so adds nothing.
+function seriesState(me: string, them: string, r: { w: number; l: number; t: number }): string {
+  if (r.w > r.l) return `${me} leads the series ${recordStr(r.w, r.l, r.t)}`
+  if (r.w < r.l) return `${them} leads the series ${recordStr(r.l, r.w, r.t)}`
+  return `the series is even at ${recordStr(r.w, r.l, r.t)}`
 }
 
 // The same thing as a clause that follows a sentence about `me`: "and leads
 // the series 8-2", "though Mason still leads the series 6-5".
-function seriesTail(me: string, them: string, r: { w: number; l: number; t: number }, since: number): string {
-  if (r.w > r.l) return `and leads the series ${recordStr(r.w, r.l, r.t)} since ${since}`
+function seriesTail(me: string, them: string, r: { w: number; l: number; t: number }): string {
+  if (r.w > r.l) return `and leads the series ${recordStr(r.w, r.l, r.t)}`
   if (r.w < r.l) return `though ${them} still leads the series ${recordStr(r.l, r.w, r.t)}`
   return `and the series is even at ${recordStr(r.w, r.l, r.t)}`
 }
@@ -180,15 +182,16 @@ function markSentence(name: string, s: number, m: RecapMark): string | null {
   }
 }
 
+// Every finished season counts, so this is "in league history", never a
+// date range that reads like only some of it.
 function startHistory(s: RecapStart, unbeaten: boolean, plural: boolean): string {
-  const span = `from ${s.from} to ${s.to}`
   if (s.champs === 0) {
     return unbeaten
-      ? `History is against ${plural ? 'them' : 'it'}: none of the ${s.teams} teams to start ${s.record} ${span} won the title.`
-      : `No team that started ${s.record} has won the title either; ${s.teams} tried ${span}.`
+      ? `History is against ${plural ? 'them' : 'it'}: none of the ${s.teams} teams to start ${s.record} in league history went on to win the title.`
+      : `No ${s.record} team has ever won the title either; ${s.teams} have tried.`
   }
   const last = s.lastChamp ? `, most recently ${s.lastChamp.name} in ${s.lastChamp.year}` : ''
-  return `Of the ${s.teams} teams to start ${s.record} ${span}, ${numberWord(s.champs)} won the title${last}.`
+  return `Of the ${s.teams} teams to start ${s.record} in league history, ${numberWord(s.champs)} won the title${last}.`
 }
 
 // ── The lead story ────────────────────────────────────────────────────────
@@ -270,7 +273,7 @@ function angles(f: RecapFacts, league: string): Angle[] {
     const ev = g.seriesEvent
     if (!ev || !decided(g)) return
     const after = g.series ? seriesFrom(g, W(g).name, g.series) : null
-    const state = after && g.series ? ` ${cap(seriesState(W(g).name, L(g).name, after, g.series.since))}.` : ''
+    const state = after && g.series ? ` ${cap(seriesState(W(g).name, L(g).name, after))}.` : ''
     if (ev.kind === 'snap') {
       out.push({
         weight: 70 + ev.run,
@@ -365,11 +368,11 @@ function angles(f: RecapFacts, league: string): Angle[] {
     const gi = f.games.findIndex((g) => decided(g) && W(g).name === u.winner && L(g).name === u.loser)
     out.push({
       weight: firstLoss ? 52 : 46,
-      headline: firstLoss ? `${u.winner} hands ${u.loser} a first loss` : `${u.winner} upsets ${u.loser}`,
+      headline: firstLoss ? `${u.winner} hands ${u.loser} their first loss` : `${u.winner} upsets ${u.loser}`,
       lede: firstLoss
-        ? `${u.winner} came in at ${u.winnerRecord} and handed ${u.loser} a first loss, ${pts(u.winnerScore)} to ${pts(u.loserScore)}.`
+        ? `${u.winner} came in at ${u.winnerRecord} and handed ${u.loser} their first loss, ${pts(u.winnerScore)} to ${pts(u.loserScore)}.`
         : `${u.winner} came in at ${u.winnerRecord} and beat ${u.loser}, who came in at ${u.loserRecord}, ${pts(u.winnerScore)} to ${pts(u.loserScore)}.`,
-      tail: firstLoss ? `It was the first loss of the season for ${u.loser}.` : `${u.winner} came in at ${u.winnerRecord}, ${u.loser} at ${u.loserRecord}.`,
+      tail: firstLoss ? `It was ${poss(u.loser)} first loss of the season.` : `${u.winner} came in at ${u.winnerRecord}, ${u.loser} at ${u.loserRecord}.`,
       game: gi >= 0 ? gi : null,
       claims: ['upset'],
     })
@@ -625,19 +628,18 @@ function gameStory(f: RecapFacts, g: RecapGame, i: number, claimed: Set<string>,
   if (!claimed.has(`game:${i}:series`)) {
     const ev = g.seriesEvent
     const after = g.series ? seriesFrom(g, w.name, g.series) : null
-    const since = g.series?.since ?? f.year
     if (ev?.kind === 'snap') out.push(`It ended ${poss(l.name)} ${numberWord(ev.run)}-game run in the series.`)
-    else if (ev?.kind === 'extend') out.push(`${w.name} has won ${numberWord(ev.run)} straight in the series${after ? `, ${seriesTail(w.name, l.name, after, since)}` : ''}.`)
+    else if (ev?.kind === 'extend') out.push(`${w.name} has won ${numberWord(ev.run)} straight in the series${after ? `, ${seriesTail(w.name, l.name, after)}` : ''}.`)
     else if (ev?.kind === 'even' && after) out.push(`That evens the series at ${recordStr(after.w, after.l, after.t)}.`)
-    else if (ev?.kind === 'lead' && after) out.push(`${w.name} takes a ${recordStr(after.w, after.l, after.t)} lead in a series that goes back to ${since}.`)
+    else if (ev?.kind === 'lead' && after) out.push(`${w.name} takes a ${recordStr(after.w, after.l, after.t)} lead in the series.`)
     else if (ev?.kind === 'first') out.push('It was their first meeting.')
     else if (g.last && after) {
       out.push(
         g.last.winner === w.name
-          ? `${w.name} also won their last meeting, in ${when(g.last, f.year)}, ${seriesTail(w.name, l.name, after, since)}.`
-          : `${l.name} had won their last meeting, in ${when(g.last, f.year)}. ${cap(seriesState(w.name, l.name, after, since))}.`,
+          ? `${w.name} also won their last meeting, in ${when(g.last, f.year)}, ${seriesTail(w.name, l.name, after)}.`
+          : `${l.name} had won their last meeting, in ${when(g.last, f.year)}. ${cap(seriesState(w.name, l.name, after))}.`,
       )
-    } else if (after) out.push(`${cap(seriesState(w.name, l.name, after, since))}.`)
+    } else if (after) out.push(`${cap(seriesState(w.name, l.name, after))}.`)
   }
 
   // 3. Personal marks. Two of the same kind become one sentence.
@@ -700,13 +702,21 @@ function headliner(games: RecapNextGame[]): RecapNextGame | null {
   return [...ranked].sort((x, y) => x.a.place! + x.b.place! - (y.a.place! + y.b.place!))[0]
 }
 
+// One line of history for a game next week: who leads the series, and who
+// has had the better of it lately, when that says something.
 function previewNote(f: RecapFacts, g: RecapNextGame): string | null {
-  if (g.run && g.run.n >= 3) return `${g.run.name} has won the last ${numberWord(g.run.n)} meetings.`
-  if (g.last?.kind === 'championship') {
-    return `${g.last.winner} won their last meeting, in ${when(g.last, f.year)}.`
+  if (g.last?.kind === 'championship' && g.last.year === f.year - 1) {
+    return `A rematch of last season's final, which ${g.last.winner} won.`
   }
-  if (g.series) return `${cap(seriesState(g.a.name, g.b.name, seriesFrom(g, g.a.name, g.series), g.series.since))}.`
-  return 'First meeting.'
+  if (!g.series) return 'First meeting.'
+  const r = seriesFrom(g, g.a.name, g.series)
+  const leader = r.w > r.l ? g.a.name : r.w < r.l ? g.b.name : null
+  const state = cap(seriesState(g.a.name, g.b.name, r))
+  let form = ''
+  if (g.run && g.run.n >= 3) form = `${g.run.name === leader ? 'and has' : `${g.run.name} has`} won the last ${numberWord(g.run.n)}`
+  else if (g.recent && g.series.w + g.series.l + g.series.t >= 6) form = `${g.recent.name === leader ? 'and has' : `${g.recent.name} has`} won ${numberWord(g.recent.w)} of the last ${numberWord(g.recent.of)}`
+  if (!form) return `${state}.`
+  return form.startsWith('and') ? `${state} ${form}.` : `${state}, but ${form}.`
 }
 
 // ── The edition ───────────────────────────────────────────────────────────
