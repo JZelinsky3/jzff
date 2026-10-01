@@ -94,16 +94,18 @@ export function MobileLibrary({
             </span>
           )}
         </div>
-        {/* Tier pill */}
-        <div className="mlib-tier">
-          {comp ? (
-            <><span className="mlib-tier-icon">★</span> Comp</>
-          ) : subActive ? (
-            <>{subTierName}</>
-          ) : isUDFA ? (
-            <><span className="mlib-tier-icon">★</span> UDFA · {tier1Limit} free</>
-          ) : null}
-        </div>
+        {/* Tier pill: tap it to see every plan. */}
+        {comp || subActive || isUDFA ? (
+          <Link href="/pricing" className="mlib-tier" aria-label="Your plan. See all plans">
+            {comp ? (
+              <><span className="mlib-tier-icon">★</span> Comp</>
+            ) : subActive ? (
+              <>{subTierName}</>
+            ) : (
+              <><span className="mlib-tier-icon">★</span> UDFA · {tier1Limit} free</>
+            )}
+          </Link>
+        ) : null}
       </div>
 
       {/* Most signups arrive on a phone (Instagram especially), so the

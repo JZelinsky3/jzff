@@ -10045,14 +10045,14 @@ body.tsc-hdr-collapsed .mlib-bar {
     white-space: nowrap;
 }
 /* The mono font draws the star on its baseline, low against the capitals
-   beside it. A system font, its own line box and a nudge centre it. */
+   beside it. A system font in its own line box centres it. */
 .mlib-tier-icon {
     font-family: system-ui, -apple-system, sans-serif;
-    font-size: .7rem;
+    font-size: .58rem;
     line-height: 1;
-    position: relative;
-    top: -.06em;
 }
+a.mlib-tier { text-decoration: none; }
+a.mlib-tier:active { background: rgba(232, 200, 137, .12); }
 
 /* ── UDFA explainer ── */
 .mlib-udfa {
@@ -26719,14 +26719,14 @@ body.tsc-hdr-collapsed .mlib-bar {
     white-space: nowrap;
 }
 /* The mono font draws the star on its baseline, low against the capitals
-   beside it. A system font, its own line box and a nudge centre it. */
+   beside it. A system font in its own line box centres it. */
 .mlib-tier-icon {
     font-family: system-ui, -apple-system, sans-serif;
-    font-size: .7rem;
+    font-size: .58rem;
     line-height: 1;
-    position: relative;
-    top: -.06em;
 }
+a.mlib-tier { text-decoration: none; }
+a.mlib-tier:active { background: rgba(232, 200, 137, .12); }
 
 /* ── UDFA explainer ── */
 .mlib-udfa {
