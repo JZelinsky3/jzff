@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     THE WEEKLY RECAP — a single 1080x1350 post.
+
+       ./render.sh recap        writes out/recap.png
+
+     The recap is the league's own newspaper, so the post shows one:
+     the front page lying on top, and the sections behind it stacked
+     so their heads peek out in the stocks they really print on
+     (src/app/leagues/[slug]/recap/recap.module.css, .sBook .sTable
+     .sPicks .sNext). The colours are read off that file, not picked.
+
+     All names are the demo cast. No real league, manager or team
+     name goes on a public post.
+     ============================================================ -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Weekly Recap Post</title>
+<link rel="stylesheet" href="brand.css">
+<style>
+:root {
+  --desk:  #1a1916;
+  --body:  Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+}
+html, body { width: 1080px; height: 1350px; }
+
+.board {
+  width: 1080px;
+  height: 1350px;
+  /* The recap page's own colours: newsprint (#f6f1e4) at the top,
+     turning to its tan desk (#ddd4bf) early, then down to gold kraft. */
+  background: linear-gradient(180deg,
+    #f6f0e2 0%, #ece2cb 16%, #ddd0b0 42%, #cfbb8f 72%, #bea170 100%);
+}
+
+/* Light from above the desk, edges falling off warm, never grey. */
+.lamp {
+  position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(255, 251, 240, .55) 0%, transparent 70%),
+    radial-gradient(ellipse 100% 80% at 50% 55%, transparent 55%, rgba(90, 62, 24, .22) 100%);
+}
+
+/* ── the pitch ─────────────────────────────────────────────── */
+
+.top {
+  position: absolute; left: 72px; right: 72px; top: 28px; z-index: 5;
+  color: #1c1915;
+}
+.toprow {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1.5px solid #1c1915;
+}
+.flag {
+  display: flex; align-items: center; gap: 14px;
+  font-family: var(--sans); font-size: 23px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: #1c1915;
+}
+.flag b {
+  padding: 5px 11px 4px;
+  background: #a3302a; color: #fff;
+  font-size: 18px; font-weight: 800; letter-spacing: .16em;
+}
+.word { font-family: var(--serif); font-size: 32px; color: #1c1915; }
+.word i { color: #a3302a; }
+
+.pitch {
+  margin-top: 30px;
+  font-family: var(--serif); font-weight: 400;
+  font-size: 92px; line-height: .95; white-space: nowrap; letter-spacing: -.018em;
+}
+.pitch i { color: #a3302a; }
+.sub {
+  margin-top: 16px; max-width: 920px;
+  font-family: var(--sans); font-size: 27px; line-height: 1.4;
+  color: #463f35;
+}
+.sub b { color: #a3302a; font-weight: 700; }
+
+/* ── the stack ─────────────────────────────────────────────── */
+
+.sheet {
+  position: absolute; left: 66px; width: 948px; height: 760px;
+  background: var(--paper); color: var(--ink2);
+  box-shadow: 0 -1px 0 rgba(60,40,10,.10), 0 14px 30px rgba(70,46,14,.30);
+  z-index: 10;
+}
+/* Only the head of a back sheet shows, so the head is all it has. */
+.head {
+  height: 48px; padding: 0 30px;
+  display: flex; align-items: center; gap: 18px;
+  border-top: 5px solid var(--red);
+}
+.tag {
+  flex: none;
+  padding: 4px 10px;
+  background: var(--red); color: var(--on-red);
+  font-family: var(--sans); font-size: 16px; font-weight: 800;
+  letter-spacing: .18em; text-transform: uppercase;
+}
+.head h2 {
+  font-family: var(--serif); font-weight: 400; font-size: 34px; line-height: 1;
+  white-space: nowrap;
+}
+.tease {
+  margin-left: auto;
+  font-family: var(--mono); font-size: 22px; color: var(--mute);
+  white-space: nowrap;
+}
+.tease b { color: var(--ink2); font-weight: 700; }
+
+.s-next  { --paper:#1d3a2c; --ink2:#f1ead7; --mute:#a3b2a3; --red:#d8b45e; --on-red:#1d3a2c;
+           top: 383px; transform: rotate(.9deg);  z-index: 11; }
+.s-picks { --paper:#dde6ec; --ink2:#16232d; --mute:#627480; --red:#2c5a7e; --on-red:#fff;
+           top: 431px; transform: rotate(-.6deg); z-index: 12; }
+.s-table { --paper:#f3dfcf; --ink2:#1c1915; --mute:#7a6455; --red:#9b3a26; --on-red:#fff;
+           top: 479px; transform: rotate(.5deg);  z-index: 13; }
+.sheet { height: 520px; }
+.s-book  { --paper:#1e1b17; --ink2:#f3ead6; --mute:#a99e88; --red:#e2b866; --on-red:#1e1b17;
+           top: 527px; transform: rotate(-.4deg); z-index: 14; }
+
+/* ── the front page ────────────────────────────────────────── */
+
+.front {
+  --paper:#f6f1e4; --ink2:#1c1915; --ink-2:#463f35; --mute:#776e5f;
+  --rule:#cdc2a8; --red:#a3302a;
+  position: absolute; left: 50px; width: 980px; top: 575px; height: 490px;
+  transform: rotate(-.8deg);
+  z-index: 15;
+  padding: 20px 40px 0;
+  background: var(--paper); color: var(--ink2);
+  box-shadow: 0 2px 0 rgba(60,40,10,.10), 0 22px 46px rgba(70,46,14,.40);
+}
+.mast { text-align: center; border-top: 4px solid var(--ink2); padding-top: 10px; }
+.mk {
+  font-family: var(--sans); font-size: 17px; font-weight: 700;
+  letter-spacing: .24em; text-transform: uppercase; color: var(--red);
+}
+.np {
+  margin: 2px 0 10px;
+  font-family: var(--serif); font-size: 56px; line-height: 1; letter-spacing: -.01em;
+}
+.dl {
+  display: flex; justify-content: space-between;
+  padding: 7px 0;
+  border-top: 1px solid var(--ink2);
+  border-bottom: 5px double var(--ink2);
+  font-family: var(--sans); font-size: 17px; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2);
+}
+.hl {
+  margin-top: 16px;
+  font-family: var(--serif); font-weight: 400;
+  font-size: 47px; white-space: nowrap; line-height: 1.04; letter-spacing: -.01em;
+}
+.cols {
+  display: grid; grid-template-columns: 1fr 320px; gap: 0 30px;
+  margin-top: 14px;
+}
+.lead {
+  font-family: var(--body); font-size: 24px; line-height: 1.5;
+  padding-right: 30px; border-right: 1px solid var(--rule);
+}
+.lead p::first-letter {
+  float: left; font-family: var(--serif); font-size: 92px; line-height: .8;
+  padding: 6px 10px 0 0; color: var(--red);
+}
+.by {
+  margin-bottom: 12px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--sans); font-size: 15px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+}
+.by span { font-weight: 500; color: var(--mute); }
+
+/* The rail box: one number from the league's whole history. */
+.box {
+  border: 1.5px solid var(--ink2);
+  box-shadow: 4px 4px 0 var(--rule);
+  background: #fffbf2;
+  padding: 12px 18px 14px;
+}
+.box .bh {
+  font-family: var(--sans); font-size: 15px; font-weight: 800;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--red);
+  padding-bottom: 8px; border-bottom: 1px solid var(--rule);
+}
+.box .fig {
+  margin-top: 8px;
+  font-family: var(--serif); font-size: 62px; line-height: 1;
+}
+.box .cap {
+  margin-top: 6px;
+  font-family: var(--body); font-size: 22px; line-height: 1.35;
+}
+.box .old {
+  margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--rule);
+  font-family: var(--mono); font-size: 17px; color: var(--mute);
+}
+
+/* ── the foot: two cards, one for members, one for newcomers ─ */
+
+.foot {
+  position: absolute; left: 66px; right: 66px; bottom: 40px; height: 198px; z-index: 30;
+  display: grid; grid-template-columns: 1fr 1.08fr; gap: 26px;
+}
+.card {
+  position: relative;
+  padding: 20px 28px 0;
+}
+.ctag {
+  display: inline-block;
+  padding: 5px 10px 4px;
+  font-family: var(--sans); font-size: 16px; font-weight: 800;
+  letter-spacing: .16em; text-transform: uppercase;
+}
+.ch {
+  margin-top: 14px;
+  font-family: var(--serif); font-weight: 400; line-height: 1.02;
+}
+.cl {
+  margin-top: 10px;
+  font-family: var(--sans); font-size: 22px; line-height: 1.35;
+}
+
+/* Members: the recap's own boxed story, cream stock, ink rule. */
+.card.mem {
+  background: #fffbf2;
+  color: #1c1915;
+  border: 1.5px solid #1c1915;
+  box-shadow: 5px 5px 0 #b59a68;
+}
+.mem .ctag { background: #ece4d0; color: #463f35; }
+.mem .ch { font-size: 36px; }
+.mem .cl { color: #463f35; }
+.mem .cl b { color: #a3302a; font-weight: 700; }
+.mem svg { position: absolute; top: 20px; right: 24px; width: 40px; height: 40px; }
+
+/* Newcomers: the one dark thing on a light board, so the eye ends here. */
+.card.new {
+  background: linear-gradient(165deg, #2a2520 0%, #1a1714 100%);
+  color: #f6f1e4;
+  border: 1.5px solid #1a1714;
+  box-shadow: 6px 6px 0 #a3302a;
+}
+.new .ctag { background: #e8c889; color: #1a1714; }
+.new .ch { font-size: 44px; margin-top: 12px; }
+.new .ch i { color: #e8c889; }
+.new .cl { color: #d6cbb3; margin-top: 8px; }
+.url {
+  display: inline-block; margin-top: 10px;
+  padding: 6px 14px 5px;
+  background: #e8c889; color: #1a1714;
+  font-family: var(--mono); font-size: 21px; font-weight: 700; letter-spacing: .02em;
+}
+
+/* The stamp hanging off the corner, the way the clipping carries its ink. */
+.stamp {
+  position: absolute; right: -18px; top: -36px;
+  width: 104px; height: 104px; border-radius: 50%;
+  background: #a3302a; color: #fbeee3;
+  border: 3px solid #fbeee3; outline: 2px solid #a3302a;
+  box-shadow: 0 8px 18px rgba(0,0,0,.35);
+  transform: rotate(-12deg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-family: var(--sans); font-weight: 800; text-transform: uppercase; line-height: 1;
+  padding-bottom: 14px;
+}
+.stamp .n { font-family: var(--serif); font-weight: 400; font-size: 42px; }
+.stamp .t { margin-top: 4px; font-size: 12px; letter-spacing: .14em; }
+</style>
+</head>
+<body>
+<div class="board">
+  <div class="lamp"></div>
+
+  <div class="top">
+    <div class="toprow">
+      <div class="flag"><b>New</b>The Weekly Recap</div>
+      <div class="word">The Sunday <i>Chronicle.</i></div>
+    </div>
+    <div class="pitch">Your League's <i>Chronicle.</i></div>
+    <div class="sub">A real newspaper, out <b>every Tuesday.</b> Every game written up as a story, with your league's whole history behind it: the records broken, the streaks snapped, and who's up next.</div>
+  </div>
+
+  <!-- back to front: each section's head peeks out in its own stock -->
+  <div class="sheet s-next">
+    <div class="head"><span class="tag">Next week</span><h2>Coming Up: Week 5</h2>
+      <span class="tease"><b>Bryce 4-0</b> v <b>Cole 3-1</b></span></div>
+  </div>
+  <div class="sheet s-picks">
+    <div class="head"><span class="tag">Pick'ems</span><h2>Who Called It</h2>
+      <span class="tease"><b>Matt</b> went 6 for 6</span></div>
+  </div>
+  <div class="sheet s-table">
+    <div class="head"><span class="tag">The table</span><h2>The Standings</h2>
+      <span class="tease"><b>1</b> Bryce 4-0 &nbsp;<b>2</b> Cole 3-1 &nbsp;<b>3</b> Drew 3-1</span></div>
+  </div>
+  <div class="sheet s-book">
+    <div class="head"><span class="tag">History</span><h2>The Record Book</h2>
+      <span class="tease">Lowest score since 2021: <b>Vince, 61.4</b></span></div>
+  </div>
+
+  <div class="front">
+    <div class="mast">
+      <div class="mk">The week 4 paper</div>
+      <div class="np">The Lakeshore League</div>
+      <div class="dl"><span>Tuesday, September 29, 2026</span><span>Week 4</span></div>
+    </div>
+    <div class="hl">Drew snaps five-game skid against Owen</div>
+    <div class="cols">
+      <div class="lead">
+        <div class="by">By the Chronicle staff <span>&middot; Week 4</span></div>
+        <p>Drew had lost five straight to Owen. On Sunday he put up 168.2, the top score of the week, and won by 31. It is his first win in the series since 2022.</p>
+      </div>
+      <div class="box">
+        <div class="bh">The season so far</div>
+        <div class="fig">541.6</div>
+        <div class="cap">Bryce through four weeks, a league record.</div>
+        <div class="old">Was 528.0, Grant in 2021</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="card mem">
+      <span class="ctag">Already a member</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#a3302a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="1.5"/><path d="M3.5 6.5 12 13l8.5-6.5"/></svg>
+      <div class="ch">New every Tuesday.</div>
+      <div class="cl">Read it on your league page or in <b>your commissioner's inbox.</b></div>
+    </div>
+    <div class="card new">
+      <span class="ctag">New here</span>
+      <div class="ch">Sign up <i>today.</i></div>
+      <div class="cl">Get the full paper free for 10 days.</div>
+      <div class="url">thesundaychronicle.app</div>
+      <div class="stamp"><span class="n">10</span><span class="t">Days free</span></div>
+    </div>
+  </div>
+
+  <div class="l-grain"></div>
+</div>
+</body>
+</html>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { verifyUnsubscribeToken } from '@/lib/recap/links'
+import { isSubscriberToken, verifySubscriberToken, verifyUnsubscribeToken } from '@/lib/recap/links'
 import { suppressEmail, unsuppressEmail, userEmail } from '@/lib/recap/suppress'
+import { activateSubscriber, subscriberById, unsubscribeSubscriber } from '@/lib/recap/subscribers'
 
 // Two callers:
 //
@@ -9,6 +10,10 @@ import { suppressEmail, unsuppressEmail, userEmail } from '@/lib/recap/suppress'
 //     with the token in the query string, and expect a 2xx. No redirect.
 //  2. The form on /recap/unsubscribe, which posts `action` (stop | resume)
 //     and gets sent back to the page to see the result.
+//
+// A commissioner's token turns recap email off for their address. A
+// mailing-list member's token (sub.<id>.<sig>) takes that one address off
+// that one league's list and nothing else.
 //
 // There is no GET handler on purpose. Link scanners and inbox previews fetch
 // every URL in an email; if a GET unsubscribed, those would unsubscribe
@@ -34,13 +39,21 @@ export async function POST(req: Request) {
     }
   }
 
-  const userId = verifyUnsubscribeToken(token)
-  if (!userId) return NextResponse.json({ error: 'invalid link' }, { status: 400 })
-  const user = await userEmail(userId)
-  if (!user) return NextResponse.json({ error: 'no such account' }, { status: 404 })
+  if (isSubscriberToken(token)) {
+    const id = verifySubscriberToken(token)
+    if (!id) return NextResponse.json({ error: 'invalid link' }, { status: 400 })
+    if (!(await subscriberById(id))) return NextResponse.json({ error: 'no such signup' }, { status: 404 })
+    if (action === 'resume') await activateSubscriber(id)
+    else await unsubscribeSubscriber(id)
+  } else {
+    const userId = verifyUnsubscribeToken(token)
+    if (!userId) return NextResponse.json({ error: 'invalid link' }, { status: 400 })
+    const user = await userEmail(userId)
+    if (!user) return NextResponse.json({ error: 'no such account' }, { status: 404 })
 
-  if (action === 'resume') await unsuppressEmail(user.email)
-  else await suppressEmail(user.email, 'unsubscribe')
+    if (action === 'resume') await unsuppressEmail(user.email)
+    else await suppressEmail(user.email, 'unsubscribe')
+  }
 
   if (!fromPage) return new NextResponse('Unsubscribed from weekly recaps.', { status: 200 })
 

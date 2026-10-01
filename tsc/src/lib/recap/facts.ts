@@ -18,7 +18,8 @@
 //           next week's slate
 //   rookie  + the record book (history ranks, start history, a year ago),
 //           power rankings and odds, pick'ems, milestones, the players
-//           behind each result, next week's lines
+//           behind each result, starters against their projections,
+//           next week's lines
 //   full    + trades, trade verdicts
 // A free league's facts never contain the paid sections at all, so there is
 // nothing on its page or in its email to unlock.
@@ -33,6 +34,8 @@ import { getLeagueBundle } from '@/lib/leagueBundleCache'
 import { commishRulesFor, effectivePlayoffRounds } from '@/lib/seasonRules'
 import { weekOverAt } from '@/lib/nflClock'
 import { lineupWeekEfficiency } from '@/lib/export/pams'
+import { sleeper } from '@/lib/platforms/sleeper'
+import { scoreGame } from '@/lib/scoring'
 
 // ── Tiers ─────────────────────────────────────────────────────────────────
 
@@ -53,7 +56,7 @@ export function recapSections(tier: RecapTier): { paid: boolean; veteran: boolea
 
 // ── Shape ─────────────────────────────────────────────────────────────────
 
-export const RECAP_FACTS_VERSION = 7
+export const RECAP_FACTS_VERSION = 8
 
 // An all-time series between two people, from one side's point of view.
 export type RecapSeries = { w: number; l: number; t: number; since: number }
@@ -289,6 +292,10 @@ export type RecapPickems = {
 
 export type RecapMilestone = { name: string; text: string }
 
+// A starter's points against what the platform projected going into the
+// week. diff is points minus projection.
+export type RecapProjRow = { player: string; pos: string | null; manager: string; points: number; proj: number; diff: number }
+
 export type RecapTradeAsset = { label: string; pos: string | null; team: string | null }
 
 export type RecapTrade = {
@@ -326,7 +333,7 @@ export type RecapNext = {
 }
 
 export type RecapFacts = {
-  v: 7
+  v: 8
   generatedAt: string
   league: { id: string; slug: string; name: string; abbr: string | null }
   year: number
@@ -366,6 +373,9 @@ export type RecapFacts = {
   playoffTeams?: number | null
   pickems?: RecapPickems | null
   milestones?: RecapMilestone[]
+  // The starters who beat, and missed, their projections by the most. No
+  // kickers or defenses. Null when there were no projections to compare.
+  projections?: { over: RecapProjRow[]; under: RecapProjRow[] } | null
 
   // Veteran and up.
   trades?: RecapTrade[]
@@ -419,6 +429,7 @@ type MatchupRow = {
 type SeasonRow = {
   id: string
   year: number
+  external_id: string | null
   playoff_weeks: number[] | null
   settings: Record<string, unknown> | null
   champion_manager_id: string | null
@@ -464,14 +475,14 @@ export async function buildRecapFacts(args: {
 
   const { data: league } = await db
     .from('leagues')
-    .select('id, name, slug, abbreviation, settings')
+    .select('id, name, slug, abbreviation, settings, platform')
     .eq('id', leagueId)
     .maybeSingle()
   if (!league) return { status: 'no-league' }
 
   const { data: seasonRows } = await db
     .from('seasons')
-    .select('id, year, playoff_weeks, settings, champion_manager_id')
+    .select('id, year, external_id, playoff_weeks, settings, champion_manager_id')
     .eq('league_id', leagueId)
   const seasons = (seasonRows ?? []) as SeasonRow[]
   const season = seasons.find((s) => s.year === year)
@@ -943,7 +954,7 @@ export async function buildRecapFacts(args: {
     : null
 
   const facts: RecapFacts = {
-    v: 7,
+    v: 8,
     generatedAt: new Date().toISOString(),
     league: {
       id: league.id as string,
@@ -1089,6 +1100,13 @@ export async function buildRecapFacts(args: {
     }
     facts.star = lineups.star ? { ...lineups.star.player, manager: nameOf(lineups.star.managerId) } : null
   }
+  facts.projections = await soft(
+    'projections',
+    buildProjections({
+      db, rows: lineupRows, played: seen, year, week, nameOf,
+      leagueId, leaguePlatform: (league.platform as string | null) ?? null, seasonExternalId: season.external_id,
+    }),
+  )
 
   // Next week's lines, off the matchup preview, which the bundle builds for
   // the week about to be played. Only trusted when that is the week after
@@ -2052,6 +2070,116 @@ function buildLineups(
   // week than the one people played. Say nothing rather than half a thing.
   if (byTeam.size < Math.max(2, played.size / 2)) return null
   return { byTeam, star }
+}
+
+// ── Projections ───────────────────────────────────────────────────────────
+
+// Kickers, defenses and IDP are left out: nobody cares that a kicker beat
+// his projection by six.
+const PROJ_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE'])
+const PROJ_ROWS = 5
+
+// Every starter's points against the projection the platform had going into
+// the week. ESPN and Yahoo hand us a projection with the lineup. Sleeper
+// doesn't, so for a Sleeper season we take Sleeper's own weekly projection
+// (the RotoWire feed its app shows) and score its projected stat line with
+// the league's scoring settings, the same way the app does. TE premium and
+// the rest come along for free.
+async function buildProjections(args: {
+  db: ReturnType<typeof createAdminClient>
+  rows: LineupRow[] | null
+  played: Set<string>
+  year: number
+  week: number
+  nameOf: (id: string) => string
+  leagueId: string
+  leaguePlatform: string | null
+  seasonExternalId: string | null
+}): Promise<{ over: RecapProjRow[]; under: RecapProjRow[] } | null> {
+  const starters = (args.rows ?? []).filter(
+    (r) =>
+      r.is_starter &&
+      r.player_name &&
+      args.played.has(r.manager_id) &&
+      PROJ_POSITIONS.has((r.position ?? '').toUpperCase()) &&
+      r.points != null,
+  )
+  if (!starters.length) return null
+
+  const projOf = new Map<LineupRow, number>()
+  const withPlatformProj = starters.filter((r) => r.proj_points != null)
+  if (withPlatformProj.length >= starters.length / 2) {
+    for (const r of withPlatformProj) projOf.set(r, Number(r.proj_points))
+  } else {
+    const sleeperId = await sleeperLeagueIdFor(args)
+    if (!sleeperId) return null
+    const [lg, projected] = await Promise.all([sleeper.league(sleeperId), sleeperWeekProjections(args.year, args.week)])
+    const scoring = lg?.scoring_settings
+    if (!scoring || !projected.size) return null
+    for (const r of starters) {
+      const stats = projected.get(r.player_external_id)
+      if (stats) projOf.set(r, scoreGame(scoring, stats, (r.position ?? '').toUpperCase()))
+    }
+  }
+  // Same rule as the lineups: half the league unaccounted for means the
+  // projections describe some other set of players.
+  const teams = new Set([...projOf.keys()].map((r) => r.manager_id))
+  if (teams.size < Math.max(2, args.played.size / 2)) return null
+
+  const all: RecapProjRow[] = []
+  for (const [r, proj] of projOf) {
+    // No projection means out, on bye or unknown to the feed. A diff against
+    // zero says nothing about how the player played.
+    if (!(proj > 0)) continue
+    const points = round2(Number(r.points))
+    all.push({
+      player: r.player_name!,
+      pos: (r.position ?? '').toUpperCase() || null,
+      manager: args.nameOf(r.manager_id),
+      points,
+      proj: round2(proj),
+      diff: round2(points - proj),
+    })
+  }
+  const over = [...all].filter((x) => x.diff > 0).sort((a, b) => b.diff - a.diff).slice(0, PROJ_ROWS)
+  const under = [...all].filter((x) => x.diff < 0).sort((a, b) => a.diff - b.diff).slice(0, PROJ_ROWS)
+  return over.length || under.length ? { over, under } : null
+}
+
+// The Sleeper league id for this season, when this season was played on
+// Sleeper. pams is an NFL.com league with a Sleeper source for 2026, so the
+// league's own platform isn't enough; the source that covers the year says.
+async function sleeperLeagueIdFor(args: {
+  db: ReturnType<typeof createAdminClient>
+  leagueId: string
+  leaguePlatform: string | null
+  seasonExternalId: string | null
+  year: number
+}): Promise<string | null> {
+  if (!args.seasonExternalId) return null
+  if (args.leaguePlatform === 'sleeper') return args.seasonExternalId
+  const { data } = await args.db
+    .from('league_sources')
+    .select('settings')
+    .eq('league_id', args.leagueId)
+    .eq('platform', 'sleeper')
+  const covers = (data ?? []).some((s) => {
+    const st = s.settings as { season_start?: number; season_end?: number } | null
+    return (st?.season_start == null || st.season_start <= args.year) && (st?.season_end == null || st.season_end >= args.year)
+  })
+  return covers ? args.seasonExternalId : null
+}
+
+async function sleeperWeekProjections(year: number, week: number): Promise<Map<string, Record<string, number>>> {
+  const pos = [...PROJ_POSITIONS].map((p) => `position%5B%5D=${p}`).join('&')
+  const res = await fetch(`https://api.sleeper.com/projections/nfl/${year}/${week}?season_type=regular&${pos}`, {
+    cache: 'no-store',
+  })
+  if (!res.ok) throw new Error(`Sleeper projections ${year} week ${week}: ${res.status}`)
+  const rows = (await res.json()) as { player_id?: string; stats?: Record<string, number> }[]
+  const out = new Map<string, Record<string, number>>()
+  for (const r of Array.isArray(rows) ? rows : []) if (r.player_id && r.stats) out.set(String(r.player_id), r.stats)
+  return out
 }
 
 // ── Trades ────────────────────────────────────────────────────────────────

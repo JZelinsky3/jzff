@@ -1,8 +1,10 @@
 /* The weekly recap, printed as the league's paper. The front page is cream
    newsprint; every section after it is its own stock (the games on a
-   lighter sheet with each story boxed, the record book in black and gold,
-   the standings on salmon, pick'ems on blue, the wire on kraft, next week in
-   green), so a change of topic is visible at a glance. Each section just
+   lighter sheet with each story boxed, the projections on grey-violet, the
+   record book in black and gold, the season so far on manila, the
+   standings on salmon, pick'ems on blue, the wire on kraft, next week in
+   green), so a change of topic is visible at a glance. The back page goes
+   back to the front page's cream, so the paper is bookended. Each section just
    redefines the house tokens (--paper, --ink, --rule, --red...) and every
    piece inside reads them.
 
@@ -100,11 +102,6 @@
 .viewLeague:active {
   opacity: 0.85;
 }
-.viewLeagueBig {
-  padding: 0.95rem 1.4rem;
-  font-size: 1rem;
-  text-align: center;
-}
 
 /* ── Masthead ────────────────────────────────────────────────────────── */
 
@@ -144,6 +141,10 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-2);
+}
+.volume {
+  font-weight: 700;
+  color: var(--ink);
 }
 .emptyNote {
   font-size: 1.15rem;
@@ -494,6 +495,28 @@
   --rule: #c2a77d;
   --red: #7a4a1c;
 }
+.sProj {
+  --paper: #e3e0ea;
+  --paper-2: #d5d0e0;
+  --card: #f4f2f8;
+  --ink: #1b1826;
+  --ink-2: #423d55;
+  --mute: #6b6580;
+  --rule: #bdb6cc;
+  --red: #4f3a86;
+}
+/* Manila, so the running totals read as their own page rather than more
+   rows of the black record book above them or the salmon table below. */
+.sSeason {
+  --paper: #ecdca8;
+  --paper-2: #e2cd8e;
+  --card: #f7eed2;
+  --ink: #231b0c;
+  --ink-2: #4d3f22;
+  --mute: #7a6638;
+  --rule: #cbb377;
+  --red: #8a3b12;
+}
 .sNext {
   --paper: #1d3a2c;
   --paper-2: #264a39;
@@ -760,6 +783,87 @@
 .milestones li::before {
   content: '★ ';
   color: var(--red);
+}
+
+/* ── Over and under: starters against their projections ──────────────── */
+
+.projGrid {
+  display: grid;
+  gap: 1.2rem;
+}
+.projCol {
+  background: var(--card);
+  border: 1px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--rule);
+}
+.projHead {
+  padding: 0.6rem 0.9rem 0.5rem;
+  border-bottom: 2px solid var(--ink);
+  font-family: var(--rc-sans);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.projList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.projRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 4.6rem;
+  gap: 0.8rem;
+  align-items: center;
+  padding: 0.6rem 0.9rem;
+}
+.projRow + .projRow {
+  border-top: 1px solid var(--rule);
+}
+.projWho {
+  display: grid;
+  min-width: 0;
+}
+.projName {
+  font-family: var(--rc-display);
+  font-size: 1.18rem;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.projMeta {
+  font-family: var(--rc-sans);
+  font-size: 0.74rem;
+  color: var(--mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.projLine {
+  display: grid;
+  justify-items: end;
+  font-family: var(--rc-mono);
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+}
+.projLine small {
+  font-size: 0.68rem;
+  color: var(--mute);
+}
+.projDiff {
+  justify-self: end;
+  font-family: var(--rc-mono);
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.projUp {
+  color: var(--up);
+}
+.projDown {
+  color: var(--down);
 }
 
 /* ── Standings ───────────────────────────────────────────────────────── */
@@ -1169,40 +1273,234 @@
   line-height: 1.55;
 }
 
-/* ── Footer ──────────────────────────────────────────────────────────── */
+/* ── The back page ───────────────────────────────────────────────────── */
 
-.foot {
-  margin-top: 2rem;
-  padding-top: 1.4rem;
-  border-top: 4px solid var(--ink);
-}
-.footActions {
+.back {
+  margin: 2.2rem calc(-1 * var(--gutter)) 0;
+  padding: 1.6rem var(--gutter) 0.4rem;
+  border-top: 6px double var(--ink);
   display: grid;
-  gap: 0.6rem;
+  gap: 1.4rem;
 }
-.shareBtn {
+
+/* The mailing list, as a clip-out subscription coupon: a dashed cut line
+   around a card with a hairline inside it. */
+.coupon {
+  padding: 1.3rem 1.2rem 1.2rem;
+  background: var(--card);
+  border: 2px dashed var(--ink);
+  box-shadow: inset 0 0 0 6px var(--card), inset 0 0 0 7px var(--rule);
+  scroll-margin-top: 3.5rem;
+}
+.couponTag {
+  display: inline-block;
+  padding: 0.18rem 0.5rem;
+  background: var(--red);
+  color: var(--on-red);
+  font-family: var(--rc-sans);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.couponTitle {
+  margin: 0.7rem 0 0.5rem;
+  font-family: var(--rc-display);
+  font-weight: 400;
+  font-size: clamp(1.75rem, 6.4vw, 2.5rem);
+  line-height: 1.05;
+}
+.couponText {
+  max-width: 40rem;
+  margin: 0 0 1rem;
+  font-size: 1.02rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.couponForm {
+  display: grid;
+  gap: 0.5rem;
+  max-width: 34rem;
+}
+.couponForm input[type='email'] {
+  min-width: 0;
+  padding: 0.8rem 0.85rem;
+  font-family: var(--rc-sans);
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+}
+.couponForm input[type='email']:focus {
+  outline: 2px solid var(--red);
+  outline-offset: 1px;
+}
+.couponForm button {
+  padding: 0.8rem 1.3rem;
   font-family: var(--rc-sans);
   font-size: 0.95rem;
-  font-weight: 700;
-  padding: 0.9rem 1.2rem;
-  background: transparent;
-  color: var(--ink);
+  font-weight: 800;
+  color: var(--paper);
+  background: var(--ink);
   border: 1px solid var(--ink);
   border-radius: 2px;
   cursor: pointer;
 }
-.footNav {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0.6rem 1.2rem;
-  margin-top: 1.2rem;
-  font-family: var(--rc-sans);
-  font-size: 0.86rem;
+.couponForm button:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
-.footNav a {
+.couponHint,
+.couponError {
+  margin: 0.6rem 0 0;
+  font-family: var(--rc-sans);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--mute);
+}
+.couponError {
+  color: var(--red);
+  font-weight: 600;
+}
+.couponDone p {
+  margin: 0 0 0.4rem;
+  font-size: 1.02rem;
+  line-height: 1.55;
+}
+.srOnly {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Two tiles: pass it on (ink, gold button) and the almanac (card, ink
+   button). */
+.backTiles {
+  display: grid;
+  gap: 1rem;
+}
+.backTile {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+  justify-items: start;
+  padding: 1.1rem 1.15rem 1.2rem;
+  background: var(--card);
+  color: var(--ink) !important;
+  border: 1px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--rule);
+  text-decoration: none;
+}
+.backTile p {
+  margin: 0 0 0.6rem;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.backTileInk {
+  --ink: #f4ebd8;
+  --ink-2: #cfc4ad;
+  background: #1c1915;
+  border-color: #1c1915;
+  box-shadow: 3px 3px 0 var(--red);
+}
+.backKicker {
+  font-family: var(--rc-sans);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.backTileInk .backKicker {
+  color: #e2b866;
+}
+.backTitle {
+  margin: 0 0 0.15rem;
+  font-family: var(--rc-display);
+  font-weight: 400;
+  font-size: 1.65rem;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.backBtnGold,
+.backBtnInk {
+  margin-top: auto;
+  padding: 0.75rem 1.15rem;
+  font-family: var(--rc-sans);
+  font-size: 0.9rem;
+  font-weight: 800;
+  border-radius: 2px;
+}
+.backBtnGold {
+  color: #1c1915;
+  background: #e2b866;
+  border: 0;
+  cursor: pointer;
+}
+.backBtnInk {
+  color: var(--paper);
+  background: var(--ink);
+}
+.backTile:not(.backTileInk):hover .backBtnInk,
+.backBtnGold:hover {
+  filter: brightness(1.08);
+}
+
+/* The index: where else to go, as newspaper jump lines. */
+.backIndex {
+  display: grid;
+  border-top: 2px solid var(--ink);
+}
+.backIndex a {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--rc-display);
+  font-size: 1.2rem;
+  line-height: 1.2;
+  text-decoration: none;
+}
+.backIndex a:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+.backIndex small {
+  font-family: var(--rc-sans);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.colophon {
+  padding: 0.4rem 0 0;
+  text-align: center;
+}
+.colophonName {
+  display: inline-block;
+  padding: 0 1rem;
+  font-family: var(--rc-display);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.colophon p {
+  margin: 0.55rem auto 0;
+  max-width: 36rem;
+  font-family: var(--rc-sans);
+  font-size: 0.72rem;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  color: var(--mute);
 }
 
 /* ── Wider screens ───────────────────────────────────────────────────── */
@@ -1281,9 +1579,24 @@
   .previewLead {
     grid-column: 1 / -1;
   }
-  .footActions {
-    grid-auto-flow: column;
-    justify-content: start;
+  .projGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.6rem;
+    align-items: start;
+  }
+  .couponForm {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .coupon {
+    padding: 1.6rem 1.8rem 1.5rem;
+  }
+  .backTiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.4rem;
+  }
+  .backIndex {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 2rem;
   }
 }
 

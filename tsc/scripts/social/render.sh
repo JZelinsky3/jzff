@@ -178,6 +178,14 @@ case "${1:-}" in
     done
     ;;
 
+  # ./render.sh recap
+  #
+  # The single Weekly Recap post.
+  recap)
+    echo "Rendering the recap post:"
+    shot "file://$HERE/recap.html" "recap" 1080 1350
+    ;;
+
   pitch)
     shift
     SLIDES=("$@")

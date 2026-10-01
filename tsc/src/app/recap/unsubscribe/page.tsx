@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { verifyUnsubscribeToken } from '@/lib/recap/links'
+import { isSubscriberToken, verifySubscriberToken, verifyUnsubscribeToken } from '@/lib/recap/links'
 import { suppressionFor, userEmail } from '@/lib/recap/suppress'
+import { subscriberById } from '@/lib/recap/subscribers'
 import styles from './unsubscribe.module.css'
 
 export const dynamic = 'force-dynamic'
@@ -26,6 +27,7 @@ export default async function RecapUnsubscribePage({
   searchParams: Promise<{ t?: string; done?: string }>
 }) {
   const { t, done } = await searchParams
+  if (isSubscriberToken(t)) return <ListMember t={t!} done={done} />
   const userId = verifyUnsubscribeToken(t)
   const user = userId ? await userEmail(userId) : null
 
@@ -93,6 +95,63 @@ export default async function RecapUnsubscribePage({
           </>
         )}
         <p className={styles.foot}><Link href="/account/">Account settings</Link></p>
+      </div>
+    </main>
+  )
+}
+
+// A mailing-list member: off this one league's list, or back on it.
+async function ListMember({ t, done }: { t: string; done?: string }) {
+  const id = verifySubscriberToken(t)
+  const sub = id ? await subscriberById(id) : null
+  if (!sub) {
+    return (
+      <main className={styles.page}>
+        <div className={styles.card}>
+          <h1>That link didn&apos;t work</h1>
+          <p>It may have been cut off when it was copied.</p>
+        </div>
+      </main>
+    )
+  }
+  const on = sub.status === 'active'
+  return (
+    <main className={styles.page}>
+      <div className={styles.card}>
+        <div className={styles.kicker}>The Sunday Chronicle</div>
+        {on ? (
+          <>
+            <h1>{done === 'resume' ? "You're back on the list" : `Leave the ${sub.league.name} mailing list?`}</h1>
+            <p>
+              {done === 'resume'
+                ? `The ${sub.league.name} paper will come to ${mask(sub.email)} again after next Monday night.`
+                : `One email a week to ${mask(sub.email)}, the Tuesday after Monday night. Other leagues' lists you are on aren't affected.`}
+            </p>
+            {done !== 'resume' ? (
+              <form method="post" action="/api/recap/unsubscribe/">
+                <input type="hidden" name="t" value={t} />
+                <input type="hidden" name="action" value="stop" />
+                <button type="submit" className={styles.primary}>Leave the list</button>
+              </form>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <h1>You&apos;re off the list</h1>
+            <p>
+              {done === 'stop' ? 'Done. ' : ''}We won&apos;t send the {sub.league.name} paper to {mask(sub.email)}. The
+              recap pages are still there whenever you want them.
+            </p>
+            <form method="post" action="/api/recap/unsubscribe/">
+              <input type="hidden" name="t" value={t} />
+              <input type="hidden" name="action" value="resume" />
+              <button type="submit" className={styles.secondary}>Put me back on</button>
+            </form>
+          </>
+        )}
+        <p className={styles.foot}>
+          <Link href={`/leagues/${sub.league.slug}/recap/`}>This week&apos;s paper</Link>
+        </p>
       </div>
     </main>
   )

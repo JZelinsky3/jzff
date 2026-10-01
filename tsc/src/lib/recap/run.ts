@@ -20,14 +20,20 @@
 //     called. A second run hits the unique constraint and skips, so a recap
 //     can go out at most once. A send that dies halfway stays 'pending' and
 //     is not retried.
+//  6. The league's mailing list (./subscribers.ts) gets the same email under
+//     the same rules: same mode gate, a (recap, subscriber) claim first, and
+//     no copy to a bounced or complained address. Only confirmed addresses
+//     are on it.
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getLockReason } from '@/lib/leagueTier'
 import { getNflClock, weekIsFinal } from '@/lib/nflClock'
 import { buildRecapFacts, recapTierFor, RECAP_FACTS_VERSION, type RecapFacts } from './facts'
 import { recapSubject, templateIntro, writeIntro } from './intro'
-import { renderRecapEmail } from './email'
-import { SITE_URL, recapPageUrl, unsubscribeApiUrl, unsubscribePageUrl, unsubscribeToken } from './links'
+import { renderRecapEmail, type RecapAudience } from './email'
+import { SITE_URL, recapPageUrl, subscriberToken, unsubscribePageUrl, unsubscribeToken } from './links'
+import { sendViaResend } from './resend'
+import { activeSubscribers } from './subscribers'
 
 export type RecapMode = 'off' | 'admin' | 'all'
 
@@ -220,7 +226,10 @@ async function runLeague(
     for (const adminId of ctx.admins) {
       const email = await confirmedEmail(db, adminId)
       if (!email) continue
-      const r = await sendRecapEmail({ facts, intro, subject: `[Preview] ${subject}`, userId: adminId, to: email, idempotencyKey: null })
+      const r = await sendRecapEmail({
+        facts, intro, subject: `[Preview] ${subject}`, to: email, audience: 'owner',
+        unsubToken: unsubscribeToken(adminId), idempotencyKey: null,
+      })
       sent.push(r.ok ? email : `${email} failed: ${r.error}`)
     }
     return out('preview', sent.join('; ') || 'no admin with a confirmed email')
@@ -228,40 +237,80 @@ async function runLeague(
 
   if (existing?.status === 'sent') return out('rebuilt', introInfo)
   if (ctx.mode === 'off') return out('built', `RECAP_SEND_MODE=off. ${introInfo}`)
-  if (!league.owner_id) return out('built', 'league has no owner')
-  if (ctx.mode === 'admin' && !ctx.admins.has(league.owner_id)) {
+  if (ctx.mode === 'admin' && (!league.owner_id || !ctx.admins.has(league.owner_id))) {
     return out('built', `admin-only mode, owner is not a site admin. ${introInfo}`)
   }
 
-  const recipient = await eligibleRecipient(db, league.owner_id)
-  if (!recipient.ok) return out('built', `not sent: ${recipient.reason}`)
-
-  // Claim the send first. The unique (recap_id, user_id) constraint is what
-  // makes a second run skip instead of emailing twice.
-  const { error: claimErr } = await db
-    .from('recap_sends')
-    .insert({ recap_id: recapId, user_id: league.owner_id, email: recipient.email, status: 'pending' })
-  if (claimErr) {
-    if (claimErr.code === '23505') return out('already-sent')
-    return out('error', `could not claim the send: ${claimErr.message}`)
+  // ── The commissioner ──
+  let ownerNote: string
+  let ownerEmail: string | null = null
+  let anySent = false
+  if (!league.owner_id) ownerNote = 'league has no owner'
+  else {
+    const recipient = await eligibleRecipient(db, league.owner_id)
+    if (!recipient.ok) ownerNote = `owner not sent: ${recipient.reason}`
+    else {
+      ownerEmail = recipient.email
+      // Claim the send first. The unique (recap_id, user_id) constraint is
+      // what makes a second run skip instead of emailing twice.
+      const { error: claimErr } = await db
+        .from('recap_sends')
+        .insert({ recap_id: recapId, user_id: league.owner_id, email: recipient.email, status: 'pending' })
+      if (claimErr) {
+        ownerNote = claimErr.code === '23505' ? 'owner already sent' : `could not claim the owner send: ${claimErr.message}`
+      } else {
+        const result = await sendRecapEmail({
+          facts, intro, subject, to: recipient.email, audience: 'owner',
+          unsubToken: unsubscribeToken(league.owner_id),
+          idempotencyKey: `recap-${recapId}-${league.owner_id}`,
+        })
+        await db
+          .from('recap_sends')
+          .update(sendUpdate(result))
+          .eq('recap_id', recapId)
+          .eq('user_id', league.owner_id)
+        ownerNote = result.ok ? 'owner sent' : `owner send failed: ${result.error}`
+        anySent ||= result.ok
+      }
+    }
   }
 
-  const result = await sendRecapEmail({
-    facts, intro, subject, userId: league.owner_id, to: recipient.email,
-    idempotencyKey: `recap-${recapId}-${league.owner_id}`,
-  })
-  const now = new Date().toISOString()
-  await db
-    .from('recap_sends')
-    .update(result.ok
-      ? { status: 'sent', resend_id: result.id, updated_at: now }
-      : { status: 'failed', error: result.error.slice(0, 500), updated_at: now })
-    .eq('recap_id', recapId)
-    .eq('user_id', league.owner_id)
-  if (!result.ok) return out('send-failed', result.error)
+  // ── The league's mailing list ──
+  const subs = await activeSubscribers(db, league.id)
+  let subsSent = 0
+  let subsFailed = 0
+  for (const sub of subs) {
+    if (sub.email === ownerEmail) continue
+    const { data: suppressed } = await db.from('email_suppressions').select('reason').eq('email', sub.email).maybeSingle()
+    if (suppressed && (suppressed.reason === 'bounce' || suppressed.reason === 'complaint')) continue
+    const { error: claimErr } = await db
+      .from('recap_sends')
+      .insert({ recap_id: recapId, subscriber_id: sub.id, email: sub.email, status: 'pending' })
+    if (claimErr) continue
+    const result = await sendRecapEmail({
+      facts, intro, subject, to: sub.email, audience: 'subscriber',
+      unsubToken: subscriberToken(sub.id),
+      idempotencyKey: `recap-${recapId}-sub-${sub.id}`,
+    })
+    await db.from('recap_sends').update(sendUpdate(result)).eq('recap_id', recapId).eq('subscriber_id', sub.id)
+    if (result.ok) subsSent++
+    else subsFailed++
+  }
+  anySent ||= subsSent > 0
 
-  await db.from('weekly_recaps').update({ status: 'sent', updated_at: now }).eq('id', recapId)
-  return out('sent', introInfo)
+  const listNote = subs.length ? `, list ${subsSent} sent${subsFailed ? `, ${subsFailed} failed` : ''}` : ''
+  if (anySent) {
+    await db.from('weekly_recaps').update({ status: 'sent', updated_at: new Date().toISOString() }).eq('id', recapId)
+    return out('sent', `${ownerNote}${listNote}. ${introInfo}`)
+  }
+  return out(ownerNote.startsWith('owner send failed') ? 'send-failed' : 'built', `${ownerNote}${listNote}`)
+}
+
+function sendUpdate(result: { ok: true; id: string | null } | { ok: false; error: string }) {
+  const now = new Date().toISOString()
+  return result.ok
+    ? { status: 'sent', resend_id: result.id, updated_at: now }
+    : { status: 'failed', error: result.error.slice(0, 500), updated_at: now }
 }
 
 // ── On request ────────────────────────────────────────────────────────────
@@ -301,8 +350,9 @@ export async function sendRecapNow(args: {
     facts,
     intro: templateIntro(facts),
     subject: recapSubject(facts),
-    userId: args.userId,
     to,
+    audience: 'owner',
+    unsubToken: unsubscribeToken(args.userId),
     idempotencyKey: null,
   })
   return r.ok ? { ok: true, to } : { ok: false, error: 'The email did not go out. Try again in a minute.' }
@@ -337,61 +387,38 @@ async function sendRecapEmail(args: {
   facts: RecapFacts
   intro: string
   subject: string
-  userId: string
   to: string
+  audience: RecapAudience
+  unsubToken: string | null
   idempotencyKey: string | null
 }): Promise<{ ok: true; id: string | null } | { ok: false; error: string }> {
-  const key = process.env.RESEND_API_KEY
-  if (!key) return { ok: false, error: 'RESEND_API_KEY is not set' }
-
-  // The August broadcast went to spam because it was sent from Resend's
-  // shared sandbox address. The domain's DMARC policy is p=quarantine, so
-  // anything not from our own domain is spam-foldered on our own orders.
-  const from = process.env.RECAP_EMAIL_FROM || 'The Sunday Chronicle <recap@thesundaychronicle.app>'
-  if (!/@thesundaychronicle\.app>?\s*$/i.test(from)) {
-    return { ok: false, error: `RECAP_EMAIL_FROM must be an @thesundaychronicle.app address, got "${from}"` }
-  }
-
-  const token = unsubscribeToken(args.userId)
+  const token = args.unsubToken
   if (!token) return { ok: false, error: 'no RECAP_SIGNING_SECRET or CRON_SECRET to sign the unsubscribe link' }
 
   const { facts } = args
-  const { html, text } = renderRecapEmail(facts, args.intro, args.subject, {
-    page: recapPageUrl(facts.league.slug, facts.year, facts.week, 'email'),
-    share: recapPageUrl(facts.league.slug, facts.year, facts.week, 'share'),
-    unsubscribe: unsubscribePageUrl(token),
-    account: `${SITE_URL}/account/`,
-    pricing: `${SITE_URL}/pricing/?utm_source=recap&utm_medium=email`,
-    newLeague: `${SITE_URL}/?utm_source=recap&utm_medium=email&utm_campaign=new-league`,
-    league: `${SITE_URL}/leagues/${facts.league.slug}/?utm_source=recap&utm_medium=email`,
-  })
-
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/json',
-      ...(args.idempotencyKey ? { 'Idempotency-Key': args.idempotencyKey } : {}),
+  const { html, text } = renderRecapEmail(
+    facts,
+    args.intro,
+    args.subject,
+    {
+      page: recapPageUrl(facts.league.slug, facts.year, facts.week, 'email'),
+      share: recapPageUrl(facts.league.slug, facts.year, facts.week, 'share'),
+      unsubscribe: unsubscribePageUrl(token),
+      account: `${SITE_URL}/account/`,
+      pricing: `${SITE_URL}/pricing/?utm_source=recap&utm_medium=email`,
+      newLeague: `${SITE_URL}/?utm_source=recap&utm_medium=email&utm_campaign=new-league`,
+      league: `${SITE_URL}/leagues/${facts.league.slug}/?utm_source=recap&utm_medium=email`,
+      join: `${recapPageUrl(facts.league.slug, facts.year, facts.week, 'email')}#join`,
     },
-    body: JSON.stringify({
-      from,
-      to: [args.to],
-      subject: args.subject,
-      html,
-      text,
-      ...(process.env.RECAP_REPLY_TO ? { reply_to: process.env.RECAP_REPLY_TO } : {}),
-      // One-click unsubscribe (RFC 8058). Gmail and Yahoo show their own
-      // unsubscribe button off these, which is far better for the domain's
-      // reputation than a reader reaching for "report spam".
-      headers: {
-        'List-Unsubscribe': `<${unsubscribeApiUrl(token)}>`,
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      },
-      tags: [{ name: 'category', value: 'weekly_recap' }],
-    }),
-    cache: 'no-store',
+    args.audience,
+  )
+  return sendViaResend({
+    to: args.to,
+    subject: args.subject,
+    html,
+    text,
+    unsubToken: token,
+    idempotencyKey: args.idempotencyKey,
+    category: args.audience === 'owner' ? 'weekly_recap' : 'weekly_recap_list',
   })
-  if (!res.ok) return { ok: false, error: `Resend ${res.status}: ${(await res.text().catch(() => '')).slice(0, 300)}` }
-  const data = (await res.json().catch(() => null)) as { id?: string } | null
-  return { ok: true, id: data?.id ?? null }
 }

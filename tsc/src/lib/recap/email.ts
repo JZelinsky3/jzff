@@ -43,7 +43,13 @@ export type RecapEmailLinks = {
   pricing: string
   newLeague: string
   league: string
+  // Where the league's mailing list signup is: the bottom of the page.
+  join: string
 }
+
+// The commissioner gets it because they run the league; a list member
+// because they signed up for it. Only the footer differs.
+export type RecapAudience = 'owner' | 'subscriber'
 
 const winnerOf = (g: RecapGame) => (g.winner === 'a' ? g.a : g.b)
 const loserOf = (g: RecapGame) => (g.winner === 'a' ? g.b : g.a)
@@ -59,6 +65,7 @@ export function renderRecapEmail(
   intro: string,
   subject: string,
   links: RecapEmailLinks,
+  audience: RecapAudience = 'owner',
 ): { html: string; text: string } {
   const show = recapSections(f.tier)
   const rows: string[] = []
@@ -167,16 +174,33 @@ Send it to the league: <a href="${esc(links.share)}" style="color:${C.gold}; tex
 </td></tr>`)
   text.push(`Read the full paper: ${links.page}`, `Send it to the league: ${links.share}`, '')
 
+  // ── The mailing list, for the commissioner to pass on ──
+  if (audience === 'owner') {
+    rows.push(`<tr><td class="pad" bgcolor="${C.card}" style="padding:0 40px 24px; font-family:${SANS}; font-size:13px; line-height:1.6; color:${C.muted};">
+Want the rest of the league getting this too? Anyone can add their own email at the bottom of the page: <a href="${esc(links.join)}" style="color:${C.gold}; text-decoration:underline;">join the mailing list</a>.
+</td></tr>`)
+    text.push(`The rest of the league can get this every Tuesday too: ${links.join}`, '')
+  }
+
   // ── Footer ──
+  const why =
+    audience === 'owner'
+      ? `You're getting this because you run ${esc(f.league.name)} on The Sunday Chronicle. Recaps go to the league's commissioner once a week, after Monday night.`
+      : `You're getting this because you joined the ${esc(f.league.name)} mailing list on The Sunday Chronicle. It comes once a week, after Monday night.`
+  const stop = audience === 'owner' ? 'Stop recap emails' : 'Leave the mailing list'
   rows.push(`<tr><td class="pad" bgcolor="${C.card}" style="padding:18px 40px 26px; border-top:1px solid ${C.rule}; font-family:${SANS}; font-size:11px; line-height:1.7; color:${C.foot};">
-You're getting this because you run ${esc(f.league.name)} on The Sunday Chronicle. Recaps go to the league's commissioner once a week, after Monday night.<br>
-<a href="${esc(links.league)}" style="color:${C.foot}; text-decoration:underline;">View the league</a> · <a href="${esc(links.unsubscribe)}" style="color:${C.foot}; text-decoration:underline;">Stop recap emails</a> · <a href="${esc(links.account)}" style="color:${C.foot}; text-decoration:underline;">Account settings</a> · <a href="${esc(links.newLeague)}" style="color:${C.foot}; text-decoration:underline;">Run another league? Start its book free</a>
+${why}<br>
+<a href="${esc(links.league)}" style="color:${C.foot}; text-decoration:underline;">View the league</a> · <a href="${esc(links.unsubscribe)}" style="color:${C.foot}; text-decoration:underline;">${stop}</a>${
+    audience === 'owner' ? ` · <a href="${esc(links.account)}" style="color:${C.foot}; text-decoration:underline;">Account settings</a>` : ''
+  } · <a href="${esc(links.newLeague)}" style="color:${C.foot}; text-decoration:underline;">Run another league? Start its book free</a>
 </td></tr>`)
   text.push(
-    `You're getting this because you run ${f.league.name} on The Sunday Chronicle.`,
+    audience === 'owner'
+      ? `You're getting this because you run ${f.league.name} on The Sunday Chronicle.`
+      : `You're getting this because you joined the ${f.league.name} mailing list on The Sunday Chronicle.`,
     `View the league: ${links.league}`,
-    `Stop recap emails: ${links.unsubscribe}`,
-    `Account settings: ${links.account}`,
+    `${stop}: ${links.unsubscribe}`,
+    ...(audience === 'owner' ? [`Account settings: ${links.account}`] : []),
   )
 
   const preheader = front.deck ? `${front.deck}.` : (intro.split(/(?<=\.)\s/)[0] ?? intro)
@@ -211,4 +235,75 @@ ${rows.join('\n')}
 </html>`
 
   return { html, text: text.join('\n') }
+}
+
+// ── Mailing list confirmation ─────────────────────────────────────────────
+
+// The one email a new list member gets before they confirm. Short, plain,
+// one button. It also asks them to add the sender to their contacts: the
+// first message from a new sender is the one most likely to be filtered,
+// and a contact entry is the strongest "I want this" signal a reader can
+// give their mail provider.
+export function renderSubscribeConfirmEmail(args: { league: string; confirmUrl: string; from: string }): {
+  subject: string
+  html: string
+  text: string
+} {
+  const subject = `Confirm: the ${args.league} paper, every Tuesday`
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
+<title>${esc(subject)}</title>
+<style>
+  @media only screen and (max-width: 620px) {
+    .wrap { width: 100% !important; }
+    .pad  { padding-left: 20px !important; padding-right: 20px !important; }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:${C.page};">
+<div style="display:none; max-height:0; overflow:hidden; opacity:0; color:${C.page}; font-size:1px; line-height:1px;">One click and the ${esc(args.league)} paper comes to you every Tuesday.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.page}" style="background-color:${C.page};">
+<tr><td align="center" style="padding:24px 10px;">
+<table role="presentation" class="wrap" width="560" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.card}" style="width:560px; max-width:560px; background-color:${C.card}; border:1px solid ${C.rule};">
+<tr><td class="pad" align="center" bgcolor="${C.card}" style="padding:28px 40px 18px; border-bottom:3px double #a88a4a;">
+<div style="font-family:${SANS}; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:${C.muted}; padding-bottom:10px;">The Sunday Chronicle</div>
+<div style="font-family:${SERIF}; font-size:26px; line-height:1.2; color:${C.ink};">${esc(args.league)}</div>
+</td></tr>
+<tr><td class="pad" bgcolor="${C.card}" style="padding:24px 40px 0; font-family:${SERIF}; font-size:16px; line-height:1.6; color:${C.ink};">
+Someone, hopefully you, asked for the ${esc(args.league)} weekly paper to come to this address. It lands every Tuesday morning after Monday night: a story for every game, the standings and what's coming next week.
+</td></tr>
+<tr><td class="pad" align="center" bgcolor="${C.card}" style="padding:24px 40px 8px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+<td align="center" bgcolor="${C.gold}" style="background-color:${C.gold}; border-radius:2px;">
+<a href="${esc(args.confirmUrl)}" style="display:inline-block; padding:13px 28px; font-family:${SANS}; font-size:14px; font-weight:bold; letter-spacing:1px; color:${C.page}; text-decoration:none;">Confirm my email</a>
+</td></tr></table>
+</td></tr>
+<tr><td class="pad" bgcolor="${C.card}" style="padding:16px 40px 6px; font-family:${SANS}; font-size:13px; line-height:1.6; color:${C.muted};">
+So Tuesday's paper lands in your inbox and not in spam, add <b style="color:${C.ink};">${esc(args.from)}</b> to your contacts. If this email went to spam or promotions, mark it as not spam first.
+</td></tr>
+<tr><td class="pad" bgcolor="${C.card}" style="padding:14px 40px 26px; font-family:${SANS}; font-size:11px; line-height:1.7; color:${C.foot};">
+Didn't ask for this? Ignore it and you won't hear from us again. Nothing is sent until the button above is pressed.
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>`
+  const text = [
+    `The Sunday Chronicle: ${args.league}`,
+    '',
+    `Someone, hopefully you, asked for the ${args.league} weekly paper to come to this address. It lands every Tuesday morning after Monday night.`,
+    '',
+    `Confirm your email: ${args.confirmUrl}`,
+    '',
+    `So Tuesday's paper lands in your inbox and not in spam, add ${args.from} to your contacts.`,
+    '',
+    "Didn't ask for this? Ignore it and you won't hear from us again.",
+  ].join('\n')
+  return { subject, html, text }
 }

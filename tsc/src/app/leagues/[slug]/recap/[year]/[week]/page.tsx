@@ -6,10 +6,12 @@ import { loadRecap, recapViewable } from '@/lib/recap/load'
 import { ordinal, pts, recapSections, recordStr, type RecapGame } from '@/lib/recap/facts'
 import { bookLine, poss, totalLine, writeEdition } from '@/lib/recap/story'
 import { SITE_URL, recapPageUrl } from '@/lib/recap/links'
+import { recapFromAddress } from '@/lib/recap/resend'
 import { TIER_PRICES } from '@/lib/stripe'
 import { ShareButton } from '../../ShareButton'
 import { YourWeek, type YourWeekTeam } from '../../YourWeek'
 import { SectionNav } from '../../SectionNav'
+import { JoinList } from '../../JoinList'
 import styles from '../../recap.module.css'
 
 export const dynamic = 'force-dynamic'
@@ -21,7 +23,8 @@ export const dynamic = 'force-dynamic'
 // site's other pages. All of the writing is in lib/recap/story.ts.
 //
 // No site nav and no hamburger: it is opened from a group chat. The way back
-// is the "View the league" button, at the top and again at the bottom.
+// is the "View the league" button at the top and the almanac tile on the
+// back page, which also carries the league's mailing list signup.
 
 async function loadLeague(slug: string) {
   if (!/^[a-z0-9-]{1,80}$/.test(slug)) notFound()
@@ -127,6 +130,14 @@ function signed(n: number): string {
   return n > 0 ? `+${n}` : String(n)
 }
 
+// Vol. VIII, No. 3: the league's eighth season, third paper.
+function roman(n: number): string {
+  const table: [number, string][] = [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']]
+  let out = ''
+  for (const [v, r] of table) while (n >= v) { out += r; n -= v }
+  return out || String(n)
+}
+
 function editionDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {
     weekday: 'long',
@@ -200,7 +211,7 @@ export default async function RecapPage({
     ? show.veteran
       ? f
       : { ...f, trades: undefined, verdicts: undefined }
-    : { ...f, book: undefined, starts: undefined, yearAgo: undefined, weekRecord: undefined, star: undefined, power: undefined, pickems: undefined, milestones: undefined, trades: undefined, verdicts: undefined }
+    : { ...f, book: undefined, starts: undefined, yearAgo: undefined, weekRecord: undefined, totals: undefined, star: undefined, power: undefined, pickems: undefined, milestones: undefined, projections: undefined, trades: undefined, verdicts: undefined }
   const edition = writeEdition(facts)
   const { front } = edition
   const shareUrl = recapPageUrl(slug, year, week, 'share')
@@ -237,9 +248,15 @@ export default async function RecapPage({
   const hasOdds = show.paid && !!f.standings?.some((s) => s.odds != null)
   const hasPower = show.paid && f.teams.some((t) => t.power)
   const book = show.paid ? (facts.book ?? []) : []
+  const totals = show.paid ? (facts.totals ?? []) : []
+  const proj = show.paid ? facts.projections : null
+  const hasBook = !!book.length || (show.paid && !!facts.weekRecord) || (show.paid && !!facts.milestones?.length)
+  const volume = `Vol. ${roman(f.history.seasons)}, No. ${week}`
   const jumps: { id: string; label: string }[] = [
     { id: 'games', label: 'Results' },
-    ...(book.length ? [{ id: 'book', label: 'Record book' }] : []),
+    ...(proj ? [{ id: 'projections', label: 'Projections' }] : []),
+    ...(hasBook ? [{ id: 'book', label: 'Record book' }] : []),
+    ...(totals.length ? [{ id: 'season', label: 'Season so far' }] : []),
     ...(hasStandings ? [{ id: 'standings', label: 'Standings' }] : []),
     ...(show.paid && facts.pickems ? [{ id: 'pickems', label: "Pick'ems" }] : []),
     ...(show.veteran && (facts.trades?.length || facts.verdicts?.length) ? [{ id: 'trades', label: 'Trades' }] : []),
@@ -257,6 +274,7 @@ export default async function RecapPage({
           <h1 className={styles.nameplate}>{f.league.name}</h1>
           <div className={styles.dateline}>
             <span>{editionDate(f.generatedAt)}</span>
+            <span className={styles.volume}>{volume}</span>
             <span>{weekLabel}</span>
           </div>
         </header>
@@ -275,9 +293,7 @@ export default async function RecapPage({
                 </div>
               </div>
             ) : null}
-            <div className={styles.byline}>
-              By the Chronicle staff <span>· Filed after Monday night</span>
-            </div>
+            <div className={styles.byline}>By the Chronicle staff</div>
             <div className={styles.leadBody}>
               {front.paragraphs.map((p, i) => (
                 <p key={i}>{p}</p>
@@ -325,8 +341,52 @@ export default async function RecapPage({
           </div>
         </section>
 
+        {/* ── Against the projections ── */}
+        {proj ? (
+          <section className={`${styles.section} ${styles.sProj}`}>
+            <SectionHead id="projections" tag="Projections" title="Over and Under" />
+            <div className={styles.projGrid}>
+              {[
+                { key: 'over', head: 'Beat their projection', rows: proj.over },
+                { key: 'under', head: 'Fell short of it', rows: proj.under },
+              ].map((col) =>
+                col.rows.length ? (
+                  <div key={col.key} className={styles.projCol}>
+                    <div className={styles.projHead}>{col.head}</div>
+                    <ol className={styles.projList}>
+                      {col.rows.map((r) => (
+                        <li key={`${r.player}-${r.manager}`} className={styles.projRow}>
+                          <span className={styles.projWho}>
+                            <span className={styles.projName}>{r.player}</span>
+                            <span className={styles.projMeta}>
+                              {r.pos ? `${r.pos} · ` : ''}
+                              {r.manager}
+                            </span>
+                          </span>
+                          <span className={styles.projLine}>
+                            {pts(r.points)}
+                            <small>proj {pts(r.proj)}</small>
+                          </span>
+                          <span className={`${styles.projDiff} ${r.diff > 0 ? styles.projUp : styles.projDown}`}>
+                            {r.diff > 0 ? '+' : '−'}
+                            {pts(Math.abs(r.diff))}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ) : null,
+              )}
+            </div>
+            <p className={styles.fine}>
+              Starters only, no kickers or defenses. Each projection is the platform&apos;s own going into the week,
+              scored with the league&apos;s settings.
+            </p>
+          </section>
+        ) : null}
+
         {/* ── Record book ── */}
-        {book.length || (show.paid && facts.weekRecord) || (show.paid && facts.totals?.length) || (show.paid && facts.milestones?.length) ? (
+        {hasBook ? (
           <section className={`${styles.section} ${styles.sBook}`}>
             <SectionHead id="book" tag="History" title="The Record Book" link={{ href: `/leagues/${slug}/live/records-watch/`, label: 'Records watch' }} />
             <div className={styles.book}>
@@ -355,21 +415,6 @@ export default async function RecapPage({
                 </div>
               ) : null}
             </div>
-            {show.paid && facts.totals?.length ? (
-              <>
-                <div className={styles.bookSub}>The season so far</div>
-                <div className={styles.book}>
-                  {facts.totals.map((r) => (
-                    <div key={r.key} className={`${styles.bookRow} ${r.rank <= 3 ? styles.bookHot : ''}`}>
-                      <span className={styles.bookLabel}>{r.label}</span>
-                      <span className={styles.bookValue}>{r.key === 'streak' ? `${r.value} straight` : pts(r.value)}</span>
-                      <span className={styles.bookWho}>{r.who}</span>
-                      <span className={styles.bookLine}>{totalLine(r, facts)}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : null}
             {show.paid && facts.milestones?.length ? (
               <ul className={styles.milestones}>
                 {facts.milestones.map((m) => (
@@ -379,6 +424,23 @@ export default async function RecapPage({
                 ))}
               </ul>
             ) : null}
+          </section>
+        ) : null}
+
+        {/* ── The season so far: running totals against every season ── */}
+        {totals.length ? (
+          <section className={`${styles.section} ${styles.sSeason}`}>
+            <SectionHead id="season" tag="Running totals" title="The Season So Far" />
+            <div className={styles.book}>
+              {totals.map((r) => (
+                <div key={r.key} className={`${styles.bookRow} ${r.rank <= 3 ? styles.bookHot : ''}`}>
+                  <span className={styles.bookLabel}>{r.label}</span>
+                  <span className={styles.bookValue}>{r.key === 'streak' ? `${r.value} straight` : pts(r.value)}</span>
+                  <span className={styles.bookWho}>{r.who}</span>
+                  <span className={styles.bookLine}>{totalLine(r, facts)}</span>
+                </div>
+              ))}
+            </div>
           </section>
         ) : null}
 
@@ -643,23 +705,46 @@ export default async function RecapPage({
           </section>
         ) : null}
 
-        {/* ── Footer: back to the league ── */}
-        <footer className={styles.foot}>
-          <div className={styles.footActions}>
-            <a className={`${styles.viewLeague} ${styles.viewLeagueBig}`} href={leagueHref}>
-              View the {league.name} almanac
+        {/* ── The back page: the mailing list, pass it on, the way back ── */}
+        <section className={styles.back}>
+          <JoinList slug={slug} league={league.name} from={recapFromAddress()} />
+
+          <div className={styles.backTiles}>
+            <div className={`${styles.backTile} ${styles.backTileInk}`}>
+              <div className={styles.backKicker}>Pass it on</div>
+              <h3 className={styles.backTitle}>Send it to the group chat</h3>
+              <p>One link to the whole paper: every game, the standings and next week.</p>
+              <ShareButton className={styles.backBtnGold} url={shareUrl} title={`Week ${week} Recap · ${league.name}`} label="Share the link" />
+            </div>
+            <a className={styles.backTile} href={leagueHref}>
+              <div className={styles.backKicker}>The almanac</div>
+              <h3 className={styles.backTitle}>{league.name}</h3>
+              <p>Every season, record and rivalry the league has on the books.</p>
+              <span className={styles.backBtnInk}>View the almanac</span>
             </a>
-            <ShareButton className={styles.shareBtn} url={shareUrl} title={`Week ${week} Recap · ${league.name}`} />
           </div>
-          <nav className={styles.footNav}>
-            {week > 1 ? <a href={`/leagues/${slug}/recap/${year}/${week - 1}/`}>Week {week - 1} paper</a> : <span />}
-            <Link href="/?utm_source=recap&utm_medium=page&utm_campaign=new-league">Run another league? Start its book free</Link>
+
+          <nav className={styles.backIndex} aria-label="More">
+            {week > 1 ? (
+              <a href={`/leagues/${slug}/recap/${year}/${week - 1}/`}>
+                <small>Last week</small>
+                The week {week - 1} paper
+              </a>
+            ) : null}
+            <Link href="/?utm_source=recap&utm_medium=page&utm_campaign=new-league">
+              <small>Run another league?</small>
+              Start its book free
+            </Link>
           </nav>
-          <p className={styles.fine}>
-            The Sunday Chronicle · {poss(f.league.name)} paper for {weekLabel.toLowerCase()}, {f.year} · scores as of{' '}
-            {new Date(f.generatedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'America/New_York' })}
-          </p>
-        </footer>
+
+          <footer className={styles.colophon}>
+            <div className={styles.colophonName}>The Sunday Chronicle</div>
+            <p>
+              {poss(f.league.name)} paper for {weekLabel.toLowerCase()}, {f.year} · {volume} · Scores as of{' '}
+              {new Date(f.generatedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'America/New_York' })}
+            </p>
+          </footer>
+        </section>
       </div>
     </div>
   )

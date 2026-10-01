@@ -4,7 +4,7 @@ import { useState } from 'react'
 
 // The phone's own share sheet where there is one (that's where the group chat
 // is), otherwise copy the link.
-export function ShareButton({ url, title, className }: { url: string; title: string; className?: string }) {
+export function ShareButton({ url, title, className, label }: { url: string; title: string; className?: string; label?: string }) {
   const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle')
 
   async function copy() {
@@ -32,7 +32,7 @@ export function ShareButton({ url, title, className }: { url: string; title: str
 
   return (
     <button type="button" className={className} onClick={onClick}>
-      {state === 'copied' ? 'Link copied' : state === 'failed' ? 'Copy the link from the address bar' : 'Send to the group chat'}
+      {state === 'copied' ? 'Link copied' : state === 'failed' ? 'Copy the link from the address bar' : (label ?? 'Send to the group chat')}
     </button>
   )
 }

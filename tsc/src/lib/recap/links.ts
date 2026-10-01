@@ -56,3 +56,45 @@ export function unsubscribePageUrl(token: string): string {
 export function unsubscribeApiUrl(token: string): string {
   return `${SITE_URL}/api/recap/unsubscribe/?t=${encodeURIComponent(token)}`
 }
+
+// ── League mailing list ───────────────────────────────────────────────────
+
+// A list member has no account, so their token is the subscriber row's id,
+// signed under its own label so an owner's token can never pass for a
+// subscriber's or the other way round. The same token confirms the signup
+// and later unsubscribes; both only ever act on that one row.
+const SUB_PREFIX = 'sub.'
+
+function signSubscriber(id: string, secret: string): string {
+  return createHmac('sha256', secret).update(`recap-subscriber:${id}`).digest('base64url').slice(0, 32)
+}
+
+export function subscriberToken(id: string): string | null {
+  const secret = signingSecret()
+  if (!secret || !UUID.test(id)) return null
+  return `${SUB_PREFIX}${id}.${signSubscriber(id, secret)}`
+}
+
+export function isSubscriberToken(token: string | null | undefined): boolean {
+  return !!token && token.startsWith(SUB_PREFIX)
+}
+
+// The subscriber id the token was issued for, or null.
+export function verifySubscriberToken(token: string | null | undefined): string | null {
+  const secret = signingSecret()
+  if (!secret || !token || !token.startsWith(SUB_PREFIX)) return null
+  const rest = token.slice(SUB_PREFIX.length)
+  const dot = rest.lastIndexOf('.')
+  if (dot < 0) return null
+  const id = rest.slice(0, dot)
+  const sig = rest.slice(dot + 1)
+  if (!UUID.test(id)) return null
+  const expected = Buffer.from(signSubscriber(id, secret))
+  const given = Buffer.from(sig)
+  if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null
+  return id
+}
+
+export function subscribeConfirmUrl(token: string): string {
+  return `${SITE_URL}/recap/subscribe/?t=${encodeURIComponent(token)}`
+}

@@ -70,6 +70,31 @@ function cap(s: string): string {
   return PLAIN_START.test(s) ? s.charAt(0).toUpperCase() + s.slice(1) : s
 }
 
+const bare = (s: string) => s.replace(/\.\s*$/, '')
+const words = (s: string) => s.split(/\s+/).length
+
+// Two sentences about the same person become one: "Mason still leads the
+// series 6-5." + "Mason is 0-3 for the first time..." reads as "Mason still
+// leads the series 6-5 and is 0-3 for the first time...". Only when the
+// second one opens on the name the first one's last sentence opens on, and
+// only while the result stays a readable length.
+function fuse(a: string, b: string, names: string[]): string {
+  const parts = a.split(/(?<=\.)\s+/)
+  const last = parts[parts.length - 1]
+  const name = names.find((n) => last.startsWith(`${n} `) && b.startsWith(`${n} `))
+  if (!name || words(last) + words(b) > 34 || /\b(and|but|though)\b/.test(last.slice(name.length))) return `${a} ${b}`
+  const conj = /\b0-\d|\blow|\bfewest|\bslow|\blost\b/.test(b) !== /\b0-\d|\blow|\bfewest|\bslow|\blost\b/.test(last) ? 'but' : 'and'
+  parts[parts.length - 1] = `${bare(last)} ${conj} ${b.slice(name.length + 1)}`
+  return parts.join(' ')
+}
+
+// Opening a later sentence in a paragraph: "Elsewhere, Evan beat Luke".
+// A plain word after the comma goes lower case; a name never changes.
+function after(lead: string, s: string): string {
+  const low = s.charAt(0).toLowerCase() + s.slice(1)
+  return `${lead}, ${PLAIN_START.test(low) ? low : s}`
+}
+
 const ORDINAL_WORDS = ['', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth']
 function ordinalWord(n: number): string {
   return ORDINAL_WORDS[n] ?? ordinal(n)
@@ -109,6 +134,24 @@ function seriesTail(me: string, them: string, r: { w: number; l: number; t: numb
   if (r.w > r.l) return `and leads the series ${recordStr(r.w, r.l, r.t)}`
   if (r.w < r.l) return `though ${them} still leads the series ${recordStr(r.l, r.w, r.t)}`
   return `and the series is even at ${recordStr(r.w, r.l, r.t)}`
+}
+
+// The series after a win, as a clause that follows a sentence about that
+// win: "which puts Connie ahead 5-4 in the series", "though Mason still
+// leads the series 6-5".
+function seriesAfter(me: string, them: string, r: { w: number; l: number; t: number }): string {
+  if (r.w > r.l) return `which puts ${me} ahead ${recordStr(r.w, r.l, r.t)} in the series`
+  if (r.w < r.l) return `though ${them} still leads the series ${recordStr(r.l, r.w, r.t)}`
+  return `which evens the series at ${recordStr(r.w, r.l, r.t)}`
+}
+
+// "a 112.32 to 107.36 win", "a 220.5 to 210.1 win over two weeks".
+function winBy(g: RecapGame): string {
+  if (g.leg?.n === 2 && g.leg.totalA != null && g.leg.totalB != null) {
+    const [w, l] = g.winner === 'a' ? [g.leg.totalA, g.leg.totalB] : [g.leg.totalB, g.leg.totalA]
+    return `${pts(w)} to ${pts(l)} win over two weeks`
+  }
+  return `${pts(W(g).score)} to ${pts(L(g).score)} win`
 }
 
 // Only the final is named. Platforms flag consolation games as playoff
@@ -169,6 +212,48 @@ function startSentence(name: string, rec: string, m: RecapStartMark, v = 0): str
   return `${name} has started ${rec} for the ${ordinalWord(m.years)} straight season.`
 }
 
+// The same facts as predicates, so two of them about one person can share a
+// sentence ("Sean is 3-0 for the first time since 2023 but hasn't scored
+// this little through three weeks since 2021"). `good` decides between "and"
+// and "but" when two are joined.
+type Clause = { text: string; good: boolean }
+
+function startClause(rec: string, m: RecapStartMark): Clause {
+  const good = /-0$/.test(rec)
+  if (m.kind === 'first-ever') return { text: `is ${rec} for the first time in ${numberWord(m.seasons)} seasons in the league`, good }
+  if (m.kind === 'first-since') return { text: `is ${rec} for the first time since ${m.year}`, good }
+  return { text: `has started ${rec} for the ${ordinalWord(m.years)} straight season`, good }
+}
+
+function runClause(week: number, m: RecapRunMark): Clause {
+  const w = numberWord(week)
+  const v = pts(m.value)
+  switch (m.kind) {
+    case 'start-best':
+      return m.since == null
+        ? { text: `is off to a career-best start, ${v} points through ${w} weeks`, good: true }
+        : { text: `hasn't started this well since ${m.since}, with ${v} points through ${w} weeks`, good: true }
+    case 'start-worst':
+      return m.since == null
+        ? { text: `is off to a career-worst start, ${v} points through ${w} weeks`, good: false }
+        : { text: `hasn't scored this little through ${w} weeks since ${m.since} (${v} points)`, good: false }
+    case 'two-week-best':
+      return m.since == null
+        ? { text: `has a career-best ${v} points over the last two weeks`, good: true }
+        : { text: `hasn't had a better two-week stretch since ${m.since} (${v} points)`, good: true }
+  }
+}
+
+// One or two clauses about one person, as a sentence. A clause with a comma
+// in it ("..., 313.48 points through two weeks") can only go last; two of
+// those stay two sentences.
+function clauseSentence(name: string, cs: Clause[]): string {
+  if (cs.length === 1) return `${name} ${cs[0].text}.`
+  const [a, b] = cs[0].text.includes(',') ? [cs[1], cs[0]] : [cs[0], cs[1]]
+  if (a.text.includes(',')) return `${name} ${a.text}. ${name} also ${b.text}.`
+  return `${name} ${a.text} ${a.good === b.good ? 'and' : 'but'} ${b.text}.`
+}
+
 function markSentence(name: string, s: number, m: RecapMark): string | null {
   switch (m.kind) {
     case 'career-high':
@@ -184,35 +269,18 @@ function markSentence(name: string, s: number, m: RecapMark): string | null {
   }
 }
 
-// Every finished season counts, so this is "in league history", never a
-// date range that reads like only some of it.
-function runSentence(name: string, week: number, m: RecapRunMark): string {
-  const w = numberWord(week)
-  const v = pts(m.value)
-  switch (m.kind) {
-    case 'start-best':
-      return m.since == null
-        ? `${name} has never started better: ${v} through ${w} weeks is a best in ${numberWord(m.seasons)} seasons.`
-        : `${name} hasn't started this well since ${m.since}, with ${v} through ${w} weeks.`
-    case 'start-worst':
-      return m.since == null
-        ? `It is the slowest start of ${poss(name)} career, ${v} through ${w} weeks.`
-        : `${name} hasn't started this slowly since ${m.since}, with ${v} through ${w} weeks.`
-    case 'two-week-best':
-      return m.since == null
-        ? `The last two weeks, ${v} points, are the best two-week stretch of ${poss(name)} career.`
-        : `${name} hasn't had a better two-week stretch since ${m.since} (${v} points).`
-  }
-}
-
-function startHistory(s: RecapStart, unbeaten: boolean, plural: boolean): string {
+// How earlier teams with this start finished, as a clause that follows
+// "Isaac and Sean are both 3-0".
+function startHistory(s: RecapStart, unbeaten: boolean): string {
   if (s.champs === 0) {
     return unbeaten
-      ? `History is against ${plural ? 'them' : 'it'}: none of the ${s.teams} teams to start ${s.record} in league history went on to win the title.`
-      : `No ${s.record} team has ever won the title either; ${s.teams} have tried.`
+      ? `, though history isn't kind to ${s.record} starts: none of the ${s.teams} teams to start ${s.record} in league history went on to win the title`
+      : `, and no ${s.record} team has ever come back to win the title (${s.teams} have tried)`
   }
   const last = s.lastChamp ? `, most recently ${s.lastChamp.name} in ${s.lastChamp.year}` : ''
-  return `Of the ${s.teams} teams to start ${s.record} in league history, ${numberWord(s.champs)} won the title${last}.`
+  return unbeaten
+    ? `, and ${numberWord(s.champs)} of the ${s.teams} teams to start ${s.record} in league history went on to win the title${last}`
+    : `, though ${numberWord(s.champs)} of the ${s.teams} teams to start ${s.record} in league history still won the title${last}`
 }
 
 // The phrase each running total ranks on.
@@ -302,8 +370,8 @@ function angles(f: RecapFacts, league: string): Angle[] {
     out.push({
       weight: 100,
       headline: `${W(g).name} wins the ${f.year} title`,
-      lede: `${W(g).name} is the ${f.year} champion of ${league}, beating ${L(g).name} ${score(g)} in the final. ${
-        n === 1 ? `It is the first title of ${poss(W(g).name)} career.` : `It is ${poss(W(g).name)} ${ordinalWord(n)} title, after ${list(W(g).titles.map(String))}.`
+      lede: `${W(g).name} beat ${L(g).name} ${score(g)} in the final and is the ${f.year} champion of ${league}, ${
+        n === 1 ? `the first title of ${poss(W(g).name)} career.` : `a ${ordinalWord(n)} title to go with ${list(W(g).titles.map(String))}.`
       }`,
       tail: null,
       game: final,
@@ -319,12 +387,12 @@ function angles(f: RecapFacts, league: string): Angle[] {
       headline: top.rank === 1 ? `${top.who} sets the league scoring record` : `${top.who} posts the ${ordinal(top.rank)}-best score in league history`,
       lede:
         top.rank === 1
-          ? `${top.who} scored ${pts(top.value)}, the most any team has put up in ${numberWord(f.history.seasons)} seasons of ${league}.${
-              r ? ` The old record was ${poss(r.who)} ${pts(r.value)} in ${r.year}.` : ''
-            }`
-          : `${top.who} scored ${pts(top.value)}, the ${ordinal(top.rank)}-highest score in ${numberWord(f.history.seasons)} seasons of ${league}.${
-              r ? ` The record is still ${poss(r.who)} ${pts(r.value)} from ${r.year}.` : ''
-            }`,
+          ? `${top.who} scored ${pts(top.value)}, the most any team has put up in ${numberWord(f.history.seasons)} seasons of ${league}${
+              r ? `, breaking the record of ${pts(r.value)} that ${r.who} set in ${r.year}` : ''
+            }.`
+          : `${top.who} scored ${pts(top.value)}, the ${ordinal(top.rank)}-highest score in ${numberWord(f.history.seasons)} seasons of ${league}${
+              r ? `, though the record is still the ${pts(r.value)} ${r.who} put up in ${r.year}` : ''
+            }.`,
       tail:
         top.rank === 1
           ? `${poss(top.who)} ${pts(top.value)} is a league record.`
@@ -338,9 +406,9 @@ function angles(f: RecapFacts, league: string): Angle[] {
     out.push({
       weight: 82,
       headline: `${low.who} sets the league's low-score record`,
-      lede: `${poss(low.who)} ${pts(low.value)} is the lowest score in ${league} history.${
-        low.record ? ` The old low was ${poss(low.record.who)} ${pts(low.record.value)} in ${low.record.year}.` : ''
-      }`,
+      lede: `${poss(low.who)} ${pts(low.value)} is the lowest score in ${league} history${
+        low.record ? `, under the ${pts(low.record.value)} ${low.record.who} scored in ${low.record.year}` : ''
+      }.`,
       tail: `${poss(low.who)} ${pts(low.value)} is the lowest score in league history.`,
       game: gameIndexOf(f, low.managerId),
       claims: ['book:low', `mark:${low.managerId}`],
@@ -350,25 +418,34 @@ function angles(f: RecapFacts, league: string): Angle[] {
   f.games.forEach((g, i) => {
     const ev = g.seriesEvent
     if (!ev || !decided(g)) return
-    const after = g.series ? seriesFrom(g, W(g).name, g.series) : null
-    const state = after && g.series ? ` ${cap(seriesState(W(g).name, L(g).name, after))}.` : ''
+    const r = g.series ? seriesFrom(g, W(g).name, g.series) : null
     if (ev.kind === 'snap') {
+      // After a snapped run the loser usually still leads the series: "still".
+      const state = !r
+        ? ''
+        : r.w > r.l
+          ? ` ${W(g).name} now leads the series ${recordStr(r.w, r.l, r.t)}.`
+          : r.w < r.l
+            ? ` ${L(g).name} still leads the series ${recordStr(r.l, r.w, r.t)}.`
+            : ` The series is now even at ${recordStr(r.w, r.l, r.t)}.`
       out.push({
         weight: 70 + ev.run,
         // "ends Mason's five-game run" read as five straight wins overall;
         // the skid is Joey's, and it was against Mason.
         headline: `${W(g).name} snaps ${numberWord(ev.run)}-game skid against ${L(g).name}`,
-        lede: `${W(g).name} had lost ${numberWord(ev.run)} straight to ${L(g).name}. That ended this week, ${score(g)}.${state}`,
+        lede: `${W(g).name} had lost ${numberWord(ev.run)} straight to ${L(g).name} until this week, when a ${winBy(g)} finally ended the skid.${state}`,
         tail: `It also ended ${poss(L(g).name)} ${numberWord(ev.run)}-game run in the series.`,
         game: i,
         claims: [`game:${i}:series`],
       })
     } else if (ev.kind === 'extend') {
+      const tail = r ? `, ${seriesAfter(W(g).name, L(g).name, r)}` : ''
+      const ledeTail = r ? `, ${seriesTail(W(g).name, L(g).name, r)}` : ''
       out.push({
         weight: 45 + ev.run,
         headline: `${W(g).name} makes it ${numberWord(ev.run)} straight over ${L(g).name}`,
-        lede: `${W(g).name} has now beaten ${L(g).name} ${numberWord(ev.run)} times in a row, the latest ${score(g)}.${state}`,
-        tail: `It was ${poss(W(g).name)} ${ordinalWord(ev.run)} straight win over ${L(g).name}.${state}`,
+        lede: `${W(g).name} beat ${L(g).name} for the ${ordinalWord(ev.run)} straight time, ${score(g)}${ledeTail.replace(', and leads', ', and now leads')}.`,
+        tail: `It was ${poss(W(g).name)} ${ordinalWord(ev.run)} straight win over ${L(g).name}${tail}.`,
         game: i,
         claims: [`game:${i}:series`],
       })
@@ -383,7 +460,7 @@ function angles(f: RecapFacts, league: string): Angle[] {
       out.push({
         weight: 75,
         headline: `${t.name} sets a career high`,
-        lede: `${t.name} scored ${pts(t.score)} ${result(t)}, the most in ${poss(t.name)} career. The old best was ${pts(m.old)}, in ${m.oldYear}.`,
+        lede: `${t.name} scored ${pts(t.score)} ${result(t)}, a career high that tops the ${pts(m.old)} from ${m.oldYear}.`,
         tail: markSentence(t.name, t.score, m),
         game: gi,
         claims: [`mark:${t.managerId}`],
@@ -418,7 +495,7 @@ function angles(f: RecapFacts, league: string): Angle[] {
     out.push({
       weight: 64 - heartbreak.rank,
       headline: `${heartbreak.who} scores ${pts(heartbreak.value)} and loses`,
-      lede: `${heartbreak.who} scored ${pts(heartbreak.value)} and lost anyway, to ${heartbreak.vs}. ${more}`,
+      lede: `${heartbreak.who} scored ${pts(heartbreak.value)} and still lost to ${heartbreak.vs}. ${more}`,
       tail: `${heartbreak.who} scored ${pts(heartbreak.value)} in the loss. ${more}`,
       game: gameIndexOf(f, heartbreak.managerId),
       claims: ['book:heartbreak'],
@@ -524,11 +601,20 @@ function frontPage(f: RecapFacts, league: string, claimed: Set<string>): FrontPa
     for (const c of a.claims) claimed.add(c)
     if (a.game != null && a.game >= 0) claimed.add(`lead:${a.game}`)
   }
-  const told = (a: (typeof lead)[number]) => [a.lede, ...a.tails].join(' ')
+  // Longest first, so "Big Mike" is matched before "Big".
+  const names = f.teams.map((t) => t.name).sort((a, b) => b.length - a.length)
+  const told = (a: (typeof lead)[number]) => a.tails.reduce((acc, t) => fuse(acc, t, names), a.lede)
 
+  const seed = `${f.league.id}:${f.year}:${f.week}:front`
   const paragraphs: string[] = []
   if (lead[0]) paragraphs.push(told(lead[0]))
-  if (lead.length > 1) paragraphs.push(lead.slice(1).map(told).join(' '))
+  if (lead.length > 1) {
+    const turns = pick(seed, [['Elsewhere', 'And'], ['Across the league', 'Meanwhile'], ['Meanwhile', 'Elsewhere']])
+    const rest = lead.slice(1).map((a, i) => (i === 0 ? told(a) : after(turns[i - 1] ?? 'And', told(a)))).join(' ')
+    // A one-line second story is too thin for a paragraph of its own.
+    if (words(rest) < 18) paragraphs[0] += ' ' + after(turns[0], rest)
+    else paragraphs.push(rest)
+  }
 
   // The table, told as the season's story so far.
   if (f.phase === 'regular' && f.standings?.length && f.week >= 2) {
@@ -553,9 +639,9 @@ function frontPage(f: RecapFacts, league: string, claimed: Set<string>): FrontPa
       const lastOne = unbeaten.length === 1 && f.week >= 3
       const st = startOf(rec)
       bits.push(
-        `${list(names)} ${names.length === 1 ? 'is' : 'are'} ${rec}${lastOne ? ', the last unbeaten team in the league' : ''}.${
-          st ? ' ' + startHistory(st, true, names.length > 1) : ''
-        }${markFor(names)}`,
+        `${list(names)} ${names.length === 1 ? 'is' : names.length === 2 ? 'are both' : 'are'} ${rec}${lastOne ? ', the last unbeaten team in the league' : ''}${
+          st ? startHistory(st, true) : ''
+        }.${markFor(names)}`,
       )
       for (const r of unbeaten) claimed.add(`rec:${r.managerId}`)
     } else {
@@ -572,11 +658,7 @@ function frontPage(f: RecapFacts, league: string, claimed: Set<string>): FrontPa
       const names = winless.map((r) => r.name)
       const rec = recordStr(0, f.week)
       const st = startOf(rec)
-      const either = !!st && st.champs === 0 && !!startOf(recordStr(f.week, 0)) && startOf(recordStr(f.week, 0))!.champs === 0
-      const history = st
-        ? ' ' + (either ? startHistory(st, false, names.length > 1) : startHistory(st, false, names.length > 1).replace(' either', ''))
-        : ''
-      bits.push(`At the other end, ${list(names)} ${names.length === 1 ? 'is' : 'are'} ${rec}.${history}${markFor(names)}`)
+      bits.push(`At the other end, ${list(names)} ${names.length === 1 ? 'is' : 'are'} ${rec}${st ? startHistory(st, false) : ''}.${markFor(names)}`)
       for (const r of winless) claimed.add(`rec:${r.managerId}`)
     }
     paragraphs.push(bits.join(' '))
@@ -605,15 +687,21 @@ function frontPage(f: RecapFacts, league: string, claimed: Set<string>): FrontPa
   if (f.yearAgo?.leaders.length) {
     const ya = f.yearAgo
     const names = ya.leaders.map((l) => l.name)
-    const finishes = ya.leaders.filter((l) => l.finish).map((l) => `${l.name} ${l.finish}`)
-    const now = ya.leaders
-      .map((l) => f.teams.find((t) => t.name === l.name))
-      .filter((t): t is RecapTeamCard => !!t?.record)
-      .map((t) => `${t.name} is ${t.record}`)
+    // "Ricci, who went on to finish 3rd, is 0-3 this year".
+    const wentOn = (finish: string) => (finish === 'won the title' ? 'went on to win the title' : finish.replace(/^finished/, 'went on to finish'))
+    // The first one says "went on to" and "this year"; the rest lean on it.
+    const then = ya.leaders.map((l, i) => {
+      const rec = f.teams.find((t) => t.name === l.name)?.record
+      const fin = l.finish ? (i === 0 ? wentOn(l.finish) : l.finish) : null
+      if (fin && rec) return `${l.name}, who ${fin}, is ${rec}${i === 0 ? ' this year' : ''}`
+      if (fin) return `${l.name} ${fin}`
+      return rec ? `${l.name} is ${rec}${i === 0 ? ' this year' : ''}` : null
+    }).filter((x): x is string => !!x)
+    const joined = then.length > 2 ? `${then.slice(0, -1).join('; ')}; and ${then[then.length - 1]}` : then.join(', and ')
     paragraphs.push(
       `A year ago after week ${f.week}, ${list(names)} ${names.length === 1 ? 'led the league' : 'shared the lead'} at ${ya.record}.${
-        finishes.length ? ` ${cap(list(finishes))}.` : ''
-      }${now.length ? ` This year, ${list(now)}.` : ''}`,
+        joined ? ` ${joined}.` : ''
+      }`,
     )
   }
 
@@ -699,100 +787,124 @@ function gameStory(f: RecapFacts, g: RecapGame, i: number, claimed: Set<string>,
   const wCard = cardOf(f, w.managerId)
   const lCard = cardOf(f, l.managerId)
 
-  // 1. The result, with titles on first mention and the player who carried it.
+  // 1. The result, with titles on first mention. A personal mark rides on
+  // the score it is about ("..., Evan's best score since 2024"); otherwise
+  // the player who carried it does.
   const named = (s: RecapSide) => {
     const e = epithet(s, f.year)
     return e ? `${e} ${s.name}` : s.name
   }
   const verb = g.margin < 2 ? 'edged' : g.margin >= 40 ? 'routed' : 'beat'
-  let first = `${cap(named(w))} ${verb} ${named(l)}, ${score(g)}.`
-  if (paid && w.star && w.star.points >= 15) {
-    first +=
-      ' ' +
-      pick(`${seed}:star`, [
-        `${w.star.player} led ${w.name} with ${pts(w.star.points)}.`,
-        `${w.star.player} had ${pts(w.star.points)} for ${w.name}.`,
-        `${poss(w.star.player)} ${pts(w.star.points)} did the heavy lifting.`,
-      ])
-    if (l.star && l.star.points >= 25 && l.star.points > w.star.points) {
-      first += ` ${poss(l.star.player)} ${pts(l.star.points)} for ${l.name} wasn't enough.`
-    }
+  const markOf = (s: RecapSide, card: RecapTeamCard | undefined) => {
+    if (!card?.mark || claimed.has(`mark:${s.managerId}`)) return null
+    const m = card.mark
+    const text =
+      m.kind === 'career-high'
+        ? `a career high for ${s.name} that tops the ${pts(m.old)} from ${m.oldYear}`
+        : m.kind === 'career-low'
+          ? `a career low for ${s.name}`
+          : m.kind === 'best-since'
+            ? `${poss(s.name)} best score since ${m.year}`
+            : m.kind === 'low-since'
+              ? `${poss(s.name)} lowest score since ${m.year}`
+              : null
+    if (text) claimed.add(`mark:${s.managerId}`)
+    return text
   }
+  const wMark = markOf(w, wCard)
+  const lMark = markOf(l, lCard)
+  const wStar = paid && w.star && w.star.points >= 15 ? w.star : null
+  let first = `${cap(named(w))} ${verb} ${named(l)}, ${score(g)}`
+  if (wMark) {
+    first += `, ${wMark}.`
+    if (wStar) {
+      first +=
+        ' ' +
+        pick(`${seed}:star`, [
+          `${wStar.player} led the way with ${pts(wStar.points)} points.`,
+          `${wStar.player} did the heavy lifting with ${pts(wStar.points)}.`,
+          `${w.name} got ${pts(wStar.points)} from ${wStar.player}.`,
+        ])
+    }
+  } else if (wStar) {
+    first += pick(`${seed}:star`, [
+      `, behind ${pts(wStar.points)} points from ${wStar.player}.`,
+      `, with ${wStar.player} leading the way on ${pts(wStar.points)} points.`,
+      `, as ${wStar.player} put up ${pts(wStar.points)} points.`,
+    ])
+  } else first += '.'
   out.push(first)
 
   // 2. History between the two.
   if (!claimed.has(`game:${i}:series`)) {
     const ev = g.seriesEvent
     const after = g.series ? seriesFrom(g, w.name, g.series) : null
-    if (ev?.kind === 'snap') out.push(`It ended ${poss(l.name)} ${numberWord(ev.run)}-game run in the series.`)
+    if (ev?.kind === 'snap') out.push(`It ended ${poss(l.name)} ${numberWord(ev.run)}-game run in the series${after && after.w < after.l ? `, though ${l.name} still leads it ${recordStr(after.l, after.w, after.t)}` : ''}.`)
     else if (ev?.kind === 'extend') out.push(`${w.name} has won ${numberWord(ev.run)} straight in the series${after ? `, ${seriesTail(w.name, l.name, after)}` : ''}.`)
-    else if (ev?.kind === 'even' && after) out.push(`That evens the series at ${recordStr(after.w, after.l, after.t)}.`)
-    else if (ev?.kind === 'lead' && after) out.push(`${w.name} takes a ${recordStr(after.w, after.l, after.t)} lead in the series.`)
-    else if (ev?.kind === 'first') out.push('It was their first meeting.')
+    else if (ev?.kind === 'even' && after) out.push(`The win evens their all-time series at ${recordStr(after.w, after.l, after.t)}.`)
+    else if (ev?.kind === 'lead' && after) out.push(`The win puts ${w.name} ahead ${recordStr(after.w, after.l, after.t)} in their all-time series.`)
+    else if (ev?.kind === 'first') out.push('It was the first time the two had met.')
     else if (g.last && after) {
       out.push(
         g.last.winner === w.name
           ? `${w.name} also won their last meeting, in ${when(g.last, f.year)}, ${seriesTail(w.name, l.name, after)}.`
-          : `${l.name} had won their last meeting, in ${when(g.last, f.year)}. ${cap(seriesState(w.name, l.name, after))}.`,
+          : `${l.name} had won their last meeting, in ${when(g.last, f.year)}, ${
+              after.w > after.l
+                ? `but this one puts ${w.name} ahead ${recordStr(after.w, after.l, after.t)} in the series`
+                : after.w < after.l
+                  ? `and still leads the series ${recordStr(after.l, after.w, after.t)}`
+                  : `and this one evens the series at ${recordStr(after.w, after.l, after.t)}`
+            }.`,
       )
-    } else if (after) out.push(`${cap(seriesState(w.name, l.name, after))}.`)
+    } else if (after) out.push(`${cap(seriesState(w.name, l.name, after))} all time.`)
   }
 
-  // 3. Personal marks. Two of the same kind become one sentence.
-  const marks: { s: RecapSide; m: RecapMark }[] = []
-  const starts: { s: RecapSide; rec: string; m: RecapStartMark }[] = []
-  for (const [s, card] of [
-    [w, wCard],
-    [l, lCard],
-  ] as const) {
-    if (!card) continue
-    if (card.mark && !claimed.has(`mark:${s.managerId}`) && markSentence(s.name, s.score, card.mark)) {
-      marks.push({ s, m: card.mark })
-      claimed.add(`mark:${s.managerId}`)
-    }
-    if (card.startMark && card.record && !claimed.has(`start:${s.managerId}`)) {
-      starts.push({ s, rec: card.record, m: card.startMark })
+  // 3. Each side's own story: how the start compares with their past
+  // starts, and their running numbers against their own past. Two facts
+  // about one person share a sentence.
+  const clausesFor = (s: RecapSide, card: RecapTeamCard | undefined): Clause[] => {
+    const cs: Clause[] = []
+    if (card?.startMark && card.record && !claimed.has(`start:${s.managerId}`)) {
+      cs.push(startClause(card.record, card.startMark))
       claimed.add(`start:${s.managerId}`)
     }
-  }
-  const personal: string[] = []
-  if (marks.length === 2 && marks[0].m.kind === 'best-since' && marks[1].m.kind === 'best-since') {
-    const [a, b] = marks as { s: RecapSide; m: { kind: 'best-since'; year: number } }[]
-    personal.push(`Both sides had their best day in a while: ${poss(a.s.name)} best score since ${a.m.year}, ${poss(b.s.name)} since ${b.m.year}.`)
-  } else {
-    for (const { s, m } of marks) personal.push(markSentence(s.name, s.score, m)!)
-  }
-  starts.forEach(({ s, rec, m }, v) => personal.push(startSentence(s.name, rec, m, v)))
-  // Their running numbers against their own past: best start, best stretch.
-  for (const [s, card] of [
-    [w, wCard],
-    [l, lCard],
-  ] as const) {
     for (const m of card?.runs ?? []) {
+      // Through two weeks, the start and the last two weeks are one number.
+      if (m.kind === 'two-week-best' && f.week === 2) continue
       const key = `run:${m.kind === 'two-week-best' ? 'two' : 'start'}:${s.managerId}`
       if (claimed.has(key)) continue
       claimed.add(key)
-      personal.push(runSentence(s.name, f.week, m))
+      cs.push(runClause(f.week, m))
     }
+    return cs.slice(0, 2)
   }
-  out.push(...personal.slice(0, 3))
+  const wClauses = clausesFor(w, wCard)
+  if (wClauses.length) out.push(clauseSentence(w.name, wClauses))
 
-  // 4. A loss the bench would have turned around. Only the total is safe to
-  // print: the best bench player isn't always one the best lineup would
-  // have started.
-  if (paid && l.left != null && l.left > g.margin && !g.leg) {
-    out.push(`${l.name} left ${pts(l.left)} points on the bench in a game lost by ${pts(g.margin)}.`)
+  // 4. The losing side: the player who nearly carried them, what the bench
+  // cost (only the total is safe to print: the best bench player isn't
+  // always one the best lineup would have started), and their own marks.
+  const lStar = paid && l.star && l.star.points >= 25 && (!w.star || l.star.points > w.star.points) ? l.star : null
+  const benched = paid && l.left != null && l.left > g.margin && !g.leg ? l.left : null
+  if (lMark) out.push(`${l.name} scored ${pts(l.score)} in the loss, ${lMark}.`)
+  if (lStar && benched != null) {
+    out.push(`${l.name} got ${pts(lStar.points)} from ${lStar.player} but left ${pts(benched)} points on the bench in a game decided by ${pts(g.margin)}.`)
+  } else if (lStar) {
+    out.push(`${poss(lStar.player)} ${pts(lStar.points)} for ${l.name} wasn't enough.`)
+  } else if (benched != null) {
+    out.push(`${l.name} left ${pts(benched)} points on the bench in a game decided by ${pts(g.margin)}.`)
   }
+  const lClauses = clausesFor(l, lCard)
+  if (lClauses.length) out.push(clauseSentence(l.name, lClauses))
 
   // 5. Where it leaves them, when nothing above already said it.
-  if (out.length < 4 && f.phase === 'regular') {
-    const parts: string[] = []
-    if (wCard?.record && !claimed.has(`rec:${w.managerId}`)) parts.push(`${w.name} is ${wCard.record}`)
-    if (lCard?.record && !claimed.has(`rec:${l.managerId}`)) {
-      const st = lCard.streak && lCard.streak.kind === 'L' && lCard.streak.length >= 3 ? `, losers of ${numberWord(lCard.streak.length)} straight` : ''
-      parts.push(`${l.name} ${parts.length ? 'falls to' : 'is'} ${lCard.record}${st}`)
-    }
-    if (parts.length) out.push(`${cap(parts.join('; '))}.`)
+  if (out.length < 5 && f.phase === 'regular') {
+    const wRec = wCard?.record && !claimed.has(`rec:${w.managerId}`) && !wClauses.some((c) => c.text.startsWith('is ')) ? wCard.record : null
+    const lRec = lCard?.record && !claimed.has(`rec:${l.managerId}`) && !lClauses.some((c) => c.text.startsWith('is ')) ? lCard.record : null
+    const skid = lCard?.streak && lCard.streak.kind === 'L' && lCard.streak.length >= 3 ? `, losers of ${numberWord(lCard.streak.length)} straight` : ''
+    if (wRec && lRec) out.push(`${w.name} moves to ${wRec}, and ${l.name} falls to ${lRec}${skid}.`)
+    else if (wRec) out.push(`The win moves ${w.name} to ${wRec}.`)
+    else if (lRec) out.push(`The loss drops ${l.name} to ${lRec}${skid}.`)
   }
 
   return story()
