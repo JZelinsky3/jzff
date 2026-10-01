@@ -57,14 +57,14 @@ export function JoinList({ slug, league, from }: { slug: string; league: string;
       ) : state === 'already' ? (
         <div className={styles.couponDone} role="status">
           <p>
-            <b>You&apos;re already on the list.</b> The next paper comes the Tuesday after Monday night.
+            <b>You&apos;re already on the list.</b> The next paper comes Tuesday morning.
           </p>
         </div>
       ) : (
         <>
           <p className={styles.couponText}>
             Don&apos;t wait on the commish to post the link. Put your own email on the {league} list and the paper comes
-            to you the morning after Monday night. One email a week, leave any time.
+            to you every Tuesday morning. Leave any time.
           </p>
           <form className={styles.couponForm} onSubmit={onSubmit}>
             <label className={styles.srOnly} htmlFor="join-email">

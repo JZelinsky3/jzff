@@ -43,8 +43,7 @@ export default async function RecapSubscribePage({
           <>
             <h1>You&apos;re on the list</h1>
             <p>
-              {done ? 'Confirmed. ' : ''}The {sub.league.name} paper will come to you every Tuesday morning, after Monday
-              night.
+              {done ? 'Confirmed. ' : ''}The {sub.league.name} paper will come to you every Tuesday morning.
             </p>
             <p className={styles.note}>
               Add {recapFromAddress()} to your contacts so it lands in your inbox. If you ever find it in spam, mark it
@@ -57,7 +56,7 @@ export default async function RecapSubscribePage({
         ) : (
           <>
             <h1>Get the {sub.league.name} paper every Tuesday?</h1>
-            <p>One email a week, the morning after Monday night. Leave the list any time from the link at the bottom.</p>
+            <p>One email every Tuesday morning. Leave the list any time from the link at the bottom.</p>
             <form method="post" action="/api/recap/subscribe/confirm/">
               <input type="hidden" name="t" value={t} />
               <button type="submit" className={styles.primary}>Confirm my email</button>

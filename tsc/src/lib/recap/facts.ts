@@ -56,7 +56,7 @@ export function recapSections(tier: RecapTier): { paid: boolean; veteran: boolea
 
 // ── Shape ─────────────────────────────────────────────────────────────────
 
-export const RECAP_FACTS_VERSION = 8
+export const RECAP_FACTS_VERSION = 9
 
 // An all-time series between two people, from one side's point of view.
 export type RecapSeries = { w: number; l: number; t: number; since: number }
@@ -83,6 +83,8 @@ export type RecapSide = {
   team: string | null
   avatar: string | null
   score: number
+  // Index into facts.divisions; null when the league has none.
+  div?: number | null
   // Seasons this person won the title, before this one.
   titles: number[]
   // Rookie and up, from the week's lineups: the best starter, the best
@@ -250,6 +252,7 @@ export type RecapStanding = {
   pf: number
   // Places moved since last week, + is up. Null in week 1.
   change: number | null
+  div?: number | null
   // Rookie and up: playoff odds from the power rankings sim, 0 to 100.
   odds?: number | null
 }
@@ -306,7 +309,7 @@ export type RecapTrade = {
 
 export type RecapVerdict = { headline: string; summary: string }
 
-export type RecapNextSide = { name: string; avatar: string | null; record: string | null; place: number | null; ppg: number | null }
+export type RecapNextSide = { name: string; avatar: string | null; record: string | null; place: number | null; ppg: number | null; div?: number | null }
 
 export type RecapNextGame = {
   a: RecapNextSide
@@ -333,7 +336,7 @@ export type RecapNext = {
 }
 
 export type RecapFacts = {
-  v: 8
+  v: 9
   generatedAt: string
   league: { id: string; slug: string; name: string; abbr: string | null }
   year: number
@@ -341,6 +344,10 @@ export type RecapFacts = {
   tier: RecapTier
   phase: 'regular' | 'playoffs'
   history: { firstYear: number; seasons: number }
+  // Division (or conference) names, in index order, when this season has
+  // two or more in use. Every tier: in a league with conference titles,
+  // which side of the league a team is on is part of reading the table.
+  divisions?: string[] | null
 
   games: RecapGame[]
   top: RecapLine | null
@@ -475,7 +482,7 @@ export async function buildRecapFacts(args: {
 
   const { data: league } = await db
     .from('leagues')
-    .select('id, name, slug, abbreviation, settings, platform')
+    .select('id, name, slug, abbreviation, settings, platform, division_names')
     .eq('id', leagueId)
     .maybeSingle()
   if (!league) return { status: 'no-league' }
@@ -491,7 +498,7 @@ export async function buildRecapFacts(args: {
   const [{ data: managerRows }, { data: profileRows }, { data: teamRows }, { data: matchupRows }] = await Promise.all([
     db.from('managers').select('id, display_name, profile_id, avatar_url, external_id').eq('league_id', leagueId),
     db.from('manager_profiles').select('id, canonical_name').eq('league_id', leagueId),
-    db.from('manager_seasons').select('manager_id, team_name, avatar_url').eq('season_id', season.id),
+    db.from('manager_seasons').select('manager_id, team_name, avatar_url, division_index').eq('season_id', season.id),
     db
       .from('matchups')
       .select('week, manager_a_id, manager_b_id, score_a, score_b, is_playoff, is_championship')
@@ -519,10 +526,18 @@ export async function buildRecapFacts(args: {
   }
   const teams = new Map<string, string | null>()
   const seasonAvatar = new Map<string, string | null>()
+  const divIndex = new Map<string, number>()
   for (const t of teamRows ?? []) {
     teams.set(t.manager_id as string, (t.team_name as string | null) ?? null)
     seasonAvatar.set(t.manager_id as string, (t.avatar_url as string | null) ?? null)
+    if (typeof t.division_index === 'number') divIndex.set(t.manager_id as string, t.division_index as number)
   }
+  // Only when two or more divisions are actually in use this season, so a
+  // league that once had them (or has one) shows no badges.
+  const divNames = Array.isArray(league.division_names) ? (league.division_names as string[]) : []
+  const usedDivs = new Set([...divIndex.values()].filter((i) => i >= 0 && i < divNames.length))
+  const divisions = usedDivs.size >= 2 ? divNames : null
+  const divOf = (id: string) => (divisions ? divIndex.get(id) ?? null : null)
   const nameOf = (id: string) => names.get(id) ?? 'Unknown'
   const personOf = (id: string) => personOfId.get(id) ?? id
   const avatarOf = (id: string) => seasonAvatar.get(id) || managerAvatar.get(id) || null
@@ -541,6 +556,7 @@ export async function buildRecapFacts(args: {
     team: teams.get(id) ?? null,
     avatar: avatarOf(id),
     score: round2(score),
+    div: divOf(id),
     titles: titlesOf(id),
   })
 
@@ -813,6 +829,7 @@ export async function buildRecapFacts(args: {
       ties: r.t,
       pf: round2(r.pf),
       change: before ? (prevRank.get(r.id) ?? i + 1) - (i + 1) : null,
+      div: divOf(r.id),
     }))
 
     for (const id of universe) {
@@ -939,6 +956,7 @@ export async function buildRecapFacts(args: {
               record: recordOf(id),
               place: placeOf.get(id)?.rank ?? null,
               ppg: r && played ? round1(r.pf / played) : null,
+              div: divOf(id),
             }
           }
           return {
@@ -954,7 +972,7 @@ export async function buildRecapFacts(args: {
     : null
 
   const facts: RecapFacts = {
-    v: 8,
+    v: 9,
     generatedAt: new Date().toISOString(),
     league: {
       id: league.id as string,
@@ -967,6 +985,7 @@ export async function buildRecapFacts(args: {
     tier,
     phase: playoffWeek ? 'playoffs' : 'regular',
     history: { firstYear, seasons: seasonsWithGames.length },
+    divisions,
     games,
     top,
     low,

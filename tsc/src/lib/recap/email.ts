@@ -186,7 +186,7 @@ Want the rest of the league getting this too? Anyone can add their own email at 
   const why =
     audience === 'owner'
       ? `You're getting this because you run ${esc(f.league.name)} on The Sunday Chronicle. Recaps go to the league's commissioner once a week, after Monday night.`
-      : `You're getting this because you joined the ${esc(f.league.name)} mailing list on The Sunday Chronicle. It comes once a week, after Monday night.`
+      : `You're getting this because you joined the ${esc(f.league.name)} mailing list on The Sunday Chronicle. It comes every Tuesday morning.`
   const stop = audience === 'owner' ? 'Stop recap emails' : 'Leave the mailing list'
   rows.push(`<tr><td class="pad" bgcolor="${C.card}" style="padding:18px 40px 26px; border-top:1px solid ${C.rule}; font-family:${SANS}; font-size:11px; line-height:1.7; color:${C.foot};">
 ${why}<br>
@@ -275,7 +275,7 @@ export function renderSubscribeConfirmEmail(args: { league: string; confirmUrl: 
 <div style="font-family:${SERIF}; font-size:26px; line-height:1.2; color:${C.ink};">${esc(args.league)}</div>
 </td></tr>
 <tr><td class="pad" bgcolor="${C.card}" style="padding:24px 40px 0; font-family:${SERIF}; font-size:16px; line-height:1.6; color:${C.ink};">
-Someone, hopefully you, asked for the ${esc(args.league)} weekly paper to come to this address. It lands every Tuesday morning after Monday night: a story for every game, the standings and what's coming next week.
+Someone, hopefully you, asked for the ${esc(args.league)} weekly paper to come to this address. It lands every Tuesday morning: a story for every game, the standings and what's coming next week.
 </td></tr>
 <tr><td class="pad" align="center" bgcolor="${C.card}" style="padding:24px 40px 8px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
@@ -297,7 +297,7 @@ Didn't ask for this? Ignore it and you won't hear from us again. Nothing is sent
   const text = [
     `The Sunday Chronicle: ${args.league}`,
     '',
-    `Someone, hopefully you, asked for the ${args.league} weekly paper to come to this address. It lands every Tuesday morning after Monday night.`,
+    `Someone, hopefully you, asked for the ${args.league} weekly paper to come to this address. It lands every Tuesday morning.`,
     '',
     `Confirm your email: ${args.confirmUrl}`,
     '',

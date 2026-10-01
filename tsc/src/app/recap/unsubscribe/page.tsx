@@ -76,7 +76,7 @@ export default async function RecapUnsubscribePage({
             <h1>{done === 'resume' ? 'Recap emails are back on' : 'Stop weekly recap emails?'}</h1>
             <p>
               {done === 'resume'
-                ? `Recaps will go to ${mask(user.email)} again after next Monday night.`
+                ? `Recaps will go to ${mask(user.email)} again next Tuesday morning.`
                 : `One email a week to ${mask(user.email)}, the Tuesday after Monday night, about the league you run.`}
             </p>
             {done === 'resume' && user.productEmailOff ? (
@@ -124,8 +124,8 @@ async function ListMember({ t, done }: { t: string; done?: string }) {
             <h1>{done === 'resume' ? "You're back on the list" : `Leave the ${sub.league.name} mailing list?`}</h1>
             <p>
               {done === 'resume'
-                ? `The ${sub.league.name} paper will come to ${mask(sub.email)} again after next Monday night.`
-                : `One email a week to ${mask(sub.email)}, the Tuesday after Monday night. Other leagues' lists you are on aren't affected.`}
+                ? `The ${sub.league.name} paper will come to ${mask(sub.email)} again next Tuesday morning.`
+                : `One email every Tuesday morning to ${mask(sub.email)}. Other leagues' lists you are on aren't affected.`}
             </p>
             {done !== 'resume' ? (
               <form method="post" action="/api/recap/unsubscribe/">

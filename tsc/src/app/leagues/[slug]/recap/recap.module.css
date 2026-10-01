@@ -1,8 +1,8 @@
 /* The weekly recap, printed as the league's paper. The front page is cream
    newsprint; every section after it is its own stock (the games on a
-   lighter sheet with each story boxed, the projections on grey-violet, the
-   record book in black and gold, the season so far on manila, the
-   standings on salmon, pick'ems on blue, the wire on kraft, next week in
+   lighter sheet with each story boxed, the standings on salmon, the
+   projections on grey-violet, the record book in black and gold, the
+   season so far on sage, pick'ems on blue, the wire on kraft, next week in
    green), so a change of topic is visible at a glance. The back page goes
    back to the front page's cream, so the paper is bookended. Each section just
    redefines the house tokens (--paper, --ink, --rule, --red...) and every
@@ -505,17 +505,17 @@
   --rule: #bdb6cc;
   --red: #4f3a86;
 }
-/* Manila, so the running totals read as their own page rather than more
-   rows of the black record book above them or the salmon table below. */
+/* Sage, so the running totals read as their own page rather than more
+   rows of the black record book above them. */
 .sSeason {
-  --paper: #ecdca8;
-  --paper-2: #e2cd8e;
-  --card: #f7eed2;
-  --ink: #231b0c;
-  --ink-2: #4d3f22;
-  --mute: #7a6638;
-  --rule: #cbb377;
-  --red: #8a3b12;
+  --paper: #d3e3c6;
+  --paper-2: #c3d8b3;
+  --card: #eef5e8;
+  --ink: #16241a;
+  --ink-2: #3a4d3d;
+  --mute: #5f7461;
+  --rule: #a9c29a;
+  --red: #2f6a3d;
 }
 .sNext {
   --paper: #1d3a2c;
@@ -565,6 +565,55 @@
   color: var(--red) !important;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+/* Division badges: W and S, after a record. Four fills, one per division,
+   each readable on every stock (the thin ring keeps them visible on the
+   dark ones). */
+.divBadge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.35em;
+  height: 1.35em;
+  margin-left: 0.4rem;
+  padding: 0 0.3em;
+  border-radius: 3px;
+  font-family: var(--rc-sans);
+  font-size: 0.62rem;
+  font-weight: 800;
+  font-style: normal;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: #fff;
+  vertical-align: 0.12em;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+.divBadge[data-div='0'] {
+  background: #2c5a7e;
+}
+.divBadge[data-div='1'] {
+  background: #b4472a;
+}
+.divBadge[data-div='2'] {
+  background: #2f7a4a;
+}
+.divBadge[data-div='3'] {
+  background: #6b3f8a;
+}
+.divKey {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.1rem;
+  margin: -0.3rem 0 1rem;
+  font-family: var(--rc-sans);
+  font-size: 0.76rem;
+  color: var(--ink-2);
+}
+.divKey .divBadge {
+  margin: 0 0.25rem 0 0;
+}
+.sTable .divKey {
+  margin: 0.8rem 0 0;
 }
 
 /* Avatars */

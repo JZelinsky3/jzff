@@ -130,6 +130,47 @@ function signed(n: number): string {
   return n > 0 ? `+${n}` : String(n)
 }
 
+// Short labels for the division badges: "W" and "S" for Whole and Skim.
+// Words every name shares ("Division", "KFL") are dropped first, then the
+// first letter if that tells them apart, else the first letter of each
+// word ("TFC East" -> "TE"), else the division's number.
+function divisionLabels(names: string[]): string[] {
+  const split = names.map((n) => n.split(/[\s.\-]+/).filter(Boolean))
+  const shared = new Set(split[0].filter((w) => split.every((ws) => ws.some((x) => x.toLowerCase() === w.toLowerCase()))).map((w) => w.toLowerCase()))
+  const kept = split.map((ws) => {
+    const k = ws.filter((w) => !shared.has(w.toLowerCase()) && !/^the$/i.test(w))
+    return k.length ? k : ws
+  })
+  const distinct = (xs: string[]) => new Set(xs).size === xs.length && xs.every(Boolean)
+  const first = kept.map((ws) => ws[0].charAt(0).toUpperCase())
+  if (distinct(first)) return first
+  const initials = kept.map((ws) => ws.map((w) => w.charAt(0).toUpperCase()).join('').slice(0, 3))
+  if (distinct(initials)) return initials
+  return names.map((_, i) => String(i + 1))
+}
+
+function DivBadge({ div, labels, names }: { div: number | null | undefined; labels: string[] | null; names: string[] | null }) {
+  if (div == null || !labels || !names || labels[div] == null) return null
+  return (
+    <span className={styles.divBadge} data-div={div % 4} title={names[div]}>
+      {labels[div]}
+    </span>
+  )
+}
+
+function DivKey({ labels, names }: { labels: string[] | null; names: string[] | null }) {
+  if (!labels || !names) return null
+  return (
+    <div className={styles.divKey}>
+      {names.map((n, i) => (
+        <span key={n}>
+          <DivBadge div={i} labels={labels} names={names} /> {n}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 // Vol. VIII, No. 3: the league's eighth season, third paper.
 function roman(n: number): string {
   const table: [number, string][] = [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']]
@@ -218,6 +259,8 @@ export default async function RecapPage({
   const rookiePrice = `$${(TIER_PRICES.tier1.yearly.amountCents / 100).toFixed(0)} a year`
   const weekLabel = f.phase === 'playoffs' ? `Playoffs, week ${week}` : `Week ${week}`
   const cardOf = new Map(f.teams.map((t) => [t.managerId, t]))
+  const divNames = f.divisions?.length ? f.divisions : null
+  const divLabels = divNames ? divisionLabels(divNames) : null
 
   const yourTeams: YourWeekTeam[] = f.teams.map((t) => {
     const s = edition.stories.find((x) => x.game.a.managerId === t.managerId || x.game.b.managerId === t.managerId)
@@ -254,10 +297,10 @@ export default async function RecapPage({
   const volume = `Vol. ${roman(f.history.seasons)}, No. ${week}`
   const jumps: { id: string; label: string }[] = [
     { id: 'games', label: 'Results' },
+    ...(hasStandings ? [{ id: 'standings', label: 'Standings' }] : []),
     ...(proj ? [{ id: 'projections', label: 'Projections' }] : []),
     ...(hasBook ? [{ id: 'book', label: 'Record book' }] : []),
     ...(totals.length ? [{ id: 'season', label: 'Season so far' }] : []),
-    ...(hasStandings ? [{ id: 'standings', label: 'Standings' }] : []),
     ...(show.paid && facts.pickems ? [{ id: 'pickems', label: "Pick'ems" }] : []),
     ...(show.veteran && (facts.trades?.length || facts.verdicts?.length) ? [{ id: 'trades', label: 'Trades' }] : []),
     ...(edition.previews.length ? [{ id: 'next', label: `Week ${f.next!.week}` }] : []),
@@ -311,6 +354,7 @@ export default async function RecapPage({
         {/* ── The games ── */}
         <section className={`${styles.section} ${styles.sGames}`}>
           <SectionHead id="games" tag="Results" title="The Games" />
+          <DivKey labels={divLabels} names={divNames} />
           <div className={styles.stories}>
             {edition.stories.map((s) => {
               const g = s.game
@@ -329,6 +373,7 @@ export default async function RecapPage({
                         <span className={styles.storyName}>
                           {side.name}
                           {cardOf.get(side.managerId)?.record && f.phase === 'regular' ? <small>{cardOf.get(side.managerId)!.record}</small> : null}
+                          <DivBadge div={side.div} labels={divLabels} names={divNames} />
                         </span>
                         <span className={styles.storyNum}>{pts(side.score)}</span>
                       </span>
@@ -340,6 +385,91 @@ export default async function RecapPage({
             })}
           </div>
         </section>
+
+        {/* ── Standings, with the power rankings folded in ── */}
+        {hasStandings ? (
+          <section className={`${styles.section} ${styles.sTable}`}>
+            <SectionHead
+              id="standings"
+              tag="The table"
+              title="The Standings"
+              link={hasPower ? { href: `/leagues/${slug}/live/powerrank/`, label: 'Power rankings' } : { href: `/leagues/${slug}/standings`, label: 'Standings' }}
+            />
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th />
+                    <th className={`${styles.left} ${styles.teamCol}`}>Team</th>
+                    <th>W-L</th>
+                    <th>PF</th>
+                    <th>Strk</th>
+                    {hasPower ? <th>Power</th> : null}
+                    {hasOdds ? <th className={styles.left}>Playoffs</th> : null}
+                  </tr>
+                </thead>
+                <tbody>
+                  {f.standings!.map((s, i) => {
+                    const card = cardOf.get(s.managerId)
+                    const cut = show.paid && f.playoffTeams && i === f.playoffTeams - 1
+                    return (
+                      <tr key={s.managerId} className={cut ? styles.cutLine : undefined}>
+                        <td className={styles.rank}>
+                          {s.rank}
+                          {s.change ? <small className={s.change > 0 ? styles.up : styles.down}>{s.change > 0 ? '▲' : '▼'}</small> : null}
+                        </td>
+                        <td className={`${styles.left} ${styles.teamCol}`}>
+                          <span className={styles.tableTeam}>
+                            <Avatar src={s.avatar} name={s.name} size="sm" />
+                            <span className={styles.tableName}>{s.name}</span>
+                          </span>
+                        </td>
+                        <td>
+                          {recordStr(s.wins, s.losses, s.ties)}
+                          {divLabels ? <DivBadge div={s.div} labels={divLabels} names={divNames} /> : null}
+                        </td>
+                        <td>{pts(s.pf)}</td>
+                        <td>{card?.streak ? `${card.streak.kind}${card.streak.length}` : <span className={styles.noStreak}>-</span>}</td>
+                        {hasPower ? (
+                          <td>
+                            {card?.power ? (
+                              <>
+                                {card.power.rank}
+                                <small className={`${styles.pDelta} ${card.power.delta > 0 ? styles.up : card.power.delta < 0 ? styles.down : styles.flat}`}>
+                                  {card.power.delta ? signed(card.power.delta) : '-'}
+                                </small>
+                              </>
+                            ) : (
+                              ''
+                            )}
+                          </td>
+                        ) : null}
+                        {hasOdds ? (
+                          <td className={styles.left}>
+                            {s.odds != null ? (
+                              <span className={styles.odds}>
+                                <span className={styles.oddsBar}>
+                                  <span style={{ width: `${Math.max(2, Math.round(s.odds))}%` }} />
+                                </span>
+                                {Math.round(s.odds)}%
+                              </span>
+                            ) : null}
+                          </td>
+                        ) : null}
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <DivKey labels={divLabels} names={divNames} />
+            <p className={styles.fine}>
+              Ranked by record, then points for. The arrow is the move since last week
+              {hasPower ? '; Power is the power ranking, with its weekly move' : ''}
+              {show.paid && f.playoffTeams ? `. The rule marks the ${f.playoffTeams}-team playoff line` : ''}.
+            </p>
+          </section>
+        ) : null}
 
         {/* ── Against the projections ── */}
         {proj ? (
@@ -441,87 +571,6 @@ export default async function RecapPage({
                 </div>
               ))}
             </div>
-          </section>
-        ) : null}
-
-        {/* ── Standings, with the power rankings folded in ── */}
-        {hasStandings ? (
-          <section className={`${styles.section} ${styles.sTable}`}>
-            <SectionHead
-              id="standings"
-              tag="The table"
-              title="The Standings"
-              link={hasPower ? { href: `/leagues/${slug}/live/powerrank/`, label: 'Power rankings' } : { href: `/leagues/${slug}/standings`, label: 'Standings' }}
-            />
-            <div className={styles.tableWrap}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th />
-                    <th className={`${styles.left} ${styles.teamCol}`}>Team</th>
-                    <th>W-L</th>
-                    <th>PF</th>
-                    <th>Strk</th>
-                    {hasPower ? <th>Power</th> : null}
-                    {hasOdds ? <th className={styles.left}>Playoffs</th> : null}
-                  </tr>
-                </thead>
-                <tbody>
-                  {f.standings!.map((s, i) => {
-                    const card = cardOf.get(s.managerId)
-                    const cut = show.paid && f.playoffTeams && i === f.playoffTeams - 1
-                    return (
-                      <tr key={s.managerId} className={cut ? styles.cutLine : undefined}>
-                        <td className={styles.rank}>
-                          {s.rank}
-                          {s.change ? <small className={s.change > 0 ? styles.up : styles.down}>{s.change > 0 ? '▲' : '▼'}</small> : null}
-                        </td>
-                        <td className={`${styles.left} ${styles.teamCol}`}>
-                          <span className={styles.tableTeam}>
-                            <Avatar src={s.avatar} name={s.name} size="sm" />
-                            <span className={styles.tableName}>{s.name}</span>
-                          </span>
-                        </td>
-                        <td>{recordStr(s.wins, s.losses, s.ties)}</td>
-                        <td>{pts(s.pf)}</td>
-                        <td>{card?.streak ? `${card.streak.kind}${card.streak.length}` : <span className={styles.noStreak}>-</span>}</td>
-                        {hasPower ? (
-                          <td>
-                            {card?.power ? (
-                              <>
-                                {card.power.rank}
-                                <small className={`${styles.pDelta} ${card.power.delta > 0 ? styles.up : card.power.delta < 0 ? styles.down : styles.flat}`}>
-                                  {card.power.delta ? signed(card.power.delta) : '-'}
-                                </small>
-                              </>
-                            ) : (
-                              ''
-                            )}
-                          </td>
-                        ) : null}
-                        {hasOdds ? (
-                          <td className={styles.left}>
-                            {s.odds != null ? (
-                              <span className={styles.odds}>
-                                <span className={styles.oddsBar}>
-                                  <span style={{ width: `${Math.max(2, Math.round(s.odds))}%` }} />
-                                </span>
-                                {Math.round(s.odds)}%
-                              </span>
-                            ) : null}
-                          </td>
-                        ) : null}
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <p className={styles.fine}>
-              Ranked by record, then points for. The arrow is the move since last week
-              {hasPower ? '; Power is the power ranking, with its weekly move' : ''}
-              {show.paid && f.playoffTeams ? `. The rule marks the ${f.playoffTeams}-team playoff line` : ''}.
-            </p>
           </section>
         ) : null}
 
@@ -639,6 +688,7 @@ export default async function RecapPage({
                         <span className={styles.previewName}>
                           {s.name}
                           {s.record ? <small>{s.record}</small> : null}
+                          <DivBadge div={s.div} labels={divLabels} names={divNames} />
                         </span>
                         {s.ppg != null ? (
                           <span className={styles.previewPpg}>
