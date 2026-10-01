@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { loadRecap, recapViewable } from '@/lib/recap/load'
 import { ordinal, pts, recapSections, recordStr, type RecapGame } from '@/lib/recap/facts'
-import { bookLine, poss, writeEdition } from '@/lib/recap/story'
+import { bookLine, poss, totalLine, writeEdition } from '@/lib/recap/story'
 import { recapPageUrl } from '@/lib/recap/links'
 import { TIER_PRICES } from '@/lib/stripe'
 import { ShareButton } from '../../ShareButton'
@@ -265,13 +265,12 @@ export default async function RecapPage({
             <h2 className={styles.headline}>{front.headline}</h2>
             {front.deck ? <p className={styles.deck}>{front.deck}</p> : null}
             {show.paid && facts.star ? (
-              <div className={styles.starStrip}>
-                <span className={styles.starLabel}>Player of the week</span>
-                <span className={styles.starName}>{facts.star.player}</span>
-                <span className={styles.starMeta}>
-                  {facts.star.pos ? `${facts.star.pos} · ` : ''}
-                  {pts(facts.star.points)} pts · {facts.star.manager}
-                </span>
+              <div className={styles.starBox}>
+                <div className={styles.boxHead}>Player of the week</div>
+                <div className={styles.starName}>{facts.star.player}</div>
+                <div className={styles.starMeta}>
+                  {pts(facts.star.points)} points{facts.star.pos ? `, ${facts.star.pos}` : ''}, for {facts.star.manager}
+                </div>
               </div>
             ) : null}
             <div className={styles.byline}>
@@ -325,7 +324,7 @@ export default async function RecapPage({
         </section>
 
         {/* ── Record book ── */}
-        {book.length || (show.paid && facts.weekRecord) || (show.paid && facts.milestones?.length) ? (
+        {book.length || (show.paid && facts.weekRecord) || (show.paid && facts.totals?.length) || (show.paid && facts.milestones?.length) ? (
           <section className={`${styles.section} ${styles.sBook}`}>
             <SectionHead id="book" tag="History" title="The Record Book" link={{ href: `/leagues/${slug}/live/records-watch/`, label: 'Records watch' }} />
             <div className={styles.book}>
@@ -350,12 +349,25 @@ export default async function RecapPage({
                   <span className={styles.bookLabel}>All-time week {week} record</span>
                   <span className={styles.bookValue}>{pts(facts.weekRecord.value)}</span>
                   <span className={styles.bookWho}>{facts.weekRecord.who}</span>
-                  <span className={styles.bookLine}>
-                    Set in {facts.weekRecord.year} and still standing.{f.top ? ` This week's best was ${pts(f.top.score)}.` : ''}
-                  </span>
+                  <span className={styles.bookLine}>Set in {facts.weekRecord.year} and still standing.</span>
                 </div>
               ) : null}
             </div>
+            {show.paid && facts.totals?.length ? (
+              <>
+                <div className={styles.bookSub}>The season so far</div>
+                <div className={styles.book}>
+                  {facts.totals.map((r) => (
+                    <div key={r.key} className={`${styles.bookRow} ${r.rank <= 3 ? styles.bookHot : ''}`}>
+                      <span className={styles.bookLabel}>{r.label}</span>
+                      <span className={styles.bookValue}>{r.key === 'streak' ? `${r.value} straight` : pts(r.value)}</span>
+                      <span className={styles.bookWho}>{r.who}</span>
+                      <span className={styles.bookLine}>{totalLine(r, facts)}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : null}
             {show.paid && facts.milestones?.length ? (
               <ul className={styles.milestones}>
                 {facts.milestones.map((m) => (
@@ -382,7 +394,7 @@ export default async function RecapPage({
                 <thead>
                   <tr>
                     <th />
-                    <th className={styles.left}>Team</th>
+                    <th className={`${styles.left} ${styles.teamCol}`}>Team</th>
                     <th>W-L</th>
                     <th>PF</th>
                     <th>Strk</th>
@@ -400,7 +412,7 @@ export default async function RecapPage({
                           {s.rank}
                           {s.change ? <small className={s.change > 0 ? styles.up : styles.down}>{s.change > 0 ? '▲' : '▼'}</small> : null}
                         </td>
-                        <td className={styles.left}>
+                        <td className={`${styles.left} ${styles.teamCol}`}>
                           <span className={styles.tableTeam}>
                             <Avatar src={s.avatar} name={s.name} size="sm" />
                             <span className={styles.tableName}>{s.name}</span>
@@ -414,9 +426,9 @@ export default async function RecapPage({
                             {card?.power ? (
                               <>
                                 {card.power.rank}
-                                {card.power.delta ? (
-                                  <small className={card.power.delta > 0 ? styles.up : styles.down}> {signed(card.power.delta)}</small>
-                                ) : null}
+                                <small className={`${styles.pDelta} ${card.power.delta > 0 ? styles.up : card.power.delta < 0 ? styles.down : styles.flat}`}>
+                                  {card.power.delta ? signed(card.power.delta) : '-'}
+                                </small>
                               </>
                             ) : (
                               ''

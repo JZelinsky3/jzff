@@ -29,6 +29,8 @@ import {
   type RecapStart,
   type RecapStartMark,
   type RecapTeamCard,
+  type RecapTotalRow,
+  type RecapRunMark,
 } from './facts'
 
 export type FrontPage = { headline: string; deck: string | null; paragraphs: string[] }
@@ -162,7 +164,7 @@ export function bookLine(row: RecapBookRow, f: RecapFacts): string {
 function startSentence(name: string, rec: string, m: RecapStartMark, v = 0): string {
   if (m.kind === 'first-ever') return `${name} is ${rec} for the first time in ${numberWord(m.seasons)} seasons in the league.`
   if (m.kind === 'first-since') {
-    return v % 2 === 0 ? `It is ${poss(name)} first ${rec} start since ${m.year}.` : `${name} hadn't started ${rec} since ${m.year}.`
+    return v % 2 === 0 ? `It is ${poss(name)} first ${rec} start since ${m.year}.` : `${name} hasn't started ${rec} since ${m.year}.`
   }
   return `${name} has started ${rec} for the ${ordinalWord(m.years)} straight season.`
 }
@@ -184,6 +186,25 @@ function markSentence(name: string, s: number, m: RecapMark): string | null {
 
 // Every finished season counts, so this is "in league history", never a
 // date range that reads like only some of it.
+function runSentence(name: string, week: number, m: RecapRunMark): string {
+  const w = numberWord(week)
+  const v = pts(m.value)
+  switch (m.kind) {
+    case 'start-best':
+      return m.since == null
+        ? `${name} has never started better: ${v} through ${w} weeks is a best in ${numberWord(m.seasons)} seasons.`
+        : `${name} hasn't started this well since ${m.since}, with ${v} through ${w} weeks.`
+    case 'start-worst':
+      return m.since == null
+        ? `It is the slowest start of ${poss(name)} career, ${v} through ${w} weeks.`
+        : `${name} hasn't started this slowly since ${m.since}, with ${v} through ${w} weeks.`
+    case 'two-week-best':
+      return m.since == null
+        ? `The last two weeks, ${v} points, are the best two-week stretch of ${poss(name)} career.`
+        : `${name} hasn't had a better two-week stretch since ${m.since} (${v} points).`
+  }
+}
+
 function startHistory(s: RecapStart, unbeaten: boolean, plural: boolean): string {
   if (s.champs === 0) {
     return unbeaten
@@ -192,6 +213,64 @@ function startHistory(s: RecapStart, unbeaten: boolean, plural: boolean): string
   }
   const last = s.lastChamp ? `, most recently ${s.lastChamp.name} in ${s.lastChamp.year}` : ''
   return `Of the ${s.teams} teams to start ${s.record} in league history, ${numberWord(s.champs)} won the title${last}.`
+}
+
+// The phrase each running total ranks on.
+const TOTAL_SUP: Record<RecapTotalRow['key'], string> = {
+  pf: 'most points',
+  pfLow: 'fewest points',
+  pa: 'most points against',
+  twoWeek: 'most points in back-to-back weeks',
+  leagueHigh: 'highest league-wide average',
+  leagueLow: 'lowest league-wide average',
+  streak: 'longest win streak',
+}
+
+function totalValue(row: RecapTotalRow): string {
+  return row.key === 'streak' ? `${row.value} straight` : pts(row.value)
+}
+
+// The history line under a running-total row in the record book.
+export function totalLine(row: RecapTotalRow, f: RecapFacts): string {
+  const sup = TOTAL_SUP[row.key]
+  const at = row.key === 'pf' || row.key === 'pfLow' || row.key === 'pa' ? ` through ${numberWord(f.week)} weeks` : row.key === 'streak' ? ' in a season' : row.key.startsWith('league') ? ' for a week' : ''
+  const held = (r: { who: string; value: number; year: number }) =>
+    r.who === 'The league' ? `${r.year}'s ${row.key === 'streak' ? r.value : pts(r.value)}` : `${poss(r.who)} ${row.key === 'streak' ? r.value : pts(r.value)} in ${r.year}`
+  if (row.rank === 1) return `The ${sup}${at} in league history${row.record ? `. The old mark was ${held(row.record)}` : ''}`
+  if (row.rank <= 10) return `${ordinal(row.rank)} ${sup}${at} in league history${row.record ? `. Record: ${held(row.record)}` : ''}`
+  return `The ${sup}${at} since ${row.since ? held(row.since) : ''}`
+}
+
+// The same thing as a sentence for the lead story.
+function totalSentence(row: RecapTotalRow, f: RecapFacts): string {
+  const w = numberWord(f.week)
+  const v = totalValue(row)
+  const rankText = row.rank === 1
+    ? 'the most in league history'
+    : row.rank <= 10
+      ? `the ${ordinal(row.rank)}-most in league history`
+      : `the most since ${row.since!.who === 'The league' ? row.since!.year : `${row.since!.who} in ${row.since!.year}`}`
+  const fewest = rankText.replace('most', 'fewest')
+  const lowest = rankText.replace('most', 'lowest')
+  const highest = rankText.replace('most', 'highest')
+  switch (row.key) {
+    case 'pf':
+      return `${row.who} has ${v} points through ${w} weeks, ${rankText} at this point of a season${
+        row.chaser ? `, just ahead of ${poss(row.chaser.who)} ${pts(row.chaser.value)}` : ''
+      }.`
+    case 'pfLow':
+      return `${row.who} has ${v} points through ${w} weeks, ${fewest} at this point of a season.`
+    case 'pa':
+      return `${row.who} has had ${v} points scored against them through ${w} weeks, ${rankText} at this point of a season.`
+    case 'twoWeek':
+      return `${poss(row.who)} ${v} over the last two weeks is ${rankText} for back-to-back weeks.`
+    case 'leagueHigh':
+      return `The league averaged ${v} points a team this week, ${highest} for a week.`
+    case 'leagueLow':
+      return `The league averaged ${v} points a team this week, ${lowest} for a week.`
+    case 'streak':
+      return `${row.who} has won ${row.value} straight, ${rankText.replace('most', 'longest')} for a streak inside a season.`
+  }
 }
 
 // ── The lead story ────────────────────────────────────────────────────────
@@ -212,7 +291,6 @@ type Angle = {
 
 function angles(f: RecapFacts, league: string): Angle[] {
   const out: Angle[] = []
-  const seed = `${f.league.id}:${f.year}:${f.week}`
   const book = new Map((f.book ?? []).map((r) => [r.key, r]))
   const result = (t: RecapTeamCard) =>
     t.result === 'W' ? `in a win over ${t.opponent}` : t.result === 'L' ? `and still lost to ${t.opponent}` : `against ${t.opponent}`
@@ -277,10 +355,9 @@ function angles(f: RecapFacts, league: string): Angle[] {
     if (ev.kind === 'snap') {
       out.push({
         weight: 70 + ev.run,
-        headline: pick(`${seed}:snap`, [
-          `${W(g).name} finally beats ${L(g).name}`,
-          `${W(g).name} ends ${poss(L(g).name)} ${numberWord(ev.run)}-game run`,
-        ]),
+        // "ends Mason's five-game run" read as five straight wins overall;
+        // the skid is Joey's, and it was against Mason.
+        headline: `${W(g).name} snaps ${numberWord(ev.run)}-game skid against ${L(g).name}`,
         lede: `${W(g).name} had lost ${numberWord(ev.run)} straight to ${L(g).name}. That ended this week, ${score(g)}.${state}`,
         tail: `It also ended ${poss(L(g).name)} ${numberWord(ev.run)}-game run in the series.`,
         game: i,
@@ -505,6 +582,25 @@ function frontPage(f: RecapFacts, league: string, claimed: Set<string>): FrontPa
     paragraphs.push(bits.join(' '))
   }
 
+  // The season so far, in running totals: the two that rank highest.
+  const totals = [...(f.totals ?? [])]
+    .filter((r) => !claimed.has(`total:${r.key}`))
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, 2)
+  if (totals.length) {
+    for (const r of totals) {
+      claimed.add(`total:${r.key}`)
+      // "Most points ever through three weeks" already says it is that
+      // manager's best start too.
+      const t = f.teams.find((x) => x.name === r.who)
+      if (t && (r.key === 'pf' || r.key === 'pfLow')) claimed.add(`run:start:${t.managerId}`)
+      const chaser = r.chaser ? f.teams.find((x) => x.name === r.chaser!.who) : null
+      if (chaser && r.key === 'pf') claimed.add(`run:start:${chaser.managerId}`)
+      if (t && r.key === 'twoWeek') claimed.add(`run:two:${t.managerId}`)
+    }
+    paragraphs.push(totals.map((r) => totalSentence(r, f)).join(' '))
+  }
+
   // A year ago tonight, and where those teams are now.
   if (f.yearAgo?.leaders.length) {
     const ya = f.yearAgo
@@ -667,7 +763,19 @@ function gameStory(f: RecapFacts, g: RecapGame, i: number, claimed: Set<string>,
     for (const { s, m } of marks) personal.push(markSentence(s.name, s.score, m)!)
   }
   starts.forEach(({ s, rec, m }, v) => personal.push(startSentence(s.name, rec, m, v)))
-  out.push(...personal.slice(0, 2))
+  // Their running numbers against their own past: best start, best stretch.
+  for (const [s, card] of [
+    [w, wCard],
+    [l, lCard],
+  ] as const) {
+    for (const m of card?.runs ?? []) {
+      const key = `run:${m.kind === 'two-week-best' ? 'two' : 'start'}:${s.managerId}`
+      if (claimed.has(key)) continue
+      claimed.add(key)
+      personal.push(runSentence(s.name, f.week, m))
+    }
+  }
+  out.push(...personal.slice(0, 3))
 
   // 4. A loss the bench would have turned around. Only the total is safe to
   // print: the best bench player isn't always one the best lineup would

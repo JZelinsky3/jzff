@@ -188,6 +188,9 @@
   font-weight: 500;
   color: var(--mute);
 }
+.leadBody p:last-child {
+  margin-bottom: 0;
+}
 .leadBody p {
   margin: 0 0 0.9rem;
   font-size: 1.08rem;
@@ -219,33 +222,26 @@
   border-top: 3px solid var(--ink);
   border-bottom: 1px solid var(--ink);
 }
-/* Player of the week: a ruled strip between the deck and the byline. */
-.starStrip {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.15rem 0.7rem;
-  margin-top: 0.95rem;
-  padding: 0.55rem 0.75rem;
+/* Player of the week, between the deck and the byline. */
+.starBox {
+  max-width: 24rem;
+  margin-top: 1rem;
+  padding: 0 0.9rem 0.8rem;
   background: var(--paper-2);
-  border-left: 3px solid var(--red);
 }
-.starLabel {
-  font-family: var(--rc-sans);
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--red);
+.starBox .boxHead {
+  border-top-color: var(--red);
 }
 .starName {
+  margin-top: 0.55rem;
   font-family: var(--rc-display);
-  font-size: 1.25rem;
-  line-height: 1.15;
+  font-size: 1.5rem;
+  line-height: 1.1;
 }
 .starMeta {
+  margin-top: 0.2rem;
   font-family: var(--rc-sans);
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   color: var(--ink-2);
 }
 
@@ -708,8 +704,8 @@
   grid-column: 1;
   grid-row: 2;
   font-family: var(--rc-display);
-  font-size: 1.15rem;
-  line-height: 1.2;
+  font-size: 1.4rem;
+  line-height: 1.15;
 }
 .bookWho small {
   margin-left: 0.35rem;
@@ -731,17 +727,27 @@
 /* The all-time week record isn't from this week: its own colour and a
    tinted band so it can't be read as one of the week's numbers. */
 .bookAllTime {
-  margin-top: 0.6rem;
-  padding-left: 0.85rem;
-  padding-right: 0.85rem;
-  background: rgba(143, 193, 232, 0.08);
-  border-left: 3px solid #8fc1e8;
-  border-bottom: 0;
+  margin-top: 0.8rem;
+  padding-left: 0.9rem;
+  padding-right: 0.9rem;
+  background: rgba(143, 193, 232, 0.07);
+  border: 1px dashed rgba(143, 193, 232, 0.55);
 }
 .bookAllTime .bookLabel,
 .bookAllTime .bookValue,
 .bookAllTime .bookLine {
   color: #8fc1e8;
+}
+.bookSub {
+  margin: 1.8rem 0 0.2rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 2px solid var(--ink);
+  font-family: var(--rc-sans);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--red);
 }
 .milestones {
   margin: 1rem 0 0;
@@ -765,7 +771,7 @@
 }
 .table {
   width: 100%;
-  min-width: 40rem;
+  min-width: 34rem;
   border-collapse: collapse;
   font-family: var(--rc-sans);
   font-size: 0.88rem;
@@ -806,6 +812,13 @@
   margin-left: 0.2rem;
   font-size: 0.6rem;
 }
+/* The team column takes only what its longest name needs (plus a gap);
+   the spare width spreads across the number columns instead of opening a
+   canyon between the names and W-L. */
+.teamCol {
+  width: 1%;
+  padding-right: 1.6rem !important;
+}
 .tableTeam {
   display: flex;
   align-items: center;
@@ -817,6 +830,15 @@
   max-width: 14rem;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.pDelta {
+  display: inline-block;
+  min-width: 1.5rem;
+  margin-left: 0.25rem;
+  text-align: left;
+}
+.flat {
+  color: var(--mute);
 }
 .noStreak {
   font-size: 0.7rem;
@@ -989,9 +1011,7 @@
   color: var(--mute);
 }
 .assetPos {
-  display: inline-block;
-  min-width: 2rem;
-  margin-right: 0.35rem;
+  margin-right: 0.4rem;
 }
 .assetTeam {
   margin-left: 0.4rem;
