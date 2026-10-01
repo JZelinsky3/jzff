@@ -184,6 +184,8 @@ case "${1:-}" in
   recap)
     echo "Rendering the recap post:"
     shot "file://$HERE/recap.html" "recap" 1080 1350
+    shot "file://$HERE/recap.html?dark=ox" "recap-dark" 1080 1350
+    shot "file://$HERE/recap.html?dark=gr" "recap-dark-green" 1080 1350
     ;;
 
   pitch)

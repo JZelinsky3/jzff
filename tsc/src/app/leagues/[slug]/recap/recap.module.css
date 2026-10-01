@@ -1,9 +1,10 @@
 /* The weekly recap, printed as the league's paper. The front page is cream
    newsprint; every section after it is its own stock (the games on a
    lighter sheet with each story boxed, the standings on salmon, the
-   projections on grey-violet, the record book in black and gold, the
-   season so far on sage, pick'ems on blue, the wire on kraft, next week in
-   green), so a change of topic is visible at a glance. The back page goes
+   record book in black and gold, the season so far on cream (the book
+   inverted), the projections on grey-violet, pick'ems on blue, the wire
+   on kraft, next week in green), so a change of topic is visible at a
+   glance. The back page goes
    back to the front page's cream, so the paper is bookended. Each section just
    redefines the house tokens (--paper, --ink, --rule, --red...) and every
    piece inside reads them.
@@ -505,17 +506,31 @@
   --rule: #bdb6cc;
   --red: #4f3a86;
 }
-/* Sage, so the running totals read as their own page rather than more
-   rows of the black record book above them. */
+/* The record book turned inside out: cream paper and black ink where the
+   book above is black paper and cream ink, with the book's gold darkened
+   so it holds up on a light stock. The mark each total is measured against
+   (the old record, or the record it chases) is green. */
 .sSeason {
-  --paper: #d3e3c6;
-  --paper-2: #c3d8b3;
-  --card: #eef5e8;
-  --ink: #16241a;
-  --ink-2: #3a4d3d;
-  --mute: #5f7461;
-  --rule: #a9c29a;
-  --red: #2f6a3d;
+  --paper: #f3ead6;
+  --paper-2: #e8dcc0;
+  --card: #fbf6ea;
+  --ink: #1e1b17;
+  --ink-2: #463f35;
+  --mute: #776e5f;
+  --rule: #cfc2a3;
+  --red: #8a6516;
+}
+.sSeason .bookValue {
+  font-size: 1.35rem;
+}
+.oldMark {
+  display: block;
+  margin-top: 0.15rem;
+  font-style: normal;
+  font-family: var(--rc-sans);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #2f7a4a;
 }
 .sNext {
   --paper: #1d3a2c;

@@ -298,15 +298,17 @@ function totalValue(row: RecapTotalRow): string {
   return row.key === 'streak' ? `${row.value} straight` : pts(row.value)
 }
 
-// The history line under a running-total row in the record book.
-export function totalLine(row: RecapTotalRow, f: RecapFacts): string {
+// The history line under a running-total row, with the mark it is measured
+// against (the old record it broke, or the record it chases) split off so
+// the page can print it in its own colour.
+export function totalLine(row: RecapTotalRow, f: RecapFacts): { line: string; mark: string | null } {
   const sup = TOTAL_SUP[row.key]
   const at = row.key === 'pf' || row.key === 'pfLow' || row.key === 'pa' ? ` through ${numberWord(f.week)} weeks` : row.key === 'streak' ? ' in a season' : row.key.startsWith('league') ? ' for a week' : ''
   const held = (r: { who: string; value: number; year: number }) =>
     r.who === 'The league' ? `${r.year}'s ${row.key === 'streak' ? r.value : pts(r.value)}` : `${poss(r.who)} ${row.key === 'streak' ? r.value : pts(r.value)} in ${r.year}`
-  if (row.rank === 1) return `The ${sup}${at} in league history${row.record ? `. The old mark was ${held(row.record)}` : ''}`
-  if (row.rank <= 10) return `${ordinal(row.rank)} ${sup}${at} in league history${row.record ? `. Record: ${held(row.record)}` : ''}`
-  return `The ${sup}${at} since ${row.since ? held(row.since) : ''}`
+  if (row.rank === 1) return { line: `The ${sup}${at} in league history`, mark: row.record ? `The old mark was ${held(row.record)}` : null }
+  if (row.rank <= 10) return { line: `${ordinal(row.rank)} ${sup}${at} in league history`, mark: row.record ? `Record: ${held(row.record)}` : null }
+  return { line: `The ${sup}${at} since ${row.since ? held(row.since) : ''}`, mark: null }
 }
 
 // The same thing as a sentence for the lead story.

@@ -298,9 +298,9 @@ export default async function RecapPage({
   const jumps: { id: string; label: string }[] = [
     { id: 'games', label: 'Results' },
     ...(hasStandings ? [{ id: 'standings', label: 'Standings' }] : []),
-    ...(proj ? [{ id: 'projections', label: 'Projections' }] : []),
     ...(hasBook ? [{ id: 'book', label: 'Record book' }] : []),
     ...(totals.length ? [{ id: 'season', label: 'Season so far' }] : []),
+    ...(proj ? [{ id: 'projections', label: 'Projections' }] : []),
     ...(show.paid && facts.pickems ? [{ id: 'pickems', label: "Pick'ems" }] : []),
     ...(show.veteran && (facts.trades?.length || facts.verdicts?.length) ? [{ id: 'trades', label: 'Trades' }] : []),
     ...(edition.previews.length ? [{ id: 'next', label: `Week ${f.next!.week}` }] : []),
@@ -471,50 +471,6 @@ export default async function RecapPage({
           </section>
         ) : null}
 
-        {/* ── Against the projections ── */}
-        {proj ? (
-          <section className={`${styles.section} ${styles.sProj}`}>
-            <SectionHead id="projections" tag="Projections" title="Over and Under" />
-            <div className={styles.projGrid}>
-              {[
-                { key: 'over', head: 'Beat their projection', rows: proj.over },
-                { key: 'under', head: 'Fell short of it', rows: proj.under },
-              ].map((col) =>
-                col.rows.length ? (
-                  <div key={col.key} className={styles.projCol}>
-                    <div className={styles.projHead}>{col.head}</div>
-                    <ol className={styles.projList}>
-                      {col.rows.map((r) => (
-                        <li key={`${r.player}-${r.manager}`} className={styles.projRow}>
-                          <span className={styles.projWho}>
-                            <span className={styles.projName}>{r.player}</span>
-                            <span className={styles.projMeta}>
-                              {r.pos ? `${r.pos} · ` : ''}
-                              {r.manager}
-                            </span>
-                          </span>
-                          <span className={styles.projLine}>
-                            {pts(r.points)}
-                            <small>proj {pts(r.proj)}</small>
-                          </span>
-                          <span className={`${styles.projDiff} ${r.diff > 0 ? styles.projUp : styles.projDown}`}>
-                            {r.diff > 0 ? '+' : '−'}
-                            {pts(Math.abs(r.diff))}
-                          </span>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                ) : null,
-              )}
-            </div>
-            <p className={styles.fine}>
-              Starters only, no kickers or defenses. Each projection is the platform&apos;s own going into the week,
-              scored with the league&apos;s settings.
-            </p>
-          </section>
-        ) : null}
-
         {/* ── Record book ── */}
         {hasBook ? (
           <section className={`${styles.section} ${styles.sBook}`}>
@@ -562,15 +518,65 @@ export default async function RecapPage({
           <section className={`${styles.section} ${styles.sSeason}`}>
             <SectionHead id="season" tag="Running totals" title="The Season So Far" />
             <div className={styles.book}>
-              {totals.map((r) => (
-                <div key={r.key} className={`${styles.bookRow} ${r.rank <= 3 ? styles.bookHot : ''}`}>
-                  <span className={styles.bookLabel}>{r.label}</span>
-                  <span className={styles.bookValue}>{r.key === 'streak' ? `${r.value} straight` : pts(r.value)}</span>
-                  <span className={styles.bookWho}>{r.who}</span>
-                  <span className={styles.bookLine}>{totalLine(r, facts)}</span>
-                </div>
-              ))}
+              {totals.map((r) => {
+                const t = totalLine(r, facts)
+                return (
+                  <div key={r.key} className={`${styles.bookRow} ${r.rank <= 3 ? styles.bookHot : ''}`}>
+                    <span className={styles.bookLabel}>{r.label}</span>
+                    <span className={styles.bookValue}>{r.key === 'streak' ? `${r.value} straight` : pts(r.value)}</span>
+                    <span className={styles.bookWho}>{r.who}</span>
+                    <span className={styles.bookLine}>
+                      {t.line}
+                      {t.mark ? <span className={styles.oldMark}>{t.mark}</span> : null}
+                    </span>
+                  </div>
+                )
+              })}
             </div>
+          </section>
+        ) : null}
+
+        {/* ── Against the projections ── */}
+        {proj ? (
+          <section className={`${styles.section} ${styles.sProj}`}>
+            <SectionHead id="projections" tag="Projections" title="Over and Under" />
+            <div className={styles.projGrid}>
+              {[
+                { key: 'over', head: 'Beat their projection', rows: proj.over },
+                { key: 'under', head: 'Fell short of it', rows: proj.under },
+              ].map((col) =>
+                col.rows.length ? (
+                  <div key={col.key} className={styles.projCol}>
+                    <div className={styles.projHead}>{col.head}</div>
+                    <ol className={styles.projList}>
+                      {col.rows.map((r) => (
+                        <li key={`${r.player}-${r.manager}`} className={styles.projRow}>
+                          <span className={styles.projWho}>
+                            <span className={styles.projName}>{r.player}</span>
+                            <span className={styles.projMeta}>
+                              {r.pos ? `${r.pos} · ` : ''}
+                              {r.manager}
+                            </span>
+                          </span>
+                          <span className={styles.projLine}>
+                            {pts(r.points)}
+                            <small>proj {pts(r.proj)}</small>
+                          </span>
+                          <span className={`${styles.projDiff} ${r.diff > 0 ? styles.projUp : styles.projDown}`}>
+                            {r.diff > 0 ? '+' : '−'}
+                            {pts(Math.abs(r.diff))}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ) : null,
+              )}
+            </div>
+            <p className={styles.fine}>
+              Starters only, no kickers or defenses. Each projection is the platform&apos;s own going into the week,
+              scored with the league&apos;s settings.
+            </p>
           </section>
         ) : null}
 

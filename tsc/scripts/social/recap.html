@@ -270,10 +270,48 @@ html, body { width: 1080px; height: 1350px; }
 }
 .stamp .n { font-family: var(--serif); font-weight: 400; font-size: 42px; }
 .stamp .t { margin-top: 4px; font-size: 12px; letter-spacing: .14em; }
+
+/* ── ?dark=1: cream up top under the pitch, warm black from the stack down ─
+   The turn happens behind the section heads, so the muddy middle of a
+   cream-to-black ramp only shows in the two side margins. */
+.board.dk {
+  background: linear-gradient(180deg,
+    #3b1d1a 0%, #2c1815 26%, #1c1513 50%, #131110 100%);
+}
+/* Two dark stocks off the recap page, nothing light anywhere on the ground. */
+.board.dk.gr {
+  background: linear-gradient(180deg,
+    #1f3a2d 0%, #192d23 26%, #151a16 50%, #121110 100%);
+}
+.board.dk { background-repeat: no-repeat; background-color: #121110; }
+.dk .top { color: var(--cream); }
+.dk .toprow { border-bottom-color: rgba(244, 235, 216, .28); }
+.dk .flag, .dk .word, .dk .pitch { color: var(--cream); }
+.dk .word i, .dk .pitch i { color: var(--gold); }
+.dk .sub { color: #d6cbb3; }
+.dk .sub b { color: var(--gold); }
+.dk .lamp {
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(255, 230, 190, .08) 0%, transparent 70%),
+    radial-gradient(ellipse 70% 45% at 50% 62%, rgba(255, 228, 180, .07) 0%, transparent 70%);
+}
+.dk .sheet { box-shadow: 0 -1px 0 rgba(0,0,0,.15), 0 14px 30px rgba(0,0,0,.45); }
+.dk .front { box-shadow: 0 2px 0 rgba(0,0,0,.2), 0 24px 50px rgba(0,0,0,.6); }
+.dk .card.mem { box-shadow: 5px 5px 0 #8a7448; }
+/* On a dark desk the dark card would vanish, so newcomers get the gold stock. */
+.dk .card.new {
+  background: linear-gradient(160deg, #f6dfae 0%, #e8c889 100%);
+  color: #1a1714;
+}
+.dk .new .ctag { background: #1a1714; color: #e8c889; }
+.dk .new .ch i { color: #a3302a; }
+.dk .new .cl { color: #3b3226; }
+.dk .url { background: #1a1714; color: #e8c889; }
 </style>
 </head>
 <body>
 <div class="board">
+<script>{ const m = location.search.match(/[?&]dark=(\w+)/); if (m) document.querySelector('.board').classList.add('dk', m[1]) }</script>
   <div class="lamp"></div>
 
   <div class="top">
