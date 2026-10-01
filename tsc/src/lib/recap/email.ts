@@ -300,7 +300,6 @@ export function renderRecapEmail(
     ...(f.top && f.low
       ? [`<b style="color:${C.red};">Forecast</b> &nbsp;High ${pts(f.top.score)}, ${esc(f.top.name)}`, `Low ${pts(f.low.score)}, ${esc(f.low.name)}`]
       : [`<b style="color:${C.red};">Late final</b>`]),
-    'Price: one click',
   ]
   rows.push(`<tr><td class="pad" align="center" bgcolor="${C.paper}" style="background-color:${C.paper}; padding:26px 32px 0;">
 <div style="font-family:${SANS}; font-size:10px; letter-spacing:4px; text-transform:uppercase; color:${C.mute};">The Sunday Chronicle</div>
