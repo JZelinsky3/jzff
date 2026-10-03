@@ -847,6 +847,9 @@ function getBundle(leagueId: string, slug: string): Promise<ExportBundle> {
   // v83: multi-week playoff rounds fold into one game with per-week legs,
   // league.json carries eras + season_rules, and the ESPN seed "champions"
   // of 2026 are gone.
+  // v84: the weekly_lineups read used to hit Supabase's 8s statement
+  // timeout and fall back to no rows, so cached bundles can be missing Best
+  // Coach, Roster Building and the lineup half of Manager DNA.
   const BUNDLE_VERSION = BUNDLE_VERSION_TAG
   // Single-flight, the same reason dev does it: a hub landing fires the
   // page plus five preloaded data/*.json files at once, and on a cold
@@ -877,7 +880,7 @@ function getBundle(leagueId: string, slug: string): Promise<ExportBundle> {
 // version|leagueId|slug and cleared the moment the build settles.
 const bundleInFlight = new Map<string, Promise<ExportBundle>>()
 
-const BUNDLE_VERSION_TAG = 'v83'
+const BUNDLE_VERSION_TAG = 'v84'
 
 // The record book and standings narrowed to an era and/or one side of the
 // season (?era=, ?years=, ?scope=). Built on demand from the same snapshot

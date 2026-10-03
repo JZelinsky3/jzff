@@ -302,6 +302,23 @@ async function loadSnapshot(leagueId: string, opts: { lite?: boolean } = {}): Pr
   const seasonIdList = Array.from(seasonIds)
   const managerIds = new Set((managers ?? []).map((m) => m.id))
 
+  // Profiles, rivalries and trades need nothing from the second batch, so
+  // they start now and are awaited where they're used below.
+  const profilesQuery = Promise.resolve(db
+    .from('manager_profiles')
+    .select('id, canonical_name, is_alumni_override, is_hidden')
+    .eq('league_id', leagueId))
+  const rivalriesQueryP = Promise.resolve(db
+    .from('rivalries')
+    .select('id, name, manager_a_id, manager_b_id, created_at')
+    .eq('league_id', leagueId)
+    .order('created_at', { ascending: true }))
+  const tradeSidesQuery = opts.lite ? null : Promise.resolve(db
+    .from('trade_sides')
+    .select('trade_id, manager_id, trades!inner(season_id, week, status, league_id)')
+    .eq('trades.league_id', leagueId)
+    .eq('trades.status', 'completed'))
+
   // Second batch: matchups + manager_seasons + drafts. These have no
   // league_id column, so they must be filtered by season_id. Bug-fix history:
   // we used to do `from('matchups').select(...)` with no filter and post-
@@ -318,9 +335,8 @@ async function loadSnapshot(leagueId: string, opts: { lite?: boolean } = {}): Pr
     seasonIdList.length === 0 ? Promise.resolve([] as DraftRow[]) : selectAllPaged<DraftRow>(db, 'drafts',
       'id, season_id, external_id, draft_type, rounds',
       seasonIdList),
-    seasonIdList.length === 0 || opts.lite ? Promise.resolve([] as WeeklyLineupRow[]) : selectAllPaged<WeeklyLineupRow>(db, 'weekly_lineups',
-      'season_id, week, manager_id, player_external_id, player_name, position, nfl_team, slot, is_starter, points, proj_points',
-      seasonIdList).catch(() => [] as WeeklyLineupRow[]),
+    seasonIdList.length === 0 || opts.lite ? Promise.resolve([] as WeeklyLineupRow[]) : selectWeeklyLineups(db, seasonIdList)
+      .catch(() => [] as WeeklyLineupRow[]),
   ])
 
   // Both queries are already filtered by season_id, but keep the manager
@@ -363,10 +379,7 @@ async function loadSnapshot(leagueId: string, opts: { lite?: boolean } = {}): Pr
   // Profiles (migration 0006). Pre-migration this returns an error; we degrade gracefully.
   const profilesById = new Map<string, ProfileRow>()
   {
-    const { data: profiles } = await db
-      .from('manager_profiles')
-      .select('id, canonical_name, is_alumni_override, is_hidden')
-      .eq('league_id', leagueId)
+    const { data: profiles } = await profilesQuery
     for (const p of profiles ?? []) {
       profilesById.set(p.id, p as ProfileRow)
     }
@@ -402,21 +415,13 @@ async function loadSnapshot(leagueId: string, opts: { lite?: boolean } = {}): Pr
 
   // Rivalries (commissioner-curated). Pre-migration leagues with no rivalries
   // table will just return error → empty array.
-  const rivalriesQuery = await db
-    .from('rivalries')
-    .select('id, name, manager_a_id, manager_b_id, created_at')
-    .eq('league_id', leagueId)
-    .order('created_at', { ascending: true })
+  const rivalriesQuery = await rivalriesQueryP
   const rivalries: RivalryRow[] = (rivalriesQuery.data ?? []) as RivalryRow[]
 
   // Trade participation — join trades + trade_sides so Manager DNA can count
   // trade volume per profile. Pre-0022 leagues return error → empty.
-  const tradeParticipation: TradeParticipationRow[] = opts.lite ? [] : await (async () => {
-    const { data, error } = await db
-      .from('trade_sides')
-      .select('trade_id, manager_id, trades!inner(season_id, week, status, league_id)')
-      .eq('trades.league_id', leagueId)
-      .eq('trades.status', 'completed')
+  const tradeParticipation: TradeParticipationRow[] = !tradeSidesQuery ? [] : await (async () => {
+    const { data, error } = await tradeSidesQuery
     if (error || !data) return []
     type Joined = {
       trade_id: string
@@ -638,10 +643,11 @@ function groupBy<T, K>(rows: T[], key: (r: T) => K): Map<K, T[]> {
 // select lets the same row come back on two pages while another never
 // appears at all. On a 22k-row weekly_lineups set that silently deleted one
 // whole season and double-counted another. Any paged select needs a unique
-// sort key; id is the primary key, so it is always safe.
+// sort key; id is the primary key, so it is always safe. (weekly_lineups now
+// pages per season through selectWeeklyLineups below, on its unique key.)
 async function selectAllPaged<T>(
   db: ReturnType<typeof createAdminClient>,
-  table: 'matchups' | 'drafts' | 'weekly_lineups',
+  table: 'matchups' | 'drafts',
   columns: string,
   seasonIds: string[],
 ): Promise<T[]> {
@@ -662,6 +668,48 @@ async function selectAllPaged<T>(
     from += PAGE
   }
   return out
+}
+
+// weekly_lineups is by far the biggest read (~26k rows, ~7MB for a league
+// with nine synced seasons). Paging it as one id-ordered set made Postgres
+// sort every matching row again for each 1000-row page, one page at a time:
+// ~1.1s a page, ~29s of a ~30s export. Instead each season pages on its own,
+// ordered by the table's unique key (season_id, week, manager_id,
+// player_external_id) so the index serves the order and every sort key is
+// unique, and the seasons run a few at a time in parallel.
+const LINEUP_COLUMNS = 'season_id, week, manager_id, player_external_id, player_name, position, nfl_team, slot, is_starter, points, proj_points'
+const LINEUP_SEASON_CONCURRENCY = 6
+
+async function selectWeeklyLineups(
+  db: ReturnType<typeof createAdminClient>,
+  seasonIds: string[],
+): Promise<WeeklyLineupRow[]> {
+  const perSeason: WeeklyLineupRow[][] = new Array(seasonIds.length)
+  let next = 0
+  const worker = async () => {
+    while (next < seasonIds.length) {
+      const i = next++
+      const rows: WeeklyLineupRow[] = []
+      const PAGE = 1000
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await db
+          .from('weekly_lineups')
+          .select(LINEUP_COLUMNS)
+          .eq('season_id', seasonIds[i])
+          .order('week', { ascending: true })
+          .order('manager_id', { ascending: true })
+          .order('player_external_id', { ascending: true })
+          .range(from, from + PAGE - 1)
+        if (error) throw new Error(`weekly_lineups paged select: ${error.message}`)
+        const page = (data ?? []) as unknown as WeeklyLineupRow[]
+        rows.push(...page)
+        if (page.length < PAGE) break
+      }
+      perSeason[i] = rows
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(LINEUP_SEASON_CONCURRENCY, seasonIds.length) }, worker))
+  return perSeason.flat()
 }
 
 // manager_seasons has a fallback for pre-0003 databases without division_index.
