@@ -38,10 +38,21 @@ export type Card =
   | { template: 'regret'; week: number; season: number; rows: Row[] }
   | { template: 'product'; kicker: string; title: string; dek: string; points: string[] }
 
-/** Both platform texts from one body. The link goes last, tagged per platform. */
-function texts(body: { x: string; threads: string }, link: string, campaign: string) {
+/**
+ * Both platform texts from one body. The link goes last, tagged per platform.
+ *
+ * The X copy has no link unless `xLink: true`. X charges per post and a post
+ * with a link costs about thirteen times one without, so for now only the
+ * Monday recap promo carries one there, as a one-link-a-week test of whether
+ * X sends anyone. Every card carries the domain in its foot. Threads is free,
+ * so it always links.
+ */
+function texts(body: { x: string; threads: string }, link: string, campaign: string, opts: { xLink?: boolean } = {}) {
   const join = (p: Platform, t: string) => `${t}\n\n${taggedLink(link, p, campaign)}`
-  const out = { x_text: join('x', body.x), threads_text: join('threads', body.threads) }
+  const out = {
+    x_text: opts.xLink ? join('x', body.x) : body.x,
+    threads_text: join('threads', body.threads),
+  }
   const bad = textProblem('x', out.x_text) ?? textProblem('threads', out.threads_text)
   if (bad) throw new Error(`built copy is ${bad}`)
   return out
@@ -172,7 +183,8 @@ export function buildRoulette(season: number, week: number): Built {
   const link = `/games/roulette/?pool=site&seed=${seed}`
   return {
     ...texts({
-      x: `Roster Roulette, Week ${week}. Seven spins, one lineup, and everyone gets the same wheel this week. Reply with your record.`,
+      // No link on X (see texts()), so the X copy can't promise a shared wheel.
+      x: `Roster Roulette, Week ${week}. Seven spins of real fantasy rosters, one lineup, one season to see how it holds up. Free to play under Games at The Sunday Chronicle.`,
       threads: `Roster Roulette, Week ${week}.\n\nSeven spins of real fantasy rosters, build one lineup, and see how it does over a season. Everyone who opens this link gets the same wheel, so reply with your record.`,
     }, link, 'roulette'),
     link, card: null, image_path: '/api/og/games/',
@@ -205,7 +217,7 @@ export function buildRecapPromo(week: number): Built {
   const pitch = RECAP_PITCHES[week % RECAP_PITCHES.length]
   const link = '/'
   return {
-    ...texts({ x: pitch.x, threads: pitch.threads }, link, 'recap'),
+    ...texts({ x: pitch.x, threads: pitch.threads }, link, 'recap', { xLink: true }),
     link,
     card: { template: 'product', kicker: 'The Weekly Recap', title: 'Your League’s Chronicle.', dek: pitch.dek, points: pitch.points },
     image_path: null,

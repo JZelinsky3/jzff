@@ -5,7 +5,7 @@
 // one Joey edited or vetoed) is left exactly as it is.
 //
 // The week (all times Eastern):
-//   Mon 12:00  Weekly Recap promo     product card
+//   Mon  9:00  Weekly Recap promo     product card, the one X post with a link
 //   Tue 12:00  Drop Regret Index      filled Tuesday from Sunday's scores
 //   Wed 12:00  Fantasy History        best Week N games since 2009
 //   Fri 12:00  Roster Roulette deal   one seeded wheel for everyone
@@ -62,7 +62,7 @@ export async function planWeek(db: Db, opts: { monday?: string; dry?: boolean } 
   const tue = addDays(monday, 1)
   const slots: Slot[] = [
     {
-      kind: 'recap', date: monday, hour: 12,
+      kind: 'recap', date: monday, hour: 9,
       build: async () => ({ built: buildRecapPromo(rotation) }),
     },
     {
