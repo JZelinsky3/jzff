@@ -1,0 +1,23 @@
+Plain-text part for winback-season.html. Paste everything below the line into the
+broadcast's text version in Resend. Keep it matching the HTML: filters compare
+the two.
+
+Subject: Your league's 2026 season isn't connected yet
+
+────────────────────────────────────────────────────────────────────────────
+
+Hi {{{FIRST_NAME|there}}},
+
+Your league page on The Sunday Chronicle is still up, with every season you imported. The 2026 season isn't connected to it yet, so this year's scores and standings aren't coming in.
+
+It takes about a minute. Open your league, go to Sources, and connect this season. After that it updates on its own, and a recap of the week lands in your inbox every Tuesday.
+
+Open your dashboard: https://thesundaychronicle.app/dashboard/
+
+If anything doesn't work, reply to this email. It comes straight to me.
+
+Joey
+The Sunday Chronicle
+
+
+Don't want these? Unsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}

@@ -23,8 +23,9 @@ export type GotwWeek = {
 // (one click flips two managers — both sides of the matchup).
 //
 // On a phone the picker and the tally sit side by side in two narrow
-// columns, each matchup a tappable two-line card, rather than stacking the
-// tally under a long radio list.
+// columns, each matchup a tappable card, rather than stacking the tally
+// under a long radio list. Tally rows are sized so a 12-team league's tally
+// is exactly as tall as the picker beside it (live-season-mobile.css).
 export function GotwPicker({
   leagueId,
   seasonId,
@@ -137,9 +138,13 @@ export function GotwPicker({
                     checked={selected === m.id}
                     onChange={() => onSelect(m.id)}
                   />
-                  <span className="mgw-side">{m.managerA}</span>
-                  <span className="mgw-side">
-                    <i>vs</i> {m.managerB}
+                  {/* One line when both names fit; the second name wraps
+                      under the first only when they don't. */}
+                  <span className="mgw-names">
+                    <span className="mgw-side">{m.managerA}</span>
+                    <span className="mgw-side">
+                      <i>vs</i> {m.managerB}
+                    </span>
                   </span>
                   {m.id === saved && (
                     <span className="mgw-saved" role="img" aria-label="Saved" title="Saved">
@@ -150,7 +155,9 @@ export function GotwPicker({
               ))}
               <label className={`mgw-game none${selected === '' ? ' on' : ''}`}>
                 <input type="radio" name="gotw-m" value="" checked={selected === ''} onChange={() => onSelect('')} />
-                <span className="mgw-side">No game this week</span>
+                <span className="mgw-names">
+                  <span className="mgw-side">No game this week</span>
+                </span>
               </label>
             </div>
           )}

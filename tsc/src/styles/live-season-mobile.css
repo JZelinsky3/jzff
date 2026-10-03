@@ -11,7 +11,18 @@
    ============================================================ */
 
 /* ── Game of the Week: picker | tally ───────────────────────── */
+/* Every height in the picker is fixed, so the tally can be measured off it.
+   A 12-team week is the week box, six games, "No game", and Save; the
+   tally's header lines up with the week box and its twelve rows fill the
+   rest exactly. The row height stays put for other league sizes, so a
+   10-team tally is a little shorter and a 14-team one a little taller. */
 .mgw {
+    --gw-sel: 2.5rem;
+    --gw-row: 2.2rem;
+    --gw-gap: .3rem;
+    --gw-space: .45rem;
+    --gw-save: 2.2rem;
+    --gw-tally-row: calc((7 * var(--gw-row) + 6 * var(--gw-gap) + var(--gw-space) + var(--gw-save)) / 12);
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: .5rem;
@@ -28,21 +39,24 @@
 .mgw-week {
     display: block;
     width: 100%;
-    margin-bottom: .45rem;
-    padding: .4rem 1.6rem .4rem .55rem;
+    height: var(--gw-sel);
+    margin-bottom: var(--gw-space);
+    padding: 0 1.6rem 0 .6rem;
     font-family: var(--sans);
     font-weight: 600;
     font-size: 16px;
-    color: var(--cream);
-    background: rgba(0, 0, 0, .25) url("data:image/svg+xml,%3Csvg viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23999' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right .55rem center / 10px 6px;
-    border: 1px solid var(--ink-line);
-    border-radius: 8px;
+    letter-spacing: .01em;
+    color: var(--gold);
+    background: rgba(232, 200, 137, .07) url("data:image/svg+xml,%3Csvg viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23e8c889' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right .6rem center / 10px 6px;
+    border: 1px solid rgba(232, 200, 137, .45);
+    border-radius: 10px;
     appearance: none;
     -webkit-appearance: none;
 }
+.mgw-week option { color: var(--cream); background: var(--ink-soft); }
 .mgw-games {
     display: grid;
-    gap: .3rem;
+    gap: var(--gw-gap);
 }
 .mgw-game {
     position: relative;
@@ -50,7 +64,8 @@
     grid-template-columns: minmax(0, 1fr) auto;
     column-gap: .3rem;
     align-items: center;
-    padding: .42rem .5rem;
+    min-height: var(--gw-row);
+    padding: .3rem .5rem;
     background: rgba(0, 0, 0, .18);
     border: 1px solid var(--ink-line);
     border-radius: 8px;
@@ -73,8 +88,15 @@
     outline: 2px solid var(--gold);
     outline-offset: 1px;
 }
-.mgw-side {
+.mgw-names {
     grid-column: 1;
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: .25rem;
+    min-width: 0;
+}
+.mgw-side {
+    max-width: 100%;
     font-family: var(--serif);
     font-size: .82rem;
     line-height: 1.25;
@@ -86,7 +108,7 @@
 .mgw-side i {
     margin-right: .15rem;
     font-family: var(--mono);
-    font-size: .45rem;
+    font-size: .5rem;
     font-style: normal;
     letter-spacing: .12em;
     text-transform: uppercase;
@@ -94,43 +116,44 @@
 }
 .mgw-game.on .mgw-side i { color: var(--gold); }
 .mgw-game.none .mgw-side {
-    font-size: .7rem;
+    font-size: .72rem;
     font-style: italic;
     color: var(--cream-mute);
 }
 .mgw-saved {
     grid-column: 2;
-    grid-row: 1 / span 2;
     font-size: .7rem;
     color: var(--gold);
 }
 .mgw-empty {
     padding: .8rem .3rem;
     text-align: center;
-    font-size: .65rem;
+    font-size: .68rem;
     line-height: 1.4;
     color: var(--cream-mute);
 }
 .mgw-err {
     margin: .4rem 0 0;
-    font-size: .6rem;
+    font-size: .64rem;
     line-height: 1.4;
     color: #d08a76;
 }
+/* Same button as the other Save buttons on this page (mlf-save). */
 .mgw-save {
     display: block;
     width: 100%;
-    margin-top: .45rem;
-    padding: .62rem .4rem;
+    height: var(--gw-save);
+    margin-top: var(--gw-space);
+    padding: 0 .4rem;
     font-family: var(--mono);
     font-size: .5rem;
     font-weight: 700;
-    letter-spacing: .14em;
+    letter-spacing: .18em;
     text-transform: uppercase;
     color: var(--ink);
     background: var(--gold);
     border: 0;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
 }
 .mgw-save:disabled {
@@ -138,12 +161,17 @@
     cursor: default;
 }
 .mgw-tally-head {
-    margin: .15rem 0 .35rem;
+    display: flex;
+    align-items: center;
+    height: var(--gw-sel);
+    margin-bottom: var(--gw-space);
+    padding: 0 .1rem;
     font-family: var(--mono);
-    font-size: .42rem;
+    font-size: .56rem;
     letter-spacing: .2em;
     text-transform: uppercase;
     color: var(--gold);
+    border-bottom: 1px solid var(--ink-line);
 }
 .mgw-tally ul {
     margin: 0;
@@ -152,13 +180,14 @@
 }
 .mgw-tally li {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: .35rem;
-    padding: .3rem 0;
+    height: var(--gw-tally-row);
+    padding: 0 .1rem;
     border-bottom: 1px dotted var(--ink-line);
     font-family: var(--serif);
-    font-size: .78rem;
+    font-size: .8rem;
     color: var(--cream-mute);
 }
 .mgw-tally li:last-child { border-bottom: 0; }
@@ -172,13 +201,27 @@
 .mgw-tally .n {
     flex-shrink: 0;
     font-family: var(--mono);
-    font-size: .7rem;
+    font-size: .72rem;
 }
 .mgw-tally li.has .n { color: var(--gold); }
 
 /* ── The recap section ─────────────────────────────────────── */
 /* The recap card keeps a plain hairline all round. */
 .mliv .mrc { border-left: 1px solid var(--ink-line); }
+.mliv .mrc-title { font-size: 1rem; }
+.mliv .mrc-text { font-size: .74rem; }
+/* The desktop lo-btn is square and large. On a phone these match the
+   page's other buttons: rounded, full width, the same small mono label as
+   the Save buttons. */
+.mliv .mrc-actions .lo-btn,
+.mliv .mrc-actions .lo-btn-ghost {
+    width: 100%;
+    padding: .55rem .5rem;
+    font-size: .5rem;
+    letter-spacing: .18em;
+    border-radius: 10px;
+}
+.mliv .mrc-actions .lo-btn-ghost { background: rgba(0, 0, 0, .18); }
 
 .mrc-tip {
     display: flex;
@@ -189,7 +232,7 @@
     background: var(--ink-soft);
     border: 1px solid var(--ink-line);
     border-radius: 10px;
-    font-size: .68rem;
+    font-size: .74rem;
     line-height: 1.45;
     color: var(--cream-mute);
 }
@@ -198,9 +241,10 @@
 .mrc-tip.set b { color: var(--gold); }
 .mrc-tip .lo-btn-ghost {
     flex-shrink: 0;
-    padding: .6rem .55rem;
-    font-size: .48rem;
-    border-radius: 8px;
+    padding: .55rem .6rem;
+    font-size: .5rem;
+    letter-spacing: .18em;
+    border-radius: 10px;
 }
 
 .mml {
@@ -232,7 +276,7 @@
 }
 .mml-text {
     margin: 0;
-    font-size: .66rem;
+    font-size: .72rem;
     line-height: 1.45;
     color: var(--cream-mute);
 }
@@ -250,8 +294,10 @@
 }
 .mml-form .lo-btn {
     width: 100%;
-    padding: .75rem .6rem;
-    font-size: .58rem;
+    padding: .55rem .5rem;
+    font-size: .5rem;
+    letter-spacing: .18em;
+    border-radius: 10px;
 }
 .mml .lo-msg-ok,
 .mml .lo-msg-err { font-size: .6rem; }
@@ -447,3 +493,48 @@
     display: block;
     margin-top: .4rem;
 }
+
+/* ── Readable headings and labels on every mobile setup page ──────
+   The section titles ("Active season", "Game of the Week") were .42rem
+   mono, about 7px, and field labels .38rem, about 6px: too small to tell
+   which section you're editing. Section titles are now serif headings with
+   a rule between sections; field labels stay mono caps but at a size you
+   can read. Scoped to .mlsub-wrap so it outranks the older copies of these
+   rules in globals.css. */
+.mlsub-wrap .mliv-hint,
+.mlsub-wrap .mset-hint {
+    font-size: .74rem;
+    line-height: 1.45;
+}
+.mlsub-wrap .mliv-section ~ .mliv-section {
+    padding-top: 1rem;
+    border-top: 1px solid var(--ink-line);
+}
+.mlsub-wrap .mliv-section-label,
+.mlsub-wrap .msrc-add-label {
+    margin-bottom: .2rem;
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    line-height: 1.2;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--cream);
+}
+.mlsub-wrap .mliv-section-desc {
+    margin-bottom: .6rem;
+    font-size: .72rem;
+    line-height: 1.45;
+}
+.mlsub-wrap .mlf-field-label,
+.mlsub-wrap .msr-field-label,
+.mlsub-wrap .msr-panel-title,
+.mlsub-wrap .msl-divider-label,
+.mlsub-wrap .mset-form .dc-label {
+    font-size: .58rem;
+    letter-spacing: .16em;
+}
+.mlsub-wrap .mlf-field-hint {
+    font-size: .64rem;
+    line-height: 1.4;
+}
+.mlsub-wrap .msrc-add-label { margin-bottom: .5rem; }

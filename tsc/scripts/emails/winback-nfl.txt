@@ -1,0 +1,23 @@
+Plain-text part for winback-nfl.html. Paste everything below the line into the
+broadcast's text version in Resend. Keep it matching the HTML: filters compare
+the two.
+
+Subject: About your NFL.com league
+
+────────────────────────────────────────────────────────────────────────────
+
+Hi {{{FIRST_NAME|there}}},
+
+You signed up for The Sunday Chronicle right around the time NFL.com shut down its fantasy game. NFL.com took its league pages offline in August, so when your league went to import, there was nothing left to read. That's why your page came up empty. Sorry about that.
+
+There is a way back. ESPN is now the NFL's official fantasy game, and NFL.com leagues can move there at espn.com/importnfl. ESPN says your settings and history come with it. Once your league is on ESPN, open your league here, go to Sources, and add it as an ESPN league. Your archive builds from there and this season keeps itself up to date.
+
+Open your dashboard: https://thesundaychronicle.app/dashboard/
+
+If your league moved somewhere else instead, like Sleeper, that works too. Reply and tell me where and I'll help you get it connected.
+
+Joey
+The Sunday Chronicle
+
+
+Don't want these? Unsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}

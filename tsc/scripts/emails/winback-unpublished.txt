@@ -1,0 +1,23 @@
+Plain-text part for winback-unpublished.html. Paste everything below the line into the
+broadcast's text version in Resend. Keep it matching the HTML: filters compare
+the two.
+
+Subject: Your league page never went live
+
+────────────────────────────────────────────────────────────────────────────
+
+Hi {{{FIRST_NAME|there}}},
+
+You started a league page on The Sunday Chronicle a while back, but it was never published, so nobody in your league has seen it yet.
+
+Everything you set up is still saved. Open it, look it over, and publish it. Then you have one link for the group chat with your league's champions, records and rivalries.
+
+Finish your league page: https://thesundaychronicle.app/dashboard/
+
+If the import didn't come out right, reply and tell me what went wrong. I read every one.
+
+Joey
+The Sunday Chronicle
+
+
+Don't want these? Unsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}

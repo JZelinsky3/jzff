@@ -29,8 +29,7 @@ export function GotwTip({
     return (
       <div className={`${cls} set`}>
         <span>
-          <b>Week {week} Game of the Week:</b> {matchup}.{' '}
-          {variant === 'mobile' ? 'The recap leads with it.' : 'The recap leads its look at the week ahead with it.'}
+          <b>Week {week} Game of the Week:</b> {matchup}
         </span>
       </div>
     )
