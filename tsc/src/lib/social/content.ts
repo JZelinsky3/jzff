@@ -123,13 +123,13 @@ export async function buildHistory(week: number, lastSeason: number): Promise<Bu
   const hero = { ...toRow(top), line: statLine(players[top.id].position, top.s) }
   const card: Card = { template: 'history', week, hero, rows: rest.slice(0, 5).map(toRow) }
 
-  const lead = `The best fantasy game ever played in a Week ${week}: ${hero.name}, ${hero.year}. ${hero.value} PPR points (${hero.line}).`
-  const runnerUp = rest[0] ? ` Next best: ${toRow(rest[0]).name}, ${rest[0].year}, ${fmt1(rest[0].pts)}.` : ''
+  const lead = `the best Week ${week} ever was ${hero.name} in ${hero.year}. ${hero.line}, ${hero.value} PPR points.`
+  const runnerUp = rest[0] ? ` Next best: ${toRow(rest[0]).name} in ${rest[0].year} with ${fmt1(rest[0].pts)}.` : ''
   const link = '/'
   return {
     ...texts({
-      x: `This Week in Fantasy History. ${lead}`,
-      threads: `This Week in Fantasy History.\n\n${lead}${runnerUp}\n\nEvery league has its own version of this list. Ours keeps it for you.`,
+      x: `This week in fantasy history: ${lead}`,
+      threads: `This week in fantasy history: ${lead}${runnerUp}\n\nWho has the best week in your league's history? Connect your league and find out.`,
     }, link, 'history'),
     link, card, image_path: null,
   }
@@ -163,12 +163,13 @@ export async function buildRegret(p: RegretParams): Promise<Built | null> {
     note: `dropped ${compact(d.count)}`,
   }))
   const top = rows[0]
-  const lead = `${top.name} was dropped ${scored[0].count.toLocaleString('en-US')} times on Sleeper last week, then scored ${top.value} PPR.`
+  const lead = `${top.name} got dropped in ${scored[0].count.toLocaleString('en-US')} Sleeper leagues last week, then put up ${top.value} PPR points.`
+  const [second, third] = rows.slice(1, 3)
   const link = '/'
   return {
     ...texts({
-      x: `The Drop Regret Index, Week ${p.week}. ${lead}`,
-      threads: `The Drop Regret Index, Week ${p.week}.\n\n${lead} ${rows.slice(1, 3).map((r) => `${r.name}: ${r.value}.`).join(' ')}\n\nThe most-dropped players of the week, ranked by what they did after you let them go.`,
+      x: `Drop Regret Index, Week ${p.week}: ${lead}`,
+      threads: `Drop Regret Index, Week ${p.week}: ${lead} ${second.name} (${second.value}) and ${third.name} (${third.value}) weren't far behind.\n\nThe week's most-dropped players, ranked by what they scored right after.`,
     }, link, 'regret'),
     link,
     card: { template: 'regret', week: p.week, season: p.season, rows },
@@ -177,15 +178,20 @@ export async function buildRegret(p: RegretParams): Promise<Built | null> {
 }
 
 // ── Roster Roulette deal of the week ─────────────────────────────────────
-// A fixed seed per week, so everyone who opens the link plays the same wheel.
+// A fixed seed per week, so everyone who opens the link gets the same teams.
+//
+// Copy rule (Joey): there is a popular NFL game built on spinning for teams
+// and chasing an unbeaten record. Don't sound like it. No spins, wheels or
+// "go undefeated". Ours is about real fantasy teams from real leagues, and
+// playing it with your own league's history.
 export function buildRoulette(season: number, week: number): Built {
   const seed = `WK${season}${String(week).padStart(2, '0')}`
   const link = `/games/roulette/?pool=site&seed=${seed}`
   return {
     ...texts({
-      // No link on X (see texts()), so the X copy can't promise a shared wheel.
-      x: `Roster Roulette, Week ${week}. Seven spins of real fantasy rosters, one lineup, one season to see how it holds up. Free to play under Games at The Sunday Chronicle.`,
-      threads: `Roster Roulette, Week ${week}.\n\nSeven spins of real fantasy rosters, build one lineup, and see how it does over a season. Everyone who opens this link gets the same wheel, so reply with your record.`,
+      // No link on X (see texts()), so the X copy can't promise shared teams.
+      x: `Roster Roulette, Week ${week}: you get handed real teams from real fantasy leagues. Take one player off each, fill your lineup, and see what record it puts up over 17 games. Free under Games at The Sunday Chronicle.`,
+      threads: `Roster Roulette, Week ${week}.\n\nEach round you get a real team from a real fantasy league on our site. Take one player off it, fill your lineup, then see what record it puts up over 17 games.\n\nEveryone gets the same teams this week, so drop your record below. Connect your league and you can play it with your own league's old teams.`,
     }, link, 'roulette'),
     link, card: null, image_path: '/api/og/games/',
   }
@@ -194,22 +200,22 @@ export function buildRoulette(season: number, week: number): Built {
 // ── Weekly Recap promo ───────────────────────────────────────────────────
 const RECAP_PITCHES = [
   {
-    x: 'Every Tuesday your league can get its own newspaper: last week\'s results, the best and worst lineup calls, and where the standings moved. 10 days free.',
-    threads: 'Every Tuesday your league can get its own newspaper.\n\nLast week\'s results, the best and worst lineup calls, and where the standings moved, written up from your league\'s own history. Anyone in the league can sign up to get it.\n\n10 days free.',
+    x: 'Your fantasy league gets its own newspaper every Tuesday. Last week\'s scores, the best and worst lineup calls, and how the standings moved. 10 days free.',
+    threads: 'Your fantasy league gets its own newspaper every Tuesday.\n\nLast week\'s scores, the best and worst lineup calls, and how the standings moved, pulled from your league\'s own history. Anyone in the league can sign up to get it.\n\n10 days free.',
     dek: 'A paper for your league, every Tuesday.',
-    points: ['Last week’s results', 'Best and worst lineup calls', 'Where the standings moved', 'Anyone in the league can subscribe'],
+    points: ['Last week\u2019s scores', 'Best and worst lineup calls', 'How the standings moved', 'Anyone in the league can sign up'],
   },
   {
-    x: 'Your group chat argues about last week. Your league\'s Tuesday paper settles it: every score, every bench mistake, every streak, from the league\'s own records.',
-    threads: 'Your group chat argues about last week. The Tuesday paper settles it.\n\nEvery score, every bench mistake, every streak, checked against your league\'s whole history. It lands in your inbox after Monday night.\n\n10 days free.',
-    dek: 'The argument, settled every Tuesday.',
-    points: ['Every score, every week', 'Bench mistakes, named', 'Streaks and records on the line', 'In your inbox after Monday night'],
+    x: 'Every week the group chat argues about who should have started who. The Tuesday recap settles it: every score, every bad bench call, every streak in your league.',
+    threads: 'Every week the group chat argues about who should have started who.\n\nThe Tuesday recap settles it. Every score, every bad bench call, every streak, checked against your league\'s whole history. It hits your inbox after Monday night.\n\n10 days free.',
+    dek: 'Settles the group chat every Tuesday.',
+    points: ['Every score, every week', 'The worst bench calls', 'Streaks and records in play', 'In your inbox after Monday night'],
   },
   {
-    x: 'Sleeper, ESPN or Yahoo: connect your league once and it gets a weekly paper, an all-time record book and a full history of every season. 10 days free.',
-    threads: 'Connect your league once. Sleeper, ESPN or Yahoo.\n\nIt gets a weekly paper every Tuesday, an all-time record book, and every season you have ever played, bound and kept.\n\n10 days free.',
+    x: 'Connect your Sleeper, ESPN or Yahoo league once. You get a recap every Tuesday, an all-time record book, and every season you\'ve ever played in one place. 10 days free.',
+    threads: 'Connect your Sleeper, ESPN or Yahoo league once.\n\nYou get a recap every Tuesday, an all-time record book, and every season you\'ve ever played in one place.\n\n10 days free.',
     dek: 'Connect once. Read it every Tuesday.',
-    points: ['Sleeper, ESPN and Yahoo', 'A paper every Tuesday', 'An all-time record book', 'Every season, bound and kept'],
+    points: ['Sleeper, ESPN and Yahoo', 'A recap every Tuesday', 'An all-time record book', 'Every season in one place'],
   },
 ]
 
@@ -227,15 +233,36 @@ export function buildRecapPromo(week: number): Built {
 // ── Feature of the week ──────────────────────────────────────────────────
 // Rotates through the share hub's pages, whose landing pages (/see/<key>)
 // and heroes are already built for strangers and run on the demo league.
+//
+// The pages' own decks are written for the site ("kept like exhibits"), which
+// reads oddly in a feed. These say the same thing the way a fantasy account
+// would. A page missing here falls back to its title and deck.
+const FEATURE_COPY: Record<string, string> = {
+  standings: 'Every win, loss and point your league has ever put up, in one table. Finally settle who has actually been the best.',
+  records: 'Highest score ever, worst blowout, longest win streak. Every record your league has, in one place.',
+  managers: 'Everyone who has ever been in your league, with their record, their titles, and how they do head to head against everyone else.',
+  draft: 'Every draft your league has ever had, pick by pick. See who hit, who busted, and who keeps reaching in the first round.',
+  seasons: 'Every season of your league: final standings, the playoff bracket, and who won it.',
+  'all-time': 'The best season anyone in your league has had at every position, all in one lineup.',
+  live: 'Power rankings, pick\'ems, records on the line and trade grades for your league, updated every week.',
+  powerrank: 'Power rankings for your league every week, worked out from record, points scored and recent form.',
+  pickems: 'Pick\'ems for your league: everyone picks every matchup each week, plus the high and low scorer. Nobody needs an account.',
+  milestones: 'Career milestones as the managers in your league hit them, and who is close to the next one.',
+  'records-watch': 'Which league records fell this season, which are on pace, and which are just out of reach.',
+}
+
+// Site names that mean nothing to a stranger in a feed.
+const FEATURE_TITLE: Record<string, string> = { managers: 'Manager pages' }
+
 export function buildFeature(week: number): Built {
   const page = SHARE_PAGES[week % SHARE_PAGES.length]
   const link = `/see/${page.key}/`
-  const title = page.title.replace(/’/g, '\'')
-  const deck = page.deck.replace(/’/g, '\'')
+  const title = FEATURE_TITLE[page.key] ?? page.title.replace(/’/g, '\'')
+  const line = FEATURE_COPY[page.key] ?? page.deck.replace(/’/g, '\'')
   return {
     ...texts({
-      x: `${title}. ${deck}`,
-      threads: `${title}.\n\n${deck}\n\nThis one is from our demo league. Yours gets built from its own history the day you connect it.`,
+      x: `${title}. ${line}`,
+      threads: `${title}.\n\n${line}\n\nThis is our demo league. Connect yours and it fills in with your own league's history.`,
     }, link, `feature-${page.key}`),
     // The share pages list their OG paths without the trailing slash, which
     // the site answers with a 308. Threads fetches the image itself and may
