@@ -7,6 +7,8 @@ import { isSiteAdmin } from '@/lib/siteAdmin'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { latestRecapWeek } from '@/lib/recap/load'
 import { sendRecapNow } from '@/lib/recap/run'
+import { currentNflYear, syncableSourceIds } from '@/lib/liveChoices'
+import { inviteToList, removeMember, OWNER_INVITES_PER_CALL, type InviteOutcome } from '@/lib/recap/subscribers'
 
 const Schema = z.object({
   leagueId: z.string().uuid(),
@@ -39,8 +41,28 @@ export async function setLiveSeason(
     .eq('id', parsed.data.leagueId)
     .maybeSingle()
   if (!league) return { ok: false, error: 'League not found.' }
-  if (league.owner_id !== user.id && !(await isSiteAdmin(user.id))) {
+  const admin = await isSiteAdmin(user.id)
+  if (league.owner_id !== user.id && !admin) {
     return { ok: false, error: 'Only the owner can change the live season.' }
+  }
+
+  // Only this NFL year can go live (or whichever season already is, so its
+  // dates can still be fixed). Site admins can pick any year for testing.
+  // See lib/liveChoices.ts.
+  if (parsed.data.seasonId && !admin) {
+    const [{ data: chosen }, year] = await Promise.all([
+      supabase
+        .from('seasons')
+        .select('year, is_live')
+        .eq('league_id', league.id)
+        .eq('id', parsed.data.seasonId)
+        .maybeSingle(),
+      currentNflYear(),
+    ])
+    if (!chosen) return { ok: false, error: 'Season not found.' }
+    if (chosen.year !== year && !chosen.is_live) {
+      return { ok: false, error: `Only the ${year} season can be marked live.` }
+    }
   }
 
   // Clear is_live across all seasons in this league, then set the chosen one (if any).
@@ -108,8 +130,24 @@ export async function setLiveSource(leagueId: string, sourceId: string | null): 
     .eq('id', parsed.data.leagueId)
     .maybeSingle()
   if (!league) return { ok: false, error: 'League not found.' }
-  if (league.owner_id !== user.id && !(await isSiteAdmin(user.id))) {
+  const admin = await isSiteAdmin(user.id)
+  if (league.owner_id !== user.id && !admin) {
     return { ok: false, error: 'Only the owner can change the live source.' }
+  }
+
+  // Same rule as the page: only a source that can sync this NFL year, or
+  // the one already live. Site admins can pick any.
+  if (parsed.data.sourceId && !admin) {
+    const [{ data: sources }, { data: seasons }, year] = await Promise.all([
+      supabase.from('league_sources').select('id, platform, external_id, is_live, settings').eq('league_id', league.id),
+      supabase.from('seasons').select('id, year, is_live, external_id').eq('league_id', league.id),
+      currentNflYear(),
+    ])
+    const chosen = (sources ?? []).find((s) => s.id === parsed.data.sourceId)
+    if (!chosen) return { ok: false, error: 'Source not found.' }
+    if (!chosen.is_live && !syncableSourceIds(sources ?? [], seasons ?? [], year).has(chosen.id)) {
+      return { ok: false, error: `That source can't sync the ${year} season.` }
+    }
   }
 
   const { error: clearErr } = await supabase
@@ -291,4 +329,50 @@ export async function emailMeTheRecap(leagueId: string): Promise<{ ok: true; to:
 
   const sent = await sendRecapNow({ leagueId: league.id, userId: user.id, year: latest.year, week: latest.week })
   return sent.ok ? { ok: true, to: sent.to, week: latest.week } : sent
+}
+
+// ── The league's mailing list, from the commissioner's side ─────────────
+
+// Addresses come in as one box of text: commas, spaces, semicolons or one
+// per line, however they were pasted from the group chat.
+export async function inviteRecapReaders(
+  leagueId: string,
+  raw: string,
+): Promise<{ ok: true; outcomes: InviteOutcome[] } | { ok: false; error: string }> {
+  if (!z.string().uuid().safeParse(leagueId).success) return { ok: false, error: 'Invalid league.' }
+  if (typeof raw !== 'string' || raw.length > 6000) return { ok: false, error: 'That’s too much text. Paste the addresses only.' }
+  const emails = raw.split(/[\s,;]+/).map((s) => s.replace(/^<|>$/g, '')).filter(Boolean)
+  if (emails.length === 0) return { ok: false, error: 'Add at least one email address.' }
+  if (emails.length > OWNER_INVITES_PER_CALL) {
+    return { ok: false, error: `${OWNER_INVITES_PER_CALL} at a time, please. Send these, then the rest.` }
+  }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Not signed in.' }
+  const { data: league } = await supabase.from('leagues').select('id, slug, owner_id').eq('id', leagueId).maybeSingle()
+  if (!league) return { ok: false, error: 'League not found.' }
+  const isOwner = league.owner_id === user.id
+  if (!isOwner && !(await isSiteAdmin(user.id))) return { ok: false, error: 'Only the commissioner can add to the list.' }
+
+  const r = await inviteToList({ leagueId: league.id, emails, ownerEmail: isOwner ? user.email ?? null : null })
+  if (r.ok) revalidatePath(`/league/${league.slug}/live`)
+  return r
+}
+
+export async function removeRecapReader(leagueId: string, subscriberId: string): Promise<Result> {
+  if (!z.string().uuid().safeParse(leagueId).success || !z.string().uuid().safeParse(subscriberId).success) {
+    return { ok: false, error: 'Invalid input.' }
+  }
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Not signed in.' }
+  const { data: league } = await supabase.from('leagues').select('id, slug, owner_id').eq('id', leagueId).maybeSingle()
+  if (!league) return { ok: false, error: 'League not found.' }
+  if (league.owner_id !== user.id && !(await isSiteAdmin(user.id))) {
+    return { ok: false, error: 'Only the commissioner can change the list.' }
+  }
+  await removeMember(league.id, subscriberId)
+  revalidatePath(`/league/${league.slug}/live`)
+  return { ok: true }
 }

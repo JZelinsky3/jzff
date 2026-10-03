@@ -4,23 +4,30 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { setLiveSeason } from '@/app/league/[slug]/live/actions'
 
-export type SeasonOption = { id: string; year: number; is_live: boolean }
+export type SeasonOption = { id: string; year: number; is_live: boolean; stale?: boolean }
 
 export function MobileLiveForm({
   leagueId,
   seasons,
+  pastSeasons = [],
+  year,
   weekOverride,
   seasonStartDate,
   resolvedWeek,
 }: {
   leagueId: string
+  // This NFL year's season (plus whatever is live now). See lib/liveChoices.
   seasons: SeasonOption[]
+  // Every other year. Site admins only.
+  pastSeasons?: SeasonOption[]
+  year: number
   weekOverride: number | null
   seasonStartDate: string | null
   resolvedWeek: number | null
 }) {
   const router = useRouter()
-  const initialSeason = seasons.find((s) => s.is_live)?.id ?? ''
+  const all = [...seasons, ...pastSeasons]
+  const initialSeason = all.find((s) => s.is_live)?.id ?? ''
   const initialWeek = weekOverride != null ? String(weekOverride) : ''
   const initialDate = seasonStartDate ?? ''
   const [selected, setSelected] = useState(initialSeason)
@@ -29,8 +36,8 @@ export function MobileLiveForm({
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
-  if (seasons.length === 0) {
-    return <div className="mliv-card-empty">No seasons yet. Sync a source first.</div>
+  if (all.length === 0) {
+    return <div className="mliv-card-empty">No {year} season yet. Sync this year&apos;s source first.</div>
   }
 
   async function onSubmit() {
@@ -48,7 +55,8 @@ export function MobileLiveForm({
   }
 
   const dirty = selected !== initialSeason || week !== initialWeek || startDate !== initialDate
-  const selectedYear = seasons.find((s) => s.id === selected)?.year
+  const selectedYear = all.find((s) => s.id === selected)?.year
+  const label = (s: SeasonOption) => `${s.year}${s.is_live ? ' ★' : ''}${s.stale ? ' (past)' : ''}`
 
   return (
     <div className="mlf">
@@ -60,15 +68,23 @@ export function MobileLiveForm({
         >
           <option value="">Off-season (no live)</option>
           {seasons.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.year}{s.is_live ? ' ★' : ''}
-            </option>
+            <option key={s.id} value={s.id}>{label(s)}</option>
           ))}
+          {pastSeasons.length > 0 && (
+            <optgroup label="Past seasons (site admin)">
+              {pastSeasons.map((s) => (
+                <option key={s.id} value={s.id}>{label(s)}</option>
+              ))}
+            </optgroup>
+          )}
         </select>
         {selectedYear && (
           <span className="mlf-selected-label">{selectedYear}</span>
         )}
       </div>
+      {seasons.every((s) => s.stale) && (
+        <span className="mlf-field-hint">No {year} season yet. Sync this year&apos;s source first.</span>
+      )}
 
       {selected && (
         <div className="mlf-fields">

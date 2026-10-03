@@ -1,0 +1,451 @@
+/* The "what's new" popup (WhatsNew.tsx). Site house colours: the ink card,
+   cream type, gold for the one thing to press. The headline clipping wears
+   the recap's own newsprint so it previews the real thing.
+
+   Desktop: a centred card. Phones (and narrow windows): a bottom sheet. */
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 9, 14, 0.66);
+  animation: fadeIn 0.18s ease-out both;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 31rem);
+  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
+  background: var(--ink-card);
+  border: 1px solid var(--ink-line);
+  border-radius: 6px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+  color: var(--cream);
+  font-family: var(--sans);
+  animation: rise 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.card:focus {
+  outline: none;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+
+.head {
+  position: relative;
+  padding: 1.5rem 1.6rem 0;
+}
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.title {
+  margin: 0.45rem 2.25rem 0 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.75rem;
+  line-height: 1.15;
+  color: var(--cream);
+}
+.x {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: var(--cream-mute);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.x:hover {
+  color: var(--cream);
+  background: rgba(255, 255, 255, 0.06);
+}
+.x:focus-visible,
+.ok:focus-visible,
+.link:focus-visible,
+.clip:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ── Body ───────────────────────────────────────────────────────────── */
+
+.body {
+  padding: 0.85rem 1.6rem 1.35rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.lede {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--cream-soft);
+}
+
+/* The newest week's headline, on recap paper. */
+.clip {
+  display: block;
+  margin-top: 1.1rem;
+  padding: 0.8rem 1rem 0.85rem;
+  background: #f6f1e4;
+  border: 1px solid #cdc2a8;
+  border-radius: 3px;
+  color: #1c1915;
+  text-decoration: none;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.clip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+.clipKicker {
+  display: block;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #cdc2a8;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #a3302a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.clipHead {
+  display: block;
+  margin-top: 0.5rem;
+  font-family: var(--serif);
+  font-size: 1.22rem;
+  line-height: 1.2;
+  color: #1c1915;
+}
+.clipMore {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #a3302a;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rows {
+  display: grid;
+  gap: 1rem;
+  margin: 1.2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.row {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: start;
+}
+.icon {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  background: var(--ink-soft);
+  border: 1px solid var(--ink-line);
+  border-radius: 6px;
+  color: var(--gold);
+}
+.rowTitle {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.93rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--cream);
+}
+.rowText {
+  margin: 0.2rem 0 0;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--cream-soft);
+}
+.tag {
+  padding: 0.18rem 0.45rem;
+  border: 1px solid rgba(232, 200, 137, 0.4);
+  border-radius: 2px;
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.1rem;
+  margin-top: 0.5rem;
+}
+.link {
+  padding-bottom: 1px;
+  border-bottom: 1px solid rgba(232, 200, 137, 0.35);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-decoration: none;
+  transition: color 0.15s, border-color 0.15s;
+}
+.link:hover {
+  color: var(--gold-bright);
+  border-color: var(--gold-bright);
+}
+
+.live {
+  margin-top: 1.25rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid var(--ink-line);
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────── */
+
+.foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.9rem 1.6rem 1.1rem;
+  border-top: 1px solid var(--ink-line);
+}
+.ok {
+  padding: 0.8rem 1.7rem;
+  background: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 2px;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  line-height: 1;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.ok:hover {
+  background: var(--gold-bright);
+  border-color: var(--gold-bright);
+}
+
+/* ── Phone: bottom sheet ────────────────────────────────────────────── */
+
+/* The mobile league hub's own controls (its Configure list): tappable
+   rows with a tinted icon tile, a serif name, one muted line and a
+   chevron, pill badges, and a rounded gold button. */
+.list {
+  margin-top: 1rem;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--ink-line);
+  border-radius: 12px;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.8rem 0.85rem;
+  border-bottom: 1px solid var(--ink-line);
+  color: inherit;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.12s;
+}
+.item:last-child {
+  border-bottom: 0;
+}
+a.item:active {
+  background: rgba(232, 200, 137, 0.06);
+}
+a.item:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
+}
+.itemIcon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  background: rgba(232, 200, 137, 0.07);
+  border-radius: 8px;
+  color: var(--gold);
+}
+.itemBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+.itemName {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  font-family: var(--serif);
+  font-size: 0.98rem;
+  line-height: 1.2;
+  color: var(--cream);
+}
+.itemDesc {
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: var(--cream-mute);
+}
+.itemArrow {
+  flex-shrink: 0;
+  color: var(--cream-mute);
+  opacity: 0.5;
+}
+.badge {
+  padding: 0.16rem 0.42rem;
+  border: 1px solid;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 0.48rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+.badgeOn {
+  color: #7aad8e;
+  border-color: rgba(107, 154, 110, 0.4);
+  background: rgba(107, 154, 110, 0.08);
+}
+.badgePaid {
+  color: var(--gold);
+  border-color: var(--gold-deep);
+  background: rgba(232, 200, 137, 0.06);
+}
+
+.sheet {
+  align-items: flex-end;
+  padding: 0;
+}
+.sheet .card {
+  width: 100%;
+  max-height: 88vh;
+  max-height: 88dvh;
+  border-bottom: 0;
+  border-radius: 14px 14px 0 0;
+  animation: slideUp 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.sheet .head {
+  padding: 1.2rem 1.15rem 0;
+}
+.sheet .x {
+  top: 0.7rem;
+  right: 0.7rem;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+.sheet .title {
+  font-size: 1.45rem;
+}
+.sheet .body {
+  padding: 0.7rem 1.15rem 1.1rem;
+}
+.sheet .lede {
+  font-size: 0.84rem;
+}
+.sheet .clip {
+  border-radius: 10px;
+}
+.sheet .clipHead {
+  font-size: 1.1rem;
+}
+/* The button sits well clear of the bottom edge (and of the home bar
+   when the site is installed to the home screen). */
+.sheet .foot {
+  padding: 0.85rem 1.15rem calc(1.4rem + env(safe-area-inset-bottom));
+  border-top-color: rgba(255, 255, 255, 0.05);
+}
+.sheet .ok {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+}
+
+/* ── Motion ─────────────────────────────────────────────────────────── */
+
+.closing .backdrop {
+  animation: fadeOut 0.18s ease-in both;
+}
+.closing .card {
+  animation: sink 0.18s ease-in both;
+}
+.sheet.closing .card {
+  animation: slideDown 0.2s ease-in both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes sink {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(6px) scale(0.99); }
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+@keyframes slideDown {
+  from { transform: none; }
+  to { transform: translateY(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .card,
+  .sheet .card,
+  .closing .backdrop,
+  .closing .card,
+  .sheet.closing .card {
+    animation: none;
+  }
+}

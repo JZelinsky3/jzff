@@ -9,6 +9,8 @@ export type SeasonRow = {
   id: string
   year: number
   is_live: boolean
+  // Live, but not this NFL year. Listed only so it can be switched off.
+  stale?: boolean
 }
 
 const inputStyle: React.CSSProperties = {
@@ -56,18 +58,24 @@ function prettyDate(iso: string): string {
 export function LiveSeasonForm({
   leagueId,
   seasons,
+  pastSeasons = [],
+  year,
   weekOverride,
   seasonStartDate,
   resolvedWeek,
 }: {
   leagueId: string
+  // This NFL year's season (plus whatever is live now). See lib/liveChoices.
   seasons: SeasonRow[]
+  // Every other year. Site admins only, for testing against an old season.
+  pastSeasons?: SeasonRow[]
+  year: number
   weekOverride: number | null
   seasonStartDate: string | null
   resolvedWeek: number | null
 }) {
   const router = useRouter()
-  const initialSeason = seasons.find((s) => s.is_live)?.id ?? ''
+  const initialSeason = [...seasons, ...pastSeasons].find((s) => s.is_live)?.id ?? ''
   const initialWeek = weekOverride != null ? String(weekOverride) : ''
   const initialDate = seasonStartDate ?? ''
   const [selected, setSelected] = useState<string>(initialSeason)
@@ -93,7 +101,7 @@ export function LiveSeasonForm({
 
   // Offered for whichever season is currently selected, so the default
   // tracks the year you're marking live rather than today's date.
-  const selectedYear = seasons.find((s) => s.id === selected)?.year ?? null
+  const selectedYear = [...seasons, ...pastSeasons].find((s) => s.id === selected)?.year ?? null
   const suggestedStart = selectedYear != null ? nflWeekOneTuesday(selectedYear) : null
 
   const dirty = selected !== initialSeason || week !== initialWeek || startDate !== initialDate
@@ -101,12 +109,33 @@ export function LiveSeasonForm({
   // Registered before the empty-state early return so the hook order is
   // stable across renders.
   useChapterEdits('season', dirty, onSubmit)
+  // The fold-out starts open only when the live season is in it.
+  const [pastOpen] = useState(() => pastSeasons.some((s) => s.id === initialSeason))
 
-  if (seasons.length === 0) {
+  if (seasons.length === 0 && pastSeasons.length === 0) {
     return (
-      <div className="lo-empty"><div className="lo-empty-text">No seasons yet. Sync a source first.</div></div>
+      <div className="lo-empty">
+        <div className="lo-empty-text">No {year} season yet. Sync this year&apos;s source and it shows up here.</div>
+      </div>
     )
   }
+
+  const radio = (s: SeasonRow) => (
+    <label key={s.id} className="lo-pick-row">
+      <input
+        type="radio"
+        name="live"
+        value={s.id}
+        checked={selected === s.id}
+        onChange={() => setSelected(s.id)}
+      />
+      <span className="lo-pick-label">
+        {s.year}
+        {s.is_live && <span className="lo-tag live">Currently live</span>}
+        {s.stale && <span className="lo-tag">Past season</span>}
+      </span>
+    </label>
+  )
 
   return (
     <div className="lo-form-card">
@@ -121,21 +150,16 @@ export function LiveSeasonForm({
           />
           <span className="lo-pick-label muted">Off-season (no live)</span>
         </label>
-        {seasons.map((s) => (
-          <label key={s.id} className="lo-pick-row">
-            <input
-              type="radio"
-              name="live"
-              value={s.id}
-              checked={selected === s.id}
-              onChange={() => setSelected(s.id)}
-            />
-            <span className="lo-pick-label">
-              {s.year}
-              {s.is_live && <span className="lo-tag live">Currently live</span>}
-            </span>
-          </label>
-        ))}
+        {seasons.map(radio)}
+        {seasons.every((s) => s.stale) && (
+          <div className="lo-pick-note">No {year} season yet. Sync this year&apos;s source and it shows up here.</div>
+        )}
+        {pastSeasons.length > 0 && (
+          <details className="lo-pick-more" open={pastOpen}>
+            <summary>Past seasons · site admin</summary>
+            {pastSeasons.map(radio)}
+          </details>
+        )}
       </div>
 
       {selected && (

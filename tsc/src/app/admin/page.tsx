@@ -152,6 +152,16 @@ export default async function AdminPage() {
               Who came back
             </Link>
             <Link
+              href="/admin/activity"
+              style={{
+                fontFamily: 'var(--mono)', fontSize: '.65rem', letterSpacing: '.16em',
+                textTransform: 'uppercase', color: 'var(--gold)', textDecoration: 'none',
+                border: '1px solid var(--ink-line)', padding: '.45rem .9rem',
+              }}
+            >
+              League activity
+            </Link>
+            <Link
               href="/admin/reviews"
               style={{
                 fontFamily: 'var(--mono)', fontSize: '.65rem', letterSpacing: '.16em',

@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import '@/styles/league-office.css'
+import '@/styles/live-season-mobile.css'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 import { getViewMode } from '@/lib/viewMode'
 import { LeagueBackLink } from './back-link'
@@ -9,6 +10,7 @@ import { MobileLeagueBackLink } from './_mobile-back-link'
 import { SpineRail } from './spine-rail'
 import { PageTurn } from './page-turn'
 import { SupportWidget } from '@/components/SupportWidget'
+import { WhatsNew } from '@/components/WhatsNew'
 
 export default async function LeagueLayout({
   children,
@@ -41,6 +43,9 @@ export default async function LeagueLayout({
   const tail = words[words.length - 1] ?? ''
 
   const mobile = (await getViewMode()) === 'mobile'
+  // The season's "what's new" card. Owners only: it talks about "your
+  // league", and an assisting site admin isn't this league's commish.
+  const whatsNew = isOwner ? <WhatsNew user={user.id} league={slug} mobile={mobile} /> : null
 
   if (mobile) {
     return (
@@ -57,6 +62,7 @@ export default async function LeagueLayout({
           <span className="mlsub-bar-spacer" />
         </header>
         {children}
+        {whatsNew}
       </div>
     )
   }
@@ -80,6 +86,7 @@ export default async function LeagueLayout({
       <PageTurn />
       <SupportWidget slug={slug} league={league.name} email={user.email} />
       {children}
+      {whatsNew}
     </>
   )
 }

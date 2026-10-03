@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveCommishPower } from './actions'
 
-type Team = { team_id: string; rank: number; team_name: string; manager: string; wins: number; losses: number; ties: number }
+type Team = { team_id: string; rank: number; team_name: string; manager: string; wins: number; losses: number; ties: number; pf: number }
 type Week = {
   id: string
   week: number
@@ -106,6 +106,11 @@ export function CommishPower({
   const sameAsModel = order.every((id, i) => modelOrder[i] === id)
   const published = !!week.commish
   const record = (t: Team) => `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ''}`
+  // Points per game through this week's snapshot; nothing before a game.
+  const ppg = (t: Team) => {
+    const games = t.wins + t.losses + t.ties
+    return games > 0 ? ` · ${(t.pf / games).toFixed(1)} PPG` : ''
+  }
 
   return (
     <div className={cls}>
@@ -145,9 +150,13 @@ export function CommishPower({
               <span className={`${cls}-rank`}>{i + 1}</span>
               <span className={`${cls}-team`}>
                 <b>{t.manager}</b>
-                <small>{t.team_name} · {record(t)}</small>
+                {variant === 'mobile' ? (
+                  <small>{record(t)}{ppg(t)} · Model #{t.rank}</small>
+                ) : (
+                  <small>{t.team_name} · {record(t)}{ppg(t)}</small>
+                )}
               </span>
-              <span className={`${cls}-model`}>Model #{t.rank}</span>
+              {variant === 'desktop' && <span className={`${cls}-model`}>Model #{t.rank}</span>}
               <span className={`${cls}-gap ${gap > 0 ? 'up' : gap < 0 ? 'down' : 'even'}`}>
                 {gap > 0 ? `↑${gap}` : gap < 0 ? `↓${-gap}` : '='}
               </span>

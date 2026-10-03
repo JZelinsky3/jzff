@@ -40,7 +40,7 @@ export function MobileLoginForm({ next, initialMode = 'signin' }: { next?: strin
     if (mode === 'signin') {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) { setStatus('error'); setError(error.message); return }
-      window.location.assign(next || '/hub')
+      window.location.assign(next || '/dashboard')
       return
     }
 
@@ -61,7 +61,7 @@ export function MobileLoginForm({ next, initialMode = 'signin' }: { next?: strin
     })
     if (error) { setStatus('error'); setError(error.message); return }
     if (data.session) {
-      window.location.assign(next || '/hub')
+      window.location.assign(next || '/dashboard')
       return
     }
     setStatus('sent')

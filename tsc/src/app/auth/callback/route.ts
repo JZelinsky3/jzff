@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server'
 import { REFERRAL_CHANNEL_SET } from '@/lib/referralChannels'
 import { createClient } from '@/lib/supabase/server'
+import { getViewMode } from '@/lib/viewMode'
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
   const code = url.searchParams.get('code')
-  // Default post-auth landing is the Clubhouse (/hub) — the signed-in home.
-  const next = url.searchParams.get('next') ?? '/hub'
+  // Default post-auth landing is the Clubhouse (/hub) on desktop and the
+  // dashboard on a phone.
+  const next = url.searchParams.get('next') ?? ((await getViewMode()) === 'mobile' ? '/dashboard' : '/hub')
 
   // Optional referral metadata bounced through Google OAuth via the
   // redirectTo URL. Password signup persists referral via signUp({ data })

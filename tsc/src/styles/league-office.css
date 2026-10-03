@@ -1290,6 +1290,30 @@ a.lo-billboard:hover::before { border-color: rgba(232, 200, 137, .45); }
     min-width: 0;
 }
 .lo-pick-label .muted { opacity: .65; }
+/* A line of explanation inside the ledger, and the site-admin fold-out
+   holding past years / other sources (lib/liveChoices.ts). */
+.lo-pick-note {
+    padding: .7rem .95rem;
+    border-bottom: 1px solid var(--ink-line-soft);
+    font-size: .8rem; line-height: 1.5; color: var(--cream-mute);
+}
+.lo-pick-note:last-child { border-bottom: none; }
+.lo-pick-more > summary {
+    padding: .65rem .95rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--cream-mute);
+    cursor: pointer;
+    list-style: none;
+}
+.lo-pick-more > summary::-webkit-details-marker { display: none; }
+.lo-pick-more > summary::before {
+    content: '▸'; display: inline-block; margin-right: .55rem;
+    transition: transform .15s;
+}
+.lo-pick-more[open] > summary::before { transform: rotate(90deg); }
+.lo-pick-more > summary:hover { color: var(--accent, var(--gold)); }
+.lo-pick-more .lo-pick-row { border-top: 1px solid var(--ink-line-soft); border-bottom: none; }
 
 /* ------------------------------------------------ wizard
    Progress rail: numbered stops on a single ruled line, the
@@ -2021,12 +2045,11 @@ a.lo-billboard:hover::before { border-color: rgba(232, 200, 137, .45); }
 }
 
 /* ------------------------------------------------- weekly recap card
-   Current Season §05: read this week's recap or send a copy now. */
+   Current Season §04: read this week's recap or send a copy now. */
 .lo-rc {
     display: grid; gap: 1.1rem 2rem; align-items: center;
     padding: 1.4rem 1.5rem;
     border: 1px solid var(--ink-line);
-    border-left: 3px solid var(--accent, var(--gold));
     background: rgba(244, 235, 216, .02);
 }
 @media (min-width: 900px) {
@@ -2046,5 +2069,83 @@ a.lo-billboard:hover::before { border-color: rgba(232, 200, 137, .45); }
     padding: 1.4rem 1.5rem;
     border: 1px dashed var(--ink-line);
     font-family: var(--serif); font-style: italic; font-size: 1rem;
+    color: var(--cream-mute);
+}
+
+/* The tip's "Set week N" scrolls here; clear the sticky bar. */
+#gotw { scroll-margin-top: 5.5rem; }
+
+/* Next week's Game of the Week, under the recap card (gotw-tip.tsx). */
+.lo-rc-tip {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: .7rem 1.4rem;
+    margin-top: .75rem;
+    padding: .95rem 1.5rem;
+    border: 1px solid var(--ink-line);
+    font-size: .88rem; line-height: 1.55; color: var(--cream-mute);
+}
+.lo-rc-tip > span { flex: 1 1 32rem; max-width: 72ch; }
+.lo-rc-tip b { color: var(--cream); font-weight: 600; }
+.lo-rc-tip.set b { color: var(--accent, var(--gold)); }
+
+/* The league's recap mailing list, run by the commish (recap-list.tsx). */
+.lo-ml {
+    display: grid; gap: .9rem;
+    margin-top: .75rem;
+    padding: 1.3rem 1.5rem 1.4rem;
+    border: 1px solid var(--ink-line);
+}
+.lo-ml-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem 1rem; }
+.lo-ml-title { font-family: var(--serif); font-size: 1.25rem; color: var(--cream); }
+.lo-ml-count {
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--accent, var(--gold));
+}
+.lo-ml-text { margin: 0; max-width: 72ch; font-size: .88rem; line-height: 1.6; color: var(--cream-mute); }
+.lo-ml-form { display: flex; flex-wrap: wrap; gap: .6rem; align-items: stretch; }
+.lo-ml-form textarea { flex: 1 1 24rem; min-height: 2.9rem; resize: vertical; font-family: var(--mono); font-size: .82rem; }
+.lo-ml-list {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+    gap: 0 2rem;
+    border-top: 1px solid var(--ink-line-soft);
+}
+.lo-ml-list li {
+    display: flex; align-items: center; gap: .75rem;
+    min-width: 0; padding: .55rem 0;
+    border-bottom: 1px dotted var(--ink-line);
+}
+.lo-ml-email {
+    flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: .88rem; color: var(--cream);
+}
+.lo-ml-state {
+    flex-shrink: 0;
+    font-family: var(--mono); font-size: .52rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.lo-ml-state.active { color: #9dc79d; }
+.lo-ml-x {
+    flex-shrink: 0;
+    min-width: 1.8rem; padding: .25rem .4rem;
+    background: none; border: 1px solid transparent;
+    font-family: var(--mono); font-size: .62rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--cream-mute); cursor: pointer;
+}
+.lo-ml-x:hover:not(:disabled) { color: #d08a76; }
+.lo-ml-x.armed { color: #d08a76; border-color: rgba(208, 138, 118, .45); }
+.lo-ml-x:disabled { opacity: .4; cursor: default; }
+.lo-ml-more {
+    justify-self: start;
+    background: none; border: 0; padding: 0;
+    font-family: var(--mono); font-size: .6rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--cream-mute); cursor: pointer;
+}
+.lo-ml-more:hover { color: var(--accent, var(--gold)); }
+.lo-ml-off {
+    margin-top: .75rem; padding: .95rem 1.5rem;
+    border: 1px dashed var(--ink-line);
+    font-family: var(--serif); font-style: italic; font-size: .95rem;
     color: var(--cream-mute);
 }

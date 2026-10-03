@@ -4,12 +4,21 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
 import { MobileLiveSeason } from '@/components/league/MobileLiveSeason'
 import { getViewMode } from '@/lib/viewMode'
+import { isSiteAdmin } from '@/lib/siteAdmin'
+import { currentNflYear, splitSeasons, splitSources } from '@/lib/liveChoices'
+import { listMembers, type ListMember } from '@/lib/recap/subscribers'
 import { LiveSeasonForm, type SeasonRow } from './live-form'
 import { SourcePicker, type SourceRow } from './source-picker'
 import { GotwPicker, type GotwWeek } from './gotw-picker'
+import { GotwTip } from './gotw-tip'
 import { CommishPower } from './commish-power'
 import { RecapCard } from './recap-card'
+import { RecapList } from './recap-list'
 import { latestRecapWeek } from '@/lib/recap/load'
+
+// Inviting the league to the recap list sends its confirmation emails one
+// at a time, under Resend's rate limit, from this page's server action.
+export const maxDuration = 60
 
 export default async function LiveSeasonPage({
   params,
@@ -21,46 +30,81 @@ export default async function LiveSeasonPage({
 
   const { data: league } = await supabase
     .from('leagues')
-    .select('id, name, slug, published_at')
+    .select('id, name, slug, published_at, owner_id')
     .eq('slug', slug)
     .maybeSingle()
   if (!league) notFound()
 
-  const [{ data: seasons }, { data: sources }, recapWeek] = await Promise.all([
+  const { data: { user } } = await supabase.auth.getUser()
+  const [{ data: seasons }, { data: sources }, recapWeek, year, admin] = await Promise.all([
     supabase
       .from('seasons')
-      .select('id, year, is_live, settings')
+      .select('id, year, is_live, settings, external_id')
       .eq('league_id', league.id)
       .order('year', { ascending: false }),
     supabase
       .from('league_sources')
-      .select('id, platform, external_id, label, is_live')
+      .select('id, platform, external_id, label, is_live, settings')
       .eq('league_id', league.id)
       .order('created_at', { ascending: true }),
     latestRecapWeek(league.id),
+    currentNflYear(),
+    user ? isSiteAdmin(user.id) : Promise.resolve(false),
   ])
   const published = !!league.published_at
+  const canManage = !!user && (user.id === league.owner_id || admin)
+  // Addresses on the recap list are the commissioner's to see, nobody else's.
+  const members: ListMember[] = canManage && published ? await listMembers(league.id) : []
 
-  const rows: SeasonRow[] = (seasons ?? []).map((s) => ({
+  // Only this NFL year's season and the sources that can sync it are on
+  // offer (lib/liveChoices.ts); site admins get the rest in a fold-out.
+  const seasonList = (seasons ?? []).map((s) => ({
+    id: s.id as string,
+    year: s.year as number,
+    is_live: !!s.is_live,
+    external_id: (s.external_id as string | null) ?? null,
+  }))
+  const seasonSplit = splitSeasons(seasonList, year)
+  const toSeasonRow = (s: { id: string; year: number; is_live: boolean; stale?: boolean }): SeasonRow => ({
     id: s.id,
     year: s.year,
-    is_live: !!s.is_live,
-  }))
-  const liveSeason = rows.find((r) => r.is_live) ?? null
+    is_live: s.is_live,
+    ...(s.stale ? { stale: true } : {}),
+  })
+  const rows: SeasonRow[] = seasonSplit.picks.map(toSeasonRow)
+  const pastRows: SeasonRow[] = admin ? seasonSplit.rest.map(toSeasonRow) : []
+
+  // settings carries ESPN cookies: it's read here and never handed on.
+  const sourceSplit = splitSources(
+    (sources ?? []).map((s) => ({
+      id: s.id as string,
+      platform: s.platform as string,
+      external_id: s.external_id as string,
+      label: (s.label as string | null) ?? null,
+      is_live: !!s.is_live,
+      settings: s.settings,
+    })),
+    seasonList,
+    year,
+  )
+  const toSourceRow = (s: { id: string; platform: string; external_id: string; label: string | null; is_live: boolean; stale?: boolean }): SourceRow => ({
+    id: s.id,
+    platform: s.platform,
+    external_id: s.external_id,
+    label: s.label,
+    is_live: s.is_live,
+    ...(s.stale ? { stale: true } : {}),
+  })
+  const sourceRows: SourceRow[] = sourceSplit.picks.map(toSourceRow)
+  const pastSources: SourceRow[] = admin ? sourceSplit.rest.map(toSourceRow) : []
+
   const liveRaw = (seasons ?? []).find((s) => s.is_live)
+  const liveSeason = liveRaw ? toSeasonRow({ id: liveRaw.id, year: liveRaw.year, is_live: true }) : null
   const liveSettings = (liveRaw?.settings ?? {}) as Record<string, unknown>
   const weekOverride = typeof liveSettings.current_week === 'number' ? (liveSettings.current_week as number) : null
   const seasonStartDate =
     typeof liveSettings.season_start_date === 'string' ? (liveSettings.season_start_date as string) : null
   const currentWeek = resolveCurrentWeek(liveSettings)
-
-  const sourceRows: SourceRow[] = (sources ?? []).map((s) => ({
-    id: s.id,
-    platform: s.platform,
-    external_id: s.external_id,
-    label: s.label ?? null,
-    is_live: !!s.is_live,
-  }))
 
   // Load every regular-season week's matchups so the commish can pre-pick a
   // Game of the Week for any week — the side panel tallies who's been
@@ -109,24 +153,48 @@ export default async function LiveSeasonPage({
     }
   }
 
+  // Next week's Game of the Week, for the line in the recap section: the
+  // Tuesday recap's look at the week ahead leads with it.
+  const tipWeek = currentWeek != null ? gotwWeeks.find((w) => w.week === currentWeek + 1) : undefined
+  const gotwTip = tipWeek
+    ? { week: tipWeek.week, matchup: tipWeek.matchups.find((m) => m.id === gotwMap[String(tipWeek.week)])?.label ?? null }
+    : null
+
+  // The drawer's closed line: the latest week with a published board.
+  const commishPower = (liveSettings.commish_power ?? {}) as Record<string, { order?: unknown[] } | undefined>
+  const publishedWeeks = Object.entries(commishPower)
+    .filter(([, v]) => Array.isArray(v?.order) && v.order.length > 0)
+    .map(([k]) => Number(k))
+    .filter((n) => Number.isFinite(n))
+  const lastPublished = publishedWeeks.length > 0 ? Math.max(...publishedWeeks) : null
+  const powerStatus =
+    lastPublished == null ? 'Not published yet' : lastPublished === 0 ? 'Published: preseason' : `Published: week ${lastPublished}`
+
   if ((await getViewMode()) === 'mobile') {
     return (
       <MobileLiveSeason
         leagueId={league.id}
         slug={league.slug}
+        year={year}
         seasons={rows}
+        pastSeasons={pastRows}
         weekOverride={weekOverride}
         seasonStartDate={seasonStartDate}
         resolvedWeek={currentWeek}
         liveSeason={liveSeason}
         currentWeek={currentWeek}
         sourceRows={sourceRows}
+        pastSources={pastSources}
         liveSeasonId={liveRaw?.id ?? null}
         gotwWeeks={gotwWeeks}
         gotwMap={gotwMap}
         gotwManagers={gotwManagers}
+        gotwTip={gotwTip}
         recapWeek={recapWeek}
         published={published}
+        members={members}
+        showList={canManage}
+        powerStatus={powerStatus}
       />
     )
   }
@@ -163,6 +231,8 @@ export default async function LiveSeasonPage({
             <LiveSeasonForm
               leagueId={league.id}
               seasons={rows}
+              pastSeasons={pastRows}
+              year={year}
               weekOverride={weekOverride}
               seasonStartDate={seasonStartDate}
               resolvedWeek={currentWeek}
@@ -174,7 +244,7 @@ export default async function LiveSeasonPage({
               <span className="lo-folio-no">02</span>
               <span className="lo-folio-title">Weekly source</span>
             </div>
-            <SourcePicker leagueId={league.id} sources={sourceRows} />
+            <SourcePicker leagueId={league.id} sources={sourceRows} pastSources={pastSources} year={year} />
           </div>
         </div>
       </div>
@@ -206,6 +276,17 @@ export default async function LiveSeasonPage({
       <div className="lo-band">
         <div className="lo-folio">
           <span className="lo-folio-no">04</span>
+          <span className="lo-folio-title">The weekly recap</span>
+          <span className="lo-folio-meta">Every Tuesday, or right now</span>
+        </div>
+        <RecapCard leagueId={league.id} slug={league.slug} latest={recapWeek} published={published} />
+        {gotwTip ? <GotwTip week={gotwTip.week} matchup={gotwTip.matchup} /> : null}
+        {canManage ? <RecapList leagueId={league.id} members={members} published={published} /> : null}
+      </div>
+
+      <div className="lo-band">
+        <div className="lo-folio">
+          <span className="lo-folio-no">05</span>
           <span className="lo-folio-title">Your power rankings</span>
           <span className="lo-folio-meta">Shown beside the model&apos;s</span>
         </div>
@@ -216,15 +297,6 @@ export default async function LiveSeasonPage({
             <div className="lo-empty-text">Pick a live season above to rank the league yourself.</div>
           </div>
         )}
-      </div>
-
-      <div className="lo-band">
-        <div className="lo-folio">
-          <span className="lo-folio-no">05</span>
-          <span className="lo-folio-title">The weekly recap</span>
-          <span className="lo-folio-meta">Every Tuesday, or right now</span>
-        </div>
-        <RecapCard leagueId={league.id} slug={league.slug} latest={recapWeek} published={published} />
       </div>
 
       <SiteFooter />

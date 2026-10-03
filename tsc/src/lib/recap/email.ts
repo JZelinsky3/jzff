@@ -548,12 +548,28 @@ ${rows.join('\n')}
 // first message from a new sender is the one most likely to be filtered,
 // and a contact entry is the strongest "I want this" signal a reader can
 // give their mail provider.
-export function renderSubscribeConfirmEmail(args: { league: string; confirmUrl: string; from: string }): {
+export function renderSubscribeConfirmEmail(args: {
+  league: string
+  confirmUrl: string
+  from: string
+  // The commissioner added this address from the Current Season page,
+  // rather than the reader signing up on a recap page.
+  invited?: boolean
+}): {
   subject: string
   html: string
   text: string
 } {
   const subject = `Confirm: the ${args.league} paper, every Tuesday`
+  const preheader = args.invited
+    ? `Your commissioner added you to the ${args.league} list. One click to confirm.`
+    : `One click and the ${args.league} paper comes to you every Tuesday.`
+  const opener = args.invited
+    ? `Your ${args.league} commissioner added this address to the league's mailing list for the weekly paper. It lands every Tuesday morning: a story for every game, the standings and what's coming next week.`
+    : `Someone, hopefully you, asked for the ${args.league} weekly paper to come to this address. It lands every Tuesday morning: a story for every game, the standings and what's coming next week.`
+  const closer = args.invited
+    ? "Not interested? Ignore this email and you won't hear from us again. Nothing is sent until the button above is pressed."
+    : "Didn't ask for this? Ignore it and you won't hear from us again. Nothing is sent until the button above is pressed."
   const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -570,7 +586,7 @@ export function renderSubscribeConfirmEmail(args: { league: string; confirmUrl: 
 </style>
 </head>
 <body style="margin:0; padding:0; background-color:${C.desk};">
-<div style="display:none; max-height:0; overflow:hidden; opacity:0; color:${C.desk}; font-size:1px; line-height:1px;">One click and the ${esc(args.league)} paper comes to you every Tuesday.</div>
+<div style="display:none; max-height:0; overflow:hidden; opacity:0; color:${C.desk}; font-size:1px; line-height:1px;">${esc(preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.desk}" style="background-color:${C.desk};">
 <tr><td align="center" style="padding:24px 10px;">
 <table role="presentation" class="wrap" width="560" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.paper}" style="width:560px; max-width:560px; background-color:${C.paper}; border:1px solid ${C.rule};">
@@ -579,7 +595,7 @@ export function renderSubscribeConfirmEmail(args: { league: string; confirmUrl: 
 <div style="font-family:${SERIF}; font-size:30px; font-weight:bold; line-height:1.15; color:${C.ink}; padding-bottom:14px; border-bottom:3px double ${C.ink};">${esc(args.league)}</div>
 </td></tr>
 <tr><td class="pad" bgcolor="${C.paper}" style="padding:22px 40px 0; font-family:${SERIF}; font-size:16px; line-height:1.6; color:${C.ink};">
-Someone, hopefully you, asked for the ${esc(args.league)} weekly paper to come to this address. It lands every Tuesday morning: a story for every game, the standings and what's coming next week.
+${esc(opener)}
 </td></tr>
 <tr><td class="pad" align="center" bgcolor="${C.paper}" style="padding:24px 40px 8px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
@@ -591,7 +607,7 @@ Someone, hopefully you, asked for the ${esc(args.league)} weekly paper to come t
 So Tuesday's paper lands in your inbox and not in spam, add <b style="color:${C.ink};">${esc(args.from)}</b> to your contacts. If this email went to spam or promotions, mark it as not spam first.
 </td></tr>
 <tr><td class="pad" bgcolor="${C.paper}" style="padding:14px 40px 26px; font-family:${SANS}; font-size:11px; line-height:1.7; color:${C.mute};">
-Didn't ask for this? Ignore it and you won't hear from us again. Nothing is sent until the button above is pressed.
+${esc(closer)}
 </td></tr>
 </table>
 </td></tr>
@@ -601,13 +617,13 @@ Didn't ask for this? Ignore it and you won't hear from us again. Nothing is sent
   const text = [
     `The Sunday Chronicle: ${args.league}`,
     '',
-    `Someone, hopefully you, asked for the ${args.league} weekly paper to come to this address. It lands every Tuesday morning.`,
+    opener,
     '',
     `Confirm your email: ${args.confirmUrl}`,
     '',
     `So Tuesday's paper lands in your inbox and not in spam, add ${args.from} to your contacts.`,
     '',
-    "Didn't ask for this? Ignore it and you won't hear from us again.",
+    closer,
   ].join('\n')
   return { subject, html, text }
 }

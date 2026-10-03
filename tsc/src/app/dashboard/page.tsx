@@ -3,6 +3,7 @@ import { OnboardingChecklist, type OnboardingStep } from '@/components/Onboardin
 import { SiteFooter } from '@/components/SiteFooter'
 import { MobileLibrary } from '@/components/dashboard/MobileLibrary'
 import { ReferralPrompt } from '@/components/dashboard/ReferralPrompt'
+import { WhatsNew } from '@/components/WhatsNew'
 import { createClient } from '@/lib/supabase/server'
 import {
   getUserSubscription,
@@ -183,22 +184,29 @@ export default async function DashboardPage({
   const earliestOwnedLeagueId =
     previewOpen && leagues && leagues.length > 0 ? leagues[leagues.length - 1].id : null
 
-  if ((await getViewMode()) === 'mobile') {
+  const mobile = (await getViewMode()) === 'mobile'
+  // The season's "what's new" card, for anyone with a league to point it at.
+  const whatsNew = user && hasLeague ? <WhatsNew user={user.id} league={null} mobile={mobile} /> : null
+
+  if (mobile) {
     return (
-      <MobileLibrary
-        leagues={leagues ?? []}
-        bookmarks={bookmarks}
-        isUDFA={isUDFA}
-        earliestOwnedLeagueId={earliestOwnedLeagueId}
-        comp={comp}
-        subActive={subActive}
-        subTierName={subTierName}
-        tier1Limit={tier1Limit}
-        showDemoCard={showDemoCard}
-        askReferral={askReferral}
-        previewEndsLabel={previewEndsLabel}
-        offerDeadline={offerDeadline}
-      />
+      <>
+        <MobileLibrary
+          leagues={leagues ?? []}
+          bookmarks={bookmarks}
+          isUDFA={isUDFA}
+          earliestOwnedLeagueId={earliestOwnedLeagueId}
+          comp={comp}
+          subActive={subActive}
+          subTierName={subTierName}
+          tier1Limit={tier1Limit}
+          showDemoCard={showDemoCard}
+          askReferral={askReferral}
+          previewEndsLabel={previewEndsLabel}
+          offerDeadline={offerDeadline}
+        />
+        {whatsNew}
+      </>
     )
   }
 
@@ -730,6 +738,7 @@ export default async function DashboardPage({
       </div>
 
       <SiteFooter />
+      {whatsNew}
     </main>
   )
 }

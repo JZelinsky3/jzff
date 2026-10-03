@@ -1,8 +1,9 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { setGotw } from './actions'
+import { GOTW_WEEK_EVENT } from './gotw-tip'
 
 export type GotwMatchup = {
   id: string
@@ -20,6 +21,10 @@ export type GotwWeek = {
 // week in the live season, with a running tally showing how many GOTWs each
 // manager has been featured in. Tally updates optimistically as they choose
 // (one click flips two managers — both sides of the matchup).
+//
+// On a phone the picker and the tally sit side by side in two narrow
+// columns, each matchup a tappable two-line card, rather than stacking the
+// tally under a long radio list.
 export function GotwPicker({
   leagueId,
   seasonId,
@@ -27,6 +32,7 @@ export function GotwPicker({
   weeks,
   currentGotw,
   managers,
+  variant = 'desktop',
 }: {
   leagueId: string
   seasonId: string
@@ -34,6 +40,7 @@ export function GotwPicker({
   weeks: GotwWeek[]
   currentGotw: Record<string, string>
   managers: string[]
+  variant?: 'desktop' | 'mobile'
 }) {
   const router = useRouter()
   const fallbackWeek = weeks[0]?.week ?? 1
@@ -41,6 +48,16 @@ export function GotwPicker({
   const [picks, setPicks] = useState<Record<string, string>>(currentGotw)
   const [busy, setBusy] = useState<number | null>(null)
   const [err, setErr] = useState<string | null>(null)
+
+  // "Set week N" from the recap section's tip (gotw-tip.tsx).
+  useEffect(() => {
+    function onWeek(e: Event) {
+      const week = (e as CustomEvent<number>).detail
+      if (weeks.some((w) => w.week === week)) setActiveWeek(week)
+    }
+    window.addEventListener(GOTW_WEEK_EVENT, onWeek)
+    return () => window.removeEventListener(GOTW_WEEK_EVENT, onWeek)
+  }, [weeks])
 
   const active = weeks.find((w) => w.week === activeWeek)
   const selected = picks[String(activeWeek)] ?? ''
@@ -89,8 +106,79 @@ export function GotwPicker({
     )
   }
 
+  if (variant === 'mobile') {
+    const saved = currentGotw[String(activeWeek)] ?? ''
+    return (
+      <div className="mgw" id="gotw">
+        <div className="mgw-pick">
+          <select
+            className="mgw-week"
+            value={activeWeek}
+            onChange={(e) => setActiveWeek(Number(e.target.value))}
+            aria-label="Week"
+          >
+            {weeks.map((w) => (
+              <option key={w.week} value={w.week}>
+                Week {w.week}{currentGotw[String(w.week)] ? ' ★' : ''}
+              </option>
+            ))}
+          </select>
+
+          {active && active.matchups.length === 0 ? (
+            <div className="mgw-empty">No games on file for week {activeWeek}.</div>
+          ) : (
+            <div className="mgw-games" role="radiogroup" aria-label={`Week ${activeWeek} Game of the Week`}>
+              {active?.matchups.map((m) => (
+                <label key={m.id} className={`mgw-game${selected === m.id ? ' on' : ''}`}>
+                  <input
+                    type="radio"
+                    name="gotw-m"
+                    value={m.id}
+                    checked={selected === m.id}
+                    onChange={() => onSelect(m.id)}
+                  />
+                  <span className="mgw-side">{m.managerA}</span>
+                  <span className="mgw-side">
+                    <i>vs</i> {m.managerB}
+                  </span>
+                  {m.id === saved && (
+                    <span className="mgw-saved" role="img" aria-label="Saved" title="Saved">
+                      ★
+                    </span>
+                  )}
+                </label>
+              ))}
+              <label className={`mgw-game none${selected === '' ? ' on' : ''}`}>
+                <input type="radio" name="gotw-m" value="" checked={selected === ''} onChange={() => onSelect('')} />
+                <span className="mgw-side">No game this week</span>
+              </label>
+            </div>
+          )}
+
+          {err && <p className="mgw-err">{err}</p>}
+
+          <button type="button" onClick={onSave} disabled={!dirty || busy != null} className="mgw-save">
+            {busy === activeWeek ? 'Saving…' : `Save week ${activeWeek}`}
+          </button>
+        </div>
+
+        <aside className="mgw-tally" aria-label="Game of the Week tally">
+          <div className="mgw-tally-head">Tally</div>
+          <ul>
+            {tally.map(([name, n]) => (
+              <li key={name} className={n > 0 ? 'has' : undefined}>
+                <span className="who">{name}</span>
+                <span className="n">{n}</span>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      </div>
+    )
+  }
+
   return (
-    <div className="dc-gotw">
+    <div className="dc-gotw" id="gotw">
       <div className="card" style={{ padding: '1.25rem 1.5rem' }}>
         <div className="dc-field" style={{ marginBottom: '1rem' }}>
           <label className="dc-label">Week</label>

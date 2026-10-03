@@ -37,6 +37,7 @@ import {
   type Tier,
 } from '@/lib/stripe'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
+import { leagueVisitScript } from '@/lib/leagueVisit'
 
 const TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams')
 // Mobile-first rebuilds of the same pages. Phones get the file from here when
@@ -1323,6 +1324,9 @@ export async function GET(
     if (!servedMobile) {
       html = injectSupportWidget(html, meta, user?.email ?? null)
     }
+    // Per-league activity for /admin/activity.
+    const ping = leagueVisitScript(meta.slug)
+    html = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${ping}\n</body>`) : html + ping
     return new NextResponse(html, {
       status: 200,
       headers: {

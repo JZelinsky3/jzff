@@ -16,6 +16,7 @@ import { BillboardPublishCta } from './billboard-publish-cta'
 import { SetupWizCallout } from './setup-wiz-callout'
 import { SeasonLiveCallout } from './season-live-callout'
 import { getSeasonNotice } from '@/lib/seasonNotice'
+import { currentNflYear, splitSeasons, splitSources } from '@/lib/liveChoices'
 import { ChapterBook } from './chapter-book'
 import { SourcesWorkbench } from './sources/sources-workbench'
 import { SetupList, type ProfileRow } from './setup/setup-list'
@@ -44,7 +45,8 @@ export default async function LeagueOverviewPage({
   const isOwner = !!viewer && league.owner_id === viewer.id
   // Site admins can run every owner control here (sync, publish, wizard,
   // presentations) when assisting with someone else's league.
-  const canManage = isOwner || (!!viewer && (await isSiteAdmin(viewer.id)))
+  const siteAdmin = !!viewer && (await isSiteAdmin(viewer.id))
+  const canManage = isOwner || siteAdmin
   // Manual "grade N trades" card — dev/backfill tool, deliberately limited
   // to Joey's own leagues. Everyone else gets grades automatically via the
   // daily cron (/api/cron/grade-trades); no button needed.
@@ -158,12 +160,12 @@ export default async function LeagueOverviewPage({
       .order('created_at'),
     supabase
       .from('seasons')
-      .select('id, year, is_live, settings')
+      .select('id, year, is_live, settings, external_id')
       .eq('league_id', league.id)
       .order('year', { ascending: false }),
     supabase
       .from('league_sources')
-      .select('id, platform, external_id, label, is_live')
+      .select('id, platform, external_id, label, is_live, settings')
       .eq('league_id', league.id)
       .order('created_at', { ascending: true }),
     viewer
@@ -240,24 +242,53 @@ export default async function LeagueOverviewPage({
     bName: nameOf.get(r.manager_b_id as string) ?? 'Unknown',
   }))
 
-  const seasonRows: SeasonRow[] = (seasonRowsRaw ?? []).map((s) => ({
+  // Only this NFL year's season and the sources that can sync it are on
+  // offer (lib/liveChoices.ts); site admins get the rest in a fold-out.
+  const nflYear = await currentNflYear()
+  const seasonList = (seasonRowsRaw ?? []).map((s) => ({
+    id: s.id as string,
+    year: s.year as number,
+    is_live: !!s.is_live,
+    external_id: (s.external_id as string | null) ?? null,
+  }))
+  const toSeasonRow = (s: { id: string; year: number; is_live: boolean; stale?: boolean }): SeasonRow => ({
     id: s.id,
     year: s.year,
-    is_live: !!s.is_live,
-  }))
+    is_live: s.is_live,
+    ...(s.stale ? { stale: true } : {}),
+  })
+  const seasonSplit = splitSeasons(seasonList, nflYear)
+  const seasonRows: SeasonRow[] = seasonSplit.picks.map(toSeasonRow)
+  const pastSeasonRows: SeasonRow[] = siteAdmin ? seasonSplit.rest.map(toSeasonRow) : []
   const liveRaw = (seasonRowsRaw ?? []).find((s) => s.is_live)
   const liveSettings = (liveRaw?.settings ?? {}) as Record<string, unknown>
   const weekOverride =
     typeof liveSettings.current_week === 'number' ? (liveSettings.current_week as number) : null
   const seasonStartDate =
     typeof liveSettings.season_start_date === 'string' ? (liveSettings.season_start_date as string) : null
-  const livePickerSources: LiveSourceRow[] = (liveSourceRows ?? []).map((s) => ({
+  // settings carries ESPN cookies: it's read here and never handed on.
+  const sourceSplit = splitSources(
+    (liveSourceRows ?? []).map((s) => ({
+      id: s.id as string,
+      platform: s.platform as string,
+      external_id: s.external_id as string,
+      label: (s.label as string | null) ?? null,
+      is_live: !!s.is_live,
+      settings: s.settings,
+    })),
+    seasonList,
+    nflYear,
+  )
+  const toSourceRow = (s: { id: string; platform: string; external_id: string; label: string | null; is_live: boolean; stale?: boolean }): LiveSourceRow => ({
     id: s.id,
     platform: s.platform,
     external_id: s.external_id,
-    label: s.label ?? null,
-    is_live: !!s.is_live,
-  }))
+    label: s.label,
+    is_live: s.is_live,
+    ...(s.stale ? { stale: true } : {}),
+  })
+  const livePickerSources: LiveSourceRow[] = sourceSplit.picks.map(toSourceRow)
+  const pastPickerSources: LiveSourceRow[] = siteAdmin ? sourceSplit.rest.map(toSourceRow) : []
 
   // Game of the Week lives in the Season chapter, so the hub needs the
   // live season's regular-season schedule and the names on both sides of
@@ -646,6 +677,8 @@ export default async function LeagueOverviewPage({
                   <LiveSeasonForm
                     leagueId={league.id}
                     seasons={seasonRows}
+                    pastSeasons={pastSeasonRows}
+                    year={nflYear}
                     weekOverride={weekOverride}
                     seasonStartDate={seasonStartDate}
                     resolvedWeek={liveWeek}
@@ -654,7 +687,12 @@ export default async function LeagueOverviewPage({
                       override), so the source column gets a note rather
                       than a hole beneath it. */}
                   <div>
-                    <SourcePicker leagueId={league.id} sources={livePickerSources} />
+                    <SourcePicker
+                      leagueId={league.id}
+                      sources={livePickerSources}
+                      pastSources={pastPickerSources}
+                      year={nflYear}
+                    />
                     <div className="lo-note" style={{ marginTop: '1.4rem' }}>
                       <div className="lo-note-head">
                         <span className="pin">✦</span> What going live turns on

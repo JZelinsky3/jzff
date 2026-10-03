@@ -37,18 +37,22 @@ export default async function LoginPage({
 
   // Post-auth destination: explicit `next` takes priority, then `from` (so a
   // visitor who came from /leagues/jake/ and signed in lands back there), then
-  // the Clubhouse. The LoginForm uses this string verbatim on success.
+  // the Clubhouse on desktop, the dashboard on a phone. The LoginForm uses
+  // this string verbatim on success.
   const postAuthNext = next || safeFrom || undefined
+  const mobile = (await getViewMode()) === 'mobile'
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   // Already signed in? Honor the requested post-auth destination too — this
   // covers the case where a user clicks Sign In on an almanac, lands on
   // /login, but is already authenticated from a previous tab/session.
-  if (user) redirect(postAuthNext ?? '/hub')
+  if (user) redirect(postAuthNext ?? (mobile ? '/dashboard' : '/hub'))
 
-  if ((await getViewMode()) === 'mobile') {
-    return <MobileLogin backHref={backHref} postAuthNext={postAuthNext} initialMode={initialMode} />
+  if (mobile) {
+    // Passed explicitly so the email links and Google carry it through
+    // /auth/callback too.
+    return <MobileLogin backHref={backHref} postAuthNext={postAuthNext ?? '/dashboard'} initialMode={initialMode} />
   }
 
   return (

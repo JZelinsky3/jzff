@@ -136,3 +136,152 @@ export async function activeSubscribers(db: Db, leagueId: string): Promise<{ id:
   const { data } = await db.from('recap_subscribers').select('id, email').eq('league_id', leagueId).eq('status', 'active')
   return (data ?? []) as { id: string; email: string }[]
 }
+
+// ── The commissioner's side of the list ──────────────────────────────────
+//
+// The commish knows everyone's email, so they can add the league from the
+// Current Season page instead of waiting for each member to find the form.
+// It's the same double opt-in: an added address gets one confirmation
+// email that says who added it, and nothing else until they press the
+// button. Someone who left the list is not re-invited; they can rejoin
+// from any recap page themselves.
+
+const OWNER_INVITES_PER_HOUR = 40
+export const OWNER_INVITES_PER_CALL = 20
+// Resend allows two requests a second; invites go out one at a time under it.
+const SEND_GAP_MS = 550
+
+export type ListMember = { id: string; email: string; status: 'pending' | 'active' }
+
+export async function listMembers(leagueId: string): Promise<ListMember[]> {
+  const db = createAdminClient()
+  const { data } = await db
+    .from('recap_subscribers')
+    .select('id, email, status')
+    .eq('league_id', leagueId)
+    .in('status', ['pending', 'active'])
+    .order('created_at', { ascending: true })
+  return (data ?? []) as ListMember[]
+}
+
+export type InviteResult = 'sent' | 'already' | 'recent' | 'left' | 'blocked' | 'invalid' | 'you' | 'full' | 'failed'
+export type InviteOutcome = { email: string; result: InviteResult }
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+export async function inviteToList(args: {
+  leagueId: string
+  emails: string[]
+  // The commissioner's own address. They already get the paper as owner,
+  // and a second copy on the list would just be a duplicate.
+  ownerEmail: string | null
+}): Promise<{ ok: true; outcomes: InviteOutcome[] } | { ok: false; error: string }> {
+  if (recapMode() === 'off') return { ok: false, error: 'Recap email is paused right now. Try again next week.' }
+
+  const db = createAdminClient()
+  const { data: league } = await db.from('leagues').select('id, name, published_at').eq('id', args.leagueId).maybeSingle()
+  if (!league) return { ok: false, error: 'League not found.' }
+  // Same rule as the public form: the list belongs to a public paper.
+  if (!league.published_at) return { ok: false, error: 'Publish your almanac first. The mailing list opens once the recap is public.' }
+
+  const emails = [...new Set(args.emails.map((e) => e.trim().toLowerCase()).filter(Boolean))].slice(0, OWNER_INVITES_PER_CALL)
+  const isEmail = (e: string) => e.length <= 254 && EMAIL.test(e)
+  // Only well-formed addresses go into the lookups below.
+  const valid = emails.filter(isEmail)
+  const owner = args.ownerEmail?.trim().toLowerCase() ?? null
+
+  const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+  const none = Promise.resolve({ data: [] as Record<string, unknown>[] })
+  const [{ count: leagueHour }, { count: siteHour }, { count: activeCount }, { data: existingRows }, { data: suppressedRows }] =
+    await Promise.all([
+      db.from('recap_subscribers').select('id', { count: 'exact', head: true }).eq('league_id', league.id).gte('updated_at', hourAgo),
+      db.from('recap_subscribers').select('id', { count: 'exact', head: true }).gte('updated_at', hourAgo),
+      db.from('recap_subscribers').select('id', { count: 'exact', head: true }).eq('league_id', league.id).eq('status', 'active'),
+      valid.length > 0
+        ? db.from('recap_subscribers').select('id, email, status, confirm_sent_at').eq('league_id', league.id).in('email', valid)
+        : none,
+      valid.length > 0 ? db.from('email_suppressions').select('email').in('email', valid) : none,
+    ])
+  let budget = Math.min(OWNER_INVITES_PER_HOUR - (leagueHour ?? 0), SITE_SIGNUPS_PER_HOUR - (siteHour ?? 0))
+  if (budget <= 0) return { ok: false, error: 'That’s a lot of invites for one hour. Try again later.' }
+
+  const existing = new Map((existingRows ?? []).map((r) => [r.email as string, r]))
+  // Any suppression, including an unsubscribe: the commissioner adding an
+  // address must not be a way around somebody saying stop.
+  const suppressed = new Set((suppressedRows ?? []).map((r) => r.email as string))
+  const room = LEAGUE_MAX_ACTIVE - (activeCount ?? 0)
+
+  const outcomes: InviteOutcome[] = []
+  let lastSend = 0
+  for (const email of emails) {
+    const ex = existing.get(email)
+    if (!isEmail(email)) { outcomes.push({ email, result: 'invalid' }); continue }
+    if (owner && email === owner) { outcomes.push({ email, result: 'you' }); continue }
+    if (suppressed.has(email)) { outcomes.push({ email, result: 'blocked' }); continue }
+    if (ex?.status === 'active') { outcomes.push({ email, result: 'already' }); continue }
+    if (ex?.status === 'unsubscribed') { outcomes.push({ email, result: 'left' }); continue }
+    if (ex?.status === 'pending' && ex.confirm_sent_at && Date.now() - Date.parse(ex.confirm_sent_at as string) < RESEND_AFTER_MS) {
+      outcomes.push({ email, result: 'recent' })
+      continue
+    }
+    if (room <= 0) { outcomes.push({ email, result: 'full' }); continue }
+    if (budget <= 0) { outcomes.push({ email, result: 'failed' }); continue }
+
+    const now = new Date().toISOString()
+    let id = ex?.id as string | undefined
+    if (id) {
+      await db.from('recap_subscribers').update({ status: 'pending', updated_at: now }).eq('id', id)
+    } else {
+      const { data: row } = await db
+        .from('recap_subscribers')
+        .insert({ league_id: league.id, email, status: 'pending', updated_at: now })
+        .select('id')
+        .single()
+      id = row?.id as string | undefined
+    }
+    const token = id ? subscriberToken(id) : null
+    if (!id || !token) { outcomes.push({ email, result: 'failed' }); continue }
+
+    const mail = renderSubscribeConfirmEmail({
+      league: league.name as string,
+      confirmUrl: subscribeConfirmUrl(token),
+      from: recapFromAddress(),
+      invited: true,
+    })
+    const send = () => sendViaResend({ to: email, ...mail, unsubToken: null, idempotencyKey: null, category: 'recap_invite' })
+    const wait = lastSend + SEND_GAP_MS - Date.now()
+    if (wait > 0) await sleep(wait)
+    lastSend = Date.now()
+    let sent = await send()
+    // One retry if Resend says slow down.
+    if (!sent.ok && sent.error.startsWith('Resend 429')) {
+      await sleep(1100)
+      lastSend = Date.now()
+      sent = await send()
+    }
+    budget--
+    if (!sent.ok) { outcomes.push({ email, result: 'failed' }); continue }
+    await db.from('recap_subscribers').update({ confirm_sent_at: new Date().toISOString() }).eq('id', id)
+    outcomes.push({ email, result: 'sent' })
+  }
+  return { ok: true, outcomes }
+}
+
+// Off the list, from the commissioner's side. An address that never
+// confirmed is simply forgotten; a confirmed one is marked as left, which
+// keeps its send history.
+export async function removeMember(leagueId: string, id: string): Promise<void> {
+  const db = createAdminClient()
+  const { data: row } = await db.from('recap_subscribers').select('status').eq('id', id).eq('league_id', leagueId).maybeSingle()
+  if (!row) return
+  if (row.status === 'pending') {
+    await db.from('recap_subscribers').delete().eq('id', id).eq('league_id', leagueId)
+    return
+  }
+  const now = new Date().toISOString()
+  await db
+    .from('recap_subscribers')
+    .update({ status: 'unsubscribed', unsubscribed_at: now, updated_at: now })
+    .eq('id', id)
+    .eq('league_id', leagueId)
+}
