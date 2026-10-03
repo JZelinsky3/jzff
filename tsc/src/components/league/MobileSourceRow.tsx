@@ -145,7 +145,13 @@ export function MobileSourceRow({
         {hasCookies && ' · Private'}
       </div>
 
-      {/* ── Action pills ── */}
+      {/* NFL.com is gone, so its history is frozen as it stands
+          (lib/ingest/nfl.ts). No Sync, settings or Remove. */}
+      {source.platform === 'nfl' ? (
+        <p className="msr-archived">
+          <b>Archived.</b> NFL.com has shut down, so this history is kept as it is and never re-synced.
+        </p>
+      ) : (
       <div className="msr-actions">
         <button onClick={onSync} disabled={busy !== null || isPending} className="msr-btn primary">
           {busy === 'syncing' ? 'Syncing...' : 'Sync'}
@@ -172,6 +178,7 @@ export function MobileSourceRow({
           </button>
         </div>
       </div>
+      )}
 
       {/* ── Custom sync panel ── */}
       {expanded === 'custom' && (

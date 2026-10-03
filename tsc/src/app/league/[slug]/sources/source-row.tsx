@@ -261,6 +261,15 @@ export function SourceRow({
         </p>
       )}
 
+      {/* NFL.com is gone, so its history is frozen as it stands
+          (lib/ingest/nfl.ts). No Sync, settings or Remove: none of them
+          can do anything but risk the only copy. */}
+      {source.platform === 'nfl' ? (
+        <p className="lo-src-archived">
+          <b>Archived.</b> NFL.com Fantasy has shut down, so this history is kept exactly as it is and never re-synced.
+        </p>
+      ) : (
+      <>
       {/* 2x2 segmented block sharing its rules — as four loose inline
           buttons these wrapped into an uneven floating cluster inside a
           narrow card. */}
@@ -305,6 +314,8 @@ export function SourceRow({
           Remove
         </button>
       </div>
+      </>
+      )}
 
       {customSyncOpen && (
         <div className="lo-src-panel">

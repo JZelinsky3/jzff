@@ -33,6 +33,29 @@ export type IngestResult = {
   warnings: string[]
 }
 
+// NFL.com Fantasy shut down in August 2026 and every league page now
+// redirects to a marketing page. There is nothing left to read, so a sync
+// can only lose data: an earlier one wiped five seasons of a real league.
+// Every NFL archive is frozen as it stands. Both entry points below return
+// before touching the database, whatever calls them (the Sync button, the
+// whole-league sync, a cron, a script), so no button or route can undo it.
+// Set NFL_INGEST_UNFREEZE=1 only if NFL.com ever comes back.
+export const NFL_FROZEN_MESSAGE =
+  'NFL.com Fantasy has shut down, so this NFL.com history is archived as it stands and is never re-synced. Nothing was changed.'
+
+function nflFrozen(): IngestResult | null {
+  if (process.env.NFL_INGEST_UNFREEZE === '1') return null
+  return {
+    ok: true,
+    seasonsIngested: 0,
+    managersIngested: 0,
+    matchupsIngested: 0,
+    draftsIngested: 0,
+    tradesIngested: 0,
+    warnings: [NFL_FROZEN_MESSAGE],
+  }
+}
+
 type LeagueSettings = {
   playoff_week_start?: number
   playoff_team_count?: number
@@ -47,6 +70,8 @@ export async function ingestNflLeague(
   stages?: IngestStages,
   range?: IngestYearRange,
 ): Promise<IngestResult> {
+  const frozen = nflFrozen()
+  if (frozen) return frozen
   const db = createAdminClient()
   const { data: leagueRow, error: leagueErr } = await db
     .from('leagues')
@@ -118,6 +143,8 @@ export async function ingestNflSource(
   stagesIn?: IngestStages,
   range?: IngestYearRange,
 ): Promise<IngestResult> {
+  const frozen = nflFrozen()
+  if (frozen) return frozen
   const stages = resolveStages(stagesIn)
   const db = createAdminClient()
   const { data: leagueRow, error: leagueErr } = await db

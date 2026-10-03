@@ -456,6 +456,17 @@ export async function deleteSource(sourceId: string, leagueId: string) {
   if (!access.ok) return access
 
   const db = createAdminClient()
+  // An NFL.com source can never be added back (the site is gone), and its
+  // history is the only copy there will ever be. Keep it.
+  const { data: src } = await db
+    .from('league_sources')
+    .select('platform')
+    .eq('id', sourceId)
+    .eq('league_id', leagueId)
+    .maybeSingle()
+  if (src?.platform === 'nfl') {
+    return { ok: false as const, error: 'NFL.com sources are archived and can’t be removed: NFL.com has shut down, so it could never be added back.' }
+  }
   await db.from('league_sources').delete().eq('id', sourceId).eq('league_id', leagueId)
   revalidatePath(`/league/${access.slug}/sources`)
   return { ok: true as const }

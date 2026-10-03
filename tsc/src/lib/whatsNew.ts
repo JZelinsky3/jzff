@@ -15,6 +15,9 @@
 //
 // Client-safe: no server imports.
 
+// Never change this to edit the current popup. Copy, layout and link fixes
+// ship under the same id, and everyone who already closed it stays done.
+// A new id means a new announcement, shown again to every owner.
 export const WHATS_NEW_ID = 'season-2026-recap'
 // Through Friday October 16, Eastern.
 export const WHATS_NEW_ENDS_AT = Date.parse('2026-10-17T04:00:00Z')

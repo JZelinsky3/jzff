@@ -974,6 +974,16 @@ a.lo-billboard:hover::before { border-color: rgba(232, 200, 137, .45); }
     border-top: 1px solid var(--ink-line-soft);
 }
 .lo-src-foot .lo-btn-quiet { padding: .45rem 0; }
+/* An NFL.com source: frozen, so a note where the buttons would be. */
+.lo-src-archived {
+    margin: 0;
+    padding: .7rem .85rem;
+    font-size: .8rem; line-height: 1.5;
+    color: var(--cream-mute);
+    background: rgba(232,200,137,.04);
+    border: 1px solid var(--ink-line-soft);
+}
+.lo-src-archived b { color: var(--gold); font-weight: 600; }
 .lo-src-panel {
     margin-top: 1.1rem;
     padding: 1.1rem 1.15rem;

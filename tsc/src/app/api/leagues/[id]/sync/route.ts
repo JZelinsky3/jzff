@@ -110,7 +110,9 @@ async function syncChunkPlan(leagueId: string, fallbackPlatform: string): Promis
   for (const [platform, ranges] of byPlatform) {
     const allRanged = ranges.every((r) => r.start != null && r.end != null && r.start <= r.end)
     const size = CHUNK_SEASONS[platform] ?? 4
-    if (!allRanged) {
+    // NFL archives are frozen (lib/ingest/nfl.ts): one step that only
+    // reports so, instead of a window per few seasons that each say it.
+    if (!allRanged || platform === 'nfl') {
       chunks.push({ platform })
       continue
     }

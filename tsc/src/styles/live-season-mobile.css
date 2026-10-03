@@ -13,8 +13,8 @@
 /* ── Game of the Week: picker | tally ───────────────────────── */
 /* Every height in the picker is fixed, so the tally can be measured off it.
    A 12-team week is the week box, six games, "No game", and Save; the
-   tally's header lines up with the week box and its twelve rows fill the
-   rest exactly. The row height stays put for other league sizes, so a
+   tally's header and twelve rows are thirteen equal cells that add up to
+   exactly that. The cell height stays put for other league sizes, so a
    10-team tally is a little shorter and a 14-team one a little taller. */
 .mgw {
     --gw-sel: 2.5rem;
@@ -22,7 +22,7 @@
     --gw-gap: .3rem;
     --gw-space: .45rem;
     --gw-save: 2.2rem;
-    --gw-tally-row: calc((7 * var(--gw-row) + 6 * var(--gw-gap) + var(--gw-space) + var(--gw-save)) / 12);
+    --gw-tally-row: calc((var(--gw-sel) + 7 * var(--gw-row) + 6 * var(--gw-gap) + 2 * var(--gw-space) + var(--gw-save)) / 13);
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: .5rem;
@@ -42,8 +42,8 @@
     height: var(--gw-sel);
     margin-bottom: var(--gw-space);
     padding: 0 1.6rem 0 .6rem;
-    font-family: var(--sans);
-    font-weight: 600;
+    font-family: var(--serif);
+    font-weight: 400;
     font-size: 16px;
     letter-spacing: .01em;
     color: var(--gold);
@@ -163,8 +163,7 @@
 .mgw-tally-head {
     display: flex;
     align-items: center;
-    height: var(--gw-sel);
-    margin-bottom: var(--gw-space);
+    height: var(--gw-tally-row);
     padding: 0 .1rem;
     font-family: var(--mono);
     font-size: .56rem;
@@ -216,9 +215,9 @@
 .mliv .mrc-actions .lo-btn,
 .mliv .mrc-actions .lo-btn-ghost {
     width: 100%;
-    padding: .55rem .5rem;
-    font-size: .5rem;
-    letter-spacing: .18em;
+    padding: .75rem .5rem;
+    font-size: .58rem;
+    letter-spacing: .16em;
     border-radius: 10px;
 }
 .mliv .mrc-actions .lo-btn-ghost { background: rgba(0, 0, 0, .18); }
@@ -294,9 +293,9 @@
 }
 .mml-form .lo-btn {
     width: 100%;
-    padding: .55rem .5rem;
-    font-size: .5rem;
-    letter-spacing: .18em;
+    padding: .75rem .5rem;
+    font-size: .58rem;
+    letter-spacing: .16em;
     border-radius: 10px;
 }
 .mml .lo-msg-ok,
@@ -497,9 +496,8 @@
 /* ── Readable headings and labels on every mobile setup page ──────
    The section titles ("Active season", "Game of the Week") were .42rem
    mono, about 7px, and field labels .38rem, about 6px: too small to tell
-   which section you're editing. Section titles are now serif headings with
-   a rule between sections; field labels stay mono caps but at a size you
-   can read. Scoped to .mlsub-wrap so it outranks the older copies of these
+   which section you're editing. Both keep their mono caps in gold, at a
+   size you can read, with a rule between sections. Scoped to .mlsub-wrap so it outranks the older copies of these
    rules in globals.css. */
 .mlsub-wrap .mliv-hint,
 .mlsub-wrap .mset-hint {
@@ -512,13 +510,9 @@
 }
 .mlsub-wrap .mliv-section-label,
 .mlsub-wrap .msrc-add-label {
-    margin-bottom: .2rem;
-    font-family: var(--serif);
-    font-size: 1.1rem;
-    line-height: 1.2;
-    letter-spacing: 0;
-    text-transform: none;
-    color: var(--cream);
+    margin-bottom: .3rem;
+    font-size: .7rem;
+    letter-spacing: .2em;
 }
 .mlsub-wrap .mliv-section-desc {
     margin-bottom: .6rem;
@@ -538,3 +532,56 @@
     line-height: 1.4;
 }
 .mlsub-wrap .msrc-add-label { margin-bottom: .5rem; }
+
+/* An NFL.com source on the mobile Sources page: frozen, so a note where
+   the Sync / Custom / Settings / Remove pills would be. */
+.msr-archived {
+    margin: .55rem 0 0;
+    padding: .55rem .65rem;
+    font-size: .7rem;
+    line-height: 1.45;
+    color: var(--cream-mute);
+    background: rgba(232, 200, 137, .05);
+    border: 1px solid var(--ink-line);
+    border-radius: 10px;
+}
+.msr-archived b { color: var(--gold); font-weight: 600; }
+
+/* ── Desktop parts inside the mobile setup pages ───────────────────
+   Sources (season by season, add another source), Settings and Hand entry
+   reuse desktop components, so their buttons came through as the square
+   desktop lo-btn. Here they take the mobile shape: rounded, the same mono
+   label as the other mobile buttons, a little larger for the longer ones.
+   The containers sit inside :where() so these stay low-specificity, and any
+   rule already tuned for one spot (msrc-rules-*, mrc-actions) still wins.
+   Presentation mode is left alone on purpose. */
+:where(.mlsub-wrap :is(.msrc, .mset, .lo-page--sources)) .lo-btn,
+:where(.mlsub-wrap :is(.msrc, .mset, .lo-page--sources)) .lo-btn-ghost {
+    padding: .75rem .9rem;
+    font-size: .58rem;
+    letter-spacing: .16em;
+    border-radius: 10px;
+}
+:where(.mlsub-wrap :is(.msrc, .mset, .lo-page--sources)) .lo-btn.sm,
+:where(.mlsub-wrap :is(.msrc, .mset, .lo-page--sources)) .lo-btn-ghost.sm {
+    padding: .62rem .75rem;
+    font-size: .54rem;
+    letter-spacing: .14em;
+}
+:where(.mlsub-wrap :is(.msrc, .mset, .lo-page--sources)) .lo-btn-ghost.xs {
+    padding: .5rem .6rem;
+    font-size: .5rem;
+    border-radius: 8px;
+}
+:where(.mlsub-wrap :is(.msrc, .mset, .lo-page--sources)) .lo-btn-ghost {
+    background: rgba(0, 0, 0, .18);
+}
+/* The platform tiles in Add another source. */
+:where(.mlsub-wrap :is(.msrc, .mset, .lo-page--sources)) .lo-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .45rem;
+}
+:where(.mlsub-wrap :is(.msrc, .mset, .lo-page--sources)) .lo-tile {
+    padding: .7rem .75rem;
+    border-radius: 10px;
+}
