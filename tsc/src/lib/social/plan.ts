@@ -5,11 +5,14 @@
 // one Joey edited or vetoed) is left exactly as it is.
 //
 // The week (all times Eastern):
-//   Mon  9:00  Weekly Recap promo     product card, the one X post with a link
-//   Tue 12:00  Drop Regret Index      filled Tuesday from Sunday's scores
-//   Wed 12:00  Fantasy History        best Week N games since 2009
-//   Fri 12:00  Roster Roulette deal   one seeded wheel for everyone
+//   Mon  8:00  Weekly Recap promo     product card, the one X post with a link
+//   Tue  8:00  Drop Regret Index      filled Tuesday from Sunday's scores
+//   Wed  8:00  Fantasy History        best Week N games since 2009
+//   Fri  8:00  Roster Roulette deal   one seeded wheel for everyone
 //   Sat 10:00  Feature of the week    a /see/ landing page on the demo league
+//
+// Weekdays at 8: people read before work, and Tuesday morning is waivers.
+// Saturday is later because 8am on a weekend is a dead feed.
 //
 // The three NFL posts only run in the regular season. In the offseason the
 // week is just the promo and the feature.
@@ -62,11 +65,11 @@ export async function planWeek(db: Db, opts: { monday?: string; dry?: boolean } 
   const tue = addDays(monday, 1)
   const slots: Slot[] = [
     {
-      kind: 'recap', date: monday, hour: 9,
+      kind: 'recap', date: monday, hour: 8,
       build: async () => ({ built: buildRecapPromo(rotation) }),
     },
     {
-      kind: 'regret', date: tue, hour: 12,
+      kind: 'regret', date: tue, hour: 8,
       build: async () => {
         // The week that ended Monday night. Its drops have to be captured
         // while it is still being played, which is why this slot can only be
@@ -84,7 +87,7 @@ export async function planWeek(db: Db, opts: { monday?: string; dry?: boolean } 
       },
     },
     {
-      kind: 'history', date: addDays(monday, 2), hour: 12,
+      kind: 'history', date: addDays(monday, 2), hour: 8,
       build: async () => {
         const week = weekOf(addDays(monday, 2), 12)
         if (!week) return { skip: 'not the regular season' }
@@ -92,7 +95,7 @@ export async function planWeek(db: Db, opts: { monday?: string; dry?: boolean } 
       },
     },
     {
-      kind: 'roulette', date: addDays(monday, 4), hour: 12,
+      kind: 'roulette', date: addDays(monday, 4), hour: 8,
       build: async () => {
         const week = weekOf(addDays(monday, 4), 12)
         if (!week) return { skip: 'not the regular season' }
