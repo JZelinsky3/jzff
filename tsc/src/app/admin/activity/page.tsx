@@ -92,6 +92,7 @@ export default async function AdminActivityPage() {
     ownerDays: Set<string>
     byDay: Map<string, Set<string>>
     lastSeenAt: string | null
+    ownerLastSeenAt: string | null
   }
   const agg = new Map<string, Agg>()
   for (const r of rows) {
@@ -99,11 +100,12 @@ export default async function AdminActivityPage() {
     if (!league) continue
     let a = agg.get(r.league_id)
     if (!a) {
-      a = { league, today: new Set(), todayVisits: 0, week: new Set(), weekVisits: 0, month: new Set(), ownerDays: new Set(), byDay: new Map(), lastSeenAt: null }
+      a = { league, today: new Set(), todayVisits: 0, week: new Set(), weekVisits: 0, month: new Set(), ownerDays: new Set(), byDay: new Map(), lastSeenAt: null, ownerLastSeenAt: null }
       agg.set(r.league_id, a)
     }
     if (r.role === 'owner') {
       if (last7.has(r.day)) a.ownerDays.add(r.day)
+      if (!a.ownerLastSeenAt || r.last_seen_at > a.ownerLastSeenAt) a.ownerLastSeenAt = r.last_seen_at
       continue
     }
     a.month.add(r.visitor)
@@ -244,7 +246,16 @@ export default async function AdminActivityPage() {
                       </div>
                       )}
                     </td>
-                    <td style={{ ...td, whiteSpace: 'nowrap' }}>{fmtStamp(l.lastSeenAt)}</td>
+                    <td style={{ ...td, whiteSpace: 'nowrap' }}>
+                      {/* Falls back to the commish's own last visit, labelled, so
+                          a league only its commissioner has opened isn't blank. */}
+                      {l.lastSeenAt ? fmtStamp(l.lastSeenAt) : l.ownerLastSeenAt ? (
+                        <>
+                          {fmtStamp(l.ownerLastSeenAt)}
+                          <div style={{ opacity: 0.55, fontSize: '.65rem' }}>commish</div>
+                        </>
+                      ) : '·'}
+                    </td>
                   </tr>
                 ))}
               </tbody>
