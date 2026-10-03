@@ -181,6 +181,16 @@ export default async function AdminPage() {
             >
               Mailing lists
             </Link>
+            <Link
+              href="/admin/social"
+              style={{
+                fontFamily: 'var(--mono)', fontSize: '.65rem', letterSpacing: '.16em',
+                textTransform: 'uppercase', color: 'var(--gold)', textDecoration: 'none',
+                border: '1px solid var(--ink-line)', padding: '.45rem .9rem',
+              }}
+            >
+              Social queue
+            </Link>
             {/* Audience export for Resend broadcasts. Confirmed addresses only. */}
             <a
               href="/api/admin/audience"
