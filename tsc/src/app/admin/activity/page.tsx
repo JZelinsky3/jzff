@@ -23,7 +23,9 @@ const SITE_TZ = 'America/New_York'
 const STRIP_DAYS = 30
 
 type Row = { league_id: string; day: string; visitor: string; role: string; visits: number; views: number; last_seen_at: string }
-type League = { id: string; name: string; slug: string }
+type League = { id: string; name: string; slug: string; platform: string; created_at: string }
+
+const PLATFORM: Record<string, string> = { sleeper: 'Sleeper', espn: 'ESPN', yahoo: 'Yahoo', nfl: 'NFL.com' }
 
 function dayKey(d: Date): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: SITE_TZ }).format(d)
@@ -76,7 +78,7 @@ export default async function AdminActivityPage() {
 
   const ids = [...new Set(rows.map((r) => r.league_id))]
   const { data: leagueRows } = ids.length
-    ? await db.from('leagues').select('id, name, slug').in('id', ids)
+    ? await db.from('leagues').select('id, name, slug, platform, created_at').in('id', ids)
     : { data: [] as League[] }
   const leagueById = new Map(((leagueRows ?? []) as League[]).map((l) => [l.id, l]))
 
@@ -204,7 +206,14 @@ export default async function AdminActivityPage() {
                       <a href={`/leagues/${l.league.slug}/`} target="_blank" rel="noopener" style={{ color: 'var(--cream)', textDecoration: 'none' }}>
                         {l.league.name}
                       </a>
-                      <div style={{ opacity: 0.55, fontSize: '.7rem' }}>{l.league.slug}</div>
+                      {/* Platform and when it joined, so a quiet league reads as
+                          brand new or long dormant at a glance. */}
+                      <div style={{ opacity: 0.55, fontSize: '.7rem', whiteSpace: 'nowrap' }}>
+                        {PLATFORM[l.league.platform] ?? l.league.platform} · added {fmtDate(l.league.created_at)}
+                        {last7.has(dayKey(new Date(l.league.created_at))) && (
+                          <span style={{ marginLeft: '.4rem', padding: '0 .3rem', border: '1px solid rgba(232,200,137,.55)', color: 'var(--gold)', fontFamily: 'var(--mono)', fontSize: '.55rem', letterSpacing: '.14em', opacity: 1 }}>NEW</span>
+                        )}
+                      </div>
                     </td>
                     <td style={{ ...td, fontFamily: 'var(--mono)', whiteSpace: 'nowrap' }}>
                       {l.today.size === 0 ? '·' : `${l.today.size} · ${l.todayVisits}`}
@@ -216,6 +225,11 @@ export default async function AdminActivityPage() {
                       {l.ownerDays.size === 0 ? '·' : `${l.ownerDays.size} ${l.ownerDays.size === 1 ? 'day' : 'days'}`}
                     </td>
                     <td style={td}>
+                      {l.month.size === 0 ? (
+                        // Rows only exist for leagues someone opened, so an empty
+                        // strip means the only visits were the commissioner's own.
+                        <span style={{ fontStyle: 'italic', opacity: 0.6, fontSize: '.75rem' }}>Only the commish has opened it</span>
+                      ) : (
                       <div style={{ display: 'flex', gap: 2 }}>
                         {days.map((d) => {
                           const n = l.byDay.get(d)?.size ?? 0
@@ -228,6 +242,7 @@ export default async function AdminActivityPage() {
                           )
                         })}
                       </div>
+                      )}
                     </td>
                     <td style={{ ...td, whiteSpace: 'nowrap' }}>{fmtStamp(l.lastSeenAt)}</td>
                   </tr>

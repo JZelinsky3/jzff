@@ -54,6 +54,18 @@ type SubscriptionRow = {
 
 type CompRow = { user_id: string; granted_by: string | null; note: string | null; created_at: string; expires_at: string | null }
 
+// Ids of leagues with at least one manager row. Read in pages: managers is
+// past the 1,000-row default.
+async function leaguesWithManagers(db: ReturnType<typeof createAdminClient>): Promise<Set<string>> {
+  const ids = new Set<string>()
+  for (let from = 0; ; from += 1000) {
+    const { data } = await db.from('managers').select('league_id').range(from, from + 999)
+    for (const r of data ?? []) ids.add(r.league_id as string)
+    if (!data || data.length < 1000) break
+  }
+  return ids
+}
+
 export default async function AdminPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -103,6 +115,104 @@ export default async function AdminPage() {
   for (const l of leagues) {
     leagueCountByOwner.set(l.owner_id, (leagueCountByOwner.get(l.owner_id) ?? 0) + 1)
     earliestLeagueByOwner.set(l.owner_id, l.id)
+  }
+
+  // A league with no managers never got any data in: almost all of them are
+  // NFL.com leagues created around the platform's shutdown, plus the odd
+  // sync that failed outright. They go in a closed drawer under the table so
+  // they don't bury the real ones, with the owner still listed for outreach.
+  const hasData = await leaguesWithManagers(db)
+  const withData = leagues.filter((l) => hasData.has(l.id))
+  const empty = leagues.filter((l) => !hasData.has(l.id))
+
+  // One row of the leagues table, shared by the main table and the drawer of
+  // leagues that never got any data.
+  const renderLeague = (l: LeagueRow) => {
+    const owner = profileById.get(l.owner_id)
+    const grace = l.grace_period_ends_at
+    // Per-league state — mirrors resolveLeagueTier:
+    //   • Comp owner → no state badge (full access, uninteresting).
+    //   • Owner's earliest league → 'testing' (trial slot),
+    //     only while the preview window is open.
+    //   • Non-trial league of an un-subscribed owner → 'udfa'.
+    //   • Non-trial league of a paid owner → no state badge;
+    //     subscription tier already shows in the upper table.
+    const sub = subByUser.get(l.owner_id)
+    const ownerHasSub = !!sub && (sub.status === 'active' || sub.status === 'trialing')
+    const ownerComp = compByUser.has(l.owner_id) || isLifetimeUser(l.owner_id)
+    const isOwnersEarliest = earliestLeagueByOwner.get(l.owner_id) === l.id
+    const isTrial = previewOpen && !ownerComp && isOwnersEarliest
+
+    // The plan chip names what the owner actually pays for.
+    // Rookie is the paid tier1 plan; Veteran (tier2), All-Pro
+    // (tier3) and comp share the premium feature set and
+    // collapse to one "Veteran+" chip. A free owner has no plan
+    // chip at all, just UDFA: this used to default everyone
+    // below Veteran to "rookie", so free leagues read
+    // "ROOKIE UDFA" as if they were on the paid plan.
+    let planBadge: 'rookie' | 'veteran+' | null = null
+    if (ownerComp) planBadge = 'veteran+'
+    else if (ownerHasSub) planBadge = sub!.tier === 'tier1' ? 'rookie' : 'veteran+'
+
+    // Order: plan/testing badge on the inside, then UDFA,
+    // then grace, with `published` always furthest right.
+    // Trial leagues show 'testing' instead of a plan badge.
+    const tags: string[] = []
+    if (isTrial) tags.push('testing')
+    else if (planBadge) tags.push(planBadge)
+    if (!ownerComp && !isTrial && !ownerHasSub) tags.push('udfa')
+    if (grace) tags.push('grace')
+    if (l.published_at) tags.push('published')
+    return (
+      <tr key={l.id} style={{ borderTop: '1px solid var(--ink-line)' }}>
+        <td style={td}>
+          <Link href={`/league/${l.slug}`} style={{ color: 'var(--cream)' }}>{l.name}</Link>
+          <div style={{ opacity: 0.5, fontFamily: 'var(--mono)', fontSize: '.65rem' }}>{l.slug}</div>
+        </td>
+        <td style={td}>
+          <div>{owner?.display_name || '·'}</div>
+          <div style={{ opacity: 0.6, fontSize: '.7rem' }}>{owner?.email ?? '·'}</div>
+        </td>
+        <td style={td}>{l.platform}</td>
+        <td style={td}>{new Date(l.created_at).toLocaleDateString()}</td>
+        <td style={td}>
+          {tags.length === 0 ? (
+            <span style={{ opacity: 0.4 }}>, </span>
+          ) : (
+            tags.map((t) => {
+              // Color the state chip so the trial/UDFA call-outs
+              // pop against the neutral published/grace badges.
+              const palette: Record<string, { color: string; border: string }> = {
+                testing:    { color: '#b8d4e6',          border: 'rgba(143,180,207,.5)' },
+                udfa:       { color: 'var(--cream)',     border: 'var(--ink-line)' },
+                published:  { color: 'var(--cream-soft)', border: 'var(--ink-line)' },
+                grace:      { color: 'rgba(220,120,80,.85)', border: 'rgba(220,120,80,.4)' },
+                // Plan badges: rookie = paid tier1; veteran+ =
+                // Veteran tier on up plus comp grants.
+                rookie:     { color: 'var(--cream)',     border: 'var(--ink-line)' },
+                'veteran+': { color: 'var(--gold)',      border: 'rgba(232,200,137,.55)' },
+              }
+              const c = palette[t] ?? { color: 'var(--cream-soft)', border: 'var(--ink-line)' }
+              return (
+                <span key={t} style={{
+                  display: 'inline-block', marginRight: '.35rem',
+                  padding: '.1rem .4rem',
+                  fontFamily: 'var(--mono)', fontSize: '.6rem',
+                  letterSpacing: '.15em', textTransform: 'uppercase',
+                  border: `1px solid ${c.border}`, borderRadius: '2px',
+                  color: c.color,
+                }}>{t}</span>
+              )
+            })
+          )}
+          {grace && (
+            <div style={{ opacity: 0.6, fontSize: '.65rem', marginTop: '.2rem' }}>
+              ends {new Date(grace).toLocaleDateString()}
+            </div>
+          )}
+        </td>
+      </tr>
+    )
   }
 
   return (
@@ -324,95 +434,34 @@ export default async function AdminPage() {
                 <th style={th}>State</th>
               </tr>
             </thead>
-            <PagedRows cols={5} rows={leagues.map((l) => {
-                const owner = profileById.get(l.owner_id)
-                const grace = l.grace_period_ends_at
-                // Per-league state — mirrors resolveLeagueTier:
-                //   • Comp owner → no state badge (full access, uninteresting).
-                //   • Owner's earliest league → 'testing' (trial slot),
-                //     only while the preview window is open.
-                //   • Non-trial league of an un-subscribed owner → 'udfa'.
-                //   • Non-trial league of a paid owner → no state badge;
-                //     subscription tier already shows in the upper table.
-                const sub = subByUser.get(l.owner_id)
-                const ownerHasSub = !!sub && (sub.status === 'active' || sub.status === 'trialing')
-                const ownerComp = compByUser.has(l.owner_id) || isLifetimeUser(l.owner_id)
-                const isOwnersEarliest = earliestLeagueByOwner.get(l.owner_id) === l.id
-                const isTrial = previewOpen && !ownerComp && isOwnersEarliest
-
-                // The plan chip names what the owner actually pays for.
-                // Rookie is the paid tier1 plan; Veteran (tier2), All-Pro
-                // (tier3) and comp share the premium feature set and
-                // collapse to one "Veteran+" chip. A free owner has no plan
-                // chip at all, just UDFA: this used to default everyone
-                // below Veteran to "rookie", so free leagues read
-                // "ROOKIE UDFA" as if they were on the paid plan.
-                let planBadge: 'rookie' | 'veteran+' | null = null
-                if (ownerComp) planBadge = 'veteran+'
-                else if (ownerHasSub) planBadge = sub!.tier === 'tier1' ? 'rookie' : 'veteran+'
-
-                // Order: plan/testing badge on the inside, then UDFA,
-                // then grace, with `published` always furthest right.
-                // Trial leagues show 'testing' instead of a plan badge.
-                const tags: string[] = []
-                if (isTrial) tags.push('testing')
-                else if (planBadge) tags.push(planBadge)
-                if (!ownerComp && !isTrial && !ownerHasSub) tags.push('udfa')
-                if (grace) tags.push('grace')
-                if (l.published_at) tags.push('published')
-                return (
-                  <tr key={l.id} style={{ borderTop: '1px solid var(--ink-line)' }}>
-                    <td style={td}>
-                      <Link href={`/league/${l.slug}`} style={{ color: 'var(--cream)' }}>{l.name}</Link>
-                      <div style={{ opacity: 0.5, fontFamily: 'var(--mono)', fontSize: '.65rem' }}>{l.slug}</div>
-                    </td>
-                    <td style={td}>
-                      <div>{owner?.display_name || '·'}</div>
-                      <div style={{ opacity: 0.6, fontSize: '.7rem' }}>{owner?.email ?? '·'}</div>
-                    </td>
-                    <td style={td}>{l.platform}</td>
-                    <td style={td}>{new Date(l.created_at).toLocaleDateString()}</td>
-                    <td style={td}>
-                      {tags.length === 0 ? (
-                        <span style={{ opacity: 0.4 }}>, </span>
-                      ) : (
-                        tags.map((t) => {
-                          // Color the state chip so the trial/UDFA call-outs
-                          // pop against the neutral published/grace badges.
-                          const palette: Record<string, { color: string; border: string }> = {
-                            testing:    { color: '#b8d4e6',          border: 'rgba(143,180,207,.5)' },
-                            udfa:       { color: 'var(--cream)',     border: 'var(--ink-line)' },
-                            published:  { color: 'var(--cream-soft)', border: 'var(--ink-line)' },
-                            grace:      { color: 'rgba(220,120,80,.85)', border: 'rgba(220,120,80,.4)' },
-                            // Plan badges: rookie = paid tier1; veteran+ =
-                            // Veteran tier on up plus comp grants.
-                            rookie:     { color: 'var(--cream)',     border: 'var(--ink-line)' },
-                            'veteran+': { color: 'var(--gold)',      border: 'rgba(232,200,137,.55)' },
-                          }
-                          const c = palette[t] ?? { color: 'var(--cream-soft)', border: 'var(--ink-line)' }
-                          return (
-                            <span key={t} style={{
-                              display: 'inline-block', marginRight: '.35rem',
-                              padding: '.1rem .4rem',
-                              fontFamily: 'var(--mono)', fontSize: '.6rem',
-                              letterSpacing: '.15em', textTransform: 'uppercase',
-                              border: `1px solid ${c.border}`, borderRadius: '2px',
-                              color: c.color,
-                            }}>{t}</span>
-                          )
-                        })
-                      )}
-                      {grace && (
-                        <div style={{ opacity: 0.6, fontSize: '.65rem', marginTop: '.2rem' }}>
-                          ends {new Date(grace).toLocaleDateString()}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })} />
+            <PagedRows cols={5} rows={withData.map(renderLeague)} />
           </table>
         </div>
+
+        {empty.length > 0 && (
+          <details style={{ marginTop: '1rem', border: '1px solid var(--ink-line)', borderRadius: '2px' }}>
+            <summary style={{ cursor: 'pointer', padding: '.7rem .9rem', fontFamily: 'var(--mono)', fontSize: '.65rem', letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--cream-soft)' }}>
+              No data · {empty.length} {empty.length === 1 ? 'league' : 'leagues'}
+              <span style={{ opacity: 0.6, textTransform: 'none', letterSpacing: 0, marginLeft: '.6rem', fontFamily: 'inherit' }}>
+                never synced any managers, mostly NFL.com ({empty.filter((l) => l.platform === 'nfl').length})
+              </span>
+            </summary>
+            <div style={{ overflowX: 'auto', borderTop: '1px solid var(--ink-line)' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.8rem' }}>
+                <thead>
+                  <tr style={{ background: 'rgba(232,200,137,.06)', textAlign: 'left' }}>
+                    <th style={th}>League</th>
+                    <th style={th}>Owner</th>
+                    <th style={th}>Platform</th>
+                    <th style={th}>Created</th>
+                    <th style={th}>State</th>
+                  </tr>
+                </thead>
+                <PagedRows cols={5} rows={empty.map(renderLeague)} />
+              </table>
+            </div>
+          </details>
+        )}
       </section>
 
       <SiteFooter />

@@ -237,6 +237,9 @@ export function buildFeature(week: number): Built {
       x: `${title}. ${deck}`,
       threads: `${title}.\n\n${deck}\n\nThis one is from our demo league. Yours gets built from its own history the day you connect it.`,
     }, link, `feature-${page.key}`),
-    link, card: null, image_path: page.og,
+    // The share pages list their OG paths without the trailing slash, which
+    // the site answers with a 308. Threads fetches the image itself and may
+    // not follow it, so hand it the final URL.
+    link, card: null, image_path: page.og.replace(/^([^?]*?)\/?(\?|$)/, '$1/$2'),
   }
 }
