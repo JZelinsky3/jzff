@@ -1466,13 +1466,13 @@ function renderOutlook() {
   if (!m) { el.innerHTML = ""; return; }
 
   const o = seasonOutlook(m);
+  // The card holds six lines of about eighty characters. Every one of the
+  // twelve writeups is inside that; if a rewrite ever runs past it the
+  // overflow is hidden and the last sentence goes missing quietly, which
+  // is the one failure here worth knowing about before the night.
   el.innerHTML = `
     <div class="ol-goal"><span class="k">The goal</span>
       <span class="v">${C.escapeHtml(o.goal)}</span></div>
-    <!-- The card holds six lines of about eighty characters. Every one of the
-         twelve writeups is inside that; if a rewrite ever runs past it the
-         overflow is hidden and the last sentence goes missing quietly, which
-         is the one failure here worth knowing about before the night. -->
     <p class="ol-text">${C.escapeHtml(o.text)}</p>
     <div class="ol-h2h">${headToHead(m)}</div>`;
 }
