@@ -8,13 +8,15 @@
 //   - A post more than a day late is expired, not sent. A Tuesday regret
 //     post going out on Thursday after an outage is worse than none, and it
 //     stops a backlog flooding both accounts the moment posting is switched on.
+//     The text-only extras get six hours (TIMELY_KINDS): a "most added" list
+//     or an evening question is stale by the next morning.
 //   - Each platform is sent at most once per post. If X succeeds and Threads
 //     fails, the post goes back in the queue and the next run retries Threads
 //     alone. Three attempts, then it stops and says so on the admin page.
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { absoluteUrl, socialLive, textProblem, threadsSeeded, xConfigured, type Platform } from './config'
-import { buildRegret, type RegretParams } from './content'
+import { buildOnTheDay, TIMELY_KINDS } from './extras'
 import { postToX } from './x'
 import { postToThreads } from './threads'
 
@@ -43,6 +45,7 @@ export type PostRow = {
 export type PublishResult = { id: string; plan_key: string | null; outcome: string; detail?: string }
 
 const LATE_MS = 24 * 60 * 60 * 1000
+const TIMELY_LATE_MS = 6 * 60 * 60 * 1000
 const MAX_ATTEMPTS = 3
 const COLS = 'id, plan_key, kind, scheduled_at, status, x_text, threads_text, image_path, link, params, card, x_post_id, threads_post_id, x_error, threads_error, attempts, sent_at'
 
@@ -66,9 +69,9 @@ async function touch(db: Db, id: string, patch: Record<string, unknown>) {
 /** Writes the copy for a post that could only be built on the day. */
 async function fill(db: Db, row: PostRow): Promise<PostRow | { expired: string }> {
   if (row.x_text && row.threads_text) return row
-  if (row.kind !== 'regret') return { expired: 'no copy and nothing to build it from' }
-  const built = await buildRegret(row.params as unknown as RegretParams)
-  if (!built) return { expired: 'quiet week: fewer than three dropped players scored 12+' }
+  const made = await buildOnTheDay(row.kind, row.params)
+  if ('skip' in made) return { expired: made.skip }
+  const built = made.built
   const patch = { x_text: built.x_text, threads_text: built.threads_text, link: built.link, card: built.card }
   await touch(db, row.id, patch)
   return { ...row, ...patch }
@@ -129,9 +132,10 @@ export async function publishDue(db: Db): Promise<{ live: boolean; platforms: Pl
     const base = { id: raw.id, plan_key: raw.plan_key }
     // Late only counts against a post nothing has gone out for yet. One that
     // reached X and is retrying Threads should finish the job.
-    if (!raw.x_post_id && !raw.threads_post_id && Date.now() - Date.parse(raw.scheduled_at) > LATE_MS) {
+    const lateMs = TIMELY_KINDS.has(raw.kind) ? TIMELY_LATE_MS : LATE_MS
+    if (!raw.x_post_id && !raw.threads_post_id && Date.now() - Date.parse(raw.scheduled_at) > lateMs) {
       await touch(db, raw.id, { status: 'expired' })
-      results.push({ ...base, outcome: 'expired', detail: 'more than a day late' })
+      results.push({ ...base, outcome: 'expired', detail: lateMs === LATE_MS ? 'more than a day late' : 'more than six hours late' })
       continue
     }
     try {

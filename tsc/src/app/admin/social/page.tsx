@@ -153,7 +153,7 @@ function Post({ p, live }: { p: PostRow; live: boolean }) {
           </div>
         ) : (
           <p style={{ color: 'var(--cream-soft)', fontStyle: 'italic', margin: '.6rem 0 0' }}>
-            Written on the day from that week&apos;s scores. Veto now to skip it.
+            Written on the day from live Sleeper data. Veto now to skip it.
           </p>
         )}
         {(p.x_post_id || p.threads_post_id) ? (

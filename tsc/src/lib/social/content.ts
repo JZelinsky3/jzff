@@ -12,7 +12,11 @@ import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 import { SHARE_PAGES } from '@/lib/sharePages'
 import { taggedLink, textProblem, type Platform } from './config'
 
-export type Kind = 'regret' | 'history' | 'roulette' | 'recap' | 'feature'
+// The base post of the day (card + link) is one of the first five; the rest
+// are the text-only extras in ./extras.ts.
+export type Kind =
+  | 'regret' | 'history' | 'roulette' | 'recap' | 'feature'
+  | 'trending' | 'leaders' | 'beat' | 'season' | 'byes' | 'nugget' | 'sunday' | 'question'
 
 export const KIND_LABELS: Record<Kind, string> = {
   regret: 'Drop Regret Index',
@@ -20,12 +24,21 @@ export const KIND_LABELS: Record<Kind, string> = {
   roulette: 'Roster Roulette deal',
   recap: 'Weekly Recap promo',
   feature: 'Feature of the week',
+  trending: 'Most added (text)',
+  leaders: 'Week’s top scorers (text)',
+  beat: 'Beat the projection (text)',
+  season: 'Season leaders (text)',
+  byes: 'Byes this week (text)',
+  nugget: 'History by position (text)',
+  sunday: 'Sunday’s top scorers (text)',
+  question: 'Question (text)',
 }
 
 export type Built = {
   x_text: string
   threads_text: string
-  link: string
+  /** Null on the text-only extras. */
+  link: string | null
   /** Null when the post reuses an existing OG route via image_path. */
   card: Card | null
   image_path: string | null
@@ -58,20 +71,20 @@ function texts(body: { x: string; threads: string }, link: string, campaign: str
   return out
 }
 
-function fmt1(n: number): string {
+export function fmt1(n: number): string {
   return (Math.round(n * 10) / 10).toFixed(1)
 }
 
-function compact(n: number): string {
+export function compact(n: number): string {
   if (n >= 1_000_000) return `${fmt1(n / 1_000_000)}M`
   if (n >= 10_000) return `${Math.round(n / 1000)}K`
   return n.toLocaleString('en-US')
 }
 
-type Stats = Record<string, number>
+export type Stats = Record<string, number>
 
 /** "13 rec, 212 yds, 1 TD" style line for the history hero. */
-function statLine(pos: string | undefined, s: Stats): string {
+export function statLine(pos: string | undefined, s: Stats): string {
   const parts: string[] = []
   if (pos === 'QB' || (s.pass_yd ?? 0) > 100) {
     parts.push(`${Math.round(s.pass_yd ?? 0)} pass yds`, `${s.pass_td ?? 0} pass TD`)
@@ -91,7 +104,7 @@ function statLine(pos: string | undefined, s: Stats): string {
   return parts.join(', ')
 }
 
-const FANTASY_POS = new Set(['QB', 'RB', 'WR', 'TE'])
+export const FANTASY_POS = new Set(['QB', 'RB', 'WR', 'TE'])
 
 // ── This Week in Fantasy History ─────────────────────────────────────────
 // The best PPR games ever played in this week of the season, one per year at

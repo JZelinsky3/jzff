@@ -36,7 +36,7 @@ export async function sendDigest(db: Db, monday: string): Promise<string[]> {
   const live = socialLive()
   const rows = posts.map((p) => {
     const label = KIND_LABELS[p.kind as Kind] ?? p.kind
-    const copy = p.x_text ? esc(p.x_text).replace(/\n/g, '<br>') : '<em>Written on the day from that week&#39;s scores.</em>'
+    const copy = p.x_text ? esc(p.x_text).replace(/\n/g, '<br>') : '<em>Written on the day from live Sleeper data.</em>'
     const img = p.image_path && p.x_text
       ? `<img src="${esc(absoluteUrl(p.image_path))}" width="240" style="display:block;width:240px;max-width:100%;border:1px solid #d9cdb2;margin:8px 0 0">`
       : ''

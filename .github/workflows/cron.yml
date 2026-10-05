@@ -97,11 +97,13 @@ on:
     # posts and email the list for vetoes. Must stay on a Friday or Saturday:
     # the Drop Regret post captures that week's drops when it is planned.
     - cron: '0 13 * * 6'
-    # Social, hourly 12:20-23:20 UTC: send whatever is due. Posts are slotted
-    # at 8:00 ET weekdays (12:00 UTC in summer time, 13:00 in winter), so the
-    # 12:20 run lands them at about 8:20 and later runs catch up if GitHub
-    # starts late. Sends nothing until SOCIAL_LIVE=1 in Vercel.
-    - cron: '20 12-23 * * *'
+    # Social, hourly from 12:20 to 02:20 UTC (8:20am to 10:20pm ET in summer
+    # time, 7:20am to 9:20pm in winter): send whatever is due. Posts are
+    # slotted on the hour between 8am and 8pm ET, so each lands at about :20
+    # past and later runs catch up if GitHub starts late. The evening hours
+    # past midnight UTC are for the 7pm and 8pm ET posts. Sends nothing until
+    # SOCIAL_LIVE=1 in Vercel.
+    - cron: '20 0-2,12-23 * * *'
   # Lets you run any single job by hand from the Actions tab, which is also
   # how you smoke-test that CRON_SECRET is correct without waiting a day.
   workflow_dispatch:
@@ -145,7 +147,7 @@ jobs:
             '0 12 * * 2')  paths='refresh recaps' ;;
             '0 15 * * 3')  paths='recaps' ;;
             '0 13 * * 6')  paths='social-plan' ;;
-            '20 12-23 * * *') paths='social-publish' ;;
+            '20 0-2,12-23 * * *') paths='social-publish' ;;
             *)
               # Manual dispatch.
               case "$MANUAL" in
