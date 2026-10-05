@@ -19,13 +19,13 @@
 //
 // Around it, the text-only extras (lib/social/extras.ts), so each day has
 // three or four posts instead of one:
-//   Mon 12 most added      19 most dropped
+//   Mon 12 most added      15 drafted side by side   19 most dropped
 //   Tue 12 top scorers     17 beat the projection    20 target leaders
 //   Wed 12 most added      17 season leaders RB/WR   20 best pace vs the record
-//   Thu  9 byes            12 history by position    19 draft bargains
-//   Fri 12 most added      18 every game over N points
-//   Sat 13 season leaders QB/TE                      18 draft busts
-//   Sun 10 top projected   12 most added             20 Sunday's top scorers
+//   Thu  9 byes            12 history by position    16 name the player   19 draft bargains
+//   Fri 12 most added      15 best single games      18 every game over N points
+//   Sat 13 season leaders QB/TE   15 red zone chances   18 draft busts
+//   Sun 10 top projected   12 most added   15 name the player   20 Sunday's top scorers
 //
 // No questions, no reply bait (Joey): a post asking for answers that gets
 // none looks empty. Every extra stands on its own as a stat.
@@ -43,7 +43,7 @@ import {
   buildFeature, buildHistory, buildRecapPromo, buildRoulette, snapshotDrops,
   type Built, type Kind, type RegretParams,
 } from './content'
-import { buildNugget } from './extras'
+import { buildNameGame, buildNugget } from './extras'
 
 type Db = ReturnType<typeof createAdminClient>
 
@@ -197,9 +197,19 @@ function extraSlots(monday: string, season: number, rotation: number, weekOf: We
   // Season-to-date posts wait for three weeks of games.
   const sinceWeek3 = (wk: number) => (wk >= 3 ? week(wk) : null)
 
+  // Name the player, from the archive: written now, so it's in the digest.
+  const nameGame = (n: number, hour: number, k: number): Slot => ({
+    kind: 'namegame', date: day(n), hour,
+    build: async () => {
+      if (!weekOf(day(n), hour)) return { skip: 'not the regular season' }
+      return { built: await buildNameGame(season - 1, rotation, k) }
+    },
+  })
+
   return [
     // Monday
     trending(0),
+    onTheDay('sidebyside', 0, 15, 'last', sinceWeek3),
     onTheDay('drops', 0, 19, 'this', () => ({})),
     // Tuesday
     onTheDay('leaders', 1, 12, 'last', week),
@@ -219,16 +229,20 @@ function extraSlots(monday: string, season: number, rotation: number, weekOf: We
         return { built: await buildNugget(wk, season - 1, rotation) }
       },
     },
+    nameGame(3, 16, 0),
     onTheDay('bargains', 3, 19, 'last', sinceWeek3),
     // Friday
     trending(4),
+    onTheDay('highs', 4, 15, 'last', sinceWeek3),
     onTheDay('streaks', 4, 18, 'last', sinceWeek3),
     // Saturday
     onTheDay('season', 5, 13, 'last', (wk) => (wk >= 3 ? { ...week(wk), pos: ['QB', 'TE'][rotation % 2] } : null)),
+    onTheDay('redzone', 5, 15, 'last', sinceWeek3),
     onTheDay('busts', 5, 18, 'last', sinceWeek3),
     // Sunday
     onTheDay('projections', 6, 10, 'this', week),
     trending(6),
+    nameGame(6, 15, 1),
     onTheDay('sunday', 6, 20, 'this', week),
   ]
 }

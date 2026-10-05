@@ -30,7 +30,7 @@ type Player = Awaited<ReturnType<typeof getPlayersNflDict>>[string]
 // Sunday night scoreboard posted the next morning is worse than nothing.
 export const TIMELY_KINDS = new Set([
   'trending', 'drops', 'leaders', 'beat', 'season', 'targets', 'pace', 'bargains',
-  'streaks', 'busts', 'byes', 'projections', 'sunday', 'question',
+  'streaks', 'busts', 'byes', 'projections', 'sunday', 'question', 'sidebyside', 'highs', 'redzone',
 ])
 
 function textOnly(x: string, threads: string = x): Built {
@@ -69,30 +69,33 @@ const POS_PLURAL: Record<string, string> = { QB: 'QBs', RB: 'RBs', WR: 'WRs', TE
 // How deep "a starter" goes at each position in a 12-team league.
 const STARTER_DEPTH: Record<string, number> = { QB: 12, RB: 24, WR: 24, TE: 12 }
 
-type Line = { id: string; player: Player; pts: number; games: number; low: number; tgt: number }
+type Line = { id: string; player: Player; pts: number; games: number; low: number; tgt: number; rz: number; best: { pts: number; week: number } }
 
 /**
  * Season to date for every fantasy player over weeks 1..through: PPR points,
- * games played, lowest single game and targets. A week counts as a game
+ * games played, lowest and best single game, targets, and red zone chances
+ * (carries plus targets inside the 20). A week counts as a game
  * when Sleeper marks the player active or he scored anything.
  */
 async function seasonLines(season: number, through: number): Promise<Line[]> {
   const [players, weeks] = await Promise.all([getPlayersNflDict(), fetchSeasonByWeek(season, through)])
   const acc = new Map<string, Line>()
-  for (const wk of weeks) {
+  weeks.forEach((wk, wi) => {
     for (const [id, s] of Object.entries(wk as Record<string, Stats>)) {
       const player = players[id]
       if (!player?.full_name || !FANTASY_POS.has(player.position ?? '')) continue
       const pts = s.pts_ppr ?? 0
       if (!(s.gp ?? 0) && !pts) continue
-      const l = acc.get(id) ?? { id, player, pts: 0, games: 0, low: Infinity, tgt: 0 }
+      const l = acc.get(id) ?? { id, player, pts: 0, games: 0, low: Infinity, tgt: 0, rz: 0, best: { pts: -Infinity, week: 0 } }
       l.pts += pts
       l.games += 1
       l.low = Math.min(l.low, pts)
       l.tgt += s.rec_tgt ?? 0
+      l.rz += (s.rush_rz_att ?? 0) + (s.rec_rz_tgt ?? 0)
+      if (pts > l.best.pts) l.best = { pts, week: wi + 1 }
       acc.set(id, l)
     }
-  }
+  })
   return [...acc.values()]
 }
 
@@ -417,6 +420,76 @@ export async function buildSunday(p: WeekParams): Promise<Built | null> {
   )
 }
 
+// ── Drafted side by side ─────────────────────────────────────────────────
+// Two players taken a pick or two apart in Sleeper drafts, with the biggest
+// gap in points since. Starting-lineup picks only (top 100).
+export async function buildSideBySide(p: WeekParams): Promise<Built | null> {
+  const [lines, adp] = await Promise.all([seasonLines(p.season, p.week), draftPositions(p.season)])
+  const minGames = Math.max(2, p.week - 1)
+  const drafted = lines
+    .map((l) => ({ l, adp: adp.get(l.id) ?? 999 }))
+    .filter((x) => x.adp <= 100 && x.l.games >= minGames)
+    .sort((a, b) => a.adp - b.adp)
+  let pair: [typeof drafted[number], typeof drafted[number]] | null = null
+  for (let i = 0; i < drafted.length; i++) {
+    for (let j = i + 1; j < drafted.length && drafted[j].adp - drafted[i].adp <= 2; j++) {
+      const gap = Math.abs(drafted[i].l.pts - drafted[j].l.pts)
+      if (!pair || gap > Math.abs(pair[0].l.pts - pair[1].l.pts)) pair = [drafted[i], drafted[j]]
+    }
+  }
+  if (!pair || Math.abs(pair[0].l.pts - pair[1].l.pts) < 30) return null
+  const [hi, lo] = pair[0].l.pts >= pair[1].l.pts ? pair : [pair[1], pair[0]]
+  const line = (x: typeof hi) => `${x.l.player.full_name} (${x.l.player.position}), pick ${Math.round(x.adp)}: ${fmt1(x.l.pts)} PPR points`
+  return textOnly(`Taken side by side in Sleeper drafts:\n\n${line(hi)}\n${line(lo)}\n\nThrough Week ${p.week}.`)
+}
+
+// ── Best single games of the season ──────────────────────────────────────
+export async function buildHighs(p: WeekParams): Promise<Built | null> {
+  const top = (await seasonLines(p.season, p.week)).sort((a, b) => b.best.pts - a.best.pts).slice(0, 5)
+  if (top.length < 5) return null
+  return listPost(
+    'The best single games of the season so far, one per player, PPR:',
+    top.map((l, i) => `${i + 1}. ${named(l.player)}, ${fmt1(l.best.pts)} in Week ${l.best.week}`),
+    `Through Week ${p.week}.`,
+    // Five fits most weeks; long names drop the fifth rather than the post.
+    4,
+  )
+}
+
+// ── Red zone chances ─────────────────────────────────────────────────────
+export async function buildRedZone(p: WeekParams): Promise<Built | null> {
+  const top = (await seasonLines(p.season, p.week)).filter((l) => l.rz > 0).sort((a, b) => b.rz - a.rz).slice(0, 5)
+  if (top.length < 5 || top[0].rz < 8) return null
+  return listPost(
+    `Most red zone chances through Week ${p.week}, carries plus targets inside the 20:`,
+    top.map((l, i) => `${i + 1}. ${who(l.player)}, ${l.rz}`),
+  )
+}
+
+// ── Name the player ──────────────────────────────────────────────────────
+// A big game from the archive with the name held back to the bottom of the
+// post, so people guess as they read and the answer is right there. Nothing
+// to reply to. Written at plan time; `k` keeps two in one week apart.
+export async function buildNameGame(lastSeason: number, rotation: number, k: number): Promise<Built> {
+  const players = await getPlayersNflDict()
+  const years = lastSeason - 2009 + 1
+  for (let tries = 0; tries < 6; tries++) {
+    const n = rotation * 2 + k + tries * 13
+    const year = 2009 + ((n * 7) % years)
+    const week = 1 + ((n * 5) % 17)
+    const stats = (await fetchWeekStats(year, week).catch(() => ({}))) as Record<string, Stats>
+    const best = Object.entries(stats)
+      .map(([id, s]) => ({ id, s, pts: s.pts_ppr ?? 0, player: players[id] }))
+      .filter((x) => x.player?.full_name && FANTASY_POS.has(x.player.position ?? ''))
+      .sort((a, b) => b.pts - a.pts)[0]
+    if (!best || best.pts < 30) continue
+    const pos = best.player.position!
+    const text = `Name the player. A ${POS_WORD[pos]}, Week ${week} of ${year}: ${statLine(pos, best.s)}, ${fmt1(best.pts)} PPR points.\n\n\n\nIt was ${best.player.full_name}.`
+    return textOnly(text)
+  }
+  throw new Error('no archive game big enough')
+}
+
 // ── Send-time builds ─────────────────────────────────────────────────────
 /** Builds a post that could only be written on the day, from its params. */
 export async function buildOnTheDay(kind: string, params: Record<string, unknown>): Promise<{ built: Built } | { skip: string }> {
@@ -447,6 +520,12 @@ export async function buildOnTheDay(kind: string, params: Record<string, unknown
       return quiet(await buildStreaks(wk), 'no clean streak list this week')
     case 'byes':
       return quiet(await buildByes(wk), 'no byes this week')
+    case 'sidebyside':
+      return quiet(await buildSideBySide(wk), 'no big gap between neighbouring draft picks')
+    case 'highs':
+      return quiet(await buildHighs(wk), 'not enough season stats')
+    case 'redzone':
+      return quiet(await buildRedZone(wk), 'not enough season stats')
     case 'projections':
       return quiet(await buildProjections(wk), 'no projections for this week yet')
     case 'sunday':

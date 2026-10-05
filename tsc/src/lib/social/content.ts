@@ -18,6 +18,7 @@ export type Kind =
   | 'regret' | 'history' | 'roulette' | 'recap' | 'feature'
   | 'trending' | 'drops' | 'leaders' | 'beat' | 'season' | 'targets' | 'pace' | 'bargains'
   | 'streaks' | 'busts' | 'byes' | 'nugget' | 'projections' | 'sunday'
+  | 'sidebyside' | 'highs' | 'redzone' | 'namegame'
   // Retired 2026-10-05 (reply bait); kept so old rows still have a label.
   | 'question'
 
@@ -38,6 +39,10 @@ export const KIND_LABELS: Record<Kind, string> = {
   streaks: 'Every game over the line (text)',
   busts: 'Draft busts (text)',
   projections: 'Top projected (text)',
+  sidebyside: 'Drafted side by side (text)',
+  highs: 'Best single games (text)',
+  redzone: 'Red zone chances (text)',
+  namegame: 'Name the player (text)',
   byes: 'Byes this week (text)',
   nugget: 'History by position (text)',
   sunday: 'Sunday’s top scorers (text)',
