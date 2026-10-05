@@ -56,8 +56,8 @@ export type Card =
  *
  * The X copy has no link unless `xLink: true`. X charges per post and a post
  * with a link costs about thirteen times one without, so for now only the
- * Monday recap promo carries one there, as a one-link-a-week test of whether
- * X sends anyone. Every card carries the domain in its foot. Threads is free,
+ * Monday feature carries one there, as a one-link-a-week test of whether X
+ * sends anyone. Every card carries the domain in its foot. Threads is free,
  * so it always links.
  */
 function texts(body: { x: string; threads: string }, link: string, campaign: string, opts: { xLink?: boolean } = {}) {
@@ -213,19 +213,19 @@ export function buildRoulette(season: number, week: number): Built {
 // ── Weekly Recap promo ───────────────────────────────────────────────────
 const RECAP_PITCHES = [
   {
-    x: 'Your fantasy league gets its own newspaper every Tuesday. Last week\'s scores, the best and worst lineup calls, and how the standings moved. 10 days free.',
+    x: 'Your fantasy league gets its own newspaper every Tuesday. Last week\'s scores, the best and worst lineup calls, and how the standings moved. 10 days free at The Sunday Chronicle.',
     threads: 'Your fantasy league gets its own newspaper every Tuesday.\n\nLast week\'s scores, the best and worst lineup calls, and how the standings moved, pulled from your league\'s own history. Anyone in the league can sign up to get it.\n\n10 days free.',
     dek: 'A paper for your league, every Tuesday.',
     points: ['Last week\u2019s scores', 'Best and worst lineup calls', 'How the standings moved', 'Anyone in the league can sign up'],
   },
   {
-    x: 'Every week the group chat argues about who should have started who. The Tuesday recap settles it: every score, every bad bench call, every streak in your league.',
+    x: 'Every week the group chat argues about who should have started who. The Tuesday recap settles it: every score, every bad bench call, every streak in your league. Free for 10 days at The Sunday Chronicle.',
     threads: 'Every week the group chat argues about who should have started who.\n\nThe Tuesday recap settles it. Every score, every bad bench call, every streak, checked against your league\'s whole history. It hits your inbox after Monday night.\n\n10 days free.',
     dek: 'Settles the group chat every Tuesday.',
     points: ['Every score, every week', 'The worst bench calls', 'Streaks and records in play', 'In your inbox after Monday night'],
   },
   {
-    x: 'Connect your Sleeper, ESPN or Yahoo league once. You get a recap every Tuesday, an all-time record book, and every season you\'ve ever played in one place. 10 days free.',
+    x: 'Connect your Sleeper, ESPN or Yahoo league once. You get a recap every Tuesday, an all-time record book, and every season you\'ve ever played in one place. 10 days free at The Sunday Chronicle.',
     threads: 'Connect your Sleeper, ESPN or Yahoo league once.\n\nYou get a recap every Tuesday, an all-time record book, and every season you\'ve ever played in one place.\n\n10 days free.',
     dek: 'Connect once. Read it every Tuesday.',
     points: ['Sleeper, ESPN and Yahoo', 'A recap every Tuesday', 'An all-time record book', 'Every season in one place'],
@@ -236,7 +236,8 @@ export function buildRecapPromo(week: number): Built {
   const pitch = RECAP_PITCHES[week % RECAP_PITCHES.length]
   const link = '/'
   return {
-    ...texts({ x: pitch.x, threads: pitch.threads }, link, 'recap', { xLink: true }),
+    // Saturday, no link on X, so its X copy names the site instead.
+    ...texts({ x: pitch.x, threads: pitch.threads }, link, 'recap'),
     link,
     card: { template: 'product', kicker: 'The Weekly Recap', title: 'Your League’s Chronicle.', dek: pitch.dek, points: pitch.points },
     image_path: null,
@@ -276,7 +277,7 @@ export function buildFeature(week: number): Built {
     ...texts({
       x: `${title}. ${line}`,
       threads: `${title}.\n\n${line}\n\nThis is our demo league. Connect yours and it fills in with your own league's history.`,
-    }, link, `feature-${page.key}`),
+    }, link, `feature-${page.key}`, { xLink: true }),
     // The share pages list their OG paths without the trailing slash, which
     // the site answers with a 308. Threads fetches the image itself and may
     // not follow it, so hand it the final URL.

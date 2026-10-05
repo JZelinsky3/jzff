@@ -5,14 +5,17 @@
 // one Joey edited or vetoed) is left exactly as it is.
 //
 // The base post of the day, with its card and link (all times Eastern):
-//   Mon  8:00  Weekly Recap promo     product card, the one X post with a link
+//   Mon  8:00  Feature of the week    a /see/ landing page on the demo league,
+//                                     the one X post with a link
 //   Tue  8:00  Drop Regret Index      filled Tuesday from Sunday's scores
 //   Wed  8:00  Fantasy History        best Week N games since 2009
 //   Fri  8:00  Roster Roulette deal   one seeded wheel for everyone
-//   Sat 10:00  Feature of the week    a /see/ landing page on the demo league
+//   Sat 10:00  Weekly Recap promo     product card, no link on X
 //
 // Weekdays at 8: people read before work, and Tuesday morning is waivers.
-// Saturday is later because 8am on a weekend is a dead feed.
+// Saturday is later because 8am on a weekend is a dead feed. The feature
+// has Monday (Joey: Monday mornings are the most active on X) because it is
+// the post that shows the site, so it is the one worth paying for a link.
 //
 // Around it, the text-only extras (lib/social/extras.ts), so each day has
 // three or four posts instead of one:
@@ -80,8 +83,8 @@ export async function planWeek(db: Db, opts: { monday?: string; dry?: boolean } 
   const tue = addDays(monday, 1)
   const slots: Slot[] = [
     {
-      kind: 'recap', date: monday, hour: 8,
-      build: async () => ({ built: buildRecapPromo(rotation) }),
+      kind: 'feature', date: monday, hour: 8,
+      build: async () => ({ built: buildFeature(rotation) }),
     },
     {
       kind: 'regret', date: tue, hour: 8, card: true,
@@ -118,8 +121,8 @@ export async function planWeek(db: Db, opts: { monday?: string; dry?: boolean } 
       },
     },
     {
-      kind: 'feature', date: addDays(monday, 5), hour: 10,
-      build: async () => ({ built: buildFeature(rotation) }),
+      kind: 'recap', date: addDays(monday, 5), hour: 10,
+      build: async () => ({ built: buildRecapPromo(rotation) }),
     },
     ...extraSlots(monday, season, rotation, weekOf),
   ]
