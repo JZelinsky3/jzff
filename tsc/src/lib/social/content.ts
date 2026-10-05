@@ -16,7 +16,10 @@ import { taggedLink, textProblem, type Platform } from './config'
 // are the text-only extras in ./extras.ts.
 export type Kind =
   | 'regret' | 'history' | 'roulette' | 'recap' | 'feature'
-  | 'trending' | 'leaders' | 'beat' | 'season' | 'byes' | 'nugget' | 'sunday' | 'question'
+  | 'trending' | 'drops' | 'leaders' | 'beat' | 'season' | 'targets' | 'pace' | 'bargains'
+  | 'streaks' | 'busts' | 'byes' | 'nugget' | 'projections' | 'sunday'
+  // Retired 2026-10-05 (reply bait); kept so old rows still have a label.
+  | 'question'
 
 export const KIND_LABELS: Record<Kind, string> = {
   regret: 'Drop Regret Index',
@@ -25,13 +28,20 @@ export const KIND_LABELS: Record<Kind, string> = {
   recap: 'Weekly Recap promo',
   feature: 'Feature of the week',
   trending: 'Most added (text)',
+  drops: 'Most dropped (text)',
   leaders: 'Week’s top scorers (text)',
   beat: 'Beat the projection (text)',
   season: 'Season leaders (text)',
+  targets: 'Target leaders (text)',
+  pace: 'Best pace (text)',
+  bargains: 'Draft bargains (text)',
+  streaks: 'Every game over the line (text)',
+  busts: 'Draft busts (text)',
+  projections: 'Top projected (text)',
   byes: 'Byes this week (text)',
   nugget: 'History by position (text)',
   sunday: 'Sunday’s top scorers (text)',
-  question: 'Question (text)',
+  question: 'Question (retired)',
 }
 
 export type Built = {
@@ -142,7 +152,7 @@ export async function buildHistory(week: number, lastSeason: number): Promise<Bu
   return {
     ...texts({
       x: `This week in fantasy history: ${lead}`,
-      threads: `This week in fantasy history: ${lead}${runnerUp}\n\nWho has the best week in your league's history? Connect your league and find out.`,
+      threads: `This week in fantasy history: ${lead}${runnerUp}\n\nConnect your league and see the best week in its history.`,
     }, link, 'history'),
     link, card, image_path: null,
   }
@@ -204,7 +214,7 @@ export function buildRoulette(season: number, week: number): Built {
     ...texts({
       // No link on X (see texts()), so the X copy can't promise shared teams.
       x: `Roster Roulette, Week ${week}: you get handed real teams from real fantasy leagues. Take one player off each, fill your lineup, and see what record it puts up over 17 games. Free under Games at The Sunday Chronicle.`,
-      threads: `Roster Roulette, Week ${week}.\n\nEach round you get a real team from a real fantasy league on our site. Take one player off it, fill your lineup, then see what record it puts up over 17 games.\n\nEveryone gets the same teams this week, so drop your record below. Connect your league and you can play it with your own league's old teams.`,
+      threads: `Roster Roulette, Week ${week}.\n\nEach round you get a real team from a real fantasy league on our site. Take one player off it, fill your lineup, then see what record it puts up over 17 games.\n\nEveryone gets the same teams this week. Connect your league and you can play it with your own league's old teams.`,
     }, link, 'roulette'),
     link, card: null, image_path: '/api/og/games/',
   }

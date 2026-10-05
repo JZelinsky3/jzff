@@ -1,17 +1,19 @@
 // The text-only posts that fill out the day around the base post.
 //
 // One post a day disappears in feeds this busy, so the plan adds two or three
-// of these a day. Joey's rule: no link and no image on any of them. The base
-// post of the day keeps the card and the link; these are there to be seen,
-// replied to and followed from, and on X a post without a link or image costs
-// a fraction of one with.
+// of these a day. Joey's rules: no link and no image on any of them (the base
+// post of the day keeps the card and the link), and nothing that needs
+// replies to work. A question nobody answers sits there looking empty, so
+// every post here is a stat people take in and scroll past: no questions, no
+// "who did you start?" closers. On X a post without a link or image also
+// costs a fraction of one with.
 //
-// Most are built at send time from live Sleeper data (trending adds, final
-// scores, projections, the schedule), because a list of most-added players
-// written on Saturday is stale by Monday. The plan stores what each one needs
-// in params and the publisher calls buildOnTheDay. Questions and the
-// position history post don't depend on the week's games, so they're written
-// at plan time and show up in the Saturday digest for vetoing.
+// Most are built at send time from live Sleeper data (trending players,
+// final scores, projections, the schedule), because a most-added list written
+// on Saturday is stale by Monday. The plan stores what each one needs in
+// params and the publisher calls buildOnTheDay. The position history post
+// doesn't depend on the week's games, so it is written at plan time and shows
+// up in the Saturday digest for vetoing.
 //
 // Same rules as content.ts: public data only, no real league names, no
 // emojis, no em dashes, plain words.
@@ -26,7 +28,10 @@ type Player = Awaited<ReturnType<typeof getPlayersNflDict>>[string]
 // Kinds that must go out close to their slot or not at all. The publisher
 // expires these after a few hours instead of a day: a "most added" list or a
 // Sunday night scoreboard posted the next morning is worse than nothing.
-export const TIMELY_KINDS = new Set(['trending', 'leaders', 'beat', 'season', 'byes', 'sunday', 'question'])
+export const TIMELY_KINDS = new Set([
+  'trending', 'drops', 'leaders', 'beat', 'season', 'targets', 'pace', 'bargains',
+  'streaks', 'busts', 'byes', 'projections', 'sunday', 'question',
+])
 
 function textOnly(x: string, threads: string = x): Built {
   const bad = textProblem('x', x) ?? textProblem('threads', threads)
@@ -35,10 +40,12 @@ function textOnly(x: string, threads: string = x): Built {
 }
 
 /**
- * A head, a list and a closing line, with list items dropped from the end
- * until each platform's copy fits. Threads usually keeps the whole list.
+ * A head and a list, plus an optional closing line, with list items dropped
+ * from the end until each platform's copy fits. Threads usually keeps the
+ * whole list.
  */
-function listPost(head: string, lines: string[], tail: string, minLines = 3): Built | null {
+function listPost(head: string, lines: string[], tail = '', minLines = 3): Built | null {
+  if (lines.length < minLines) return null
   const make = (n: number) => [head, lines.slice(0, n).join('\n'), tail].filter(Boolean).join('\n\n')
   let nx = lines.length
   while (nx > minLines && xLength(make(nx)) > X_MAX) nx--
@@ -52,42 +59,87 @@ function who(p: Player): string {
   return `${p.full_name} (${[p.position, p.team].filter(Boolean).join(', ')})`
 }
 
+/** Name and team only, for lines that already say the position. */
+function named(p: Player): string {
+  return p.team ? `${p.full_name} (${p.team})` : p.full_name!
+}
+
 const POS_WORD: Record<string, string> = { QB: 'quarterback', RB: 'running back', WR: 'receiver', TE: 'tight end' }
 const POS_PLURAL: Record<string, string> = { QB: 'QBs', RB: 'RBs', WR: 'WRs', TE: 'TEs' }
+// How deep "a starter" goes at each position in a 12-team league.
+const STARTER_DEPTH: Record<string, number> = { QB: 12, RB: 24, WR: 24, TE: 12 }
 
-/** Total PPR points per player over weeks 1..through. */
-async function seasonPoints(season: number, through: number): Promise<Map<string, number>> {
-  const weeks = await fetchSeasonByWeek(season, through)
-  const out = new Map<string, number>()
+type Line = { id: string; player: Player; pts: number; games: number; low: number; tgt: number }
+
+/**
+ * Season to date for every fantasy player over weeks 1..through: PPR points,
+ * games played, lowest single game and targets. A week counts as a game
+ * when Sleeper marks the player active or he scored anything.
+ */
+async function seasonLines(season: number, through: number): Promise<Line[]> {
+  const [players, weeks] = await Promise.all([getPlayersNflDict(), fetchSeasonByWeek(season, through)])
+  const acc = new Map<string, Line>()
   for (const wk of weeks) {
     for (const [id, s] of Object.entries(wk as Record<string, Stats>)) {
+      const player = players[id]
+      if (!player?.full_name || !FANTASY_POS.has(player.position ?? '')) continue
       const pts = s.pts_ppr ?? 0
-      if (pts) out.set(id, (out.get(id) ?? 0) + pts)
+      if (!(s.gp ?? 0) && !pts) continue
+      const l = acc.get(id) ?? { id, player, pts: 0, games: 0, low: Infinity, tgt: 0 }
+      l.pts += pts
+      l.games += 1
+      l.low = Math.min(l.low, pts)
+      l.tgt += s.rec_tgt ?? 0
+      acc.set(id, l)
     }
+  }
+  return [...acc.values()]
+}
+
+/** Position rank by season points, e.g. rank.get(line) === 3 for the WR3. */
+function positionRanks(lines: Line[]): Map<Line, number> {
+  const out = new Map<Line, number>()
+  for (const pos of FANTASY_POS) {
+    lines.filter((l) => l.player.position === pos).sort((a, b) => b.pts - a.pts).forEach((l, i) => out.set(l, i + 1))
   }
   return out
 }
 
-// ── Most added on Sleeper ────────────────────────────────────────────────
-export type TrendingParams = { sunday?: boolean }
+/** Sleeper's PPR average draft position for the season, by player id. */
+async function draftPositions(season: number): Promise<Map<string, number>> {
+  const pos = ['QB', 'RB', 'WR', 'TE'].map((x) => `position%5B%5D=${x}`).join('&')
+  const res = await fetch(`https://api.sleeper.com/projections/nfl/${season}?season_type=regular&${pos}`, { cache: 'no-store' })
+  if (!res.ok) throw new Error(`Sleeper season projections ${season}: ${res.status}`)
+  const rows = (await res.json()) as { player_id?: string; stats?: Stats }[]
+  const out = new Map<string, number>()
+  for (const r of Array.isArray(rows) ? rows : []) {
+    const adp = r.stats?.adp_ppr
+    if (r.player_id && adp != null && adp < 999) out.set(String(r.player_id), adp)
+  }
+  return out
+}
 
-export async function buildTrending(p: TrendingParams): Promise<Built | null> {
+async function sleeperTrending(type: 'add' | 'drop'): Promise<{ player: Player; count: number }[]> {
   const [players, res] = await Promise.all([
     getPlayersNflDict(),
-    fetch('https://api.sleeper.app/v1/players/nfl/trending/add?lookback_hours=24&limit=40', { cache: 'no-store' }),
+    fetch(`https://api.sleeper.app/v1/players/nfl/trending/${type}?lookback_hours=24&limit=40`, { cache: 'no-store' }),
   ])
-  if (!res.ok) throw new Error(`Sleeper trending adds ${res.status}`)
-  const adds = (await res.json()) as { player_id: string; count: number }[]
-  const top = adds
-    .map((a) => ({ ...a, player: players[a.player_id] }))
+  if (!res.ok) throw new Error(`Sleeper trending ${type} ${res.status}`)
+  return ((await res.json()) as { player_id: string; count: number }[])
+    .map((a) => ({ player: players[a.player_id], count: a.count }))
     .filter((a) => a.player?.full_name && FANTASY_POS.has(a.player.position ?? ''))
     .slice(0, 5)
-  if (top.length < 3) return null
-  return listPost(
-    'Most added on Sleeper in the last 24 hours:',
-    top.map((a, i) => `${i + 1}. ${who(a.player)}, ${compact(a.count)} leagues`),
-    p.sunday ? 'Anyone making a late pickup before kickoff?' : 'Who are you putting in a claim for?',
-  )
+}
+
+// ── Most added / most dropped on Sleeper ─────────────────────────────────
+export async function buildTrending(): Promise<Built | null> {
+  const top = await sleeperTrending('add')
+  return listPost('Most added on Sleeper in the last 24 hours:', top.map((a, i) => `${i + 1}. ${who(a.player)}, ${compact(a.count)} leagues`))
+}
+
+export async function buildDrops(): Promise<Built | null> {
+  const top = await sleeperTrending('drop')
+  return listPost('Most dropped on Sleeper in the last 24 hours:', top.map((a, i) => `${i + 1}. ${who(a.player)}, ${compact(a.count)} leagues`))
 }
 
 // ── Last week's top scorer at each position ──────────────────────────────
@@ -107,8 +159,8 @@ export async function buildLeaders(p: WeekParams): Promise<Built | null> {
   if (order.some((pos) => !best[pos] || best[pos].pts < 10)) return null
   return listPost(
     `Week ${p.week}'s top scorer at every position, PPR:`,
-    order.map((pos) => `${pos} ${best[pos].player.full_name}, ${fmt1(best[pos].pts)}`),
-    'Anyone start all four?',
+    order.map((pos) => `${pos} ${named(best[pos].player)}, ${fmt1(best[pos].pts)}`),
+    '',
     4,
   )
 }
@@ -144,7 +196,6 @@ export async function buildBeat(p: WeekParams): Promise<Built | null> {
   return listPost(
     `Week ${p.week}'s biggest surprises against Sleeper's projections, PPR:`,
     beats.map((b) => `${who(b.player)}: projected ${fmt1(b.pr)}, scored ${fmt1(b.pts)}`),
-    'Who had one of them on the bench?',
   )
 }
 
@@ -152,19 +203,118 @@ export async function buildBeat(p: WeekParams): Promise<Built | null> {
 export type SeasonParams = { season: number; week: number; pos: string }
 
 export async function buildSeason(p: SeasonParams): Promise<Built | null> {
-  const [players, totals] = await Promise.all([getPlayersNflDict(), seasonPoints(p.season, p.week)])
-  const top = [...totals.entries()]
-    .map(([id, pts]) => ({ player: players[id], pts }))
-    .filter((t) => t.player?.full_name && t.player.position === p.pos)
+  const top = (await seasonLines(p.season, p.week))
+    .filter((l) => l.player.position === p.pos)
     .sort((a, b) => b.pts - a.pts)
     .slice(0, 5)
-  if (top.length < 5) return null
   return listPost(
     `The top ${POS_PLURAL[p.pos]} in PPR points through Week ${p.week}:`,
     top.map((t, i) => `${i + 1}. ${t.player.full_name}${t.player.team ? ` (${t.player.team})` : ''}, ${fmt1(t.pts)}`),
-    'Who is missing from this list?',
+    '',
     5,
   )
+}
+
+// ── Target leaders ───────────────────────────────────────────────────────
+export async function buildTargets(p: WeekParams): Promise<Built | null> {
+  const top = (await seasonLines(p.season, p.week))
+    .filter((l) => l.tgt > 0)
+    .sort((a, b) => b.tgt - a.tgt)
+    .slice(0, 5)
+  if (!top.length || top[0].tgt < 15) return null
+  return listPost(
+    `Most targets through Week ${p.week}:`,
+    top.map((t, i) => `${i + 1}. ${who(t.player)}, ${t.tgt} (${fmt1(t.tgt / t.games)} a game)`),
+  )
+}
+
+// ── On pace ──────────────────────────────────────────────────────────────
+// The best points-per-game pace this season, over 17 games, against the most
+// PPR points anyone has scored in a season since 2009.
+async function seasonRecord(lastSeason: number): Promise<{ name: string; year: number; pts: number } | null> {
+  const players = await getPlayersNflDict()
+  let best: { name: string; year: number; pts: number } | null = null
+  await Promise.all(Array.from({ length: lastSeason - 2009 + 1 }, (_, i) => 2009 + i).map(async (year) => {
+    const res = await fetch(`https://api.sleeper.app/v1/stats/nfl/regular/${year}`, { cache: 'no-store' })
+    if (!res.ok) return
+    const totals = (await res.json()) as Record<string, Stats>
+    for (const [id, s] of Object.entries(totals)) {
+      const pl = players[id]
+      if (!pl?.full_name || !FANTASY_POS.has(pl.position ?? '')) continue
+      const pts = s.pts_ppr ?? 0
+      if (!best || pts > best.pts) best = { name: pl.full_name, year, pts }
+    }
+  }))
+  return best
+}
+
+export async function buildPace(p: WeekParams): Promise<Built | null> {
+  const [lines, record] = await Promise.all([seasonLines(p.season, p.week), seasonRecord(p.season - 1)])
+  const minGames = Math.max(3, p.week - 2)
+  const leaders = lines.filter((l) => l.games >= minGames).sort((a, b) => b.pts / b.games - a.pts / a.games)
+  const top = leaders[0]
+  if (!top || !record) return null
+  const pace = (top.pts / top.games) * 17
+  const lead = `${top.player.full_name} has ${fmt1(top.pts)} PPR points in ${top.games} games. Over 17 games that's a ${Math.round(pace)}-point season.`
+  const vs = pace > record.pts
+    ? `The most anyone has scored in a season since 2009 is ${fmt1(record.pts)}, by ${record.name} in ${record.year}.`
+    : `The most since 2009 is ${fmt1(record.pts)}, by ${record.name} in ${record.year}.`
+  const next = leaders.slice(1, 3).map((l) => `${l.player.full_name} (${Math.round((l.pts / l.games) * 17)})`)
+  const behind = next.length === 2 ? `\n\nNext best paces: ${next[0]} and ${next[1]}.` : ''
+  const full = `${lead}\n\n${vs}${behind}`
+  return textOnly(xLength(full) <= X_MAX ? full : `${lead}\n\n${vs}`, full)
+}
+
+// ── Draft bargains and busts ─────────────────────────────────────────────
+export async function buildBargains(p: WeekParams): Promise<Built | null> {
+  const [lines, adp] = await Promise.all([seasonLines(p.season, p.week), draftPositions(p.season)])
+  const rank = positionRanks(lines)
+  const picks = lines
+    .map((l) => ({ l, r: rank.get(l)!, adp: adp.get(l.id) ?? 400 }))
+    // Starters now, drafted after the sixth round (or not at all).
+    .filter((x) => x.r <= STARTER_DEPTH[x.l.player.position!] / 2 && x.adp >= 72)
+    .sort((a, b) => b.adp - a.adp)
+    .slice(0, 4)
+  return listPost(
+    `The best values from Sleeper drafts through Week ${p.week}, by average draft position:`,
+    picks.map((x) => `${named(x.l.player)}: ${x.adp >= 250 ? 'undrafted' : `pick ${Math.round(x.adp)}`}, now ${x.l.player.position}${x.r}`),
+    '',
+    3,
+  )
+}
+
+export async function buildBusts(p: WeekParams): Promise<Built | null> {
+  const [lines, adp] = await Promise.all([seasonLines(p.season, p.week), draftPositions(p.season)])
+  const rank = positionRanks(lines)
+  // Only players who have played (nearly) every week: an injury isn't a bust.
+  const minGames = Math.max(2, p.week - 1)
+  const picks = lines
+    .map((l) => ({ l, r: rank.get(l)!, adp: adp.get(l.id) ?? 999 }))
+    .filter((x) => x.adp <= 36 && x.l.games >= minGames && x.r > STARTER_DEPTH[x.l.player.position!])
+    .sort((a, b) => a.adp - b.adp)
+    .slice(0, 4)
+  return listPost(
+    `First three rounds in Sleeper drafts, not a starter through Week ${p.week}:`,
+    picks.map((x) => `${named(x.l.player)}: pick ${Math.round(x.adp)}, ${x.l.player.position}${x.r} so far`),
+    '',
+    2,
+  )
+}
+
+// ── Every game over the line ─────────────────────────────────────────────
+export async function buildStreaks(p: WeekParams): Promise<Built | null> {
+  const lines = (await seasonLines(p.season, p.week)).filter((l) => l.games >= Math.max(3, p.week - 1))
+  // The highest round line that names three to six players, so the whole
+  // list fits and the count in the heading is the list.
+  for (const floor of [25, 20, 18, 15]) {
+    const over = lines.filter((l) => l.low >= floor).sort((a, b) => b.low - a.low)
+    if (over.length < 3) continue
+    if (over.length > 6) return null
+    const head = `${over.length} players have scored ${floor}+ PPR points in every game this season:`
+    const built = listPost(head, over.map((l) => `${named(l.player)}, ${l.player.position}, low ${fmt1(l.low)}`), `Through Week ${p.week}.`, over.length)
+    return built
+  }
+  return null
 }
 
 // ── Byes this week ───────────────────────────────────────────────────────
@@ -177,14 +327,12 @@ export async function buildByes(p: WeekParams): Promise<Built | null> {
   const bye = [...all].filter((t) => !playing.has(t)).sort()
   if (!bye.length || !playing.size) return null
 
-  const [players, totals] = await Promise.all([getPlayersNflDict(), seasonPoints(p.season, Math.max(1, p.week - 1))])
   const byeSet = new Set(bye)
-  const names = [...totals.entries()]
-    .map(([id, pts]) => ({ player: players[id], pts }))
-    .filter((t) => t.player?.full_name && FANTASY_POS.has(t.player.position ?? '') && byeSet.has(t.player.team ?? ''))
+  const names = (await seasonLines(p.season, Math.max(1, p.week - 1)))
+    .filter((l) => byeSet.has(l.player.team ?? ''))
     .sort((a, b) => b.pts - a.pts)
     .slice(0, 4)
-    .map((t) => who(t.player))
+    .map((l) => who(l.player))
   const teams = bye.length === 1 ? bye[0] : `${bye.slice(0, -1).join(', ')} and ${bye[bye.length - 1]}`
   const biggest = names.length >= 2
     ? `\n\nThe biggest names sitting out: ${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}.`
@@ -192,6 +340,26 @@ export async function buildByes(p: WeekParams): Promise<Built | null> {
   const make = (body: string) => `On bye in Week ${p.week}: ${teams}.${body}\n\nCheck your lineups before tonight's game.`
   // Drop the names before the teams if X runs out of room.
   return textOnly(xLength(make(biggest)) <= X_MAX ? make(biggest) : make(''), make(biggest))
+}
+
+// ── Sunday morning: top projected at each position ───────────────────────
+export async function buildProjections(p: WeekParams): Promise<Built | null> {
+  const [players, proj] = await Promise.all([getPlayersNflDict(), weekProjections(p.season, p.week)])
+  const best: Record<string, { player: Player; pts: number }> = {}
+  for (const [id, pts] of proj) {
+    const player = players[id]
+    const pos = player?.position ?? ''
+    if (!player?.full_name || !FANTASY_POS.has(pos)) continue
+    if (!best[pos] || pts > best[pos].pts) best[pos] = { player, pts }
+  }
+  const order = ['QB', 'RB', 'WR', 'TE']
+  if (order.some((pos) => !best[pos])) return null
+  return listPost(
+    `Sleeper's top projected player at every position for Week ${p.week}, PPR:`,
+    order.map((pos) => `${pos} ${named(best[pos].player)}, ${fmt1(best[pos].pts)}`),
+    '',
+    4,
+  )
 }
 
 // ── Best game ever in this week, at one position ─────────────────────────
@@ -245,87 +413,44 @@ export async function buildSunday(p: WeekParams): Promise<Built | null> {
   return listPost(
     `The top PPR scorers of Week ${p.week} so far:`,
     top.map((t, i) => `${i + 1}. ${who(t.player)}, ${fmt1(t.pts)}`),
-    'Who carried your team today?',
+    'Sunday night still to come.',
   )
-}
-
-// ── Questions ────────────────────────────────────────────────────────────
-// Replies are what both feeds reward, so most days end on one. Written at
-// plan time and rotated by week, so a question comes round again every month
-// or two at most. The league ones lean on what the site is about: a league's
-// history, its records, its arguments.
-export type QuestionContext = 'sunday' | 'mnf' | 'tnf' | 'waivers' | 'league'
-
-const QUESTIONS: Record<QuestionContext, string[]> = {
-  sunday: [
-    'Which start are you least sure about today?',
-    'Who are you starting today against your better judgment?',
-    'Biggest lineup call you made this morning. Let\'s hear it before kickoff.',
-    'Who did you bench today that you\'re scared of?',
-    'Which game today matters most for your matchup?',
-  ],
-  mnf: [
-    'Who needs a big Monday night to save your week?',
-    'Is your matchup already decided, or is it riding on Monday night?',
-    'How many points do you need from Monday night?',
-    'Leading or trailing going into Monday night?',
-  ],
-  tnf: [
-    'Starting anyone in tonight\'s game?',
-    'Who are you counting on in the Thursday game?',
-    'Do you like having a player in the Thursday game, or would you rather wait for Sunday?',
-  ],
-  waivers: [
-    'Who is your top waiver claim this week?',
-    'Who are you dropping this week to make room?',
-    'What\'s the most FAAB you\'ve ever spent on one player, and was it worth it?',
-    'Worst drop you\'ve ever made?',
-    'Do you spend your FAAB early or save it for the playoffs?',
-  ],
-  league: [
-    'Who is the one player on your roster you would never trade?',
-    'What\'s the worst trade anyone in your league has ever made?',
-    'What\'s the highest score you\'ve ever lost with?',
-    'What does last place have to do in your league?',
-    'How many years has your league been running?',
-    'Who in your league has the most titles?',
-    'Best team name in your league right now?',
-    'What\'s the worst draft pick your league has ever seen?',
-    'Has anyone in your league ever won back to back titles?',
-    'One rule you would change in your league?',
-    'Who is the most active trader in your league?',
-    'What\'s the longest losing streak you\'ve ever had in fantasy?',
-    'Who has finished last the most times in your league?',
-    'Biggest blowout your league has ever seen?',
-    'What\'s the closest matchup you\'ve ever lost?',
-    'Who in your league always reaches in the first round?',
-  ],
-}
-
-export function buildQuestion(context: QuestionContext, n: number): Built {
-  const bank = QUESTIONS[context]
-  return textOnly(bank[((n % bank.length) + bank.length) % bank.length])
 }
 
 // ── Send-time builds ─────────────────────────────────────────────────────
 /** Builds a post that could only be written on the day, from its params. */
 export async function buildOnTheDay(kind: string, params: Record<string, unknown>): Promise<{ built: Built } | { skip: string }> {
   const quiet = (built: Built | null, why: string) => (built ? { built } : { skip: why })
+  const wk = params as unknown as WeekParams
   switch (kind) {
     case 'regret':
       return quiet(await buildRegret(params as unknown as RegretParams), 'quiet week: fewer than three dropped players scored 12+')
     case 'trending':
-      return quiet(await buildTrending(params as TrendingParams), 'Sleeper trending list was short')
+      return quiet(await buildTrending(), 'Sleeper trending list was short')
+    case 'drops':
+      return quiet(await buildDrops(), 'Sleeper trending list was short')
     case 'leaders':
-      return quiet(await buildLeaders(params as unknown as WeekParams), 'the week\'s scores are not in yet')
+      return quiet(await buildLeaders(wk), 'the week\'s scores are not in yet')
     case 'beat':
-      return quiet(await buildBeat(params as unknown as WeekParams), 'no big beats against projection, or scores not in')
+      return quiet(await buildBeat(wk), 'no big beats against projection, or scores not in')
     case 'season':
       return quiet(await buildSeason(params as unknown as SeasonParams), 'not enough season stats')
+    case 'targets':
+      return quiet(await buildTargets(wk), 'not enough season stats')
+    case 'pace':
+      return quiet(await buildPace(wk), 'not enough season stats')
+    case 'bargains':
+      return quiet(await buildBargains(wk), 'no late-round picks are starting yet')
+    case 'busts':
+      return quiet(await buildBusts(wk), 'no early-round busts this week')
+    case 'streaks':
+      return quiet(await buildStreaks(wk), 'no clean streak list this week')
     case 'byes':
-      return quiet(await buildByes(params as unknown as WeekParams), 'no byes this week')
+      return quiet(await buildByes(wk), 'no byes this week')
+    case 'projections':
+      return quiet(await buildProjections(wk), 'no projections for this week yet')
     case 'sunday':
-      return quiet(await buildSunday(params as unknown as WeekParams), 'Sunday scores are not in yet')
+      return quiet(await buildSunday(wk), 'Sunday scores are not in yet')
     default:
       return { skip: 'no copy and nothing to build it from' }
   }

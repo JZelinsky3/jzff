@@ -19,16 +19,19 @@
 //
 // Around it, the text-only extras (lib/social/extras.ts), so each day has
 // three or four posts instead of one:
-//   Mon 12 most added      19 question (Monday night)
-//   Tue 12 top scorers     17 beat the projection    20 question (waivers)
-//   Wed 12 most added      17 season leaders RB/WR   20 question (league)
-//   Thu  9 byes            12 history by position    19 question (Thursday night)
-//   Fri 12 most added      18 question (league)
-//   Sat 13 season leaders QB/TE                      18 question (league)
-//   Sun 10 question (lineups)   12 most added        20 Sunday's top scorers
+//   Mon 12 most added      19 most dropped
+//   Tue 12 top scorers     17 beat the projection    20 target leaders
+//   Wed 12 most added      17 season leaders RB/WR   20 best pace vs the record
+//   Thu  9 byes            12 history by position    19 draft bargains
+//   Fri 12 most added      18 every game over N points
+//   Sat 13 season leaders QB/TE                      18 draft busts
+//   Sun 10 top projected   12 most added             20 Sunday's top scorers
+//
+// No questions, no reply bait (Joey): a post asking for answers that gets
+// none looks empty. Every extra stands on its own as a stat.
 //
 // Everything tied to NFL games only runs in the regular season. In the
-// offseason the week is the promo, the feature and the league questions.
+// offseason the week is just the promo and the feature.
 // Slots already in the past when the plan runs are skipped, so planning the
 // current week mid-week only adds what is still ahead.
 
@@ -40,7 +43,7 @@ import {
   buildFeature, buildHistory, buildRecapPromo, buildRoulette, snapshotDrops,
   type Built, type Kind, type RegretParams,
 } from './content'
-import { buildNugget, buildQuestion, type QuestionContext } from './extras'
+import { buildNugget } from './extras'
 
 type Db = ReturnType<typeof createAdminClient>
 
@@ -189,31 +192,23 @@ function extraSlots(monday: string, season: number, rotation: number, weekOf: We
     },
   })
 
-  // League questions run all year; the game-day ones only in the season.
-  // Up to three league questions a week, so `k` keeps them apart.
-  const question = (n: number, hour: number, context: QuestionContext, k = 0): Slot => ({
-    kind: 'question', date: day(n), hour,
-    build: async () => {
-      if (context !== 'league' && !weekOf(day(n), hour)) return { skip: 'not the regular season' }
-      return { built: buildQuestion(context, context === 'league' ? rotation * 3 + k : rotation) }
-    },
-  })
-
-  const trending = (n: number, sunday = false) => onTheDay('trending', n, 12, 'this', () => (sunday ? { sunday } : {}))
+  const trending = (n: number) => onTheDay('trending', n, 12, 'this', () => ({}))
   const week = (wk: number) => ({ season, week: wk })
+  // Season-to-date posts wait for three weeks of games.
+  const sinceWeek3 = (wk: number) => (wk >= 3 ? week(wk) : null)
 
   return [
     // Monday
     trending(0),
-    question(0, 19, 'mnf'),
+    onTheDay('drops', 0, 19, 'this', () => ({})),
     // Tuesday
     onTheDay('leaders', 1, 12, 'last', week),
     onTheDay('beat', 1, 17, 'last', week),
-    question(1, 20, 'waivers'),
+    onTheDay('targets', 1, 20, 'last', sinceWeek3),
     // Wednesday
     trending(2),
     onTheDay('season', 2, 17, 'last', (wk) => (wk >= 3 ? { ...week(wk), pos: ['RB', 'WR'][rotation % 2] } : null)),
-    question(2, 20, 'league', 0),
+    onTheDay('pace', 2, 20, 'last', sinceWeek3),
     // Thursday
     onTheDay('byes', 3, 9, 'this', week),
     {
@@ -224,16 +219,16 @@ function extraSlots(monday: string, season: number, rotation: number, weekOf: We
         return { built: await buildNugget(wk, season - 1, rotation) }
       },
     },
-    question(3, 19, 'tnf'),
+    onTheDay('bargains', 3, 19, 'last', sinceWeek3),
     // Friday
     trending(4),
-    question(4, 18, 'league', 1),
+    onTheDay('streaks', 4, 18, 'last', sinceWeek3),
     // Saturday
     onTheDay('season', 5, 13, 'last', (wk) => (wk >= 3 ? { ...week(wk), pos: ['QB', 'TE'][rotation % 2] } : null)),
-    question(5, 18, 'league', 2),
+    onTheDay('busts', 5, 18, 'last', sinceWeek3),
     // Sunday
-    question(6, 10, 'sunday'),
-    trending(6, true),
+    onTheDay('projections', 6, 10, 'this', week),
+    trending(6),
     onTheDay('sunday', 6, 20, 'this', week),
   ]
 }
