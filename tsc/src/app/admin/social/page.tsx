@@ -167,7 +167,8 @@ function Post({ p, live }: { p: PostRow; live: boolean }) {
             {errors.join(' · ')}{p.attempts ? ` (attempt ${p.attempts})` : ''}
           </div>
         ) : null}
-        <PostControls id={p.id} status={p.status} xText={p.x_text} threadsText={p.threads_text} live={live} />
+        <PostControls id={p.id} status={p.status} xText={p.x_text} threadsText={p.threads_text} live={live}
+          sentX={!!p.x_post_id} sentThreads={!!p.threads_post_id} />
       </div>
     </article>
   )

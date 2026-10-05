@@ -15,13 +15,19 @@ function Err({ msg }: { msg: string | null }) {
   return msg ? <div style={{ color: 'rgba(220,120,80,.9)', fontSize: '.72rem', marginTop: '.4rem' }}>{msg}</div> : null
 }
 
-export function PostControls({ id, status, xText, threadsText, live }: {
+export function PostControls({ id, status, xText, threadsText, live, sentX, sentThreads }: {
   id: string
   status: string
   xText: string | null
   threadsText: string | null
   live: boolean
+  sentX: boolean
+  sentThreads: boolean
 }) {
+  // Sending only ever goes to a platform the post hasn't reached yet (see
+  // sendRow in lib/social/publish), so after a half-sent post the buttons
+  // name the one that's left.
+  const left = sentX ? 'Threads' : sentThreads ? 'X' : null
   const [pending, start] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
@@ -89,11 +95,11 @@ export function PostControls({ id, status, xText, threadsText, live }: {
           armed ? (
             <button type="button" className="dc-btn" style={btn} disabled={pending}
               onClick={() => run(() => sendNow(id), () => setArmed(false))}>
-              {pending ? 'Sending' : 'Post it to both now'}
+              {pending ? 'Sending' : left ? `Post it to ${left} now` : 'Post it to both now'}
             </button>
           ) : (
             <button type="button" className="dc-btn-ghost" style={btn} disabled={pending} onClick={() => setArmed(true)}>
-              Send now
+              {left ? `Retry ${left}` : 'Send now'}
             </button>
           )
         ) : null}
