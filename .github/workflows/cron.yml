@@ -86,6 +86,22 @@ on:
     # routinely starts these runs several hours late, so 8am ET is also the
     # only start that reliably still lands on Tuesday.
     - cron: '0 12 * * 2'
+    # The same Tuesday run then sends the weekly recaps, straight after the
+    # refresh (see the case arm below), because a recap needs Monday night's
+    # final scores in the database first. This Wednesday pass is the retry:
+    # a league whose platform hadn't finalised on Tuesday is stored as 'held'
+    # and goes out here instead. Already-sent recaps are skipped, so a run
+    # that has nothing left to do sends nothing.
+    - cron: '0 15 * * 3'
+    # Social, Saturday 13:00 UTC (~9am ET): plan next week's X and Threads
+    # posts and email the list for vetoes. Must stay on a Friday or Saturday:
+    # the Drop Regret post captures that week's drops when it is planned.
+    - cron: '0 13 * * 6'
+    # Social, hourly 12:20-23:20 UTC: send whatever is due. Posts are slotted
+    # at 8:00 ET weekdays (12:00 UTC in summer time, 13:00 in winter), so the
+    # 12:20 run lands them at about 8:20 and later runs catch up if GitHub
+    # starts late. Sends nothing until SOCIAL_LIVE=1 in Vercel.
+    - cron: '20 12-23 * * *'
   # Lets you run any single job by hand from the Actions tab, which is also
   # how you smoke-test that CRON_SECRET is correct without waiting a day.
   workflow_dispatch:
@@ -104,6 +120,9 @@ on:
           - refresh-draft-ranks
           - sync-trades
           - grade-trades
+          - recaps
+          - social-plan
+          - social-publish
 
 jobs:
   run:
@@ -123,7 +142,10 @@ jobs:
           case "$SCHEDULE" in
             '0 9 * * *')   paths="$daily_chain" ;;
             '0 23 * * *')  paths="$trade_sweep" ;;
-            '0 12 * * 2')  paths='refresh' ;;
+            '0 12 * * 2')  paths='refresh recaps' ;;
+            '0 15 * * 3')  paths='recaps' ;;
+            '0 13 * * 6')  paths='social-plan' ;;
+            '20 12-23 * * *') paths='social-publish' ;;
             *)
               # Manual dispatch.
               case "$MANUAL" in
