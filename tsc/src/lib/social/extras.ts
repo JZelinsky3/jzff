@@ -30,7 +30,7 @@ type Player = Awaited<ReturnType<typeof getPlayersNflDict>>[string]
 // Sunday night scoreboard posted the next morning is worse than nothing.
 export const TIMELY_KINDS = new Set([
   'trending', 'drops', 'leaders', 'beat', 'season', 'targets', 'pace', 'bargains',
-  'streaks', 'busts', 'byes', 'projections', 'sunday', 'question', 'sidebyside', 'highs', 'redzone',
+  'streaks', 'busts', 'byes', 'projections', 'sunday', 'question', 'sidebyside', 'highs', 'redzone', 'mnf',
 ])
 
 function textOnly(x: string, threads: string = x): Built {
@@ -490,6 +490,51 @@ export async function buildNameGame(lastSeason: number, rotation: number, k: num
   throw new Error('no archive game big enough')
 }
 
+// ── Monday night ─────────────────────────────────────────────────────────
+// The two best fantasy players in each Monday night game, side by side:
+// points per game so far, position rank, and Sleeper's projection for the
+// night. A comparison people take in before kickoff; nothing to answer.
+export async function buildMondayNight(p: WeekParams & { date: string }): Promise<Built | null> {
+  if (p.week < 2) return null
+  const res = await fetch(`https://api.sleeper.com/schedule/nfl/regular/${p.season}`, { cache: 'no-store' })
+  if (!res.ok) throw new Error(`Sleeper schedule ${p.season}: ${res.status}`)
+  const games = ((await res.json()) as { week: number; date: string; home: string; away: string; status?: string }[])
+    .filter((g) => g.week === p.week && g.date === p.date && g.status !== 'canceled')
+    .slice(0, 2)
+  if (!games.length) return null
+
+  const [lines, proj] = await Promise.all([seasonLines(p.season, p.week - 1), weekProjections(p.season, p.week)])
+  const rank = positionRanks(lines)
+  const minGames = Math.max(1, p.week - 2)
+  const blocks: { head: string; rows: string[] }[] = []
+  for (const g of games) {
+    const best = lines
+      // Projected for tonight, so nobody ruled out makes the list.
+      .filter((l) => (l.player.team === g.home || l.player.team === g.away) && l.games >= minGames && (proj.get(l.id) ?? 0) > 0)
+      .sort((a, b) => b.pts / b.games - a.pts / a.games)
+      .slice(0, 2)
+    if (best.length < 2) continue
+    blocks.push({
+      head: `${g.away} at ${g.home}`,
+      rows: best.map((l) => `${who(l.player)}: ${fmt1(l.pts / l.games)} a game, ${l.player.position}${rank.get(l)}, projected ${fmt1(proj.get(l.id)!)}`),
+    })
+  }
+  if (!blocks.length) return null
+  const compose = (bs: typeof blocks, note: boolean) => {
+    const title = bs.length === 1
+      ? `Monday night, ${bs[0].head}. The two best fantasy players in the game, PPR:`
+      : 'Monday night. The two best fantasy players in each game, PPR:'
+    const body = bs.length === 1 ? bs[0].rows.join('\n') : bs.map((b) => `${b.head}\n${b.rows.join('\n')}`).join('\n\n')
+    return `${title}\n\n${body}${note ? `\n\nSeason averages through Week ${p.week - 1}, projections from Sleeper.` : ''}`
+  }
+  // Longest version that fits each platform: with the footnote, without it,
+  // then (on a doubleheader) the first game alone.
+  const options = [compose(blocks, true), compose(blocks, false), compose(blocks.slice(0, 1), true), compose(blocks.slice(0, 1), false)]
+  const x = options.find((t) => xLength(t) <= X_MAX)
+  const threads = options.find((t) => t.length <= THREADS_MAX)
+  return x && threads ? textOnly(x, threads) : null
+}
+
 // ── Send-time builds ─────────────────────────────────────────────────────
 /** Builds a post that could only be written on the day, from its params. */
 export async function buildOnTheDay(kind: string, params: Record<string, unknown>): Promise<{ built: Built } | { skip: string }> {
@@ -526,6 +571,8 @@ export async function buildOnTheDay(kind: string, params: Record<string, unknown
       return quiet(await buildHighs(wk), 'not enough season stats')
     case 'redzone':
       return quiet(await buildRedZone(wk), 'not enough season stats')
+    case 'mnf':
+      return quiet(await buildMondayNight(params as unknown as WeekParams & { date: string }), 'no Monday game, or not enough stats yet')
     case 'projections':
       return quiet(await buildProjections(wk), 'no projections for this week yet')
     case 'sunday':

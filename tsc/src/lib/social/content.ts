@@ -18,7 +18,7 @@ export type Kind =
   | 'regret' | 'history' | 'roulette' | 'recap' | 'feature'
   | 'trending' | 'drops' | 'leaders' | 'beat' | 'season' | 'targets' | 'pace' | 'bargains'
   | 'streaks' | 'busts' | 'byes' | 'nugget' | 'projections' | 'sunday'
-  | 'sidebyside' | 'highs' | 'redzone' | 'namegame'
+  | 'sidebyside' | 'highs' | 'redzone' | 'namegame' | 'mnf'
   // Retired 2026-10-05 (reply bait); kept so old rows still have a label.
   | 'question'
 
@@ -43,6 +43,7 @@ export const KIND_LABELS: Record<Kind, string> = {
   highs: 'Best single games (text)',
   redzone: 'Red zone chances (text)',
   namegame: 'Name the player (text)',
+  mnf: 'Monday night matchup (text)',
   byes: 'Byes this week (text)',
   nugget: 'History by position (text)',
   sunday: 'Sunday’s top scorers (text)',

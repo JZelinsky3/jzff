@@ -19,7 +19,7 @@
 //
 // Around it, the text-only extras (lib/social/extras.ts), so each day has
 // three or four posts instead of one:
-//   Mon 12 most added      15 drafted side by side   19 most dropped
+//   Mon 12 most added      15 drafted side by side   17 most dropped   19 Monday night matchup
 //   Tue 12 top scorers     17 beat the projection    20 target leaders
 //   Wed 12 most added      17 season leaders RB/WR   20 best pace vs the record
 //   Thu  9 byes            12 history by position    16 name the player   19 draft bargains
@@ -210,7 +210,9 @@ function extraSlots(monday: string, season: number, rotation: number, weekOf: We
     // Monday
     trending(0),
     onTheDay('sidebyside', 0, 15, 'last', sinceWeek3),
-    onTheDay('drops', 0, 19, 'this', () => ({})),
+    onTheDay('drops', 0, 17, 'this', () => ({})),
+    // Close to kickoff (8:15), with the night's projections.
+    onTheDay('mnf', 0, 19, 'this', (wk) => (wk >= 2 ? { ...week(wk), date: day(0) } : null)),
     // Tuesday
     onTheDay('leaders', 1, 12, 'last', week),
     onTheDay('beat', 1, 17, 'last', week),
