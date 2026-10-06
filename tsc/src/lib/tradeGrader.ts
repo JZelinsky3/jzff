@@ -2298,6 +2298,16 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '',
       'NAME A RANK ONCE. The two asset lists are two halves of ONE exchange: a player arriving on one side is a player the other side gave up, and the reader can see that from the lists. So cite a position rank at most ONCE per player, on the side that RECEIVED him. When the same player comes up again from the other side\'s point of view, use words instead of the number: "the top-end receiver they gave up", "their RB1", "the back end of their backfield". Never print the same rank label twice in one write-up, and never spend a sentence telling the reader that the side who gave a player up no longer has him.',
       '',
+      // Joey, 2026-10-06: "if I trade a WR8 for a WR6 and you say that, you
+      // don't need to mention who I traded with giving up a WR6 for a WR8."
+      // The rank rule above stops the label repeating; this stops the same
+      // swap being told twice in words ("Woodpooper receives lower-ranked
+      // receivers and takes a downgrade at both WR and RB" straight after
+      // the sentence that said what IsAAcShake gave and got).
+      'TELL THE SWAP ONCE, THEN BUILD ON IT. Once a sentence has said what one side gave and got, the other side\'s half of that exchange is already told. Do not follow it with a sentence describing the same players from the other manager\'s side: no "Woodpooper receives lower-ranked receivers", no "the other side takes a downgrade at WR and RB", no "Charlie gives up the WR6 to get the WR8", no "loses a premier receiver". Every sentence must add something the one before it did not: why the deal makes sense for that roster, what it costs, the risk taken on, what to watch. Read each sentence against the previous one; if it restates it from the other side, replace it with the next thought.',
+      'BAD: "IsAAcShake gave up a solid RB10 and a WR20 to acquire the WR6 and the RB9. Woodpooper receives lower-ranked receivers and takes a downgrade at both WR and RB."',
+      'GOOD: "IsAAcShake gave up a solid RB10 and a WR20 to acquire the WR6 and the RB9, an upgrade at both spots that only pays off once Jefferson\'s ankle heals. Until then Woodpooper has the healthier lineup, which is the case for the deal from that side."',
+      '',
       // "loses the only TE2 on his roster" was written about a player nobody
       // else could have had: ranks are identities, and there is exactly one
       // holder of each. The sentence sounds like scarcity and contains none.
@@ -2521,6 +2531,8 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
       'A HURT PLAYER FILLS NOTHING TODAY. Never write that an injured player instantly, immediately or right away fills or upgrades a slot. Four weeks on you can say what actually happened: whether he played, how much he missed, whether the wait was worth it.',
       '',
       'NAME A RANK ONCE, AND ONLY WHERE IT MEANS SOMETHING. A player arriving on one side is a player the other side gave up; the reader can see that, so cite his rank once, on the side that received him, and refer to him in words from the other side ("the receiver they gave up"). Name an exact rank only for a player who actually starts: past roughly the top 24 at a position the number is noise, and "a bench receiver who will not crack the lineup" beats "the WR57".',
+      '',
+      'TELL THE SWAP ONCE, THEN BUILD ON IT. Once a sentence has said what one side gave and got, the other side\'s half of that exchange is already told. Never follow it with the same players described from the other manager\'s side ("the other side now has the lesser receiver", "takes a downgrade at WR"). Each sentence must add something the previous one did not: how a player has actually played since, what changed, whether the bet is paying off.',
       '',
       'NEVER WRITE THE NEGATIVE SPACE, AND NEVER EXPLAIN THE LEAGUE TO THE LEAGUE. These instructions name factors that do not apply here; that is guidance for you, not material for the write-up. Leave an inapplicable factor out silently. Never write that something is irrelevant, does not matter, is a non-factor or is moot, and never write "in a redraft league", "in this format", or any line explaining the league\'s own rules back to a manager who plays in it.',
       '',

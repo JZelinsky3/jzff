@@ -645,7 +645,7 @@ export default async function RecapPage({
                 </article>
               ))}
               {facts.verdicts?.map((v, i) => (
-                <article key={`v${i}`} className={styles.trade}>
+                <article key={`v${i}`} className={`${styles.trade} ${styles.verdict}`}>
                   <div className={styles.tradeWho}>Four weeks later: {v.headline}</div>
                   <p className={styles.tradeNote}>{v.summary}</p>
                 </article>

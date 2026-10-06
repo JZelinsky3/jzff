@@ -1220,6 +1220,21 @@
   line-height: 1.55;
   color: var(--ink-2);
 }
+/* A four-week verdict prints in reverse, ink card and kraft type, so a trade
+   made this week and one being checked on read as two different things at a
+   glance. */
+.verdict {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.verdict > .tradeWho {
+  color: var(--paper-2);
+}
+.verdict .tradeNote {
+  padding-top: 0.45rem;
+  border-top: 0;
+  color: var(--card);
+}
 
 /* ── Coming up ───────────────────────────────────────────────────────── */
 

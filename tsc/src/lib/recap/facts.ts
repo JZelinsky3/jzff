@@ -206,6 +206,47 @@ export type RecapStart = {
   lastChamp: { name: string; year: number } | null
   from: number
   to: number
+  // How those teams finished, so a week doesn't have to lead on the title
+  // count again ("none of the 3-0 teams won it" already says no 4-0 team
+  // did). `known` is how many have a stored finish; the rest are averaged
+  // over it. Older stored facts don't carry these.
+  known?: number
+  avgFinish?: number | null
+  bestFinish?: { name: string; year: number; rank: number } | null
+  worstFinish?: { name: string; year: number; rank: number } | null
+  // How many of `known` made the playoffs (regular-season seed inside that
+  // season's playoff field). Null when the field size isn't on record.
+  playoffs?: number | null
+  // Their points through the same number of weeks.
+  avgPts?: number | null
+  maxPts?: { name: string; year: number; value: number } | null
+  minPts?: { name: string; year: number; value: number } | null
+}
+
+// Who a team has played and who comes next, by the opponents' records. Faced
+// counts each opponent's games against everyone else, so a 4-0 team's wins
+// don't make its own opponents look bad.
+export type RecapSchedule = {
+  faced: { w: number; l: number; t: number }
+  ahead: { weeks: number; names: string[]; w: number; l: number; t: number } | null
+}
+
+// What last week's paper said, so this week's doesn't say it the same way.
+// Built from last week's stored facts (./story.ts editionSig).
+export type RecapEditionSig = {
+  week: number
+  // The angle kind that made the headline, and every kind in the lead.
+  head: string
+  leads: string[]
+  layout: number
+  // Template ids used anywhere (headline phrasing, start frames, game
+  // shapes), so the same sentence shape doesn't run two weeks in a row.
+  used: string[]
+  // Start frames by group, and whether the title frame said "none".
+  up: { record: string; frames: string[]; noneWon: boolean } | null
+  down: { record: string; frames: string[]; noneWon: boolean } | null
+  // Leaders the year-ago paragraph named, [] when it didn't run.
+  yearAgo: string[]
 }
 
 export type RecapTeamCard = {
@@ -238,6 +279,8 @@ export type RecapTeamCard = {
   power?: { rank: number; delta: number } | null
   odds?: { now: number; change: number | null } | null
   runs?: RecapRunMark[]
+  // Regular season only.
+  sched?: RecapSchedule | null
 }
 
 export type RecapStanding = {
@@ -364,6 +407,9 @@ export type RecapFacts = {
   // intro to lead with. "Joey snaps Mason's 5-game run", "Charlie's best
   // score since 2023". Tier-safe: built only from facts this tier carries.
   hooks: string[]
+  // Last week's paper, in outline. Null in week 1 or when last week has no
+  // stored recap.
+  prior?: RecapEditionSig | null
 
   // Rookie and up.
   book?: RecapBookRow[]
@@ -907,6 +953,43 @@ export async function buildRecapFacts(args: {
     nextByManager.set(m.manager_b_id, m.manager_a_id)
   }
 
+  // ── Schedule: who each team has beaten (or lost to), and who is next ──
+  // The opponents' records leave out their games against this team, or a
+  // 4-0 team would make everyone it played look worse than they are.
+  const opponentOf = (m: MatchupRow, id: string) => (m.manager_a_id === id ? m.manager_b_id : m.manager_b_id === id ? m.manager_a_id : null)
+  const schedOf = (id: string): RecapSchedule | null => {
+    if (playoffWeek) return null
+    const faced = { w: 0, l: 0, t: 0 }
+    for (const m of settled) {
+      const opp = m.week <= week ? opponentOf(m, id) : null
+      if (!opp) continue
+      for (const o of settled) {
+        if (o.week > regularThrough || opponentOf(o, id) != null) continue
+        const theirs = o.manager_a_id === opp ? [o.score_a!, o.score_b!] : o.manager_b_id === opp ? [o.score_b!, o.score_a!] : null
+        if (!theirs) continue
+        if (theirs[0] > theirs[1]) faced.w++
+        else if (theirs[0] < theirs[1]) faced.l++
+        else faced.t++
+      }
+    }
+    const coming = all
+      .filter((m) => m.week > week && m.week <= week + 3 && isRegular(m.week) && opponentOf(m, id))
+      .sort((x, y) => x.week - y.week)
+      .map((m) => opponentOf(m, id)!)
+    let ahead: RecapSchedule['ahead'] = null
+    if (coming.length >= 2) {
+      ahead = { weeks: coming.length, names: coming.map(nameOf), w: 0, l: 0, t: 0 }
+      for (const opp of coming) {
+        const r = recordsNow.get(opp)
+        if (!r) continue
+        ahead.w += r.w
+        ahead.l += r.l
+        ahead.t += r.t
+      }
+    }
+    return { faced, ahead }
+  }
+
   // ── Every team ──
   const noteFor = (id: string, name: string, score: number) => {
     const n = careerNote(id, name, score, history, personOf, year, week)
@@ -955,6 +1038,7 @@ export async function buildRecapFacts(args: {
         next: nextId
           ? { opponent: nameOf(nextId), series: nextSeries?.s ?? null, favored: null, spread: null }
           : null,
+        sched: schedOf(me.managerId),
       })
     }
   }
@@ -1038,6 +1122,8 @@ export async function buildRecapFacts(args: {
       .slice(0, 4)
   }
 
+  facts.prior = await priorEdition(db, leagueId, year, week)
+
   const sections = recapSections(tier)
   if (!sections.paid) {
     finishHooks()
@@ -1071,7 +1157,19 @@ export async function buildRecapFacts(args: {
     const runs = buildRunMarks(history, year, week)
     for (const card of facts.teams) card.runs = runs.get(personOf(card.managerId)) ?? []
   }
-  facts.starts = standings ? buildStartHistory({ standings, week, year, seasons, history, nameOf: nameOfPerson }) : []
+  if (standings) {
+    const pastIds = seasons.filter((s) => s.year < year).map((s) => s.id)
+    const { data: finishRows } = pastIds.length
+      ? await db.from('manager_seasons').select('season_id, manager_id, final_rank, regular_rank').in('season_id', pastIds)
+      : { data: [] }
+    const finishes = new Map(
+      (finishRows ?? []).map((r) => [
+        `${r.season_id}:${r.manager_id}`,
+        { final: (r.final_rank as number | null) ?? null, regular: (r.regular_rank as number | null) ?? null },
+      ]),
+    )
+    facts.starts = buildStartHistory({ standings, week, year, seasons, history, nameOf: nameOfPerson, finishes })
+  } else facts.starts = []
   facts.weekRecord = playoffWeek ? null : buildWeekRecord(history, year, week, top, nameOfPerson, hookPool)
   facts.yearAgo = playoffWeek ? null : await buildYearAgo(db, seasons, history, year, week, nameOfPerson, personOf)
 
@@ -1748,8 +1846,10 @@ function buildStartHistory(args: {
   seasons: SeasonRow[]
   history: HistGame[]
   nameOf: (person: string) => string
+  // `${season_id}:${manager_id}` → final and regular-season rank.
+  finishes: Map<string, { final: number | null; regular: number | null }>
 }): RecapStart[] {
-  const { standings, week, year, seasons, history, nameOf } = args
+  const { standings, week, year, seasons, history, nameOf, finishes } = args
   if (week < 2 || !standings.length) return []
   const past = seasons.filter((s) => s.year < year && s.champion_manager_id).sort((a, b) => a.year - b.year)
   if (past.length < 3) return []
@@ -1771,32 +1871,48 @@ function buildStartHistory(args: {
     let teams = 0
     let champs = 0
     let lastChamp: RecapStart['lastChamp'] = null
+    const finished: { name: string; year: number; rank: number }[] = []
+    let playoffs = 0
+    let seeded = 0
+    const scored: { name: string; year: number; value: number }[] = []
     for (const s of past) {
-      const counts = new Map<string, { w: number; l: number; t: number }>()
+      const counts = new Map<string, { w: number; l: number; t: number; pf: number }>()
       for (const g of history) {
         if (g.year !== s.year || g.week > week || g.kind !== 'regular') continue
         for (const [id, mine, theirs] of [
           [g.aId, g.sa, g.sb],
           [g.bId, g.sb, g.sa],
         ] as const) {
-          const r = counts.get(id) ?? { w: 0, l: 0, t: 0 }
+          const r = counts.get(id) ?? { w: 0, l: 0, t: 0, pf: 0 }
+          r.pf += mine
           if (mine > theirs) r.w++
           else if (mine < theirs) r.l++
           else r.t++
           counts.set(id, r)
         }
       }
+      const field = Number(s.settings?.playoff_team_count)
       for (const [id, r] of counts) {
         if (r.w + r.l + r.t !== week || r.t) continue
         if (r.w !== wins) continue
         teams++
+        const name = nameOf(personOfId.get(id) ?? id)
+        scored.push({ name, year: s.year, value: round2(r.pf) })
         if (id === s.champion_manager_id) {
           champs++
-          lastChamp = { name: nameOf(personOfId.get(id) ?? id), year: s.year }
+          lastChamp = { name, year: s.year }
+        }
+        const fin = finishes.get(`${s.id}:${id}`)
+        if (fin?.final) finished.push({ name, year: s.year, rank: fin.final })
+        if (fin?.regular && Number.isFinite(field) && field > 0) {
+          seeded++
+          if (fin.regular <= field) playoffs++
         }
       }
     }
     if (teams < 3) continue
+    const byRank = [...finished].sort((a, b) => a.rank - b.rank || b.year - a.year)
+    const byPts = [...scored].sort((a, b) => b.value - a.value)
     out.push({
       record: recordStr(wins, week - wins),
       who: group.map((s) => s.name),
@@ -1805,6 +1921,16 @@ function buildStartHistory(args: {
       lastChamp,
       from: past[0].year,
       to: past[past.length - 1].year,
+      // Only when nearly all of them have a finish on record; an average of
+      // half the teams is a different number.
+      known: finished.length,
+      avgFinish: finished.length >= Math.max(3, teams - 1) ? round1(finished.reduce((n, f) => n + f.rank, 0) / finished.length) : null,
+      bestFinish: finished.length >= Math.max(3, teams - 1) ? byRank[0] : null,
+      worstFinish: finished.length >= Math.max(3, teams - 1) ? byRank[byRank.length - 1] : null,
+      playoffs: seeded === teams ? playoffs : null,
+      avgPts: round2(scored.reduce((n, x) => n + x.value, 0) / scored.length),
+      maxPts: byPts[0] ?? null,
+      minPts: byPts[byPts.length - 1] ?? null,
     })
   }
   return out
@@ -1832,6 +1958,76 @@ function buildWeekRecord(
     return { who: top.name, value: top.score, year, isNew: true }
   }
   return { who: nameOf(best.person), value: round2(best.value), year: best.year, isNew: false }
+}
+
+// Last week's paper in outline, from its stored facts. The writer is
+// deterministic, so running it on those facts reproduces what was printed.
+//
+// Facts stored before the writer kept this outline (no `prior` key) were
+// written by the old fixed-order writer, so the outline is reconstructed the
+// way that writer worked: the headline from the stored subject, the title
+// count as the only start frame, the year-ago paragraph whenever there was
+// one. Running today's writer on them would describe a paper nobody got.
+const LEGACY_HEADS: [RegExp, string][] = [
+  [/ wins the \d{4} title/, 'title'],
+  [/scoring record|-best score in league history/, 'top'],
+  [/low-score record/, 'low'],
+  [/ snaps \w+-game skid against /, 'snap'],
+  [/ makes it \w+ straight over /, 'extend'],
+  [/ sets a career high/, 'career-high'],
+  [/ hits a career low/, 'career-low'],
+  [/ best week since /, 'best-since'],
+  [/ and loses$/, 'heartbreak'],
+  [/ their first loss/, 'first-loss'],
+  [/ upsets /, 'upset'],
+  [/ sets the week \d+ record/, 'week-record'],
+  [/ for the first time$/, 'start'],
+  [/ leads week \d+ with /, 'top-score'],
+  [/ beats .+ by [\d.]+$/, 'margin'],
+]
+
+async function priorEdition(
+  db: ReturnType<typeof createAdminClient>,
+  leagueId: string,
+  year: number,
+  week: number,
+): Promise<RecapEditionSig | null> {
+  if (week < 2) return null
+  const { data } = await db
+    .from('weekly_recaps')
+    .select('facts, subject')
+    .eq('league_id', leagueId)
+    .eq('season_year', year)
+    .eq('week', week - 1)
+    .in('status', ['ready', 'sent'])
+    .maybeSingle()
+  const prev = data?.facts as RecapFacts | null | undefined
+  if (!prev?.games) return null
+  try {
+    // Imported here, not at the top: story.ts imports this module's helpers.
+    const { editionSig } = await import('./story')
+    const sig = editionSig(prev)
+    if ('prior' in prev) return sig
+    const headline = String(data?.subject ?? '').replace(/^.*?:\s/, '')
+    const head = LEGACY_HEADS.find(([re]) => re.test(headline))?.[1] ?? sig.head
+    const startOf = (rec: string | undefined) => (rec ? prev.starts?.find((s) => s.record === rec) : undefined)
+    const unbeaten = prev.standings?.find((s) => s.losses === 0 && s.ties === 0 && s.wins === prev.week)
+    const winless = prev.standings?.find((s) => s.wins === 0 && s.ties === 0 && s.losses === prev.week)
+    const up = startOf(unbeaten ? recordStr(prev.week, 0) : undefined)
+    const down = startOf(winless ? recordStr(0, prev.week) : undefined)
+    return {
+      ...sig,
+      head,
+      leads: [...new Set([head, ...sig.leads])],
+      layout: 0,
+      used: [],
+      up: up ? { record: up.record, frames: ['title'], noneWon: up.champs === 0 } : null,
+      down: down ? { record: down.record, frames: ['title'], noneWon: down.champs === 0 } : null,
+      yearAgo: prev.yearAgo?.leaders.map((l) => l.name) ?? [],
+    }
+  } catch {
+    return null
+  }
 }
 
 // Who led the league after this many weeks last season, and how their
