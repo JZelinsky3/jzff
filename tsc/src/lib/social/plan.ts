@@ -8,7 +8,7 @@
 //   Mon  8:00  Feature of the week    a /see/ landing page on the demo league,
 //                                     the one X post with a link
 //   Tue  8:00  Drop Regret Index      filled Tuesday from Sunday's scores
-//   Wed  8:00  Fantasy History        best Week N games since 2009
+//   Wed  8:00  Fantasy History        top six Week N games since 2009
 //   Fri  8:00  Roster Roulette deal   one seeded wheel for everyone
 //   Sat 10:00  Weekly Recap promo     product card, no link on X
 //
@@ -22,7 +22,7 @@
 //   Mon 12 most added      15 drafted side by side   17 most dropped   19 Monday night matchup
 //   Tue 12 top scorers     17 beat the projection    20 target leaders
 //   Wed 12 most added      17 season leaders RB/WR   20 best pace vs the record
-//   Thu  9 byes            12 history by position    16 name the player   19 draft bargains
+//   Thu  9 byes            12 this year vs last      16 name the player   19 draft bargains
 //   Fri 12 most added      15 best single games      18 every game over N points
 //   Sat 13 season leaders QB/TE   15 red zone chances   18 draft busts
 //   Sun 10 top projected   12 most added   15 name the player   20 Sunday's top scorers
@@ -43,7 +43,7 @@ import {
   buildFeature, buildHistory, buildRecapPromo, buildRoulette, snapshotDrops,
   type Built, type Kind, type RegretParams,
 } from './content'
-import { buildNameGame, buildNugget } from './extras'
+import { buildNameGame } from './extras'
 
 type Db = ReturnType<typeof createAdminClient>
 
@@ -223,14 +223,8 @@ function extraSlots(monday: string, season: number, rotation: number, weekOf: We
     onTheDay('pace', 2, 20, 'last', sinceWeek3),
     // Thursday
     onTheDay('byes', 3, 9, 'this', week),
-    {
-      kind: 'nugget', date: day(3), hour: 12,
-      build: async () => {
-        const wk = weekOf(day(3), 12)
-        if (!wk) return { skip: 'not the regular season' }
-        return { built: await buildNugget(wk, season - 1, rotation) }
-      },
-    },
+    // The RB/WR position Wednesday's season leaders didn't take.
+    onTheDay('yearago', 3, 12, 'last', (wk) => (wk >= 3 ? { ...week(wk), pos: ['WR', 'RB'][rotation % 2] } : null)),
     nameGame(3, 16, 0),
     onTheDay('bargains', 3, 19, 'last', sinceWeek3),
     // Friday

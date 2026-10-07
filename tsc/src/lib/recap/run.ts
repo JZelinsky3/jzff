@@ -396,19 +396,20 @@ async function sendRecapEmail(args: {
   if (!token) return { ok: false, error: 'no RECAP_SIGNING_SECRET or CRON_SECRET to sign the unsubscribe link' }
 
   const { facts } = args
+  const who = args.audience === 'owner' ? 'owner' : 'list'
   const { html, text } = renderRecapEmail(
     facts,
     args.intro,
     args.subject,
     {
-      page: recapPageUrl(facts.league.slug, facts.year, facts.week, 'email'),
+      page: recapPageUrl(facts.league.slug, facts.year, facts.week, 'email', who),
       share: recapPageUrl(facts.league.slug, facts.year, facts.week, 'share'),
       unsubscribe: unsubscribePageUrl(token),
       account: `${SITE_URL}/account/`,
       pricing: `${SITE_URL}/pricing/?utm_source=recap&utm_medium=email`,
       newLeague: `${SITE_URL}/dashboard/new/?utm_source=recap&utm_medium=email&utm_campaign=new-league`,
       league: `${SITE_URL}/leagues/${facts.league.slug}/?utm_source=recap&utm_medium=email`,
-      join: `${recapPageUrl(facts.league.slug, facts.year, facts.week, 'email')}#join`,
+      join: `${recapPageUrl(facts.league.slug, facts.year, facts.week, 'email', who)}#join`,
     },
     args.audience,
   )

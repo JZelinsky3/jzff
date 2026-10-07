@@ -99,10 +99,13 @@ function Body({ card }: { card: Card | null }) {
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <Flag label="This week in fantasy history" right={`Week ${card.week}`} />
         <DoubleRule />
-        <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 76, lineHeight: 1.02, color: INK, marginTop: 40 }}>
-          The best Week {card.week} anybody ever had.
+        <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 92, lineHeight: 1.02, color: INK, marginTop: 40 }}>
+          Top Week {card.week} Games Ever
         </div>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 40 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', fontFamily: 'JetBrains', fontWeight: 700, fontSize: 22, letterSpacing: 4, color: MUTE, marginTop: 28 }}>
+          PPR
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 8 }}>
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, paddingRight: 24 }}>
             <div style={{ display: 'flex', fontFamily: 'JetBrains', fontWeight: 700, fontSize: 24, letterSpacing: 3, color: RED }}>{card.hero.meta.toUpperCase()}</div>
             <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 72, lineHeight: 1, color: INK, marginTop: 10 }}>{card.hero.name}</div>
@@ -110,13 +113,11 @@ function Body({ card }: { card: Card | null }) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
             <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 170, lineHeight: 0.9, color: RED }}>{card.hero.value}</div>
-            <div style={{ display: 'flex', fontFamily: 'JetBrains', fontWeight: 700, fontSize: 22, letterSpacing: 4, color: INK, marginTop: 8 }}>PPR POINTS</div>
           </div>
         </div>
-        <div style={{ display: 'flex', fontFamily: 'JetBrains', fontWeight: 700, fontSize: 22, letterSpacing: 4, color: INK, marginTop: 44, marginBottom: 6 }}>
-          THE REST OF THE LIST · BEST GAME OF EACH SEASON
+        <div style={{ display: 'flex', flexDirection: 'column', marginTop: 40 }}>
+          {card.rows.map((r, i) => <Line key={i} n={i + 2} row={r} />)}
         </div>
-        {card.rows.map((r, i) => <Line key={i} n={i + 2} row={r} />)}
       </div>
     )
   }

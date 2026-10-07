@@ -18,7 +18,7 @@ export type Kind =
   | 'regret' | 'history' | 'roulette' | 'recap' | 'feature'
   | 'trending' | 'drops' | 'leaders' | 'beat' | 'season' | 'targets' | 'pace' | 'bargains'
   | 'streaks' | 'busts' | 'byes' | 'nugget' | 'projections' | 'sunday'
-  | 'sidebyside' | 'highs' | 'redzone' | 'namegame' | 'mnf'
+  | 'sidebyside' | 'highs' | 'redzone' | 'namegame' | 'mnf' | 'yearago'
   // Retired 2026-10-05 (reply bait); kept so old rows still have a label.
   | 'question'
 
@@ -45,7 +45,8 @@ export const KIND_LABELS: Record<Kind, string> = {
   namegame: 'Name the player (text)',
   mnf: 'Monday night matchup (text)',
   byes: 'Byes this week (text)',
-  nugget: 'History by position (text)',
+  nugget: 'History by position (retired)',
+  yearago: 'This year vs last (text)',
   sunday: 'Sunday’s top scorers (text)',
   question: 'Question (retired)',
 }
@@ -122,27 +123,31 @@ export function statLine(pos: string | undefined, s: Stats): string {
 
 export const FANTASY_POS = new Set(['QB', 'RB', 'WR', 'TE'])
 
-// ── This Week in Fantasy History ─────────────────────────────────────────
-// The best PPR games ever played in this week of the season, one per year at
-// most so a single season can't take the whole list.
-export async function buildHistory(week: number, lastSeason: number): Promise<Built> {
+export type WeekGame = { id: string; year: number; pts: number; s: Stats }
+
+/** Every QB/RB/WR/TE game in week `week` since 2009, best first, top 20. */
+export async function weekBestEver(week: number, lastSeason: number): Promise<WeekGame[]> {
   const players = await getPlayersNflDict()
   const years = Array.from({ length: lastSeason - 2009 + 1 }, (_, i) => 2009 + i)
-  const perYear = await Promise.all(years.map(async (year) => {
-    const stats = await fetchWeekStats(year, week).catch(() => ({}))
-    let best: { id: string; pts: number; s: Stats } | null = null
-    for (const [id, s] of Object.entries(stats as Record<string, Stats>)) {
-      const pts = s.pts_ppr ?? 0
-      if (!FANTASY_POS.has(players[id]?.position ?? '')) continue
-      if (!best || pts > best.pts) best = { id, pts, s }
-    }
-    return best ? { year, ...best } : null
-  }))
-  const ranked = perYear.filter((r): r is NonNullable<typeof r> => !!r && !!players[r.id]?.full_name)
-    .sort((a, b) => b.pts - a.pts)
-  if (ranked.length < 5) throw new Error(`only ${ranked.length} seasons of week ${week} stats`)
+  const games = (await Promise.all(years.map(async (year) => {
+    const stats = (await fetchWeekStats(year, week).catch(() => ({}))) as Record<string, Stats>
+    return Object.entries(stats)
+      .filter(([id]) => FANTASY_POS.has(players[id]?.position ?? '') && !!players[id]?.full_name)
+      .map(([id, s]) => ({ id, year, pts: s.pts_ppr ?? 0, s }))
+  }))).flat()
+  return games.sort((a, b) => b.pts - a.pts).slice(0, 20)
+}
 
-  const toRow = (r: (typeof ranked)[number]) => ({
+// ── This Week in Fantasy History ─────────────────────────────────────────
+// The six best PPR games ever played in this week of the season, all time.
+// A true top six: two from one season both make it (a "best of each season"
+// list left Aaron Jones' 49.2 off because Will Fuller had 2019, Joey caught it).
+export async function buildHistory(week: number, lastSeason: number): Promise<Built> {
+  const ranked = await weekBestEver(week, lastSeason)
+  if (ranked.length < 6) throw new Error(`only ${ranked.length} games found for week ${week}`)
+  const players = await getPlayersNflDict()
+
+  const toRow = (r: WeekGame) => ({
     name: players[r.id].full_name!,
     meta: `${players[r.id].position} · ${r.year}`,
     value: fmt1(r.pts),

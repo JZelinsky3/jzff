@@ -29,7 +29,7 @@ type Player = Awaited<ReturnType<typeof getPlayersNflDict>>[string]
 // expires these after a few hours instead of a day: a "most added" list or a
 // Sunday night scoreboard posted the next morning is worse than nothing.
 export const TIMELY_KINDS = new Set([
-  'trending', 'drops', 'leaders', 'beat', 'season', 'targets', 'pace', 'bargains',
+  'trending', 'drops', 'leaders', 'beat', 'season', 'yearago', 'targets', 'pace', 'bargains',
   'streaks', 'busts', 'byes', 'projections', 'sunday', 'question', 'sidebyside', 'highs', 'redzone', 'mnf',
 ])
 
@@ -365,10 +365,32 @@ export async function buildProjections(p: WeekParams): Promise<Built | null> {
   )
 }
 
+// ── This year against last year ──────────────────────────────────────────
+// The top five at one position through Week N, next to the top five through
+// the same week a year ago (like windows: both seasons cut at Week N). Took
+// Thursday from the position history post, which kept naming players from
+// Wednesday's all-time list. The plan passes the position Wednesday's season
+// leaders didn't use.
+export async function buildYearAgo(p: SeasonParams): Promise<Built | null> {
+  const [now, then] = await Promise.all([seasonLines(p.season, p.week), seasonLines(p.season - 1, p.week)])
+  const top = (lines: Line[]) => lines.filter((l) => l.player.position === p.pos).sort((a, b) => b.pts - a.pts).slice(0, 5)
+  const a = top(now)
+  const b = top(then)
+  if (a.length < 3 || b.length < 3) return null
+  const make = (n: number) => [
+    `Top ${POS_PLURAL[p.pos]} through Week ${p.week}, this year and last, PPR:`,
+    `${p.season}\n${a.slice(0, n).map((l, i) => `${i + 1}. ${l.player.full_name}, ${fmt1(l.pts)}`).join('\n')}`,
+    `${p.season - 1}\n${b.slice(0, n).map((l, i) => `${i + 1}. ${l.player.full_name}, ${fmt1(l.pts)}`).join('\n')}`,
+  ].join('\n\n')
+  const counts = [5, 4, 3].filter((n) => n <= Math.min(a.length, b.length))
+  const x = counts.map(make).find((t) => xLength(t) <= X_MAX)
+  const threads = counts.map(make).find((t) => t.length <= THREADS_MAX)
+  return x && threads ? textOnly(x, threads) : null
+}
+
 // ── Best game ever in this week, at one position ─────────────────────────
-// Written at plan time. Wednesday's history post already has the best game
-// of the week at any position, so this picks a position whose best game is
-// someone else's.
+// RETIRED 2026-10-06 from the plan (crossed over with Wednesday's all-time
+// top six); kept for the rows already written.
 export async function buildNugget(week: number, lastSeason: number, rotation: number): Promise<Built> {
   const players = await getPlayersNflDict()
   const years = Array.from({ length: lastSeason - 2009 + 1 }, (_, i) => 2009 + i)
@@ -553,6 +575,8 @@ export async function buildOnTheDay(kind: string, params: Record<string, unknown
       return quiet(await buildBeat(wk), 'no big beats against projection, or scores not in')
     case 'season':
       return quiet(await buildSeason(params as unknown as SeasonParams), 'not enough season stats')
+    case 'yearago':
+      return quiet(await buildYearAgo(params as unknown as SeasonParams), 'not enough season stats')
     case 'targets':
       return quiet(await buildTargets(wk), 'not enough season stats')
     case 'pace':

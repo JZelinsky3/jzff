@@ -1,5 +1,5 @@
 // POST /api/visit/league
-// Body: { slug: string, vid: string }
+// Body: { slug: string, vid: string, recap?: { year, week, medium, content } }
 //
 // One page view of a league's public pages (the almanac, Live Season, the
 // recap, awards, games). Fired from the page by a small script the almanac
@@ -30,6 +30,13 @@ const BOT_UA = /bot|crawl|spider|slurp|preview|headless|lighthouse|facebookexter
 const schema = z.object({
   slug: z.string().regex(/^[a-z0-9-]{1,80}$/),
   vid: z.string().regex(/^[A-Za-z0-9-]{8,64}$/),
+  // Sent from a recap edition page; see recordRecapView below.
+  recap: z.object({
+    year: z.number().int().min(2000).max(2100),
+    week: z.number().int().min(1).max(25),
+    medium: z.string().max(20),
+    content: z.string().max(20),
+  }).optional(),
 })
 
 const skipped = () => NextResponse.json({ ok: true, recorded: false })
@@ -44,7 +51,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
   const parsed = schema.safeParse(body)
   if (!parsed.success) return skipped()
-  const { slug, vid } = parsed.data
+  const { slug, vid, recap } = parsed.data
 
   const db = createAdminClient()
   const supabase = await createClient()
@@ -56,10 +63,25 @@ export async function POST(req: NextRequest): Promise<Response> {
   if (user && (await isSiteAdmin(user.id))) return skipped()
 
   const role = !user ? 'visitor' : user.id === league.owner_id ? 'owner' : 'member'
+  const visitor = user ? `u:${user.id}` : `a:${vid}`
+  if (recap) {
+    // A reader of one recap edition, for /admin/mailing-lists (0075). The
+    // email's links say which copy was clicked (utm_content owner or list);
+    // the commissioner signed in counts as the owner wherever they came from.
+    const { error: recapError } = await db.rpc('record_recap_view', {
+      p_league: league.id,
+      p_year: recap.year,
+      p_week: recap.week,
+      p_visitor: visitor,
+      p_role: role === 'owner' || recap.content === 'owner' ? 'owner' : recap.content === 'list' ? 'subscriber' : 'other',
+      p_source: recap.medium === 'email' ? 'email' : recap.medium === 'share' ? 'share' : 'direct',
+    })
+    if (recapError) console.error('[visit/league] record_recap_view failed:', recapError.message)
+  }
   const { error } = await db.rpc('record_league_visit', {
     p_league: league.id,
     p_day: siteDay(),
-    p_visitor: user ? `u:${user.id}` : `a:${vid}`,
+    p_visitor: visitor,
     p_role: role,
   })
   if (error) {

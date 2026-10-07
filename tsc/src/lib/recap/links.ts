@@ -12,9 +12,12 @@ export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://thesundayc
 // Trailing slashes throughout: next.config sets trailingSlash, and a mail
 // provider's one-click POST to the slashless form would get a 308 it may not
 // follow.
-export function recapPageUrl(slug: string, year: number, week: number, src?: string): string {
+// `who` (utm_content) says which copy of the email a click came from, owner
+// or list, so /admin/mailing-lists can count readers by kind (0075).
+export function recapPageUrl(slug: string, year: number, week: number, src?: string, who?: 'owner' | 'list'): string {
   const base = `${SITE_URL}/leagues/${slug}/recap/${year}/${week}/`
-  return src ? `${base}?utm_source=recap&utm_medium=${src}&utm_campaign=w${week}` : base
+  if (!src) return base
+  return `${base}?utm_source=recap&utm_medium=${src}&utm_campaign=w${week}${who ? `&utm_content=${who}` : ''}`
 }
 
 function signingSecret(): string | null {

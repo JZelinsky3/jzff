@@ -9,8 +9,16 @@ import { useParams, usePathname } from 'next/navigation'
 import { useEffect } from 'react'
 import { LEAGUE_VISIT_KEY } from '@/lib/leagueVisit'
 
+// On a recap edition page the ping also says which edition, and the email's
+// utm tags if the reader came from it (recap_views, migration 0075).
+function recapContext(pathname: string, year?: string, week?: string) {
+  if (!year || !week || !pathname.includes('/recap/')) return undefined
+  const q = new URLSearchParams(window.location.search)
+  return { year: Number(year), week: Number(week), medium: q.get('utm_medium') ?? '', content: q.get('utm_content') ?? '' }
+}
+
 export function LeagueVisitPing() {
-  const { slug } = useParams<{ slug: string }>()
+  const { slug, year, week } = useParams<{ slug: string; year?: string; week?: string }>()
   const pathname = usePathname()
 
   useEffect(() => {
@@ -29,10 +37,10 @@ export function LeagueVisitPing() {
     void fetch('/api/visit/league', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug, vid }),
+      body: JSON.stringify({ slug, vid, recap: recapContext(pathname, year, week) }),
       keepalive: true,
     }).catch(() => {})
-  }, [slug, pathname])
+  }, [slug, pathname, year, week])
 
   return null
 }
