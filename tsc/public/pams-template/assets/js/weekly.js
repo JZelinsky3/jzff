@@ -39,7 +39,10 @@
     initShare();
     // Trailing slash is the canonical form (next.config trailingSlash) —
     // without it every load eats a 308 before the data arrives.
-    fetch('live/weekly/data/', { cache: 'no-store' })
+    // The demo league is a static tree: its payload is a file beside the page
+    // (scripts/build-demo-recap.mjs writes it).
+    var demo = !!(window.__DC && window.__DC.leagueTier === 'demo');
+    fetch(demo ? 'live/weekly/data.json' : 'live/weekly/data/', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; })
       .then(function (data) {
@@ -88,7 +91,7 @@
     // Last week's paper, at the foot of the Reading as card.
     var recap = byId('wkRecap');
     if (recap && d.recap) {
-      recap.href = 'recap/' + d.recap.year + '/' + d.recap.week + '/';
+      recap.href = d.recap.href || ('recap/' + d.recap.year + '/' + d.recap.week + '/');
       byId('wkRecapK').textContent = 'Week ' + d.recap.week + ' is in the books';
       byId('wkRecapT').innerHTML = 'Read the Week ' + esc(d.recap.week) + ' <em>Recap</em>';
       show(recap, true);

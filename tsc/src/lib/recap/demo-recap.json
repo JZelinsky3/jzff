@@ -974,7 +974,7 @@
     "opponent": "Cole",
     "weekRank": 1,
     "managerId": "demo-m-1002",
-    "profileId": "demo-p-1002",
+    "profileId": "p2",
     "startMark": null,
     "placeChange": 1,
     "opponentScore": 124.22
@@ -1029,7 +1029,7 @@
     "opponent": "Noah",
     "weekRank": 2,
     "managerId": "demo-m-1004",
-    "profileId": "demo-p-1004",
+    "profileId": "p9",
     "startMark": null,
     "placeChange": 2,
     "opponentScore": 117.38
@@ -1096,7 +1096,7 @@
     "opponent": "Ryan",
     "weekRank": 3,
     "managerId": "demo-m-1001",
-    "profileId": "demo-p-1001",
+    "profileId": "p11",
     "startMark": null,
     "placeChange": 2,
     "opponentScore": 67.12
@@ -1159,7 +1159,7 @@
     "opponent": "Owen",
     "weekRank": 4,
     "managerId": "demo-m-1005",
-    "profileId": "demo-p-1005",
+    "profileId": "p8",
     "startMark": {
      "kind": "first-ever",
      "seasons": 7
@@ -1217,7 +1217,7 @@
     "opponent": "Devin",
     "weekRank": 5,
     "managerId": "demo-m-1008",
-    "profileId": "demo-p-1008",
+    "profileId": "p7",
     "startMark": null,
     "placeChange": 0,
     "opponentScore": 126.2
@@ -1280,7 +1280,7 @@
     "opponent": "Adam",
     "weekRank": 6,
     "managerId": "demo-m-1003",
-    "profileId": "demo-p-1003",
+    "profileId": "p3",
     "startMark": null,
     "placeChange": 3,
     "opponentScore": 105.28
@@ -1340,7 +1340,7 @@
     "opponent": "Trevor",
     "weekRank": 7,
     "managerId": "demo-m-1006",
-    "profileId": "demo-p-1006",
+    "profileId": "p6",
     "startMark": null,
     "placeChange": -3,
     "opponentScore": 137.36
@@ -1400,7 +1400,7 @@
     "opponent": "Tyler",
     "weekRank": 8,
     "managerId": "demo-m-1007",
-    "profileId": "demo-p-1007",
+    "profileId": "p10",
     "startMark": null,
     "placeChange": 0,
     "opponentScore": 168.52
@@ -1463,7 +1463,7 @@
     "opponent": "Ethan",
     "weekRank": 9,
     "managerId": "demo-m-1010",
-    "profileId": "demo-p-1010",
+    "profileId": "p1",
     "startMark": null,
     "placeChange": 0,
     "opponentScore": 154.52
@@ -1526,7 +1526,7 @@
     "opponent": "Jordan",
     "weekRank": 10,
     "managerId": "demo-m-1009",
-    "profileId": "demo-p-1009",
+    "profileId": "p4",
     "startMark": null,
     "placeChange": -2,
     "opponentScore": 132.2
@@ -1587,7 +1587,7 @@
     "opponent": "Brandon",
     "weekRank": 11,
     "managerId": "demo-m-1012",
-    "profileId": "demo-p-1012",
+    "profileId": "p12",
     "startMark": {
      "kind": "first-since",
      "year": 2023
@@ -1649,7 +1649,7 @@
     "opponent": "Marcus",
     "weekRank": 12,
     "managerId": "demo-m-1011",
-    "profileId": "demo-p-1011",
+    "profileId": "p5",
     "startMark": null,
     "placeChange": -3,
     "opponentScore": 140.34
