@@ -202,7 +202,8 @@ function extraSlots(monday: string, season: number, rotation: number, weekOf: We
     kind: 'namegame', date: day(n), hour,
     build: async () => {
       if (!weekOf(day(n), hour)) return { skip: 'not the regular season' }
-      return { built: await buildNameGame(season - 1, rotation, k) }
+      const { built, answer } = await buildNameGame(season - 1, rotation, k)
+      return { built, params: { answer } }
     },
   })
 

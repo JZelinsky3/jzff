@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { latestRecapWeek, recapViewable } from '@/lib/recap/load'
+import { DEMO_RECAP, isDemoRecap } from '@/lib/recap/demo'
 import styles from './recap.module.css'
 
 export const dynamic = 'force-dynamic'
@@ -11,6 +12,7 @@ export const dynamic = 'force-dynamic'
 export default async function LatestRecap({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   if (!/^[a-z0-9-]{1,80}$/.test(slug)) notFound()
+  if (isDemoRecap(slug)) redirect(`/leagues/${slug}/recap/${DEMO_RECAP.year}/${DEMO_RECAP.week}/`)
   const db = createAdminClient()
   const { data: league } = await db.from('leagues').select('id, name, owner_id, published_at').eq('slug', slug).maybeSingle()
   // Unpublished almanacs are private to their owner; see the week page.

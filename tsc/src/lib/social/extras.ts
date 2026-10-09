@@ -20,7 +20,7 @@
 
 import { fetchWeekStats, fetchSeasonByWeek } from '@/lib/playerStats'
 import { getPlayersNflDict } from '@/lib/sleeperPlayers'
-import { textProblem, xLength, X_MAX, THREADS_MAX } from './config'
+import { textProblem, xLength, X_MAX, X_ROOM, THREADS_MAX } from './config'
 import { buildRegret, compact, fmt1, statLine, FANTASY_POS, type Built, type RegretParams, type Stats } from './content'
 
 type Player = Awaited<ReturnType<typeof getPlayersNflDict>>[string]
@@ -48,9 +48,10 @@ function listPost(head: string, lines: string[], tail = '', minLines = 3): Built
   if (lines.length < minLines) return null
   const make = (n: number) => [head, lines.slice(0, n).join('\n'), tail].filter(Boolean).join('\n\n')
   let nx = lines.length
-  while (nx > minLines && xLength(make(nx)) > X_MAX) nx--
+  while (nx > minLines && xLength(make(nx)) > X_ROOM) nx--
   let nt = lines.length
   while (nt > minLines && make(nt).length > THREADS_MAX) nt--
+  // Short of room for the hashtags is fine (they're dropped); over X's limit isn't.
   if (xLength(make(nx)) > X_MAX) return null
   return textOnly(make(nx), make(nt))
 }
@@ -265,7 +266,7 @@ export async function buildPace(p: WeekParams): Promise<Built | null> {
   const next = leaders.slice(1, 3).map((l) => `${l.player.full_name} (${Math.round((l.pts / l.games) * 17)})`)
   const behind = next.length === 2 ? `\n\nNext best paces: ${next[0]} and ${next[1]}.` : ''
   const full = `${lead}\n\n${vs}${behind}`
-  return textOnly(xLength(full) <= X_MAX ? full : `${lead}\n\n${vs}`, full)
+  return textOnly(xLength(full) <= X_ROOM ? full : `${lead}\n\n${vs}`, full)
 }
 
 // ── Draft bargains and busts ─────────────────────────────────────────────
@@ -342,7 +343,7 @@ export async function buildByes(p: WeekParams): Promise<Built | null> {
     : ''
   const make = (body: string) => `On bye in Week ${p.week}: ${teams}.${body}\n\nCheck your lineups before tonight's game.`
   // Drop the names before the teams if X runs out of room.
-  return textOnly(xLength(make(biggest)) <= X_MAX ? make(biggest) : make(''), make(biggest))
+  return textOnly(xLength(make(biggest)) <= X_ROOM ? make(biggest) : make(''), make(biggest))
 }
 
 // ── Sunday morning: top projected at each position ───────────────────────
@@ -383,7 +384,7 @@ export async function buildYearAgo(p: SeasonParams): Promise<Built | null> {
     `${p.season - 1}\n${b.slice(0, n).map((l, i) => `${i + 1}. ${l.player.full_name}, ${fmt1(l.pts)}`).join('\n')}`,
   ].join('\n\n')
   const counts = [5, 4, 3].filter((n) => n <= Math.min(a.length, b.length))
-  const x = counts.map(make).find((t) => xLength(t) <= X_MAX)
+  const x = counts.map(make).find((t) => xLength(t) <= X_ROOM) ?? counts.map(make).find((t) => xLength(t) <= X_MAX)
   const threads = counts.map(make).find((t) => t.length <= THREADS_MAX)
   return x && threads ? textOnly(x, threads) : null
 }
@@ -418,7 +419,7 @@ export async function buildNugget(week: number, lastSeason: number, rotation: nu
     const name = players[top.id].full_name
     const lead = `The best Week ${week} ${POS_WORD[pos]} game since 2009: ${name} in ${top.year}. ${statLine(pos, top.s)}, ${fmt1(top.pts)} PPR points.`
     const runner = `Next best: ${players[next.id].full_name} in ${next.year} with ${fmt1(next.pts)}.`
-    const x = xLength(`${lead}\n\n${runner}`) <= X_MAX ? `${lead}\n\n${runner}` : lead
+    const x = xLength(`${lead}\n\n${runner}`) <= X_ROOM ? `${lead}\n\n${runner}` : lead
     return textOnly(x, `${lead}\n\n${runner}`)
   }
   throw new Error(`no position history for week ${week}`)
@@ -489,10 +490,12 @@ export async function buildRedZone(p: WeekParams): Promise<Built | null> {
 }
 
 // ── Name the player ──────────────────────────────────────────────────────
-// A big game from the archive with the name held back to the bottom of the
-// post, so people guess as they read and the answer is right there. Nothing
-// to reply to. Written at plan time; `k` keeps two in one week apart.
-export async function buildNameGame(lastSeason: number, rotation: number, k: number): Promise<Built> {
+// A big game from the archive with the name held back. The answer is not in
+// the post (blank lines to push it down collapse on both platforms, so it sat
+// right under the question); the publisher replies with it a couple of hours
+// after the post goes out (ANSWER_DELAY_MS in publish.ts). Written at plan
+// time; `k` keeps two in one week apart.
+export async function buildNameGame(lastSeason: number, rotation: number, k: number): Promise<{ built: Built; answer: string }> {
   const players = await getPlayersNflDict()
   const years = lastSeason - 2009 + 1
   for (let tries = 0; tries < 6; tries++) {
@@ -506,8 +509,8 @@ export async function buildNameGame(lastSeason: number, rotation: number, k: num
       .sort((a, b) => b.pts - a.pts)[0]
     if (!best || best.pts < 30) continue
     const pos = best.player.position!
-    const text = `Name the player. A ${POS_WORD[pos]}, Week ${week} of ${year}: ${statLine(pos, best.s)}, ${fmt1(best.pts)} PPR points.\n\n\n\nIt was ${best.player.full_name}.`
-    return textOnly(text)
+    const text = `Name the player. A ${POS_WORD[pos]}, Week ${week} of ${year}: ${statLine(pos, best.s)}, ${fmt1(best.pts)} PPR points.\n\nAnswer in the replies.`
+    return { built: textOnly(text), answer: `It was ${best.player.full_name}.` }
   }
   throw new Error('no archive game big enough')
 }
@@ -552,7 +555,7 @@ export async function buildMondayNight(p: WeekParams & { date: string }): Promis
   // Longest version that fits each platform: with the footnote, without it,
   // then (on a doubleheader) the first game alone.
   const options = [compose(blocks, true), compose(blocks, false), compose(blocks.slice(0, 1), true), compose(blocks.slice(0, 1), false)]
-  const x = options.find((t) => xLength(t) <= X_MAX)
+  const x = options.find((t) => xLength(t) <= X_ROOM) ?? options.find((t) => xLength(t) <= X_MAX)
   const threads = options.find((t) => t.length <= THREADS_MAX)
   return x && threads ? textOnly(x, threads) : null
 }

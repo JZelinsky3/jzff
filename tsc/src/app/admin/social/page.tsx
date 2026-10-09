@@ -30,6 +30,7 @@ type PostRow = {
   threads_error: string | null
   attempts: number
   edited_at: string | null
+  params: { answer?: string; answered?: string; answer_error?: string } | null
 }
 
 const STATUS: Record<string, { label: string; color: string }> = {
@@ -51,7 +52,7 @@ async function loadQueue() {
   const since = new Date(now - 21 * 24 * 60 * 60 * 1000).toISOString()
   const [{ data, error }, { data: token }] = await Promise.all([
     db.from('social_posts')
-      .select('id, kind, scheduled_at, status, x_text, threads_text, image_path, link, x_post_id, threads_post_id, x_error, threads_error, attempts, edited_at')
+      .select('id, kind, scheduled_at, status, x_text, threads_text, image_path, link, x_post_id, threads_post_id, x_error, threads_error, attempts, edited_at, params')
       .gte('scheduled_at', since)
       .order('scheduled_at', { ascending: true }),
     db.from('social_tokens').select('expires_at').eq('platform', 'threads').maybeSingle(),
@@ -156,6 +157,14 @@ function Post({ p, live }: { p: PostRow; live: boolean }) {
             Written on the day from live Sleeper data. Veto now to skip it.
           </p>
         )}
+        {p.params?.answer ? (
+          <div style={{ color: 'var(--cream-soft)', fontSize: '.8rem', marginTop: '.5rem' }}>
+            Answer reply: {p.params.answer}{' '}
+            <span style={{ opacity: 0.7 }}>
+              {p.params.answered ? (p.params.answer_error ? `(failed, comment it yourself: ${p.params.answer_error})` : '(posted)') : '(goes up two hours after the post)'}
+            </span>
+          </div>
+        ) : null}
         {(p.x_post_id || p.threads_post_id) ? (
           <div style={{ display: 'flex', gap: '1rem', marginTop: '.6rem', ...mono }}>
             {p.x_post_id ? <a href={xPostUrl(p.x_post_id)} target="_blank" rel="noreferrer" style={{ color: 'var(--gold)' }}>On X</a> : null}

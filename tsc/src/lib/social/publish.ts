@@ -13,9 +13,12 @@
 //   - Each platform is sent at most once per post. If X succeeds and Threads
 //     fails, the post goes back in the queue and the next run retries Threads
 //     alone. Three attempts, then it stops and says so on the admin page.
+//   - A post with params.answer (name the player) gets the answer as a reply
+//     on each platform it reached, once it has been up ANSWER_DELAY_MS. One
+//     try; a failed reply is shown on the admin page for Joey to post by hand.
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { absoluteUrl, socialLive, textProblem, threadsSeeded, xConfigured, type Platform } from './config'
+import { absoluteUrl, socialLive, textProblem, threadsSeeded, withXTags, xConfigured, type Platform } from './config'
 import { buildOnTheDay, TIMELY_KINDS } from './extras'
 import { postToX } from './x'
 import { postToThreads } from './threads'
@@ -100,10 +103,13 @@ async function sendRow(db: Db, row: PostRow, platforms: Platform[]): Promise<Pub
   for (const p of platforms) {
     if (ids[p]) continue
     try {
-      const sent = p === 'x' ? await postToX(row.x_text!, image) : await postToThreads(db, row.threads_text!, image)
+      const xText = withXTags(row.kind, row.x_text!)
+      const sent = p === 'x' ? await postToX(xText, image) : await postToThreads(db, row.threads_text!, image)
       ids[p] = sent.id
       patch[`${p}_post_id`] = sent.id
       patch[`${p}_error`] = null
+      // The admin page shows what actually went out.
+      if (p === 'x') patch.x_text = xText
     } catch (e) {
       patch[`${p}_error`] = (e as Error).message.slice(0, 500)
     }
@@ -120,14 +126,46 @@ async function sendRow(db: Db, row: PostRow, platforms: Platform[]): Promise<Pub
   return { ...base, outcome: patch.status as string, detail: errors.join(' | ') || undefined }
 }
 
+const ANSWER_DELAY_MS = 2 * 60 * 60 * 1000
+
+/** Replies with the answer under puzzle posts that have been up long enough. */
+async function postAnswers(db: Db): Promise<PublishResult[]> {
+  const now = Date.now()
+  const { data } = await db.from('social_posts').select(COLS)
+    .in('status', ['sent', 'partial'])
+    .not('params->answer', 'is', null).is('params->answered', null)
+    .lte('sent_at', new Date(now - ANSWER_DELAY_MS).toISOString())
+    .gte('sent_at', new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString())
+    .limit(5)
+  const results: PublishResult[] = []
+  for (const row of (data ?? []) as PostRow[]) {
+    const answer = String(row.params.answer)
+    const ids: Record<string, string> = {}
+    const errors: string[] = []
+    for (const [p, parent] of [['x', row.x_post_id], ['threads', row.threads_post_id]] as const) {
+      if (!parent) continue
+      try {
+        ids[p] = (p === 'x' ? await postToX(answer, null, parent) : await postToThreads(db, answer, null, parent)).id
+      } catch (e) {
+        errors.push(`${p}: ${(e as Error).message.slice(0, 200)}`)
+      }
+    }
+    const params = { ...row.params, answered: new Date().toISOString(), answer_ids: ids, ...(errors.length ? { answer_error: errors.join(' | ') } : {}) }
+    await touch(db, row.id, { params })
+    results.push({ id: row.id, plan_key: row.plan_key, outcome: errors.length ? 'answer failed' : 'answered', detail: errors.join(' | ') || undefined })
+  }
+  return results
+}
+
 export async function publishDue(db: Db): Promise<{ live: boolean; platforms: Platform[]; results: PublishResult[] }> {
   const live = socialLive()
   const platforms = await enabledPlatforms(db)
+  const answers = live ? await postAnswers(db).catch((e) => [{ id: '', plan_key: null, outcome: 'error', detail: `answers: ${(e as Error).message}` }]) : []
   const { data } = await db.from('social_posts').select(COLS)
     .eq('status', 'queued').lte('scheduled_at', new Date().toISOString())
     .order('scheduled_at', { ascending: true }).limit(5)
 
-  const results: PublishResult[] = []
+  const results: PublishResult[] = [...answers]
   for (const raw of (data ?? []) as PostRow[]) {
     const base = { id: raw.id, plan_key: raw.plan_key }
     // Late only counts against a post nothing has gone out for yet. One that

@@ -77,13 +77,17 @@ async function uploadImage(imageUrl: string): Promise<string> {
   return id
 }
 
-export async function postToX(text: string, imageUrl: string | null): Promise<{ id: string; url: string }> {
+export async function postToX(text: string, imageUrl: string | null, replyTo?: string): Promise<{ id: string; url: string }> {
   const mediaId = imageUrl ? await uploadImage(imageUrl) : null
   const url = `${API}/tweets`
   const res = await fetch(url, {
     method: 'POST',
     headers: { Authorization: authHeader('POST', url), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, ...(mediaId ? { media: { media_ids: [mediaId] } } : {}) }),
+    body: JSON.stringify({
+      text,
+      ...(mediaId ? { media: { media_ids: [mediaId] } } : {}),
+      ...(replyTo ? { reply: { in_reply_to_tweet_id: replyTo } } : {}),
+    }),
     cache: 'no-store',
   })
   if (!res.ok) throw new Error(await readError(res))

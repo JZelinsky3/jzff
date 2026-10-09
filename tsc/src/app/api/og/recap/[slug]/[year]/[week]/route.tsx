@@ -17,6 +17,7 @@ import { readFile } from 'fs/promises'
 import path from 'path'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { loadRecap } from '@/lib/recap/load'
+import { DEMO_LEAGUE, isDemoRecap } from '@/lib/recap/demo'
 import { pts, recapSections } from '@/lib/recap/facts'
 import { writeEdition } from '@/lib/recap/story'
 
@@ -74,11 +75,13 @@ export async function GET(
   }
 
   const db = createAdminClient()
-  const { data: league } = await db
-    .from('leagues')
-    .select('id, name, slug, owner_id, published_at')
-    .eq('slug', slug)
-    .maybeSingle()
+  const { data: league } = isDemoRecap(slug)
+    ? { data: DEMO_LEAGUE }
+    : await db
+        .from('leagues')
+        .select('id, name, slug, owner_id, published_at')
+        .eq('slug', slug)
+        .maybeSingle()
   // Crawlers have no session, so only published leagues get a card, the
   // same rule as the page for everyone but the owner.
   if (!league || !league.published_at) return new Response('Not found', { status: 404 })

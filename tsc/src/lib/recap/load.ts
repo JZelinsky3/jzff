@@ -14,6 +14,7 @@ import { getLockReason } from '@/lib/leagueTier'
 import { getNflClock, weekIsFinal } from '@/lib/nflClock'
 import { buildRecapFacts, recapTierFor, RECAP_FACTS_VERSION, type RecapFacts, type RecapTier } from './facts'
 import { templateIntro } from './intro'
+import { DEMO_RECAP, isDemoRecap } from './demo'
 
 export type LoadedRecap =
   | { status: 'ok'; facts: RecapFacts; intro: string; tier: RecapTier }
@@ -26,6 +27,11 @@ export async function loadRecap(
   year: number,
   week: number,
 ): Promise<LoadedRecap> {
+  if (isDemoRecap(league.id)) {
+    return year === DEMO_RECAP.year && week === DEMO_RECAP.week
+      ? { status: 'ok', facts: DEMO_RECAP.facts, intro: DEMO_RECAP.intro, tier: 'full' }
+      : { status: 'no-games' }
+  }
   const tier = recapTierFor(await getLockReason(league.id, league.owner_id))
 
   const db = createAdminClient()
@@ -60,6 +66,7 @@ export async function loadRecap(
 
 // The newest week this league has a recap for, stored or buildable.
 export async function latestRecapWeek(leagueId: string): Promise<{ year: number; week: number } | null> {
+  if (isDemoRecap(leagueId)) return { year: DEMO_RECAP.year, week: DEMO_RECAP.week }
   const db = createAdminClient()
   const { data: stored } = await db
     .from('weekly_recaps')

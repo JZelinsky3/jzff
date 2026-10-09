@@ -46,6 +46,25 @@ export function xLength(text: string): number {
   return text.replace(/https?:\/\/\S+/g, 'x'.repeat(23)).length
 }
 
+// Hashtags go on X only, added at send time so every post gets them, queued
+// rows included. Threads turns a hashtag into its one topic tag and is doing
+// fine without, so it's left alone. Builders that fill X to the brim with a
+// list aim at X_ROOM instead, leaving space for both tags.
+const X_TAG = '#FantasyFootball'
+const WAIVER_KINDS = new Set(['trending', 'drops', 'regret'])
+export const X_ROOM = X_MAX - `\n\n${X_TAG} #WaiverWire`.length
+
+/** The X copy with one or two hashtags on the end, as many as fit. */
+export function withXTags(kind: string, text: string): string {
+  if (/(^|\s)#\w/.test(text)) return text
+  const second = WAIVER_KINDS.has(kind) ? '#WaiverWire' : '#NFL'
+  for (const tags of [`${X_TAG} ${second}`, X_TAG]) {
+    const out = `${text}\n\n${tags}`
+    if (xLength(out) <= X_MAX) return out
+  }
+  return text
+}
+
 export function textProblem(platform: Platform, text: string | null): string | null {
   if (!text || !text.trim()) return 'empty'
   if (/—/.test(text)) return 'has an em dash'

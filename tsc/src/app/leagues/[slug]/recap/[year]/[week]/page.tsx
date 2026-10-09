@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { loadRecap, recapViewable } from '@/lib/recap/load'
+import { DEMO_LEAGUE, DEMO_RECAP, isDemoRecap } from '@/lib/recap/demo'
 import { editionDate, ordinal, pts, recapSections, recordStr, roman, type RecapGame } from '@/lib/recap/facts'
 import { bookLine, poss, totalLine, writeEdition } from '@/lib/recap/story'
 import { SITE_URL, recapPageUrl } from '@/lib/recap/links'
@@ -28,6 +29,8 @@ export const dynamic = 'force-dynamic'
 
 async function loadLeague(slug: string) {
   if (!/^[a-z0-9-]{1,80}$/.test(slug)) notFound()
+  // The sample paper for people without a league; see lib/recap/demo.ts.
+  if (isDemoRecap(slug)) return DEMO_LEAGUE
   const db = createAdminClient()
   const { data } = await db.from('leagues').select('id, name, slug, owner_id, published_at').eq('slug', slug).maybeSingle()
   // Same rule as the almanac: until the owner publishes, nothing about the
@@ -53,14 +56,17 @@ export async function generateMetadata({
   const { slug, year: y, week: w } = await params
   const { year, week } = parseParams(y, w)
   const league = await loadLeague(slug)
+  const demo = isDemoRecap(slug)
   const db = createAdminClient()
-  const { data } = await db
-    .from('weekly_recaps')
-    .select('intro, subject')
-    .eq('league_id', league.id)
-    .eq('season_year', year)
-    .eq('week', week)
-    .maybeSingle()
+  const { data } = demo
+    ? { data: { intro: DEMO_RECAP.intro } }
+    : await db
+        .from('weekly_recaps')
+        .select('intro, subject')
+        .eq('league_id', league.id)
+        .eq('season_year', year)
+        .eq('week', week)
+        .maybeSingle()
   const title = `Week ${week} Recap · ${league.name}`
   // The paper's front page as the preview: nameplate, headline, scores.
   const image = { url: `${SITE_URL}/api/og/recap/${slug}/${year}/${week}/?v=1`, width: 1200, height: 630, alt: title }
@@ -69,7 +75,8 @@ export async function generateMetadata({
   return {
     title,
     description,
-    ...(league.published_at ? {} : { robots: { index: false, follow: false } }),
+    // The demo is a pams week with the names changed; keep it out of search.
+    ...(league.published_at && !demo ? {} : { robots: { index: false, follow: false } }),
     alternates: { canonical: recapPageUrl(slug, year, week) },
     openGraph: { type: 'article', title, description, siteName: 'The Sunday Chronicle', url: recapPageUrl(slug, year, week), images: [image] },
     twitter: { card: 'summary_large_image', title, description, images: [image.url] },
@@ -182,7 +189,13 @@ export default async function RecapPage({
   const { year, week } = parseParams(y, w)
   const league = await loadLeague(slug)
   const loaded = await loadRecap(league, year, week)
-  const leagueHref = `/leagues/${slug}/`
+  // The demo league's almanac is the static /demo/ tree, and it has no live
+  // pages (power rankings, pick'ems, trade desk) to link to.
+  const demo = isDemoRecap(slug)
+  // The demo prints one edition; any other week goes to it.
+  if (demo && (year !== DEMO_RECAP.year || week !== DEMO_RECAP.week)) redirect(`/leagues/${slug}/recap/${DEMO_RECAP.year}/${DEMO_RECAP.week}/`)
+  const leagueHref = demo ? '/demo/' : `/leagues/${slug}/`
+  const liveLink = (path: string, label: string) => (demo ? null : { href: `/leagues/${slug}/${path}`, label })
 
   const topBar = (
     <div className={styles.topBar}>
@@ -214,7 +227,7 @@ export default async function RecapPage({
             </div>
           </header>
           <p className={styles.emptyNote}>{message}</p>
-          {week > 1 ? (
+          {week > 1 && !demo ? (
             <a className={styles.sectionLink} href={`/leagues/${slug}/recap/${year}/${week - 1}/`}>
               Week {week - 1} paper
             </a>
@@ -375,7 +388,13 @@ export default async function RecapPage({
               id="standings"
               tag="The table"
               title="The Standings"
-              link={hasPower ? { href: `/leagues/${slug}/live/powerrank/`, label: 'Power rankings' } : { href: `/leagues/${slug}/standings`, label: 'Standings' }}
+              link={
+                demo
+                  ? { href: '/demo/standings', label: 'Standings' }
+                  : hasPower
+                    ? { href: `/leagues/${slug}/live/powerrank/`, label: 'Power rankings' }
+                    : { href: `/leagues/${slug}/standings`, label: 'Standings' }
+              }
             />
             <div className={styles.tableWrap}>
               <table className={styles.table}>
@@ -454,7 +473,7 @@ export default async function RecapPage({
         {/* ── Record book ── */}
         {hasBook ? (
           <section className={`${styles.section} ${styles.sBook}`}>
-            <SectionHead id="book" tag="History" title="The Record Book" link={{ href: `/leagues/${slug}/live/records-watch/`, label: 'Records watch' }} />
+            <SectionHead id="book" tag="History" title="The Record Book" link={liveLink('live/records-watch/', 'Records watch')} />
             <div className={styles.book}>
               {book.map((r) => (
                 <div key={r.key} className={`${styles.bookRow} ${r.rank <= 10 ? styles.bookHot : ''}`}>
@@ -563,7 +582,7 @@ export default async function RecapPage({
         {/* ── Pick'ems ── */}
         {show.paid && facts.pickems ? (
           <section className={`${styles.section} ${styles.sPicks}`}>
-            <SectionHead id="pickems" tag="Pick'ems" title="Who Called It" link={{ href: `/leagues/${slug}/live/pickems/`, label: "Pick'ems board" }} />
+            <SectionHead id="pickems" tag="Pick'ems" title="Who Called It" link={liveLink('live/pickems/', "Pick'ems board")} />
             <div className={styles.picks}>
               <div className={styles.pickBest}>
                 <span className={styles.pickLabel}>Best of week {week}</span>
@@ -617,7 +636,7 @@ export default async function RecapPage({
         {/* ── The wire: trades, each side in its own box ── */}
         {show.veteran && (facts.trades?.length || facts.verdicts?.length) ? (
           <section className={`${styles.section} ${styles.sWire}`}>
-            <SectionHead id="trades" tag="The wire" title="Trades" link={{ href: `/leagues/${slug}/live/trades/`, label: 'Trade desk' }} />
+            <SectionHead id="trades" tag="The wire" title="Trades" link={liveLink('live/trades/', 'Trade desk')} />
             <div className={styles.trades}>
               {facts.trades?.map((t, i) => (
                 <article key={i} className={styles.trade}>
@@ -661,7 +680,7 @@ export default async function RecapPage({
               id="next"
               tag="Next week"
               title={`Coming Up: Week ${f.next!.week}`}
-              link={show.paid ? { href: `/leagues/${slug}/live/matchup-preview/`, label: 'Matchup preview' } : null}
+              link={show.paid ? liveLink('live/matchup-preview/', 'Matchup preview') : null}
             />
             <div className={styles.previews}>
               {edition.previews.map(({ game: g, note }, i) => (
@@ -713,7 +732,7 @@ export default async function RecapPage({
         ) : null}
 
         {/* ── Onward to The Weekly: the to-do side of the same week ── */}
-        {show.paid && f.next ? (
+        {show.paid && f.next && !demo ? (
           <a className={styles.weeklyCta} href={`/leagues/${slug}/live/weekly/`}>
             <span className={styles.weeklyKicker}>Before week {f.next.week} kicks off</span>
             <span className={styles.weeklyTitle}>
@@ -743,7 +762,21 @@ export default async function RecapPage({
 
         {/* ── The back page: the mailing list, pass it on, the way back ── */}
         <section className={styles.back}>
-          <JoinList slug={slug} league={league.name} from={recapFromAddress()} />
+          {demo ? (
+            <section className={styles.coupon} id="join">
+              <div className={styles.couponTag}>Your league</div>
+              <h2 className={styles.couponTitle}>A paper like this, every Tuesday</h2>
+              <p className={styles.couponText}>
+                {league.name} is a sample league. Bring yours over and its own paper comes out every Tuesday morning,
+                written from your league&apos;s whole history.
+              </p>
+              <Link className={styles.viewLeague} href="/dashboard/new/?utm_source=recap&utm_medium=demo&utm_campaign=new-league">
+                Start your league
+              </Link>
+            </section>
+          ) : (
+            <JoinList slug={slug} league={league.name} from={recapFromAddress()} />
+          )}
 
           <div className={styles.backTiles}>
             <div className={`${styles.backTile} ${styles.backTileInk}`}>
@@ -761,7 +794,7 @@ export default async function RecapPage({
           </div>
 
           <nav className={styles.backIndex} aria-label="More">
-            {week > 1 ? (
+            {week > 1 && !demo ? (
               <a href={`/leagues/${slug}/recap/${year}/${week - 1}/`}>
                 <small>Last week</small>
                 The week {week - 1} paper

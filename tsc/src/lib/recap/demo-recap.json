@@ -1,0 +1,2345 @@
+{
+ "year": 2026,
+ "week": 4,
+ "intro": "Tyler had lost four straight to Cole until this week, when a 168.52 to 124.22 win finally ended the skid. Cole still leads the series 7-3.",
+ "subject": "Week 4 in The Lakeside League: Tyler snaps four-game skid against Cole",
+ "facts": {
+  "v": 10,
+  "low": {
+   "won": false,
+   "name": "Ryan",
+   "team": "Riverside Reign",
+   "score": 67.12,
+   "opponent": "Marcus",
+   "managerId": "demo-m-1011",
+   "opponentScore": 140.34
+  },
+  "top": {
+   "won": true,
+   "name": "Tyler",
+   "team": "Crosstown Comets",
+   "score": 168.52,
+   "opponent": "Cole",
+   "managerId": "demo-m-1002",
+   "opponentScore": 124.22
+  },
+  "book": [
+   {
+    "of": 1426,
+    "vs": null,
+    "key": "top",
+    "who": "Tyler",
+    "rank": 52,
+    "label": "Top score",
+    "value": 168.52,
+    "record": {
+     "who": "Ryan",
+     "year": 2021,
+     "value": 200.6
+    },
+    "managerId": "demo-m-1002",
+    "seasonRank": 3
+   },
+   {
+    "of": 1426,
+    "vs": null,
+    "key": "low",
+    "who": "Ryan",
+    "rank": 20,
+    "label": "Low score",
+    "value": 67.12,
+    "record": {
+     "who": "Noah",
+     "year": 2025,
+     "value": 21.08
+    },
+    "managerId": "demo-m-1011",
+    "seasonRank": 1
+   },
+   {
+    "of": 713,
+    "vs": "Trevor",
+    "key": "heartbreak",
+    "who": "Devin",
+    "rank": 116,
+    "label": "Most points in a loss",
+    "value": 126.2,
+    "record": {
+     "who": "Jordan",
+     "year": 2020,
+     "value": 175.3
+    },
+    "managerId": "demo-m-1006",
+    "seasonRank": 6
+   },
+   {
+    "of": 713,
+    "vs": "Adam",
+    "key": "robbery",
+    "who": "Jordan",
+    "rank": 353,
+    "label": "Fewest points in a win",
+    "value": 132.2,
+    "record": {
+     "who": "Tyler",
+     "year": 2025,
+     "value": 74.5
+    },
+    "managerId": "demo-m-1003",
+    "seasonRank": 8
+   },
+   {
+    "of": 713,
+    "vs": "Devin",
+    "key": "closest",
+    "who": "Trevor",
+    "rank": 189,
+    "label": "Closest game",
+    "value": 11.16,
+    "record": {
+     "who": "Ryan",
+     "year": 2019,
+     "value": 0.02
+    },
+    "managerId": "demo-m-1008",
+    "seasonRank": 9
+   },
+   {
+    "of": 713,
+    "vs": "Ryan",
+    "key": "blowout",
+    "who": "Marcus",
+    "rank": 22,
+    "label": "Biggest win",
+    "value": 73.22,
+    "record": {
+     "who": "Pete",
+     "year": 2019,
+     "value": 125.56
+    },
+    "managerId": "demo-m-1001",
+    "seasonRank": 2
+   }
+  ],
+  "next": {
+   "week": 5,
+   "games": [
+    {
+     "a": {
+      "div": 0,
+      "ppg": 136.9,
+      "name": "Marcus",
+      "place": 3,
+      "avatar": "/demo/assets/avatars/1001.svg",
+      "record": "3-1"
+     },
+     "b": {
+      "div": 0,
+      "ppg": 117.1,
+      "name": "Devin",
+      "place": 5,
+      "avatar": "/demo/assets/avatars/1006.svg",
+      "record": "3-1"
+     },
+     "run": {
+      "n": 2,
+      "name": "Marcus"
+     },
+     "code": "5.02",
+     "gotw": true,
+     "last": {
+      "ls": 97.26,
+      "ws": 126.2,
+      "kind": "playoff",
+      "week": 15,
+      "year": 2025,
+      "loser": "Devin",
+      "winner": "Marcus"
+     },
+     "recent": null,
+     "series": {
+      "l": 3,
+      "t": 0,
+      "w": 2,
+      "since": 2023
+     },
+     "spread": 19.8,
+     "favorite": "a"
+    },
+    {
+     "a": {
+      "div": 0,
+      "ppg": 122.3,
+      "name": "Cole",
+      "place": 9,
+      "avatar": "/demo/assets/avatars/1007.svg",
+      "record": "1-3"
+     },
+     "b": {
+      "div": 1,
+      "ppg": 152.9,
+      "name": "Brandon",
+      "place": 1,
+      "avatar": "/demo/assets/avatars/1005.svg",
+      "record": "4-0"
+     },
+     "run": null,
+     "code": "5.06",
+     "gotw": false,
+     "last": {
+      "ls": 112.74,
+      "ws": 132,
+      "kind": "regular",
+      "week": 13,
+      "year": 2025,
+      "loser": "Brandon",
+      "winner": "Cole"
+     },
+     "recent": {
+      "w": 3,
+      "of": 4,
+      "name": "Brandon"
+     },
+     "series": {
+      "l": 4,
+      "t": 0,
+      "w": 4,
+      "since": 2020
+     },
+     "spread": 30.7,
+     "favorite": "b"
+    },
+    {
+     "a": {
+      "div": 0,
+      "ppg": 104.4,
+      "name": "Owen",
+      "place": 12,
+      "avatar": "/demo/assets/avatars/1012.svg",
+      "record": "0-4"
+     },
+     "b": {
+      "div": 1,
+      "ppg": 128,
+      "name": "Ethan",
+      "place": 8,
+      "avatar": "/demo/assets/avatars/1004.svg",
+      "record": "1-3"
+     },
+     "run": null,
+     "code": "5.05",
+     "gotw": false,
+     "last": {
+      "ls": 91.74,
+      "ws": 98.92,
+      "kind": "playoff",
+      "week": 17,
+      "year": 2025,
+      "loser": "Owen",
+      "winner": "Ethan"
+     },
+     "recent": null,
+     "series": {
+      "l": 6,
+      "t": 0,
+      "w": 4,
+      "since": 2019
+     },
+     "spread": 23.6,
+     "favorite": "b"
+    },
+    {
+     "a": {
+      "div": 1,
+      "ppg": 127.1,
+      "name": "Ryan",
+      "place": 7,
+      "avatar": "/demo/assets/avatars/1011.svg",
+      "record": "2-2"
+     },
+     "b": {
+      "div": 1,
+      "ppg": 118.3,
+      "name": "Trevor",
+      "place": 11,
+      "avatar": "/demo/assets/avatars/1008.svg",
+      "record": "1-3"
+     },
+     "run": null,
+     "code": "5.03",
+     "gotw": false,
+     "last": {
+      "ls": 124.12,
+      "ws": 125.5,
+      "kind": "regular",
+      "week": 9,
+      "year": 2025,
+      "loser": "Ryan",
+      "winner": "Trevor"
+     },
+     "recent": null,
+     "series": {
+      "l": 4,
+      "t": 0,
+      "w": 4,
+      "since": 2019
+     },
+     "spread": 8.8,
+     "favorite": "a"
+    },
+    {
+     "a": {
+      "div": 0,
+      "ppg": 129.2,
+      "name": "Noah",
+      "place": 6,
+      "avatar": "/demo/assets/avatars/1010.svg",
+      "record": "2-2"
+     },
+     "b": {
+      "div": 1,
+      "ppg": 120.4,
+      "name": "Adam",
+      "place": 10,
+      "avatar": "/demo/assets/avatars/1009.svg",
+      "record": "1-3"
+     },
+     "run": null,
+     "code": "5.04",
+     "gotw": false,
+     "last": {
+      "ls": 94.2,
+      "ws": 139.62,
+      "kind": "regular",
+      "week": 10,
+      "year": 2025,
+      "loser": "Adam",
+      "winner": "Noah"
+     },
+     "recent": null,
+     "series": {
+      "l": 5,
+      "t": 0,
+      "w": 2,
+      "since": 2020
+     },
+     "spread": 8.8,
+     "favorite": "a"
+    },
+    {
+     "a": {
+      "div": 0,
+      "ppg": 132.8,
+      "name": "Jordan",
+      "place": 4,
+      "avatar": "/demo/assets/avatars/1003.svg",
+      "record": "3-1"
+     },
+     "b": {
+      "div": 1,
+      "ppg": 159.1,
+      "name": "Tyler",
+      "place": 2,
+      "avatar": "/demo/assets/avatars/1002.svg",
+      "record": "3-1"
+     },
+     "run": null,
+     "code": "5.01",
+     "gotw": false,
+     "last": {
+      "ls": 151.72,
+      "ws": 176.28,
+      "kind": "playoff",
+      "week": 15,
+      "year": 2025,
+      "loser": "Tyler",
+      "winner": "Jordan"
+     },
+     "recent": {
+      "w": 3,
+      "of": 4,
+      "name": "Jordan"
+     },
+     "series": {
+      "l": 4,
+      "t": 0,
+      "w": 9,
+      "since": 2019
+     },
+     "spread": 26.3,
+     "favorite": "b"
+    }
+   ],
+   "milestones": [
+    "Tyler: 141 pts from 12,500"
+   ]
+  },
+  "star": {
+   "pos": "WR",
+   "player": "Tetairoa McMillan",
+   "points": 45.2,
+   "manager": "Trevor"
+  },
+  "tier": "full",
+  "week": 4,
+  "year": 2026,
+  "games": [
+   {
+    "a": {
+     "div": 0,
+     "left": 22.9,
+     "name": "Devin",
+     "star": {
+      "pos": "RB",
+      "player": "Kenneth Walker",
+      "points": 30.9
+     },
+     "team": "Den of Thieves",
+     "bench": {
+      "pos": "WR",
+      "player": "Jameson Williams",
+      "points": 16.2
+     },
+     "score": 126.2,
+     "avatar": "/demo/assets/avatars/1006.svg",
+     "titles": [],
+     "managerId": "demo-m-1006"
+    },
+    "b": {
+     "div": 1,
+     "left": 31.3,
+     "name": "Trevor",
+     "star": {
+      "pos": "WR",
+      "player": "Tetairoa McMillan",
+      "points": 45.2
+     },
+     "team": "Trojan Horse",
+     "bench": {
+      "pos": "QB",
+      "player": "Drake Maye",
+      "points": 32.16
+     },
+     "score": 137.36,
+     "avatar": "/demo/assets/avatars/1008.svg",
+     "titles": [
+      2025
+     ],
+     "managerId": "demo-m-1008"
+    },
+    "leg": null,
+    "kind": "regular",
+    "last": {
+     "ls": 85.5,
+     "ws": 117.5,
+     "kind": "regular",
+     "week": 14,
+     "year": 2025,
+     "loser": "Devin",
+     "winner": "Trevor"
+    },
+    "margin": 11.16,
+    "series": {
+     "l": 6,
+     "t": 0,
+     "w": 5,
+     "since": 2019
+    },
+    "winner": "b",
+    "seriesNote": "Trevor takes the series lead, 6-5.",
+    "seriesEvent": {
+     "kind": "lead"
+    }
+   },
+   {
+    "a": {
+     "div": 0,
+     "left": 44.78,
+     "name": "Jordan",
+     "star": {
+      "pos": "WR",
+      "player": "CeeDee Lamb",
+      "points": 41.3
+     },
+     "team": "Highland Hawks",
+     "bench": {
+      "pos": "TE",
+      "player": "T.J. Hockenson",
+      "points": 31.4
+     },
+     "score": 132.2,
+     "avatar": "/demo/assets/avatars/1003.svg",
+     "titles": [
+      2023
+     ],
+     "managerId": "demo-m-1003"
+    },
+    "b": {
+     "div": 1,
+     "left": 28,
+     "name": "Adam",
+     "star": {
+      "pos": "RB",
+      "player": "Quinshon Judkins",
+      "points": 21.6
+     },
+     "team": "Avalanche",
+     "bench": {
+      "pos": "RB",
+      "player": "Kyle Monangai",
+      "points": 28
+     },
+     "score": 105.28,
+     "avatar": "/demo/assets/avatars/1009.svg",
+     "titles": [
+      2024
+     ],
+     "managerId": "demo-m-1009"
+    },
+    "leg": null,
+    "kind": "regular",
+    "last": {
+     "ls": 67.74,
+     "ws": 113.84,
+     "kind": "regular",
+     "week": 13,
+     "year": 2025,
+     "loser": "Adam",
+     "winner": "Jordan"
+    },
+    "margin": 26.92,
+    "series": {
+     "l": 4,
+     "t": 0,
+     "w": 6,
+     "since": 2020
+    },
+    "winner": "a",
+    "seriesNote": null,
+    "seriesEvent": null
+   },
+   {
+    "a": {
+     "div": 0,
+     "left": 44,
+     "name": "Noah",
+     "star": {
+      "pos": "WR",
+      "player": "Nico Collins",
+      "points": 30.8
+     },
+     "team": "Northern Lights",
+     "bench": {
+      "pos": "RB",
+      "player": "Emanuel Wilson",
+      "points": 27
+     },
+     "score": 117.38,
+     "avatar": "/demo/assets/avatars/1010.svg",
+     "titles": [],
+     "managerId": "demo-m-1010"
+    },
+    "b": {
+     "div": 1,
+     "left": 13.7,
+     "name": "Ethan",
+     "star": {
+      "pos": "RB",
+      "player": "Bijan Robinson",
+      "points": 28.7
+     },
+     "team": "Eastside Express",
+     "bench": {
+      "pos": "RB",
+      "player": "Brian Robinson",
+      "points": 25.7
+     },
+     "score": 154.52,
+     "avatar": "/demo/assets/avatars/1004.svg",
+     "titles": [
+      2020
+     ],
+     "managerId": "demo-m-1004"
+    },
+    "leg": null,
+    "kind": "regular",
+    "last": {
+     "ls": 102.9,
+     "ws": 109,
+     "kind": "regular",
+     "week": 11,
+     "year": 2025,
+     "loser": "Noah",
+     "winner": "Ethan"
+    },
+    "margin": 37.14,
+    "series": {
+     "l": 8,
+     "t": 0,
+     "w": 4,
+     "since": 2019
+    },
+    "winner": "b",
+    "seriesNote": null,
+    "seriesEvent": null
+   },
+   {
+    "a": {
+     "div": 0,
+     "left": 20.58,
+     "name": "Owen",
+     "star": {
+      "pos": "QB",
+      "player": "Lamar Jackson",
+      "points": 22.88
+     },
+     "team": "Old Glory",
+     "bench": {
+      "pos": "QB",
+      "player": "Bryce Young",
+      "points": 25.46
+     },
+     "score": 100.78,
+     "avatar": "/demo/assets/avatars/1012.svg",
+     "titles": [],
+     "managerId": "demo-m-1012"
+    },
+    "b": {
+     "div": 1,
+     "left": 5,
+     "name": "Brandon",
+     "star": {
+      "pos": "QB",
+      "player": "Brock Purdy",
+      "points": 23.62
+     },
+     "team": "Brimstone FC",
+     "bench": {
+      "pos": "WR",
+      "player": "Rome Odunze",
+      "points": 15.4
+     },
+     "score": 139.02,
+     "avatar": "/demo/assets/avatars/1005.svg",
+     "titles": [
+      2022
+     ],
+     "managerId": "demo-m-1005"
+    },
+    "leg": null,
+    "kind": "regular",
+    "last": {
+     "ls": 112.3,
+     "ws": 115.38,
+     "kind": "playoff",
+     "week": 15,
+     "year": 2025,
+     "loser": "Brandon",
+     "winner": "Owen"
+    },
+    "margin": 38.24,
+    "series": {
+     "l": 8,
+     "t": 0,
+     "w": 3,
+     "since": 2020
+    },
+    "winner": "b",
+    "seriesNote": null,
+    "seriesEvent": null
+   },
+   {
+    "a": {
+     "div": 1,
+     "left": 4.1,
+     "name": "Tyler",
+     "star": {
+      "pos": "RB",
+      "player": "Javonte Williams",
+      "points": 31.3
+     },
+     "team": "Crosstown Comets",
+     "bench": {
+      "pos": "WR",
+      "player": "Mike Evans",
+      "points": 12.6
+     },
+     "score": 168.52,
+     "avatar": "/demo/assets/avatars/1002.svg",
+     "titles": [],
+     "managerId": "demo-m-1002"
+    },
+    "b": {
+     "div": 0,
+     "left": 9.2,
+     "name": "Cole",
+     "star": {
+      "pos": "WR",
+      "player": "Puka Nacua",
+      "points": 27.7
+     },
+     "team": "Cold Front",
+     "bench": {
+      "pos": "QB",
+      "player": "Justin Herbert",
+      "points": 11.56
+     },
+     "score": 124.22,
+     "avatar": "/demo/assets/avatars/1007.svg",
+     "titles": [
+      2019
+     ],
+     "managerId": "demo-m-1007"
+    },
+    "leg": null,
+    "kind": "regular",
+    "last": {
+     "ls": 106.8,
+     "ws": 132.62,
+     "kind": "regular",
+     "week": 11,
+     "year": 2025,
+     "loser": "Tyler",
+     "winner": "Cole"
+    },
+    "margin": 44.3,
+    "series": {
+     "l": 7,
+     "t": 0,
+     "w": 3,
+     "since": 2019
+    },
+    "winner": "a",
+    "seriesNote": "Tyler snaps Cole's 4-game run in this matchup.",
+    "seriesEvent": {
+     "run": 4,
+     "kind": "snap"
+    }
+   },
+   {
+    "a": {
+     "div": 0,
+     "left": 41.16,
+     "name": "Marcus",
+     "star": {
+      "pos": "RB",
+      "player": "Kyren Williams",
+      "points": 36.7
+     },
+     "team": "Stoneridge Hammers",
+     "bench": {
+      "pos": "QB",
+      "player": "Kirk Cousins",
+      "points": 26.6
+     },
+     "score": 140.34,
+     "avatar": "/demo/assets/avatars/1001.svg",
+     "titles": [],
+     "managerId": "demo-m-1001"
+    },
+    "b": {
+     "div": 1,
+     "left": 32.16,
+     "name": "Ryan",
+     "star": {
+      "pos": "QB",
+      "player": "Josh Allen",
+      "points": 20.52
+     },
+     "team": "Riverside Reign",
+     "bench": {
+      "pos": "QB",
+      "player": "C.J. Stroud",
+      "points": 27.08
+     },
+     "score": 67.12,
+     "avatar": "/demo/assets/avatars/1011.svg",
+     "titles": [
+      2021
+     ],
+     "managerId": "demo-m-1011"
+    },
+    "leg": null,
+    "kind": "regular",
+    "last": {
+     "ls": 94.32,
+     "ws": 150.1,
+     "kind": "regular",
+     "week": 5,
+     "year": 2025,
+     "loser": "Marcus",
+     "winner": "Ryan"
+    },
+    "margin": 73.22,
+    "series": {
+     "l": 3,
+     "t": 0,
+     "w": 2,
+     "since": 2023
+    },
+    "winner": "a",
+    "seriesNote": null,
+    "seriesEvent": null
+   }
+  ],
+  "hooks": [
+   "Tyler snaps four-game skid against Cole",
+   "Tyler has the most points ever through four weeks",
+   "Trevor pulls the upset",
+   "Ryan's lowest score since 2019"
+  ],
+  "phase": "regular",
+  "power": [
+   {
+    "name": "Brandon",
+    "odds": 94.6,
+    "rank": 1,
+    "team": "Brimstone FC",
+    "delta": 0,
+    "avatar": "/demo/assets/avatars/1005.svg",
+    "record": "4-0",
+    "oddsChange": null
+   },
+   {
+    "name": "Tyler",
+    "odds": 88.9,
+    "rank": 2,
+    "team": "Crosstown Comets",
+    "delta": 0,
+    "avatar": "/demo/assets/avatars/1002.svg",
+    "record": "3-1",
+    "oddsChange": null
+   },
+   {
+    "name": "Jordan",
+    "odds": 74.8,
+    "rank": 3,
+    "team": "Highland Hawks",
+    "delta": 2,
+    "avatar": "/demo/assets/avatars/1003.svg",
+    "record": "3-1",
+    "oddsChange": null
+   },
+   {
+    "name": "Marcus",
+    "odds": 74.8,
+    "rank": 4,
+    "team": "Stoneridge Hammers",
+    "delta": 2,
+    "avatar": "/demo/assets/avatars/1001.svg",
+    "record": "3-1",
+    "oddsChange": null
+   },
+   {
+    "name": "Noah",
+    "odds": 57.1,
+    "rank": 5,
+    "team": "Northern Lights",
+    "delta": -1,
+    "avatar": "/demo/assets/avatars/1010.svg",
+    "record": "2-2",
+    "oddsChange": null
+   },
+   {
+    "name": "Devin",
+    "odds": 64.6,
+    "rank": 6,
+    "team": "Den of Thieves",
+    "delta": 1,
+    "avatar": "/demo/assets/avatars/1006.svg",
+    "record": "3-1",
+    "oddsChange": null
+   },
+   {
+    "name": "Ryan",
+    "odds": 53.1,
+    "rank": 7,
+    "team": "Riverside Reign",
+    "delta": -4,
+    "avatar": "/demo/assets/avatars/1011.svg",
+    "record": "2-2",
+    "oddsChange": null
+   },
+   {
+    "name": "Ethan",
+    "odds": 23.4,
+    "rank": 8,
+    "team": "Eastside Express",
+    "delta": 2,
+    "avatar": "/demo/assets/avatars/1004.svg",
+    "record": "1-3",
+    "oddsChange": null
+   },
+   {
+    "name": "Trevor",
+    "odds": 20.2,
+    "rank": 9,
+    "team": "Trojan Horse",
+    "delta": 2,
+    "avatar": "/demo/assets/avatars/1008.svg",
+    "record": "1-3",
+    "oddsChange": null
+   },
+   {
+    "name": "Cole",
+    "odds": 23.2,
+    "rank": 10,
+    "team": "Cold Front",
+    "delta": -1,
+    "avatar": "/demo/assets/avatars/1007.svg",
+    "record": "1-3",
+    "oddsChange": null
+   },
+   {
+    "name": "Adam",
+    "odds": 19.9,
+    "rank": 11,
+    "team": "Avalanche",
+    "delta": -3,
+    "avatar": "/demo/assets/avatars/1009.svg",
+    "record": "1-3",
+    "oddsChange": null
+   },
+   {
+    "name": "Owen",
+    "odds": 5.6,
+    "rank": 12,
+    "team": "Old Glory",
+    "delta": 0,
+    "avatar": "/demo/assets/avatars/1012.svg",
+    "record": "0-4",
+    "oddsChange": null
+   }
+  ],
+  "teams": [
+   {
+    "mark": null,
+    "name": "Tyler",
+    "next": {
+     "series": {
+      "l": 9,
+      "t": 0,
+      "w": 4,
+      "since": 2019
+     },
+     "spread": 26.3,
+     "favored": true,
+     "opponent": "Jordan"
+    },
+    "note": null,
+    "odds": {
+     "now": 88.9,
+     "change": null
+    },
+    "runs": [
+     {
+      "kind": "start-best",
+      "since": null,
+      "value": 636.24,
+      "seasons": 8
+     },
+     {
+      "kind": "two-week-best",
+      "since": null,
+      "value": 342.24,
+      "seasons": 8
+     }
+    ],
+    "team": "Crosstown Comets",
+    "place": 2,
+    "power": {
+     "rank": 2,
+     "delta": 0
+    },
+    "score": 168.52,
+    "avatar": "/demo/assets/avatars/1002.svg",
+    "record": "3-1",
+    "result": "W",
+    "series": {
+     "l": 7,
+     "t": 0,
+     "w": 3,
+     "since": 2019
+    },
+    "streak": {
+     "kind": "W",
+     "length": 2
+    },
+    "titles": [],
+    "allPlay": {
+     "l": 0,
+     "t": 0,
+     "w": 11
+    },
+    "opponent": "Cole",
+    "weekRank": 1,
+    "managerId": "demo-m-1002",
+    "profileId": "demo-p-1002",
+    "startMark": null,
+    "placeChange": 1,
+    "opponentScore": 124.22
+   },
+   {
+    "mark": {
+     "kind": "season-high"
+    },
+    "name": "Ethan",
+    "next": {
+     "series": {
+      "l": 4,
+      "t": 0,
+      "w": 6,
+      "since": 2019
+     },
+     "spread": 23.6,
+     "favored": true,
+     "opponent": "Owen"
+    },
+    "note": "Season high.",
+    "odds": {
+     "now": 23.4,
+     "change": null
+    },
+    "runs": [],
+    "team": "Eastside Express",
+    "place": 8,
+    "power": {
+     "rank": 8,
+     "delta": 2
+    },
+    "score": 154.52,
+    "avatar": "/demo/assets/avatars/1004.svg",
+    "record": "1-3",
+    "result": "W",
+    "series": {
+     "l": 4,
+     "t": 0,
+     "w": 8,
+     "since": 2019
+    },
+    "streak": null,
+    "titles": [
+     2020
+    ],
+    "allPlay": {
+     "l": 1,
+     "t": 0,
+     "w": 10
+    },
+    "opponent": "Noah",
+    "weekRank": 2,
+    "managerId": "demo-m-1004",
+    "profileId": "demo-p-1004",
+    "startMark": null,
+    "placeChange": 2,
+    "opponentScore": 117.38
+   },
+   {
+    "mark": null,
+    "name": "Marcus",
+    "next": {
+     "series": {
+      "l": 3,
+      "t": 0,
+      "w": 2,
+      "since": 2023
+     },
+     "spread": 19.8,
+     "favored": true,
+     "opponent": "Devin"
+    },
+    "note": null,
+    "odds": {
+     "now": 74.8,
+     "change": null
+    },
+    "runs": [
+     {
+      "kind": "start-best",
+      "since": null,
+      "value": 547.54,
+      "seasons": 4
+     },
+     {
+      "kind": "two-week-best",
+      "since": 2023,
+      "value": 296.84,
+      "seasons": 4
+     }
+    ],
+    "team": "Stoneridge Hammers",
+    "place": 3,
+    "power": {
+     "rank": 4,
+     "delta": 2
+    },
+    "score": 140.34,
+    "avatar": "/demo/assets/avatars/1001.svg",
+    "record": "3-1",
+    "result": "W",
+    "series": {
+     "l": 3,
+     "t": 0,
+     "w": 2,
+     "since": 2023
+    },
+    "streak": {
+     "kind": "W",
+     "length": 2
+    },
+    "titles": [],
+    "allPlay": {
+     "l": 2,
+     "t": 0,
+     "w": 9
+    },
+    "opponent": "Ryan",
+    "weekRank": 3,
+    "managerId": "demo-m-1001",
+    "profileId": "demo-p-1001",
+    "startMark": null,
+    "placeChange": 2,
+    "opponentScore": 67.12
+   },
+   {
+    "mark": null,
+    "name": "Brandon",
+    "next": {
+     "series": {
+      "l": 4,
+      "t": 0,
+      "w": 4,
+      "since": 2020
+     },
+     "spread": 30.7,
+     "favored": true,
+     "opponent": "Cole"
+    },
+    "note": null,
+    "odds": {
+     "now": 94.6,
+     "change": null
+    },
+    "runs": [
+     {
+      "kind": "start-best",
+      "since": null,
+      "value": 611.68,
+      "seasons": 7
+     }
+    ],
+    "team": "Brimstone FC",
+    "place": 1,
+    "power": {
+     "rank": 1,
+     "delta": 0
+    },
+    "score": 139.02,
+    "avatar": "/demo/assets/avatars/1005.svg",
+    "record": "4-0",
+    "result": "W",
+    "series": {
+     "l": 3,
+     "t": 0,
+     "w": 8,
+     "since": 2020
+    },
+    "streak": {
+     "kind": "W",
+     "length": 4
+    },
+    "titles": [
+     2022
+    ],
+    "allPlay": {
+     "l": 3,
+     "t": 0,
+     "w": 8
+    },
+    "opponent": "Owen",
+    "weekRank": 4,
+    "managerId": "demo-m-1005",
+    "profileId": "demo-p-1005",
+    "startMark": {
+     "kind": "first-ever",
+     "seasons": 7
+    },
+    "placeChange": 0,
+    "opponentScore": 100.78
+   },
+   {
+    "mark": {
+     "kind": "season-high"
+    },
+    "name": "Trevor",
+    "next": {
+     "series": {
+      "l": 4,
+      "t": 0,
+      "w": 4,
+      "since": 2019
+     },
+     "spread": 8.8,
+     "favored": false,
+     "opponent": "Ryan"
+    },
+    "note": "Season high.",
+    "odds": {
+     "now": 20.2,
+     "change": null
+    },
+    "runs": [],
+    "team": "Trojan Horse",
+    "place": 11,
+    "power": {
+     "rank": 9,
+     "delta": 2
+    },
+    "score": 137.36,
+    "avatar": "/demo/assets/avatars/1008.svg",
+    "record": "1-3",
+    "result": "W",
+    "series": {
+     "l": 5,
+     "t": 0,
+     "w": 6,
+     "since": 2019
+    },
+    "streak": null,
+    "titles": [
+     2025
+    ],
+    "allPlay": {
+     "l": 4,
+     "t": 0,
+     "w": 7
+    },
+    "opponent": "Devin",
+    "weekRank": 5,
+    "managerId": "demo-m-1008",
+    "profileId": "demo-p-1008",
+    "startMark": null,
+    "placeChange": 0,
+    "opponentScore": 126.2
+   },
+   {
+    "mark": null,
+    "name": "Jordan",
+    "next": {
+     "series": {
+      "l": 4,
+      "t": 0,
+      "w": 9,
+      "since": 2019
+     },
+     "spread": 26.3,
+     "favored": false,
+     "opponent": "Tyler"
+    },
+    "note": null,
+    "odds": {
+     "now": 74.8,
+     "change": null
+    },
+    "runs": [
+     {
+      "kind": "start-best",
+      "since": 2020,
+      "value": 531.16,
+      "seasons": 8
+     }
+    ],
+    "team": "Highland Hawks",
+    "place": 4,
+    "power": {
+     "rank": 3,
+     "delta": 2
+    },
+    "score": 132.2,
+    "avatar": "/demo/assets/avatars/1003.svg",
+    "record": "3-1",
+    "result": "W",
+    "series": {
+     "l": 4,
+     "t": 0,
+     "w": 6,
+     "since": 2020
+    },
+    "streak": {
+     "kind": "W",
+     "length": 3
+    },
+    "titles": [
+     2023
+    ],
+    "allPlay": {
+     "l": 5,
+     "t": 0,
+     "w": 6
+    },
+    "opponent": "Adam",
+    "weekRank": 6,
+    "managerId": "demo-m-1003",
+    "profileId": "demo-p-1003",
+    "startMark": null,
+    "placeChange": 3,
+    "opponentScore": 105.28
+   },
+   {
+    "mark": {
+     "kind": "season-high"
+    },
+    "name": "Devin",
+    "next": {
+     "series": {
+      "l": 2,
+      "t": 0,
+      "w": 3,
+      "since": 2023
+     },
+     "spread": 19.8,
+     "favored": false,
+     "opponent": "Marcus"
+    },
+    "note": "Season high.",
+    "odds": {
+     "now": 64.6,
+     "change": null
+    },
+    "runs": [
+     {
+      "kind": "start-worst",
+      "since": 2021,
+      "value": 468.3,
+      "seasons": 8
+     }
+    ],
+    "team": "Den of Thieves",
+    "place": 5,
+    "power": {
+     "rank": 6,
+     "delta": 1
+    },
+    "score": 126.2,
+    "avatar": "/demo/assets/avatars/1006.svg",
+    "record": "3-1",
+    "result": "L",
+    "series": {
+     "l": 6,
+     "t": 0,
+     "w": 5,
+     "since": 2019
+    },
+    "streak": null,
+    "titles": [],
+    "allPlay": {
+     "l": 6,
+     "t": 0,
+     "w": 5
+    },
+    "opponent": "Trevor",
+    "weekRank": 7,
+    "managerId": "demo-m-1006",
+    "profileId": "demo-p-1006",
+    "startMark": null,
+    "placeChange": -3,
+    "opponentScore": 137.36
+   },
+   {
+    "mark": null,
+    "name": "Cole",
+    "next": {
+     "series": {
+      "l": 4,
+      "t": 0,
+      "w": 4,
+      "since": 2020
+     },
+     "spread": 30.7,
+     "favored": false,
+     "opponent": "Brandon"
+    },
+    "note": null,
+    "odds": {
+     "now": 23.2,
+     "change": null
+    },
+    "runs": [
+     {
+      "kind": "start-best",
+      "since": 2022,
+      "value": 489.02,
+      "seasons": 8
+     }
+    ],
+    "team": "Cold Front",
+    "place": 9,
+    "power": {
+     "rank": 10,
+     "delta": -1
+    },
+    "score": 124.22,
+    "avatar": "/demo/assets/avatars/1007.svg",
+    "record": "1-3",
+    "result": "L",
+    "series": {
+     "l": 3,
+     "t": 0,
+     "w": 7,
+     "since": 2019
+    },
+    "streak": null,
+    "titles": [
+     2019
+    ],
+    "allPlay": {
+     "l": 7,
+     "t": 0,
+     "w": 4
+    },
+    "opponent": "Tyler",
+    "weekRank": 8,
+    "managerId": "demo-m-1007",
+    "profileId": "demo-p-1007",
+    "startMark": null,
+    "placeChange": 0,
+    "opponentScore": 168.52
+   },
+   {
+    "mark": {
+     "kind": "season-low"
+    },
+    "name": "Noah",
+    "next": {
+     "series": {
+      "l": 5,
+      "t": 0,
+      "w": 2,
+      "since": 2020
+     },
+     "spread": 8.8,
+     "favored": true,
+     "opponent": "Adam"
+    },
+    "note": "Season low.",
+    "odds": {
+     "now": 57.1,
+     "change": null
+    },
+    "runs": [
+     {
+      "kind": "start-worst",
+      "since": 2022,
+      "value": 516.8,
+      "seasons": 8
+     }
+    ],
+    "team": "Northern Lights",
+    "place": 6,
+    "power": {
+     "rank": 5,
+     "delta": -1
+    },
+    "score": 117.38,
+    "avatar": "/demo/assets/avatars/1010.svg",
+    "record": "2-2",
+    "result": "L",
+    "series": {
+     "l": 8,
+     "t": 0,
+     "w": 4,
+     "since": 2019
+    },
+    "streak": {
+     "kind": "L",
+     "length": 2
+    },
+    "titles": [],
+    "allPlay": {
+     "l": 8,
+     "t": 0,
+     "w": 3
+    },
+    "opponent": "Ethan",
+    "weekRank": 9,
+    "managerId": "demo-m-1010",
+    "profileId": "demo-p-1010",
+    "startMark": null,
+    "placeChange": 0,
+    "opponentScore": 154.52
+   },
+   {
+    "mark": null,
+    "name": "Adam",
+    "next": {
+     "series": {
+      "l": 2,
+      "t": 0,
+      "w": 5,
+      "since": 2020
+     },
+     "spread": 8.8,
+     "favored": false,
+     "opponent": "Noah"
+    },
+    "note": null,
+    "odds": {
+     "now": 19.9,
+     "change": null
+    },
+    "runs": [
+     {
+      "kind": "start-best",
+      "since": 2023,
+      "value": 481.66,
+      "seasons": 7
+     }
+    ],
+    "team": "Avalanche",
+    "place": 10,
+    "power": {
+     "rank": 11,
+     "delta": -3
+    },
+    "score": 105.28,
+    "avatar": "/demo/assets/avatars/1009.svg",
+    "record": "1-3",
+    "result": "L",
+    "series": {
+     "l": 6,
+     "t": 0,
+     "w": 4,
+     "since": 2020
+    },
+    "streak": {
+     "kind": "L",
+     "length": 2
+    },
+    "titles": [
+     2024
+    ],
+    "allPlay": {
+     "l": 9,
+     "t": 0,
+     "w": 2
+    },
+    "opponent": "Jordan",
+    "weekRank": 10,
+    "managerId": "demo-m-1009",
+    "profileId": "demo-p-1009",
+    "startMark": null,
+    "placeChange": -2,
+    "opponentScore": 132.2
+   },
+   {
+    "mark": null,
+    "name": "Owen",
+    "next": {
+     "series": {
+      "l": 6,
+      "t": 0,
+      "w": 4,
+      "since": 2019
+     },
+     "spread": 23.6,
+     "favored": false,
+     "opponent": "Ethan"
+    },
+    "note": null,
+    "odds": {
+     "now": 5.6,
+     "change": null
+    },
+    "runs": [
+     {
+      "kind": "start-worst",
+      "since": 2023,
+      "value": 417.58,
+      "seasons": 8
+     }
+    ],
+    "team": "Old Glory",
+    "place": 12,
+    "power": {
+     "rank": 12,
+     "delta": 0
+    },
+    "score": 100.78,
+    "avatar": "/demo/assets/avatars/1012.svg",
+    "record": "0-4",
+    "result": "L",
+    "series": {
+     "l": 8,
+     "t": 0,
+     "w": 3,
+     "since": 2020
+    },
+    "streak": {
+     "kind": "L",
+     "length": 4
+    },
+    "titles": [],
+    "allPlay": {
+     "l": 10,
+     "t": 0,
+     "w": 1
+    },
+    "opponent": "Brandon",
+    "weekRank": 11,
+    "managerId": "demo-m-1012",
+    "profileId": "demo-p-1012",
+    "startMark": {
+     "kind": "first-since",
+     "year": 2023
+    },
+    "placeChange": 0,
+    "opponentScore": 139.02
+   },
+   {
+    "mark": {
+     "kind": "low-since",
+     "year": 2019
+    },
+    "name": "Ryan",
+    "next": {
+     "series": {
+      "l": 4,
+      "t": 0,
+      "w": 4,
+      "since": 2019
+     },
+     "spread": 8.8,
+     "favored": true,
+     "opponent": "Trevor"
+    },
+    "note": "Lowest score since 2019.",
+    "odds": {
+     "now": 53.1,
+     "change": null
+    },
+    "runs": [],
+    "team": "Riverside Reign",
+    "place": 7,
+    "power": {
+     "rank": 7,
+     "delta": -4
+    },
+    "score": 67.12,
+    "avatar": "/demo/assets/avatars/1011.svg",
+    "record": "2-2",
+    "result": "L",
+    "series": {
+     "l": 2,
+     "t": 0,
+     "w": 3,
+     "since": 2023
+    },
+    "streak": {
+     "kind": "L",
+     "length": 2
+    },
+    "titles": [
+     2021
+    ],
+    "allPlay": {
+     "l": 11,
+     "t": 0,
+     "w": 0
+    },
+    "opponent": "Marcus",
+    "weekRank": 12,
+    "managerId": "demo-m-1011",
+    "profileId": "demo-p-1011",
+    "startMark": null,
+    "placeChange": -3,
+    "opponentScore": 140.34
+   }
+  ],
+  "upset": {
+   "loser": "Devin",
+   "winner": "Trevor",
+   "loserScore": 126.2,
+   "loserRecord": "3-0",
+   "winnerScore": 137.36,
+   "winnerRecord": "0-3"
+  },
+  "league": {
+   "id": "demo",
+   "abbr": "LSL",
+   "name": "The Lakeside League",
+   "slug": "demo"
+  },
+  "starts": [
+   {
+    "to": 2025,
+    "who": [
+     "Brandon"
+    ],
+    "from": 2019,
+    "teams": 4,
+    "champs": 0,
+    "record": "4-0",
+    "lastChamp": null
+   },
+   {
+    "to": 2025,
+    "who": [
+     "Owen"
+    ],
+    "from": 2019,
+    "teams": 6,
+    "champs": 0,
+    "record": "0-4",
+    "lastChamp": null
+   }
+  ],
+  "totals": [
+   {
+    "of": 98,
+    "key": "pf",
+    "who": "Tyler",
+    "rank": 1,
+    "label": "Points through four weeks",
+    "since": null,
+    "value": 636.24,
+    "chaser": null,
+    "record": {
+     "who": "Tyler",
+     "year": 2023,
+     "value": 634.32
+    }
+   },
+   {
+    "of": 98,
+    "key": "pfLow",
+    "who": "Owen",
+    "rank": 7,
+    "label": "Fewest points through four weeks",
+    "since": null,
+    "value": 417.58,
+    "chaser": null,
+    "record": {
+     "who": "Dave",
+     "year": 2021,
+     "value": 357.72
+    }
+   },
+   {
+    "of": 98,
+    "key": "pa",
+    "who": "Ryan",
+    "rank": 3,
+    "label": "Points against through four weeks",
+    "since": {
+     "who": "Cole",
+     "year": 2020,
+     "value": 598.9
+    },
+    "value": 596.32,
+    "chaser": null,
+    "record": {
+     "who": "Jordan",
+     "year": 2020,
+     "value": 607.28
+    }
+   },
+   {
+    "of": 1128,
+    "key": "twoWeek",
+    "who": "Tyler",
+    "rank": 4,
+    "label": "Best back-to-back weeks",
+    "since": {
+     "who": "Ryan",
+     "year": 2021,
+     "value": 355.14
+    },
+    "value": 342.24,
+    "chaser": null,
+    "record": {
+     "who": "Ryan",
+     "year": 2021,
+     "value": 355.14
+    }
+   }
+  ],
+  "trades": [
+   {
+    "sides": [
+     {
+      "gets": [
+       "Ladd McConkey"
+      ],
+      "assets": [
+       {
+        "pos": "WR",
+        "team": "LAC",
+        "label": "Ladd McConkey"
+       }
+      ],
+      "manager": "Devin"
+     },
+     {
+      "gets": [
+       "DK Metcalf",
+       "Terry McLaurin"
+      ],
+      "assets": [
+       {
+        "pos": "WR",
+        "team": "PIT",
+        "label": "DK Metcalf"
+       },
+       {
+        "pos": "WR",
+        "team": "WAS",
+        "label": "Terry McLaurin"
+       }
+      ],
+      "manager": "Adam"
+     }
+    ],
+    "summary": "Timing favored Den of Thieves, who bought a higher‑valued WR23 while the market was still pricing McConkey above McLaurin. Avalanche sold the premium McConkey at a premium and bought two lower‑valued pieces, effectively cashing in. The deal makes sense because Avalanche needed a healthy starter now, and Den of Thieves can absorb McConkey’s foot issue with depth at WR. Den of Thieves wins this trade, though he assumes the risk of McConkey’s lingering questionability.",
+    "headline": "Devin and Adam"
+   },
+   {
+    "sides": [
+     {
+      "gets": [
+       "Mike Evans"
+      ],
+      "assets": [
+       {
+        "pos": "WR",
+        "team": "SF",
+        "label": "Mike Evans"
+       }
+      ],
+      "manager": "Ethan"
+     },
+     {
+      "gets": [
+       "Aaron Jones"
+      ],
+      "assets": [
+       {
+        "pos": "RB",
+        "team": "MIN",
+        "label": "Aaron Jones"
+       }
+      ],
+      "manager": "Tyler"
+     }
+    ],
+    "summary": "By swapping a veteran WR for a veteran RB, each manager signals a shift in positional focus for the season. Eastside Express is saying he values a more reliable WR slot, while Crosstown Comets is indicating a need to bolster his backfield depth. Eastside Express wins this trade, acquiring the higher‑valued Mike Evans, and Crosstown Comets takes on the lower‑valued Aaron Jones. The move leaves Crosstown Comets with a modest downgrade in overall package value, while Eastside Express gains a clear upgrade in weekly upside.",
+    "headline": "Ethan and Tyler"
+   }
+  ],
+  "blowout": {
+   "a": {
+    "div": 0,
+    "left": 41.16,
+    "name": "Marcus",
+    "star": {
+     "pos": "RB",
+     "player": "Kyren Williams",
+     "points": 36.7
+    },
+    "team": "Stoneridge Hammers",
+    "bench": {
+     "pos": "QB",
+     "player": "Kirk Cousins",
+     "points": 26.6
+    },
+    "score": 140.34,
+    "avatar": "/demo/assets/avatars/1001.svg",
+    "titles": [],
+    "managerId": "demo-m-1001"
+   },
+   "b": {
+    "div": 1,
+    "left": 32.16,
+    "name": "Ryan",
+    "star": {
+     "pos": "QB",
+     "player": "Josh Allen",
+     "points": 20.52
+    },
+    "team": "Riverside Reign",
+    "bench": {
+     "pos": "QB",
+     "player": "C.J. Stroud",
+     "points": 27.08
+    },
+    "score": 67.12,
+    "avatar": "/demo/assets/avatars/1011.svg",
+    "titles": [
+     2021
+    ],
+    "managerId": "demo-m-1011"
+   },
+   "leg": null,
+   "kind": "regular",
+   "last": {
+    "ls": 94.32,
+    "ws": 150.1,
+    "kind": "regular",
+    "week": 5,
+    "year": 2025,
+    "loser": "Marcus",
+    "winner": "Ryan"
+   },
+   "margin": 73.22,
+   "series": {
+    "l": 3,
+    "t": 0,
+    "w": 2,
+    "since": 2023
+   },
+   "winner": "a",
+   "seriesNote": null,
+   "seriesEvent": null
+  },
+  "closest": {
+   "a": {
+    "div": 0,
+    "left": 22.9,
+    "name": "Devin",
+    "star": {
+     "pos": "RB",
+     "player": "Kenneth Walker",
+     "points": 30.9
+    },
+    "team": "Den of Thieves",
+    "bench": {
+     "pos": "WR",
+     "player": "Jameson Williams",
+     "points": 16.2
+    },
+    "score": 126.2,
+    "avatar": "/demo/assets/avatars/1006.svg",
+    "titles": [],
+    "managerId": "demo-m-1006"
+   },
+   "b": {
+    "div": 1,
+    "left": 31.3,
+    "name": "Trevor",
+    "star": {
+     "pos": "WR",
+     "player": "Tetairoa McMillan",
+     "points": 45.2
+    },
+    "team": "Trojan Horse",
+    "bench": {
+     "pos": "QB",
+     "player": "Drake Maye",
+     "points": 32.16
+    },
+    "score": 137.36,
+    "avatar": "/demo/assets/avatars/1008.svg",
+    "titles": [
+     2025
+    ],
+    "managerId": "demo-m-1008"
+   },
+   "leg": null,
+   "kind": "regular",
+   "last": {
+    "ls": 85.5,
+    "ws": 117.5,
+    "kind": "regular",
+    "week": 14,
+    "year": 2025,
+    "loser": "Devin",
+    "winner": "Trevor"
+   },
+   "margin": 11.16,
+   "series": {
+    "l": 6,
+    "t": 0,
+    "w": 5,
+    "since": 2019
+   },
+   "winner": "b",
+   "seriesNote": "Trevor takes the series lead, 6-5.",
+   "seriesEvent": {
+    "kind": "lead"
+   }
+  },
+  "history": {
+   "seasons": 8,
+   "firstYear": 2019
+  },
+  "pickems": {
+   "low": {
+    "team": "Ryan",
+    "right": [],
+    "pickers": 5
+   },
+   "best": [
+    {
+     "name": "Noah",
+     "right": 4,
+     "wrong": 1
+    },
+    {
+     "name": "Marcus",
+     "right": 4,
+     "wrong": 1
+    }
+   ],
+   "high": {
+    "team": "Tyler",
+    "right": [
+     "Marcus"
+    ],
+    "pickers": 5
+   },
+   "crowd": "Nobody picked Ethan over Noah.",
+   "leaders": [
+    {
+     "name": "Marcus",
+     "right": 16,
+     "wrong": 4
+    },
+    {
+     "name": "Cole",
+     "right": 11,
+     "wrong": 9
+    },
+    {
+     "name": "Noah",
+     "right": 9,
+     "wrong": 6
+    },
+    {
+     "name": "Ryan",
+     "right": 9,
+     "wrong": 11
+    },
+    {
+     "name": "Devin",
+     "right": 8,
+     "wrong": 7
+    },
+    {
+     "name": "Jordan",
+     "right": 7,
+     "wrong": 3
+    }
+   ],
+   "pickers": 5
+  },
+  "streaks": [
+   {
+    "kind": "W",
+    "name": "Brandon",
+    "length": 4
+   },
+   {
+    "kind": "L",
+    "name": "Owen",
+    "length": 4
+   },
+   {
+    "kind": "W",
+    "name": "Jordan",
+    "length": 3
+   }
+  ],
+  "yearAgo": {
+   "record": "4-0",
+   "leaders": [
+    {
+     "name": "Ethan",
+     "finish": "finished 3rd"
+    }
+   ]
+  },
+  "verdicts": [
+   {
+    "summary": "Brock Bowers has kept his TE1 production alive, anchoring Crosstown Comets’s lineup while Zay Flowers and Javonte Williams have both stayed solid contributors. Meanwhile, Brimstone FC’s new TE, Dallas Goedert, remains sidelined and the team’s RB8 Derrick Henry is battling a dip in efficiency, leaving a net shortfall at the top spots. The balance of value still favors Crosstown Comets, so the original grades stand.",
+    "headline": "Brandon and Tyler"
+   },
+   {
+    "summary": "Tee Higgins exploded into a weekly WR1 while Malik Nabers has been limited by lingering knee issues and remains a bench option. The surge from Higgins and solid contributions from Robinson give Eastside Express the productive depth they needed, whereas Den of Thieves’s upgrade never materialized. This flips the advantage, nudging Den of Thieves’s grade down and lifting Eastside Express’s grade.",
+    "headline": "Devin and Ethan"
+   }
+  ],
+  "divisions": [
+   "North",
+   "South"
+  ],
+  "standings": [
+   {
+    "pf": 611.68,
+    "div": 1,
+    "name": "Brandon",
+    "odds": 94.6,
+    "rank": 1,
+    "team": "Brimstone FC",
+    "ties": 0,
+    "wins": 4,
+    "avatar": "/demo/assets/avatars/1005.svg",
+    "change": 0,
+    "losses": 0,
+    "managerId": "demo-m-1005"
+   },
+   {
+    "pf": 636.24,
+    "div": 1,
+    "name": "Tyler",
+    "odds": 88.9,
+    "rank": 2,
+    "team": "Crosstown Comets",
+    "ties": 0,
+    "wins": 3,
+    "avatar": "/demo/assets/avatars/1002.svg",
+    "change": 1,
+    "losses": 1,
+    "managerId": "demo-m-1002"
+   },
+   {
+    "pf": 547.54,
+    "div": 0,
+    "name": "Marcus",
+    "odds": 74.8,
+    "rank": 3,
+    "team": "Stoneridge Hammers",
+    "ties": 0,
+    "wins": 3,
+    "avatar": "/demo/assets/avatars/1001.svg",
+    "change": 2,
+    "losses": 1,
+    "managerId": "demo-m-1001"
+   },
+   {
+    "pf": 531.16,
+    "div": 0,
+    "name": "Jordan",
+    "odds": 74.8,
+    "rank": 4,
+    "team": "Highland Hawks",
+    "ties": 0,
+    "wins": 3,
+    "avatar": "/demo/assets/avatars/1003.svg",
+    "change": 3,
+    "losses": 1,
+    "managerId": "demo-m-1003"
+   },
+   {
+    "pf": 468.3,
+    "div": 0,
+    "name": "Devin",
+    "odds": 64.6,
+    "rank": 5,
+    "team": "Den of Thieves",
+    "ties": 0,
+    "wins": 3,
+    "avatar": "/demo/assets/avatars/1006.svg",
+    "change": -3,
+    "losses": 1,
+    "managerId": "demo-m-1006"
+   },
+   {
+    "pf": 516.8,
+    "div": 0,
+    "name": "Noah",
+    "odds": 57.1,
+    "rank": 6,
+    "team": "Northern Lights",
+    "ties": 0,
+    "wins": 2,
+    "avatar": "/demo/assets/avatars/1010.svg",
+    "change": 0,
+    "losses": 2,
+    "managerId": "demo-m-1010"
+   },
+   {
+    "pf": 508.36,
+    "div": 1,
+    "name": "Ryan",
+    "odds": 53.1,
+    "rank": 7,
+    "team": "Riverside Reign",
+    "ties": 0,
+    "wins": 2,
+    "avatar": "/demo/assets/avatars/1011.svg",
+    "change": -3,
+    "losses": 2,
+    "managerId": "demo-m-1011"
+   },
+   {
+    "pf": 512.14,
+    "div": 1,
+    "name": "Ethan",
+    "odds": 23.4,
+    "rank": 8,
+    "team": "Eastside Express",
+    "ties": 0,
+    "wins": 1,
+    "avatar": "/demo/assets/avatars/1004.svg",
+    "change": 2,
+    "losses": 3,
+    "managerId": "demo-m-1004"
+   },
+   {
+    "pf": 489.02,
+    "div": 0,
+    "name": "Cole",
+    "odds": 23.2,
+    "rank": 9,
+    "team": "Cold Front",
+    "ties": 0,
+    "wins": 1,
+    "avatar": "/demo/assets/avatars/1007.svg",
+    "change": 0,
+    "losses": 3,
+    "managerId": "demo-m-1007"
+   },
+   {
+    "pf": 481.66,
+    "div": 1,
+    "name": "Adam",
+    "odds": 19.9,
+    "rank": 10,
+    "team": "Avalanche",
+    "ties": 0,
+    "wins": 1,
+    "avatar": "/demo/assets/avatars/1009.svg",
+    "change": -2,
+    "losses": 3,
+    "managerId": "demo-m-1009"
+   },
+   {
+    "pf": 473.36,
+    "div": 1,
+    "name": "Trevor",
+    "odds": 20.2,
+    "rank": 11,
+    "team": "Trojan Horse",
+    "ties": 0,
+    "wins": 1,
+    "avatar": "/demo/assets/avatars/1008.svg",
+    "change": 0,
+    "losses": 3,
+    "managerId": "demo-m-1008"
+   },
+   {
+    "pf": 417.58,
+    "div": 0,
+    "name": "Owen",
+    "odds": 5.6,
+    "rank": 12,
+    "team": "Old Glory",
+    "ties": 0,
+    "wins": 0,
+    "avatar": "/demo/assets/avatars/1012.svg",
+    "change": 0,
+    "losses": 4,
+    "managerId": "demo-m-1012"
+   }
+  ],
+  "milestones": [
+   {
+    "name": "Tyler",
+    "text": "50th career win"
+   }
+  ],
+  "weekRecord": {
+   "who": "Noah",
+   "year": 2024,
+   "isNew": false,
+   "value": 189.52
+  },
+  "generatedAt": "2026-10-06T18:12:05.058Z",
+  "projections": {
+   "over": [
+    {
+     "pos": "WR",
+     "diff": 29.33,
+     "proj": 15.87,
+     "player": "Tetairoa McMillan",
+     "points": 45.2,
+     "manager": "Trevor"
+    },
+    {
+     "pos": "WR",
+     "diff": 23.88,
+     "proj": 17.42,
+     "player": "CeeDee Lamb",
+     "points": 41.3,
+     "manager": "Jordan"
+    },
+    {
+     "pos": "RB",
+     "diff": 22.95,
+     "proj": 13.75,
+     "player": "Kyren Williams",
+     "points": 36.7,
+     "manager": "Marcus"
+    },
+    {
+     "pos": "RB",
+     "diff": 16.33,
+     "proj": 14.97,
+     "player": "Javonte Williams",
+     "points": 31.3,
+     "manager": "Tyler"
+    },
+    {
+     "pos": "TE",
+     "diff": 12.4,
+     "proj": 14,
+     "player": "Sam LaPorta",
+     "points": 26.4,
+     "manager": "Marcus"
+    }
+   ],
+   "under": [
+    {
+     "pos": "WR",
+     "diff": -15.16,
+     "proj": 17.16,
+     "player": "Parker Washington",
+     "points": 2,
+     "manager": "Ryan"
+    },
+    {
+     "pos": "WR",
+     "diff": -13.98,
+     "proj": 13.98,
+     "player": "Rashee Rice",
+     "points": 0,
+     "manager": "Noah"
+    },
+    {
+     "pos": "TE",
+     "diff": -13.16,
+     "proj": 13.16,
+     "player": "Kenyon Sadiq",
+     "points": 0,
+     "manager": "Owen"
+    },
+    {
+     "pos": "WR",
+     "diff": -13.09,
+     "proj": 18.79,
+     "player": "Garrett Wilson",
+     "points": 5.7,
+     "manager": "Jordan"
+    },
+    {
+     "pos": "TE",
+     "diff": -12.35,
+     "proj": 14.55,
+     "player": "Dalton Kincaid",
+     "points": 2.2,
+     "manager": "Cole"
+    }
+   ]
+  },
+  "playoffTeams": 6
+ }
+}

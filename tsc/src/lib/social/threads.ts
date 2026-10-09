@@ -37,7 +37,7 @@ async function graph<T>(path: string, params: Record<string, string>, method: 'G
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-export async function postToThreads(db: Db, text: string, imageUrl: string | null): Promise<{ id: string; url: string | null }> {
+export async function postToThreads(db: Db, text: string, imageUrl: string | null, replyTo?: string): Promise<{ id: string; url: string | null }> {
   const token = await threadsToken(db)
   if (!token) throw new Error('THREADS_ACCESS_TOKEN is not set')
 
@@ -45,6 +45,7 @@ export async function postToThreads(db: Db, text: string, imageUrl: string | nul
     access_token: token,
     text,
     ...(imageUrl ? { media_type: 'IMAGE', image_url: imageUrl } : { media_type: 'TEXT' }),
+    ...(replyTo ? { reply_to_id: replyTo } : {}),
   })
 
   // Up to ~40s for Threads to fetch and process the card.
