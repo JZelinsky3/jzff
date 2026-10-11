@@ -4,6 +4,7 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isSiteAdmin } from '@/lib/siteAdmin'
+import { ownAccountIds } from '@/lib/ownAccounts'
 
 // How busy each league is.
 //
@@ -74,7 +75,8 @@ export default async function AdminActivityPage() {
     .gte('day', days[0])
     .limit(50_000)
   const tableMissing = !!visitsRes.error
-  const rows = (visitsRes.data ?? []) as Row[]
+  const own = await ownAccountIds(db)
+  const rows = ((visitsRes.data ?? []) as Row[]).filter((r) => !own.has(r.visitor.slice(2)))
 
   const ids = [...new Set(rows.map((r) => r.league_id))]
   const { data: leagueRows } = ids.length

@@ -9,7 +9,8 @@
 //                                     the one X post with a link
 //   Tue  8:00  Drop Regret Index      filled Tuesday from Sunday's scores
 //   Wed  8:00  Fantasy History        top six Week N games since 2009
-//   Fri  8:00  Roster Roulette deal   one seeded wheel for everyone
+//   Fri  8:00  A game                 every other week, one seeded deal for
+//                                     everyone, rotating (content.ts)
 //   Sat 10:00  Weekly Recap promo     product card, no link on X
 //
 // Weekdays at 8: people read before work, and Tuesday morning is waivers.
@@ -40,7 +41,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getNflClock, nflWeekAt, weekOverAt } from '@/lib/nflClock'
 import { addDays, easternAt, easternDate, easternWeekday } from './config'
 import {
-  buildFeature, buildHistory, buildRecapPromo, buildRoulette, snapshotDrops,
+  buildFeature, buildGame, buildHistory, buildRecapPromo, snapshotDrops,
   type Built, type Kind, type RegretParams,
 } from './content'
 import { buildNameGame } from './extras'
@@ -116,11 +117,12 @@ export async function planWeek(db: Db, opts: { monday?: string; dry?: boolean } 
       },
     },
     {
-      kind: 'roulette', date: addDays(monday, 4), hour: 8,
+      kind: 'game', date: addDays(monday, 4), hour: 8,
       build: async () => {
         const week = weekOf(addDays(monday, 4), 12)
         if (!week) return { skip: 'not the regular season' }
-        return { built: buildRoulette(season, week) }
+        if (rotation % 2) return { skip: 'a game goes out every other week' }
+        return { built: buildGame(season, week, rotation / 2) }
       },
     },
     {

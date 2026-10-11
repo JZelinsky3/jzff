@@ -14,9 +14,19 @@
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
 
--- 2. The secret. Run once. To change it later:
---    select vault.update_secret((select id from vault.secrets where name = 'cron_secret'), '<new>');
-select vault.create_secret('PASTE_CRON_SECRET_HERE', 'cron_secret');
+-- 2. The secret. Safe to re-run: creates it, or overwrites it if a
+-- previous run already stored one.
+do $$
+declare
+  secret text := 'PASTE_CRON_SECRET_HERE';
+  existing uuid := (select id from vault.secrets where name = 'cron_secret');
+begin
+  if existing is null then
+    perform vault.create_secret(secret, 'cron_secret');
+  else
+    perform vault.update_secret(existing, secret);
+  end if;
+end $$;
 
 -- 3. Every hour at :02. Posts are slotted on the hour, so they land two
 -- minutes late. All 24 hours: a run with nothing due does nothing.

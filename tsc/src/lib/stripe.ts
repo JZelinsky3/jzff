@@ -512,7 +512,10 @@ export async function upsertSubscriptionFromStripe(
       price_id: priceId,
       trial_ends_at: trialEndSec ? new Date(trialEndSec * 1000).toISOString() : null,
       current_period_end: periodEndSec ? new Date(periodEndSec * 1000).toISOString() : null,
-      cancel_at_period_end: !!sub.cancel_at_period_end,
+      // "Won't renew." Newer Stripe versions (and the billing portal) can say
+      // so with a cancel_at date instead of the flag; either one counts, so a
+      // trial cancelled from the portal reads as ending on /admin.
+      cancel_at_period_end: !!sub.cancel_at_period_end || sub.cancel_at != null,
     },
     { onConflict: 'user_id' },
   )

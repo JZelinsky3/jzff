@@ -19,6 +19,7 @@ import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
+import { isOwnEmail } from '@/lib/ownAccounts'
 
 const SITE_TZ = 'America/New_York'
 function siteDay(): string {
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     supabase.auth.getUser(),
   ])
   if (!league?.published_at) return skipped()
-  if (user && (await isSiteAdmin(user.id))) return skipped()
+  if (user && (isOwnEmail(user.email) || (await isSiteAdmin(user.id)))) return skipped()
 
   const role = !user ? 'visitor' : user.id === league.owner_id ? 'owner' : 'member'
   const visitor = user ? `u:${user.id}` : `a:${vid}`

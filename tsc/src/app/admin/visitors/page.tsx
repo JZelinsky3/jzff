@@ -4,6 +4,7 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isSiteAdmin } from '@/lib/siteAdmin'
+import { ownAccountIds } from '@/lib/ownAccounts'
 
 // Who keeps coming back.
 //
@@ -86,7 +87,9 @@ export default async function AdminVisitorsPage() {
   // A missing table (migration 0066 not run yet) should say so, not render an
   // empty page that looks like "nobody came back".
   const tableMissing = !!visitsRes.error
-  const visits = (visitsRes.data ?? []) as VisitRow[]
+  // Joey's own accounts were recorded until 2026-10-10; leave them out.
+  const own = await ownAccountIds(db, authRes.data?.users)
+  const visits = ((visitsRes.data ?? []) as VisitRow[]).filter((v) => !own.has(v.user_id))
 
   const profileById = new Map(
     (profilesRes.data ?? []).map((p) => [p.id as string, p as { display_name: string | null; created_at: string }]),

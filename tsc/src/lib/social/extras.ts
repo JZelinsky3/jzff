@@ -70,7 +70,7 @@ const POS_PLURAL: Record<string, string> = { QB: 'QBs', RB: 'RBs', WR: 'WRs', TE
 // How deep "a starter" goes at each position in a 12-team league.
 const STARTER_DEPTH: Record<string, number> = { QB: 12, RB: 24, WR: 24, TE: 12 }
 
-type Line = { id: string; player: Player; pts: number; games: number; low: number; tgt: number; rz: number; best: { pts: number; week: number } }
+type Line = { id: string; player: Player; pts: number; games: number; weeks: Set<number>; low: number; tgt: number; rz: number; best: { pts: number; week: number } }
 
 /**
  * Season to date for every fantasy player over weeks 1..through: PPR points,
@@ -87,9 +87,10 @@ async function seasonLines(season: number, through: number): Promise<Line[]> {
       if (!player?.full_name || !FANTASY_POS.has(player.position ?? '')) continue
       const pts = s.pts_ppr ?? 0
       if (!(s.gp ?? 0) && !pts) continue
-      const l = acc.get(id) ?? { id, player, pts: 0, games: 0, low: Infinity, tgt: 0, rz: 0, best: { pts: -Infinity, week: 0 } }
+      const l = acc.get(id) ?? { id, player, pts: 0, games: 0, weeks: new Set(), low: Infinity, tgt: 0, rz: 0, best: { pts: -Infinity, week: 0 } }
       l.pts += pts
       l.games += 1
+      l.weeks.add(wi + 1)
       l.low = Math.min(l.low, pts)
       l.tgt += s.rec_tgt ?? 0
       l.rz += (s.rush_rz_att ?? 0) + (s.rec_rz_tgt ?? 0)
@@ -98,6 +99,48 @@ async function seasonLines(season: number, through: number): Promise<Line[]> {
     }
   })
   return [...acc.values()]
+}
+
+// ── Injuries ─────────────────────────────────────────────────────────────
+// A season total says nothing about a player who stopped playing in Week 2,
+// and calling him a bust is wrong (De'Von Achane went out as RB40 a month
+// after his ACL; Joey caught it). Sleeper's injury status says who's out now,
+// the schedule says which of his team's games he missed (byes aren't games).
+//
+// Out for weeks: injured reserve, the PUP and NFI lists, a suspension.
+const OUT_FOR_WEEKS = new Set(['IR', 'PUP', 'NFI', 'Sus', 'DNR'])
+const OUT_THIS_WEEK = new Set(['Out', 'Doubtful'])
+
+type TeamWeeks = Map<string, number[]>
+
+/** The weeks each team played, 1..through. */
+async function teamWeeks(season: number, through: number): Promise<TeamWeeks> {
+  const res = await fetch(`https://api.sleeper.com/schedule/nfl/regular/${season}`, { cache: 'no-store' })
+  if (!res.ok) throw new Error(`Sleeper schedule ${season}: ${res.status}`)
+  const out: TeamWeeks = new Map()
+  for (const g of (await res.json()) as { week: number; home: string; away: string; status?: string }[]) {
+    if (g.week > through || g.status === 'canceled') continue
+    for (const t of [g.home, g.away]) out.set(t, [...(out.get(t) ?? []), g.week])
+  }
+  return out
+}
+
+/** Still playing: on a team, not on a reserve list, and in one of his team's last two games. */
+function stillPlaying(l: Line, tw: TeamWeeks): boolean {
+  const p = l.player
+  if (!p.team || p.status === 'Inactive' || OUT_FOR_WEEKS.has(p.injury_status ?? '')) return false
+  const recent = (tw.get(p.team) ?? []).slice(-2)
+  return recent.length === 0 || recent.some((w) => l.weeks.has(w))
+}
+
+/** Played every one of his team's games so far (traded players can trip this; it errs out). */
+function noneMissed(l: Line, tw: TeamWeeks): boolean {
+  return (tw.get(l.player.team ?? '') ?? []).every((w) => l.weeks.has(w))
+}
+
+/** Fair to judge on his season: every game played and not out this week. */
+function everyGame(l: Line, tw: TeamWeeks): boolean {
+  return stillPlaying(l, tw) && noneMissed(l, tw) && !OUT_THIS_WEEK.has(l.player.injury_status ?? '')
 }
 
 /** Position rank by season points, e.g. rank.get(line) === 3 for the WR3. */
@@ -207,8 +250,9 @@ export async function buildBeat(p: WeekParams): Promise<Built | null> {
 export type SeasonParams = { season: number; week: number; pos: string }
 
 export async function buildSeason(p: SeasonParams): Promise<Built | null> {
-  const top = (await seasonLines(p.season, p.week))
-    .filter((l) => l.player.position === p.pos)
+  const [lines, tw] = await Promise.all([seasonLines(p.season, p.week), teamWeeks(p.season, p.week)])
+  const top = lines
+    .filter((l) => l.player.position === p.pos && stillPlaying(l, tw))
     .sort((a, b) => b.pts - a.pts)
     .slice(0, 5)
   return listPost(
@@ -221,8 +265,9 @@ export async function buildSeason(p: SeasonParams): Promise<Built | null> {
 
 // ── Target leaders ───────────────────────────────────────────────────────
 export async function buildTargets(p: WeekParams): Promise<Built | null> {
-  const top = (await seasonLines(p.season, p.week))
-    .filter((l) => l.tgt > 0)
+  const [lines, tw] = await Promise.all([seasonLines(p.season, p.week), teamWeeks(p.season, p.week)])
+  const top = lines
+    .filter((l) => l.tgt > 0 && stillPlaying(l, tw))
     .sort((a, b) => b.tgt - a.tgt)
     .slice(0, 5)
   if (!top.length || top[0].tgt < 15) return null
@@ -253,9 +298,10 @@ async function seasonRecord(lastSeason: number): Promise<{ name: string; year: n
 }
 
 export async function buildPace(p: WeekParams): Promise<Built | null> {
-  const [lines, record] = await Promise.all([seasonLines(p.season, p.week), seasonRecord(p.season - 1)])
+  const [lines, record, tw] = await Promise.all([seasonLines(p.season, p.week), seasonRecord(p.season - 1), teamWeeks(p.season, p.week)])
   const minGames = Math.max(3, p.week - 2)
-  const leaders = lines.filter((l) => l.games >= minGames).sort((a, b) => b.pts / b.games - a.pts / a.games)
+  // A pace he's on IR for isn't a pace.
+  const leaders = lines.filter((l) => l.games >= minGames && stillPlaying(l, tw)).sort((a, b) => b.pts / b.games - a.pts / a.games)
   const top = leaders[0]
   if (!top || !record) return null
   const pace = (top.pts / top.games) * 17
@@ -271,12 +317,12 @@ export async function buildPace(p: WeekParams): Promise<Built | null> {
 
 // ── Draft bargains and busts ─────────────────────────────────────────────
 export async function buildBargains(p: WeekParams): Promise<Built | null> {
-  const [lines, adp] = await Promise.all([seasonLines(p.season, p.week), draftPositions(p.season)])
+  const [lines, adp, tw] = await Promise.all([seasonLines(p.season, p.week), draftPositions(p.season), teamWeeks(p.season, p.week)])
   const rank = positionRanks(lines)
   const picks = lines
     .map((l) => ({ l, r: rank.get(l)!, adp: adp.get(l.id) ?? 400 }))
     // Starters now, drafted after the sixth round (or not at all).
-    .filter((x) => x.r <= STARTER_DEPTH[x.l.player.position!] / 2 && x.adp >= 72)
+    .filter((x) => x.r <= STARTER_DEPTH[x.l.player.position!] / 2 && x.adp >= 72 && stillPlaying(x.l, tw))
     .sort((a, b) => b.adp - a.adp)
     .slice(0, 4)
   return listPost(
@@ -288,13 +334,13 @@ export async function buildBargains(p: WeekParams): Promise<Built | null> {
 }
 
 export async function buildBusts(p: WeekParams): Promise<Built | null> {
-  const [lines, adp] = await Promise.all([seasonLines(p.season, p.week), draftPositions(p.season)])
+  const [lines, adp, tw] = await Promise.all([seasonLines(p.season, p.week), draftPositions(p.season), teamWeeks(p.season, p.week)])
   const rank = positionRanks(lines)
-  // Only players who have played (nearly) every week: an injury isn't a bust.
-  const minGames = Math.max(2, p.week - 1)
+  // Only players who've played every game and aren't hurt now: an injury
+  // isn't a bust.
   const picks = lines
     .map((l) => ({ l, r: rank.get(l)!, adp: adp.get(l.id) ?? 999 }))
-    .filter((x) => x.adp <= 36 && x.l.games >= minGames && x.r > STARTER_DEPTH[x.l.player.position!])
+    .filter((x) => x.adp <= 36 && everyGame(x.l, tw) && x.r > STARTER_DEPTH[x.l.player.position!])
     .sort((a, b) => a.adp - b.adp)
     .slice(0, 4)
   return listPost(
@@ -307,7 +353,9 @@ export async function buildBusts(p: WeekParams): Promise<Built | null> {
 
 // ── Every game over the line ─────────────────────────────────────────────
 export async function buildStreaks(p: WeekParams): Promise<Built | null> {
-  const lines = (await seasonLines(p.season, p.week)).filter((l) => l.games >= Math.max(3, p.week - 1))
+  const [all, tw] = await Promise.all([seasonLines(p.season, p.week), teamWeeks(p.season, p.week)])
+  // "Every game" has to mean every game his team played.
+  const lines = all.filter((l) => l.games >= 3 && noneMissed(l, tw) && stillPlaying(l, tw))
   // The highest round line that names three to six players, so the whole
   // list fits and the count in the heading is the list.
   for (const floor of [25, 20, 18, 15]) {
@@ -332,8 +380,11 @@ export async function buildByes(p: WeekParams): Promise<Built | null> {
   if (!bye.length || !playing.size) return null
 
   const byeSet = new Set(bye)
-  const names = (await seasonLines(p.season, Math.max(1, p.week - 1)))
-    .filter((l) => byeSet.has(l.player.team ?? ''))
+  const through = Math.max(1, p.week - 1)
+  const [lines, tw] = await Promise.all([seasonLines(p.season, through), teamWeeks(p.season, through)])
+  // Someone already on IR isn't sitting out for the bye.
+  const names = lines
+    .filter((l) => byeSet.has(l.player.team ?? '') && stillPlaying(l, tw))
     .sort((a, b) => b.pts - a.pts)
     .slice(0, 4)
     .map((l) => who(l.player))
@@ -373,9 +424,10 @@ export async function buildProjections(p: WeekParams): Promise<Built | null> {
 // Wednesday's all-time list. The plan passes the position Wednesday's season
 // leaders didn't use.
 export async function buildYearAgo(p: SeasonParams): Promise<Built | null> {
-  const [now, then] = await Promise.all([seasonLines(p.season, p.week), seasonLines(p.season - 1, p.week)])
+  const [now, then, tw] = await Promise.all([seasonLines(p.season, p.week), seasonLines(p.season - 1, p.week), teamWeeks(p.season, p.week)])
   const top = (lines: Line[]) => lines.filter((l) => l.player.position === p.pos).sort((a, b) => b.pts - a.pts).slice(0, 5)
-  const a = top(now)
+  // This year's side leaves out who's stopped playing; last year's is history.
+  const a = top(now.filter((l) => stillPlaying(l, tw)))
   const b = top(then)
   if (a.length < 3 || b.length < 3) return null
   const make = (n: number) => [
@@ -447,11 +499,11 @@ export async function buildSunday(p: WeekParams): Promise<Built | null> {
 // Two players taken a pick or two apart in Sleeper drafts, with the biggest
 // gap in points since. Starting-lineup picks only (top 100).
 export async function buildSideBySide(p: WeekParams): Promise<Built | null> {
-  const [lines, adp] = await Promise.all([seasonLines(p.season, p.week), draftPositions(p.season)])
-  const minGames = Math.max(2, p.week - 1)
+  const [lines, adp, tw] = await Promise.all([seasonLines(p.season, p.week), draftPositions(p.season), teamWeeks(p.season, p.week)])
+  // Both have to have played every game: a gap that's an injury isn't a story.
   const drafted = lines
     .map((l) => ({ l, adp: adp.get(l.id) ?? 999 }))
-    .filter((x) => x.adp <= 100 && x.l.games >= minGames)
+    .filter((x) => x.adp <= 100 && everyGame(x.l, tw))
     .sort((a, b) => a.adp - b.adp)
   let pair: [typeof drafted[number], typeof drafted[number]] | null = null
   for (let i = 0; i < drafted.length; i++) {
@@ -481,7 +533,8 @@ export async function buildHighs(p: WeekParams): Promise<Built | null> {
 
 // ── Red zone chances ─────────────────────────────────────────────────────
 export async function buildRedZone(p: WeekParams): Promise<Built | null> {
-  const top = (await seasonLines(p.season, p.week)).filter((l) => l.rz > 0).sort((a, b) => b.rz - a.rz).slice(0, 5)
+  const [lines, tw] = await Promise.all([seasonLines(p.season, p.week), teamWeeks(p.season, p.week)])
+  const top = lines.filter((l) => l.rz > 0 && stillPlaying(l, tw)).sort((a, b) => b.rz - a.rz).slice(0, 5)
   if (top.length < 5 || top[0].rz < 8) return null
   return listPost(
     `Most red zone chances through Week ${p.week}, carries plus targets inside the 20:`,

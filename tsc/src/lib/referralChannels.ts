@@ -12,8 +12,8 @@
 // alphabetically or by when they were added.
 //
 // Any change here must also change the CHECK constraint and the
-// handle_new_user allowlist in supabase/migrations (see 0060), or new signups
-// picking a new channel get silently nulled.
+// handle_new_user allowlist in supabase/migrations (latest: 0076), or new
+// signups picking a new channel get silently nulled.
 
 export const REFERRAL_OPTIONS = [
   { value: '',          label: 'Prefer not to say' },
@@ -24,6 +24,7 @@ export const REFERRAL_OPTIONS = [
   { value: 'reddit',    label: 'Reddit' },
   { value: 'discord',   label: 'Discord' },
   { value: 'twitter',   label: 'Twitter / X' },
+  { value: 'threads',   label: 'Threads' },
   { value: 'facebook',  label: 'Facebook' },
   { value: 'instagram', label: 'Instagram' },
   { value: 'youtube',   label: 'YouTube' },
@@ -50,6 +51,7 @@ export const REFERRAL_LABELS: Record<string, string> = {
   reddit: 'Reddit',
   discord: 'Discord',
   twitter: 'Twitter/X',
+  threads: 'Threads',
   facebook: 'Facebook',
   instagram: 'Instagram',
   youtube: 'YouTube',

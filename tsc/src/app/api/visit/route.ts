@@ -15,6 +15,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { isSiteAdmin } from '@/lib/siteAdmin'
+import { isOwnEmail } from '@/lib/ownAccounts'
 
 // The day boundary that matters is Joey's, not UTC's. A Sunday 9pm ET visit
 // is already Monday in UTC, which would scatter one evening across two days
@@ -40,6 +42,10 @@ export async function POST(req: NextRequest): Promise<Response> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ ok: true, recorded: false })
+  // Joey checking on the site isn't a visitor (lib/ownAccounts).
+  if (isOwnEmail(user.email) || (await isSiteAdmin(user.id))) {
+    return NextResponse.json({ ok: true, recorded: false })
+  }
 
   const db = createAdminClient()
   const { error } = await db.rpc('record_visit', {

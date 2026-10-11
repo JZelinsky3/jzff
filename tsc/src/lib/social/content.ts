@@ -12,10 +12,11 @@ import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 import { SHARE_PAGES } from '@/lib/sharePages'
 import { taggedLink, textProblem, type Platform } from './config'
 
-// The base post of the day (card + link) is one of the first five; the rest
-// are the text-only extras in ./extras.ts.
+// The base post of the day (card + link) is one of the first six; the rest
+// are the text-only extras in ./extras.ts. 'roulette' is the Friday slot
+// before games rotated (2026-10-10), kept for its rows.
 export type Kind =
-  | 'regret' | 'history' | 'roulette' | 'recap' | 'feature'
+  | 'regret' | 'history' | 'roulette' | 'game' | 'recap' | 'feature'
   | 'trending' | 'drops' | 'leaders' | 'beat' | 'season' | 'targets' | 'pace' | 'bargains'
   | 'streaks' | 'busts' | 'byes' | 'nugget' | 'projections' | 'sunday'
   | 'sidebyside' | 'highs' | 'redzone' | 'namegame' | 'mnf' | 'yearago'
@@ -26,6 +27,7 @@ export const KIND_LABELS: Record<Kind, string> = {
   regret: 'Drop Regret Index',
   history: 'This Week in Fantasy History',
   roulette: 'Roster Roulette deal',
+  game: 'Game, every other week',
   recap: 'Weekly Recap promo',
   feature: 'Feature of the week',
   trending: 'Most added (text)',
@@ -228,6 +230,49 @@ export function buildRoulette(season: number, week: number): Built {
       threads: `Roster Roulette, Week ${week}.\n\nEach round you get a real team from a real fantasy league on our site. Take one player off it, fill your lineup, then see what record it puts up over 17 games.\n\nEveryone gets the same teams this week. Connect your league and you can play it with your own league's old teams.`,
     }, link, 'roulette'),
     link, card: null, image_path: '/api/og/games/',
+  }
+}
+
+// ── A game, every other Friday ───────────────────────────────────────────
+// Roulette every Friday was the same pitch every week (Joey), so Friday's
+// game goes out every other week and rotates through the ones a stranger can
+// play with no account: Roulette on the whole site, the rest on the demo
+// league. The Gauntlet and the Over/Under need a league of your own, so they
+// sit out. Four games, two weeks apart: each one comes round every two months.
+//
+// Guess the Draft and the Redraft borrow Roulette's preview image on the site,
+// so their posts draw a product card of their own instead.
+const DEMO_GAMES: Record<string, { path: string; x: string; threads: string; card?: Card; image?: string }> = {
+  multiverse: {
+    path: '/games/multiverse/',
+    x: 'The Multiverse Draft: every player on the board comes with three real seasons, and each week he plays as one of them. Draft seven, play fourteen weeks, and eight wins makes the playoffs. Free under Games at The Sunday Chronicle.',
+    threads: 'The Multiverse Draft.\n\nEvery player on the board carries three real seasons from one league\'s history, with what he actually scored in each. Take him and you get all three: each week he plays as one of them.\n\nDraft seven, play fourteen weeks, and eight wins makes the playoffs. This one runs on our demo league, no account needed.',
+    image: '/api/og/multiverse/',
+  },
+  'guess-the-draft': {
+    path: '/games/guess-the-draft/',
+    x: 'Guess the Draft: real fantasy drafts with the manager\'s name and the year blacked out. Read the first eight picks, then name who made them and when. Free under Games at The Sunday Chronicle.',
+    threads: 'Guess the Draft.\n\nEight real fantasy drafts, each one a manager\'s first eight picks, with the name and the year blacked out. The players date the year, and the year narrows down who was in the league.\n\nThis one runs on our demo league, no account needed. Connect yours and it deals your own league\'s drafts.',
+    card: { template: 'product', kicker: 'Games', title: 'Guess the Draft.', dek: 'A real draft with the name blacked out.', points: ['Eight real drafts', 'The first eight picks of each', 'Name the manager and the year', 'No account needed'] },
+  },
+  redraft: {
+    path: '/games/redraft/',
+    x: 'The Redraft: you are on the clock at a real pick from a real fantasy draft, with the six players who were actually still there. Take one, see what he did that year, and set your team against the one that got built. Free at The Sunday Chronicle.',
+    threads: 'The Redraft.\n\nYou are on the clock at a real pick from a real fantasy draft, looking at six players who were actually still on the board. Take one and see what he did that year. Finish the draft and your team goes up against the one that really got built.\n\nThis one runs on our demo league, no account needed. Connect yours and redraft your own league with hindsight.',
+    card: { template: 'product', kicker: 'Games', title: 'The Redraft.', dek: 'A real draft slot, picked again with hindsight.', points: ['A real pick from a real draft', 'Six players who were still there', 'See what each one did', 'Your team against the real one'] },
+  },
+}
+const GAME_ORDER = ['roulette', 'multiverse', 'guess-the-draft', 'redraft']
+
+/** The `turn`th game post (the plan passes a count of game weeks). */
+export function buildGame(season: number, week: number, turn: number): Built {
+  const id = GAME_ORDER[turn % GAME_ORDER.length]
+  if (id === 'roulette') return buildRoulette(season, week)
+  const g = DEMO_GAMES[id]
+  const link = `${g.path}?pool=demo&seed=WK${season}${String(week).padStart(2, '0')}`
+  return {
+    ...texts({ x: g.x, threads: g.threads }, link, id),
+    link, card: g.card ?? null, image_path: g.image ?? null,
   }
 }
 
