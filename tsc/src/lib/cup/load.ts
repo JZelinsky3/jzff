@@ -17,10 +17,16 @@ export type CupRow = {
   seeds: CupSeedRow[]
 }
 
+export type CupSeasonGame = { week: number; a: string; b: string; sa: number | null; sb: number | null }
+
 export type CupView = {
   cup: CupRow
   bracket: CupBracket
   currentWeek: number | null
+  season: { id: string; settings: Record<string, unknown> | null }
+  // Every game of the Cup's season, for the extras (form, win odds).
+  games: CupSeasonGame[]
+  weekFinal: (week: number) => boolean
 }
 
 type Db = ReturnType<typeof createAdminClient>
@@ -64,8 +70,7 @@ export async function loadCup(leagueId: string, year?: number | null): Promise<C
     db
       .from('matchups')
       .select('week, manager_a_id, manager_b_id, score_a, score_b')
-      .eq('season_id', season.id)
-      .gte('week', cup.start_week),
+      .eq('season_id', season.id),
   ])
 
   // Same names as the recap: the person's profile first, then the league's
@@ -93,21 +98,35 @@ export async function loadCup(leagueId: string, year?: number | null): Promise<C
   }
 
   const currentWeek = resolveCurrentWeek((season.settings ?? null) as Record<string, unknown> | null)
+  // Same test the recap uses for a settled week: every game has two real
+  // scores. A zero almost always means the platform hasn't finalised.
+  const weekFinal = (w: number) => {
+    const rows = byWeek.get(w) ?? []
+    return rows.length > 0 && rows.every((r) => r.a != null && r.b != null && r.a > 0 && r.b > 0)
+  }
   const bracket = buildBracket({
     seeds: cup.seeds,
     nameOf: (id) => ({ name: names.get(id) ?? 'Unknown', team: teams.get(id) ?? null }),
     startWeek: cup.start_week,
     currentWeek,
     scoreOf: (id, w) => score.get(`${w}:${id}`) ?? null,
-    // Same test the recap uses for a settled week: every game has two real
-    // scores. A zero almost always means the platform hasn't finalised.
-    weekFinal: (w) => {
-      const rows = byWeek.get(w) ?? []
-      return rows.length > 0 && rows.every((r) => r.a != null && r.b != null && r.a > 0 && r.b > 0)
-    },
+    weekFinal,
     opponentOf: (id, w) => opponent.get(`${w}:${id}`) ?? null,
   })
-  return { cup, bracket, currentWeek }
+  return {
+    cup,
+    bracket,
+    currentWeek,
+    season: { id: season.id as string, settings: (season.settings ?? null) as Record<string, unknown> | null },
+    games: (games ?? []).map((g) => ({
+      week: g.week as number,
+      a: g.manager_a_id as string,
+      b: g.manager_b_id as string,
+      sa: g.score_a == null ? null : Number(g.score_a),
+      sb: g.score_b == null ? null : Number(g.score_b),
+    })),
+    weekFinal,
+  }
 }
 
 export type CupBadge = { id: string; name: string; href: string; label: string; key: string }

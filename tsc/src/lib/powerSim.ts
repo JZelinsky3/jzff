@@ -106,8 +106,8 @@ export type StandingNow = {
 // Across 351 manager-seasons in seven leagues, a manager's past PPG
 // predicted the next season's at r = 0.08, so history is no prior: every
 // team starts at the league average.
-const GAME_SD_REL = 0.19
-const TEAM_SD_REL = 0.06
+export const GAME_SD_REL = 0.19
+export const TEAM_SD_REL = 0.06
 // The league's own weekly noise is estimated from this season's games and
 // leans on the calibrated figure as if it were worth this many games.
 const GAME_SD_PRIOR_DF = 30
