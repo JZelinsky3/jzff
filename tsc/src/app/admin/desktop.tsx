@@ -48,7 +48,7 @@ export function DesktopAdmin({ data, filter }: { data: AdminData; filter?: strin
               <Accounts a={data.accounts} />
             </Section>
             <Section kicker="Library">
-              <Library lib={data.library} />
+              <Library lib={data.library} nudge={data.followNudge} />
             </Section>
           </div>
         </div>

@@ -73,6 +73,8 @@ export type AdminData = {
   tiles: Tile[]
   accounts: { paying: number; mrrCents: number; trial: number; trialCancels: number; comped: number; canceled: number; free: number }
   library: { withData: number; byPlatform: { platform: string; n: number }[]; published: number; empty: number; emptyNfl: number }
+  /** The "save this league" card on almanacs, last 30 days (0077). Null until the table exists. */
+  followNudge: { shown: number; tapped: number; dismissed: number; bookmarked: number } | null
   attention: Attention[]
   rooms: Room[]
   members: Member[]
@@ -124,7 +126,7 @@ export async function loadAdmin(): Promise<AdminData> {
   const week = new Set(days.slice(-7))
   const seenSince = new Date(now - 90 * DAY_MS).toISOString().slice(0, 10)
 
-  const [profilesRes, leaguesRes, subsRes, compsRes, authRes, hasData, userVisitsRes, leagueVisitsRes, socialRes, failedRes, tokenRes, subscribersRes, reviewsRes, bookmarksRes] = await Promise.all([
+  const [profilesRes, leaguesRes, subsRes, compsRes, authRes, hasData, userVisitsRes, leagueVisitsRes, socialRes, failedRes, tokenRes, subscribersRes, reviewsRes, bookmarksRes, nudgeRes] = await Promise.all([
     db.from('profiles').select('id, display_name, member_code, created_at, referral_source, referral_source_other').order('created_at', { ascending: false }),
     db.from('leagues').select('id, name, slug, platform, owner_id, created_at, last_synced_at, published_at, grace_period_ends_at').order('created_at', { ascending: false }),
     db.from('subscriptions').select('user_id, tier, billing_period, status, current_period_end, trial_ends_at, cancel_at_period_end'),
@@ -139,6 +141,7 @@ export async function loadAdmin(): Promise<AdminData> {
     db.from('recap_subscribers').select('id', { count: 'exact', head: true }).eq('status', 'active'),
     db.from('site_reviews').select('rating'),
     db.from('league_bookmarks').select('user_id, league_id, created_at').order('created_at', { ascending: false }),
+    db.from('follow_nudge_events').select('event').gte('created_at', new Date(now - 30 * DAY_MS).toISOString()).limit(50_000),
   ])
 
   const users = authRes.data?.users ?? []
@@ -349,6 +352,11 @@ export async function loadAdmin(): Promise<AdminData> {
       empty: emptyLeagues.length,
       emptyNfl: emptyLeagues.filter((l) => l.platform === 'nfl').length,
     },
+    followNudge: nudgeRes.error ? null : (() => {
+      const n = { shown: 0, tapped: 0, dismissed: 0, bookmarked: 0 }
+      for (const r of (nudgeRes.data ?? []) as { event: keyof typeof n }[]) if (r.event in n) n[r.event]++
+      return n
+    })(),
     attention,
     rooms,
     members,

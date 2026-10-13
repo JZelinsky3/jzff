@@ -62,7 +62,7 @@ export function MobileAdmin({ data, filter }: { data: AdminData; filter?: string
         </Section>
 
         <Section kicker="Library">
-          <Library lib={data.library} />
+          <Library lib={data.library} nudge={data.followNudge} />
         </Section>
 
         <Section id="members" kicker="Members" className={s.anchor}>

@@ -282,6 +282,16 @@ a.attnRow:hover .attnTitle { color: var(--gold); }
   text-underline-offset: 3px;
 }
 .libEmpty:hover { color: var(--gold); }
+.nudgeLine {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  margin-top: .85rem;
+  padding-top: .7rem;
+  border-top: 1px solid var(--ink-line-soft);
+  font-size: .74rem;
+  color: var(--cream-soft);
+}
 
 /* ── Rooms ── */
 .rooms { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }

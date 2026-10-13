@@ -135,7 +135,7 @@ export function Accounts({ a }: { a: AdminData['accounts'] }) {
 // Leagues with data only. The empty ones are counted on their own line, not
 // in the total.
 
-export function Library({ lib }: { lib: AdminData['library'] }) {
+export function Library({ lib, nudge }: { lib: AdminData['library']; nudge: AdminData['followNudge'] }) {
   const peak = Math.max(1, ...lib.byPlatform.map((p) => p.n))
   return (
     <div className={s.library}>
@@ -156,6 +156,14 @@ export function Library({ lib }: { lib: AdminData['library'] }) {
         <a href="#empty" className={s.libEmpty}>
           {lib.empty} more never got any data{lib.emptyNfl ? `, ${lib.emptyNfl} of them NFL.com` : ''}
         </a>
+      )}
+      {nudge && (
+        <div className={s.nudgeLine}>
+          <span className={s.kicker}>Save-this-league card · 30 days</span>
+          <span>
+            {nudge.shown} shown · {nudge.tapped} tapped · {nudge.bookmarked} saved · {nudge.dismissed} waved off
+          </span>
+        </div>
       )}
     </div>
   )

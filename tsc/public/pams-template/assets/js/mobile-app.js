@@ -1165,6 +1165,18 @@
             .catch(function () { /* offline / probe failed — leave signed-out shell */ });
     }
 
+    // "Save this league" card for readers of somebody else's league; the
+    // rules for when it shows live in follow-nudge.js.
+    function loadFollowNudge() {
+        var dc = window.__DC || {};
+        if (!dc.slug || dc.isCommish || document.getElementById('dc-follow-script')) return;
+        var s = document.createElement('script');
+        s.id = 'dc-follow-script';
+        s.src = '/pams-template/assets/js/follow-nudge.js';
+        s.async = true;
+        document.head.appendChild(s);
+    }
+
     function init() {
         buildShell();
         buildTierStrip();
@@ -1172,6 +1184,7 @@
         enhanceAuthLinks();
         wireBookmarkToggle();
         wirePostSigninBookmark();
+        loadFollowNudge();
         wireInstallPrompt();
         maybeCorrectDemoAuth();
         // wireThemePicker(); // vaulted — themes not ready yet

@@ -1780,6 +1780,18 @@
         if (!stripUp) document.documentElement.classList.add('dc-rev-strip-on');
     }
 
+    // "Save this league" card for readers of somebody else's league; the
+    // rules for when it shows live in follow-nudge.js.
+    function loadFollowNudge() {
+        var dc = window.__DC || {};
+        if (!dc.slug || dc.isCommish || document.getElementById('dc-follow-script')) return;
+        var s = document.createElement('script');
+        s.id = 'dc-follow-script';
+        s.src = '/pams-template/assets/js/follow-nudge.js';
+        s.async = true;
+        document.head.appendChild(s);
+    }
+
     function init() {
         buildTestingStrip();
         buildReviewNudge();
@@ -1789,6 +1801,7 @@
         wirePostSigninBookmark();
         // wireThemePicker(); // vaulted — themes not ready yet
         loadTutorial();
+        loadFollowNudge();
         buildLockOverlay();
         lockLiveSeasonHub();
     }
