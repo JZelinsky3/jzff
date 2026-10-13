@@ -47,8 +47,8 @@ function count(n: number): string {
 // One sentence under the title: where the Cup stands right now.
 function statusLine(b: CupBracket): string {
   if (b.status === 'done' && b.champion) {
-    const ru = b.runnerUp ? ` over ${b.runnerUp.name}` : ''
-    return `${b.champion.name} won it, the ${ordinal(b.champion.seed)} seed${ru} in the week ${b.finalWeek} final.`
+    const ru = b.runnerUp ? `, beating ${b.runnerUp.name} in the week ${b.finalWeek} final` : ''
+    return `${b.champion.name} won it as the ${ordinal(b.champion.seed)} seed${ru}.`
   }
   const r = b.currentRound == null ? null : b.rounds[b.currentRound]
   if (!r) return 'The draw is set.'
@@ -326,7 +326,7 @@ function sideRow(m: CupMatch, which: 'a' | 'b', withTeam: boolean) {
           <span className={styles.team}>{s.entrant.team}</span>
         ) : null}
       </span>
-      <span className={styles.score}>{s.score != null ? pts(s.score) : m.state === 'upcoming' ? '' : '-'}</span>
+      <span className={styles.score}>{s.score != null ? pts(s.score) : m.state === 'waiting' ? '-' : ''}</span>
     </div>
   )
 }
@@ -334,7 +334,7 @@ function sideRow(m: CupMatch, which: 'a' | 'b', withTeam: boolean) {
 function noteFor(m: CupMatch): string | null {
   if (m.tiebreak) return 'Level on points, settled on seed'
   const w = m.winner ? m[m.winner] : null
-  if (w?.kind === 'team' && m.upsetBy >= 3) return `Upset: the ${ordinal(w.entrant.seed)} seed goes through`
+  if (w?.kind === 'team' && m.upsetBy >= 3) return `${w.entrant.seed} seed upset`
   if (m.sameGame) return 'Also their league game'
   return null
 }

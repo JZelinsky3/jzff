@@ -31,6 +31,7 @@ import { getNflClock, weekIsFinal } from '@/lib/nflClock'
 import { buildRecapFacts, recapTierFor, RECAP_FACTS_VERSION, type RecapFacts } from './facts'
 import { recapSubject, templateIntro, writeIntro } from './intro'
 import { renderRecapEmail, type RecapAudience } from './email'
+import { reportTeaser } from '@/lib/report/teaser'
 import { SITE_URL, recapPageUrl, subscriberToken, unsubscribePageUrl, unsubscribeToken } from './links'
 import { sendViaResend } from './resend'
 import { activeSubscribers } from './subscribers'
@@ -397,6 +398,8 @@ async function sendRecapEmail(args: {
 
   const { facts } = args
   const who = args.audience === 'owner' ? 'owner' : 'list'
+  // On a Progress Report week the email carries its block (lib/report/teaser).
+  const report = facts.phase === 'regular' ? await reportTeaser(facts.league, facts.year, facts.week) : null
   const { html, text } = renderRecapEmail(
     facts,
     args.intro,
@@ -412,6 +415,7 @@ async function sendRecapEmail(args: {
       join: `${recapPageUrl(facts.league.slug, facts.year, facts.week, 'email', who)}#join`,
     },
     args.audience,
+    report,
   )
   return sendViaResend({
     to: args.to,

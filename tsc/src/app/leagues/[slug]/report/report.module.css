@@ -1,0 +1,784 @@
+/* The Progress Report, printed as a school report card. Blue-grey card
+   stock and pale blue rules, navy ink, grades circled in red pen. The race
+   sits on its own navy board between the letterhead and the cards, so the
+   page reads as two parts, not one long sheet. Headlines and grades in DM
+   Serif, form labels and numbers in the mono, sentences in Inter.
+
+   Phone first; wider screens get the race as a table and the cards two up. */
+
+.page {
+  --stock: #e3e9ed;
+  --sheet: #f6f8fa;
+  --rule: #bccbd6;
+  --rule-2: #d3dde4;
+  --ink: #16243a;
+  --ink-2: #3f4f66;
+  --mute: #6c7a8c;
+  --red: #c23a2c;
+  --board: #13233a;
+  --board-2: #1b2f4c;
+  --chalk: #e8eef4;
+  --chalk-2: #aebdcd;
+  --bar: #8db6dc;
+  --up: #6cc59a;
+  --down: #f08a78;
+  --gutter: 16px;
+
+  --rp-display: var(--font-dm-serif), 'DM Serif Display', Georgia, serif;
+  --rp-sans: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
+  --rp-mono: var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+  min-height: 100vh;
+  background: var(--stock);
+  color: var(--ink);
+  font-family: var(--rp-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page h1,
+.page h2,
+.page h3,
+.page p,
+.page dl,
+.page dd,
+.page ul {
+  margin: 0;
+}
+
+.label {
+  display: block;
+  font-family: var(--rp-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+/* ── Letterhead ─────────────────────────────────────────── */
+
+.head {
+  padding: 40px var(--gutter) 30px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 70%),
+    var(--stock);
+  border-bottom: 1px solid var(--rule);
+}
+
+.headInner {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.school {
+  font-family: var(--rp-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+
+.title {
+  margin-top: 8px !important;
+  font-family: var(--rp-display);
+  font-weight: 400;
+  font-size: clamp(46px, 7.5vw, 84px);
+  line-height: 0.98;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.pending {
+  max-width: 34em;
+  margin-top: 16px !important;
+  font-size: 17px;
+  color: var(--ink-2);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 22px !important;
+  border-top: 2px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+
+.field {
+  padding: 9px 12px 10px 0;
+}
+
+.field + .field {
+  padding-left: 12px;
+  border-left: 1px solid var(--rule);
+}
+
+.field dt {
+  font-family: var(--rp-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.field dd {
+  margin-top: 2px;
+  font-family: var(--rp-display);
+  font-size: 21px;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.btnPrimary,
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 3px;
+  font-family: var(--rp-sans);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btnPrimary {
+  border: 0;
+  background: var(--ink);
+  color: var(--sheet);
+}
+
+.btnPrimary:hover {
+  background: var(--board-2);
+}
+
+.btn {
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+}
+
+.btn:hover {
+  background: var(--sheet);
+}
+
+.editions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 18px;
+}
+
+.edition {
+  padding: 4px 9px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  font-family: var(--rp-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+a.edition:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.editionOn {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--sheet);
+}
+
+.editionLater {
+  border-style: dashed;
+  color: var(--mute);
+}
+
+/* ── The race (navy board) ──────────────────────────────── */
+
+.race {
+  padding: 34px var(--gutter) 30px;
+  background: var(--board);
+  color: var(--chalk);
+}
+
+.raceInner,
+.cardsInner {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.sectionHead {
+  margin-bottom: 16px;
+}
+
+.raceTitle,
+.cardsTitle {
+  font-family: var(--rp-display);
+  font-weight: 400;
+  font-size: 34px;
+  line-height: 1.1;
+}
+
+.raceSub {
+  margin-top: 6px !important;
+  max-width: 44em;
+  font-size: 14px;
+  color: var(--chalk-2);
+}
+
+.raceTable {
+  border-top: 1px solid rgba(232, 238, 244, 0.35);
+}
+
+/* Phone: name and record on top, the bar under it, change and next week
+   on the right. */
+.raceRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'who change'
+    'bar next';
+  column-gap: 12px;
+  row-gap: 6px;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(232, 238, 244, 0.12);
+}
+
+.raceHeadRow {
+  display: none;
+}
+
+.who {
+  grid-area: who;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.whoName {
+  font-family: var(--rp-display);
+  font-size: 19px;
+  line-height: 1.15;
+}
+
+.whoMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  font-family: var(--rp-mono);
+  font-size: 11px;
+  color: var(--chalk-2);
+}
+
+.tagIn,
+.tagOut {
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tagIn {
+  background: var(--up);
+  color: #0d2318;
+}
+
+.tagOut {
+  border: 1px solid var(--chalk-2);
+  color: var(--chalk-2);
+}
+
+.barCell {
+  grid-area: bar;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.track {
+  position: relative;
+  flex: 1;
+  height: 10px;
+  border-radius: 2px;
+  background: rgba(232, 238, 244, 0.1);
+}
+
+.fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 2px 4px 4px 2px;
+  background: var(--bar);
+}
+
+/* Where the odds stood last report: a short upright tick through the bar. */
+.tick {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--chalk);
+  box-shadow: 0 0 0 2px var(--board);
+}
+
+.oddsNum {
+  width: 46px;
+  flex-shrink: 0;
+  font-family: var(--rp-mono);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: right;
+  color: var(--chalk);
+}
+
+.numCol {
+  grid-area: change;
+  text-align: right;
+}
+
+.change {
+  font-family: var(--rp-mono);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.up {
+  color: var(--up);
+}
+
+.down {
+  color: var(--down);
+}
+
+.flat {
+  color: var(--chalk-2);
+}
+
+.nextCol {
+  grid-area: next;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 92px;
+}
+
+.nextOdds {
+  font-family: var(--rp-mono);
+  font-size: 13px;
+  color: var(--chalk);
+  white-space: nowrap;
+}
+
+/* The race table's header says what the pair is on wide screens; phones
+   have no header row, so each pair carries its own label. */
+.nextLabel {
+  font-family: var(--rp-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--chalk-2);
+}
+
+.nextOpp {
+  font-size: 11.5px;
+  color: var(--chalk-2);
+  white-space: nowrap;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0;
+  font-family: var(--rp-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--bar);
+}
+
+.line::before,
+.line::after {
+  content: '';
+  flex: 1;
+  border-top: 1px dashed rgba(141, 182, 220, 0.7);
+}
+
+.blurred {
+  filter: blur(5px);
+  user-select: none;
+  pointer-events: none;
+}
+
+.upgrade {
+  margin-top: 14px !important;
+  font-size: 13.5px;
+  color: inherit;
+  opacity: 0.85;
+}
+
+.upgrade a {
+  color: inherit;
+  font-weight: 700;
+}
+
+/* ── Report cards ───────────────────────────────────────── */
+
+.cards {
+  padding: 34px var(--gutter) 40px;
+}
+
+.cardsSub {
+  margin-top: 6px !important;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.rolls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 26px;
+  margin-bottom: 18px;
+  padding: 10px 0;
+  border-top: 2px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+
+.roll {
+  font-family: var(--rp-display);
+  font-size: 18px;
+}
+
+.rollLabel {
+  margin-right: 10px;
+  font-family: var(--rp-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--sheet);
+  box-shadow: 0 1px 0 var(--rule-2), 0 6px 16px rgba(22, 36, 58, 0.06);
+}
+
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 10px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.cardWho {
+  min-width: 0;
+}
+
+.cardName {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--rp-display);
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.cardTeam {
+  display: block;
+  overflow: hidden;
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--mute);
+}
+
+.cardGrade {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.mark,
+.markBig {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--red);
+}
+
+.markBig {
+  width: 64px;
+  height: 52px;
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  transform: rotate(-6deg);
+}
+
+.letter {
+  position: relative;
+  font-family: var(--rp-display);
+  font-style: italic;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.subjects {
+  padding: 4px 16px 6px;
+}
+
+.subject {
+  display: grid;
+  grid-template-columns: 104px 42px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--rule-2);
+}
+
+.subjectHead {
+  padding: 6px 0 4px;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--rp-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.subjectName {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.subjectMark {
+  font-family: var(--rp-display);
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--red);
+}
+
+.luckMark {
+  font-family: var(--rp-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.subjectNote {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.blurBlock {
+  filter: blur(4px);
+  user-select: none;
+  pointer-events: none;
+}
+
+.comments {
+  flex: 1;
+  padding: 10px 16px 12px;
+}
+
+/* Written on ruled lines: one rule under every 26px line of text, so the
+   ruling follows the writing however many lines it wraps to. */
+.comment {
+  font-family: Georgia, 'Iowan Old Style', serif;
+  font-style: italic;
+  font-size: 15.5px;
+  line-height: 26px;
+  color: var(--ink);
+  background-image: linear-gradient(180deg, transparent 25px, var(--rule-2) 25px);
+  background-size: 100% 26px;
+}
+
+.cardFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px 10px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--rp-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--mute);
+}
+
+.spark {
+  flex-shrink: 0;
+}
+
+.sparkMid {
+  stroke: var(--rule);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
+.sparkLine {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.sparkDot {
+  fill: var(--red);
+  stroke: var(--sheet);
+  stroke-width: 1.5;
+}
+
+.method {
+  margin-top: 26px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ink);
+}
+
+.methodHead {
+  font-family: var(--rp-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.methodList {
+  margin-top: 6px !important;
+  padding-left: 1.1em !important;
+  list-style: square;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.foot {
+  padding: 18px var(--gutter) 30px;
+  border-top: 1px solid var(--rule);
+  text-align: center;
+}
+
+.footLink {
+  font-family: var(--rp-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--mute);
+}
+
+/* ── Wider screens ──────────────────────────────────────── */
+
+@media (max-width: 599px) {
+  .fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .field:nth-child(3) {
+    padding-left: 0;
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .field:nth-child(4) {
+    border-top: 1px solid var(--rule);
+  }
+
+  .btnPrimary,
+  .btn {
+    flex: 1 1 auto;
+  }
+}
+
+@media (min-width: 760px) {
+  .raceRow {
+    grid-template-columns: minmax(150px, 1.1fr) minmax(220px, 2fr) 74px 150px;
+    grid-template-areas: 'who bar change next';
+    align-items: center;
+    column-gap: 18px;
+    padding: 10px 0;
+  }
+
+  .raceHeadRow {
+    display: grid;
+    padding: 10px 0 8px;
+    font-family: var(--rp-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--chalk-2);
+  }
+
+  .raceHeadRow > span:nth-child(1) {
+    grid-area: who;
+  }
+
+  .raceHeadRow > span:nth-child(2) {
+    grid-area: bar;
+  }
+
+  .nextLabel {
+    display: none;
+  }
+
+  .raceHeadRow > span:nth-child(4) {
+    grid-area: next;
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .title {
+    margin-top: 10px !important;
+  }
+}

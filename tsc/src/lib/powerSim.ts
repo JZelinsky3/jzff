@@ -57,6 +57,11 @@ export type TeamProjection = {
   conf_win_pct: number
   clinched_playoff: boolean
   eliminated: boolean
+  // Playoff odds split on the team's game in `next`, when one was passed:
+  // the share of runs where it made the playoffs after winning that game,
+  // and after losing it.
+  if_win_pct?: number
+  if_loss_pct?: number
 }
 
 export type SimOptions = {
@@ -66,6 +71,10 @@ export type SimOptions = {
   played: SimGame[]
   // Unset: division_winners with divisions, record without.
   format?: PlayoffFormat
+  // Next week's games (each also in `remaining`). Adds if_win_pct and
+  // if_loss_pct. Left out of the generator's seed, so passing it never
+  // moves the plain odds.
+  next?: { a: string; b: string }[]
 }
 
 type Format = { kind: PlayoffFormat; playoffTeams: number }
@@ -422,7 +431,9 @@ export function simulateSeason(
   const t = [...teams].sort((x, y) => cmp(x.teamId, y.teamId))
   const r = [...remaining].sort((x, y) => cmp(`${x.a}|${x.b}`, `${y.a}|${y.b}`))
   const o = { ...opts, played: [...opts.played].sort((x, y) => cmp(`${x.a}|${x.b}|${x.sa}|${x.sb}`, `${y.a}|${y.b}|${y.sa}|${y.sb}`)) }
-  random = sfc32(seedFrom(JSON.stringify([t, r, o])))
+  const seedOpts: Partial<SimOptions> = { ...o }
+  delete seedOpts.next
+  random = sfc32(seedFrom(JSON.stringify([t, r, seedOpts])))
   try {
     return simulate(t, r, o)
   } finally {
@@ -440,14 +451,20 @@ function simulate(
 
   const games: [number, number][] = []
   const remainingCount = new Float64Array(n)
+  // Which of `games` are next week's, one per pairing (the first match).
+  const nextKeys = new Set((opts.next ?? []).map((m) => `${m.a}|${m.b}`))
+  const isNext: boolean[] = []
   for (const m of remaining) {
     const i = index.get(m.a)
     const j = index.get(m.b)
     if (i == null || j == null) continue
     games.push([i, j])
+    const key = `${m.a}|${m.b}`
+    isNext.push(nextKeys.delete(key))
     remainingCount[i]++
     remainingCount[j]++
   }
+  const hasNext = isNext.some(Boolean)
 
   // League scoring level and weekly noise from this season's games.
   let sum = 0
@@ -483,18 +500,22 @@ function simulate(
     muSd[i] = Math.sqrt(1 / prec)
   })
 
-  const tally = teams.map(() => ({ wins: 0, playoff: 0, bye: 0, confWin: 0 }))
+  const tally = teams.map(() => ({ wins: 0, playoff: 0, bye: 0, confWin: 0, nextW: 0, nextWIn: 0, nextL: 0, nextLIn: 0 }))
   const run = newTable(n, base.div)
   const wins = new Float64Array(n)
   const strength = new Float64Array(n)
+  // This run's result in next week's game: 1 won, 0 lost, -1 no game.
+  const nextResult = new Int8Array(n)
   const runs = Math.max(1, opts.runs)
   for (let r = 0; r < runs; r++) {
     copyTable(base, run)
+    nextResult.fill(-1)
     for (let i = 0; i < n; i++) {
       wins[i] = teams[i]!.startWins
       strength[i] = gauss(mu[i]!, muSd[i]!)
     }
-    for (const [i, j] of games) {
+    for (let g = 0; g < games.length; g++) {
+      const [i, j] = games[g]!
       const sa = gauss(strength[i]!, gameSd)
       const sb = gauss(strength[j]!, gameSd)
       run.pf[i] += sa
@@ -502,12 +523,19 @@ function simulate(
       const aWon = sa >= sb
       if (aWon) { wins[i]++; run.pts[i]++ } else { wins[j]++; run.pts[j]++ }
       recordGame(run, i, j, aWon ? 1 : 0)
+      if (isNext[g]) {
+        nextResult[i] = aWon ? 1 : 0
+        nextResult[j] = aWon ? 0 : 1
+      }
     }
     const s = seeds(run, groups, fmt)
     s.order.forEach((i, k) => {
       const acc = tally[i]!
-      if (k < opts.playoffTeams) acc.playoff++
+      const made = k < opts.playoffTeams
+      if (made) acc.playoff++
       if (k < opts.byeTeams) acc.bye++
+      if (nextResult[i] === 1) { acc.nextW++; if (made) acc.nextWIn++ }
+      else if (nextResult[i] === 0) { acc.nextL++; if (made) acc.nextLIn++ }
     })
     for (const i of s.winners) tally[i]!.confWin++
     for (let i = 0; i < n; i++) tally[i]!.wins += wins[i]!
@@ -536,6 +564,12 @@ function simulate(
       conf_win_pct: groups.size >= 2 ? bounded(pct(acc.confWin), sure.divClinched, sure.divOut) : 0,
       clinched_playoff: sure.playoffClinched,
       eliminated: sure.eliminated,
+      ...(hasNext && acc.nextW + acc.nextL > 0
+        ? {
+            if_win_pct: bounded(acc.nextW ? Math.round((acc.nextWIn / acc.nextW) * 1000) / 10 : 0, sure.playoffClinched, sure.eliminated),
+            if_loss_pct: bounded(acc.nextL ? Math.round((acc.nextLIn / acc.nextL) * 1000) / 10 : 0, sure.playoffClinched, sure.eliminated),
+          }
+        : {}),
     })
   })
   return out
