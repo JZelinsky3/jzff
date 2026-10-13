@@ -85,14 +85,28 @@ on:
     # the archive sat a day behind the league all through Tuesday. GitHub
     # routinely starts these runs several hours late, so 8am ET is also the
     # only start that reliably still lands on Tuesday.
-    - cron: '0 12 * * 2'
+    #
+    # Minute 7, not 0: GitHub's docs name the top of the hour as its busiest
+    # moment and say queued scheduled runs can be DROPPED, not just delayed.
+    # On 2026-10-13 the '0 12' run still had not started at 17:30 UTC, so no
+    # recap went out until someone dispatched it by hand.
+    - cron: '7 12 * * 2'
     # The same Tuesday run then sends the weekly recaps, straight after the
     # refresh (see the case arm below), because a recap needs Monday night's
-    # final scores in the database first. This Wednesday pass is the retry:
-    # a league whose platform hadn't finalised on Tuesday is stored as 'held'
-    # and goes out here instead. Already-sent recaps are skipped, so a run
-    # that has nothing left to do sends nothing.
-    - cron: '0 15 * * 3'
+    # final scores in the database first.
+    #
+    # Tuesday afternoon backup: the same refresh + recaps again, in case
+    # GitHub dropped or badly delayed the morning run. If the morning run
+    # already sent, this re-ingests (idempotent) and every recap answers
+    # 'already-sent'. The concurrency group below queues it behind a late
+    # morning run instead of letting the two overlap.
+    - cron: '47 16 * * 2'
+    # Wednesday retry: a league whose platform hadn't finalised on Tuesday is
+    # stored as 'held' and goes out here instead. It re-ingests first. The
+    # recaps pass alone had no new scores to work with, so a held league
+    # stayed held. Already-sent recaps are skipped, so a run with nothing
+    # left to do sends nothing.
+    - cron: '23 15 * * 3'
     # Social, Saturday 13:00 UTC (~9am ET): plan next week's X and Threads
     # posts and email the list for vetoes. Must stay on a Friday or Saturday:
     # the Drop Regret post captures that week's drops when it is planned.
@@ -116,6 +130,7 @@ on:
         options:
           - daily-chain
           - trade-sweep
+          - weekly-recap
           - refresh
           - refresh-player-values
           - refresh-sleeper-players
@@ -129,6 +144,13 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
+    # Every run that touches the weekly refresh or the recaps shares one
+    # group, so a late scheduled run and a hand-dispatched one queue behind
+    # each other instead of ingesting the same leagues at the same time.
+    # Everything else gets its own group (the run id) and never waits.
+    concurrency:
+      group: ${{ (endsWith(github.event.schedule, '* * 2') || endsWith(github.event.schedule, '* * 3') || contains(fromJSON('["weekly-recap","refresh","recaps"]'), github.event.inputs.job)) && 'weekly-recap' || format('run-{0}', github.run_id) }}
+      cancel-in-progress: false
     steps:
       - name: Pick endpoints for this trigger
         id: pick
@@ -144,8 +166,9 @@ jobs:
           case "$SCHEDULE" in
             '0 9 * * *')   paths="$daily_chain" ;;
             '0 23 * * *')  paths="$trade_sweep" ;;
-            '0 12 * * 2')  paths='refresh recaps' ;;
-            '0 15 * * 3')  paths='recaps' ;;
+            '7 12 * * 2')  paths='refresh recaps' ;;
+            '47 16 * * 2') paths='refresh recaps' ;;
+            '23 15 * * 3') paths='refresh recaps' ;;
             '0 13 * * 6')  paths='social-plan' ;;
             '20 0-2,12-23 * * *') paths='social-publish' ;;
             *)
@@ -153,6 +176,7 @@ jobs:
               case "$MANUAL" in
                 daily-chain) paths="$daily_chain" ;;
                 trade-sweep) paths="$trade_sweep" ;;
+                weekly-recap) paths='refresh recaps' ;;
                 *)           paths="$MANUAL" ;;
               esac
               ;;
