@@ -432,6 +432,16 @@ html.dc-lock-active .site-grain { display: none !important; }
     font-size: .52rem; letter-spacing: .18em;
     white-space: nowrap;
 }
+/* The Cup, in its own page's board green and brass (cup.module.css). */
+.m-tier-strip--cup {
+    background: #0c271f;
+    border-bottom: 1px solid rgba(200,163,91,.5);
+    color: #ece4ce;
+    text-decoration: none;
+}
+.m-tier-strip--cup .m-tier-strip-pill {
+    background: #c8a35b; color: #10251d;
+}
 
 /* ============================================================
    SHARED PAGE PRIMITIVES — the mobile design system.

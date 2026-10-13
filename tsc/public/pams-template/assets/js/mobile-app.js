@@ -1085,8 +1085,28 @@
     function buildTierStrip() {
         var dc = window.__DC || {};
         var tier = dc.leagueTier;
-        if (tier !== 'test' && tier !== 'udfa' && tier !== 'paid' && tier !== 'comp') return;
         if (document.getElementById('dc-testing-strip')) return;
+        // While the league's Cup is running, paid leagues get the Cup here
+        // instead of the "Beta" line: one tap to the bracket from every
+        // page, nothing added to the nav. Trial and free leagues keep their
+        // tier line (it tells them something they need); their way to the
+        // Cup is the Live hub card.
+        if (dc.cup && dc.cup.href && tier !== 'test' && tier !== 'udfa') {
+            var link = document.createElement('a');
+            link.id = 'dc-testing-strip';
+            link.className = 'm-tier-strip m-tier-strip--cup';
+            link.href = dc.cup.href;
+            var pill = document.createElement('span');
+            pill.className = 'm-tier-strip-pill';
+            pill.textContent = '★ ' + dc.cup.name;
+            var text = document.createElement('span');
+            text.textContent = dc.cup.label;
+            link.appendChild(pill);
+            link.appendChild(text);
+            document.body.insertBefore(link, document.body.firstChild);
+            return;
+        }
+        if (tier !== 'test' && tier !== 'udfa' && tier !== 'paid' && tier !== 'comp') return;
 
         var pillLabel, text;
         if (tier === 'test') {

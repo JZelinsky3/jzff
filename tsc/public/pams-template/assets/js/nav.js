@@ -1670,12 +1670,20 @@
     // is worse than no prompt at all. With a clear masthead, phones get a
     // slim strip instead, pushing the sticky nav stack down by --rev-strip-h
     // the same way the tier strip does with --demo-strip-h.
+    //
+    // While the league's Cup is running (__DC.cup, see lib/cup/load.ts) the
+    // same slot carries the Cup instead, in the Cup page's green and brass,
+    // so the bracket is one tap from every page without touching the nav.
+    // Dismissing it hides it for that week only; the review ask stays out of
+    // the way until the Cup is over.
     function buildReviewNudge() {
         if (document.getElementById('dc-review-nudge')) return;
         // Not on the page whose whole job is the thing being asked for.
         if (/^\/review(\/|$)/.test(window.location.pathname)) return;
+        var cup = (window.__DC || {}).cup;
+        var dismissKey = cup && cup.href ? 'tsc-cup-strip-' + cup.key : 'tsc-review-nudge-dismissed';
         try {
-            if (localStorage.getItem('tsc-review-nudge-dismissed')) return;
+            if (localStorage.getItem(dismissKey)) return;
         } catch (e) { /* private mode — show it, worst case it returns */ }
 
         var stripUp = !!(document.getElementById('dc-testing-strip') ||
@@ -1683,13 +1691,18 @@
 
         var el = document.createElement('div');
         el.id = 'dc-review-nudge';
-        el.className = 'dc-rev' + (stripUp ? ' dc-rev--pill-only' : '');
-        el.innerHTML =
-            '<a class="dc-rev-link" href="/review" target="_top">' +
-                '<span class="dc-rev-stars" aria-hidden="true">★★★★★</span>' +
-                '<span class="dc-rev-full">Enjoying the Chronicle? Leave a review</span>' +
-                '<span class="dc-rev-short">Rate the Chronicle</span>' +
-            '</a>' +
+        el.className = 'dc-rev' + (stripUp ? ' dc-rev--pill-only' : '') + (cup && cup.href ? ' dc-rev--cup' : '');
+        el.innerHTML = (cup && cup.href
+            ? '<a class="dc-rev-link" href="' + escapeHtmlLock(cup.href) + '" target="_top">' +
+                  '<span class="dc-rev-stars" aria-hidden="true">★</span>' +
+                  '<span class="dc-rev-full">' + escapeHtmlLock(cup.name) + ' · ' + escapeHtmlLock(cup.label) + ' · See the bracket</span>' +
+                  '<span class="dc-rev-short">' + escapeHtmlLock(cup.name) + ' · ' + escapeHtmlLock(cup.label) + '</span>' +
+              '</a>'
+            : '<a class="dc-rev-link" href="/review" target="_top">' +
+                  '<span class="dc-rev-stars" aria-hidden="true">★★★★★</span>' +
+                  '<span class="dc-rev-full">Enjoying the Chronicle? Leave a review</span>' +
+                  '<span class="dc-rev-short">Rate the Chronicle</span>' +
+              '</a>') +
             '<button type="button" class="dc-rev-x" aria-label="Dismiss">✕</button>';
 
         // Appended to the END of body for the pill, and to the TOP for the
@@ -1698,13 +1711,17 @@
         else document.body.insertBefore(el, document.body.firstChild);
 
         el.querySelector('.dc-rev-x').addEventListener('click', function () {
-            try { localStorage.setItem('tsc-review-nudge-dismissed', String(Date.now())); } catch (e) {}
+            try { localStorage.setItem(dismissKey, String(Date.now())); } catch (e) {}
             el.remove();
             document.documentElement.classList.remove('dc-rev-strip-on');
         });
-        el.querySelector('.dc-rev-link').addEventListener('click', function () {
-            try { localStorage.setItem('tsc-review-nudge-dismissed', String(Date.now())); } catch (e) {}
-        });
+        // Leaving a review answers the ask; opening the Cup doesn't, since
+        // people come back to it all week.
+        if (!(cup && cup.href)) {
+            el.querySelector('.dc-rev-link').addEventListener('click', function () {
+                try { localStorage.setItem(dismissKey, String(Date.now())); } catch (e) {}
+            });
+        }
 
         var style = document.createElement('style');
         style.setAttribute('data-review-nudge', '1');
@@ -1738,6 +1755,12 @@
             '  font-size: .62rem; line-height: 1;',
             '}',
             '.dc-rev-x:hover { color: var(--cream, #f4ebd8); }',
+            // The Cup wears its own page's board green and brass.
+            '.dc-rev--cup { background: #0c271f; border-color: #c8a35b; }',
+            '.dc-rev--cup .dc-rev-link { color: #ece4ce; }',
+            '.dc-rev--cup .dc-rev-link:hover { background: rgba(200,163,91,.14); color: #e6cb8e; }',
+            '.dc-rev--cup .dc-rev-stars { color: #c8a35b; }',
+            '.dc-rev--cup .dc-rev-x { border-left-color: rgba(236,228,206,.2); color: #8fa597; }',
             // Phones with a clear masthead: a band across the top, and the
             // same sticky-stack offsets the tier strip uses.
             '@media (max-width: 940px) {',
@@ -1749,6 +1772,7 @@
             '    border-radius: 0; box-shadow: none;',
             '    background: var(--ink-soft, #16202c);',
             '  }',
+            '  .dc-rev--cup:not(.dc-rev--pill-only) { background: #0c271f; border-bottom-color: rgba(200,163,91,.55); }',
             '  .dc-rev:not(.dc-rev--pill-only) .dc-rev-link {',
             '    flex: 1; justify-content: center;',
             '    padding: 0 .6rem; font-size: .58rem; letter-spacing: .1em;',

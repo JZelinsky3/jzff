@@ -28,8 +28,12 @@ const DISMISS_EVENT = 'tsc-review-nudge'
 // and pin their own fixed HUD; /admin is staff-only.
 const HIDDEN_PREFIXES = ['/review', '/admin', '/login', '/auth', '/games/']
 
+// The Cup page is opened from a group chat link; a strip above its
+// masthead would be the first thing anyone sees.
+const HIDDEN_PATTERNS = [/^\/leagues\/[^/]+\/cup(\/|$)/]
+
 function isHidden(path: string): boolean {
-  return HIDDEN_PREFIXES.some((p) => path === p || path.startsWith(p))
+  return HIDDEN_PREFIXES.some((p) => path === p || path.startsWith(p)) || HIDDEN_PATTERNS.some((re) => re.test(path))
 }
 
 // The dismissal lives in localStorage, which the server can't read. Reading

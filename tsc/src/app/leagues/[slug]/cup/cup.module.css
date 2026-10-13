@@ -1,0 +1,681 @@
+/* The Cup, painted as a tournament draw board: bottle-green boards with
+   faint plank lines, names lettered in ivory, brass for seeds, rules and the
+   trophy. A knocked-out name is struck through the way a draw board does it.
+   One warm red, only for "this week". Headlines and names in DM Serif,
+   seeds and scores in the mono, sentences in Inter.
+
+   Desktop (900px and up) draws the full bracket; phones stack the rounds. */
+
+.page {
+  --board: #0c271f;
+  --board-2: #10322a;
+  --slot: #143c31;
+  --line: rgba(236, 228, 206, 0.13);
+  --line-2: rgba(236, 228, 206, 0.3);
+  --ivory: #ece4ce;
+  --ivory-2: #c9c1aa;
+  --mute: #8fa597;
+  --brass: #c8a35b;
+  --brass-hi: #e6cb8e;
+  --red: #e2694f;
+  --gutter: 16px;
+  --gap: 34px;
+
+  --cp-display: var(--font-dm-serif), 'DM Serif Display', Georgia, serif;
+  --cp-sans: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
+  --cp-mono: var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+  min-height: 100vh;
+  color: var(--ivory);
+  background:
+    radial-gradient(circle at 50% -20%, #1b4a39 0%, rgba(12, 39, 31, 0) 60%),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0 1px, transparent 1px 132px),
+    var(--board);
+  font-family: var(--cp-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page h1,
+.page h2,
+.page p,
+.page ol {
+  margin: 0;
+}
+
+/* ── Masthead ───────────────────────────────────────────── */
+
+.mast {
+  padding: 44px var(--gutter) 36px;
+  border-bottom: 1px solid var(--line-2);
+  box-shadow: 0 3px 0 -2px var(--line);
+}
+
+.mastInner {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.mastText {
+  min-width: 0;
+}
+
+.kicker {
+  font-family: var(--cp-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.title {
+  margin: 10px 0 16px !important;
+  font-family: var(--cp-display);
+  font-weight: 400;
+  font-size: clamp(50px, 8vw, 94px);
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  color: var(--ivory);
+}
+
+.status {
+  max-width: 34em;
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--ivory);
+}
+
+.meta {
+  margin-top: 10px !important;
+  font-family: var(--cp-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.btnPrimary,
+.btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 3px;
+  font-family: var(--cp-sans);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btnPrimary {
+  border: 0;
+  background: var(--brass);
+  color: #10251d;
+}
+
+.btnPrimary:hover {
+  background: var(--brass-hi);
+}
+
+.btn {
+  border: 1px solid var(--line-2);
+  background: transparent;
+  color: var(--ivory);
+}
+
+.btn:hover {
+  border-color: var(--brass);
+  color: var(--brass-hi);
+}
+
+.mastCup {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.plaque {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 170px;
+  padding: 7px 18px 8px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #d6b46e 0%, #a7863f 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 2px 0 rgba(0, 0, 0, 0.35);
+  color: #1d1708;
+  text-align: center;
+}
+
+.plaqueLabel {
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
+.plaqueName {
+  font-family: var(--cp-display);
+  font-size: 21px;
+  line-height: 1.15;
+}
+
+/* ── The board (desktop bracket) ────────────────────────── */
+
+.board {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 34px var(--gutter) 18px;
+}
+
+.bracketScroll {
+  overflow-x: auto;
+  padding-bottom: 26px;
+}
+
+.bracket {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(176px, 1fr);
+  column-gap: var(--gap);
+  min-width: 960px;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.colHead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line-2);
+}
+
+.colName {
+  font-family: var(--cp-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ivory);
+}
+
+.colWeek {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--cp-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--mute);
+}
+
+.now {
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: var(--red);
+  color: #1b0d08;
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.colBody {
+  display: flex;
+  flex-direction: column;
+  height: calc(var(--slots) * 86px);
+  min-height: 260px;
+}
+
+.pair {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.cell {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+/* The line joining two games to the one they feed. */
+.joinBoth::after,
+.joinTop::after,
+.joinBottom::after {
+  content: '';
+  position: absolute;
+  right: calc(var(--gap) / -2);
+  border-right: 1px solid var(--line-2);
+}
+
+.joinBoth::after {
+  top: 25%;
+  bottom: 25%;
+}
+
+.joinTop::after {
+  top: 25%;
+  bottom: 50%;
+}
+
+.joinBottom::after {
+  top: 50%;
+  bottom: 25%;
+}
+
+.card {
+  position: relative;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--slot);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.feeds::after,
+.fed::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: calc(var(--gap) / 2);
+  border-top: 1px solid var(--line-2);
+}
+
+.feeds::after {
+  left: 100%;
+}
+
+.fed::before {
+  right: 100%;
+}
+
+.cardLive {
+  border-color: rgba(226, 105, 79, 0.6);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 31px;
+  padding: 4px 10px;
+}
+
+.row + .row {
+  border-top: 1px solid var(--line);
+}
+
+.seed {
+  font-family: var(--cp-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--brass);
+  text-align: right;
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  overflow: hidden;
+  font-family: var(--cp-display);
+  font-size: 17px;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ivory);
+}
+
+.team {
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--mute);
+}
+
+.score {
+  font-family: var(--cp-mono);
+  font-size: 13px;
+  color: var(--ivory-2);
+}
+
+.won .name {
+  color: var(--brass-hi);
+}
+
+.won .score {
+  color: var(--brass-hi);
+  font-weight: 700;
+}
+
+.lost {
+  opacity: 0.5;
+}
+
+.lost .name {
+  text-decoration: line-through;
+  text-decoration-color: rgba(236, 228, 206, 0.55);
+  text-decoration-thickness: 1px;
+}
+
+.tbdRow {
+  grid-template-columns: 20px minmax(0, 1fr);
+}
+
+.tbd {
+  overflow: hidden;
+  font-size: 12.5px;
+  font-style: italic;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--mute);
+}
+
+.cardNote {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  overflow: hidden;
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--brass);
+}
+
+.champCol .colBody {
+  justify-content: center;
+}
+
+.champ {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 10px 16px;
+  border: 1px solid rgba(200, 163, 91, 0.45);
+  border-radius: 3px;
+  background: var(--board-2);
+  text-align: center;
+}
+
+.champ::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: calc(var(--gap) / 2);
+  border-top: 1px solid var(--line-2);
+}
+
+.champName {
+  font-family: var(--cp-display);
+  font-size: 22px;
+  line-height: 1.15;
+  color: var(--brass-hi);
+}
+
+.champSub {
+  font-size: 12px;
+  color: var(--mute);
+}
+
+/* ── Rounds, stacked (phones) ───────────────────────────── */
+
+.stack {
+  display: none;
+  padding: 6px var(--gutter) 0;
+}
+
+.round {
+  margin: 24px 0 0;
+}
+
+.roundHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line-2);
+}
+
+.roundName {
+  font-family: var(--cp-display);
+  font-weight: 400;
+  font-size: 26px;
+  line-height: 1.1;
+  color: var(--ivory);
+}
+
+.byes {
+  margin: 0 0 10px !important;
+  font-size: 14px;
+  color: var(--ivory-2);
+}
+
+.games {
+  display: grid;
+  gap: 10px;
+}
+
+.gameCard {
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--slot);
+}
+
+.gameCard .row {
+  min-height: 46px;
+  padding: 7px 12px;
+}
+
+.gameCard .name {
+  font-size: 19px;
+}
+
+.gameCard .score {
+  font-size: 14px;
+}
+
+.gameNote {
+  display: block;
+  padding: 6px 12px 7px;
+  border-top: 1px solid var(--line);
+  font-family: var(--cp-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+/* ── Notes and rules ────────────────────────────────────── */
+
+.lower {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px var(--gutter) 40px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+.lowerHead {
+  margin-bottom: 12px !important;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line-2);
+  font-family: var(--cp-mono);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.noteGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.note {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--board-2);
+}
+
+.noteLabel {
+  font-family: var(--cp-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.noteBig {
+  font-family: var(--cp-display);
+  font-size: 30px;
+  line-height: 1.1;
+  color: var(--brass-hi);
+}
+
+.noteLine {
+  font-size: 13px;
+  color: var(--ivory-2);
+}
+
+.ruleList {
+  padding-left: 1.3em !important;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ivory-2);
+}
+
+.ruleList li + li {
+  margin-top: 6px;
+}
+
+.ruleList li::marker {
+  font-family: var(--cp-mono);
+  font-size: 12px;
+  color: var(--brass);
+}
+
+.foot {
+  padding: 18px var(--gutter) 34px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.footLink {
+  font-family: var(--cp-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--mute);
+}
+
+.footLink:hover {
+  color: var(--brass-hi);
+}
+
+/* ── Phones ─────────────────────────────────────────────── */
+
+@media (max-width: 899px) {
+  .board {
+    display: none;
+  }
+
+  .stack {
+    display: block;
+  }
+
+  .mast {
+    padding: 26px var(--gutter) 24px;
+  }
+
+  .mastInner {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 18px;
+  }
+
+  .mastCup {
+    flex-direction: row;
+    gap: 14px;
+  }
+
+  .mastCup svg {
+    width: 54px;
+    height: auto;
+  }
+
+  .plaque {
+    min-width: 0;
+    align-items: flex-start;
+    padding: 6px 14px 7px;
+    text-align: left;
+  }
+
+  .status {
+    font-size: 16.5px;
+  }
+
+  .actions {
+    margin-top: 18px;
+  }
+
+  .btnPrimary,
+  .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .lower {
+    padding-top: 26px;
+  }
+}

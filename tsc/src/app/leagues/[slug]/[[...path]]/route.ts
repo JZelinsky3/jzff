@@ -38,6 +38,7 @@ import {
 } from '@/lib/stripe'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
 import { leagueVisitScript } from '@/lib/leagueVisit'
+import { cupBadge, type CupBadge } from '@/lib/cup/load'
 
 const TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams')
 // Mobile-first rebuilds of the same pages. Phones get the file from here when
@@ -88,6 +89,9 @@ type LeagueMeta = {
   // outside the regular season. Used by nav.js to glow the chapbar's Live
   // tab during in-season weeks.
   liveWeek: number | null
+  // The league's Cup while it's running (a week either side), for the strip
+  // at the top of the almanac and the Live hub card. See lib/cup.
+  cup: CupBadge | null
 }
 
 const VALID_THEMES = ['tribunal', 'wire', 'floor', 'cards'] as const
@@ -115,11 +119,16 @@ async function loadLeagueMetaUncached(slug: string): Promise<LeagueMeta | null> 
       .then(r => r.data?.theme).catch(() => null),
     // Live season settings — used to glow the chapbar's Live tab during
     // the regular season. Returns null when no season is flagged is_live.
-    db.from('seasons').select('settings').eq('league_id', row.id)
+    db.from('seasons').select('settings, year').eq('league_id', row.id)
       .eq('is_live', true).maybeSingle(),
   ])
   const rawTheme = themeResult as unknown
   const liveSeasonSettings = (liveSeasonRow?.settings ?? null) as Record<string, unknown> | null
+  const liveWeek = resolveCurrentWeek(liveSeasonSettings)
+  const cup = await cupBadge(db, { id: row.id, slug: row.slug }, {
+    year: (liveSeasonRow?.year as number | undefined) ?? null,
+    week: liveWeek,
+  }).catch(() => null)
   return {
     id: row.id,
     name: row.name,
@@ -133,7 +142,8 @@ async function loadLeagueMetaUncached(slug: string): Promise<LeagueMeta | null> 
     trades_theme: normalizeTradesTheme(row.trades_theme),
     theme: typeof rawTheme === 'string' && (LEAGUE_THEMES as readonly string[]).includes(rawTheme)
       ? (rawTheme as LeagueTheme) : null,
-    liveWeek: resolveCurrentWeek(liveSeasonSettings),
+    liveWeek,
+    cup,
   }
 }
 
@@ -263,6 +273,7 @@ async function injectDcConfig(
     viewerTier,
     leagueTheme,
     liveWeek: meta.liveWeek,
+    cup: meta.cup,
   })};</script>`
   // Stamp the theme as a body data-attribute so theme CSS applies during the
   // first paint without waiting for JS. We only do this when the template
