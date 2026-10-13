@@ -16,6 +16,12 @@ const DOCK: { href: string; label: string; icon: React.ReactNode }[] = [
   { href: '#rooms', label: 'Pages', icon: <><rect x="5" y="3" width="14" height="18" rx="1" /><line x1="15" y1="12" x2="15" y2="12.01" /></> },
 ]
 
+function needsLine(items: AdminData['attention']): string {
+  if (items.length === 0) return 'All quiet.'
+  const act = items.filter((a) => a.tone === 'rust').length
+  return act ? `${act} to act on · ${items[0].title}` : items[0].title
+}
+
 export function MobileAdmin({ data, filter }: { data: AdminData; filter?: string }) {
   return (
     <main className={`${s.root} ${s.m}`}>
@@ -37,9 +43,19 @@ export function MobileAdmin({ data, filter }: { data: AdminData; filter?: string
           <Tiles tiles={data.tiles} days={data.stripDays} />
         </section>
 
-        <Section kicker="Needs you" side={data.attention.length ? <span className={s.countPill}>{data.attention.length}</span> : null}>
+        {/* Closed by default on a phone: it's long and rarely urgent yet. The
+            summary still says how many and whether any need acting on. */}
+        <details className={`${s.drawerBox} ${s.needsDrawer}`}>
+          <summary>
+            <span className={s.needsHead}>
+              <span className={s.kicker}>Needs you</span>
+              {data.attention.length > 0 && <span className={s.countPill}>{data.attention.length}</span>}
+              <svg className={s.drawerChev} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="6 9 12 15 18 9" /></svg>
+            </span>
+            <span className={s.drawerSub}>{needsLine(data.attention)}</span>
+          </summary>
           <NeedsYou items={data.attention} />
-        </Section>
+        </details>
 
         <Section kicker="Accounts" side={<span className={s.sideNote}>{data.members.length} members</span>}>
           <Accounts a={data.accounts} />
@@ -49,16 +65,16 @@ export function MobileAdmin({ data, filter }: { data: AdminData; filter?: string
           <Library lib={data.library} />
         </Section>
 
-        <Section id="rooms" kicker="Pages" className={s.anchor}>
-          <Rooms rooms={data.rooms} />
-        </Section>
-
         <Section id="members" kicker="Members" className={s.anchor}>
           <MemberList key={filter ?? 'all'} members={data.members} asOf={data.asOf} initial={20} initialFilter={filter} />
         </Section>
 
         <Section id="leagues" kicker="Leagues" side={<span className={s.sideNote}>{data.leagues.length} with data</span>} className={s.anchor}>
           <LeagueList leagues={data.leagues} asOf={data.asOf} initial={20} />
+        </Section>
+
+        <Section id="rooms" kicker="Pages" className={s.anchor}>
+          <Rooms rooms={data.rooms} />
         </Section>
 
         {data.emptyLeagues.length > 0 && (

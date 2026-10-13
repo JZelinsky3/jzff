@@ -40,6 +40,8 @@ export type Member = {
   /** A comp that has run out, kept for the drawer. */
   endedComp: { ended: string; note: string | null } | null
   leagues: { name: string; slug: string; empty: boolean }[]
+  /** Other people's almanacs they bookmarked, newest first. */
+  bookmarks: { name: string; slug: string; at: string }[]
 }
 
 export type LeagueItem = {
@@ -122,7 +124,7 @@ export async function loadAdmin(): Promise<AdminData> {
   const week = new Set(days.slice(-7))
   const seenSince = new Date(now - 90 * DAY_MS).toISOString().slice(0, 10)
 
-  const [profilesRes, leaguesRes, subsRes, compsRes, authRes, hasData, userVisitsRes, leagueVisitsRes, socialRes, failedRes, tokenRes, subscribersRes, reviewsRes] = await Promise.all([
+  const [profilesRes, leaguesRes, subsRes, compsRes, authRes, hasData, userVisitsRes, leagueVisitsRes, socialRes, failedRes, tokenRes, subscribersRes, reviewsRes, bookmarksRes] = await Promise.all([
     db.from('profiles').select('id, display_name, member_code, created_at, referral_source, referral_source_other').order('created_at', { ascending: false }),
     db.from('leagues').select('id, name, slug, platform, owner_id, created_at, last_synced_at, published_at, grace_period_ends_at').order('created_at', { ascending: false }),
     db.from('subscriptions').select('user_id, tier, billing_period, status, current_period_end, trial_ends_at, cancel_at_period_end'),
@@ -136,6 +138,7 @@ export async function loadAdmin(): Promise<AdminData> {
     db.from('social_tokens').select('expires_at').eq('platform', 'threads').maybeSingle(),
     db.from('recap_subscribers').select('id', { count: 'exact', head: true }).eq('status', 'active'),
     db.from('site_reviews').select('rating'),
+    db.from('league_bookmarks').select('user_id, league_id, created_at').order('created_at', { ascending: false }),
   ])
 
   const users = authRes.data?.users ?? []
@@ -198,6 +201,14 @@ export async function loadAdmin(): Promise<AdminData> {
     if (!leaguesByOwner.has(l.owner_id)) leaguesByOwner.set(l.owner_id, [])
     leaguesByOwner.get(l.owner_id)!.push({ name: l.name, slug: l.slug, empty: !hasData.has(l.id) })
   }
+  const leagueById = new Map(leagues.map((l) => [l.id, l]))
+  const bookmarksByUser = new Map<string, Member['bookmarks']>()
+  for (const b of (bookmarksRes.data ?? []) as { user_id: string; league_id: string; created_at: string }[]) {
+    const l = leagueById.get(b.league_id)
+    if (!l) continue
+    if (!bookmarksByUser.has(b.user_id)) bookmarksByUser.set(b.user_id, [])
+    bookmarksByUser.get(b.user_id)!.push({ name: l.name, slug: l.slug, at: b.created_at })
+  }
   const members: Member[] = profiles.filter((p) => !own.has(p.id)).map((p) => {
     const sub = subByUser.get(p.id)
     const comp = compByUser.get(p.id)
@@ -225,6 +236,7 @@ export async function loadAdmin(): Promise<AdminData> {
       subNote,
       endedComp: comp && !compOn && comp.expires_at ? { ended: comp.expires_at, note: comp.note } : null,
       leagues: leaguesByOwner.get(p.id) ?? [],
+      bookmarks: bookmarksByUser.get(p.id) ?? [],
     }
   })
 

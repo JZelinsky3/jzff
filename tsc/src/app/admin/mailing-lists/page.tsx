@@ -62,6 +62,7 @@ type Db = ReturnType<typeof createAdminClient>
 
 type Edition = {
   league: LeagueRow
+  year: number
   week: number
   sent: number
   owner: number
@@ -97,6 +98,7 @@ async function recapReaders(db: Db): Promise<{ editions: Edition[]; error: strin
     const v = (views ?? []).filter((x) => x.league_id === r.league_id && x.year === r.season_year && x.week === r.week)
     return {
       league: leagues.get(r.league_id) ?? { id: r.league_id, name: 'Deleted league', slug: '' },
+      year: r.season_year,
       week: r.week,
       sent: sentBy.get(r.id) ?? 0,
       owner: v.filter((x) => x.role === 'owner').length,
@@ -107,6 +109,21 @@ async function recapReaders(db: Db): Promise<{ editions: Edition[]; error: strin
   }).filter((e) => e.sent > 0 || e.owner + e.list + e.shared + e.other > 0)
   return { editions, error: error?.message ?? null }
 }
+
+// One drawer per week, newest first, so a week's totals read on their own.
+function byWeek(editions: Edition[]): { key: string; year: number; week: number; rows: Edition[] }[] {
+  const groups = new Map<string, { key: string; year: number; week: number; rows: Edition[] }>()
+  for (const e of editions) {
+    const key = `${e.year}-${e.week}`
+    if (!groups.has(key)) groups.set(key, { key, year: e.year, week: e.week, rows: [] })
+    groups.get(key)!.rows.push(e)
+  }
+  return [...groups.values()]
+    .sort((a, b) => b.year - a.year || b.week - a.week)
+    .map((g) => ({ ...g, rows: g.rows.sort((a, b) => b.sent - a.sent || a.league.name.localeCompare(b.league.name)) }))
+}
+
+const sum = (rows: Edition[], k: 'sent' | 'owner' | 'list' | 'shared' | 'other') => rows.reduce((n, r) => n + (k === 'owner' ? (r.owner ? 1 : 0) : r[k]), 0)
 
 type Unsub = { email: string; reason: string; at: string; leagues: LeagueRow[] }
 
@@ -216,7 +233,7 @@ export default async function AdminMailingListsPage({ searchParams }: { searchPa
       ) : null}
 
       <section className="section" style={{ maxWidth: '900px', margin: '0 auto', padding: '0 1.25rem 1rem' }}>
-        <h2 style={h2}>Recap readers, last four weeks</h2>
+        <h2 style={h2}>Recap readers by week, last four weeks</h2>
         {readers.error ? (
           <p style={{ color: 'var(--cream-soft)', opacity: 0.7 }}>
             Couldn&apos;t read recap_views ({readers.error}). Has migration 0075 been applied?
@@ -225,34 +242,48 @@ export default async function AdminMailingListsPage({ searchParams }: { searchPa
           <p style={{ color: 'var(--cream-soft)', opacity: 0.7 }}>No recaps sent or read in the last four weeks.</p>
         ) : (
           <>
-            <div style={{ overflowX: 'auto', border: '1px solid var(--ink-line)', borderRadius: '2px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.82rem' }}>
-                <thead>
-                  <tr style={{ background: 'rgba(232,200,137,.06)', textAlign: 'left' }}>
-                    <th style={th}>League</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Week</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Emailed</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Owner</th>
-                    <th style={{ ...th, textAlign: 'right' }}>List</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Shared</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Other</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {readers.editions.map((e) => (
-                    <tr key={`${e.league.id}:${e.week}`} style={{ borderTop: '1px solid var(--ink-line)' }}>
-                      <td style={{ ...td, color: 'var(--cream)' }}>{e.league.name}</td>
-                      <td style={{ ...td, ...num }}>{e.week}</td>
-                      <td style={{ ...td, ...num }}>{e.sent}</td>
-                      <td style={{ ...td, ...num, color: e.owner ? 'var(--gold)' : undefined }}>{e.owner ? 'Read' : '·'}</td>
-                      <td style={{ ...td, ...num }}>{e.list || '·'}</td>
-                      <td style={{ ...td, ...num }}>{e.shared || '·'}</td>
-                      <td style={{ ...td, ...num }}>{e.other || '·'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {byWeek(readers.editions).map((g, i) => {
+              const leaguesSent = g.rows.filter((r) => r.sent > 0).length
+              const readersN = sum(g.rows, 'owner') + sum(g.rows, 'list') + sum(g.rows, 'shared') + sum(g.rows, 'other')
+              return (
+                <details key={g.key} open={i === 0} className="adm-week" style={weekBox}>
+                  <summary style={weekSummary}>
+                    <span style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem', color: 'var(--cream)' }}>Week {g.week}</span>
+                    <span style={{ color: 'var(--cream-soft)', fontSize: '.78rem' }}>
+                      {sum(g.rows, 'sent')} emailed to {leaguesSent} {leaguesSent === 1 ? 'league' : 'leagues'} · {sum(g.rows, 'owner')} {sum(g.rows, 'owner') === 1 ? 'commish' : 'commishes'} read · {readersN} {readersN === 1 ? 'reader' : 'readers'}
+                    </span>
+                    <span className="adm-week-chev" aria-hidden style={{ marginLeft: 'auto', display: 'inline-block', color: 'var(--cream-mute)', fontSize: '.8rem', transition: 'transform .15s' }}>▾</span>
+                  </summary>
+                  <div style={{ overflowX: 'auto', borderTop: '1px solid var(--ink-line)' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.82rem' }}>
+                      <thead>
+                        <tr style={{ background: 'rgba(232,200,137,.06)', textAlign: 'left' }}>
+                          <th style={th}>League</th>
+                          <th style={{ ...th, textAlign: 'right' }}>Emailed</th>
+                          <th style={{ ...th, textAlign: 'right' }}>Owner</th>
+                          <th style={{ ...th, textAlign: 'right' }}>List</th>
+                          <th style={{ ...th, textAlign: 'right' }}>Shared</th>
+                          <th style={{ ...th, textAlign: 'right' }}>Other</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {g.rows.map((e) => (
+                          <tr key={e.league.id} style={{ borderTop: '1px solid var(--ink-line)' }}>
+                            <td style={{ ...td, color: 'var(--cream)' }}>{e.league.name}</td>
+                            <td style={{ ...td, ...num }}>{e.sent || '·'}</td>
+                            <td style={{ ...td, ...num, color: e.owner ? 'var(--gold)' : undefined }}>{e.owner ? 'Read' : '·'}</td>
+                            <td style={{ ...td, ...num }}>{e.list || '·'}</td>
+                            <td style={{ ...td, ...num }}>{e.shared || '·'}</td>
+                            <td style={{ ...td, ...num }}>{e.other || '·'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
+              )
+            })}
+            <style>{`.adm-week > summary::-webkit-details-marker { display: none; } .adm-week[open] .adm-week-chev { transform: rotate(180deg); }`}</style>
             <p style={{ color: 'var(--cream-soft)', opacity: 0.6, fontSize: '.75rem', marginTop: '.6rem' }}>
               Unique readers. Owner is the commissioner (from their email or signed in), List is a click from a
               mailing-list copy, Shared came in on the share link, Other is anyone else. Counting started with
@@ -385,6 +416,22 @@ export default async function AdminMailingListsPage({ searchParams }: { searchPa
       <SiteFooter />
     </main>
   )
+}
+
+const weekBox: React.CSSProperties = {
+  border: '1px solid var(--ink-line)',
+  borderRadius: '2px',
+  marginBottom: '.6rem',
+}
+
+const weekSummary: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'baseline',
+  gap: '.8rem',
+  flexWrap: 'wrap',
+  padding: '.7rem .8rem',
+  cursor: 'pointer',
+  listStyle: 'none',
 }
 
 const h2: React.CSSProperties = {

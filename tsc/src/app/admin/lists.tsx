@@ -95,10 +95,13 @@ export function PlanPill({ plan }: { plan: Plan }) {
 
 // ── Members ──────────────────────────────────────────────────────────────
 
-type MemberFilter = 'all' | 'paying' | 'trial' | 'comp' | 'canceled' | 'free' | 'new'
+type MemberFilter = 'all' | 'paying' | 'trial' | 'comp' | 'canceled' | 'free' | 'new' | 'noleague'
 
 const isFilter = (v: string | undefined): v is MemberFilter =>
-  !!v && ['all', 'paying', 'trial', 'comp', 'canceled', 'free', 'new'].includes(v)
+  !!v && ['all', 'paying', 'trial', 'comp', 'canceled', 'free', 'new', 'noleague'].includes(v)
+
+// Joined with the time, for the closed row on a wide screen: "Oct 13, 6:11 PM".
+const JOINED_AT: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }
 
 export function MemberList({ members, asOf, initial, initialFilter }: {
   members: Member[]
@@ -116,6 +119,7 @@ export function MemberList({ members, asOf, initial, initialFilter }: {
   const inFilter = (m: Member, f: MemberFilter) =>
     f === 'all' ? true
       : f === 'new' ? Date.parse(m.joined) >= weekAgo
+      : f === 'noleague' ? m.leagues.length === 0
       : f === 'canceled' ? m.plan.kind === 'canceled' || m.plan.kind === 'pastdue'
       : m.plan.kind === f
 
@@ -150,6 +154,7 @@ export function MemberList({ members, asOf, initial, initialFilter }: {
             { id: 'comp', label: 'Comped', n: n('comp'), glyph: 'comp' },
             { id: 'canceled', label: 'Canceled', n: n('canceled'), glyph: 'canceled' },
             { id: 'free', label: 'Free', n: n('free'), glyph: 'free' },
+            { id: 'noleague', label: 'No league', n: n('noleague') },
           ]}
         />
         <div className={s.toolRow}>
@@ -168,7 +173,7 @@ export function MemberList({ members, asOf, initial, initialFilter }: {
       ) : (
         <ul className={s.rows}>
           <li className={`${s.labels} ${s.memberLabels}`} aria-hidden>
-            <span>Member</span><span>Joined</span><span>Leagues</span><span>Seen</span><span>Heard via</span><span>Plan</span><span />
+            <span>Member</span><span>Joined</span><span>Leagues</span><span>Bookmarks</span><span>Seen</span><span>Heard via</span><span>Plan</span><span />
           </li>
           {list.slice(0, shown).map((m) => (
             <MemberRow key={m.id} m={m} asOf={asOf} open={open === m.id} toggle={() => setOpen(open === m.id ? null : m.id)} />
@@ -182,6 +187,7 @@ export function MemberList({ members, asOf, initial, initialFilter }: {
 
 function MemberRow({ m, asOf, open, toggle }: { m: Member; asOf: string; open: boolean; toggle: () => void }) {
   const leagues = m.leagues.length
+  const marks = m.bookmarks.length
   return (
     <li className={`${s.row} ${open ? s.rowOpen : ''}`}>
       <button type="button" className={s.rowHead} onClick={toggle} aria-expanded={open}>
@@ -189,8 +195,9 @@ function MemberRow({ m, asOf, open, toggle }: { m: Member; asOf: string; open: b
           <span className={s.whoName}>{m.name ?? m.email ?? m.id.slice(0, 8)}</span>
           {m.name && m.email && <span className={s.whoSub}>{m.email}</span>}
         </span>
-        <span className={s.cell} data-label="Joined">{fmtDay(m.joined)}</span>
+        <span className={s.cell} data-label="Joined">{fmtDay(m.joined, JOINED_AT)}</span>
         <span className={s.cell} data-label="Leagues">{leagues}</span>
+        <span className={s.cell} data-label="Bookmarks">{marks || '·'}</span>
         <span className={s.cell} data-label="Seen">{m.lastSeen ? ago(m.lastSeen, asOf) : '·'}</span>
         <span className={s.cell} data-label="Via">{m.heardVia ?? '·'}</span>
         <span className={s.planCell}><PlanPill plan={m.plan} /></span>
@@ -199,7 +206,7 @@ function MemberRow({ m, asOf, open, toggle }: { m: Member; asOf: string; open: b
         </span>
         {/* The columns as one muted line, where they don't fit (a phone). */}
         <span className={s.rowMeta}>
-          Joined {fmtDay(m.joined)} · {leagues} {leagues === 1 ? 'league' : 'leagues'}{m.lastSeen ? ` · seen ${ago(m.lastSeen, asOf)}` : ''}
+          Joined {fmtDay(m.joined)} · {leagues} {leagues === 1 ? 'league' : 'leagues'}{marks ? ` · ${marks} ${marks === 1 ? 'bookmark' : 'bookmarks'}` : ''}{m.lastSeen ? ` · seen ${ago(m.lastSeen, asOf)}` : ''}
         </span>
       </button>
       {open && <MemberDrawer m={m} />}
@@ -230,6 +237,16 @@ function MemberDrawer({ m }: { m: Member }) {
             {m.leagues.length === 0 ? 'None' : m.leagues.map((l) => (
               <Link key={l.slug} href={`/league/${l.slug}`} className={s.leagueTag}>
                 {l.name}{l.empty && <span className={s.tagMute}> · empty</span>}
+              </Link>
+            ))}
+          </dd>
+        </div>
+        <div className={s.factWide}>
+          <dt>Bookmarks</dt>
+          <dd>
+            {m.bookmarks.length === 0 ? 'None' : m.bookmarks.map((b) => (
+              <Link key={b.slug} href={`/leagues/${b.slug}/`} className={s.leagueTag}>
+                {b.name}<span className={s.tagMute}> · {fmtDay(b.at)}</span>
               </Link>
             ))}
           </dd>
@@ -304,6 +321,18 @@ function CompControls({ m }: { m: Member }) {
 
 // ── Leagues ──────────────────────────────────────────────────────────────
 
+// Each platform in its own colours, set like its wordmark, so the column reads
+// at a glance. Drawn in CSS, not the real logo files.
+const PLATFORM_MARK: Record<string, string> = { sleeper: 'sleeper', espn: 'ESPN', yahoo: 'yahoo!', nfl: 'NFL' }
+
+function PlatformMark({ platform }: { platform: string }) {
+  return (
+    <span className={s.plat} data-p={platform} title={PLATFORM_LABEL[platform] ?? platform}>
+      {PLATFORM_MARK[platform] ?? (PLATFORM_LABEL[platform] ?? platform).replace('.com', '')}
+    </span>
+  )
+}
+
 const PLAN_LABEL: Record<LeagueItem['plan'], string> = { 'veteran+': 'Veteran+', rookie: 'Rookie', comp: 'Comp', udfa: 'UDFA', testing: 'Testing' }
 
 export function LeagueList({ leagues, asOf, initial, empty = false }: {
@@ -369,7 +398,7 @@ export function LeagueList({ leagues, asOf, initial, empty = false }: {
           </li>
           {list.slice(0, shown).map((l) => (
             <li key={l.id} className={`${s.row} ${s.leagueRow}`}>
-              <span className={s.plat} data-p={l.platform}>{(PLATFORM_LABEL[l.platform] ?? l.platform).replace('.com', '')}</span>
+              <PlatformMark platform={l.platform} />
               <span className={s.who}>
                 <Link href={`/league/${l.slug}`} className={s.whoName}>{l.name}</Link>
                 <span className={s.whoSub}>{l.owner}{l.ownerEmail && l.ownerEmail !== l.owner ? ` · ${l.ownerEmail}` : ''}</span>
