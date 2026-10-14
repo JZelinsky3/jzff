@@ -338,8 +338,9 @@ export async function loadCupExtras(leagueId: string, view: CupView): Promise<Cu
   for (const m of managers ?? []) {
     if (m.profile_id && liveTeams.has(m.id as string)) teamByProfile.set(m.profile_id as string, m.id as string)
   }
+  // Only the managers in the Cup pick, not every alumnus on the books.
   const pickers: CupPicker[] = (profiles ?? [])
-    .filter((p) => !p.is_hidden)
+    .filter((p) => !p.is_hidden && teamByProfile.has(p.id as string))
     .map((p) => ({ profileId: p.id as string, name: p.canonical_name as string, teamId: teamByProfile.get(p.id as string) ?? null }))
     .sort((x, y) => x.name.localeCompare(y.name))
 

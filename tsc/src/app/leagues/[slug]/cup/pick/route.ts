@@ -5,7 +5,8 @@
 // kickoff, so this upserts. Body:
 //   { profile_id, round, slot, picked_manager_id }   round -1 = champion
 //
-// Guards: published league with a Cup; a visible profile in the league; the
+// Guards: published league with a Cup; a visible profile in the league whose
+// manager has a team in the Cup; the
 // game exists with both sides known, isn't finished, and hasn't locked; the
 // pick is one of its two teams (or, for the champion, any team in the Cup).
 
@@ -52,6 +53,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     .eq('league_id', league.id)
     .maybeSingle()
   if (!profile || profile.is_hidden) return fail('Unknown picker.')
+  // Same list the page offers: managers with a team in this Cup.
+  const { data: theirs } = await db.from('managers').select('id').eq('league_id', league.id).eq('profile_id', profile_id)
+  const inCup = new Set(view.cup.seeds.map((s) => s.manager_id))
+  if (!(theirs ?? []).some((m) => inCup.has(m.id as string))) return fail('Only managers in the Cup can pick.')
 
   const now = Date.now()
   if (round === -1) {
