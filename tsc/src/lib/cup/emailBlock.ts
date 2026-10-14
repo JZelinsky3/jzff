@@ -8,7 +8,7 @@
 // lands on a dark olive with pale ink).
 
 import type { CupTeaser, CupTeaserGame } from './teaser'
-import { cupBubbleLines, cupCta, cupDeck, cupLeadersLine, cupLockText, cupNextLabel, cupPts, cupSideRight, cupTag } from './words'
+import { cupBubbleLines, cupCta, cupDeck, cupLaunchLine, cupLeadersLine, cupLockText, cupNextLabel, cupPts, cupSideRight, cupTag } from './words'
 
 const K = {
   band: '#ead9a8',
@@ -53,7 +53,29 @@ function gamesCard(label: string, games: CupTeaserGame[], kind: 'result' | 'next
 </td></tr></table>`
 }
 
+// Before a league's Cup exists: a small "New" card at the foot of the Final
+// Scores section (on its stock), not a section of its own. One line and the way to the preview; the projected draw and the
+// countdown are on the page.
+function launchCard(t: CupTeaser, text: string[]): string[] {
+  const line = cupLaunchLine(t)
+  const url = `${t.url}?utm_source=recap&amp;utm_medium=email&amp;utm_campaign=cup-launch`
+  text.push(`NEW: ${t.name.toUpperCase()}`, line, `See the preview: ${t.url}`, '')
+  return [
+    `<tr><td class="pad" bgcolor="#efe8d6" style="background-color:#efe8d6; padding:0 32px 22px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${K.band}" style="background-color:${K.band}; border:1px solid ${K.rule};"><tr><td style="padding:14px 16px 15px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+<td bgcolor="${K.ink}" style="background-color:${K.ink}; padding:2px 7px 1px; font-family:${SANS}; font-size:10px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:${K.band};">New</td>
+<td style="padding-left:9px; font-family:${SERIF}; font-size:19px; line-height:1.2; color:${K.ink};">${esc(t.name)}</td>
+</tr></table>
+<div style="font-family:${SERIF}; font-size:15px; line-height:1.5; color:${K.ink2}; padding-top:8px;">${esc(line)}</div>
+<div style="padding-top:10px; font-family:${SANS}; font-size:12px; font-weight:bold; letter-spacing:1px; text-transform:uppercase;"><a href="${url}" style="color:${K.ink}; text-decoration:underline;">See the preview</a></div>
+</td></tr></table>
+</td></tr>`,
+  ]
+}
+
 export function cupBlock(t: CupTeaser, text: string[]): string[] {
+  if (t.preview) return launchCard(t, text)
   const deck = cupDeck(t)
   const lock = t.next?.open ? cupLockText(t.next.lockAt) : null
   const leaders = cupLeadersLine(t)

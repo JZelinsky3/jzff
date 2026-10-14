@@ -175,3 +175,63 @@
   font-weight: 700;
   text-decoration: none;
 }
+
+/* The launch teaser: a small card at the foot of The Games, on that
+   section's stock, before a league's Cup exists. */
+.launchWrap {
+  margin: 0 calc(-1 * var(--gutter));
+  padding: 0 var(--gutter) 1.6rem;
+  background: #efe8d6;
+}
+
+.launch {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-width: 40rem;
+  padding: 0.85rem 1rem 0.9rem;
+  border: 1px solid #c9ad6c;
+  border-radius: 12px;
+  background: linear-gradient(160deg, #ecd9a6, #dfc68c);
+  color: #14301f !important;
+  text-decoration: none;
+}
+
+.launchTop {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.launchTag {
+  padding: 0.12rem 0.45rem;
+  border-radius: 4px;
+  background: #14301f;
+  color: #ead9a8;
+  font-family: var(--rc-sans);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.launchName {
+  font-family: var(--rc-display);
+  font-size: 1.2rem;
+  line-height: 1.1;
+}
+
+.launchLine {
+  font-family: var(--rc-body);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: #3d4a33;
+}
+
+.launchGo {
+  font-family: var(--rc-sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

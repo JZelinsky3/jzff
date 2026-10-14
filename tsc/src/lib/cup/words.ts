@@ -21,6 +21,15 @@ function list(names: string[]): string {
   return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
 }
 
+// The launch teaser's one line (a league with no Cup yet): what it is and
+// when the draw is. The detail lives on the preview page.
+export function cupLaunchLine(t: CupTeaser): string {
+  const p = t.preview
+  if (!p) return ''
+  if (p.final) return `The draw is ${p.drawDay}, seeded from the standings after this week. Round one is week ${t.startWeek}.`
+  return `A knockout bracket inside your season, starting week ${t.startWeek}. Your score each week is your Cup score. The draw is ${p.drawDay}.`
+}
+
 // One or two sentences under the Cup's name: what happened this week, in
 // plain words.
 export function cupDeck(t: CupTeaser): string {

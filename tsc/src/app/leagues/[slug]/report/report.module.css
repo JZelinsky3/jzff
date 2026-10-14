@@ -241,21 +241,53 @@ a.edition:hover {
   color: var(--chalk-2);
 }
 
+/* One board per conference when each sends its own top N; one board
+   otherwise. */
+.raceGroup + .raceGroup {
+  margin-top: 30px;
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+.groupName {
+  font-family: var(--rp-display);
+  font-size: 23px;
+  line-height: 1.1;
+}
+
+.groupRule {
+  margin-left: auto;
+  font-family: var(--rp-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-align: right;
+  text-transform: uppercase;
+  color: var(--chalk-2);
+}
+
 .raceTable {
   border-top: 1px solid rgba(232, 238, 244, 0.35);
 }
 
-/* Phone: name and record on top, the bar under it, change and next week
-   on the right. */
+/* Phone: the place, the name, the odds on the right with the move under
+   them; the bar across under the name; next week in one line. */
 .raceRow {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
   grid-template-areas:
-    'who change'
-    'bar next';
+    'rank who odds'
+    '. bar bar'
+    '. next next';
+  align-items: center;
   column-gap: 12px;
-  row-gap: 6px;
-  padding: 11px 0;
+  row-gap: 8px;
+  padding: 13px 0;
   border-bottom: 1px solid rgba(232, 238, 244, 0.12);
 }
 
@@ -263,24 +295,49 @@ a.edition:hover {
   display: none;
 }
 
+/* The place in the race, filled while it's a playoff place. */
+.rank {
+  grid-area: rank;
+  align-self: start;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-top: 1px;
+  border: 1.5px solid rgba(232, 238, 244, 0.28);
+  border-radius: 50%;
+  font-family: var(--rp-mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--chalk-2);
+}
+
+.raceIn .rank {
+  border-color: var(--bar);
+  background: var(--bar);
+  color: var(--board);
+}
+
 .who {
   grid-area: who;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
 .whoName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
   font-family: var(--rp-display);
-  font-size: 19px;
+  font-size: 20px;
   line-height: 1.15;
 }
 
 .whoMeta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 6px;
   font-family: var(--rp-mono);
   font-size: 11px;
   color: var(--chalk-2);
@@ -288,8 +345,9 @@ a.edition:hover {
 
 .tagIn,
 .tagOut {
-  padding: 1px 5px;
-  border-radius: 2px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-family: var(--rp-mono);
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -306,19 +364,98 @@ a.edition:hover {
   color: var(--chalk-2);
 }
 
+/* Conference badges: the recap's letters and colours, with a thin ring so
+   they hold up on the navy board as well as the card stock. */
+.divBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+  color: #fff;
+  font-family: var(--rp-sans);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.divBadge[data-div='0'] {
+  background: #2c5a7e;
+}
+
+.divBadge[data-div='1'] {
+  background: #b4472a;
+}
+
+.divBadge[data-div='2'] {
+  background: #2f7a4a;
+}
+
+.divBadge[data-div='3'] {
+  background: #6b3f8a;
+}
+
+.oddsCell {
+  grid-area: odds;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.oddsBig {
+  font-family: var(--rp-sans);
+  font-size: 23px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--chalk);
+}
+
+/* The move since last time, as a small pill. */
+.change > span {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-family: var(--rp-mono);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.up {
+  background: rgba(108, 197, 154, 0.14);
+  color: var(--up);
+}
+
+.down {
+  background: rgba(240, 138, 120, 0.14);
+  color: var(--down);
+}
+
+.flat {
+  color: var(--chalk-2);
+}
+
 .barCell {
   grid-area: bar;
   display: flex;
   align-items: center;
-  gap: 10px;
   min-width: 0;
 }
 
 .track {
   position: relative;
   flex: 1;
-  height: 10px;
-  border-radius: 2px;
+  height: 8px;
+  border-radius: 4px;
   background: rgba(232, 238, 244, 0.1);
 }
 
@@ -327,7 +464,7 @@ a.edition:hover {
   top: 0;
   bottom: 0;
   left: 0;
-  border-radius: 2px 4px 4px 2px;
+  border-radius: 4px;
   background: var(--bar);
 }
 
@@ -343,81 +480,45 @@ a.edition:hover {
   box-shadow: 0 0 0 2px var(--board);
 }
 
-.oddsNum {
-  width: 46px;
-  flex-shrink: 0;
-  font-family: var(--rp-mono);
-  font-size: 15px;
-  font-weight: 700;
-  text-align: right;
-  color: var(--chalk);
-}
-
-.numCol {
-  grid-area: change;
-  text-align: right;
-}
-
-.change {
-  font-family: var(--rp-mono);
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.up {
-  color: var(--up);
-}
-
-.down {
-  color: var(--down);
-}
-
-.flat {
-  color: var(--chalk-2);
-}
-
-.nextCol {
+.nextCell {
   grid-area: next;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: center;
-  min-width: 92px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--chalk-2);
 }
 
-.nextOdds {
+.nextVs {
   font-family: var(--rp-mono);
-  font-size: 13px;
-  color: var(--chalk);
-  white-space: nowrap;
-}
-
-/* The race table's header says what the pair is on wide screens; phones
-   have no header row, so each pair carries its own label. */
-.nextLabel {
-  font-family: var(--rp-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.12em;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--chalk-2);
 }
 
-.nextOpp {
-  font-size: 11.5px;
-  color: var(--chalk-2);
+.nextPair {
   white-space: nowrap;
 }
 
+.nextPair b {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--chalk);
+}
+
+/* The playoff line: a solid rule with its label on it. */
 .line {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 2px 0;
+  margin: 0;
+  padding: 7px 0;
   font-family: var(--rp-mono);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--bar);
 }
@@ -426,7 +527,17 @@ a.edition:hover {
 .line::after {
   content: '';
   flex: 1;
-  border-top: 1px dashed rgba(141, 182, 220, 0.7);
+  border-top: 2px solid rgba(141, 182, 220, 0.55);
+}
+
+.line::before {
+  flex: 0 0 14px;
+}
+
+.wildcards {
+  margin-top: 14px !important;
+  font-size: 13.5px;
+  color: var(--chalk-2);
 }
 
 .bigGame {
@@ -844,12 +955,13 @@ a.edition:hover {
 }
 
 @media (min-width: 760px) {
+  /* A table: place, team, bar, odds and move, next week. */
   .raceRow {
-    grid-template-columns: minmax(150px, 1.1fr) minmax(220px, 2fr) 74px 150px;
-    grid-template-areas: 'who bar change next';
-    align-items: center;
+    grid-template-columns: 30px minmax(170px, 1.1fr) minmax(200px, 2fr) 92px 190px;
+    grid-template-areas: 'rank who bar odds next';
     column-gap: 18px;
-    padding: 10px 0;
+    row-gap: 0;
+    padding: 11px 0;
   }
 
   .raceHeadRow {
@@ -863,20 +975,36 @@ a.edition:hover {
     color: var(--chalk-2);
   }
 
-  .raceHeadRow > span:nth-child(1) {
+  .rankHead {
+    grid-area: rank;
+    text-align: center;
+  }
+
+  .whoHead {
     grid-area: who;
   }
 
-  .raceHeadRow > span:nth-child(2) {
+  .barHead {
     grid-area: bar;
   }
 
-  .nextLabel {
-    display: none;
+  .oddsHead {
+    grid-area: odds;
+    text-align: right;
   }
 
-  .raceHeadRow > span:nth-child(4) {
+  .nextHead {
     grid-area: next;
+    text-align: right;
+  }
+
+  .rank,
+  .oddsCell {
+    align-self: center;
+  }
+
+  .nextCell {
+    flex-direction: column;
     align-items: flex-end;
     text-align: right;
   }

@@ -16,7 +16,8 @@
 // node scripts/emails/gmail-dark-sim.mjs.
 
 import { TIER_PRICES } from '@/lib/stripe'
-import { needsLabel, needsVerdict, type ReportTeam, type ReportView } from './build'
+import { needsLabel, needsVerdict, raceGroups, type ReportTeam, type ReportView } from './build'
+import { divisionLabels } from '@/lib/divisionLabels'
 
 const C = {
   desk: '#cdd6de',
@@ -55,6 +56,15 @@ export type ReportAudience = 'owner' | 'subscriber'
 
 function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+// A conference badge after a name, in the recap's letters and colours.
+const DIV_COLORS = ['#2c5a7e', '#b4472a', '#2f7a4a', '#6b3f8a']
+function badge(v: ReportView, t: ReportTeam): string {
+  if (t.div == null || !v.divisions) return ''
+  const label = divisionLabels(v.divisions)[t.div]
+  if (!label) return ''
+  return ` <span style="display:inline-block; padding:1px 5px; background-color:${DIV_COLORS[t.div % 4]}; color:#ffffff; font-family:${SANS}; font-size:10px; font-weight:bold; line-height:1.4; border-radius:3px; vertical-align:2px;">${esc(label)}</span>`
 }
 
 function odds(n: number): string {
@@ -133,10 +143,17 @@ export function reportLead(v: ReportView, paid: boolean): string {
   if (needers.length && open > 0) {
     out.push(`${needers.length} ${needers.length === 1 ? 'team is' : 'teams are'} still playing for ${open} ${open === 1 ? 'spot' : 'spots'} with ${v.left === 1 ? 'one week' : `${v.left} weeks`} left.`)
   } else {
-    // The race for the last spot, when it's close.
-    const a = v.teams[v.playoffTeams - 1]
-    const b = v.teams[v.playoffTeams]
-    if (a && b && a.odds <= 80 && b.odds >= 20) out.push(`The last spot is between ${a.name} at ${odds(a.odds)} and ${b.name} at ${odds(b.odds)}.`)
+    // The race for the last spot, when it's close: per conference when each
+    // conference sends its own top N, the closest of them.
+    let best: { a: ReportTeam; b: ReportTeam; name: string | null; gap: number } | null = null
+    for (const g of raceGroups(v).groups) {
+      const a = g.teams[g.spots - 1]
+      const b = g.teams[g.spots]
+      if (!a || !b || a.odds > 80 || b.odds < 20) continue
+      const gap = a.odds - b.odds
+      if (!best || gap < best.gap) best = { a, b, name: g.name, gap }
+    }
+    if (best) out.push(`The last ${best.name ? `${best.name} spot` : 'spot'} is between ${best.a.name} at ${odds(best.a.odds)} and ${best.b.name} at ${odds(best.b.odds)}.`)
   }
   return out.join(' ')
 }
@@ -164,7 +181,7 @@ function cutLine(text: string): string {
 </td></tr>`
 }
 
-function raceRowPaid(t: ReportTeam, first: boolean): string {
+function raceRowPaid(v: ReportView, t: ReportTeam, first: boolean): string {
   const w = Math.max(2, Math.min(100, Math.round(t.odds)))
   const d = changeOf(t)
   const change =
@@ -174,7 +191,7 @@ function raceRowPaid(t: ReportTeam, first: boolean): string {
   const tag = t.clinched ? ` &nbsp;<b style="color:${C.up};">CLINCHED</b>` : t.eliminated ? ` &nbsp;<b style="color:${C.chalkMute};">OUT</b>` : ''
   const top = first ? '' : ` border-top:1px solid ${C.boardRule};`
   return `<tr>
-<td style="padding:8px 0;${top} font-family:${SERIF}; font-size:15px; line-height:1.2; color:${C.chalk}; word-break:break-word;">${esc(t.name)}<br><span style="font-family:${SANS}; font-size:11px; color:${C.chalkMute};">${esc(record(t))} &middot; seed ${t.seed}${tag}</span></td>
+<td style="padding:8px 0;${top} font-family:${SERIF}; font-size:15px; line-height:1.2; color:${C.chalk}; word-break:break-word;">${esc(t.name)}${badge(v, t)}<br><span style="font-family:${SANS}; font-size:11px; color:${C.chalkMute};">${esc(record(t))} &middot; seed ${t.seed}${tag}</span></td>
 <td width="38%" style="padding:8px 10px;${top}">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.barTrack}" style="background-color:${C.barTrack};"><tr><td width="${w}%" bgcolor="${C.bar}" style="background-color:${C.bar}; height:9px; line-height:9px; font-size:1px;">&nbsp;</td>${w < 100 ? `<td style="height:9px; line-height:9px; font-size:1px;">&nbsp;</td>` : ''}</tr></table>
 </td>
@@ -183,11 +200,11 @@ function raceRowPaid(t: ReportTeam, first: boolean): string {
 </tr>`
 }
 
-function raceRowFree(t: ReportTeam, first: boolean): string {
+function raceRowFree(v: ReportView, t: ReportTeam, first: boolean): string {
   const top = first ? '' : ` border-top:1px solid ${C.boardRule};`
   return `<tr>
 <td style="padding:8px 0;${top} font-family:${SANS}; font-size:12px; font-weight:bold; color:${C.chalkMute}; width:26px;">${t.seed}</td>
-<td colspan="2" style="padding:8px 0;${top} font-family:${SERIF}; font-size:15px; line-height:1.2; color:${C.chalk}; word-break:break-word;">${esc(t.name)}</td>
+<td colspan="2" style="padding:8px 0;${top} font-family:${SERIF}; font-size:15px; line-height:1.2; color:${C.chalk}; word-break:break-word;">${esc(t.name)}${badge(v, t)}</td>
 <td align="right" style="padding:8px 0;${top} font-family:${SANS}; font-size:13px; color:${C.chalk}; white-space:nowrap;"><b>${esc(record(t))}</b> &nbsp;<span style="color:${C.chalkMute};">${t.pf.toFixed(1)} pts</span></td>
 </tr>`
 }
@@ -248,22 +265,22 @@ export function renderReportEmail(
   const lead = reportLead(v, paid)
   const byId = new Map(v.teams.map((t) => [t.managerId, t]))
 
-  // ── Letterhead ──
-  const field = (k: string, val: string, first: boolean) =>
-    `<td class="fld" width="25%" valign="top" style="padding:8px 0 8px ${first ? 0 : 12}px;${first ? '' : ` border-left:1px solid ${C.rule};`}">
-${label(k, C.mute)}<div style="font-family:${SERIF}; font-size:16px; line-height:1.2; color:${C.ink};">${esc(val)}</div></td>`
-  rows.push(`<tr><td class="pad" bgcolor="${C.stock}" style="background-color:${C.stock}; padding:28px 32px 0;">
+  // ── Letterhead: centred like the recap's nameplate. The site, the
+  // report's name big, the league under it, then a dateline band. ──
+  const band = `font-family:${SANS}; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:${C.ink};`
+  rows.push(`<tr><td class="pad" align="center" bgcolor="${C.stock}" style="background-color:${C.stock}; padding:30px 32px 0;">
 <div style="font-family:${SANS}; font-size:10px; letter-spacing:4px; text-transform:uppercase; color:${C.mute};">The Sunday Chronicle</div>
-<div style="font-family:${SANS}; font-size:12px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:${C.ink2}; padding-top:14px;">${esc(v.league.name)} &middot; ${v.year} season</div>
-<div class="hed" style="font-family:${SERIF}; font-size:40px; line-height:1.08; color:${C.ink}; padding-top:6px;">${esc(title)}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px; border-top:2px solid ${C.ink}; border-bottom:1px solid ${C.rule};"><tr>
-${field('Report', `${v.edition} of ${v.editions.length}`, true)}
-${field('Covers', `Weeks 1 to ${v.week}`, false)}
-${field('Playoff spots', String(v.playoffTeams), false)}
-${field('Next report', v.nextEdition ? `After week ${v.nextEdition}` : 'Last one', false)}
+<div class="hed" style="font-family:${SERIF}; font-size:42px; line-height:1.05; color:${C.ink}; padding-top:10px;">${esc(title)}</div>
+<div style="font-family:${SERIF}; font-style:italic; font-size:18px; line-height:1.3; color:${C.ink2}; padding-top:8px;">${esc(v.league.name)} &middot; ${v.year} season</div>
+</td></tr>
+<tr><td class="pad" bgcolor="${C.stock}" style="background-color:${C.stock}; padding:18px 32px 0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:3px double ${C.ink}; border-bottom:1px solid ${C.ink};"><tr>
+<td style="padding:7px 0; ${band} white-space:nowrap;"><b style="color:${C.red};">No. ${v.edition} of ${v.editions.length}</b></td>
+<td class="dl" align="center" style="padding:7px 8px; ${band}">Weeks 1 to ${v.week}</td>
+<td align="right" style="padding:7px 0; ${band} white-space:nowrap;">${v.nextEdition ? `Next: after week ${v.nextEdition}` : 'Final report'}</td>
 </tr></table>
 </td></tr>
-<tr><td class="pad" bgcolor="${C.stock}" style="background-color:${C.stock}; padding:18px 32px 26px;">
+<tr><td class="pad" bgcolor="${C.stock}" style="background-color:${C.stock}; padding:20px 32px 26px;">
 <div style="font-family:${SERIF}; font-size:18px; line-height:1.55; color:${C.ink};">${esc(lead)}</div>
 </td></tr>`)
   text.push(
@@ -277,8 +294,22 @@ ${field('Next report', v.nextEdition ? `After week ${v.nextEdition}` : 'Last one
   // ── The race ──
   rows.push(flagHead(paid ? `Through week ${v.week}` : 'Standings', 'The Playoff Race', { ink: C.chalk, flag: C.red, onFlag: '#ffffff', bg: C.board }))
   const race = paid ? v.teams : [...v.teams].sort((a, b) => a.seed - b.seed)
-  const raceRows = race
-    .map((t, i) => (i === v.playoffTeams && i < race.length ? cutLine(paid ? `Top ${v.playoffTeams} by odds` : 'Playoff line') : '') + (paid ? raceRowPaid(t, i === 0) : raceRowFree(t, i === 0)))
+  // One table, or one per conference when each sends its own top N.
+  const { groups, wildcards } = raceGroups(v, race)
+  const lineText = (g: (typeof groups)[number]) => (g.name ? `Top ${g.spots} in the ${g.name}` : paid ? `Top ${g.spots} by odds` : 'Playoff line')
+  const raceRows = groups
+    .map((g, gi) => {
+      const head = g.name
+        ? `<tr><td colspan="4" style="padding:${gi ? 22 : 4}px 0 6px; border-bottom:1px solid ${C.chalkMute};"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+<td style="font-family:${SERIF}; font-size:19px; color:${C.chalk};">${esc(g.name)}${g.teams[0] ? badge(v, g.teams[0]) : ''}</td>
+<td align="right" style="font-family:${SANS}; font-size:10px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; color:${C.chalkMute}; white-space:nowrap;">Top ${g.spots} make it</td>
+</tr></table></td></tr>`
+        : ''
+      return (
+        head +
+        g.teams.map((t, i) => (i === g.spots && i < g.teams.length ? cutLine(lineText(g)) : '') + (paid ? raceRowPaid(v, t, i === 0) : raceRowFree(v, t, i === 0))).join('')
+      )
+    })
     .join('')
   const raceNote = paid
     ? `Playoff odds from 8,000 simulated finishes to the season, and the change since ${sinceLabel(v)}.`
@@ -286,14 +317,18 @@ ${field('Next report', v.nextEdition ? `After week ${v.nextEdition}` : 'Last one
   rows.push(`<tr><td class="pad" bgcolor="${C.board}" style="background-color:${C.board}; padding:6px 32px 8px;">
 <div style="font-family:${SERIF}; font-style:italic; font-size:14px; line-height:1.5; color:${C.chalkMute}; padding-bottom:8px;">${esc(raceNote)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${raceRows}</table>
+${wildcards ? `<div style="font-family:${SANS}; font-size:12px; line-height:1.5; color:${C.chalkMute}; padding-top:8px;">Plus ${wildcards} wildcard ${wildcards === 1 ? 'spot' : 'spots'} for the best ${wildcards === 1 ? 'record' : 'records'} left over.</div>` : ''}
 </td></tr>`)
   text.push(
     paid ? `THE PLAYOFF RACE (change since ${sinceLabel(v)})` : 'THE STANDINGS',
-    ...race.flatMap((t, i) => [
-      ...(i === v.playoffTeams ? ['  ----- playoff line -----'] : []),
-      paid
-        ? `${t.name} (${record(t)}): ${odds(t.odds)}${changeOf(t) ? ` (${changeOf(t)! > 0 ? '+' : ''}${changeOf(t)})` : ''}${t.clinched ? ', clinched' : t.eliminated ? ', out' : ''}`
-        : `${t.seed}. ${t.name} ${record(t)}, ${t.pf.toFixed(1)} pts`,
+    ...groups.flatMap((g) => [
+      ...(g.name ? [`${g.name.toUpperCase()} (top ${g.spots} make it)`] : []),
+      ...g.teams.flatMap((t, i) => [
+        ...(i === g.spots ? ['  ----- playoff line -----'] : []),
+        paid
+          ? `${t.name} (${record(t)}): ${odds(t.odds)}${changeOf(t) ? ` (${changeOf(t)! > 0 ? '+' : ''}${changeOf(t)})` : ''}${t.clinched ? ', clinched' : t.eliminated ? ', out' : ''}`
+          : `${t.seed}. ${t.name} ${record(t)}, ${t.pf.toFixed(1)} pts`,
+      ]),
     ]),
     '',
   )
@@ -393,8 +428,9 @@ ${last ? `<div style="font-family:${SERIF}; font-size:16px; line-height:1.55; co
     ...(paid && v.teams.every((t) => t.grades.lineups) ? [{ key: 'lineups' as const, head: 'Lineups' }] : []),
     ...(paid && v.teams.every((t) => t.grades.moves) ? [{ key: 'moves' as const, head: 'Moves' }] : []),
   ]
+  // The Student head sits flush left over the names; the grade heads centre.
   const th = (s: string, align: string) =>
-    `<td align="${align}" style="padding:8px 4px 6px; font-family:${SANS}; font-size:9px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; color:${C.mute}; border-bottom:1px solid ${C.ink};">${esc(s)}</td>`
+    `<td align="${align}" style="padding:8px ${align === 'left' ? '4px 6px 0' : '4px 6px'}; font-family:${SANS}; font-size:9px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; color:${C.mute}; border-bottom:1px solid ${C.ink};">${esc(s)}</td>`
   const sheetRows = ranked
     .map((t, i) => {
       const cell = (k: (typeof subjects)[number]['key']) => {
@@ -402,7 +438,7 @@ ${last ? `<div style="font-family:${SERIF}; font-size:16px; line-height:1.55; co
         return `<td align="center" width="50" style="padding:7px 4px; border-top:${i ? `1px solid ${C.rule}` : '0'};">${g ? (k === 'overall' ? pen(g.letter, 16) : `<span style="font-family:${SERIF}; font-size:14px; color:${C.ink};">${esc(g.letter)}</span>`) : ''}</td>`
       }
       return `<tr>
-<td style="padding:7px 4px 7px 0; border-top:${i ? `1px solid ${C.rule}` : '0'}; font-family:${SERIF}; font-size:14px; line-height:1.25; color:${C.ink}; word-break:break-word;">${esc(t.name)}</td>
+<td style="padding:7px 4px 7px 0; border-top:${i ? `1px solid ${C.rule}` : '0'}; font-family:${SERIF}; font-size:14px; line-height:1.25; color:${C.ink}; word-break:break-word;">${esc(t.name)}${badge(v, t)}</td>
 ${subjects.map((s) => cell(s.key)).join('')}
 </tr>`
     })
@@ -488,7 +524,7 @@ ${esc(why)}<br>
     .tiles { padding-left: 12px !important; padding-right: 12px !important; }
     .col  { display: block !important; width: 100% !important; box-sizing: border-box; }
     .hed  { font-size: 32px !important; }
-    .fld  { display: inline-block !important; width: 50% !important; box-sizing: border-box; border-left: 0 !important; padding-left: 0 !important; }
+    .dl   { font-size: 9px !important; letter-spacing: 0 !important; }
   }
   a { text-decoration: none; }
 </style>

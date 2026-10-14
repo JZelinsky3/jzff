@@ -19,6 +19,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
 import { simulateSeason, standingsNow, type SimGame, type SimTeam } from '@/lib/powerSim'
+import type { PlayoffFormat } from '@/lib/seasonRules'
 import { commishRulesFor, effectiveRules, resolvePlayoffFormat } from '@/lib/seasonRules'
 import { lineupWeekEfficiency, type LineupWeekRow } from '@/lib/export/pams'
 import { leagueName } from '@/lib/pamsNames'
@@ -53,6 +54,8 @@ export type ReportTeam = {
   pf: number
   ppg: number
   seed: number
+  // Conference (division) index into ReportView.divisions; null without.
+  div: number | null
   odds: number
   // Odds at the comparison week (the last edition, or week 1 on the first).
   before: number | null
@@ -87,6 +90,12 @@ export type ReportView = {
   compareIsEdition: boolean
   nextEdition: number | null
   playoffTeams: number
+  // The season's conferences (division names), when it plays them, and how
+  // playoff spots are decided: 'per_division' is the top N of each
+  // conference (pams: top 3 of the Whole and of the Skim), not the best N
+  // records. The odds already follow it; the race groups by it.
+  divisions: string[] | null
+  format: PlayoffFormat
   lastRegularWeek: number
   // Regular-season weeks still to play after this one.
   left: number
@@ -438,6 +447,7 @@ export async function loadReport(
       pf: round2(s.startPf),
       ppg: round2(s.ppg),
       seed: standing.get(t.id)?.seed ?? 0,
+      div: hasDivisions ? t.div : null,
       odds: p?.playoff_pct ?? 0,
       before: before?.get(t.id)?.playoff_pct ?? null,
       path: [...oddsByWeek.entries()].map(([w, m]) => ({ week: w, odds: m.get(t.id)?.playoff_pct ?? 0 })),
@@ -492,6 +502,8 @@ export async function loadReport(
       compareIsEdition: prevEdition != null,
       nextEdition: editions.find((w) => w > week) ?? null,
       playoffTeams,
+      divisions: hasDivisions ? divisionNames : null,
+      format: playoffFormat,
       lastRegularWeek,
       left,
       bigGame,
@@ -656,4 +668,25 @@ export function ordinal(n: number): string {
   const s = ['th', 'st', 'nd', 'rd']
   const v = n % 100
   return `${n}${s[(v - 20) % 10] || s[v] || s[0]}`
+}
+
+// ── The race, by the league's playoff rules ──────────────────────────────
+//
+// One group for a league seeded by record (or by division winners, which
+// still lines everyone up on one table). With 'per_division' it's one group
+// per conference, each with its own playoff line: the top N of each make it,
+// so CAT 4th overall can be out while the Skim's 3rd at a worse record is in.
+// `wildcards`: spots an uneven split leaves over, filled by record.
+export type RaceGroup = { name: string | null; div: number | null; teams: ReportTeam[]; spots: number }
+
+export function raceGroups(v: ReportView, teams: ReportTeam[] = v.teams): { groups: RaceGroup[]; wildcards: number } {
+  const divs = v.divisions
+  if (v.format === 'per_division' && divs && divs.length >= 2) {
+    const per = Math.floor(v.playoffTeams / divs.length)
+    const groups = divs.map((name, i) => ({ name, div: i, teams: teams.filter((t) => t.div === i), spots: per })).filter((g) => g.teams.length)
+    if (groups.length >= 2 && groups.reduce((n, g) => n + g.teams.length, 0) === teams.length) {
+      return { groups, wildcards: Math.max(0, v.playoffTeams - per * divs.length) }
+    }
+  }
+  return { groups: [{ name: null, div: null, teams, spots: v.playoffTeams }], wildcards: 0 }
 }

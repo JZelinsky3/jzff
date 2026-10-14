@@ -6,7 +6,8 @@ import { recapViewable } from '@/lib/recap/load'
 import { SITE_URL } from '@/lib/recap/links'
 import { TIER_PRICES } from '@/lib/stripe'
 import { loadReportCached } from '@/lib/report/cached'
-import { needsLabel, needsVerdict, ordinal, type Grade, type ReportTeam, type ReportView } from '@/lib/report/build'
+import { needsLabel, needsVerdict, ordinal, raceGroups, type Grade, type ReportTeam, type ReportView } from '@/lib/report/build'
+import { divisionLabels } from '@/lib/divisionLabels'
 import { ShareButton } from '../recap/ShareButton'
 import styles from './report.module.css'
 
@@ -81,6 +82,9 @@ export async function ReportPage({ slug, week, previewTier }: { slug: string; we
   // Playoff odds are a paid feature across the site, so the free race is the
   // standings, with the odds columns blurred over placeholders.
   const raceTeams = paid ? v.teams : [...v.teams].sort((a, b) => a.seed - b.seed)
+  // One board, or one per conference when each sends its own top N.
+  const raceBoards = raceGroups(v, raceTeams)
+  const divLabels = v.divisions ? divisionLabels(v.divisions) : null
   const pageUrl = `${SITE_URL}/leagues/${slug}/report/${v.week}/`
   const byGpa = [...v.teams].sort((a, b) => b.gpa - a.gpa || b.odds - a.odds)
   const honor = byGpa.slice(0, 3)
@@ -151,7 +155,7 @@ export async function ReportPage({ slug, week, previewTier }: { slug: string; we
         <div className={styles.raceInner}>
           <div className={styles.sectionHead}>
             <h2 id="race-h" className={styles.raceTitle}>
-              The playoff race
+              The Playoff Race
             </h2>
             <p className={styles.raceSub}>
               {paid
@@ -160,80 +164,104 @@ export async function ReportPage({ slug, week, previewTier }: { slug: string; we
             </p>
           </div>
 
-          <div className={styles.raceTable} role="table" aria-label="Playoff odds">
-            <div className={`${styles.raceRow} ${styles.raceHeadRow}`} role="row">
-              <span role="columnheader">Team</span>
-              <span role="columnheader">Playoff odds</span>
-              <span role="columnheader" className={styles.numCol}>
-                Change
-              </span>
-              {hasNext ? (
-                <span role="columnheader" className={styles.nextCol}>
-                  Week {v.week + 1}: win / lose
-                </span>
+          {/* A standings board: the place in the race, the team, the odds
+              big on the right with the move since last time under it, the
+              bar, and next week's stakes in one plain line. By the league's
+              playoff rules: one board, or one per conference when each
+              conference sends its own top N (raceGroups). */}
+          {raceBoards.groups.map((g) => (
+            <div key={g.div ?? 'all'} className={styles.raceGroup}>
+              {g.name ? (
+                <div className={styles.groupHead}>
+                  <DivBadge div={g.div} labels={divLabels} names={v.divisions} />
+                  <span className={styles.groupName}>{g.name}</span>
+                  <span className={styles.groupRule}>Top {g.spots} make the playoffs</span>
+                </div>
               ) : null}
-            </div>
-            {raceTeams.map((t, i) => (
-              <div key={t.managerId}>
-                {i === v.playoffTeams ? (
-                  <div className={styles.line} role="presentation">
-                    <span>{paid ? `Top ${v.playoffTeams} by odds` : 'Playoff line'}</span>
-                  </div>
-                ) : null}
-                <div className={styles.raceRow} role="row" title={paid ? `${t.name}: ${t.odds}% playoff odds, ${t.projW}-${t.projL} projected` : t.name}>
-                  <span className={styles.who} role="cell">
-                    <span className={styles.whoName}>{t.name}</span>
-                    <span className={styles.whoMeta}>
-                      {t.w}-{t.l}
-                      {t.t ? `-${t.t}` : ''} · {t.pf.toFixed(1)} pts · seed {t.seed}
-                      {t.clinched ? <span className={styles.tagIn}>Clinched</span> : null}
-                      {t.eliminated ? <span className={styles.tagOut}>Out</span> : null}
-                    </span>
+              <div className={styles.raceTable} role="table" aria-label={g.name ? `${g.name} playoff odds` : 'Playoff odds'}>
+                <div className={`${styles.raceRow} ${styles.raceHeadRow}`} role="row">
+                  <span role="columnheader" className={styles.rankHead}>
+                    #
                   </span>
-                  {paid ? (
-                    <span className={styles.barCell} role="cell">
-                      <span className={styles.track}>
-                        <span className={styles.fill} style={{ width: `${Math.max(1, t.odds)}%` }} />
-                        {t.before != null ? <span className={styles.tick} style={{ left: `${t.before}%` }} /> : null}
-                      </span>
-                      <span className={styles.oddsNum}>{fmtOdds(t.odds)}</span>
-                    </span>
-                  ) : (
-                    <span className={`${styles.barCell} ${styles.blurred}`} role="cell" aria-hidden>
-                      <span className={styles.track}>
-                        <span className={styles.fill} style={{ width: `${PLACEHOLDER_ODDS[i % PLACEHOLDER_ODDS.length]}%` }} />
-                      </span>
-                      <span className={styles.oddsNum}>{PLACEHOLDER_ODDS[i % PLACEHOLDER_ODDS.length]}%</span>
-                    </span>
-                  )}
-                  <span className={`${styles.numCol} ${styles.change}${paid ? '' : ` ${styles.blurred}`}`} role="cell">
-                    {paid ? changeOf(t) : <span className={styles.up}>▲ 8</span>}
+                  <span role="columnheader" className={styles.whoHead}>
+                    Team
+                  </span>
+                  <span role="columnheader" className={styles.barHead}>
+                    Playoff odds
+                  </span>
+                  <span role="columnheader" className={styles.oddsHead}>
+                    {tickLabel ? 'Odds · move' : 'Odds'}
                   </span>
                   {hasNext ? (
-                    <span className={styles.nextCol} role="cell">
-                      {t.next ? (
-                        paid ? (
-                          <>
-                            <span className={styles.nextLabel}>Wk {v.week + 1} win / lose</span>
-                            <span className={styles.nextOdds}>
-                              {fmtOdds(t.next.ifWin)} / {fmtOdds(t.next.ifLoss)}
-                            </span>
-                            <span className={styles.nextOpp}>v {t.next.opponent}</span>
-                          </>
-                        ) : (
-                          <span className={styles.blurred} aria-hidden>
-                            64% / 31%
-                          </span>
-                        )
-                      ) : (
-                        <span className={styles.nextOpp}>-</span>
-                      )}
+                    <span role="columnheader" className={styles.nextHead}>
+                      Week {v.week + 1}: win / lose
                     </span>
                   ) : null}
                 </div>
+                {g.teams.map((t, i) => (
+                  <div key={t.managerId}>
+                    {i === g.spots && i < g.teams.length ? (
+                      <div className={styles.line} role="presentation">
+                        <span>{g.name ? `Playoff line · top ${g.spots} in the ${g.name}` : paid ? `Playoff line · top ${g.spots}` : 'Playoff line'}</span>
+                      </div>
+                    ) : null}
+                    <div className={`${styles.raceRow} ${i < g.spots ? styles.raceIn : ''}`} role="row" title={paid ? `${t.name}: ${t.odds}% playoff odds, ${t.projW}-${t.projL} projected` : t.name}>
+                      <span className={styles.rank} role="cell">
+                        {i + 1}
+                      </span>
+                      <span className={styles.who} role="cell">
+                        <span className={styles.whoName}>
+                          {t.name}
+                          <DivBadge div={t.div} labels={divLabels} names={v.divisions} />
+                          {t.clinched ? <span className={styles.tagIn}>Clinched</span> : null}
+                          {t.eliminated ? <span className={styles.tagOut}>Out</span> : null}
+                        </span>
+                        <span className={styles.whoMeta}>
+                          {t.w}-{t.l}
+                          {t.t ? `-${t.t}` : ''} · {t.pf.toFixed(1)} pts · seed {t.seed}
+                        </span>
+                      </span>
+                      <span className={`${styles.oddsCell}${paid ? '' : ` ${styles.blurred}`}`} role="cell" aria-hidden={!paid || undefined}>
+                        <span className={styles.oddsBig}>{paid ? fmtOdds(t.odds) : `${PLACEHOLDER_ODDS[i % PLACEHOLDER_ODDS.length]}%`}</span>
+                        <span className={styles.change}>{paid ? changeOf(t) : <span className={styles.up}>▲ 8</span>}</span>
+                      </span>
+                      <span className={`${styles.barCell}${paid ? '' : ` ${styles.blurred}`}`} role="cell" aria-hidden={!paid || undefined}>
+                        <span className={styles.track}>
+                          <span className={styles.fill} style={{ width: `${Math.max(1, paid ? t.odds : PLACEHOLDER_ODDS[i % PLACEHOLDER_ODDS.length])}%` }} />
+                          {paid && t.before != null ? <span className={styles.tick} style={{ left: `${t.before}%` }} /> : null}
+                        </span>
+                      </span>
+                      {hasNext ? (
+                        <span className={styles.nextCell} role="cell">
+                          {t.next ? (
+                            <>
+                              <span className={styles.nextVs}>
+                                Wk {v.week + 1} v {t.next.opponent}
+                              </span>
+                              {paid ? (
+                                <span className={styles.nextPair}>
+                                  <b>{fmtOdds(t.next.ifWin)}</b> win <span aria-hidden>·</span> <b>{fmtOdds(t.next.ifLoss)}</b> lose
+                                </span>
+                              ) : (
+                                <span className={`${styles.nextPair} ${styles.blurred}`} aria-hidden>
+                                  <b>64%</b> win · <b>31%</b> lose
+                                </span>
+                              )}
+                            </>
+                          ) : null}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
+          {raceBoards.wildcards ? (
+            <p className={styles.wildcards}>
+              Plus {raceBoards.wildcards} wildcard {raceBoards.wildcards === 1 ? 'spot' : 'spots'} for the best {raceBoards.wildcards === 1 ? 'record' : 'records'} left over.
+            </p>
+          ) : null}
           {paid && v.bigGame ? (
             <p className={styles.bigGame}>
               <span className={styles.bigGameLabel}>Week {v.week + 1}&apos;s biggest game</span>
@@ -242,7 +270,7 @@ export async function ReportPage({ slug, week, previewTier }: { slug: string; we
           ) : null}
           {paid && needers.length ? (
             <div className={styles.needs}>
-              <h3 className={styles.needsTitle}>What they need</h3>
+              <h3 className={styles.needsTitle}>What They Need</h3>
               <p className={styles.needsSub}>
                 Playoff odds by how each team still in the race finishes the last {v.left === 1 ? 'week' : `${v.left} weeks`}.
               </p>
@@ -282,7 +310,7 @@ export async function ReportPage({ slug, week, previewTier }: { slug: string; we
         <div className={styles.cardsInner}>
           <div className={styles.sectionHead}>
             <h2 id="cards-h" className={styles.cardsTitle}>
-              Report cards
+              Report Cards
             </h2>
             <p className={styles.cardsSub}>
               Graded on the league&apos;s curve: where each manager ranks this season. Ordered by grade point average.
@@ -308,7 +336,10 @@ export async function ReportPage({ slug, week, previewTier }: { slug: string; we
                 <header className={styles.cardHead}>
                   <div className={styles.cardWho}>
                     <span className={styles.label}>Student</span>
-                    <span className={styles.cardName}>{t.name}</span>
+                    <span className={styles.cardName}>
+                      {t.name}
+                      <DivBadge div={t.div} labels={divLabels} names={v.divisions} />
+                    </span>
                     {t.team && t.team !== t.name ? <span className={styles.cardTeam}>{t.team}</span> : null}
                   </div>
                   <div className={styles.cardGrade}>
@@ -390,7 +421,7 @@ export async function ReportPage({ slug, week, previewTier }: { slug: string; we
           {!paid ? <UpgradeLine slug={slug} what="every subject grade, luck and the comments" /> : null}
 
           <div className={styles.method}>
-            <h3 className={styles.methodHead}>How the grades work</h3>
+            <h3 className={styles.methodHead}>How the Grades Work</h3>
             <ul className={styles.methodList}>
               <li>Scoring: points per game.</li>
               <li>Lineups: the share of the best possible starting lineup&apos;s points actually started.</li>
@@ -447,6 +478,17 @@ function fmtOdds(n: number): string {
   if (n > 0 && n < 1) return '<1%'
   if (n > 99) return '>99%'
   return `${Math.round(n)}%`
+}
+
+// A conference badge after a name: "W" or "S" for pams' Whole and Skim, the
+// recap's letters and colours.
+function DivBadge({ div, labels, names }: { div: number | null; labels: string[] | null; names: string[] | null }) {
+  if (div == null || !labels || !names || labels[div] == null) return null
+  return (
+    <span className={styles.divBadge} data-div={div % 4} title={names[div]}>
+      {labels[div]}
+    </span>
+  )
 }
 
 function changeOf(t: ReportTeam) {

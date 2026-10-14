@@ -7,7 +7,7 @@
 // it reads as the Cup, not as one more section of the paper.
 
 import type { CupTeaser, CupTeaserGame } from '@/lib/cup/teaser'
-import { cupBubbleLines, cupCta, cupDeck, cupLeadersLine, cupLockText, cupNextLabel, cupSideRight, cupTag } from '@/lib/cup/words'
+import { cupBubbleLines, cupCta, cupDeck, cupLaunchLine, cupLeadersLine, cupLockText, cupNextLabel, cupSideRight, cupTag } from '@/lib/cup/words'
 import recap from './recap.module.css'
 import styles from './cupSection.module.css'
 
@@ -43,6 +43,22 @@ function Games({ label, games, kind }: { label: string; games: CupTeaserGame[]; 
 }
 
 export function CupSection({ cup, href }: { cup: CupTeaser; href: string }) {
+  // Before the league's Cup exists: a small "New" card at the foot of The
+  // Games, not a section. The preview page has the rest.
+  if (cup.preview) {
+    return (
+      <aside className={styles.launchWrap}>
+        <a className={styles.launch} href={href}>
+          <span className={styles.launchTop}>
+            <span className={styles.launchTag}>New</span>
+            <span className={styles.launchName}>{cup.name}</span>
+          </span>
+          <span className={styles.launchLine}>{cupLaunchLine(cup)}</span>
+          <span className={styles.launchGo}>See the preview</span>
+        </a>
+      </aside>
+    )
+  }
   const deck = cupDeck(cup)
   // Only while it's still true: an old paper read after the lock points at
   // the bracket instead.
