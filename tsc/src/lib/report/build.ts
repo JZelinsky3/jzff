@@ -220,16 +220,20 @@ export async function loadReport(
   // ── Who's in it ──
   const profileName = new Map((profiles ?? []).map((p) => [p.id as string, p.canonical_name as string]))
   const mgr = new Map((managers ?? []).map((m) => [m.id as string, m]))
-  let teamRows = (roster ?? []).map((r) => ({
-    id: r.manager_id as string,
-    team: (r.team_name as string | null) ?? null,
-    avatar: (r.avatar_url as string | null) ?? null,
-    div: (r.division_index as number | null) ?? null,
-  }))
-  if (!teamRows.length) {
-    const ids = new Set(games.flatMap((g) => [g.a, g.b]))
-    teamRows = [...ids].map((id) => ({ id, team: null, avatar: null, div: null }))
-  }
+  // The field is whoever played this season's games, not manager_seasons:
+  // that table carries stale rows (twfl: 26 for 16 teams), and a phantom
+  // 0-0 team would sit in the standings, the sim and the grading curve.
+  const playing = new Set(games.flatMap((g) => [g.a, g.b]).filter(Boolean))
+  const rosterRow = new Map((roster ?? []).map((r) => [r.manager_id as string, r]))
+  const teamRows = [...playing].map((id) => {
+    const r = rosterRow.get(id)
+    return {
+      id,
+      team: (r?.team_name as string | null) ?? null,
+      avatar: (r?.avatar_url as string | null) ?? null,
+      div: (r?.division_index as number | null) ?? null,
+    }
+  })
   const nameOf = (id: string) => {
     const m = mgr.get(id)
     const profile = m?.profile_id ? profileName.get(m.profile_id as string) : undefined
