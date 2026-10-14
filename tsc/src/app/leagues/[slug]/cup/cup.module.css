@@ -586,16 +586,14 @@
 
 .facts {
   display: grid;
-  gap: 4px;
-  padding: 8px 12px 10px;
-  border-top: 1px solid var(--line);
-  background: rgba(0, 0, 0, 0.12);
+  gap: 3px;
+  padding: 6px 12px 11px;
 }
 
 .facts > div {
   display: grid;
-  grid-template-columns: 62px minmax(0, 1fr);
-  gap: 8px;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 10px;
   align-items: baseline;
 }
 
@@ -603,20 +601,15 @@
   font-family: var(--cp-mono);
   font-size: 9.5px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--mute);
 }
 
 .facts dd {
-  font-size: 13px;
+  font-size: 13.5px;
+  line-height: 1.4;
   color: var(--ivory-2);
-}
-
-.formLine {
-  display: block;
-  font-family: var(--cp-mono);
-  font-size: 12px;
 }
 
 .crowd {
@@ -924,6 +917,18 @@
   line-height: 1.15;
 }
 
+.votePill {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border: 1px solid rgba(200, 163, 91, 0.6);
+  border-radius: 2px;
+  font-family: var(--cp-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  vertical-align: 2px;
+  color: var(--brass-hi);
+}
+
 .oddsPath {
   overflow: hidden;
   font-family: var(--cp-mono);
@@ -1076,6 +1081,71 @@
 .champBtnOn {
   border-color: var(--brass);
   background: rgba(200, 163, 91, 0.2);
+}
+
+.votes {
+  margin-top: 8px !important;
+  padding: 0 !important;
+  list-style: none;
+}
+
+.voteRow {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 90px 26px;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.voteWho {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.voteName {
+  font-family: var(--cp-display);
+  font-size: 17px;
+  line-height: 1.15;
+}
+
+.voteBy {
+  overflow: hidden;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--mute);
+}
+
+.voteBar {
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(236, 228, 206, 0.1);
+}
+
+.voteBar > span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 3px;
+  background: var(--brass);
+}
+
+.voteNum {
+  font-family: var(--cp-mono);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: right;
+  color: var(--brass-hi);
+}
+
+.voteNote {
+  margin-top: 6px !important;
+  font-size: 12.5px;
+  color: var(--mute);
 }
 
 .board {

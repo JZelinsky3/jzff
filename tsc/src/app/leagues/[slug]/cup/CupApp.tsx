@@ -190,6 +190,18 @@ export function CupApp({ slug, bracket, notes, extras, imageUrl, seededThrough }
     [user, myPick, slug],
   )
 
+  // Champion votes: team -> who picked it, with this browser's latest pick.
+  const championVotes = useMemo(() => {
+    const by = new Map<string, string[]>()
+    for (const p of extras.picks) {
+      if (p.round !== -1 || (user && p.profileId === user.profileId)) continue
+      by.set(p.picked, [...(by.get(p.picked) ?? []), p.profileId])
+    }
+    const mineNow = user ? myPick(-1, 0) : null
+    if (user && mineNow) by.set(mineNow, [...(by.get(mineNow) ?? []), user.profileId])
+    return by
+  }, [extras.picks, user, myPick])
+
   const openCount = bracket.rounds.flatMap((r) => r.matches).filter((m) => extras.details[m.id]?.open).length
   const unpicked = user
     ? bracket.rounds.flatMap((r) => r.matches).filter((m) => extras.details[m.id]?.open && !myPick(m.round, m.slot)).length +
@@ -231,9 +243,20 @@ export function CupApp({ slug, bracket, notes, extras, imageUrl, seededThrough }
           />
         ) : null}
         {tab === 'bracket' ? <BracketTab bracket={bracket} imageUrl={imageUrl} slug={slug} /> : null}
-        {tab === 'odds' ? <OddsTab bracket={bracket} odds={extras.odds} notes={notes} user={user} /> : null}
+        {tab === 'odds' ? <OddsTab bracket={bracket} odds={extras.odds} notes={notes} user={user} votes={championVotes} /> : null}
         {tab === 'picks' ? (
-          <PicksTab bracket={bracket} extras={extras} user={user} setUser={setUser} myPick={myPick} onPick={pick} saving={saving} seededThrough={seededThrough} goGames={() => setTab('games')} />
+          <PicksTab
+            bracket={bracket}
+            extras={extras}
+            user={user}
+            setUser={setUser}
+            myPick={myPick}
+            onPick={pick}
+            saving={saving}
+            seededThrough={seededThrough}
+            goGames={() => setTab('games')}
+            votes={championVotes}
+          />
         ) : null}
       </div>
 
@@ -463,15 +486,16 @@ function GameCard(props: {
     )
   }
 
-  const series = d.series && a && b ? seriesLine(d.series, a.name, b.name) : a && b ? 'First meeting' : null
-  const last = d.series?.last && a && b ? lastLine(d.series.last, a.name, b.name) : null
+  // Three plain lines under the teams: the Cup's own rule run back over
+  // this season, recent scoring, and the all-time league series.
+  const duel = d.duel && a && b ? duelLine(d.duel, a.name, b.name) : null
+  const recent = a && b && d.formA.length && d.formB.length ? recentLine(d.formA, d.formB, a.name, b.name) : null
+  const series = a && b ? (d.series ? seriesLine(d.series, a.name, b.name) : 'Never played each other') : null
 
   return (
     <article className={`${styles.game} ${m.state === 'live' ? styles.gameLive : ''}`}>
       <header className={styles.gameHead}>
-        <span>
-          Game {index + 1} · Week {m.week}
-        </span>
+        <span>Game {index + 1}</span>
         {m.sameGame ? <span className={styles.flag}>Also their league game</span> : null}
         {m.state === 'final' && m.upsetBy >= UPSET_GAP ? <span className={styles.flagRed}>Upset</span> : null}
       </header>
@@ -484,31 +508,24 @@ function GameCard(props: {
           {winnerProb != null && winnerProb < 0.45 ? `, a ${pct(winnerProb * 100)} shot` : ''}.
         </p>
       ) : null}
-      {a && b ? (
+      {a && b && (duel || recent || series || showCrowd) ? (
         <dl className={styles.facts}>
+          {duel ? (
+            <div>
+              <dt>Week by week</dt>
+              <dd>{duel}</dd>
+            </div>
+          ) : null}
+          {recent ? (
+            <div>
+              <dt>Last 3 weeks</dt>
+              <dd>{recent}</dd>
+            </div>
+          ) : null}
           {series ? (
             <div>
-              <dt>Series</dt>
+              <dt>All-time</dt>
               <dd>{series}</dd>
-            </div>
-          ) : null}
-          {last ? (
-            <div>
-              <dt>Last met</dt>
-              <dd>{last}</dd>
-            </div>
-          ) : null}
-          {d.formA.length || d.formB.length ? (
-            <div>
-              <dt>Form</dt>
-              <dd>
-                <span className={styles.formLine}>
-                  {a.name} {d.formA.map((x) => Math.round(x)).join(' · ')}
-                </span>
-                <span className={styles.formLine}>
-                  {b.name} {d.formB.map((x) => Math.round(x)).join(' · ')}
-                </span>
-              </dd>
             </div>
           ) : null}
           {showCrowd ? (
@@ -533,17 +550,27 @@ function GameCard(props: {
   )
 }
 
-function seriesLine(s: NonNullable<CupMatchDetail['series']>, a: string, b: string): string {
-  const tie = s.t ? `-${s.t}` : ''
-  if (s.w === s.l) return `Even at ${s.w}-${s.l}${tie} all-time`
-  return s.w > s.l ? `${a} leads ${s.w}-${s.l}${tie} all-time` : `${b} leads ${s.l}-${s.w}${tie} all-time`
+// "Chris outscored Mason in 3 of 5 weeks": every week this season, whoever
+// put up more, the way the Cup decides it.
+function duelLine(x: NonNullable<CupMatchDetail['duel']>, a: string, b: string): string {
+  const n = x.a + x.b + x.t
+  const tie = x.t ? ` (${x.t} tied)` : ''
+  if (x.a === x.b) return `Even, ${x.a} ${x.a === 1 ? 'week' : 'weeks'} each${tie}`
+  const [hi, lo, k] = x.a > x.b ? [a, b, x.a] : [b, a, x.b]
+  return `${hi} outscored ${lo} in ${k} of ${n} weeks${tie}`
 }
 
-function lastLine(l: NonNullable<NonNullable<CupMatchDetail['series']>['last']>, a: string, b: string): string {
-  const when = `${l.year}, week ${l.week}${l.playoff ? ' (playoffs)' : ''}`
-  if (l.winner === 'tie') return `${when}: a tie, ${l.sa.toFixed(1)} each`
-  const [w, hi, lo] = l.winner === 'a' ? [a, l.sa, l.sb] : [b, l.sb, l.sa]
-  return `${when}: ${w} won ${hi.toFixed(1)} to ${lo.toFixed(1)}`
+// The better recent scorer first.
+function recentLine(fa: number[], fb: number[], a: string, b: string): string {
+  const avg = (l: number[]) => l.reduce((s, v) => s + v, 0) / l.length
+  const [ma, mb] = [avg(fa), avg(fb)]
+  return ma >= mb ? `${a} ${ma.toFixed(1)} a week, ${b} ${mb.toFixed(1)}` : `${b} ${mb.toFixed(1)} a week, ${a} ${ma.toFixed(1)}`
+}
+
+function seriesLine(s: NonNullable<CupMatchDetail['series']>, a: string, b: string): string {
+  const tie = s.t ? `-${s.t}` : ''
+  if (s.w === s.l) return `Even at ${s.w}-${s.l}${tie} in the league`
+  return s.w > s.l ? `${a} leads ${s.w}-${s.l}${tie} in the league` : `${b} leads ${s.l}-${s.w}${tie} in the league`
 }
 
 // Your own team's Cup, when the name you picked has a team in it.
@@ -660,7 +687,19 @@ function MiniCard({ m, fed, last }: { m: CupMatch; fed: boolean; last: boolean }
 
 // ── Odds ──
 
-function OddsTab({ bracket, odds, notes, user }: { bracket: CupBracket; odds: CupOdds[]; notes: CupNotes; user: User | null }) {
+function OddsTab({
+  bracket,
+  odds,
+  notes,
+  user,
+  votes,
+}: {
+  bracket: CupBracket
+  odds: CupOdds[]
+  notes: CupNotes
+  user: User | null
+  votes: Map<string, string[]>
+}) {
   const alive = odds.filter((o) => o.alive)
   // Knocked out, furthest run first (the beaten finalist, then the semis...).
   const depth = new Map(bracket.rounds.map((r) => [r.name, r.round]))
@@ -677,16 +716,24 @@ function OddsTab({ bracket, odds, notes, user }: { bracket: CupBracket; odds: Cu
       <p className={styles.sectionSub}>
         {bracket.champion
           ? `${bracket.champion.name} won it.`
-          : 'From 20,000 simulated Cups, played on each team’s scoring this season.'}
+          : `From 20,000 simulated Cups, played on each team’s scoring this season.${votes.size ? ' ★ is how many people picked them to win it.' : ''}`}
       </p>
       <ol className={styles.oddsList}>
         {alive.map((o) => (
           <li key={o.managerId} className={`${styles.oddsRow} ${user?.teamId === o.managerId ? styles.oddsMine : ''}`}>
             <span className={styles.seed}>{o.seed}</span>
             <span className={styles.oddsWho}>
-              <span className={styles.oddsName}>{o.name}</span>
+              <span className={styles.oddsName}>
+                {o.name}
+                {votes.get(o.managerId)?.length ? (
+                  <span className={styles.votePill} title={`${votes.get(o.managerId)!.length} champion picks`}>
+                    ★ {votes.get(o.managerId)!.length}
+                  </span>
+                ) : null}
+              </span>
               <span className={styles.oddsPath}>
                 {bracket.champion ? `${ordinal(o.seed)} seed · won the Cup` : shown.map(({ label, i }) => `${label} ${pct(o.reach[i] ?? 0)}`).join(' · ')}
+
               </span>
             </span>
             <span className={styles.oddsBar}>
@@ -762,8 +809,9 @@ function PicksTab(props: {
   saving: string | null
   seededThrough: number
   goGames: () => void
+  votes: Map<string, string[]>
 }) {
-  const { bracket, extras, user, setUser } = props
+  const { bracket, extras, user, setUser, votes } = props
   const champ = props.myPick(-1, 0)
   const teams = [...bracket.rounds[0]!.matches.flatMap((m) => [teamOf(m.a), teamOf(m.b)]), ...bracket.rounds[0]!.byes]
     .filter((e): e is NonNullable<typeof e> => !!e)
@@ -825,6 +873,46 @@ function PicksTab(props: {
       ) : (
         <p className={styles.sectionSub}>Choose your name to make picks. It’s the same name you use for pick’ems.</p>
       )}
+
+      <h3 className={styles.subHead}>Champion picks</h3>
+      {(() => {
+        const nameOf = new Map(extras.pickers.map((p) => [p.profileId, p.name]))
+        const rows = teams
+          .map((t) => ({ t, by: votes.get(t.managerId) ?? [] }))
+          .filter((x) => x.by.length)
+          .sort((x, y) => y.by.length - x.by.length || x.t.seed - y.t.seed)
+        const total = rows.reduce((n, x) => n + x.by.length, 0)
+        if (!total) return <p className={styles.sectionSub}>Nobody has picked a champion yet.</p>
+        return (
+          <>
+            <ol className={styles.votes}>
+              {rows.map(({ t, by }) => (
+                <li key={t.managerId} className={styles.voteRow}>
+                  <span className={styles.seed}>{t.seed}</span>
+                  <span className={styles.voteWho}>
+                    <span className={styles.voteName}>{t.name}</span>
+                    {!extras.championOpen ? (
+                      <span className={styles.voteBy}>
+                        {by
+                          .map((id) => nameOf.get(id) ?? 'Someone')
+                          .sort()
+                          .join(', ')}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className={styles.voteBar}>
+                    <span style={{ width: `${Math.round((by.length / total) * 100)}%` }} />
+                  </span>
+                  <span className={styles.voteNum}>{by.length}</span>
+                </li>
+              ))}
+            </ol>
+            <p className={styles.voteNote}>
+              {total} {total === 1 ? 'pick' : 'picks'}.{extras.championOpen ? ' Who picked whom shows once picks lock at kickoff.' : ''}
+            </p>
+          </>
+        )
+      })()}
 
       <h3 className={styles.subHead}>Leaderboard</h3>
       {extras.board.length ? (

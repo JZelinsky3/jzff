@@ -35,6 +35,9 @@ export type CupMatchDetail = {
   formB: number[]
   ppgA: number | null
   ppgB: number | null
+  // The Cup's own rule run over this season so far: in how many weeks each
+  // side put up the higher score (whoever they were playing).
+  duel: { a: number; b: number; t: number } | null
   lockAt: string | null
   // Picks are open right now (both sides known, before kickoff).
   open: boolean
@@ -216,6 +219,32 @@ export async function loadCupExtras(leagueId: string, view: CupView): Promise<Cu
     return list.slice(-3).map((v) => Math.round(v * 10) / 10)
   }
 
+  // Week by week this season, who scored more (the Cup's rule, backdated).
+  const duelOf = (a: string, b: string, week: number): CupMatchDetail['duel'] => {
+    const by = new Map<number, { a?: number; b?: number }>()
+    for (const g of view.games) {
+      if (g.week >= week || !view.weekFinal(g.week)) continue
+      for (const [id, sc] of [
+        [g.a, g.sa],
+        [g.b, g.sb],
+      ] as const) {
+        if (sc == null || !(sc > 0)) continue
+        if (id === a) by.set(g.week, { ...(by.get(g.week) ?? {}), a: sc })
+        if (id === b) by.set(g.week, { ...(by.get(g.week) ?? {}), b: sc })
+      }
+    }
+    let wa = 0
+    let wb = 0
+    let t = 0
+    for (const x of by.values()) {
+      if (x.a == null || x.b == null) continue
+      if (x.a > x.b) wa++
+      else if (x.b > x.a) wb++
+      else t++
+    }
+    return wa + wb + t ? { a: wa, b: wb, t } : null
+  }
+
   // ── All-time series between two people ──
   const history = await allLeagueGames(db, [...yearOf.keys()])
   const seriesOf = (aId: string, bId: string, beforeYear: number, beforeWeek: number): CupSeries | null => {
@@ -291,6 +320,7 @@ export async function loadCupExtras(leagueId: string, view: CupView): Promise<Cu
         formB: b ? formOf(b, r.week) : [],
         ppgA: a ? avg(before.get(a)) : null,
         ppgB: b ? avg(before.get(b)) : null,
+        duel: a && b ? duelOf(a, b, r.week) : null,
         lockAt,
         open: !!a && !!b && m.state !== 'final' && m.state !== 'waiting' && !locked,
         locked,
