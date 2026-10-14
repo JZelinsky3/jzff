@@ -584,38 +584,67 @@
   color: var(--brass-hi);
 }
 
-.facts {
-  display: grid;
-  gap: 3px;
-  padding: 6px 12px 11px;
+.tape {
+  padding: 2px 12px 8px;
 }
 
-.facts > div {
+.tapeRow {
   display: grid;
-  grid-template-columns: 88px minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) minmax(104px, auto) minmax(0, 1fr);
   align-items: baseline;
+  gap: 6px;
+  padding: 6px 0;
 }
 
-.facts dt {
+.tapeRow + .tapeRow {
+  border-top: 1px solid var(--line);
+}
+
+.tapeHead {
+  padding: 6px 0 4px;
+}
+
+.tapeHead > span {
+  overflow: hidden;
   font-family: var(--cp-mono);
   font-size: 9.5px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
+  text-align: center;
   text-transform: uppercase;
-  color: var(--mute);
-}
-
-.facts dd {
-  font-size: 13.5px;
-  line-height: 1.4;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   color: var(--ivory-2);
 }
 
-.crowd {
+.tapeNum {
+  font-family: var(--cp-mono);
+  font-size: 15px;
+  text-align: center;
+  color: var(--ivory-2);
+}
+
+.tapeWin {
+  font-weight: 700;
+  color: var(--brass-hi);
+}
+
+.tapeLabel {
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--mute);
+}
+
+.crowdRow {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
+  padding: 8px 12px 11px;
+  border-top: 1px solid var(--line);
 }
 
 .crowdBar {

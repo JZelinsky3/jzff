@@ -312,7 +312,6 @@ function Games(props: {
   const done = r.matches.length > 0 && r.matches.every((m) => m.state === 'final')
   const lockAt = r.matches.map((m) => extras.details[m.id]?.lockAt).find(Boolean) ?? null
   const open = r.matches.some((m) => extras.details[m.id]?.open)
-  const nextRound = bracket.rounds[r.round + 1]
 
   return (
     <>
@@ -342,7 +341,7 @@ function Games(props: {
           <h2 className={styles.roundName}>{r.name}</h2>
           <p className={styles.roundSub}>
             Week {r.week}
-            {done ? ' · Final' : live ? ' · This week' : ''}
+            {done ? ' · Final' : ''}
             {open && lockAt ? ` · Picks close ${lockText(lockAt)}` : ''}
             {!open && !done && lockAt && r.matches.some((m) => extras.details[m.id]?.locked) ? ' · Picks locked' : ''}
           </p>
@@ -365,7 +364,11 @@ function Games(props: {
 
       {r.byes.length ? (
         <p className={styles.byes}>
-          Byes: {r.byes.map((e) => `${e.name} (${e.seed})`).join(', ')}. They wait in the {nextRound?.name.toLowerCase() ?? 'next round'}.
+          Byes:{' '}
+          {[...r.byes]
+            .sort((x, y) => x.seed - y.seed)
+            .map((e) => `${e.name} (${e.seed})`)
+            .join(', ')}
         </p>
       ) : null}
 
@@ -486,11 +489,27 @@ function GameCard(props: {
     )
   }
 
-  // Three plain lines under the teams: the Cup's own rule run back over
-  // this season, recent scoring, and the all-time league series.
-  const duel = d.duel && a && b ? duelLine(d.duel, a.name, b.name) : null
-  const recent = a && b && d.formA.length && d.formB.length ? recentLine(d.formA, d.formB, a.name, b.name) : null
-  const series = a && b ? (d.series ? seriesLine(d.series, a.name, b.name) : 'Never played each other') : null
+  // Tale of the tape under the teams: each side's number in its own column
+  // (top team left, bottom team right), the better one lit, a label between,
+  // so no row repeats a name and every row fits on one line.
+  type TapeRow = { label: string; a: string; b: string; better: 'a' | 'b' | null }
+  const tape: TapeRow[] = []
+  if (a && b) {
+    const better = (x: number, y: number): TapeRow['better'] => (x > y ? 'a' : y > x ? 'b' : null)
+    if (d.duel) {
+      tape.push({ label: d.duel.t ? `Weeks won (${d.duel.t} tied)` : 'Weeks won', a: String(d.duel.a), b: String(d.duel.b), better: better(d.duel.a, d.duel.b) })
+    }
+    if (d.formA.length && d.formB.length) {
+      const avg = (l: number[]) => l.reduce((n, v) => n + v, 0) / l.length
+      const [ma, mb] = [avg(d.formA), avg(d.formB)]
+      tape.push({ label: 'Last 3 avg', a: ma.toFixed(1), b: mb.toFixed(1), better: better(ma, mb) })
+    }
+    tape.push(
+      d.series
+        ? { label: d.series.t ? `All-time (${d.series.t} tied)` : 'All-time', a: String(d.series.w), b: String(d.series.l), better: better(d.series.w, d.series.l) }
+        : { label: 'All-time', a: '0', b: '0', better: null },
+    )
+  }
 
   return (
     <article className={`${styles.game} ${m.state === 'live' ? styles.gameLive : ''}`}>
@@ -508,69 +527,34 @@ function GameCard(props: {
           {winnerProb != null && winnerProb < 0.45 ? `, a ${pct(winnerProb * 100)} shot` : ''}.
         </p>
       ) : null}
-      {a && b && (duel || recent || series || showCrowd) ? (
-        <dl className={styles.facts}>
-          {duel ? (
-            <div>
-              <dt>Week by week</dt>
-              <dd>{duel}</dd>
+      {a && b && tape.length ? (
+        <div className={styles.tape}>
+          <div className={`${styles.tapeRow} ${styles.tapeHead}`}>
+            <span>{a.name}</span>
+            <span />
+            <span>{b.name}</span>
+          </div>
+          {tape.map((t) => (
+            <div className={styles.tapeRow} key={t.label}>
+              <span className={`${styles.tapeNum} ${t.better === 'a' ? styles.tapeWin : ''}`}>{t.a}</span>
+              <span className={styles.tapeLabel}>{t.label}</span>
+              <span className={`${styles.tapeNum} ${t.better === 'b' ? styles.tapeWin : ''}`}>{t.b}</span>
             </div>
-          ) : null}
-          {recent ? (
-            <div>
-              <dt>Last 3 weeks</dt>
-              <dd>{recent}</dd>
-            </div>
-          ) : null}
-          {series ? (
-            <div>
-              <dt>All-time</dt>
-              <dd>{series}</dd>
-            </div>
-          ) : null}
-          {showCrowd ? (
-            <div>
-              <dt>Picks</dt>
-              <dd>
-                <span className={styles.crowd}>
-                  <span className={styles.crowdBar}>
-                    <span style={{ width: `${Math.round((crowd.a / crowdTotal) * 100)}%` }} />
-                  </span>
-                  <span className={styles.crowdText}>
-                    {a.name} {Math.round((crowd.a / crowdTotal) * 100)}% · {b.name} {Math.round((crowd.b / crowdTotal) * 100)}% · {crowdTotal}{' '}
-                    {crowdTotal === 1 ? 'pick' : 'picks'}
-                  </span>
-                </span>
-              </dd>
-            </div>
-          ) : null}
-        </dl>
+          ))}
+        </div>
+      ) : null}
+      {a && b && showCrowd ? (
+        <div className={styles.crowdRow}>
+          <span className={styles.crowdBar}>
+            <span style={{ width: `${Math.round((crowd.a / crowdTotal) * 100)}%` }} />
+          </span>
+          <span className={styles.crowdText}>
+            Picks: {a.name} {Math.round((crowd.a / crowdTotal) * 100)}%, {b.name} {Math.round((crowd.b / crowdTotal) * 100)}% ({crowdTotal})
+          </span>
+        </div>
       ) : null}
     </article>
   )
-}
-
-// "Chris outscored Mason in 3 of 5 weeks": every week this season, whoever
-// put up more, the way the Cup decides it.
-function duelLine(x: NonNullable<CupMatchDetail['duel']>, a: string, b: string): string {
-  const n = x.a + x.b + x.t
-  const tie = x.t ? ` (${x.t} tied)` : ''
-  if (x.a === x.b) return `Even, ${x.a} ${x.a === 1 ? 'week' : 'weeks'} each${tie}`
-  const [hi, lo, k] = x.a > x.b ? [a, b, x.a] : [b, a, x.b]
-  return `${hi} outscored ${lo} in ${k} of ${n} weeks${tie}`
-}
-
-// The better recent scorer first.
-function recentLine(fa: number[], fb: number[], a: string, b: string): string {
-  const avg = (l: number[]) => l.reduce((s, v) => s + v, 0) / l.length
-  const [ma, mb] = [avg(fa), avg(fb)]
-  return ma >= mb ? `${a} ${ma.toFixed(1)} a week, ${b} ${mb.toFixed(1)}` : `${b} ${mb.toFixed(1)} a week, ${a} ${ma.toFixed(1)}`
-}
-
-function seriesLine(s: NonNullable<CupMatchDetail['series']>, a: string, b: string): string {
-  const tie = s.t ? `-${s.t}` : ''
-  if (s.w === s.l) return `Even at ${s.w}-${s.l}${tie} in the league`
-  return s.w > s.l ? `${a} leads ${s.w}-${s.l}${tie} in the league` : `${b} leads ${s.l}-${s.w}${tie} in the league`
 }
 
 // Your own team's Cup, when the name you picked has a team in it.

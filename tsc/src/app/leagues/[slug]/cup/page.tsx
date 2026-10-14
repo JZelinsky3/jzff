@@ -117,7 +117,6 @@ export default async function CupPage({ params, searchParams }: Props) {
             <p className={styles.status}>{statusLine(bracket)}</p>
             <p className={styles.meta}>
               {bracket.field} teams · Weeks {bracket.startWeek} to {bracket.finalWeek}
-              {bracket.champion ? '' : extras.board.length ? ` · ${extras.board.length} in the bracket challenge` : ' · Picks open'}
             </p>
           </div>
           <div className={styles.mastCup} aria-hidden>
