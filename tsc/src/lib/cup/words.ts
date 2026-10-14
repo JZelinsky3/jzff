@@ -27,7 +27,7 @@ export function cupDeck(t: CupTeaser): string {
   if (t.preview) {
     const p = t.preview
     if (p.final) return `The draw is ${p.drawDay}, and the seeds are set: the standings after week ${p.throughWeek}. Round one is next week.`
-    return `${t.name} starts in week ${t.startWeek}: the top ${Math.min(t.field, 12)} after week ${t.startWeek - 1}, one round a week, the final in week ${t.finalWeek}. Your score each week is your Cup score. The draw is ${p.drawDay}; here is how it sets up today.`
+    return `${t.name} starts in week ${t.startWeek}: the top ${Math.min(t.field, 12)} after week ${t.startWeek - 1}, one round a week, the final in week ${t.finalWeek}. Your score each week is your Cup score. Here is how the draw sets up today.`
   }
   if (t.champion) {
     const c = t.champion

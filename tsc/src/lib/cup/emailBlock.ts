@@ -8,7 +8,7 @@
 // lands on a dark olive with pale ink).
 
 import type { CupTeaser, CupTeaserGame } from './teaser'
-import { cupDeck, cupLeadersLine, cupLockText, cupPct, cupPts } from './words'
+import { cupBubbleLines, cupCta, cupDeck, cupLeadersLine, cupLockText, cupNextLabel, cupPts, cupSideRight, cupTag } from './words'
 
 const K = {
   band: '#ead9a8',
@@ -27,8 +27,8 @@ function esc(s: string): string {
 }
 
 // Two lines a game, winner (or the higher seed) on top: name and seed on
-// the left, the score (results) or the chance to win (next week) on the
-// right.
+// the left, the score (results), the chance to win (next week) or the
+// record (the launch preview) on the right.
 function gamesCard(label: string, games: CupTeaserGame[], kind: 'result' | 'next'): string {
   const name = `font-family:${SERIF}; font-size:15px; line-height:1.35;`
   const num = `font-family:${SANS}; font-size:13px; line-height:1.35; white-space:nowrap; padding-left:10px;`
@@ -37,7 +37,7 @@ function gamesCard(label: string, games: CupTeaserGame[], kind: 'result' | 'next
     .map((g, i) => {
       const last = i === games.length - 1
       const [top, bottom] = kind === 'result' ? (g.winner === 'b' ? [g.b, g.a] : [g.a, g.b]) : g.a.seed <= g.b.seed ? [g.a, g.b] : [g.b, g.a]
-      const right = (s: typeof top) => (kind === 'result' ? (s.score != null ? cupPts(s.score) : '') : cupPct(s.prob))
+      const right = (s: typeof top) => cupSideRight(s, kind)
       const tag = g.upset ? `<span style="font-family:${SANS}; font-size:9px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; color:${K.red};"> &nbsp;Upset</span>` : ''
       return `<tr><td style="padding:7px 0;${last ? '' : ` border-bottom:1px dotted ${K.rule};`}">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -57,12 +57,13 @@ export function cupBlock(t: CupTeaser, text: string[]): string[] {
   const deck = cupDeck(t)
   const lock = t.next?.open ? cupLockText(t.next.lockAt) : null
   const leaders = cupLeadersLine(t)
-  const cta = lock ? 'Make your Cup picks' : 'See the bracket'
-  const tag = t.champion ? 'Champion' : t.results ? t.results.round : 'Starts next week'
+  const bubble = cupBubbleLines(t)
+  const cta = cupCta(t)
+  const tag = cupTag(t)
 
   const cards = [
     t.results ? gamesCard(`Week ${t.week} · ${t.results.round}`, t.results.games, 'result') : '',
-    t.next ? gamesCard(`Next week · ${t.next.round}`, t.next.games, 'next') : '',
+    t.next ? gamesCard(cupNextLabel(t), t.next.games, 'next') : '',
   ].join('')
   const byes = t.next?.byes.length ? `<div style="font-family:${SANS}; font-size:12px; line-height:1.5; color:${K.ink2}; padding-top:8px;">Byes: ${t.next.byes.map((b) => `${esc(b.name)} (${b.seed})`).join(', ')}</div>` : ''
 
@@ -73,7 +74,8 @@ export function cupBlock(t: CupTeaser, text: string[]): string[] {
       const [w, l] = g.winner === 'b' ? [g.b, g.a] : [g.a, g.b]
       return `${w.name} (${w.seed}) ${w.score != null ? cupPts(w.score) : ''}, ${l.name} (${l.seed}) ${l.score != null ? cupPts(l.score) : ''}${g.upset ? ' (upset)' : ''}`
     }) : []),
-    ...(t.next ? [`Next week, ${t.next.round.toLowerCase()}:`, ...t.next.games.map((g) => `${g.a.name} (${g.a.seed}) ${cupPct(g.a.prob)} v ${g.b.name} (${g.b.seed}) ${cupPct(g.b.prob)}`)] : []),
+    ...(t.next ? [`${cupNextLabel(t)}:`, ...t.next.games.map((g) => `${g.a.name} (${g.a.seed}) ${cupSideRight(g.a, 'next')} v ${g.b.name} (${g.b.seed}) ${cupSideRight(g.b, 'next')}`)] : []),
+    ...bubble,
     ...(leaders ? [leaders] : []),
     `${cta}${lock ? ` (they lock ${lock} ET)` : ''}: ${t.url}`,
     '',
@@ -88,6 +90,7 @@ export function cupBlock(t: CupTeaser, text: string[]): string[] {
 ${deck ? `<div style="font-family:${SERIF}; font-style:italic; font-size:16px; line-height:1.5; color:${K.ink2};">${esc(deck)}</div>` : ''}
 ${cards}
 ${byes}
+${bubble.map((l) => `<div style="font-family:${SERIF}; font-size:15px; line-height:1.5; color:${K.ink}; padding-top:10px;">${esc(l)}</div>`).join('')}
 ${leaders ? `<div style="font-family:${SERIF}; font-size:15px; line-height:1.5; color:${K.ink}; padding-top:12px;">${esc(leaders)}</div>` : ''}
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px;"><tr>
 <td align="center" bgcolor="${K.ink}" style="background-color:${K.ink};">

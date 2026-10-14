@@ -883,16 +883,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  height: 24px;
+  padding: 0 9px;
   flex-shrink: 0;
   border: 1.5px solid var(--pline);
-  border-radius: 50%;
+  border-radius: 999px;
   background: var(--paper);
-  font-family: var(--cp-display);
-  font-size: 14px;
-  font-style: italic;
+  font-family: var(--cp-num);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   line-height: 1;
+  text-transform: uppercase;
   color: var(--ink-3);
 }
 
@@ -1244,8 +1246,36 @@
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  font-size: 12.5px;
-  color: var(--ink-2);
+}
+
+.crowdSide {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.crowdName {
+  overflow: hidden;
+  font-family: var(--cp-display);
+  font-size: 15px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ink);
+}
+
+/* Each number in its bar's colour: green for the left side, brass for the
+   right. */
+.crowdPct {
+  font-family: var(--cp-num);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--green);
+}
+
+.crowdSide + .crowdSide .crowdPct {
+  color: var(--brass-lo);
 }
 
 /* ── The pick bar: pinned to the bottom while picks are open ─ */
@@ -1254,8 +1284,14 @@
   position: sticky;
   bottom: 0;
   z-index: 30;
-  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  padding: 10px 12px calc(18px + env(safe-area-inset-bottom));
   pointer-events: none;
+}
+
+/* With the bar showing, the panel hands over its bottom padding: 8 + the
+   bar's 10 above it matches the bar's 18 below it. */
+.appBar .panel {
+  padding-bottom: 8px;
 }
 
 .pickBarInner {
@@ -1649,8 +1685,15 @@
 
 /* ── Bracket (fits a phone: four columns, no sideways scroll) ── */
 
-.bracketWrap {
-  margin-top: 2px;
+.board {
+  padding: 4px 10px 14px;
+  border: 1px solid var(--bline);
+  border-radius: 16px;
+  background: var(--board-2);
+}
+
+.board .rail {
+  margin: 0 -6px 10px !important;
 }
 
 .bracket {
@@ -1663,34 +1706,6 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-}
-
-.colHead {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: 6px;
-  padding: 0 0 6px;
-  border: 0;
-  border-bottom: 1px solid var(--line-2);
-  background: none;
-  text-align: left;
-  cursor: pointer;
-}
-
-.colName {
-  font-family: var(--cp-mono);
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ivory);
-}
-
-.colWeek {
-  font-family: var(--cp-mono);
-  font-size: 9.5px;
-  color: var(--mute);
 }
 
 .colBody {
@@ -1741,13 +1756,17 @@
 .mCard {
   position: relative;
   width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--slot);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28);
 }
 
+/* This week's games carry the red strip, as on Games. */
 .mLive {
-  border-color: rgba(226, 105, 79, 0.7);
+  box-shadow:
+    inset 0 2px 0 var(--red),
+    0 3px 8px rgba(0, 0, 0, 0.28);
 }
 
 .feeds::after,
@@ -1777,15 +1796,22 @@
 }
 
 .mRow + .mRow {
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--pline);
 }
 
 .mSeed {
   font-family: var(--cp-num);
   font-size: 11px;
   font-weight: 700;
-  color: var(--brass);
+  color: var(--brass-lo);
   text-align: right;
+}
+
+/* Your team, wherever it is in the draw. */
+.mMine {
+  border-radius: 5px;
+  background: #f0dca8;
+  box-shadow: inset 0 0 0 1.5px var(--brass);
 }
 
 .mName,
@@ -1798,61 +1824,106 @@
 .mName {
   font-family: var(--cp-display);
   font-size: 12.5px;
-  color: var(--ivory);
+  color: var(--ink);
 }
 
 .mTbd {
   font-size: 10px;
   font-style: italic;
-  color: var(--mute);
+  color: var(--ink-3);
 }
 
 .mScore {
   display: none;
   font-family: var(--cp-num);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--ivory-2);
+  color: var(--ink-2);
 }
 
 .mWon .mName,
 .mWon .mScore {
-  color: var(--brass-hi);
+  color: var(--green);
+}
+
+.mWon .mScore {
+  font-weight: 700;
 }
 
 .mLost {
-  opacity: 0.5;
+  opacity: 0.45;
 }
 
 .mLost .mName {
   text-decoration: line-through;
 }
 
-.champ {
+.legendMine {
   display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 16px;
-  padding: 12px 14px;
-  border: 1px solid rgba(200, 163, 91, 0.5);
-  border-radius: 12px;
-  background: var(--board-2);
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px !important;
+  font-size: 12.5px;
+  color: var(--ivory-2);
 }
 
-.champLabel {
+.legendMine span {
+  width: 14px;
+  height: 10px;
+  border-radius: 3px;
+  background: #f0dca8;
+  box-shadow: inset 0 0 0 1.5px var(--brass);
+}
+
+/* The champion, on the golden ticket (the newcomer card's stock). */
+.trophyCard {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background:
+    radial-gradient(90% 120% at 100% 0%, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 55%),
+    linear-gradient(160deg, #ecd9a6, #d9bf83);
+  color: #14301f;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+}
+
+.trophyArt svg {
+  display: block;
+  width: 54px;
+  height: auto;
+}
+
+.trophyText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.trophyLabel {
   font-family: var(--cp-mono);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: #4a4a2a;
 }
 
-.champPlate {
+.trophyName {
+  overflow: hidden;
   font-family: var(--cp-display);
-  font-size: 20px;
-  color: var(--brass-hi);
+  font-size: 26px;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.trophyLine {
+  font-size: 13.5px;
+  color: #3d4a33;
 }
 
 .bracketFoot {
@@ -1899,9 +1970,114 @@
   border-top: 1px solid var(--bline-2);
 }
 
+.medalSm {
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+  border-width: 1.5px;
+}
+
+.medalOut {
+  border-color: var(--bline-2);
+  background: transparent;
+  color: var(--mute);
+}
+
+/* The three favourites: a ticket each, the favourite on brass. */
+.podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px !important;
+}
+
+.pod {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 8px 12px;
+  border-radius: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  text-align: center;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.3);
+}
+
+.podFirst {
+  background:
+    radial-gradient(90% 120% at 100% 0%, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 55%),
+    linear-gradient(160deg, #ecd9a6, #d9bf83);
+}
+
+.podMine {
+  box-shadow:
+    inset 0 0 0 2px var(--green),
+    0 10px 22px rgba(0, 0, 0, 0.3);
+}
+
+.podRank {
+  font-family: var(--cp-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.podFirst .podRank {
+  color: #4a4a2a;
+}
+
+.podName {
+  max-width: 100%;
+  overflow: hidden;
+  font-family: var(--cp-display);
+  font-size: 17px;
+  line-height: 1.15;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.podPct {
+  font-family: var(--cp-num);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--green);
+}
+
+.podPct small {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.podPath {
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  color: var(--ink-3);
+}
+
+/* The path and the champion-pick star share the bottom line, so the star
+   never crowds the rank label. */
+.podFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 6px;
+}
+
+.pod .votePill {
+  border-color: var(--pline-2);
+  color: var(--brass-lo);
+}
+
 .oddsRow {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) 70px 46px;
+  grid-template-columns: 28px minmax(0, 1fr) 70px 46px;
   align-items: center;
   gap: 8px;
   padding: 10px 0;
@@ -2004,18 +2180,52 @@
 }
 
 .outList li {
-  padding: 7px 0;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
   border-bottom: 1px solid var(--bline);
-  font-size: 13.5px;
-  color: var(--ivory-2);
+}
+
+.outWho {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .outName {
   font-family: var(--cp-display);
   font-size: 16px;
-  color: var(--ivory);
+  color: var(--ivory-2);
   text-decoration: line-through;
   text-decoration-color: rgba(236, 228, 206, 0.5);
+}
+
+.outLine {
+  overflow: hidden;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--mute);
+}
+
+/* Their score over the score that beat them. */
+.outScore {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-family: var(--cp-num);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--ivory-2);
+}
+
+.outScore small {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--mute);
 }
 
 .notes {
@@ -2372,16 +2582,20 @@
 }
 
 .footActions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   width: 100%;
   max-width: 520px;
 }
 
+/* Two equal buttons; the label shrinks a touch on a narrow phone rather
+   than one button growing. */
 .footActions > * {
-  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0 10px;
+  font-size: clamp(13px, 3.7vw, 14.5px) !important;
+  white-space: nowrap;
 }
 
 .footLink {
@@ -2419,10 +2633,6 @@
     height: calc(var(--slots) * 66px);
   }
 
-  .colName,
-  .colWeek {
-    font-size: 10.5px;
-  }
 
   .champGrid,
   .whoGrid {

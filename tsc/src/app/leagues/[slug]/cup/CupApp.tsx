@@ -347,13 +347,18 @@ export function CupApp(props: Props) {
   const picked = user ? openGames.filter((m) => myPick(m.round, m.slot)).length + (champOpen && myPick(-1, 0) ? 1 : 0) : 0
   const lockAt = openGames.map((m) => extras.details[m.id]?.lockAt).find(Boolean) ?? (champOpen ? extras.championLockAt : null)
 
+  // The pick bar, when it has something to say (it hides away from Games
+  // once every pick is in). The panel above it gives up its bottom padding
+  // so the bar sits evenly between the last card and the footer.
+  const barShown = extras.hasPickTable && toPick > 0 && known && !(!!user && picked >= toPick && tab !== 'games')
+
   const goRound = (r: number) => {
     setRound(r)
     setTab('games')
   }
 
   return (
-    <div className={styles.app}>
+    <div className={`${styles.app} ${barShown ? styles.appBar : ''}`}>
       <header className={styles.mast}>
         <div className={styles.mastInner}>
           <div className={styles.mastText}>
@@ -421,7 +426,7 @@ export function CupApp(props: Props) {
             onChampion={openChampion}
           />
         ) : null}
-        {tab === 'bracket' ? <BracketTab bracket={bracket} imageUrl={imageUrl} slug={slug} title={`${props.cupName} · ${props.leagueName}`} onRound={goRound} /> : null}
+        {tab === 'bracket' ? <BracketTab bracket={bracket} odds={extras.odds} user={user} imageUrl={imageUrl} slug={slug} title={`${props.cupName} · ${props.leagueName}`} onRound={goRound} /> : null}
         {tab === 'odds' ? <OddsTab bracket={bracket} odds={extras.odds} notes={notes} user={user} votes={championVotes} /> : null}
         {tab === 'leaders' ? <LeadersTab bracket={bracket} extras={extras} user={user} userIn={!!user && (extras.picks.some((p) => p.profileId === user.profileId) || Object.keys(mine).some((k) => k.startsWith(`${user.profileId}|`)))} votes={championVotes} champName={user ? (nameOf.get(myPick(-1, 0) ?? '') ?? null) : null} onChampion={openChampion} onWho={() => setSheet({ kind: 'who', then: null })} /> : null}
       </div>
@@ -1037,7 +1042,9 @@ function GameCard(props: {
     const lead = (x: number, y: number) => (x > y ? a.name : y > x ? b.name : null)
     if (d.duel) {
       const [hi, lo] = d.duel.a >= d.duel.b ? [d.duel.a, d.duel.b] : [d.duel.b, d.duel.a]
-      facts.push({ label: 'Weeks won', score: `${hi}-${lo}${d.duel.t ? `-${d.duel.t}` : ''}`, who: lead(d.duel.a, d.duel.b) ?? 'Even' })
+      // "Weeks won" read like a season record. This is the two of them
+      // side by side every week this season: who put up the higher score.
+      facts.push({ label: 'Season duel', score: `${hi}-${lo}${d.duel.t ? `-${d.duel.t}` : ''}`, who: lead(d.duel.a, d.duel.b) ?? 'Even' })
     }
     if (d.formA.length && d.formB.length) {
       const avg = (l: number[]) => l.reduce((n, v) => n + v, 0) / l.length
@@ -1079,7 +1086,7 @@ function GameCard(props: {
       <div className={styles.sides}>
         {row('a')}
         <span className={styles.vs} aria-hidden>
-          <span>v</span>
+          <span>vs</span>
         </span>
         {row('b')}
       </div>
@@ -1110,11 +1117,13 @@ function GameCard(props: {
             <span style={{ width: `${Math.round((crowd.a / crowdTotal) * 100)}%` }} />
           </span>
           <span className={styles.crowdNames}>
-            <span>
-              {a.name} {Math.round((crowd.a / crowdTotal) * 100)}%
+            <span className={styles.crowdSide}>
+              <span className={styles.crowdName}>{a.name}</span>
+              <span className={styles.crowdPct}>{Math.round((crowd.a / crowdTotal) * 100)}%</span>
             </span>
-            <span>
-              {Math.round((crowd.b / crowdTotal) * 100)}% {b.name}
+            <span className={styles.crowdSide}>
+              <span className={styles.crowdPct}>{Math.round((crowd.b / crowdTotal) * 100)}%</span>
+              <span className={styles.crowdName}>{b.name}</span>
             </span>
           </span>
         </div>
@@ -1125,23 +1134,41 @@ function GameCard(props: {
 
 // ── Bracket ──
 
-function BracketTab({ bracket, imageUrl, slug, title, onRound }: { bracket: CupBracket; imageUrl: string; slug: string; title: string; onRound: (r: number) => void }) {
+function BracketTab({
+  bracket,
+  odds,
+  user,
+  imageUrl,
+  slug,
+  title,
+  onRound,
+}: {
+  bracket: CupBracket
+  odds: CupOdds[]
+  user: User | null
+  imageUrl: string
+  slug: string
+  title: string
+  onRound: (r: number) => void
+}) {
+  const mine = user?.teamId ?? null
+  const fav = bracket.champion ? null : ([...odds].filter((o) => o.alive).sort((x, y) => y.win - x.win)[0] ?? null)
   return (
     <>
-      <div className={styles.bracketWrap}>
+      {/* The board: the same round track as Games across the top (a tap
+          opens that round's games), then the draw under it, column for
+          column. */}
+      <div className={styles.board}>
+        <RoundRail bracket={bracket} round={-1} setRound={onRound} />
         <div className={styles.bracket} style={{ ['--slots' as string]: bracket.size / 2, ['--cols' as string]: bracket.rounds.length }}>
           {bracket.rounds.map((r, ri) => (
             <div className={styles.col} key={r.round}>
-              <button type="button" className={styles.colHead} onClick={() => onRound(r.round)}>
-                <span className={styles.colName}>{r.short}</span>
-                <span className={styles.colWeek}>Wk {r.week}</span>
-              </button>
               <div className={styles.colBody}>
                 {pairsOf(r, ri > 0 ? bracket.rounds[ri - 1] : null).map((pair, pi) => (
                   <div className={`${styles.pair} ${pair.join ? styles[pair.join] : ''}`} key={pi}>
                     {pair.cells.map((cell, ci) => (
                       <div className={styles.cell} key={ci}>
-                        {cell.match ? <MiniCard m={cell.match} fed={cell.fed} last={ri === bracket.rounds.length - 1} /> : null}
+                        {cell.match ? <MiniCard m={cell.match} fed={cell.fed} last={ri === bracket.rounds.length - 1} mine={mine} /> : null}
                       </div>
                     ))}
                   </div>
@@ -1151,10 +1178,29 @@ function BracketTab({ bracket, imageUrl, slug, title, onRound }: { bracket: CupB
           ))}
         </div>
       </div>
-      <div className={styles.champ}>
-        <span className={styles.champLabel}>Champion</span>
-        <span className={styles.champPlate}>{bracket.champion ? bracket.champion.name : `Decided week ${bracket.finalWeek}`}</span>
+      {mine && bracket.rounds.some((r) => r.matches.some((m) => teamOf(m.a)?.managerId === mine || teamOf(m.b)?.managerId === mine)) ? (
+        <p className={styles.legendMine}>
+          <span aria-hidden /> Your team
+        </p>
+      ) : null}
+
+      <div className={styles.trophyCard}>
+        <span className={styles.trophyArt} aria-hidden>
+          {trophy({ width: 54, brass: '#a8823c', light: '#d9b66f', dark: '#6b5124', plate: '#e3cd95' })}
+        </span>
+        <span className={styles.trophyText}>
+          <span className={styles.trophyLabel}>Champion · week {bracket.finalWeek}</span>
+          <span className={styles.trophyName}>{bracket.champion ? bracket.champion.name : 'To be decided'}</span>
+          <span className={styles.trophyLine}>
+            {bracket.champion
+              ? `The ${ordinal(bracket.champion.seed)} seed${bracket.runnerUp ? `, over ${bracket.runnerUp.name} in the final` : ''}`
+              : fav
+                ? `Favourite: ${fav.name}, ${pct(fav.win)}`
+                : `Final in week ${bracket.finalWeek}`}
+          </span>
+        </span>
       </div>
+
       <div className={styles.bracketFoot}>
         <SaveImage url={imageUrl} filename={`${slug}-cup-bracket.png`} title={title} />
         <p className={styles.legend}>Struck through: knocked out. Each round is one week; a tie goes to the higher seed.</p>
@@ -1263,11 +1309,11 @@ function pairsOf(r: CupRound, prev: CupRound | null): Pair[] {
   return out
 }
 
-function MiniCard({ m, fed, last }: { m: CupMatch; fed: boolean; last: boolean }) {
+function MiniCard({ m, fed, last, mine }: { m: CupMatch; fed: boolean; last: boolean; mine: string | null }) {
   const row = (side: 'a' | 'b') => {
     const s = m[side]
     const e = teamOf(s)
-    const cls = `${styles.mRow} ${m.winner === side ? styles.mWon : ''} ${m.winner && m.winner !== side ? styles.mLost : ''}`
+    const cls = `${styles.mRow} ${m.winner === side ? styles.mWon : ''} ${m.winner && m.winner !== side ? styles.mLost : ''} ${e && e.managerId === mine ? styles.mMine : ''}`
     return (
       <div className={cls}>
         <span className={styles.mSeed}>{e?.seed ?? ''}</span>
@@ -1286,6 +1332,17 @@ function MiniCard({ m, fed, last }: { m: CupMatch; fed: boolean; last: boolean }
 
 // ── Odds ──
 
+function VoteChip({ n }: { n: number }) {
+  return (
+    <span className={styles.votePill} title={`${n} champion ${n === 1 ? 'pick' : 'picks'}`}>
+      <svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true">
+        <path d="M5 0.4l1.4 2.9 3.2.4-2.3 2.2.6 3.2L5 7.6 2.1 9.1l.6-3.2L.4 3.7l3.2-.4z" fill="currentColor" />
+      </svg>
+      {n}
+    </span>
+  )
+}
+
 function OddsTab({ bracket, odds, notes, user, votes }: { bracket: CupBracket; odds: CupOdds[]; notes: CupNotes; user: User | null; votes: Map<string, string[]> }) {
   const alive = odds.filter((o) => o.alive)
   // Knocked out, furthest run first (the beaten finalist, then the semis...).
@@ -1295,43 +1352,64 @@ function OddsTab({ bracket, odds, notes, user, votes }: { bracket: CupBracket; o
   // (the next round is near-certain for a top seed and says little).
   const later = bracket.rounds.slice(1).map((r) => r.short)
   const shown = later.map((label, i) => ({ label, i })).slice(-2)
+  const finalIdx = bracket.rounds.length - 2
   // Bars scale to the favourite, so a 20% leader doesn't read as empty.
   const top = Math.max(1, ...alive.map((o) => o.win))
+  // The three favourites get a card each; everyone after is a row.
+  const podium = bracket.champion ? [] : alive.slice(0, 3)
+  const rows = bracket.champion ? alive : alive.slice(3)
+  const nVotes = (id: string) => votes.get(id)?.length ?? 0
   return (
     <>
       <h2 className={styles.sectionHead}>{bracket.champion ? 'Champion' : 'Who wins the Cup'}</h2>
       <p className={styles.sectionSub}>
         {bracket.champion
           ? `${bracket.champion.name} won it.`
-          : `From 20,000 simulated Cups, played on each team’s scoring this season.${votes.size ? ' The star counts how many people picked them to win it.' : ''}`}
+          : `From 20,000 simulated Cups, played on each team’s scoring this season.${votes.size ? ' The star counts the league’s champion picks.' : ''}`}
       </p>
-      <ol className={styles.oddsList}>
-        {alive.map((o) => (
-          <li key={o.managerId} className={`${styles.oddsRow} ${user?.teamId === o.managerId ? styles.oddsMine : ''}`}>
-            <span className={styles.oddsSeed}>{o.seed}</span>
-            <span className={styles.oddsWho}>
-              <span className={styles.oddsName}>
-                <span className={styles.oddsNameText}>{o.name}</span>
-                {votes.get(o.managerId)?.length ? (
-                  <span className={styles.votePill} title={`${votes.get(o.managerId)!.length} champion picks`}>
-                    <svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true">
-                      <path d="M5 0.4l1.4 2.9 3.2.4-2.3 2.2.6 3.2L5 7.6 2.1 9.1l.6-3.2L.4 3.7l3.2-.4z" fill="currentColor" />
-                    </svg>
-                    {votes.get(o.managerId)!.length}
-                  </span>
-                ) : null}
+
+      {podium.length ? (
+        <ol className={styles.podium}>
+          {podium.map((o, i) => (
+            <li key={o.managerId} className={`${styles.pod} ${i === 0 ? styles.podFirst : ''} ${user?.teamId === o.managerId ? styles.podMine : ''}`}>
+              <span className={styles.podRank}>{i === 0 ? 'Favourite' : i === 1 ? '2nd' : '3rd'}</span>
+              <span className={styles.medal}>{o.seed}</span>
+              <span className={styles.podName}>{o.name}</span>
+              <span className={styles.podPct}>
+                {pct(o.win).replace('%', '')}
+                <small>%</small>
               </span>
-              <span className={styles.oddsPath}>
-                {bracket.champion ? `${ordinal(o.seed)} seed · won the Cup` : shown.map(({ label, i }) => `${label} ${pct(o.reach[i] ?? 0)}`).join(' · ')}
+              <span className={styles.podFoot}>
+                <span className={styles.podPath}>{finalIdx >= 0 ? `Final ${pct(o.reach[finalIdx] ?? 0)}` : `${ordinal(o.seed)} seed`}</span>
+                {nVotes(o.managerId) ? <VoteChip n={nVotes(o.managerId)} /> : null}
               </span>
-            </span>
-            <span className={styles.oddsBar}>
-              <span style={{ width: `${Math.max(2, Math.min(100, (o.win / top) * 100))}%` }} />
-            </span>
-            <span className={styles.oddsNum}>{bracket.champion ? 'Won' : pct(o.win)}</span>
-          </li>
-        ))}
-      </ol>
+            </li>
+          ))}
+        </ol>
+      ) : null}
+
+      {rows.length ? (
+        <ol className={styles.oddsList}>
+          {rows.map((o) => (
+            <li key={o.managerId} className={`${styles.oddsRow} ${user?.teamId === o.managerId ? styles.oddsMine : ''}`}>
+              <span className={`${styles.medal} ${styles.medalSm}`}>{o.seed}</span>
+              <span className={styles.oddsWho}>
+                <span className={styles.oddsName}>
+                  <span className={styles.oddsNameText}>{o.name}</span>
+                  {nVotes(o.managerId) ? <VoteChip n={nVotes(o.managerId)} /> : null}
+                </span>
+                <span className={styles.oddsPath}>
+                  {bracket.champion ? `${ordinal(o.seed)} seed · won the Cup` : shown.map(({ label, i }) => `${label} ${pct(o.reach[i] ?? 0)}`).join(' · ')}
+                </span>
+              </span>
+              <span className={styles.oddsBar}>
+                <span style={{ width: `${Math.max(2, Math.min(100, (o.win / top) * 100))}%` }} />
+              </span>
+              <span className={styles.oddsNum}>{bracket.champion ? 'Won' : pct(o.win)}</span>
+            </li>
+          ))}
+        </ol>
+      ) : null}
 
       {out.length ? (
         <>
@@ -1339,8 +1417,18 @@ function OddsTab({ bracket, odds, notes, user, votes }: { bracket: CupBracket; o
           <ul className={styles.outList}>
             {out.map((o) =>
               o.out ? (
-                <li key={o.managerId}>
-                  <span className={styles.outName}>{o.name}</span> ({o.seed}), {o.out.round.toLowerCase()}, to {o.out.to}, {pts(o.out.mine)} to {pts(o.out.theirs)}
+                <li key={o.managerId} className={user?.teamId === o.managerId ? styles.oddsMine : ''}>
+                  <span className={`${styles.medal} ${styles.medalSm} ${styles.medalOut}`}>{o.seed}</span>
+                  <span className={styles.outWho}>
+                    <span className={styles.outName}>{o.name}</span>
+                    <span className={styles.outLine}>
+                      {o.out.round} · lost to {o.out.to}
+                    </span>
+                  </span>
+                  <span className={styles.outScore}>
+                    {pts(o.out.mine)}
+                    <small>{pts(o.out.theirs)}</small>
+                  </span>
                 </li>
               ) : null,
             )}

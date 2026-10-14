@@ -16,9 +16,15 @@ export const CUP_LAUNCH = {
   startWeek: 8,
 } as const
 
-// "Wednesday, October 28"
+// "Wednesday, October 28th". A spelled-out month takes the ordinal (Joey);
+// the short form below doesn't.
 export function drawDayText(): string {
-  return new Date(CUP_LAUNCH.drawAt).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'America/New_York' })
+  const at = new Date(CUP_LAUNCH.drawAt)
+  const base = at.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'America/New_York' })
+  const day = Number(at.toLocaleDateString('en-US', { day: 'numeric', timeZone: 'America/New_York' }))
+  const v = day % 100
+  const suffix = v >= 11 && v <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[day % 10] ?? 'th'
+  return `${base}${suffix}`
 }
 
 // "Wed, Oct 28"

@@ -68,7 +68,7 @@ function ordinal(n: number): string {
   return `${n}${s[(v - 20) % 10] || s[v] || s[0]}`
 }
 
-type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ year?: string }> }
+type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ year?: string; preview?: string }> }
 
 // ?year= opens a past season's Cup; the newest one otherwise.
 async function yearOf(searchParams: Props['searchParams']): Promise<number | null> {
@@ -79,8 +79,9 @@ async function yearOf(searchParams: Props['searchParams']): Promise<number | nul
 // A league with a live season this year and no Cup yet gets the launch
 // preview (countdown to the draw, the bracket as today's standings would
 // draw it) instead of a 404. A Cup from an earlier year doesn't count.
-async function previewFor(leagueId: string, askedYear: number | null, view: Awaited<ReturnType<typeof loadCup>>): Promise<CupPreview | null> {
-  if (askedYear || (view && view.cup.season_year >= CUP_LAUNCH.year)) return null
+// ?preview=1 shows it on any league, Cup or not (how pams sees it).
+async function previewFor(leagueId: string, askedYear: number | null, view: Awaited<ReturnType<typeof loadCup>>, force: boolean): Promise<CupPreview | null> {
+  if (askedYear || (!force && view && view.cup.season_year >= CUP_LAUNCH.year)) return null
   return loadCupPreview(leagueId)
 }
 
@@ -89,7 +90,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const year = await yearOf(searchParams)
   const league = await loadLeague(slug)
   const view = await loadCup(league.id, year)
-  const preview = await previewFor(league.id, year, view)
+  const preview = await previewFor(league.id, year, view, (await searchParams).preview === '1')
   if (preview) {
     const title = `${CUP_LAUNCH.name} · ${league.name}`
     const description = `A knockout bracket inside the season. The draw is ${drawDayText()}; the top ${Math.min(preview.teams.length, CUP_MAX_FIELD)} after week ${CUP_LAUNCH.seededThrough} are in.`
@@ -124,7 +125,7 @@ export default async function CupPage({ params, searchParams }: Props) {
   const askedYear = await yearOf(searchParams)
   const league = await loadLeague(slug)
   const view = await loadCup(league.id, askedYear)
-  const preview = await previewFor(league.id, askedYear, view)
+  const preview = await previewFor(league.id, askedYear, view, (await searchParams).preview === '1')
   if (preview) return <CupPreviewPage league={league} preview={preview} pageUrl={`${SITE_URL}/leagues/${slug}/cup/`} />
   if (!view) notFound()
   const { cup, bracket } = view

@@ -109,7 +109,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
 
   // No Cup yet this year: the launch preview's card, the bracket as today's
   // standings would draw it, under the draw date.
-  if (!year && format === 'card' && (!view || view.cup.season_year < CUP_LAUNCH.year)) {
+  if (!year && format === 'card' && (search.get('preview') === '1' || !view || view.cup.season_year < CUP_LAUNCH.year)) {
     const preview = await loadCupPreview(league.id as string)
     if (preview) {
       const fonts = await loadFonts()
@@ -262,7 +262,7 @@ function cardImage(
                     >
                       {more > 0
                         ? `and ${more} more ${more === 1 ? 'game' : 'games'}`
-                        : `Byes: ${(r?.byes ?? []).map((e) => short(e.name, 12)).join(', ')}`}
+                        : `Byes: ${[...(r?.byes ?? [])].sort((x, y) => x.seed - y.seed).map((e) => short(e.name, 12)).join(', ')}`}
                     </div>
                   ) : null}
                 </div>

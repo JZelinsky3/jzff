@@ -4,6 +4,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveCurrentWeek, resolveWeekLockAt } from '@/lib/liveSeason'
+import { week1TuesdayUtc } from '@/lib/nflClock'
 import { leagueName } from '@/lib/pamsNames'
 import { buildBracket, cupWeekLabel, roundNames, type CupBracket, type CupSeedRow } from './bracket'
 import { CUP_LAUNCH, drawDayShort, launchPhase } from './launch'
@@ -48,6 +49,17 @@ export async function latestCup(db: Db, leagueId: string, year?: number | null):
     .maybeSingle()
   if (error || !data) return null
   return { ...(data as CupRow), seeds: Array.isArray(data.seeds) ? (data.seeds as CupSeedRow[]) : [] }
+}
+
+// A season with no calendar of its own (no season_start_date in its
+// settings) runs on the NFL's: week 1 opens the Tuesday after Labor Day.
+// 12 of the 29 published live leagues had none on 2026-10-14, which left
+// the Cup no current week: no banner, and picks that never opened. Scoped
+// to the Cup; the rest of the site reads the season's settings as stored.
+export function cupSeasonSettings(settings: Record<string, unknown> | null, year: number): Record<string, unknown> {
+  const s = settings ?? {}
+  if (typeof s.season_start_date === 'string' && !Number.isNaN(Date.parse(s.season_start_date))) return s
+  return { ...s, season_start_date: new Date(week1TuesdayUtc(year)).toISOString().slice(0, 10) }
 }
 
 // Same names as the recap: the person's profile first, then the league's own
@@ -108,7 +120,8 @@ export async function loadCup(leagueId: string, year?: number | null, opts?: { a
     byWeek.set(w, [...(byWeek.get(w) ?? []), { a: sa, b: sb }])
   }
 
-  const resolved = resolveCurrentWeek((season.settings ?? null) as Record<string, unknown> | null)
+  const settings = cupSeasonSettings((season.settings ?? null) as Record<string, unknown> | null, cup.season_year)
+  const resolved = resolveCurrentWeek(settings)
   const currentWeek = opts?.asOfWeek != null && resolved != null ? Math.max(resolved, opts.asOfWeek) : resolved
   // Same test the recap uses for a settled week: every game has two real
   // scores. A zero almost always means the platform hasn't finalised.
@@ -129,7 +142,9 @@ export async function loadCup(leagueId: string, year?: number | null, opts?: { a
     cup,
     bracket,
     currentWeek,
-    season: { id: season.id as string, settings: (season.settings ?? null) as Record<string, unknown> | null },
+    // With the NFL calendar filled in, so lock times resolve everywhere the
+    // Cup reads them (the page, the pick route).
+    season: { id: season.id as string, settings },
     games: (games ?? []).map((g) => ({
       week: g.week as number,
       a: g.manager_a_id as string,
@@ -162,8 +177,10 @@ export async function cupBadge(
   league: { id: string; slug: string },
   live: { year: number | null; week: number | null; settings?: Record<string, unknown> | null },
 ): Promise<CupBadge | null> {
-  const liveWeek = live.week
-  if (liveWeek == null || live.year == null) return null
+  if (live.year == null) return null
+  const settings = cupSeasonSettings(live.settings ?? null, live.year)
+  const liveWeek = live.week ?? resolveCurrentWeek(settings)
+  if (liveWeek == null) return null
   const cup = await latestCup(db, league.id)
   if (!cup || cup.season_year !== live.year) {
     // The launch: every league with a live season this year, until the
@@ -187,7 +204,7 @@ export async function cupBadge(
   // The round whose picks are on the table: this week's, or round one in
   // the week before the Cup starts.
   const pickWeek = Math.max(liveWeek, cup.start_week)
-  const lockAt = pickWeek <= cup.start_week + rounds - 1 ? resolveWeekLockAt(live.settings ?? null, pickWeek) : null
+  const lockAt = pickWeek <= cup.start_week + rounds - 1 ? resolveWeekLockAt(settings, pickWeek) : null
   return {
     id: cup.id,
     name: cup.name,

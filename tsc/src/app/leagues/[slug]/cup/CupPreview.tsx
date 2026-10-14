@@ -20,12 +20,13 @@ import pv from './preview.module.css'
 
 const NUMBER_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve']
 
+// "half a game behind", "level on record with": read before a name.
 function gb(n: number): string {
-  if (n === 0) return 'level on record'
+  if (n === 0) return 'level on record with'
   const whole = Math.floor(n)
   const half = n - whole >= 0.5
-  if (!whole) return 'half a game back'
-  return `${NUMBER_WORDS[whole] ?? whole}${half ? ' and a half' : ''} ${whole === 1 && !half ? 'game' : 'games'} back`
+  if (!whole) return 'half a game behind'
+  return `${NUMBER_WORDS[whole] ?? whole}${half ? ' and a half' : ''} ${whole === 1 && !half ? 'game' : 'games'} behind`
 }
 
 function ordinal(n: number): string {
@@ -86,9 +87,9 @@ export function CupPreviewPage({ league, preview, pageUrl }: { league: { name: s
               {league.name} · {preview.year}
             </p>
             <h1 className={styles.title}>{CUP_LAUNCH.name}</h1>
-            <p className={styles.status}>A knockout bracket inside your season. {phase === 'before' ? `The draw is ${day}.` : 'The draw is today.'}</p>
+            <p className={styles.status}>A knockout bracket inside your season, one round a week.</p>
             <div className={styles.mastActions}>
-              <span className={pv.comingChip}>Coming {day.replace(/^\w+, /, '')}</span>
+              <span className={pv.comingChip}>{phase === 'before' ? 'Coming soon' : 'Draw day'}</span>
               <span className={styles.mastMeta}>
                 {b.field} teams · Weeks {b.startWeek} to {b.finalWeek}
               </span>
@@ -182,6 +183,7 @@ export function CupPreviewPage({ league, preview, pageUrl }: { league: { name: s
                   <header className={styles.gameHead}>
                     <span className={styles.gameNum}>Game {i + 1}</span>
                     {m.sameGame ? <span className={styles.flag}>Also their league game</span> : null}
+                    <span className={styles.chipWeek}>Week {r1.week}</span>
                   </header>
                   <div className={pv.sides}>
                     <TeamRow t={a} ppg />
@@ -205,13 +207,13 @@ export function CupPreviewPage({ league, preview, pageUrl }: { league: { name: s
               ) : preview.firstOut ? (
                 <p>
                   <span className={pv.bubbleTag}>First out</span>
-                  {preview.firstOut.name}, {ordinal(preview.firstOut.seed)}, {gb(preview.firstOut.gb)} of the last spot.
+                  {preview.firstOut.name}, {ordinal(preview.firstOut.seed)}, {gb(preview.firstOut.gb)} the last team in.
                 </p>
               ) : null}
               {preview.byeRace ? (
                 <p>
                   <span className={pv.bubbleTag}>Bye race</span>
-                  {preview.byeRace.next} is {gb(preview.byeRace.gb)} of {preview.byeRace.last} for the last bye.
+                  {preview.byeRace.next} is {gb(preview.byeRace.gb)} {preview.byeRace.last} for the last bye.
                 </p>
               ) : null}
             </div>

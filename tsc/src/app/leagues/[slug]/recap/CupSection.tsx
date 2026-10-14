@@ -7,7 +7,7 @@
 // it reads as the Cup, not as one more section of the paper.
 
 import type { CupTeaser, CupTeaserGame } from '@/lib/cup/teaser'
-import { cupDeck, cupLeadersLine, cupLockText, cupPct, cupPts } from '@/lib/cup/words'
+import { cupBubbleLines, cupCta, cupDeck, cupLeadersLine, cupLockText, cupNextLabel, cupSideRight, cupTag } from '@/lib/cup/words'
 import recap from './recap.module.css'
 import styles from './cupSection.module.css'
 
@@ -18,7 +18,7 @@ function Games({ label, games, kind }: { label: string; games: CupTeaserGame[]; 
       <ol className={styles.games}>
         {games.map((g, i) => {
           const [top, bottom] = kind === 'result' ? (g.winner === 'b' ? [g.b, g.a] : [g.a, g.b]) : g.a.seed <= g.b.seed ? [g.a, g.b] : [g.b, g.a]
-          const right = (s: typeof top) => (kind === 'result' ? (s.score != null ? cupPts(s.score) : '') : cupPct(s.prob))
+          const right = (s: typeof top) => cupSideRight(s, kind)
           return (
             <li key={i} className={styles.game}>
               <span className={`${styles.row} ${kind === 'result' ? styles.won : ''}`}>
@@ -48,7 +48,8 @@ export function CupSection({ cup, href }: { cup: CupTeaser; href: string }) {
   // the bracket instead.
   const lock = cup.next?.open ? cupLockText(cup.next.lockAt) : null
   const leaders = cupLeadersLine(cup)
-  const tag = cup.champion ? 'Champion' : cup.results ? `The Cup · ${cup.results.round}` : 'The Cup · starts next week'
+  const bubble = cupBubbleLines(cup)
+  const tag = cupTag(cup)
   return (
     <section className={`${recap.section} ${styles.sCup}`}>
       <header className={recap.sectionHead} id="cup">
@@ -57,19 +58,24 @@ export function CupSection({ cup, href }: { cup: CupTeaser; href: string }) {
           <h2>{cup.name}</h2>
         </div>
         <a className={recap.sectionLink} href={href}>
-          The bracket
+          {cup.preview ? 'The preview' : 'The bracket'}
         </a>
       </header>
       {deck ? <p className={styles.deck}>{deck}</p> : null}
       <div className={styles.cards}>
         {cup.results ? <Games label={`Week ${cup.week} · ${cup.results.round}`} games={cup.results.games} kind="result" /> : null}
-        {cup.next ? <Games label={`Next week · ${cup.next.round}`} games={cup.next.games} kind="next" /> : null}
+        {cup.next ? <Games label={cupNextLabel(cup)} games={cup.next.games} kind="next" /> : null}
       </div>
       {cup.next?.byes.length ? <p className={styles.byes}>Byes: {cup.next.byes.map((b) => `${b.name} (${b.seed})`).join(', ')}</p> : null}
+      {bubble.map((l) => (
+        <p key={l} className={styles.leaders}>
+          {l}
+        </p>
+      ))}
       {leaders ? <p className={styles.leaders}>{leaders}</p> : null}
       <div className={styles.ctaRow}>
         <a className={styles.cta} href={href}>
-          {lock ? 'Make your Cup picks' : 'See the bracket'}
+          {cupCta(cup)}
         </a>
         {lock ? <span className={styles.lock}>Picks lock {lock} ET</span> : null}
       </div>

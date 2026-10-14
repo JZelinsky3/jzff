@@ -7,7 +7,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
 import { buildBracket, recordStr, standingsSeeds, CUP_MAX_FIELD, type CupBracket } from './bracket'
-import { cupNames } from './load'
+import { cupNames, cupSeasonSettings } from './load'
 import { CUP_LAUNCH } from './launch'
 
 export type CupPreviewTeam = {
@@ -91,7 +91,7 @@ export async function loadCupPreview(leagueId: string, opts?: { throughWeek?: nu
     games8.set(g.manager_a_id as string, g.manager_b_id as string)
     games8.set(g.manager_b_id as string, g.manager_a_id as string)
   }
-  const currentWeek = resolveCurrentWeek((season.settings ?? null) as Record<string, unknown> | null)
+  const currentWeek = resolveCurrentWeek(cupSeasonSettings((season.settings ?? null) as Record<string, unknown> | null, CUP_LAUNCH.year))
   const bracket = buildBracket({
     seeds,
     nameOf,

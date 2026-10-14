@@ -85,9 +85,14 @@ export type CupExtras = {
   hasPickTable: boolean
 }
 
-// Points for a correct pick, by round: the final is worth the most.
+// Points for a correct pick, by round: 1, 2, 2, 3 in a four-round Cup, the
+// final worth the most. Flat on purpose (Joey, 2026-10-14): each game is
+// picked the week it's played, with both teams known, so a late round is no
+// harder to call than an early one and the final (a 50/50) shouldn't be
+// worth more than all of round one. The long-range call is the champion
+// pick, made before round one; that's the bonus.
 export function roundPoints(rounds: number): number[] {
-  const fromEnd = [5, 3, 2, 1]
+  const fromEnd = [3, 2, 2, 1]
   return Array.from({ length: rounds }, (_, r) => fromEnd[rounds - 1 - r] ?? 1)
 }
 export const CHAMPION_BONUS = 5
