@@ -584,59 +584,56 @@
   color: var(--brass-hi);
 }
 
-.tape {
-  padding: 2px 12px 8px;
-}
-
-.tapeRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(104px, auto) minmax(0, 1fr);
-  align-items: baseline;
-  gap: 6px;
-  padding: 6px 0;
-}
-
-.tapeRow + .tapeRow {
+.facts {
+  margin: 0 !important;
+  padding: 0 12px;
   border-top: 1px solid var(--line);
 }
 
-.tapeHead {
-  padding: 6px 0 4px;
+.facts > div {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
 }
 
-.tapeHead > span {
-  overflow: hidden;
+.facts > div + div {
+  border-top: 1px solid var(--line);
+}
+
+.facts dt {
   font-family: var(--cp-mono);
   font-size: 9.5px;
   font-weight: 700;
-  letter-spacing: 0.12em;
-  text-align: center;
-  text-transform: uppercase;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  color: var(--ivory-2);
-}
-
-.tapeNum {
-  font-family: var(--cp-mono);
-  font-size: 15px;
-  text-align: center;
-  color: var(--ivory-2);
-}
-
-.tapeWin {
-  font-weight: 700;
-  color: var(--brass-hi);
-}
-
-.tapeLabel {
-  font-family: var(--cp-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.12em;
-  text-align: center;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   white-space: nowrap;
   color: var(--mute);
+}
+
+.facts dd {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.factScore {
+  font-family: var(--cp-mono);
+  font-size: 13.5px;
+  white-space: nowrap;
+  color: var(--ivory-2);
+}
+
+.factWho {
+  overflow: hidden;
+  font-family: var(--cp-display);
+  font-size: 15px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--brass-hi);
 }
 
 .crowdRow {
@@ -946,16 +943,28 @@
   line-height: 1.15;
 }
 
+/* Drawn star (the mono font has no ★, and a fallback glyph sits low),
+   centred with the count by flexbox rather than by baseline. */
 .votePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 17px;
   margin-left: 8px;
-  padding: 1px 6px;
+  padding: 0 6px;
   border: 1px solid rgba(200, 163, 91, 0.6);
   border-radius: 2px;
   font-family: var(--cp-mono);
   font-size: 10.5px;
   font-weight: 700;
-  vertical-align: 2px;
+  line-height: 1;
+  vertical-align: middle;
   color: var(--brass-hi);
+}
+
+.votePill svg {
+  display: block;
+  flex-shrink: 0;
 }
 
 .oddsPath {

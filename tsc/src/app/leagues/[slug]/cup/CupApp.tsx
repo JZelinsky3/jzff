@@ -489,26 +489,29 @@ function GameCard(props: {
     )
   }
 
-  // Tale of the tape under the teams: each side's number in its own column
-  // (top team left, bottom team right), the better one lit, a label between,
-  // so no row repeats a name and every row fits on one line.
-  type TapeRow = { label: string; a: string; b: string; better: 'a' | 'b' | null }
-  const tape: TapeRow[] = []
+  // Three short lines under the teams, each a box-score: the numbers first
+  // (leader's number first), then who's ahead in brass. One line each on a
+  // phone, and no row starts with a name.
+  type Fact = { label: string; score: string; who: string | null }
+  const facts: Fact[] = []
   if (a && b) {
-    const better = (x: number, y: number): TapeRow['better'] => (x > y ? 'a' : y > x ? 'b' : null)
+    const lead = (x: number, y: number) => (x > y ? a.name : y > x ? b.name : null)
     if (d.duel) {
-      tape.push({ label: d.duel.t ? `Weeks won (${d.duel.t} tied)` : 'Weeks won', a: String(d.duel.a), b: String(d.duel.b), better: better(d.duel.a, d.duel.b) })
+      const [hi, lo] = d.duel.a >= d.duel.b ? [d.duel.a, d.duel.b] : [d.duel.b, d.duel.a]
+      facts.push({ label: 'Weeks won', score: `${hi}-${lo}${d.duel.t ? `-${d.duel.t}` : ''}`, who: lead(d.duel.a, d.duel.b) ?? 'Even' })
     }
     if (d.formA.length && d.formB.length) {
       const avg = (l: number[]) => l.reduce((n, v) => n + v, 0) / l.length
       const [ma, mb] = [avg(d.formA), avg(d.formB)]
-      tape.push({ label: 'Last 3 avg', a: ma.toFixed(1), b: mb.toFixed(1), better: better(ma, mb) })
+      const [hi, lo] = ma >= mb ? [ma, mb] : [mb, ma]
+      facts.push({ label: 'Last 3 avg', score: `${hi.toFixed(1)} v ${lo.toFixed(1)}`, who: lead(ma, mb) ?? 'Even' })
     }
-    tape.push(
-      d.series
-        ? { label: d.series.t ? `All-time (${d.series.t} tied)` : 'All-time', a: String(d.series.w), b: String(d.series.l), better: better(d.series.w, d.series.l) }
-        : { label: 'All-time', a: '0', b: '0', better: null },
-    )
+    if (d.series) {
+      const [hi, lo] = d.series.w >= d.series.l ? [d.series.w, d.series.l] : [d.series.l, d.series.w]
+      facts.push({ label: 'All-time', score: `${hi}-${lo}${d.series.t ? `-${d.series.t}` : ''}`, who: lead(d.series.w, d.series.l) ?? 'Even' })
+    } else {
+      facts.push({ label: 'All-time', score: '0-0', who: 'First meeting' })
+    }
   }
 
   return (
@@ -527,21 +530,18 @@ function GameCard(props: {
           {winnerProb != null && winnerProb < 0.45 ? `, a ${pct(winnerProb * 100)} shot` : ''}.
         </p>
       ) : null}
-      {a && b && tape.length ? (
-        <div className={styles.tape}>
-          <div className={`${styles.tapeRow} ${styles.tapeHead}`}>
-            <span>{a.name}</span>
-            <span />
-            <span>{b.name}</span>
-          </div>
-          {tape.map((t) => (
-            <div className={styles.tapeRow} key={t.label}>
-              <span className={`${styles.tapeNum} ${t.better === 'a' ? styles.tapeWin : ''}`}>{t.a}</span>
-              <span className={styles.tapeLabel}>{t.label}</span>
-              <span className={`${styles.tapeNum} ${t.better === 'b' ? styles.tapeWin : ''}`}>{t.b}</span>
+      {a && b && facts.length ? (
+        <dl className={styles.facts}>
+          {facts.map((f) => (
+            <div key={f.label}>
+              <dt>{f.label}</dt>
+              <dd>
+                <span className={styles.factScore}>{f.score}</span>
+                {f.who ? <span className={styles.factWho}>{f.who}</span> : null}
+              </dd>
             </div>
           ))}
-        </div>
+        </dl>
       ) : null}
       {a && b && showCrowd ? (
         <div className={styles.crowdRow}>
@@ -711,7 +711,10 @@ function OddsTab({
                 {o.name}
                 {votes.get(o.managerId)?.length ? (
                   <span className={styles.votePill} title={`${votes.get(o.managerId)!.length} champion picks`}>
-                    ★ {votes.get(o.managerId)!.length}
+                    <svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true">
+                      <path d="M5 0.4l1.4 2.9 3.2.4-2.3 2.2.6 3.2L5 7.6 2.1 9.1l.6-3.2L.4 3.7l3.2-.4z" fill="currentColor" />
+                    </svg>
+                    {votes.get(o.managerId)!.length}
                   </span>
                 ) : null}
               </span>
