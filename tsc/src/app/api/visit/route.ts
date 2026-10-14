@@ -30,6 +30,11 @@ function siteDay(): string {
 const schema = z.object({ path: z.string().trim().max(200).optional() })
 
 export async function POST(req: NextRequest): Promise<Response> {
+  // Only the live site counts. A dev server or preview deploy writes to the
+  // same database, and screenshot runs against a local server (a fresh
+  // browser each time) showed up as two dozen new "people" on pams on
+  // 2026-10-13.
+  if (process.env.VERCEL_ENV !== 'production') return NextResponse.json({ ok: true, recorded: false })
   let body: unknown
   try {
     body = await req.json()

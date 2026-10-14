@@ -1,0 +1,449 @@
+/* The League Cup's launch preview. Reads the Cup's tokens from .page in
+   cup.module.css (board green, cream paper, brass, the numeral face); only
+   the preview's own pieces live here. Regions are separated by space and a
+   rule, the countdown is the cream ticket, the projected games are the same
+   tickets the Cup page uses. */
+
+.body {
+  max-width: calc(1080px + 2 * var(--gutter));
+  margin: 0 auto;
+  padding: 18px var(--gutter) 30px;
+}
+
+.comingChip {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--brass);
+  color: #14301f;
+  font-family: var(--cp-num);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── The countdown ticket ── */
+
+.ticket {
+  position: relative;
+  overflow: hidden;
+  padding: 16px 16px 0;
+  border-radius: 18px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 14px 30px rgba(0, 0, 0, 0.35);
+}
+
+.ticketLabel {
+  font-family: var(--cp-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+
+.count {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.countCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0 8px;
+  border-radius: 12px;
+  background: var(--green);
+  color: var(--paper);
+}
+
+.countNum {
+  font-family: var(--cp-num);
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.countLabel {
+  margin-top: 4px;
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass-hi);
+}
+
+.countDone {
+  margin-top: 10px !important;
+  font-family: var(--cp-display);
+  font-size: 26px;
+  line-height: 1.15;
+  color: var(--green);
+}
+
+/* The stub, torn along a perforation, with the date on it. */
+.ticketFoot {
+  position: relative;
+  margin: 16px -16px 0 !important;
+  padding: 12px 16px 14px;
+  border-top: 2px dashed var(--pline-2);
+  background: var(--paper-2);
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.ticketFoot b {
+  font-family: var(--cp-display);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.ticketFoot::before,
+.ticketFoot::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--board);
+}
+
+.ticketFoot::before {
+  left: -9px;
+}
+
+.ticketFoot::after {
+  right: -9px;
+}
+
+/* ── Sections ── */
+
+.section {
+  margin-top: 30px;
+  padding-top: 18px;
+  border-top: 1px solid var(--bline);
+}
+
+.head {
+  font-family: var(--cp-display);
+  font-weight: 400;
+  font-size: 27px;
+  line-height: 1.1;
+}
+
+.sub {
+  margin-top: 6px !important;
+  font-size: 14px;
+  color: var(--ivory-2);
+}
+
+.label {
+  margin-top: 18px !important;
+  font-family: var(--cp-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+/* How it works */
+
+.steps {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px !important;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--bline);
+  border-radius: 14px;
+  background: var(--board-2);
+}
+
+.stepNum {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--brass);
+  color: #14301f;
+  font-family: var(--cp-num);
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.stepText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stepHead {
+  font-family: var(--cp-display);
+  font-size: 18.5px;
+  line-height: 1.2;
+}
+
+.stepBody {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ivory-2);
+}
+
+/* The schedule rail */
+
+.rail {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  margin-top: 16px !important;
+}
+
+.rail li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  text-align: center;
+}
+
+.rail li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: calc(50% + 11px);
+  right: calc(-50% + 11px);
+  height: 2px;
+  background: var(--bline-2);
+}
+
+.railDot {
+  width: 18px;
+  height: 18px;
+  margin-bottom: 4px;
+  border: 2px solid var(--brass);
+  border-radius: 50%;
+  background: var(--board);
+}
+
+.railDraw .railDot {
+  background: var(--brass);
+  box-shadow: 0 0 0 4px rgba(200, 163, 91, 0.2);
+}
+
+.railName {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--ivory);
+}
+
+.railWhen {
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  color: var(--mute);
+}
+
+.railDraw .railWhen {
+  color: var(--brass-hi);
+}
+
+/* Byes */
+
+.byes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.bye {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid rgba(200, 163, 91, 0.45);
+  border-radius: 12px;
+  background: var(--board-2);
+}
+
+.byeMedal {
+  background: var(--brass);
+  border-color: var(--brass-hi);
+  color: #14301f;
+}
+
+.byeText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.byeName {
+  overflow: hidden;
+  font-family: var(--cp-display);
+  font-size: 17px;
+  line-height: 1.15;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.byeRec {
+  font-family: var(--cp-num);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mute);
+}
+
+/* Projected round one: the Cup page's tickets, without the pick */
+
+.games {
+  display: grid;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.game {
+  padding-bottom: 2px;
+}
+
+.sides {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 10px 12px;
+}
+
+.team {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  min-height: 60px;
+  padding: 8px 12px 8px 10px;
+  border: 1.5px solid var(--pline);
+  border-radius: 12px;
+  background: var(--paper-3);
+}
+
+.teamWho {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.teamName {
+  overflow: hidden;
+  font-family: var(--cp-display);
+  font-size: 20px;
+  line-height: 1.12;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ink);
+}
+
+.teamMeta {
+  overflow: hidden;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ink-3);
+}
+
+.teamPpg {
+  font-family: var(--cp-num);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.teamPpg small {
+  margin-left: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+  text-transform: uppercase;
+}
+
+/* The bubble */
+
+.bubble {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--board-2);
+  border: 1px solid var(--bline);
+}
+
+.bubble p {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ivory-2);
+}
+
+.bubbleTag {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--red);
+  color: #fff;
+  font-family: var(--cp-num);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+
+@media (min-width: 700px) {
+  .countNum {
+    font-size: 64px;
+  }
+
+  .ticket {
+    padding: 22px 24px 0;
+    max-width: 640px;
+  }
+
+  .ticketFoot {
+    margin: 20px -24px 0 !important;
+    padding: 14px 24px 16px;
+  }
+
+  .steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .byes {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .games {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

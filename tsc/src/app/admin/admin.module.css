@@ -61,6 +61,20 @@
   transition: border-color .15s;
 }
 .tileLink:hover { border-color: var(--gold-deep); }
+/* Joey's own league: a full-width row under the four, number beside the
+   strip, so it reads as separate from the site's counts. */
+.tileOwn {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
+  column-gap: 1.25rem;
+  align-items: center;
+}
+.tileOwn > .tileLabel,
+.tileOwn > .tileNums,
+.tileOwn > .tileToday,
+.tileOwn > .tileNote { grid-column: 1; }
+.tileOwn > .strip { grid-column: 2; grid-row: 1 / span 4; align-self: center; margin-top: 0; }
 .tileLabel {
   font-family: var(--mono);
   font-size: .6rem;
@@ -721,6 +735,7 @@ a.mbarIco:active { background: rgba(232, 200, 137, .08); }
 .m .tile { padding: .8rem .85rem .75rem; }
 .m .tileWeek { font-size: 1.9rem; }
 .m .tileNote { display: none; }
+.m .tileOwn { grid-template-columns: minmax(0, 8.5rem) minmax(0, 1fr); column-gap: .8rem; }
 .m .strip { height: 22px; margin-top: .45rem; }
 
 .m .panel { padding: .85rem .85rem .95rem; }

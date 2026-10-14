@@ -284,8 +284,10 @@
   line-height: 1;
 }
 
+/* The masthead and tabs are 1080 wide inside their padding; the panel's
+   padding is inside its own box, so it adds the gutters to line up. */
 .panel {
-  max-width: 1080px;
+  max-width: calc(1080px + 2 * var(--gutter));
   margin: 0 auto;
   padding: 16px var(--gutter) 28px;
 }

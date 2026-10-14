@@ -1125,7 +1125,9 @@
             words.appendChild(label);
             var go = document.createElement('span');
             go.className = 'm-cup-go' + (dc.cup.picksOpen ? ' m-cup-go--pick' : '');
-            go.textContent = dc.cup.picksOpen ? 'Pick now' : 'Bracket';
+            // Before a league's Cup exists, the strip is the launch banner
+            // (dc.cup.preview) and points at the countdown preview.
+            go.textContent = dc.cup.picksOpen ? 'Pick now' : dc.cup.preview ? 'Preview' : 'Bracket';
             ticket.appendChild(stub);
             ticket.appendChild(words);
             ticket.appendChild(go);

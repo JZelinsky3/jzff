@@ -13,6 +13,8 @@ import { ShareButton } from '../../ShareButton'
 import { YourWeek, type YourWeekTeam } from '../../YourWeek'
 import { SectionNav } from '../../SectionNav'
 import { JoinList } from '../../JoinList'
+import { CupSection } from '../../CupSection'
+import { cupTeaser } from '@/lib/cup/teaser'
 import styles from '../../recap.module.css'
 
 export const dynamic = 'force-dynamic'
@@ -290,8 +292,11 @@ export default async function RecapPage({
   const proj = show.paid ? facts.projections : null
   const hasBook = !!book.length || (show.paid && !!facts.weekRecord) || (show.paid && !!facts.milestones?.length)
   const volume = `Vol. ${roman(f.history.seasons)}, No. ${week}`
+  // The Cup, on the weeks it runs. Every tier: the Cup has no paywall.
+  const cup = demo || f.phase !== 'regular' ? null : await cupTeaser(league, year, week)
   const jumps: { id: string; label: string }[] = [
     { id: 'games', label: 'Results' },
+    ...(cup ? [{ id: 'cup', label: 'The Cup' }] : []),
     ...(hasStandings ? [{ id: 'standings', label: 'Standings' }] : []),
     ...(hasBook ? [{ id: 'book', label: 'Record book' }] : []),
     ...(totals.length ? [{ id: 'season', label: 'Season so far' }] : []),
@@ -380,6 +385,9 @@ export default async function RecapPage({
             })}
           </div>
         </section>
+
+        {/* ── The Cup, on the weeks it runs ── */}
+        {cup ? <CupSection cup={cup} href={`/leagues/${slug}/cup/?utm_source=recap&utm_medium=page`} /> : null}
 
         {/* ── Standings, with the power rankings folded in ── */}
         {hasStandings ? (

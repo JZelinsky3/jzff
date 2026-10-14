@@ -42,7 +42,7 @@ function gamesCard(label: string, games: CupTeaserGame[], kind: 'result' | 'next
       return `<tr><td style="padding:7px 0;${last ? '' : ` border-bottom:1px dotted ${K.rule};`}">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
 <tr><td style="${name} color:${K.ink};">${kind === 'result' ? `<b>${esc(top.name)}</b>` : esc(top.name)}${seed(top.seed)}${tag}</td><td align="right" style="${num} color:${K.ink};">${kind === 'result' ? `<b>${right(top)}</b>` : right(top)}</td></tr>
-<tr><td style="${name} color:${K.mute};">${kind === 'result' ? `<s>${esc(bottom.name)}</s>` : esc(bottom.name)}${seed(bottom.seed)}</td><td align="right" style="${num} color:${K.mute};">${right(bottom)}</td></tr>
+<tr><td style="${name} color:${kind === 'result' ? K.mute : K.ink};">${kind === 'result' ? `<s>${esc(bottom.name)}</s>` : esc(bottom.name)}${seed(bottom.seed)}</td><td align="right" style="${num} color:${kind === 'result' ? K.mute : K.ink};">${right(bottom)}</td></tr>
 </table>
 </td></tr>`
     })
@@ -55,9 +55,9 @@ function gamesCard(label: string, games: CupTeaserGame[], kind: 'result' | 'next
 
 export function cupBlock(t: CupTeaser, text: string[]): string[] {
   const deck = cupDeck(t)
-  const lock = t.next ? cupLockText(t.next.lockAt) : null
+  const lock = t.next?.open ? cupLockText(t.next.lockAt) : null
   const leaders = cupLeadersLine(t)
-  const cta = lock ? `Make your Cup picks before ${lock} ET` : 'See the bracket'
+  const cta = lock ? 'Make your Cup picks' : 'See the bracket'
   const tag = t.champion ? 'Champion' : t.results ? t.results.round : 'Starts next week'
 
   const cards = [
@@ -75,7 +75,7 @@ export function cupBlock(t: CupTeaser, text: string[]): string[] {
     }) : []),
     ...(t.next ? [`Next week, ${t.next.round.toLowerCase()}:`, ...t.next.games.map((g) => `${g.a.name} (${g.a.seed}) ${cupPct(g.a.prob)} v ${g.b.name} (${g.b.seed}) ${cupPct(g.b.prob)}`)] : []),
     ...(leaders ? [leaders] : []),
-    `${cta}: ${t.url}`,
+    `${cta}${lock ? ` (they lock ${lock} ET)` : ''}: ${t.url}`,
     '',
   )
 
@@ -93,6 +93,7 @@ ${leaders ? `<div style="font-family:${SERIF}; font-size:15px; line-height:1.5; 
 <td align="center" bgcolor="${K.ink}" style="background-color:${K.ink};">
 <a href="${esc(t.url)}?utm_source=recap&amp;utm_medium=email&amp;utm_campaign=cup" style="display:inline-block; padding:11px 20px; font-family:${SANS}; font-size:12px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; color:${K.band}; text-decoration:none;">${esc(cta)}</a>
 </td></tr></table>
+${lock ? `<div style="font-family:${SANS}; font-size:12px; line-height:1.5; color:${K.ink2}; padding-top:8px;">Picks lock ${esc(lock)} ET. Tap the team you think wins each game.</div>` : ''}
 </td></tr>`,
   ]
 }

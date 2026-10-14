@@ -6,22 +6,27 @@ import { recapViewable } from '@/lib/recap/load'
 import { SITE_URL } from '@/lib/recap/links'
 import { loadCup } from '@/lib/cup/load'
 import { loadCupExtras } from '@/lib/cup/extras'
-import { cupNotes, type CupBracket } from '@/lib/cup/bracket'
+import { cupNotes, CUP_MAX_FIELD, type CupBracket } from '@/lib/cup/bracket'
+import { loadCupPreview, type CupPreview } from '@/lib/cup/preview'
+import { CUP_LAUNCH, drawDayText } from '@/lib/cup/launch'
 import { ShareButton } from '../recap/ShareButton'
 import { CupApp } from './CupApp'
+import { CupPreviewPage } from './CupPreview'
 import styles from './cup.module.css'
 
 export const dynamic = 'force-dynamic'
 
-// The Cup: a knockout side tournament inside the regular season, drawn as a
-// painted tournament board (bottle green, ivory lettering, brass). Its own
-// house on purpose, not the recap's newsprint: this is the thing people
-// check on, not read through.
+// The Cup: a knockout side tournament inside the regular season. The board
+// (bottle green, ivory lettering, brass) carries the masthead, bracket and
+// odds; every game is a cream ticket on it. Its own house on purpose, not
+// the recap's newsprint: this is the thing people check on and play, not
+// read through.
 //
-// Built for the phone it's opened on from the group chat: a short masthead,
-// then CupApp's four tabs (games with odds and history, the bracket sized
-// to fit, the Cup odds, the league's bracket challenge). No site nav; "View
-// the league" in the footer is the way in.
+// Built for the phone it's opened on from the group chat. CupApp draws the
+// masthead (with "How it works" up top) and the four tabs (games with odds,
+// history and the pick; the bracket sized to fit; the Cup odds; the
+// bracket challenge). No site nav; "View the league" in the footer is the
+// way in.
 
 async function loadLeague(slug: string) {
   if (!/^[a-z0-9-]{1,80}$/.test(slug)) notFound()
@@ -71,11 +76,33 @@ async function yearOf(searchParams: Props['searchParams']): Promise<number | nul
   return Number.isInteger(y) && y > 1990 && y < 2100 ? y : null
 }
 
+// A league with a live season this year and no Cup yet gets the launch
+// preview (countdown to the draw, the bracket as today's standings would
+// draw it) instead of a 404. A Cup from an earlier year doesn't count.
+async function previewFor(leagueId: string, askedYear: number | null, view: Awaited<ReturnType<typeof loadCup>>): Promise<CupPreview | null> {
+  if (askedYear || (view && view.cup.season_year >= CUP_LAUNCH.year)) return null
+  return loadCupPreview(leagueId)
+}
+
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug } = await params
   const year = await yearOf(searchParams)
   const league = await loadLeague(slug)
   const view = await loadCup(league.id, year)
+  const preview = await previewFor(league.id, year, view)
+  if (preview) {
+    const title = `${CUP_LAUNCH.name} · ${league.name}`
+    const description = `A knockout bracket inside the season. The draw is ${drawDayText()}; the top ${Math.min(preview.teams.length, CUP_MAX_FIELD)} after week ${CUP_LAUNCH.seededThrough} are in.`
+    const image = { url: `${SITE_URL}/api/og/cup/${slug}/?v=preview-${preview.throughWeek}`, width: 1200, height: 630, alt: title }
+    return {
+      title,
+      description,
+      ...(league.published_at ? {} : { robots: { index: false, follow: false } }),
+      alternates: { canonical: `${SITE_URL}/leagues/${slug}/cup/` },
+      openGraph: { title, description, images: [image], type: 'article' },
+      twitter: { card: 'summary_large_image', title, description, images: [image.url] },
+    }
+  }
   if (!view) return { title: `The Cup · ${league.name}`, robots: { index: false, follow: false } }
   const title = `${view.cup.name} · ${league.name}`
   const description = statusLine(view.bracket)
@@ -97,6 +124,8 @@ export default async function CupPage({ params, searchParams }: Props) {
   const askedYear = await yearOf(searchParams)
   const league = await loadLeague(slug)
   const view = await loadCup(league.id, askedYear)
+  const preview = await previewFor(league.id, askedYear, view)
+  if (preview) return <CupPreviewPage league={league} preview={preview} pageUrl={`${SITE_URL}/leagues/${slug}/cup/`} />
   if (!view) notFound()
   const { cup, bracket } = view
   const extras = await loadCupExtras(league.id, view)

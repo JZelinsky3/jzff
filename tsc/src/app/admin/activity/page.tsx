@@ -24,7 +24,7 @@ const SITE_TZ = 'America/New_York'
 const STRIP_DAYS = 30
 
 type Row = { league_id: string; day: string; visitor: string; role: string; visits: number; views: number; last_seen_at: string }
-type League = { id: string; name: string; slug: string; platform: string; created_at: string }
+type League = { id: string; name: string; slug: string; platform: string; created_at: string; owner_id: string }
 
 const PLATFORM: Record<string, string> = { sleeper: 'Sleeper', espn: 'ESPN', yahoo: 'Yahoo', nfl: 'NFL.com' }
 
@@ -80,7 +80,7 @@ export default async function AdminActivityPage() {
 
   const ids = [...new Set(rows.map((r) => r.league_id))]
   const { data: leagueRows } = ids.length
-    ? await db.from('leagues').select('id, name, slug, platform, created_at').in('id', ids)
+    ? await db.from('leagues').select('id, name, slug, platform, created_at, owner_id').in('id', ids)
     : { data: [] as League[] }
   const leagueById = new Map(((leagueRows ?? []) as League[]).map((l) => [l.id, l]))
 
@@ -121,10 +121,14 @@ export default async function AdminActivityPage() {
     (x, y) => y.week.size - x.week.size || y.weekVisits - x.weekVisits || (y.lastSeenAt ?? '').localeCompare(x.lastSeenAt ?? ''),
   )
 
-  const leaguesToday = leagues.filter((l) => l.today.size > 0).length
-  const leaguesWeek = leagues.filter((l) => l.week.size > 0).length
-  const peopleWeek = leagues.reduce((n, l) => n + l.week.size, 0)
-  const visitsWeek = leagues.reduce((n, l) => n + l.weekVisits, 0)
+  // Joey's own leagues (pams) stay in the table but out of the totals: they
+  // are about half of all reading, and it's his own league mates.
+  const isYours = (l: Agg) => own.has(l.league.owner_id)
+  const counted = leagues.filter((l) => !isYours(l))
+  const leaguesToday = counted.filter((l) => l.today.size > 0).length
+  const leaguesWeek = counted.filter((l) => l.week.size > 0).length
+  const peopleWeek = counted.reduce((n, l) => n + l.week.size, 0)
+  const visitsWeek = counted.reduce((n, l) => n + l.weekVisits, 0)
 
   return (
     <main>
@@ -147,7 +151,7 @@ export default async function AdminActivityPage() {
           {leaguesWeek === 0 ? <>Nothing <em>yet.</em></> : <>{leaguesWeek} {leaguesWeek === 1 ? 'league' : 'leagues'} <em>opened.</em></>}
         </h1>
         <div className="hero-meta">
-          People and visits leave out each league&rsquo;s own commissioner
+          People and visits leave out each league&rsquo;s own commissioner. Your leagues are listed but not in the totals.
         </div>
       </section>
 
@@ -214,6 +218,9 @@ export default async function AdminActivityPage() {
                           brand new or long dormant at a glance. */}
                       <div style={{ opacity: 0.55, fontSize: '.7rem', whiteSpace: 'nowrap' }}>
                         {PLATFORM[l.league.platform] ?? l.league.platform} · added {fmtDate(l.league.created_at)}
+                        {isYours(l) && (
+                          <span style={{ marginLeft: '.4rem', padding: '0 .3rem', border: '1px solid var(--ink-line)', color: 'var(--cream-soft)', fontFamily: 'var(--mono)', fontSize: '.55rem', letterSpacing: '.14em', opacity: 1 }}>YOURS · NOT IN TOTALS</span>
+                        )}
                         {last7.has(dayKey(new Date(l.league.created_at))) && (
                           <span style={{ marginLeft: '.4rem', padding: '0 .3rem', border: '1px solid rgba(232,200,137,.55)', color: 'var(--gold)', fontFamily: 'var(--mono)', fontSize: '.55rem', letterSpacing: '.14em', opacity: 1 }}>NEW</span>
                         )}

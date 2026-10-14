@@ -15,6 +15,8 @@ import { readFile } from 'fs/promises'
 import path from 'path'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { loadCup } from '@/lib/cup/load'
+import { loadCupPreview } from '@/lib/cup/preview'
+import { CUP_LAUNCH, drawDayShort } from '@/lib/cup/launch'
 import type { CupBracket, CupMatch, CupRound, CupSide } from '@/lib/cup/bracket'
 import { trophy } from '@/lib/cup/trophy'
 
@@ -103,10 +105,23 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   // Crawlers have no session: only published leagues get an image.
   if (!league || !league.published_at) return new Response('Not found', { status: 404 })
   const view = await loadCup(league.id as string, year)
+  const leagueName = league.name as string
+
+  // No Cup yet this year: the launch preview's card, the bracket as today's
+  // standings would draw it, under the draw date.
+  if (!year && format === 'card' && (!view || view.cup.season_year < CUP_LAUNCH.year)) {
+    const preview = await loadCupPreview(league.id as string)
+    if (preview) {
+      const fonts = await loadFonts()
+      return cardImage(CUP_LAUNCH.name, leagueName, preview.year, preview.bracket, fonts, {
+        live: false,
+        text: `The draw: ${drawDayShort()} · ${preview.final ? 'The seeds' : 'If it were today'}`,
+      })
+    }
+  }
   if (!view) return new Response('Not found', { status: 404 })
 
   const fonts = await loadFonts()
-  const leagueName = league.name as string
   return format === 'post'
     ? postImage(view.cup.name, leagueName, view.cup.season_year, view.bracket, slug, fonts)
     : cardImage(view.cup.name, leagueName, view.cup.season_year, view.bracket, fonts)
@@ -114,9 +129,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
 
 // ── Link preview ─────────────────────────────────────────────────────────
 
-function cardImage(name: string, leagueName: string, year: number, b: CupBracket, fonts: Awaited<ReturnType<typeof loadFonts>>) {
+function cardImage(
+  name: string,
+  leagueName: string,
+  year: number,
+  b: CupBracket,
+  fonts: Awaited<ReturnType<typeof loadFonts>>,
+  tagOverride?: { live: boolean; text: string },
+) {
   const r = focusRound(b)
-  const tag = roundTag(b, r)
+  const tag = tagOverride ?? roundTag(b, r)
   const games = (r?.matches ?? []).slice(0, 4)
   const more = (r?.matches.length ?? 0) - games.length
   const size = titleSize(name, 620, 116)

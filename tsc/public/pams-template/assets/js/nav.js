@@ -1699,7 +1699,7 @@
                   '<span class="dc-cup-stub" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v4.5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5a2.5 2.5 0 0 0 2.6 3.6M17 6h2.5a2.5 2.5 0 0 1-2.6 3.6M12 13.5V17M8.5 20h7M9.5 17h5"/></svg></span>' +
                   '<span class="dc-cup-name">' + escapeHtmlLock(cup.name) + '</span>' +
                   '<span class="dc-cup-label">' + escapeHtmlLock(cup.label) + '</span>' +
-                  '<span class="dc-cup-go' + (cup.picksOpen ? ' dc-cup-go--pick' : '') + '">' + (cup.picksOpen ? 'Make your picks' : 'See the bracket') + '</span>' +
+                  '<span class="dc-cup-go' + (cup.picksOpen ? ' dc-cup-go--pick' : '') + '">' + (cup.picksOpen ? 'Make your picks' : cup.preview ? 'See the preview' : 'See the bracket') + '</span>' +
               '</a>'
             : '<a class="dc-rev-link" href="/review" target="_top">' +
                   '<span class="dc-rev-stars" aria-hidden="true">★★★★★</span>' +

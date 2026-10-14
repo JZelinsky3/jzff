@@ -119,8 +119,9 @@ export function recordStr(w: number, l: number, t: number): string {
 export const CUP_MAX_FIELD = 12
 
 // Seeds from a run of finished games: win rate (a tie is half a win), then
-// points for, then id so the order is stable. Capped at CUP_MAX_FIELD.
-export function standingsSeeds(games: { a: string; b: string; sa: number; sb: number }[]): CupSeedRow[] {
+// points for, then id so the order is stable. Capped at CUP_MAX_FIELD; the
+// launch preview passes Infinity to see the teams just outside.
+export function standingsSeeds(games: { a: string; b: string; sa: number; sb: number }[], limit: number = CUP_MAX_FIELD): CupSeedRow[] {
   const rows = new Map<string, { w: number; l: number; t: number; pf: number }>()
   const row = (id: string) => {
     let r = rows.get(id)
@@ -149,7 +150,7 @@ export function standingsSeeds(games: { a: string; b: string; sa: number; sb: nu
   }
   return [...rows.entries()]
     .sort(([ia, a], [ib, b]) => pct(b) - pct(a) || b.pf - a.pf || ia.localeCompare(ib))
-    .slice(0, CUP_MAX_FIELD)
+    .slice(0, limit)
     .map(([id, r], i) => ({ seed: i + 1, manager_id: id, w: r.w, l: r.l, t: r.t, pf: Math.round(r.pf * 100) / 100 }))
 }
 

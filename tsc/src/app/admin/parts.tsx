@@ -42,8 +42,8 @@ export function Tiles({ tiles, days }: { tiles: Tile[]; days: string[] }) {
           </>
         )
         return t.href
-          ? <Link key={t.label} href={t.href} className={`${s.tile} ${s.tileLink}`}>{body}</Link>
-          : <div key={t.label} className={s.tile}>{body}</div>
+          ? <Link key={t.label} href={t.href} className={`${s.tile} ${s.tileLink}${t.own ? ` ${s.tileOwn}` : ''}`}>{body}</Link>
+          : <div key={t.label} className={`${s.tile}${t.own ? ` ${s.tileOwn}` : ''}`}>{body}</div>
       })}
     </div>
   )

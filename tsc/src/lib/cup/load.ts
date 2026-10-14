@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveCurrentWeek, resolveWeekLockAt } from '@/lib/liveSeason'
 import { leagueName } from '@/lib/pamsNames'
 import { buildBracket, cupWeekLabel, roundNames, type CupBracket, type CupSeedRow } from './bracket'
+import { CUP_LAUNCH, drawDayShort, launchPhase } from './launch'
 
 export type CupRow = {
   id: string
@@ -49,6 +50,25 @@ export async function latestCup(db: Db, leagueId: string, year?: number | null):
   return { ...(data as CupRow), seeds: Array.isArray(data.seeds) ? (data.seeds as CupSeedRow[]) : [] }
 }
 
+// Same names as the recap: the person's profile first, then the league's own
+// name for the account, then whatever the platform calls them. Team names
+// from that season.
+export async function cupNames(db: Db, leagueId: string, seasonId: string, ids: string[]): Promise<(id: string) => { name: string; team: string | null }> {
+  const [{ data: managerRows }, { data: profileRows }, { data: teamRows }] = await Promise.all([
+    db.from('managers').select('id, display_name, profile_id').in('id', ids),
+    db.from('manager_profiles').select('id, canonical_name').eq('league_id', leagueId),
+    db.from('manager_seasons').select('manager_id, team_name').eq('season_id', seasonId),
+  ])
+  const profileName = new Map((profileRows ?? []).map((p) => [p.id as string, p.canonical_name as string]))
+  const names = new Map<string, string>()
+  for (const m of managerRows ?? []) {
+    const profile = m.profile_id ? profileName.get(m.profile_id as string) : undefined
+    names.set(m.id as string, profile || leagueName(m.id as string, (m.display_name as string) ?? 'Unknown'))
+  }
+  const teams = new Map((teamRows ?? []).map((t) => [t.manager_id as string, (t.team_name as string | null) ?? null]))
+  return (id) => ({ name: names.get(id) ?? 'Unknown', team: teams.get(id) ?? null })
+}
+
 // `asOfWeek` treats the season as being at least that week, so a round can
 // read as decided before the platform's calendar has rolled over (the recap
 // goes out the Tuesday after a week, sometimes before the week advances).
@@ -66,25 +86,13 @@ export async function loadCup(leagueId: string, year?: number | null, opts?: { a
   if (!season) return null
 
   const ids = cup.seeds.map((s) => s.manager_id)
-  const [{ data: managerRows }, { data: profileRows }, { data: teamRows }, { data: games }] = await Promise.all([
-    db.from('managers').select('id, display_name, profile_id').in('id', ids),
-    db.from('manager_profiles').select('id, canonical_name').eq('league_id', leagueId),
-    db.from('manager_seasons').select('manager_id, team_name').eq('season_id', season.id),
+  const [nameOf, { data: games }] = await Promise.all([
+    cupNames(db, leagueId, season.id as string, ids),
     db
       .from('matchups')
       .select('week, manager_a_id, manager_b_id, score_a, score_b')
       .eq('season_id', season.id),
   ])
-
-  // Same names as the recap: the person's profile first, then the league's
-  // own name for the account, then whatever the platform calls them.
-  const profileName = new Map((profileRows ?? []).map((p) => [p.id as string, p.canonical_name as string]))
-  const names = new Map<string, string>()
-  for (const m of managerRows ?? []) {
-    const profile = m.profile_id ? profileName.get(m.profile_id as string) : undefined
-    names.set(m.id as string, profile || leagueName(m.id as string, (m.display_name as string) ?? 'Unknown'))
-  }
-  const teams = new Map((teamRows ?? []).map((t) => [t.manager_id as string, (t.team_name as string | null) ?? null]))
 
   const score = new Map<string, number | null>()
   const opponent = new Map<string, string>()
@@ -110,7 +118,7 @@ export async function loadCup(leagueId: string, year?: number | null, opts?: { a
   }
   const bracket = buildBracket({
     seeds: cup.seeds,
-    nameOf: (id) => ({ name: names.get(id) ?? 'Unknown', team: teams.get(id) ?? null }),
+    nameOf,
     startWeek: cup.start_week,
     currentWeek,
     scoreOf: (id, w) => score.get(`${w}:${id}`) ?? null,
@@ -143,6 +151,8 @@ export type CupBadge = {
   // one, and every Cup week until Thursday kickoff. The strip says "Pick
   // now" then, "Bracket" otherwise.
   picksOpen: boolean
+  // No Cup yet: the launch banner, pointing at the countdown preview.
+  preview: boolean
 }
 
 // What the almanac's top strip and the Live hub card need, from the cup row
@@ -155,7 +165,22 @@ export async function cupBadge(
   const liveWeek = live.week
   if (liveWeek == null || live.year == null) return null
   const cup = await latestCup(db, league.id)
-  if (!cup || cup.season_year !== live.year) return null
+  if (!cup || cup.season_year !== live.year) {
+    // The launch: every league with a live season this year, until the
+    // draw. A league whose Cup exists by then gets its own strip above.
+    if (live.year !== CUP_LAUNCH.year || liveWeek > CUP_LAUNCH.startWeek) return null
+    const phase = launchPhase()
+    if (phase === 'after') return null
+    return {
+      id: `launch-${CUP_LAUNCH.year}`,
+      name: CUP_LAUNCH.name,
+      href: `/leagues/${league.slug}/cup/`,
+      label: phase === 'today' ? 'The draw is today' : `Starts ${drawDayShort()}`,
+      key: `launch-${CUP_LAUNCH.year}:${liveWeek}`,
+      picksOpen: false,
+      preview: true,
+    }
+  }
   const label = cupWeekLabel({ field: cup.seeds.length, startWeek: cup.start_week, currentWeek: liveWeek })
   if (!label) return null
   const rounds = roundNames(cup.seeds.length).length
@@ -171,5 +196,6 @@ export async function cupBadge(
     // Dismissing the strip hides it for this week only; next round it's back.
     key: `${cup.id}:${liveWeek}`,
     picksOpen: lockAt != null && Date.now() < Date.parse(lockAt),
+    preview: false,
   }
 }

@@ -43,6 +43,11 @@ const schema = z.object({
 const skipped = () => NextResponse.json({ ok: true, recorded: false })
 
 export async function POST(req: NextRequest): Promise<Response> {
+  // Only the live site counts. A dev server or preview deploy writes to the
+  // same database, and screenshot runs against a local server (a fresh
+  // browser each time) showed up as two dozen new "people" on pams on
+  // 2026-10-13.
+  if (process.env.VERCEL_ENV !== 'production') return skipped()
   if (BOT_UA.test(req.headers.get('user-agent') ?? '')) return skipped()
   let body: unknown
   try {

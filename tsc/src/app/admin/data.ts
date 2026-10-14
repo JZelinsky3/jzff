@@ -60,7 +60,8 @@ export type LeagueItem = {
   yours: boolean
 }
 
-export type Tile = { label: string; today: number; week: number; strip: number[]; href?: string; note: string }
+// `own`: Joey's own league, on its own full-width tile under the site's four.
+export type Tile = { label: string; today: number; week: number; strip: number[]; href?: string; note: string; own?: boolean }
 
 export type Attention = { tone: 'rust' | 'gold' | 'steel'; title: string; detail: string; href?: string }
 
@@ -160,20 +161,29 @@ export async function loadAdmin(): Promise<AdminData> {
   const lastSeen = new Map<string, string>()
   for (const v of userVisits) if (!lastSeen.has(v.user_id) || v.last_seen_at > lastSeen.get(v.user_id)!) lastSeen.set(v.user_id, v.last_seen_at)
 
+  // Joey's own leagues (pams and his test copies) are about half of all
+  // league reading, and it's his own league mates. Their readers get their
+  // own tile and stay out of People and Leagues opened, so those show the
+  // site's reach on its own. The per-league counts in the list keep them.
+  const ownLeagueIds = new Set(leagues.filter((l) => own.has(l.owner_id)).map((l) => l.id))
+  const otherLeagueVisits = leagueVisits.filter((v) => !ownLeagueIds.has(v.league_id))
+
   // People: every signed-in member on the site plus every browser that read a
   // league. A signed-in reader is 'u:<id>' in both, so they count once.
   const peopleByDay = new Map<string, Set<string>>(days.map((d) => [d, new Set()]))
   for (const v of userVisits) peopleByDay.get(v.day)?.add(`u:${v.user_id}`)
-  for (const v of leagueVisits) peopleByDay.get(v.day)?.add(v.visitor)
+  for (const v of otherLeagueVisits) peopleByDay.get(v.day)?.add(v.visitor)
   const peopleWeek = new Set<string>()
   for (const d of week) for (const p of peopleByDay.get(d) ?? []) peopleWeek.add(p)
 
   // Leagues opened by somebody other than their commish (as /admin/activity counts).
   const openedByDay = new Map<string, Set<string>>(days.map((d) => [d, new Set()]))
   const readers7 = new Map<string, Set<string>>()
+  const ownReadersByDay = new Map<string, Set<string>>(days.map((d) => [d, new Set()]))
   for (const v of leagueVisits) {
     if (v.role === 'owner') continue
-    openedByDay.get(v.day)?.add(v.league_id)
+    if (ownLeagueIds.has(v.league_id)) ownReadersByDay.get(v.day)?.add(v.visitor)
+    else openedByDay.get(v.day)?.add(v.league_id)
     if (week.has(v.day)) {
       if (!readers7.has(v.league_id)) readers7.set(v.league_id, new Set())
       readers7.get(v.league_id)!.add(v.visitor)
@@ -181,6 +191,9 @@ export async function loadAdmin(): Promise<AdminData> {
   }
   const openedWeek = new Set<string>()
   for (const d of week) for (const l of openedByDay.get(d) ?? []) openedWeek.add(l)
+  const ownReadersWeek = new Set<string>()
+  for (const d of week) for (const p of ownReadersByDay.get(d) ?? []) ownReadersWeek.add(p)
+  const ownRead = leagues.filter((l) => ownLeagueIds.has(l.id) && readers7.has(l.id))
 
   const countByDay = (isos: string[]) => {
     const m = new Map<string, number>()
@@ -192,11 +205,22 @@ export async function loadAdmin(): Promise<AdminData> {
   const sumWeek = (strip: number[]) => strip.slice(-7).reduce((a, b) => a + b, 0)
 
   const tiles: Tile[] = [
-    { label: 'People', today: peopleByDay.get(today)!.size, week: peopleWeek.size, strip: days.map((d) => peopleByDay.get(d)!.size), href: '/admin/visitors', note: 'Members signed in, plus anyone reading a league' },
-    { label: 'Leagues opened', today: openedByDay.get(today)!.size, week: openedWeek.size, strip: days.map((d) => openedByDay.get(d)!.size), href: '/admin/activity', note: 'Opened by someone besides the commish' },
+    { label: 'People', today: peopleByDay.get(today)!.size, week: peopleWeek.size, strip: days.map((d) => peopleByDay.get(d)!.size), href: '/admin/visitors', note: 'Members signed in, plus anyone reading a league but yours' },
+    { label: 'Leagues opened', today: openedByDay.get(today)!.size, week: openedWeek.size, strip: days.map((d) => openedByDay.get(d)!.size), href: '/admin/activity', note: 'Opened by someone besides the commish, yours left out' },
     { label: 'Signups', today: signupStrip[signupStrip.length - 1], week: sumWeek(signupStrip), strip: signupStrip, note: 'New accounts' },
     { label: 'New leagues', today: leagueStrip[leagueStrip.length - 1], week: sumWeek(leagueStrip), strip: leagueStrip, note: 'Leagues created, with or without data yet' },
   ]
+  if (ownLeagueIds.size) {
+    tiles.push({
+      label: ownRead.length === 1 ? ownRead[0]!.name : 'Your leagues',
+      today: ownReadersByDay.get(today)!.size,
+      week: ownReadersWeek.size,
+      strip: days.map((d) => ownReadersByDay.get(d)!.size),
+      href: '/admin/activity',
+      note: 'People reading your league, kept out of the counts above',
+      own: true,
+    })
+  }
 
   // ── Members ──
   const leaguesByOwner = new Map<string, { name: string; slug: string; empty: boolean }[]>()
