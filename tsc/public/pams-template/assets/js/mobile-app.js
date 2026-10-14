@@ -1090,7 +1090,9 @@
         // instead of the "Beta" line: one tap to the bracket from every
         // page, nothing added to the nav. Trial and free leagues keep their
         // tier line (it tells them something they need); their way to the
-        // Cup is the Live hub card.
+        // Cup is the Live hub card. The Cup strip sits ABOVE the app bar,
+        // pinned to the very top; html.m-has-cup moves the bar and the
+        // body's padding down to make room (mobile-app.css).
         if (dc.cup && dc.cup.href && tier !== 'test' && tier !== 'udfa') {
             var link = document.createElement('a');
             link.id = 'dc-testing-strip';
@@ -1104,6 +1106,7 @@
             link.appendChild(pill);
             link.appendChild(text);
             document.body.insertBefore(link, document.body.firstChild);
+            document.documentElement.classList.add('m-has-cup');
             return;
         }
         if (tier !== 'test' && tier !== 'udfa' && tier !== 'paid' && tier !== 'comp') return;

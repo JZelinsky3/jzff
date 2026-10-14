@@ -3,6 +3,7 @@
 // The rules, which the page prints in plain words:
 //   • Seeds are the standings when the Cup is made (win rate, then points
 //     for), frozen on the league_cups row so the draw never reshuffles.
+//     Twelve teams at most: the top twelve, or everyone in a smaller league.
 //   • The bracket is the next power of two up from the field, so the top
 //     seeds get byes when a league isn't 8 or 16 teams. Standard seeding
 //     order: 1 meets the lowest seed left, and 1 and 2 can only meet in the
@@ -113,8 +114,12 @@ export function recordStr(w: number, l: number, t: number): string {
   return t ? `${w}-${l}-${t}` : `${w}-${l}`
 }
 
+// Twelve teams at most. A bigger league sends its top twelve; a smaller one
+// sends everybody.
+export const CUP_MAX_FIELD = 12
+
 // Seeds from a run of finished games: win rate (a tie is half a win), then
-// points for, then id so the order is stable.
+// points for, then id so the order is stable. Capped at CUP_MAX_FIELD.
 export function standingsSeeds(games: { a: string; b: string; sa: number; sb: number }[]): CupSeedRow[] {
   const rows = new Map<string, { w: number; l: number; t: number; pf: number }>()
   const row = (id: string) => {
@@ -144,6 +149,7 @@ export function standingsSeeds(games: { a: string; b: string; sa: number; sb: nu
   }
   return [...rows.entries()]
     .sort(([ia, a], [ib, b]) => pct(b) - pct(a) || b.pf - a.pf || ia.localeCompare(ib))
+    .slice(0, CUP_MAX_FIELD)
     .map(([id, r], i) => ({ seed: i + 1, manager_id: id, w: r.w, l: r.l, t: r.t, pf: Math.round(r.pf * 100) / 100 }))
 }
 

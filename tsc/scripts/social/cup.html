@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The League Cup</title>
+
+<!-- ============================================================
+     THE LEAGUE CUP, launch carousel. Four 1080x1350 slides:
+
+       cup.html?slide=1   cover: trophy in the laurel, the date
+       cup.html?slide=2   the bracket, a demo field half played
+       cup.html?slide=3   the Cup page: win odds, picks, title odds
+       cup.html?slide=4   how it works, numbered, and the date again
+
+     ./render.sh cup [n ...]
+
+     Cream and bottle green with brass, the Milk Cup cover's palette;
+     the board-green figures are the Cup page's own (cup.module.css).
+     Every name is from the demo CAST: no real league on a public post.
+     ============================================================ -->
+
+<style>
+  @font-face { font-family: 'DMS'; src: url('../../public/og/fonts/DMSerifDisplay-Regular.ttf'); }
+  @font-face { font-family: 'DMS'; font-style: italic; src: url('../../public/og/fonts/DMSerifDisplay-Italic.ttf'); }
+  @font-face { font-family: 'JBM'; font-weight: 700; src: url('../../public/og/fonts/JetBrainsMono-Bold.ttf'); }
+  @font-face { font-family: 'JBM'; font-weight: 400; src: url('../../public/og/fonts/JetBrainsMono-Regular.ttf'); }
+
+  :root {
+    --cream: #f3ecda;
+    --cream-2: #e9dfc6;
+    --paper: #f8f2e3;
+    --green: #0f2e24;
+    --green-2: #3d5a4e;
+    --brass: #b98f3e;
+    --brass-lo: #7c5d23;
+
+    /* the Cup page's board */
+    --board: #0c271f;
+    --slot: #143c31;
+    --line: rgba(236, 228, 206, .14);
+    --line-2: rgba(236, 228, 206, .3);
+    --ivory: #ece4ce;
+    --ivory-2: #c9c1aa;
+    --mute: #8fa597;
+    --cb: #c8a35b;
+    --cb-hi: #e6cb8e;
+    --red: #e2694f;
+
+    --serif: 'DMS', Georgia, serif;
+    --mono: 'JBM', Menlo, monospace;
+    --sans: 'Avenir Next', 'Helvetica Neue', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1350px; overflow: hidden; }
+  body { position: relative; background: var(--cream); color: var(--green); -webkit-font-smoothing: antialiased; }
+  .slide { display: none; position: absolute; inset: 0; overflow: hidden; }
+  .slide.on { display: block; }
+
+  .cream {
+    background: radial-gradient(ellipse at 50% 40%, var(--paper) 0%, var(--cream) 55%, var(--cream-2) 100%);
+  }
+  .boardbg {
+    background:
+      radial-gradient(circle at 50% -10%, #1b4a39 0%, rgba(12, 39, 31, 0) 62%),
+      repeating-linear-gradient(180deg, rgba(255, 255, 255, .022) 0 1px, transparent 1px 132px),
+      var(--board);
+    color: var(--ivory);
+  }
+  .grain { position: absolute; inset: 0; opacity: .32; mix-blend-mode: multiply; pointer-events: none; }
+  .boardbg .grain { opacity: .5; mix-blend-mode: overlay; }
+
+  .mono { font-family: var(--mono); font-weight: 700; text-transform: uppercase; }
+
+  /* ── 1 · cover ─────────────────────────────────────────── */
+  .frame { position: absolute; inset: 46px; border: 2px solid var(--green); }
+  .frame::after { content: ''; position: absolute; inset: 9px; border: 1px solid var(--green); opacity: .55; }
+  .c-stack {
+    position: absolute; inset: 46px;
+    display: flex; flex-direction: column; align-items: center;
+    padding-top: 108px;
+  }
+  .c-kicker { font-size: 24px; letter-spacing: .34em; padding-left: .34em; color: var(--green-2); }
+  .c-emblem { position: relative; width: 640px; height: 535px; margin-top: 40px; }
+  .c-emblem svg { position: absolute; }
+  .c-title { margin-top: 34px; font-family: var(--serif); font-size: 136px; line-height: .95; letter-spacing: -.01em; white-space: nowrap; }
+  .c-rule { display: flex; align-items: center; gap: 22px; margin-top: 34px; color: var(--brass); }
+  .c-rule i { display: block; width: 150px; height: 2px; background: var(--brass); }
+  .c-rule svg { display: block; }
+  .c-line { margin-top: 28px; font-family: var(--serif); font-style: italic; font-size: 44px; color: var(--green-2); }
+  .c-tag {
+    position: absolute; left: 50%; bottom: 82px; transform: translateX(-50%);
+    display: flex; align-items: stretch;
+    font-size: 23px; letter-spacing: .2em; white-space: nowrap;
+  }
+  .c-tag span { display: flex; align-items: center; gap: 14px; padding: 17px 26px 17px calc(26px + .2em); }
+  .c-tag .a { background: var(--green); color: var(--cream); }
+  .c-tag .b { border: 2px solid var(--green); border-left: 0; color: var(--green); }
+
+  /* ── 2 · bracket ───────────────────────────────────────── */
+  .b-head { position: absolute; left: 64px; top: 64px; right: 64px; }
+  .b-kicker { font-size: 23px; letter-spacing: .3em; color: var(--cb); }
+  .b-title { margin-top: 14px; font-family: var(--serif); font-size: 100px; line-height: .95; color: var(--ivory); }
+  .b-status { margin-top: 26px; display: flex; align-items: center; gap: 18px; font-size: 23px; letter-spacing: .2em; color: var(--ivory-2); }
+  .chip-red { background: var(--red); color: #1b0d08; padding: 7px 12px 7px calc(12px + .2em); }
+  .b-trophy { position: absolute; right: 52px; top: 40px; }
+  .cols { position: absolute; left: 64px; right: 64px; top: 356px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+  .cols div { border-bottom: 1px solid var(--line-2); padding-bottom: 12px; }
+  .cols b { display: block; font-family: var(--mono); font-size: 21px; letter-spacing: .18em; text-transform: uppercase; color: var(--ivory); }
+  .cols span { display: block; margin-top: 6px; font-family: var(--mono); font-size: 21px; color: var(--mute); }
+  .cols span.now { color: var(--red); }
+  .bk { position: absolute; width: 220px; border: 1px solid var(--line); border-radius: 4px; background: var(--slot); overflow: hidden; }
+  .bk.live { border-color: rgba(226, 105, 79, .75); box-shadow: 0 0 0 1px rgba(226, 105, 79, .35); }
+  .bk .row { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 10px; height: 56px; padding: 0 14px 0 10px; }
+  .bk .row + .row { border-top: 1px solid var(--line); }
+  .bk .sd { font-family: var(--mono); font-weight: 700; font-size: 19px; color: var(--cb); text-align: right; }
+  .bk .nm { font-family: var(--serif); font-size: 30px; line-height: 1; color: var(--ivory); white-space: nowrap; }
+  .bk .sc { font-family: var(--mono); font-weight: 700; font-size: 20px; color: var(--ivory-2); }
+  .bk .won .nm, .bk .won .sc { color: var(--cb-hi); }
+  .bk .bye .sc { font-size: 15px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); }
+  .bk .lost { opacity: .5; }
+  .bk .lost .nm { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: rgba(236, 228, 206, .6); }
+  .bk .tbd { grid-column: 2 / 4; font-family: var(--serif); font-style: italic; font-size: 25px; color: var(--mute); white-space: nowrap; }
+  .bk .pc { font-family: var(--mono); font-weight: 700; font-size: 20px; color: var(--ivory); }
+  .champ { position: absolute; width: 220px; border: 1px solid rgba(200, 163, 91, .7); border-radius: 4px; text-align: center; padding: 16px 0 18px; }
+  .champ b { display: block; font-family: var(--mono); font-size: 17px; letter-spacing: .3em; color: var(--cb); padding-left: .3em; }
+  .champ span { display: block; margin-top: 8px; font-family: var(--serif); font-style: italic; font-size: 29px; color: var(--ivory-2); }
+  .wires { position: absolute; inset: 0; pointer-events: none; }
+  .b-foot { position: absolute; left: 64px; right: 64px; bottom: 54px; padding-top: 24px; border-top: 1px solid var(--line-2); display: flex; justify-content: center; align-items: center; gap: 24px; color: var(--cb); }
+  .b-foot .l { font-family: var(--serif); font-style: italic; font-size: 34px; color: var(--ivory); }
+  .b-foot .r { font-size: 19px; letter-spacing: .2em; color: var(--mute); }
+
+  /* ── 3 · the Cup page ──────────────────────────────────── */
+  .p-head { position: absolute; left: 64px; right: 64px; top: 70px; }
+  .p-kicker { font-size: 23px; letter-spacing: .3em; color: var(--green-2); }
+  .p-title { margin-top: 16px; font-family: var(--serif); font-size: 80px; line-height: 1; color: var(--green); white-space: nowrap; }
+  .p-body { position: absolute; left: 64px; right: 64px; top: 236px; display: flex; flex-direction: column; gap: 26px; }
+  .p-body .card { position: relative; }
+  .p-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .card { position: absolute; background: var(--slot); color: var(--ivory); border-radius: 8px; overflow: hidden; box-shadow: 0 18px 40px -22px rgba(15, 46, 36, .55); }
+  .card-head { display: flex; align-items: center; gap: 14px; padding: 16px 26px 14px; border-bottom: 1px solid var(--line); font-size: 21px; letter-spacing: .14em; color: var(--mute); }
+  .card-head > span:first-child { margin-right: auto; }
+  .flag { border: 1px solid rgba(200, 163, 91, .7); color: var(--cb); padding: 4px 10px; border-radius: 3px; letter-spacing: .1em; }
+  .g-side { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 18px; height: 104px; padding: 0 28px 0 22px; }
+  .g-side + .g-side { border-top: 1px solid var(--line); }
+  .g-side .sd { font-family: var(--mono); font-weight: 700; font-size: 25px; color: var(--cb); text-align: right; }
+  .g-side .nm { font-family: var(--serif); font-size: 50px; line-height: 1.05; color: var(--ivory); display: flex; align-items: center; gap: 16px; }
+  .g-side .tm { margin-top: 4px; font-family: var(--sans); font-size: 23px; color: var(--mute); }
+  .pick { font-family: var(--mono); font-weight: 700; font-size: 16px; letter-spacing: .1em; text-transform: uppercase; background: var(--cb); color: #10251d; padding: 4px 9px; border-radius: 3px; }
+  .prob { display: flex; flex-direction: column; align-items: flex-end; gap: 9px; width: 150px; }
+  .prob b { font-family: var(--mono); font-size: 36px; color: var(--ivory); }
+  .prob i { position: relative; display: block; width: 150px; height: 8px; border-radius: 4px; background: rgba(236, 228, 206, .13); }
+  .prob i s { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--cb); }
+  .facts { padding: 0 28px; border-top: 1px solid var(--line); }
+  .facts > div { display: grid; grid-template-columns: 200px 1fr; align-items: baseline; gap: 18px; padding: 12px 0 11px; }
+  .facts > div + div { border-top: 1px solid var(--line); }
+  .facts dt { font-family: var(--mono); font-weight: 700; font-size: 21px; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); }
+  .facts dd { display: flex; justify-content: space-between; align-items: baseline; }
+  .facts .fs { font-family: var(--mono); font-size: 28px; color: var(--ivory-2); }
+  .facts .fw { font-family: var(--serif); font-size: 33px; color: var(--cb-hi); }
+  .crowd { padding: 16px 28px 20px; border-top: 1px solid var(--line); }
+  .crowd i { position: relative; display: block; height: 8px; border-radius: 4px; background: rgba(236, 228, 206, .13); }
+  .crowd i s { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--cb); }
+  .crowd span { display: block; margin-top: 12px; font-family: var(--sans); font-size: 22px; color: var(--ivory-2); }
+
+  .lb { list-style: none; padding: 4px 26px 8px; }
+  .lb li { display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 14px; height: 78px; }
+  .lb li + li { border-top: 1px solid var(--line); }
+  .lb .rk { font-family: var(--mono); font-weight: 700; font-size: 21px; color: var(--cb); }
+  .lb .who b { display: block; font-family: var(--serif); font-weight: 400; font-size: 34px; line-height: 1.05; color: var(--ivory); }
+  .lb .who span { display: block; margin-top: 2px; font-family: var(--sans); font-size: 21px; color: var(--mute); }
+  .lb .pt { font-family: var(--mono); font-weight: 700; font-size: 32px; color: var(--cb-hi); }
+  .od li { grid-template-columns: 1fr auto; }
+  .od .bar { position: relative; display: block; height: 7px; margin-top: 10px; border-radius: 4px; background: rgba(236, 228, 206, .12); }
+  .od .bar s { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--cb); }
+  .od .pt { color: var(--ivory); }
+  .od .out b { color: var(--mute); text-decoration: line-through; text-decoration-thickness: 2px; }
+  .od .out .pt { font-size: 22px; letter-spacing: .12em; color: var(--mute); }
+
+  /* ── 4 · how it works ──────────────────────────────────── */
+  .h-head { position: absolute; left: 72px; right: 72px; top: 70px; }
+  .h-title { margin-top: 16px; font-family: var(--serif); font-size: 88px; line-height: 1; }
+  .steps { position: absolute; left: 72px; right: 72px; top: 236px; list-style: none; }
+  .steps li { display: grid; grid-template-columns: 84px 1fr; gap: 30px; align-items: start; padding: 21px 0 22px; }
+  .steps li + li { border-top: 1px solid rgba(15, 46, 36, .2); }
+  .num {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: var(--green); color: var(--cream);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-size: 42px; line-height: 1;
+    box-shadow: inset 0 0 0 3px var(--green), inset 0 0 0 5px rgba(201, 163, 90, .9);
+  }
+  .steps h3 { font-family: var(--serif); font-weight: 400; font-size: 42px; line-height: 1.05; color: var(--green); }
+  .steps p { margin-top: 8px; font-family: var(--sans); font-size: 25px; line-height: 1.3; color: #33493f; }
+  .steps p b { font-weight: 600; color: var(--green); }
+  .cta {
+    position: absolute; left: 72px; right: 72px; bottom: 110px; height: 178px;
+    background: var(--green); color: var(--cream); border-radius: 8px;
+    display: grid; grid-template-columns: 1fr auto; align-items: center;
+    padding: 0 30px 0 44px; overflow: hidden;
+  }
+  .cta small { display: block; font-size: 20px; letter-spacing: .26em; color: var(--brass); }
+  .cta strong { display: block; margin-top: 10px; font-family: var(--serif); font-weight: 400; font-size: 66px; line-height: 1; }
+  .cta span { display: block; margin-top: 12px; font-family: var(--sans); font-size: 24px; color: #c9d3cc; }
+  .h-url { position: absolute; left: 0; right: 0; bottom: 52px; text-align: center; font-size: 21px; letter-spacing: .3em; padding-left: .3em; color: var(--green-2); }
+</style>
+</head>
+<body>
+
+<!-- 1 · cover -->
+<section class="slide cream" data-n="1">
+  <svg class="grain" width="1080" height="1350" aria-hidden="true"><filter id="n1"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="3" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .45  0 0 0 0 .38  0 0 0 0 .25  0 0 0 .35 0"/></filter><rect width="100%" height="100%" filter="url(#n1)"/></svg>
+  <div class="frame"></div>
+  <div class="c-stack">
+    <div class="c-kicker mono">New on The Sunday Chronicle</div>
+    <div class="c-emblem">
+      <svg id="laurel1" width="640" height="640" viewBox="0 0 600 600"></svg>
+      <svg id="trophy1" width="388" height="543" viewBox="0 0 400 560" style="left:126px; top:15px;"></svg>
+    </div>
+    <div class="c-title">The League Cup</div>
+    <div class="c-rule"><i></i><svg width="30" height="30" viewBox="0 0 30 30"><path class="star" fill="currentColor"/></svg><i></i></div>
+    <div class="c-line">A second trophy, inside your season.</div>
+  </div>
+  <div class="c-tag mono"><span class="a">Wed, Oct 28</span><span class="b">Every league</span></div>
+</section>
+
+<!-- 2 · the bracket -->
+<section class="slide boardbg" data-n="2">
+  <svg class="grain" width="1080" height="1350" aria-hidden="true"><filter id="n2"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="3" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .05 0"/></filter><rect width="100%" height="100%" filter="url(#n2)"/></svg>
+  <div class="b-head">
+    <div class="b-kicker mono">The Lakeshore League · 2026</div>
+    <div class="b-title">The League Cup</div>
+    <div class="b-status mono"><span class="chip-red">This week</span>First round · Week 8</div>
+  </div>
+  <svg class="b-trophy" id="trophy2" width="190" height="266" viewBox="0 0 400 560"></svg>
+  <div class="cols">
+    <div><b>Round 1</b><span class="now">Week 8 · now</span></div>
+    <div><b>Quarters</b><span>Week 9</span></div>
+    <div><b>Semis</b><span>Week 10</span></div>
+    <div><b>Final</b><span>Week 11</span></div>
+  </div>
+  <svg class="wires" id="wires" width="1080" height="1350"></svg>
+  <div id="bracket"></div>
+  <div class="b-foot"><svg width="22" height="22" viewBox="0 0 30 30"><path class="star" fill="currentColor"/></svg><span class="l">Twelve teams. Four weeks. One cup.</span><svg width="22" height="22" viewBox="0 0 30 30"><path class="star" fill="currentColor"/></svg></div>
+</section>
+
+<!-- 3 · the Cup page -->
+<section class="slide cream" data-n="3">
+  <svg class="grain" width="1080" height="1350" aria-hidden="true"><filter id="n3"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="3" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .45  0 0 0 0 .38  0 0 0 0 .25  0 0 0 .35 0"/></filter><rect width="100%" height="100%" filter="url(#n3)"/></svg>
+  <div class="p-head">
+    <div class="p-kicker mono">Your league's Cup page</div>
+    <div class="p-title">Win odds on every game.</div>
+  </div>
+
+  <div class="p-body">
+  <article class="card">
+    <header class="card-head mono"><span>Semifinal · Game 1</span><span class="flag">Also their league game</span></header>
+    <div class="g-side">
+      <span class="sd">4</span>
+      <span><span class="nm">Reid <span class="pick">Your pick</span></span><span class="tm" style="display:block">Option Play · 4-3</span></span>
+      <span class="prob"><b>59%</b><i><s style="width:59%"></s></i></span>
+    </div>
+    <div class="g-side">
+      <span class="sd">9</span>
+      <span><span class="nm">Grant</span><span class="tm" style="display:block">Lake Effect · 3-4</span></span>
+      <span class="prob"><b>41%</b><i><s style="width:41%"></s></i></span>
+    </div>
+    <dl class="facts">
+      <div><dt>Weeks won</dt><dd><span class="fs">5-4</span><span class="fw">Reid</span></dd></div>
+      <div><dt>Last 3 avg</dt><dd><span class="fs">128.4 v 117.9</span><span class="fw">Grant</span></dd></div>
+      <div><dt>All-time</dt><dd><span class="fs">6-3</span><span class="fw">Reid</span></dd></div>
+    </dl>
+    <div class="crowd"><i><s style="width:62%"></s></i><span>Picks: Reid 62%, Grant 38% (13)</span></div>
+  </article>
+
+  <div class="p-pair">
+  <article class="card">
+    <header class="card-head mono"><span>Bracket challenge</span></header>
+    <ol class="lb">
+      <li><span class="rk">1</span><span class="who"><b>Cole</b><span>6 of 8 right</span></span><span class="pt">9</span></li>
+      <li><span class="rk">2</span><span class="who"><b>Matt</b><span>6 of 8 right</span></span><span class="pt">8</span></li>
+      <li><span class="rk">3</span><span class="who"><b>Vince</b><span>5 of 8 right</span></span><span class="pt">8</span></li>
+      <li><span class="rk">4</span><span class="who"><b>John</b><span>5 of 8 right</span></span><span class="pt">7</span></li>
+      <li><span class="rk">5</span><span class="who"><b>Drew</b><span>4 of 8 right</span></span><span class="pt">6</span></li>
+    </ol>
+  </article>
+
+  <article class="card">
+    <header class="card-head mono"><span>Title odds</span></header>
+    <ol class="lb od">
+      <li><span class="who"><b>Reid</b><span class="bar"><s style="width:66%"></s></span></span><span class="pt">33%</span></li>
+      <li><span class="who"><b>Owen</b><span class="bar"><s style="width:58%"></s></span></span><span class="pt">29%</span></li>
+      <li><span class="who"><b>Nate</b><span class="bar"><s style="width:44%"></s></span></span><span class="pt">22%</span></li>
+      <li><span class="who"><b>Grant</b><span class="bar"><s style="width:32%"></s></span></span><span class="pt">16%</span></li>
+      <li class="out"><span class="who"><b>Bryce</b><span class="bar"></span></span><span class="pt mono">Out</span></li>
+    </ol>
+  </article>
+  </div>
+  </div>
+</section>
+
+<!-- 4 · how it works -->
+<section class="slide cream" data-n="4">
+  <svg class="grain" width="1080" height="1350" aria-hidden="true"><filter id="n4"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="3" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .45  0 0 0 0 .38  0 0 0 0 .25  0 0 0 .35 0"/></filter><rect width="100%" height="100%" filter="url(#n4)"/></svg>
+  <div class="h-head">
+    <div class="p-kicker mono">The League Cup</div>
+    <div class="h-title">How the Cup works</div>
+  </div>
+  <ol class="steps">
+    <li><span class="num">1</span><div><h3>The top 12 make it</h3><p>Seeded by your standings after Week 7. More than 12 teams, the top 12 get in. Fewer than 12, everyone does.</p></div></li>
+    <li><span class="num">2</span><div><h3>Top seeds get byes</h3><p>Short of a full bracket? The best records skip round one.</p></div></li>
+    <li><span class="num">3</span><div><h3>Your score is your Cup score</h3><p>One round a week. What you score in your league game counts, whoever you're playing.</p></div></li>
+    <li><span class="num">4</span><div><h3>Win and move on</h3><p>Higher score advances. A tie goes to the higher seed.</p></div></li>
+    <li><span class="num">5</span><div><h3>Pick the bracket</h3><p>Call every game before Thursday 8pm ET. Points for each right pick, more for the champion.</p></div></li>
+  </ol>
+  <div class="cta">
+    <div>
+      <small class="mono">Arrives in every league</small>
+      <strong>Wednesday, Oct 28</strong>
+      <span>Round one is Week 8.</span>
+    </div>
+    <svg id="trophy4" width="118" height="166" viewBox="0 0 400 560"></svg>
+  </div>
+  <div class="h-url mono">thesundaychronicle.app</div>
+</section>
+
+<script src="cup-trophy.js"></script>
+<script>
+  const n = Number(new URLSearchParams(location.search).get('slide')) || 1
+  document.querySelector(`.slide[data-n="${n}"]`).classList.add('on')
+
+  // Five-point stars for the rules.
+  for (const p of document.querySelectorAll('path.star')) {
+    const pts = []
+    for (let i = 0; i < 10; i++) {
+      const r = i % 2 ? 6 : 14.5
+      const a = (Math.PI / 5) * i - Math.PI / 2
+      pts.push(`${(15 + r * Math.cos(a)).toFixed(2)} ${(16 + r * Math.sin(a)).toFixed(2)}`)
+    }
+    p.setAttribute('d', 'M' + pts.join(' L') + ' Z')
+  }
+
+  if (n === 1) {
+    drawLaurel(document.getElementById('laurel1'))
+    drawTrophy(document.getElementById('trophy1'), { plate: '2026' })
+  }
+  if (n === 4) drawTrophy(document.getElementById('trophy4'), { plate: '2026', paper: '#0f2e24' })
+  if (n === 2) {
+    drawTrophy(document.getElementById('trophy2'), { plate: '2026' })
+    drawBracket()
+  }
+
+  // The demo field, seeded 1 to 12 after Week 7, on the week the Cup
+  // starts: round one this week, shown as win odds; seeds 1 to 4 wait in
+  // the quarters with a bye.
+  function drawBracket() {
+    const X = [64, 308, 552, 796]
+    const W = 220, ROW = 56, H = ROW * 2 + 1
+    const TOP = 446, STEP = 190
+    const qfMid = [0, 1, 2, 3].map((i) => TOP + H / 2 + i * STEP)
+    const r1Mid = qfMid.map((y) => y + ROW / 2 + 16)
+    const sfMid = [(qfMid[0] + qfMid[1]) / 2, (qfMid[2] + qfMid[3]) / 2]
+    const fMid = (sfMid[0] + sfMid[1]) / 2
+
+    const t = (seed, name, score, state) => ({ seed, name, score, state })
+    const games = [
+      // round 1, week 8: this week, win odds
+      { c: 0, mid: r1Mid[0], live: true, rows: [t(8, 'Drew', '52%', 'odds'), t(9, 'Grant', '48%', 'odds')] },
+      { c: 0, mid: r1Mid[1], live: true, rows: [t(5, 'Cole', '71%', 'odds'), t(12, 'John', '29%', 'odds')] },
+      { c: 0, mid: r1Mid[2], live: true, rows: [t(7, 'Tyler', '56%', 'odds'), t(10, 'Jack', '44%', 'odds')] },
+      { c: 0, mid: r1Mid[3], live: true, rows: [t(6, 'Nate', '60%', 'odds'), t(11, 'Vince', '40%', 'odds')] },
+      // quarters, week 9: the byes
+      { c: 1, mid: qfMid[0], rows: [t(1, 'Bryce', 'Bye', 'bye'), { tbd: 'Drew or Grant' }] },
+      { c: 1, mid: qfMid[1], rows: [t(4, 'Reid', 'Bye', 'bye'), { tbd: 'Cole or John' }] },
+      { c: 1, mid: qfMid[2], rows: [t(2, 'Owen', 'Bye', 'bye'), { tbd: 'Tyler or Jack' }] },
+      { c: 1, mid: qfMid[3], rows: [t(3, 'Matt', 'Bye', 'bye'), { tbd: 'Nate or Vince' }] },
+      // semis, week 10, and the final, week 11
+      { c: 2, mid: sfMid[0], rows: [{ tbd: 'TBD' }, { tbd: 'TBD' }] },
+      { c: 2, mid: sfMid[1], rows: [{ tbd: 'TBD' }, { tbd: 'TBD' }] },
+      { c: 3, mid: fMid, rows: [{ tbd: 'TBD' }, { tbd: 'TBD' }] },
+    ]
+
+    const host = document.getElementById('bracket')
+    for (const g of games) {
+      const el = document.createElement('div')
+      el.className = 'bk' + (g.live ? ' live' : '')
+      el.style.left = X[g.c] + 'px'
+      el.style.top = (g.mid - H / 2) + 'px'
+      el.innerHTML = g.rows.map((r) => r.tbd
+        ? `<div class="row"><span class="sd"></span><span class="tbd">${r.tbd}</span></div>`
+        : `<div class="row ${r.state}"><span class="sd">${r.seed}</span><span class="nm">${r.name}</span><span class="${r.state === 'odds' ? 'pc' : 'sc'}">${r.score}</span></div>`
+      ).join('')
+      host.appendChild(el)
+    }
+    const champ = document.createElement('div')
+    champ.className = 'champ'
+    champ.style.left = X[3] + 'px'
+    champ.style.top = (fMid + H / 2 + 30) + 'px'
+    champ.innerHTML = '<b class="mono">Champion</b><span>TBD</span>'
+    host.appendChild(champ)
+
+    // Wires: from each game's right edge into the next game's row.
+    const svg = document.getElementById('wires')
+    const wire = (x1, y1, x2, y2) => {
+      const mx = x1 + (x2 - x1) / 2
+      const p = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+      p.setAttribute('d', `M${x1} ${y1} H${mx} V${y2} H${x2}`)
+      p.setAttribute('fill', 'none')
+      p.setAttribute('stroke', 'rgba(236,228,206,.32)')
+      p.setAttribute('stroke-width', '1.5')
+      svg.appendChild(p)
+    }
+    const rowY = (mid, i) => mid - H / 2 + ROW / 2 + i * (ROW + 1)
+    r1Mid.forEach((y, i) => wire(X[0] + W, y, X[1], rowY(qfMid[i], 1)))
+    qfMid.forEach((y, i) => wire(X[1] + W, y, X[2], rowY(sfMid[i >> 1], i & 1)))
+    sfMid.forEach((y, i) => wire(X[2] + W, y, X[3], rowY(fMid, i)))
+  }
+</script>
+</body>
+</html>

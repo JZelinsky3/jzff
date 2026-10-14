@@ -432,15 +432,43 @@ html.dc-lock-active .site-grain { display: none !important; }
     font-size: .52rem; letter-spacing: .18em;
     white-space: nowrap;
 }
-/* The Cup, in its own page's board green and brass (cup.module.css). */
+/* The Cup, in its own page's board green and brass (cup.module.css).
+   Unlike the tier lines it is pinned ABOVE the app bar, at the very top
+   of the screen, and owns the notch inset; html.m-has-cup (set by
+   mobile-app.js) drops the bar below it and grows the body padding to
+   match. `html.m-has-cup body` outranks the plain `body` padding the
+   live pages (pickems, trades) set in their own <style>. */
+:root { --m-cup-h: 38px; }
 .m-tier-strip--cup {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 211;
+    height: calc(var(--m-cup-h) + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) .75rem 0;
     background: #0c271f;
     border-bottom: 1px solid rgba(200,163,91,.5);
     color: #ece4ce;
+    font-size: .6rem;
+    white-space: nowrap; overflow: hidden;
     text-decoration: none;
 }
 .m-tier-strip--cup .m-tier-strip-pill {
     background: #c8a35b; color: #10251d;
+    padding: 4px 8px;
+    font-size: .56rem;
+}
+html.m-has-cup body {
+    padding-top: calc(var(--m-cup-h) + var(--m-appbar-h) + env(safe-area-inset-top));
+}
+html.m-has-cup .m-appbar {
+    top: calc(var(--m-cup-h) + env(safe-area-inset-top));
+    height: var(--m-appbar-h);
+    padding-top: 0;
+}
+html.m-has-cup .m-appbar-week,
+html.m-has-cup .m-appbar-right-slot { margin-top: 0; }
+html.m-has-cup .dc-lock-overlay,
+html.m-has-cup .records-modal {
+    padding-top: calc(var(--m-cup-h) + var(--m-appbar-h) + env(safe-area-inset-top) + 1rem);
 }
 
 /* ============================================================

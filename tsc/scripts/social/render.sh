@@ -188,6 +188,20 @@ case "${1:-}" in
     shot "file://$HERE/recap.html?dark=gr" "recap-dark-green" 1080 1350
     ;;
 
+  # ./render.sh cup [slide-number ...]
+  #
+  # The League Cup launch carousel, four slides.
+  cup)
+    shift
+    SLIDES=("$@")
+    [ ${#SLIDES[@]} -eq 0 ] && SLIDES=(1 2 3 4)
+    echo "Rendering the League Cup carousel:"
+    for i in "${SLIDES[@]}"; do
+      shot "file://$HERE/cup.html?slide=$i" \
+           "cup-$(printf '%02d' "$i")" 1080 1350
+    done
+    ;;
+
   pitch)
     shift
     SLIDES=("$@")

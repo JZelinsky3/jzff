@@ -924,9 +924,9 @@ function PicksTab(props: {
 
       <h3 className={styles.subHead}>How the Cup works</h3>
       <ul className={styles.rules}>
-        <li>Seeded by the standings after week {props.seededThrough}. Top seeds get byes when the field isn’t 8 or 16.</li>
+        <li>The top twelve in the standings after week {props.seededThrough} are in, or every team in a smaller league. Top seeds get byes to fill out the bracket.</li>
         <li>One round a week. Your real score that week is your Cup score, whoever you play in the league.</li>
-        <li>A tie goes to the higher seed. Nothing to sign up for: every team is in.</li>
+        <li>A tie goes to the higher seed. Nothing to sign up for.</li>
       </ul>
     </>
   )
