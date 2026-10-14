@@ -1314,10 +1314,18 @@ function MiniCard({ m, fed, last, mine }: { m: CupMatch; fed: boolean; last: boo
     const s = m[side]
     const e = teamOf(s)
     const cls = `${styles.mRow} ${m.winner === side ? styles.mWon : ''} ${m.winner && m.winner !== side ? styles.mLost : ''} ${e && e.managerId === mine ? styles.mMine : ''}`
+    // An open slot has no seed or score, so its "Chris/Mason" takes the
+    // whole row and starts where the seed would.
+    if (!e)
+      return (
+        <div className={cls}>
+          <span className={styles.mTbd}>{s.kind === 'tbd' && s.options.length ? `${s.options[0]}/${s.options[1]}` : 'TBD'}</span>
+        </div>
+      )
     return (
       <div className={cls}>
-        <span className={styles.mSeed}>{e?.seed ?? ''}</span>
-        <span className={e ? styles.mName : styles.mTbd}>{e ? e.name : s.kind === 'tbd' && s.options.length ? `${s.options[0]}/${s.options[1]}` : 'TBD'}</span>
+        <span className={styles.mSeed}>{e.seed}</span>
+        <span className={styles.mName}>{e.name}</span>
         <span className={styles.mScore}>{s.kind === 'team' && s.score != null ? Math.round(s.score) : ''}</span>
       </div>
     )
@@ -1355,7 +1363,9 @@ function OddsTab({ bracket, odds, notes, user, votes }: { bracket: CupBracket; o
   const finalIdx = bracket.rounds.length - 2
   // Bars scale to the favourite, so a 20% leader doesn't read as empty.
   const top = Math.max(1, ...alive.map((o) => o.win))
-  // The three favourites get a card each; everyone after is a row.
+  // The three favourites get a card each: the favourite a full-width ticket,
+  // the next two a pair under it (three across read as a 2-1-3 podium when
+  // the seeds came out that way). Everyone after is a row.
   const podium = bracket.champion ? [] : alive.slice(0, 3)
   const rows = bracket.champion ? alive : alive.slice(3)
   const nVotes = (id: string) => votes.get(id)?.length ?? 0
