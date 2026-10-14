@@ -31,7 +31,7 @@ import { getNflClock, weekIsFinal } from '@/lib/nflClock'
 import { buildRecapFacts, recapTierFor, RECAP_FACTS_VERSION, type RecapFacts } from './facts'
 import { recapSubject, templateIntro, writeIntro } from './intro'
 import { renderRecapEmail, type RecapAudience } from './email'
-import { reportTeaser } from '@/lib/report/teaser'
+import { cupTeaser } from '@/lib/cup/teaser'
 import { SITE_URL, recapPageUrl, subscriberToken, unsubscribePageUrl, unsubscribeToken } from './links'
 import { sendViaResend } from './resend'
 import { activeSubscribers } from './subscribers'
@@ -77,7 +77,7 @@ export type RecapRunReport =
 // reads plus one model call; the headroom is for the one in flight.
 const START_BUDGET_MS = 200_000
 
-type Db = ReturnType<typeof createAdminClient>
+export type Db = ReturnType<typeof createAdminClient>
 
 export async function runRecaps(opts: RecapRunOptions): Promise<RecapRunReport> {
   const db = createAdminClient()
@@ -361,14 +361,14 @@ export async function sendRecapNow(args: {
 
 // ── Recipients ────────────────────────────────────────────────────────────
 
-async function confirmedEmail(db: Db, userId: string): Promise<string | null> {
+export async function confirmedEmail(db: Db, userId: string): Promise<string | null> {
   const { data } = await db.auth.admin.getUserById(userId)
   const user = data?.user
   if (!user?.email || !user.email_confirmed_at) return null
   return user.email.toLowerCase()
 }
 
-async function eligibleRecipient(db: Db, userId: string): Promise<{ ok: true; email: string } | { ok: false; reason: string }> {
+export async function eligibleRecipient(db: Db, userId: string): Promise<{ ok: true; email: string } | { ok: false; reason: string }> {
   const { data } = await db.auth.admin.getUserById(userId)
   const user = data?.user
   if (!user?.email) return { ok: false, reason: 'owner has no email address' }
@@ -398,8 +398,9 @@ async function sendRecapEmail(args: {
 
   const { facts } = args
   const who = args.audience === 'owner' ? 'owner' : 'list'
-  // On a Progress Report week the email carries its block (lib/report/teaser).
-  const report = facts.phase === 'regular' ? await reportTeaser(facts.league, facts.year, facts.week) : null
+  // On the weeks the Cup runs, its block (lib/cup/teaser). Null otherwise,
+  // and null on any error: it never holds up a send.
+  const cup = facts.phase === 'regular' ? await cupTeaser(facts.league, facts.year, facts.week) : null
   const { html, text } = renderRecapEmail(
     facts,
     args.intro,
@@ -415,7 +416,7 @@ async function sendRecapEmail(args: {
       join: `${recapPageUrl(facts.league.slug, facts.year, facts.week, 'email', who)}#join`,
     },
     args.audience,
-    report,
+    cup,
   )
   return sendViaResend({
     to: args.to,

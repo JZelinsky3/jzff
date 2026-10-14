@@ -62,6 +62,10 @@ export type TeamProjection = {
   // and after losing it.
   if_win_pct?: number
   if_loss_pct?: number
+  // With `byWins`: playoff odds by how many of its remaining games the team
+  // wins, and the share of runs that ended that way. Rows for outcomes that
+  // never came up in any run are left out.
+  by_wins?: { wins: number; share: number; pct: number }[]
 }
 
 export type SimOptions = {
@@ -75,6 +79,9 @@ export type SimOptions = {
   // if_loss_pct. Left out of the generator's seed, so passing it never
   // moves the plain odds.
   next?: { a: string; b: string }[]
+  // Adds by_wins. Also left out of the seed: it only counts what the runs
+  // already did.
+  byWins?: boolean
 }
 
 type Format = { kind: PlayoffFormat; playoffTeams: number }
@@ -433,6 +440,7 @@ export function simulateSeason(
   const o = { ...opts, played: [...opts.played].sort((x, y) => cmp(`${x.a}|${x.b}|${x.sa}|${x.sb}`, `${y.a}|${y.b}|${y.sa}|${y.sb}`)) }
   const seedOpts: Partial<SimOptions> = { ...o }
   delete seedOpts.next
+  delete seedOpts.byWins
   random = sfc32(seedFrom(JSON.stringify([t, r, seedOpts])))
   try {
     return simulate(t, r, o)
@@ -506,6 +514,9 @@ function simulate(
   const strength = new Float64Array(n)
   // This run's result in next week's game: 1 won, 0 lost, -1 no game.
   const nextResult = new Int8Array(n)
+  // Runs, and playoff runs, by remaining games won: [team][wins].
+  const byWinRuns = opts.byWins ? teams.map((_, i) => new Float64Array(remainingCount[i]! + 1)) : null
+  const byWinMade = opts.byWins ? teams.map((_, i) => new Float64Array(remainingCount[i]! + 1)) : null
   const runs = Math.max(1, opts.runs)
   for (let r = 0; r < runs; r++) {
     copyTable(base, run)
@@ -536,6 +547,11 @@ function simulate(
       if (k < opts.byeTeams) acc.bye++
       if (nextResult[i] === 1) { acc.nextW++; if (made) acc.nextWIn++ }
       else if (nextResult[i] === 0) { acc.nextL++; if (made) acc.nextLIn++ }
+      if (byWinRuns && byWinMade) {
+        const won = wins[i]! - teams[i]!.startWins
+        byWinRuns[i]![won]!++
+        if (made) byWinMade[i]![won]!++
+      }
     })
     for (const i of s.winners) tally[i]!.confWin++
     for (let i = 0; i < n; i++) tally[i]!.wins += wins[i]!
@@ -568,6 +584,19 @@ function simulate(
         ? {
             if_win_pct: bounded(acc.nextW ? Math.round((acc.nextWIn / acc.nextW) * 1000) / 10 : 0, sure.playoffClinched, sure.eliminated),
             if_loss_pct: bounded(acc.nextL ? Math.round((acc.nextLIn / acc.nextL) * 1000) / 10 : 0, sure.playoffClinched, sure.eliminated),
+          }
+        : {}),
+      ...(byWinRuns && byWinMade
+        ? {
+            by_wins: [...byWinRuns[i]!].flatMap((count, w) =>
+              count > 0
+                ? [{
+                    wins: w,
+                    share: Math.round((count / runs) * 1000) / 1000,
+                    pct: bounded(Math.round((byWinMade[i]![w]! / count) * 1000) / 10, sure.playoffClinched, sure.eliminated),
+                  }]
+                : [],
+            ),
           }
         : {}),
     })

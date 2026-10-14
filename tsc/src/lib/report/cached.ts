@@ -9,7 +9,7 @@ export function loadReportCached(
   league: { id: string; name: string; slug: string; owner_id: string | null },
   week: number | null,
 ): Promise<ReportResult> {
-  return unstable_cache(() => loadReport(league, week), ['progress-report', 'v3', league.id, String(week ?? 'latest')], {
+  return unstable_cache(() => loadReport(league, week), ['progress-report', 'v4', league.id, String(week ?? 'latest')], {
     revalidate: 900,
     tags: [`league-${league.id}`],
   })()

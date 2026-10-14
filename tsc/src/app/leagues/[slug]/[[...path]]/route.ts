@@ -128,6 +128,7 @@ async function loadLeagueMetaUncached(slug: string): Promise<LeagueMeta | null> 
   const cup = await cupBadge(db, { id: row.id, slug: row.slug }, {
     year: (liveSeasonRow?.year as number | undefined) ?? null,
     week: liveWeek,
+    settings: liveSeasonSettings,
   }).catch(() => null)
   return {
     id: row.id,

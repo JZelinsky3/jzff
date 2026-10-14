@@ -1692,11 +1692,14 @@
         var el = document.createElement('div');
         el.id = 'dc-review-nudge';
         el.className = 'dc-rev' + (stripUp ? ' dc-rev--pill-only' : '') + (cup && cup.href ? ' dc-rev--cup' : '');
+        // The Cup is a cream ticket with a green trophy stub (the same one
+        // the phone strip draws), so it reads on every chapter's colour.
         el.innerHTML = (cup && cup.href
             ? '<a class="dc-rev-link" href="' + escapeHtmlLock(cup.href) + '" target="_top">' +
-                  '<span class="dc-rev-stars" aria-hidden="true">★</span>' +
-                  '<span class="dc-rev-full">' + escapeHtmlLock(cup.name) + ' · ' + escapeHtmlLock(cup.label) + ' · See the bracket</span>' +
-                  '<span class="dc-rev-short">' + escapeHtmlLock(cup.name) + ' · ' + escapeHtmlLock(cup.label) + '</span>' +
+                  '<span class="dc-cup-stub" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v4.5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5a2.5 2.5 0 0 0 2.6 3.6M17 6h2.5a2.5 2.5 0 0 1-2.6 3.6M12 13.5V17M8.5 20h7M9.5 17h5"/></svg></span>' +
+                  '<span class="dc-cup-name">' + escapeHtmlLock(cup.name) + '</span>' +
+                  '<span class="dc-cup-label">' + escapeHtmlLock(cup.label) + '</span>' +
+                  '<span class="dc-cup-go' + (cup.picksOpen ? ' dc-cup-go--pick' : '') + '">' + (cup.picksOpen ? 'Make your picks' : 'See the bracket') + '</span>' +
               '</a>'
             : '<a class="dc-rev-link" href="/review" target="_top">' +
                   '<span class="dc-rev-stars" aria-hidden="true">★★★★★</span>' +
@@ -1755,12 +1758,18 @@
             '  font-size: .62rem; line-height: 1;',
             '}',
             '.dc-rev-x:hover { color: var(--cream, #f4ebd8); }',
-            // The Cup wears its own page's board green and brass.
-            '.dc-rev--cup { background: #0c271f; border-color: #c8a35b; }',
-            '.dc-rev--cup .dc-rev-link { color: #ece4ce; }',
-            '.dc-rev--cup .dc-rev-link:hover { background: rgba(200,163,91,.14); color: #e6cb8e; }',
-            '.dc-rev--cup .dc-rev-stars { color: #c8a35b; }',
-            '.dc-rev--cup .dc-rev-x { border-left-color: rgba(236,228,206,.2); color: #8fa597; }',
+            // The Cup: a cream ticket, green stub, green ink.
+            '.dc-rev--cup { background: #f5eedb; border: 0; border-radius: 10px; box-shadow: 0 8px 26px rgba(0,0,0,.45); }',
+            '.dc-rev--cup .dc-rev-link { gap: .6rem; padding: 0 .45rem 0 0; color: #1f4a3a; text-transform: none; letter-spacing: 0; }',
+            '.dc-rev--cup .dc-rev-link:hover { background: #fbf7ec; color: #14301f; }',
+            '.dc-cup-stub { position: relative; flex: none; align-self: stretch; display: flex; align-items: center; justify-content: center; width: 38px; background: #1f4a3a; color: #e6cb8e; }',
+            '.dc-cup-stub::after { content: ""; position: absolute; top: 5px; bottom: 5px; right: -1px; border-right: 2px dotted #f5eedb; }',
+            '.dc-cup-name { font-family: var(--serif, "DM Serif Display", Georgia, serif); font-size: 1.02rem; line-height: 1; color: #1f4a3a; white-space: nowrap; }',
+            '.dc-cup-label { font-family: var(--sans, Inter, system-ui, sans-serif); font-size: .78rem; font-weight: 500; color: #5d5a4a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+            '.dc-cup-go { flex: none; margin: .4rem 0 .4rem .2rem; padding: .42rem .7rem; border-radius: 7px; box-shadow: inset 0 0 0 1px #c4b386; font-family: var(--sans, Inter, system-ui, sans-serif); font-size: .74rem; font-weight: 700; color: #1f4a3a; white-space: nowrap; }',
+            '.dc-cup-go--pick { background: #1f4a3a; box-shadow: none; color: #f5eedb; }',
+            '.dc-rev--cup .dc-rev-x { border-left: 1px solid #ddd0ad; padding: 0 .7rem; color: #7b745f; }',
+            '.dc-rev--cup .dc-rev-x:hover { color: #1f4a3a; }',
             // Phones with a clear masthead: a band across the top, and the
             // same sticky-stack offsets the tier strip uses.
             '@media (max-width: 940px) {',
@@ -1772,7 +1781,11 @@
             '    border-radius: 0; box-shadow: none;',
             '    background: var(--ink-soft, #16202c);',
             '  }',
-            '  .dc-rev--cup:not(.dc-rev--pill-only) { background: #0c271f; border-bottom-color: rgba(200,163,91,.55); }',
+            // A band on narrow windows: the whole band is the cream ticket.
+            '  .dc-rev--cup:not(.dc-rev--pill-only) { height: var(--rev-strip-h, 34px); background: #f5eedb; border-bottom: 1px solid #c4b386; }',
+            '  .dc-rev--cup:not(.dc-rev--pill-only) .dc-rev-link { justify-content: flex-start; padding: 0 .4rem 0 0; font-size: inherit; letter-spacing: 0; }',
+            '  .dc-rev--cup:not(.dc-rev--pill-only) .dc-cup-label { flex: 1; }',
+            '  .dc-rev--cup .dc-cup-go { margin: .25rem 0; padding: .32rem .6rem; }',
             '  .dc-rev:not(.dc-rev--pill-only) .dc-rev-link {',
             '    flex: 1; justify-content: center;',
             '    padding: 0 .6rem; font-size: .58rem; letter-spacing: .1em;',

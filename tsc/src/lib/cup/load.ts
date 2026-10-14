@@ -3,9 +3,9 @@
 // the page and both image routes so they can't disagree.
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { resolveCurrentWeek } from '@/lib/liveSeason'
+import { resolveCurrentWeek, resolveWeekLockAt } from '@/lib/liveSeason'
 import { leagueName } from '@/lib/pamsNames'
-import { buildBracket, cupWeekLabel, type CupBracket, type CupSeedRow } from './bracket'
+import { buildBracket, cupWeekLabel, roundNames, type CupBracket, type CupSeedRow } from './bracket'
 
 export type CupRow = {
   id: string
@@ -49,7 +49,10 @@ export async function latestCup(db: Db, leagueId: string, year?: number | null):
   return { ...(data as CupRow), seeds: Array.isArray(data.seeds) ? (data.seeds as CupSeedRow[]) : [] }
 }
 
-export async function loadCup(leagueId: string, year?: number | null): Promise<CupView | null> {
+// `asOfWeek` treats the season as being at least that week, so a round can
+// read as decided before the platform's calendar has rolled over (the recap
+// goes out the Tuesday after a week, sometimes before the week advances).
+export async function loadCup(leagueId: string, year?: number | null, opts?: { asOfWeek?: number }): Promise<CupView | null> {
   const db = createAdminClient()
   const cup = await latestCup(db, leagueId, year)
   if (!cup || cup.seeds.length < 2) return null
@@ -97,7 +100,8 @@ export async function loadCup(leagueId: string, year?: number | null): Promise<C
     byWeek.set(w, [...(byWeek.get(w) ?? []), { a: sa, b: sb }])
   }
 
-  const currentWeek = resolveCurrentWeek((season.settings ?? null) as Record<string, unknown> | null)
+  const resolved = resolveCurrentWeek((season.settings ?? null) as Record<string, unknown> | null)
+  const currentWeek = opts?.asOfWeek != null && resolved != null ? Math.max(resolved, opts.asOfWeek) : resolved
   // Same test the recap uses for a settled week: every game has two real
   // scores. A zero almost always means the platform hasn't finalised.
   const weekFinal = (w: number) => {
@@ -129,14 +133,24 @@ export async function loadCup(leagueId: string, year?: number | null): Promise<C
   }
 }
 
-export type CupBadge = { id: string; name: string; href: string; label: string; key: string }
+export type CupBadge = {
+  id: string
+  name: string
+  href: string
+  label: string
+  key: string
+  // Bracket-challenge picks can be made right now: the week before round
+  // one, and every Cup week until Thursday kickoff. The strip says "Pick
+  // now" then, "Bracket" otherwise.
+  picksOpen: boolean
+}
 
 // What the almanac's top strip and the Live hub card need, from the cup row
 // and the week alone: cheap enough to run on every almanac page load.
 export async function cupBadge(
   db: Db,
   league: { id: string; slug: string },
-  live: { year: number | null; week: number | null },
+  live: { year: number | null; week: number | null; settings?: Record<string, unknown> | null },
 ): Promise<CupBadge | null> {
   const liveWeek = live.week
   if (liveWeek == null || live.year == null) return null
@@ -144,6 +158,11 @@ export async function cupBadge(
   if (!cup || cup.season_year !== live.year) return null
   const label = cupWeekLabel({ field: cup.seeds.length, startWeek: cup.start_week, currentWeek: liveWeek })
   if (!label) return null
+  const rounds = roundNames(cup.seeds.length).length
+  // The round whose picks are on the table: this week's, or round one in
+  // the week before the Cup starts.
+  const pickWeek = Math.max(liveWeek, cup.start_week)
+  const lockAt = pickWeek <= cup.start_week + rounds - 1 ? resolveWeekLockAt(live.settings ?? null, pickWeek) : null
   return {
     id: cup.id,
     name: cup.name,
@@ -151,5 +170,6 @@ export async function cupBadge(
     label,
     // Dismissing the strip hides it for this week only; next round it's back.
     key: `${cup.id}:${liveWeek}`,
+    picksOpen: lockAt != null && Date.now() < Date.parse(lockAt),
   }
 }

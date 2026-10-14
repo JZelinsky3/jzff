@@ -107,6 +107,16 @@ on:
     # stayed held. Already-sent recaps are skipped, so a run with nothing
     # left to do sends nothing.
     - cron: '23 15 * * 3'
+    # Progress Reports, Thursday 14:17 UTC (~10am ET): the playoff race and
+    # report cards, emailed the Thursday after weeks 4, 6, 9, 11 and 13
+    # (REPORT_WEEKS in tsc/src/lib/report/build.ts). Every other Thursday the
+    # endpoint answers "not a report week" and sends nothing. No refresh
+    # first: Tuesday's and Wednesday's runs already have the week's scores.
+    # Off the hour for the same reason as the Tuesday run.
+    - cron: '17 14 * * 4'
+    # Thursday afternoon backup, before the Thursday night game: anything
+    # held or dropped in the morning. Already-sent addresses are skipped.
+    - cron: '41 18 * * 4'
     # Social, Saturday 13:00 UTC (~9am ET): plan next week's X and Threads
     # posts and email the list for vetoes. Must stay on a Friday or Saturday:
     # the Drop Regret post captures that week's drops when it is planned.
@@ -138,6 +148,7 @@ on:
           - sync-trades
           - grade-trades
           - recaps
+          - reports
           - social-plan
           - social-publish
 
@@ -169,6 +180,8 @@ jobs:
             '7 12 * * 2')  paths='refresh recaps' ;;
             '47 16 * * 2') paths='refresh recaps' ;;
             '23 15 * * 3') paths='refresh recaps' ;;
+            '17 14 * * 4') paths='reports' ;;
+            '41 18 * * 4') paths='reports' ;;
             '0 13 * * 6')  paths='social-plan' ;;
             '20 0-2,12-23 * * *') paths='social-publish' ;;
             *)

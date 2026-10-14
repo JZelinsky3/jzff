@@ -429,6 +429,113 @@ a.edition:hover {
   border-top: 1px dashed rgba(141, 182, 220, 0.7);
 }
 
+.bigGame {
+  margin-top: 16px !important;
+  font-size: 14px;
+  color: var(--chalk);
+}
+
+.bigGameLabel {
+  display: block;
+  font-family: var(--rp-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bar);
+}
+
+/* What they need: late in the season, each bubble team's odds by finish. */
+.needs {
+  margin-top: 26px;
+  padding: 16px 16px 6px;
+  border: 1px solid rgba(232, 238, 244, 0.22);
+  border-radius: 3px;
+  background: var(--board-2);
+}
+
+.needsTitle {
+  font-family: var(--rp-display);
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 1.15;
+}
+
+.needsSub {
+  margin-top: 4px !important;
+  font-size: 13.5px;
+  color: var(--chalk-2);
+}
+
+.needsList {
+  margin-top: 10px;
+}
+
+.needsRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 16px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(232, 238, 244, 0.12);
+}
+
+.needsWho {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.needsName {
+  font-family: var(--rp-display);
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.needsVerdict {
+  font-family: var(--rp-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--down);
+  white-space: nowrap;
+}
+
+.needsOdds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.needsCell {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--rp-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--chalk);
+  white-space: nowrap;
+}
+
+.needsLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--chalk-2);
+}
+
+.needsSettled {
+  padding: 10px 0 8px;
+  border-top: 1px solid rgba(232, 238, 244, 0.12);
+  font-size: 13.5px;
+  color: var(--chalk-2);
+}
+
 .blurred {
   filter: blur(5px);
   user-select: none;

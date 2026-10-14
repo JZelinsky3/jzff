@@ -7,7 +7,6 @@ import { SITE_URL } from '@/lib/recap/links'
 import { loadCup } from '@/lib/cup/load'
 import { loadCupExtras } from '@/lib/cup/extras'
 import { cupNotes, type CupBracket } from '@/lib/cup/bracket'
-import { trophy } from '@/lib/cup/trophy'
 import { ShareButton } from '../recap/ShareButton'
 import { CupApp } from './CupApp'
 import styles from './cup.module.css'
@@ -107,31 +106,28 @@ export default async function CupPage({ params, searchParams }: Props) {
 
   return (
     <main className={styles.page}>
-      <header className={styles.mast}>
-        <div className={styles.mastInner}>
-          <div className={styles.mastText}>
-            <p className={styles.kicker}>
-              {league.name} · {cup.season_year}
-            </p>
-            <h1 className={styles.title}>{cup.name}</h1>
-            <p className={styles.status}>{statusLine(bracket)}</p>
-            <p className={styles.meta}>
-              {bracket.field} teams · Weeks {bracket.startWeek} to {bracket.finalWeek}
-            </p>
-          </div>
-          <div className={styles.mastCup} aria-hidden>
-            {trophy({ width: 120, brass: '#c8a35b', light: '#e6cb8e', dark: '#7d6230', plate: '#0c271f' })}
-            {bracket.champion ? <span className={styles.mastChamp}>{bracket.champion.name}</span> : null}
-          </div>
-        </div>
-      </header>
+      <CupApp
+        slug={slug}
+        cupId={cup.id}
+        cupName={cup.name}
+        leagueName={league.name}
+        year={cup.season_year}
+        status={statusLine(bracket)}
+        bracket={bracket}
+        notes={cupNotes(bracket)}
+        extras={extras}
+        imageUrl={imageUrl}
+        seededThrough={cup.seeded_through}
+      />
 
-      <CupApp slug={slug} bracket={bracket} notes={cupNotes(bracket)} extras={extras} imageUrl={imageUrl} seededThrough={cup.seeded_through} />
-
+      {/* "Send to the group chat" read as the way to hand picks in, and most
+          of the league pressed it thinking they had. Picks save on the tap;
+          this only passes the link on, and says so. */}
       <footer className={styles.foot}>
+        <p className={styles.footNote}>Picks save on their own. This just shares the page.</p>
         <div className={styles.footActions}>
-          <ShareButton className={styles.btnPrimary} url={pageUrl} title={`${cup.name} · ${league.name}`} />
-          <Link className={styles.btn} href={`/leagues/${slug}/`}>
+          <ShareButton className={styles.btnGhost} url={pageUrl} title={`${cup.name} · ${league.name}`} label="Share the Cup link" />
+          <Link className={styles.btnGhost} href={`/leagues/${slug}/`}>
             View the league
           </Link>
         </div>

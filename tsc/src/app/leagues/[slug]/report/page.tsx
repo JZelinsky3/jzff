@@ -1,10 +1,15 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { loadReportCached } from '@/lib/report/cached'
+import { REPORT_WEEKS } from '@/lib/report/build'
 import { reportLeague } from './ReportPage'
 import styles from './report.module.css'
 
 export const dynamic = 'force-dynamic'
+
+function listWeeks(w: number[]): string {
+  return w.length > 1 ? `${w.slice(0, -1).join(', ')} and ${w[w.length - 1]}` : String(w[0] ?? '')
+}
 
 // /leagues/<slug>/report/ always opens the newest edition. Before the first
 // one is out it says when it will be, rather than 404ing a link that will
@@ -25,7 +30,7 @@ export default async function LatestReport({ params }: { params: Promise<{ slug:
           <h1 className={styles.title}>Progress Report</h1>
           <p className={styles.pending}>
             {r.firstWeek
-              ? `The first report comes out after week ${r.firstWeek}: playoff odds and a report card for every manager, every three weeks.`
+              ? `The first report comes out after week ${r.firstWeek}: playoff odds and a report card for every manager, after weeks ${listWeeks(REPORT_WEEKS)}.`
               : 'This season is too short for a report.'}
           </p>
           <div className={styles.actions}>

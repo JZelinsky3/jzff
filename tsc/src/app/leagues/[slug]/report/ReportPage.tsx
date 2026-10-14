@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { recapViewable } from '@/lib/recap/load'
 import { SITE_URL } from '@/lib/recap/links'
 import { TIER_PRICES } from '@/lib/stripe'
 import { loadReportCached } from '@/lib/report/cached'
-import { ordinal, type Grade, type ReportTeam, type ReportView } from '@/lib/report/build'
+import { needsLabel, needsVerdict, ordinal, type Grade, type ReportTeam, type ReportView } from '@/lib/report/build'
 import { ShareButton } from '../recap/ShareButton'
 import styles from './report.module.css'
 
@@ -71,7 +71,10 @@ export async function reportMetadata(slug: string, week: number | null): Promise
 export async function ReportPage({ slug, week, previewTier }: { slug: string; week: number; previewTier?: string | null }) {
   const league = await reportLeague(slug)
   const r = await loadReportCached(league, week)
-  if (r.status !== 'ok' || r.view.week !== week) notFound()
+  if (r.status !== 'ok') notFound()
+  // Not a report week (the 2026 week 5 edition, from before the weeks were
+  // fixed, or one that isn't out yet): the newest report instead.
+  if (r.view.week !== week) redirect(`/leagues/${slug}/report/${r.view.week}/`)
   const v = r.view
   // ?tier=free shows the free page on a paid league, outside production only.
   const paid = previewTier === 'free' && process.env.NODE_ENV !== 'production' ? false : v.tier !== 'free'
@@ -84,6 +87,10 @@ export async function ReportPage({ slug, week, previewTier }: { slug: string; we
   const seeMe = byGpa[byGpa.length - 1]
   const tickLabel = v.compareWeek ? (v.compareIsEdition ? `in the week ${v.compareWeek} report` : `after week ${v.compareWeek}`) : null
   const hasNext = v.teams.some((t) => t.next)
+  const needers = v.teams.filter((t) => t.needs)
+  const clinched = v.teams.filter((t) => t.clinched)
+  const out = v.teams.filter((t) => t.eliminated)
+  const nameOf = new Map(v.teams.map((t) => [t.managerId, t.name]))
 
   return (
     <main className={styles.page}>
@@ -227,6 +234,45 @@ export async function ReportPage({ slug, week, previewTier }: { slug: string; we
               </div>
             ))}
           </div>
+          {paid && v.bigGame ? (
+            <p className={styles.bigGame}>
+              <span className={styles.bigGameLabel}>Week {v.week + 1}&apos;s biggest game</span>
+              {nameOf.get(v.bigGame.a)} vs. {nameOf.get(v.bigGame.b)}: {v.bigGame.swing} points of playoff odds ride on it between them.
+            </p>
+          ) : null}
+          {paid && needers.length ? (
+            <div className={styles.needs}>
+              <h3 className={styles.needsTitle}>What they need</h3>
+              <p className={styles.needsSub}>
+                Playoff odds by how each team still in the race finishes the last {v.left === 1 ? 'week' : `${v.left} weeks`}.
+              </p>
+              <div className={styles.needsList}>
+                {needers.map((t) => (
+                  <div className={styles.needsRow} key={t.managerId}>
+                    <span className={styles.needsWho}>
+                      <span className={styles.needsName}>{t.name}</span>
+                      <span className={styles.needsVerdict}>{needsVerdict(t)}</span>
+                    </span>
+                    <span className={styles.needsOdds}>
+                      {t.needs!.map((x) => (
+                        <span className={styles.needsCell} key={x.wins}>
+                          <span className={styles.needsLabel}>{needsLabel(x)}</span>
+                          {fmtOdds(x.pct)}
+                        </span>
+                      ))}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {clinched.length || out.length ? (
+                <p className={styles.needsSettled}>
+                  {clinched.length ? `Clinched: ${clinched.map((t) => t.name).join(', ')}.` : ''}
+                  {clinched.length && out.length ? ' ' : ''}
+                  {out.length ? `Out: ${out.map((t) => t.name).join(', ')}.` : ''}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           {!paid ? <UpgradeLine slug={slug} what="playoff odds, how they've moved, and what next week is worth" /> : null}
         </div>
       </section>

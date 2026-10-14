@@ -432,29 +432,88 @@ html.dc-lock-active .site-grain { display: none !important; }
     font-size: .52rem; letter-spacing: .18em;
     white-space: nowrap;
 }
-/* The Cup, in its own page's board green and brass (cup.module.css).
-   Unlike the tier lines it is pinned ABOVE the app bar, at the very top
-   of the screen, and owns the notch inset; html.m-has-cup (set by
-   mobile-app.js) drops the bar below it and grows the body padding to
-   match. `html.m-has-cup body` outranks the plain `body` padding the
-   live pages (pickems, trades) set in their own <style>. */
-:root { --m-cup-h: 38px; }
-.m-tier-strip--cup {
+/* The Cup strip. Pinned ABOVE the app bar at the very top of the screen;
+   html.m-has-cup (set by mobile-app.js) drops the bar below it and grows
+   the body padding to match. `html.m-has-cup body` outranks the plain
+   `body` padding the live pages (pickems, trades) set in their own <style>.
+
+   The strip itself wears the app bar's colour (--m-chrome-bg, which the
+   themed chapters re-point), so the notch and Safari's tinted toolbar
+   match the rest of the chrome. The Cup lives on the cream ticket inside
+   it: a green stub with the trophy, the Cup's name, where it stands, and
+   "Pick now" while picks are open. Cream reads on every chapter's colour
+   (navy, draft black, records green) where the Cup's board green did not. */
+:root { --m-cup-h: 46px; }
+.m-cup-strip {
     position: fixed; top: 0; left: 0; right: 0;
     z-index: 211;
+    display: flex; align-items: center;
     height: calc(var(--m-cup-h) + env(safe-area-inset-top));
-    padding: env(safe-area-inset-top) .75rem 0;
-    background: #0c271f;
-    border-bottom: 1px solid rgba(200,163,91,.5);
-    color: #ece4ce;
-    font-size: .6rem;
-    white-space: nowrap; overflow: hidden;
+    padding: env(safe-area-inset-top) max(.6rem, env(safe-area-inset-right)) 0 max(.6rem, env(safe-area-inset-left));
+    background: var(--m-chrome-bg);
     text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
 }
-.m-tier-strip--cup .m-tier-strip-pill {
-    background: #c8a35b; color: #10251d;
-    padding: 4px 8px;
-    font-size: .56rem;
+.m-cup-ticket {
+    flex: 1; min-width: 0;
+    display: flex; align-items: center;
+    height: 34px;
+    border-radius: 9px;
+    background: #f5eedb;
+    box-shadow: 0 1px 0 rgba(255,255,255,.5) inset, 0 2px 8px rgba(0,0,0,.35);
+    overflow: hidden;
+}
+.m-cup-strip:active .m-cup-ticket { background: #ece3c9; }
+.m-cup-stub {
+    flex: none;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 100%;
+    background: #1f4a3a;
+    color: #e6cb8e;
+}
+/* Perforation between the stub and the ticket. */
+.m-cup-stub::after {
+    content: '';
+    position: absolute; top: 4px; bottom: 4px; right: -1px;
+    border-right: 2px dotted #f5eedb;
+}
+.m-cup-words {
+    flex: 1; min-width: 0;
+    display: flex; align-items: baseline; gap: .45rem;
+    padding: 0 .55rem 0 .6rem;
+    white-space: nowrap; overflow: hidden;
+}
+.m-cup-name {
+    flex: none;
+    font-family: var(--serif);
+    font-size: .98rem; line-height: 1;
+    color: #1f4a3a;
+}
+.m-cup-label {
+    min-width: 0;
+    overflow: hidden; text-overflow: ellipsis;
+    font-family: var(--sans); font-weight: 500;
+    font-size: .72rem;
+    color: #5d5a4a;
+}
+.m-cup-go {
+    flex: none;
+    margin-right: 4px;
+    padding: 6px 10px;
+    border-radius: 7px;
+    box-shadow: inset 0 0 0 1px #c4b386;
+    font-family: var(--sans); font-weight: 700;
+    font-size: .68rem; line-height: 1;
+    color: #1f4a3a;
+}
+.m-cup-go--pick {
+    background: #1f4a3a;
+    box-shadow: none;
+    color: #f5eedb;
+}
+@media (max-width: 359px) {
+    .m-cup-label { display: none; }
 }
 html.m-has-cup body {
     padding-top: calc(var(--m-cup-h) + var(--m-appbar-h) + env(safe-area-inset-top));

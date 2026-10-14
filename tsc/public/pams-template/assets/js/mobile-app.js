@@ -1086,25 +1086,50 @@
         var dc = window.__DC || {};
         var tier = dc.leagueTier;
         if (document.getElementById('dc-testing-strip')) return;
-        // While the league's Cup is running, paid leagues get the Cup here
-        // instead of the "Beta" line: one tap to the bracket from every
-        // page, nothing added to the nav. Trial and free leagues keep their
-        // tier line (it tells them something they need); their way to the
-        // Cup is the Live hub card. The Cup strip sits ABOVE the app bar,
-        // pinned to the very top; html.m-has-cup moves the bar and the
-        // body's padding down to make room (mobile-app.css).
-        if (dc.cup && dc.cup.href && tier !== 'test' && tier !== 'udfa') {
+        // While the league's Cup is running, every league gets the Cup here
+        // instead of its tier line: one tap to the bracket from every page,
+        // nothing added to the nav. Free leagues included; the Cup has no
+        // tier gate, and this strip is their only way in on a phone. It
+        // sits ABOVE the app bar, pinned to the very top; html.m-has-cup
+        // moves the bar and the body's padding down to make room
+        // (mobile-app.css).
+        //
+        // Drawn as a cream ticket with a green trophy stub, on the app
+        // bar's own colour: the notch (and Safari's tinted toolbar, which
+        // takes the colour of whatever is pinned at the top) stays the
+        // page's chrome instead of turning Cup green.
+        if (dc.cup && dc.cup.href) {
             var link = document.createElement('a');
             link.id = 'dc-testing-strip';
-            link.className = 'm-tier-strip m-tier-strip--cup';
+            link.className = 'm-cup-strip';
             link.href = dc.cup.href;
-            var pill = document.createElement('span');
-            pill.className = 'm-tier-strip-pill';
-            pill.textContent = '★ ' + dc.cup.name;
-            var text = document.createElement('span');
-            text.textContent = dc.cup.label;
-            link.appendChild(pill);
-            link.appendChild(text);
+            link.setAttribute('aria-label', dc.cup.name + ', ' + dc.cup.label + (dc.cup.picksOpen ? ', picks are open' : ''));
+            var ticket = document.createElement('span');
+            ticket.className = 'm-cup-ticket';
+            var stub = document.createElement('span');
+            stub.className = 'm-cup-stub';
+            stub.setAttribute('aria-hidden', 'true');
+            stub.innerHTML =
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' +
+                '<path d="M7 4h10v4.5a5 5 0 0 1-10 0z"/>' +
+                '<path d="M7 6H4.5a2.5 2.5 0 0 0 2.6 3.6M17 6h2.5a2.5 2.5 0 0 1-2.6 3.6M12 13.5V17M8.5 20h7M9.5 17h5"/></svg>';
+            var words = document.createElement('span');
+            words.className = 'm-cup-words';
+            var name = document.createElement('span');
+            name.className = 'm-cup-name';
+            name.textContent = dc.cup.name;
+            var label = document.createElement('span');
+            label.className = 'm-cup-label';
+            label.textContent = dc.cup.label;
+            words.appendChild(name);
+            words.appendChild(label);
+            var go = document.createElement('span');
+            go.className = 'm-cup-go' + (dc.cup.picksOpen ? ' m-cup-go--pick' : '');
+            go.textContent = dc.cup.picksOpen ? 'Pick now' : 'Bracket';
+            ticket.appendChild(stub);
+            ticket.appendChild(words);
+            ticket.appendChild(go);
+            link.appendChild(ticket);
             document.body.insertBefore(link, document.body.firstChild);
             document.documentElement.classList.add('m-has-cup');
             return;

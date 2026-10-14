@@ -1,12 +1,13 @@
 // The Progress Report: the playoff race and a report card for every
-// manager, every three weeks of the regular season.
+// manager, five times a regular season.
 //
-// Editions fall every three weeks counting back from the last regular-season
-// week, so the last one is always the final report card (pams, 14 weeks:
-// 5, 8, 11, 14). Nothing is stored: an edition is rebuilt from the scores
-// through its week, and the odds come from the same seeded simulator the
-// power rankings use (lib/powerSim), so the same scores always give the
-// same numbers and an old edition still reads as it did.
+// Editions come out after the same weeks every season (REPORT_WEEKS), and
+// the last one is the final report card. Nothing is stored: an edition is
+// rebuilt from the scores through its week, and the odds come from the same
+// seeded simulator the power rankings use (lib/powerSim), so the same scores
+// always give the same numbers and an old edition still reads as it did.
+// Late in the season the race adds what each team needs: its odds by how
+// many of the remaining games it wins.
 //
 // Grades are on the league's curve, from where a manager ranks this season:
 //   Scoring       points per game
@@ -24,14 +25,19 @@ import { leagueName } from '@/lib/pamsNames'
 import { getLockReason } from '@/lib/leagueTier'
 import { recapTierFor, type RecapTier } from '@/lib/recap/facts'
 
-export const REPORT_EVERY = 3
-const FIRST_REPORT_MIN_WEEK = 4
+// The weeks a report comes out after, every season (Joey, 2026-10-14). A
+// league whose regular season ends sooner gets the ones inside it. There is
+// no report in the playoffs.
+export const REPORT_WEEKS = [4, 6, 9, 11, 13]
+// With this many regular-season weeks left or fewer, the race adds what
+// each team needs.
+const NEEDS_WEEKS_LEFT = 3
+// An outcome that comes up in fewer runs than this is too rare to quote.
+const NEEDS_MIN_SHARE = 0.03
 const RUNS = 8000 // same as the power rankings, so the odds match that page
 
 export function reportWeeks(lastRegularWeek: number): number[] {
-  const out: number[] = []
-  for (let w = lastRegularWeek; w >= FIRST_REPORT_MIN_WEEK; w -= REPORT_EVERY) out.unshift(w)
-  return out
+  return REPORT_WEEKS.filter((w) => w <= lastRegularWeek)
 }
 
 export type Grade = { letter: string; points: number }
@@ -56,7 +62,10 @@ export type ReportTeam = {
   eliminated: boolean
   projW: number
   projL: number
-  next: { opponent: string; ifWin: number; ifLoss: number } | null
+  next: { opponentId: string; opponent: string; ifWin: number; ifLoss: number } | null
+  // Late in the season: playoff odds by remaining games won (wins of `of`),
+  // most wins first. Only for teams still in the race.
+  needs: { wins: number; of: number; pct: number }[] | null
   expectedWins: number
   luck: number
   lineup: { actual: number; optimal: number; pct: number; left: number } | null
@@ -79,6 +88,11 @@ export type ReportView = {
   nextEdition: number | null
   playoffTeams: number
   lastRegularWeek: number
+  // Regular-season weeks still to play after this one.
+  left: number
+  // Next week's game with the most playoff odds riding on it, by both
+  // teams' win/lose swing added together. Null when nothing much rides on any.
+  bigGame: { a: string; b: string; swing: number } | null
   tier: RecapTier
   teams: ReportTeam[]
 }
@@ -284,9 +298,11 @@ export async function loadReport(
   }
   const remainingAfter = (w: number) =>
     games.filter((g) => g.week > w && g.week < playoffStart).map(({ a, b }) => ({ a, b }))
-  const simAt = (w: number, withNext: boolean) => {
+  const left = lastRegularWeek - week
+  const withNeeds = left > 0 && left <= NEEDS_WEEKS_LEFT
+  const simAt = (w: number, edition: boolean) => {
     const played = playedThrough(w)
-    const next = withNext && w + 1 < playoffStart ? (byWeek.get(w + 1) ?? []).map(({ a, b }) => ({ a, b })) : undefined
+    const next = edition && w + 1 < playoffStart ? (byWeek.get(w + 1) ?? []).map(({ a, b }) => ({ a, b })) : undefined
     return simulateSeason(simTeamsFor(played), remainingAfter(w), {
       playoffTeams,
       byeTeams,
@@ -294,11 +310,12 @@ export async function loadReport(
       played,
       format: playoffFormat,
       ...(next ? { next } : {}),
+      ...(edition && withNeeds ? { byWins: true } : {}),
     })
   }
 
   // Odds through every week up to this edition (the sparkline), with next
-  // week's swing on the edition itself.
+  // week's swing (and, late on, the odds by wins) on the edition itself.
   const oddsByWeek = new Map<number, ReturnType<typeof simAt>>()
   for (let w = 1; w <= week; w++) oddsByWeek.set(w, simAt(w, w === week))
   const now = oddsByWeek.get(week)!
@@ -401,6 +418,15 @@ export async function loadReport(
     const weight = parts.reduce((sum, [, w]) => sum + w, 0)
     const gpa = parts.reduce((sum, [g, w]) => sum + g.points * w, 0) / weight
     const nextGame = (byWeek.get(week + 1) ?? []).find((g) => g.a === t.id || g.b === t.id)
+    const opponentId = nextGame ? (nextGame.a === t.id ? nextGame.b : nextGame.a) : null
+    const of = p?.by_wins?.length ? Math.max(...p.by_wins.map((b) => b.wins)) : 0
+    const needs =
+      p?.by_wins && !p.clinched_playoff && !p.eliminated
+        ? p.by_wins
+            .filter((b) => b.share >= NEEDS_MIN_SHARE)
+            .map((b) => ({ wins: b.wins, of, pct: b.pct }))
+            .sort((x, y) => y.wins - x.wins)
+        : null
     return {
       managerId: t.id,
       name: nameOf(t.id),
@@ -420,9 +446,10 @@ export async function loadReport(
       projW: p?.proj_wins ?? s.startWins,
       projL: p?.proj_losses ?? s.startLosses,
       next:
-        nextGame && week + 1 < playoffStart && p?.if_win_pct != null && p.if_loss_pct != null
-          ? { opponent: nameOf(nextGame.a === t.id ? nextGame.b : nextGame.a), ifWin: p.if_win_pct, ifLoss: p.if_loss_pct }
+        opponentId && week + 1 < playoffStart && p?.if_win_pct != null && p.if_loss_pct != null
+          ? { opponentId, opponent: nameOf(opponentId), ifWin: p.if_win_pct, ifLoss: p.if_loss_pct }
           : null,
+      needs: needs && needs.length >= 2 ? needs : null,
       expectedWins: Math.round(expectedWins * 10) / 10,
       luck: Math.round((s.startWins + s.startTies / 2 - expectedWins) * 10) / 10,
       lineup: lineupOf.get(t.id) ?? null,
@@ -440,8 +467,18 @@ export async function loadReport(
   teams.sort((a, b) => b.odds - a.odds || a.seed - b.seed)
   for (const t of teams) t.comment = commentFor(t, teams, { compareWeek, compareIsEdition: prevEdition != null, week, playoffTeams })
 
+  // Next week's biggest game: both sides' swing added up.
+  const byId = new Map(teams.map((t) => [t.managerId, t]))
+  let bigGame: ReportView['bigGame'] = null
+  for (const t of teams) {
+    const o = t.next ? byId.get(t.next.opponentId) : undefined
+    if (!t.next || !o?.next || t.managerId > o.managerId) continue
+    const swing = Math.round(t.next.ifWin - t.next.ifLoss + (o.next.ifWin - o.next.ifLoss))
+    if (swing >= 30 && (!bigGame || swing > bigGame.swing)) bigGame = { a: t.managerId, b: o.managerId, swing }
+  }
+
   const lock = await getLockReason(league.id, league.owner_id)
-  const final = week === lastRegularWeek
+  const final = week === editions[editions.length - 1]
   return {
     status: 'ok',
     view: {
@@ -456,6 +493,8 @@ export async function loadReport(
       nextEdition: editions.find((w) => w > week) ?? null,
       playoffTeams,
       lastRegularWeek,
+      left,
+      bigGame,
       tier: recapTierFor(lock),
       teams,
     },
@@ -586,6 +625,31 @@ function commentFor(
     if (out.length === 2) break
   }
   return out
+}
+
+// ── What they need ────────────────────────────────────────────────────────
+//
+// Shared by the page and the email. The odds are the sim's, so a team is
+// never called "in" here: only the race's Clinched tag says that.
+
+export function needsLabel(x: { wins: number; of: number }): string {
+  if (x.of === 1) return x.wins ? 'Win' : 'Lose'
+  if (x.wins === x.of) return 'Win out'
+  if (x.wins === 0) return 'Lose out'
+  return `${x.wins}-${x.of - x.wins}`
+}
+
+// The fewest wins that make them more likely in than out.
+export function needsVerdict(t: ReportTeam): string | null {
+  const n = t.needs
+  if (!n?.length) return null
+  const of = n[0]!.of
+  const asc = [...n].sort((a, b) => a.wins - b.wins)
+  const enough = asc.find((x) => x.pct >= 50)
+  if (!enough) return 'Needs help'
+  if (enough.wins === 0) return asc[0]!.pct >= 85 ? 'Nearly safe' : 'In good shape'
+  if (enough.wins === of) return of === 1 ? 'Must win' : 'Has to win out'
+  return `Needs ${enough.wins} of ${of}`
 }
 
 export function ordinal(n: number): string {

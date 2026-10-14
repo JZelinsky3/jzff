@@ -26,7 +26,8 @@
 import { TIER_PRICES } from '@/lib/stripe'
 import { editionDate, ordinal, pts, recapSections, roman, type RecapFacts, type RecapGame } from './facts'
 import { poss, writeEdition } from './story'
-import type { ReportTeaser } from '@/lib/report/teaser'
+import type { CupTeaser } from '@/lib/cup/teaser'
+import { cupBlock } from '@/lib/cup/emailBlock'
 
 const C = {
   desk: '#ddd4bf',
@@ -52,18 +53,6 @@ const C = {
   greenMute: '#a3b2a3',
   greenRule: '#3e5f4e',
   gold: '#d8b45e',
-  // The Progress Report, on report weeks: its page's navy board, chalk ink
-  // and red pen. Dark like Coming Up, so Gmail's dark theme leaves it be.
-  board: '#13233a',
-  boardCard: '#1b2f4c',
-  chalk: '#e8eef4',
-  chalkMute: '#aebdcd',
-  boardRule: '#33496a',
-  bar: '#8db6dc',
-  barTrack: '#24395a',
-  pen: '#c23a2c',
-  up: '#6cc59a',
-  down: '#f08a78',
 }
 const SERIF = "Georgia,'Times New Roman',serif"
 const SANS = 'Arial,Helvetica,sans-serif'
@@ -296,7 +285,8 @@ export function renderRecapEmail(
   subject: string,
   links: RecapEmailLinks,
   audience: RecapAudience = 'owner',
-  report: ReportTeaser | null = null,
+  // The Cup's block, on the weeks it runs (lib/cup/teaser).
+  cup: CupTeaser | null = null,
 ): { html: string; text: string } {
   const show = recapSections(f.tier)
   const rows: string[] = []
@@ -349,9 +339,6 @@ ${front.deck ? `<div style="font-family:${SERIF}; font-style:italic; font-size:1
     '',
   )
 
-  // ── The Progress Report, on the weeks one comes out ──
-  if (report) rows.push(...reportBlock(report, text, show.paid))
-
   // ── Final scores: two columns, winner on top ──
   rows.push(flagHead('Results', 'Final Scores', { ink: C.ink, flag: C.red, onFlag: '#ffffff', bg: C.games }))
   text.push('FINAL SCORES')
@@ -388,6 +375,9 @@ ${right.length ? `<td class="${stack} sc2" width="50%" valign="top" style="paddi
 </tr></table>
 </td></tr>`)
   text.push('')
+
+  // ── The Cup, on the weeks it runs (every tier: the Cup has no paywall) ──
+  if (cup) rows.push(...cupBlock(cup, text))
 
   // ── Quick hits ──
   const hits = quickHits(f, show.paid, [front.headline, front.deck ?? '', teaser].join(' '))
@@ -556,62 +546,6 @@ ${rows.join('\n')}
 </html>`
 
   return { html, text: text.join('\n') }
-}
-
-// The top of the playoff race and the honor roll, then the way in. Playoff
-// odds are paid everywhere on the site, so the free block is the grades
-// alone: the honor roll and the bottom of the class.
-function reportBlock(r: ReportTeaser, text: string[], paid: boolean): string[] {
-  const odds = (n: number) => (n >= 99.95 ? '100%' : n > 99 ? '>99%' : n > 0 && n < 1 ? '<1%' : `${Math.round(n)}%`)
-  const change = (d: number | null) =>
-    d == null || d === 0
-      ? `<span style="color:${C.chalkMute};">${d == null ? '' : '0'}</span>`
-      : `<span style="color:${d > 0 ? C.up : C.down};">${d > 0 ? '&#9650;' : '&#9660;'}&nbsp;${Math.abs(d)}</span>`
-  const lead = paid
-    ? `Playoff odds and a report card for all ${r.teams} managers, through week ${r.week}.`
-    : `A report card for all ${r.teams} managers, through week ${r.week}.`
-  const mover = paid && r.mover
-    ? ` ${r.mover.name} is ${r.mover.change > 0 ? 'up' : 'down'} ${Math.abs(r.mover.change)} points since ${r.since}, to ${odds(r.mover.odds)}.`
-    : ''
-  const raceRows = r.rows
-    .map((t, i) => {
-      const w = Math.max(2, Math.min(100, Math.round(t.odds)))
-      return `<tr>
-<td style="padding:8px 0;${i ? ` border-top:1px solid ${C.boardRule};` : ''} font-family:${SERIF}; font-size:15px; line-height:1.2; color:${C.chalk}; white-space:nowrap;">${esc(t.name)}<br><span style="font-family:${SANS}; font-size:11px; color:${C.chalkMute};">${esc(t.record)}</span></td>
-<td width="45%" style="padding:8px 10px;${i ? ` border-top:1px solid ${C.boardRule};` : ''}">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.barTrack}" style="background-color:${C.barTrack};"><tr><td width="${w}%" bgcolor="${C.bar}" style="background-color:${C.bar}; height:9px; line-height:9px; font-size:1px;">&nbsp;</td>${w < 100 ? `<td style="height:9px; line-height:9px; font-size:1px;">&nbsp;</td>` : ''}</tr></table>
-</td>
-<td align="right" style="padding:8px 0;${i ? ` border-top:1px solid ${C.boardRule};` : ''} font-family:${SANS}; font-size:14px; font-weight:bold; color:${C.chalk}; white-space:nowrap;">${odds(t.odds)}</td>
-<td align="right" style="padding:8px 0 8px 10px;${i ? ` border-top:1px solid ${C.boardRule};` : ''} font-family:${SANS}; font-size:12px; font-weight:bold; white-space:nowrap;">${change(t.change)}</td>
-</tr>`
-    })
-    .join('')
-  const honor = r.honor.map((h) => `${esc(h.name)} <span style="color:${C.down}; font-family:${SERIF}; font-style:italic; font-weight:bold;">${esc(h.letter)}</span>`).join(', ')
-  const last = !paid && r.last
-    ? `<div style="font-family:${SERIF}; font-size:15px; line-height:1.5; color:${C.chalk}; padding-top:8px;"><span style="font-family:${SANS}; font-size:10px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:${C.down};">See me after class</span> &nbsp;${esc(r.last.name)} <span style="color:${C.down}; font-family:${SERIF}; font-style:italic; font-weight:bold;">${esc(r.last.letter)}</span></div>`
-    : ''
-  text.push(
-    `${r.title.toUpperCase()}, NO. ${r.edition} OF ${r.of}`,
-    `${lead}${mover}`,
-    ...(paid ? r.rows.map((t) => `${t.name} (${t.record}): ${odds(t.odds)}${t.change ? ` (${t.change > 0 ? '+' : ''}${t.change})` : ''}`) : []),
-    `Honor roll: ${r.honor.map((h) => `${h.name} ${h.letter}`).join(', ')}`,
-    ...(!paid && r.last ? [`See me after class: ${r.last.name} ${r.last.letter}`] : []),
-    `Read the report cards: ${r.url}`,
-    '',
-  )
-  return [
-    flagHead(`No. ${r.edition} of ${r.of}`, r.title, { ink: C.chalk, flag: C.pen, onFlag: '#ffffff', bg: C.board }),
-    `<tr><td class="pad" bgcolor="${C.board}" style="background-color:${C.board}; padding:8px 32px 26px;">
-<div style="font-family:${SERIF}; font-style:italic; font-size:16px; line-height:1.5; color:${C.chalkMute};">${esc(lead)}${esc(mover)}</div>
-${paid ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.boardCard}" style="background-color:${C.boardCard}; border:1px solid ${C.boardRule}; margin-top:14px;"><tr><td style="padding:6px 16px;">
-<div style="font-family:${SANS}; font-size:10px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:${C.chalkMute}; padding:6px 0 4px;">The playoff race &middot; top ${r.rows.length} of ${r.teams}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${raceRows}</table>
-</td></tr></table>` : ''}
-<div style="font-family:${SERIF}; font-size:15px; line-height:1.5; color:${C.chalk}; padding-top:14px;"><span style="font-family:${SANS}; font-size:10px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:${C.down};">Honor roll</span> &nbsp;${honor}</div>
-${last}
-<div style="padding-top:14px; font-family:${SANS}; font-size:12px; font-weight:bold; letter-spacing:1px; text-transform:uppercase;"><a href="${esc(r.url)}" style="color:${C.chalk}; text-decoration:underline;">Read all ${r.teams} report cards</a></div>
-</td></tr>`,
-  ]
 }
 
 // ── Mailing list confirmation ─────────────────────────────────────────────
