@@ -1807,11 +1807,19 @@
   text-align: right;
 }
 
-/* Your team, wherever it is in the draw. */
+/* Your team, wherever it is in the draw. Rounded on the card's outer edge,
+   square on the side it shares with the opponent. */
 .mMine {
-  border-radius: 5px;
   background: #f0dca8;
   box-shadow: inset 0 0 0 1.5px var(--brass);
+}
+
+.mMine:first-child {
+  border-radius: 6px 6px 0 0;
+}
+
+.mMine:last-child {
+  border-radius: 0 0 6px 6px;
 }
 
 .mName,
@@ -1829,6 +1837,7 @@
 
 .mTbd {
   grid-column: 1 / -1;
+  text-align: center;
   font-size: 10px;
   font-style: italic;
   color: var(--ink-3);
@@ -2004,14 +2013,33 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
-  padding: 12px 8px 12px;
+  padding: 10px 8px;
   border-radius: 14px;
   background: var(--paper);
   color: var(--ink);
   text-align: center;
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.3);
+}
+
+/* 2nd and 3rd: the seed sits beside the name, so the ticket is four short
+   lines rather than five. */
+.podWho {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.pod .medal {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-width: 1.5px;
+  font-size: 13px;
 }
 
 /* The favourite reads left to right: medal, label over name over path,
@@ -2033,10 +2061,16 @@
     linear-gradient(160deg, #ecd9a6, #d9bf83);
 }
 
+/* The favourite places the medal and name in its own grid. */
+.podFirst .podWho {
+  display: contents;
+}
+
 .podFirst .medal {
   grid-area: medal;
   width: 44px;
   height: 44px;
+  border-width: 2px;
   font-size: 22px;
 }
 
@@ -2094,7 +2128,7 @@
 
 .podPct {
   font-family: var(--cp-num);
-  font-size: 34px;
+  font-size: 30px;
   font-weight: 700;
   line-height: 1;
   color: var(--green);
@@ -2668,6 +2702,448 @@
   text-transform: uppercase;
   text-decoration: none;
   color: var(--mute);
+}
+
+/* ── The reveal: a round's results, once ─────────────────
+   The whole screen is the board. Each game is dealt in as a ticket, its
+   winner stamped and its loser struck through, then your pick is marked
+   on the stub. Delays come in as --d (ms) from CupApp. */
+
+.rv {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background:
+    radial-gradient(90% 46% at 50% 0%, rgba(200, 163, 91, 0.22), rgba(200, 163, 91, 0) 70%),
+    var(--board);
+  color: var(--ivory);
+  -webkit-overflow-scrolling: touch;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.rvInner {
+  position: relative;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: calc(22px + env(safe-area-inset-top)) var(--gutter) calc(28px + env(safe-area-inset-bottom));
+}
+
+.rvX {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  right: var(--gutter);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1.5px solid var(--bline-2);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ivory) !important;
+  cursor: pointer;
+}
+
+.rvStep {
+  animation: rvUp 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes rvUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+.rvKicker {
+  padding-right: 48px;
+  font-family: var(--cp-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.rvTitle {
+  margin-top: 8px !important;
+  padding-right: 36px;
+  font-family: var(--cp-display);
+  font-size: 36px;
+  font-weight: 400;
+  line-height: 1.05;
+  color: var(--ivory);
+  text-wrap: balance;
+}
+
+.rvChamp {
+  color: var(--brass-hi);
+}
+
+.rvSub {
+  margin-top: 8px !important;
+  font-size: 14.5px;
+  color: var(--ivory-2);
+}
+
+/* The final: the trophy rises out of its glow. */
+.rvHero {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin: 14px 0 4px;
+}
+
+.rvHero svg {
+  position: relative;
+  animation: rvLift 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: 120ms;
+}
+
+.rvHalo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230, 203, 142, 0.4), rgba(230, 203, 142, 0) 65%);
+  transform: translate(-50%, -50%);
+  animation: rvGlow 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes rvLift {
+  from {
+    opacity: 0;
+    transform: translateY(26px) scale(0.9);
+  }
+}
+
+@keyframes rvGlow {
+  from {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.04);
+  }
+}
+
+.rvGames {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px !important;
+}
+
+.rvGame {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.3);
+  animation: rvDeal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+/* With a name chosen, the stub on the right carries your pick. */
+.rvGameStub {
+  grid-template-columns: minmax(0, 1fr) 60px;
+}
+
+@keyframes rvDeal {
+  from {
+    opacity: 0;
+    transform: translateY(18px) rotate(-1.2deg) scale(0.97);
+  }
+}
+
+.rvRows {
+  min-width: 0;
+}
+
+.rvRow {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  height: 46px;
+  padding: 0 12px;
+}
+
+.rvRow + .rvRow {
+  border-top: 1px solid var(--pline);
+}
+
+.rvName {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-family: var(--cp-display);
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.rvNameText {
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.rvScore {
+  font-family: var(--cp-num);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.rvWon .rvScore {
+  color: var(--green);
+}
+
+.rvLost {
+  animation: rvDim 0.4s ease-out both;
+  animation-delay: calc(var(--d, 0ms) + 650ms);
+}
+
+@keyframes rvDim {
+  to {
+    opacity: 0.45;
+  }
+}
+
+.rvLost .rvNameText::after {
+  content: '';
+  position: absolute;
+  top: 55%;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: rvStrike 0.35s ease-out forwards;
+  animation-delay: calc(var(--d, 0ms) + 650ms);
+}
+
+@keyframes rvStrike {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.rvThrough,
+.rvUpset {
+  flex-shrink: 0;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-family: var(--cp-num);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  animation: rvStamp 0.35s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  animation-delay: calc(var(--d, 0ms) + 450ms);
+}
+
+.rvThrough {
+  background: var(--green);
+  color: var(--paper);
+}
+
+.rvUpset {
+  background: var(--pred);
+  color: #fff;
+}
+
+@keyframes rvStamp {
+  from {
+    opacity: 0;
+    transform: scale(1.6) rotate(-6deg);
+  }
+}
+
+.rvMark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-left: 1.5px dashed var(--pline-2);
+  background: var(--paper-2);
+}
+
+.rvMarkDot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  animation: rvStamp 0.35s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  animation-delay: calc(var(--d, 0ms) + 900ms);
+}
+
+.rvHit .rvMarkDot {
+  background: var(--right);
+  color: #fff;
+}
+
+.rvMiss .rvMarkDot {
+  background: var(--wrong-bg);
+  color: var(--wrong);
+}
+
+.rvMarkPts {
+  font-family: var(--cp-num);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  animation: rvUp 0.3s ease-out both;
+  animation-delay: calc(var(--d, 0ms) + 1000ms);
+}
+
+.rvHit .rvMarkPts {
+  color: var(--right);
+}
+
+.rvMiss .rvMarkPts {
+  color: var(--wrong);
+}
+
+.rvMarkNone {
+  font-family: var(--cp-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  line-height: 1.3;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.rvTeam {
+  margin-top: 16px !important;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--board-2);
+  box-shadow: inset 0 0 0 1px var(--bline);
+  font-size: 14.5px;
+  color: var(--ivory);
+}
+
+.rvTeam > span {
+  display: block;
+  margin-bottom: 3px;
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+/* Your round, on the golden ticket: what you got right and the points. */
+.rvYou {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background:
+    radial-gradient(90% 120% at 100% 0%, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 55%),
+    linear-gradient(160deg, #ecd9a6, #d9bf83);
+  color: #14301f;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+}
+
+.rvYouText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rvYouLabel {
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #4a4a2a;
+}
+
+.rvYouMain {
+  font-family: var(--cp-display);
+  font-size: 22px;
+  line-height: 1.15;
+}
+
+.rvYouLine {
+  font-size: 13px;
+  color: #3d3f26;
+}
+
+.rvYouPts {
+  font-family: var(--cp-num);
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: right;
+  color: var(--green);
+}
+
+.rvYouPts small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #4a4a2a;
+}
+
+.rvNote {
+  margin-top: 14px !important;
+  font-size: 14px;
+  text-align: center;
+  color: var(--ivory-2);
+}
+
+.rvNote b {
+  color: var(--ivory);
+}
+
+.rvActions {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv,
+  .rv *,
+  .rv *::after {
+    animation: none !important;
+  }
+
+  .rvLost {
+    opacity: 0.45;
+  }
+
+  .rvLost .rvNameText::after {
+    transform: scaleX(1);
+  }
 }
 
 /* ── Wider screens ──────────────────────────────────────── */

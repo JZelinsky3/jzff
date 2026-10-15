@@ -68,7 +68,7 @@ function ordinal(n: number): string {
   return `${n}${s[(v - 20) % 10] || s[v] || s[0]}`
 }
 
-type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ year?: string; preview?: string }> }
+type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ year?: string; preview?: string; reveal?: string }> }
 
 // ?year= opens a past season's Cup; the newest one otherwise.
 async function yearOf(searchParams: Props['searchParams']): Promise<number | null> {
@@ -148,6 +148,10 @@ export default async function CupPage({ params, searchParams }: Props) {
         extras={extras}
         imageUrl={imageUrl}
         seededThrough={cup.seeded_through}
+        currentWeek={view.currentWeek}
+        // ?reveal=1 replays the latest round's results reveal (how to see it
+        // again, or check it before anyone else does).
+        forceReveal={(await searchParams).reveal === '1'}
       />
 
       {/* "Send to the group chat" read as the way to hand picks in, and most
