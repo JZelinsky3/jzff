@@ -35,9 +35,22 @@ export type StampId =
 // pick: round seal. team: rectangular postmark. fun: oval. A different
 // shape per set, so a stamp book reads by structure, not just colour.
 export type StampSet = 'pick' | 'team' | 'fun'
-export type StampInk = 'red' | 'green' | 'brass' | 'slate'
 
-export type StampDef = { id: StampId; name: string; set: StampSet; ink: StampInk; how: string }
+// The colour says how many times you've earned it, all-time: bronze, then
+// silver, then gold (Joey, 2026-10-16). Each stamp has its own counts, set
+// by how often it can come up, so a common one (an upset called, a close
+// win) takes years to reach gold and a rare one (a title) doesn't need ten.
+export type StampTier = 'bronze' | 'silver' | 'gold'
+export const TIER_NAMES: Record<StampTier, string> = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold' }
+
+export type StampDef = {
+  id: StampId
+  name: string
+  set: StampSet
+  how: string
+  // Times earned for bronze, silver, gold.
+  tiers: [number, number, number]
+}
 
 // Under this margin a win is a Close Shave.
 export const CLOSE_SHAVE_PTS = 3
@@ -47,27 +60,42 @@ const CROWD_SHARE = 0.25
 const CROWD_MIN = 3
 
 export const STAMPS: StampDef[] = [
-  { id: 'every-game', name: 'Every Game', set: 'pick', ink: 'red', how: 'Pick every game in a Cup.' },
-  { id: 'perfect-round', name: 'Perfect Round', set: 'pick', ink: 'red', how: 'Get every pick right in a round.' },
-  { id: 'called-upset', name: 'Called the Upset', set: 'pick', ink: 'red', how: `Pick a winner seeded ${UPSET_GAP} or more spots lower, and be right.` },
-  { id: 'against-crowd', name: 'Against the Crowd', set: 'pick', ink: 'red', how: 'Be right on a pick less than a quarter of the league made.' },
-  { id: 'called-it', name: 'Called It', set: 'pick', ink: 'brass', how: 'Pick the champion before round one.' },
-  { id: 'perfect-cup', name: 'Perfect Cup', set: 'pick', ink: 'brass', how: 'Every pick right, every round, in one Cup.' },
-  { id: 'challenge-winner', name: 'Challenge Winner', set: 'pick', ink: 'brass', how: 'Win the bracket challenge.' },
-  { id: 'champion', name: 'Champion', set: 'team', ink: 'brass', how: 'Win the Cup.' },
-  { id: 'finalist', name: 'Finalist', set: 'team', ink: 'green', how: 'Reach the final and lose it.' },
-  { id: 'giant-killer', name: 'Giant Killer', set: 'team', ink: 'green', how: `Beat a team seeded ${GIANT_KILLER_GAP} or more spots higher.` },
-  { id: 'cinderella', name: 'Cinderella', set: 'team', ink: 'green', how: 'Reach the semifinals from the bottom third of the seeds.' },
-  { id: 'cup-high', name: 'Cup High', set: 'team', ink: 'green', how: 'Put up the top score of the whole Cup.' },
-  { id: 'close-shave', name: 'Close Shave', set: 'team', ink: 'green', how: `Win a game by less than ${CLOSE_SHAVE_PTS} points.` },
-  { id: 'double', name: 'The Double', set: 'team', ink: 'brass', how: 'Win the Cup and the league title in the same season.' },
-  { id: 'repeat', name: 'Repeat', set: 'team', ink: 'brass', how: 'Win the Cup two years running.' },
-  { id: 'bye-and-out', name: 'Bye and Out', set: 'fun', ink: 'slate', how: 'Get a bye, then lose your first game.' },
-  { id: 'traitor', name: 'Traitor', set: 'fun', ink: 'slate', how: 'Pick against your own team.' },
-  { id: 'jinxed', name: 'Jinxed', set: 'fun', ink: 'slate', how: 'Your champion pick goes out in their first game.' },
+  { id: 'every-game', name: 'Every Game', set: 'pick', how: 'Pick every game in a Cup.', tiers: [1, 3, 6] },
+  { id: 'perfect-round', name: 'Perfect Round', set: 'pick', how: 'Get every pick right in a round.', tiers: [1, 4, 8] },
+  { id: 'called-upset', name: 'Called the Upset', set: 'pick', how: `Pick an upset by ${UPSET_GAP} or more seeds and be right.`, tiers: [1, 5, 10] },
+  { id: 'against-crowd', name: 'Against the Crowd', set: 'pick', how: 'Be right on a pick less than a quarter of the league made.', tiers: [1, 5, 10] },
+  { id: 'called-it', name: 'Called It', set: 'pick', how: 'Pick the champion before round one.', tiers: [1, 2, 4] },
+  { id: 'perfect-cup', name: 'Perfect Cup', set: 'pick', how: 'Every pick right, every round, in one Cup.', tiers: [1, 2, 3] },
+  { id: 'challenge-winner', name: 'Challenge Winner', set: 'pick', how: 'Win the bracket challenge.', tiers: [1, 2, 4] },
+  { id: 'champion', name: 'Champion', set: 'team', how: 'Win the Cup.', tiers: [1, 2, 4] },
+  { id: 'finalist', name: 'Finalist', set: 'team', how: 'Reach the final and lose it.', tiers: [1, 3, 5] },
+  { id: 'giant-killer', name: 'Giant Killer', set: 'team', how: `Beat a team seeded ${GIANT_KILLER_GAP} or more spots higher.`, tiers: [1, 3, 6] },
+  { id: 'cinderella', name: 'Cinderella', set: 'team', how: 'Reach the semifinals from the bottom third of the seeds.', tiers: [1, 2, 3] },
+  { id: 'cup-high', name: 'Cup High', set: 'team', how: 'Put up the top score of the whole Cup.', tiers: [1, 2, 4] },
+  { id: 'close-shave', name: 'Close Shave', set: 'team', how: `Win a game by less than ${CLOSE_SHAVE_PTS} points.`, tiers: [1, 5, 10] },
+  { id: 'double', name: 'The Double', set: 'team', how: 'Win the Cup and the league title in the same season.', tiers: [1, 2, 3] },
+  { id: 'repeat', name: 'Repeat', set: 'team', how: 'Win the Cup two years running.', tiers: [1, 2, 3] },
+  { id: 'bye-and-out', name: 'Bye and Out', set: 'fun', how: 'Get a bye, then lose your first game.', tiers: [1, 2, 4] },
+  { id: 'traitor', name: 'Traitor', set: 'fun', how: 'Pick against your own team.', tiers: [1, 5, 10] },
+  { id: 'jinxed', name: 'Jinxed', set: 'fun', how: 'Your champion pick goes out in their first game.', tiers: [1, 3, 5] },
 ]
 
 export const STAMP_BY_ID = new Map(STAMPS.map((s) => [s.id, s]))
+
+export function stampTier(def: StampDef, count: number): StampTier | null {
+  if (count >= def.tiers[2]) return 'gold'
+  if (count >= def.tiers[1]) return 'silver'
+  if (count >= def.tiers[0]) return 'bronze'
+  return null
+}
+
+// How many more for the next colour, or null at gold.
+export function nextTier(def: StampDef, count: number): { tier: StampTier; need: number } | null {
+  if (count < def.tiers[0]) return { tier: 'bronze', need: def.tiers[0] - count }
+  if (count < def.tiers[1]) return { tier: 'silver', need: def.tiers[1] - count }
+  if (count < def.tiers[2]) return { tier: 'gold', need: def.tiers[2] - count }
+  return null
+}
 
 export const STAMP_SETS: { set: StampSet; name: string }[] = [
   { set: 'pick', name: 'Picking' },

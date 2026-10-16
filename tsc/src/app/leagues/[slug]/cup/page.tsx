@@ -10,9 +10,11 @@ import { loadLeagueCups } from '@/lib/cup/history'
 import { cupNotes, CUP_MAX_FIELD, type CupBracket } from '@/lib/cup/bracket'
 import { loadCupPreview, type CupPreview } from '@/lib/cup/preview'
 import { CUP_LAUNCH, drawDayText } from '@/lib/cup/launch'
+import { DEMO_ALMANAC, DEMO_CUP_LEAGUE, demoCupExtras, demoCupPreview, demoCupView, demoLeagueCups, isDemoCup } from '@/lib/cup/demo'
 import { ShareButton } from '../recap/ShareButton'
 import { CupApp } from './CupApp'
 import { CupPreviewPage } from './CupPreview'
+import { DemoLaunch } from './DemoLaunch'
 import styles from './cup.module.css'
 
 export const dynamic = 'force-dynamic'
@@ -30,6 +32,8 @@ export const dynamic = 'force-dynamic'
 // way in.
 
 async function loadLeague(slug: string) {
+  // The demo league has no row; its Cups come from lib/cup/demo.ts.
+  if (isDemoCup(slug)) return DEMO_CUP_LEAGUE
   if (!/^[a-z0-9-]{1,80}$/.test(slug)) notFound()
   const db = createAdminClient()
   const { data } = await db.from('leagues').select('id, name, slug, owner_id, published_at').eq('slug', slug).maybeSingle()
@@ -81,16 +85,22 @@ async function yearOf(searchParams: Props['searchParams']): Promise<number | nul
 // preview (countdown to the draw, the bracket as today's standings would
 // draw it) instead of a 404. A Cup from an earlier year doesn't count.
 // ?preview=1 shows it on any league, Cup or not (how pams sees it).
+// The demo's own Cup is running, so it shows the preview only when asked.
 async function previewFor(leagueId: string, askedYear: number | null, view: Awaited<ReturnType<typeof loadCup>>, force: boolean): Promise<CupPreview | null> {
   if (askedYear || (!force && view && view.cup.season_year >= CUP_LAUNCH.year)) return null
+  if (isDemoCup(leagueId)) return force ? demoCupPreview() : null
   return loadCupPreview(leagueId)
+}
+
+function cupOf(leagueId: string, year: number | null) {
+  return isDemoCup(leagueId) ? Promise.resolve(demoCupView(year)) : loadCup(leagueId, year)
 }
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug } = await params
   const year = await yearOf(searchParams)
   const league = await loadLeague(slug)
-  const view = await loadCup(league.id, year)
+  const view = await cupOf(league.id, year)
   const preview = await previewFor(league.id, year, view, (await searchParams).preview === '1')
   if (preview) {
     const title = `${CUP_LAUNCH.name} · ${league.name}`
@@ -125,15 +135,17 @@ export default async function CupPage({ params, searchParams }: Props) {
   const { slug } = await params
   const askedYear = await yearOf(searchParams)
   const league = await loadLeague(slug)
-  const view = await loadCup(league.id, askedYear)
+  const demo = isDemoCup(slug)
+  const view = await cupOf(league.id, askedYear)
   const preview = await previewFor(league.id, askedYear, view, (await searchParams).preview === '1')
-  if (preview) return <CupPreviewPage league={league} preview={preview} pageUrl={`${SITE_URL}/leagues/${slug}/cup/`} />
+  const leagueHref = demo ? DEMO_ALMANAC : `/leagues/${slug}/`
+  if (preview) return <CupPreviewPage league={league} preview={preview} pageUrl={`${SITE_URL}/leagues/${slug}/cup/${demo ? '?preview=1' : ''}`} leagueHref={leagueHref} />
   if (!view) notFound()
   const { cup, bracket } = view
-  const extras = await loadCupExtras(league.id, view)
+  const extras = demo ? demoCupExtras(view) : await loadCupExtras(league.id, view)
   // Stamps are all-time (a stamp book spans every Cup), so this reads the
   // league's other Cups too; the one already loaded isn't loaded again.
-  const { stamps } = await loadLeagueCups(league.id, { view, picks: extras.picks })
+  const { stamps } = demo ? demoLeagueCups({ current: view }) : await loadLeagueCups(league.id, { view, picks: extras.picks })
   const yearQuery = askedYear ? `year=${askedYear}` : ''
   const pageUrl = `${SITE_URL}/leagues/${slug}/cup/${yearQuery ? `?${yearQuery}` : ''}`
   const imageUrl = `/api/og/cup/${slug}/?format=post${yearQuery ? `&${yearQuery}` : ''}`
@@ -157,6 +169,9 @@ export default async function CupPage({ params, searchParams }: Props) {
         // ?reveal=1 replays the latest round's results reveal (how to see it
         // again, or check it before anyone else does).
         forceReveal={(await searchParams).reveal === '1'}
+        demo={demo}
+        // The demo is mid-Cup; this says when a real league's starts.
+        banner={demo && cup.season_year >= CUP_LAUNCH.year ? <DemoLaunch previewHref={`/leagues/${slug}/cup/?preview=1`} /> : null}
       />
 
       {/* "Send to the group chat" read as the way to hand picks in, and most
@@ -166,7 +181,7 @@ export default async function CupPage({ params, searchParams }: Props) {
         <p className={styles.footNote}>Picks save on their own. This just shares the page.</p>
         <div className={styles.footActions}>
           <ShareButton className={styles.btnGhost} url={pageUrl} title={`${cup.name} · ${league.name}`} label="Share the Cup link" />
-          <Link className={styles.btnGhost} href={`/leagues/${slug}/`}>
+          <Link className={styles.btnGhost} href={leagueHref}>
             View the league
           </Link>
         </div>

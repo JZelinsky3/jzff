@@ -7,7 +7,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
 import { buildBracket, recordStr, standingsSeeds, CUP_MAX_FIELD, type CupBracket } from './bracket'
-import { cupNames, cupSeasonSettings } from './load'
+import { cupNames, cupSeasonSettings, type CupSeasonGame } from './load'
 import { CUP_LAUNCH } from './launch'
 
 export type CupPreviewTeam = {
@@ -64,34 +64,59 @@ export async function loadCupPreview(leagueId: string, opts?: { throughWeek?: nu
     .from('matchups')
     .select('week, manager_a_id, manager_b_id, score_a, score_b, is_playoff')
     .eq('season_id', season.id)
-  const games = (rows ?? []).filter((g) => !g.is_playoff)
+  const games: CupSeasonGame[] = (rows ?? [])
+    .filter((g) => !g.is_playoff)
+    .map((g) => ({
+      week: g.week as number,
+      a: g.manager_a_id as string,
+      b: g.manager_b_id as string,
+      sa: g.score_a == null ? null : Number(g.score_a),
+      sb: g.score_b == null ? null : Number(g.score_b),
+    }))
+  const currentWeek = resolveCurrentWeek(cupSeasonSettings((season.settings ?? null) as Record<string, unknown> | null, CUP_LAUNCH.year))
+  return buildCupPreview({
+    games,
+    currentWeek,
+    throughWeek: opts?.throughWeek,
+    names: (ids) => cupNames(db, leagueId, season.id as string, ids),
+  })
+}
+
+// The preview from a season's regular-season games already in hand: the
+// database's (above) or the demo league's (demo.ts).
+export async function buildCupPreview(args: {
+  games: CupSeasonGame[]
+  currentWeek: number | null
+  throughWeek?: number
+  names: (ids: string[]) => Promise<(id: string) => { name: string; team: string | null }> | ((id: string) => { name: string; team: string | null })
+}): Promise<CupPreview | null> {
+  const { games, currentWeek } = args
 
   // A settled week: every game has two real scores (the recap's test).
-  const byWeek = new Map<number, typeof games>()
-  for (const g of games) byWeek.set(g.week as number, [...(byWeek.get(g.week as number) ?? []), g])
+  const byWeek = new Map<number, CupSeasonGame[]>()
+  for (const g of games) byWeek.set(g.week, [...(byWeek.get(g.week) ?? []), g])
   const settled = (w: number) => {
     const list = byWeek.get(w) ?? []
-    return list.length > 0 && list.every((g) => g.score_a != null && g.score_b != null && Number(g.score_a) > 0 && Number(g.score_b) > 0)
+    return list.length > 0 && list.every((g) => g.sa != null && g.sb != null && g.sa > 0 && g.sb > 0)
   }
-  const cap = Math.min(CUP_LAUNCH.seededThrough, opts?.throughWeek ?? CUP_LAUNCH.seededThrough)
+  const cap = Math.min(CUP_LAUNCH.seededThrough, args.throughWeek ?? CUP_LAUNCH.seededThrough)
   const weeks = [...byWeek.keys()].filter((w) => w <= cap && settled(w)).sort((a, b) => a - b)
   if (!weeks.length) return null
   const counted = games
-    .filter((g) => weeks.includes(g.week as number))
-    .map((g) => ({ a: g.manager_a_id as string, b: g.manager_b_id as string, sa: Number(g.score_a), sb: Number(g.score_b) }))
+    .filter((g) => weeks.includes(g.week))
+    .map((g) => ({ a: g.a, b: g.b, sa: Number(g.sa), sb: Number(g.sb) }))
 
   // Everyone, not just the twelve: the bubble needs the teams outside it.
   const all = standingsSeeds(counted, Infinity)
   if (all.length < 4) return null
   const seeds = all.slice(0, CUP_MAX_FIELD)
-  const nameOf = await cupNames(db, leagueId, season.id as string, all.map((s) => s.manager_id))
+  const nameOf = await args.names(all.map((s) => s.manager_id))
   const games8 = new Map<string, string>()
   for (const g of games) {
     if (g.week !== CUP_LAUNCH.startWeek) continue
-    games8.set(g.manager_a_id as string, g.manager_b_id as string)
-    games8.set(g.manager_b_id as string, g.manager_a_id as string)
+    games8.set(g.a, g.b)
+    games8.set(g.b, g.a)
   }
-  const currentWeek = resolveCurrentWeek(cupSeasonSettings((season.settings ?? null) as Record<string, unknown> | null, CUP_LAUNCH.year))
   const bracket = buildBracket({
     seeds,
     nameOf,

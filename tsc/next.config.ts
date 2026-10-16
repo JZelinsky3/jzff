@@ -98,6 +98,13 @@ const nextConfig: NextConfig = {
       { source: '/manager/:slug/ledger',               destination: '/manager/:slug/vault',   permanent: true },
       { source: '/manager/:slug/ledger/:rest*',        destination: '/manager/:slug/vault',   permanent: true },
 
+      // The demo almanac's Cup links ("cup/" under its <base>) go to the demo
+      // league's Cup, which is the real Cup page reading lib/cup/demo.ts.
+      { source: '/demo/cup',              destination: '/leagues/demo/cup/', permanent: false },
+      { source: '/demo/cup/:rest*',       destination: '/leagues/demo/cup/:rest*', permanent: false },
+      { source: '/demo-m/cup',            destination: '/leagues/demo/cup/', permanent: false },
+      { source: '/demo-m/cup/:rest*',     destination: '/leagues/demo/cup/:rest*', permanent: false },
+
       // Sunday Live promoted out of live-season/ to its own top-level chapter.
       { source: '/leagues/:slug/live-season/sunday-live',        destination: '/leagues/:slug/sunday-live', permanent: true },
       { source: '/leagues/:slug/live-season/sunday-live/:rest*', destination: '/leagues/:slug/sunday-live/:rest*', permanent: true },

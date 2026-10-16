@@ -16,6 +16,7 @@ import path from 'path'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { loadCup } from '@/lib/cup/load'
 import { loadCupPreview } from '@/lib/cup/preview'
+import { DEMO_CUP_LEAGUE, demoCupPreview, demoCupView, isDemoCup } from '@/lib/cup/demo'
 import { CUP_LAUNCH, drawDayShort } from '@/lib/cup/launch'
 import type { CupBracket, CupMatch, CupRound, CupSide } from '@/lib/cup/bracket'
 import { trophy } from '@/lib/cup/trophy'
@@ -100,17 +101,24 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   // A past season's Cup; the newest one when absent.
   const year = Number(search.get('year')) || null
 
-  const db = createAdminClient()
-  const { data: league } = await db.from('leagues').select('id, name, slug, published_at').eq('slug', slug).maybeSingle()
+  // The demo league has no row: its Cups come from lib/cup/demo.ts.
+  const demo = isDemoCup(slug)
+  let league: { id: string; name: string; published_at: string | null } | null = demo ? DEMO_CUP_LEAGUE : null
+  if (!demo) {
+    const db = createAdminClient()
+    const { data } = await db.from('leagues').select('id, name, slug, published_at').eq('slug', slug).maybeSingle()
+    league = data as typeof league
+  }
   // Crawlers have no session: only published leagues get an image.
   if (!league || !league.published_at) return new Response('Not found', { status: 404 })
-  const view = await loadCup(league.id as string, year)
-  const leagueName = league.name as string
+  const view = demo ? demoCupView(year) : await loadCup(league.id, year)
+  const leagueName = league.name
 
   // No Cup yet this year: the launch preview's card, the bracket as today's
-  // standings would draw it, under the draw date.
-  if (!year && format === 'card' && (search.get('preview') === '1' || !view || view.cup.season_year < CUP_LAUNCH.year)) {
-    const preview = await loadCupPreview(league.id as string)
+  // standings would draw it, under the draw date. The demo shows it only
+  // when asked (?preview=1), since its own Cup is running.
+  if (!year && format === 'card' && (search.get('preview') === '1' || (!demo && (!view || view.cup.season_year < CUP_LAUNCH.year)))) {
+    const preview = demo ? await demoCupPreview() : await loadCupPreview(league.id)
     if (preview) {
       const fonts = await loadFonts()
       return cardImage(CUP_LAUNCH.name, leagueName, preview.year, preview.bracket, fonts, {

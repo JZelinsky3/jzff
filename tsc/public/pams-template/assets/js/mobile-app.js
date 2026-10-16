@@ -583,6 +583,16 @@
     function buildSheets(ctx, liveMode) {
         var udfa = ctx.leagueTier === 'udfa';
 
+        // The league's Cup, all year: its brackets and champions are league
+        // history, so it sits in the History list (and wherever that list
+        // goes: More's Almanac in season, More's Society on a free league,
+        // whose History tab goes straight to Seasons). The strip above the
+        // app bar only shows a week either side of the Cup.
+        var cupLink = (window.__DC || {}).cupLink;
+        var cupRow = cupLink && cupLink.href
+            ? sheetRow('cup/', cupLink.name, cupLink.preview ? { sub: 'New' } : {})
+            : '';
+
         // History sheet — the History tab's targets.
         var history = document.createElement('dialog');
         history.className = 'm-sheet';
@@ -591,6 +601,7 @@
             '<div class="m-sheet-handle" aria-hidden></div>' +
             '<div class="m-sheet-title">League History</div>' +
             sheetRow('seasons/', 'Season Archives') +
+            cupRow +
             sheetRow('records', 'Record Book', { locked: udfa }) +
             sheetRow('draft/', 'Draft History', { locked: udfa });
 
@@ -661,6 +672,7 @@
         var society = udfa
             ? '<span class="m-sheet-label">The Society</span>' +
               sheetRow('rivalries/', 'Rivalries') +
+              cupRow +
               '<div class="m-sheet-divider"></div>' +
               '<span class="m-sheet-label">With a paid plan</span>' +
               sheetRow('records', 'Record Book', { locked: true }) +
@@ -671,6 +683,7 @@
             ? '<span class="m-sheet-label">The Almanac</span>' +
               sheetRow('standings', 'Standings') +
               sheetRow('seasons/', 'Season Archives') +
+              cupRow +
               sheetRow('records', 'Record Book') +
               sheetRow('draft/', 'Draft History') +
               sheetRow('managers/', 'Managers') +
@@ -1227,7 +1240,18 @@
         document.head.appendChild(s);
     }
 
+    // The demo league is frozen mid-Cup (lib/cup/demo.ts): the static pages
+    // get the strip and the History row a real league's route would hand
+    // them in __DC.cup / __DC.cupLink, pointing at the demo's Cup page.
+    function demoCup() {
+        var dc = window.__DC || {};
+        if (!(dc.slug === 'demo' || dc.leagueTier === 'demo') || dc.cup) return;
+        dc.cup = { id: 'demo-cup-2026', name: 'The League Cup', href: '/leagues/demo/cup/', label: 'Semifinals this week', key: 'demo-cup-2026:8', picksOpen: true, preview: false };
+        dc.cupLink = { name: 'The League Cup', href: '/leagues/demo/cup/', preview: false };
+    }
+
     function init() {
+        demoCup();
         buildShell();
         buildTierStrip();
         buildLockOverlay();

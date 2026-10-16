@@ -161,8 +161,10 @@ function gauss(rand: () => number, mu: number, sd: number): number {
 
 type Db = ReturnType<typeof createAdminClient>
 
+export type CupHistoryGame = { season_id: string; week: number; manager_a_id: string; manager_b_id: string; score_a: number | null; score_b: number | null; is_playoff: boolean | null }
+
 async function allLeagueGames(db: Db, seasonIds: string[]) {
-  type Row = { season_id: string; week: number; manager_a_id: string; manager_b_id: string; score_a: number | null; score_b: number | null; is_playoff: boolean | null }
+  type Row = CupHistoryGame
   const out: Row[] = []
   if (!seasonIds.length) return out
   for (let from = 0; ; from += 1000) {
@@ -179,18 +181,45 @@ async function allLeagueGames(db: Db, seasonIds: string[]) {
   return out
 }
 
+// What the extras are worked out from: the database's rows (loadCupExtras)
+// or the demo league's (demo.ts).
+export type CupExtrasSource = {
+  seasons: { id: string; year: number }[]
+  managers: { id: string; profile_id: string | null; display_name: string | null }[]
+  profiles: { id: string; canonical_name: string; is_hidden: boolean | null }[]
+  // Null when the cup_picks table isn't there (before migration 0079).
+  picks: { profile_id: string; round: number; slot: number; picked_manager_id: string }[] | null
+  // Every game the league has played, for the all-time series.
+  history: CupHistoryGame[]
+  // When a week's picks lock (Thursday kickoff).
+  lockAtOf: (week: number) => string | null
+  now: number
+}
+
 export async function loadCupExtras(leagueId: string, view: CupView): Promise<CupExtras> {
   const db = createAdminClient()
-  const { cup, bracket, season } = view
-  const now = Date.now()
-
   const [{ data: seasons }, { data: managers }, { data: profiles }, picksRes] = await Promise.all([
     db.from('seasons').select('id, year').eq('league_id', leagueId),
     db.from('managers').select('id, profile_id, display_name').eq('league_id', leagueId),
     db.from('manager_profiles').select('id, canonical_name, is_hidden').eq('league_id', leagueId),
-    db.from('cup_picks').select('profile_id, round, slot, picked_manager_id').eq('cup_id', cup.id),
+    db.from('cup_picks').select('profile_id, round, slot, picked_manager_id').eq('cup_id', view.cup.id),
   ])
-  const hasPickTable = !picksRes.error
+  const seasonRows = (seasons ?? []) as CupExtrasSource['seasons']
+  return computeCupExtras(view, {
+    seasons: seasonRows,
+    managers: (managers ?? []) as CupExtrasSource['managers'],
+    profiles: (profiles ?? []) as CupExtrasSource['profiles'],
+    picks: picksRes.error ? null : ((picksRes.data ?? []) as NonNullable<CupExtrasSource['picks']>),
+    history: await allLeagueGames(db, seasonRows.map((s) => s.id)),
+    lockAtOf: (week) => resolveWeekLockAt(view.season.settings, week),
+    now: Date.now(),
+  })
+}
+
+export function computeCupExtras(view: CupView, src: CupExtrasSource): CupExtras {
+  const { cup, bracket } = view
+  const { seasons, managers, profiles, history, now } = src
+  const hasPickTable = src.picks != null
   const yearOf = new Map((seasons ?? []).map((s) => [s.id as string, s.year as number]))
   const personOf = new Map((managers ?? []).map((m) => [m.id as string, (m.profile_id as string | null) ?? (m.id as string)]))
   const person = (id: string) => personOf.get(id) ?? id
@@ -251,7 +280,6 @@ export async function loadCupExtras(leagueId: string, view: CupView): Promise<Cu
   }
 
   // ── All-time series between two people ──
-  const history = await allLeagueGames(db, [...yearOf.keys()])
   const seriesOf = (aId: string, bId: string, beforeYear: number, beforeWeek: number): CupSeries | null => {
     const pa = person(aId)
     const pb = person(bId)
@@ -288,7 +316,7 @@ export async function loadCupExtras(leagueId: string, view: CupView): Promise<Cu
   }
 
   // ── Picks ──
-  const pickRows: CupPickRow[] = (picksRes.data ?? []).map((p) => ({
+  const pickRows: CupPickRow[] = (src.picks ?? []).map((p) => ({
     profileId: p.profile_id as string,
     round: p.round as number,
     slot: p.slot as number,
@@ -300,7 +328,7 @@ export async function loadCupExtras(leagueId: string, view: CupView): Promise<Cu
   for (const r of bracket.rounds) {
     const before = scoresBefore(r.week)
     const { rate, gameSd } = ratings(before)
-    const lockAt = resolveWeekLockAt(season.settings, r.week)
+    const lockAt = src.lockAtOf(r.week)
     const locked = lockAt != null && now >= Date.parse(lockAt)
     for (const m of r.matches) {
       const a = m.a.kind === 'team' ? m.a.entrant.managerId : null
@@ -350,7 +378,7 @@ export async function loadCupExtras(leagueId: string, view: CupView): Promise<Cu
     .sort((x, y) => x.name.localeCompare(y.name))
 
   const points = roundPoints(bracket.rounds.length)
-  const championLockAt = resolveWeekLockAt(season.settings, cup.start_week)
+  const championLockAt = src.lockAtOf(cup.start_week)
   // With no calendar to lock on, it closes once round one has a result.
   const championOpen = championLockAt == null ? !bracket.rounds[0]?.matches.some((m) => m.state === 'final') : now < Date.parse(championLockAt)
   const matchAt = new Map<string, CupMatch>()
@@ -477,7 +505,11 @@ function titleOdds(bracket: CupBracket, view: CupView, cupId: string): CupOdds[]
   return seeds
     .map((s) => {
       const counts = reach.get(s.manager_id)!
-      const pct = (c: number) => Math.round((c / RUNS) * 1000) / 10
+      // 100 and 0 only when certain (every run, or none): a team with a bye
+      // is in round two, so it reads 100%, not ">99%". Near-certain caps at
+      // 99.9 (and near-impossible floors at 0.1) so the page can tell them
+      // apart.
+      const pct = (c: number) => (c === RUNS ? 100 : c === 0 ? 0 : Math.min(99.9, Math.max(0.1, Math.round((c / RUNS) * 1000) / 10)))
       const out = outOf.get(s.manager_id) ?? null
       return {
         managerId: s.manager_id,

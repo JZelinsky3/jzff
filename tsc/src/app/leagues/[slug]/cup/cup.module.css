@@ -2024,49 +2024,52 @@
 }
 
 /* 2nd and 3rd: the words are centred on the whole ticket, and the seed
-   fills the open space to their left, a little nearer the words than the
-   edge (Joey, 2026-10-16: "equal distance ... or a little closer to text").
-   The columns mirror each other (space 2, seed, space 1, words, space 1,
-   empty seed column, space 2) so the words sit on the ticket's centre line
-   and the seed is twice as far from the edge as from the words. */
+   sits in the open space to their left (Joey, 2026-10-16). It's in the SAME
+   spot on both tickets whatever the names: placed by the ticket's width,
+   not the words', and level with the top three lines (rank, name, odds),
+   above the bottom line, which carries the star chip and runs widest.
+   Absolutely positioned in the grid area of those three rows, so it
+   centres on them. The name is capped so it can never run under the seed. */
 .pod:not(.podFirst) {
+  --seed: 30px;
   display: grid;
-  grid-template-columns:
-    minmax(6px, 2fr) 24px minmax(4px, 1fr) minmax(0, max-content)
-    minmax(4px, 1fr) 24px minmax(6px, 2fr);
-  grid-template-areas:
-    '. medal . rank . . .'
-    '. medal . name . . .'
-    '. medal . pct . . .'
-    '. medal . foot . . .';
+  grid-template-columns: minmax(0, 1fr);
   justify-items: center;
   row-gap: 3px;
-  column-gap: 0;
 }
 
 .pod:not(.podFirst) .podWho {
   display: contents;
 }
 
-.pod:not(.podFirst) .medal {
-  grid-area: medal;
-  align-self: center;
-}
-
 .pod:not(.podFirst) .podRank {
-  grid-area: rank;
+  grid-row: 1;
 }
 
 .pod:not(.podFirst) .podName {
-  grid-area: name;
+  grid-row: 2;
+  max-width: calc(50% + 8px - var(--seed));
 }
 
 .pod:not(.podFirst) .podPct {
-  grid-area: pct;
+  grid-row: 3;
 }
 
 .pod:not(.podFirst) .podFoot {
-  grid-area: foot;
+  grid-row: 4;
+}
+
+.pod:not(.podFirst) .medal {
+  position: absolute;
+  top: 50%;
+  left: calc(25% - 10px - var(--seed) / 2);
+  grid-row: 1 / 4;
+  grid-column: 1;
+  width: var(--seed);
+  height: var(--seed);
+  border-width: 2px;
+  font-size: calc(var(--seed) * 0.5);
+  transform: translateY(-50%);
 }
 
 .pod .medal {
@@ -3387,6 +3390,63 @@
   line-clamp: 3;
 }
 
+/* The colour a stamp is held in, as words. */
+.bookTier,
+.rvStampTier {
+  margin-top: 2px;
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Catalogue: the count for bronze, silver and gold, as three foil pills. */
+.bookTiers {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.tierPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-family: var(--cp-num);
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.pill_bronze {
+  background: linear-gradient(135deg, #7a4520, #b97f4b);
+}
+
+.pill_silver {
+  background: linear-gradient(135deg, #55606b, #a9b3bc);
+}
+
+.pill_gold {
+  background: linear-gradient(135deg, #86620e, #d4aa42);
+}
+
+.tier_bronze {
+  color: #8a5428;
+}
+
+.tier_silver {
+  color: #5b6672;
+}
+
+.tier_gold {
+  color: #8d6812;
+}
+
 .bookItemOff .bookName {
   color: var(--ink-3);
 }
@@ -4267,6 +4327,10 @@ button.sideName:hover {
 
   .bracketCards .trophyCard {
     margin-top: 0;
+  }
+
+  .pod:not(.podFirst) {
+    --seed: 38px;
   }
 
   /* Following someone: the card goes solid. */

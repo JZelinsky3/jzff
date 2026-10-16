@@ -106,23 +106,45 @@ export async function loadCup(leagueId: string, year?: number | null, opts?: { a
       .eq('season_id', season.id),
   ])
 
-  const score = new Map<string, number | null>()
-  const opponent = new Map<string, string>()
-  const byWeek = new Map<number, { a: number | null; b: number | null }[]>()
-  for (const g of games ?? []) {
-    const w = g.week as number
-    const sa = g.score_a == null ? null : Number(g.score_a)
-    const sb = g.score_b == null ? null : Number(g.score_b)
-    score.set(`${w}:${g.manager_a_id}`, sa)
-    score.set(`${w}:${g.manager_b_id}`, sb)
-    opponent.set(`${w}:${g.manager_a_id}`, g.manager_b_id as string)
-    opponent.set(`${w}:${g.manager_b_id}`, g.manager_a_id as string)
-    byWeek.set(w, [...(byWeek.get(w) ?? []), { a: sa, b: sb }])
-  }
-
   const settings = cupSeasonSettings((season.settings ?? null) as Record<string, unknown> | null, cup.season_year)
   const resolved = resolveCurrentWeek(settings)
   const currentWeek = opts?.asOfWeek != null && resolved != null ? Math.max(resolved, opts.asOfWeek) : resolved
+  return buildCupView({
+    cup,
+    season: { id: season.id as string, settings },
+    currentWeek,
+    nameOf,
+    games: (games ?? []).map((g) => ({
+      week: g.week as number,
+      a: g.manager_a_id as string,
+      b: g.manager_b_id as string,
+      sa: g.score_a == null ? null : Number(g.score_a),
+      sb: g.score_b == null ? null : Number(g.score_b),
+    })),
+  })
+}
+
+// The bracket from rows already in hand: the database's (loadCup above) or
+// the demo league's (demo.ts), which has no rows to read.
+export function buildCupView(args: {
+  cup: CupRow
+  season: CupView['season']
+  currentWeek: number | null
+  nameOf: (id: string) => { name: string; team: string | null }
+  games: CupSeasonGame[]
+}): CupView {
+  const { cup, season, currentWeek, nameOf, games } = args
+  const score = new Map<string, number | null>()
+  const opponent = new Map<string, string>()
+  const byWeek = new Map<number, { a: number | null; b: number | null }[]>()
+  for (const g of games) {
+    score.set(`${g.week}:${g.a}`, g.sa)
+    score.set(`${g.week}:${g.b}`, g.sb)
+    opponent.set(`${g.week}:${g.a}`, g.b)
+    opponent.set(`${g.week}:${g.b}`, g.a)
+    byWeek.set(g.week, [...(byWeek.get(g.week) ?? []), { a: g.sa, b: g.sb }])
+  }
+
   // Same test the recap uses for a settled week: every game has two real
   // scores. A zero almost always means the platform hasn't finalised.
   const weekFinal = (w: number) => {
@@ -144,14 +166,8 @@ export async function loadCup(leagueId: string, year?: number | null, opts?: { a
     currentWeek,
     // With the NFL calendar filled in, so lock times resolve everywhere the
     // Cup reads them (the page, the pick route).
-    season: { id: season.id as string, settings },
-    games: (games ?? []).map((g) => ({
-      week: g.week as number,
-      a: g.manager_a_id as string,
-      b: g.manager_b_id as string,
-      sa: g.score_a == null ? null : Number(g.score_a),
-      sb: g.score_b == null ? null : Number(g.score_b),
-    })),
+    season,
+    games,
     weekFinal,
   }
 }
@@ -170,18 +186,32 @@ export type CupBadge = {
   preview: boolean
 }
 
+// The Cup's permanent place in the almanac's nav (the History list on a
+// phone), all year round, unlike the strip: the league's newest real Cup,
+// or the launch preview while there's no Cup yet. Cups before the launch
+// year are test draws (see history.ts) and don't count.
+export type CupLink = { name: string; href: string; preview: boolean }
+
+export function cupLink(slug: string, latest: CupRow | null, badge: CupBadge | null): CupLink | null {
+  if (latest && latest.season_year >= CUP_LAUNCH.year) return { name: latest.name, href: `/leagues/${slug}/cup/`, preview: false }
+  if (badge?.preview) return { name: badge.name, href: badge.href, preview: true }
+  return null
+}
+
 // What the almanac's top strip and the Live hub card need, from the cup row
 // and the week alone: cheap enough to run on every almanac page load.
 export async function cupBadge(
   db: Db,
   league: { id: string; slug: string },
   live: { year: number | null; week: number | null; settings?: Record<string, unknown> | null },
+  // The league's newest Cup, when the caller has already read it.
+  preloaded?: CupRow | null,
 ): Promise<CupBadge | null> {
   if (live.year == null) return null
   const settings = cupSeasonSettings(live.settings ?? null, live.year)
   const liveWeek = live.week ?? resolveCurrentWeek(settings)
   if (liveWeek == null) return null
-  const cup = await latestCup(db, league.id)
+  const cup = preloaded !== undefined ? preloaded : await latestCup(db, league.id)
   if (!cup || cup.season_year !== live.year) {
     // The launch: every league with a live season this year, until the
     // draw. A league whose Cup exists by then gets its own strip above.

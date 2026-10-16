@@ -68,7 +68,7 @@ function TeamRow({ t, ppg }: { t: CupPreviewTeam; ppg: boolean }) {
   )
 }
 
-export function CupPreviewPage({ league, preview, pageUrl }: { league: { name: string; slug: string }; preview: CupPreview; pageUrl: string }) {
+export function CupPreviewPage({ league, preview, pageUrl, leagueHref }: { league: { name: string; slug: string }; preview: CupPreview; pageUrl: string; leagueHref?: string }) {
   const b = preview.bracket
   const byId = new Map(preview.teams.map((t) => [t.managerId, t]))
   const r1 = b.rounds[0]!
@@ -243,7 +243,7 @@ export function CupPreviewPage({ league, preview, pageUrl }: { league: { name: s
         <p className={styles.footNote}>Send it to the league so nobody misses the draw.</p>
         <div className={styles.footActions}>
           <ShareButton className={styles.btnGold} url={pageUrl} title={`${CUP_LAUNCH.name} · ${league.name}`} label="Share the preview" />
-          <Link className={styles.btnGhost} href={`/leagues/${league.slug}/`}>
+          <Link className={styles.btnGhost} href={leagueHref ?? `/leagues/${league.slug}/`}>
             View the league
           </Link>
         </div>

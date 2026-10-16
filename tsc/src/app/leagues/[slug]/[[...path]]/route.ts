@@ -38,7 +38,7 @@ import {
 } from '@/lib/stripe'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
 import { leagueVisitScript } from '@/lib/leagueVisit'
-import { cupBadge, type CupBadge } from '@/lib/cup/load'
+import { cupBadge, cupLink, latestCup, type CupBadge, type CupLink } from '@/lib/cup/load'
 
 const TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams')
 // Mobile-first rebuilds of the same pages. Phones get the file from here when
@@ -92,6 +92,8 @@ type LeagueMeta = {
   // The league's Cup while it's running (a week either side), for the strip
   // at the top of the almanac and the Live hub card. See lib/cup.
   cup: CupBadge | null
+  // The Cup's row in the nav's History list, all year. See lib/cup.
+  cupLink: CupLink | null
 }
 
 const VALID_THEMES = ['tribunal', 'wire', 'floor', 'cards'] as const
@@ -125,11 +127,12 @@ async function loadLeagueMetaUncached(slug: string): Promise<LeagueMeta | null> 
   const rawTheme = themeResult as unknown
   const liveSeasonSettings = (liveSeasonRow?.settings ?? null) as Record<string, unknown> | null
   const liveWeek = resolveCurrentWeek(liveSeasonSettings)
+  const latest = await latestCup(db, row.id).catch(() => null)
   const cup = await cupBadge(db, { id: row.id, slug: row.slug }, {
     year: (liveSeasonRow?.year as number | undefined) ?? null,
     week: liveWeek,
     settings: liveSeasonSettings,
-  }).catch(() => null)
+  }, latest).catch(() => null)
   return {
     id: row.id,
     name: row.name,
@@ -145,6 +148,7 @@ async function loadLeagueMetaUncached(slug: string): Promise<LeagueMeta | null> 
       ? (rawTheme as LeagueTheme) : null,
     liveWeek,
     cup,
+    cupLink: cupLink(row.slug, latest, cup),
   }
 }
 
@@ -275,6 +279,7 @@ async function injectDcConfig(
     leagueTheme,
     liveWeek: meta.liveWeek,
     cup: meta.cup,
+    cupLink: meta.cupLink,
   })};</script>`
   // Stamp the theme as a body data-attribute so theme CSS applies during the
   // first paint without waiting for JS. We only do this when the template

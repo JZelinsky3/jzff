@@ -83,6 +83,27 @@
   color: var(--brass-hi);
 }
 
+/* The demo's launch ticket: the same four cells, small enough to sit on
+   one line beside the copy. */
+.countCompact {
+  gap: 6px;
+  margin-top: 0;
+}
+
+.countCompact .countCell {
+  padding: 7px 0 6px;
+  border-radius: 9px;
+}
+
+.countCompact .countNum {
+  font-size: 28px;
+}
+
+.countCompact .countLabel {
+  margin-top: 2px;
+  font-size: 8.5px;
+}
+
 .countDone {
   margin-top: 10px !important;
   font-family: var(--cp-display);

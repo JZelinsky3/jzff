@@ -19,10 +19,10 @@
 // (localStorage dc_pickems_user_<slug>), so anyone who has made pick'ems
 // picks is already signed in here.
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { UPSET_GAP, type CupBracket, type CupEntrant, type CupMatch, type CupNotes, type CupRound, type CupSide } from '@/lib/cup/bracket'
 import type { CupExtras, CupMatchDetail, CupOdds, CupPicker } from '@/lib/cup/extras'
-import { STAMP_BY_ID, STAMP_SETS, STAMPS, type StampAward, type StampId } from '@/lib/cup/stamps'
+import { nextTier, STAMP_BY_ID, STAMP_SETS, STAMPS, stampTier, TIER_NAMES, type StampAward, type StampId, type StampTier } from '@/lib/cup/stamps'
 import { trophy } from '@/lib/cup/trophy'
 import { Stamp } from './Stamp'
 import styles from './cup.module.css'
@@ -45,6 +45,11 @@ type Props = {
   seededThrough: number
   currentWeek: number | null
   forceReveal: boolean
+  // The demo league (lib/cup/demo.ts): picks stay in this browser instead
+  // of going to cup_picks, since there is no demo league in the database.
+  demo?: boolean
+  // Drawn between the masthead and the tabs (the demo's launch ticket).
+  banner?: ReactNode
 }
 
 type User = { profileId: string; name: string; teamId: string | null }
@@ -119,6 +124,9 @@ function pts(n: number): string {
 }
 
 function pct(p: number): string {
+  // Exactly 100 only when it's certain (extras sends 99.9 at most otherwise):
+  // a team with a bye is in the quarters, full stop.
+  if (p >= 100) return '100%'
   if (p >= 99.5) return '>99%'
   if (p > 0 && p < 1) return '<1%'
   return `${Math.round(p)}%`
@@ -226,8 +234,19 @@ export function CupApp(props: Props) {
   const [tab, setTab] = useState<Tab>('games')
   const [round, setRound] = useState<number>(bracket.currentRound ?? bracket.rounds.length - 1)
   const { user, setUser, known } = useUser(slug, extras.pickers)
-  // This browser's picks since the page loaded, over the saved ones.
-  const [mine, setMine] = useState<Record<string, string>>({})
+  // This browser's picks since the page loaded, over the saved ones. On the
+  // demo, the picks this browser has ever made there come first.
+  const [fresh, setMine] = useState<Record<string, string>>({})
+  const demoKey = `tsc-cup-demo-picks-${cupId}`
+  const demoRaw = useStored(demoKey)
+  const mine = useMemo(() => {
+    if (!props.demo || !demoRaw) return fresh
+    try {
+      return { ...(JSON.parse(demoRaw) as Record<string, string>), ...fresh }
+    } catch {
+      return fresh
+    }
+  }, [props.demo, demoRaw, fresh])
   const [saving, setSaving] = useState<string | null>(null)
   const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null)
   const [sheet, setSheet] = useState<Sheet>(null)
@@ -292,6 +311,12 @@ export function CupApp(props: Props) {
       const prev = pickOf(who, r, slot)
       if (prev === managerId) return
       setMine((x) => ({ ...x, [k]: managerId }))
+      if (props.demo) {
+        writeStored(demoKey, JSON.stringify({ ...mine, [k]: managerId }))
+        const name = nameOf.get(managerId) ?? 'Your pick'
+        say(r === -1 ? `Saved. ${name} to win the Cup.` : `Saved. ${name} to win.`, true)
+        return
+      }
       setSaving(k)
       try {
         const res = await fetch(`/leagues/${slug}/cup/pick/`, {
@@ -315,7 +340,7 @@ export function CupApp(props: Props) {
         setSaving(null)
       }
     },
-    [pickOf, slug, nameOf, say],
+    [pickOf, slug, nameOf, say, props.demo, demoKey, mine],
   )
 
   // A tap on a team: pick it, or ask who's picking first.
@@ -346,6 +371,13 @@ export function CupApp(props: Props) {
   // (the stamp books). The caption printed on every stamp is the Cup's name.
   const stampCaption = props.cupName.replace(/^The\s+/i, '')
   const stampsHere = useMemo(() => props.stamps.filter((s) => s.cupId === cupId), [props.stamps, cupId])
+  // A stamp's colour is its holder's all-time count of it.
+  const countOf = useMemo<CountFor>(() => {
+    const n = new Map<string, number>()
+    for (const s of props.stamps) n.set(`${s.person}|${s.stamp}`, (n.get(`${s.person}|${s.stamp}`) ?? 0) + 1)
+    return (person, stamp) => n.get(`${person}|${stamp}`) ?? 0
+  }, [props.stamps])
+  const tierFor = useCallback<TierFor>((person, stamp) => stampTier(STAMP_BY_ID.get(stamp)!, countOf(person, stamp)), [countOf])
   const openBook = useCallback((person: string | null, name: string | null) => setSheet({ kind: 'book', person, name }), [])
 
   // Champion votes: team -> who picked it, with this browser's latest pick.
@@ -434,6 +466,8 @@ export function CupApp(props: Props) {
         </div>
       </header>
 
+      {props.banner}
+
       <nav className={styles.tabs} aria-label="The Cup">
         <div className={styles.tabsInner}>
           {(
@@ -491,6 +525,7 @@ export function CupApp(props: Props) {
               stampsHere={stampsHere}
               myStamps={user ? props.stamps.filter((s) => s.person === user.profileId).length : 0}
               caption={stampCaption}
+              tierFor={tierFor}
               onBook={openBook}
               onChampion={openChampion}
               onWho={() => setSheet({ kind: 'who', then: null })}
@@ -507,6 +542,7 @@ export function CupApp(props: Props) {
           stampsHere={stampsHere}
           myStamps={user ? props.stamps.filter((s) => s.person === user.profileId).length : 0}
           caption={stampCaption}
+          tierFor={tierFor}
           champOpen={champOpen && known}
           champName={user ? (nameOf.get(myPick(-1, 0) ?? '') ?? null) : null}
           onBook={openBook}
@@ -586,7 +622,7 @@ export function CupApp(props: Props) {
               title={sheet.person == null ? 'Every Stamp' : mineBook ? 'Your Stamps' : sheet.name ? `${sheet.name}’s Stamps` : 'Stamps'}
               sub={
                 sheet.person == null
-                  ? `${STAMPS.length} to collect, kept across every Cup.`
+                  ? `${STAMPS.length} to collect across every Cup. Each goes bronze, then silver, then gold as you earn it again; the numbers show how many times.`
                   : theirs.length
                     ? `${kinds} of ${STAMPS.length} collected${theirs.length > kinds ? `, ${theirs.length} in all` : ''}.`
                     : `None yet. ${STAMPS.length} to collect, kept across every Cup.`
@@ -607,6 +643,8 @@ export function CupApp(props: Props) {
           user={user}
           stamps={user ? stampsHere.filter((s) => s.person === user.profileId && (s.round === revealRound.round || (s.round == null && revealRound.round === bracket.rounds.length - 1))) : []}
           caption={stampCaption}
+          tierFor={tierFor}
+          countOf={countOf}
           cupName={props.cupName}
           onClose={() => closeReveal()}
           onPick={(r) => closeReveal(() => goRound(r))}
@@ -688,6 +726,7 @@ function Side(props: {
   stampsHere: StampAward[]
   myStamps: number
   caption: string
+  tierFor: TierFor
   champOpen: boolean
   champName: string | null
   onBook: (person: string | null, name: string | null) => void
@@ -820,7 +859,7 @@ function Side(props: {
             const def = STAMP_BY_ID.get(g.stamp)!
             return (
               <li key={g.stamp} className={styles.stampRow}>
-                <Stamp def={def} center={String(g.latest.year)} caption={props.caption} size={44} seed={g.latest.note} />
+                <Stamp def={def} tier={bestTier(g, props.tierFor)} year={g.latest.year} caption={props.caption} size={44} seed={g.latest.note} />
                 <span className={styles.stampWho}>
                   <span className={styles.stampName}>{def.name}</span>
                   <span className={styles.stampPeople}>{g.people.map((p) => (p.count > 1 ? `${p.name} ×${p.count}` : p.name)).join(', ')}</span>
@@ -1064,9 +1103,24 @@ function groupStamps(list: StampAward[]): StampGroup[] {
     })
 }
 
-// A stamp book: every stamp, set by set. Earned ones inked with the newest
-// year and what happened; the rest a faint outline with how to earn it. The
-// catalogue (nobody's book) inks them all and says how.
+type CountFor = (person: string, stamp: StampId) => number
+type TierFor = (person: string, stamp: StampId) => StampTier | null
+
+const TIER_ORDER: StampTier[] = ['bronze', 'silver', 'gold']
+
+// A list row shows one stamp for everyone who earned it, in the best colour
+// any of them holds it in.
+function bestTier(g: StampGroup, tierFor: TierFor): StampTier {
+  let best = 0
+  for (const p of g.people) best = Math.max(best, TIER_ORDER.indexOf(tierFor(p.person, g.stamp) ?? 'bronze'))
+  return TIER_ORDER[best]!
+}
+
+// A stamp book: every stamp, set by set. Earned ones in their colour (the
+// person's count: bronze, silver, gold) with the newest year, how far to
+// the next colour and what happened; the rest a faint outline with how to
+// earn it. The catalogue (nobody's book) shows each in bronze, how to earn
+// it and the count for each colour.
 function StampBook({ stamps, catalogue, caption }: { stamps: StampAward[]; catalogue: boolean; caption: string }) {
   const by = new Map(groupStamps(stamps).map((g) => [g.stamp, g]))
   return (
@@ -1078,13 +1132,27 @@ function StampBook({ stamps, catalogue, caption }: { stamps: StampAward[]; catal
             {STAMPS.filter((d) => d.set === set).map((def) => {
               const g = by.get(def.id)
               const off = !catalogue && !g
+              const tier = catalogue ? 'bronze' : g ? stampTier(def, g.count) : null
+              const next = g ? nextTier(def, g.count) : null
               return (
                 <li key={def.id} className={`${styles.bookItem} ${off ? styles.bookItemOff : ''}`}>
                   <span className={styles.bookInk}>
-                    <Stamp def={def} center={g ? String(g.latest.year) : null} caption={caption} size={80} faded={off} />
-                    {g && g.count > 1 ? <span className={styles.stampCount}>×{g.count}</span> : null}
+                    <Stamp def={def} tier={tier} year={g?.latest.year ?? null} caption={caption} size={80} />
                   </span>
                   <span className={styles.bookName}>{def.name}</span>
+                  {catalogue ? (
+                    <span className={styles.bookTiers} aria-label={TIER_ORDER.map((t, i) => `${TIER_NAMES[t]} at ${def.tiers[i]}`).join(', ')}>
+                      {TIER_ORDER.map((t, i) => (
+                        <span key={t} className={`${styles.tierPill} ${styles[`pill_${t}` as 'pill_gold']}`} title={`${TIER_NAMES[t]}: earned ${def.tiers[i]} ${def.tiers[i] === 1 ? 'time' : 'times'}`}>
+                          {def.tiers[i]}
+                        </span>
+                      ))}
+                    </span>
+                  ) : g && tier ? (
+                    <span className={`${styles.bookTier} ${styles[`tier_${tier}` as 'tier_gold']}`}>
+                      {TIER_NAMES[tier]} · {next ? `${next.need} more for ${TIER_NAMES[next.tier].toLowerCase()}` : `${g.count} in all`}
+                    </span>
+                  ) : null}
                   <span className={styles.bookNote}>{g ? g.latest.note : def.how}</span>
                 </li>
               )
@@ -1149,6 +1217,8 @@ function Reveal({
   user,
   stamps,
   caption,
+  tierFor,
+  countOf,
   cupName,
   onClose,
   onPick,
@@ -1161,6 +1231,8 @@ function Reveal({
   // The stamps you earned in this round (the final adds the whole Cup's).
   stamps: StampAward[]
   caption: string
+  tierFor: TierFor
+  countOf: CountFor
   cupName: string
   onClose: () => void
   onPick: (round: number) => void
@@ -1367,16 +1439,24 @@ function Reveal({
           <div className={`${styles.rvStamps} ${styles.rvStep}`} style={at(stampsAt)}>
             <span className={styles.rvYouLabel}>{newStamps.length === 1 && newStamps[0]!.count === 1 ? 'New stamp' : 'New stamps'}</span>
             <ul className={styles.rvStampRow}>
-              {newStamps.map((g, i) => (
-                <li key={g.stamp} className={styles.rvStampItem}>
-                  <span className={styles.rvStampInk} style={at(stampsAt + 350 + i * STAMP_STEP)}>
-                    <Stamp def={STAMP_BY_ID.get(g.stamp)!} center={String(g.latest.year)} caption={caption} size={newStamps.length > 2 ? 76 : 88} seed={g.latest.note} />
-                    {g.count > 1 ? <span className={styles.stampCount}>×{g.count}</span> : null}
-                  </span>
-                  <span className={styles.rvStampName}>{STAMP_BY_ID.get(g.stamp)!.name}</span>
-                  <span className={styles.rvStampNote}>{g.latest.note}</span>
-                </li>
-              ))}
+              {newStamps.map((g, i) => {
+                const def = STAMP_BY_ID.get(g.stamp)!
+                const tier = (user ? tierFor(user.profileId, g.stamp) : null) ?? 'bronze'
+                // Did this round's take move it up a colour?
+                const before = user ? stampTier(def, countOf(user.profileId, g.stamp) - g.count) : null
+                const up = !!before && before !== tier
+                return (
+                  <li key={g.stamp} className={styles.rvStampItem}>
+                    <span className={styles.rvStampInk} style={at(stampsAt + 350 + i * STAMP_STEP)}>
+                      <Stamp def={def} tier={tier} year={g.latest.year} caption={caption} size={newStamps.length > 2 ? 76 : 88} seed={g.latest.note} />
+                      {g.count > 1 ? <span className={styles.stampCount}>×{g.count}</span> : null}
+                    </span>
+                    <span className={styles.rvStampName}>{def.name}</span>
+                    <span className={`${styles.rvStampTier} ${styles[`tier_${tier}` as 'tier_gold']}`}>{up ? `Up to ${TIER_NAMES[tier].toLowerCase()}` : TIER_NAMES[tier]}</span>
+                    <span className={styles.rvStampNote}>{g.latest.note}</span>
+                  </li>
+                )
+              })}
             </ul>
           </div>
         ) : null}
@@ -1546,10 +1626,11 @@ function teamLine(bracket: CupBracket, extras: CupExtras, user: User): string | 
     const opp = teamOf(game[side === 'a' ? 'b' : 'a'])
     const p = extras.details[game.id]?.probA
     const mine = p == null ? null : side === 'a' ? p : 1 - p
-    line = opp ? `${ordinal(o.seed)} seed · v ${opp.name}${mine != null ? `, ${pct(mine * 100)} to win` : ''}` : `${ordinal(o.seed)} seed · still alive`
+    // Short enough for one line on a phone (Joey, 2026-10-16): no opponent.
+    line = opp && mine != null ? `${ordinal(o.seed)} seed · ${pct(mine * 100)} to win` : `${ordinal(o.seed)} seed · still alive`
   } else if (bye) line = `${ordinal(o.seed)} seed · bye in the ${cur!.name.toLowerCase()}`
   else line = `${ordinal(o.seed)} seed · still alive`
-  return `${line} · ${pct(o.win)} to win the Cup`
+  return `${line} · ${pct(o.win)} to win Title`
 }
 
 // Who's picking, and where their own team stands in the Cup.
@@ -2437,6 +2518,7 @@ function LeadersTab({
   stampsHere,
   myStamps,
   caption,
+  tierFor,
   onBook,
   onChampion,
   onWho,
@@ -2452,6 +2534,7 @@ function LeadersTab({
   stampsHere: StampAward[]
   myStamps: number
   caption: string
+  tierFor: TierFor
   onBook: (person: string | null, name: string | null) => void
   onChampion: () => void
   onWho: () => void
@@ -2617,7 +2700,7 @@ function LeadersTab({
             const def = STAMP_BY_ID.get(g.stamp)!
             return (
               <li key={g.stamp} className={styles.stampRow}>
-                <Stamp def={def} center={String(g.latest.year)} caption={caption} size={50} seed={g.latest.note} />
+                <Stamp def={def} tier={bestTier(g, tierFor)} year={g.latest.year} caption={caption} size={50} seed={g.latest.note} />
                 <span className={styles.stampWho}>
                   <span className={styles.stampName}>{def.name}</span>
                   <span className={styles.stampPeople}>

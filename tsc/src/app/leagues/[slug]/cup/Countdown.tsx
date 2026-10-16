@@ -14,7 +14,8 @@ function subscribe(cb: () => void) {
 
 const nowSeconds = () => Math.floor(Date.now() / 1000)
 
-export function Countdown({ at, done }: { at: string; done: string }) {
+// `compact`: one short row of cells, for the demo's launch ticket.
+export function Countdown({ at, done, compact }: { at: string; done: string; compact?: boolean }) {
   const now = useSyncExternalStore(subscribe, nowSeconds, () => null)
   const left = now == null ? null : Math.max(0, Math.floor(Date.parse(at) / 1000) - now)
   if (left === 0) return <p className={styles.countDone}>{done}</p>
@@ -25,7 +26,7 @@ export function Countdown({ at, done }: { at: string; done: string }) {
     ['Sec', left == null ? null : left % 60],
   ]
   return (
-    <div className={styles.count} role="timer" aria-live="off">
+    <div className={`${styles.count} ${compact ? styles.countCompact : ''}`} role="timer" aria-live="off">
       {parts.map(([label, n]) => (
         <span key={label} className={styles.countCell}>
           <span className={styles.countNum}>{n == null ? '--' : String(n).padStart(2, '0')}</span>

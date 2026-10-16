@@ -9,8 +9,9 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { recapViewable } from '@/lib/recap/load'
-import { cupBadge } from '@/lib/cup/load'
-import { loadLeagueCups } from '@/lib/cup/history'
+import { cupBadge, type CupBadge } from '@/lib/cup/load'
+import { loadLeagueCups, type LeagueCups } from '@/lib/cup/history'
+import { demoLeagueCups, isDemoCup } from '@/lib/cup/demo'
 import { CHAMPION_BONUS, roundPoints } from '@/lib/cup/extras'
 import { challengePoints } from '@/lib/cup/stamps'
 
@@ -60,18 +61,29 @@ function json(body: CupSummary | null, status = 200) {
 export async function GET(_req: Request, { params }: { params: Promise<{ slug: string }> }): Promise<Response> {
   const { slug } = await params
   if (!/^[a-z0-9-]{1,80}$/.test(slug)) return json(null, 404)
-  const db = createAdminClient()
-  const { data: league } = await db.from('leagues').select('id, slug, owner_id, published_at').eq('slug', slug).maybeSingle()
-  if (!league || !(await recapViewable(league))) return json(null, 404)
-
   const href = `/leagues/${slug}/cup/`
-  const [{ cups, stamps, nameOf }, { data: live }] = await Promise.all([
-    loadLeagueCups(league.id as string),
-    db.from('seasons').select('year, settings').eq('league_id', league.id).eq('is_live', true).maybeSingle(),
-  ])
-  const badge = live
-    ? await cupBadge(db, { id: league.id as string, slug }, { year: live.year as number, week: null, settings: (live.settings ?? null) as Record<string, unknown> | null }).catch(() => null)
-    : null
+  let leagueCups: LeagueCups
+  let badge: CupBadge | null
+  if (isDemoCup(slug)) {
+    // The demo league (lib/cup/demo.ts): no rows, and its semifinal picks
+    // are always open.
+    leagueCups = demoLeagueCups()
+    const newest = leagueCups.cups[leagueCups.cups.length - 1]
+    badge = newest ? { id: newest.view.cup.id, name: newest.view.cup.name, href, label: '', key: '', picksOpen: true, preview: false } : null
+  } else {
+    const db = createAdminClient()
+    const { data: league } = await db.from('leagues').select('id, slug, owner_id, published_at').eq('slug', slug).maybeSingle()
+    if (!league || !(await recapViewable(league))) return json(null, 404)
+    const [lc, { data: live }] = await Promise.all([
+      loadLeagueCups(league.id as string),
+      db.from('seasons').select('year, settings').eq('league_id', league.id).eq('is_live', true).maybeSingle(),
+    ])
+    leagueCups = lc
+    badge = live
+      ? await cupBadge(db, { id: league.id as string, slug }, { year: live.year as number, week: null, settings: (live.settings ?? null) as Record<string, unknown> | null }).catch(() => null)
+      : null
+  }
+  const { cups, stamps, nameOf } = leagueCups
 
   if (!cups.length) {
     if (badge?.preview) return json({ kind: 'preview', name: badge.name, href, status: badge.label })

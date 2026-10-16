@@ -698,9 +698,64 @@
             .catch(function () { /* offline / probe failed — leave signed-out nav */ });
     }
 
+    // Demo-only: the Cup pill a real league shows while its Cup is running
+    // (pams-template nav.js buildReviewNudge, Cup branch). The demo league is
+    // frozen mid-Cup (lib/cup/demo.ts), semifinal picks open, so it always
+    // shows. With the demo strip pinned at the top it's the bottom-left
+    // pill at every width, as on a real league with a strip up. Dismissing
+    // hides it, as it does for that week on a real league.
+    function buildDemoCup() {
+        if (!/^\/demo(\/|$)/.test(window.location.pathname)) return;
+        if (document.getElementById('dc-review-nudge')) return;
+        var key = 'tsc-cup-strip-demo-cup-2026:8';
+        try { if (localStorage.getItem(key)) return; } catch (e) {}
+
+        var el = document.createElement('div');
+        el.id = 'dc-review-nudge';
+        el.className = 'dc-rev dc-rev--cup';
+        el.innerHTML =
+            '<a class="dc-rev-link" href="/leagues/demo/cup/" target="_top">' +
+                '<span class="dc-cup-stub" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v4.5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5a2.5 2.5 0 0 0 2.6 3.6M17 6h2.5a2.5 2.5 0 0 1-2.6 3.6M12 13.5V17M8.5 20h7M9.5 17h5"/></svg></span>' +
+                '<span class="dc-cup-name">The League Cup</span>' +
+                '<span class="dc-cup-label">Semifinals this week</span>' +
+                '<span class="dc-cup-go dc-cup-go--pick">Make your picks</span>' +
+            '</a>' +
+            '<button type="button" class="dc-rev-x" aria-label="Dismiss">✕</button>';
+        document.body.appendChild(el);
+        el.querySelector('.dc-rev-x').addEventListener('click', function () {
+            try { localStorage.setItem(key, String(Date.now())); } catch (e) {}
+            el.remove();
+        });
+
+        var style = document.createElement('style');
+        style.setAttribute('data-demo-cup', '1');
+        style.textContent = [
+            '.dc-rev {',
+            '  position: fixed; z-index: 88;',
+            '  left: calc(1.1rem + env(safe-area-inset-left));',
+            '  bottom: calc(1.1rem + env(safe-area-inset-bottom));',
+            '  display: flex; align-items: stretch; overflow: hidden;',
+            '  background: #f5eedb; border-radius: 10px; box-shadow: 0 8px 26px rgba(0,0,0,.45);',
+            '}',
+            '.dc-rev-link { display: flex; align-items: center; gap: .6rem; padding: 0 .45rem 0 0; color: #1f4a3a; text-decoration: none; }',
+            '.dc-rev-link:hover { background: #fbf7ec; color: #14301f; }',
+            '.dc-cup-stub { position: relative; flex: none; align-self: stretch; display: flex; align-items: center; justify-content: center; width: 38px; background: #1f4a3a; color: #e6cb8e; }',
+            '.dc-cup-stub::after { content: ""; position: absolute; top: 5px; bottom: 5px; right: -1px; border-right: 2px dotted #f5eedb; }',
+            '.dc-cup-name { font-family: var(--serif, "DM Serif Display", Georgia, serif); font-size: 1.02rem; line-height: 1; color: #1f4a3a; white-space: nowrap; }',
+            '.dc-cup-label { font-family: var(--sans, Inter, system-ui, sans-serif); font-size: .78rem; font-weight: 500; color: #5d5a4a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+            '.dc-cup-go { flex: none; margin: .4rem 0 .4rem .2rem; padding: .42rem .7rem; border-radius: 7px; font-family: var(--sans, Inter, system-ui, sans-serif); font-size: .74rem; font-weight: 700; white-space: nowrap; }',
+            '.dc-cup-go--pick { background: #1f4a3a; color: #f5eedb; }',
+            '.dc-rev-x { flex: none; padding: 0 .7rem; background: none; border: 0; border-left: 1px solid #ddd0ad; color: #7b745f; cursor: pointer; font-size: .62rem; line-height: 1; }',
+            '.dc-rev-x:hover { color: #1f4a3a; }',
+            '@media (max-width: 560px) { .dc-cup-label { display: none; } }'
+        ].join('\n');
+        document.head.appendChild(style);
+    }
+
     function init() {
         buildDemoStrip();
         buildNav();
+        buildDemoCup();
         buildDemoBookmark();
         enhanceAuthLinks();
         wireBookmarkToggle();
