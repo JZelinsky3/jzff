@@ -107,6 +107,14 @@ on:
     # stayed held. Already-sent recaps are skipped, so a run with nothing
     # left to do sends nothing.
     - cron: '23 15 * * 3'
+    # The League Cup draw (tsc/src/lib/cup/draw.ts): every league's Cup is
+    # made just after the announced draw time, Wednesday 13:00 UTC (9am ET)
+    # on draw day. It does nothing before that time, and on any other
+    # Wednesday it finds every Cup already made, so it can stay scheduled.
+    # The Wednesday refresh above and the Thursday reports run it again
+    # afterwards for any league whose seeding week wasn't final yet. Minute
+    # 7, not 0, for the dropped-run reason given on the Tuesday run.
+    - cron: '7 13 * * 3'
     # Progress Reports, Thursday 14:17 UTC (~10am ET): the playoff race and
     # report cards, emailed the Thursday after weeks 4, 6, 9, 11 and 13
     # (REPORT_WEEKS in tsc/src/lib/report/build.ts). Every other Thursday the
@@ -151,6 +159,7 @@ on:
           - reports
           - social-plan
           - social-publish
+          - cup-draw
 
 jobs:
   run:
@@ -179,8 +188,9 @@ jobs:
             '0 23 * * *')  paths="$trade_sweep" ;;
             '7 12 * * 2')  paths='refresh recaps' ;;
             '47 16 * * 2') paths='refresh recaps' ;;
-            '23 15 * * 3') paths='refresh recaps' ;;
-            '17 14 * * 4') paths='reports' ;;
+            '23 15 * * 3') paths='refresh recaps cup-draw' ;;
+            '7 13 * * 3')  paths='cup-draw' ;;
+            '17 14 * * 4') paths='reports cup-draw' ;;
             '41 18 * * 4') paths='reports' ;;
             '0 13 * * 6')  paths='social-plan' ;;
             '20 0-2,12-23 * * *') paths='social-publish' ;;

@@ -1824,12 +1824,14 @@
 
 .mRow {
   display: grid;
-  /* No score column on a phone (scores show from 600px). */
-  grid-template-columns: 11px minmax(0, 1fr);
+  /* No score column on a phone (scores show from 600px). The seed is
+     centred in its own column flush to the card's edge, with no gap after
+     it, so it sits halfway between the edge and the name. */
+  grid-template-columns: 18px minmax(0, 1fr);
   align-items: center;
-  gap: 3px;
+  gap: 0;
   height: 22px;
-  padding: 0 4px;
+  padding: 0 4px 0 0;
 }
 
 /* The second team a shade darker, so the two read as two. */
@@ -1844,7 +1846,7 @@
   font-size: 11px;
   font-weight: 700;
   color: var(--brass-lo);
-  text-align: left;
+  text-align: center;
 }
 
 /* Your team, wherever it is in the draw. Rounded on the card's outer edge,
@@ -3604,10 +3606,14 @@
   }
 
   .mRow {
-    grid-template-columns: 16px minmax(0, 1fr) auto;
-    gap: 4px;
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    gap: 0;
     height: 26px;
-    padding: 0 8px;
+    padding: 0 8px 0 0;
+  }
+
+  .mScore {
+    padding-left: 6px;
   }
 
   .mName {
@@ -4161,10 +4167,10 @@ button.sideName:hover {
 }
 
 .sideDraw .mRow {
-  grid-template-columns: 12px minmax(0, 1fr) auto;
-  gap: 4px;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 0;
   height: 20px;
-  padding: 0 5px;
+  padding: 0 5px 0 0;
 }
 
 .sideDraw .mName {
