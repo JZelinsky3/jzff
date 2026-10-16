@@ -20,6 +20,8 @@ export type Kind =
   | 'trending' | 'drops' | 'leaders' | 'beat' | 'season' | 'targets' | 'pace' | 'bargains'
   | 'streaks' | 'busts' | 'byes' | 'nugget' | 'projections' | 'sunday'
   | 'sidebyside' | 'highs' | 'redzone' | 'namegame' | 'mnf' | 'yearago'
+  // League Cup launch posts, queued by hand for the two weeks before the draw.
+  | 'cup'
   // Retired 2026-10-05 (reply bait); kept so old rows still have a label.
   | 'question'
 
@@ -50,6 +52,7 @@ export const KIND_LABELS: Record<Kind, string> = {
   nugget: 'History by position (retired)',
   yearago: 'This year vs last (text)',
   sunday: 'Sunday’s top scorers (text)',
+  cup: 'League Cup launch',
   question: 'Question (retired)',
 }
 
@@ -65,10 +68,47 @@ export type Built = {
 
 export type Row = { name: string; meta: string; value: string; note?: string }
 
+// The stat cards rotate through designs week to week, so Tuesday and
+// Wednesday don't post the same layout every week (Joey). Rows written before
+// designs existed have none and draw as the ledger.
+export type Design = 'ledger' | 'bars' | 'poster' | 'columns' | 'timeline' | 'scatter'
+
+/** One game in the history charts. */
+export type Dot = { name: string; pos: string; year: number; pts: number }
+/** One dropped player in the regret charts. */
+export type Drop = { name: string; pos: string; pts: number; drops: number }
+
 export type Card =
-  | { template: 'history'; week: number; hero: Row & { year: number; line: string }; rows: (Row & { year: number })[] }
-  | { template: 'regret'; week: number; season: number; rows: Row[] }
-  | { template: 'product'; kicker: string; title: string; dek: string; points: string[] }
+  | {
+      template: 'history'; week: number; hero: Row & { year: number; line: string }; rows: (Row & { year: number })[]
+      design?: Design
+      // The top 20 games ever in this week, for the bars and the timeline.
+      field?: Dot[]
+      // The best game in this week of every season, for the columns.
+      seasons?: Dot[]
+    }
+  | { template: 'regret'; week: number; season: number; rows: Row[]; design?: Design; field?: Drop[] }
+  // `right` and `stamp` default to the recap promo's "Every Tuesday" and
+  // "10 DAYS FREE".
+  | { template: 'product'; kicker: string; title: string; dek: string; points: string[]; right?: string; stamp?: string }
+  // The League Cup's own card: the Cup's green board, trophy and bracket.
+  | { template: 'cup'; kicker: string; title: string; dek: string; date: string; time: string; note: string; steps: string[]; cta: string }
+
+// Five history designs and four regret ones, a week apart. Regret goes out on
+// the Tuesday before the week's history post, and never in the same design.
+const HISTORY_DESIGNS: Design[] = ['poster', 'ledger', 'columns', 'bars', 'timeline']
+const REGRET_DESIGNS: Design[] = ['poster', 'bars', 'ledger', 'scatter']
+
+export function historyDesign(week: number): Design {
+  return HISTORY_DESIGNS[week % HISTORY_DESIGNS.length]
+}
+
+/** `week` is the week the drops scored in; the history post that week is week + 1. */
+export function regretDesign(week: number): Design {
+  const w = week + 1
+  const d = REGRET_DESIGNS[w % REGRET_DESIGNS.length]
+  return d === historyDesign(w) ? REGRET_DESIGNS[(w + 1) % REGRET_DESIGNS.length] : d
+}
 
 /**
  * Both platform texts from one body. The link goes last, tagged per platform.
@@ -127,8 +167,8 @@ export const FANTASY_POS = new Set(['QB', 'RB', 'WR', 'TE'])
 
 export type WeekGame = { id: string; year: number; pts: number; s: Stats }
 
-/** Every QB/RB/WR/TE game in week `week` since 2009, best first, top 20. */
-export async function weekBestEver(week: number, lastSeason: number): Promise<WeekGame[]> {
+/** Every QB/RB/WR/TE game in week `week` since 2009, best first. */
+async function weekGames(week: number, lastSeason: number): Promise<WeekGame[]> {
   const players = await getPlayersNflDict()
   const years = Array.from({ length: lastSeason - 2009 + 1 }, (_, i) => 2009 + i)
   const games = (await Promise.all(years.map(async (year) => {
@@ -137,7 +177,12 @@ export async function weekBestEver(week: number, lastSeason: number): Promise<We
       .filter(([id]) => FANTASY_POS.has(players[id]?.position ?? '') && !!players[id]?.full_name)
       .map(([id, s]) => ({ id, year, pts: s.pts_ppr ?? 0, s }))
   }))).flat()
-  return games.sort((a, b) => b.pts - a.pts).slice(0, 20)
+  return games.sort((a, b) => b.pts - a.pts)
+}
+
+/** The top 20 of weekGames. */
+export async function weekBestEver(week: number, lastSeason: number): Promise<WeekGame[]> {
+  return (await weekGames(week, lastSeason)).slice(0, 20)
 }
 
 // ── This Week in Fantasy History ─────────────────────────────────────────
@@ -145,7 +190,8 @@ export async function weekBestEver(week: number, lastSeason: number): Promise<We
 // A true top six: two from one season both make it (a "best of each season"
 // list left Aaron Jones' 49.2 off because Will Fuller had 2019, Joey caught it).
 export async function buildHistory(week: number, lastSeason: number): Promise<Built> {
-  const ranked = await weekBestEver(week, lastSeason)
+  const all = await weekGames(week, lastSeason)
+  const ranked = all.slice(0, 20)
   if (ranked.length < 6) throw new Error(`only ${ranked.length} games found for week ${week}`)
   const players = await getPlayersNflDict()
 
@@ -155,9 +201,18 @@ export async function buildHistory(week: number, lastSeason: number): Promise<Bu
     value: fmt1(r.pts),
     year: r.year,
   })
+  const toDot = (r: WeekGame): Dot => ({ name: players[r.id].full_name!, pos: players[r.id].position ?? '', year: r.year, pts: Math.round(r.pts * 10) / 10 })
+  // `all` is sorted best first, so the first game seen in a year is its best.
+  const best = new Map<number, WeekGame>()
+  for (const g of all) if (!best.has(g.year)) best.set(g.year, g)
   const [top, ...rest] = ranked
   const hero = { ...toRow(top), line: statLine(players[top.id].position, top.s) }
-  const card: Card = { template: 'history', week, hero, rows: rest.slice(0, 5).map(toRow) }
+  const card: Card = {
+    template: 'history', week, hero, rows: rest.slice(0, 5).map(toRow),
+    design: historyDesign(week),
+    field: ranked.map(toDot),
+    seasons: [...best.values()].sort((a, b) => a.year - b.year).map(toDot),
+  }
 
   const lead = `the best Week ${week} ever was ${hero.name} in ${hero.year}. ${hero.line}, ${hero.value} PPR points.`
   const runnerUp = rest[0] ? ` Next best: ${toRow(rest[0]).name} in ${rest[0].year} with ${fmt1(rest[0].pts)}.` : ''
@@ -184,11 +239,11 @@ export async function snapshotDrops(): Promise<RegretParams['drops']> {
 
 export async function buildRegret(p: RegretParams): Promise<Built | null> {
   const [players, stats] = await Promise.all([getPlayersNflDict(), fetchWeekStats(p.season, p.week)])
-  const scored = p.drops
+  const everyone = p.drops
     .map((d) => ({ ...d, player: players[d.player_id], pts: (stats as Record<string, Stats>)[d.player_id]?.pts_ppr ?? 0 }))
     .filter((d) => d.player?.full_name && FANTASY_POS.has(d.player.position ?? '') && d.pts > 0)
     .sort((a, b) => b.pts - a.pts)
-    .slice(0, 6)
+  const scored = everyone.slice(0, 6)
   // A quiet week has no regret worth posting. The publisher expires it.
   if (scored.filter((d) => d.pts >= 12).length < 3) return null
 
@@ -208,7 +263,12 @@ export async function buildRegret(p: RegretParams): Promise<Built | null> {
       threads: `Drop Regret Index, Week ${p.week}: ${lead} ${second.name} (${second.value}) and ${third.name} (${third.value}) weren't far behind.\n\nThe week's most-dropped players, ranked by what they scored right after.`,
     }, link, 'regret'),
     link,
-    card: { template: 'regret', week: p.week, season: p.season, rows },
+    card: {
+      template: 'regret', week: p.week, season: p.season, rows,
+      design: regretDesign(p.week),
+      // The scatter's dots: the 15 best scorers among the drops.
+      field: everyone.slice(0, 15).map((d) => ({ name: d.player.full_name!, pos: d.player.position ?? '', pts: Math.round(d.pts * 10) / 10, drops: d.count })),
+    },
     image_path: null,
   }
 }
@@ -349,4 +409,37 @@ export function buildFeature(week: number): Built {
     // not follow it, so hand it the final URL.
     link, card: null, image_path: page.og.replace(/^([^?]*?)\/?(\?|$)/, '$1/$2'),
   }
+}
+
+// ── The League Cup launch ────────────────────────────────────────────────
+// Two posts before the draw, queued by hand from buildCupPost.
+// The first card was the recap promo's cream product card, which said
+// nothing about what the Cup is (Joey), so the Cup has a card of its own.
+const CUP_POSTS: Record<'launch' | 'seeds', { x: string; threads: string; card: Card }> = {
+  launch: {
+    x: 'The League Cup: a knockout bracket inside your fantasy season.\n\n• Top 12 after Week 7 get seeded\n• One round a week, Weeks 8 to 11\n• Your weekly score is your Cup score\n• Lose once and you\'re out\n\nDraw: Wednesday, October 28th. Sync your league today to get in.',
+    threads: 'New this season: The League Cup, a knockout tournament inside your fantasy season.\n\n• Your league\'s top 12 after Week 7 are seeded, top 4 on a bye\n• One round a week, Weeks 8 to 11\n• Your weekly score is your Cup score. Lose and you\'re out\n• The whole league picks the winners\n\nThe draw is Wednesday, October 28th. Sync your Sleeper or ESPN league today to be in it.',
+    card: {
+      template: 'cup', kicker: 'New this season', title: 'The League Cup', dek: 'A knockout tournament inside your fantasy season.',
+      date: 'Wednesday, October 28th', time: '9 AM ET', note: 'Seeded after Week 7 · Final in Week 11',
+      steps: ['Top 12 after Week 7 are seeded, top 4 get a bye', 'Your weekly score is your Cup score. Lose and you’re out', 'The whole league picks the winners each round'],
+      cta: 'Sync your league today to be in the draw',
+    },
+  },
+  seeds: {
+    x: 'The League Cup draw is Wednesday, October 28th, and Week 7 sets the seeds.\n\n• Top 12 in your league go into the bracket\n• Top 4 seeds get a bye\n• Round one is Week 8, the final is Week 11\n\nSync your league this week to be in the draw.',
+    threads: 'The League Cup draw is Wednesday, October 28th, and this weekend sets the seeds.\n\n• Your top 12 after Week 7 go into a knockout bracket\n• Top 4 seeds get a bye\n• Round one is Week 8, the final is Week 11, all before your playoffs\n• Your weekly score is your Cup score. One loss and you\'re out\n\nSync your Sleeper or ESPN league this week to be in the draw.',
+    card: {
+      template: 'cup', kicker: 'The League Cup', title: 'Week 7 Sets the Seeds', dek: 'The last weekend that counts for the draw.',
+      date: 'Wednesday, October 28th', time: '9 AM ET', note: 'Seeded after Week 7 · Final in Week 11',
+      steps: ['Top 12 in your league go into the bracket', 'Top 4 seeds get a bye', 'Round one is Week 8, the final is Week 11', 'One loss and you’re out'],
+      cta: 'Sync your league this week to be in the draw',
+    },
+  },
+}
+
+export function buildCupPost(which: keyof typeof CUP_POSTS): Built {
+  const p = CUP_POSTS[which]
+  const link = '/'
+  return { ...texts({ x: p.x, threads: p.threads }, link, `cup-${which}`), link, card: p.card, image_path: null }
 }

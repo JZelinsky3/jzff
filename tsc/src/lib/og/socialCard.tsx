@@ -1,19 +1,21 @@
 // The social post card, 1080x1350 (4:5, which both X and Threads show
-// uncropped in the feed). Newsprint: cream paper, ink, one red. Drawn by
-// /api/og/social/<id>/ from the `card` on a social_posts row.
+// uncropped in the feed). Drawn by /api/og/social/<id>/ from the `card` on a
+// social_posts row.
+//
+// The stat cards rotate through designs (card.design, see content.ts), each
+// on its own paper stock, so the feed isn't the same cream list every week:
+// the ledger here, the charts and the poster in ./socialDesigns. The League
+// Cup has its own card in ./socialCup. The typefaces and the foot never change.
 
 import { ImageResponse } from 'next/og'
 import { readFile } from 'fs/promises'
 import path from 'path'
 import type { Card, Row } from '@/lib/social/content'
+import { barsCard, columnsCard, posterCard, scatterCard, timelineCard } from './socialDesigns'
+import { cupCard } from './socialCup'
+import { CREAM, GRAPH, NAVY, NIGHT, SALMON, doubleRule, flag, type Stock } from './socialParts'
 
 const FONT_DIR = path.join(process.cwd(), 'public', 'og', 'fonts')
-
-const PAPER = '#f2e9d6'
-const INK = '#16130f'
-const MUTE = '#6b5d44'
-const RULE = '#cdbf9f'
-const RED = '#a3271d'
 
 async function loadFonts() {
   const [serif, serifItalic, mono, monoBold] = await Promise.all([
@@ -30,145 +32,153 @@ async function loadFonts() {
   ]
 }
 
-function Flag({ label, right }: { label: string; right?: string }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <div style={{ display: 'flex', background: RED, color: PAPER, fontFamily: 'JetBrains', fontWeight: 700, fontSize: 26, letterSpacing: 4, padding: '10px 18px' }}>
-        {label.toUpperCase()}
-      </div>
-      {right ? (
-        <div style={{ display: 'flex', fontFamily: 'JetBrains', fontWeight: 700, fontSize: 26, letterSpacing: 4, color: INK }}>{right.toUpperCase()}</div>
-      ) : null}
-    </div>
-  )
-}
-
-function DoubleRule() {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', marginTop: 26 }}>
-      <div style={{ display: 'flex', height: 4, background: INK }} />
-      <div style={{ display: 'flex', height: 1, background: INK, marginTop: 4 }} />
-    </div>
-  )
-}
-
-function Foot() {
+function foot(s: Stock) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', marginTop: 'auto' }}>
-      <div style={{ display: 'flex', height: 2, background: INK }} />
+      <div style={{ display: 'flex', height: 2, background: s.ink }} />
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', paddingTop: 18 }}>
-        <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 40, color: INK }}>The Sunday Chronicle.</div>
-        <div style={{ display: 'flex', fontFamily: 'JetBrains', fontSize: 22, letterSpacing: 2, color: MUTE }}>thesundaychronicle.app</div>
+        <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 40, color: s.ink }}>The Sunday Chronicle.</div>
+        <div style={{ display: 'flex', fontFamily: 'JetBrains', fontSize: 22, letterSpacing: 2, color: s.mute }}>thesundaychronicle.app</div>
       </div>
     </div>
   )
 }
 
 /** One agate line: rank, name over meta, value. */
-function Line({ n, row, big }: { n: number; row: Row; big?: boolean }) {
+function line(s: Stock, n: number, row: Row, big?: boolean) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', borderTop: `1px solid ${RULE}`, padding: big ? '20px 0' : '14px 0' }}>
-      <div style={{ display: 'flex', width: 70, fontFamily: 'DMSerif', fontSize: big ? 56 : 44, color: RED }}>{n}</div>
+    <div key={n} style={{ display: 'flex', alignItems: 'center', borderTop: `1px solid ${s.rule}`, padding: big ? '20px 0' : '14px 0' }}>
+      <div style={{ display: 'flex', width: 70, fontFamily: 'DMSerif', fontSize: big ? 56 : 44, color: s.accent }}>{n}</div>
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-        <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: big ? 50 : 40, color: INK, lineHeight: 1.05 }}>{row.name}</div>
-        <div style={{ display: 'flex', fontFamily: 'JetBrains', fontSize: 22, letterSpacing: 1, color: MUTE, marginTop: 6 }}>
+        <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: big ? 50 : 40, color: s.ink, lineHeight: 1.05 }}>{row.name}</div>
+        <div style={{ display: 'flex', fontFamily: 'JetBrains', fontSize: 22, letterSpacing: 1, color: s.mute, marginTop: 6 }}>
           {[row.meta, row.note].filter(Boolean).join('  ·  ')}
         </div>
       </div>
-      <div style={{ display: 'flex', fontFamily: 'JetBrains', fontWeight: 700, fontSize: big ? 56 : 44, color: INK }}>{row.value}</div>
+      <div style={{ display: 'flex', fontFamily: 'JetBrains', fontWeight: 700, fontSize: big ? 56 : 44, color: s.ink }}>{row.value}</div>
     </div>
   )
 }
 
-function Body({ card }: { card: Card | null }) {
+type Drawn = { stock: Stock; body: React.ReactNode; /** Draws its own frame, foot included. */ bare?: boolean }
+
+function draw(card: Card | null): Drawn {
+  const s = CREAM
   if (!card) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <Flag label="Drop Regret Index" />
-        <DoubleRule />
-        <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 92, lineHeight: 1, color: INK, marginTop: 60 }}>Written on the day.</div>
-        <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: 40, color: MUTE, marginTop: 28 }}>
-          This card is drawn from Sunday&apos;s scores once Monday night is final.
+    return {
+      stock: s,
+      body: (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {flag(s, 'Drop Regret Index')}
+          {doubleRule(s)}
+          <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 92, lineHeight: 1, color: s.ink, marginTop: 60 }}>Written on the day.</div>
+          <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: 40, color: s.mute, marginTop: 28 }}>
+            This card is drawn from Sunday&apos;s scores once Monday night is final.
+          </div>
         </div>
-      </div>
-    )
+      ),
+    }
+  }
+
+  if (card.template === 'cup') return { stock: s, body: cupCard(card), bare: true }
+
+  if (card.template === 'history' || card.template === 'regret') {
+    switch (card.design) {
+      case 'bars': return { stock: SALMON, body: barsCard(SALMON, card) }
+      case 'poster': return { stock: NIGHT, body: posterCard(NIGHT, card) }
+      case 'columns': if (card.template === 'history' && card.seasons?.length) return { stock: NAVY, body: columnsCard(NAVY, card) }; break
+      case 'timeline': if (card.template === 'history' && card.field?.length) return { stock: GRAPH, body: timelineCard(GRAPH, card) }; break
+      case 'scatter': if (card.template === 'regret' && card.field?.length) return { stock: GRAPH, body: scatterCard(GRAPH, card) }; break
+    }
   }
 
   if (card.template === 'history') {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <Flag label="This week in fantasy history" right={`Week ${card.week}`} />
-        <DoubleRule />
-        <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 92, lineHeight: 1.02, color: INK, marginTop: 40 }}>
-          Top Week {card.week} Games Ever
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', fontFamily: 'JetBrains', fontWeight: 700, fontSize: 22, letterSpacing: 4, color: MUTE, marginTop: 28 }}>
-          PPR
-        </div>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 8 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, paddingRight: 24 }}>
-            <div style={{ display: 'flex', fontFamily: 'JetBrains', fontWeight: 700, fontSize: 24, letterSpacing: 3, color: RED }}>{card.hero.meta.toUpperCase()}</div>
-            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 72, lineHeight: 1, color: INK, marginTop: 10 }}>{card.hero.name}</div>
-            <div style={{ display: 'flex', fontFamily: 'JetBrains', fontSize: 24, color: MUTE, marginTop: 14 }}>{card.hero.line}</div>
+    return {
+      stock: s,
+      body: (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {flag(s, 'This week in fantasy history', `Week ${card.week}`)}
+          {doubleRule(s)}
+          <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 92, lineHeight: 1.02, color: s.ink, marginTop: 40 }}>
+            Top Week {card.week} Games Ever
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 170, lineHeight: 0.9, color: RED }}>{card.hero.value}</div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', fontFamily: 'JetBrains', fontWeight: 700, fontSize: 22, letterSpacing: 4, color: s.mute, marginTop: 28 }}>
+            PPR
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, paddingRight: 24 }}>
+              <div style={{ display: 'flex', fontFamily: 'JetBrains', fontWeight: 700, fontSize: 24, letterSpacing: 3, color: s.accent }}>{card.hero.meta.toUpperCase()}</div>
+              <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 72, lineHeight: 1, color: s.ink, marginTop: 10 }}>{card.hero.name}</div>
+              <div style={{ display: 'flex', fontFamily: 'JetBrains', fontSize: 24, color: s.mute, marginTop: 14 }}>{card.hero.line}</div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+              <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 170, lineHeight: 0.9, color: s.accent }}>{card.hero.value}</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', marginTop: 40 }}>
+            {card.rows.map((r, i) => line(s, i + 2, r))}
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', marginTop: 40 }}>
-          {card.rows.map((r, i) => <Line key={i} n={i + 2} row={r} />)}
-        </div>
-      </div>
-    )
+      ),
+    }
   }
 
   if (card.template === 'regret') {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <Flag label="The Drop Regret Index" right={`Week ${card.week}`} />
-        <DoubleRule />
-        <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 84, lineHeight: 1.02, color: INK, marginTop: 40 }}>
-          You let them go.
+    return {
+      stock: s,
+      body: (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {flag(s, 'The Drop Regret Index', `Week ${card.week}`)}
+          {doubleRule(s)}
+          <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 84, lineHeight: 1.02, color: s.ink, marginTop: 40 }}>
+            You let them go.
+          </div>
+          <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: 38, color: s.mute, marginTop: 14, marginBottom: 30 }}>
+            The week&apos;s most-dropped players on Sleeper, and what they scored on Sunday.
+          </div>
+          {card.rows.map((r, i) => line(s, i + 1, r, i < 3))}
+          <div style={{ display: 'flex', fontFamily: 'JetBrains', fontSize: 20, color: s.mute, marginTop: 18 }}>
+            PPR points. Drops across all Sleeper leagues, Tuesday to Saturday.
+          </div>
         </div>
-        <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: 38, color: MUTE, marginTop: 14, marginBottom: 30 }}>
-          The week&apos;s most-dropped players on Sleeper, and what they scored on Sunday.
-        </div>
-        {card.rows.map((r, i) => <Line key={i} n={i + 1} row={r} big={i < 3} />)}
-        <div style={{ display: 'flex', fontFamily: 'JetBrains', fontSize: 20, color: MUTE, marginTop: 18 }}>
-          PPR points. Drops across all Sleeper leagues, Tuesday to Saturday.
-        </div>
-      </div>
-    )
+      ),
+    }
   }
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <Flag label={card.kicker} right="Every Tuesday" />
-      <DoubleRule />
-      <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 120, lineHeight: 0.98, color: INK, marginTop: 56 }}>{card.title}</div>
-      <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: 46, color: MUTE, marginTop: 24, marginBottom: 44 }}>{card.dek}</div>
-      {card.points.map((p, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'baseline', borderTop: `1px solid ${RULE}`, padding: '22px 0' }}>
-          <div style={{ display: 'flex', width: 70, fontFamily: 'JetBrains', fontWeight: 700, fontSize: 26, color: RED }}>{String(i + 1).padStart(2, '0')}</div>
-          <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 44, color: INK }}>{p}</div>
-        </div>
-      ))}
-      <div style={{ display: 'flex', marginTop: 36 }}>
-        <div style={{ display: 'flex', border: `3px solid ${RED}`, color: RED, fontFamily: 'JetBrains', fontWeight: 700, fontSize: 26, letterSpacing: 4, padding: '12px 20px' }}>
-          10 DAYS FREE
+  return {
+    stock: s,
+    body: (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {flag(s, card.kicker, card.right ?? 'Every Tuesday')}
+        {doubleRule(s)}
+        <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 120, lineHeight: 0.98, color: s.ink, marginTop: 56 }}>{card.title}</div>
+        <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: 46, color: s.mute, marginTop: 24, marginBottom: 44 }}>{card.dek}</div>
+        {card.points.map((p, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'baseline', borderTop: `1px solid ${s.rule}`, padding: '22px 0' }}>
+            <div style={{ display: 'flex', width: 70, fontFamily: 'JetBrains', fontWeight: 700, fontSize: 26, color: s.accent }}>{String(i + 1).padStart(2, '0')}</div>
+            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 44, color: s.ink }}>{p}</div>
+          </div>
+        ))}
+        <div style={{ display: 'flex', marginTop: 36 }}>
+          <div style={{ display: 'flex', border: `3px solid ${s.accent}`, color: s.accent, fontFamily: 'JetBrains', fontWeight: 700, fontSize: 26, letterSpacing: 4, padding: '12px 20px' }}>
+            {card.stamp ?? '10 DAYS FREE'}
+          </div>
         </div>
       </div>
-    </div>
-  )
+    ),
+  }
 }
 
 export async function renderSocialCard(card: Card | null): Promise<ImageResponse> {
   const fonts = await loadFonts()
+  const { stock, body, bare } = draw(card)
   return new ImageResponse(
-    (
-      <div style={{ width: '1080px', height: '1350px', display: 'flex', flexDirection: 'column', background: PAPER, padding: '64px 72px 56px' }}>
-        <Body card={card} />
-        <Foot />
+    bare ? (
+      <div style={{ width: '1080px', height: '1350px', display: 'flex' }}>{body}</div>
+    ) : (
+      <div style={{ width: '1080px', height: '1350px', display: 'flex', flexDirection: 'column', background: stock.bg, padding: '64px 72px 56px' }}>
+        {body}
+        {foot(stock)}
       </div>
     ),
     {
