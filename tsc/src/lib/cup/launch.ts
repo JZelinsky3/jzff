@@ -10,7 +10,7 @@ export const CUP_LAUNCH = {
   year: 2026,
   name: 'The League Cup',
   // The draw: Wednesday, October 28, 9 AM Eastern (still daylight time, so
-  // 13:00 UTC). Seeds are the standings after week 7.
+  // 13:00 UTC). Seeds are the Cup Rating after week 7.
   drawAt: '2026-10-28T13:00:00.000Z',
   seededThrough: 7,
   startWeek: 8,

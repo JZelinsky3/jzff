@@ -37,6 +37,8 @@ export type CupSummary =
       kind: 'cup'
       name: string
       href: string
+      // The Cup Hall of Fame.
+      hall: string
       since: number
       // One line on the newest Cup.
       status: string
@@ -140,6 +142,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     kind: 'cup',
     name: newest.view.cup.name,
     href,
+    hall: `${href}hall/`,
     since: cups[0]!.view.cup.season_year,
     status,
     picksOpen: !!badge && !badge.preview && badge.id === newest.view.cup.id && badge.picksOpen,

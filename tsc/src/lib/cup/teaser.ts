@@ -57,8 +57,8 @@ export type CupTeaser = {
     // The seeding week has been played: these are the seeds.
     final: boolean
     throughWeek: number
-    firstOut: { name: string; seed: number; gb: number } | null
-    byeRace: { last: string; next: string; gb: number } | null
+    firstOut: { name: string; seed: number; gap: number } | null
+    byeRace: { last: string; next: string; gap: number } | null
   } | null
 }
 

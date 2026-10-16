@@ -3,6 +3,20 @@
 <head>
 <base href="/demo-m/">
 <script>(function(){var u=navigator.userAgent;var m=/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u);if(m)return;if(/(?:^|;\s*)dc_view=mobile/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo-m\//,"/demo/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<!-- Link preview: the card a real league's page gets (demo_resync). -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The Sunday Chronicle">
+<meta property="og:title" content="The Lakeside League · The Live Season">
+<meta property="og:description" content="The Lakeside League's season as it happens, power rankings, pick'ems, records watch, and the trade desk.">
+<meta property="og:url" content="https://thesundaychronicle.app/demo-m/live/">
+<meta property="og:image" content="https://thesundaychronicle.app/api/og/league/demo/?page=live&v=3">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Lakeside League, The Live Season">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Lakeside League · The Live Season">
+<meta name="twitter:description" content="The Lakeside League's season as it happens, power rankings, pick'ems, records watch, and the trade desk.">
+<meta name="twitter:image" content="https://thesundaychronicle.app/api/og/league/demo/?page=live&v=3">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Live Season · The Lakeside League</title>
@@ -38,7 +52,10 @@ body { background: var(--ls-bg); }
     border-bottom: 2px solid var(--m-chrome-bg);
     height: 28px;
     display: flex; align-items: center; overflow: hidden;
-    margin: 0 -0.9rem;
+    /* Cancel .m-main's .9rem top padding so the ticker sits flush
+       against the bottom of the fixed app header. Side bleed keeps it
+       spanning edge-to-edge. */
+    margin: -.9rem -0.9rem 0;
 }
 .lv-ticker-track {
     display: flex; gap: 2.2rem; white-space: nowrap; padding-left: 2.2rem;
@@ -126,11 +143,6 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
        reads as "text sitting high". */
     padding: 4px 4px 2px;
 }
-/* Demo only — veteran badges are hidden here for now. They belong on
-   Rookie-tier subscription leagues (to show what an upgrade unlocks);
-   the template keeps them. To bring them back on the demo, delete this
-   one rule. */
-.lv-vet { display: none; }
 .lv-chev { flex: none; display: flex; color: var(--lv-accent, var(--gold)); opacity: .55; }
 .lv-row.is-soon { opacity: .42; filter: saturate(.5); }
 
@@ -194,6 +206,8 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
 }
 .fs-row.leader .fs-pos-num { color: #f4d9a4; }
 .fs-chg { font-size: .5rem; font-weight: 700; }
+/* Seats the stroked arrow on the mono baseline beside its number. */
+.m-move-arrow { display: inline-block; vertical-align: -1px; margin-right: .12em; }
 .fs-chg.up   { color: #6a9a6e; }
 .fs-chg.down { color: var(--ls-live); }
 .fs-chg.same { color: var(--ls-mute); }
@@ -202,6 +216,9 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
     font-size: .74rem; font-weight: 600;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* Team line scales down to fit its column (fitFsNames in JS); ellipsis
+   only kicks in once it bottoms out at the readable floor font-size. */
+.fs-team { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fs-name small {
     display: block;
     font-weight: 400; font-size: .56rem;
@@ -226,6 +243,11 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
 }
 
 .lv-foot { margin: 1.6rem 0 .4rem; text-align: center; }
+/* Demo only — veteran badges are hidden here for now. They belong on
+   Rookie-tier subscription leagues (to show what an upgrade unlocks);
+   the template keeps them. To bring them back on the demo, delete this
+   one rule. */
+.lv-vet { display: none; }
 </style>
 </head>
 <body>
@@ -380,9 +402,22 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
         });
     }
     function chg(n) {
-        if (n > 0) return '<span class="fs-chg up">▲' + n + '</span>';
-        if (n < 0) return '<span class="fs-chg down">▼' + Math.abs(n) + '</span>';
+        // Stroked arrow, not ▲ / ▼ — see the note on moveArrow below.
+        if (n > 0) return '<span class="fs-chg up">' + moveArrow(1) + n + '</span>';
+        if (n < 0) return '<span class="fs-chg down">' + moveArrow(-1) + Math.abs(n) + '</span>';
         return '<span class="fs-chg same">·</span>';
+    }
+    // Movement arrow. Was ▲ / ▼: solid typographic triangles that set at
+    // whatever weight the font decides, share a stroke with nothing else on
+    // the page, and at half-rem read as two filled blobs. Same stroked glyph
+    // the season standings use (seasons/season.html).
+    function moveArrow(dir) {
+        var path = dir > 0
+            ? '<path d="M5 10.4V2.3"/><path d="M1.7 5.5 5 2.2l3.3 3.3"/>'
+            : '<path d="M5 2.2v8.1"/><path d="M1.7 7 5 10.3 8.3 7"/>';
+        return '<svg class="m-move-arrow" viewBox="0 0 10 12.5" width="7" height="9" fill="none"'
+            + ' stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"'
+            + ' aria-hidden>' + path + '</svg>';
     }
     function pills(form) {
         // Always 5 slots; missing weeks render as dashed empties so an
@@ -432,7 +467,7 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
                         '<span class="fs-pos-num">' + (r.pos || (i + 1)) + '</span>' +
                         chg(Number(r.pos_change || 0)) +
                     '</span>' +
-                    '<span class="fs-name">' + esc(r.team || r.name) +
+                    '<span class="fs-name"><span class="fs-team">' + esc(r.team || r.name) + '</span>' +
                         (owner ? '<small>' + esc(owner) + '</small>' : '') +
                     '</span>' +
                     '<span class="fs-form">' + pills(form) + '</span>' +
@@ -442,7 +477,42 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
 
             document.getElementById('fsCard').innerHTML = html;
             document.getElementById('fsSection').hidden = false;
+            scheduleFit();
         });
+
+    // Shrink each name line until it fits its column, down to a readable floor
+    // — long names scale instead of truncating, and the CSS ellipsis only
+    // takes over once a name is too long even at the floor. Resets to base
+    // first so it's safe to re-run (after fonts load, on resize).
+    //
+    // Both the team line (.fs-team) AND the owner line (.fs-name small) get
+    // fitted: the owner line was previously untouched, so long handles like
+    // "Commissioner Goodhead" truncated no matter how the CSS was tuned.
+    function fitEl(el, base) {
+        var FLOOR = 0.36, STEP = 0.02, size = base, guard = 0;
+        el.style.fontSize = size + 'rem';
+        while (el.scrollWidth > el.clientWidth + 1 && size > FLOOR && guard < 26) {
+            size = Math.round((size - STEP) * 100) / 100;
+            el.style.fontSize = size + 'rem';
+            guard++;
+        }
+    }
+    function fitFsNames() {
+        document.querySelectorAll('#fsCard .fs-team').forEach(function (el) { fitEl(el, 0.74); });
+        document.querySelectorAll('#fsCard .fs-name small').forEach(function (el) { fitEl(el, 0.56); });
+    }
+    function scheduleFit() {
+        requestAnimationFrame(fitFsNames);
+        // The first pass measures with fallback-font metrics (narrower), so a
+        // long name "fits" and never shrinks — then the real webfont swaps in
+        // wider and truncates. Re-measure once fonts are actually ready.
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitFsNames);
+    }
+    var fitTimer;
+    window.addEventListener('resize', function () {
+        clearTimeout(fitTimer);
+        fitTimer = setTimeout(scheduleFit, 150);
+    });
 })();
 </script>
 </body>

@@ -7,7 +7,8 @@ import { LeagueVisitPing } from '@/components/LeagueVisitPing'
 const numerals = Barlow_Condensed({
   variable: '--font-cup-num',
   subsets: ['latin'],
-  weight: ['500', '600', '700'],
+  // 400: the bracket's open slots ("Noah/Adam").
+  weight: ['400', '500', '600', '700'],
 })
 
 export default function Layout({ children }: { children: React.ReactNode }) {

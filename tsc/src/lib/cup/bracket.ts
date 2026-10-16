@@ -1,9 +1,11 @@
 // The Cup: a knockout side tournament inside a league's regular season.
 //
 // The rules, which the page prints in plain words:
-//   • Seeds are the standings when the Cup is made (win rate, then points
-//     for), frozen on the league_cups row so the draw never reshuffles.
-//     Twelve teams at most: the top twelve, or everyone in a smaller league.
+//   • Seeds are the Cup Rating when the Cup is made (scoring, record, form
+//     and schedule; see ratingSeeds), frozen on the league_cups row so the
+//     draw never reshuffles. Twelve teams at most: the top twelve, or
+//     everyone in a smaller league. (pams' 2026 Milk Cup came before the
+//     rating and was seeded on the standings; its rows carry no rating.)
 //   • The bracket is the next power of two up from the field, so the top
 //     seeds get byes when a league isn't 8 or 16 teams. Standard seeding
 //     order: 1 meets the lowest seed left, and 1 and 2 can only meet in the
@@ -15,7 +17,20 @@
 // Pure: every input comes in as an argument, so the page, both image routes
 // and the almanac strip build the same bracket from the same rows.
 
-export type CupSeedRow = { seed: number; manager_id: string; w: number; l: number; t: number; pf: number }
+export type CupSeedRow = {
+  seed: number
+  manager_id: string
+  w: number
+  l: number
+  t: number
+  pf: number
+  // Points against, points a game over the last three weeks, and the Cup
+  // Rating the seed came from (50 = league average). Absent on Cups seeded
+  // on the standings, before the rating.
+  pa?: number
+  form?: number
+  rating?: number
+}
 
 export type CupEntrant = {
   seed: number
@@ -125,21 +140,49 @@ export function recordStr(w: number, l: number, t: number): string {
 // sends everybody.
 export const CUP_MAX_FIELD = 12
 
-// Seeds from a run of finished games: win rate (a tie is half a win), then
-// points for, then id so the order is stable. Capped at CUP_MAX_FIELD; the
-// launch preview passes Infinity to see the teams just outside.
-export function standingsSeeds(games: { a: string; b: string; sa: number; sb: number }[], limit: number = CUP_MAX_FIELD): CupSeedRow[] {
-  const rows = new Map<string, { w: number; l: number; t: number; pf: number }>()
+// The Cup Rating: the seeds aren't the standings, so the draw isn't known
+// before it's made. Four parts, all from the weekly scores every league has
+// (a free league syncs nothing else: no lineups, no projections):
+//   scoring    50%  points scored a game
+//   record     30%  win rate, a tie half a win
+//   form       10%  points a game over the last three weeks
+//   schedule   10%  points scored against you a game: a tough draw of
+//                   opponents, which a record alone punishes
+// Each part is measured as distance from the league average in the
+// league's own spread (a z-score), so the size of a gap counts: 140 a game
+// against 130 is a big gap in a league that runs 120 to 140, a small one in
+// a league that runs 90 to 160, and one runaway scorer doesn't squash
+// everyone else together the way a best-to-worst scale would. Shown with
+// 50 as the league average and 20 points to one spread.
+// Backtested on 290 past seasons (2026-10-16), rated after week 7 against
+// how teams did from week 8 on: rank correlation with later scoring .368
+// (standings .323), with later wins .262 (standings .221). Scoring alone
+// predicts better than record alone (.363 against .289), hence its weight;
+// all-play record, top-score weeks and steadiness added nothing. It moves a
+// seed 1.2 places from the standings on average and gives a different top
+// seed in about 40% of seasons.
+export const CUP_RATING_WEIGHTS = { scoring: 0.5, record: 0.3, form: 0.1, schedule: 0.1 } as const
+
+// Seeds from a run of finished games, by the Cup Rating (then win rate,
+// points for, and id so the order is stable). Everyone is rated against
+// everyone; the field is then capped at CUP_MAX_FIELD (the launch preview
+// passes Infinity to see the teams just outside).
+export function ratingSeeds(games: { week: number; a: string; b: string; sa: number; sb: number }[], limit: number = CUP_MAX_FIELD): CupSeedRow[] {
+  const rows = new Map<string, { w: number; l: number; t: number; pf: number; pa: number; weeks: [number, number][] }>()
   const row = (id: string) => {
     let r = rows.get(id)
-    if (!r) rows.set(id, (r = { w: 0, l: 0, t: 0, pf: 0 }))
+    if (!r) rows.set(id, (r = { w: 0, l: 0, t: 0, pf: 0, pa: 0, weeks: [] }))
     return r
   }
   for (const g of games) {
     const a = row(g.a)
     const b = row(g.b)
     a.pf += g.sa
+    a.pa += g.sb
     b.pf += g.sb
+    b.pa += g.sa
+    a.weeks.push([g.week, g.sa])
+    b.weeks.push([g.week, g.sb])
     if (g.sa > g.sb) {
       a.w++
       b.l++
@@ -151,14 +194,69 @@ export function standingsSeeds(games: { a: string; b: string; sa: number; sb: nu
       b.t++
     }
   }
-  const pct = (r: { w: number; l: number; t: number }) => {
+  const list = [...rows.entries()].map(([id, r]) => {
     const n = r.w + r.l + r.t
-    return n ? (r.w + r.t / 2) / n : 0
+    const last3 = [...r.weeks].sort((x, y) => y[0] - x[0]).slice(0, 3)
+    return {
+      id,
+      r,
+      pct: n ? (r.w + r.t / 2) / n : 0,
+      ppg: n ? r.pf / n : 0,
+      papg: n ? r.pa / n : 0,
+      form: last3.length ? last3.reduce((sum, [, x]) => sum + x, 0) / last3.length : 0,
+    }
+  })
+  // Distance from the league average in standard deviations (everyone
+  // level: 0 each).
+  const zOf = (pick: (x: (typeof list)[number]) => number) => {
+    const v = list.map(pick)
+    const mean = v.reduce((sum, x) => sum + x, 0) / (v.length || 1)
+    const sd = Math.sqrt(v.reduce((sum, x) => sum + (x - mean) ** 2, 0) / (v.length || 1))
+    return (x: (typeof list)[number]) => (sd ? (pick(x) - mean) / sd : 0)
   }
-  return [...rows.entries()]
-    .sort(([ia, a], [ib, b]) => pct(b) - pct(a) || b.pf - a.pf || ia.localeCompare(ib))
+  const sco = zOf((x) => x.ppg)
+  const rec = zOf((x) => x.pct)
+  const frm = zOf((x) => x.form)
+  const sch = zOf((x) => x.papg)
+  const W = CUP_RATING_WEIGHTS
+  const rated = list.map((x) => {
+    const z = W.scoring * sco(x) + W.record * rec(x) + W.form * frm(x) + W.schedule * sch(x)
+    return { ...x, z, rating: Math.max(0, Math.min(100, 50 + 20 * z)) }
+  })
+  return rated
+    .sort((a, b) => b.z - a.z || b.pct - a.pct || b.r.pf - a.r.pf || a.id.localeCompare(b.id))
     .slice(0, limit)
-    .map(([id, r], i) => ({ seed: i + 1, manager_id: id, w: r.w, l: r.l, t: r.t, pf: Math.round(r.pf * 100) / 100 }))
+    .map((x, i) => ({
+      seed: i + 1,
+      manager_id: x.id,
+      w: x.r.w,
+      l: x.r.l,
+      t: x.r.t,
+      pf: Math.round(x.r.pf * 100) / 100,
+      pa: Math.round(x.r.pa * 100) / 100,
+      form: Math.round(x.form * 100) / 100,
+      rating: Math.round(x.rating * 10) / 10,
+    }))
+}
+
+// Where each team sits in the plain standings (win rate, then points for):
+// 1-based, by manager id. The preview shows how far the rating moved them.
+export function standingsPlaces(games: { a: string; b: string; sa: number; sb: number }[]): Map<string, number> {
+  const rows = new Map<string, { w: number; n: number; pf: number }>()
+  for (const g of games) {
+    for (const [id, mine, theirs] of [
+      [g.a, g.sa, g.sb],
+      [g.b, g.sb, g.sa],
+    ] as const) {
+      const r = rows.get(id) ?? { w: 0, n: 0, pf: 0 }
+      r.n++
+      r.pf += mine
+      r.w += mine > theirs ? 1 : mine === theirs ? 0.5 : 0
+      rows.set(id, r)
+    }
+  }
+  const order = [...rows.entries()].sort(([ia, a], [ib, b]) => b.w / b.n - a.w / a.n || b.pf - a.pf || ia.localeCompare(ib))
+  return new Map(order.map(([id], i) => [id, i + 1]))
 }
 
 type Node = { e: CupEntrant } | { m: CupMatch } | null

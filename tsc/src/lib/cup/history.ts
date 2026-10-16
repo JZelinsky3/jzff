@@ -21,6 +21,9 @@ export type LeagueCups = {
   stamps: StampAward[]
   // A person's name (profile id, or manager id for a team with no profile).
   nameOf: (person: string) => string
+  // A team (manager id) to its person, so a manager's Cups join up across
+  // years (the Hall of Fame).
+  personOf: (managerId: string) => string
 }
 
 type Db = ReturnType<typeof createAdminClient>
@@ -46,7 +49,7 @@ export async function loadLeagueCups(leagueId: string, current?: LeagueCup): Pro
   const managerName = new Map((managers ?? []).map((m) => [m.id as string, leagueName(m.id as string, (m.display_name as string) ?? 'Unknown')]))
   const personOf = (managerId: string) => profileOf.get(managerId) ?? managerId
   const nameOf = (person: string) => profileName.get(person) ?? managerName.get(person) ?? 'Unknown'
-  if (error || !rows?.length) return { cups: current ? [current] : [], stamps: [], nameOf }
+  if (error || !rows?.length) return { cups: current ? [current] : [], stamps: [], nameOf, personOf }
 
   const cups: LeagueCup[] = []
   for (const row of rows) {
@@ -73,5 +76,5 @@ export async function loadLeagueCups(leagueId: string, current?: LeagueCup): Pro
       leagueChampion: champOf.get(view.cup.season_year) ?? null,
     })),
   )
-  return { cups, stamps, nameOf }
+  return { cups, stamps, nameOf, personOf }
 }

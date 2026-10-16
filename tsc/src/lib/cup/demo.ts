@@ -14,7 +14,7 @@
 
 import { resolveWeekLockAt } from '@/lib/liveSeason'
 import { week1TuesdayUtc } from '@/lib/nflClock'
-import { standingsSeeds, type CupBracket, type CupMatch } from './bracket'
+import { ratingSeeds, type CupBracket, type CupMatch } from './bracket'
 import { CHAMPION_BONUS, computeCupExtras, roundPoints, type CupExtras, type CupHistoryGame } from './extras'
 import type { LeagueCups } from './history'
 import { buildCupView, type CupRow, type CupSeasonGame, type CupView } from './load'
@@ -75,7 +75,7 @@ function settingsFor(year: number, now: number): Record<string, unknown> {
 function cupRow(year: number): CupRow {
   const counted = gamesOf(year)
     .filter((g) => g.week <= SEEDED_THROUGH && g.sa != null && g.sb != null)
-    .map((g) => ({ a: g.a, b: g.b, sa: g.sa!, sb: g.sb! }))
+    .map((g) => ({ week: g.week, a: g.a, b: g.b, sa: g.sa!, sb: g.sb! }))
   return {
     id: `demo-cup-${year}`,
     league_id: DEMO_CUP_LEAGUE.id,
@@ -83,7 +83,7 @@ function cupRow(year: number): CupRow {
     name: CUP_NAME,
     start_week: START_WEEK,
     seeded_through: SEEDED_THROUGH,
-    seeds: standingsSeeds(counted),
+    seeds: ratingSeeds(counted),
   }
 }
 
@@ -231,7 +231,7 @@ export function demoLeagueCups(opts?: { current?: CupView; now?: number }): Leag
       leagueChampion: champions[String(view.cup.season_year)] ?? null,
     })),
   )
-  return { cups, stamps, nameOf }
+  return { cups, stamps, nameOf, personOf }
 }
 
 // The launch countdown page as a league sees it before its first draw: the

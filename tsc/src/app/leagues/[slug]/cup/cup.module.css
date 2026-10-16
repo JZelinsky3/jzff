@@ -157,6 +157,7 @@
 
 .howBtn {
   display: inline-flex;
+  text-decoration: none;
   align-items: center;
   gap: 7px;
   height: 36px;
@@ -217,6 +218,41 @@
   font-family: var(--cp-display);
   font-size: 15px;
   color: var(--brass-hi);
+}
+
+/* The trophy links to its Hall of Fame; this tag says so. */
+.mastCup {
+  text-decoration: none;
+}
+
+.mastCup > span[aria-hidden] {
+  display: contents;
+}
+
+.mastHall {
+  position: relative;
+  padding: 4px 8px;
+  border: 1px solid rgba(200, 163, 91, 0.6);
+  border-radius: 999px;
+  background: rgba(200, 163, 91, 0.1);
+  font-family: var(--cp-mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  white-space: nowrap;
+  text-transform: uppercase;
+  color: var(--brass-hi);
+}
+
+.mastCup:active .mastHall {
+  background: rgba(200, 163, 91, 0.26);
+}
+
+@media (hover: hover) {
+  .mastCup:hover .mastHall {
+    background: rgba(200, 163, 91, 0.22);
+  }
 }
 
 /* ── Tabs: a segmented control, pinned while you scroll ─── */
@@ -1788,15 +1824,19 @@
 
 .mRow {
   display: grid;
-  grid-template-columns: 13px minmax(0, 1fr) auto;
+  /* No score column on a phone (scores show from 600px). */
+  grid-template-columns: 11px minmax(0, 1fr);
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   height: 22px;
-  padding: 0 5px;
+  padding: 0 4px;
 }
 
+/* The second team a shade darker, so the two read as two. */
 .mRow + .mRow {
   border-top: 1px solid var(--pline);
+  border-radius: 0 0 6px 6px;
+  background: var(--paper-2);
 }
 
 .mSeed {
@@ -1804,7 +1844,7 @@
   font-size: 11px;
   font-weight: 700;
   color: var(--brass-lo);
-  text-align: right;
+  text-align: left;
 }
 
 /* Your team, wherever it is in the draw. Rounded on the card's outer edge,
@@ -1812,6 +1852,11 @@
 .mMine {
   background: #f0dca8;
   box-shadow: inset 0 0 0 1.5px var(--brass);
+}
+
+/* Over the second row's darker shade too. */
+.mRow + .mRow.mMine {
+  background: #f0dca8;
 }
 
 .mMine:first-child {
@@ -1838,9 +1883,23 @@
 .mTbd {
   grid-column: 1 / -1;
   text-align: center;
-  font-size: 10px;
-  font-style: italic;
+  font-family: var(--cp-num);
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
   color: var(--ink-3);
+}
+
+/* Long names step down a size on a phone's narrow columns rather than
+   lose their ends. */
+@media (max-width: 599px) {
+  .mName[data-len='l'] {
+    font-size: 11.5px;
+  }
+
+  .mName[data-len='xl'] {
+    font-size: 10.5px;
+  }
 }
 
 .mScore {
@@ -2024,12 +2083,12 @@
 }
 
 /* 2nd and 3rd: the words are centred on the whole ticket, and the seed
-   sits in the open space to their left (Joey, 2026-10-16). It's in the SAME
-   spot on both tickets whatever the names: placed by the ticket's width,
-   not the words', and level with the top three lines (rank, name, odds),
-   above the bottom line, which carries the star chip and runs widest.
-   Absolutely positioned in the grid area of those three rows, so it
-   centres on them. The name is capped so it can never run under the seed. */
+   sits in the open space to the left of the odds (Joey, 2026-10-16). It's
+   in the SAME spot on both tickets whatever the names: placed by the
+   ticket's width, not the words', halfway between the edge and the odds.
+   Level with the odds line only, so the name above it gets the ticket's
+   whole width (a "Brandon" was cut to "Bran..." when the seed sat beside
+   the name). */
 .pod:not(.podFirst) {
   --seed: 30px;
   display: grid;
@@ -2048,7 +2107,7 @@
 
 .pod:not(.podFirst) .podName {
   grid-row: 2;
-  max-width: calc(50% + 8px - var(--seed));
+  max-width: 100%;
 }
 
 .pod:not(.podFirst) .podPct {
@@ -2057,13 +2116,16 @@
 
 .pod:not(.podFirst) .podFoot {
   grid-row: 4;
+  margin-top: 3px;
 }
 
 .pod:not(.podFirst) .medal {
   position: absolute;
   top: 50%;
-  left: calc(25% - 10px - var(--seed) / 2);
-  grid-row: 1 / 4;
+  left: calc(25% - 16px - var(--seed) / 2);
+  /* Both lines: an absolutely placed item's "auto" end runs to the
+     ticket's bottom edge, which centred it low, on the bottom line. */
+  grid-row: 3 / 4;
   grid-column: 1;
   width: var(--seed);
   height: var(--seed);
@@ -2336,6 +2398,19 @@
   text-decoration-color: rgba(236, 228, 206, 0.5);
 }
 
+/* Their Cup record beside the struck name (inline-block, so the
+   strike-through doesn't run through it). */
+.outRec {
+  display: inline-block;
+  margin-left: 7px;
+  font-family: var(--cp-num);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--mute);
+  text-decoration: none;
+}
+
 .outLine {
   overflow: hidden;
   font-size: 12px;
@@ -2573,8 +2648,41 @@
   grid-template-columns: 28px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 10px;
-  padding: 9px 0;
+  /* Inset from the board's edges (the page's list reset zeroes the
+     board's own padding, which had rank and points touching the sides). */
+  padding: 9px 16px 9px 12px;
   border-bottom: 1px solid var(--bline);
+}
+
+.board > li:last-child .boardRow {
+  border-bottom: 0;
+}
+
+/* A champion pick in a board line. */
+.champPick {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  vertical-align: -1px;
+}
+
+.champPick svg {
+  flex: none;
+  color: var(--brass);
+}
+
+.champPickOut > span {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: rgba(240, 230, 204, 0.55);
+}
+
+.champPickOut svg {
+  opacity: 0.45;
+}
+
+.champPickRight > span {
+  color: #8cc9a0;
 }
 
 /* Rows are buttons now: a tap opens that person's stamp book. */
@@ -2676,9 +2784,9 @@
 
 .voteRow {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) 90px 26px;
+  grid-template-columns: 28px minmax(0, 1fr) 90px 26px;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   padding: 8px 0;
   border-bottom: 1px solid var(--bline);
 }
@@ -2693,6 +2801,12 @@
   font-family: var(--cp-display);
   font-size: 17px;
   line-height: 1.15;
+}
+
+.voteOut {
+  color: var(--mute);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
 }
 
 .voteBy {
@@ -3291,8 +3405,9 @@
   display: grid;
   grid-template-columns: 50px minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
-  padding: 6px 0;
+  gap: 12px;
+  /* The page's list reset zeroes .stampList's padding: inset here. */
+  padding: 7px 14px;
 }
 
 .stampRow + .stampRow {
@@ -3490,6 +3605,7 @@
 
   .mRow {
     grid-template-columns: 16px minmax(0, 1fr) auto;
+    gap: 4px;
     height: 26px;
     padding: 0 8px;
   }
@@ -4064,7 +4180,7 @@ button.sideName:hover {
 }
 
 .sideDraw .mTbd {
-  font-size: 9.5px;
+  font-size: 10.5px;
 }
 
 /* You, on a ticket. */

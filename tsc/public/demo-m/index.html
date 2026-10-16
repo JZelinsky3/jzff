@@ -24,19 +24,29 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
 <style>
-/* ── Status sash — the almanac's identity stripe, kept thin. In-season
-   shows a live pulse + week; off-season collapses to founding/volume. ── */
+/* ── Status ticker — the almanac's identity stripe, scrolling. Same
+   shape as the live-page lv-ticker (two duplicated groups in a track,
+   translateX 0 → -50% loop). In-season pulses with the current week;
+   off-season collapses to founding + volume. Pulled flush against the
+   bottom of the fixed app header — .m-main owns the .9rem top padding,
+   so the ticker neutralizes it with a matching negative margin. ── */
 .m-sash {
     background: var(--gold);
     color: var(--ink);
     border-bottom: 2px solid var(--ink);
     height: 30px;
-    display: flex; align-items: center; justify-content: center;
-    margin: 0 -0.9rem;
+    display: flex; align-items: center; overflow: hidden;
+    margin: -.9rem -0.9rem 0;
+}
+.m-sash-track {
+    display: flex; gap: 2.2rem; white-space: nowrap; padding-left: 2.2rem;
+    animation: m-sash-scroll 38s linear infinite;
+}
+.m-sash-group { display: flex; gap: 2.2rem; align-items: center; }
+.m-sash-item {
     font-family: var(--mono); font-weight: 700;
     font-size: .6rem; letter-spacing: .22em; text-transform: uppercase;
-    gap: .55rem;
-    white-space: nowrap; overflow: hidden;
+    display: inline-flex; align-items: center; gap: .55rem;
 }
 .m-sash-dot {
     width: 7px; height: 7px; border-radius: 50%;
@@ -45,6 +55,10 @@
     animation: m-sash-pulse 1.8s ease-out infinite;
 }
 .m-sash-sep { color: var(--ink); opacity: .35; }
+@keyframes m-sash-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
 @keyframes m-sash-pulse {
     0%   { box-shadow: 0 0 0 0 rgba(160, 72, 48, .55); }
     70%  { box-shadow: 0 0 0 7px rgba(160, 72, 48, 0); }
@@ -139,34 +153,135 @@
 }
 .m-standrow-rings { flex: none; font-size: .68rem; color: var(--gold); letter-spacing: .08em; }
 
-/* ── Record teaser ── */
-#recordCard, .m-riv-fade {
-    transition: opacity .35s ease;
+/* ── The record plaque ──
+   One record at a time on an engraved brass plaque: a framed card with
+   rivets, the record's own stroke icon, the figure set large with its unit.
+   Story bars across the top fill as it plays (8s each); a tap on the left
+   third goes back, anywhere else goes on. Fixed-height text boxes so a
+   longer record never changes the card's height mid-scroll. ── */
+.m-plaque {
+    position: relative;
+    padding: 1.05rem 1.1rem 1rem;
+    border-radius: 14px;
+    border: 1px solid var(--gold-deep);
+    background:
+        radial-gradient(120% 90% at 50% 46%, rgba(232, 200, 137, .13), rgba(232, 200, 137, 0) 62%),
+        linear-gradient(160deg, #1d2836, #121b26 70%);
+    box-shadow: 0 1px 0 rgba(244, 217, 164, .12) inset, 0 10px 24px rgba(0, 0, 0, .35);
+    overflow: hidden;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
 }
-.is-swapping { opacity: 0; }
-.m-record-value {
-    font-family: var(--serif);
-    font-size: 2rem; line-height: 1;
+/* The engraved frame, inset from the edge. */
+.m-plaque::before {
+    content: '';
+    position: absolute; inset: 6px;
+    border: 1px solid rgba(232, 200, 137, .22);
+    border-radius: 9px;
+    pointer-events: none;
+}
+/* Four rivets, one in each corner of the frame. */
+.m-plaque::after {
+    content: '';
+    position: absolute; inset: 11px;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 3px 3px, #e8c889 0 1.6px, rgba(0, 0, 0, .5) 2.2px, transparent 2.8px) top left / 7px 7px no-repeat,
+        radial-gradient(circle at 3px 3px, #e8c889 0 1.6px, rgba(0, 0, 0, .5) 2.2px, transparent 2.8px) top right / 7px 7px no-repeat,
+        radial-gradient(circle at 3px 3px, #e8c889 0 1.6px, rgba(0, 0, 0, .5) 2.2px, transparent 2.8px) bottom left / 7px 7px no-repeat,
+        radial-gradient(circle at 3px 3px, #e8c889 0 1.6px, rgba(0, 0, 0, .5) 2.2px, transparent 2.8px) bottom right / 7px 7px no-repeat;
+    opacity: .75;
+}
+.m-plaque-bars {
+    position: relative; z-index: 1;
+    display: flex; gap: 3px;
+    margin: 0 .55rem .85rem;
+}
+.m-plaque-bar {
+    flex: 1; height: 2.5px; border-radius: 2px;
+    background: rgba(232, 200, 137, .18);
+    overflow: hidden;
+}
+.m-plaque-bar i {
+    display: block; height: 100%; width: 0;
+    background: var(--gold);
+}
+.m-plaque-bar.is-done i { width: 100%; }
+.m-plaque-bar.is-on i { animation: m-plaque-fill 8s linear forwards; }
+.m-plaque.is-paused .m-plaque-bar.is-on i { animation-play-state: paused; }
+@keyframes m-plaque-fill { from { width: 0; } to { width: 100%; } }
+.m-plaque-head {
+    position: relative; z-index: 1;
+    display: flex; align-items: center; gap: .6rem;
+    padding: 0 .55rem;
+}
+.m-plaque-ico {
+    flex: none;
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
     color: var(--gold);
+    background: radial-gradient(circle at 35% 30%, rgba(244, 217, 164, .22), rgba(168, 138, 74, .08));
+    box-shadow: inset 0 0 0 1px rgba(232, 200, 137, .45);
 }
-.m-record-name {
-    font-family: var(--serif); font-size: 1.02rem;
+.m-plaque-label {
+    flex: 1; min-width: 0;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--gold);
+    line-height: 1.35;
+}
+.m-plaque-n {
+    flex: none;
+    font-family: var(--mono);
+    font-size: .52rem; letter-spacing: .12em;
+    color: var(--cream-mute);
+}
+.m-plaque-body {
+    position: relative; z-index: 1;
+    text-align: center;
+    padding: .7rem .55rem .2rem;
+}
+.m-plaque-value {
+    font-family: var(--serif);
+    font-size: 3rem; line-height: 1;
+    color: var(--gold-bright);
+    letter-spacing: -.01em;
+    /* Struck into the brass: a dark cut under, a light edge over. */
+    text-shadow: 0 1px 0 rgba(0, 0, 0, .55), 0 -1px 0 rgba(255, 240, 210, .12);
+}
+.m-plaque-unit {
+    display: block;
+    margin-top: .3rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--gold-deep);
+    min-height: 1.3em;
+}
+.m-plaque-rule {
+    width: 46px; height: 1px; margin: .6rem auto .55rem;
+    background: linear-gradient(90deg, transparent, var(--gold-deep), transparent);
+}
+.m-plaque-name {
+    font-family: var(--serif); font-size: 1.08rem;
     line-height: 1.3;
     color: var(--cream);
-    margin-top: .3rem;
-    /* Fixed two-line box so rotating records never change the card height
-       (which shifted the whole page mid-scroll). */
+    /* Two lines, always: rotating records never move the page. */
     display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
+    -webkit-line-clamp: 2; line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     min-height: 2.6em;
 }
-.m-record-name em { font-style: italic; color: var(--gold); }
-#recordDetail {
+.m-plaque-name em { font-style: italic; color: var(--gold); }
+.m-plaque-detail {
+    margin-top: .3rem;
+    font-family: var(--mono);
+    font-size: .58rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cream-mute);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.m-plaque-swap { transition: opacity .3s ease; }
+.m-plaque-swap.is-swapping { opacity: 0; }
 
 /* ── Managers rail ── */
 .m-mgr-rail {
@@ -215,33 +330,218 @@
     color: var(--cream-mute);
 }
 
-/* ── Rivalry teaser ── */
-.m-riv-vs {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: .6rem;
-    margin-top: .4rem;
+/* ── The rivalries: a deck of fight cards ──
+   One poster per feud, swiped sideways (the next card peeks in so the deck
+   reads as swipeable). Each side of the poster takes a corner colour, gold
+   on the left and steel on the right, split on a slant; the two managers
+   square off across a brass VS seal over their head-to-head wins, a
+   tug-of-war bar shows the split, and the last five meetings sit as pips
+   in the same two colours. ── */
+.m-rv-deck {
+    display: flex; gap: .6rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    margin: 0 -0.9rem;
+    padding: .1rem .9rem .3rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
 }
-.m-riv-side { flex: 1; min-width: 0; text-align: center; }
-.m-riv-side b {
-    display: block;
-    font-family: var(--serif); font-size: 1.05rem; font-weight: 400;
+.m-rv-deck::-webkit-scrollbar { display: none; }
+.m-rv {
+    --rv-a: #e8c889;
+    --rv-b: #8fb0cf;
+    position: relative;
+    flex: none;
+    width: 86%;
+    scroll-snap-align: center;
+    border-radius: 16px;
+    border: 1px solid var(--ink-line);
+    padding: .95rem .95rem .85rem;
+    color: inherit; text-decoration: none;
+    overflow: hidden;
+    background:
+        radial-gradient(90% 70% at 0% 0%, rgba(232, 200, 137, .16), transparent 60%),
+        radial-gradient(90% 70% at 100% 100%, rgba(143, 176, 207, .16), transparent 60%),
+        linear-gradient(104deg, #1d2633 0 50%, #16202c 50% 100%);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, .3);
+    -webkit-tap-highlight-color: transparent;
+}
+.m-rv:only-child { width: 100%; }
+.m-rv:active { filter: brightness(1.06); }
+/* A huge outlined VS behind everything. */
+.m-rv::before {
+    content: 'VS';
+    position: absolute; left: 50%; top: 46%;
+    transform: translate(-50%, -50%) rotate(-8deg);
+    font-family: var(--serif); font-style: italic;
+    font-size: 7.5rem; line-height: 1;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(244, 235, 216, .05);
+    pointer-events: none;
+}
+.m-rv-top { position: relative; text-align: center; }
+.m-rv-name {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.22rem; line-height: 1.1;
     color: var(--cream);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.m-riv-mid {
-    flex: none;
+.m-rv-since {
+    margin-top: .25rem;
     font-family: var(--mono); font-weight: 700;
-    font-size: .9rem; color: var(--gold);
-    letter-spacing: .06em;
+    font-size: .5rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.m-rv-faceoff {
+    position: relative;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: .35rem;
+    margin-top: .8rem;
+}
+/* The slash between the two corners, only through the face-off so it
+   never crosses the feud's name. */
+.m-rv-faceoff::before {
+    content: '';
+    position: absolute; left: 50%; top: -14px; bottom: -34px;
+    width: 1.5px; margin-left: -.75px;
+    transform: rotate(14deg);
+    background: linear-gradient(180deg, transparent, rgba(232, 200, 137, .55) 22%, rgba(232, 200, 137, .55) 78%, transparent);
+    pointer-events: none;
+}
+.m-rv-side { position: relative; min-width: 0; text-align: center; }
+.m-rv-seal { position: relative; }
+.m-rv-ava {
+    position: relative;
+    width: 58px; height: 58px;
+    margin: 0 auto;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-size: 1.35rem;
+    color: var(--ink);
+    background: var(--rv-a);
+    box-shadow: 0 0 0 2px var(--ink), 0 0 0 3.5px var(--rv-a), 0 8px 18px rgba(0, 0, 0, .4);
+}
+.m-rv-side.is-b .m-rv-ava { background: var(--rv-b); box-shadow: 0 0 0 2px var(--ink), 0 0 0 3.5px var(--rv-b), 0 8px 18px rgba(0, 0, 0, .4); }
+.m-rv-ava img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+/* The one ahead in the series wears the star. */
+.m-rv-crown {
+    position: absolute; top: -9px; left: 50%;
+    transform: translateX(-50%);
+    font-size: .8rem; line-height: 1;
+    color: var(--gold-bright);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, .6);
+}
+.m-rv-who {
+    margin-top: .45rem;
+    font-weight: 600; font-size: .86rem;
+    color: var(--cream);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.m-rv-wins {
+    font-family: var(--serif);
+    font-size: 2.1rem; line-height: 1;
+    margin-top: .2rem;
+    color: var(--rv-a);
+}
+.m-rv-side.is-b .m-rv-wins { color: var(--rv-b); }
+.m-rv-side.is-behind .m-rv-wins { opacity: .55; }
+.m-rv-wl {
+    font-family: var(--mono);
+    font-size: .48rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.m-rv-seal {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.05rem;
+    color: var(--ink);
+    background: radial-gradient(circle at 35% 30%, #f4d9a4, #c8a35b 60%, #8f6f33);
+    box-shadow: 0 0 0 3px var(--ink), 0 0 0 4px rgba(232, 200, 137, .5), 0 6px 14px rgba(0, 0, 0, .45);
+    transform: rotate(-8deg);
+}
+.m-rv-tug {
+    position: relative;
+    display: flex;
+    height: 6px; margin-top: .85rem;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--ink-line);
+}
+.m-rv-tug i { display: block; height: 100%; }
+.m-rv-tug .a { background: var(--rv-a); }
+.m-rv-tug .b { background: var(--rv-b); margin-left: auto; }
+/* The middle of the rope. */
+.m-rv-tug::after {
+    content: '';
+    position: absolute; left: 50%; top: -2px; bottom: -2px;
+    width: 2px; margin-left: -1px;
+    background: var(--ink);
+}
+.m-rv-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: .6rem;
+    margin-top: .7rem;
+}
+.m-rv-pips { display: flex; align-items: center; gap: 4px; }
+.m-rv-pips-lbl {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .46rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-right: 3px;
+}
+.m-rv-pip {
+    width: 11px; height: 11px; border-radius: 3px;
+    background: var(--ink-line);
+}
+.m-rv-pip.a { background: var(--rv-a); }
+.m-rv-pip.b { background: var(--rv-b); }
+/* A playoff meeting is ringed. */
+.m-rv-pip.po { box-shadow: 0 0 0 1.5px var(--ink), 0 0 0 2.5px var(--rust); }
+.m-rv-last {
+    min-width: 0;
+    font-family: var(--mono);
+    font-size: .5rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cream-mute);
+    text-align: right;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.m-rv-last b { color: var(--cream-soft); font-weight: 700; }
+.m-rv-dots {
+    display: flex; justify-content: center; gap: 6px;
+    margin-top: .55rem;
+}
+.m-rv-dot {
+    width: 6px; height: 6px; border-radius: 6px;
+    background: var(--ink-line);
+    transition: width .25s ease, background .25s ease;
+}
+.m-rv-dot.is-on { width: 18px; background: var(--gold); }
+
+@media (prefers-reduced-motion: reduce) {
+    .m-plaque-bar.is-on i { animation: none; width: 100%; }
+    .m-rv-dot { transition: none; }
 }
 
 /* ── Seasons list ── */
 #seasonsList {
-    /* ~5 full rows visible; older seasons scroll inside the card. Sized to a
-       whole row count so the last visible season shows its year too, not a
-       half-clipped row. Fewer seasons just make the card shorter (max-height
-       only caps — it never pads out). */
-    max-height: 268px;
+    /* ~3.5 rows visible: the 4th season sits half-clipped on purpose so the
+       card reads as scrollable (there's more history below) rather than a
+       clean stop. Fewer seasons just make the card shorter (max-height only
+       caps — it never pads out).
+
+       Trimmed from 240px, which was cut for ~4.5 rows before each row grew a
+       second line (champion team name + "champion"). At the taller row this
+       is the same half-clipped shape at a height the last card on the page
+       can actually justify. */
+    max-height: 200px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
 }
@@ -305,11 +605,23 @@
             </div>
             <a class="m-section-link" href="records.html">All records</a>
         </div>
-        <a class="m-card" href="records.html" id="recordCard">
-            <div class="m-record-value" id="recordValue"></div>
-            <div class="m-record-name" id="recordName"></div>
-            <div class="m-mono" id="recordDetail" style="margin-top:.3rem"></div>
-        </a>
+        <div class="m-plaque" id="recordCard" role="group" aria-roledescription="carousel" aria-label="League records">
+            <div class="m-plaque-bars" id="recordBars" aria-hidden="true"></div>
+            <div class="m-plaque-swap" id="recordSwap" aria-live="polite">
+                <div class="m-plaque-head">
+                    <span class="m-plaque-ico" id="recordIco" aria-hidden="true"></span>
+                    <span class="m-plaque-label" id="recordLabel"></span>
+                    <span class="m-plaque-n" id="recordN"></span>
+                </div>
+                <div class="m-plaque-body">
+                    <div class="m-plaque-value" id="recordValue"></div>
+                    <span class="m-plaque-unit" id="recordUnit"></span>
+                    <div class="m-plaque-rule"></div>
+                    <div class="m-plaque-name" id="recordName"></div>
+                    <div class="m-plaque-detail" id="recordDetail"></div>
+                </div>
+            </div>
+        </div>
     </section>
 
     <section class="m-section" id="managersSection" hidden>
@@ -331,7 +643,8 @@
             </div>
             <a class="m-section-link" href="rivalries/">Rivalries</a>
         </div>
-        <div id="rivalryCards"></div>
+        <div class="m-rv-deck" id="rivalryCards"></div>
+        <div class="m-rv-dots" id="rivalryDots" aria-hidden="true"></div>
     </section>
 
     <section class="m-section" id="seasonsSection" hidden style="margin-bottom:1rem">
@@ -383,37 +696,42 @@
         renderStandings(managersDir);
         renderRecord(recordBook);
         renderManagers(managersDir);
-        renderRivalries(rivalries);
+        renderRivalries(rivalries, managersDir);
         renderSeasons(seasonsDir);
     });
 
-    // Live status sash: in-season pulses with the current week; off-season
-    // collapses to founding + volume number. window.__DC.liveWeek is set
-    // by the route handler when current_season is between 1 and 18.
+    // Status ticker: scrolling marquee with league identity. In-season
+    // pulses with the current week; off-season collapses to founding +
+    // volume number. window.__DC.liveWeek is set by the route handler
+    // when current_season is between 1 and 18.
+    //
+    // Two duplicated groups inside a single track so the translateX
+    // 0 → -50% animation loops seamlessly (same trick as the live
+    // page's lv-ticker).
     function renderSash(league, seasonsDir) {
         var sash = document.getElementById('sash');
         if (!sash) return;
         var dc = window.__DC || {};
         var liveWeek = Number(dc.liveWeek);
+        var abbr = (league && league.abbr) || '';
         var vol = (seasonsDir && seasonsDir.seasons && seasonsDir.seasons.length) || (league && league.total_seasons) || null;
-        var parts;
+        var items;
         if (liveWeek >= 1 && liveWeek <= 18) {
-            parts = [
-                '<span class="m-sash-dot" aria-hidden="true"></span>',
-                'Live · Week ' + liveWeek,
-                '<span class="m-sash-sep">·</span>',
-                ((league && league.current_season) || new Date().getFullYear()) + ' Season',
+            var seasonYear = ((league && league.current_season) || new Date().getFullYear()) + ' Season';
+            items = [
+                '<span class="m-sash-item">Live · Week ' + liveWeek + ' <span class="m-sash-sep">·</span> ' + esc(seasonYear) + '</span>',
+                '<span class="m-sash-item">Pickems · Power Rankings · Trade Desk</span>',
             ];
         } else {
-            parts = [
-                (league && league.founded) ? 'Est. ' + league.founded : 'The Almanac',
+            var head = (league && league.founded) ? 'Est. ' + league.founded : 'The Almanac';
+            if (vol) head += ' <span class="m-sash-sep">·</span> Vol. ' + toRoman(vol);
+            items = [
+                '<span class="m-sash-item">' + head + '</span>',
+                '<span class="m-sash-item">' + (abbr ? esc(abbr) + ' · ' : '') + 'Champions · Records · Managers · Rivalries</span>',
             ];
-            if (vol) {
-                parts.push('<span class="m-sash-sep">·</span>');
-                parts.push('Vol. ' + toRoman(vol));
-            }
         }
-        sash.innerHTML = parts.join(' ');
+        var group = '<div class="m-sash-group">' + items.join('') + '</div>';
+        sash.innerHTML = '<div class="m-sash-track">' + group + group + '</div>';
     }
     // Volume number stays in roman — it's an editorial numbering (Vol. I–VII),
     // not a year, so readers don't need to decode "what year was that".
@@ -475,29 +793,94 @@
         }).join('');
     }
 
+    // The record plaque. Each record gets the stroke icon and unit for its
+    // kind, keyed off the export's label. Plays like stories: the bar for
+    // the record on show fills over 8s and moves on; a tap on the left third
+    // goes back, anywhere else goes on. Paused while the tab is hidden or
+    // while a finger is down.
+    var RECORD_ICONS = {
+        score: '<path d="M12 3c.8 3.4 5 5.3 5 10.2a5 5 0 0 1-10 0c0-2.5 1.2-3.9 2.5-5.1.3 1.6 1 2.7 2.2 3.1-.2-3-.1-5.6.3-8.2z"/>',
+        blowout: '<path d="M13.5 2.5 4.5 14h7l-1 7.5 9-11.5h-7z"/>',
+        winstreak: '<path d="m6 13 6-6 6 6"/><path d="m6 19 6-6 6 6"/>',
+        losestreak: '<path d="m6 5 6 6 6-6"/><path d="m6 11 6 6 6-6"/>',
+        season: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4M8 14h3M8 17h6"/>',
+        closest: '<path d="M2.5 12h6M15.5 12h6"/><path d="m9 8 3 4-3 4M15 8l-3 4 3 4"/>',
+        unlucky: '<path d="M7 16.5a4 4 0 0 1-.4-8 5.5 5.5 0 0 1 10.6-.8 3.7 3.7 0 0 1 .3 7.4z"/><path d="m9 21 1-2.2M13.5 21l1-2.2"/>',
+        shootout: '<path d="M4 20 18 6M14 5h5v5"/><path d="M20 20 6 6M10 5H5v5"/>',
+        other: '<path d="M7 4h10v4.5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5a2.5 2.5 0 0 0 2.6 3.6M17 6h2.5a2.5 2.5 0 0 1-2.6 3.6M12 13.5V17M8.5 20h7M9.5 17h5"/>'
+    };
+    function recordKind(label) {
+        var l = String(label || '').toLowerCase();
+        if (l.indexOf('losing streak') !== -1) return ['losestreak', 'Straight losses'];
+        if (l.indexOf('win streak') !== -1) return ['winstreak', 'Straight wins'];
+        if (l.indexOf('blowout') !== -1) return ['blowout', 'Point margin'];
+        if (l.indexOf('closest') !== -1) return ['closest', 'Point margin'];
+        if (l.indexOf('unluckiest') !== -1) return ['unlucky', 'Points, in a loss'];
+        if (l.indexOf('combined') !== -1 || l.indexOf('shootout') !== -1) return ['shootout', 'Points combined'];
+        if (l.indexOf('season') !== -1) return ['season', 'Points in a season'];
+        if (l.indexOf('week') !== -1 || l.indexOf('score') !== -1) return ['score', 'Points in a week'];
+        return ['other', ''];
+    }
+
     function renderRecord(book) {
         var recs = (book && book.hub_records) || [];
         if (!recs.length) return; // UDFA leagues: record_book.json 404s — section stays hidden
         document.getElementById('recordSection').hidden = false;
-        var idx = 0;
-        function show(rec) {
-            document.getElementById('recordValue').textContent = rec.value;
-            // name/detail come from the export bundle (server-built markup, trusted)
-            document.getElementById('recordName').innerHTML = rec.label + ' · ' + rec.name;
-            document.getElementById('recordDetail').textContent = (rec.detail || '').replace(/<[^>]*>/g, '');
-        }
-        show(recs[0]);
-        if (recs.length < 2) return;
         var card = document.getElementById('recordCard');
-        setInterval(function () {
-            if (document.hidden) return;
-            idx = (idx + 1) % recs.length;
-            card.classList.add('is-swapping');
+        var swap = document.getElementById('recordSwap');
+        var bars = document.getElementById('recordBars');
+        var idx = 0;
+        var many = recs.length > 1;
+        var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        bars.hidden = !many;
+        bars.innerHTML = recs.map(function () { return '<span class="m-plaque-bar"><i></i></span>'; }).join('');
+
+        function show(i) {
+            var rec = recs[i];
+            var kind = recordKind(rec.label);
+            document.getElementById('recordIco').innerHTML =
+                '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + RECORD_ICONS[kind[0]] + '</svg>';
+            document.getElementById('recordLabel').textContent = rec.label;
+            document.getElementById('recordN').textContent = many ? (i + 1) + ' / ' + recs.length : '';
+            document.getElementById('recordValue').textContent = rec.value;
+            document.getElementById('recordUnit').textContent = kind[1];
+            // name/detail come from the export bundle (server-built markup, trusted)
+            document.getElementById('recordName').innerHTML = rec.name;
+            document.getElementById('recordDetail').textContent = (rec.detail || '').replace(/<[^>]*>/g, '');
+            var list = bars.children;
+            for (var b = 0; b < list.length; b++) {
+                list[b].className = 'm-plaque-bar' + (b < i ? ' is-done' : b === i ? ' is-on' : '');
+            }
+        }
+        function go(i) {
+            var next = (i + recs.length) % recs.length;
+            swap.classList.add('is-swapping');
             setTimeout(function () {
-                show(recs[idx]);
-                card.classList.remove('is-swapping');
-            }, 350);
-        }, 8000);
+                idx = next;
+                show(idx);
+                swap.classList.remove('is-swapping');
+            }, 300);
+        }
+        show(0);
+        if (!many) return;
+
+        // The bar's own animation is the clock, so pausing it (hidden tab,
+        // finger down) pauses the plaque too.
+        bars.addEventListener('animationend', function () { go(idx + 1); });
+        if (still) {
+            setInterval(function () { if (!document.hidden) go(idx + 1); }, 8000);
+        }
+        document.addEventListener('visibilitychange', function () {
+            card.classList.toggle('is-paused', document.hidden);
+        });
+        card.addEventListener('pointerdown', function () { card.classList.add('is-paused'); });
+        ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (t) {
+            card.addEventListener(t, function () { card.classList.remove('is-paused'); });
+        });
+        card.addEventListener('click', function (e) {
+            var r = card.getBoundingClientRect();
+            go(e.clientX - r.left < r.width / 3 ? idx - 1 : idx + 1);
+        });
     }
 
     function renderManagers(dir) {
@@ -522,50 +905,89 @@
         }).join('');
     }
 
-    function renderRivalries(data) {
-        var list = (data && data.rivalries) || [];
+    // The rivalry deck: a fight card per feud, swiped sideways. Avatars come
+    // from the managers directory (initials when there's no image); the
+    // left manager is gold, the right steel, and the tug bar and the last
+    // five pips use the same two colours.
+    function titleCase(s) {
+        return String(s || '').toLowerCase().replace(/(^|[\s-])([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); })
+            .replace(/\b(Vs|Of|The|And|In|On|At)\b/g, function (w, x, i) { return i ? w.toLowerCase() : w; });
+    }
+    function renderRivalries(data, dir) {
+        var list = ((data && data.rivalries) || []).filter(function (r) { return r.total_meetings > 0; });
         if (!list.length) return;
         document.getElementById('rivalrySection').hidden = false;
-        var box = document.getElementById('rivalryCards');
-        box.className = 'm-riv-fade';
+        var avatarOf = {};
+        ((dir && dir.managers) || []).forEach(function (m) { avatarOf[String(m.user_id)] = m.avatar || ''; });
 
+        function ava(side) {
+            var initial = (side.name || '?').trim().charAt(0).toUpperCase();
+            var src = avatarOf[String(side.user_id)];
+            return esc(initial) + (src ? '<img src="' + esc(src) + '" alt="" loading="lazy" onerror="this.remove()">' : '');
+        }
+        function side(s, cls, lead, behind) {
+            return '<div class="m-rv-side ' + cls + (behind ? ' is-behind' : '') + '">' +
+                '<div class="m-rv-ava">' + ava(s) + (lead ? '<span class="m-rv-crown" aria-hidden="true">★</span>' : '') + '</div>' +
+                '<div class="m-rv-who">' + esc(s.name) + '</div>' +
+                '<div class="m-rv-wins">' + esc(s.wins) + '</div>' +
+                '<div class="m-rv-wl">' + (s.wins === 1 ? 'Win' : 'Wins') + '</div>' +
+            '</div>';
+        }
         function card(r) {
-            // Head-to-head record oriented to the names as displayed (A–B) —
-            // leader_record is leader-first, which can read backwards here.
-            var mid = (r.manager_a && r.manager_a.wins != null && r.manager_b && r.manager_b.wins != null)
-                ? r.manager_a.wins + '–' + r.manager_b.wins
-                : esc(r.leader_record || '0–0');
-            var sub = r.is_deadlocked
-                ? 'Dead even after ' + r.total_meetings
-                : esc(r.leader_name) + ' leads · ' + r.total_meetings + (r.total_meetings === 1 ? ' meeting' : ' meetings');
-            return '<a class="m-card" href="rivalries/rivalry.html?id=' + encodeURIComponent(r.id) + '">' +
-                '<div class="m-kicker">' + esc(r.name) + '</div>' +
-                '<div class="m-riv-vs">' +
-                    '<span class="m-riv-side"><b>' + esc(r.manager_a.name) + '</b></span>' +
-                    '<span class="m-riv-mid">' + mid + '</span>' +
-                    '<span class="m-riv-side"><b>' + esc(r.manager_b.name) + '</b></span>' +
+            var a = r.manager_a, b = r.manager_b;
+            var aw = a.wins || 0, bw = b.wins || 0;
+            var aLead = aw > bw, bLead = bw > aw;
+            var total = Math.max(1, aw + bw);
+            // Oldest to newest, coloured by who won each meeting.
+            var pips = (a.last5 || []).map(function (g) {
+                var cls = g.result === 'W' ? 'a' : g.result === 'L' ? 'b' : '';
+                return '<span class="m-rv-pip ' + cls + (g.is_playoff ? ' po' : '') + '" title="' + esc(g.year + ' · Week ' + g.week) + '"></span>';
+            }).join('');
+            var lm = r.last_meeting;
+            var last = lm ? 'Last met <b>' + esc(lm.year) + ' · Wk ' + esc(lm.week) + '</b>' + (lm.is_playoff ? ' · Playoffs' : '') : '';
+            var since = (r.first_meeting_year ? 'Since ' + r.first_meeting_year + ' · ' : '') + r.total_meetings + (r.total_meetings === 1 ? ' meeting' : ' meetings');
+            return '<a class="m-rv" href="rivalries/rivalry.html?id=' + encodeURIComponent(r.id) + '">' +
+                '<div class="m-rv-top">' +
+                    '<div class="m-rv-name">' + esc(titleCase(r.name)) + '</div>' +
+                    '<div class="m-rv-since">' + esc(r.is_deadlocked ? since + ' · Dead even' : since) + '</div>' +
                 '</div>' +
-                '<div class="m-mono" style="text-align:center;margin-top:.45rem">' + sub + '</div>' +
+                '<div class="m-rv-faceoff">' +
+                    side(a, 'is-a', aLead, bLead) +
+                    '<div class="m-rv-seal" aria-hidden="true">vs</div>' +
+                    side(b, 'is-b', bLead, aLead) +
+                '</div>' +
+                '<div class="m-rv-tug" aria-hidden="true">' +
+                    '<i class="a" style="width:' + (aw / total * 100).toFixed(1) + '%"></i>' +
+                    '<i class="b" style="width:' + (bw / total * 100).toFixed(1) + '%"></i>' +
+                '</div>' +
+                '<div class="m-rv-foot">' +
+                    (pips ? '<span class="m-rv-pips"><span class="m-rv-pips-lbl">Last ' + (a.last5 || []).length + '</span>' + pips + '</span>' : '<span></span>') +
+                    '<span class="m-rv-last">' + last + '</span>' +
+                '</div>' +
             '</a>';
         }
 
-        var start = 0;
-        function show() {
-            var pair = [list[start % list.length]];
-            if (list.length > 1) pair.push(list[(start + 1) % list.length]);
-            box.innerHTML = pair.map(card).join('');
-        }
-        show();
-        if (list.length <= 2) return;
-        setInterval(function () {
-            if (document.hidden) return;
-            start = (start + 2) % list.length;
-            box.classList.add('is-swapping');
-            setTimeout(function () {
-                show();
-                box.classList.remove('is-swapping');
-            }, 350);
-        }, 12000);
+        var deck = document.getElementById('rivalryCards');
+        var dots = document.getElementById('rivalryDots');
+        deck.innerHTML = list.map(card).join('');
+        if (list.length < 2) { dots.hidden = true; return; }
+        dots.innerHTML = list.map(function (_, i) { return '<span class="m-rv-dot' + (i ? '' : ' is-on') + '"></span>'; }).join('');
+        // The dot follows whichever card is nearest the middle.
+        var ticking = false;
+        deck.addEventListener('scroll', function () {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(function () {
+                ticking = false;
+                var mid = deck.scrollLeft + deck.clientWidth / 2;
+                var cards = deck.children, best = 0, bestD = Infinity;
+                for (var i = 0; i < cards.length; i++) {
+                    var c = cards[i].offsetLeft + cards[i].offsetWidth / 2;
+                    if (Math.abs(c - mid) < bestD) { bestD = Math.abs(c - mid); best = i; }
+                }
+                for (var j = 0; j < dots.children.length; j++) dots.children[j].classList.toggle('is-on', j === best);
+            });
+        }, { passive: true });
     }
 
     function renderSeasons(dir) {

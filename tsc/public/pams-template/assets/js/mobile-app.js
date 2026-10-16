@@ -592,6 +592,10 @@
         var cupRow = cupLink && cupLink.href
             ? sheetRow('cup/', cupLink.name, cupLink.preview ? { sub: 'New' } : {})
             : '';
+        // Its Hall of Fame (every Cup, all time) once there's a real Cup.
+        if (cupRow && !cupLink.preview) {
+            cupRow += sheetRow('cup/hall/', cupLink.name.replace(/^The /, '') + ' Hall of Fame');
+        }
 
         // History sheet — the History tab's targets.
         var history = document.createElement('dialog');

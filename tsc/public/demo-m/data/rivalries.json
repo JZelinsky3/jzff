@@ -1,9 +1,710 @@
 {
- "rivalries": [],
+ "rivalries": [
+  {
+   "id": "demo-lake-effect",
+   "name": "THE LAKE EFFECT",
+   "total_meetings": 8,
+   "first_meeting_year": 2020,
+   "last_meeting": {
+    "year": 2025,
+    "week": 6,
+    "is_playoff": false,
+    "a_score": 117.51,
+    "b_score": 120.47
+   },
+   "leader_name": "Cole",
+   "leader_record": "7–1",
+   "is_deadlocked": false,
+   "manager_a": {
+    "name": "Noah",
+    "user_id": 1010,
+    "wins": 1,
+    "avg_ppg": 115.41,
+    "reg_record": "1-7-0",
+    "playoff_record": "0-0-0",
+    "high_score": {
+     "score": 132.55,
+     "year": 2022,
+     "week": 14,
+     "is_playoff": false
+    },
+    "last5": [
+     {
+      "year": 2022,
+      "week": 14,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 18.43
+     },
+     {
+      "year": 2023,
+      "week": 6,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 12.37
+     },
+     {
+      "year": 2024,
+      "week": 2,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 15.31
+     },
+     {
+      "year": 2024,
+      "week": 13,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 12.58
+     },
+     {
+      "year": 2025,
+      "week": 6,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 2.96
+     }
+    ]
+   },
+   "manager_b": {
+    "name": "Cole",
+    "user_id": 1007,
+    "wins": 7,
+    "avg_ppg": 126.06,
+    "reg_record": "7-1-0",
+    "playoff_record": "0-0-0",
+    "high_score": {
+     "score": 146.53,
+     "year": 2021,
+     "week": 7,
+     "is_playoff": false
+    },
+    "last5": [
+     {
+      "year": 2022,
+      "week": 14,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 18.43
+     },
+     {
+      "year": 2023,
+      "week": 6,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 12.37
+     },
+     {
+      "year": 2024,
+      "week": 2,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 15.31
+     },
+     {
+      "year": 2024,
+      "week": 13,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 12.58
+     },
+     {
+      "year": 2025,
+      "week": 6,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 2.96
+     }
+    ]
+   },
+   "ties_count": 0
+  },
+  {
+   "id": "demo-crosstown",
+   "name": "THE CROSSTOWN CLASSIC",
+   "total_meetings": 11,
+   "first_meeting_year": 2019,
+   "last_meeting": {
+    "year": 2025,
+    "week": 7,
+    "is_playoff": false,
+    "a_score": 111.63,
+    "b_score": 140.93
+   },
+   "leader_name": "Ethan",
+   "leader_record": "6–5",
+   "is_deadlocked": false,
+   "manager_a": {
+    "name": "Tyler",
+    "user_id": 1002,
+    "wins": 5,
+    "avg_ppg": 122.63,
+    "reg_record": "5-5-0",
+    "playoff_record": "0-1-0",
+    "high_score": {
+     "score": 146.85,
+     "year": 2021,
+     "week": 1,
+     "is_playoff": false
+    },
+    "last5": [
+     {
+      "year": 2023,
+      "week": 5,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 30.57
+     },
+     {
+      "year": 2023,
+      "week": 15,
+      "is_playoff": true,
+      "result": "L",
+      "margin": 7.22
+     },
+     {
+      "year": 2024,
+      "week": 1,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 11.83
+     },
+     {
+      "year": 2024,
+      "week": 12,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 19.04
+     },
+     {
+      "year": 2025,
+      "week": 7,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 29.3
+     }
+    ]
+   },
+   "manager_b": {
+    "name": "Ethan",
+    "user_id": 1004,
+    "wins": 6,
+    "avg_ppg": 120.05,
+    "reg_record": "5-5-0",
+    "playoff_record": "1-0-0",
+    "high_score": {
+     "score": 140.93,
+     "year": 2025,
+     "week": 7,
+     "is_playoff": false
+    },
+    "last5": [
+     {
+      "year": 2023,
+      "week": 5,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 30.57
+     },
+     {
+      "year": 2023,
+      "week": 15,
+      "is_playoff": true,
+      "result": "W",
+      "margin": 7.22
+     },
+     {
+      "year": 2024,
+      "week": 1,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 11.83
+     },
+     {
+      "year": 2024,
+      "week": 12,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 19.04
+     },
+     {
+      "year": 2025,
+      "week": 7,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 29.3
+     }
+    ]
+   },
+   "ties_count": 0
+  },
+  {
+   "id": "demo-hammer-hawk",
+   "name": "THE HAMMER AND THE HAWK",
+   "total_meetings": 9,
+   "first_meeting_year": 2019,
+   "last_meeting": {
+    "year": 2025,
+    "week": 15,
+    "is_playoff": true,
+    "a_score": 135.16,
+    "b_score": 132.06
+   },
+   "leader_name": "Marcus",
+   "leader_record": "8–1",
+   "is_deadlocked": false,
+   "manager_a": {
+    "name": "Marcus",
+    "user_id": 1001,
+    "wins": 8,
+    "avg_ppg": 134.84,
+    "reg_record": "7-1-0",
+    "playoff_record": "1-0-0",
+    "high_score": {
+     "score": 147.65,
+     "year": 2019,
+     "week": 12,
+     "is_playoff": false
+    },
+    "last5": [
+     {
+      "year": 2023,
+      "week": 7,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 30.27
+     },
+     {
+      "year": 2024,
+      "week": 3,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 0.33
+     },
+     {
+      "year": 2024,
+      "week": 14,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 28.93
+     },
+     {
+      "year": 2025,
+      "week": 5,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 12.12
+     },
+     {
+      "year": 2025,
+      "week": 15,
+      "is_playoff": true,
+      "result": "W",
+      "margin": 3.1
+     }
+    ]
+   },
+   "manager_b": {
+    "name": "Jordan",
+    "user_id": 1003,
+    "wins": 1,
+    "avg_ppg": 118.07,
+    "reg_record": "1-7-0",
+    "playoff_record": "0-1-0",
+    "high_score": {
+     "score": 137.78,
+     "year": 2024,
+     "week": 3,
+     "is_playoff": false
+    },
+    "last5": [
+     {
+      "year": 2023,
+      "week": 7,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 30.27
+     },
+     {
+      "year": 2024,
+      "week": 3,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 0.33
+     },
+     {
+      "year": 2024,
+      "week": 14,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 28.93
+     },
+     {
+      "year": 2025,
+      "week": 5,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 12.12
+     },
+     {
+      "year": 2025,
+      "week": 15,
+      "is_playoff": true,
+      "result": "L",
+      "margin": 3.1
+     }
+    ]
+   },
+   "ties_count": 0
+  },
+  {
+   "id": "demo-inside-job",
+   "name": "THE INSIDE JOB",
+   "total_meetings": 8,
+   "first_meeting_year": 2019,
+   "last_meeting": {
+    "year": 2025,
+    "week": 5,
+    "is_playoff": false,
+    "a_score": 92.82,
+    "b_score": 98.72
+   },
+   "leader_name": "Devin",
+   "leader_record": "5–3",
+   "is_deadlocked": false,
+   "manager_a": {
+    "name": "Devin",
+    "user_id": 1006,
+    "wins": 5,
+    "avg_ppg": 121.91,
+    "reg_record": "5-3-0",
+    "playoff_record": "0-0-0",
+    "high_score": {
+     "score": 135.02,
+     "year": 2023,
+     "week": 7,
+     "is_playoff": false
+    },
+    "last5": [
+     {
+      "year": 2021,
+      "week": 12,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 22.46
+     },
+     {
+      "year": 2022,
+      "week": 6,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 15.66
+     },
+     {
+      "year": 2023,
+      "week": 7,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 3.26
+     },
+     {
+      "year": 2024,
+      "week": 6,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 0.74
+     },
+     {
+      "year": 2025,
+      "week": 5,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 5.9
+     }
+    ]
+   },
+   "manager_b": {
+    "name": "Trevor",
+    "user_id": 1008,
+    "wins": 3,
+    "avg_ppg": 111.73,
+    "reg_record": "3-5-0",
+    "playoff_record": "0-0-0",
+    "high_score": {
+     "score": 131.94,
+     "year": 2020,
+     "week": 4,
+     "is_playoff": false
+    },
+    "last5": [
+     {
+      "year": 2021,
+      "week": 12,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 22.46
+     },
+     {
+      "year": 2022,
+      "week": 6,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 15.66
+     },
+     {
+      "year": 2023,
+      "week": 7,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 3.26
+     },
+     {
+      "year": 2024,
+      "week": 6,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 0.74
+     },
+     {
+      "year": 2025,
+      "week": 5,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 5.9
+     }
+    ]
+   },
+   "ties_count": 0
+  },
+  {
+   "id": "demo-fire-ice",
+   "name": "FIRE AND ICE",
+   "total_meetings": 7,
+   "first_meeting_year": 2021,
+   "last_meeting": {
+    "year": 2025,
+    "week": 4,
+    "is_playoff": false,
+    "a_score": 113.91,
+    "b_score": 94.47
+   },
+   "leader_name": "Brandon",
+   "leader_record": "6–1",
+   "is_deadlocked": false,
+   "manager_a": {
+    "name": "Brandon",
+    "user_id": 1005,
+    "wins": 6,
+    "avg_ppg": 117.14,
+    "reg_record": "6-1-0",
+    "playoff_record": "0-0-0",
+    "high_score": {
+     "score": 128.37,
+     "year": 2023,
+     "week": 3,
+     "is_playoff": false
+    },
+    "last5": [
+     {
+      "year": 2022,
+      "week": 14,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 7.56
+     },
+     {
+      "year": 2023,
+      "week": 3,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 17.14
+     },
+     {
+      "year": 2023,
+      "week": 14,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 10.03
+     },
+     {
+      "year": 2024,
+      "week": 8,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 18.55
+     },
+     {
+      "year": 2025,
+      "week": 4,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 19.44
+     }
+    ]
+   },
+   "manager_b": {
+    "name": "Adam",
+    "user_id": 1009,
+    "wins": 1,
+    "avg_ppg": 106.4,
+    "reg_record": "1-6-0",
+    "playoff_record": "0-0-0",
+    "high_score": {
+     "score": 113.06,
+     "year": 2021,
+     "week": 5,
+     "is_playoff": false
+    },
+    "last5": [
+     {
+      "year": 2022,
+      "week": 14,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 7.56
+     },
+     {
+      "year": 2023,
+      "week": 3,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 17.14
+     },
+     {
+      "year": 2023,
+      "week": 14,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 10.03
+     },
+     {
+      "year": 2024,
+      "week": 8,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 18.55
+     },
+     {
+      "year": 2025,
+      "week": 4,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 19.44
+     }
+    ]
+   },
+   "ties_count": 0
+  },
+  {
+   "id": "demo-river-wars",
+   "name": "THE RIVER WARS",
+   "total_meetings": 4,
+   "first_meeting_year": 2023,
+   "last_meeting": {
+    "year": 2025,
+    "week": 9,
+    "is_playoff": false,
+    "a_score": 120.71,
+    "b_score": 111.07
+   },
+   "leader_name": null,
+   "leader_record": "2–2",
+   "is_deadlocked": true,
+   "manager_a": {
+    "name": "Ryan",
+    "user_id": 1011,
+    "wins": 2,
+    "avg_ppg": 110.86,
+    "reg_record": "2-2-0",
+    "playoff_record": "0-0-0",
+    "high_score": {
+     "score": 124.24,
+     "year": 2024,
+     "week": 5,
+     "is_playoff": false
+    },
+    "last5": [
+     {
+      "year": 2023,
+      "week": 3,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 2.42
+     },
+     {
+      "year": 2023,
+      "week": 14,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 1.4
+     },
+     {
+      "year": 2024,
+      "week": 5,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 9.84
+     },
+     {
+      "year": 2025,
+      "week": 9,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 9.64
+     }
+    ]
+   },
+   "manager_b": {
+    "name": "Owen",
+    "user_id": 1012,
+    "wins": 2,
+    "avg_ppg": 110.66,
+    "reg_record": "2-2-0",
+    "playoff_record": "0-0-0",
+    "high_score": {
+     "score": 134.08,
+     "year": 2024,
+     "week": 5,
+     "is_playoff": false
+    },
+    "last5": [
+     {
+      "year": 2023,
+      "week": 3,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 2.42
+     },
+     {
+      "year": 2023,
+      "week": 14,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 1.4
+     },
+     {
+      "year": 2024,
+      "week": 5,
+      "is_playoff": false,
+      "result": "W",
+      "margin": 9.84
+     },
+     {
+      "year": 2025,
+      "week": 9,
+      "is_playoff": false,
+      "result": "L",
+      "margin": 9.64
+     }
+    ]
+   },
+   "ties_count": 0
+  }
+ ],
  "summary": {
-  "active_feuds": 0,
-  "total_meetings": 0,
-  "leaders": 0,
-  "deadlocked": 0
+  "active_feuds": 6,
+  "total_meetings": 47,
+  "leaders": 5,
+  "deadlocked": 1
  }
 }

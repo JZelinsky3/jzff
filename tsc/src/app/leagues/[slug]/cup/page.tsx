@@ -75,7 +75,7 @@ function ordinal(n: number): string {
   return `${n}${s[(v - 20) % 10] || s[v] || s[0]}`
 }
 
-type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ year?: string; preview?: string; reveal?: string }> }
+type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ year?: string; preview?: string; reveal?: string; tab?: string }> }
 
 // ?year= opens a past season's Cup; the newest one otherwise.
 async function yearOf(searchParams: Props['searchParams']): Promise<number | null> {
@@ -172,6 +172,9 @@ export default async function CupPage({ params, searchParams }: Props) {
         // again, or check it before anyone else does).
         forceReveal={(await searchParams).reveal === '1'}
         demo={demo}
+        hallHref={`/leagues/${slug}/cup/hall/`}
+        initialTab={(await searchParams).tab}
+        rated={cup.seeds.some((x) => x.rating != null)}
         // The demo is mid-Cup; this says when a real league's starts.
         banner={demo && cup.season_year >= CUP_LAUNCH.year ? <DemoLaunch previewHref={`/leagues/${slug}/cup/?preview=1`} /> : null}
       />

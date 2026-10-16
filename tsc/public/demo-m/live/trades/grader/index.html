@@ -3,60 +3,57 @@
 <head>
 <base href="/demo-m/">
 <script>(function(){var u=navigator.userAgent;var m=/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u);if(m)return;if(/(?:^|;\s*)dc_view=mobile/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo-m\//,"/demo/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<!-- Link preview: the card a real league's page gets (demo_resync). -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The Sunday Chronicle">
+<meta property="og:title" content="The Lakeside League · The Grader">
+<meta property="og:description" content="Every trade in The Lakeside League hits the wire, announced, graded on arrival, revisited four weeks later.">
+<meta property="og:url" content="https://thesundaychronicle.app/demo-m/live/trades/grader/">
+<meta property="og:image" content="https://thesundaychronicle.app/api/og/league/demo/?page=trades">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Lakeside League, The Grader">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Lakeside League · The Grader">
+<meta name="twitter:description" content="Every trade in The Lakeside League hits the wire, announced, graded on arrival, revisited four weeks later.">
+<meta name="twitter:image" content="https://thesundaychronicle.app/api/og/league/demo/?page=trades">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Trade Grader · The Trade Desk · The Lakeside League</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap">
 <link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
 <link rel="stylesheet" href="/pams-template/assets/css/trades.css">
+<link rel="stylesheet" href="/pams-template/assets/css/trades-grader-mobile.css">
 <style>
-/* Mobile shell fit-up — the room keeps the desktop's trades.css +
-   trades.js wholesale (same theme variants, grading engine, feeds);
-   only the chrome swaps to the app shell. */
-
-/* App bar + tab bar follow the commish's grader theme (the route stamps
-   data-trades-theme on <body>), mirroring the desktop nav recolors in
-   trades.css — not the walnut Trade Desk hub. */
+/* Mobile shell — the grader desktop ships 4 themes; on phones we
+   drop the theme system and build a single purpose-tuned look in
+   trades-grader-mobile.css (aubergine + copper palette, news-feed
+   cards, side A/B color chips). App-bar + tab-bar pick the matching
+   aubergine chrome here so the masthead doesn't fight the page. */
 :root {
-    --m-chrome-bg:  #2a1d11;   /* cards fallback before the attr resolves */
-    --m-chrome-bg2: #322217;
+    --m-chrome-bg:  #0d0a14;
+    --m-chrome-bg2: #14101c;
 }
-body[data-trades-theme="cards"] { --m-chrome-bg: #2a1d11; --m-chrome-bg2: #322217; }
-body[data-trades-theme="cards"] .m-appbar,
-body[data-trades-theme="cards"] .m-tabbar {
-    --ink-line: #4c3922; --gold: #c8a464; --gold-deep: #8a6f3a;
-    --cream: #f5e9c8; --cream-mute: #9c8665;
-}
-body[data-trades-theme="tribunal"] { --m-chrome-bg: #14100d; --m-chrome-bg2: #1f1714; }
-body[data-trades-theme="tribunal"] .m-appbar,
-body[data-trades-theme="tribunal"] .m-tabbar {
-    --ink-line: #3a2820; --gold: #c8a464; --gold-deep: #8a6f3a;
-    --cream: #ede0c4; --cream-mute: #7e6e58;
-}
-body[data-trades-theme="wire"] { --m-chrome-bg: #efeae0; --m-chrome-bg2: #f6f1e4; }
-body[data-trades-theme="wire"] .m-appbar,
-body[data-trades-theme="wire"] .m-tabbar {
-    /* Newsprint flips light — ink text, masthead red accent. */
-    --ink-line: #c9bea3; --gold: #b03830; --gold-deep: #8a5a30;
-    --cream: #1a1612; --cream-mute: #6b5e44;
-}
-body[data-trades-theme="floor"] { --m-chrome-bg: #050707; --m-chrome-bg2: #0e1110; }
-body[data-trades-theme="floor"] .m-appbar,
-body[data-trades-theme="floor"] .m-tabbar {
-    --ink-line: #1c2421; --gold: #00ff9f; --gold-deep: #ffb000;
-    --cream: #c5d4cb; --cream-mute: #889084;
+.m-appbar, .m-tabbar {
+    --ink-line: #3a2e50;
+    --gold: #e8a26c;
+    --gold-deep: #d49260;
+    --cream: #ede5f5;
+    --cream-mute: #968aa6;
 }
 body {
     padding-top: calc(var(--m-appbar-h) + env(safe-area-inset-top));
     padding-bottom: calc(var(--m-tab-h) + env(safe-area-inset-bottom) + 12px);
 }
-.tr-wrap { padding-left: .9rem; padding-right: .9rem; }
 
 /* Spinner — lives in main.css on desktop; ported here */
 .tsc-spinner {
     display: block;
     width: 38px; height: 38px;
     margin: 0 auto 1rem;
-    color: var(--td-live, currentColor);
+    color: #f0c878;
     animation: tsc-spin 1.1s linear infinite;
 }
 .tsc-spinner[data-size="sm"] {
@@ -82,6 +79,7 @@ body {
 
     <header class="tr-page-head">
         <h1 class="tr-page-title">Trade <em>Grader.</em></h1>
+        <p class="tr-page-sub">Every trade in LSL, graded when it lands and revisited four weeks later.</p>
     </header>
 
     <!-- Commissioner-only theme picker — rendered by trades.js when __DC.isCommish -->
@@ -106,6 +104,28 @@ body {
 
 </main>
 
+<script>
+// Share lives in the app bar, not the page header. Sitting beside the
+// title forced the title off-centre, and this page is meant to match the
+// other Trade Desk rooms, which all centre their masthead. The bar's
+// right slot floats absolutely, so the centred title stays centred.
+(function () {
+    function mount() {
+        if (!window.__MA || !window.__MA.setAppbarRight) return false;
+        window.__MA.setAppbarRight(
+            '<button type="button" class="td-share-btn td-share-btn--bar" aria-label="Share the wire">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+            '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>' +
+            '<line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>' +
+            '</svg></button>',
+            function () { if (window.TSCShare) window.TSCShare.open(); }
+        );
+        return true;
+    }
+    if (!mount()) document.addEventListener('DOMContentLoaded', mount);
+})();
+</script>
+<script>/* Demo: the sample trades are a static file. */(function(){var f=window.fetch;window.fetch=function(u,o){if(u==='live/trades/data')u='live/trades/data.json';return f.call(this,u,o)}})()</script>
 <script src="/pams-template/assets/js/trades.js"></script>
 </body>
 </html>

@@ -3,6 +3,20 @@
 <head>
 <base href="/demo-m/">
 <script>(function(){var u=navigator.userAgent;var m=/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u);if(m)return;if(/(?:^|;\s*)dc_view=mobile/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo-m\//,"/demo/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<!-- Link preview: the card a real league's page gets (demo_resync). -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The Sunday Chronicle">
+<meta property="og:title" content="The Lakeside League · The Live Season">
+<meta property="og:description" content="The Lakeside League's season as it happens, power rankings, pick'ems, records watch, and the trade desk.">
+<meta property="og:url" content="https://thesundaychronicle.app/demo-m/live/matchup-preview/">
+<meta property="og:image" content="https://thesundaychronicle.app/api/og/league/demo/?page=live&v=3">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Lakeside League, The Live Season">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Lakeside League · The Live Season">
+<meta name="twitter:description" content="The Lakeside League's season as it happens, power rankings, pick'ems, records watch, and the trade desk.">
+<meta name="twitter:image" content="https://thesundaychronicle.app/api/og/league/demo/?page=live&v=3">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Matchup Preview · The Lakeside League</title>
@@ -133,12 +147,32 @@ body { background: var(--mp-bg); color: var(--mp-cream); }
     border-radius: 0 0 12px 12px;
     overflow: hidden;
 }
+/* Whole row is a tap target — link-styled but visually identical to the
+   previous div. The chevron at the right edge is the only affordance,
+   plus an active flash so a tap registers. */
 .bd-row {
-    padding: .6rem .8rem .65rem;
+    display: block;
+    position: relative;
+    padding: .6rem 1.6rem .65rem .8rem;
     border-bottom: 1px solid var(--mp-line-soft);
+    color: inherit;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
 }
 .bd-row:last-child { border-bottom: none; }
+.bd-row::after {
+    content: '›';
+    position: absolute;
+    right: .7rem; top: 50%;
+    transform: translateY(-55%);
+    font-family: var(--mono); font-weight: 700;
+    font-size: 1.05rem; line-height: 1;
+    color: var(--mp-brass);
+    opacity: .65;
+}
+.bd-row:active { background: rgba(200, 157, 92, .08); }
 .bd-row.gotw { background: rgba(232, 176, 71, .07); border-left: 3px solid var(--mp-amber); }
+.bd-row.gotw::after { color: var(--mp-amber); opacity: 1; }
 .bd-row-top {
     display: flex; justify-content: space-between; align-items: baseline;
     font-family: var(--mono); font-weight: 700;
@@ -352,7 +386,7 @@ body { background: var(--mp-bg); color: var(--mp-cream); }
 
 /* Form rows + footers */
 .fm-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: .55rem; align-items: center; padding: .35rem 0; }
-.fm-name { font-size: .74rem; font-weight: 600; color: var(--mp-cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fm-name { font-size: .64rem; font-weight: 600; color: var(--mp-cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fm-pills { display: flex; gap: 2px; }
 .fm-pills i {
     display: flex; align-items: center; justify-content: center;
@@ -434,7 +468,11 @@ button.dk-btn { width: 100%; }
 <body>
 <div class="site-glow"></div>
 
-<nav id="site-nav" data-page="matchup-preview" data-chapter="Ch. VII · Matchup Preview" data-back-href="live/"></nav>
+<!-- back-smart: a matchup desk is opened from the board, from Pick'ems ("Preview"),
+     and from the live hub. Backing out to the live hub every time dumps Pick'ems
+     voters two pages from where they were, so return them to whichever page they
+     actually came from; direct loads still fall through to data-back-href. -->
+<nav id="site-nav" data-page="matchup-preview" data-chapter="Ch. VII · Matchup Preview" data-back-href="live/" data-back-smart="1"></nav>
 <script>window.__DC={slug:"demo",name:"The Lakeside League",isCommish:false,isSignedIn:false,isBookmarked:false,leagueTier:"demo",pageLocked:false}</script>
 <script src="/pams-template/assets/js/mobile-app.js"></script>
 
@@ -531,8 +569,36 @@ button.dk-btn { width: 100%; }
             }
             renderGotw(data);
             renderBoard(data);
-            renderConductor(data);
+            bindBoardShare(data);
+            // No conductor on mobile — the board rows are tap targets, so
+            // the "pick your name" picker is redundant. Identity still
+            // carries via the shared localStorage key when set on desktop
+            // (used to pre-target the GOTW marquee CTA).
         });
+
+    // Board-level share, mounted in the chrome app bar's right slot via
+    // __MA.setAppbarRight — same placement as the power rankings page, so
+    // the header stays clean and the league title stays centered. The desk
+    // view keeps its own in-body "Share matchup" button; this is the one
+    // for the whole slate, which readers arriving from a home-screen link
+    // otherwise had no way to pass on. Desktop already has the equivalent
+    // ("Share the board" in the section-header meta slot).
+    function bindBoardShare(data) {
+        if (!window.__MA || !window.__MA.setAppbarRight) return;
+        var html =
+            '<button type="button" class="m-appbar-share" aria-label="Share this week\'s board">' +
+                '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 9.5 9.5 6.5"/><path d="M7 4.5h-1.5a3 3 0 0 0 0 6h1.5"/><path d="M9 11.5h1.5a3 3 0 0 0 0-6h-1.5"/></svg>' +
+                'Share' +
+            '</button>';
+        window.__MA.setAppbarRight(html, function () {
+            var leagueName = (window.__DC && window.__DC.name) || 'Live Season';
+            // Drop ?m= so the link always opens on the board, never on
+            // whichever desk view the reader happened to visit last.
+            var url = new URL(window.location.href);
+            url.searchParams.delete('m');
+            shareLink(url.toString(), 'Wk ' + data.week + ' Matchups · ' + leagueName);
+        });
+    }
 
     // ── Share — native sheet first, clipboard fallback, toast either way.
     function showToast(msg) {
@@ -632,6 +698,11 @@ button.dk-btn { width: 100%; }
                 '<span class="bd-mast-meta">' + esc(data.year) + '</span>' +
             '</div>' +
             '<div class="bd-list">';
+        // Pre-target the row to whichever side the visitor previously
+        // identified as, so deep-linking via the picker carries through.
+        // Default to side A so every row always has a target.
+        var savedUid = null;
+        try { savedUid = localStorage.getItem(pickerKey()); } catch (e) { /* ignore */ }
         data.matchups.forEach(function (m) {
             var spreadTxt = m.projected.favorite === 'pp'
                 ? '<span class="bd-spread pp">Pick’em</span>'
@@ -639,8 +710,10 @@ button.dk-btn { width: 100%; }
                   (m.projected.favorite === 'a' ? '◀' : '▶') + ' by ' + fmtPts(m.projected.spread) + '</span>';
             var aStar = m.projected.favorite === 'a' ? '<span class="fav-mark">★</span> ' : '';
             var bStar = m.projected.favorite === 'b' ? ' <span class="fav-mark">★</span>' : '';
+            var jumpUid = (savedUid === m.a.uid || savedUid === m.b.uid) ? savedUid : m.a.uid;
+            var href = 'live/matchup-preview/?m=' + encodeURIComponent(jumpUid);
             html +=
-                '<div class="bd-row' + (m.gotw ? ' gotw' : '') + '">' +
+                '<a class="bd-row' + (m.gotw ? ' gotw' : '') + '" href="' + href + '">' +
                     '<div class="bd-row-top">' +
                         '<span>Train ' + esc(m.train) + (m.gotw ? ' · Main Line' : '') + '</span>' +
                         spreadTxt +
@@ -656,9 +729,9 @@ button.dk-btn { width: 100%; }
                             '<div class="bd-side-rec">' + esc(m.b.record) + '</div>' +
                         '</div>' +
                     '</div>' +
-                '</div>';
+                '</a>';
         });
-        html += '<div class="bd-legend"><span class="star">★</span> ◀ / ▶ favored side · last-5 PPG spread</div></div>';
+        html += '<div class="bd-legend">Tap a row for H2H, form, and projection · <span class="star">★</span> ◀ / ▶ favored side</div></div>';
         boardHost.innerHTML = html;
     }
 
@@ -742,7 +815,7 @@ button.dk-btn { width: 100%; }
         }
         function cell(side, right) {
             return '<div class="fm-high' + (right ? ' right' : '') + '">' +
-                     '<span class="label">' + esc(side.name) + ' · Best run</span>' +
+                     '<span class="label">' + esc(side.name) + ' · Hot streak</span>' +
                      chipFor(side.longestWinStreak || 0) +
                    '</div>';
         }
@@ -803,7 +876,7 @@ button.dk-btn { width: 100%; }
         if (m.projected.favorite === 'pp') {
             projMsg = 'A coin flip, neither side has separated.';
         } else if (favSelf) {
-            projMsg = 'Form has you favored by <strong>' + fmtPts(spread) + '</strong>.';
+            projMsg = '<strong>' + esc(self.name) + '</strong> is favored by <strong>' + fmtPts(spread) + '</strong> on form.';
         } else {
             projMsg = '<strong>' + esc(opp.name) + '</strong> is favored by <strong>' + fmtPts(spread) + '</strong> on form.';
         }

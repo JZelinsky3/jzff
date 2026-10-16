@@ -29,7 +29,7 @@ export function DemoLaunch({ previewHref }: { previewHref: string }) {
                 : `Your league’s Cup is drawn ${drawDayText()}.`}
           </p>
           <p className={styles.line}>
-            Seeds are the standings after week {CUP_LAUNCH.seededThrough}. Round one is week {CUP_LAUNCH.startWeek}. This league is playing its semifinals now, so try a pick.
+            Seeds are the Cup Rating after week {CUP_LAUNCH.seededThrough}, not the standings. Round one is week {CUP_LAUNCH.startWeek}. This league is playing its semifinals now, so try a pick.
           </p>
         </div>
         {phase === 'before' ? (

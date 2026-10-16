@@ -7,6 +7,20 @@
      handler, so the base lives in the file itself. -->
 <base href="/demo/">
 <script>(function(){var u=navigator.userAgent;if(!(/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u)))return;if(/(?:^|;\s*)dc_view=desktop/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo\//,"/demo-m/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<!-- Link preview: the card a real league's page gets (demo_resync). -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The Sunday Chronicle">
+<meta property="og:title" content="The Lakeside League · The Seasons">
+<meta property="og:description" content="Season by season through The Lakeside League's history, champions, standings, and the stories between.">
+<meta property="og:url" content="https://thesundaychronicle.app/demo/seasons/">
+<meta property="og:image" content="https://thesundaychronicle.app/api/og/league/demo/?page=seasons&v=3">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Lakeside League, The Seasons">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Lakeside League · The Seasons">
+<meta name="twitter:description" content="Season by season through The Lakeside League's history, champions, standings, and the stories between.">
+<meta name="twitter:image" content="https://thesundaychronicle.app/api/og/league/demo/?page=seasons&v=3">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Season Archives · The Lakeside League</title>
@@ -149,8 +163,21 @@
     font-family: var(--mono); font-weight: 700;
     font-size: .52rem; letter-spacing: .14em; text-transform: uppercase;
     color: rgba(10, 10, 12, .85);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    /* A 98px spine fits about 13 characters, and the median name is 9 — but
+       ESPN and Yahoo hand back 17-character machine names, and truncating
+       every one of those to "ESPNFAN04…" reads as broken. Two lines with a
+       size step covers the real range; only the extremes still clip.
+       overflow-wrap breaks an unbroken token rather than letting it spill. */
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-clamp: 2;
+    overflow: hidden;
 }
+.book-band.long   { font-size: .46rem; letter-spacing: .1em; }
+.book-band.longer { font-size: .41rem; letter-spacing: .06em; }
 .book-band.in-play {
     background: var(--ink-soft);
     color: var(--cream-mute);
@@ -251,8 +278,18 @@
     color: var(--cream-soft);
     margin-top: .5rem;
     max-width: 84%;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    /* Same reasoning as .book-band: wrap to two lines rather than ellipse a
+       name the cloth could hold. */
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-clamp: 2;
+    overflow: hidden;
 }
+.flag-name.long   { font-size: .44rem; letter-spacing: .08em; }
+.flag-name.longer { font-size: .39rem; letter-spacing: .04em; }
 .flag-star {
     font-size: .62rem;
     color: var(--gold);
@@ -268,6 +305,8 @@
 }
 .rafter-strip.dense .flag-year { font-size: .92rem; }
 .rafter-strip.dense .flag-name { font-size: .42rem; margin-top: .4rem; }
+.rafter-strip.dense .flag-name.long   { font-size: .38rem; }
+.rafter-strip.dense .flag-name.longer { font-size: .34rem; }
 .rafter-strip.dense .flag-star { font-size: .52rem; margin-top: .35rem; }
 @media (max-width: 640px) { .rafter-strip { display: none; } }
 
@@ -510,6 +549,157 @@
 @media (prefers-reduced-motion: reduce) {
     .book, .reign-color, .season-entry, .season-entry::before, .entry-arrow { transition: none !important; }
 }
+
+/* ============================================================
+   THE CUP · the league's knockout Cup, kept in the vault all year
+   (the Cup itself only runs a few weeks). Drawn in the Cup's own
+   ticket stock, the same as its strip and pages: cream paper, a
+   green stub holding the brass trophy, a dotted perforation. On
+   the right, the trophy's base: one engraved plate per year, the
+   years to come left blank.
+   ============================================================ */
+.cup-ticket {
+    display: flex;
+    border-radius: 16px;
+    background: #f5eedb;
+    color: #1b1f18;
+    box-shadow: 0 1px 0 rgba(255,255,255,.5) inset, 0 14px 34px rgba(0,0,0,.45);
+    overflow: hidden;
+}
+.cup-stub {
+    flex: none;
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: .9rem;
+    width: 150px;
+    padding: 1.5rem 0;
+    background:
+        radial-gradient(80% 50% at 50% 38%, rgba(230,203,142,.22), rgba(230,203,142,0) 70%),
+        #1f4a3a;
+}
+.cup-stub::after {
+    content: '';
+    position: absolute; top: 10px; bottom: 10px; right: -1px;
+    border-right: 3px dotted #f5eedb;
+}
+.cup-since {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .24em;
+    text-transform: uppercase;
+    color: #c8a35b;
+}
+.cup-main {
+    flex: 1; min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: 2.25rem;
+    align-items: center;
+    padding: 1.75rem 2rem 1.75rem 2.25rem;
+}
+.cup-kicker {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .24em;
+    text-transform: uppercase;
+    color: #7b745f;
+}
+.cup-name {
+    margin-top: .35rem;
+    font-family: var(--serif);
+    font-size: 2.6rem; line-height: 1;
+    color: #1f4a3a;
+}
+.cup-status {
+    margin-top: .55rem;
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.12rem; line-height: 1.4;
+    color: #4a4839;
+}
+.cup-facts {
+    margin-top: .8rem;
+    font-family: var(--sans);
+    font-size: .85rem; line-height: 1.5;
+    color: #5d5a4a;
+}
+.cup-facts b { font-weight: 600; color: #1b1f18; }
+.cup-go {
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-top: 1.2rem;
+    padding: .75rem 1.5rem;
+    border-radius: 10px;
+    background: #1f4a3a;
+    font-family: var(--sans); font-weight: 700;
+    font-size: .85rem;
+    color: #f5eedb;
+    text-decoration: none;
+    transition: background .2s;
+}
+.cup-go:hover { background: #2a6450; }
+.cup-gos { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.2rem; }
+.cup-gos .cup-go { margin-top: 0; }
+.cup-go--hall { background: transparent; color: #1f4a3a; box-shadow: inset 0 0 0 1.5px #1f4a3a; }
+.cup-go--hall:hover { background: rgba(31, 74, 58, .08); }
+.cup-base {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .6rem;
+    padding: .9rem;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #5c4520, #3f2f16);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 6px 14px rgba(0,0,0,.25);
+}
+.cup-plate {
+    display: block;
+    min-width: 0;
+    padding: .6rem .75rem .65rem;
+    border-radius: 5px;
+    background: linear-gradient(180deg, #ecdcae, #d2b675);
+    box-shadow: inset 0 0 0 1px rgba(143,111,51,.6), inset 0 1px 0 rgba(255,255,255,.55);
+    color: #2e2410;
+    text-decoration: none;
+    transition: transform .2s, box-shadow .2s;
+}
+a.cup-plate:hover {
+    transform: translateY(-2px);
+    box-shadow: inset 0 0 0 1px rgba(143,111,51,.8), inset 0 1px 0 rgba(255,255,255,.55), 0 6px 12px rgba(0,0,0,.3);
+}
+.cup-plate b {
+    display: block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .18em;
+    color: #6b5221;
+}
+.cup-plate span {
+    display: block;
+    margin-top: .1rem;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    font-family: var(--serif);
+    font-size: 1.05rem; line-height: 1.2;
+}
+.cup-plate small {
+    display: block;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    font-family: var(--sans);
+    font-size: .68rem;
+    color: #6b5221;
+}
+.cup-plate--open { background: #ece3c9; box-shadow: inset 0 0 0 1px #c4b386; }
+.cup-plate--open span { color: #1f4a3a; }
+.cup-plate--blank {
+    background: rgba(236,220,174,.08);
+    box-shadow: inset 0 0 0 1px rgba(236,220,174,.28);
+    color: rgba(236,220,174,.45);
+}
+.cup-plate--blank b { color: rgba(236,220,174,.45); }
+@media (max-width: 900px) {
+    .cup-main { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
+}
+@media (max-width: 640px) {
+    .cup-stub { width: 64px; }
+    .cup-stub svg { width: 40px; height: 48px; }
+    .cup-since { writing-mode: vertical-rl; transform: rotate(180deg); }
+    .cup-main { padding: 1.1rem 1rem 1.2rem 1.15rem; }
+    .cup-name { font-size: 1.8rem; }
+}
 </style>
 </head>
 <body>
@@ -569,10 +759,21 @@
         </div>
     </div>
 
+    <!-- THE CUP · the league's knockout Cup, kept here all year. Filled
+         from cup/summary/; stays hidden when the league has no Cup. -->
+    <div class="section" id="cup-section" hidden>
+        <div class="section-header">
+            <span class="section-num">§ 02 · The Cup</span>
+            <span class="section-title">The knockout cup.</span>
+            <span class="section-meta">Every bracket, every year</span>
+        </div>
+        <div id="cup-ticket"></div>
+    </div>
+
     <!-- §02 THE CHRONICLE · title-fight card docked in each row -->
     <div class="section" style="margin-bottom: 4rem;">
         <div class="section-header">
-            <span class="section-num">§ 02 · The Chronicle</span>
+            <span class="section-num" id="chronicle-num">§ 02 · The Chronicle</span>
             <span class="section-title">The full record.</span>
             <span class="section-meta">Newest first</span>
         </div>
@@ -665,13 +866,21 @@ function render(seasons) {
     document.getElementById('page-regions').style.display = '';
 }
 
+/* How much to shrink a champion's name so it fits the cloth or the spine.
+   Length, not measurement: these are fixed-width mono boxes, so characters
+   are a reliable proxy and it costs no layout read. */
+function nameFit(name) {
+    const n = (name ?? '').length;
+    return n > 20 ? ' longer' : n > 13 ? ' long' : '';
+}
+
 /* ─── §01 The shelf ─── */
 function buildShelf(chrono, colors) {
     const first = chrono[0]?.year ?? 0;
     document.getElementById('shelf-row').innerHTML = chrono.map((s, i) => {
         const k = champKey(s);
         const band = k
-            ? `<span class="book-band" style="--band:${colors[k]}">${s.champion.owner_name}</span>`
+            ? `<span class="book-band${nameFit(s.champion.owner_name)}" style="--band:${colors[k]}">${s.champion.owner_name}</span>`
             : `<span class="book-band in-play">In play</span>`;
         // Slight deterministic height variation so the shelf reads organic.
         const h = 258 + ((s.year % 3) * 11);
@@ -709,7 +918,7 @@ function buildRafterStrip(chrono, colors) {
             style="--cloth:${cloth(colors[k])}"
             title="${s.year} · ${s.champion.owner_name} · ${s.champion.team_name}">
             <div class="flag-year">${s.year}</div>
-            <div class="flag-name">${s.champion.owner_name}</div>
+            <div class="flag-name${nameFit(s.champion.owner_name)}">${s.champion.owner_name}</div>
             <div class="flag-star">★</div>
         </a>`;
     }).join('');
@@ -961,7 +1170,7 @@ function buildEntry(s, isFeatured, volNum, colors, boutHTML) {
                 ${runner}
                 ${third}
                 ${regLine}
-                <div class="entry-meta">${s.total_teams} teams</div>
+                <div class="entry-meta">${s.total_teams ? `${s.total_teams} teams` : 'Podium only'}</div>
                 <div class="entry-arrow">→</div>
             </div>
             ${boutHTML}
@@ -969,7 +1178,106 @@ function buildEntry(s, isFeatured, volNum, colors, boutHTML) {
     `;
 }
 
+/* ─── The Cup · cup/summary/ (null when the league has no Cup) ─── */
+
+const CUP_TROPHY = `<svg width="84" height="101" viewBox="0 0 200 240" aria-hidden="true">
+    <path d="M50 44 C14 44 12 104 64 114" fill="none" stroke="#c8a35b" stroke-width="11" stroke-linecap="round"/>
+    <path d="M150 44 C186 44 188 104 136 114" fill="none" stroke="#c8a35b" stroke-width="11" stroke-linecap="round"/>
+    <path d="M44 26 H156 V58 C156 108 130 138 100 138 C70 138 44 108 44 58 Z" fill="#c8a35b"/>
+    <rect x="36" y="16" width="128" height="14" rx="3" fill="#e6cb8e"/>
+    <path d="M62 38 V60 C62 90 74 112 90 124" fill="none" stroke="#e6cb8e" stroke-width="7" stroke-linecap="round" opacity=".7"/>
+    <rect x="44" y="50" width="112" height="6" fill="#7d6230" opacity=".55"/>
+    <rect x="91" y="136" width="18" height="34" fill="#c8a35b"/>
+    <rect x="78" y="152" width="44" height="11" rx="5" fill="#e6cb8e"/>
+    <path d="M64 170 H136 L146 194 H54 Z" fill="#c8a35b"/>
+    <rect x="40" y="194" width="120" height="34" rx="2" fill="#7d6230"/>
+    <rect x="40" y="194" width="120" height="4" fill="#e6cb8e" opacity=".5"/>
+    <rect x="64" y="204" width="72" height="14" rx="1" fill="#1f4a3a" opacity=".9"/>
+</svg>`;
+
+function cupEsc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function cupOrdinal(n) {
+    const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+// The trophy's base: every year engraved, oldest first, then blank plates
+// for the years to come, filling out the row (always at least one blank).
+function cupBase(c) {
+    const chrono = [...c.years].reverse();
+    const plates = chrono.map(y => {
+        if (y.champion) {
+            return `<a class="cup-plate" href="${cupEsc(y.href)}">
+                <b>${y.year}</b>
+                <span>${cupEsc(y.champion.name)}</span>
+                <small>${cupOrdinal(y.champion.seed)} seed${y.runnerUp ? `, beat ${cupEsc(y.runnerUp)}` : ''}</small>
+            </a>`;
+        }
+        const what = y.state === 'before' ? 'Draw set' : (y.round?.name ?? 'In play');
+        const sub = y.round ? `Week ${y.round.week} · ${y.alive} of ${y.field} left` : '';
+        return `<a class="cup-plate cup-plate--open" href="${cupEsc(y.href)}">
+            <b>${y.year}</b><span>${cupEsc(what)}</span><small>${cupEsc(sub)}</small>
+        </a>`;
+    });
+    let next = chrono[chrono.length - 1].year + 1;
+    do {
+        plates.push(`<span class="cup-plate cup-plate--blank" aria-hidden="true"><b>${next++}</b><span>&nbsp;</span><small>&nbsp;</small></span>`);
+    } while (plates.length % 3);
+    return `<div class="cup-base">${plates.join('')}</div>`;
+}
+
+function cupTicket(c) {
+    const stub = `<div class="cup-stub">${CUP_TROPHY}${c.since ? `<span class="cup-since">Since ${c.since}</span>` : ''}</div>`;
+    if (c.kind === 'preview') {
+        return `<div class="cup-ticket">${stub}
+            <div class="cup-main" style="grid-template-columns:minmax(0,1fr)">
+                <div>
+                    <div class="cup-kicker">New this season</div>
+                    <div class="cup-name">${cupEsc(c.name)}</div>
+                    <div class="cup-status">${cupEsc(c.status)}. A knockout bracket inside the season, with picks for the whole league.</div>
+                    <a class="cup-go" href="${cupEsc(c.href)}">See the preview</a>
+                </div>
+            </div>
+        </div>`;
+    }
+    const facts = [];
+    if (c.leader) {
+        const who = `<b>${c.leader.names.map(cupEsc).join(' and ')}</b>`;
+        facts.push(c.leader.done
+            ? `${who} won the bracket challenge with ${c.leader.points} points`
+            : `Bracket challenge: ${who} ${c.leader.names.length > 1 ? 'lead' : 'leads'} with ${c.leader.points}`);
+    }
+    if (c.stamps) facts.push(`${c.stamps} ${c.stamps === 1 ? 'stamp' : 'stamps'} handed out`);
+    return `<div class="cup-ticket">${stub}
+        <div class="cup-main">
+            <div>
+                <div class="cup-kicker">${{ before: 'Draw set', running: 'Under way', done: 'Decided' }[c.years[0].state] ?? ''}</div>
+                <div class="cup-name">${cupEsc(c.name)}</div>
+                <div class="cup-status">${cupEsc(c.status)}</div>
+                ${facts.length ? `<div class="cup-facts">${facts.join(' · ')}</div>` : ''}
+                <div class="cup-gos">
+                    <a class="cup-go" href="${cupEsc(c.href)}">${c.picksOpen ? 'Pick now' : 'Open the Cup'}</a>
+                    ${c.hall ? `<a class="cup-go cup-go--hall" href="${cupEsc(c.hall)}">Hall of Fame</a>` : ''}
+                </div>
+            </div>
+            ${cupBase(c)}
+        </div>
+    </div>`;
+}
+
+async function loadCup() {
+    const c = await fetch('cup/summary/').then(r => r.ok ? r.json() : null).catch(() => null);
+    if (!c || (c.kind !== 'preview' && !c.years?.length)) return;
+    document.getElementById('cup-ticket').innerHTML = cupTicket(c);
+    document.getElementById('cup-section').hidden = false;
+    document.getElementById('chronicle-num').textContent = '§ 03 · The Chronicle';
+}
+
 load();
+loadCup();
 </script>
 
 </body>

@@ -1,12 +1,12 @@
 // The launch preview: the League Cup as it would be drawn from the
-// standings right now, for a league that has a live season this year and
-// no Cup yet. Same seeding rule as the real draw (standingsSeeds: win rate,
-// then points for, top twelve), same bracket builder, so what people see in
-// the preview is exactly what the draw will make of the table as it stands.
+// season so far, for a league that has a live season this year and no Cup
+// yet. Same seeding rule as the real draw (ratingSeeds: the Cup Rating, top
+// twelve), same bracket builder, so what people see in the preview is
+// exactly what the draw will make of the season as it stands.
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
-import { buildBracket, recordStr, standingsSeeds, CUP_MAX_FIELD, type CupBracket } from './bracket'
+import { buildBracket, ratingSeeds, recordStr, standingsPlaces, CUP_MAX_FIELD, type CupBracket } from './bracket'
 import { cupNames, cupSeasonSettings, type CupSeasonGame } from './load'
 import { CUP_LAUNCH } from './launch'
 
@@ -21,13 +21,20 @@ export type CupPreviewTeam = {
   t: number
   pf: number
   ppg: number
+  // Points against a game, points a game over the last three weeks, and the
+  // Cup Rating the seed comes from (50 = league average).
+  papg: number
+  last3: number
+  rating: number
+  // Their place in the plain standings, to show what the rating moved.
+  place: number
   // Inside the twelve.
   inField: boolean
 }
 
 export type CupPreview = {
   year: number
-  // Standings counted through this week (the latest final one, at most the
+  // Games counted through this week (the latest final one, at most the
   // seeding week).
   throughWeek: number
   // The seeding week has been played: these ARE the seeds, barring a
@@ -35,18 +42,21 @@ export type CupPreview = {
   final: boolean
   teams: CupPreviewTeam[]
   bracket: CupBracket
-  // The first team outside the twelve, and how far back it is.
-  firstOut: { name: string; seed: number; gb: number } | null
+  // The first team outside the twelve, and how far back it is (in Cup
+  // Rating points).
+  firstOut: { name: string; seed: number; gap: number } | null
   // The last team with a bye and the first one without, when a bye is still
   // in reach.
-  byeRace: { last: string; next: string; gb: number } | null
+  byeRace: { last: string; next: string; gap: number } | null
 }
 
-// Games behind, the standings way: half the difference in wins plus half
-// the difference in losses.
-function gamesBack(a: { w: number; l: number }, b: { w: number; l: number }): number {
-  return (a.w - b.w + (b.l - a.l)) / 2
-}
+// A bye race is worth a line while it's within this many rating points.
+// Seven weeks in, one more win is worth about 4 (a win is a seventh of a
+// win rate whose spread is about .2: 0.7 of a spread, times record's 30%,
+// times 20 points a spread), so this is about two wins.
+const BYE_RACE_GAP = 8
+
+const gapOf = (a: { rating: number }, b: { rating: number }) => Math.round((a.rating - b.rating) * 10) / 10
 
 // `throughWeek` caps the weeks counted (the recap's week); the seeding week
 // caps it either way.
@@ -104,10 +114,11 @@ export async function buildCupPreview(args: {
   if (!weeks.length) return null
   const counted = games
     .filter((g) => weeks.includes(g.week))
-    .map((g) => ({ a: g.a, b: g.b, sa: Number(g.sa), sb: Number(g.sb) }))
+    .map((g) => ({ week: g.week, a: g.a, b: g.b, sa: Number(g.sa), sb: Number(g.sb) }))
 
   // Everyone, not just the twelve: the bubble needs the teams outside it.
-  const all = standingsSeeds(counted, Infinity)
+  const all = ratingSeeds(counted, Infinity)
+  const places = standingsPlaces(counted)
   if (all.length < 4) return null
   const seeds = all.slice(0, CUP_MAX_FIELD)
   const nameOf = await args.names(all.map((s) => s.manager_id))
@@ -144,18 +155,21 @@ export async function buildCupPreview(args: {
       t: s.t,
       pf: s.pf,
       ppg: n ? Math.round((s.pf / n) * 10) / 10 : 0,
+      papg: n ? Math.round(((s.pa ?? 0) / n) * 10) / 10 : 0,
+      last3: Math.round((s.form ?? 0) * 10) / 10,
+      rating: s.rating ?? 0,
+      place: places.get(s.manager_id) ?? s.seed,
       inField: i < CUP_MAX_FIELD,
     }
   })
 
   const out = teams[CUP_MAX_FIELD]
   const lastIn = teams[CUP_MAX_FIELD - 1]
-  const firstOut = out && lastIn ? { name: out.name, seed: out.seed, gb: gamesBack(lastIn, out) } : null
+  const firstOut = out && lastIn ? { name: out.name, seed: out.seed, gap: gapOf(lastIn, out) } : null
   const byes = bracket.rounds[0]?.byes.length ?? 0
   const lastBye = byes ? teams[byes - 1] : null
   const nextUp = byes ? teams[byes] : null
-  // Only worth a line while it's within two games.
-  const byeRace = lastBye && nextUp && gamesBack(lastBye, nextUp) <= 2 ? { last: lastBye.name, next: nextUp.name, gb: gamesBack(lastBye, nextUp) } : null
+  const byeRace = lastBye && nextUp && gapOf(lastBye, nextUp) <= BYE_RACE_GAP ? { last: lastBye.name, next: nextUp.name, gap: gapOf(lastBye, nextUp) } : null
 
   return {
     year: CUP_LAUNCH.year,

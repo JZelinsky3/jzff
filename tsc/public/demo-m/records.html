@@ -3,6 +3,20 @@
 <head>
 <base href="/demo-m/">
 <script>(function(){var u=navigator.userAgent;var m=/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u);if(m)return;if(/(?:^|;\s*)dc_view=mobile/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo-m\//,"/demo/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<!-- Link preview: the card a real league's page gets (demo_resync). -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The Sunday Chronicle">
+<meta property="og:title" content="The Lakeside League · The Record Book">
+<meta property="og:description" content="The records of record in The Lakeside League, single-week scorchers, season highs, and career marks.">
+<meta property="og:url" content="https://thesundaychronicle.app/demo-m/records.html">
+<meta property="og:image" content="https://thesundaychronicle.app/api/og/league/demo/?page=records&v=3">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Lakeside League, The Record Book">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Lakeside League · The Record Book">
+<meta name="twitter:description" content="The records of record in The Lakeside League, single-week scorchers, season highs, and career marks.">
+<meta name="twitter:image" content="https://thesundaychronicle.app/api/og/league/demo/?page=records&v=3">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Record Book · The Lakeside League</title>
@@ -268,6 +282,64 @@
 .rb-pod-more { margin-top: .95rem; padding-top: .7rem; border-top: 1px solid var(--ink-line-soft); display: none; }
 .rb-card.is-open .rb-pod-more { display: block; }
 
+/* ── Filter bar: which games, which years ──────────────────────── */
+/* A second level under the chapter pills, so it is deliberately not
+   pills: plain words with a green underline under the active one (the
+   games), and on the same line a years phrase that opens the phone's own
+   picker. Only when the years are narrowed does a small line appear under
+   it with the span (or From / To pickers) and Clear. Its class is
+   .rb-fsub, not .rb-sub: .rb-sub is the year/team line under each season
+   bar, and sharing the name dragged that line up over the bars. */
+.rb-filter {
+    display: flex; align-items: flex-end; justify-content: space-between; gap: .8rem;
+    margin: 0 .15rem .8rem;
+    border-bottom: 1px solid var(--ink-line-soft);
+}
+.rb-filter[hidden], .rb-fsub[hidden], .rb-range[hidden], .rb-scope[hidden] { display: none; }
+.rb-scope { display: flex; gap: 1.05rem; min-width: 0; }
+.rb-scope button {
+    flex: none; background: none; border: 0;
+    padding: .35rem 0 .45rem; margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.rb-scope button.is-active { color: var(--cream); border-bottom-color: var(--rec); }
+.rb-f-pick {
+    position: relative; display: inline-block;
+    min-width: 0; max-width: 42%;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cream-soft);
+    text-decoration: underline dotted var(--rec-deep);
+    text-underline-offset: 3px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* margin-left keeps the years on the right when Careers hides the switch. */
+.rb-filter > .rb-f-pick { flex: none; margin-left: auto; padding: .35rem 0 .5rem; }
+.rb-f-pick.is-set { color: var(--rec); text-decoration-color: var(--rec); }
+.rb-f-pick select {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; font-size: 16px; /* 16px keeps iOS from zooming on tap */
+    -webkit-appearance: none; appearance: none;
+}
+.rb-fsub {
+    display: flex; align-items: baseline; justify-content: flex-end; gap: .5rem;
+    margin: -.45rem .15rem .85rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.rb-range { display: inline-flex; align-items: baseline; gap: .4rem; }
+.rb-range .rb-f-pick { max-width: none; overflow: visible; }
+.rb-f-to { font-family: var(--serif); font-style: italic; font-size: .82rem; letter-spacing: 0; text-transform: none; }
+.rb-f-clear {
+    background: none; border: 0; padding: 0 0 0 .3rem;
+    font: inherit; color: var(--cream-mute);
+    text-decoration: underline; text-underline-offset: 3px;
+}
+
 /* ── Careers: no-podiums roll ──────────────────────────────────── */
 .rb-nopod-note { margin-top: .5rem; font-family: var(--mono); font-size: .54rem; letter-spacing: .04em; color: var(--cream-mute); }
 .rb-nopod-rows { display: flex; flex-direction: column; margin-top: .7rem; }
@@ -278,11 +350,17 @@
 .rb-nopod-best { flex: none; font-family: var(--mono); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--cream-mute); }
 .rb-nopod-best b { font-weight: 700; font-size: .82rem; letter-spacing: 0; color: var(--rec); margin-left: .3rem; }
 </style>
+<style>
+/* Demo: the scope and years filters ask the server for a filtered book; the
+   static demo can only serve the whole one, so they are hidden here. */
+#rb-filter, #rb-fsub, #st-filter { display: none !important; }
+</style>
 </head>
 <body>
 <div class="site-glow"></div>
 
 <nav id="site-nav" data-page="records" data-chapter="Ch. V · Record Book" data-back-href="./"></nav>
+<script>window.__DC={slug:"demo",name:"The Lakeside League",isCommish:false,isSignedIn:false,isBookmarked:false,leagueTier:"demo",pageLocked:false}</script>
 <script src="/pams-template/assets/js/mobile-app.js"></script>
 
 <main class="m-main">
@@ -296,6 +374,27 @@
         <button data-sec="season">Seasons</button>
         <button data-sec="career">Careers</button>
         <button data-sec="feats">Feats</button>
+    </div>
+
+    <div class="rb-filter" id="rb-filter" hidden>
+        <div class="rb-scope" id="rb-scope" role="group" aria-label="Which games">
+            <button type="button" data-scope="all" class="is-active">Overall</button>
+            <button type="button" data-scope="reg">Reg Season</button>
+            <button type="button" data-scope="post">Playoffs</button>
+        </div>
+        <label class="rb-f-pick" id="rb-years-pick">
+            <span id="rb-years-text">All years</span>
+            <select id="rb-years" aria-label="Which years"></select>
+        </label>
+    </div>
+    <div class="rb-fsub" id="rb-fsub" hidden>
+        <span id="rb-span"></span>
+        <span class="rb-range" id="rb-range" hidden>
+            <label class="rb-f-pick is-set"><span id="rb-from-text"></span><select id="rb-from" aria-label="From"></select></label>
+            <span class="rb-f-to">to</span>
+            <label class="rb-f-pick is-set"><span id="rb-to-text"></span><select id="rb-to" aria-label="To"></select></label>
+        </span>
+        <button type="button" class="rb-f-clear" id="rb-clear">Clear</button>
     </div>
 
     <div id="cards"><div class="m-empty">Dusting off the ledgers…</div></div>
@@ -327,14 +426,137 @@
 
     var book = null;
     var section = 'weekly';
+    var meta = null;
 
-    fetch('data/record_book.json')
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .catch(function () { return null; })
-        .then(function (data) {
-            book = data && data.full_book;
+    // The filter lives in the URL (?scope=, ?era=, ?years=) and rides on the
+    // data fetch; the server hands back the book for just those games/years.
+    var FILTER = (function () {
+        var p = new URLSearchParams(location.search);
+        var sc = p.get('scope');
+        return { scope: sc === 'reg' || sc === 'post' ? sc : 'all', era: p.get('era') || '', years: p.get('years') || '' };
+    })();
+    function filterQs(scope) {
+        var p = new URLSearchParams();
+        if (scope == null) scope = FILTER.scope;
+        if (scope !== 'all') p.set('scope', scope);
+        if (FILTER.era) p.set('era', FILTER.era);
+        else if (FILTER.years) p.set('years', FILTER.years);
+        var q = p.toString();
+        return q ? '?' + q : '';
+    }
+
+    // Careers ignore the Games switch. Titles, podiums, trips and average
+    // finish count whole seasons whatever it says, so under Reg Season or
+    // Playoffs those cards only repeated Overall. The chapter always reads
+    // every game and the switch hides while it is open.
+    function dataScope() { return section === 'career' ? 'all' : FILTER.scope; }
+    var loadedQs = null;
+    var fetched = {};
+    function fetchBook(qs) {
+        if (!fetched[qs]) {
+            fetched[qs] = Promise.all([
+                fetch('data/record_book.json' + qs).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+                fetch('data/league.json' + qs).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+            ]);
+        }
+        return fetched[qs];
+    }
+    function load() {
+        var qs = filterQs(dataScope());
+        loadedQs = qs;
+        return fetchBook(qs).then(function (res) {
+            // A tab or filter change started a newer load; let that one draw.
+            if (qs !== loadedQs) return;
+            book = res[0] && res[0].full_book;
+            meta = res[1];
+            renderFilter();
             render();
         });
+    }
+    load();
+
+    function yearSpan(ys) {
+        return ys.length > 1 ? ys[0] + '–' + ys[ys.length - 1] : String(ys[0]);
+    }
+    function renderFilter() {
+        var bar = document.getElementById('rb-filter');
+        if (!meta) return;
+        var eras = meta.eras || [];
+        var years = (meta.all_seasons || []).slice().sort(function (a, b) { return a - b; });
+        if (years.length < 2 && !eras.length) { bar.hidden = true; return; }
+        bar.hidden = false;
+
+        document.getElementById('rb-scope').hidden = section === 'career';
+        document.querySelectorAll('#rb-scope button').forEach(function (b) {
+            b.classList.toggle('is-active', b.dataset.scope === FILTER.scope);
+        });
+
+        var custom = !FILTER.era && !!FILTER.years;
+        var era = FILTER.era ? eras.find(function (e) { return e.id === FILTER.era; }) : null;
+        var sel = document.getElementById('rb-years');
+        sel.innerHTML = '<option value="all">All years</option>' +
+            eras.map(function (e) {
+                return '<option value="era:' + esc(e.id) + '"' + (FILTER.era === e.id ? ' selected' : '') + '>' + esc(e.name) + ' · ' + esc(yearSpan(e.years)) + '</option>';
+            }).join('') +
+            '<option value="custom"' + (custom ? ' selected' : '') + '>Pick years</option>';
+        if (!FILTER.era && !FILTER.years) sel.value = 'all';
+
+        var m = (FILTER.years || '').match(/^(\d{4})(?:-(\d{4}))?$/);
+        var fromY = m ? Number(m[1]) : years[0];
+        var toY = m ? Number(m[2] || m[1]) : years[years.length - 1];
+        document.getElementById('rb-years-text').textContent = era ? era.name : custom ? 'Pick years' : 'All years';
+        document.getElementById('rb-years-pick').classList.toggle('is-set', !!(FILTER.era || FILTER.years));
+
+        // The line under the bar only exists once the years are narrowed:
+        // an era's span, or From / To pickers for a range, then Clear.
+        var opts = function (pick) {
+            return years.map(function (y) { return '<option value="' + y + '"' + (y === pick ? ' selected' : '') + '>' + y + '</option>'; }).join('');
+        };
+        document.getElementById('rb-from').innerHTML = opts(fromY);
+        document.getElementById('rb-to').innerHTML = opts(toY);
+        document.getElementById('rb-from-text').textContent = fromY;
+        document.getElementById('rb-to-text').textContent = toY;
+        document.getElementById('rb-range').hidden = !custom;
+        document.getElementById('rb-span').textContent = era ? yearSpan(era.years) : '';
+        document.getElementById('rb-fsub').hidden = !(FILTER.era || FILTER.years);
+    }
+    function applyFilter(patch) {
+        Object.keys(patch).forEach(function (k) { FILTER[k] = patch[k]; });
+        var url = new URL(location.href);
+        ['scope', 'era', 'years'].forEach(function (k) { url.searchParams.delete(k); });
+        new URLSearchParams(filterQs()).forEach(function (v, k) { url.searchParams.set(k, v); });
+        history.replaceState(null, '', url);
+        document.getElementById('cards').innerHTML = '<div class="m-empty">Turning the pages…</div>';
+        load();
+    }
+    document.getElementById('rb-scope').addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-scope]');
+        if (!b || b.dataset.scope === FILTER.scope) return;
+        applyFilter({ scope: b.dataset.scope });
+    });
+    document.getElementById('rb-years').addEventListener('change', function () {
+        var v = this.value;
+        if (v === 'custom') {
+            document.getElementById('rb-years-text').textContent = 'Pick years';
+            pickRange();
+            return;
+        }
+        document.getElementById('rb-range').hidden = true;
+        if (v === 'all') applyFilter({ era: '', years: '' });
+        else applyFilter({ era: v.slice(4), years: '' });
+    });
+    function pickRange() {
+        var a = Number(document.getElementById('rb-from').value);
+        var b = Number(document.getElementById('rb-to').value);
+        if (!a || !b) return;
+        if (a > b) { var t = a; a = b; b = t; }
+        applyFilter({ era: '', years: a === b ? String(a) : a + '-' + b });
+    }
+    document.getElementById('rb-from').addEventListener('change', pickRange);
+    document.getElementById('rb-to').addEventListener('change', pickRange);
+    document.getElementById('rb-clear').addEventListener('click', function () {
+        applyFilter({ era: '', years: '' });
+    });
 
     // Per-record config: label + how to read value/context out of an entry.
     function gameCtx(e) {
@@ -367,6 +589,9 @@
             // season totals unfairly stack the bottom of this list.
             ['lowest_ppg', 'Lowest PPG', function (e) { return num(e.reg_ppg); }, seasonCtx],
             ['most_points_against', 'Most Points Against', function (e) { return num(e.reg_pa, 0); }, seasonCtx],
+            // Playoffs view: one postseason at a time.
+            ['best_playoff_runs', 'Biggest Playoff Run', function (e) { return num(e.playoff_pf, 0); }, runCtx],
+            ['best_playoff_ppg', 'Hottest Playoff Run', function (e) { return num(e.playoff_ppg); }, runCtx],
         ],
         career: [
             ['longest_win_streaks', 'Longest Win Streak', function (e) { return e.length + 'W'; }, streakCtx],
@@ -396,6 +621,7 @@
     var TONE_GOOD = {
         highest_single_week_score: 1, biggest_blowouts: 1, luckiest_wins: 1, highest_combined_score: 1,
         highest_season_pf: 1, highest_total_season_pf: 1, highest_ppg: 1, best_reg_season_records: 1,
+        best_playoff_runs: 1, best_playoff_ppg: 1,
     };
     var TONE_BAD = {
         lowest_single_week_score: 1, unluckiest_losses: 1, lowest_combined_score: 1,
@@ -416,8 +642,10 @@
     // which would grow the card taller than its rail siblings.
     function seasonSubHtml(e) {
         var head = e.season + (e.team_name ? ' · ' + e.team_name : '');
+        // Playoff-run cards show the bracket record, not the regular season's.
+        var r = FILTER.scope === 'post' ? e.playoff_record : e.reg_record;
         return '<span class="rb-sub-head">' + esc(head) + '</span>' +
-            (e.reg_record ? '<span class="rb-sub-rec">' + esc(rec(e.reg_record)) + '</span>' : '');
+            (r ? '<span class="rb-sub-rec">' + esc(rec(r)) + '</span>' : '');
     }
     // Secondary stat shown ON the value (right side), mirroring how each
     // name carries a small year/season tag beneath it. `below` stacks under
@@ -461,6 +689,7 @@
         var p = String(r).split('-').map(Number);
         return (p[0] || 0) + (p[1] || 0) + (p[2] || 0);
     }
+    function runCtx(e) { return e.season + ' · ' + rec(e.playoff_record) + ' in the playoffs'; }
     function streakCtx(e) {
         var span = e.start_season === e.end_season
             ? e.start_season + ' · W' + e.start_week + '–W' + e.end_week
@@ -602,6 +831,8 @@
         return ' <i class="rb-name-g">' + e.total_games + 'g</i>';
     }
     function seasonBasis(key, e) {
+        if (key === 'best_playoff_runs') return e.playoff_pf || 0;
+        if (key === 'best_playoff_ppg') return e.playoff_ppg || 0;
         if (key === 'highest_total_season_pf') return e.total_pf || 0;
         if (key === 'highest_ppg' || key === 'lowest_ppg') return e.reg_ppg || 0;
         if (key === 'most_points_against') return e.reg_pa || 0;
@@ -736,17 +967,29 @@
                 '<div class="rb-step-sub">' + (sub ? esc(sub) : '&nbsp;') + '</div>' +
             '</div>';
         }
+        // Equal values share a rank, so a 2-2 tie reads T-1ST twice instead
+        // of handing one of them 2ND.
+        var vals = entries.map(function (e) { return val(e); });
+        function rankOf(i) {
+            var first = vals.indexOf(vals[i]);
+            return { n: first + 1, tied: first !== vals.lastIndexOf(vals[i]) };
+        }
+        function medal(i) {
+            var r = rankOf(i);
+            return (r.tied ? 'T-' : '') + ({ 1: '1ST', 2: '2ND', 3: '3RD' }[r.n]);
+        }
         var podium = '<div class="rb-podium">' +
-            step(entries[1], 'rb-s2', '2ND') +
-            step(entries[0], 'rb-s1', '1ST') +
-            step(entries[2], 'rb-s3', '3RD') +
+            step(entries[1], 'rb-s2', entries[1] ? medal(1) : '2ND') +
+            step(entries[0], 'rb-s1', entries[0] ? medal(0) : '1ST') +
+            step(entries[2], 'rb-s3', entries[2] ? medal(2) : '3RD') +
         '</div>';
         var rest = entries.slice(3);
         var more = rest.length
             ? '<div class="rb-others rb-pod-more">' + rest.map(function (e, i) {
                 var sub = ctx ? ctx(e) : '';
+                var r = rankOf(i + 3);
                 return '<div class="rb-other">' +
-                    '<span class="rb-other-rank">' + (i + 4) + '</span>' +
+                    '<span class="rb-other-rank">' + (r.tied ? 'T-' : '') + r.n + '</span>' +
                     '<span class="rb-other-name">' + holderHtmlFor(key, e) +
                         (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
                     '<span class="rb-other-val">' + esc(val(e)) + '</span>' +
@@ -850,6 +1093,15 @@
         if (section === 'feats') { renderFeats(box); return; }
 
         var groups = GROUPS[section] || [];
+        // The Seasons chapter reads differently per filter: playoff runs for
+        // the Playoffs view, and no "full season" total in the regular one.
+        if (section === 'season' && FILTER.scope === 'post') {
+            groups = [{ title: 'Playoff Runs', keys: ['best_playoff_runs', 'best_playoff_ppg'] }];
+        } else if (section === 'season' && FILTER.scope === 'reg') {
+            groups = groups.map(function (g) {
+                return { title: g.title, keys: g.keys.filter(function (k) { return k !== 'highest_total_season_pf'; }) };
+            });
+        }
         var html = groups.map(function (g, gi) {
             var slides = g.keys.map(function (key) {
                 var def = DEF_BY_KEY[section][key];
@@ -913,6 +1165,13 @@
         if (!btn) return;
         section = btn.dataset.sec;
         this.querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+        // Into or out of Careers under a Reg / Playoffs filter swaps books.
+        if (filterQs(dataScope()) !== loadedQs) {
+            document.getElementById('cards').innerHTML = '<div class="m-empty">Turning the pages…</div>';
+            load();
+            return;
+        }
+        renderFilter();
         render();
     });
 })();

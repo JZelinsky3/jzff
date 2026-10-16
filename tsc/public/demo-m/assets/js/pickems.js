@@ -92,8 +92,12 @@
       elViews.innerHTML = state.weeks.map(function (w) { return weekViewHTML(w); }).join('');
     }
 
+    // Lazy hydration: build only the active week's matchup cards up front and
+    // fill the rest the first time their tab is opened. A full season is 14–18
+    // weeks × 6 cards; rendering all of them (with logos + shadows) into the
+    // DOM at once made scrolling the single visible week janky. setActive()
+    // hydrates whatever week it switches to.
     setActive(state.currentWeekId || state.weeks[state.weeks.length - 1].id);
-    state.weeks.forEach(function (w) { hydrateWeek(w); });
     renderRecords();
 
     // Re-fit the active week as fonts and layout settle. document.fonts
@@ -131,8 +135,20 @@
   }
 
   // ── Views ───────────────────────────────────────────────────────────────────
+  // Build a week's matchup cards on demand (once). Non-active weeks stay as
+  // empty section shells until first viewed — keeps the live DOM light.
+  var hydrated = {};
+  function ensureHydrated(weekId) {
+    if (hydrated[weekId]) return;
+    var w = weekById(weekId);
+    if (!w) return;
+    hydrateWeek(w);
+    hydrated[weekId] = true;
+  }
+
   function setActive(weekId) {
     state.activeWeekId = weekId;
+    ensureHydrated(weekId);
     // CSS gates on data-active="true" specifically — toggleAttribute would set
     // an empty value, so set the explicit string.
     var activeTab = null;
@@ -175,6 +191,34 @@
       && state.submissions[state.user.profileId][weekId]);
   }
 
+  // "Locks Thursday at 8:00 PM" — the deadline in the reader's own time
+  // zone. The board used to read "Open for picks" right up until it read
+  // "Locked", with nothing in between to plan around. Near dates get a
+  // weekday (or today/tomorrow) because that's how people actually think
+  // about a deadline this week; anything further out gets a plain date.
+  function lockCountdownHTML(w) {
+    if (w.locked || !w.locks_at) return '';
+    var at = new Date(w.locks_at);
+    if (isNaN(at.getTime())) return '';
+    var now = new Date();
+    if (at <= now) return '';
+
+    var time = at.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    // Compare calendar days, not elapsed hours: 11pm to 1am is "tomorrow"
+    // even though it's two hours away.
+    var midnightToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var midnightAt = new Date(at.getFullYear(), at.getMonth(), at.getDate());
+    var days = Math.round((midnightAt - midnightToday) / 86400000);
+
+    var when;
+    if (days === 0) when = 'today at ' + time;
+    else if (days === 1) when = 'tomorrow at ' + time;
+    else if (days > 1 && days < 7) when = at.toLocaleDateString([], { weekday: 'long' }) + ' at ' + time;
+    else when = at.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+    return '<span class="week-lockat">Locks ' + esc(when) + '</span>';
+  }
+
   function weekViewHTML(w) {
     // Three states, not two. A week locks at Thursday kickoff but stays the
     // current week until the season rolls past it on Tuesday, so there is a
@@ -187,7 +231,7 @@
         : '<span class="badge">Locked · Final</span>';
     return ''
       + '<section class="week" data-week="' + esc(w.id) + '">'
-      +   '<div class="week-info">' + statusBadge + '</div>'
+      +   '<div class="week-info">' + statusBadge + lockCountdownHTML(w) + '</div>'
       +   '<div id="lock-msg-' + esc(w.id) + '" class="week-locked"></div>'
       // GOTW header is now rendered inline as the first row of the GOTW
       // card itself (see matchHTML), not as a section-level title — keeps
@@ -318,7 +362,14 @@
     grid.querySelectorAll(sel).forEach(function (el) {
       el.style.fontSize = ''; // reset prior fit (e.g. on re-hydrate)
       var size = parseFloat(window.getComputedStyle(el).fontSize);
-      var min = 8;
+      // Mobile team names start at .6rem (9.6px), so an 8px floor gave the
+      // loop barely a pixel and a half to work with — long names hit the
+      // floor still overflowing and the box clipped the tail of the name or
+      // the record after it. 7px is the smallest the name is still readable
+      // at, and the record scales with it (see the .record em rule in
+      // pickems.css). Vote-button names and every desktop case keep 8.
+      var isMobileTeamName = isMobile && el.classList.contains('team-name');
+      var min = isMobileTeamName ? 7 : 8;
       var guard = 24; // hard cap so we can't loop forever
       var isMobileGotwName = isMobile
         && el.classList.contains('team-name')
@@ -342,15 +393,18 @@
           // length). Canvas returns 0 / fallback metrics while web fonts
           // are still loading — the retry loop in retryFitActive() will
           // re-run this once they've painted.
+          // Math.max clamps the last step: sizes start fractional (.6rem is
+          // 9.6px), so a bare `size -= 1` overshoots the floor by up to a
+          // pixel on the final pass.
           while (measureTextPx(el) > maxWidth && size > min && guard-- > 0) {
-            size -= 1;
+            size = Math.max(min, size - 1);
             el.style.fontSize = size + 'px';
           }
         }
       } else {
         // Original behavior (desktop, and non-GOTW everywhere).
         while (el.scrollWidth > el.clientWidth && size > min && guard-- > 0) {
-          size -= 1;
+          size = Math.max(min, size - 1);
           el.style.fontSize = size + 'px';
         }
       }
@@ -417,35 +471,48 @@
     var B = state.teams[m.away];
     var recA = w.records ? (w.records[m.home] || '') : '';
     var recB = w.records ? (w.records[m.away] || '') : '';
+    // LAST WK and PPG as of THIS week, so a past week's card doesn't show
+    // today's numbers. The team-level values are the fallback for payloads
+    // without per-week snapshots.
+    function lastWkOf(id, team) {
+      if (w.lastWeek) return w.lastWeek[id] != null ? w.lastWeek[id] : null;
+      return team && team.last_week_points != null ? team.last_week_points : null;
+    }
+    function ppgOf(id, team) {
+      if (w.ppg) return w.ppg[id] != null ? w.ppg[id] : null;
+      return team && team.projected_points != null ? team.projected_points : null;
+    }
 
     function teamBlock(side, team, rec, isAway) {
       var champ = team && team.isChampion ? '<span title="Defending Champion">👑</span>' : '';
       var name = esc(team ? team.name : side);
-      // Record gets its own line below the name so it sits in the same
-      // vertical slot for both sides — the old inline placement
-      // (name + record on home, record + name on away) made the record
-      // jump between top and bottom rows when names wrapped.
-      var recLine = rec ? '<div class="record-line">' + esc(rec) + '</div>' : '';
-      var lwk = team && team.last_week_points != null
-        ? '<div class="lwk"><span class="lbl">LAST WK</span> <strong>' + team.last_week_points.toFixed(1) + '</strong></div>'
+      // Record sits inline with the name — right of it on the home side,
+      // left of it on the away side — so it reads toward the center of the
+      // card on both sides (matches the demo layout).
+      var recHTML = rec ? '<span class="record">' + esc(rec) + '</span>' : '';
+      var nameLine = isAway ? (recHTML + ' ' + name + ' ' + champ) : (name + ' ' + champ + ' ' + recHTML);
+      var lastPts = lastWkOf(side, team);
+      var lwk = lastPts != null
+        ? '<div class="lwk"><span class="lbl">LAST WK</span> <strong>' + lastPts.toFixed(1) + '</strong></div>'
         : '';
       return ''
         + '<div class="team" data-team="' + esc(side) + '">'
         +   '<div class="logo">' + (team && team.logo ? '<img src="' + esc(team.logo) + '" alt="' + esc(team.name) + '" loading="lazy">' : '') + '</div>'
         +   '<div class="meta">'
-        +     '<div class="team-name">' + name + ' ' + champ + '</div>'
-        +     recLine
+        +     '<div class="team-name">' + nameLine + '</div>'
         +     '<div class="manager">' + esc(team ? team.manager : '') + '</div>'
         +     lwk
         +   '</div>'
         + '</div>';
     }
 
-    var haveProj = A && B && A.projected_points != null && B.projected_points != null;
+    var ppgA = ppgOf(m.home, A);
+    var ppgB = ppgOf(m.away, B);
+    var haveProj = ppgA != null && ppgB != null;
     var projCell = haveProj
-      ? '<div class="vs"><span class="vs-pts home">' + A.projected_points.toFixed(1) + '</span>'
+      ? '<div class="vs"><span class="vs-pts home">' + ppgA.toFixed(1) + '</span>'
         + '<span class="vs-mid">PPG</span>'
-        + '<span class="vs-pts away">' + B.projected_points.toFixed(1) + '</span></div>'
+        + '<span class="vs-pts away">' + ppgB.toFixed(1) + '</span></div>'
       : '<div class="vs"><span class="vs-mid">vs</span></div>';
 
     var previewUrl = previewHref(m);
@@ -479,13 +546,16 @@
       +     '</div>'
       +     '<div class="vote">'
       +       '<div class="buttons">'
+      // Only the picked button is ever highlighted; once the game is decided
+      // its colour says whether the pick was right (see the result-state
+      // block in pickems.css).
       +         '<button class="vote-btn" data-matchup="' + esc(m.id) + '" data-team="' + esc(m.home) + '">'
       +           '<span class="vote-name">' + esc(A ? A.name : m.home) + '</span>'
-      +           '<span class="vote-pct" id="vp-' + esc(w.id) + '-' + esc(m.id) + '-' + esc(m.home) + '">·</span>'
+      +           '<span class="vote-pct" id="vp-' + esc(w.id) + '-' + esc(m.id) + '-' + esc(m.home) + '">—</span>'
       +         '</button>'
       +         '<button class="vote-btn" data-matchup="' + esc(m.id) + '" data-team="' + esc(m.away) + '">'
       +           '<span class="vote-name">' + esc(B ? B.name : m.away) + '</span>'
-      +           '<span class="vote-pct" id="vp-' + esc(w.id) + '-' + esc(m.id) + '-' + esc(m.away) + '">·</span>'
+      +           '<span class="vote-pct" id="vp-' + esc(w.id) + '-' + esc(m.id) + '-' + esc(m.away) + '">—</span>'
       +         '</button>'
       +       '</div>'
       +       '<div class="bar2" id="bar-' + esc(w.id) + '-' + esc(m.id) + '">'
@@ -545,8 +615,8 @@
       var pB = 100 - pA;
       left.style.width = pA + '%';
       rgt.style.width = pB + '%';
-      if (vpA) vpA.textContent = reveal ? pA + '%' : '·';
-      if (vpB) vpB.textContent = reveal ? pB + '%' : '·';
+      if (vpA) vpA.textContent = reveal ? pA + '%' : '—';
+      if (vpB) vpB.textContent = reveal ? pB + '%' : '—';
       if (bar) bar.title = reveal
         ? (teamName(m.home) + ' ' + pA + '% · ' + teamName(m.away) + ' ' + pB + '% · ' + tot + ' picks')
         : 'Picks hidden until you lock in';
@@ -645,7 +715,7 @@
     if (missing.length > 0) submitHint.textContent = 'Pick ' + missing.length + ' more matchup' + (missing.length === 1 ? '' : 's');
     else if (!hlOK) submitHint.textContent = 'Pick Highest + Lowest scorer';
     else if (sameHL) submitHint.textContent = 'Highest and Lowest must differ';
-    else submitHint.textContent = 'Ready, locking in is final';
+    else submitHint.textContent = 'Ready — locking in is final';
   }
 
   async function onSubmitPicks() {
@@ -684,7 +754,7 @@
       renderTally(w);
       renderRecords();
     } catch (e) {
-      submitHint.textContent = 'Network error, try again.';
+      submitHint.textContent = 'Network error — try again.';
       submitBtn.disabled = false;
     }
   }
@@ -693,7 +763,7 @@
   function renderRecords() {
     var byUser = new Map();
     state.profiles.forEach(function (p) {
-      byUser.set(p.profileId, { name: p.name, teamId: p.teamId, right: 0, wrong: 0 });
+      byUser.set(p.profileId, { name: p.name, teamId: p.teamId, right: 0, wrong: 0, hi: 0, lo: 0 });
     });
 
     state.weeks.forEach(function (w) {
@@ -710,6 +780,12 @@
           if (row.teamId && m && (m.home === row.teamId || m.away === row.teamId)) return; // own game
           if (sub.picks[mid] === win) row.right++; else row.wrong++;
         });
+        // Highest / lowest scorer hits. A tie at the top (or bottom) pays
+        // everyone who named any of the tied teams.
+        if (w.hlWinners && sub.hl) {
+          if (sub.hl.highest && (w.hlWinners.highest || []).indexOf(sub.hl.highest) > -1) row.hi++;
+          if (sub.hl.lowest && (w.hlWinners.lowest || []).indexOf(sub.hl.lowest) > -1) row.lo++;
+        }
       });
     });
 
@@ -723,7 +799,11 @@
       return;
     }
     list.innerHTML = rows.map(function (r) {
-      return '<li><span class="name">' + esc(r.name) + '</span><span class="rw">' + r.right + '-' + r.wrong + '</span></li>';
+      return '<li><span class="name">' + esc(r.name) + '</span>'
+        + '<span class="hl" title="Highest / lowest scorer called">'
+        +   '<span class="hl-h">H: ' + r.hi + '</span><span class="hl-l">L: ' + r.lo + '</span>'
+        + '</span>'
+        + '<span class="rw">' + r.right + '-' + r.wrong + '</span></li>';
     }).join('');
   }
 
@@ -747,7 +827,7 @@
       var title = leagueName + ' · Pick’ems' + (wk ? ' · Wk ' + wk : '');
       var text  = wk
         ? 'Lock your Week ' + wk + ' picks before kickoff.'
-        : 'Weekly pick’em pool, no login, one click to vote.';
+        : 'Weekly pick’em pool — no login, one click to vote.';
       var url   = window.location.href;
       if (navigator.share) {
         navigator.share({ title: title, text: text, url: url })
@@ -758,7 +838,7 @@
     });
   }
   function copyShareLink(url, title) {
-    var payload = title ? title + ' · ' + url : url;
+    var payload = title ? title + ' — ' + url : url;
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(payload).then(
         function () { showPkToast('Link copied'); },
@@ -792,7 +872,7 @@
   // ── Auth (no login — profile dropdown) ──────────────────────────────────────
   function initAuthUI() {
     if (elAuthSel) {
-      elAuthSel.innerHTML = '<option value="">· pick your name ·</option>'
+      elAuthSel.innerHTML = '<option value="">— pick your name —</option>'
         + state.profiles.map(function (p) {
             return '<option value="' + esc(p.profileId) + '">' + esc(p.name) + '</option>';
           }).join('');

@@ -1,6 +1,6 @@
 // The League Cup's launch page, for a league with no Cup yet: the countdown
 // to the draw, what the Cup is, when each round is, and the bracket as it
-// would be drawn from the standings right now. Built to be sent to the
+// would be drawn from the Cup Rating right now. Built to be sent to the
 // group chat a week or two out so the league starts caring before round
 // one: who has a bye, who's on the bubble, who'd play whom.
 //
@@ -20,13 +20,10 @@ import pv from './preview.module.css'
 
 const NUMBER_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve']
 
-// "half a game behind", "level on record with": read before a name.
-function gb(n: number): string {
-  if (n === 0) return 'level on record with'
-  const whole = Math.floor(n)
-  const half = n - whole >= 0.5
-  if (!whole) return 'half a game behind'
-  return `${NUMBER_WORDS[whole] ?? whole}${half ? ' and a half' : ''} ${whole === 1 && !half ? 'game' : 'games'} behind`
+// "2.4 rating points behind", "level on rating with": read before a name.
+function behind(n: number): string {
+  if (n <= 0) return 'level on rating with'
+  return `${n.toFixed(1)} rating ${n === 1 ? 'point' : 'points'} behind`
 }
 
 function ordinal(n: number): string {
@@ -108,7 +105,7 @@ export function CupPreviewPage({ league, preview, pageUrl, leagueHref }: { leagu
           <p className={pv.ticketLabel}>{phase === 'before' ? 'The draw in' : 'Draw day'}</p>
           <Countdown at={CUP_LAUNCH.drawAt} done={phase === 'after' ? 'The draw is done. The bracket goes up any minute.' : 'The draw is today. The bracket goes up this morning.'} />
           <p className={pv.ticketFoot}>
-            <b>{day}</b> · Seeds are the standings after week {CUP_LAUNCH.seededThrough}
+            <b>{day}</b> · Seeds are the Cup Rating after week {CUP_LAUNCH.seededThrough}
           </p>
         </section>
 
@@ -118,8 +115,8 @@ export function CupPreviewPage({ league, preview, pageUrl, leagueHref }: { leagu
           <ol className={pv.steps}>
             <Step
               n={1}
-              head="Seeded from the standings"
-              body={`${inAll ? `All ${preview.teams.length} teams are in` : `The top ${CUP_MAX_FIELD} after week ${CUP_LAUNCH.seededThrough} are in`}.${r1.byes.length ? ` The top ${NUMBER_WORDS[r1.byes.length] ?? r1.byes.length} skip round one.` : ''}`}
+              head="Seeded on the Cup Rating"
+              body={`${inAll ? `All ${preview.teams.length} teams are in` : `The top ${CUP_MAX_FIELD} after week ${CUP_LAUNCH.seededThrough} on the Cup Rating are in`}, not the standings.${r1.byes.length ? ` The top ${NUMBER_WORDS[r1.byes.length] ?? r1.byes.length} skip round one.` : ''}`}
             />
             <Step n={2} head="One round a week" body="Your real score that week is your Cup score. Outscore your Cup opponent to move on, whoever you play in the league. A tie goes to the higher seed." />
             <Step n={3} head="Pick who wins each game" body="Every manager in the Cup picks every game, knocked out or not. Tap the team you think wins; picks lock Thursday night." />
@@ -151,8 +148,8 @@ export function CupPreviewPage({ league, preview, pageUrl, leagueHref }: { leagu
           <h2 className={pv.head}>{preview.final ? 'The draw' : 'If the draw were today'}</h2>
           <p className={pv.sub}>
             {preview.final
-              ? `The standings after week ${preview.throughWeek}. These are the seeds.`
-              : `Standings through week ${preview.throughWeek}. Seeds lock after week ${CUP_LAUNCH.seededThrough}.`}
+              ? `The Cup Rating after week ${preview.throughWeek}. These are the seeds.`
+              : `The Cup Rating through week ${preview.throughWeek}. Seeds lock after week ${CUP_LAUNCH.seededThrough}.`}
           </p>
 
           {byes.length ? (
@@ -207,17 +204,45 @@ export function CupPreviewPage({ league, preview, pageUrl, leagueHref }: { leagu
               ) : preview.firstOut ? (
                 <p>
                   <span className={pv.bubbleTag}>First out</span>
-                  {preview.firstOut.name}, {ordinal(preview.firstOut.seed)}, {gb(preview.firstOut.gb)} the last team in.
+                  {preview.firstOut.name}, {ordinal(preview.firstOut.seed)}, {behind(preview.firstOut.gap)} the last team in.
                 </p>
               ) : null}
               {preview.byeRace ? (
                 <p>
                   <span className={pv.bubbleTag}>Bye race</span>
-                  {preview.byeRace.next} is {gb(preview.byeRace.gb)} {preview.byeRace.last} for the last bye.
+                  {preview.byeRace.next} is {behind(preview.byeRace.gap)} {preview.byeRace.last} for the last bye.
                 </p>
               ) : null}
             </div>
           ) : null}
+        </section>
+
+        {/* ── The Cup Rating: every team, and how far it moved them from
+            the standings (the point of not seeding on the table). ── */}
+        <section className={pv.section}>
+          <h2 className={pv.head}>The Cup Rating</h2>
+          <p className={pv.sub}>Every team as it stands. The seeds come from this, not the standings.</p>
+          <ol className={pv.rates}>
+            {preview.teams.map((t, i) => {
+              const move = t.place - t.seed
+              return (
+                <li key={t.managerId} className={`${pv.rate} ${t.inField ? '' : pv.rateOut} ${i === CUP_MAX_FIELD ? pv.rateCut : ''}`}>
+                  <span className={`${styles.medal} ${styles.medalSm} ${t.inField ? '' : styles.medalOut}`}>{t.seed}</span>
+                  <span className={pv.rateWho}>
+                    <span className={pv.rateName}>{t.name}</span>
+                    <span className={pv.rateLine}>
+                      {t.record} · {t.ppg.toFixed(1)} ppg
+                    </span>
+                  </span>
+                  <span className={`${pv.rateMove} ${move > 0 ? pv.rateUp : move < 0 ? pv.rateDown : ''}`} title={`${ordinal(t.place)} in the standings`}>
+                    {move > 0 ? `Up ${move}` : move < 0 ? `Down ${-move}` : 'Same'}
+                  </span>
+                  <span className={pv.rateNum}>{t.rating.toFixed(1)}</span>
+                </li>
+              )
+            })}
+          </ol>
+          <p className={pv.rateNote}>Up and down: places moved from the standings.{inAll ? '' : ` Below the line: outside the ${CUP_MAX_FIELD}.`}</p>
         </section>
 
         {/* ── The bracket challenge ── */}

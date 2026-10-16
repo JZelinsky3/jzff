@@ -3,6 +3,20 @@
 <head>
 <base href="/demo-m/">
 <script>(function(){var u=navigator.userAgent;var m=/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u);if(m)return;if(/(?:^|;\s*)dc_view=mobile/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo-m\//,"/demo/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<!-- Link preview: the card a real league's page gets (demo_resync). -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The Sunday Chronicle">
+<meta property="og:title" content="The Lakeside League · The Managers">
+<meta property="og:description" content="Every manager who's ever run a team in The Lakeside League, careers, trophies, and head-to-head ledgers.">
+<meta property="og:url" content="https://thesundaychronicle.app/demo-m/managers/">
+<meta property="og:image" content="https://thesundaychronicle.app/api/og/league/demo/?page=managers&v=3">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Lakeside League, The Managers">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Lakeside League · The Managers">
+<meta name="twitter:description" content="Every manager who's ever run a team in The Lakeside League, careers, trophies, and head-to-head ledgers.">
+<meta name="twitter:image" content="https://thesundaychronicle.app/api/og/league/demo/?page=managers&v=3">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Managers · The Lakeside League</title>
@@ -22,6 +36,11 @@
 /* ── Ticket stubs — one admission ticket per member. The stub (avatar side)
       is split off by a dashed perforation with punched semicircle notches. ── */
 .mg-tickets { display: flex; flex-direction: column; gap: .55rem; margin-top: .35rem; }
+/* Inherit color from the row so the browser's default visited-link
+   styling doesn't recolor a row you've tapped before — without this,
+   on mobile the last-tapped manager row reads as "brighter" than the
+   rest because of the UA's :visited default. */
+.mg-ticket, .mg-ticket:visited, .mg-ticket:hover, .mg-ticket:active { color: inherit; }
 .mg-ticket {
     position: relative;
     display: flex; align-items: stretch;
@@ -69,51 +88,125 @@
     width: 100%; height: 100%;
     object-fit: cover;
 }
+/* Champion adornments restored from the original ticket-stub design:
+   gold border on the ticket, the perforation notches, and the avatar
+   ring. Reigning champion = current title-holder; adds a brighter
+   gold name on top of the champ treatment. */
 .mg-ticket.is-champ { border-color: var(--gold-deep); }
 .mg-ticket.is-champ .mg-stub { border-right-color: rgba(232,200,137,.45); }
 .mg-ticket.is-champ::before, .mg-ticket.is-champ::after { border-color: var(--gold-deep); }
 .mg-ticket.is-champ .mg-ava { border-color: var(--gold-deep); background: rgba(232,200,137,.07); }
-.mg-name { min-width: 0; flex: 1; font-weight: 600; font-size: .95rem; }
+.mg-ticket.is-reigning { border-color: var(--gold); }
+.mg-ticket.is-reigning .mg-stub { border-right-color: rgba(232,200,137,.55); }
+.mg-ticket.is-reigning::before, .mg-ticket.is-reigning::after { border-color: var(--gold); }
+.mg-ticket.is-reigning .mg-ava { border-color: var(--gold); background: rgba(232,200,137,.1); }
+/* Name color is scoped by the section the row is in, not by per-row
+   classes — the JS already splits managers into #currentList vs
+   #alumniList based on is_current, so the section IS the signal. */
+.mg-name {
+    min-width: 0; flex: 1;
+    font-weight: 600; font-size: .95rem;
+}
+#currentList .mg-name { color: #f4ebd8; }
+#alumniList  .mg-name { color: var(--cream-mute); }
+/* !important so reigning beats the higher-specificity section-id rules above.
+   Name uses --gold-bright (not --gold) on purpose: the 1px border reads
+   brighter than text of the identical hex, so the slightly lighter token
+   makes the name visually match the gold border instead of looking duller. */
+.mg-ticket.is-reigning .mg-name { color: var(--gold-bright) !important; }
+/* Two-row layout: name on top, small ("Team · tenure" + championship
+   pills) below. The small is a flex row so the team name ellipsizes
+   while the tenure tail + pills hug the right and never wrap. */
 .mg-name small {
-    display: block; font-weight: 400; font-size: .7rem; color: var(--cream-mute);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: flex;
+    align-items: baseline;
+    gap: 0;
+    font-weight: 400; font-size: .7rem; color: var(--cream-mute);
+    margin-top: 2px;
+    line-height: 1.35;
+    width: 100%;
+    min-width: 0;
+}
+.mg-team {
+    flex: 0 1 auto;
+    min-width: 0;
+    font-size: .68rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* Tenure tail + pills are pinned to the right side of the line and
+   share `flex: none` so they never compress and never wrap. The team
+   name above shrinks via min-width:0 + ellipsis to make room. */
+.mg-tenure {
+    flex: none;
+    white-space: nowrap;
+    margin-left: .15rem;
+}
+/* Championship-year pills — small gold mono pills, one per year,
+   inline next to the tenure line under the name. */
+.mg-champ-pill {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 5px;
+    margin-left: .25rem;
+    border-radius: 4px;
+    border: 1px solid rgba(232, 200, 137, .35);
+    background: rgba(232, 200, 137, .07);
+    color: var(--gold);
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .52rem;
+    letter-spacing: .06em;
+    line-height: 1.4;
 }
 .mg-rings { flex: none; color: var(--gold); font-size: .7rem; letter-spacing: .08em; }
 .mg-rec { flex: none; font-family: var(--mono); font-weight: 700; font-size: .72rem; color: var(--cream-soft); text-align: right; }
 .mg-rec small { display: block; font-weight: 400; font-size: .56rem; color: var(--cream-mute); }
-/* ── Special-collection entry: the All-Time Team, one tap off the society
-      index. Deliberately a compact pill rather than a full-bleed card — at
-      card width it read as the page's main purpose instead of a side door. ── */
-.mg-feature-wrap { text-align: center; margin: .55rem 0 1.35rem; }
+/* ── Special-collection entries: the All-Time Team and Manager DNA, one tap
+      off the society index. Both are compact pills rather than full-bleed
+      cards — at card width they read as the page's main purpose instead of
+      two side doors.
+
+      Two-up on one row, which is what the pair fits in at 390px once the
+      All-Time pill drops its "Squads" tag: the pill already says Team, and
+      the tag was a second word for the same thing eating the width the
+      second door needed. Each keeps its own accent, matching the desktop
+      feature panels. ── */
+.mg-feature-wrap {
+    display: flex; gap: .45rem;
+    margin: .55rem 0 1.35rem;
+}
 .mg-feature {
-    display: inline-flex; align-items: center; gap: .45rem;
-    max-width: 100%;
-    padding: .4rem .8rem .4rem .6rem;
+    flex: 1; min-width: 0;
+    display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+    padding: .45rem .6rem;
     background: linear-gradient(135deg, var(--ink-card), var(--ink-soft));
-    border: 1px solid var(--gold-deep);
+    border: 1px solid var(--mg-feature-accent, var(--gold-deep));
     border-radius: 999px;
     text-decoration: none; color: inherit;
 }
 .mg-feature:active { background: var(--ink-soft); }
 .mg-feature svg { flex: none; }
 .mg-feature-title {
+    min-width: 0;
     font-family: var(--serif);
-    font-size: .88rem; line-height: 1.15;
+    font-size: .86rem; line-height: 1.15;
     color: var(--cream);
-    white-space: nowrap;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.mg-feature-title em { font-style: italic; color: var(--gold); }
-.mg-feature-tag {
-    flex: none;
-    font-family: var(--mono); font-weight: 700;
-    font-size: .48rem; letter-spacing: .16em; text-transform: uppercase;
-    color: var(--gold-deep);
-    padding-left: .45rem;
-    border-left: 1px solid var(--ink-line);
-}
+.mg-feature-title em { font-style: italic; color: var(--mg-feature-accent, var(--gold)); }
+/* DNA is sequenced in cyan and magenta wherever it appears, so its door is
+   not a second gold pill sitting next to the All-Time Team's. */
+.mg-feature.dna { --mg-feature-accent: #4fd1ff; }
 
-.mg-alumni { opacity: .82; }
-.mg-alumni .mg-name, .mg-alumni .mg-ava { color: var(--cream-mute); }
+/* Alumni tickets are slightly dimmed via opacity (still readable, just
+   reads as "past member") — but their NAMES use the same bright cream
+   as active members. The opacity gives a subtle hierarchy without
+   downgrading the name color itself. */
+.mg-alumni { opacity: .85; }
+.mg-alumni .mg-ava { color: var(--cream-mute); }
 </style>
 </head>
 <body>
@@ -132,7 +225,7 @@
 
     <div class="mg-feature-wrap">
         <a class="mg-feature" href="managers/all-time.html">
-            <svg width="18" height="18" viewBox="0 0 42 42" fill="none" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 42 42" fill="none" aria-hidden="true">
                 <rect x="16.5" y="3"  width="9" height="7" rx="1.5" stroke="#e8c889" stroke-width="2.4" />
                 <rect x="4"    y="17" width="9" height="7" rx="1.5" stroke="rgba(244,235,216,.5)" stroke-width="2.2" />
                 <rect x="16.5" y="17" width="9" height="7" rx="1.5" stroke="rgba(244,235,216,.5)" stroke-width="2.2" />
@@ -140,8 +233,16 @@
                 <rect x="10"   y="31" width="9" height="7" rx="1.5" stroke="#6b8aa8" stroke-width="2.2" />
                 <rect x="23"   y="31" width="9" height="7" rx="1.5" stroke="#6b8aa8" stroke-width="2.2" />
             </svg>
-            <span class="mg-feature-title">The All-Time <em>Team</em></span>
-            <span class="mg-feature-tag">Squads</span>
+            <span class="mg-feature-title">All-Time <em>Team</em></span>
+        </a>
+        <a class="mg-feature dna" href="live/manager-dna/">
+            <svg width="17" height="17" viewBox="0 0 42 42" fill="none" stroke-width="2.6" stroke-linecap="round" aria-hidden="true">
+                <path d="M10 4 C32 12, 14 24, 34 38" stroke="#4fd1ff" />
+                <path d="M34 4 C12 12, 30 24, 8 38" stroke="#ff5db1" />
+                <line x1="16" y1="10" x2="28" y2="10" stroke="rgba(244,235,216,.4)" stroke-width="1.8" />
+                <line x1="14" y1="32" x2="30" y2="32" stroke="rgba(244,235,216,.4)" stroke-width="1.8" />
+            </svg>
+            <span class="mg-feature-title">Manager <em>DNA</em></span>
         </a>
     </div>
 
@@ -167,8 +268,6 @@
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
         });
     }
-    // "59-42-0" → "59-42" when the league has no ties on the books.
-    function rec(r) { return String(r == null ? '' : r).replace(/^(\d+-\d+)-0$/, '$1'); }
 
     fetch('data/managers_directory.json')
         .then(function (r) { return r.ok ? r.json() : null; })
@@ -179,9 +278,11 @@
                 document.getElementById('emptyMsg').hidden = false;
                 return;
             }
-            // Most decorated first within each group.
+            // Sort by total wins first — championships are a decorative
+            // signal but raw wins are the truer "who's been the better
+            // manager?" question. Ties broken by win pct, then name.
             managers.sort(function (a, b) {
-                return (b.championships - a.championships) || (b.win_pct - a.win_pct) || a.name.localeCompare(b.name);
+                return (b.win_pct - a.win_pct) || (b.wins - a.wins) || a.name.localeCompare(b.name);
             });
             var current = managers.filter(function (m) { return m.is_current; });
             var alumni = managers.filter(function (m) { return !m.is_current; });
@@ -206,14 +307,36 @@
         var img = m.avatar
             ? '<img src="' + esc(m.avatar) + '" alt="" loading="lazy" onerror="this.remove()">'
             : '';
-        var rings = m.championships ? '<span class="mg-rings">' + '✦'.repeat(Math.min(m.championships, 4)) + '</span>' : '';
-        var tenure = m.seasons_played + (m.seasons_played === 1 ? ' season' : ' seasons');
-        return '<a class="mg-ticket' + (m.championships ? ' is-champ' : '') + (isAlumni ? ' mg-alumni' : '') + '" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
+        // Championship year pills — one per title, newest first, capped
+        // at 3 visible (older collapse to "+N" so a 6× champ doesn't push
+        // the row off-screen). No star glyph — the gold pill itself
+        // already carries the championship signal.
+        var champYears = (m.championship_seasons || []).slice().sort(function (a, b) { return b - a; });
+        var maxPills = 3;
+        var pills = champYears.slice(0, maxPills).map(function (y) {
+            return '<span class="mg-champ-pill">' + esc(y) + '</span>';
+        }).join('');
+        if (champYears.length > maxPills) {
+            pills += '<span class="mg-champ-pill">+' + (champYears.length - maxPills) + '</span>';
+        }
+        var tenure = m.seasons_played + ' yrs';
+        // is-champ: ever won (gives the gold ticket-stub border + avatar ring).
+        // is-reigning: holds the most recent title (adds gold name + brighter border).
+        var classes = 'mg-ticket';
+        if (m.championships) classes += ' is-champ';
+        if (m.is_reigning_champion) classes += ' is-reigning';
+        if (isAlumni) classes += ' mg-alumni';
+        return '<a class="' + classes + '" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
             '<span class="mg-stub"><span class="mg-ava">' + esc(initial) + img + '</span></span>' +
             '<span class="mg-body">' +
-                '<span class="mg-name">' + esc(m.name) + '<small>' + esc(m.team_latest || '') + ' · ' + tenure + '</small></span>' +
-                rings +
-                '<span class="mg-rec">' + esc(rec(m.total_record)) + '<small>' + (m.win_pct * 100).toFixed(0) + '% win</small></span>' +
+                '<span class="mg-name">' + esc(m.name) +
+                    '<small>' +
+                        '<span class="mg-team">' + esc(m.team_latest || '') + '</span>' +
+                        '<span class="mg-tenure"> · ' + tenure + '</span>' +
+                        pills +
+                    '</small>' +
+                '</span>' +
+                '<span class="mg-rec">' + esc(m.total_record) + '<small>' + (m.win_pct * 100).toFixed(0) + '% win</small></span>' +
             '</span>' +
         '</a>';
     }

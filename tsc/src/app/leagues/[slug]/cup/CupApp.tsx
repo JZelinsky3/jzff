@@ -28,6 +28,7 @@ import { Stamp } from './Stamp'
 import styles from './cup.module.css'
 
 type Tab = 'games' | 'bracket' | 'odds' | 'leaders'
+const TABS: Tab[] = ['games', 'bracket', 'odds', 'leaders']
 
 type Props = {
   slug: string
@@ -50,6 +51,13 @@ type Props = {
   demo?: boolean
   // Drawn between the masthead and the tabs (the demo's launch ticket).
   banner?: ReactNode
+  // The Cup Hall of Fame (cup/hall/): every Cup, all time.
+  hallHref: string
+  // ?tab= opens a tab directly.
+  initialTab?: string
+  // Seeded on the Cup Rating (every Cup from the 2026 launch on); false for
+  // pams' Milk Cup, which was seeded on the standings before it existed.
+  rated: boolean
 }
 
 type User = { profileId: string; name: string; teamId: string | null }
@@ -231,7 +239,7 @@ function Icon({ name, size = 18 }: { name: 'help' | 'check' | 'close' | 'seed' |
 
 export function CupApp(props: Props) {
   const { slug, cupId, bracket, notes, extras, imageUrl, seededThrough } = props
-  const [tab, setTab] = useState<Tab>('games')
+  const [tab, setTab] = useState<Tab>(TABS.includes(props.initialTab as Tab) ? (props.initialTab as Tab) : 'games')
   const [round, setRound] = useState<number>(bracket.currentRound ?? bracket.rounds.length - 1)
   const { user, setUser, known } = useUser(slug, extras.pickers)
   // This browser's picks since the page loaded, over the saved ones. On the
@@ -458,11 +466,13 @@ export function CupApp(props: Props) {
             </div>
           </div>
           <Scoreboard bracket={bracket} extras={extras} currentWeek={props.currentWeek} />
-          <div className={styles.mastCup} aria-hidden>
+          {/* The trophy is the way into its Hall of Fame. */}
+          <a className={styles.mastCup} href={props.hallHref}>
             <span className={styles.mastHalo} />
-            {trophy({ width: 120, brass: '#c8a35b', light: '#e6cb8e', dark: '#7d6230', plate: '#0d2a21' })}
+            <span aria-hidden>{trophy({ width: 120, brass: '#c8a35b', light: '#e6cb8e', dark: '#7d6230', plate: '#0d2a21' })}</span>
             {bracket.champion ? <span className={styles.mastChamp}>{bracket.champion.name}</span> : null}
-          </div>
+            <span className={styles.mastHall}>Hall of Fame</span>
+          </a>
         </div>
       </header>
 
@@ -565,7 +575,7 @@ export function CupApp(props: Props) {
 
       {sheet?.kind === 'how' ? (
         <SheetFrame title="How the Cup Works" onClose={() => setSheet(null)}>
-          <HowItWorks bracket={bracket} extras={extras} seededThrough={seededThrough} />
+          <HowItWorks bracket={bracket} extras={extras} seededThrough={seededThrough} rated={props.rated} />
           <button type="button" className={styles.sheetCta} onClick={() => setSheet(null)}>
             Got it
           </button>
@@ -933,14 +943,20 @@ function SheetFrame({ title, sub, onClose, children }: { title: string; sub?: st
   )
 }
 
-function HowItWorks({ bracket, extras, seededThrough }: { bracket: CupBracket; extras: CupExtras; seededThrough: number }) {
+function HowItWorks({ bracket, extras, seededThrough, rated }: { bracket: CupBracket; extras: CupExtras; seededThrough: number; rated: boolean }) {
   const byes = bracket.rounds[0]?.byes.length ?? 0
   const steps: { icon: 'seed' | 'week' | 'tap' | 'cup' | 'stamp'; head: string; body: string }[] = [
-    {
-      icon: 'seed',
-      head: 'Seeded from the standings',
-      body: `The top ${bracket.field} after week ${seededThrough} are in.${byes ? ` Seeds 1 to ${byes} skip round one.` : ''}`,
-    },
+    rated
+      ? {
+          icon: 'seed',
+          head: 'Seeded on the Cup Rating',
+          body: `The top ${bracket.field} after week ${seededThrough} on the Cup Rating, not the standings.${byes ? ` Seeds 1 to ${byes} skip round one.` : ''}`,
+        }
+      : {
+          icon: 'seed',
+          head: 'Seeded from the standings',
+          body: `The top ${bracket.field} after week ${seededThrough} are in.${byes ? ` Seeds 1 to ${byes} skip round one.` : ''}`,
+        },
     {
       icon: 'week',
       head: 'One round a week',
@@ -2197,7 +2213,9 @@ function MiniCard({ m, fed, last, mine, hover, onHover }: { m: CupMatch; fed: bo
     return (
       <div className={cls} onMouseEnter={onHover ? () => onHover(e.managerId) : undefined}>
         <span className={styles.mSeed}>{e.seed}</span>
-        <span className={styles.mName}>{e.name}</span>
+        <span className={styles.mName} data-len={e.name.length >= 9 ? 'xl' : e.name.length >= 7 ? 'l' : undefined}>
+          {e.name}
+        </span>
         <span className={styles.mScore}>{s.kind === 'team' && s.score != null ? Math.round(s.score) : ''}</span>
       </div>
     )
@@ -2223,11 +2241,43 @@ function VoteChip({ n }: { n: number }) {
   )
 }
 
+// Each team's Cup games so far: wins, losses and points a game (byes
+// don't count as games).
+function cupRuns(bracket: CupBracket): Map<string, { w: number; l: number; games: number; ppg: number }> {
+  const out = new Map<string, { w: number; l: number; games: number; pf: number; ppg: number }>()
+  for (const r of bracket.rounds) {
+    for (const m of r.matches) {
+      if (m.state !== 'final' || !m.winner) continue
+      for (const side of ['a', 'b'] as const) {
+        const s = m[side]
+        if (s.kind !== 'team') continue
+        const t = out.get(s.entrant.managerId) ?? { w: 0, l: 0, games: 0, pf: 0, ppg: 0 }
+        if (m.winner === side) t.w++
+        else t.l++
+        t.games++
+        t.pf += s.score ?? 0
+        t.ppg = t.pf / t.games
+        out.set(s.entrant.managerId, t)
+      }
+    }
+  }
+  return out
+}
+
 function OddsTab({ bracket, odds, notes, user, votes }: { bracket: CupBracket; odds: CupOdds[]; notes: CupNotes; user: User | null; votes: Map<string, string[]> }) {
   const alive = odds.filter((o) => o.alive)
-  // Knocked out, furthest run first (the beaten finalist, then the semis...).
-  const depth = new Map(bracket.rounds.map((r) => [r.name, r.round]))
-  const out = odds.filter((o) => !o.alive).sort((x, y) => (depth.get(y.out?.round ?? '') ?? 0) - (depth.get(x.out?.round ?? '') ?? 0) || x.seed - y.seed)
+  // Knocked out, ranked (Joey, 2026-10-16): Cup wins first (a bye isn't a
+  // win), then points per Cup game. So a 2-1 run is above every 1-1, two
+  // 1-1s go by average, and the one-and-done teams by what they scored.
+  const run = cupRuns(bracket)
+  const short = new Map(bracket.rounds.map((r) => [r.name, r.short]))
+  const out = odds
+    .filter((o) => !o.alive)
+    .sort((x, y) => {
+      const a = run.get(x.managerId)
+      const b = run.get(y.managerId)
+      return (b?.w ?? 0) - (a?.w ?? 0) || (b?.ppg ?? 0) - (a?.ppg ?? 0) || x.seed - y.seed
+    })
   // Labels for the "reach" figures: the last two rounds before the title
   // (the next round is near-certain for a top seed and says little).
   const later = bracket.rounds.slice(1).map((r) => r.short)
@@ -2348,9 +2398,17 @@ function OddsTab({ bracket, odds, notes, user, votes }: { bracket: CupBracket; o
                 <li key={o.managerId} className={user?.teamId === o.managerId ? styles.oddsMine : ''}>
                   <span className={`${styles.medal} ${styles.medalSm} ${styles.medalOut}`}>{o.seed}</span>
                   <span className={styles.outWho}>
-                    <span className={styles.outName}>{o.name}</span>
+                    <span className={styles.outName}>
+                      {o.name}
+                      {run.get(o.managerId) ? (
+                        <span className={styles.outRec}>
+                          {run.get(o.managerId)!.w}-{run.get(o.managerId)!.l}
+                        </span>
+                      ) : null}
+                    </span>
                     <span className={styles.outLine}>
-                      {o.out.round} · lost to {o.out.to}
+                      {short.get(o.out.round) ?? o.out.round} · lost to {o.out.to}
+                      {(run.get(o.managerId)?.games ?? 0) > 1 ? ` · ${run.get(o.managerId)!.ppg.toFixed(1)} avg` : ''}
                     </span>
                   </span>
                   <span className={styles.outScore}>
@@ -2508,6 +2566,17 @@ function LeadersTable({
   )
 }
 
+// A champion pick in a board line: a small trophy and the name (no
+// "Champion:" on every row), struck through once that team is out.
+function ChampPick({ name, right }: { name: string; right: boolean | null }) {
+  return (
+    <span className={`${styles.champPick} ${right === false ? styles.champPickOut : right ? styles.champPickRight : ''}`} title={right === false ? `Champion pick ${name} is out` : `Champion pick: ${name}`}>
+      <Icon name="cup" size={11} />
+      <span>{name}</span>
+    </span>
+  )
+}
+
 function LeadersTab({
   bracket,
   extras,
@@ -2541,6 +2610,7 @@ function LeadersTab({
 }) {
   if (!extras.hasPickTable) return <p className={styles.sectionSub}>The bracket challenge opens soon.</p>
   const teams = entrantsOf(bracket)
+  const aliveIds = new Set(extras.odds.filter((o) => o.alive).map((o) => o.managerId))
   const anyPoints = extras.board.some((r) => r.points > 0)
   const firstFinal = bracket.rounds.find((r) => r.matches.length)?.week
   const mineIdx = user ? extras.board.findIndex((r) => r.profileId === user.profileId) : -1
@@ -2573,8 +2643,13 @@ function LeadersTab({
           <span className={styles.meText}>
             <span className={styles.meName}>{user.name}</span>
             <span className={styles.meLine}>
-              {mine?.decided ? `${mine.correct} of ${mine.decided} right` : 'No results yet'}
-              {champName ? ` · Champion: ${champName}` : ''}
+              {mine?.decided ? `${mine.correct}/${mine.decided} right` : 'No results yet'}
+              {champName ? (
+                <>
+                  {' · '}
+                  <ChampPick name={champName} right={mine?.championRight ?? null} />
+                </>
+              ) : null}
             </span>
           </span>
           <span className={styles.mePts}>
@@ -2670,8 +2745,13 @@ function LeadersTab({
                     <span className={styles.boardWho}>
                       <span className={styles.boardName}>{row.name}</span>
                       <span className={styles.boardMeta}>
-                        {row.decided ? `${row.correct} of ${row.decided} right` : 'Picks in, no results yet'}
-                        {row.champion ? ` · Champion: ${row.champion}${row.championRight === true ? ' (right)' : row.championRight === false ? ' (out)' : ''}` : ''}
+                        {row.decided ? `${row.correct}/${row.decided} right` : 'Picks in, no results yet'}
+                        {row.champion ? (
+                          <>
+                            {' · '}
+                            <ChampPick name={row.champion} right={row.championRight} />
+                          </>
+                        ) : null}
                       </span>
                     </span>
                     <span className={styles.boardStamps} aria-label={n ? `${n} ${n === 1 ? 'stamp' : 'stamps'} this Cup` : undefined}>
@@ -2740,9 +2820,9 @@ function LeadersTab({
             <ol className={styles.votes}>
               {rows.map(({ t, by }) => (
                 <li key={t.managerId} className={styles.voteRow}>
-                  <span className={styles.oddsSeed}>{t.seed}</span>
+                  <span className={`${styles.medal} ${styles.medalSm} ${t.managerId !== bracket.champion?.managerId && !aliveIds.has(t.managerId) ? styles.medalOut : ''}`}>{t.seed}</span>
                   <span className={styles.voteWho}>
-                    <span className={styles.voteName}>{t.name}</span>
+                    <span className={`${styles.voteName} ${t.managerId !== bracket.champion?.managerId && !aliveIds.has(t.managerId) ? styles.voteOut : ''}`}>{t.name}</span>
                     {!extras.championOpen ? (
                       <span className={styles.voteBy}>
                         {by

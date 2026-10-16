@@ -69,6 +69,7 @@ export type CupBoardRow = {
   correct: number
   decided: number
   champion: string | null
+  // true once their champion wins it, false as soon as it's knocked out.
   championRight: boolean | null
 }
 
@@ -383,6 +384,15 @@ export function computeCupExtras(view: CupView, src: CupExtrasSource): CupExtras
   const championOpen = championLockAt == null ? !bracket.rounds[0]?.matches.some((m) => m.state === 'final') : now < Date.parse(championLockAt)
   const matchAt = new Map<string, CupMatch>()
   for (const r of bracket.rounds) for (const m of r.matches) matchAt.set(`${r.round}:${m.slot}`, m)
+  // Knocked out so far: a champion pick on one of these can't come good.
+  const beaten = new Set<string>()
+  for (const r of bracket.rounds) {
+    for (const m of r.matches) {
+      if (m.state !== 'final' || !m.winner) continue
+      const l = m[m.winner === 'a' ? 'b' : 'a']
+      if (l.kind === 'team') beaten.add(l.entrant.managerId)
+    }
+  }
   const board = new Map<string, CupBoardRow>()
   const rowFor = (profileId: string) => {
     let row = board.get(profileId)
@@ -400,7 +410,7 @@ export function computeCupExtras(view: CupView, src: CupExtrasSource): CupExtras
       if (bracket.champion) {
         row.championRight = bracket.champion.managerId === p.picked
         if (row.championRight) row.points += CHAMPION_BONUS
-      }
+      } else if (beaten.has(p.picked)) row.championRight = false
       continue
     }
     const m = matchAt.get(`${p.round}:${p.slot}`)

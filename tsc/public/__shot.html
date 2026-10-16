@@ -2,6 +2,7 @@
 <script>
 var q = new URLSearchParams(location.search);
 try { (q.get('ls') || '').split(',').filter(Boolean).forEach(function (kv) { var i = kv.indexOf('='); localStorage.setItem(kv.slice(0, i), kv.slice(i + 1)); }); } catch (e) {}
+(q.get('ck') || '').split(',').filter(Boolean).forEach(function (c) { document.cookie = c + '; path=/'; });
 var f = document.createElement('iframe');
 f.src = q.get('u'); f.style.cssText = 'width:' + (q.get('w') || 375) + 'px;height:' + (q.get('h') || 2000) + 'px;border:0';
 document.body.appendChild(f);

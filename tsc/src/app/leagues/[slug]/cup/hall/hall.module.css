@@ -1,0 +1,969 @@
+/* The Cup Hall of Fame. The Cup's house (the board's bottle green, brass,
+   cream paper; tokens on cup.module.css .page), with its own furniture:
+     the monument   the trophy on a barrel of brass bands, a champion
+                    engraved on each, the year being played left blank
+     plates         a cream plate per Cup with a green year stub
+     marks          a square per Cup year on each manager's row
+     medallions     the records, struck in brass
+   Phone first; from 900px the masthead splits text and monument. */
+
+.hall {
+  --band-hi: #ead39c;
+  --band: #c8a35b;
+  --band-lo: #8f6f33;
+  --engrave: #3a2c10;
+}
+
+/* ── Masthead ── */
+
+.mast {
+  position: relative;
+  overflow: hidden;
+  padding: 24px var(--gutter) 22px;
+  border-bottom: 3px double rgba(200, 163, 91, 0.5);
+}
+
+.mastInner {
+  position: relative;
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+}
+
+.mastText {
+  min-width: 0;
+}
+
+.kicker {
+  font-family: var(--cp-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.title {
+  margin-top: 8px !important;
+  font-family: var(--cp-display);
+  font-size: clamp(34px, 9.5vw, 54px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--ivory);
+}
+
+.title em {
+  display: block;
+  margin-top: 4px;
+  font-style: italic;
+  color: var(--brass-hi);
+}
+
+.lede {
+  margin-top: 10px !important;
+  font-size: 15px;
+  color: var(--ivory-2);
+}
+
+.mastText > a {
+  margin-top: 16px;
+}
+
+.tally {
+  display: grid;
+  text-align: center;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 16px auto 0;
+  max-width: 380px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 0 0 1px var(--bline-2);
+}
+
+.tally > div {
+  padding: 9px 4px 8px;
+}
+
+.tally > div + div {
+  border-left: 1px solid var(--bline);
+}
+
+.tally dt {
+  font-family: var(--cp-mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.tally dd {
+  margin: 2px 0 0;
+  font-family: var(--cp-num);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--brass-hi);
+}
+
+/* The monument: trophy on top, the barrel of bands below it. */
+.monument {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.monument > svg {
+  position: relative;
+  margin-bottom: -6px;
+}
+
+.halo {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  width: 260px;
+  height: 260px;
+  margin-left: -130px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230, 203, 142, 0.22), rgba(230, 203, 142, 0) 65%);
+  pointer-events: none;
+}
+
+.barrel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 248px;
+  padding: 5px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #5e4718, #8f6f33 12%, #6f5421 50%, #8f6f33 88%, #5e4718);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
+}
+
+/* A band: brass, lit across the middle, the name cut into it. */
+.band {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  height: 25px;
+  padding: 0 10px 0 8px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--band-lo), var(--band) 18%, var(--band-hi) 50%, var(--band) 82%, var(--band-lo));
+  color: var(--engrave);
+  text-shadow: 0 1px 0 rgba(255, 244, 214, 0.45);
+}
+
+.band b {
+  font-family: var(--cp-num);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: left;
+}
+
+.band span {
+  font-family: var(--cp-display);
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+/* Not won yet: duller brass, the lettering only scratched in. */
+.bandBlank {
+  background: linear-gradient(90deg, #6f5421, #9c7d3f 50%, #6f5421);
+  color: rgba(58, 44, 16, 0.65);
+}
+
+.bandBlank span {
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ── Rooms ── */
+
+.body {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 18px var(--gutter) 28px;
+}
+
+.room {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.head {
+  margin-top: 8px !important;
+  font-family: var(--cp-display);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--ivory);
+}
+
+.empty {
+  padding: 22px 18px;
+  border: 1.5px dashed var(--bline-2);
+  border-radius: 14px;
+  text-align: center;
+  font-size: 14.5px;
+  color: var(--ivory-2);
+}
+
+.note {
+  font-size: 13px;
+  color: var(--mute);
+  text-align: center;
+}
+
+.note a {
+  color: var(--brass-hi);
+}
+
+/* ── Champions ── */
+
+.roll {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.rollLabel {
+  margin-right: 4px;
+  font-family: var(--cp-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.rollChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 4px 0 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 0 0 1px var(--bline-2);
+  font-family: var(--cp-display);
+  font-size: 15px;
+  color: var(--ivory);
+}
+
+.rollChip b {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--brass);
+  color: #14301f;
+  font-family: var(--cp-num);
+  font-size: 14px;
+}
+
+.plates {
+  display: grid;
+  gap: 10px;
+}
+
+/* A plate: cream paper with a green stub carrying the year. */
+.plate {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--paper);
+  color: var(--ink) !important;
+  text-decoration: none;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.3);
+}
+
+.plate:active {
+  background: var(--paper-3);
+}
+
+.plateYear {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 16px;
+  background: var(--green);
+  color: var(--brass-hi);
+  font-family: var(--cp-num);
+  font-size: 22px;
+  font-weight: 700;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0.08em;
+}
+
+.plateYear::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: -1px;
+  border-left: 2px dotted var(--paper);
+}
+
+.plateMain {
+  min-width: 0;
+  padding: 13px 14px 14px;
+}
+
+.plateKicker {
+  font-family: var(--cp-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+
+.plateName {
+  margin-top: 3px !important;
+  font-family: var(--cp-display);
+  font-size: 27px;
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+.plateLine {
+  margin-top: 5px !important;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.plateLine b {
+  font-family: var(--cp-num);
+  font-size: 15px;
+  color: var(--green);
+}
+
+.plateGo {
+  display: inline-flex;
+  margin-top: 10px;
+  padding: 8px 13px;
+  border-radius: 9px;
+  background: var(--green);
+  color: var(--paper);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* The Cup being played: an open plate on the board, dashed. */
+.plateOpen {
+  background: transparent;
+  color: var(--ivory) !important;
+  box-shadow: inset 0 0 0 1.5px var(--bline-2);
+  border: 0;
+}
+
+.plateOpen .plateYear {
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--brass);
+}
+
+.plateOpen .plateYear::after {
+  border-left-color: var(--bline-2);
+}
+
+.plateOpen .plateKicker {
+  color: var(--red);
+}
+
+.plateOpen .plateName {
+  color: var(--ivory);
+  font-size: 22px;
+}
+
+.plateOpen .plateLine {
+  color: var(--ivory-2);
+}
+
+.plateOpen .plateGo {
+  background: var(--brass);
+  color: #14301f;
+}
+
+/* The champion's run: a chip per round. */
+.path {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 10px 0 0 !important;
+  padding: 0;
+  list-style: none;
+}
+
+.path li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 5px;
+  border-radius: 7px;
+  background: var(--paper-2);
+  box-shadow: inset 0 0 0 1px var(--pline);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.pathRound {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: var(--green);
+  color: var(--paper);
+  font-family: var(--cp-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pathGame small {
+  color: var(--ink-3);
+}
+
+.pathGame b {
+  font-family: var(--cp-num);
+  font-size: 13px;
+  color: var(--green);
+}
+
+.pathBye {
+  opacity: 0.7;
+}
+
+/* ── Managers ── */
+
+.podium {
+  display: grid;
+  gap: 8px;
+}
+
+.medal {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px 10px 10px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 0 0 1px var(--bline-2);
+}
+
+.medalDisc {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-family: var(--cp-display);
+  font-size: 18px;
+  color: #241a07;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.35), 0 6px 14px rgba(0, 0, 0, 0.4);
+}
+
+.gold .medalDisc {
+  background: radial-gradient(circle at 35% 30%, #f6e2b0, #c8a35b 60%, #8f6f33);
+}
+
+.silver .medalDisc {
+  background: radial-gradient(circle at 35% 30%, #f4f4f0, #b9bcbf 60%, #7b7f84);
+}
+
+.bronze .medalDisc {
+  background: radial-gradient(circle at 35% 30%, #f1c9a2, #b5794a 60%, #7a4b26);
+}
+
+.gold {
+  background: linear-gradient(100deg, rgba(200, 163, 91, 0.2), rgba(0, 0, 0, 0.2) 60%);
+}
+
+.medalText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.medalName {
+  font-family: var(--cp-display);
+  font-size: 21px;
+  line-height: 1.1;
+  color: var(--ivory);
+}
+
+.medalLine {
+  margin-top: 2px;
+  font-family: var(--cp-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ivory-2);
+}
+
+.register {
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.16);
+  box-shadow: inset 0 0 0 1px var(--bline);
+  overflow: hidden;
+}
+
+.regHead,
+.regRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+}
+
+.regHead {
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+  border-bottom: 1px solid var(--bline);
+}
+
+.regHead > span:first-child {
+  flex: 1;
+}
+
+.regRow + .regRow {
+  border-top: 1px solid var(--bline);
+}
+
+.regGroup {
+  padding: 14px 12px 6px;
+  border-top: 1px solid var(--bline-2);
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.regWho {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.regName {
+  font-family: var(--cp-display);
+  font-size: 17px;
+  line-height: 1.15;
+  color: var(--ivory);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.regStars {
+  margin-left: 6px;
+  font-family: var(--cp-sans);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--brass-hi);
+}
+
+.regLine {
+  margin-top: 1px;
+  font-family: var(--cp-num);
+  font-size: 13.5px;
+  color: var(--ivory-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.regYears {
+  flex: none;
+  display: flex;
+  gap: 4px;
+}
+
+.regHead .regYears > span {
+  width: 22px;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+/* A year's mark: how far they got. */
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  font-family: var(--cp-num);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.markW {
+  background: radial-gradient(circle at 35% 30%, #f6e2b0, #c8a35b 60%, #8f6f33);
+  color: #3a2c10;
+  font-family: var(--cp-sans);
+  font-size: 12px;
+}
+
+.markF {
+  box-shadow: inset 0 0 0 1.5px var(--brass);
+  color: var(--brass-hi);
+}
+
+.markSF {
+  background: var(--paper);
+  color: var(--green);
+}
+
+.markQF {
+  background: var(--board-3);
+  color: var(--ivory-2);
+}
+
+.markR1 {
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--mute);
+}
+
+.markIN {
+  box-shadow: inset 0 0 0 1.5px var(--red);
+  position: relative;
+}
+
+.markIN::after {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--red);
+}
+
+.markNone {
+  box-shadow: inset 0 0 0 1px var(--bline);
+  opacity: 0.6;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 5px 7px;
+  font-size: 12px;
+  color: var(--mute);
+}
+
+.legend .mark {
+  width: 18px;
+  height: 18px;
+  font-size: 9.5px;
+  margin-left: 4px;
+}
+
+/* ── Records: medallions ── */
+
+.medallions {
+  display: grid;
+  gap: 10px;
+}
+
+.rec {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px 12px 12px;
+  border-radius: 16px;
+  background: linear-gradient(110deg, rgba(200, 163, 91, 0.1), rgba(0, 0, 0, 0.18) 55%);
+  box-shadow: inset 0 0 0 1px var(--bline);
+}
+
+/* A coin: struck brass with a raised rim. */
+.recCoin {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #f6e2b0, #c8a35b 55%, #8f6f33);
+  box-shadow:
+    inset 0 0 0 4px rgba(143, 111, 51, 0.65),
+    inset 0 0 0 6px rgba(246, 226, 176, 0.5),
+    0 8px 18px rgba(0, 0, 0, 0.45);
+  color: #2e230b;
+  text-shadow: 0 1px 0 rgba(255, 244, 214, 0.5);
+}
+
+.recValue {
+  font-family: var(--cp-num);
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.recUnit {
+  margin-top: 3px;
+  max-width: 66px;
+  font-family: var(--cp-mono);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1.25;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.recText {
+  min-width: 0;
+}
+
+.recLabel {
+  font-family: var(--cp-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.recWho {
+  margin-top: 3px !important;
+  font-family: var(--cp-display);
+  font-size: 22px;
+  line-height: 1.1;
+  color: var(--ivory);
+}
+
+.recLine {
+  margin-top: 3px !important;
+  font-size: 13px;
+  color: var(--ivory-2);
+}
+
+/* ── Challenge ── */
+
+.board {
+  margin: 0 !important;
+  padding: 0;
+  list-style: none;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.16);
+  box-shadow: inset 0 0 0 1px var(--bline);
+  overflow: hidden;
+}
+
+.boardRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px 10px 12px;
+}
+
+.boardRow + .boardRow {
+  border-top: 1px solid var(--bline);
+}
+
+.boardRank {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-family: var(--cp-num);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--mute);
+  box-shadow: inset 0 0 0 1px var(--bline-2);
+}
+
+.rank1 {
+  background: radial-gradient(circle at 35% 30%, #f6e2b0, #c8a35b 60%, #8f6f33);
+  color: #3a2c10;
+  box-shadow: none;
+}
+
+.rank2 {
+  background: radial-gradient(circle at 35% 30%, #f4f4f0, #b9bcbf 60%, #7b7f84);
+  color: #26292c;
+  box-shadow: none;
+}
+
+.rank3 {
+  background: radial-gradient(circle at 35% 30%, #f1c9a2, #b5794a 60%, #7a4b26);
+  color: #2b1808;
+  box-shadow: none;
+}
+
+.boardWho {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.boardName {
+  font-family: var(--cp-display);
+  font-size: 17px;
+  line-height: 1.1;
+  color: var(--ivory);
+}
+
+.boardBar {
+  display: block;
+  height: 5px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.boardBar i {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, var(--brass-lo), var(--brass-hi));
+}
+
+.boardLine {
+  font-size: 12px;
+  color: var(--mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.boardPts {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-family: var(--cp-num);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--brass-hi);
+}
+
+.boardPts small {
+  margin-top: 2px;
+  font-family: var(--cp-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.collectors {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.collector {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 13px;
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.collectorNum {
+  font-family: var(--cp-num);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--green);
+}
+
+.collectorName {
+  margin-top: 4px;
+  font-family: var(--cp-display);
+  font-size: 17px;
+  line-height: 1.1;
+}
+
+.collectorLine {
+  margin-top: 2px;
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ── Wider screens ── */
+
+@media (min-width: 700px) {
+  .plates,
+  .medallions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .podium {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .mastInner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+    text-align: left;
+  }
+
+  .tally {
+    margin-left: 0;
+  }
+
+  .barrel {
+    width: 280px;
+  }
+}
+
+@media (min-width: 1100px) {
+  .mastInner,
+  .body {
+    max-width: var(--desk, 1240px);
+  }
+
+  .medallions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

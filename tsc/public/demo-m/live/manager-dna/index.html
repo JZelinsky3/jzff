@@ -3,6 +3,20 @@
 <head>
 <base href="/demo-m/">
 <script>(function(){var u=navigator.userAgent;var m=/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u);if(m)return;if(/(?:^|;\s*)dc_view=mobile/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo-m\//,"/demo/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<!-- Link preview: the card a real league's page gets (demo_resync). -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The Sunday Chronicle">
+<meta property="og:title" content="The Lakeside League · The Live Season">
+<meta property="og:description" content="The Lakeside League's season as it happens, power rankings, pick'ems, records watch, and the trade desk.">
+<meta property="og:url" content="https://thesundaychronicle.app/demo-m/live/manager-dna/">
+<meta property="og:image" content="https://thesundaychronicle.app/api/og/league/demo/?page=live&v=3">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Lakeside League, The Live Season">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Lakeside League · The Live Season">
+<meta name="twitter:description" content="The Lakeside League's season as it happens, power rankings, pick'ems, records watch, and the trade desk.">
+<meta name="twitter:image" content="https://thesundaychronicle.app/api/og/league/demo/?page=live&v=3">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Manager DNA · The Lakeside League</title>
@@ -379,31 +393,31 @@ body { background: var(--dna-bg); color: var(--dna-cream); }
         <div class="dna-legend-grid">
             <div class="dna-legend-item">
                 <div class="dna-legend-name">EFF · Lineup Efficiency</div>
-                <div class="dna-legend-desc">% of optimal lineup actually started · Sleeper / ESPN / Yahoo only</div>
+                <div class="dna-legend-desc">Points your starters actually scored as a percent of the points your best possible lineup would have scored. 100% means you started the optimal lineup every week. Needs weekly starter and bench data, which Sleeper, ESPN, Yahoo, and NFL.com all provide now.</div>
             </div>
             <div class="dna-legend-item">
                 <div class="dna-legend-name">CHURN · Weekly Turnover</div>
-                <div class="dna-legend-desc">% of starters changed vs prior week · Sleeper / ESPN / Yahoo only</div>
+                <div class="dna-legend-desc">Average share of your starting lineup that swaps from one week to the next. High churn means you are juggling matchups and waiver claims; low churn means you set it and forget it. Works on Sleeper, ESPN, Yahoo, and NFL.com.</div>
             </div>
             <div class="dna-legend-item">
                 <div class="dna-legend-name">VOL · Score Volatility</div>
-                <div class="dna-legend-desc">Std-dev as % of mean weekly PF</div>
+                <div class="dna-legend-desc">How much your weekly point totals swing around your own average, expressed as a percent. Low VOL is a steady scorer; high VOL is boom or bust week to week.</div>
             </div>
             <div class="dna-legend-item">
                 <div class="dna-legend-name">TRADE · Trade Volume</div>
-                <div class="dna-legend-desc">Completed trades per season</div>
+                <div class="dna-legend-desc">Completed trades per season across your career, blocked ones do not count. Captures how active you are on the trade block, not whether your trades worked out.</div>
             </div>
             <div class="dna-legend-item">
                 <div class="dna-legend-name">MARGIN · Avg Margin</div>
-                <div class="dna-legend-desc">Average margin of victory or defeat, points/game</div>
+                <div class="dna-legend-desc">Average points per game between your score and your opponent. Positive means your wins tend to be bigger than your losses, negative means you get blown out more than you blow others out. Regular season only.</div>
             </div>
             <div class="dna-legend-item">
                 <div class="dna-legend-name">CLUTCH · Close-Game Win %</div>
-                <div class="dna-legend-desc">Win rate in games decided by ≤5 points</div>
+                <div class="dna-legend-desc">Your win rate in games decided by 5 points or fewer. Anything over 50% says you find a way in nail biters; under 50% says the close ones tend to slip away.</div>
             </div>
         </div>
         <div class="dna-legend-foot">
-            NFL.com leagues fall back to Margin and Clutch, NFL's archive doesn't preserve per-week starters, so Eff and Churn can't be derived.
+            Lineup Efficiency and Weekly Turnover need per-week starter and bench data. All four platforms (Sleeper, ESPN, Yahoo, and NFL.com) now provide it; any league whose weekly lineup history hasn't synced falls back to Margin and Clutch.
         </div>
     </section>
 

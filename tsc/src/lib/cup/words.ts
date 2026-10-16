@@ -26,7 +26,7 @@ function list(names: string[]): string {
 export function cupLaunchLine(t: CupTeaser): string {
   const p = t.preview
   if (!p) return ''
-  if (p.final) return `The draw is ${p.drawDay}, seeded from the standings after this week. Round one is week ${t.startWeek}.`
+  if (p.final) return `The draw is ${p.drawDay}, seeded on the Cup Rating after this week. Round one is week ${t.startWeek}.`
   return `A knockout bracket inside your season, starting week ${t.startWeek}. Your score each week is your Cup score. The draw is ${p.drawDay}.`
 }
 
@@ -35,7 +35,7 @@ export function cupLaunchLine(t: CupTeaser): string {
 export function cupDeck(t: CupTeaser): string {
   if (t.preview) {
     const p = t.preview
-    if (p.final) return `The draw is ${p.drawDay}, and the seeds are set: the standings after week ${p.throughWeek}. Round one is next week.`
+    if (p.final) return `The draw is ${p.drawDay}, and the seeds are set: the Cup Rating after week ${p.throughWeek}. Round one is next week.`
     return `${t.name} starts in week ${t.startWeek}: the top ${Math.min(t.field, 12)} after week ${t.startWeek - 1}, one round a week, the final in week ${t.finalWeek}. Your score each week is your Cup score. Here is how the draw sets up today.`
   }
   if (t.champion) {
@@ -68,14 +68,10 @@ export function cupLockText(iso: string | null): string | null {
   return new Date(iso).toLocaleString('en-US', { weekday: 'long', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })
 }
 
-const HALF_WORDS = ['', 'one', 'two', 'three', 'four', 'five']
-
-function gamesBack(n: number): string {
-  if (n === 0) return 'level on record with'
-  const whole = Math.floor(n)
-  const half = n - whole >= 0.5
-  if (!whole) return 'half a game behind'
-  return `${HALF_WORDS[whole] ?? whole}${half ? ' and a half' : ''} ${whole === 1 && !half ? 'game' : 'games'} behind`
+// "2.4 rating points behind", "level on rating with": read before a name.
+function ratingBack(n: number): string {
+  if (n <= 0) return 'level on rating with'
+  return `${n.toFixed(1)} rating ${n === 1 ? 'point' : 'points'} behind`
 }
 
 // The launch's bubble, in a line or two: the first team outside the twelve
@@ -84,8 +80,8 @@ export function cupBubbleLines(t: CupTeaser): string[] {
   const p = t.preview
   if (!p) return []
   const out: string[] = []
-  if (p.firstOut) out.push(`First out: ${p.firstOut.name}, ${gamesBack(p.firstOut.gb)} the last team in.`)
-  if (p.byeRace) out.push(`Bye race: ${p.byeRace.next} is ${gamesBack(p.byeRace.gb)} ${p.byeRace.last} for the last bye.`)
+  if (p.firstOut) out.push(`First out: ${p.firstOut.name}, ${ratingBack(p.firstOut.gap)} the last team in.`)
+  if (p.byeRace) out.push(`Bye race: ${p.byeRace.next} is ${ratingBack(p.byeRace.gap)} ${p.byeRace.last} for the last bye.`)
   return out
 }
 

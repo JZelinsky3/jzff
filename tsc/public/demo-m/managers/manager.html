@@ -3,6 +3,20 @@
 <head>
 <base href="/demo-m/">
 <script>(function(){var u=navigator.userAgent;var m=/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u);if(m)return;if(/(?:^|;\s*)dc_view=mobile/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo-m\//,"/demo/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<!-- Link preview: the card a real league's page gets (demo_resync). -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The Sunday Chronicle">
+<meta property="og:title" content="The Lakeside League · The Manager File">
+<meta property="og:description" content="One manager's complete file from The Lakeside League's archives, record, rings, rivalries, and tendencies.">
+<meta property="og:url" content="https://thesundaychronicle.app/demo-m/managers/manager.html">
+<meta property="og:image" content="https://thesundaychronicle.app/api/og/league/demo/?page=managers&v=3">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Lakeside League, The Manager File">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Lakeside League · The Manager File">
+<meta name="twitter:description" content="One manager's complete file from The Lakeside League's archives, record, rings, rivalries, and tendencies.">
+<meta name="twitter:image" content="https://thesundaychronicle.app/api/og/league/demo/?page=managers&v=3">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Manager · The Lakeside League</title>
@@ -18,6 +32,7 @@
 }
 .mp-ava {
     flex: none;
+    position: relative; overflow: hidden;
     width: 64px; height: 64px;
     border-radius: 50%;
     border: 1px solid var(--gold-deep);
@@ -25,6 +40,11 @@
     display: flex; align-items: center; justify-content: center;
     font-family: var(--serif);
     font-size: 1.7rem; color: var(--gold);
+}
+.mp-ava img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
 }
 .mp-name {
     font-family: var(--serif);
@@ -78,7 +98,24 @@
     border-radius: 999px;
     padding: .15rem .5rem;
 }
-.mp-led-rank.is-title { border-color: var(--gold-deep); color: var(--gold); }
+/* Podium tints. Title (1st) keeps the star; silver/bronze get the same
+   pill highlight without the glyph — the colored border + colored text
+   carries the rank. */
+.mp-led-rank.is-title {
+    border-color: var(--gold-deep);
+    color: var(--gold);
+    background: rgba(232, 200, 137, .08);
+}
+.mp-led-rank.is-silver {
+    border-color: rgba(220, 220, 230, .55);
+    color: #d8dce4;
+    background: rgba(220, 220, 230, .08);
+}
+.mp-led-rank.is-bronze {
+    border-color: rgba(205, 130, 80, .55);
+    color: #d89469;
+    background: rgba(205, 130, 80, .08);
+}
 .mp-led-rec { flex: none; font-family: var(--mono); font-weight: 700; font-size: .7rem; color: var(--cream-soft); text-align: right; }
 .mp-led-rec small { display: block; font-weight: 400; font-size: .56rem; color: var(--cream-mute); }
 
@@ -94,7 +131,7 @@
 <body>
 <div class="site-glow"></div>
 
-<nav id="site-nav" data-page="manager" data-chapter="Manager Profile" data-back-href="managers/"></nav>
+<nav id="site-nav" data-page="manager" data-chapter="Manager Profile" data-back-href="managers/" data-back-smart="1"></nav>
 <script>window.__DC={slug:"demo",name:"The Lakeside League",isCommish:false,isSignedIn:false,isBookmarked:false,leagueTier:"demo",pageLocked:false}</script>
 <script src="/pams-template/assets/js/mobile-app.js"></script>
 
@@ -138,8 +175,6 @@
         if (n == null || isNaN(n)) return '·';
         return Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d });
     }
-    // "59-42-0" → "59-42" when the league has no ties on the books.
-    function rec(r) { return String(r == null ? '' : r).replace(/^(\d+-\d+)-0$/, '$1'); }
 
     var userId = new URLSearchParams(window.location.search).get('id');
     if (!userId) {
@@ -158,7 +193,13 @@
         }
         document.title = m.name + ' · The Lakeside League';
         document.getElementById('head').hidden = false;
-        document.getElementById('ava').textContent = (m.name || '?').trim().charAt(0).toUpperCase();
+        // Avatar: platform-pulled image when available, initial fallback
+        // when it's missing or 404s. Same pattern the managers index uses.
+        var initial = (m.name || '?').trim().charAt(0).toUpperCase();
+        var avaImg = m.avatar
+            ? '<img src="' + esc(m.avatar) + '" alt="" loading="lazy" onerror="this.remove()">'
+            : '';
+        document.getElementById('ava').innerHTML = esc(initial) + avaImg;
         document.getElementById('name').innerHTML = '<em>' + esc(m.name) + '</em>';
         document.getElementById('kicker').textContent =
             (m.is_current ? 'Active member' : 'Alumni') + ' · ' +
@@ -178,10 +219,10 @@
 
         // Stat grid (3×2)
         var stats = [
-            [esc(rec(m.reg_record) || '·'), 'Record'],
+            [esc(m.reg_record || '·'), 'Record'],
             [m.reg_win_pct != null ? (m.reg_win_pct * 100).toFixed(0) + '%' : '·', 'Win pct'],
             [num(m.avg_ppg), 'Avg PPG'],
-            [esc(rec(m.playoff_record) || '·'), 'Playoffs'],
+            [esc(m.playoff_record || '·'), 'Playoffs'],
             [num(m.high_score), 'High'],
             [num(m.low_score), 'Low'],
         ];
@@ -194,15 +235,21 @@
         if (ledger.length) {
             document.getElementById('ledgerSection').hidden = false;
             document.getElementById('ledger').innerHTML = ledger.map(function (s) {
-                var isTitle = s.final_rank === 1;
+                // Podium tints: 1st keeps the star + gold, 2nd/3rd get
+                // silver/bronze pill highlight (no star — saved for 1st).
+                var podiumClass = '';
+                if (s.final_rank === 1) podiumClass = ' is-title';
+                else if (s.final_rank === 2) podiumClass = ' is-silver';
+                else if (s.final_rank === 3) podiumClass = ' is-bronze';
+                var rankLabel = s.final_rank === 1 ? '✦ 1st' : ordinal(s.final_rank);
                 var rank = s.final_rank
-                    ? '<span class="mp-led-rank' + (isTitle ? ' is-title' : '') + '">' + (isTitle ? '✦ 1st' : ordinal(s.final_rank)) + '</span>'
+                    ? '<span class="mp-led-rank' + podiumClass + '">' + rankLabel + '</span>'
                     : '';
                 return '<a class="m-list-row" href="seasons/season.html?year=' + s.year + '">' +
                     '<span class="mp-year">' + s.year + '</span>' +
                     '<span class="mp-led-name">' + esc(s.team_name || '') + '<small>' + num(s.avg_ppg) + ' ppg</small></span>' +
                     rank +
-                    '<span class="mp-led-rec">' + esc(rec(s.reg_record) || '') + '<small>' + num(s.total_pf, 0) + ' pf</small></span>' +
+                    '<span class="mp-led-rec">' + esc(s.reg_record || '') + '<small>' + num(s.total_pf, 0) + ' pf</small></span>' +
                 '</a>';
             }).join('');
         }
@@ -212,9 +259,9 @@
         if (h2h.length) {
             document.getElementById('h2hSection').hidden = false;
             document.getElementById('h2h').innerHTML = h2h.map(function (o) {
-                var raw = o.total_record || '';
+                var rec = o.total_record || '';
                 var tone = 'even';
-                var parts = raw.split('-').map(Number);
+                var parts = rec.split('-').map(Number);
                 if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
                     if (parts[0] > parts[1]) tone = 'lead';
                     else if (parts[0] < parts[1]) tone = 'trail';
@@ -222,7 +269,7 @@
                 return '<a class="m-list-row" href="managers/manager.html?id=' + encodeURIComponent(o.opp_user_id) + '">' +
                     '<span class="mp-h2h-name">vs ' + esc(o.opp_name) +
                         '<small>' + (o.total_games || 0) + (o.total_games === 1 ? ' meeting' : ' meetings') + '</small></span>' +
-                    '<span class="mp-h2h-rec ' + tone + '">' + esc(rec(raw)) + '</span>' +
+                    '<span class="mp-h2h-rec ' + tone + '">' + esc(rec) + '</span>' +
                 '</a>';
             }).join('');
         }

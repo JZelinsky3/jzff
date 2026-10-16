@@ -3,6 +3,20 @@
 <head>
 <base href="/demo-m/">
 <script>(function(){var u=navigator.userAgent;var m=/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u);if(m)return;if(/(?:^|;\s*)dc_view=mobile/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo-m\//,"/demo/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<!-- Link preview: the card a real league's page gets (demo_resync). -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The Sunday Chronicle">
+<meta property="og:title" content="The Lakeside League · Records Watch">
+<meta property="og:description" content="Live records watch for The Lakeside League, what's broken, what's on pace, and what's just out of reach.">
+<meta property="og:url" content="https://thesundaychronicle.app/demo-m/live/records-watch/">
+<meta property="og:image" content="https://thesundaychronicle.app/api/og/records-watch/demo/">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Lakeside League, Records Watch">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Lakeside League · Records Watch">
+<meta name="twitter:description" content="Live records watch for The Lakeside League, what's broken, what's on pace, and what's just out of reach.">
+<meta name="twitter:image" content="https://thesundaychronicle.app/api/og/records-watch/demo/">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Records Watch · The Lakeside League</title>
@@ -139,6 +153,16 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
 }
 .rw-broken-readout .copy { margin-top: .4rem; font-size: .72rem; line-height: 1.45; color: var(--rw-mute); }
 .rw-broken-readout .copy strong, .rw-broken-readout .copy b { color: var(--rw-cream); }
+/* The chaser name is wrapped in <em> inside copy_html. Lift it out of the
+   body-text size so the eye lands on WHO broke or chased the mark before
+   reading the surrounding context. */
+.rw-broken-readout .copy em {
+    font-style: italic;
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--rw-cream);
+}
 .rw-broken-prior {
     display: flex; justify-content: space-between; gap: .6rem;
     margin-top: .55rem; padding-top: .5rem;
@@ -196,24 +220,33 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
 .rw-block-cat { color: var(--rw-ember-hi); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rw-block-flag { color: var(--gold); }
 .rw-block-body { padding: .65rem .8rem .7rem; }
+/* Top row: the chaser owns the left as the oversized headline, the mark is
+   tucked to the right as the reference they're climbing toward. */
+.rw-block-top { display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem; margin-bottom: .2rem; }
 .rw-block-mark {
-    display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .45rem;
-    margin-bottom: .6rem;
+    flex: 0 0 auto;
+    display: flex; flex-wrap: wrap; justify-content: flex-end;
+    align-items: baseline; gap: .1rem .4rem; text-align: right;
 }
 .rw-mark-label {
     font-family: var(--mono); font-weight: 700;
     font-size: .48rem; letter-spacing: .16em; text-transform: uppercase;
     color: var(--rw-mute);
 }
-.rw-mark-num { font-family: var(--serif); font-size: 1.3rem; line-height: 1; color: var(--rw-cream); }
+.rw-mark-num { font-family: var(--serif); font-size: 1.2rem; line-height: 1; color: var(--rw-cream); }
 .rw-mark-unit { font-family: var(--mono); font-size: .52rem; letter-spacing: .08em; text-transform: uppercase; color: var(--rw-mute); }
 .rw-mark-credit { width: 100%; font-family: var(--mono); font-size: .54rem; letter-spacing: .06em; color: var(--rw-mute); }
 .rw-mark-credit strong { color: var(--rw-ember-hi); font-weight: 700; }
 
-.rw-plot-head { display: flex; align-items: baseline; gap: .4rem; margin-bottom: .85rem; }
-.rw-plot-head .chaser { font-size: .76rem; font-weight: 600; color: var(--rw-cream); }
-.rw-plot-head .chaser-sub { font-family: var(--mono); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--rw-mute); margin-left: .3rem; }
-.rw-plot-labels { position: relative; height: .85rem; }
+/* The chaser is the whole story of the card: a tiny "Chasing" kicker over an
+   oversized serif name, planted top-left as the headline. */
+.rw-plot-head { flex: 1 1 auto; min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: .05rem .45rem; }
+.rw-plot-head .chaser-lbl { flex: 0 0 100%; font-family: var(--mono); font-weight: 700; font-size: .48rem; letter-spacing: .18em; text-transform: uppercase; color: var(--rw-ember); }
+.rw-plot-head .chaser { font-family: var(--serif); font-size: 1.7rem; line-height: 1.05; font-weight: 400; color: var(--rw-cream); }
+/* nowrap so a two-part sub ("12,438 pts · 118.4 ppg" on the points tiers)
+   drops to its own line as one unit instead of breaking across the middot. */
+.rw-plot-head .chaser-sub { font-family: var(--mono); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--rw-mute); margin-left: .1rem; white-space: nowrap; }
+.rw-plot-labels { position: relative; height: .72rem; margin-bottom: .3rem; }
 .rw-plot-label {
     position: absolute; bottom: 0;
     transform: translateX(-50%);
@@ -298,8 +331,15 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
     color: var(--rw-mute);
     margin-bottom: .2rem;
 }
-.rw-onpace-col.chasing .col-lbl { color: var(--rw-ember); }
+.rw-onpace-col.chasing .col-lbl { color: var(--rw-ember); margin-bottom: .05rem; }
 .rw-onpace-col .col-name { font-size: .76rem; font-weight: 600; color: var(--rw-cream); }
+/* Chaser gets the oversized serif treatment so it reads as the subject,
+   not just the left half of a two-up grid. */
+.rw-onpace-col.chasing .col-name { font-family: var(--serif); font-size: 1.15rem; line-height: 1.05; font-weight: 400; color: var(--rw-cream); margin-bottom: .15rem; }
+.rw-onpace-col.chasing .col-name .col-sub-tag { display: block; margin-top: .1rem; }
+/* The active streak / running total is the live number, so give it a bit
+   more weight than the mark side. The "to tie" gap below stays small. */
+.rw-onpace-col.chasing .col-val { font-size: .78rem; }
 .rw-onpace-col .col-sub-tag { font-family: var(--mono); font-size: .48rem; letter-spacing: .08em; text-transform: uppercase; color: var(--rw-mute); }
 .rw-onpace-col .col-val { font-family: var(--mono); font-weight: 700; font-size: .6rem; color: var(--rw-ember-hi); margin-top: .15rem; }
 .rw-onpace-col.mark .col-val { color: var(--rw-cream); }
@@ -514,6 +554,15 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
 
       var gapClass = overshoot ? 'gap-pos' : 'gap-neg';
 
+      // The readout that rides above the fill is centred on the fill's end
+      // by default. Near the top of the track that centring pushes the text
+      // off the right edge of the card, so once the fill is well past
+      // halfway we pin the label to the right edge and right-align it. In
+      // overshoot layouts the projection label already owns the right edge,
+      // so those keep the centred position.
+      var labelStyle = 'left:' + fillPct.toFixed(2) + '%; transform:translateX(-50%);';
+      if (!overshoot && fillPct >= 60) labelStyle = 'right:0; left:auto; transform:none;';
+
       html +=
         '<article class="rw-block">' +
           '<div class="rw-block-head">' +
@@ -522,20 +571,23 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
             '<span class="rw-block-flag">' + esc(it.flag || 'On the brink') + '</span>' +
           '</div>' +
           '<div class="rw-block-body">' +
-            '<div class="rw-block-mark">' +
-              '<span class="rw-mark-label">The mark</span>' +
-              '<span class="rw-mark-num">' + esc(markNum) + '</span>' +
-              (markUnit ? '<span class="rw-mark-unit">' + esc(markUnit) + '</span>' : '') +
-              '<span class="rw-mark-credit"><strong>' + esc(it.holder || '·') + '</strong>' +
-                (it.holder_when ? ' · ' + esc(it.holder_when) : '') + '</span>' +
-            '</div>' +
-            '<div class="rw-block-plot">' +
+            '<div class="rw-block-top">' +
               '<div class="rw-plot-head">' +
+                '<span class="chaser-lbl">Chasing</span>' +
                 '<span class="chaser">' + esc(it.chaser || '·') + '</span>' +
                 (it.chaser_sub ? '<span class="chaser-sub">' + esc(it.chaser_sub) + '</span>' : '') +
               '</div>' +
+              '<div class="rw-block-mark">' +
+                '<span class="rw-mark-label">The mark</span>' +
+                '<span class="rw-mark-num">' + esc(markNum) + '</span>' +
+                (markUnit ? '<span class="rw-mark-unit">' + esc(markUnit) + '</span>' : '') +
+                '<span class="rw-mark-credit"><strong>' + esc(it.holder || '·') + '</strong>' +
+                  (it.holder_when ? ' · ' + esc(it.holder_when) : '') + '</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="rw-block-plot">' +
               '<div class="rw-plot-labels">' +
-                '<span class="rw-plot-label" style="left:' + fillPct.toFixed(2) + '%">' + esc(barLabel) + '</span>' +
+                '<span class="rw-plot-label" style="' + labelStyle + '">' + esc(barLabel) + '</span>' +
                 projAboveHtml +
               '</div>' +
               '<div class="rw-plot-track">' +
