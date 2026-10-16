@@ -15,7 +15,7 @@
 import { SITE_URL } from '@/lib/recap/links'
 import { loadCup } from './load'
 import { loadCupExtras, CHAMPION_BONUS } from './extras'
-import type { CupMatch } from './bracket'
+import { UPSET_GAP, type CupMatch } from './bracket'
 import { loadCupPreview } from './preview'
 import { CUP_LAUNCH, drawDayText } from './launch'
 
@@ -76,9 +76,6 @@ export function cupTeaser(league: { id: string; slug: string }, year: number, we
   }
   return p
 }
-
-// An 8 beating a 9 is a coin flip, not an upset (same as the Cup page).
-const UPSET_GAP = 2
 
 async function build(league: { id: string; slug: string }, year: number, week: number): Promise<CupTeaser | null> {
   // Treat the recap's week as over: the recap only exists once it's final.

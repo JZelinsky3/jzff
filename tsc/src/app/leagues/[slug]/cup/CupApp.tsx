@@ -20,9 +20,11 @@
 // picks is already signed in here.
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import type { CupBracket, CupEntrant, CupMatch, CupNotes, CupRound, CupSide } from '@/lib/cup/bracket'
+import { UPSET_GAP, type CupBracket, type CupEntrant, type CupMatch, type CupNotes, type CupRound, type CupSide } from '@/lib/cup/bracket'
 import type { CupExtras, CupMatchDetail, CupOdds, CupPicker } from '@/lib/cup/extras'
+import { STAMP_BY_ID, STAMP_SETS, STAMPS, type StampAward, type StampId } from '@/lib/cup/stamps'
 import { trophy } from '@/lib/cup/trophy'
+import { Stamp } from './Stamp'
 import styles from './cup.module.css'
 
 type Tab = 'games' | 'bracket' | 'odds' | 'leaders'
@@ -37,6 +39,8 @@ type Props = {
   bracket: CupBracket
   notes: CupNotes
   extras: CupExtras
+  // Every stamp handed out in every Cup the league has played.
+  stamps: StampAward[]
   imageUrl: string
   seededThrough: number
   currentWeek: number | null
@@ -45,7 +49,9 @@ type Props = {
 
 type User = { profileId: string; name: string; teamId: string | null }
 type Pending = { round: number; slot: number; managerId: string } | { champion: true }
-type Sheet = { kind: 'how' } | { kind: 'who'; then: Pending | null } | { kind: 'champ' } | null
+// book: one person's stamps across every Cup, or (person null) the
+// catalogue of every stamp and how to earn it.
+type Sheet = { kind: 'how' } | { kind: 'who'; then: Pending | null } | { kind: 'champ' } | { kind: 'book'; person: string | null; name: string | null } | null
 
 // ── Saved choices (who you are, the start card) ──
 
@@ -102,9 +108,6 @@ function useUser(slug: string, pickers: CupPicker[]) {
   return { user, setUser, known: raw !== undefined }
 }
 
-// An 8 beating a 9 is a coin flip, not an upset.
-const UPSET_GAP = 2
-
 // The results reveal plays for this many weeks after its round. Later than
 // that (an old Cup, a first visit in December) it's history, not news.
 const REVEAL_WEEKS = 2
@@ -144,7 +147,7 @@ function initials(name: string): string {
 
 // ── Small drawings (stroke icons; no emoji anywhere on the site) ──
 
-function Icon({ name, size = 18 }: { name: 'help' | 'check' | 'close' | 'seed' | 'week' | 'tap' | 'cup' | 'share' | 'lock'; size?: number }) {
+function Icon({ name, size = 18 }: { name: 'help' | 'check' | 'close' | 'seed' | 'week' | 'tap' | 'cup' | 'share' | 'lock' | 'stamp'; size?: number }) {
   const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true }
   switch (name) {
     case 'help':
@@ -204,6 +207,13 @@ function Icon({ name, size = 18 }: { name: 'help' | 'check' | 'close' | 'seed' |
         <svg {...p}>
           <rect x="5" y="10.5" width="14" height="10" rx="2" />
           <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+        </svg>
+      )
+    case 'stamp':
+      return (
+        <svg {...p}>
+          <circle cx="12" cy="5.5" r="2.6" />
+          <path d="M10.6 8v3.4h2.8V8M6 11.4h12a1 1 0 0 1 1 1V15H5v-2.6a1 1 0 0 1 1-1zM5 19h14" />
         </svg>
       )
   }
@@ -332,6 +342,12 @@ export function CupApp(props: Props) {
 
   const openChampion = useCallback(() => setSheet(user ? { kind: 'champ' } : { kind: 'who', then: { champion: true } }), [user])
 
+  // Stamps: this Cup's (the Leaders tab, the reveal) and everyone's all-time
+  // (the stamp books). The caption printed on every stamp is the Cup's name.
+  const stampCaption = props.cupName.replace(/^The\s+/i, '')
+  const stampsHere = useMemo(() => props.stamps.filter((s) => s.cupId === cupId), [props.stamps, cupId])
+  const openBook = useCallback((person: string | null, name: string | null) => setSheet({ kind: 'book', person, name }), [])
+
   // Champion votes: team -> who picked it, with this browser's latest pick.
   const championVotes = useMemo(() => {
     const by = new Map<string, string[]>()
@@ -409,6 +425,7 @@ export function CupApp(props: Props) {
               </span>
             </div>
           </div>
+          <Scoreboard bracket={bracket} extras={extras} currentWeek={props.currentWeek} />
           <div className={styles.mastCup} aria-hidden>
             <span className={styles.mastHalo} />
             {trophy({ width: 120, brass: '#c8a35b', light: '#e6cb8e', dark: '#7d6230', plate: '#0d2a21' })}
@@ -435,32 +452,68 @@ export function CupApp(props: Props) {
         </div>
       </nav>
 
-      <div className={styles.panel}>
-        {tab === 'games' ? (
-          <Games
-            bracket={bracket}
-            extras={extras}
-            round={round}
-            setRound={setRound}
-            user={user}
-            known={known}
-            cupId={cupId}
-            seededThrough={seededThrough}
-            myPick={myPick}
-            crowdOf={crowdOf}
-            onTap={tapTeam}
-            saving={saving}
-            openCount={openGames.length}
-            champOpen={champOpen}
-            champName={user ? (nameOf.get(myPick(-1, 0) ?? '') ?? null) : null}
-            onWho={() => setSheet({ kind: 'who', then: null })}
-            onHow={() => setSheet({ kind: 'how' })}
-            onChampion={openChampion}
-          />
-        ) : null}
-        {tab === 'bracket' ? <BracketTab bracket={bracket} odds={extras.odds} user={user} imageUrl={imageUrl} slug={slug} title={`${props.cupName} · ${props.leagueName}`} onRound={goRound} /> : null}
-        {tab === 'odds' ? <OddsTab bracket={bracket} odds={extras.odds} notes={notes} user={user} votes={championVotes} /> : null}
-        {tab === 'leaders' ? <LeadersTab bracket={bracket} extras={extras} user={user} userIn={!!user && (extras.picks.some((p) => p.profileId === user.profileId) || Object.keys(mine).some((k) => k.startsWith(`${user.profileId}|`)))} votes={championVotes} champName={user ? (nameOf.get(myPick(-1, 0) ?? '') ?? null) : null} onChampion={openChampion} onWho={() => setSheet({ kind: 'who', then: null })} /> : null}
+      {/* Phones: the panel alone. Desktop: the panel and, beside it, the
+          sidebar with what the open tab doesn't show. */}
+      <div className={styles.body}>
+        <div className={styles.panel}>
+          {tab === 'games' ? (
+            <Games
+              bracket={bracket}
+              extras={extras}
+              round={round}
+              setRound={setRound}
+              user={user}
+              known={known}
+              cupId={cupId}
+              seededThrough={seededThrough}
+              myPick={myPick}
+              crowdOf={crowdOf}
+              onTap={tapTeam}
+              saving={saving}
+              openCount={openGames.length}
+              champOpen={champOpen}
+              champName={user ? (nameOf.get(myPick(-1, 0) ?? '') ?? null) : null}
+              onWho={() => setSheet({ kind: 'who', then: null })}
+              onHow={() => setSheet({ kind: 'how' })}
+              onChampion={openChampion}
+            />
+          ) : null}
+          {tab === 'bracket' ? <BracketTab bracket={bracket} odds={extras.odds} user={user} imageUrl={imageUrl} slug={slug} title={`${props.cupName} · ${props.leagueName}`} onRound={goRound} /> : null}
+          {tab === 'odds' ? <OddsTab bracket={bracket} odds={extras.odds} notes={notes} user={user} votes={championVotes} /> : null}
+          {tab === 'leaders' ? (
+            <LeadersTab
+              bracket={bracket}
+              extras={extras}
+              user={user}
+              userIn={!!user && (extras.picks.some((p) => p.profileId === user.profileId) || Object.keys(mine).some((k) => k.startsWith(`${user.profileId}|`)))}
+              votes={championVotes}
+              champName={user ? (nameOf.get(myPick(-1, 0) ?? '') ?? null) : null}
+              stampsHere={stampsHere}
+              myStamps={user ? props.stamps.filter((s) => s.person === user.profileId).length : 0}
+              caption={stampCaption}
+              onBook={openBook}
+              onChampion={openChampion}
+              onWho={() => setSheet({ kind: 'who', then: null })}
+            />
+          ) : null}
+        </div>
+        <Side
+          tab={tab}
+          setTab={setTab}
+          bracket={bracket}
+          extras={extras}
+          user={user}
+          userIn={!!user && (extras.picks.some((p) => p.profileId === user.profileId) || Object.keys(mine).some((k) => k.startsWith(`${user.profileId}|`)))}
+          stampsHere={stampsHere}
+          myStamps={user ? props.stamps.filter((s) => s.person === user.profileId).length : 0}
+          caption={stampCaption}
+          champOpen={champOpen && known}
+          champName={user ? (nameOf.get(myPick(-1, 0) ?? '') ?? null) : null}
+          onBook={openBook}
+          onWho={() => setSheet({ kind: 'who', then: null })}
+          onHow={() => setSheet({ kind: 'how' })}
+          onChampion={openChampion}
+        />
       </div>
 
       {extras.hasPickTable && toPick > 0 && known ? (
@@ -523,6 +576,28 @@ export function CupApp(props: Props) {
           />
         </SheetFrame>
       ) : null}
+      {sheet?.kind === 'book' ? (
+        (() => {
+          const theirs = sheet.person ? props.stamps.filter((s) => s.person === sheet.person) : []
+          const kinds = new Set(theirs.map((s) => s.stamp)).size
+          const mineBook = !!user && sheet.person === user.profileId
+          return (
+            <SheetFrame
+              title={sheet.person == null ? 'Every Stamp' : mineBook ? 'Your Stamps' : sheet.name ? `${sheet.name}’s Stamps` : 'Stamps'}
+              sub={
+                sheet.person == null
+                  ? `${STAMPS.length} to collect, kept across every Cup.`
+                  : theirs.length
+                    ? `${kinds} of ${STAMPS.length} collected${theirs.length > kinds ? `, ${theirs.length} in all` : ''}.`
+                    : `None yet. ${STAMPS.length} to collect, kept across every Cup.`
+              }
+              onClose={() => setSheet(null)}
+            >
+              <StampBook stamps={theirs} catalogue={sheet.person == null} caption={stampCaption} />
+            </SheetFrame>
+          )
+        })()
+      ) : null}
 
       {showReveal && revealRound ? (
         <Reveal
@@ -530,6 +605,8 @@ export function CupApp(props: Props) {
           bracket={bracket}
           extras={extras}
           user={user}
+          stamps={user ? stampsHere.filter((s) => s.person === user.profileId && (s.round === revealRound.round || (s.round == null && revealRound.round === bracket.rounds.length - 1))) : []}
+          caption={stampCaption}
           cupName={props.cupName}
           onClose={() => closeReveal()}
           onPick={(r) => closeReveal(() => goRound(r))}
@@ -544,6 +621,239 @@ export function CupApp(props: Props) {
         </div>
       ) : null}
     </div>
+  )
+}
+
+// ── Desktop: the scoreboard and the sidebar ──
+//
+// A computer has the room to show the whole Cup at once, so from 1100px the
+// masthead gets a scoreboard and the page splits in two: the open tab on
+// the left, and on the right whatever that tab doesn't already show (your
+// standing, the odds, the leaderboard, the stamps, the draw). Phones never
+// see any of this; both are display: none below 1100px.
+
+// The Cup in four numbers, across the masthead.
+function Scoreboard({ bracket, extras, currentWeek }: { bracket: CupBracket; extras: CupExtras; currentWeek: number | null }) {
+  const alive = extras.odds.filter((o) => o.alive)
+  const fav = bracket.champion ? null : ([...alive].sort((x, y) => y.win - x.win)[0] ?? null)
+  const r = bracket.currentRound != null ? bracket.rounds[bracket.currentRound]! : null
+  const best = extras.board[0]?.points ?? 0
+  const leaders = best > 0 ? extras.board.filter((b) => b.points === best) : []
+  const picking = new Set(extras.picks.map((p) => p.profileId)).size
+  const cells: { label: string; big: string; line: string; name?: boolean }[] = [
+    bracket.champion
+      ? { label: 'The Cup', big: 'Decided', line: `Final, week ${bracket.finalWeek}`, name: true }
+      : { label: 'Round', big: r ? `${r.round + 1} of ${bracket.rounds.length}` : '-', line: r ? `${r.name}, ${currentWeek === r.week ? 'this week' : `week ${r.week}`}` : '' },
+    { label: 'Still in', big: String(alive.length), line: `of ${bracket.field} teams` },
+    bracket.champion
+      ? { label: 'Champion', big: bracket.champion.name, line: `The ${ordinal(bracket.champion.seed)} seed`, name: true }
+      : { label: 'Favourite', big: fav?.name ?? '-', line: fav ? `${pct(fav.win)} to win it` : '', name: true },
+    leaders.length
+      ? { label: 'Bracket challenge', big: leaders.length === 1 ? leaders[0]!.name : `${leaders.length} tied`, line: `${best} ${best === 1 ? 'point' : 'points'}`, name: leaders.length === 1 }
+      : { label: 'Bracket challenge', big: String(picking), line: `of ${extras.pickers.length} picking` },
+  ]
+  return (
+    <dl className={styles.scoreboard}>
+      {cells.map((c) => (
+        <div key={c.label} className={styles.sbCell}>
+          <dt>{c.label}</dt>
+          <dd className={c.name ? styles.sbName : styles.sbBig}>{c.big}</dd>
+          <dd className={styles.sbLine}>{c.line}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
+function SideHead({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
+  return (
+    <header className={styles.sideHead}>
+      <h3>{title}</h3>
+      {action && onAction ? (
+        <button type="button" onClick={onAction}>
+          {action}
+        </button>
+      ) : null}
+    </header>
+  )
+}
+
+function Side(props: {
+  tab: Tab
+  setTab: (t: Tab) => void
+  bracket: CupBracket
+  extras: CupExtras
+  user: User | null
+  userIn: boolean
+  stampsHere: StampAward[]
+  myStamps: number
+  caption: string
+  champOpen: boolean
+  champName: string | null
+  onBook: (person: string | null, name: string | null) => void
+  onWho: () => void
+  onHow: () => void
+  onChampion: () => void
+}) {
+  const { tab, setTab, bracket, extras, user } = props
+  const anyPoints = extras.board.some((r) => r.points > 0)
+  const firstWeek = bracket.rounds.find((r) => r.matches.length)?.week
+  const mineIdx = user ? extras.board.findIndex((r) => r.profileId === user.profileId) : -1
+
+  const you = (
+    <section key="you" className={styles.sideYou}>
+      {user ? (
+        <>
+          <div className={styles.sideYouHead}>
+            <span className={`${styles.mono} ${styles.meMono}`}>{initials(user.name)}</span>
+            <span className={styles.sideYouWho}>
+              <span className={styles.sideLabel}>Picking as</span>
+              <span className={styles.sideYouName}>{user.name}</span>
+            </span>
+            <button type="button" className={styles.sideChange} onClick={props.onWho}>
+              Change
+            </button>
+          </div>
+          {teamLine(bracket, extras, user) ? <p className={styles.sideYouLine}>{teamLine(bracket, extras, user)}</p> : null}
+          <dl className={styles.sideStats}>
+            <div>
+              <dt>Points</dt>
+              <dd>{mineIdx >= 0 ? extras.board[mineIdx]!.points : 0}</dd>
+            </div>
+            <div>
+              <dt>Rank</dt>
+              <dd>{anyPoints && mineIdx >= 0 ? ordinal(mineIdx + 1) : '-'}</dd>
+            </div>
+            <div>
+              <dt>Stamps</dt>
+              <dd>{props.myStamps}</dd>
+            </div>
+          </dl>
+          <div className={styles.sideYouActions}>
+            <button type="button" className={styles.sideBtn} onClick={() => props.onBook(user.profileId, user.name)}>
+              <Icon name="stamp" size={16} />
+              Your stamps
+            </button>
+            {props.champOpen ? (
+              <button type="button" className={`${styles.sideBtn} ${props.champName ? '' : styles.sideBtnAsk}`} onClick={props.onChampion}>
+                <Icon name="cup" size={16} />
+                {props.champName ? `Champion: ${props.champName}` : 'Pick a champion'}
+              </button>
+            ) : null}
+          </div>
+        </>
+      ) : (
+        <>
+          <span className={styles.sideLabel}>Play along</span>
+          <p className={styles.sideYouName}>Pick Who Wins Each Game</p>
+          <p className={styles.sideYouLine}>Points for every one you get right, and stamps to collect across every Cup.</p>
+          <div className={styles.sideYouActions}>
+            <button type="button" className={styles.btnGold} onClick={props.onWho}>
+              Choose your name
+            </button>
+            <button type="button" className={styles.btnGhostDark} onClick={props.onHow}>
+              How it works
+            </button>
+          </div>
+        </>
+      )}
+    </section>
+  )
+
+  const alive = extras.odds.filter((o) => o.alive).sort((x, y) => y.win - x.win)
+  const topWin = Math.max(1, ...alive.map((o) => o.win))
+  const odds = (
+    <section key="odds" className={styles.sideBox}>
+      <SideHead title={bracket.champion ? 'Champion' : 'Who Wins the Cup'} action="All odds" onAction={() => setTab('odds')} />
+      <ol className={styles.sideOdds}>
+        {alive.slice(0, 6).map((o) => (
+          <li key={o.managerId} className={user?.teamId === o.managerId ? styles.sideMine : ''}>
+            <span className={`${styles.medal} ${styles.medalSm}`}>{o.seed}</span>
+            <span className={styles.sideName}>{o.name}</span>
+            <span className={styles.oddsBar}>
+              <span style={{ width: `${Math.max(2, Math.min(100, (o.win / topWin) * 100))}%` }} />
+            </span>
+            <span className={styles.sideNum}>{bracket.champion ? 'Won' : pct(o.win)}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+
+  const inIds = new Set(extras.picks.map((p) => p.profileId))
+  if (user && props.userIn) inIds.add(user.profileId)
+  const top = extras.board.slice(0, 5)
+  const extra = mineIdx >= 5 ? extras.board[mineIdx] : null
+  const leaders = (
+    <section key="leaders" className={styles.sideBox}>
+      <SideHead title="Bracket Challenge" action="Full board" onAction={() => setTab('leaders')} />
+      {anyPoints ? (
+        <ol className={styles.sideBoard}>
+          {[...top, ...(extra ? [extra] : [])].map((row) => {
+            const i = extras.board.indexOf(row)
+            return (
+              <li key={row.profileId} className={`${i < 3 && row.points > 0 ? styles[`boardTop${i + 1}` as 'boardTop1'] : ''} ${user?.profileId === row.profileId ? styles.sideMine : ''}`}>
+                <span className={styles.boardRank}>{i + 1}</span>
+                <button type="button" className={styles.sideName} onClick={() => props.onBook(row.profileId, row.name)}>
+                  {row.name}
+                </button>
+                <span className={styles.sideNum}>{row.points}</span>
+              </li>
+            )
+          })}
+        </ol>
+      ) : (
+        <p className={styles.sideNote}>
+          {[...inIds].filter((id) => extras.pickers.some((p) => p.profileId === id)).length} of {extras.pickers.length} have picks in. The first points land once week {firstWeek} is final.
+        </p>
+      )}
+    </section>
+  )
+
+  const groups = groupStamps(props.stampsHere).slice(0, 4)
+  const stamps = (
+    <section key="stamps" className={styles.sideBox}>
+      <SideHead title="Stamps" action="Every stamp" onAction={() => props.onBook(null, null)} />
+      {groups.length ? (
+        <ul className={styles.stampList}>
+          {groups.map((g) => {
+            const def = STAMP_BY_ID.get(g.stamp)!
+            return (
+              <li key={g.stamp} className={styles.stampRow}>
+                <Stamp def={def} center={String(g.latest.year)} caption={props.caption} size={44} seed={g.latest.note} />
+                <span className={styles.stampWho}>
+                  <span className={styles.stampName}>{def.name}</span>
+                  <span className={styles.stampPeople}>{g.people.map((p) => (p.count > 1 ? `${p.name} ×${p.count}` : p.name)).join(', ')}</span>
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      ) : (
+        <p className={styles.sideNote}>The first stamps land once week {firstWeek} is final.</p>
+      )}
+    </section>
+  )
+
+  const draw = (
+    <section key="draw" className={styles.sideBox}>
+      <SideHead title="The Draw" action="Full bracket" onAction={() => setTab('bracket')} />
+      <div className={styles.sideDraw}>
+        <Draw bracket={bracket} mine={user?.teamId ?? null} />
+      </div>
+    </section>
+  )
+
+  const order: Record<Tab, React.ReactNode[]> = {
+    games: [you, odds, leaders, ...(props.stampsHere.length ? [stamps] : []), draw],
+    bracket: [you, odds, leaders, stamps],
+    odds: [you, draw, leaders],
+    leaders: [draw, odds],
+  }
+  return (
+    <aside className={styles.side} aria-label="The Cup at a glance">
+      {order[tab]}
+    </aside>
   )
 }
 
@@ -586,7 +896,7 @@ function SheetFrame({ title, sub, onClose, children }: { title: string; sub?: st
 
 function HowItWorks({ bracket, extras, seededThrough }: { bracket: CupBracket; extras: CupExtras; seededThrough: number }) {
   const byes = bracket.rounds[0]?.byes.length ?? 0
-  const steps: { icon: 'seed' | 'week' | 'tap' | 'cup'; head: string; body: string }[] = [
+  const steps: { icon: 'seed' | 'week' | 'tap' | 'cup' | 'stamp'; head: string; body: string }[] = [
     {
       icon: 'seed',
       head: 'Seeded from the standings',
@@ -606,6 +916,11 @@ function HowItWorks({ bracket, extras, seededThrough }: { bracket: CupBracket; e
       icon: 'cup',
       head: 'Score points',
       body: `A right pick is worth ${extras.points.map((p, i) => `${p} in the ${bracket.rounds[i]!.name.toLowerCase()}`).join(', ')}. Your champion is worth ${extras.championBonus} more if they win it all.`,
+    },
+    {
+      icon: 'stamp',
+      head: 'Collect stamps',
+      body: `Called upsets, perfect rounds, giant killers and ${STAMPS.length - 3} more, kept across every Cup. They’re on the Leaders tab.`,
     },
   ]
   return (
@@ -721,6 +1036,66 @@ function PickBar({
   )
 }
 
+// ── Stamps ──
+
+// Gap between stamps landing in the reveal, ms.
+const STAMP_STEP = 380
+
+type StampGroup = { stamp: StampId; count: number; latest: StampAward; people: { person: string; name: string; count: number }[] }
+
+// One entry per kind of stamp, in catalogue order, with the newest award
+// and who holds it.
+function groupStamps(list: StampAward[]): StampGroup[] {
+  const order = new Map(STAMPS.map((s, i) => [s.id, i]))
+  const by = new Map<StampId, StampAward[]>()
+  for (const s of list) by.set(s.stamp, [...(by.get(s.stamp) ?? []), s])
+  return [...by.entries()]
+    .sort(([a], [b]) => (order.get(a) ?? 0) - (order.get(b) ?? 0))
+    .map(([stamp, xs]) => {
+      // A whole-Cup stamp (no round) is settled last.
+      const latest = [...xs].sort((x, y) => y.year - x.year || (y.round ?? 99) - (x.round ?? 99))[0]!
+      const people = new Map<string, { person: string; name: string; count: number }>()
+      for (const x of xs) {
+        const p = people.get(x.person) ?? { person: x.person, name: x.name, count: 0 }
+        p.count++
+        people.set(x.person, p)
+      }
+      return { stamp, count: xs.length, latest, people: [...people.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)) }
+    })
+}
+
+// A stamp book: every stamp, set by set. Earned ones inked with the newest
+// year and what happened; the rest a faint outline with how to earn it. The
+// catalogue (nobody's book) inks them all and says how.
+function StampBook({ stamps, catalogue, caption }: { stamps: StampAward[]; catalogue: boolean; caption: string }) {
+  const by = new Map(groupStamps(stamps).map((g) => [g.stamp, g]))
+  return (
+    <div className={styles.book}>
+      {STAMP_SETS.map(({ set, name }) => (
+        <section key={set}>
+          <h3 className={styles.bookHead}>{name}</h3>
+          <ul className={styles.bookGrid}>
+            {STAMPS.filter((d) => d.set === set).map((def) => {
+              const g = by.get(def.id)
+              const off = !catalogue && !g
+              return (
+                <li key={def.id} className={`${styles.bookItem} ${off ? styles.bookItemOff : ''}`}>
+                  <span className={styles.bookInk}>
+                    <Stamp def={def} center={g ? String(g.latest.year) : null} caption={caption} size={80} faded={off} />
+                    {g && g.count > 1 ? <span className={styles.stampCount}>×{g.count}</span> : null}
+                  </span>
+                  <span className={styles.bookName}>{def.name}</span>
+                  <span className={styles.bookNote}>{g ? g.latest.note : def.how}</span>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      ))}
+    </div>
+  )
+}
+
 // ── The reveal: a round's results, played out once ──
 //
 // Tuesday's scores settle a round, and the next visit opens on it. The games
@@ -772,6 +1147,8 @@ function Reveal({
   bracket,
   extras,
   user,
+  stamps,
+  caption,
   cupName,
   onClose,
   onPick,
@@ -781,6 +1158,9 @@ function Reveal({
   bracket: CupBracket
   extras: CupExtras
   user: User | null
+  // The stamps you earned in this round (the final adds the whole Cup's).
+  stamps: StampAward[]
+  caption: string
   cupName: string
   onClose: () => void
   onPick: (round: number) => void
@@ -815,8 +1195,11 @@ function Reveal({
   const boardIdx = user ? extras.board.findIndex((r) => r.profileId === user.profileId) : -1
   const mineRow = boardIdx >= 0 ? extras.board[boardIdx] : null
 
+  // Your new stamps, one per kind (a second upset called is "x2").
+  const newStamps = groupStamps(stamps)
   const youAt = REVEAL_START + (isFinal ? 500 : 0) + games.length * REVEAL_STEP + 500
-  const endAt = youAt + 450
+  const stampsAt = youAt + 450
+  const endAt = stampsAt + (newStamps.length ? 450 + newStamps.length * STAMP_STEP : 0)
   const shown = useCountUp(earned, youAt + 250)
   const at = (ms: number) => ({ ['--d' as string]: `${ms}ms` }) as React.CSSProperties
 
@@ -980,6 +1363,24 @@ function Reveal({
           </p>
         ) : null}
 
+        {newStamps.length ? (
+          <div className={`${styles.rvStamps} ${styles.rvStep}`} style={at(stampsAt)}>
+            <span className={styles.rvYouLabel}>{newStamps.length === 1 && newStamps[0]!.count === 1 ? 'New stamp' : 'New stamps'}</span>
+            <ul className={styles.rvStampRow}>
+              {newStamps.map((g, i) => (
+                <li key={g.stamp} className={styles.rvStampItem}>
+                  <span className={styles.rvStampInk} style={at(stampsAt + 350 + i * STAMP_STEP)}>
+                    <Stamp def={STAMP_BY_ID.get(g.stamp)!} center={String(g.latest.year)} caption={caption} size={newStamps.length > 2 ? 76 : 88} seed={g.latest.note} />
+                    {g.count > 1 ? <span className={styles.stampCount}>×{g.count}</span> : null}
+                  </span>
+                  <span className={styles.rvStampName}>{STAMP_BY_ID.get(g.stamp)!.name}</span>
+                  <span className={styles.rvStampNote}>{g.latest.note}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
         <div className={`${styles.rvActions} ${styles.rvStep}`} style={at(endAt)}>
           {next ? (
             <button type="button" className={styles.btnGold} onClick={() => onPick(next.round)}>
@@ -1037,10 +1438,15 @@ function Games(props: {
       ) : known && !user && introGone == null && bracket.status !== 'done' ? (
         <StartCard bracket={bracket} onHow={props.onHow} onDismiss={() => writeStored(introKey, '1')} />
       ) : null}
-      {user ? <YouRow bracket={bracket} extras={extras} user={user} onWho={props.onWho} /> : null}
+      {/* On desktop both of these live in the sidebar's "You" card. */}
+      {user ? (
+        <div className={styles.phoneOnly}>
+          <YouRow bracket={bracket} extras={extras} user={user} onWho={props.onWho} />
+        </div>
+      ) : null}
 
       {props.champOpen && known ? (
-        <button type="button" className={`${styles.champCard} ${props.champName ? styles.champCardSet : ''}`} onClick={props.onChampion}>
+        <button type="button" className={`${styles.champCard} ${styles.phoneOnly} ${props.champName ? styles.champCardSet : ''}`} onClick={props.onChampion}>
           <span className={styles.champCardIcon}>
             <Icon name="cup" size={22} />
           </span>
@@ -1125,28 +1531,30 @@ function StartCard({ bracket, onWho, onHow, onDismiss }: { bracket: CupBracket; 
   )
 }
 
+// Where the picker's own team stands in the Cup, in one line.
+function teamLine(bracket: CupBracket, extras: CupExtras, user: User): string | null {
+  const o = user.teamId ? extras.odds.find((x) => x.managerId === user.teamId) : null
+  if (!o) return null
+  if (!o.alive && o.out) return `Out in the ${o.out.round.toLowerCase()} to ${o.out.to}`
+  if (bracket.champion?.managerId === user.teamId) return 'You won the Cup'
+  let line: string
+  const cur = bracket.currentRound != null ? bracket.rounds[bracket.currentRound] : null
+  const game = cur?.matches.find((m) => teamOf(m.a)?.managerId === user.teamId || teamOf(m.b)?.managerId === user.teamId)
+  const bye = cur?.byes.some((e) => e.managerId === user.teamId)
+  if (game) {
+    const side = teamOf(game.a)?.managerId === user.teamId ? 'a' : 'b'
+    const opp = teamOf(game[side === 'a' ? 'b' : 'a'])
+    const p = extras.details[game.id]?.probA
+    const mine = p == null ? null : side === 'a' ? p : 1 - p
+    line = opp ? `${ordinal(o.seed)} seed · v ${opp.name}${mine != null ? `, ${pct(mine * 100)} to win` : ''}` : `${ordinal(o.seed)} seed · still alive`
+  } else if (bye) line = `${ordinal(o.seed)} seed · bye in the ${cur!.name.toLowerCase()}`
+  else line = `${ordinal(o.seed)} seed · still alive`
+  return `${line} · ${pct(o.win)} to win the Cup`
+}
+
 // Who's picking, and where their own team stands in the Cup.
 function YouRow({ bracket, extras, user, onWho }: { bracket: CupBracket; extras: CupExtras; user: User; onWho: () => void }) {
-  let line: string | null = null
-  const o = user.teamId ? extras.odds.find((x) => x.managerId === user.teamId) : null
-  if (o) {
-    if (!o.alive && o.out) line = `Out in the ${o.out.round.toLowerCase()} to ${o.out.to}`
-    else if (bracket.champion?.managerId === user.teamId) line = 'You won the Cup'
-    else {
-      const cur = bracket.currentRound != null ? bracket.rounds[bracket.currentRound] : null
-      const game = cur?.matches.find((m) => teamOf(m.a)?.managerId === user.teamId || teamOf(m.b)?.managerId === user.teamId)
-      const bye = cur?.byes.some((e) => e.managerId === user.teamId)
-      if (game) {
-        const side = teamOf(game.a)?.managerId === user.teamId ? 'a' : 'b'
-        const opp = teamOf(game[side === 'a' ? 'b' : 'a'])
-        const p = extras.details[game.id]?.probA
-        const mine = p == null ? null : side === 'a' ? p : 1 - p
-        line = opp ? `${ordinal(o.seed)} seed · v ${opp.name}${mine != null ? `, ${pct(mine * 100)} to win` : ''}` : `${ordinal(o.seed)} seed · still alive`
-      } else if (bye) line = `${ordinal(o.seed)} seed · bye in the ${cur!.name.toLowerCase()}`
-      else line = `${ordinal(o.seed)} seed · still alive`
-      line += ` · ${pct(o.win)} to win the Cup`
-    }
-  }
+  const line = teamLine(bracket, extras, user)
   return (
     <div className={styles.you}>
       <span className={styles.mono}>{initials(user.name)}</span>
@@ -1476,6 +1884,15 @@ function BracketTab({
 }) {
   const mine = user?.teamId ?? null
   const fav = bracket.champion ? null : ([...odds].filter((o) => o.alive).sort((x, y) => y.win - x.win)[0] ?? null)
+  // Desktop: pointing at a team lights up its run through the draw, and the
+  // card beside the champion says how far it's likely to go.
+  // Only with a real pointer on a desktop-width screen: a tap on a phone
+  // fires mouseenter too, and phones keep the bracket as it was.
+  const [hover, setHover] = useState<string | null>(null)
+  const light = useCallback((id: string | null) => {
+    if (id == null || window.matchMedia('(hover: hover) and (min-width: 1100px)').matches) setHover(id)
+  }, [])
+  const path = hover ? (odds.find((o) => o.managerId === hover) ?? null) : null
   return (
     <>
       {/* The board: the same round track as Games across the top (a tap
@@ -1483,23 +1900,7 @@ function BracketTab({
           column. */}
       <div className={styles.board}>
         <RoundRail bracket={bracket} round={-1} setRound={onRound} />
-        <div className={styles.bracket} style={{ ['--slots' as string]: bracket.size / 2, ['--cols' as string]: bracket.rounds.length }}>
-          {bracket.rounds.map((r, ri) => (
-            <div className={styles.col} key={r.round}>
-              <div className={styles.colBody}>
-                {pairsOf(r, ri > 0 ? bracket.rounds[ri - 1] : null).map((pair, pi) => (
-                  <div className={`${styles.pair} ${pair.join ? styles[pair.join] : ''}`} key={pi}>
-                    {pair.cells.map((cell, ci) => (
-                      <div className={styles.cell} key={ci}>
-                        {cell.match ? <MiniCard m={cell.match} fed={cell.fed} last={ri === bracket.rounds.length - 1} mine={mine} /> : null}
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+        <Draw bracket={bracket} mine={mine} hover={hover} onHover={light} />
       </div>
       {mine && bracket.rounds.some((r) => r.matches.some((m) => teamOf(m.a)?.managerId === mine || teamOf(m.b)?.managerId === mine)) ? (
         <p className={styles.legendMine}>
@@ -1507,21 +1908,59 @@ function BracketTab({
         </p>
       ) : null}
 
-      <div className={styles.trophyCard}>
-        <span className={styles.trophyArt} aria-hidden>
-          {trophy({ width: 54, brass: '#a8823c', light: '#d9b66f', dark: '#6b5124', plate: '#e3cd95' })}
-        </span>
-        <span className={styles.trophyText}>
-          <span className={styles.trophyLabel}>Champion · week {bracket.finalWeek}</span>
-          <span className={styles.trophyName}>{bracket.champion ? bracket.champion.name : 'To be decided'}</span>
-          <span className={styles.trophyLine}>
-            {bracket.champion
-              ? `The ${ordinal(bracket.champion.seed)} seed${bracket.runnerUp ? `, over ${bracket.runnerUp.name} in the final` : ''}`
-              : fav
-                ? `Favourite: ${fav.name}, ${pct(fav.win)}`
-                : `Final in week ${bracket.finalWeek}`}
+      <div className={styles.bracketCards}>
+        <div className={styles.trophyCard}>
+          <span className={styles.trophyArt} aria-hidden>
+            {trophy({ width: 54, brass: '#a8823c', light: '#d9b66f', dark: '#6b5124', plate: '#e3cd95' })}
           </span>
-        </span>
+          <span className={styles.trophyText}>
+            <span className={styles.trophyLabel}>Champion · week {bracket.finalWeek}</span>
+            <span className={styles.trophyName}>{bracket.champion ? bracket.champion.name : 'To be decided'}</span>
+            <span className={styles.trophyLine}>
+              {bracket.champion
+                ? `The ${ordinal(bracket.champion.seed)} seed${bracket.runnerUp ? `, over ${bracket.runnerUp.name} in the final` : ''}`
+                : fav
+                  ? `Favourite: ${fav.name}, ${pct(fav.win)}`
+                  : `Final in week ${bracket.finalWeek}`}
+            </span>
+          </span>
+        </div>
+        <div className={`${styles.pathCard} ${styles.deskOnly}`} aria-live="polite">
+          {path ? (
+            <>
+              <span className={styles.pathHead}>
+                <span className={`${styles.medal} ${styles.medalSm}`}>{path.seed}</span>
+                <span className={styles.pathName}>{path.name}</span>
+              </span>
+              <span className={styles.pathLine}>
+                {bracket.champion?.managerId === path.managerId
+                  ? `Won the Cup as the ${ordinal(path.seed)} seed.`
+                  : path.out
+                    ? `Out in the ${path.out.round.toLowerCase()}, ${pts(path.out.mine)} to ${path.out.to}’s ${pts(path.out.theirs)}.`
+                    : null}
+              </span>
+              {path.alive && !bracket.champion ? (
+                <span className={styles.pathSteps}>
+                  {bracket.rounds.slice(1).map((r, i) => (
+                    <span key={r.round} className={styles.pathStep}>
+                      <span>{r.short}</span>
+                      <b>{pct(path.reach[i] ?? 0)}</b>
+                    </span>
+                  ))}
+                  <span className={`${styles.pathStep} ${styles.pathWin}`}>
+                    <span>Win</span>
+                    <b>{pct(path.win)}</b>
+                  </span>
+                </span>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <span className={styles.pathName}>Follow a Team</span>
+              <span className={styles.pathLine}>Point at any team in the draw to light up its run and see how far it’s likely to go.</span>
+            </>
+          )}
+        </div>
       </div>
 
       <div className={styles.bracketFoot}>
@@ -1632,11 +2071,40 @@ function pairsOf(r: CupRound, prev: CupRound | null): Pair[] {
   return out
 }
 
-function MiniCard({ m, fed, last, mine }: { m: CupMatch; fed: boolean; last: boolean; mine: string | null }) {
+// The draw itself, column for column. On the Bracket tab (desktop) a team
+// under the pointer lights up everywhere it appears; the sidebar's copy is
+// just the picture.
+function Draw({ bracket, mine, hover, onHover }: { bracket: CupBracket; mine: string | null; hover?: string | null; onHover?: (managerId: string | null) => void }) {
+  return (
+    <div
+      className={`${styles.bracket} ${hover ? styles.bracketLit : ''}`}
+      style={{ ['--slots' as string]: bracket.size / 2, ['--cols' as string]: bracket.rounds.length }}
+      onMouseLeave={onHover ? () => onHover(null) : undefined}
+    >
+      {bracket.rounds.map((r, ri) => (
+        <div className={styles.col} key={r.round}>
+          <div className={styles.colBody}>
+            {pairsOf(r, ri > 0 ? bracket.rounds[ri - 1] : null).map((pair, pi) => (
+              <div className={`${styles.pair} ${pair.join ? styles[pair.join] : ''}`} key={pi}>
+                {pair.cells.map((cell, ci) => (
+                  <div className={styles.cell} key={ci}>
+                    {cell.match ? <MiniCard m={cell.match} fed={cell.fed} last={ri === bracket.rounds.length - 1} mine={mine} hover={hover ?? null} onHover={onHover} /> : null}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function MiniCard({ m, fed, last, mine, hover, onHover }: { m: CupMatch; fed: boolean; last: boolean; mine: string | null; hover: string | null; onHover?: (managerId: string | null) => void }) {
   const row = (side: 'a' | 'b') => {
     const s = m[side]
     const e = teamOf(s)
-    const cls = `${styles.mRow} ${m.winner === side ? styles.mWon : ''} ${m.winner && m.winner !== side ? styles.mLost : ''} ${e && e.managerId === mine ? styles.mMine : ''}`
+    const cls = `${styles.mRow} ${m.winner === side ? styles.mWon : ''} ${m.winner && m.winner !== side ? styles.mLost : ''} ${e && e.managerId === mine ? styles.mMine : ''} ${e && e.managerId === hover ? styles.mPath : ''}`
     // An open slot has no seed or score, so its "Chris/Mason" takes the
     // whole row, centred.
     if (!e)
@@ -1646,7 +2114,7 @@ function MiniCard({ m, fed, last, mine }: { m: CupMatch; fed: boolean; last: boo
         </div>
       )
     return (
-      <div className={cls}>
+      <div className={cls} onMouseEnter={onHover ? () => onHover(e.managerId) : undefined}>
         <span className={styles.mSeed}>{e.seed}</span>
         <span className={styles.mName}>{e.name}</span>
         <span className={styles.mScore}>{s.kind === 'team' && s.score != null ? Math.round(s.score) : ''}</span>
@@ -1723,8 +2191,52 @@ function OddsTab({ bracket, odds, notes, user, votes }: { bracket: CupBracket; o
         </ol>
       ) : null}
 
+      {/* Desktop: every team still in, round by round: the chance of
+          reaching each round and of winning it all, shaded by size. It
+          replaces the list of rows below, which phones keep. */}
+      {!bracket.champion && alive.length ? (
+        <div className={`${styles.matrix} ${styles.deskOnly}`}>
+          <h3 className={styles.subHead}>Round by Round</h3>
+          <table className={styles.mx}>
+            <thead>
+              <tr>
+                <th className={styles.mxSeed}>Seed</th>
+                <th className={styles.mxTeam}>Team</th>
+                {later.map((label) => (
+                  <th key={label}>{label}</th>
+                ))}
+                <th className={styles.mxWinHead}>Win</th>
+              </tr>
+            </thead>
+            <tbody>
+              {alive.map((o) => (
+                <tr key={o.managerId} className={user?.teamId === o.managerId ? styles.mxMine : ''}>
+                  <td className={styles.mxSeed}>
+                    <span className={`${styles.medal} ${styles.medalSm}`}>{o.seed}</span>
+                  </td>
+                  <td className={styles.mxTeam}>
+                    <span className={styles.oddsName}>
+                      <span className={styles.oddsNameText}>{o.name}</span>
+                      {nVotes(o.managerId) ? <VoteChip n={nVotes(o.managerId)} /> : null}
+                    </span>
+                  </td>
+                  {later.map((label, i) => (
+                    <td key={label} className={styles.mxCell} style={{ ['--v' as string]: (o.reach[i] ?? 0) / 100 }}>
+                      {pct(o.reach[i] ?? 0)}
+                    </td>
+                  ))}
+                  <td className={styles.mxWin} style={{ ['--v' as string]: o.win / top }}>
+                    {pct(o.win)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
       {rows.length ? (
-        <ol className={styles.oddsList}>
+        <ol className={`${styles.oddsList} ${!bracket.champion ? styles.phoneOnly : ''}`}>
           {rows.map((o) => (
             <li key={o.managerId} className={`${styles.oddsRow} ${user?.teamId === o.managerId ? styles.oddsMine : ''}`}>
               <span className={`${styles.medal} ${styles.medalSm}`}>{o.seed}</span>
@@ -1811,6 +2323,110 @@ function OddsTab({ bracket, odds, notes, user, votes }: { bracket: CupBracket; o
 
 // ── Leaders: the bracket challenge ──
 
+// Desktop: the board as a table, a column per round (points, and right of
+// decided), the champion pick, this Cup's stamps and the total. A name
+// opens that picker's stamp book. Phones keep the list.
+function LeadersTable({
+  bracket,
+  extras,
+  user,
+  stampsOf,
+  onBook,
+}: {
+  bracket: CupBracket
+  extras: CupExtras
+  user: User | null
+  stampsOf: Map<string, number>
+  onBook: (person: string | null, name: string | null) => void
+}) {
+  const at = new Map<string, CupMatch>()
+  for (const r of bracket.rounds) for (const m of r.matches) at.set(`${r.round}:${m.slot}`, m)
+  const decidedRound = bracket.rounds.map((r) => r.matches.some((m) => m.state === 'final'))
+  const by = new Map<string, { pts: number; right: number; decided: number }[]>()
+  for (const p of extras.picks) {
+    if (p.round < 0) continue
+    const m = at.get(`${p.round}:${p.slot}`)
+    if (!m || m.state !== 'final' || !m.winner) continue
+    const cells = by.get(p.profileId) ?? bracket.rounds.map(() => ({ pts: 0, right: 0, decided: 0 }))
+    const c = cells[p.round]!
+    c.decided++
+    if (teamOf(m[m.winner])?.managerId === p.picked) {
+      c.right++
+      c.pts += extras.points[p.round] ?? 1
+    }
+    by.set(p.profileId, cells)
+  }
+  return (
+    <table className={`${styles.lb} ${styles.deskOnly}`}>
+      <thead>
+        <tr>
+          <th className={styles.lbRank}>#</th>
+          <th className={styles.lbWho}>Picker</th>
+          {bracket.rounds.map((r) => (
+            <th key={r.round}>
+              {r.short}
+              <small>{extras.points[r.round] ?? 1} pt</small>
+            </th>
+          ))}
+          <th className={styles.lbChampHead}>
+            Champion
+            <small>+{extras.championBonus}</small>
+          </th>
+          <th>Stamps</th>
+          <th className={styles.lbPtsHead}>Pts</th>
+        </tr>
+      </thead>
+      <tbody>
+        {extras.board.map((row, i) => {
+          const medal = row.points > 0 && i < 3
+          const n = stampsOf.get(row.profileId) ?? 0
+          return (
+            <tr key={row.profileId} className={`${medal ? styles[`boardTop${i + 1}` as 'boardTop1'] : ''} ${user?.profileId === row.profileId ? styles.lbMine : ''}`}>
+              <td className={styles.lbRank}>
+                <span className={styles.boardRank}>{i + 1}</span>
+              </td>
+              <td className={styles.lbWho}>
+                <button type="button" className={styles.lbName} onClick={() => onBook(row.profileId, row.name)}>
+                  {row.name}
+                </button>
+              </td>
+              {bracket.rounds.map((r) => {
+                const c = by.get(row.profileId)?.[r.round]
+                return (
+                  <td key={r.round} className={styles.lbCell}>
+                    {!decidedRound[r.round] ? null : c?.decided ? (
+                      <>
+                        <b>{c.pts}</b>
+                        <small>
+                          {c.right}/{c.decided}
+                        </small>
+                      </>
+                    ) : (
+                      <span className={styles.lbNone}>No picks</span>
+                    )}
+                  </td>
+                )
+              })}
+              <td className={`${styles.lbChamp} ${row.championRight === true ? styles.lbRight : row.championRight === false ? styles.lbOut : ''}`}>
+                {row.champion ? `${row.champion}${row.championRight ? ` +${extras.championBonus}` : ''}` : extras.championOpen ? 'Hidden till kickoff' : 'No pick'}
+              </td>
+              <td className={styles.lbCell}>
+                {n ? (
+                  <span className={styles.boardStamps}>
+                    <Icon name="stamp" size={13} />
+                    {n}
+                  </span>
+                ) : null}
+              </td>
+              <td className={styles.lbPts}>{row.points}</td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
+  )
+}
+
 function LeadersTab({
   bracket,
   extras,
@@ -1818,6 +2434,10 @@ function LeadersTab({
   userIn,
   votes,
   champName,
+  stampsHere,
+  myStamps,
+  caption,
+  onBook,
   onChampion,
   onWho,
 }: {
@@ -1828,6 +2448,11 @@ function LeadersTab({
   userIn: boolean
   votes: Map<string, string[]>
   champName: string | null
+  // Stamps given in this Cup, and how many you hold across every Cup.
+  stampsHere: StampAward[]
+  myStamps: number
+  caption: string
+  onBook: (person: string | null, name: string | null) => void
   onChampion: () => void
   onWho: () => void
 }) {
@@ -1837,6 +2462,9 @@ function LeadersTab({
   const firstFinal = bracket.rounds.find((r) => r.matches.length)?.week
   const mineIdx = user ? extras.board.findIndex((r) => r.profileId === user.profileId) : -1
   const mine = mineIdx >= 0 ? extras.board[mineIdx] : null
+  const stampGroups = groupStamps(stampsHere)
+  const stampsOf = new Map<string, number>()
+  for (const s of stampsHere) stampsOf.set(s.person, (stampsOf.get(s.person) ?? 0) + 1)
 
   return (
     <>
@@ -1884,6 +2512,19 @@ function LeadersTab({
         </button>
       )}
 
+      {user ? (
+        <button type="button" className={`${styles.champCard} ${myStamps ? styles.champCardSet : ''}`} onClick={() => onBook(user.profileId, user.name)}>
+          <span className={styles.champCardIcon}>
+            <Icon name="stamp" size={22} />
+          </span>
+          <span className={styles.champCardText}>
+            <span className={styles.champCardLabel}>Your stamps</span>
+            <span className={styles.champCardName}>{myStamps ? `${myStamps} collected` : `None yet, ${STAMPS.length} to get`}</span>
+          </span>
+          <span className={styles.champCardGo}>Open</span>
+        </button>
+      ) : null}
+
       {extras.championOpen && user ? (
         <button type="button" className={`${styles.champCard} ${champName ? styles.champCardSet : ''}`} onClick={onChampion}>
           <span className={styles.champCardIcon}>
@@ -1929,20 +2570,37 @@ function LeadersTab({
         })()
       ) : extras.board.length ? (
         <>
-          <ol className={styles.board}>
+          <LeadersTable bracket={bracket} extras={extras} user={user} stampsOf={stampsOf} onBook={onBook} />
+          <ol className={`${styles.board} ${styles.phoneOnly}`}>
             {extras.board.map((row, i) => {
               const medal = anyPoints && row.points > 0 && i < 3
+              const n = stampsOf.get(row.profileId) ?? 0
+              // A tap opens their stamp book.
               return (
-                <li key={row.profileId} className={`${styles.boardRow} ${medal ? styles[`boardTop${i + 1}` as 'boardTop1'] : ''} ${user?.profileId === row.profileId ? styles.boardMine : ''}`}>
-                  <span className={styles.boardRank}>{anyPoints ? i + 1 : ''}</span>
-                  <span className={styles.boardWho}>
-                    <span className={styles.boardName}>{row.name}</span>
-                    <span className={styles.boardMeta}>
-                      {row.decided ? `${row.correct} of ${row.decided} right` : 'Picks in, no results yet'}
-                      {row.champion ? ` · Champion: ${row.champion}${row.championRight === true ? ' (right)' : row.championRight === false ? ' (out)' : ''}` : ''}
+                <li key={row.profileId}>
+                  <button
+                    type="button"
+                    className={`${styles.boardRow} ${styles.boardBtn} ${medal ? styles[`boardTop${i + 1}` as 'boardTop1'] : ''} ${user?.profileId === row.profileId ? styles.boardMine : ''}`}
+                    onClick={() => onBook(row.profileId, row.name)}
+                  >
+                    <span className={styles.boardRank}>{anyPoints ? i + 1 : ''}</span>
+                    <span className={styles.boardWho}>
+                      <span className={styles.boardName}>{row.name}</span>
+                      <span className={styles.boardMeta}>
+                        {row.decided ? `${row.correct} of ${row.decided} right` : 'Picks in, no results yet'}
+                        {row.champion ? ` · Champion: ${row.champion}${row.championRight === true ? ' (right)' : row.championRight === false ? ' (out)' : ''}` : ''}
+                      </span>
                     </span>
-                  </span>
-                  <span className={styles.boardPts}>{row.points}</span>
+                    <span className={styles.boardStamps} aria-label={n ? `${n} ${n === 1 ? 'stamp' : 'stamps'} this Cup` : undefined}>
+                      {n ? (
+                        <>
+                          <Icon name="stamp" size={13} />
+                          {n}
+                        </>
+                      ) : null}
+                    </span>
+                    <span className={styles.boardPts}>{row.points}</span>
+                  </button>
                 </li>
               )
             })}
@@ -1951,6 +2609,39 @@ function LeadersTab({
       ) : (
         <p className={styles.sectionSub}>No picks yet. Be the first.</p>
       )}
+
+      <h3 className={styles.subHead}>Stamps</h3>
+      {stampGroups.length ? (
+        <ul className={styles.stampList}>
+          {stampGroups.map((g) => {
+            const def = STAMP_BY_ID.get(g.stamp)!
+            return (
+              <li key={g.stamp} className={styles.stampRow}>
+                <Stamp def={def} center={String(g.latest.year)} caption={caption} size={50} seed={g.latest.note} />
+                <span className={styles.stampWho}>
+                  <span className={styles.stampName}>{def.name}</span>
+                  <span className={styles.stampPeople}>
+                    {g.people.map((p, i) => (
+                      <span key={p.person}>
+                        {i ? ', ' : ''}
+                        <button type="button" className={styles.stampPerson} onClick={() => onBook(p.person, p.name)}>
+                          {p.name}
+                          {p.count > 1 ? ` ×${p.count}` : ''}
+                        </button>
+                      </span>
+                    ))}
+                  </span>
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      ) : (
+        <p className={styles.boardNote}>The first stamps land when week {firstFinal} is final: perfect rounds, called upsets, giant killers and more.</p>
+      )}
+      <button type="button" className={`${styles.btnGhost} ${styles.stampAll}`} onClick={() => onBook(null, null)}>
+        See every stamp
+      </button>
 
       <h3 className={styles.subHead}>Champion Picks</h3>
       {(() => {

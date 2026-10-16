@@ -2023,15 +2023,50 @@
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.3);
 }
 
-/* 2nd and 3rd: the seed sits beside the name, so the ticket is four short
-   lines rather than five. */
-.podWho {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  max-width: 100%;
-  min-width: 0;
+/* 2nd and 3rd: the words are centred on the whole ticket, and the seed
+   fills the open space to their left, a little nearer the words than the
+   edge (Joey, 2026-10-16: "equal distance ... or a little closer to text").
+   The columns mirror each other (space 2, seed, space 1, words, space 1,
+   empty seed column, space 2) so the words sit on the ticket's centre line
+   and the seed is twice as far from the edge as from the words. */
+.pod:not(.podFirst) {
+  display: grid;
+  grid-template-columns:
+    minmax(6px, 2fr) 24px minmax(4px, 1fr) minmax(0, max-content)
+    minmax(4px, 1fr) 24px minmax(6px, 2fr);
+  grid-template-areas:
+    '. medal . rank . . .'
+    '. medal . name . . .'
+    '. medal . pct . . .'
+    '. medal . foot . . .';
+  justify-items: center;
+  row-gap: 3px;
+  column-gap: 0;
+}
+
+.pod:not(.podFirst) .podWho {
+  display: contents;
+}
+
+.pod:not(.podFirst) .medal {
+  grid-area: medal;
+  align-self: center;
+}
+
+.pod:not(.podFirst) .podRank {
+  grid-area: rank;
+}
+
+.pod:not(.podFirst) .podName {
+  grid-area: name;
+}
+
+.pod:not(.podFirst) .podPct {
+  grid-area: pct;
+}
+
+.pod:not(.podFirst) .podFoot {
+  grid-area: foot;
 }
 
 .pod .medal {
@@ -2532,11 +2567,46 @@
 
 .boardRow {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
+  grid-template-columns: 28px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 10px;
   padding: 9px 0;
   border-bottom: 1px solid var(--bline);
+}
+
+/* Rows are buttons now: a tap opens that person's stamp book. */
+.boardBtn {
+  width: 100%;
+  border-top: 0;
+  border-right: 0;
+  border-left: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.boardBtn:active {
+  background: rgba(240, 230, 204, 0.06);
+}
+
+/* This Cup's stamps, as a small paper tab inked red. */
+.boardStamps {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--cp-num);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pred);
+}
+
+.boardStamps:not(:empty) {
+  height: 22px;
+  padding: 0 7px 0 5px;
+  border-radius: 999px;
+  background: var(--paper);
 }
 
 .boardMine {
@@ -3130,6 +3200,207 @@
   margin-top: 20px;
 }
 
+/* New stamps: pressed onto a cream sheet one at a time, the way a stamp
+   comes down (big and tilted, then flat on the paper). */
+.rvStamps {
+  margin-top: 12px;
+  padding: 14px 14px 16px;
+  border-radius: 16px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+}
+
+.rvStampRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px 8px;
+  margin-top: 8px !important;
+}
+
+.rvStampItem {
+  display: flex;
+  flex: 0 1 30%;
+  flex-direction: column;
+  align-items: center;
+  min-width: 96px;
+  text-align: center;
+}
+
+.rvStampInk {
+  position: relative;
+  display: block;
+  animation: stampDown 0.42s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes stampDown {
+  0% {
+    opacity: 0;
+    transform: scale(1.9) rotate(-14deg);
+  }
+  60% {
+    opacity: 1;
+  }
+}
+
+.rvStampName {
+  margin-top: 4px;
+  font-family: var(--cp-display);
+  font-size: 15px;
+  line-height: 1.15;
+}
+
+.rvStampNote {
+  margin-top: 2px;
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: var(--ink-3);
+}
+
+/* "x2" on a stamp held more than once: a brass tab on the corner. */
+.stampCount {
+  position: absolute;
+  top: 2px;
+  right: -4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--brass);
+  font-family: var(--cp-num);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #14301f;
+}
+
+/* ── Stamps on the Leaders tab ──────────────────────────── */
+
+.stampList {
+  margin-top: 10px !important;
+  padding: 4px 12px;
+  border-radius: 14px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.stampRow {
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.stampRow + .stampRow {
+  border-top: 1px solid var(--pline);
+}
+
+.stampWho {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stampName {
+  font-family: var(--cp-display);
+  font-size: 16.5px;
+  line-height: 1.15;
+}
+
+.stampPeople {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.stampPerson {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit !important;
+  text-decoration: underline;
+  text-decoration-color: var(--pline-2);
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.stampAll {
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* ── The stamp book (a sheet) ───────────────────────────── */
+
+.book {
+  display: grid;
+  gap: 18px;
+}
+
+.bookHead {
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--pline-2);
+  font-family: var(--cp-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.bookGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 8px;
+  margin-top: 12px !important;
+}
+
+.bookItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  text-align: center;
+}
+
+.bookInk {
+  position: relative;
+  display: block;
+}
+
+.bookName {
+  margin-top: 3px;
+  font-family: var(--cp-display);
+  font-size: 14.5px;
+  line-height: 1.15;
+}
+
+.bookNote {
+  display: -webkit-box;
+  margin-top: 2px;
+  overflow: hidden;
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: var(--ink-2);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.bookItemOff .bookName {
+  color: var(--ink-3);
+}
+
+.bookItemOff .bookNote {
+  color: var(--ink-3);
+}
+
+@media (min-width: 600px) {
+  .bookGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .rv,
   .rv *,
@@ -3282,5 +3553,725 @@
   .champCard,
   .start {
     max-width: 640px;
+  }
+}
+
+/* ── Desktop (1100px and up) ─────────────────────────────────
+   A computer gets the whole Cup at once: a scoreboard across the
+   masthead, and the page in two, the open tab on the left and a sidebar
+   on the right with what that tab doesn't show. The Bracket lights up a
+   team's run under the pointer, Odds becomes a round-by-round table and
+   Leaders a points-by-round table. Nothing here reaches a phone: the
+   desktop pieces are display: none below 1100px, the phone pieces they
+   replace (.phoneOnly) are hidden above it. */
+
+.scoreboard,
+.side {
+  display: none;
+}
+
+@media (max-width: 1099.98px) {
+  .deskOnly {
+    display: none !important;
+  }
+}
+
+/* Following a team through the draw (desktop Bracket tab). */
+.bracketLit .mRow {
+  transition: opacity 0.15s;
+}
+
+.bracketLit .mRow:not(.mPath) {
+  opacity: 0.3;
+}
+
+.bracketLit .mRow.mPath {
+  opacity: 1;
+  background: #f6e3ac;
+  box-shadow: inset 0 0 0 1.5px var(--green);
+}
+
+.mPath:first-child {
+  border-radius: 6px 6px 0 0;
+}
+
+.mPath:last-child {
+  border-radius: 0 0 6px 6px;
+}
+
+.pathCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1.5px dashed rgba(200, 163, 91, 0.55);
+  border-radius: 16px;
+  background: var(--board-2);
+}
+
+.pathHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pathName {
+  overflow: hidden;
+  font-family: var(--cp-display);
+  font-size: 22px;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ivory);
+}
+
+.pathLine {
+  font-size: 13.5px;
+  color: var(--ivory-2);
+}
+
+.pathLine:empty {
+  display: none;
+}
+
+.pathSteps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pathStep {
+  display: flex;
+  flex-direction: column;
+  min-width: 64px;
+  padding: 6px 10px 7px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 0 0 1px var(--bline);
+}
+
+.pathStep span {
+  font-family: var(--cp-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.pathStep b {
+  font-family: var(--cp-num);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--ivory);
+}
+
+.pathWin {
+  background: var(--brass);
+  box-shadow: none;
+}
+
+.pathWin span,
+.pathWin b {
+  color: #14301f;
+}
+
+/* Odds: the round-by-round table. */
+.matrix {
+  margin-top: 4px;
+}
+
+.mx {
+  width: 100%;
+  margin-top: 6px;
+  border-collapse: collapse;
+}
+
+.mx th {
+  padding: 9px 6px 8px;
+  border-bottom: 1px solid var(--bline-2);
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--ivory-2);
+}
+
+.mx td {
+  height: 44px;
+  padding: 0 6px;
+  border-bottom: 1px solid var(--bline);
+  text-align: center;
+}
+
+.mx .mxSeed {
+  width: 44px;
+}
+
+.mx .mxTeam {
+  width: 30%;
+  text-align: left;
+}
+
+/* Shaded by size: the bigger the chance, the more brass. The inset ring
+   in the board colour keeps the cells apart. */
+.mxCell,
+.mxWin {
+  font-family: var(--cp-num);
+  font-weight: 600;
+  color: var(--ivory);
+  background: rgba(200, 163, 91, calc(var(--v, 0) * 0.5));
+  box-shadow: inset 0 0 0 3px var(--board);
+}
+
+.mxCell {
+  font-size: 17px;
+}
+
+.mx .mxWin {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--brass-hi);
+  background: rgba(200, 163, 91, calc(0.08 + var(--v, 0) * 0.5));
+}
+
+.mx .mxWinHead {
+  color: var(--brass);
+}
+
+.mxMine .mxTeam {
+  box-shadow: inset 3px 0 0 var(--brass);
+}
+
+.mxMine .oddsName {
+  padding-left: 8px;
+  color: var(--brass-hi);
+}
+
+/* Leaders: the points-by-round table. */
+.lb {
+  width: 100%;
+  margin-top: 6px;
+  border-collapse: collapse;
+}
+
+.lb th {
+  padding: 9px 6px 8px;
+  border-bottom: 1px solid var(--bline-2);
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--ivory-2);
+}
+
+.lb th small {
+  display: block;
+  margin-top: 2px;
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  color: var(--mute);
+}
+
+.lb td {
+  height: 50px;
+  padding: 0 6px;
+  border-bottom: 1px solid var(--bline);
+  text-align: center;
+}
+
+.lb .lbRank {
+  width: 40px;
+}
+
+.lb .lbWho,
+.lb .lbChampHead,
+.lb .lbChamp {
+  text-align: left;
+}
+
+.lbName {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--cp-display) !important;
+  font-size: 18px !important;
+  color: var(--ivory) !important;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lbName:hover {
+  color: var(--brass-hi) !important;
+  text-decoration: underline;
+  text-decoration-color: var(--bline-2);
+  text-underline-offset: 3px;
+}
+
+.lbCell b {
+  font-family: var(--cp-num);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ivory);
+}
+
+.lbCell small {
+  margin-left: 5px;
+  font-size: 11.5px;
+  color: var(--mute);
+}
+
+.lbNone {
+  font-size: 11.5px;
+  color: var(--mute);
+}
+
+.lbChamp {
+  font-family: var(--cp-display);
+  font-size: 15px;
+  color: var(--ivory-2);
+}
+
+.lbRight {
+  color: #8cc9a0;
+}
+
+.lbOut {
+  text-decoration: line-through;
+  color: var(--mute);
+}
+
+.lb .lbPts,
+.lb .lbPtsHead {
+  width: 64px;
+}
+
+.lbPts {
+  font-family: var(--cp-num);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--brass-hi);
+}
+
+.lbMine td {
+  background: rgba(200, 163, 91, 0.1);
+}
+
+/* The sidebar's boxes. */
+.sideBox {
+  padding: 14px 14px 12px;
+  border-radius: 16px;
+  background: var(--board-2);
+  box-shadow: inset 0 0 0 1px var(--bline);
+}
+
+.sideHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.sideHead h3 {
+  font-family: var(--cp-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.sideHead button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: var(--ivory-2) !important;
+  text-decoration: underline;
+  text-decoration-color: var(--bline-2);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.sideHead button:hover {
+  color: var(--brass-hi) !important;
+}
+
+.sideOdds li,
+.sideBoard li {
+  display: grid;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  border-top: 1px solid var(--bline);
+}
+
+.sideOdds li:first-child,
+.sideBoard li:first-child {
+  border-top: 0;
+}
+
+.sideOdds li {
+  grid-template-columns: 28px minmax(0, 1fr) 56px 42px;
+}
+
+.sideBoard li {
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+}
+
+.sideName {
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--cp-display) !important;
+  font-size: 16px !important;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-align: left;
+  text-overflow: ellipsis;
+  color: var(--ivory) !important;
+}
+
+button.sideName {
+  cursor: pointer;
+}
+
+button.sideName:hover {
+  color: var(--brass-hi) !important;
+}
+
+.sideNum {
+  font-family: var(--cp-num);
+  font-size: 18px;
+  font-weight: 700;
+  text-align: right;
+  color: var(--brass-hi);
+}
+
+.sideMine {
+  border-radius: 8px;
+  background: rgba(200, 163, 91, 0.12);
+}
+
+.sideNote {
+  font-size: 13px;
+  color: var(--ivory-2);
+}
+
+.side .stampList {
+  margin-top: 0 !important;
+}
+
+/* The draw at sidebar width: the phone's sizes, whatever the screen. */
+.sideDraw {
+  --gap: 9px;
+}
+
+.sideDraw .colBody {
+  height: calc(var(--slots) * 44px);
+  min-height: 0;
+}
+
+.sideDraw .mRow {
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  gap: 4px;
+  height: 20px;
+  padding: 0 5px;
+}
+
+.sideDraw .mName {
+  font-size: 12px;
+}
+
+.sideDraw .mSeed {
+  font-size: 10.5px;
+}
+
+.sideDraw .mScore {
+  display: none;
+}
+
+.sideDraw .mTbd {
+  font-size: 9.5px;
+}
+
+/* You, on a ticket. */
+.sideYou {
+  padding: 14px 16px 16px;
+  border-radius: 16px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
+.sideYouHead {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.sideYouWho {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sideLabel {
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.sideYouName {
+  display: block;
+  overflow: hidden;
+  font-family: var(--cp-display);
+  font-size: 21px;
+  line-height: 1.15;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sideYouLine {
+  margin-top: 8px !important;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+
+.sideChange {
+  height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--pline-2);
+  border-radius: 9px;
+  background: transparent;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: var(--green) !important;
+  cursor: pointer;
+}
+
+.sideStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--pline);
+}
+
+.sideStats div + div {
+  padding-left: 12px;
+  border-left: 1px solid var(--pline);
+}
+
+.sideStats dt {
+  font-family: var(--cp-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.sideStats dd {
+  font-family: var(--cp-num);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--green);
+}
+
+.sideYouActions {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.sideBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 10px;
+  background: var(--paper-2);
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  white-space: nowrap;
+  text-align: left;
+  text-overflow: ellipsis;
+  color: var(--green) !important;
+  cursor: pointer;
+}
+
+.sideBtn:hover {
+  background: var(--pline);
+}
+
+.sideBtnAsk {
+  background: var(--green);
+  color: var(--paper) !important;
+}
+
+.sideBtnAsk:hover {
+  background: var(--green-hi);
+}
+
+@media (min-width: 1100px) {
+  .page {
+    --desk: 1240px;
+  }
+
+  .phoneOnly {
+    display: none !important;
+  }
+
+  .mastInner,
+  .tabsInner {
+    max-width: var(--desk);
+  }
+
+  .mastInner {
+    gap: 28px;
+  }
+
+  /* The scoreboard: four numbers on an inset board, between the title and
+     the trophy. */
+  .scoreboard {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(112px, auto));
+    align-self: center;
+    margin-left: auto;
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.22);
+    box-shadow: inset 0 0 0 1px var(--bline-2);
+  }
+
+  .sbCell {
+    min-width: 0;
+    padding: 14px 18px 13px;
+  }
+
+  .sbCell + .sbCell {
+    border-left: 1px solid var(--bline);
+  }
+
+  .sbCell dt {
+    font-family: var(--cp-mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--brass);
+  }
+
+  .sbBig {
+    margin-top: 6px !important;
+    font-family: var(--cp-num);
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--ivory);
+  }
+
+  .sbName {
+    max-width: 170px;
+    margin-top: 8px !important;
+    overflow: hidden;
+    font-family: var(--cp-display);
+    font-size: 24px;
+    line-height: 1.05;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--ivory);
+  }
+
+  .sbLine {
+    margin-top: 5px !important;
+    font-size: 12.5px;
+    white-space: nowrap;
+    color: var(--mute);
+  }
+
+  .body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    align-items: start;
+    gap: 32px;
+    max-width: calc(var(--desk) + 2 * var(--gutter));
+    margin: 0 auto;
+    padding: 0 var(--gutter);
+  }
+
+  .body > .panel {
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+    padding: 24px 0 36px;
+  }
+
+  .appBar .body > .panel {
+    padding-bottom: 8px;
+  }
+
+  .side {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 24px 0 36px;
+  }
+
+  /* Games: the ticket pair and the round track fill the wider column. */
+  .rail {
+    max-width: none;
+  }
+
+  .you,
+  .champCard,
+  .start {
+    max-width: none;
+  }
+
+  .stampAll {
+    width: auto;
+  }
+
+  /* Bracket: the champion and the team you're following, side by side. */
+  .bracketCards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 16px;
+  }
+
+  .bracketCards .trophyCard {
+    margin-top: 0;
+  }
+
+  /* Following someone: the card goes solid. */
+  .pathCard:has(.pathHead) {
+    border-style: solid;
+    border-color: var(--brass);
   }
 }

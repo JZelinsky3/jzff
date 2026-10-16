@@ -6,6 +6,7 @@ import { recapViewable } from '@/lib/recap/load'
 import { SITE_URL } from '@/lib/recap/links'
 import { loadCup } from '@/lib/cup/load'
 import { loadCupExtras } from '@/lib/cup/extras'
+import { loadLeagueCups } from '@/lib/cup/history'
 import { cupNotes, CUP_MAX_FIELD, type CupBracket } from '@/lib/cup/bracket'
 import { loadCupPreview, type CupPreview } from '@/lib/cup/preview'
 import { CUP_LAUNCH, drawDayText } from '@/lib/cup/launch'
@@ -130,6 +131,9 @@ export default async function CupPage({ params, searchParams }: Props) {
   if (!view) notFound()
   const { cup, bracket } = view
   const extras = await loadCupExtras(league.id, view)
+  // Stamps are all-time (a stamp book spans every Cup), so this reads the
+  // league's other Cups too; the one already loaded isn't loaded again.
+  const { stamps } = await loadLeagueCups(league.id, { view, picks: extras.picks })
   const yearQuery = askedYear ? `year=${askedYear}` : ''
   const pageUrl = `${SITE_URL}/leagues/${slug}/cup/${yearQuery ? `?${yearQuery}` : ''}`
   const imageUrl = `/api/og/cup/${slug}/?format=post${yearQuery ? `&${yearQuery}` : ''}`
@@ -146,6 +150,7 @@ export default async function CupPage({ params, searchParams }: Props) {
         bracket={bracket}
         notes={cupNotes(bracket)}
         extras={extras}
+        stamps={stamps}
         imageUrl={imageUrl}
         seededThrough={cup.seeded_through}
         currentWeek={view.currentWeek}

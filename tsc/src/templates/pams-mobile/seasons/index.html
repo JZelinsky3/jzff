@@ -96,6 +96,124 @@
 .m-list .se-row:last-child { border-bottom: none; }
 .m-chevron { flex: none; color: var(--cream-mute); }
 .se-row-partial small i { font-style: normal; color: var(--gold-deep); }
+
+/* ── The Cup ──
+   The league's knockout Cup keeps a ticket in the archives all year, in
+   the same stock as the Cup's strip and pages: cream paper, a green stub
+   with the brass trophy, a dotted perforation between them. The plates
+   are the trophy's base, one engraved per year, the next ones left blank. */
+.se-cup {
+    display: flex;
+    margin-bottom: .9rem;
+    border-radius: 14px;
+    background: #f5eedb;
+    color: #1b1f18;
+    box-shadow: 0 1px 0 rgba(255,255,255,.5) inset, 0 6px 18px rgba(0,0,0,.35);
+    overflow: hidden;
+}
+.se-cup-stub {
+    flex: none;
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: .55rem;
+    width: 58px;
+    padding: .8rem 0;
+    background: #1f4a3a;
+}
+.se-cup-stub::after {
+    content: '';
+    position: absolute; top: 6px; bottom: 6px; right: -1px;
+    border-right: 2px dotted #f5eedb;
+}
+.se-cup-since {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .16em;
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    color: #c8a35b;
+}
+.se-cup-body { flex: 1; min-width: 0; padding: .85rem .85rem .9rem .95rem; }
+.se-cup-kicker {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .2em;
+    text-transform: uppercase;
+    color: #7b745f;
+}
+.se-cup-name {
+    margin-top: .2rem;
+    font-family: var(--serif);
+    font-size: 1.4rem; line-height: 1.05;
+    color: #1f4a3a;
+}
+.se-cup-status {
+    margin-top: .3rem;
+    font-size: .8rem; line-height: 1.35;
+    color: #4a4839;
+}
+.se-cup-plates {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .4rem;
+    margin-top: .75rem;
+}
+.se-cup-plate {
+    display: block;
+    min-width: 0;
+    padding: .42rem .5rem .45rem;
+    border-radius: 6px;
+    background: linear-gradient(180deg, #ecdcae, #d6bb7c);
+    box-shadow: inset 0 0 0 1px rgba(143,111,51,.55), inset 0 1px 0 rgba(255,255,255,.55);
+    color: #2e2410;
+    text-decoration: none;
+}
+.se-cup-plate b {
+    display: block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .14em;
+    color: #6b5221;
+}
+.se-cup-plate span {
+    display: block;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    font-family: var(--serif);
+    font-size: .9rem; line-height: 1.2;
+}
+.se-cup-plate--open {
+    background: #ece3c9;
+    box-shadow: inset 0 0 0 1px #c4b386;
+}
+.se-cup-plate--open span {
+    font-family: var(--sans); font-weight: 600;
+    font-size: .7rem; line-height: 1.55;
+    color: #1f4a3a;
+}
+.se-cup-plate--blank {
+    background: none;
+    box-shadow: none;
+    border: 1px dashed #c4b386;
+    color: #b9ab86;
+}
+.se-cup-plate--blank b { color: #b9ab86; }
+.se-cup-facts {
+    margin-top: .65rem;
+    font-size: .74rem; line-height: 1.45;
+    color: #5d5a4a;
+}
+.se-cup-facts b { font-weight: 600; color: #1b1f18; }
+.se-cup-go {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%;
+    margin-top: .8rem;
+    padding: .7rem 1rem;
+    border-radius: 9px;
+    background: #1f4a3a;
+    font-family: var(--sans); font-weight: 700;
+    font-size: .82rem;
+    color: #f5eedb;
+    text-decoration: none;
+}
+.se-cup-go:active { background: #2a6450; }
 </style>
 </head>
 <body>
@@ -111,6 +229,7 @@
     </header>
 
     <div id="feature"></div>
+    <div id="cup"></div>
     <div class="m-list" id="rows"><div class="m-empty">Opening the archives…</div></div>
 </main>
 
@@ -184,6 +303,80 @@
             '<path d="M 84.5 56 l 2.6 2.6 l -2.6 2.6 l -2.6 -2.6 z" fill="var(--gold-deep)" opacity=".8"/>' +
         '</svg>';
     }
+
+    // ── The Cup ticket ──
+    // cup/summary/ is null when the league has no Cup and none is coming,
+    // and then nothing is drawn.
+    var TROPHY =
+        '<svg width="34" height="41" viewBox="0 0 200 240" aria-hidden="true">' +
+        '<path d="M50 44 C14 44 12 104 64 114" fill="none" stroke="#c8a35b" stroke-width="11" stroke-linecap="round"/>' +
+        '<path d="M150 44 C186 44 188 104 136 114" fill="none" stroke="#c8a35b" stroke-width="11" stroke-linecap="round"/>' +
+        '<path d="M44 26 H156 V58 C156 108 130 138 100 138 C70 138 44 108 44 58 Z" fill="#c8a35b"/>' +
+        '<rect x="36" y="16" width="128" height="14" rx="3" fill="#e6cb8e"/>' +
+        '<path d="M62 38 V60 C62 90 74 112 90 124" fill="none" stroke="#e6cb8e" stroke-width="7" stroke-linecap="round" opacity=".7"/>' +
+        '<rect x="44" y="50" width="112" height="6" fill="#7d6230" opacity=".55"/>' +
+        '<rect x="91" y="136" width="18" height="34" fill="#c8a35b"/>' +
+        '<rect x="78" y="152" width="44" height="11" rx="5" fill="#e6cb8e"/>' +
+        '<path d="M64 170 H136 L146 194 H54 Z" fill="#c8a35b"/>' +
+        '<rect x="40" y="194" width="120" height="34" rx="2" fill="#7d6230"/>' +
+        '<rect x="40" y="194" width="120" height="4" fill="#e6cb8e" opacity=".5"/>' +
+        '<rect x="64" y="204" width="72" height="14" rx="1" fill="#1f4a3a" opacity=".9"/>' +
+        '</svg>';
+
+    // The trophy's base: the two newest years engraved (oldest first), then
+    // blank plates for the years to come, three plates in all.
+    function cupPlates(c) {
+        var chrono = c.years.slice().reverse();
+        var plates = chrono.slice(-2).map(function (y) {
+            var what = y.champion ? y.champion.name : y.state === 'before' ? 'Draw set' : (y.round ? y.round.short : 'In play');
+            return '<a class="se-cup-plate' + (y.champion ? '' : ' se-cup-plate--open') + '" href="' + esc(y.href) + '">' +
+                '<b>' + y.year + '</b><span>' + esc(what) + '</span></a>';
+        });
+        var next = chrono[chrono.length - 1].year + 1;
+        while (plates.length < 3) {
+            plates.push('<span class="se-cup-plate se-cup-plate--blank" aria-hidden="true"><b>' + next + '</b><span>&nbsp;</span></span>');
+            next++;
+        }
+        return '<div class="se-cup-plates">' + plates.join('') + '</div>';
+    }
+
+    function cupTicket(c) {
+        var stub = '<div class="se-cup-stub">' + TROPHY +
+            (c.since ? '<span class="se-cup-since">Since ' + c.since + '</span>' : '') + '</div>';
+        if (c.kind === 'preview') {
+            return '<div class="se-cup">' + stub +
+                '<div class="se-cup-body">' +
+                    '<div class="se-cup-kicker">New this season</div>' +
+                    '<div class="se-cup-name">' + esc(c.name) + '</div>' +
+                    '<div class="se-cup-status">' + esc(c.status) + '. A knockout bracket inside the season, with picks for the whole league.</div>' +
+                    '<a class="se-cup-go" href="' + esc(c.href) + '">See the preview</a>' +
+                '</div></div>';
+        }
+        var facts = [];
+        if (c.leader) {
+            var who = '<b>' + c.leader.names.map(esc).join(' and ') + '</b>';
+            facts.push(c.leader.done
+                ? who + ' won the bracket challenge with ' + c.leader.points + ' points'
+                : 'Bracket challenge: ' + who + (c.leader.names.length > 1 ? ' lead' : ' leads') + ' with ' + c.leader.points);
+        }
+        if (c.stamps) facts.push(c.stamps + (c.stamps === 1 ? ' stamp' : ' stamps') + ' handed out');
+        return '<div class="se-cup">' + stub +
+            '<div class="se-cup-body">' +
+                '<div class="se-cup-kicker">Knockout Cup</div>' +
+                '<div class="se-cup-name">' + esc(c.name) + '</div>' +
+                '<div class="se-cup-status">' + esc(c.status) + '</div>' +
+                cupPlates(c) +
+                (facts.length ? '<div class="se-cup-facts">' + facts.join(' · ') + '</div>' : '') +
+                '<a class="se-cup-go" href="' + esc(c.href) + '">' + (c.picksOpen ? 'Pick now' : 'Open the Cup') + '</a>' +
+            '</div></div>';
+    }
+
+    fetch('cup/summary/')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; })
+        .then(function (c) {
+            if (c && (c.kind === 'preview' || (c.years && c.years.length))) document.getElementById('cup').innerHTML = cupTicket(c);
+        });
 
     fetch('data/seasons_directory.json')
         .then(function (r) { return r.ok ? r.json() : null; })

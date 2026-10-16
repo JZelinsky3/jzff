@@ -110,6 +110,13 @@ export function roundNames(field: number): { name: string; short: string }[] {
   return out
 }
 
+// An upset is a win from four or more seed lines down (Joey, 2026-10-15): a
+// 9 beating a 7 is barely one, an 11 beating a 7 is. Every "Upset" tag (the
+// tickets, the reveal, the recap) and the Called the Upset stamp read this.
+export const UPSET_GAP = 4
+// A bigger one again: the Giant Killer stamp.
+export const GIANT_KILLER_GAP = 6
+
 export function recordStr(w: number, l: number, t: number): string {
   return t ? `${w}-${l}-${t}` : `${w}-${l}`
 }
@@ -285,7 +292,7 @@ export function cupNotes(b: CupBracket): CupNotes {
       const l = m.winner === 'a' ? m.b : m.a
       const margin = Math.round(((w.score ?? 0) - (l.score ?? 0)) * 100) / 100
       if (!closest || margin < closest.margin) closest = { winner: w.entrant.name, loser: l.entrant.name, margin, round: r.name }
-      if (m.upsetBy >= 3 && (!upset || m.upsetBy > upset.by)) {
+      if (m.upsetBy >= UPSET_GAP && (!upset || m.upsetBy > upset.by)) {
         upset = { winner: w.entrant.name, ws: w.score ?? 0, loser: l.entrant.name, ls: l.score ?? 0, by: m.upsetBy, round: r.name }
       }
     }
