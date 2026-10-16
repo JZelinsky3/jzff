@@ -57,12 +57,14 @@ function statusLine(b: CupBracket): string {
   if (!r) return 'The draw is set.'
   const games = r.matches.length
   const decide = `decided by week ${r.week} scores`
-  if (b.status === 'before') return `The draw is set. The ${r.name.toLowerCase()} is week ${r.week}.`
+  // "The semifinals are", "the first round is".
+  const is = /s$/.test(r.name) ? 'are' : 'is'
+  if (b.status === 'before') return `The draw is set. The ${r.name.toLowerCase()} ${is} week ${r.week}.`
   if (r.matches.some((m) => m.state === 'waiting')) return `Waiting on final week ${r.week} scores to settle the ${r.name.toLowerCase()}.`
   if (r.matches.some((m) => m.state === 'live')) {
     return r.name === 'Final'
       ? `The final is this week, ${decide}.`
-      : `The ${r.name.toLowerCase()} is this week: ${count(games)} ${games === 1 ? 'game' : 'games'}, ${decide}.`
+      : `The ${r.name.toLowerCase()} ${is} this week: ${count(games)} ${games === 1 ? 'game' : 'games'}, ${decide}.`
   }
   return `Next up, the ${r.name.toLowerCase()} in week ${r.week}.`
 }
