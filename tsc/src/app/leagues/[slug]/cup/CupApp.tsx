@@ -24,6 +24,7 @@ import { UPSET_GAP, type CupBracket, type CupEntrant, type CupMatch, type CupNot
 import type { CupExtras, CupMatchDetail, CupOdds, CupPicker } from '@/lib/cup/extras'
 import { nextTier, STAMP_BY_ID, STAMP_SETS, STAMPS, stampTier, TIER_NAMES, type StampAward, type StampId, type StampTier } from '@/lib/cup/stamps'
 import { trophy } from '@/lib/cup/trophy'
+import { BackLink } from './BackLink'
 import { Stamp } from './Stamp'
 import styles from './cup.module.css'
 
@@ -53,6 +54,8 @@ type Props = {
   banner?: ReactNode
   // The Cup Hall of Fame (cup/hall/): every Cup, all time.
   hallHref: string
+  // The league's almanac, for the desktop back link.
+  leagueHref: string
   // ?tab= opens a tab directly.
   initialTab?: string
   // Seeded on the Cup Rating (every Cup from the 2026 launch on); false for
@@ -449,6 +452,7 @@ export function CupApp(props: Props) {
     <div className={`${styles.app} ${barShown ? styles.appBar : ''}`}>
       <header className={styles.mast}>
         <div className={styles.mastInner}>
+          <BackLink href={props.leagueHref} />
           <div className={styles.mastText}>
             <p className={styles.kicker}>
               {props.leagueName} · {props.year}

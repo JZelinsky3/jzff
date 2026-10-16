@@ -173,6 +173,7 @@ export default async function CupPage({ params, searchParams }: Props) {
         forceReveal={(await searchParams).reveal === '1'}
         demo={demo}
         hallHref={`/leagues/${slug}/cup/hall/`}
+        leagueHref={leagueHref}
         initialTab={(await searchParams).tab}
         rated={cup.seeds.some((x) => x.rating != null)}
         // The demo is mid-Cup; this says when a real league's starts.

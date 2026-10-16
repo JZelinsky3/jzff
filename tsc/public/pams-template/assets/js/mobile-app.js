@@ -583,19 +583,17 @@
     function buildSheets(ctx, liveMode) {
         var udfa = ctx.leagueTier === 'udfa';
 
-        // The league's Cup, all year: its brackets and champions are league
-        // history, so it sits in the History list (and wherever that list
-        // goes: More's Almanac in season, More's Society on a free league,
-        // whose History tab goes straight to Seasons). The strip above the
-        // app bar only shows a week either side of the Cup.
+        // The league's Cup Hall of Fame (every Cup, all time, each year's
+        // bracket a tap away), last in the History list and wherever that
+        // list goes: More's Almanac in season, More's Society on a free
+        // league, whose History tab goes straight to Seasons. Only once
+        // there's a real Cup. The Cup itself isn't listed (Joey,
+        // 2026-10-16): while it's on, the strip above the app bar leads to
+        // it, and the Hall does the rest of the year.
         var cupLink = (window.__DC || {}).cupLink;
-        var cupRow = cupLink && cupLink.href
-            ? sheetRow('cup/', cupLink.name, cupLink.preview ? { sub: 'New' } : {})
+        var hallRow = cupLink && cupLink.href && !cupLink.preview
+            ? sheetRow('cup/hall/', cupLink.name.replace(/^The /, '') + ' Hall of Fame')
             : '';
-        // Its Hall of Fame (every Cup, all time) once there's a real Cup.
-        if (cupRow && !cupLink.preview) {
-            cupRow += sheetRow('cup/hall/', cupLink.name.replace(/^The /, '') + ' Hall of Fame');
-        }
 
         // History sheet — the History tab's targets.
         var history = document.createElement('dialog');
@@ -605,9 +603,9 @@
             '<div class="m-sheet-handle" aria-hidden></div>' +
             '<div class="m-sheet-title">League History</div>' +
             sheetRow('seasons/', 'Season Archives') +
-            cupRow +
             sheetRow('records', 'Record Book', { locked: udfa }) +
-            sheetRow('draft/', 'Draft History', { locked: udfa });
+            sheetRow('draft/', 'Draft History', { locked: udfa }) +
+            hallRow;
 
         // Live-mode sheets — the Week and Desks tabs' targets.
         var week = null, desk = null;
@@ -676,7 +674,7 @@
         var society = udfa
             ? '<span class="m-sheet-label">The Society</span>' +
               sheetRow('rivalries/', 'Rivalries') +
-              cupRow +
+              hallRow +
               '<div class="m-sheet-divider"></div>' +
               '<span class="m-sheet-label">With a paid plan</span>' +
               sheetRow('records', 'Record Book', { locked: true }) +
@@ -687,12 +685,12 @@
             ? '<span class="m-sheet-label">The Almanac</span>' +
               sheetRow('standings', 'Standings') +
               sheetRow('seasons/', 'Season Archives') +
-              cupRow +
               sheetRow('records', 'Record Book') +
               sheetRow('draft/', 'Draft History') +
               sheetRow('managers/', 'Managers') +
               sheetRow('managers/all-time', 'All-Time Team') +
-              sheetRow('rivalries/', 'Rivalries')
+              sheetRow('rivalries/', 'Rivalries') +
+              hallRow
             : '<span class="m-sheet-label">The Society</span>' +
               sheetRow('managers/', 'Managers') +
               sheetRow('managers/all-time', 'All-Time Team') +

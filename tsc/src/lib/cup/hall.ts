@@ -1,6 +1,8 @@
 // The Cup Hall of Fame: every Cup a league has played, read as one history.
 // The champions engraved year by year, each manager's Cup career, the Cup's
-// own records, and the bracket challenge all-time.
+// own records, the bracket challenge all-time, and everyone's stamps across
+// every Cup (a stamp's colour is its all-time count, so the books only
+// grow).
 //
 // Pure: it reads what lib/cup/history.ts (or the demo, lib/cup/demo.ts)
 // already loads, so nothing new is stored. A Cup that's still running counts
@@ -10,7 +12,7 @@
 import { UPSET_GAP, type CupBracket, type CupEntrant, type CupMatch } from './bracket'
 import { CHAMPION_BONUS, roundPoints } from './extras'
 import type { LeagueCups } from './history'
-import { challengePoints, STAMP_BY_ID, stampTier } from './stamps'
+import { challengePoints, STAMP_BY_ID, STAMPS, stampTier, type StampId, type StampTier } from './stamps'
 
 // How far a team got in one Cup: won it, lost the final, out in the
 // semifinals, the quarterfinals, or earlier; still alive; not in it.
@@ -71,9 +73,25 @@ export type HallPicker = {
   // Champion picks that came good, and bracket challenges won.
   calledIt: number
   wins: number
-  stamps: number
-  kinds: number
-  gold: number
+}
+
+// One person's stamps across every Cup.
+export type HallBook = {
+  person: string
+  name: string
+  total: number
+  tiers: Record<StampTier, number>
+  // Each kind they hold, at its all-time colour, best first.
+  stamps: { id: StampId; count: number; tier: StampTier; year: number; note: string }[]
+}
+
+// Every stamp, and who holds the most of it.
+export type HallStamp = {
+  id: StampId
+  total: number
+  holders: number
+  // The most anyone holds (ties share it), and that colour.
+  top: { names: string[]; count: number; tier: StampTier | null } | null
 }
 
 export type CupHall = {
@@ -84,6 +102,8 @@ export type CupHall = {
   managers: HallManager[]
   records: HallRecord[]
   pickers: HallPicker[]
+  books: HallBook[]
+  catalogue: HallStamp[]
   stampsTotal: number
   // Settled Cup games across every Cup.
   gamesPlayed: number
@@ -265,6 +285,7 @@ export function buildCupHall(lc: LeagueCups, hrefBase: string): CupHall {
     managers: register,
     records: records(games, register, bands, lc),
     pickers: pickers(lc),
+    ...stampBooks(lc),
     stampsTotal: lc.stamps.length,
     gamesPlayed: games.length,
   }
@@ -329,7 +350,7 @@ function pickers(lc: LeagueCups): HallPicker[] {
   const row = (person: string) => {
     let r = rows.get(person)
     if (!r) {
-      r = { person, name: lc.nameOf(person), points: 0, correct: 0, decided: 0, calledIt: 0, wins: 0, stamps: 0, kinds: 0, gold: 0 }
+      r = { person, name: lc.nameOf(person), points: 0, correct: 0, decided: 0, calledIt: 0, wins: 0 }
       rows.set(person, r)
     }
     return r
@@ -350,25 +371,56 @@ function pickers(lc: LeagueCups): HallPicker[] {
       if (w && w.entrant.managerId === p.picked) r.correct++
     }
   }
-  const count = new Map<string, Map<string, number>>()
   for (const s of lc.stamps) {
-    const r = row(s.person)
-    r.stamps++
-    if (s.stamp === 'called-it') r.calledIt++
-    if (s.stamp === 'challenge-winner') r.wins++
-    const c = count.get(s.person) ?? new Map<string, number>()
-    c.set(s.stamp, (c.get(s.stamp) ?? 0) + 1)
-    count.set(s.person, c)
-  }
-  for (const [person, c] of count) {
-    const r = row(person)
-    r.kinds = c.size
-    r.gold = [...c.entries()].filter(([id, n]) => {
-      const def = STAMP_BY_ID.get(id as never)
-      return def ? stampTier(def, n) === 'gold' : false
-    }).length
+    if (s.stamp === 'called-it') row(s.person).calledIt++
+    if (s.stamp === 'challenge-winner') row(s.person).wins++
   }
   return [...rows.values()]
-    .filter((r) => r.points > 0 || r.decided > 0 || r.stamps > 0)
+    .filter((r) => r.points > 0 || r.decided > 0)
     .sort((x, y) => y.points - x.points || y.wins - x.wins || y.correct - x.correct || x.name.localeCompare(y.name))
+}
+
+const TIER_RANK: Record<StampTier, number> = { gold: 3, silver: 2, bronze: 1 }
+
+// Everyone's stamp book across every Cup, and the catalogue: each stamp,
+// how many have been handed out, and who holds the most.
+function stampBooks(lc: LeagueCups): { books: HallBook[]; catalogue: HallStamp[] } {
+  const byPerson = new Map<string, Map<StampId, { count: number; year: number; note: string }>>()
+  for (const s of lc.stamps) {
+    const mine = byPerson.get(s.person) ?? new Map()
+    const cur = mine.get(s.stamp)
+    // Keep the latest one's year and line for the drawing.
+    mine.set(s.stamp, { count: (cur?.count ?? 0) + 1, year: Math.max(cur?.year ?? 0, s.year), note: !cur || s.year >= cur.year ? s.note : cur.note })
+    byPerson.set(s.person, mine)
+  }
+  const books: HallBook[] = [...byPerson.entries()].map(([person, mine]) => {
+    const tiers: Record<StampTier, number> = { gold: 0, silver: 0, bronze: 0 }
+    const stamps = [...mine.entries()].map(([id, x]) => {
+      const tier = stampTier(STAMP_BY_ID.get(id)!, x.count) ?? 'bronze'
+      tiers[tier]++
+      return { id, count: x.count, tier, year: x.year, note: x.note }
+    })
+    const order = new Map(STAMPS.map((d, i) => [d.id, i]))
+    stamps.sort((a, b) => TIER_RANK[b.tier] - TIER_RANK[a.tier] || b.count - a.count || order.get(a.id)! - order.get(b.id)!)
+    return { person, name: lc.nameOf(person), total: stamps.reduce((n, x) => n + x.count, 0), tiers, stamps }
+  })
+  books.sort((a, b) => b.total - a.total || b.tiers.gold - a.tiers.gold || b.stamps.length - a.stamps.length || a.name.localeCompare(b.name))
+
+  const catalogue: HallStamp[] = STAMPS.map((def) => {
+    const holders = books.map((b) => ({ name: b.name, x: b.stamps.find((x) => x.id === def.id) })).filter((h) => h.x)
+    const total = holders.reduce((n, h) => n + h.x!.count, 0)
+    const most = Math.max(0, ...holders.map((h) => h.x!.count))
+    const top = most
+      ? {
+          names: holders
+            .filter((h) => h.x!.count === most)
+            .map((h) => h.name)
+            .sort(),
+          count: most,
+          tier: stampTier(def, most),
+        }
+      : null
+    return { id: def.id, total, holders: holders.length, top }
+  })
+  return { books, catalogue }
 }

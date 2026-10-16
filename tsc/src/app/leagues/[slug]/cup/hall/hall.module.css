@@ -78,7 +78,9 @@
   display: grid;
   text-align: center;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin: 16px auto 0;
+  /* !important: the page's reset (.page dl { margin: 0 }) outranks a
+     single class and had the bar sitting on the line above it. */
+  margin: 20px auto 0 !important;
   max-width: 380px;
   border-radius: 12px;
   background: rgba(0, 0, 0, 0.2);
@@ -148,13 +150,16 @@
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
 }
 
-/* A band: brass, lit across the middle, the name cut into it. */
+/* A band: brass, lit across the middle, the name cut into it. The name is
+   centred on the whole band (under the trophy), the year pinned to the
+   left; equal room both sides so the two never touch. */
 .band {
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
+  position: relative;
+  display: flex;
   align-items: center;
+  justify-content: center;
   height: 25px;
-  padding: 0 10px 0 8px;
+  padding: 0 44px;
   border-radius: 3px;
   background: linear-gradient(90deg, var(--band-lo), var(--band) 18%, var(--band-hi) 50%, var(--band) 82%, var(--band-lo));
   color: var(--engrave);
@@ -162,14 +167,18 @@
 }
 
 .band b {
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  transform: translateY(-50%);
   font-family: var(--cp-num);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  text-align: left;
 }
 
 .band span {
+  min-width: 0;
   font-family: var(--cp-display);
   font-size: 14px;
   white-space: nowrap;
@@ -926,11 +935,268 @@
   color: var(--ink-3);
 }
 
+/* ── Five rooms in the Cup's four-tab control: each tab as wide as its
+   word, a touch smaller, so all five fit a phone. ── */
+
+.rooms {
+  grid-template-columns: repeat(5, auto) !important;
+}
+
+.rooms > button {
+  min-width: 0;
+  padding: 0 4px !important;
+  font-size: 12px !important;
+}
+
+.sub {
+  margin-top: -6px !important;
+  font-size: 13.5px;
+  color: var(--ivory-2);
+}
+
+/* ── Stamps: career books ── */
+
+.books {
+  margin: 0 !important;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.book {
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 0 0 1px var(--bline);
+  overflow: hidden;
+}
+
+.bookOpen {
+  background: var(--paper);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.3);
+}
+
+.bookHead {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px 10px 12px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bookRank {
+  font-family: var(--cp-num);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--mute);
+}
+
+.bookWho {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bookName {
+  overflow: hidden;
+  font-family: var(--cp-display);
+  font-size: 18px;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ivory);
+}
+
+.bookTiers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+/* A count per colour, on a little coin of that metal. */
+.tier_gold,
+.tier_silver,
+.tier_bronze {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-family: var(--cp-num);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.tier_gold {
+  background: radial-gradient(circle at 35% 30%, #f6e2b0, #c8a35b 60%, #8f6f33);
+  color: #3a2c10;
+}
+
+.tier_silver {
+  background: radial-gradient(circle at 35% 30%, #f4f4f0, #b9bcbf 60%, #7b7f84);
+  color: #26292c;
+}
+
+.tier_bronze {
+  background: radial-gradient(circle at 35% 30%, #f1c9a2, #b5794a 60%, #7a4b26);
+  color: #2b1808;
+}
+
+.bookKinds {
+  margin-left: 2px;
+  font-family: var(--cp-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.bookTotal {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-family: var(--cp-num);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--brass-hi);
+}
+
+.bookTotal small {
+  margin-top: 2px;
+  font-family: var(--cp-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+/* Open: the book on cream paper. */
+.bookOpen .bookName {
+  color: var(--ink);
+}
+
+.bookOpen .bookRank,
+.bookOpen .bookKinds,
+.bookOpen .bookTotal small {
+  color: var(--ink-3);
+}
+
+.bookOpen .bookTotal {
+  color: var(--green);
+}
+
+.bookPage {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 10px 6px;
+  padding: 4px 12px 16px;
+  border-top: 1px dashed var(--pline);
+}
+
+.bookStamp {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding-top: 10px;
+  text-align: center;
+}
+
+.bookStamp figcaption {
+  font-size: 11.5px;
+  line-height: 1.2;
+  color: var(--ink-2);
+}
+
+.bookStamp figcaption b {
+  font-family: var(--cp-num);
+  font-size: 12.5px;
+  color: var(--green);
+}
+
+/* ── Stamps: the catalogue ── */
+
+.setGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setHead {
+  font-family: var(--cp-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.catalogue {
+  display: grid;
+  gap: 8px;
+}
+
+.cat {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px 10px 10px;
+  border-radius: 14px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.catText {
+  min-width: 0;
+}
+
+.catName {
+  font-family: var(--cp-display);
+  font-size: 17px;
+  line-height: 1.15;
+}
+
+.catHow {
+  margin-top: 2px !important;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--ink-2);
+}
+
+.catTop {
+  margin-top: 4px !important;
+  font-family: var(--cp-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.catTop b {
+  color: var(--green);
+}
+
 /* ── Wider screens ── */
 
 @media (min-width: 700px) {
   .plates,
-  .medallions {
+  .medallions,
+  .catalogue {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -949,7 +1215,7 @@
   }
 
   .tally {
-    margin-left: 0;
+    margin-left: 0 !important;
   }
 
   .barrel {
@@ -963,7 +1229,16 @@
     max-width: var(--desk, 1240px);
   }
 
-  .medallions {
+  .medallions,
+  .catalogue {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .rooms {
+    grid-template-columns: repeat(5, 130px) !important;
+  }
+
+  .rooms > button {
+    font-size: 13.5px !important;
   }
 }

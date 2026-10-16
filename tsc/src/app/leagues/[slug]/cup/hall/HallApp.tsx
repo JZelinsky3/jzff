@@ -6,22 +6,27 @@
 //   Managers   every manager's Cup career: titles, finals, record, scoring,
 //              and a mark for how far they got each year
 //   Records    the Cup's own records, struck as medallions
-//   Challenge  the bracket challenge all-time, and the stamp collectors
+//   Challenge  the bracket challenge all-time
+//   Stamps     everyone's stamp book across every Cup, and every stamp
 
 import Link from 'next/link'
 import { useState } from 'react'
-import type { CupHall, HallBand, HallFinish, HallManager } from '@/lib/cup/hall'
+import type { CupHall, HallBand, HallBook, HallFinish, HallManager } from '@/lib/cup/hall'
+import { STAMP_BY_ID, STAMP_SETS, STAMPS, TIER_NAMES } from '@/lib/cup/stamps'
 import { trophy } from '@/lib/cup/trophy'
+import { BackLink } from '../BackLink'
+import { Stamp } from '../Stamp'
 import cup from '../cup.module.css'
 import h from './hall.module.css'
 
-type Room = 'champions' | 'managers' | 'records' | 'challenge'
+type Room = 'champions' | 'managers' | 'records' | 'challenge' | 'stamps'
 
 const ROOMS: [Room, string][] = [
   ['champions', 'Champions'],
   ['managers', 'Managers'],
   ['records', 'Records'],
   ['challenge', 'Challenge'],
+  ['stamps', 'Stamps'],
 ]
 
 function ordinal(n: number): string {
@@ -40,7 +45,7 @@ const pts = (n: number | null) => (n == null ? '' : n.toFixed(2))
 // ?room= opens a tab directly (the Cup's Leaders links to the Challenge).
 const isRoom = (r: string | undefined): r is Room => ROOMS.some(([id]) => id === r)
 
-export function HallApp({ hall, leagueName, cupHref, room: asked }: { hall: CupHall; leagueName: string; cupHref: string; room?: string }) {
+export function HallApp({ hall, leagueName, cupHref, leagueHref, room: asked }: { hall: CupHall; leagueName: string; cupHref: string; leagueHref: string; room?: string }) {
   const [room, setRoomState] = useState<Room>(isRoom(asked) ? asked : 'champions')
   const setRoom = (r: Room) => {
     setRoomState(r)
@@ -58,6 +63,7 @@ export function HallApp({ hall, leagueName, cupHref, room: asked }: { hall: CupH
     <div className={h.hall}>
       <header className={h.mast}>
         <div className={h.mastInner}>
+          <BackLink href={leagueHref} top={-18} />
           <div className={h.mastText}>
             <p className={h.kicker}>
               {leagueName} · Since {hall.since}
@@ -90,7 +96,7 @@ export function HallApp({ hall, leagueName, cupHref, room: asked }: { hall: CupH
       </header>
 
       <nav className={cup.tabs} aria-label="The Hall">
-        <div className={cup.tabsInner}>
+        <div className={`${cup.tabsInner} ${h.rooms}`}>
           {ROOMS.map(([id, label]) => (
             <button key={id} type="button" className={`${cup.tab} ${room === id ? cup.tabOn : ''}`} onClick={() => setRoom(id)} aria-pressed={room === id}>
               {label}
@@ -104,6 +110,7 @@ export function HallApp({ hall, leagueName, cupHref, room: asked }: { hall: CupH
         {room === 'managers' ? <Managers hall={hall} /> : null}
         {room === 'records' ? <Records hall={hall} running={running} /> : null}
         {room === 'challenge' ? <Challenge hall={hall} cupHref={cupHref} /> : null}
+        {room === 'stamps' ? <Stamps hall={hall} cupHref={cupHref} /> : null}
       </div>
     </div>
   )
@@ -330,7 +337,6 @@ function Records({ hall, running }: { hall: CupHall; running: HallBand | null })
 function Challenge({ hall, cupHref }: { hall: CupHall; cupHref: string }) {
   const board = hall.pickers
   const top = board[0]?.points ?? 0
-  const collectors = [...board].filter((p) => p.stamps).sort((x, y) => y.stamps - x.stamps || y.gold - x.gold || x.name.localeCompare(y.name)).slice(0, 5)
   if (!board.length) {
     return (
       <section className={h.room}>
@@ -368,26 +374,113 @@ function Challenge({ hall, cupHref }: { hall: CupHall; cupHref: string }) {
           </li>
         ))}
       </ol>
-
-      {collectors.length ? (
-        <>
-          <h2 className={h.head}>Stamp Collectors</h2>
-          <div className={h.collectors}>
-            {collectors.map((p) => (
-              <div key={p.person} className={h.collector}>
-                <span className={h.collectorNum}>{p.stamps}</span>
-                <span className={h.collectorName}>{p.name}</span>
-                <span className={h.collectorLine}>
-                  {p.kinds} kinds{p.gold ? ` · ${p.gold} gold` : ''}
-                </span>
-              </div>
-            ))}
-          </div>
-          <p className={h.note}>
-            Every stamp book is in the Cup, under <Link href={cupHref}>Leaders</Link>.
-          </p>
-        </>
-      ) : null}
     </section>
+  )
+}
+
+// ── Stamps: every book, across every Cup ──
+
+// A book closed shows the name, the count and the colours; open, every
+// stamp they hold at its all-time colour. The leader's starts open.
+function Stamps({ hall, cupHref }: { hall: CupHall; cupHref: string }) {
+  const [open, setOpen] = useState<string | null>(hall.books[0]?.person ?? null)
+  const caption = hall.name.replace(/^The\s+/i, '')
+  if (!hall.books.length) {
+    return (
+      <section className={h.room}>
+        <p className={h.empty}>No stamps yet. The first go out when round one is final.</p>
+        <p className={h.note}>
+          <Link href={cupHref}>Open the Cup</Link>
+        </p>
+      </section>
+    )
+  }
+  return (
+    <section className={h.room}>
+      <h2 className={h.head}>Career Stamps</h2>
+      <p className={h.sub}>Every Cup adds to the same book. A stamp turns silver, then gold, the more times it&apos;s earned.</p>
+      <ol className={h.books}>
+        {hall.books.map((b, i) => (
+          <Book key={b.person} b={b} rank={i + 1} caption={caption} open={open === b.person} onToggle={() => setOpen(open === b.person ? null : b.person)} />
+        ))}
+      </ol>
+
+      <h2 className={h.head}>Every Stamp</h2>
+      {STAMP_SETS.map(({ set, name }) => (
+        <div key={set} className={h.setGroup}>
+          <h3 className={h.setHead}>{name}</h3>
+          <div className={h.catalogue}>
+            {hall.catalogue
+              .filter((c) => STAMP_BY_ID.get(c.id)!.set === set)
+              .map((c) => {
+                const def = STAMP_BY_ID.get(c.id)!
+                return (
+                  <article key={c.id} className={h.cat}>
+                    <Stamp def={def} tier={c.top?.tier ?? null} caption={caption} size={64} seed={c.id} />
+                    <div className={h.catText}>
+                      <p className={h.catName}>{def.name}</p>
+                      <p className={h.catHow}>{def.how}</p>
+                      <p className={h.catTop}>
+                        {c.top ? (
+                          <>
+                            Most: <b>{c.top.names.join(', ')}</b> ×{c.top.count}
+                          </>
+                        ) : (
+                          'Nobody yet'
+                        )}
+                      </p>
+                    </div>
+                  </article>
+                )
+              })}
+          </div>
+        </div>
+      ))}
+      <p className={h.note}>
+        Bronze, silver and gold go by how many times a stamp has been earned, all-time. {STAMPS.length} to collect.
+      </p>
+    </section>
+  )
+}
+
+function Book({ b, rank, caption, open, onToggle }: { b: HallBook; rank: number; caption: string; open: boolean; onToggle: () => void }) {
+  return (
+    <li className={`${h.book} ${open ? h.bookOpen : ''}`}>
+      <button type="button" className={h.bookHead} onClick={onToggle} aria-expanded={open}>
+        <span className={h.bookRank}>{rank}</span>
+        <span className={h.bookWho}>
+          <span className={h.bookName}>{b.name}</span>
+          <span className={h.bookTiers}>
+            {(['gold', 'silver', 'bronze'] as const).map((t) =>
+              b.tiers[t] ? (
+                <span key={t} className={h[`tier_${t}`]} title={`${b.tiers[t]} ${TIER_NAMES[t].toLowerCase()}`}>
+                  {b.tiers[t]}
+                </span>
+              ) : null,
+            )}
+            <span className={h.bookKinds}>
+              {b.stamps.length} of {STAMPS.length} kinds
+            </span>
+          </span>
+        </span>
+        <span className={h.bookTotal}>
+          {b.total}
+          <small>{b.total === 1 ? 'stamp' : 'stamps'}</small>
+        </span>
+      </button>
+      {open ? (
+        <div className={h.bookPage}>
+          {b.stamps.map((x) => (
+            <figure key={x.id} className={h.bookStamp} title={`${STAMP_BY_ID.get(x.id)!.name}: ${x.count} (${TIER_NAMES[x.tier]})`}>
+              <Stamp def={STAMP_BY_ID.get(x.id)!} tier={x.tier} year={x.year} caption={caption} size={60} seed={x.note} />
+              <figcaption>
+                {STAMP_BY_ID.get(x.id)!.name}
+                {x.count > 1 ? <b> ×{x.count}</b> : null}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      ) : null}
+    </li>
   )
 }

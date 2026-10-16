@@ -9,6 +9,7 @@ import { buildCupHall } from '@/lib/cup/hall'
 import { CUP_LAUNCH, drawDayText } from '@/lib/cup/launch'
 import { DEMO_ALMANAC, DEMO_CUP_LEAGUE, demoLeagueCups, isDemoCup } from '@/lib/cup/demo'
 import { trophy } from '@/lib/cup/trophy'
+import { BackLink } from '../BackLink'
 import { HallApp } from './HallApp'
 import styles from '../cup.module.css'
 import h from './hall.module.css'
@@ -70,11 +71,12 @@ export default async function CupHallPage({ params, searchParams }: Props) {
   return (
     <main className={styles.page}>
       {hall ? (
-        <HallApp hall={hall} leagueName={league.name} cupHref={cupHref} room={room} />
+        <HallApp hall={hall} leagueName={league.name} cupHref={cupHref} leagueHref={leagueHref} room={room} />
       ) : (
         // No Cup yet: the empty trophy, and the way to the countdown.
         <header className={h.mast}>
           <div className={h.mastInner}>
+            <BackLink href={leagueHref} top={-18} />
             <div className={h.mastText}>
               <p className={h.kicker}>{league.name}</p>
               <h1 className={h.title}>

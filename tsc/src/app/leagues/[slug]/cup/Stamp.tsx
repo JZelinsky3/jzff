@@ -252,7 +252,9 @@ function ring(kind: Ring, dash: string | undefined, ink: string) {
           <circle cx="50" cy="50" r="46.6" strokeWidth="1.6" strokeDasharray={dash} />
           {Array.from({ length: 44 }, (_, i) => {
             const a = (i / 44) * Math.PI * 2
-            return <circle key={i} cx={50 + 43.2 * Math.cos(a)} cy={50 + 43.2 * Math.sin(a)} r="1.05" fill={ink} stroke="none" />
+            // Rounded like the other rings: the server and the browser can
+            // disagree on a sine's last digit, which is a hydration mismatch.
+            return <circle key={i} cx={(50 + 43.2 * Math.cos(a)).toFixed(2)} cy={(50 + 43.2 * Math.sin(a)).toFixed(2)} r="1.05" fill={ink} stroke="none" />
           })}
           <circle cx="50" cy="50" r="39.8" strokeWidth="1.1" />
         </>

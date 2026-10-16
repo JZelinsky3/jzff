@@ -14,6 +14,7 @@ import { roundPoints, CHAMPION_BONUS } from '@/lib/cup/extras'
 import { CUP_MAX_FIELD } from '@/lib/cup/bracket'
 import { trophy } from '@/lib/cup/trophy'
 import { ShareButton } from '../recap/ShareButton'
+import { BackLink } from './BackLink'
 import { Countdown } from './Countdown'
 import styles from './cup.module.css'
 import pv from './preview.module.css'
@@ -79,6 +80,7 @@ export function CupPreviewPage({ league, preview, pageUrl, leagueHref }: { leagu
     <main className={styles.page}>
       <header className={styles.mast}>
         <div className={styles.mastInner}>
+          <BackLink href={leagueHref ?? `/leagues/${league.slug}/`} />
           <div className={styles.mastText}>
             <p className={styles.kicker}>
               {league.name} · {preview.year}

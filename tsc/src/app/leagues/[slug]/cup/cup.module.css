@@ -220,6 +220,43 @@
   color: var(--brass-hi);
 }
 
+/* Back to the league, desktop only (BackLink.tsx): pinned above the
+   kicker in the masthead's top padding, so nothing else moves. */
+.backLink {
+  position: absolute;
+  left: 0;
+  z-index: 1;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ivory-2) !important;
+  text-decoration: none;
+}
+
+.backLink svg {
+  color: var(--brass);
+  transition: transform 0.15s;
+}
+
+@media (min-width: 900px) {
+  .backLink {
+    display: inline-flex;
+  }
+}
+
+@media (hover: hover) {
+  .backLink:hover {
+    color: var(--ivory) !important;
+  }
+
+  .backLink:hover svg {
+    transform: translateX(-2px);
+  }
+}
+
 /* The trophy links to its Hall of Fame; this tag says so. */
 .mastCup {
   text-decoration: none;
