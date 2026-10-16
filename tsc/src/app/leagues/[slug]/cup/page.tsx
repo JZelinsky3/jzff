@@ -118,6 +118,20 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     }
   }
   if (!view) return { title: `The Cup · ${league.name}`, robots: { index: false, follow: false } }
+  // The demo's link is shared with people who have no league here yet: it
+  // pitches the Cup, not the week the demo is frozen in.
+  if (isDemoCup(slug) && !year) {
+    const title = `${CUP_LAUNCH.name} · Try the Demo`
+    const description = 'A knockout bracket inside your fantasy season. Pick every game, follow the title odds and collect stamps. Free for Sleeper and ESPN leagues.'
+    const image = { url: `${SITE_URL}/api/og/cup/${slug}/?v=demo-1`, width: 1200, height: 630, alt: title }
+    return {
+      title,
+      description,
+      alternates: { canonical: `${SITE_URL}/leagues/${slug}/cup/` },
+      openGraph: { title, description, images: [image], type: 'website' },
+      twitter: { card: 'summary_large_image', title, description, images: [image.url] },
+    }
+  }
   const title = `${view.cup.name} · ${league.name}`
   const description = statusLine(view.bracket)
   // Cache-bust by round: the card changes every week the Cup moves.

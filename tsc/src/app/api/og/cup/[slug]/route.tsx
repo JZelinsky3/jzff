@@ -130,6 +130,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   if (!view) return new Response('Not found', { status: 404 })
 
   const fonts = await loadFonts()
+  // The demo's link goes out to people with no league on the site yet: the
+  // card sells the Cup as a whole, not the week the demo is frozen in.
+  if (demo && !year && format === 'card') return demoCardImage(fonts)
   return format === 'post'
     ? postImage(view.cup.name, leagueName, view.cup.season_year, view.bracket, slug, fonts)
     : cardImage(view.cup.name, leagueName, view.cup.season_year, view.bracket, fonts)
@@ -294,6 +297,94 @@ function cardImage(
                 }}
               >
                 {`${b.field} teams · Weeks ${b.startWeek}-${b.finalWeek}`}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    { width: 1200, height: 630, fonts },
+  )
+}
+
+// ── The demo's link preview ──────────────────────────────────────────────
+
+const PAPER = '#f5eedb'
+const INK = '#1b1f18'
+const INK_3 = '#7b745f'
+
+const DEMO_FEATURES: [string, string][] = [
+  ['Pick Every Game', 'Tap who wins, points each round'],
+  ['Live Title Odds', 'Re-run after every week'],
+  ['Collect Stamps', 'Giant Killer, Jinxed, Traitor'],
+  ['A Hall of Fame', 'Every champion, year by year'],
+]
+
+function demoCardImage(fonts: Awaited<ReturnType<typeof loadFonts>>) {
+  return new ImageResponse(
+    (
+      <div style={{ display: 'flex', width: '1200px', height: '630px', background: BOARD, padding: '22px' }}>
+        <div style={{ display: 'flex', flex: 1, border: `1px solid ${LINE_2}`, padding: '6px' }}>
+          <div
+            style={{
+              display: 'flex',
+              flex: 1,
+              border: `1px solid rgba(200,163,91,0.45)`,
+              padding: '40px 46px 36px 50px',
+              backgroundImage: `radial-gradient(circle at 70% 0%, #1b4a39 0%, ${BOARD} 62%)`,
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flex: 1, paddingBottom: '14px' }}>
+              <div style={{ display: 'flex', fontFamily: 'JetBrains', fontWeight: 700, fontSize: '17px', letterSpacing: '0.24em', textTransform: 'uppercase', color: BRASS }}>
+                Free for Sleeper and ESPN leagues
+              </div>
+              <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: `${titleSize(CUP_LAUNCH.name, 690, 104)}px`, lineHeight: 1, color: IVORY, marginTop: '14px', whiteSpace: 'nowrap' }}>
+                {CUP_LAUNCH.name}
+              </div>
+              <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: '30px', color: IVORY_2, marginTop: '14px' }}>
+                A knockout bracket inside your fantasy season
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', marginTop: '30px', width: '690px' }}>
+                {DEMO_FEATURES.map(([title, sub]) => (
+                  <div
+                    key={title}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      width: '330px',
+                      height: '86px',
+                      marginRight: '14px',
+                      marginBottom: '14px',
+                      padding: '0 20px',
+                      background: PAPER,
+                      borderLeft: `6px solid ${BRASS}`,
+                    }}
+                  >
+                    <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '28px', lineHeight: 1.1, color: INK }}>{title}</div>
+                    <div style={{ display: 'flex', fontFamily: 'JetBrains', fontSize: '14px', color: INK_3, marginTop: '5px' }}>{sub}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '300px', flexShrink: 0 }}>
+              {trophy({ width: 230, brass: BRASS, light: BRASS_HI, dark: BRASS_LO, plate: BOARD })}
+              <div
+                style={{
+                  display: 'flex',
+                  marginTop: '18px',
+                  padding: '8px 18px',
+                  background: '#c19b52',
+                  color: '#1d1708',
+                  fontFamily: 'JetBrains',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Try the demo
               </div>
             </div>
           </div>
