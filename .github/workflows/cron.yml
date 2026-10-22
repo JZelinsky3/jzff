@@ -190,8 +190,11 @@ jobs:
             '47 16 * * 2') paths='refresh recaps' ;;
             '23 15 * * 3') paths='refresh recaps cup-draw' ;;
             '7 13 * * 3')  paths='cup-draw' ;;
-            '17 14 * * 4') paths='reports cup-draw' ;;
-            '41 18 * * 4') paths='reports' ;;
+            # HOLD 2026-10-22: Joey is holding the week 6 Progress Report until
+            # he green-lights it. Restore to 'reports cup-draw' and 'reports',
+            # then dispatch `reports` from the Actions tab to send it.
+            '17 14 * * 4') paths='cup-draw' ;;
+            '41 18 * * 4') paths='cup-draw' ;;
             '0 13 * * 6')  paths='social-plan' ;;
             '20 0-2,12-23 * * *') paths='social-publish' ;;
             *)
