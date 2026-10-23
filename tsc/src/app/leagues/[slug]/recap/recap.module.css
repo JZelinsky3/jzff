@@ -442,6 +442,11 @@
   background: var(--paper);
   color: var(--ink) !important;
 }
+.jumps a[data-accent] {
+  border-color: #c8a35b;
+  background: #c8a35b;
+  color: #0d2a21 !important;
+}
 
 /* ── Sections: each one its own stock ────────────────────────────────── */
 
@@ -1363,21 +1368,241 @@
   filter: brightness(1.08);
 }
 
-/* ── Free edition ────────────────────────────────────────────────────── */
+/* ── Free edition: the full paper, blacked out ─────────────────────────
+   Marker-black bars where the names and numbers would be (never real text
+   underneath), a red rubber stamp, and real labels and ranks where the free
+   facts carry them. Its own stock: a filed document, white-cream with a
+   faint ruled grain. */
 
-.upsell {
-  margin-top: 2rem;
-  padding: 1.1rem;
-  background: var(--paper-2);
-  border-top: 3px solid var(--red);
+.redact {
+  display: inline-block;
+  height: 0.92em;
+  margin: 0 0.06em;
+  border-radius: 1.5px;
+  background: var(--ink);
+  vertical-align: -0.12em;
+  transform: skewX(-6deg);
+}
+
+.lockIcon {
+  display: inline-block;
+  margin-left: 0.3em;
+  vertical-align: -0.08em;
+  color: var(--red);
+}
+
+.starLocked {
+  position: relative;
+  display: block;
+  color: var(--ink) !important;
+  text-decoration: none;
+}
+.starLocked .boxHead {
+  display: flex;
+  align-items: center;
+}
+.starStamp {
+  position: absolute;
+  right: 0.7rem;
+  bottom: 0.7rem;
+  padding: 0.14rem 0.45rem;
+  border: 2px solid var(--red);
+  border-radius: 3px;
+  color: var(--red);
+  font-family: var(--rc-sans);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transform: rotate(-5deg);
+}
+
+.lockedHead {
+  white-space: nowrap;
+}
+th.lockedHead .lockIcon {
+  vertical-align: -0.12em;
+}
+.oddsBarLocked {
+  background: repeating-linear-gradient(-45deg, var(--rule) 0 3px, transparent 3px 6px);
+}
+
+.sLocked {
+  --paper: #f8f5ec;
+  --paper-2: #eee8d8;
+  --card: #fffdf7;
+  --ink: #1c1915;
+  --ink-2: #463f35;
+  --mute: #776e5f;
+  --rule: #d8cfb9;
+  --red: #a3302a;
+  --on-red: #fff;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 27px, rgba(28, 25, 21, 0.035) 27px 28px),
+    var(--paper);
+}
+.censored {
+  flex: none;
+  align-self: center;
+  padding: 0.3rem 0.7rem;
+  border: 3px double var(--red);
+  border-radius: 4px;
+  color: var(--red);
+  font-family: var(--rc-sans);
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  transform: rotate(-7deg);
+  opacity: 0.88;
+}
+.lockedDeck {
+  max-width: 40rem;
+  margin: -0.3rem 0 1.1rem;
+  font-style: italic;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.lockedGrid {
   display: grid;
   gap: 0.8rem;
-  justify-items: start;
 }
-.upsell p {
+@media (min-width: 760px) {
+  .lockedGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .lockedWide {
+    grid-column: 1 / -1;
+  }
+}
+.lockedPanel {
+  padding: 0.75rem 0.9rem 0.5rem;
+  border: 1px solid var(--rule);
+  background: var(--card);
+  box-shadow: 0 1px 0 var(--rule);
+}
+.lockedPanel .lockedHead {
+  display: flex;
+  align-items: center;
+  padding-bottom: 0.45rem;
+  border-bottom: 2px solid var(--ink);
+  font-family: var(--rc-sans);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.lockedRows {
   margin: 0;
-  font-size: 1rem;
-  line-height: 1.55;
+  padding: 0;
+  list-style: none;
+}
+.lockedRows li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'label num'
+    'who num'
+    'note note';
+  align-items: center;
+  column-gap: 0.8rem;
+  row-gap: 0.15rem;
+  padding: 0.55rem 0;
+}
+.lockedRows li + li {
+  border-top: 1px dotted var(--rule);
+}
+.lockedRows li.lockedOdds {
+  grid-template-columns: 3.2rem minmax(0, 1fr) auto;
+  grid-template-areas: 'rank who num';
+}
+.lockedLabel {
+  grid-area: label;
+  font-family: var(--rc-display);
+  font-size: 1.08rem;
+  line-height: 1.2;
+}
+.lockedWho {
+  grid-area: who;
+  overflow: hidden;
+  font-family: var(--rc-display);
+  font-size: 1.02rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.lockedNum {
+  grid-area: num;
+  font-family: var(--rc-display);
+  font-size: 1.15rem;
+  white-space: nowrap;
+}
+.lockedNote {
+  grid-area: note;
+  font-family: var(--rc-sans);
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--red);
+}
+.lockedRank {
+  grid-area: rank;
+  font-family: var(--rc-sans);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mute);
+  white-space: nowrap;
+}
+@media (min-width: 760px) {
+  .lockedWide .lockedRows {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 1.6rem;
+  }
+  .lockedWide .lockedRows li:nth-child(2) {
+    border-top: 0;
+  }
+}
+.lockedCta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem 1.4rem;
+  margin-top: 1.1rem;
+  padding: 1rem 1.1rem;
+  background: var(--ink);
+  color: var(--paper);
+}
+.lockedCta p {
+  flex: 1 1 22rem;
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+.lockedBtn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.8rem;
+  padding: 0 1.3rem;
+  border-radius: 3px;
+  background: var(--red);
+  color: #fff !important;
+  font-family: var(--rc-sans);
+  font-size: 0.92rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+@media (max-width: 599px) {
+  .lockedBtn {
+    width: 100%;
+  }
+  .lockedRows li:nth-child(n + 4) {
+    display: none;
+  }
 }
 
 /* ── The back page ───────────────────────────────────────────────────── */

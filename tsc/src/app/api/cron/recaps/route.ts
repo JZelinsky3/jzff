@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { runRecaps } from '@/lib/recap/run'
+import { previewRecapHtml, runRecaps } from '@/lib/recap/run'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 
@@ -16,11 +16,14 @@ export const maxDuration = 300
 //   ?preview=1      email the recap to the site admins, marked [Preview];
 //                   needs ?league=, logs nothing
 //   ?offset=N       resume point, returned as nextOffset when time runs out
+//   ?html=1         the email itself, in the browser; needs ?league=,
+//                   ?year= and ?week=, sends nothing (&tier=free|rookie|full
+//                   renders it as that plan gets it)
 //
 // Auth: `Authorization: Bearer ${CRON_SECRET}`, failing closed when unset.
-// A signed-in site admin may also open ?preview=1 or ?dry=1 straight from the
-// browser, so checking an email doesn't mean pasting the cron secret into a
-// terminal. Those two can only ever email the admins themselves, or nobody.
+// A signed-in site admin may also open ?preview=1, ?dry=1 or ?html=1 straight
+// from the browser, so checking an email doesn't mean pasting the cron secret
+// into a terminal. Those can only ever email the admins themselves, or nobody.
 
 export async function GET(req: Request) {
   const startedAt = Date.now()
@@ -31,7 +34,7 @@ export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET
   const viaCron = !!secret && req.headers.get('authorization') === `Bearer ${secret}`
   if (!viaCron) {
-    const harmless = flag('preview') || flag('dry')
+    const harmless = flag('preview') || flag('dry') || flag('html')
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!harmless || !user || !(await isSiteAdmin(user.id))) {
@@ -39,6 +42,16 @@ export async function GET(req: Request) {
     }
   }
 
+  if (flag('html')) {
+    const year = Number(params.get('year') ?? 0)
+    const week = Number(params.get('week') ?? 0)
+    if (!slug || !year || !week) return NextResponse.json({ error: 'html needs ?league=<slug>&year=<y>&week=<n>' }, { status: 400 })
+    const t = params.get('tier')
+    const tier = t === 'free' || t === 'rookie' || t === 'full' ? t : null
+    const r = await previewRecapHtml(slug, year, week, tier)
+    if (!r.ok) return NextResponse.json({ error: r.error }, { status: 404 })
+    return new Response(r.html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } })
+  }
   if (flag('preview') && !slug) {
     return NextResponse.json({ error: 'preview needs ?league=<slug>' }, { status: 400 })
   }

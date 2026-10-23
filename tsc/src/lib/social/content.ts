@@ -93,6 +93,9 @@ export type Card =
   | { template: 'product'; kicker: string; title: string; dek: string; points: string[]; right?: string; stamp?: string }
   // The League Cup's own card: the Cup's green board, trophy and bracket.
   | { template: 'cup'; kicker: string; title: string; dek: string; date: string; time: string; note: string; steps: string[]; cta: string }
+  // The Cup's teaser posters: few words, one big picture (the trophy, or a
+  // bracket closing in on it), the date on a strip.
+  | { template: 'cupTeaser'; look: 'trophy' | 'bracket'; kicker: string; title: string; title2: string; line: string; strip: string }
 
 // Five history designs and four regret ones, a week apart. Regret goes out on
 // the Tuesday before the week's history post, and never in the same design.
@@ -436,6 +439,38 @@ const CUP_POSTS: Record<'launch' | 'seeds', { x: string; threads: string; card: 
       cta: 'Sync your league this week to be in the draw',
     },
   },
+}
+
+// Two teasers before the draw, queued by hand from buildCupTeaser (Joey,
+// 2026-10-23): a picture first and as few words as still say what it is,
+// and NO link on either platform, to see whether the link is what holds
+// the Cup posts' reach down.
+const CUP_TEASERS: Record<'enter' | 'out', { x: string; threads: string; card: Card }> = {
+  enter: {
+    x: '12 teams enter. One lifts the Cup.\n\nThe League Cup, a knockout bracket inside your fantasy league. The draw is Wednesday.',
+    threads: '12 teams enter. One lifts the Cup.\n\nThe League Cup is a knockout bracket inside your fantasy league, and the draw is Wednesday.',
+    card: {
+      template: 'cupTeaser', look: 'trophy', kicker: 'The League Cup', title: '12 Enter.', title2: 'One Lifts It.',
+      line: 'A knockout inside your fantasy league', strip: 'The draw · Wed, Oct 28',
+    },
+  },
+  out: {
+    x: "One loss and you're out.\n\nThe League Cup draw is tomorrow: your league's top 12, one round a week, Weeks 8 to 11.",
+    threads: "One loss and you're out.\n\nThe League Cup draw is tomorrow. Your league's top 12 go into a knockout bracket, one round a week from Week 8 to the final in Week 11.",
+    card: {
+      template: 'cupTeaser', look: 'bracket', kicker: 'The League Cup', title: 'One Loss and', title2: 'You’re Out.',
+      line: 'Top 12 · Weeks 8 to 11', strip: 'The draw · Tomorrow',
+    },
+  },
+}
+
+export function buildCupTeaser(which: keyof typeof CUP_TEASERS): Built {
+  const p = CUP_TEASERS[which]
+  for (const [platform, text] of [['x', p.x], ['threads', p.threads]] as const) {
+    const bad = textProblem(platform, text)
+    if (bad) throw new Error(`cup teaser ${which} ${platform} copy is ${bad}`)
+  }
+  return { x_text: p.x, threads_text: p.threads, link: null, card: p.card, image_path: null }
 }
 
 export function buildCupPost(which: keyof typeof CUP_POSTS): Built {

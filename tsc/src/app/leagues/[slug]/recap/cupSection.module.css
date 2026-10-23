@@ -1,183 +1,497 @@
-/* The Cup's section in the recap paper: the Cup page's golden ticket. It
-   redefines the paper's tokens like every other section's stock, so the
-   shared section head (tag, title, link) reads them. */
+/* The Cup's section in the recap paper: a pull-out on the Cup page's own
+   green board, brass and ivory, so it reads as the event it is rather than
+   one more section of the paper. It redefines the paper's tokens like every
+   other section's stock, so the shared section rules (top rule, padding)
+   read them. Tickets and match cards are the Cup page's cream. */
 
 .sCup {
-  --paper: #e3c98a;
-  --paper-2: #d9bf83;
-  --card: #f8f1de;
-  --ink: #14301f;
-  --ink-2: #3d4a33;
-  --mute: #6b6545;
-  --rule: #c9ad6c;
-  --red: #14301f;
-  --on-red: #ead9a8;
+  --paper: #0d2a21;
+  --ink: #f0e6cc;
+  --ink-2: #cbc2a6;
+  --mute: #93a798;
+  --red: #c8a35b;
+  --on-red: #0d2a21;
+  --brass: #c8a35b;
+  --brass-hi: #e6cb8e;
+  --line: rgba(240, 230, 204, 0.14);
+  --ticket: #f5eedb;
+  --ticket-2: #ece3c9;
+  --tink: #1b1f18;
+  --tink-2: #4a4839;
+  --tink-3: #7b745f;
+  --tline: #ddd0ad;
+  --hot: #e2694f;
+  position: relative;
+  padding-top: 1.6rem;
+  padding-bottom: 2.2rem;
   background:
-    radial-gradient(80% 120% at 100% 0%, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0) 55%),
-    linear-gradient(160deg, #ecd9a6, #d9bf83);
+    radial-gradient(70% 60% at 50% 0%, rgba(200, 163, 91, 0.16), rgba(200, 163, 91, 0) 70%),
+    linear-gradient(180deg, #0f3026, #0d2a21 40%, #0b241c);
 }
 
-.deck {
-  margin: 0 0 0.2rem;
-  max-width: 44rem;
-  font-family: var(--rc-body);
-  font-style: italic;
-  font-size: 1.05rem;
-  line-height: 1.5;
-  color: var(--ink-2);
+/* ── The masthead: trophy, kicker, name, the rounds ── */
+
+.mast {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
-.cards {
-  display: grid;
-  gap: 0.75rem;
-  margin-top: 1rem;
+.trophy {
+  display: block;
+  line-height: 0;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
 }
 
-@media (min-width: 760px) {
-  .cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-  }
-}
-
-.card {
-  padding: 0.7rem 0.9rem 0.35rem;
-  border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
-  box-shadow: 0 6px 16px rgba(60, 45, 10, 0.12);
-}
-
-.cardLabel {
+.kicker {
+  margin-top: 0.7rem;
   font-family: var(--rc-sans);
   font-size: 0.66rem;
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: var(--ink-2);
+  color: var(--brass);
 }
 
-.games {
-  margin: 0.2rem 0 0;
+.title {
+  margin: 0.25rem 0 0;
+  font-family: var(--rc-display);
+  font-weight: 400;
+  font-size: clamp(2.3rem, 9vw, 3.6rem);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+/* The rounds, joined by a brass rule: played ones filled, this week's
+   ringed, next week's outlined, the rest faint. */
+.strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  width: 100%;
+  max-width: 30rem;
+  margin: 1.1rem 0 0;
   padding: 0;
   list-style: none;
 }
 
-.game {
+.strip li {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
-  padding: 0.5rem 0;
+  align-items: center;
+  gap: 0.15rem;
+  padding-top: 1.05rem;
 }
 
-.game + .game {
-  border-top: 1px dotted var(--rule);
+.strip li::before {
+  content: '';
+  position: absolute;
+  top: 0.32rem;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(200, 163, 91, 0.3);
 }
 
-.row {
-  display: grid;
-  grid-template-columns: 1.6rem minmax(0, 1fr) auto;
-  align-items: baseline;
-  gap: 0.5rem;
+.strip li:first-child::before {
+  left: 50%;
 }
 
-.seed {
-  font-family: var(--rc-mono);
+.strip li:last-child::before {
+  right: 50%;
+}
+
+.strip li::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-left: -0.35rem;
+  border: 2px solid rgba(200, 163, 91, 0.45);
+  border-radius: 50%;
+  background: #0d2a21;
+}
+
+.strip li[data-state='done']::before,
+.strip li[data-state='now']::before {
+  background: var(--brass);
+}
+
+.strip li[data-state='now']:last-child::before {
+  right: 50%;
+}
+
+.strip li[data-state='done']::after {
+  border-color: var(--brass);
+  background: var(--brass);
+}
+
+.strip li[data-state='now']::after {
+  top: -0.15rem;
+  width: 1rem;
+  height: 1rem;
+  margin-left: -0.5rem;
+  border: 3px solid var(--brass-hi);
+  background: var(--hot);
+}
+
+.strip li[data-state='next']::after {
+  border-color: var(--ink);
+}
+
+.stripName {
+  font-family: var(--rc-sans);
   font-size: 0.72rem;
   font-weight: 700;
-  color: #8a6a2a;
-  text-align: right;
-}
-
-.name {
-  overflow: hidden;
-  font-family: var(--rc-display);
-  font-size: 1.08rem;
-  line-height: 1.25;
+  color: var(--ink-2);
   white-space: nowrap;
-  text-overflow: ellipsis;
-  color: var(--ink);
 }
 
-.num {
+.stripWk {
   font-family: var(--rc-mono);
-  font-size: 0.85rem;
-  color: var(--ink);
-}
-
-.won .num {
-  font-weight: 700;
-}
-
-.lost .name,
-.lost .num {
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
   color: var(--mute);
 }
 
-.lost .name {
-  text-decoration: line-through;
+.strip li[data-state='now'] .stripName {
+  color: var(--ink);
 }
 
-.upset {
-  margin-left: 0.45rem;
-  padding: 0.05rem 0.4rem;
-  border-radius: 999px;
-  background: #a3302a;
-  color: #fff;
+.strip li[data-state='now'] .stripWk {
+  color: var(--brass-hi);
+}
+
+.strip li[data-state='later'] .stripName {
+  color: var(--mute);
+}
+
+/* ── The story ── */
+
+.story {
+  max-width: 42rem;
+  margin: 1.5rem auto 0;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.storyTag {
+  display: inline-block;
+  padding: 0.18rem 0.55rem;
+  border-radius: 3px;
+  background: var(--brass);
+  color: #0d2a21;
   font-family: var(--rc-sans);
-  font-size: 0.58rem;
+  font-size: 0.6rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  vertical-align: 0.15em;
 }
 
-.byes,
-.leaders {
-  margin: 0.8rem 0 0;
-  font-family: var(--rc-sans);
-  font-size: 0.9rem;
+.headline {
+  margin: 0.55rem 0 0;
+  font-family: var(--rc-display);
+  font-weight: 400;
+  font-size: clamp(1.55rem, 5.6vw, 2.15rem);
+  line-height: 1.12;
+  color: var(--ink);
+}
+
+.deck {
+  margin: 0.5rem 0 0;
+  font-family: var(--rc-body);
+  font-style: italic;
+  font-size: 1.04rem;
+  line-height: 1.5;
   color: var(--ink-2);
 }
 
-.leaders {
-  font-family: var(--rc-body);
-  font-size: 1rem;
+/* ── Results and next week ── */
+
+.boards {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.4rem;
+}
+
+@media (min-width: 760px) {
+  .boards {
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+.boardLabel {
+  margin-bottom: 0.5rem;
+  font-family: var(--rc-sans);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.tickets,
+.matches {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A result on a cream ticket, the winner on top, a perforated foot. */
+.ticket,
+.match {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.6rem 0.75rem 0;
+  border-radius: 10px;
+  background: var(--ticket);
+  color: var(--tink);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+
+.match {
+  padding-bottom: 0.6rem;
+}
+
+.tRow,
+.mRow {
+  display: grid;
+  grid-template-columns: 1.55rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.medal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 50%;
+  background: #0d2a21;
+  color: var(--brass-hi);
+  font-family: var(--rc-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.tName {
+  overflow: hidden;
+  font-family: var(--rc-display);
+  font-size: 1.12rem;
+  line-height: 1.25;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tNum,
+.mNum {
+  font-family: var(--rc-mono);
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tWon .tNum {
+  font-weight: 700;
+}
+
+.tLost .tName,
+.tLost .tNum {
+  color: var(--tink-3);
+}
+
+.tLost .tName {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.tLost .medal {
+  background: var(--ticket-2);
+  color: var(--tink-3);
+}
+
+.tFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0.35rem -0.75rem 0;
+  padding: 0.38rem 0.75rem 0.45rem;
+  border-top: 1.5px dashed var(--tline);
+  font-family: var(--rc-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--tink-2);
+}
+
+.through,
+.upset {
+  padding: 0.08rem 0.45rem;
+  border-radius: 999px;
+  font-family: var(--rc-sans);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.through {
+  background: #1f4a3a;
+  color: var(--ticket);
+}
+
+.upset {
+  background: #b23a26;
+  color: #fff;
+}
+
+/* Next week: the two sides with the chance split between them. */
+.split {
+  display: flex;
+  height: 6px;
+  margin: 0.15rem 0 0.15rem 2.1rem;
+  border-radius: 3px;
+  background: var(--tline);
+  overflow: hidden;
+}
+
+.split span {
+  display: block;
+  height: 100%;
+  background: #1f4a3a;
+}
+
+.vs {
+  margin-left: 2.1rem;
+  font-family: var(--rc-sans);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tink-3);
+}
+
+.byes {
+  margin: 0.9rem 0 0;
+  font-family: var(--rc-sans);
+  font-size: 0.88rem;
+  color: var(--ink-2);
+}
+
+/* ── The facts row and the button ── */
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  margin: 1.3rem 0 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.fact {
+  padding: 0.7rem 0.8rem 0.75rem 0;
+}
+
+.fact + .fact {
+  padding-left: 0.8rem;
+  border-left: 1px solid var(--line);
+}
+
+.fact dt {
+  font-family: var(--rc-sans);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.fact dd {
+  margin: 0.2rem 0 0;
+  font-family: var(--rc-display);
+  font-size: 1.3rem;
+  line-height: 1.15;
   color: var(--ink);
+}
+
+.fact small {
+  display: block;
+  margin-top: 0.1rem;
+  font-family: var(--rc-sans);
+  font-size: 0.74rem;
+  color: var(--mute);
+}
+
+.fact .more {
+  color: var(--ink-2);
 }
 
 .ctaRow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem 0.9rem;
-  margin-top: 1.1rem;
-}
-
-.lock {
-  font-family: var(--rc-sans);
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--ink-2);
+  gap: 0.6rem 1rem;
+  margin-top: 1.3rem;
 }
 
 .cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.75rem;
-  padding: 0 1.2rem;
+  min-height: 3rem;
+  padding: 0 1.4rem;
   border-radius: 10px;
-  background: var(--ink);
-  color: #f5eedb !important;
+  background: linear-gradient(180deg, var(--brass-hi), var(--brass));
+  color: #0d2a21 !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
   font-family: var(--rc-sans);
-  font-size: 0.92rem;
-  font-weight: 700;
+  font-size: 0.95rem;
+  font-weight: 800;
   text-decoration: none;
 }
 
+.cta:hover {
+  filter: brightness(1.06);
+}
+
+.lock {
+  font-family: var(--rc-sans);
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+@media (max-width: 599px) {
+  .cta {
+    flex: 1 1 100%;
+  }
+
+  .lock {
+    width: 100%;
+    text-align: center;
+  }
+
+  .fact:nth-child(3) {
+    grid-column: 1 / -1;
+    padding-left: 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
+
 /* The launch teaser: a small card at the foot of The Games, on that
-   section's stock, before a league's Cup exists. */
+   section's stock, in the weeks before the draw week. */
 .launchWrap {
   margin: 0 calc(-1 * var(--gutter));
   padding: 0 var(--gutter) 1.6rem;

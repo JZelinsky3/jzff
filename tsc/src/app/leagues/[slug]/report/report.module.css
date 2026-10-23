@@ -110,6 +110,10 @@
   padding: 9px 12px 10px 0;
 }
 
+.termField {
+  grid-column: span 2;
+}
+
 .field + .field {
   padding-left: 12px;
   border-left: 1px solid var(--rule);
@@ -132,9 +136,134 @@
   color: var(--ink);
 }
 
-.actions {
+/* The report's place in the season, the last field on the form. */
+.termField dt {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.termNext {
+  font-weight: 400;
+  letter-spacing: 0.1em;
+}
+
+.termField dd {
+  margin-top: 0;
+}
+
+.term {
+  position: relative;
+  display: block;
+  height: 44px;
+  margin: 0 14px 0 12px;
+}
+
+.termRule {
+  position: absolute;
+  top: 15px;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: var(--rule);
+}
+
+.termInk {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--ink);
+}
+
+.termTick {
+  position: absolute;
+  top: -2px;
+  width: 1px;
+  height: 6px;
+  margin-left: -0.5px;
+  background: var(--rule);
+}
+
+.termTickInked {
+  background: var(--ink);
+}
+
+.stop {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 44px;
+  margin-left: -22px;
+  padding-top: 9px;
+  text-decoration: none;
+  color: var(--ink-2);
+}
+
+.stopDot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.stopWk {
+  font-family: var(--rp-mono);
+  font-size: 10.5px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.stopPast .stopDot {
+  background: var(--ink);
+  box-shadow: 0 0 0 3px var(--stock);
+}
+
+a.stopPast:hover .stopDot {
+  background: var(--red);
+}
+
+a.stopPast:hover .stopWk {
+  color: var(--red);
+}
+
+/* This report: the red-pen stop, ringed. */
+.stopNow {
+  padding-top: 6px;
+  color: var(--red);
+}
+
+.stopNow .stopDot {
+  width: 20px;
+  height: 20px;
+  margin-bottom: -3px;
+  border: 5px solid var(--red);
+  background: var(--sheet);
+  box-shadow: 0 0 0 3px var(--stock);
+}
+
+.stopNow .stopWk {
+  font-weight: 700;
+}
+
+.stopLater {
+  color: var(--mute);
+}
+
+.stopLater .stopDot {
+  border: 1.5px solid var(--mute);
+  background: var(--stock);
+  box-shadow: 0 0 0 3px var(--stock);
+}
+
+/* Equal buttons: every one as wide as the widest. */
+.actions {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 10px;
   margin-top: 22px;
 }
@@ -145,11 +274,12 @@
   align-items: center;
   justify-content: center;
   min-height: 42px;
-  padding: 0 16px;
+  padding: 0 18px;
   border-radius: 3px;
   font-family: var(--rp-sans);
   font-size: 14px;
   font-weight: 600;
+  white-space: nowrap;
   text-decoration: none;
   cursor: pointer;
 }
@@ -172,40 +302,6 @@
 
 .btn:hover {
   background: var(--sheet);
-}
-
-.editions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 18px;
-}
-
-.edition {
-  padding: 4px 9px;
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  font-family: var(--rp-mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  color: var(--ink-2);
-  text-decoration: none;
-}
-
-a.edition:hover {
-  border-color: var(--ink);
-  color: var(--ink);
-}
-
-.editionOn {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: var(--sheet);
-}
-
-.editionLater {
-  border-style: dashed;
-  color: var(--mute);
 }
 
 /* ── The race (navy board) ──────────────────────────────── */
@@ -692,6 +788,10 @@ a.edition:hover {
   font-size: 18px;
 }
 
+.rollName {
+  white-space: nowrap;
+}
+
 .rollLabel {
   margin-right: 10px;
   font-family: var(--rp-mono);
@@ -730,12 +830,21 @@ a.edition:hover {
   min-width: 0;
 }
 
+/* The badge centred on the name's capitals, a clear gap after it. */
 .cardName {
-  display: block;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
   margin-top: 2px;
   font-family: var(--rp-display);
   font-size: 26px;
   line-height: 1.1;
+}
+
+.cardName .divBadge {
+  position: relative;
+  top: -1px;
 }
 
 .cardTeam {
@@ -938,19 +1047,30 @@ a.edition:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .field:nth-child(3) {
-    padding-left: 0;
-    border-left: 0;
+  .termField {
+    padding-left: 0 !important;
+    border-left: 0 !important;
     border-top: 1px solid var(--rule);
   }
 
-  .field:nth-child(4) {
-    border-top: 1px solid var(--rule);
+  .term {
+    margin: 0 12px;
+  }
+
+  /* Share and recap side by side at equal widths, the league under both. */
+  .actions {
+    display: grid;
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .btnPrimary,
   .btn {
-    flex: 1 1 auto;
+    padding: 0 8px;
+  }
+
+  .btnWide {
+    grid-column: 1 / -1;
   }
 }
 

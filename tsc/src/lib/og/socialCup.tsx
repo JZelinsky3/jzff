@@ -222,3 +222,190 @@ export function cupCard(card: CupCard) {
     </div>
   )
 }
+
+// ── The teaser posters ────────────────────────────────────────────────────
+// Few words and one big picture, so the feed reads it before the caption:
+// 'trophy' is the trophy in a burst of brass light; 'bracket' is an empty
+// twelve-team draw closing in on it from both sides. Same board, frame,
+// typefaces and foot as the card above.
+
+type TeaserCard = Extract<Card, { template: 'cupTeaser' }>
+
+function frame(...children: React.ReactNode[]) {
+  return (
+    <div style={{ display: 'flex', width: W, height: H, background: BOARD, padding: 28, backgroundImage: `radial-gradient(circle at 50% 38%, #1f5240 0%, ${BOARD} 62%)` }}>
+      <div style={{ display: 'flex', flex: 1, border: `1px solid ${LINE_2}`, padding: 8 }}>
+        <div style={{ display: 'flex', flex: 1, border: '1px solid rgba(200,163,91,0.5)', padding: '46px 52px 34px' }}>
+          {/* An explicit column: satori lays a fragment's children out in a row. */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>{children}</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function kickerRow(text: string) {
+  const diamond = <div style={{ display: 'flex', width: 10, height: 10, background: BRASS, transform: 'rotate(45deg)' }} />
+  return (
+    <div key="kicker" style={{ display: 'flex', alignItems: 'center' }}>
+      <div style={{ display: 'flex', width: 90, height: 1, background: 'rgba(200,163,91,0.6)', marginRight: 18 }} />
+      {diamond}
+      <div style={{ display: 'flex', margin: '0 22px' }}>{mono(text.toUpperCase(), 24, BRASS, { bold: true, spacing: 8 })}</div>
+      {diamond}
+      <div style={{ display: 'flex', width: 90, height: 1, background: 'rgba(200,163,91,0.6)', marginLeft: 18 }} />
+    </div>
+  )
+}
+
+function titleBlock(card: TeaserCard, size: number) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: size, lineHeight: 0.98, color: IVORY }}>{card.title}</div>
+      <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: size, lineHeight: 0.98, color: BRASS_HI }}>{card.title2}</div>
+    </div>
+  )
+}
+
+function closing(card: TeaserCard) {
+  return (
+    <div key="close" style={{ display: 'flex', flexDirection: 'column', alignSelf: 'stretch', marginTop: 'auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: 34, color: IVORY_2, marginBottom: 22 }}>{card.line}</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: BRASS, padding: '16px 20px' }}>
+        {mono(card.strip.toUpperCase(), 26, '#1d1708', { bold: true, spacing: 5 })}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 16 }}>
+        <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: 34, color: IVORY }}>The Sunday Chronicle.</div>
+        {mono('thesundaychronicle.app', 20, MUTE, { spacing: 2 })}
+      </div>
+    </div>
+  )
+}
+
+function trophyPoster(card: TeaserCard) {
+  const box = 560
+  const rays = 18
+  return frame(
+      kickerRow(card.kicker),
+      <div key="art" style={{ display: 'flex', position: 'relative', width: box, height: box, alignItems: 'center', justifyContent: 'center', marginTop: 18 }}>
+        {Array.from({ length: rays }, (_, i) => (
+          <div
+            key={i}
+            style={{
+              display: 'flex',
+              position: 'absolute',
+              left: box / 2 - 2,
+              top: 0,
+              width: 4,
+              height: box,
+              backgroundImage: 'linear-gradient(180deg, rgba(200,163,91,0) 0%, rgba(230,203,142,0.30) 30%, rgba(200,163,91,0) 50%, rgba(230,203,142,0.30) 70%, rgba(200,163,91,0) 100%)',
+              transform: `rotate(${(i * 180) / rays}deg)`,
+            }}
+          />
+        ))}
+        <div style={{ display: 'flex', position: 'absolute', left: box / 2 - 190, top: box / 2 - 190, width: 380, height: 380, borderRadius: 190, backgroundImage: 'radial-gradient(circle, rgba(230,203,142,0.28) 0%, rgba(230,203,142,0) 70%)' }} />
+        <div style={{ display: 'flex', marginTop: 10 }}>{trophy({ width: 360, brass: BRASS, light: BRASS_HI, dark: BRASS_LO, plate: BOARD })}</div>
+      </div>,
+      <div key="title" style={{ display: 'flex', marginTop: 8 }}>{titleBlock(card, 132)}</div>,
+      closing(card),
+  )
+}
+
+// The twelve-team draw, mirrored: round one on the outside, the byes
+// waiting in the quarters, the semis, and the final under the trophy.
+function bracketPoster(card: TeaserCard) {
+  const areaW = W - 2 * 28 - 2 * 8 - 2 * 52 - 4
+  const areaH = 540
+  const gap = 20
+  const cols = 7
+  const colW = Math.floor((areaW - gap * (cols - 1)) / cols)
+  const x = (c: number) => c * (colW + gap)
+  const cardH = 76
+  type Slot = { col: number; y: number; top: string; bottom: string; lit?: boolean }
+  const q1 = areaH * 0.2
+  const q2 = areaH * 0.8
+  const mid = areaH / 2
+  const slots: Slot[] = [
+    { col: 0, y: q1, top: '8', bottom: '9', lit: true },
+    { col: 0, y: q2, top: '5', bottom: '12', lit: true },
+    { col: 1, y: q1, top: '1', bottom: '' },
+    { col: 1, y: q2, top: '4', bottom: '' },
+    { col: 2, y: mid, top: '', bottom: '' },
+    { col: 3, y: mid + 70, top: '', bottom: '' },
+    { col: 4, y: mid, top: '', bottom: '' },
+    { col: 5, y: q1, top: '2', bottom: '' },
+    { col: 5, y: q2, top: '3', bottom: '' },
+    { col: 6, y: q1, top: '7', bottom: '10', lit: true },
+    { col: 6, y: q2, top: '6', bottom: '11', lit: true },
+  ]
+  const lines: { left: number; top: number; width: number; height: number }[] = []
+  const h = (x1: number, x2: number, y: number) => lines.push({ left: Math.min(x1, x2), top: y, width: Math.abs(x2 - x1), height: 2 })
+  const v = (xx: number, y1: number, y2: number) => lines.push({ left: xx, top: Math.min(y1, y2), width: 2, height: Math.abs(y2 - y1) + 2 })
+  const low = (y: number) => y + cardH / 4
+  const high = (y: number) => y - cardH / 4
+  for (const side of [0, 1] as const) {
+    const r1 = side ? 6 : 0
+    const qf = side ? 5 : 1
+    const sf = side ? 4 : 2
+    const out = (c: number) => (side ? x(c) : x(c) + colW)
+    const into = (c: number) => (side ? x(c) + colW : x(c))
+    // Round one into the bottom row of its quarter, the bye on top.
+    for (const y of [q1, q2]) h(out(r1), into(qf), low(y))
+    // Quarters into the semi.
+    const m = side ? x(sf) + colW + gap / 2 : x(qf) + colW + gap / 2
+    h(out(qf), m, q1)
+    h(out(qf), m, q2)
+    v(m, q1, high(mid))
+    v(m, q2, low(mid))
+    h(m, into(sf), high(mid))
+    h(m, into(sf), low(mid))
+    // Semi into the final.
+    const fy = side ? low(mid + 70) : high(mid + 70)
+    const m2 = side ? x(3) + colW + gap / 2 : x(sf) + colW + gap / 2
+    h(out(sf), m2, mid)
+    v(m2, mid, fy)
+    h(m2, into(3), fy)
+  }
+  const seed = (text: string, lit: boolean) =>
+    text ? (
+      <div style={{ display: 'flex', fontFamily: 'JetBrains', fontWeight: 700, fontSize: 26, color: lit ? BRASS_HI : IVORY }}>{text}</div>
+    ) : (
+      <div style={{ display: 'flex', width: 22, height: 2, background: LINE_2 }} />
+    )
+  return frame(
+      kickerRow(card.kicker),
+      <div key="title" style={{ display: 'flex', marginTop: 34 }}>{titleBlock(card, 124)}</div>,
+      <div key="art" style={{ display: 'flex', position: 'relative', width: areaW, height: areaH, marginTop: 40 }}>
+        {lines.map((l, i) => (
+          <div key={`l${i}`} style={{ display: 'flex', position: 'absolute', left: l.left, top: l.top, width: l.width, height: l.height, background: 'rgba(200,163,91,0.55)' }} />
+        ))}
+        {slots.map((s, i) => (
+          <div
+            key={i}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              position: 'absolute',
+              left: x(s.col),
+              top: s.y - cardH / 2,
+              width: colW,
+              height: cardH,
+              background: s.col === 3 ? '#c19b52' : SLOT,
+              border: `2px solid ${s.lit ? 'rgba(200,163,91,0.8)' : s.col === 3 ? '#c19b52' : LINE_2}`,
+            }}
+          >
+            <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center' }}>{seed(s.top, !!s.lit)}</div>
+            <div style={{ display: 'flex', height: 1, background: s.col === 3 ? 'rgba(29,23,8,0.35)' : LINE, flexShrink: 0 }} />
+            <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center' }}>{seed(s.bottom, !!s.lit)}</div>
+          </div>
+        ))}
+        <div style={{ display: 'flex', position: 'absolute', left: x(3) + colW / 2 - 70, top: mid + 70 - cardH / 2 - 186 }}>
+          {trophy({ width: 140, brass: BRASS, light: BRASS_HI, dark: BRASS_LO, plate: BOARD })}
+        </div>
+      </div>,
+      closing(card),
+  )
+}
+
+export function cupTeaserCard(card: TeaserCard) {
+  return card.look === 'bracket' ? bracketPoster(card) : trophyPoster(card)
+}

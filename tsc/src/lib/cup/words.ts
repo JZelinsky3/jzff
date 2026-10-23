@@ -2,7 +2,7 @@
 // page so the two say the same thing. Pure: everything comes in on the
 // teaser.
 
-import type { CupTeaser, CupTeaserSide } from './teaser'
+import type { CupTeaser, CupTeaserGame, CupTeaserSide } from './teaser'
 
 function pts(n: number): string {
   return n.toFixed(2)
@@ -60,6 +60,69 @@ export function cupDeck(t: CupTeaser): string {
     return `The draw is set and round one is next week: ${t.field} teams, one round a week, the final in week ${t.finalWeek}.${byes ? ` Seeds 1 to ${byes} have byes.` : ''} Your score each week is your Cup score.`
   }
   return ''
+}
+
+// The round's best story as a headline, and the game it's about (so the
+// line under it can tell the rest without repeating it). In order: the
+// biggest upset, a photo finish, a rout, the round's top score. Before any
+// results, the state of the draw.
+export function cupHeadline(t: CupTeaser): { headline: string; game: CupTeaserGame | null } {
+  if (t.champion) return { headline: `${t.champion.name} wins ${t.name}`, game: null }
+  if (t.results) {
+    const told = t.results.games.map((g) => {
+      const [w, l] = g.winner === 'b' ? [g.b, g.a] : [g.a, g.b]
+      return { g, w, l, margin: (w.score ?? 0) - (l.score ?? 0), gap: w.seed - l.seed }
+    })
+    const upset = told.filter((x) => x.g.upset).sort((a, b) => b.gap - a.gap)[0]
+    if (upset) return { headline: `${ordinal(upset.w.seed)}-seeded ${upset.w.name} knocks out ${upset.l.name}`, game: upset.g }
+    const close = [...told].sort((a, b) => a.margin - b.margin)[0]
+    if (close && close.margin < 4) return { headline: `${close.w.name} survives ${close.l.name} by ${pts(close.margin)}`, game: close.g }
+    const rout = [...told].sort((a, b) => b.margin - a.margin)[0]
+    if (rout && rout.margin >= 40) return { headline: `${rout.w.name} routs ${rout.l.name} by ${pts(rout.margin)}`, game: rout.g }
+    const top = [...told].sort((a, b) => (b.w.score ?? 0) - (a.w.score ?? 0))[0]
+    if (top && told.length > 1) return { headline: `${top.w.name} leads the way with ${pts(top.w.score ?? 0)}`, game: top.g }
+    return { headline: `${list(told.map((x) => x.w.name))} ${told.length === 1 ? 'moves' : 'move'} on`, game: null }
+  }
+  if (t.preview) return { headline: t.preview.final ? 'The seeds are set' : `${t.name} starts week ${t.startWeek}`, game: null }
+  return { headline: 'Round one is next week', game: null }
+}
+
+// The line under the headline: the rest of the round, never the headline's
+// own game again.
+export function cupStoryDeck(t: CupTeaser, game: CupTeaserGame | null): string {
+  if (t.champion) {
+    const c = t.champion
+    return `The ${ordinal(c.seed)} seed beat ${c.over} ${pts(c.score)} to ${pts(c.theirs)} in the final.`
+  }
+  if (t.preview?.final) {
+    return `Seeded on the Cup Rating after week ${t.preview.throughWeek}. Round one is week ${t.startWeek}, the final week ${t.finalWeek}.`
+  }
+  if (!t.results || !game) return cupDeck(t)
+  const lead = (game.winner === 'b' ? game.b : game.a).name
+  const others = t.results.games.filter((g) => g !== game).map((g) => (g.winner === 'b' ? g.b : g.a).name)
+  const into = t.next ? `the ${t.next.round.toLowerCase()}` : 'the next round'
+  const upsets = t.results.games.filter((g) => g.upset).length
+  const extra = upsets > 1 ? ` ${NUMBER_WORDS[upsets] ?? upsets} upsets in all.` : ''
+  if (!others.length) return `${lead} is through to ${into}.${extra}`
+  return `${list(others)} ${others.length === 1 ? 'joins' : 'join'} ${lead} in ${into}.${extra}`
+}
+
+// The rounds as a strip: played, this week's (the one the paper reports),
+// next week's, and the rest.
+export function cupRoundStrip(t: CupTeaser): { short: string; week: number; state: 'done' | 'now' | 'next' | 'later' }[] {
+  return (t.rounds ?? []).map((r) => ({
+    short: r.short,
+    week: r.week,
+    state: r.week < t.week ? 'done' : r.week === t.week ? 'now' : r.week === t.week + 1 ? 'next' : 'later',
+  }))
+}
+
+// A Cup title chance, already a percent: "24%", ">99%", "<1%".
+export function cupWin(n: number): string {
+  if (n >= 99.95) return '100%'
+  if (n > 99) return '>99%'
+  if (n > 0 && n < 1) return '<1%'
+  return `${Math.round(n)}%`
 }
 
 // "Thursday 8:00 PM", Eastern.

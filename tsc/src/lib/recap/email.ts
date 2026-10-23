@@ -24,7 +24,7 @@
 //   · Every table carries bgcolor as well as an inline style, for Outlook.
 
 import { TIER_PRICES } from '@/lib/stripe'
-import { editionDate, ordinal, pts, recapSections, roman, type RecapFacts, type RecapGame } from './facts'
+import { editionDate, lockedFromBook, ordinal, pts, recapSections, roman, type RecapFacts, type RecapGame } from './facts'
 import { poss, writeEdition } from './story'
 import type { CupTeaser } from '@/lib/cup/teaser'
 import { cupBlock } from '@/lib/cup/emailBlock'
@@ -438,6 +438,7 @@ ${lock ? `<div style="padding-top:14px; font-family:${SANS}; font-size:12px; fon
     ...(show.paid && f.pickems ? [{ id: 'pickems', title: 'Who Called It', note: "Pick'ems, the week and the season" }] : []),
     ...(show.veteran && (f.trades?.length || f.verdicts?.length) ? [{ id: 'trades', title: 'Trades', note: 'Off the wire, graded' }] : []),
     ...(edition.previews.length ? [{ id: 'next', title: `Week ${f.next!.week}`, note: `All ${edition.previews.length} games previewed` }] : []),
+    ...(!show.paid ? [{ id: 'locked', title: "What You're Missing", note: 'The full paper, blacked out' }] : []),
   ]
   const insideRows = inside
     .map(
@@ -465,17 +466,49 @@ ${lock ? `<div style="padding-top:14px; font-family:${SANS}; font-size:12px; fon
 </td></tr>`)
   text.push(`Read the full paper: ${links.page}`, `Send it to the league: ${links.share}`, '')
 
+  // ── Free: the full paper, blacked out. Real labels and ranks where the
+  // free facts carry them (the record book), real names where the free
+  // edition already prints them (the standings), never a paid value. ──
   if (!show.paid) {
     const price = `$${(TIER_PRICES.tier1.yearly.amountCents / 100).toFixed(0)} a year`
-    const pitch = `This is the short edition. The full paper adds the record book, how teams with this start have finished, a year ago this week, the players behind each result, power rankings and playoff odds, pick'ems and next week's lines. Rookie is ${price} for your league.`
-    rows.push(`<tr><td class="pad" bgcolor="${C.paper}" style="background-color:${C.paper}; padding:0 32px 26px;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.card}" style="background-color:${C.card}; border:2px dashed ${C.ink};">
-<tr><td style="padding:16px 18px; font-family:${SERIF}; font-size:15px; line-height:1.55; color:${C.ink};">
-<div style="font-family:${SANS}; font-size:10px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:${C.red}; padding-bottom:6px;">Clip and save</div>
-${esc(pitch)}
-<div style="padding-top:10px; font-family:${SANS}; font-size:13px; font-weight:bold;"><a href="${esc(links.pricing)}" style="color:${C.red}; text-decoration:underline;">See plans</a></div>
-</td></tr></table></td></tr>`)
-    text.push(`${pitch} ${links.pricing}`, '')
+    const locked = f.locked ?? (f.book?.length ? lockedFromBook(f.book) : null)
+    const bar = (n: number) => `<span style="background-color:${C.ink}; color:${C.ink}; border-radius:2px;">${'&nbsp;'.repeat(n)}</span>`
+    const row = (label: string, body: string, first: boolean) => `<tr><td style="padding:9px 0 10px;${first ? '' : ` border-top:1px dotted ${C.rule};`}">
+<div style="font-family:${SANS}; font-size:9px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; color:${C.red}; padding-bottom:3px;">${label}</div>
+<div style="font-family:${SERIF}; font-size:15px; line-height:1.55; color:${C.ink};">${body}</div>
+</td></tr>`
+    const cells: string[] = []
+    const lines: string[] = []
+    for (const r of (locked?.book ?? []).slice(0, 2)) {
+      const where = r.rank <= 10 ? `${ordinal(r.rank)} of ${r.of.toLocaleString('en-US')} in league history` : `${bar(4)} of ${r.of.toLocaleString('en-US')} in league history`
+      cells.push(row('Record book', `<b>${esc(r.label)}</b> ${bar(12)} ${bar(7)}<br><span style="font-family:${SANS}; font-size:12px; color:${C.mute};">${where}</span>`, !cells.length))
+      lines.push(`Record book: ${r.label}${r.rank <= 10 ? `, ${ordinal(r.rank)} in league history` : ''}`)
+    }
+    const top = (f.standings ?? []).slice(0, 3)
+    if (top.length) {
+      cells.push(row('Playoff odds', top.map((s) => `${esc(s.name)} ${bar(5)}`).join(' &nbsp;&middot;&nbsp; '), !cells.length))
+      lines.push('Playoff odds and power rankings')
+    }
+    cells.push(row('Player of the week', `${bar(18)}, ${bar(3)} &nbsp;${bar(6)} pts`, !cells.length))
+    lines.push('Player of the week')
+    cells.push(row('Over and under', `${bar(14)} beat the projection by ${bar(5)}`, false))
+    lines.push("Over and under, pick'ems")
+    rows.push(flagHead('The full paper', "What You're Missing", { ink: C.ink, flag: C.red, onFlag: '#ffffff', bg: C.paper }))
+    rows.push(`<tr><td class="pad" bgcolor="${C.paper}" style="background-color:${C.paper}; padding:4px 32px 28px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.card}" style="background-color:${C.card}; border:1px solid ${C.rule};"><tr><td style="padding:12px 16px 6px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+<td style="font-family:${SERIF}; font-style:italic; font-size:14px; line-height:1.5; color:${C.ink2};">This week's full paper has all of it. Here the names and numbers are blacked out.</td>
+<td align="right" valign="top" style="padding-left:12px;"><span style="display:inline-block; padding:4px 8px; border:2px solid ${C.red}; border-radius:3px; font-family:${SANS}; font-size:11px; font-weight:bold; letter-spacing:3px; text-transform:uppercase; color:${C.red};">Censored</span></td>
+</tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:8px; border-top:2px solid ${C.ink};">${cells.join('')}</table>
+</td></tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:14px;"><tr>
+<td align="center" bgcolor="${C.red}" style="background-color:${C.red}; border:2px solid ${C.ink};">
+<a href="${esc(links.pricing)}&amp;utm_campaign=censored" style="display:block; padding:13px 20px; font-family:${SANS}; font-size:13px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:#ffffff; text-decoration:none;">Unlock the full paper</a>
+</td></tr></table>
+<div style="font-family:${SANS}; font-size:12px; line-height:1.5; color:${C.mute}; padding-top:8px; text-align:center;">Rookie opens it for the whole league, ${price}.</div>
+</td></tr>`)
+    text.push("WHAT YOU'RE MISSING (the full paper)", ...lines, `Rookie opens it for the whole league, ${price}: ${links.pricing}`, '')
   }
 
   // ── The mailing list, for the commissioner to pass on ──

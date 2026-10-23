@@ -7,7 +7,8 @@ import styles from './recap.module.css'
 // like the sections around it; once it sticks to the top of the screen the
 // rules go, so it reads as a toolbar rather than a stray band. A zero-height
 // marker just above the bar says which: off screen means stuck.
-export function SectionNav({ links }: { links: { id: string; label: string }[] }) {
+// `accent` picks a link out in brass (the Cup, on the weeks it runs).
+export function SectionNav({ links }: { links: { id: string; label: string; accent?: boolean }[] }) {
   const marker = useRef<HTMLDivElement>(null)
   const [stuck, setStuck] = useState(false)
 
@@ -25,7 +26,7 @@ export function SectionNav({ links }: { links: { id: string; label: string }[] }
       <nav className={styles.jumps} data-stuck={stuck ? 'true' : undefined} aria-label="Sections">
         <span className={styles.jumpsLabel}>Inside</span>
         {links.map((j) => (
-          <a key={j.id} href={`#${j.id}`}>
+          <a key={j.id} href={`#${j.id}`} data-accent={j.accent ? 'true' : undefined}>
             {j.label}
           </a>
         ))}

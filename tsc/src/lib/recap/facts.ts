@@ -155,6 +155,14 @@ export type RecapTotalRow = {
   chaser: { who: string; value: number } | null
 }
 
+export type RecapLocked = { book: { key: RecapBookRow['key']; label: string; rank: number; of: number }[] }
+
+// Labels and ranks only, the strongest first: what the free edition prints
+// with everything else blacked out.
+export function lockedFromBook(book: RecapBookRow[]): RecapLocked {
+  return { book: [...book].sort((a, b) => a.rank / a.of - b.rank / b.of).map((r) => ({ key: r.key, label: r.label, rank: r.rank, of: r.of })) }
+}
+
 export type RecapBookRow = {
   key: 'top' | 'low' | 'heartbreak' | 'robbery' | 'closest' | 'blowout'
   label: string
@@ -410,6 +418,11 @@ export type RecapFacts = {
   // Last week's paper, in outline. Null in week 1 or when last week has no
   // stored recap.
   prior?: RecapEditionSig | null
+  // Free only: the record book's rows this week as labels and all-time
+  // ranks, with no names and no numbers, so the free page and email can
+  // print the full paper's record book blacked out. Never anything a
+  // paid section would reveal.
+  locked?: RecapLocked | null
 
   // Rookie and up.
   book?: RecapBookRow[]
@@ -1126,6 +1139,9 @@ export async function buildRecapFacts(args: {
 
   const sections = recapSections(tier)
   if (!sections.paid) {
+    // The record book as labels only, for the blacked-out preview. Its
+    // hooks go nowhere: the free subject line can't lead with them.
+    facts.locked = lockedFromBook(buildBook({ history, games, year, week, nameOf: () => '', hooks: [] }))
     finishHooks()
     return { status: 'ok', facts }
   }

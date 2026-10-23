@@ -45,6 +45,12 @@ export type CupTeaser = {
   // `open`: picks for it can still be made (checked when the teaser is
   // built), so an old paper read after the lock points at the bracket.
   next: { round: string; week: number; games: CupTeaserGame[]; byes: { name: string; seed: number }[]; lockAt: string | null; open: boolean } | null
+  // Every round with its week, for the round strip across the top.
+  rounds?: { name: string; short: string; week: number }[]
+  // Teams still alive after the recap's week, and the three likeliest to
+  // win it from there (the Cup page's own 20,000-run odds), as of that week.
+  alive?: number
+  favourites?: { name: string; seed: number; win: number }[]
   // The bracket challenge, best three with points (empty before any).
   leaders: { name: string; points: number }[]
   pickers: number
@@ -160,6 +166,13 @@ async function build(league: { id: string; slug: string }, year: number, week: n
     .slice(0, 3)
 
   if (!results && !next && !champion) return null
+  const alive = extras.odds.filter((o) => o.alive)
+  const favourites = champion
+    ? []
+    : [...alive]
+        .sort((x, y) => y.win - x.win || x.seed - y.seed)
+        .slice(0, 3)
+        .map((o) => ({ name: o.name, seed: o.seed, win: o.win }))
   return {
     url: `${SITE_URL}/leagues/${league.slug}/cup/`,
     name: cup.name,
@@ -170,6 +183,9 @@ async function build(league: { id: string; slug: string }, year: number, week: n
     results,
     champion,
     next,
+    rounds: bracket.rounds.map((r) => ({ name: r.name, short: r.short, week: r.week })),
+    alive: champion ? 1 : alive.length,
+    favourites,
     leaders,
     pickers: extras.pickers.length,
     inPicks: new Set(extras.picks.map((p) => p.profileId)).size,
@@ -213,6 +229,7 @@ async function launchTeaser(league: { id: string; slug: string }, year: number, 
       lockAt: null,
       open: false,
     },
+    rounds: b.rounds.map((r) => ({ name: r.name, short: r.short, week: r.week })),
     leaders: [],
     pickers: 0,
     inPicks: 0,

@@ -35,6 +35,7 @@ import { cupTeaser } from '@/lib/cup/teaser'
 import { SITE_URL, recapPageUrl, subscriberToken, unsubscribePageUrl, unsubscribeToken } from './links'
 import { sendViaResend } from './resend'
 import { activeSubscribers } from './subscribers'
+import { loadRecap } from './load'
 
 export type RecapMode = 'off' | 'admin' | 'all'
 
@@ -397,27 +398,10 @@ async function sendRecapEmail(args: {
   if (!token) return { ok: false, error: 'no RECAP_SIGNING_SECRET or CRON_SECRET to sign the unsubscribe link' }
 
   const { facts } = args
-  const who = args.audience === 'owner' ? 'owner' : 'list'
   // On the weeks the Cup runs, its block (lib/cup/teaser). Null otherwise,
   // and null on any error: it never holds up a send.
   const cup = facts.phase === 'regular' ? await cupTeaser(facts.league, facts.year, facts.week) : null
-  const { html, text } = renderRecapEmail(
-    facts,
-    args.intro,
-    args.subject,
-    {
-      page: recapPageUrl(facts.league.slug, facts.year, facts.week, 'email', who),
-      share: recapPageUrl(facts.league.slug, facts.year, facts.week, 'share'),
-      unsubscribe: unsubscribePageUrl(token),
-      account: `${SITE_URL}/account/`,
-      pricing: `${SITE_URL}/pricing/?utm_source=recap&utm_medium=email`,
-      newLeague: `${SITE_URL}/dashboard/new/?utm_source=recap&utm_medium=email&utm_campaign=new-league`,
-      league: `${SITE_URL}/leagues/${facts.league.slug}/?utm_source=recap&utm_medium=email`,
-      join: `${recapPageUrl(facts.league.slug, facts.year, facts.week, 'email', who)}#join`,
-    },
-    args.audience,
-    cup,
-  )
+  const { html, text } = renderRecapEmail(facts, args.intro, args.subject, emailLinks(facts, args.audience, token), args.audience, cup)
   return sendViaResend({
     to: args.to,
     subject: args.subject,
@@ -427,4 +411,38 @@ async function sendRecapEmail(args: {
     idempotencyKey: args.idempotencyKey,
     category: args.audience === 'owner' ? 'weekly_recap' : 'weekly_recap_list',
   })
+}
+
+function emailLinks(facts: RecapFacts, audience: RecapAudience, token: string) {
+  const who = audience === 'owner' ? 'owner' : 'list'
+  return {
+    page: recapPageUrl(facts.league.slug, facts.year, facts.week, 'email', who),
+    share: recapPageUrl(facts.league.slug, facts.year, facts.week, 'share'),
+    unsubscribe: unsubscribePageUrl(token),
+    account: `${SITE_URL}/account/`,
+    pricing: `${SITE_URL}/pricing/?utm_source=recap&utm_medium=email`,
+    newLeague: `${SITE_URL}/dashboard/new/?utm_source=recap&utm_medium=email&utm_campaign=new-league`,
+    league: `${SITE_URL}/leagues/${facts.league.slug}/?utm_source=recap&utm_medium=email`,
+    join: `${recapPageUrl(facts.league.slug, facts.year, facts.week, 'email', who)}#join`,
+  }
+}
+
+// A league's recap email as HTML, for reading in the browser. Sends nothing
+// and writes nothing. `tier` renders it as another plan would get it (the
+// free edition on a paid league, say).
+export async function previewRecapHtml(
+  slug: string,
+  year: number,
+  week: number,
+  tier: RecapFacts['tier'] | null,
+): Promise<{ ok: true; html: string } | { ok: false; error: string }> {
+  const db = createAdminClient()
+  const { data: league } = await db.from('leagues').select('id, slug, owner_id').eq('slug', slug).maybeSingle()
+  if (!league) return { ok: false, error: 'no such league' }
+  const loaded = await loadRecap(league, year, week)
+  if (loaded.status !== 'ok') return { ok: false, error: loaded.status }
+  const facts = { ...loaded.facts, tier: tier ?? loaded.tier }
+  const cup = facts.phase === 'regular' ? await cupTeaser(facts.league, facts.year, facts.week) : null
+  const { html } = renderRecapEmail(facts, loaded.intro, recapSubject(facts), emailLinks(facts, 'owner', 'preview'), 'owner', cup)
+  return { ok: true, html }
 }

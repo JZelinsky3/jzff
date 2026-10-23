@@ -4,7 +4,7 @@ import { notFound, redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { loadRecap, recapViewable } from '@/lib/recap/load'
 import { DEMO_LEAGUE, DEMO_RECAP, isDemoRecap } from '@/lib/recap/demo'
-import { editionDate, ordinal, pts, recapSections, recordStr, roman, type RecapGame } from '@/lib/recap/facts'
+import { editionDate, lockedFromBook, ordinal, pts, recapSections, recordStr, roman, type RecapGame } from '@/lib/recap/facts'
 import { bookLine, poss, totalLine, writeEdition } from '@/lib/recap/story'
 import { SITE_URL, recapPageUrl } from '@/lib/recap/links'
 import { recapFromAddress } from '@/lib/recap/resend'
@@ -162,14 +162,34 @@ function DivKey({ labels, names }: { labels: string[] | null; names: string[] | 
   )
 }
 
+// A blacked-out word on the free edition. Never real text underneath: the
+// free facts don't carry the paid values, and the page source shouldn't
+// either.
+function Redact({ w }: { w: number }) {
+  return <span className={styles.redact} style={{ width: `${w}em` }} aria-hidden />
+}
+
+function LockIcon() {
+  return (
+    <svg className={styles.lockIcon} width="11" height="12" viewBox="0 0 11 12" aria-hidden>
+      <rect x="1" y="5" width="9" height="6.5" rx="1.2" fill="none" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M3 5V3.6a2.5 2.5 0 0 1 5 0V5" fill="none" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  )
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────
 
 export default async function RecapPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; year: string; week: string }>
+  searchParams: Promise<{ tier?: string }>
 }) {
   const { slug, year: y, week: w } = await params
+  // ?tier=free shows the free edition on a paid league, outside production only.
+  const previewTier = process.env.NODE_ENV !== 'production' ? (await searchParams).tier : undefined
   const { year, week } = parseParams(y, w)
   const league = await loadLeague(slug)
   const loaded = await loadRecap(league, year, week)
@@ -221,7 +241,8 @@ export default async function RecapPage({
     )
   }
 
-  const { facts: f, tier } = loaded
+  const { facts: f } = loaded
+  const tier = previewTier === 'free' || previewTier === 'rookie' || previewTier === 'full' ? previewTier : loaded.tier
   // The owner's plan today decides what shows, even on a recap that was
   // built when they were on a bigger one.
   const show = recapSections(tier)
@@ -274,12 +295,16 @@ export default async function RecapPage({
   const proj = show.paid ? facts.projections : null
   const hasBook = !!book.length || (show.paid && !!facts.weekRecord) || (show.paid && !!facts.milestones?.length)
   const volume = `Vol. ${roman(f.history.seasons)}, No. ${week}`
+  // Free: the full paper's record book as labels only, for the blacked-out
+  // preview. A stored paid recap read on a lapsed plan has the book itself.
+  const locked = show.paid ? null : (f.locked ?? (f.book?.length ? lockedFromBook(f.book) : null))
+  const pricingHref = `/pricing/?utm_source=recap&utm_medium=page&utm_campaign=censored&back=${encodeURIComponent(`/leagues/${slug}/recap/${year}/${week}/`)}`
   // The Cup, on the weeks it runs. Every tier: the Cup has no paywall.
   const cup = demo || f.phase !== 'regular' ? null : await cupTeaser(league, year, week)
-  const jumps: { id: string; label: string }[] = [
+  const jumps: { id: string; label: string; accent?: boolean }[] = [
     { id: 'games', label: 'Results' },
-    // The launch teaser is a small card, not a section: no jump for it.
-    ...(cup && !cup.preview ? [{ id: 'cup', label: 'The Cup' }] : []),
+    // The early launch teaser is a small card, not a section: no jump for it.
+    ...(cup && !(cup.preview && !cup.preview.final) ? [{ id: 'cup', label: 'The Cup', accent: true }] : []),
     ...(hasStandings ? [{ id: 'standings', label: 'Standings' }] : []),
     ...(hasBook ? [{ id: 'book', label: 'Record book' }] : []),
     ...(totals.length ? [{ id: 'season', label: 'Season so far' }] : []),
@@ -318,6 +343,19 @@ export default async function RecapPage({
                   {pts(facts.star.points)} points{facts.star.pos ? `, ${facts.star.pos}` : ''}, for {facts.star.manager}
                 </div>
               </div>
+            ) : !show.paid ? (
+              <a className={`${styles.starBox} ${styles.starLocked}`} href="#locked">
+                <div className={styles.boxHead}>
+                  Player of the week <LockIcon />
+                </div>
+                <div className={styles.starName}>
+                  <Redact w={4.2} /> <Redact w={5.6} />
+                </div>
+                <div className={styles.starMeta}>
+                  <Redact w={2.6} /> points, <Redact w={1.4} />, for <Redact w={3.4} />
+                </div>
+                <span className={styles.starStamp}>Full paper</span>
+              </a>
             ) : null}
             <div className={styles.byline}>By the Chronicle staff</div>
             <div className={styles.leadBody}>
@@ -398,6 +436,16 @@ export default async function RecapPage({
                     <th>Strk</th>
                     {hasPower ? <th>Power</th> : null}
                     {hasOdds ? <th className={styles.left}>Playoffs</th> : null}
+                    {!show.paid ? (
+                      <>
+                        <th className={styles.lockedHead}>
+                          Power <LockIcon />
+                        </th>
+                        <th className={`${styles.left} ${styles.lockedHead}`}>
+                          Playoffs <LockIcon />
+                        </th>
+                      </>
+                    ) : null}
                   </tr>
                 </thead>
                 <tbody>
@@ -434,6 +482,19 @@ export default async function RecapPage({
                             )}
                           </td>
                         ) : null}
+                        {!show.paid ? (
+                          <>
+                            <td>
+                              <Redact w={1} />
+                            </td>
+                            <td className={styles.left}>
+                              <span className={styles.odds}>
+                                <span className={`${styles.oddsBar} ${styles.oddsBarLocked}`} />
+                                <Redact w={1.6} />
+                              </span>
+                            </td>
+                          </>
+                        ) : null}
                         {hasOdds ? (
                           <td className={styles.left}>
                             {s.odds != null ? (
@@ -456,8 +517,125 @@ export default async function RecapPage({
             <p className={styles.fine}>
               Ranked by record, then points for. The arrow is the move since last week
               {hasPower ? '; Power is the power ranking, with its weekly move' : ''}
-              {show.paid && f.playoffTeams ? `. The rule marks the ${f.playoffTeams}-team playoff line` : ''}.
+              {show.paid && f.playoffTeams ? `. The rule marks the ${f.playoffTeams}-team playoff line` : ''}
+              {!show.paid ? <>. Power rankings and playoff odds come with the <a href="#locked">full paper</a></> : ''}.
             </p>
+          </section>
+        ) : null}
+
+        {/* ── Free: the full paper, blacked out ── */}
+        {!show.paid ? (
+          <section className={`${styles.section} ${styles.sLocked}`} id="locked">
+            <header className={styles.sectionHead}>
+              <div>
+                <div className={styles.sectionTag}>The full paper</div>
+                <h2>What You&apos;re Missing</h2>
+              </div>
+              <span className={styles.censored} aria-hidden>
+                Censored
+              </span>
+            </header>
+            <p className={styles.lockedDeck}>
+              This week&apos;s full paper for {league.name} has all of this. On the free edition the names and numbers are
+              blacked out.
+            </p>
+            <div className={styles.lockedGrid}>
+              {locked?.book.length ? (
+                <div className={`${styles.lockedPanel} ${styles.lockedWide}`}>
+                  <div className={styles.lockedHead}>
+                    The Record Book <LockIcon />
+                  </div>
+                  <ul className={styles.lockedRows}>
+                    {locked.book.slice(0, 4).map((r, i) => (
+                      <li key={r.key}>
+                        <span className={styles.lockedLabel}>{r.label}</span>
+                        <span className={styles.lockedWho}>
+                          <Redact w={[4.4, 3.2, 5, 3.8][i % 4]!} />
+                        </span>
+                        <span className={styles.lockedNum}>
+                          <Redact w={2.8} />
+                        </span>
+                        <span className={styles.lockedNote}>
+                          {r.rank <= 10 ? (
+                            `${ordinal(r.rank)} of ${r.of.toLocaleString('en-US')} in league history`
+                          ) : (
+                            <>
+                              <Redact w={1.8} /> of {r.of.toLocaleString('en-US')} in league history
+                            </>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {f.standings?.length ? (
+                <div className={styles.lockedPanel}>
+                  <div className={styles.lockedHead}>
+                    Power Rankings and Playoff Odds <LockIcon />
+                  </div>
+                  <ul className={styles.lockedRows}>
+                    {f.standings.slice(0, 4).map((s, i) => (
+                      <li key={s.managerId} className={styles.lockedOdds}>
+                        <span className={styles.lockedRank}>
+                          No. <Redact w={0.8} />
+                        </span>
+                        <span className={styles.lockedWho}>{s.name}</span>
+                        <span className={styles.lockedNum}>
+                          <Redact w={[2, 1.6, 1.8, 1.4][i]!} />
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              <div className={styles.lockedPanel}>
+                <div className={styles.lockedHead}>
+                  Over and Under <LockIcon />
+                </div>
+                <ul className={styles.lockedRows}>
+                  {[5.2, 4.4, 6].map((w, i) => (
+                    <li key={i} className={styles.lockedOdds}>
+                      <span className={styles.lockedRank}>{i < 2 ? 'Over' : 'Under'}</span>
+                      <span className={styles.lockedWho}>
+                        <Redact w={w} />
+                      </span>
+                      <span className={styles.lockedNum}>
+                        {i < 2 ? '+' : '−'}
+                        <Redact w={1.8} />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className={styles.lockedPanel}>
+                <div className={styles.lockedHead}>
+                  Who Called It <LockIcon />
+                </div>
+                <ul className={styles.lockedRows}>
+                  {[3.6, 4.6, 3].map((w, i) => (
+                    <li key={i} className={styles.lockedOdds}>
+                      <span className={styles.lockedRank}>{i === 0 ? 'Best' : `No. ${i + 1}`}</span>
+                      <span className={styles.lockedWho}>
+                        <Redact w={w} />
+                      </span>
+                      <span className={styles.lockedNum}>
+                        <Redact w={1.1} />-<Redact w={0.8} />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div className={styles.lockedCta}>
+              <p>
+                Rookie unlocks the whole paper for everyone in the league: the record book, power rankings and playoff
+                odds, the player of the week, projections and pick&apos;ems. {rookiePrice}.
+              </p>
+              <Link className={styles.lockedBtn} href={pricingHref}>
+                Unlock the full paper
+              </Link>
+            </div>
           </section>
         ) : null}
 
@@ -735,20 +913,6 @@ export default async function RecapPage({
             </span>
             <span className={styles.weeklyBtn}>Open The Weekly</span>
           </a>
-        ) : null}
-
-        {/* ── Free: what the full paper adds ── */}
-        {!show.paid ? (
-          <section className={styles.upsell}>
-            <p>
-              This is the short edition. The full paper adds the record book (where every score ranks in league history),
-              how teams with this start have finished, a year ago this week, the players behind each result, power
-              rankings and playoff odds, pick&apos;ems and next week&apos;s lines. Rookie is {rookiePrice} for the league.
-            </p>
-            <Link className={styles.viewLeague} href="/pricing/?utm_source=recap&utm_medium=page">
-              See plans
-            </Link>
-          </section>
         ) : null}
 
         {/* ── The back page: the mailing list, pass it on, the way back ── */}

@@ -107,12 +107,6 @@ export async function ReportPage({ slug, week, previewTier }: { slug: string; we
           <h1 className={styles.title}>{titleOf(v)}</h1>
           <dl className={styles.fields}>
             <div className={styles.field}>
-              <dt>Report</dt>
-              <dd>
-                {v.edition} of {v.editions.length}
-              </dd>
-            </div>
-            <div className={styles.field}>
               <dt>Covers</dt>
               <dd>Weeks 1 to {v.week}</dd>
             </div>
@@ -120,9 +114,14 @@ export async function ReportPage({ slug, week, previewTier }: { slug: string; we
               <dt>Playoff spots</dt>
               <dd>{v.playoffTeams}</dd>
             </div>
-            <div className={styles.field}>
-              <dt>Next report</dt>
-              <dd>{v.nextEdition ? `After week ${v.nextEdition}` : 'This is the last one'}</dd>
+            <div className={`${styles.field} ${styles.termField}`}>
+              <dt>
+                Report {v.edition} of {v.editions.length}
+                <span className={styles.termNext}>{v.nextEdition ? `Next after week ${v.nextEdition}` : 'The last one'}</span>
+              </dt>
+              <dd>
+                <TermTrack slug={slug} v={v} />
+              </dd>
             </div>
           </dl>
           <div className={styles.actions}>
@@ -130,23 +129,10 @@ export async function ReportPage({ slug, week, previewTier }: { slug: string; we
             <Link className={styles.btn} href={`/leagues/${slug}/recap/${v.year}/${v.week}/`}>
               Week {v.week} recap
             </Link>
-            <Link className={styles.btn} href={`/leagues/${slug}/`}>
+            <Link className={`${styles.btn} ${styles.btnWide}`} href={`/leagues/${slug}/`}>
               View the league
             </Link>
           </div>
-          {v.editions.length > 1 ? (
-            <nav className={styles.editions} aria-label="Reports this season">
-              {v.editions.map((w, i) =>
-                w === v.week ? (
-                  <span key={w} className={`${styles.edition} ${styles.editionOn}`}>
-                    No. {i + 1} · Wk {w}
-                  </span>
-                ) : (
-                  <EditionLink key={w} slug={slug} week={w} index={i} ready={w <= v.week || isReady(v, w)} />
-                ),
-              )}
-            </nav>
-          ) : null}
         </div>
       </header>
 
@@ -212,7 +198,8 @@ export async function ReportPage({ slug, week, previewTier }: { slug: string; we
                       <span className={styles.who} role="cell">
                         <span className={styles.whoName}>
                           {t.name}
-                          <DivBadge div={t.div} labels={divLabels} names={v.divisions} />
+                          {/* A conference board already says which one. */}
+                          {g.name ? null : <DivBadge div={t.div} labels={divLabels} names={v.divisions} />}
                           {t.clinched ? <span className={styles.tagIn}>Clinched</span> : null}
                           {t.eliminated ? <span className={styles.tagOut}>Out</span> : null}
                         </span>
@@ -320,7 +307,11 @@ export async function ReportPage({ slug, week, previewTier }: { slug: string; we
           <div className={styles.rolls}>
             <p className={styles.roll}>
               <span className={styles.rollLabel}>Honor roll</span>
-              {honor.map((t) => `${t.name} (${t.grades.overall.letter})`).join(', ')}
+              {honor.map((t, i) => (
+                <span key={t.managerId} className={styles.rollName}>
+                  {t.name} ({t.grades.overall.letter}){i < honor.length - 1 ? ', ' : ''}
+                </span>
+              ))}
             </p>
             {seeMe ? (
               <p className={styles.roll}>
@@ -337,7 +328,7 @@ export async function ReportPage({ slug, week, previewTier }: { slug: string; we
                   <div className={styles.cardWho}>
                     <span className={styles.label}>Student</span>
                     <span className={styles.cardName}>
-                      {t.name}
+                      <span>{t.name}</span>
                       <DivBadge div={t.div} labels={divLabels} names={v.divisions} />
                     </span>
                     {t.team && t.team !== t.name ? <span className={styles.cardTeam}>{t.team}</span> : null}
@@ -445,22 +436,41 @@ export async function ReportPage({ slug, week, previewTier }: { slug: string; we
 // Blurred bar widths for the free race: plausible, never the real odds.
 const PLACEHOLDER_ODDS = [88, 74, 66, 58, 47, 41, 35, 29, 22, 16, 11, 6, 4, 2]
 
-function isReady(v: ReportView, w: number): boolean {
-  return w <= v.week
-}
-
-function EditionLink({ slug, week, index, ready }: { slug: string; week: number; index: number; ready: boolean }) {
-  if (!ready) {
-    return (
-      <span className={`${styles.edition} ${styles.editionLater}`}>
-        No. {index + 1} · Wk {week}
-      </span>
-    )
-  }
+// The season as a term calendar: a rule from week 1 to the last regular
+// week, inked up to this report, with a stop at every report week. Earlier
+// reports link back; this one is the red-pen stop; later ones are open rings.
+function TermTrack({ slug, v }: { slug: string; v: ReportView }) {
+  const last = Math.max(v.lastRegularWeek, ...v.editions, v.week)
+  const at = (w: number) => `${((w - 1) / Math.max(1, last - 1)) * 100}%`
   return (
-    <Link className={styles.edition} href={`/leagues/${slug}/report/${week}/`}>
-      No. {index + 1} · Wk {week}
-    </Link>
+    <span className={styles.term}>
+      <span className={styles.termRule} aria-hidden>
+        {Array.from({ length: last }, (_, i) => (
+          <span key={i} className={`${styles.termTick}${i + 1 <= v.week ? ` ${styles.termTickInked}` : ''}`} style={{ left: at(i + 1) }} />
+        ))}
+        <span className={styles.termInk} style={{ width: at(v.week) }} />
+      </span>
+      <nav aria-label="Reports this season">
+        {v.editions.map((w, i) => {
+          const where = w === v.week ? styles.stopNow : w < v.week ? styles.stopPast : styles.stopLater
+          const body = (
+            <>
+              <span className={styles.stopDot} />
+              <span className={styles.stopWk}>Wk {w}</span>
+            </>
+          )
+          return w < v.week ? (
+            <Link key={w} className={`${styles.stop} ${where}`} style={{ left: at(w) }} href={`/leagues/${slug}/report/${w}/`} aria-label={`Report ${i + 1}, week ${w}`}>
+              {body}
+            </Link>
+          ) : (
+            <span key={w} className={`${styles.stop} ${where}`} style={{ left: at(w) }} aria-current={w === v.week ? 'page' : undefined} aria-label={`Report ${i + 1}, week ${w}${w > v.week ? ', not out yet' : ''}`}>
+              {body}
+            </span>
+          )
+        })}
+      </nav>
+    </span>
   )
 }
 

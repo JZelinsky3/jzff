@@ -64,7 +64,7 @@ function badge(v: ReportView, t: ReportTeam): string {
   if (t.div == null || !v.divisions) return ''
   const label = divisionLabels(v.divisions)[t.div]
   if (!label) return ''
-  return ` <span style="display:inline-block; padding:1px 5px; background-color:${DIV_COLORS[t.div % 4]}; color:#ffffff; font-family:${SANS}; font-size:10px; font-weight:bold; line-height:1.4; border-radius:3px; vertical-align:2px;">${esc(label)}</span>`
+  return `<span style="display:inline-block; margin-left:7px; padding:1px 5px; background-color:${DIV_COLORS[t.div % 4]}; color:#ffffff; font-family:${SANS}; font-size:10px; font-weight:bold; line-height:1.4; border-radius:3px; vertical-align:middle;">${esc(label)}</span>`
 }
 
 function odds(n: number): string {
@@ -181,7 +181,8 @@ function cutLine(text: string): string {
 </td></tr>`
 }
 
-function raceRowPaid(v: ReportView, t: ReportTeam, first: boolean): string {
+// `badged` is false on a conference's own table, whose head already says it.
+function raceRowPaid(v: ReportView, t: ReportTeam, first: boolean, badged: boolean): string {
   const w = Math.max(2, Math.min(100, Math.round(t.odds)))
   const d = changeOf(t)
   const change =
@@ -191,7 +192,7 @@ function raceRowPaid(v: ReportView, t: ReportTeam, first: boolean): string {
   const tag = t.clinched ? ` &nbsp;<b style="color:${C.up};">CLINCHED</b>` : t.eliminated ? ` &nbsp;<b style="color:${C.chalkMute};">OUT</b>` : ''
   const top = first ? '' : ` border-top:1px solid ${C.boardRule};`
   return `<tr>
-<td style="padding:8px 0;${top} font-family:${SERIF}; font-size:15px; line-height:1.2; color:${C.chalk}; word-break:break-word;">${esc(t.name)}${badge(v, t)}<br><span style="font-family:${SANS}; font-size:11px; color:${C.chalkMute};">${esc(record(t))} &middot; seed ${t.seed}${tag}</span></td>
+<td style="padding:8px 0;${top} font-family:${SERIF}; font-size:15px; line-height:1.2; color:${C.chalk}; word-break:break-word;">${esc(t.name)}${badged ? badge(v, t) : ''}<br><span style="font-family:${SANS}; font-size:11px; color:${C.chalkMute};">${esc(record(t))} &middot; seed ${t.seed}${tag}</span></td>
 <td width="38%" style="padding:8px 10px;${top}">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.barTrack}" style="background-color:${C.barTrack};"><tr><td width="${w}%" bgcolor="${C.bar}" style="background-color:${C.bar}; height:9px; line-height:9px; font-size:1px;">&nbsp;</td>${w < 100 ? `<td style="height:9px; line-height:9px; font-size:1px;">&nbsp;</td>` : ''}</tr></table>
 </td>
@@ -200,11 +201,11 @@ function raceRowPaid(v: ReportView, t: ReportTeam, first: boolean): string {
 </tr>`
 }
 
-function raceRowFree(v: ReportView, t: ReportTeam, first: boolean): string {
+function raceRowFree(v: ReportView, t: ReportTeam, first: boolean, badged: boolean): string {
   const top = first ? '' : ` border-top:1px solid ${C.boardRule};`
   return `<tr>
 <td style="padding:8px 0;${top} font-family:${SANS}; font-size:12px; font-weight:bold; color:${C.chalkMute}; width:26px;">${t.seed}</td>
-<td colspan="2" style="padding:8px 0;${top} font-family:${SERIF}; font-size:15px; line-height:1.2; color:${C.chalk}; word-break:break-word;">${esc(t.name)}${badge(v, t)}</td>
+<td colspan="2" style="padding:8px 0;${top} font-family:${SERIF}; font-size:15px; line-height:1.2; color:${C.chalk}; word-break:break-word;">${esc(t.name)}${badged ? badge(v, t) : ''}</td>
 <td align="right" style="padding:8px 0;${top} font-family:${SANS}; font-size:13px; color:${C.chalk}; white-space:nowrap;"><b>${esc(record(t))}</b> &nbsp;<span style="color:${C.chalkMute};">${t.pf.toFixed(1)} pts</span></td>
 </tr>`
 }
@@ -307,7 +308,7 @@ export function renderReportEmail(
         : ''
       return (
         head +
-        g.teams.map((t, i) => (i === g.spots && i < g.teams.length ? cutLine(lineText(g)) : '') + (paid ? raceRowPaid(v, t, i === 0) : raceRowFree(v, t, i === 0))).join('')
+        g.teams.map((t, i) => (i === g.spots && i < g.teams.length ? cutLine(lineText(g)) : '') + (paid ? raceRowPaid(v, t, i === 0, !g.name) : raceRowFree(v, t, i === 0, !g.name))).join('')
       )
     })
     .join('')
