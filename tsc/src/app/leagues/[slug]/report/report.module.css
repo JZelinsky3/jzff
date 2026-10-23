@@ -338,9 +338,23 @@ a.stopPast:hover .stopWk {
 }
 
 /* One board per conference when each sends its own top N; one board
-   otherwise. */
+   otherwise. Each conference board takes its badge's colour, lightened to
+   the light blue's weight: the first stays blue, the second (pams' Skim)
+   goes light red, then green and violet. */
 .raceGroup + .raceGroup {
   margin-top: 30px;
+}
+
+.raceGroup[data-div='1'] {
+  --bar: #dd988d;
+}
+
+.raceGroup[data-div='2'] {
+  --bar: #8ddda9;
+}
+
+.raceGroup[data-div='3'] {
+  --bar: #bc8ddd;
 }
 
 .groupHead {
@@ -391,7 +405,9 @@ a.stopPast:hover .stopWk {
   display: none;
 }
 
-/* The place in the race, filled while it's a playoff place. */
+/* The place in the race, filled while it's a playoff place. Pinned to the
+   name's line and centred on its capitals (measured: the serif's caps sit
+   low in its line box), not on the name-and-record block. */
 .rank {
   grid-area: rank;
   align-self: start;
@@ -400,7 +416,7 @@ a.stopPast:hover .stopWk {
   justify-content: center;
   width: 26px;
   height: 26px;
-  margin-top: 1px;
+  margin-top: -2px;
   border: 1.5px solid rgba(232, 238, 244, 0.28);
   border-radius: 50%;
   font-family: var(--rp-mono);
@@ -417,6 +433,7 @@ a.stopPast:hover .stopWk {
 
 .who {
   grid-area: who;
+  align-self: start;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -623,7 +640,7 @@ a.stopPast:hover .stopWk {
 .line::after {
   content: '';
   flex: 1;
-  border-top: 2px solid rgba(141, 182, 220, 0.55);
+  border-top: 2px solid color-mix(in srgb, var(--bar) 55%, transparent);
 }
 
 .line::before {
@@ -830,7 +847,8 @@ a.stopPast:hover .stopWk {
   min-width: 0;
 }
 
-/* The badge centred on the name's capitals, a clear gap after it. */
+/* The badge centred on the name (between its capitals and its lowercase,
+   which the eye reads as the middle; measured), a clear gap after it. */
 .cardName {
   display: flex;
   flex-wrap: wrap;
@@ -844,7 +862,7 @@ a.stopPast:hover .stopWk {
 
 .cardName .divBadge {
   position: relative;
-  top: -1px;
+  top: 1.5px;
 }
 
 .cardTeam {
@@ -1118,10 +1136,10 @@ a.stopPast:hover .stopWk {
     text-align: right;
   }
 
-  .rank,
   .oddsCell {
     align-self: center;
   }
+
 
   .nextCell {
     flex-direction: column;

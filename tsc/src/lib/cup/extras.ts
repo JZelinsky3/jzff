@@ -9,6 +9,7 @@
 // The Cup odds play the rest of the bracket out 20,000 times on those rates.
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { bracketGameFilter } from '@/lib/bracketGames'
 import { resolveWeekLockAt } from '@/lib/liveSeason'
 import { GAME_SD_REL, TEAM_SD_REL } from '@/lib/powerSim'
 import { leagueName } from '@/lib/pamsNames'
@@ -164,10 +165,13 @@ type Db = ReturnType<typeof createAdminClient>
 
 export type CupHistoryGame = { season_id: string; week: number; manager_a_id: string; manager_b_id: string; score_a: number | null; score_b: number | null; is_playoff: boolean | null }
 
+// Placement games (5th place and below) aren't meetings, so the series
+// leaves them out (lib/bracketGames).
 async function allLeagueGames(db: Db, seasonIds: string[]) {
   type Row = CupHistoryGame
   const out: Row[] = []
   if (!seasonIds.length) return out
+  const counts = await bracketGameFilter(db, seasonIds)
   for (let from = 0; ; from += 1000) {
     const { data, error } = await db
       .from('matchups')
@@ -176,7 +180,7 @@ async function allLeagueGames(db: Db, seasonIds: string[]) {
       .order('id', { ascending: true })
       .range(from, from + 999)
     if (error || !data) break
-    out.push(...(data as Row[]))
+    out.push(...(data as Row[]).filter(counts))
     if (data.length < 1000) break
   }
   return out

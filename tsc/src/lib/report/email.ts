@@ -170,19 +170,24 @@ function flagHead(tag: string, title: string, o: { ink: string; flag: string; on
 const label = (s: string, color: string) =>
   `<div style="font-family:${SANS}; font-size:10px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:${color}; padding-bottom:4px;">${esc(s)}</div>`
 
+// Each conference table's bar colour, the page's: the first stays light
+// blue, the second (pams' Skim) light red, then green and violet.
+const DIV_BARS = [C.bar, '#dd988d', '#8ddda9', '#bc8ddd']
+const barOf = (div: number | null) => (div == null ? C.bar : DIV_BARS[div % 4])
+
 // The dashed playoff line across the race.
-function cutLine(text: string): string {
+function cutLine(text: string, color: string = C.bar): string {
   return `<tr><td colspan="4" style="padding:6px 0 4px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-<td width="45%" style="border-top:1px dashed ${C.bar}; font-size:1px; line-height:1px;">&nbsp;</td>
-<td align="center" style="padding:0 8px; font-family:${SANS}; font-size:9px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:${C.bar}; white-space:nowrap;">${esc(text)}</td>
-<td width="45%" style="border-top:1px dashed ${C.bar}; font-size:1px; line-height:1px;">&nbsp;</td>
+<td width="45%" style="border-top:1px dashed ${color}; font-size:1px; line-height:1px;">&nbsp;</td>
+<td align="center" style="padding:0 8px; font-family:${SANS}; font-size:9px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:${color}; white-space:nowrap;">${esc(text)}</td>
+<td width="45%" style="border-top:1px dashed ${color}; font-size:1px; line-height:1px;">&nbsp;</td>
 </tr></table>
 </td></tr>`
 }
 
 // `badged` is false on a conference's own table, whose head already says it.
-function raceRowPaid(v: ReportView, t: ReportTeam, first: boolean, badged: boolean): string {
+function raceRowPaid(v: ReportView, t: ReportTeam, first: boolean, badged: boolean, bar: string = C.bar): string {
   const w = Math.max(2, Math.min(100, Math.round(t.odds)))
   const d = changeOf(t)
   const change =
@@ -194,7 +199,7 @@ function raceRowPaid(v: ReportView, t: ReportTeam, first: boolean, badged: boole
   return `<tr>
 <td style="padding:8px 0;${top} font-family:${SERIF}; font-size:15px; line-height:1.2; color:${C.chalk}; word-break:break-word;">${esc(t.name)}${badged ? badge(v, t) : ''}<br><span style="font-family:${SANS}; font-size:11px; color:${C.chalkMute};">${esc(record(t))} &middot; seed ${t.seed}${tag}</span></td>
 <td width="38%" style="padding:8px 10px;${top}">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.barTrack}" style="background-color:${C.barTrack};"><tr><td width="${w}%" bgcolor="${C.bar}" style="background-color:${C.bar}; height:9px; line-height:9px; font-size:1px;">&nbsp;</td>${w < 100 ? `<td style="height:9px; line-height:9px; font-size:1px;">&nbsp;</td>` : ''}</tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.barTrack}" style="background-color:${C.barTrack};"><tr><td width="${w}%" bgcolor="${bar}" style="background-color:${bar}; height:9px; line-height:9px; font-size:1px;">&nbsp;</td>${w < 100 ? `<td style="height:9px; line-height:9px; font-size:1px;">&nbsp;</td>` : ''}</tr></table>
 </td>
 <td align="right" style="padding:8px 0;${top} font-family:${SANS}; font-size:14px; font-weight:bold; color:${C.chalk}; white-space:nowrap;">${odds(t.odds)}</td>
 <td align="right" style="padding:8px 0 8px 10px;${top} font-family:${SANS}; font-size:12px; font-weight:bold; white-space:nowrap;">${change}</td>
@@ -308,7 +313,7 @@ export function renderReportEmail(
         : ''
       return (
         head +
-        g.teams.map((t, i) => (i === g.spots && i < g.teams.length ? cutLine(lineText(g)) : '') + (paid ? raceRowPaid(v, t, i === 0, !g.name) : raceRowFree(v, t, i === 0, !g.name))).join('')
+        g.teams.map((t, i) => (i === g.spots && i < g.teams.length ? cutLine(lineText(g), barOf(g.div)) : '') + (paid ? raceRowPaid(v, t, i === 0, !g.name, barOf(g.div)) : raceRowFree(v, t, i === 0, !g.name))).join('')
       )
     })
     .join('')

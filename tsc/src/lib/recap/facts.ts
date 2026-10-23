@@ -26,6 +26,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { leagueName } from '@/lib/pamsNames'
+import { bracketGameFilter, type PlayoffGameLike } from '@/lib/bracketGames'
 import type { LockReason } from '@/lib/leagueTier'
 import { getPowerRankings } from '@/lib/powerRankings'
 import { getPickemsState, type PickemsState } from '@/lib/pickems'
@@ -1333,6 +1334,9 @@ async function loadHistory(
 ): Promise<HistGame[]> {
   const yearOf = new Map(seasons.map((s) => [s.id, s.year]))
   if (!yearOf.size) return []
+  // Placement games (5th place and below) aren't meetings: the series, the
+  // last meeting and the record book skip them, as the almanac does.
+  const counts = await bracketGameFilter(db, [...yearOf.keys()])
   const out: HistGame[] = []
   const page = 1000
   for (let from = 0; ; from += page) {
@@ -1352,6 +1356,7 @@ async function loadHistory(
       // Nothing after the week being recapped, so a recap rebuilt later still
       // says what was true that Tuesday.
       if (y > year || (y === year && w > week)) continue
+      if (!counts(m as PlayoffGameLike)) continue
       out.push({
         year: y,
         week: w,

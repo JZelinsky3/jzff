@@ -156,7 +156,7 @@ export async function ReportPage({ slug, week, previewTier }: { slug: string; we
               playoff rules: one board, or one per conference when each
               conference sends its own top N (raceGroups). */}
           {raceBoards.groups.map((g) => (
-            <div key={g.div ?? 'all'} className={styles.raceGroup}>
+            <div key={g.div ?? 'all'} className={styles.raceGroup} data-div={g.div == null ? undefined : g.div % 4}>
               {g.name ? (
                 <div className={styles.groupHead}>
                   <DivBadge div={g.div} labels={divLabels} names={v.divisions} />
