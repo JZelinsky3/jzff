@@ -20,7 +20,7 @@ the top of each file.
 Rendering needs nothing installed: it uses the copy of Google Chrome
 already on the machine, and DM Serif Display already in
 `~/Library/Fonts`. Everything renders at 2x and is downsampled to
-1080x1350 (the 2x originals stay in `out/2x/`). Upload the 1080 files.
+1080x1350 (each post type gets its own folder, e.g. `out/cup/`, with the 2x originals in its `2x/`). Upload the 1080 files.
 Instagram re-encodes anything wider and does it worse than `sips`.
 
 ---
@@ -77,7 +77,7 @@ loudly at the cost of tidier single posts), set `FORCE_PLAIN_FIT` to
                   --sub "Everything you follow, behind one door."
 ```
 
-Writes `out/cover-the-clubhouse.png`. Only `--label` really matters;
+Writes `out/cover/cover-the-clubhouse.png`. Only `--label` really matters;
 everything else has a default or can be left out. `--out` overrides
 the filename.
 
@@ -507,7 +507,7 @@ wide, so **everything on it is seen at 0.36x**:
 | 150px | 54pt | a hero number |
 
 Check a render the way it will be seen, not at full size:
-`sips -Z 420 out/pitch-02.png`.
+`sips -Z 420 out/pitch/pitch-02.png`.
 
 **The knob is `html { font-size: 32px }`.** It has been three
 numbers and both wrong ones taught something:

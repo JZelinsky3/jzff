@@ -2,9 +2,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 import { recapViewable } from '@/lib/recap/load'
 import { SITE_URL } from '@/lib/recap/links'
-import { loadCup } from '@/lib/cup/load'
+import { CUP_REOPEN_HOURS, cupReopenOf, loadCup, reopenableWeek, type CupView } from '@/lib/cup/load'
 import { loadCupExtras } from '@/lib/cup/extras'
 import { loadLeagueCups } from '@/lib/cup/history'
 import { cupNotes, CUP_MAX_FIELD, type CupBracket } from '@/lib/cup/bracket'
@@ -94,6 +96,20 @@ async function previewFor(leagueId: string, askedYear: number | null, view: Awai
   return loadCupPreview(leagueId)
 }
 
+// The commissioner's reopen control (see actions.ts), for the round it can
+// act on. Null for everyone else, and when there's no round to reopen; the
+// sign-in check only runs when there is one.
+async function commishControl(league: { owner_id: string | null }, view: CupView): Promise<{ week: number; until: string | null; hours: number } | null> {
+  const week = reopenableWeek(view)
+  if (week == null) return null
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || (user.id !== league.owner_id && !(await isSiteAdmin(user.id)))) return null
+  const reopen = cupReopenOf(view.season.settings)
+  const live = reopen && reopen.week === week && Date.parse(reopen.until) > Date.now()
+  return { week, until: live ? reopen.until : null, hours: CUP_REOPEN_HOURS }
+}
+
 function cupOf(leagueId: string, year: number | null) {
   return isDemoCup(leagueId) ? Promise.resolve(demoCupView(year)) : loadCup(leagueId, year)
 }
@@ -159,6 +175,7 @@ export default async function CupPage({ params, searchParams }: Props) {
   if (!view) notFound()
   const { cup, bracket } = view
   const extras = demo ? demoCupExtras(view) : await loadCupExtras(league.id, view)
+  const commish = demo ? null : await commishControl(league, view)
   // Stamps are all-time (a stamp book spans every Cup), so this reads the
   // league's other Cups too; the one already loaded isn't loaded again.
   const { stamps } = demo ? demoLeagueCups({ current: view }) : await loadLeagueCups(league.id, { view, picks: extras.picks })
@@ -190,6 +207,7 @@ export default async function CupPage({ params, searchParams }: Props) {
         leagueHref={leagueHref}
         initialTab={(await searchParams).tab}
         rated={cup.seeds.some((x) => x.rating != null)}
+        commish={commish}
         // The demo is mid-Cup; this says when a real league's starts.
         banner={demo && cup.season_year >= CUP_LAUNCH.year ? <DemoLaunch previewHref={`/leagues/${slug}/cup/?preview=1`} /> : null}
       />

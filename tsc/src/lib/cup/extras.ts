@@ -10,11 +10,10 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { bracketGameFilter } from '@/lib/bracketGames'
-import { resolveWeekLockAt } from '@/lib/liveSeason'
 import { GAME_SD_REL, TEAM_SD_REL } from '@/lib/powerSim'
 import { leagueName } from '@/lib/pamsNames'
 import { seedOrder, type CupBracket, type CupMatch } from './bracket'
-import type { CupView } from './load'
+import { cupLockAt, type CupView } from './load'
 
 // ── Shapes (all JSON, handed to the client page) ──────────────────────────
 
@@ -216,7 +215,7 @@ export async function loadCupExtras(leagueId: string, view: CupView): Promise<Cu
     profiles: (profiles ?? []) as CupExtrasSource['profiles'],
     picks: picksRes.error ? null : ((picksRes.data ?? []) as NonNullable<CupExtrasSource['picks']>),
     history: await allLeagueGames(db, seasonRows.map((s) => s.id)),
-    lockAtOf: (week) => resolveWeekLockAt(view.season.settings, week),
+    lockAtOf: (week) => cupLockAt(view.season.settings, week),
     now: Date.now(),
   })
 }

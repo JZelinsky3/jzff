@@ -7,14 +7,14 @@
 //
 // Guards: published league with a Cup; a visible profile in the league whose
 // manager has a team in the Cup; the
-// game exists with both sides known, isn't finished, and hasn't locked; the
+// game exists with both sides known, isn't finished, and hasn't locked (or
+// the commissioner reopened its round); the
 // pick is one of its two teams (or, for the champion, any team in the Cup).
 
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { resolveWeekLockAt } from '@/lib/liveSeason'
-import { loadCup } from '@/lib/cup/load'
+import { cupLockAt, loadCup } from '@/lib/cup/load'
 
 const Body = z.object({
   profile_id: z.string().uuid(),
@@ -62,7 +62,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   if (round === -1) {
     if (slot !== 0) return fail('Malformed pick.')
     if (!view.cup.seeds.some((s) => s.manager_id === picked_manager_id)) return fail('That team is not in the Cup.')
-    const lockAt = resolveWeekLockAt(view.season.settings, view.cup.start_week)
+    const lockAt = cupLockAt(view.season.settings, view.cup.start_week)
     const started = view.bracket.rounds[0]?.matches.some((m) => m.state === 'final')
     if ((lockAt && now >= Date.parse(lockAt)) || (!lockAt && started)) {
       return fail('Champion picks closed at kickoff of round one.', 409)
@@ -76,8 +76,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       return fail('Pick one of the two teams in that game.')
     }
     if (m.state === 'final' || m.state === 'waiting') return fail('That game is over.', 409)
-    const lockAt = resolveWeekLockAt(view.season.settings, m.week)
-    if (lockAt && now >= Date.parse(lockAt)) return fail('Picks for this round closed at kickoff Thursday night.', 409)
+    const lockAt = cupLockAt(view.season.settings, m.week)
+    if (lockAt && now >= Date.parse(lockAt)) return fail('Picks for this round are locked.', 409)
   }
 
   const { error } = await db.from('cup_picks').upsert(

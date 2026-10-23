@@ -20,10 +20,12 @@
 // picks is already signed in here.
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
 import { UPSET_GAP, type CupBracket, type CupEntrant, type CupMatch, type CupNotes, type CupRound, type CupSide } from '@/lib/cup/bracket'
 import type { CupExtras, CupMatchDetail, CupOdds, CupPicker } from '@/lib/cup/extras'
 import { nextTier, STAMP_BY_ID, STAMP_SETS, STAMPS, stampTier, TIER_NAMES, type StampAward, type StampId, type StampTier } from '@/lib/cup/stamps'
 import { trophy } from '@/lib/cup/trophy'
+import { setCupReopen } from './actions'
 import { BackLink } from './BackLink'
 import { Stamp } from './Stamp'
 import styles from './cup.module.css'
@@ -61,13 +63,18 @@ type Props = {
   // Seeded on the Cup Rating (every Cup from the 2026 launch on); false for
   // pams' Milk Cup, which was seeded on the standings before it existed.
   rated: boolean
+  // The commissioner only: the round whose picks they can reopen after
+  // Thursday's lock, and until when it's open if they already have.
+  commish?: Commish | null
 }
+
+type Commish = { week: number; until: string | null; hours: number }
 
 type User = { profileId: string; name: string; teamId: string | null }
 type Pending = { round: number; slot: number; managerId: string } | { champion: true }
 // book: one person's stamps across every Cup, or (person null) the
 // catalogue of every stamp and how to earn it.
-type Sheet = { kind: 'how' } | { kind: 'who'; then: Pending | null } | { kind: 'champ' } | { kind: 'book'; person: string | null; name: string | null } | null
+type Sheet = { kind: 'how' } | { kind: 'reopen' } | { kind: 'who'; then: Pending | null } | { kind: 'champ' } | { kind: 'book'; person: string | null; name: string | null } | null
 
 // ── Saved choices (who you are, the start card) ──
 
@@ -268,6 +275,21 @@ export function CupApp(props: Props) {
     if (toastTimer.current) clearTimeout(toastTimer.current)
     toastTimer.current = setTimeout(() => setToast(null), ok ? 2200 : 3600)
   }, [])
+
+  // The commissioner's reopen (or early relock), then the page again with
+  // the new lock in every game.
+  const router = useRouter()
+  const [reopening, setReopening] = useState(false)
+  const reopen = async (open: boolean) => {
+    if (!props.commish || reopening) return
+    setReopening(true)
+    const res = await setCupReopen(slug, props.commish.week, open).catch(() => ({ ok: false as const, error: 'That didn’t save. Try again.' }))
+    setReopening(false)
+    if (!res.ok) return say(res.error, false)
+    setSheet(null)
+    say(res.until ? `Picks open until ${lockText(res.until)}.` : 'Picks locked.', true)
+    router.refresh()
+  }
 
   const nameOf = useMemo(() => {
     const m = new Map<string, string>()
@@ -524,6 +546,8 @@ export function CupApp(props: Props) {
               onWho={() => setSheet({ kind: 'who', then: null })}
               onHow={() => setSheet({ kind: 'how' })}
               onChampion={openChampion}
+              commishWeek={props.commish?.week ?? null}
+              onCommish={() => setSheet({ kind: 'reopen' })}
             />
           ) : null}
           {tab === 'bracket' ? <BracketTab bracket={bracket} odds={extras.odds} user={user} imageUrl={imageUrl} slug={slug} title={`${props.cupName} · ${props.leagueName}`} onRound={goRound} /> : null}
@@ -582,6 +606,21 @@ export function CupApp(props: Props) {
           <HowItWorks bracket={bracket} extras={extras} seededThrough={seededThrough} rated={props.rated} />
           <button type="button" className={styles.sheetCta} onClick={() => setSheet(null)}>
             Got it
+          </button>
+        </SheetFrame>
+      ) : null}
+      {sheet?.kind === 'reopen' && props.commish ? (
+        <SheetFrame
+          title={props.commish.until ? 'Picks Reopened' : 'Reopen Picks'}
+          sub={
+            props.commish.until
+              ? `Open until ${lockText(props.commish.until)}. Only you see this.`
+              : `Missed sharing the link? This opens the round’s picks again for ${props.commish.hours} hours. Only you see this.`
+          }
+          onClose={() => setSheet(null)}
+        >
+          <button type="button" className={styles.sheetCta} disabled={reopening} onClick={() => void reopen(!props.commish!.until)}>
+            {props.commish.until ? 'Lock Picks Now' : `Reopen for ${props.commish.hours} Hours`}
           </button>
         </SheetFrame>
       ) : null}
@@ -1521,12 +1560,19 @@ function Games(props: {
   onWho: () => void
   onHow: () => void
   onChampion: () => void
+  commishWeek: number | null
+  onCommish: () => void
 }) {
   const { bracket, extras, round, setRound, user, known } = props
   const r = bracket.rounds[round] ?? bracket.rounds[0]!
   const done = r.matches.length > 0 && r.matches.every((m) => m.state === 'final')
   const lockAt = r.matches.map((m) => extras.details[m.id]?.lockAt).find(Boolean) ?? null
   const open = extras.hasPickTable && r.matches.some((m) => extras.details[m.id]?.open)
+  const lockLine = open && lockAt
+    ? `Picks lock ${lockText(lockAt)}`
+    : !open && !done && lockAt && r.matches.some((m) => extras.details[m.id]?.locked)
+      ? 'Picks locked'
+      : null
   const anyOpen = props.openCount > 0 || props.champOpen
   const introKey = `tsc-cup-intro-${props.cupId}`
   const introGone = useStored(introKey)
@@ -1565,8 +1611,16 @@ function Games(props: {
         <p className={styles.roundSub}>
           Week {r.week}
           {done ? ' · Final' : ''}
-          {open && lockAt ? ` · Picks lock ${lockText(lockAt)}` : ''}
-          {!open && !done && lockAt && r.matches.some((m) => extras.details[m.id]?.locked) ? ' · Picks locked' : ''}
+          {lockLine ? ' · ' : ''}
+          {/* For the commissioner the lock words are the reopen control:
+              same line, same size, a dotted underline. */}
+          {lockLine && props.commishWeek === r.week ? (
+            <button type="button" className={styles.lockCtl} onClick={props.onCommish}>
+              {lockLine}
+            </button>
+          ) : (
+            lockLine
+          )}
         </p>
       </div>
 

@@ -12,8 +12,9 @@
 # downsampled to 1080x1350 with sips. Rendering at 1x and rendering at
 # 2x-then-down are not the same picture: the second supersamples the
 # hairlines, the column rules and the serif stems, all of which are
-# sub-pixel at 1x and would otherwise alias. The 2x files are kept in
-# out/2x/ in case a crop or a larger placement is ever wanted.
+# sub-pixel at 1x and would otherwise alias. Each post type renders
+# into its own folder (out/cup/, out/cover/, ...) and the 2x files are
+# kept in its 2x/ in case a crop or a larger placement is ever wanted.
 #
 # 1080x1350 is what actually gets uploaded. Instagram re-encodes
 # anything wider than 1080 on the way in, and its downscaler is worse
@@ -24,8 +25,8 @@ set -euo pipefail
 CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT="$HERE/out"
-OUT2X="$OUT/2x"
-mkdir -p "$OUT2X"
+# Folder under out/ for the current post type; each case sets it.
+GROUP=""
 
 [ -x "$CHROME" ] || { echo "Google Chrome not found at $CHROME"; exit 1; }
 
@@ -39,9 +40,11 @@ mkdir -p "$OUT2X"
 # has finished.
 shot() {
   local url="$1" name="$2" w="$3" h="$4"
-  local profile target pid last size
+  local profile target pid last size dir
+  dir="$OUT${GROUP:+/$GROUP}"
+  mkdir -p "$dir/2x"
   profile="$(mktemp -d)"
-  target="$OUT2X/${name}.png"
+  target="$dir/2x/${name}.png"
   rm -f "$target"
 
   "$CHROME" \
@@ -71,14 +74,15 @@ shot() {
 
   [ -s "$target" ] || { echo "  FAILED: $name"; return 1; }
 
-  cp "$OUT2X/${name}.png" "$OUT/${name}.png"
-  sips -z "$h" "$w" "$OUT/${name}.png" >/dev/null
-  echo "  out/${name}.png  (${w}x${h})"
+  cp "$target" "$dir/${name}.png"
+  sips -z "$h" "$w" "$dir/${name}.png" >/dev/null
+  echo "  out/${GROUP:+$GROUP/}${name}.png  (${w}x${h})"
 }
 
 case "${1:-}" in
 
   triptych)
+    GROUP=triptych
     echo "Rendering pinned triptych:"
     shot "file://$HERE/triptych.html?sheet=1" "triptych-spread" 3240 1350
     for n in 1 2 3; do
@@ -127,6 +131,7 @@ case "${1:-}" in
     [ -n "$SHOT"  ] && Q="$Q&shot=$SHOT"
     [ -n "$PHONE" ] && Q="$Q&phone=$PHONE"
 
+    GROUP=cover
     echo "Rendering cover \"$LABEL\":"
     shot "file://$HERE/cover.html?$Q" "$NAME" 1080 1350
     ;;
@@ -140,6 +145,7 @@ case "${1:-}" in
     shift
     SLIDES=("$@")
     [ ${#SLIDES[@]} -eq 0 ] && SLIDES=(1 2 3 4 5 6 7 8)
+    GROUP=offseason
     echo "Rendering offseason carousel:"
     for i in "${SLIDES[@]}"; do
       shot "file://$HERE/offseason.html?slide=$i" \
@@ -154,6 +160,7 @@ case "${1:-}" in
   # want while iterating on one panel. See README.md for the running
   # order and the layout rules.
   concepts)
+    GROUP=pitch
     echo "Rendering the treatments review sheet:"
     shot "file://$HERE/concepts.html" "concepts" 1440 3010
     ;;
@@ -164,6 +171,7 @@ case "${1:-}" in
   # module, same content in every tile, so only the design language
   # is being compared. Pick one and it goes on all eight boards.
   cards)
+    GROUP=pitch
     echo "Rendering the card-treatment review sheet:"
     shot "file://$HERE/cards.html" "cards" 1480 2620
     ;;
@@ -171,6 +179,7 @@ case "${1:-}" in
     shift
     SLIDES=("$@")
     [ ${#SLIDES[@]} -eq 0 ] && SLIDES=($(seq 1 14))
+    GROUP=tour
     echo "Rendering site tour:"
     for i in "${SLIDES[@]}"; do
       shot "file://$HERE/tour.html?slide=$i" \
@@ -182,6 +191,7 @@ case "${1:-}" in
   #
   # The single Weekly Recap post.
   recap)
+    GROUP=recap
     echo "Rendering the recap post:"
     shot "file://$HERE/recap.html" "recap" 1080 1350
     shot "file://$HERE/recap.html?dark=ox" "recap-dark" 1080 1350
@@ -195,6 +205,7 @@ case "${1:-}" in
     shift
     SLIDES=("$@")
     [ ${#SLIDES[@]} -eq 0 ] && SLIDES=(1 2 3 4)
+    GROUP=cup
     echo "Rendering the League Cup carousel:"
     for i in "${SLIDES[@]}"; do
       shot "file://$HERE/cup.html?slide=$i" \
@@ -206,6 +217,7 @@ case "${1:-}" in
     shift
     SLIDES=("$@")
     [ ${#SLIDES[@]} -eq 0 ] && SLIDES=($(seq 1 8))
+    GROUP=pitch
     echo "Rendering sign-up carousel:"
     for i in "${SLIDES[@]}"; do
       shot "file://$HERE/pitch.html?slide=$i" \

@@ -62,6 +62,42 @@ export function cupSeasonSettings(settings: Record<string, unknown> | null, year
   return { ...s, season_start_date: new Date(week1TuesdayUtc(year)).toISOString().slice(0, 10) }
 }
 
+// The commissioner can reopen a round's picks after Thursday's lock (the
+// link went out late, half the league missed it) from the Cup page. Stored
+// on the season, beside commish_power, as settings.cup_reopen; syncs merge
+// settings, so it survives them. One round at a time.
+export const CUP_REOPEN_HOURS = 24
+export type CupReopen = { week: number; until: string }
+
+export function cupReopenOf(settings: Record<string, unknown> | null | undefined): CupReopen | null {
+  const r = settings?.cup_reopen as { week?: unknown; until?: unknown } | null | undefined
+  if (!r || typeof r.week !== 'number' || typeof r.until !== 'string' || Number.isNaN(Date.parse(r.until))) return null
+  return { week: r.week, until: r.until }
+}
+
+// When a week's Cup picks lock: Thursday kickoff, same as pick'ems, or the
+// end of the commissioner's reopen if that's later. Everything that reads a
+// Cup lock goes through here (the page, the pick route, the strip, the
+// recap), so they can't disagree.
+export function cupLockAt(settings: Record<string, unknown> | null | undefined, week: number): string | null {
+  const base = resolveWeekLockAt(settings, week)
+  const reopen = cupReopenOf(settings)
+  if (!base || !reopen || reopen.week !== week) return base
+  return Date.parse(reopen.until) > Date.parse(base) ? reopen.until : base
+}
+
+// The round the commissioner can reopen: its Thursday lock has passed and
+// it still has a game to pick (both teams known, not decided yet). Null
+// between rounds and once the Cup is over.
+export function reopenableWeek(view: CupView, now: number = Date.now()): number | null {
+  for (const r of view.bracket.rounds) {
+    const base = resolveWeekLockAt(view.season.settings, r.week)
+    if (!base || now < Date.parse(base)) continue
+    if (r.matches.some((m) => m.a.kind === 'team' && m.b.kind === 'team' && (m.state === 'live' || m.state === 'upcoming'))) return r.week
+  }
+  return null
+}
+
 // Same names as the recap: the person's profile first, then the league's own
 // name for the account, then whatever the platform calls them. Team names
 // from that season.
@@ -234,7 +270,7 @@ export async function cupBadge(
   // The round whose picks are on the table: this week's, or round one in
   // the week before the Cup starts.
   const pickWeek = Math.max(liveWeek, cup.start_week)
-  const lockAt = pickWeek <= cup.start_week + rounds - 1 ? resolveWeekLockAt(settings, pickWeek) : null
+  const lockAt = pickWeek <= cup.start_week + rounds - 1 ? cupLockAt(settings, pickWeek) : null
   return {
     id: cup.id,
     name: cup.name,

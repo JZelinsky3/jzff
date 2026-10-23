@@ -771,6 +771,21 @@
   color: var(--mute);
 }
 
+/* The commissioner's reopen control: the lock words themselves, so the line
+   keeps its size; only the dotted underline says it's a button. */
+.lockCtl {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-decoration: underline dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
 .recap {
   margin-top: 12px;
   padding: 11px 13px;
