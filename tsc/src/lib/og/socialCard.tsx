@@ -13,6 +13,7 @@ import path from 'path'
 import type { Card, Row } from '@/lib/social/content'
 import { barsCard, columnsCard, posterCard, scatterCard, timelineCard } from './socialDesigns'
 import { cupCard, cupTeaserCard } from './socialCup'
+import { recapCard } from './socialRecap'
 import { CREAM, GRAPH, NAVY, NIGHT, SALMON, doubleRule, flag, type Stock } from './socialParts'
 
 const FONT_DIR = path.join(process.cwd(), 'public', 'og', 'fonts')
@@ -82,6 +83,7 @@ function draw(card: Card | null): Drawn {
 
   if (card.template === 'cup') return { stock: s, body: cupCard(card), bare: true }
   if (card.template === 'cupTeaser') return { stock: s, body: cupTeaserCard(card), bare: true }
+  if (card.template === 'recap') return { stock: s, body: recapCard(card), bare: true }
 
   if (card.template === 'history' || card.template === 'regret') {
     switch (card.design) {

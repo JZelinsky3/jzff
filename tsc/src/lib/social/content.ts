@@ -10,6 +10,7 @@
 import { fetchWeekStats } from '@/lib/playerStats'
 import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 import { SHARE_PAGES } from '@/lib/sharePages'
+import demoRecap from '@/lib/recap/demo-recap.json'
 import { taggedLink, textProblem, type Platform } from './config'
 
 // The base post of the day (card + link) is one of the first six; the rest
@@ -20,6 +21,11 @@ export type Kind =
   | 'trending' | 'drops' | 'leaders' | 'beat' | 'season' | 'targets' | 'pace' | 'bargains'
   | 'streaks' | 'busts' | 'byes' | 'nugget' | 'projections' | 'sunday'
   | 'sidebyside' | 'highs' | 'redzone' | 'namegame' | 'mnf' | 'yearago'
+  | 'snaps' | 'rookies' | 'tnf' | 'hot'
+  // Backups, sent in a slot whose own list came up empty (extras.ts).
+  | 'touchdowns' | 'airyards' | 'qbrush'
+  // Thursday's word post with a link and no image.
+  | 'plug'
   // League Cup launch posts, queued by hand for the two weeks before the draw.
   | 'cup'
   // Retired 2026-10-05 (reply bait); kept so old rows still have a label.
@@ -52,6 +58,14 @@ export const KIND_LABELS: Record<Kind, string> = {
   nugget: 'History by position (retired)',
   yearago: 'This year vs last (text)',
   sunday: 'Sunday’s top scorers (text)',
+  snaps: 'Snap share jumps (text)',
+  rookies: 'Top rookies (text)',
+  tnf: 'Thursday night scorers (text)',
+  hot: 'Last three weeks (text)',
+  touchdowns: 'Touchdown leaders (backup)',
+  airyards: 'Air yards leaders (backup)',
+  qbrush: 'QB rushing leaders (backup)',
+  plug: 'Word post with a link',
   cup: 'League Cup launch',
   question: 'Question (retired)',
 }
@@ -96,6 +110,22 @@ export type Card =
   // The Cup's teaser posters: few words, one big picture (the trophy, or a
   // bracket closing in on it), the date on a strip.
   | { template: 'cupTeaser'; look: 'trophy' | 'bracket'; kicker: string; title: string; title2: string; line: string; strip: string }
+  // The Weekly Recap promo: a real edition of the demo league's paper lying
+  // on the desk, so the picture is the product.
+  | { template: 'recap'; title: string; dek: string; stamp: string; issue: RecapIssue }
+
+/** The front page of one demo edition, cut down for the recap promo card. */
+export type RecapIssue = {
+  league: string
+  year: number
+  week: number
+  seasons: number
+  headline: string
+  games: { a: { name: string; score: number }; b: { name: string; score: number }; winner: 'a' | 'b' }[]
+  standings: { rank: number; name: string; record: string; change: number }[]
+  star: { player: string; pos: string; points: number; manager: string }
+  upset: { winner: string; winnerRecord: string; loser: string; loserRecord: string }
+}
 
 // Five history designs and four regret ones, a week apart. Regret goes out on
 // the Tuesday before the week's history post, and never in the same design.
@@ -344,22 +374,39 @@ const RECAP_PITCHES = [
   {
     x: 'Your fantasy league gets its own newspaper every Tuesday. Last week\'s scores, the best and worst lineup calls, and how the standings moved. 10 days free at The Sunday Chronicle.',
     threads: 'Your fantasy league gets its own newspaper every Tuesday.\n\nLast week\'s scores, the best and worst lineup calls, and how the standings moved, pulled from your league\'s own history. Anyone in the league can sign up to get it.\n\n10 days free.',
-    dek: 'A paper for your league, every Tuesday.',
-    points: ['Last week\u2019s scores', 'Best and worst lineup calls', 'How the standings moved', 'Anyone in the league can sign up'],
+    dek: 'Every score and every bench call, every Tuesday.',
   },
   {
     x: 'Every week the group chat argues about who should have started who. The Tuesday recap settles it: every score, every bad bench call, every streak in your league. Free for 10 days at The Sunday Chronicle.',
     threads: 'Every week the group chat argues about who should have started who.\n\nThe Tuesday recap settles it. Every score, every bad bench call, every streak, checked against your league\'s whole history. It hits your inbox after Monday night.\n\n10 days free.',
     dek: 'Settles the group chat every Tuesday.',
-    points: ['Every score, every week', 'The worst bench calls', 'Streaks and records in play', 'In your inbox after Monday night'],
   },
   {
     x: 'Connect your Sleeper, ESPN or Yahoo league once. You get a recap every Tuesday, an all-time record book, and every season you\'ve ever played in one place. 10 days free at The Sunday Chronicle.',
     threads: 'Connect your Sleeper, ESPN or Yahoo league once.\n\nYou get a recap every Tuesday, an all-time record book, and every season you\'ve ever played in one place.\n\n10 days free.',
     dek: 'Connect once. Read it every Tuesday.',
-    points: ['Sleeper, ESPN and Yahoo', 'A recap every Tuesday', 'An all-time record book', 'Every season in one place'],
   },
 ]
+
+// The card's sample paper is the demo league's real edition (the one at
+// /leagues/demo/recap/), so every number on it is something the recap printed.
+function recapIssue(): RecapIssue {
+  const f = demoRecap.facts
+  // Title Case for the headline (house style), small words left alone.
+  const small = new Set(['a', 'an', 'the', 'and', 'but', 'or', 'of', 'in', 'on', 'at', 'to', 'for', 'by', 'vs'])
+  const title = (s: string) => s.split(' ').map((w, i) => (i > 0 && small.has(w) ? w : w.replace(/(^|-)([a-z])/g, (_, h: string, c: string) => h + c.toUpperCase()))).join(' ')
+  return {
+    league: f.league.name,
+    year: f.year,
+    week: f.week,
+    seasons: f.history.seasons,
+    headline: title(f.hooks[0]),
+    games: f.games.map((g) => ({ a: { name: g.a.name, score: g.a.score }, b: { name: g.b.name, score: g.b.score }, winner: g.winner === 'a' ? 'a' : 'b' })),
+    standings: f.standings.slice(0, 6).map((s) => ({ rank: s.rank, name: s.name, record: `${s.wins}-${s.losses}`, change: s.change })),
+    star: f.star,
+    upset: { winner: f.upset.winner, winnerRecord: f.upset.winnerRecord, loser: f.upset.loser, loserRecord: f.upset.loserRecord },
+  }
+}
 
 export function buildRecapPromo(week: number): Built {
   const pitch = RECAP_PITCHES[week % RECAP_PITCHES.length]
@@ -368,9 +415,45 @@ export function buildRecapPromo(week: number): Built {
     // Saturday, no link on X, so its X copy names the site instead.
     ...texts({ x: pitch.x, threads: pitch.threads }, link, 'recap'),
     link,
-    card: { template: 'product', kicker: 'The Weekly Recap', title: 'Your League’s Chronicle.', dek: pitch.dek, points: pitch.points },
+    card: { template: 'recap', title: 'Your League Gets a Paper.', dek: pitch.dek, stamp: '10 Days Free', issue: recapIssue() },
     image_path: null,
   }
+}
+
+// ── The word post with a link ────────────────────────────────────────────
+// Thursday afternoon, no image (Joey, 2026-10-29: on Threads the text posts
+// get 1-3k views and anything with a picture gets a fraction, linked or not).
+// This is the test of whether a link alone holds a post back: plain words
+// like the stat posts, the link on its own line at the end. X stays
+// link-free (a link post costs about thirteen times one without) and names
+// the site instead.
+const PLUGS: { key: string; link: string; body: string; x: string }[] = [
+  {
+    key: 'recap',
+    link: '/leagues/demo/recap/2026/4/',
+    body: 'Every Tuesday your fantasy league can get its own newspaper: last week\'s scores, the best and worst lineup calls, records that fell, and how the standings moved.\n\nThis is a real one, from our demo league.',
+    x: 'Every Tuesday your fantasy league can get its own newspaper: last week\'s scores, the best and worst lineup calls, records that fell, and how the standings moved. The Weekly Recap at The Sunday Chronicle.',
+  },
+  {
+    key: 'records',
+    link: '/see/records/',
+    body: 'Highest score ever. Worst blowout. Longest losing streak. Most points in a loss.\n\nConnect your Sleeper, ESPN or Yahoo league once and every record it has ever set is in one book, back to year one.',
+    x: 'Highest score ever. Worst blowout. Longest losing streak. Connect your Sleeper, ESPN or Yahoo league once and every record it has ever set is in one book at The Sunday Chronicle.',
+  },
+  {
+    key: 'games',
+    link: '/games/',
+    body: 'Free fantasy games built on real leagues: redraft a real draft with hindsight, guess whose draft it was, or build a lineup from real teams and see what record it puts up.\n\nNo account needed.',
+    x: 'Free fantasy games built on real leagues: redraft a real draft with hindsight, guess whose draft it was, or build a lineup from real teams. No account needed, under Games at The Sunday Chronicle.',
+  },
+]
+
+export function buildPlug(rotation: number): Built {
+  const p = PLUGS[rotation % PLUGS.length]
+  const out = { x_text: p.x, threads_text: `${p.body}\n\n${taggedLink(p.link, 'threads', `plug-${p.key}`)}` }
+  const bad = textProblem('x', out.x_text) ?? textProblem('threads', out.threads_text)
+  if (bad) throw new Error(`plug ${p.key} copy is ${bad}`)
+  return { ...out, link: p.link, card: null, image_path: null }
 }
 
 // ── Feature of the week ──────────────────────────────────────────────────

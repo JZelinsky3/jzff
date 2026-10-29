@@ -51,7 +51,7 @@ export function xLength(text: string): number {
 // fine without, so it's left alone. Builders that fill X to the brim with a
 // list aim at X_ROOM instead, leaving space for both tags.
 const X_TAG = '#FantasyFootball'
-const WAIVER_KINDS = new Set(['trending', 'drops', 'regret'])
+const WAIVER_KINDS = new Set(['trending', 'drops', 'regret', 'snaps'])
 export const X_ROOM = X_MAX - `\n\n${X_TAG} #WaiverWire`.length
 
 /** The X copy with one or two hashtags on the end, as many as fit. */

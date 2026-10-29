@@ -18,15 +18,21 @@
 // has Monday (Joey: Monday mornings are the most active on X) because it is
 // the post that shows the site, so it is the one worth paying for a link.
 //
-// Around it, the text-only extras (lib/social/extras.ts), so each day has
-// three or four posts instead of one:
-//   Mon 12 most added      15 drafted side by side   17 most dropped   19 Monday night matchup
-//   Tue 12 top scorers     17 beat the projection    20 target leaders
-//   Wed 12 most added      17 season leaders RB/WR   20 best pace vs the record
+// Around it, the text-only extras (lib/social/extras.ts), FOUR every day. The
+// text posts are what carry the account (on Threads they get 1-3k views, a
+// post with a picture gets a fraction of that), so the image posts above are
+// bonus content on top of the four, never one of them:
+//   Mon 12 most added      15 drafted side by side   17 most dropped      19 Monday night matchup
+//   Tue 12 top scorers     15 snap share jumps       17 beat the projection   20 target leaders
+//   Wed 12 most added      15 top rookies            17 season leaders RB/WR  20 best pace vs the record
 //   Thu  9 byes            12 this year vs last      16 name the player   19 draft bargains
-//   Fri 12 most added      15 best single games      18 every game over N points
-//   Sat 13 season leaders QB/TE   15 red zone chances   18 draft busts
+//   Fri 10 Thursday night  12 most added             15 best single games     18 every game over N points
+//   Sat 12 last three weeks   14 season leaders QB/TE   16 red zone chances   18 draft busts
 //   Sun 10 top projected   12 most added   15 name the player   20 Sunday's top scorers
+// One that comes up empty on the day sends a backup in its slot (publish.ts).
+//
+// Plus Thursday 14:00, a word post with a link and no image (content.ts
+// buildPlug), to see whether the link or the picture is what costs reach.
 //
 // No questions, no reply bait (Joey): a post asking for answers that gets
 // none looks empty. Every extra stands on its own as a stat.
@@ -41,7 +47,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getNflClock, nflWeekAt, weekOverAt } from '@/lib/nflClock'
 import { addDays, easternAt, easternDate, easternWeekday } from './config'
 import {
-  buildFeature, buildGame, buildHistory, buildRecapPromo, snapshotDrops,
+  buildFeature, buildGame, buildHistory, buildPlug, buildRecapPromo, snapshotDrops,
   type Built, type Kind, type RegretParams,
 } from './content'
 import { buildNameGame } from './extras'
@@ -124,6 +130,10 @@ export async function planWeek(db: Db, opts: { monday?: string; dry?: boolean } 
         if (rotation % 2) return { skip: 'a game goes out every other week' }
         return { built: buildGame(season, week, rotation / 2) }
       },
+    },
+    {
+      kind: 'plug', date: addDays(monday, 3), hour: 14,
+      build: async () => ({ built: buildPlug(rotation) }),
     },
     {
       kind: 'recap', date: addDays(monday, 5), hour: 10,
@@ -218,10 +228,12 @@ function extraSlots(monday: string, season: number, rotation: number, weekOf: We
     onTheDay('mnf', 0, 19, 'this', (wk) => (wk >= 2 ? { ...week(wk), date: day(0) } : null)),
     // Tuesday
     onTheDay('leaders', 1, 12, 'last', week),
+    onTheDay('snaps', 1, 15, 'last', sinceWeek3),
     onTheDay('beat', 1, 17, 'last', week),
     onTheDay('targets', 1, 20, 'last', sinceWeek3),
     // Wednesday
     trending(2),
+    onTheDay('rookies', 2, 15, 'last', sinceWeek3),
     onTheDay('season', 2, 17, 'last', (wk) => (wk >= 3 ? { ...week(wk), pos: ['RB', 'WR'][rotation % 2] } : null)),
     onTheDay('pace', 2, 20, 'last', sinceWeek3),
     // Thursday
@@ -231,12 +243,15 @@ function extraSlots(monday: string, season: number, rotation: number, weekOf: We
     nameGame(3, 16, 0),
     onTheDay('bargains', 3, 19, 'last', sinceWeek3),
     // Friday
+    // Thursday's game, from the week being played.
+    onTheDay('tnf', 4, 10, 'this', (wk) => ({ ...week(wk), date: day(3) })),
     trending(4),
     onTheDay('highs', 4, 15, 'last', sinceWeek3),
     onTheDay('streaks', 4, 18, 'last', sinceWeek3),
     // Saturday
-    onTheDay('season', 5, 13, 'last', (wk) => (wk >= 3 ? { ...week(wk), pos: ['QB', 'TE'][rotation % 2] } : null)),
-    onTheDay('redzone', 5, 15, 'last', sinceWeek3),
+    onTheDay('hot', 5, 12, 'last', (wk) => (wk >= 4 ? week(wk) : null)),
+    onTheDay('season', 5, 14, 'last', (wk) => (wk >= 3 ? { ...week(wk), pos: ['QB', 'TE'][rotation % 2] } : null)),
+    onTheDay('redzone', 5, 16, 'last', sinceWeek3),
     onTheDay('busts', 5, 18, 'last', sinceWeek3),
     // Sunday
     onTheDay('projections', 6, 10, 'this', week),

@@ -10,6 +10,9 @@
 //     stops a backlog flooding both accounts the moment posting is switched on.
 //     The text-only extras get six hours (TIMELY_KINDS): a "most added" list
 //     or an evening question is stale by the next morning.
+//   - A text extra whose list comes up empty on the day sends a backup stat
+//     post in its slot (BACKUP_KINDS in extras.ts) rather than leaving the
+//     day a post short.
 //   - Each platform is sent at most once per post. If X succeeds and Threads
 //     fails, the post goes back in the queue and the next run retries Threads
 //     alone. Three attempts, then it stops and says so on the admin page.
@@ -19,7 +22,8 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { absoluteUrl, socialLive, textProblem, threadsSeeded, withXTags, xConfigured, type Platform } from './config'
-import { buildOnTheDay, TIMELY_KINDS } from './extras'
+import { BACKUP_KINDS, buildOnTheDay, THIS_WEEK_KINDS, TIMELY_KINDS } from './extras'
+import type { Built } from './content'
 import { postToX } from './x'
 import { postToThreads } from './threads'
 
@@ -69,13 +73,44 @@ async function touch(db: Db, id: string, patch: Record<string, unknown>) {
   await db.from('social_posts').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id)
 }
 
+const BACKUP_GAP_MS = 6 * 24 * 60 * 60 * 1000
+
+/**
+ * A backup stat post for a slot whose own list came up empty (BACKUP_KINDS),
+ * from the same week's stats. Null when none is free or none has a list.
+ */
+async function backupFor(db: Db, row: PostRow): Promise<{ kind: string; built: Built } | null> {
+  const p = row.params as { season?: number; week?: number }
+  if (!TIMELY_KINDS.has(row.kind) || !p.season || !p.week) return null
+  const week = THIS_WEEK_KINDS.has(row.kind) ? p.week - 1 : p.week
+  if (week < 3) return null
+  const { data } = await db.from('social_posts').select('kind, params')
+    .in('status', ['sent', 'partial']).gte('sent_at', new Date(Date.now() - BACKUP_GAP_MS).toISOString())
+  const used = new Set((data ?? []).flatMap((r) => [r.kind as string, (r.params as { backup?: string } | null)?.backup]))
+  for (const kind of BACKUP_KINDS) {
+    if (used.has(kind)) continue
+    const made = await buildOnTheDay(kind, { season: p.season, week })
+    if ('built' in made) return { kind, built: made.built }
+  }
+  return null
+}
+
 /** Writes the copy for a post that could only be built on the day. */
 async function fill(db: Db, row: PostRow): Promise<PostRow | { expired: string }> {
   if (row.x_text && row.threads_text) return row
   const made = await buildOnTheDay(row.kind, row.params)
-  if ('skip' in made) return { expired: made.skip }
-  const built = made.built
-  const patch = { x_text: built.x_text, threads_text: built.threads_text, link: built.link, card: built.card }
+  let built: Built
+  let params = row.params
+  if ('skip' in made) {
+    const backup = await backupFor(db, row)
+    if (!backup) return { expired: made.skip }
+    built = backup.built
+    // The row keeps its kind (and slot); params say what went out instead.
+    params = { ...row.params, backup: backup.kind, skipped: made.skip }
+  } else {
+    built = made.built
+  }
+  const patch = { x_text: built.x_text, threads_text: built.threads_text, link: built.link, card: built.card, params }
   await touch(db, row.id, patch)
   return { ...row, ...patch }
 }

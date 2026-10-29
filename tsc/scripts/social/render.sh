@@ -39,7 +39,7 @@ GROUP=""
 # signal: two identical byte counts a second apart means the encoder
 # has finished.
 shot() {
-  local url="$1" name="$2" w="$3" h="$4"
+  local url="$1" name="$2" w="$3" h="$4" budget="${BUDGET:-4000}"
   local profile target pid last size dir
   dir="$OUT${GROUP:+/$GROUP}"
   mkdir -p "$dir/2x"
@@ -54,13 +54,13 @@ shot() {
     --force-device-scale-factor=2 \
     --window-size="${w},${h}" \
     --user-data-dir="$profile" \
-    --virtual-time-budget=4000 \
+    --virtual-time-budget="$budget" \
     --screenshot="$target" \
     "$url" >/dev/null 2>&1 &
   pid=$!
 
   last=-1
-  for _ in $(seq 1 40); do
+  for _ in $(seq 1 60); do
     sleep 1
     [ -f "$target" ] || continue
     size=$(stat -f%z "$target")
@@ -210,6 +210,23 @@ case "${1:-}" in
     for i in "${SLIDES[@]}"; do
       shot "file://$HERE/cup.html?slide=$i" \
            "cup-$(printf '%02d' "$i")" 1080 1350
+    done
+    ;;
+
+  # ./render.sh showcase [slide-number ...]
+  #
+  # The site showcase carousel. The player photos load from Sleeper's
+  # CDN, so it gets a longer clock than the other boards.
+  showcase)
+    shift
+    SLIDES=("$@")
+    [ ${#SLIDES[@]} -eq 0 ] && SLIDES=(1 2 3 4 5 6 7 8 9)
+    GROUP=showcase
+    BUDGET=8000
+    echo "Rendering the showcase:"
+    for i in "${SLIDES[@]}"; do
+      shot "file://$HERE/showcase.html?slide=$i" \
+           "showcase-$(printf '%02d' "$i")" 1080 1350
     done
     ;;
 
