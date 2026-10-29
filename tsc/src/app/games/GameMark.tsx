@@ -20,8 +20,45 @@ import {
   OVER_UNDER,
   REDRAFT,
   MULTIVERSE_DRAFT,
+  PACK_EMPIRE,
 } from './gameDefs'
 import s from './marks.module.css'
+
+/**
+ * A pack, opened: five cards on the table, two of them flipped, and one of
+ * those two an immortal. The colours are the game's own rarity colours, so
+ * the mark is the same green and blue the cards inside will be.
+ *
+ * Names nobody, for the reason every mark here doesn't: a face on the shelf
+ * would date the game to whoever is in the pool this month.
+ */
+function PackMark() {
+  const cards: (null | { tone: string; score: string })[] = [
+    null,
+    { tone: '#42c0f8', score: '1,420' },
+    null,
+    { tone: '#28dc78', score: '4,910' },
+    null,
+  ]
+  return (
+    <>
+      <span className={s.packHead}>
+        Captain pack · <b>QB</b>
+      </span>
+      <span className={s.packRow}>
+        {cards.map((c, i) =>
+          c ? (
+            <span key={i} className={s.packCardUp} style={{ '--rc': c.tone } as React.CSSProperties}>
+              <span className={s.packScore}>{c.score}</span>
+            </span>
+          ) : (
+            <span key={i} className={s.packCard} />
+          )
+        )}
+      </span>
+    </>
+  )
+}
 
 /**
  * Names no team, and mustn't start again.
@@ -169,6 +206,7 @@ function Art({ id }: { id: string }) {
   if (id === OVER_UNDER.id) return <LineMark />
   if (id === REDRAFT.id) return <ClockMark />
   if (id === MULTIVERSE_DRAFT.id) return <BandsMark />
+  if (id === PACK_EMPIRE.id) return <PackMark />
   return null
 }
 

@@ -360,3 +360,72 @@
 .bandOn .bandPpg {
   color: var(--accent);
 }
+
+/* ── Pack Empire: a pack, opened ──────────────────────────────
+   Five cards on the table, three still face down in the original
+   card back's navy, two flipped in their rarity's colour. The
+   immortal glows; nothing else on the shelf does, which is the
+   point of pulling one.
+   ------------------------------------------------------------ */
+
+.packHead {
+  display: block;
+  margin-bottom: 0.7em;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.42em;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gp-mute, #7d8a99);
+  white-space: nowrap;
+}
+
+.packHead b {
+  color: var(--accent);
+}
+
+.packRow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.32em;
+  max-width: 12.5em;
+}
+
+.packCard,
+.packCardUp {
+  position: relative;
+  display: block;
+  aspect-ratio: 5 / 7.6;
+  border-radius: 0.24em;
+  overflow: hidden;
+}
+
+.packCard {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 0.42em 0.42em,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 0.42em 0.42em,
+    linear-gradient(155deg, #080e24, #0c1840);
+  border: 1px solid #1a3060;
+}
+
+.packCardUp {
+  border: 1px solid var(--rc);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--rc) 38%, transparent) 0 52%, transparent 52%),
+    linear-gradient(170deg, #080e24, #0b1438);
+  box-shadow: 0 0 0.55em color-mix(in srgb, var(--rc) 45%, transparent);
+  transform: translateY(-0.18em);
+}
+
+.packScore {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.35em;
+  text-align: center;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.42em;
+  letter-spacing: 0.02em;
+  color: var(--rc);
+}

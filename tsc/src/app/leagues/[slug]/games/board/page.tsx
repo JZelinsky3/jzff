@@ -59,8 +59,8 @@ export default async function LeagueGamesBoard({
   // verifier exists for this game" — a tab onto a game the server cannot
   // re-score would list nothing forever. Flipping hasBoard when a verifier
   // ships adds the tab here with no other change.
-  const ranked = GAMES.filter((g) => g.hasBoard)
-  const unranked = GAMES.filter((g) => !g.hasBoard)
+  const ranked = GAMES.filter((g) => g.hasBoard && !g.global)
+  const unranked = GAMES.filter((g) => !g.hasBoard && !g.global)
   if (ranked.length === 0) notFound()
 
   const requested = (sp.game ?? '').trim().toLowerCase()

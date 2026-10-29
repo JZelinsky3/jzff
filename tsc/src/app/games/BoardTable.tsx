@@ -84,6 +84,8 @@ function statFor(game: GameId, row: BestRow): { big: string; small: string } {
       // the board. The record is the display and it always exists.
       // The round goes in a chip next to the date; this line stays one fact.
       return { big: d.record ?? '·', small: `${d.ppg ?? 0} PPG` }
+    case 'pack-empire':
+      return { big: (d.accolades ?? row.score).toLocaleString(), small: d.tier ?? 'accolades' }
     default:
       return { big: `${d.correct ?? row.score}/${d.asked ?? 10}`, small: 'correct' }
   }
@@ -98,7 +100,7 @@ export function BoardTable({
   game: GameId
   viewerId: string | null
 }) {
-  if (board.kind === 'career') return <CareerTable board={board} viewerId={viewerId} />
+  if (board.kind === 'career') return <CareerTable board={board} game={game} viewerId={viewerId} />
 
   const { rows, you, total } = board
   if (rows.length === 0) {
@@ -252,9 +254,11 @@ function Row({ row, game, mine }: { row: BestRow; game: GameId; mine: boolean })
 
 function CareerTable({
   board,
+  game,
   viewerId,
 }: {
   board: Extract<Board, { kind: 'career' }>
+  game: GameId
   viewerId: string | null
 }) {
   const { rows, minRuns } = board
@@ -277,7 +281,12 @@ function CareerTable({
       </p>
       <ol className={styles.rows}>
         {qualified.map((r) => (
-          <CareerRowLine key={r.userId} row={r} mine={viewerId != null && r.userId === viewerId} />
+          <CareerRowLine
+            key={r.userId}
+            row={r}
+            game={game}
+            mine={viewerId != null && r.userId === viewerId}
+          />
         ))}
       </ol>
       {waiting.length > 0 && (
@@ -288,6 +297,7 @@ function CareerTable({
               <CareerRowLine
                 key={r.userId}
                 row={r}
+                game={game}
                 mine={viewerId != null && r.userId === viewerId}
                 minRuns={minRuns}
               />
@@ -301,13 +311,18 @@ function CareerTable({
 
 function CareerRowLine({
   row,
+  game,
   mine,
   minRuns,
 }: {
   row: CareerRow
+  game: GameId
   mine: boolean
   minRuns?: number
 }) {
+  // Pack Empire posts every run as score over one, so its "rate" is already
+  // the average lineup. A percentage of that would be a seven-digit number.
+  const average = game === 'pack-empire'
   return (
     <li className={`${styles.row} ${mine ? styles.rowMine : ''}`}>
       <span className={styles.rank}>{row.rank != null ? row.rank : '·'}</span>
@@ -320,8 +335,12 @@ function CareerRowLine({
         </span>
       </span>
       <span className={styles.stat}>
-        <span className={styles.statBig}>{(row.rate * 100).toFixed(1)}%</span>
-        <span className={styles.statSmall}>best {row.best}</span>
+        <span className={styles.statBig}>
+          {average ? Math.round(row.rate).toLocaleString() : `${(row.rate * 100).toFixed(1)}%`}
+        </span>
+        <span className={styles.statSmall}>
+          {average ? `avg · best ${Number(row.best).toLocaleString()}` : `best ${row.best}`}
+        </span>
       </span>
     </li>
   )

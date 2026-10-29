@@ -65,6 +65,14 @@ export type GameDef = {
   /** Copy for the pool cards in the lobby. */
   demoBody: string
   leagueBody: string
+  /**
+   * One game for everyone, on one shared pool, rather than a game played on a
+   * league. Pack Empire is the first: the same player pool and the same board
+   * for the whole site, with no league anywhere in it. Kept off the league
+   * wing (/leagues/<slug>/games/), which only shelves games a league can be
+   * the pool for, and it has its own front page instead of a league lobby.
+   */
+  global?: boolean
 }
 
 export const ROSTER_ROULETTE: GameDef = {
@@ -247,7 +255,36 @@ export const MULTIVERSE_DRAFT: GameDef = {
     'Your own league, and players you watched for years, each one dealt three of the seasons you had him. Needs two completed seasons, and reads best with four or more.',
 }
 
+export const PACK_EMPIRE: GameDef = {
+  id: 'pack-empire',
+  href: '/games/pack-empire/',
+  title: 'Pack',
+  titleEm: 'Empire',
+  shortName: 'Packs',
+  tagline: 'Eleven packs, one keeper each. Build a GOAT offense.',
+  accessTag: 'No account',
+  // The room's amber. The game re-skins its whole page in warm charcoal, and
+  // its card on the shelf draws a pack, which is what tells it apart from
+  // Roulette's brass at a glance.
+  accent: '#e8a84b',
+  blurb:
+    'Every position on an eleven-man offense is a sealed pack of five. Make one of them your captain and it deals off a richer table, then open the rest in any order, flip the cards and keep one from each. Your accolades add up to a rung on the ladder, and the best lineups anybody has built sit on the board.',
+  how: [
+    'Pick a captain: that pack deals off the captain table',
+    'Open eleven packs, five cards in each, keep one',
+    'Your accolades total sets your tier on the ladder',
+  ],
+  allowsSite: false,
+  allowsCombine: false,
+  allowsDemo: false,
+  hasBoard: true,
+  demoBody: '',
+  leagueBody: '',
+  global: true,
+}
+
 export const GAMES: GameDef[] = [
+  PACK_EMPIRE,
   ROSTER_ROULETTE,
   GUESS_THE_DRAFT,
   THE_GAUNTLET,

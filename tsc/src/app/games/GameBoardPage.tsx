@@ -60,12 +60,19 @@ export async function GameBoardPage({
   poolId,
   mode,
   kind,
+  themeClass,
+  play,
 }: {
   game: GameId
   def: GameDef
   poolId: string
   mode: string | null
   kind: BoardKind
+  /** A game that re-skins its whole page (Pack Empire) passes its theme so
+      its board is the same room as its table. */
+  themeClass?: string
+  /** Where "Play" goes, for a game whose front page isn't its board. */
+  play?: string
 }) {
   const supabase = await createClient()
   const {
@@ -77,7 +84,7 @@ export async function GameBoardPage({
     poolLabel(poolId),
   ])
 
-  const playHref = `${def.href}?pool=${encodeURIComponent(poolId)}`
+  const playHref = play ?? `${def.href}?pool=${encodeURIComponent(poolId)}`
   const tabHref = (k: BoardKind) =>
     `${def.href}board/?pool=${encodeURIComponent(poolId)}${k === 'best' ? '' : `&kind=${k}`}`
 
@@ -89,11 +96,15 @@ export async function GameBoardPage({
     // was the only way in, and isn't now that the game links to it. Same
     // chrome the game wears, so leaving a board and leaving a wheel are the
     // same gesture.
-    <main className={mobile ? mobileStyles.boardRoot : undefined}>
+    <main className={[themeClass, mobile ? mobileStyles.boardRoot : ''].filter(Boolean).join(' ') || undefined}>
       {mobile ? (
         <MobileGameBar
           left="back"
-          kicker={def.title}
+          // A game with its own front page (Pack Empire) goes back to it;
+          // the rest go back to the shelf, where their lobby lives.
+          backHref={def.global ? def.href : undefined}
+          backLabel={def.global ? `${def.title} ${def.titleEm}` : undefined}
+          kicker={`${def.title} ${def.titleEm}`}
           title="The"
           titleEm="Board"
           signedIn={!!user}

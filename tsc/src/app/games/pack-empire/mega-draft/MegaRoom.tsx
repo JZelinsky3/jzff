@@ -1,0 +1,482 @@
+'use client'
+
+// The Mega Draft room: the shared board in the middle, both elevens either
+// side, and whoever is on the clock lit up. The server is the referee; this
+// only asks it things. It polls while the draft is live, and a pick shows up
+// for the other player on their next poll, about a second and a half later.
+//
+// Phones get the board and the two elevens as three tabs under a sticky
+// clock, because three columns at 390px is three unreadable columns.
+
+import Link from 'next/link'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  MEGA_TOTAL_PICKS,
+  POOL_KEYS,
+  RARITY_LOOK,
+  SLOTS,
+  shortName,
+  tierFor,
+  type Player,
+  type PoolKey,
+} from '@/lib/packEmpire/rules'
+import type { MegaView } from '@/lib/packEmpire/mega'
+import { LineupSheet } from '../cards'
+import { ShareLink } from '../share'
+import { useStored } from '../clientStore'
+import { megaKey, rememberMega } from './MegaLobby'
+
+function PoolCard({
+  player,
+  state,
+  takenBy,
+  fresh,
+  onPick,
+}: {
+  player: Player
+  state: 'can' | 'wait' | 'full' | 'taken'
+  takenBy: string | null
+  fresh: boolean
+  onPick: () => void
+}) {
+  const rc = RARITY_LOOK[player.rarity]
+  return (
+    <button
+      type="button"
+      className={`pe-pc pe-pc--${state}${fresh ? ' fresh' : ''}`}
+      style={{ '--rc': rc.color, '--rg': rc.glow, '--art': rc.art } as React.CSSProperties}
+      onClick={state === 'can' ? onPick : undefined}
+      disabled={state !== 'can'}
+      aria-label={state === 'can' ? `Draft ${player.name}` : player.name}
+    >
+      <span className="pe-pc-top">
+        <span className="pe-pc-pos" style={{ background: rc.color }}>
+          {player.pos}
+        </span>
+        <span className="pe-pc-rar" style={{ color: rc.color }}>
+          {rc.short}
+        </span>
+      </span>
+      <span className="pe-pc-art" style={{ background: rc.art }}>
+        {player.img ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={player.img} alt="" className="pe-pc-img" loading="lazy" />
+        ) : (
+          <span className="pe-pc-initial">{player.name.charAt(0)}</span>
+        )}
+        {state === 'taken' && <span className="pe-pc-taken">{takenBy ?? 'Drafted'}</span>}
+      </span>
+      <span className="pe-pc-body">
+        <span className="pe-pc-name" style={{ color: rc.color }}>
+          {shortName(player.name)}
+        </span>
+        <span className="pe-pc-team">{player.team}</span>
+        <span className="pe-pc-score" style={{ color: rc.color }}>
+          {player.score.toLocaleString()}
+        </span>
+      </span>
+    </button>
+  )
+}
+
+function Column({
+  label,
+  name,
+  lineup,
+  score,
+  filled,
+  picking,
+}: {
+  label: string
+  name: string | null
+  lineup: (Player | null)[]
+  score: number
+  filled: number
+  picking: boolean
+}) {
+  const tier = tierFor(score)
+  return (
+    <div className={`pe-lc${picking ? ' picking' : ''}`}>
+      <div className="pe-lc-head">
+        {picking && <span className="pe-lc-flag">On the clock</span>}
+        <span className="pe-lc-label">{label}</span>
+        <span className="pe-lc-name">{name ?? 'Open seat'}</span>
+        <span className="pe-lc-score" style={{ color: tier.color }}>
+          {score.toLocaleString()}
+        </span>
+        <span className="pe-lc-progress">
+          {filled}/{SLOTS.length}
+        </span>
+      </div>
+      <div className="pe-lc-slots">
+        {SLOTS.map((s, i) => {
+          const p = lineup[i]
+          const rc = p ? RARITY_LOOK[p.rarity] : null
+          return (
+            <div
+              key={s.key}
+              className={`pe-lcs${p ? ' filled' : ''}`}
+              style={rc ? ({ '--rc': rc.color } as React.CSSProperties) : undefined}
+            >
+              <span className="pe-lcs-pos" style={rc ? { background: rc.color } : undefined}>
+                {s.short}
+              </span>
+              {p ? (
+                <>
+                  {p.img ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.img} alt="" className="pe-lcs-img" />
+                  ) : (
+                    <span className="pe-lcs-initial">{p.name.charAt(0)}</span>
+                  )}
+                  <span className="pe-lcs-info">
+                    <span className="pe-lcs-name" style={{ color: rc!.color }}>
+                      {shortName(p.name)}
+                    </span>
+                    <span className="pe-lcs-score">{p.score.toLocaleString()}</span>
+                  </span>
+                </>
+              ) : (
+                <span className="pe-lcs-empty">·</span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+export function MegaRoom({ initial, signedIn }: { initial: MegaView; signedIn: boolean }) {
+  const [view, setViewRaw] = useState<MegaView>(initial)
+  // A signed-out seat is this browser's key (one key for every Mega Draft it
+  // sits at). The one made this visit wins until storage catches up.
+  const storedKey = useStored('pe_mega_key')
+  const [madeKey, setMadeKey] = useState<string | null>(null)
+  const key = signedIn ? null : madeKey ?? storedKey
+  const [name, setName] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [filter, setFilter] = useState<'ALL' | PoolKey>('ALL')
+  const [tab, setTab] = useState<'board' | 'you' | 'them'>('board')
+  const [fresh, setFresh] = useState<string | null>(null)
+  const lastCount = useRef(initial.picks.length)
+  const freshTimer = useRef<number | null>(null)
+  const id = view.id
+
+  /** Every new view comes through here, so the newest pick can be lit up
+      for a moment, whoever made it. */
+  const setView = useCallback((v: MegaView) => {
+    if (v.picks.length > lastCount.current) {
+      setFresh(v.picks[v.picks.length - 1].id)
+      if (freshTimer.current) window.clearTimeout(freshTimer.current)
+      freshTimer.current = window.setTimeout(() => setFresh(null), 2200)
+    }
+    lastCount.current = v.picks.length
+    setViewRaw(v)
+  }, [])
+
+  const refresh = useCallback(
+    async (k: string | null) => {
+      const q = new URLSearchParams({ id })
+      if (k) q.set('key', k)
+      const res = await fetch(`/api/games/pack-empire/mega/?${q}`, { cache: 'no-store' })
+      const out = await res.json().catch(() => null)
+      if (out?.ok) setView(out.view)
+    },
+    [id, setView]
+  )
+
+  // The server render couldn't see a signed-out seat's key, so ask again
+  // with it.
+  useEffect(() => {
+    if (!storedKey || signedIn) return
+    let cancelled = false
+    void (async () => {
+      const q = new URLSearchParams({ id: initial.id, key: storedKey })
+      const res = await fetch(`/api/games/pack-empire/mega/?${q}`, { cache: 'no-store' })
+      const out = await res.json().catch(() => null)
+      if (!cancelled && out?.ok) setView(out.view)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [storedKey, signedIn, initial.id, setView])
+
+  // Poll while there is anything to wait for.
+  useEffect(() => {
+    if (view.status === 'done') return
+    const t = window.setInterval(() => refresh(key), view.status === 'live' ? 1500 : 3000)
+    return () => window.clearInterval(t)
+  }, [view.status, key, refresh])
+
+  const post = useCallback(
+    async (body: Record<string, unknown>) => {
+      const res = await fetch('/api/games/pack-empire/mega/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, key, ...body }),
+      })
+      const out = await res.json().catch(() => null)
+      if (!res.ok || !out?.ok) throw new Error(out?.error ?? 'Something went wrong.')
+      return out
+    },
+    [id, key]
+  )
+
+  const join = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      const k = signedIn ? null : key ?? megaKey()
+      if (k) setMadeKey(k)
+      const res = await fetch('/api/games/pack-empire/mega/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'join', id, name, key: k }),
+      })
+      const out = await res.json().catch(() => null)
+      if (!res.ok || !out?.ok) throw new Error(out?.error ?? 'Could not sit down.')
+      rememberMega(id)
+      setView(out.view)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not sit down.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const pick = async (p: Player) => {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      const out = await post({ action: 'pick', player: p.id })
+      setView(out.view)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'That pick did not go through.')
+      refresh(key)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const takenBy = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const pk of view.picks) m.set(pk.id, pk.seat)
+    return m
+  }, [view.picks])
+
+  const you = view.you
+  const them = you == null ? null : you === 0 ? 1 : 0
+  const yourTurn = view.status === 'live' && you != null && view.onClock === you
+  const mineLineup = you != null ? view.seats[you].lineup : null
+
+  const stateFor = (p: Player): 'can' | 'wait' | 'full' | 'taken' => {
+    if (takenBy.has(p.id)) return 'taken'
+    if (!yourTurn || !mineLineup) return 'wait'
+    const open = SLOTS.some((s, i) => s.pool === p.pos && !mineLineup[i])
+    return open ? 'can' : 'full'
+  }
+
+  const shown = view.board.filter((p) => filter === 'ALL' || p.pos === filter)
+  const seatName = (s: number) => view.seats[s].name ?? 'Open seat'
+
+  // ── Waiting room ──────────────────────────────────────────────
+  if (view.status === 'waiting') {
+    return (
+      <div className="pe-table pe-wrap--narrow">
+        <div className="pe-table-head">
+          <div className="pe-kicker">★ Mega Draft · {id} ★</div>
+          <h1 className="pe-table-title">
+            {view.hostName}&apos;s <span className="pe-em">board.</span>
+          </h1>
+          <p className="pe-table-sub">Thirty-six players, two seats, eleven picks each, snake order.</p>
+        </div>
+        {you === 0 ? (
+          <div className="pe-panel">
+            <div className="pe-kicker">Waiting for a second seat</div>
+            <p className="pe-panel-text" style={{ margin: '0.5rem 0 0.9rem' }}>
+              Send the link, or read out the code <b style={{ fontFamily: 'var(--mono)', letterSpacing: '0.2em' }}>{id}</b>.
+              The coin for first pick is flipped the moment they sit down. This page updates by itself.
+            </p>
+            <ShareLink path={`/games/pack-empire/mega-draft/${id}/`} title="Pack Empire" text="Mega Draft: sit down" />
+          </div>
+        ) : view.canJoin ? (
+          <div className="pe-panel">
+            <div className="pe-kicker">An open seat</div>
+            <div className="pe-panel-title">Draft against {view.hostName}.</div>
+            {!signedIn && (
+              <input
+                className="pe-input"
+                placeholder="Your name"
+                value={name}
+                maxLength={24}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && join()}
+                style={{ margin: '0.6rem 0' }}
+              />
+            )}
+            <button
+              type="button"
+              className="pe-btn"
+              onClick={join}
+              disabled={busy || (!signedIn && name.trim().length < 2)}
+              style={{ marginTop: '0.5rem' }}
+            >
+              Sit down
+            </button>
+            {error && (
+              <div className="pe-error" style={{ marginTop: '0.8rem' }}>
+                {error}
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="pe-empty">Waiting for the draft to start.</p>
+        )}
+        <div className="pe-sec">
+          <div className="pe-sec-head">
+            <span className="pe-sec-num">§ The board</span>
+            <span className="pe-sec-meta">{view.board.length} players</span>
+          </div>
+          <div className="pe-pool">
+            {view.board.map((p) => (
+              <PoolCard key={p.id} player={p} state="wait" takenBy={null} fresh={false} onPick={() => {}} />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Final ─────────────────────────────────────────────────────
+  if (view.status === 'done') {
+    const [a, b] = view.seats
+    const winner = a.score === b.score ? null : a.score > b.score ? 0 : 1
+    const head =
+      winner == null ? 'Dead even.' : you === winner ? 'You win.' : `${seatName(winner)} wins.`
+    return (
+      <div className="pe-table">
+        <div className="pe-recap" style={{ '--tc': tierFor(Math.max(a.score, b.score)).color } as React.CSSProperties}>
+          <div className="pe-kicker">§ Mega Draft · Final</div>
+          <div className="pe-recap-tier">{head}</div>
+          <div className="pe-recap-score pe-recap-score--pair">
+            {a.score.toLocaleString()} <span style={{ color: 'var(--pe-ink-mute)' }}>·</span> {b.score.toLocaleString()}
+          </div>
+          <div className="pe-recap-lbl pe-note">
+            {winner == null ? 'Not a point between them' : `By ${Math.abs(a.score - b.score).toLocaleString()} accolades`}
+          </div>
+          <div className="pe-recap-actions">
+            <Link href="/games/pack-empire/mega-draft/" className="pe-btn">
+              Another draft
+            </Link>
+          </div>
+        </div>
+        <div className="pe-twoup">
+          <LineupSheet name={seatName(0)} sub="Picked first" lineup={a.lineup} total={a.score} totalColor={tierFor(a.score).color} />
+          <LineupSheet name={seatName(1)} sub="Picked second" lineup={b.lineup} total={b.score} totalColor={tierFor(b.score).color} />
+        </div>
+      </div>
+    )
+  }
+
+  // ── Live ──────────────────────────────────────────────────────
+  const clockName = view.onClock != null ? seatName(view.onClock) : ''
+  const left = you ?? 0
+  const right = them ?? 1
+
+  return (
+    <div className="pe-mega">
+      <div className={`pe-clock${yourTurn ? ' yours' : ''}`}>
+        <span className="pe-clock-pick">
+          Pick {Math.min(view.pickNo + 1, MEGA_TOTAL_PICKS)} of {MEGA_TOTAL_PICKS}
+        </span>
+        <span className="pe-clock-who">
+          {you == null ? `${clockName} is picking` : yourTurn ? 'Your pick' : `${clockName} is picking`}
+        </span>
+        <span className="pe-clock-score">
+          {view.seats[left].score.toLocaleString()} · {view.seats[right].score.toLocaleString()}
+        </span>
+      </div>
+
+      {error && (
+        <div className="pe-error" style={{ margin: '0 0 0.8rem' }}>
+          {error}
+        </div>
+      )}
+
+      <div className="pe-mega-tabs" role="tablist">
+        {(
+          [
+            ['board', 'Board'],
+            ['you', you == null ? seatName(0) : 'Yours'],
+            ['them', you == null ? seatName(1) : 'Theirs'],
+          ] as const
+        ).map(([t, label]) => (
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            aria-selected={tab === t}
+            className={`pe-mega-tab${tab === t ? ' on' : ''}`}
+            onClick={() => setTab(t)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className={`pe-mega-grid show-${tab}`}>
+        <div className="pe-mega-you">
+          <Column
+            label={you == null ? 'Seat one' : 'You'}
+            name={seatName(left)}
+            lineup={view.seats[left].lineup}
+            score={view.seats[left].score}
+            filled={view.seats[left].filled}
+            picking={view.onClock === left}
+          />
+        </div>
+
+        <div className="pe-mega-board">
+          <div className="pe-filters">
+            {(['ALL', ...POOL_KEYS] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                className={`pe-filter${filter === k ? ' on' : ''}`}
+                onClick={() => setFilter(k)}
+              >
+                {k === 'ALL' ? 'All' : k}
+              </button>
+            ))}
+          </div>
+          <div className="pe-pool">
+            {shown.map((p) => (
+              <PoolCard
+                key={p.id}
+                player={p}
+                state={stateFor(p)}
+                takenBy={takenBy.has(p.id) ? seatName(takenBy.get(p.id)!) : null}
+                fresh={fresh === p.id}
+                onPick={() => pick(p)}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="pe-mega-them">
+          <Column
+            label={you == null ? 'Seat two' : 'Them'}
+            name={seatName(right)}
+            lineup={view.seats[right].lineup}
+            score={view.seats[right].score}
+            filled={view.seats[right].filled}
+            picking={view.onClock === right}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}

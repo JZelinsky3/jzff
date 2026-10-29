@@ -38,6 +38,13 @@ import s from './mobile.module.css'
     card mark (see ./GameMark) this is the same idea reduced — the wheel, the
     redacted board, the bracket, the line, the clock, the three seasons. */
 const ICONS: Record<string, React.ReactNode> = {
+  // A sealed pack: crimped at both ends, one star on the foil.
+  'pack-empire': (
+    <>
+      <path d="M6.5 3.5h11l-.8 1.6.8 1.6v10.6l-.8 1.6.8 1.6h-11l.8-1.6-.8-1.6V6.7l.8-1.6z" />
+      <path d="m12 9.2.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z" />
+    </>
+  ),
   roulette: (
     <>
       <circle cx="12" cy="12" r="8.5" />
@@ -235,8 +242,12 @@ export function MobileGamesDock({
   const hrefFor = (id: string, fallback: string) =>
     base === '/games/' ? fallback : `${base}${id}/`
 
+  // Inside a league the sheet is that league's shelf, so a game with no
+  // league in it (Pack Empire) isn't on it.
+  const games = base === '/games/' ? GAMES : GAMES.filter((g) => !g.global)
+
   const onShelf = pathname === base.replace(/\/$/, '') || pathname === base
-  const activeGame = GAMES.find((g) => {
+  const activeGame = games.find((g) => {
     const h = hrefFor(g.id, g.href).replace(/\/$/, '')
     return pathname === h || pathname.startsWith(`${h}/`)
   })
@@ -303,7 +314,7 @@ export function MobileGamesDock({
         }
       >
         <div className={s.sheetGames}>
-          {GAMES.map((g) => {
+          {games.map((g) => {
             const href = hrefFor(g.id, g.href)
             const on = activeGame?.id === g.id
             return (

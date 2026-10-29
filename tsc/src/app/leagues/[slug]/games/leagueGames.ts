@@ -105,11 +105,13 @@ export function gamesBase(slug: string): string {
  * is information, and a shelf that silently shortens is not.
  */
 export function leagueGames(): GameDef[] {
-  return GAMES
+  // Pack Empire and anything else `global` is one game for the whole site,
+  // with no league to lock it to.
+  return GAMES.filter((g) => !g.global)
 }
 
 export function isPlayableGameId(v: string): v is PlayableGameId {
-  return GAMES.some((g) => g.id === v)
+  return leagueGames().some((g) => g.id === v)
 }
 
 export function gameDefById(id: string): GameDef | null {

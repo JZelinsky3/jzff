@@ -29,6 +29,7 @@ export type GameId =
   | 'over-under'
   | 'redraft'
   | 'multiverse'
+  | 'pack-empire'
 
 export const GAME_IDS: GameId[] = [
   'roulette',
@@ -37,6 +38,7 @@ export const GAME_IDS: GameId[] = [
   'over-under',
   'redraft',
   'multiverse',
+  'pack-empire',
 ]
 
 export function isGameId(v: string): v is GameId {
@@ -92,6 +94,9 @@ export type RunDisplay = {
   margin?: number
   /** Multiverse: how far the postseason went, e.g. "Won it" or "Semi-final". */
   round?: string
+  /** Pack Empire: the lineup's total accolades, and the rung it reached. */
+  accolades?: number
+  tier?: string
 }
 
 export type BestRow = {

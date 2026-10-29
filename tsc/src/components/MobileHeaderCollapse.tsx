@@ -12,8 +12,10 @@ import { usePathname } from 'next/navigation'
 //
 // The class toggles at every width; all visual effects live behind a
 // max-width media query, so desktop never changes. Renders nothing.
-// Routes that manage `tsc-hdr-collapsed` themselves.
-const MANUAL_PATHS = ['/games/roulette']
+// Routes that manage `tsc-hdr-collapsed` themselves. Pack Empire never
+// collapses its bar: its running total sticks directly underneath it, and a
+// bar that changed height mid-draft would open a gap above the score.
+const MANUAL_PATHS = ['/games/roulette', '/games/pack-empire']
 
 export function MobileHeaderCollapse() {
   const pathname = usePathname()

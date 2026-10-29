@@ -30,6 +30,7 @@ import {
   rankScore as mvRankScore,
   type MvCard,
 } from './multiverse'
+import { parseSoloPicks, replaySolo, soloDisplay } from '@/lib/packEmpire/solo'
 import type { GameId, RunDisplay } from './leaderboard'
 
 export type VerifiedRun = {
@@ -298,6 +299,36 @@ async function verifyMultiverse(
 }
 
 // ============================================================
+// Pack Empire
+// ============================================================
+
+/**
+ * An Empire Builder run: the captain-signed seed plus every pick, in the
+ * order the packs were opened. Each pack is re-dealt from the seed and the
+ * pick has to be in it. One board, everyone on the same pool, so the pool id
+ * is fixed at 'site'.
+ *
+ * The rate is the score over one, so the career board's "rate" comes out as
+ * the average lineup a player builds, which is the honest career number for
+ * a game with no wins or losses in it.
+ */
+function verifyPackEmpire(poolId: string, seed: string, picks: unknown): VerifyResult {
+  if (poolId !== 'site') return { ok: false, status: 400, error: 'Pack Empire has one board.' }
+  const parsed = parseSoloPicks(picks)
+  if (!parsed) return { ok: false, status: 400, error: 'That lineup is incomplete.' }
+  const run = replaySolo(seed, parsed)
+  if (!run.ok) return { ok: false, status: 400, error: run.error }
+  return {
+    ok: true,
+    score: run.score,
+    rateNum: run.score,
+    rateDen: 1,
+    display: soloDisplay(run.score),
+    detail: { captain: run.captain, picks: parsed },
+  }
+}
+
+// ============================================================
 // The registry
 // ============================================================
 
@@ -317,6 +348,8 @@ export async function verifyRun(
       return verifyRoulette(poolId, seed, picks)
     case 'multiverse':
       return verifyMultiverse(poolId, seed, picks)
+    case 'pack-empire':
+      return verifyPackEmpire(poolId, seed, picks)
     default:
       return { ok: false, status: 501, error: 'That game has no leaderboard yet.' }
   }

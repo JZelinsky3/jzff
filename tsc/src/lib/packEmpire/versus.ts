@@ -1,0 +1,298 @@
+// Versus Challenge. SERVER ONLY.
+//
+// Two seats, one draft each, highest accolades total wins. The host opens it
+// (an account, so a challenge always has somebody to come back to); whoever
+// opens the link first takes the other seat, account or not.
+//
+// What each side can see is decided here, never in the browser:
+//   · your own seat's seed, so you can draft (and resume on another device);
+//   · the other side's SCORE once they have finished, so a challenger knows
+//     the number to beat, which is the fun of being second;
+//   · both lineups only once both are in.
+
+import { createAdminClient } from '@/lib/supabase/admin'
+import { newCaptainSeed } from './deal'
+import { hashKey, nameForUser, cleanGuestName, newId, isId } from './people'
+import { replaySolo, type SoloPick } from './solo'
+import { SLOT_COUNT, tierFor, type Player } from './rules'
+
+export type Seat = 'host' | 'guest'
+
+export type VersusResult = {
+  lineup: Player[]
+  score: number
+  tier: string
+  captain: number
+  picks: SoloPick[]
+  at: string
+}
+
+type Row = {
+  id: string
+  created_at: string
+  host_id: string
+  host_name: string
+  host_seed: string | null
+  host_result: VersusResult | null
+  guest_id: string | null
+  guest_key: string | null
+  guest_name: string | null
+  guest_seed: string | null
+  guest_result: VersusResult | null
+  status: 'open' | 'playing' | 'done'
+  completed_at: string | null
+}
+
+export type SideView = {
+  name: string | null
+  /** Started a draft (a seed was issued). */
+  started: boolean
+  done: boolean
+  score: number | null
+  tier: string | null
+  /** Only once both sides are in. */
+  lineup: Player[] | null
+  captain: number | null
+}
+
+export type VersusView = {
+  id: string
+  status: Row['status']
+  createdAt: string
+  host: SideView
+  guest: SideView
+  you: Seat | null
+  /** The viewer's own seed, for resuming their draft. Never the other's. */
+  yourSeed: string | null
+  /** True when the guest seat is empty and the viewer isn't the host. */
+  canJoin: boolean
+}
+
+function side(row: Row, seat: Seat, reveal: boolean): SideView {
+  const r = seat === 'host' ? row.host_result : row.guest_result
+  return {
+    name: seat === 'host' ? row.host_name : row.guest_name,
+    started: !!(seat === 'host' ? row.host_seed : row.guest_seed),
+    done: !!r,
+    score: r ? r.score : null,
+    tier: r ? r.tier : null,
+    lineup: reveal && r ? r.lineup : null,
+    captain: reveal && r ? r.captain : null,
+  }
+}
+
+export function seatFor(row: Row, userId: string | null, key: unknown): Seat | null {
+  if (userId && row.host_id === userId) return 'host'
+  if (userId && row.guest_id === userId) return 'guest'
+  const h = hashKey(key)
+  if (h && row.guest_key === h) return 'guest'
+  return null
+}
+
+function view(row: Row, you: Seat | null): VersusView {
+  const both = !!row.host_result && !!row.guest_result
+  return {
+    id: row.id,
+    status: row.status,
+    createdAt: row.created_at,
+    host: side(row, 'host', both),
+    guest: side(row, 'guest', both),
+    you,
+    yourSeed: you === 'host' ? row.host_seed : you === 'guest' ? row.guest_seed : null,
+    canJoin: you == null && !row.guest_id && !row.guest_key,
+  }
+}
+
+async function load(id: string): Promise<Row | null> {
+  if (!isId(id)) return null
+  const db = createAdminClient()
+  const { data } = await db.from('pe_versus').select('*').eq('id', id).maybeSingle()
+  return (data as Row | null) ?? null
+}
+
+export async function getVersus(id: string, userId: string | null, key: unknown): Promise<VersusView | null> {
+  const row = await load(id)
+  if (!row) return null
+  return view(row, seatFor(row, userId, key))
+}
+
+export type Fail = { ok: false; error: string; status?: number }
+
+export async function createVersus(userId: string): Promise<{ ok: true; id: string } | Fail> {
+  const db = createAdminClient()
+  const name = await nameForUser(db, userId)
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const id = newId()
+    const { error } = await db.from('pe_versus').insert({ id, host_id: userId, host_name: name })
+    if (!error) return { ok: true, id }
+    if (error.code !== '23505') return { ok: false, error: 'Could not open a challenge.' }
+  }
+  return { ok: false, error: 'Could not open a challenge.' }
+}
+
+export async function joinVersus(
+  id: string,
+  userId: string | null,
+  rawName: unknown,
+  key: unknown
+): Promise<{ ok: true; view: VersusView } | Fail> {
+  const row = await load(id)
+  if (!row) return { ok: false, error: 'No such challenge.', status: 404 }
+  const already = seatFor(row, userId, key)
+  if (already) return { ok: true, view: view(row, already) }
+  if (row.guest_id || row.guest_key) return { ok: false, error: 'Somebody already took this challenge.' }
+
+  const db = createAdminClient()
+  let patch: Record<string, unknown>
+  if (userId) {
+    patch = { guest_id: userId, guest_name: await nameForUser(db, userId), status: 'playing' }
+  } else {
+    const h = hashKey(key)
+    const name = cleanGuestName(rawName)
+    if (!h) return { ok: false, error: 'Your browser could not hold a seat. Try again.' }
+    if (!name) return { ok: false, error: 'Pick a name between 2 and 24 characters.' }
+    patch = { guest_key: h, guest_name: name, status: 'playing' }
+  }
+
+  // Only if the seat is still empty: two people opening the link at once
+  // must not both think they're in.
+  const { data, error } = await db
+    .from('pe_versus')
+    .update(patch)
+    .eq('id', id)
+    .is('guest_id', null)
+    .is('guest_key', null)
+    .select('*')
+    .maybeSingle()
+  if (error || !data) return { ok: false, error: 'Somebody already took this challenge.' }
+  const fresh = data as Row
+  return { ok: true, view: view(fresh, seatFor(fresh, userId, key)) }
+}
+
+export async function startVersusSeat(
+  id: string,
+  userId: string | null,
+  key: unknown,
+  captain: unknown
+): Promise<{ ok: true; seed: string } | Fail> {
+  if (!Number.isInteger(captain) || (captain as number) < 0 || (captain as number) >= SLOT_COUNT) {
+    return { ok: false, error: 'Pick a captain first.' }
+  }
+  const row = await load(id)
+  if (!row) return { ok: false, error: 'No such challenge.', status: 404 }
+  const seat = seatFor(row, userId, key)
+  if (!seat) return { ok: false, error: 'This is not your seat.', status: 403 }
+
+  const existing = seat === 'host' ? row.host_seed : row.guest_seed
+  if (existing) return { ok: true, seed: existing }
+
+  const seed = newCaptainSeed(captain as number)
+  const col = seat === 'host' ? 'host_seed' : 'guest_seed'
+  const db = createAdminClient()
+  const { data } = await db.from('pe_versus').update({ [col]: seed }).eq('id', id).is(col, null).select(col).maybeSingle()
+  // Lost a race with this seat's other tab: hand back whichever seed won.
+  if (!data) {
+    const again = await load(id)
+    const won = again ? (seat === 'host' ? again.host_seed : again.guest_seed) : null
+    return won ? { ok: true, seed: won } : { ok: false, error: 'Could not start your draft.' }
+  }
+  return { ok: true, seed }
+}
+
+export async function submitVersusSeat(
+  id: string,
+  userId: string | null,
+  key: unknown,
+  rawPicks: unknown
+): Promise<{ ok: true; view: VersusView } | Fail> {
+  const row = await load(id)
+  if (!row) return { ok: false, error: 'No such challenge.', status: 404 }
+  const seat = seatFor(row, userId, key)
+  if (!seat) return { ok: false, error: 'This is not your seat.', status: 403 }
+
+  const seed = seat === 'host' ? row.host_seed : row.guest_seed
+  if (!seed) return { ok: false, error: 'That draft was never started.' }
+  if (seat === 'host' ? row.host_result : row.guest_result) return { ok: true, view: view(row, seat) }
+
+  if (!Array.isArray(rawPicks) || rawPicks.length !== SLOT_COUNT) return { ok: false, error: 'That lineup is incomplete.' }
+  const picks: SoloPick[] = []
+  for (const p of rawPicks) {
+    const slot = (p as { slot?: unknown })?.slot
+    const pid = (p as { id?: unknown })?.id
+    if (!Number.isInteger(slot) || typeof pid !== 'string') return { ok: false, error: 'That lineup is incomplete.' }
+    picks.push({ slot: slot as number, id: pid })
+  }
+
+  const run = replaySolo(seed, picks)
+  if (!run.ok) return { ok: false, error: run.error }
+
+  const result: VersusResult = {
+    lineup: run.lineup,
+    score: run.score,
+    tier: tierFor(run.score).label,
+    captain: run.captain,
+    picks,
+    at: new Date().toISOString(),
+  }
+
+  const other = seat === 'host' ? row.guest_result : row.host_result
+  const patch: Record<string, unknown> = { [seat === 'host' ? 'host_result' : 'guest_result']: result }
+  if (other) {
+    patch.status = 'done'
+    patch.completed_at = new Date().toISOString()
+  }
+
+  const db = createAdminClient()
+  const { data } = await db
+    .from('pe_versus')
+    .update(patch)
+    .eq('id', id)
+    .is(seat === 'host' ? 'host_result' : 'guest_result', null)
+    .select('*')
+    .maybeSingle()
+  const fresh = (data as Row | null) ?? (await load(id))
+  if (!fresh) return { ok: false, error: 'Could not save your lineup.' }
+
+  // If the other side landed between our read and our write, the row we just
+  // wrote says 'playing' with both results in. Close it out.
+  if (fresh.host_result && fresh.guest_result && fresh.status !== 'done') {
+    await db.from('pe_versus').update({ status: 'done', completed_at: new Date().toISOString() }).eq('id', id)
+    fresh.status = 'done'
+  }
+  return { ok: true, view: view(fresh, seat) }
+}
+
+export type VersusListItem = {
+  id: string
+  status: Row['status']
+  createdAt: string
+  you: Seat
+  opponent: string | null
+  yourScore: number | null
+  theirScore: number | null
+}
+
+/** A signed-in player's challenges, newest first. */
+export async function listVersus(userId: string): Promise<VersusListItem[]> {
+  const db = createAdminClient()
+  const { data } = await db
+    .from('pe_versus')
+    .select('id, status, created_at, host_id, host_name, host_result, guest_id, guest_name, guest_result')
+    .or(`host_id.eq.${userId},guest_id.eq.${userId}`)
+    .order('created_at', { ascending: false })
+    .limit(20)
+  return ((data ?? []) as Row[]).map((r) => {
+    const you: Seat = r.host_id === userId ? 'host' : 'guest'
+    const mine = you === 'host' ? r.host_result : r.guest_result
+    const theirs = you === 'host' ? r.guest_result : r.host_result
+    return {
+      id: r.id,
+      status: r.status,
+      createdAt: r.created_at,
+      you,
+      opponent: you === 'host' ? r.guest_name : r.host_name,
+      yourScore: mine?.score ?? null,
+      theirScore: theirs?.score ?? null,
+    }
+  })
+}

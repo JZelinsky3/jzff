@@ -22,6 +22,12 @@ import { GAMES, type GameDef } from './gameDefs'
 import styles from './board.module.css'
 
 const MARKS: Record<string, React.ReactNode> = {
+  'pack-empire': (
+    <>
+      <path d="M6.5 3.5h11l-.8 1.6.8 1.6v10.6l-.8 1.6.8 1.6h-11l.8-1.6-.8-1.6V6.7l.8-1.6z" />
+      <path d="m12 9.2.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z" />
+    </>
+  ),
   roulette: (
     <>
       <circle cx="12" cy="12" r="8.5" />
