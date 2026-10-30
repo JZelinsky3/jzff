@@ -6,6 +6,7 @@ import { getViewMode } from '@/lib/viewMode'
 import { listVersus } from '@/lib/packEmpire/versus'
 import { friendPicker } from '@/lib/friends'
 import mobileStyles from '../../mobile.module.css'
+import { GameList } from '../GameList'
 import { PeChrome, PeDock } from '../chrome'
 import { peFonts } from '../fonts'
 import { ChallengePanels } from './NewChallenge'
@@ -105,30 +106,19 @@ export default async function VersusLobby() {
             {mine.length === 0 ? (
               <p className="pe-empty">Nothing yet. Open one and send it to somebody.</p>
             ) : (
-              <div className="pe-row-list">
-                {mine.map((c) => {
-                  const st = c.waitingOnYou ? { label: 'Sent to you', color: '#e8a84b' } : STATUS[c.status]
-                  const score =
-                    c.yourScore != null && c.theirScore != null
-                      ? `${c.yourScore.toLocaleString()} · ${c.theirScore.toLocaleString()}`
-                      : c.yourScore != null
-                        ? c.yourScore.toLocaleString()
-                        : '·'
-                  return (
-                    <Link key={c.id} href={`/games/pack-empire/versus/${c.id}/`} className="pe-row">
-                      <span style={{ minWidth: 0 }}>
-                        <span className="pe-row-name">vs {c.opponent ?? 'Anyone'}</span>
-                        <span className="pe-row-sub">
-                          <span className="pe-status" style={{ '--st': st.color } as React.CSSProperties}>
-                            {st.label}
-                          </span>
-                        </span>
-                      </span>
-                      <span className="pe-row-side">{score}</span>
-                    </Link>
-                  )
-                })}
-              </div>
+              <GameList
+                api="/api/games/pack-empire/versus/"
+                rows={mine.map((c) => ({
+                  id: c.id,
+                  href: `/games/pack-empire/versus/${c.id}/`,
+                  opponent: c.opponent ?? 'Anyone',
+                  status: c.waitingOnYou ? { label: 'Sent to you', color: '#e8a84b' } : STATUS[c.status],
+                  done: c.status === 'done',
+                  yours: c.yourScore,
+                  theirs: c.theirScore,
+                  canDelete: c.canDelete,
+                }))}
+              />
             )}
           </section>
         )}

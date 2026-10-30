@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from 'next'
-import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { listMega } from '@/lib/packEmpire/mega'
 import { friendPicker } from '@/lib/friends'
 import mobileStyles from '../../mobile.module.css'
+import { GameList } from '../GameList'
 import { PeChrome, PeDock } from '../chrome'
 import { peFonts } from '../fonts'
 import { MegaLobby } from './MegaLobby'
@@ -90,30 +90,20 @@ export default async function MegaDraftLobby() {
               <span className="pe-sec-num">§ Yours</span>
               <span className="pe-sec-title">Your drafts</span>
             </div>
-            <div className="pe-row-list">
-              {mine.map((d) => {
-                const st = d.waitingOnYou ? { label: 'Sent to you', color: '#e8a84b' } : STATUS[d.status]
-                return (
-                  <Link key={d.id} href={`/games/pack-empire/mega-draft/${d.id}/`} className="pe-row">
-                    <span style={{ minWidth: 0 }}>
-                      <span className="pe-row-name">vs {d.opponent ?? 'Anyone'}</span>
-                      <span className="pe-row-sub">
-                        <span className="pe-status" style={{ '--st': st.color } as React.CSSProperties}>
-                          {st.label}
-                        </span>
-                        {' · '}
-                        {d.id}
-                      </span>
-                    </span>
-                    <span className="pe-row-side">
-                      {d.yourScore != null && d.theirScore != null
-                        ? `${d.yourScore.toLocaleString()} · ${d.theirScore.toLocaleString()}`
-                        : '·'}
-                    </span>
-                  </Link>
-                )
-              })}
-            </div>
+            <GameList
+              api="/api/games/pack-empire/mega/"
+              rows={mine.map((d) => ({
+                id: d.id,
+                href: `/games/pack-empire/mega-draft/${d.id}/`,
+                opponent: d.opponent ?? 'Anyone',
+                status: d.waitingOnYou ? { label: 'Sent to you', color: '#e8a84b' } : STATUS[d.status],
+                code: d.id,
+                done: d.status === 'done',
+                yours: d.yourScore,
+                theirs: d.theirScore,
+                canDelete: d.canDelete,
+              }))}
+            />
           </section>
         )}
       </div>

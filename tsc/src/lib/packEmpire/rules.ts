@@ -305,10 +305,14 @@ export type Weights = Record<Rarity, number>
  * put that same perfect play at a median around 15.6k, about 6% GOAT and 24%
  * Hall of Fame, so sim/sim.ts is the check on any change here. The best card
  * in an ordinary pack is about 36% common, 41% rare, 19% dynasty, 4% transcendent.
+ *
+ * Because they're per card, growing a rarity raises its odds. Every table here
+ * and below was scaled when the pool went to 361 common and 200 rare (common
+ * x.967, rare x.785), so more cards to collect didn't change what a pack holds.
  */
 export const SOLO_WEIGHTS: { normal: Weights; captain: Weights } = {
-  normal: { common: 50, rare: 17, dynasty: 10, transcendent: 3.5, immortal: 1 },
-  captain: { common: 5, rare: 22, dynasty: 41, transcendent: 27, immortal: 5 },
+  normal: { common: 48, rare: 13.5, dynasty: 10, transcendent: 3.5, immortal: 1 },
+  captain: { common: 4.8, rare: 17.3, dynasty: 41, transcendent: 27, immortal: 5 },
 }
 
 /**
@@ -319,8 +323,8 @@ export const SOLO_WEIGHTS: { normal: Weights; captain: Weights } = {
  * kept as found.
  */
 export const SOLO_BOOSTED: { normal: Weights; captain: Weights } = {
-  normal: { ...SOLO_WEIGHTS.normal, common: 47, rare: 21 },
-  captain: { ...SOLO_WEIGHTS.captain, rare: 18, transcendent: 30, immortal: 2 },
+  normal: { ...SOLO_WEIGHTS.normal, common: 45.5, rare: 16.5 },
+  captain: { ...SOLO_WEIGHTS.captain, rare: 14.1, transcendent: 30, immortal: 2 },
 }
 
 /**
@@ -363,17 +367,17 @@ export const PACK_TIER_COLOR: Record<PackTier, string> = {
 /** Transcendent weights cut by a fifth with the 2026-10-30 pool, which holds
     nearly twice as many of them, so a pack is as likely to hold one as before. */
 export const LEAGUE_WEIGHTS: Record<PackTier, Weights> = {
-  standard_pack: { common: 51, rare: 23, dynasty: 15, transcendent: 8, immortal: 1 },
-  rising_pack: { common: 33, rare: 30, dynasty: 20, transcendent: 12, immortal: 2 },
-  prime_pack: { common: 18, rare: 35, dynasty: 23, transcendent: 16, immortal: 4 },
-  elite_drop: { common: 13, rare: 25, dynasty: 27, transcendent: 22, immortal: 8 },
+  standard_pack: { common: 49.3, rare: 18.1, dynasty: 15, transcendent: 8, immortal: 1 },
+  rising_pack: { common: 31.9, rare: 23.6, dynasty: 20, transcendent: 12, immortal: 2 },
+  prime_pack: { common: 17.4, rare: 27.5, dynasty: 23, transcendent: 16, immortal: 4 },
+  elite_drop: { common: 12.6, rare: 19.6, dynasty: 27, transcendent: 22, immortal: 8 },
 }
 
 /** League packs have a second table too; in the original it only differs
     from the first by one point, on the Elite Drop's rares. Kept as found. */
 export const LEAGUE_BOOSTED: Record<PackTier, Weights> = {
   ...LEAGUE_WEIGHTS,
-  elite_drop: { ...LEAGUE_WEIGHTS.elite_drop, rare: 24 },
+  elite_drop: { ...LEAGUE_WEIGHTS.elite_drop, rare: 18.8 },
 }
 
 export const REGULAR_WEEKS = 8
@@ -442,7 +446,7 @@ export const MEGA_POOL_COUNTS: Record<PoolKey, number> = {
   C: 4,
 }
 
-export const MEGA_WEIGHTS: Weights = { common: 30, rare: 35, dynasty: 22, transcendent: 8, immortal: 3 }
+export const MEGA_WEIGHTS: Weights = { common: 29, rare: 27.5, dynasty: 22, transcendent: 8, immortal: 3 }
 
 export const MEGA_TOTAL_PICKS = SLOT_COUNT * 2
 
@@ -459,8 +463,15 @@ export function megaPickOwner(pick: number): 0 | 1 {
  * once the other seat has filled its own slots. A deep position can wait; the
  * last good center can't. The CPU drafts by this, and the dealer plays it out
  * to check a board is fair.
+ *
+ * A position the other seat has filled can always wait: nobody can take him,
+ * and everyone fills all eleven, so he'll still be there at the end. Passing
+ * on him costs nothing, so he's worth next to nothing until the fight
+ * elsewhere is down to scraps. Still scaled by score, so the best man at the
+ * position goes first when the time comes.
  */
 export function megaWorth(p: Player, left: Player[], rivalOpen: number): number {
+  if (rivalOpen === 0) return 0.02 * p.score
   const rest = left
     .filter((q) => q.pos === p.pos && q.id !== p.id)
     .map((q) => q.score)

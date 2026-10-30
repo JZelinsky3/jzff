@@ -9,6 +9,9 @@
 #
 # Reports of every pick land in build/skill_report.txt and build/ol_report.txt.
 # After a rebuild, bump POOL_VERSION in src/lib/packEmpire/pool.ts.
+#
+# A rebuild only adds: every card already dealt stays, re-valued, because people
+# hold them in binders (seasons.dealt). PE_FRESH=1 samples from scratch.
 set -e
 cd "$(dirname $0)"
 python3 build/seasons.py

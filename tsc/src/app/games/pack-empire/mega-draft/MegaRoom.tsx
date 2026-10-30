@@ -25,10 +25,11 @@ import {
   type PoolKey,
 } from '@/lib/packEmpire/rules'
 import type { MegaView } from '@/lib/packEmpire/mega'
+import { DeleteGame } from '../GameList'
 import { LineupSheet } from '../cards'
 import { ShareLink } from '../share'
 import { useStored } from '../clientStore'
-import { megaKey, rememberMega } from './MegaLobby'
+import { forgetMega, megaKey, rememberMega } from './MegaLobby'
 
 function PoolCard({
   player,
@@ -58,7 +59,7 @@ function PoolCard({
           {player.pos}
         </span>
         <span className="pe-pc-rar" style={{ color: rc.color }}>
-          {rc.short}
+          {rc.label}
         </span>
       </span>
       <span className="pe-pc-art" style={{ background: rc.art }}>
@@ -397,6 +398,18 @@ export function MegaRoom({
               The coin for first pick is flipped the moment they sit down. This page updates by itself.
             </p>
             <ShareLink path={`/games/pack-empire/mega-draft/${id}/`} title="Pack Empire" text="Mega Draft: sit down" />
+            <div style={{ marginTop: '0.9rem' }}>
+              <DeleteGame
+                api="/api/games/pack-empire/mega/"
+                id={id}
+                seatKey={key}
+                label="Delete this draft"
+                onGone={() => {
+                  forgetMega(id)
+                  router.push('/games/pack-empire/mega-draft/')
+                }}
+              />
+            </div>
           </div>
         ) : view.canJoin ? (
           <div className="pe-panel">
@@ -477,13 +490,18 @@ export function MegaRoom({
     const winner = a.score === b.score ? null : a.score > b.score ? 0 : 1
     const head =
       winner == null ? 'Dead even.' : you === winner ? 'You win.' : `${seatName(winner)} wins.`
+    // Your own number goes green or red; theirs stays as it is.
+    const tone = (seat: 0 | 1) =>
+      you === seat && winner != null ? { color: winner === seat ? 'var(--pe-green)' : 'var(--pe-red)' } : undefined
     return (
       <div className="pe-table">
         <div className="pe-recap" style={{ '--tc': tierFor(Math.max(a.score, b.score)).color } as React.CSSProperties}>
           <div className="pe-kicker">§ Mega Draft · Final</div>
           <div className="pe-recap-tier">{head}</div>
           <div className="pe-recap-score pe-recap-score--pair">
-            {a.score.toLocaleString()} <span style={{ color: 'var(--pe-ink-mute)' }}>·</span> {b.score.toLocaleString()}
+            <span style={tone(0)}>{a.score.toLocaleString()}</span>{' '}
+            <span style={{ color: 'var(--pe-ink-mute)' }}>·</span>{' '}
+            <span style={tone(1)}>{b.score.toLocaleString()}</span>
           </div>
           <div className="pe-recap-lbl pe-note">
             {winner == null ? 'Not a point between them' : `By ${Math.abs(a.score - b.score).toLocaleString()} accolades`}

@@ -5,7 +5,7 @@
 # plays in the early 2000s (Faulk 1999: 1,327 rushing yards vs the official
 # 1,381), so it only supplies what PFR's table lacks for 1999-2021: two-point
 # conversions, return TDs, ids and headshots.
-import glob, re, unicodedata, os
+import glob, json, re, unicodedata, os
 import pandas as pd, numpy as np
 
 S = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,10 +18,21 @@ def season_len(y):
     return 16
 
 def min_games(y):
-    """The 'played most of the year' floor the average is divided by."""
-    L = season_len(y)
-    if L >= 16: return 14
-    return 12  # 14-game era, and 1987 (12 games once the strike games are out)
+    """The floor the average is divided by. Joey: this was 14, which read 19 a
+    game over 12 games (Beckham 2018) as a common, and 18 a game for over half a
+    season is still a great year. So it now sits at the line to get a card at
+    all (select_skill.choose): any season that counts gets its real average, and
+    the games he missed cost him through the full-season part of the metric."""
+    return 10 if season_len(y) >= 16 else 9
+
+def dealt():
+    """(pid, season) of every card the game deals now. A rebuild keeps them, at
+    whatever they're worth under the current rules: people hold them in their
+    binders, and the sampler reshuffles the commons whenever anything shifts.
+    PE_FRESH=1 ignores this, for calibration runs."""
+    if os.environ.get('PE_FRESH'): return set()
+    with open(f'{S}/../../src/lib/packEmpire/data/season-pool.json') as f:
+        return {(c['pid'].replace('k-', 'k:', 1), c['year']) for c in json.load(f)}
 
 def norm(name):
     s = unicodedata.normalize('NFKD', str(name)).encode('ascii', 'ignore').decode()

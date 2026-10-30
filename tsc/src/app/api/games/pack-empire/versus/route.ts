@@ -7,6 +7,7 @@
 //   POST { action: 'join', id, name, key } -> { view }
 //   POST { action: 'start', id, captain, key } -> { seed }
 //   POST { action: 'submit', id, picks, key }  -> { view }
+//   POST { action: 'delete', id }          -> {}          (the host, while nobody has taken the seat)
 //
 // `key` is a signed-out challenger's seat key, kept in their browser. The
 // packs themselves are dealt by /api/games/pack-empire/deal off the seat's
@@ -17,6 +18,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import {
   createVersus,
+  deleteVersus,
   getVersus,
   joinVersus,
   startVersusSeat,
@@ -73,6 +75,11 @@ export async function POST(req: NextRequest) {
     }
     case 'submit': {
       const out = await submitVersusSeat(id, userId, body.key, body.picks)
+      return out.ok ? reply(out) : reply(out, out.status ?? 400)
+    }
+    case 'delete': {
+      if (!userId) return reply({ ok: false, needsAuth: true, error: 'Sign in to delete a challenge.' }, 401)
+      const out = await deleteVersus(id, userId)
       return out.ok ? reply(out) : reply(out, out.status ?? 400)
     }
     default:

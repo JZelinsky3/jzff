@@ -58,6 +58,18 @@ export function ProfileIcon() {
   )
 }
 
+/** Two people, for the Pack Empire friends page. */
+export function FriendsIcon() {
+  return (
+    <Ico>
+      <circle cx="9" cy="8.5" r="3.2" />
+      <path d="M3.2 19.5c.6-3.3 3-5.2 5.8-5.2s5.2 1.9 5.8 5.2" />
+      <circle cx="16.6" cy="9.4" r="2.5" />
+      <path d="M15.6 14.4c2.6-.3 4.7 1.4 5.2 4.3" />
+    </Ico>
+  )
+}
+
 /** A bookshelf, same glyph the Clubhouse bar uses for the library. */
 export function LibraryIcon() {
   return (
@@ -135,8 +147,12 @@ export function MobileGameBar({
    * The Games Page is the one place where "the rest of the site" is the right
    * offer, so it is the only place that makes it. Defaulted, so a new game
    * page gets the quiet version without having to know about this.
+   *
+   * Pack Empire offers its friends page instead, which is where the people
+   * you play live; that page offers the profile, so account settings stay one
+   * more tap away.
    */
-  right?: 'library' | 'profile'
+  right?: 'library' | 'profile' | 'friends'
   kicker: string
   title: string
   titleEm?: string
@@ -170,9 +186,25 @@ export function MobileGameBar({
         </div>
       </div>
       <Link
-        href={!signedIn ? '/login' : right === 'library' ? '/dashboard' : '/account'}
+        href={
+          !signedIn
+            ? '/login'
+            : right === 'library'
+              ? '/dashboard'
+              : right === 'friends'
+                ? '/games/pack-empire/profile/'
+                : '/account'
+        }
         className={s.barIco}
-        aria-label={!signedIn ? 'Sign in' : right === 'library' ? 'Your library' : 'Your account'}
+        aria-label={
+          !signedIn
+            ? 'Sign in'
+            : right === 'library'
+              ? 'Your library'
+              : right === 'friends'
+                ? 'Friends'
+                : 'Your profile'
+        }
       >
         {!signedIn ? (
           <Ico>
@@ -182,6 +214,8 @@ export function MobileGameBar({
           </Ico>
         ) : right === 'library' ? (
           <LibraryIcon />
+        ) : right === 'friends' ? (
+          <FriendsIcon />
         ) : (
           <ProfileIcon />
         )}

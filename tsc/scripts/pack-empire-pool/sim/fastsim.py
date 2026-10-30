@@ -2,9 +2,9 @@
 # one boosted card per pack, best of five kept, no repeats of a man.
 import json, random, sys
 import numpy as np
-W = {'normal': {'common': 50, 'rare': 17, 'dynasty': 10, 'transcendent': 3.5, 'immortal': 1},
-     'captain': {'common': 5, 'rare': 22, 'dynasty': 41, 'transcendent': 27, 'immortal': 5}}
-B = {'normal': dict(W['normal'], common=47, rare=21), 'captain': dict(W['captain'], rare=18, transcendent=30, immortal=2)}
+W = {'normal': {'common': 48, 'rare': 13.5, 'dynasty': 10, 'transcendent': 3.5, 'immortal': 1},
+     'captain': {'common': 4.8, 'rare': 17.3, 'dynasty': 41, 'transcendent': 27, 'immortal': 5}}
+B = {'normal': dict(W['normal'], common=45.5, rare=16.5), 'captain': dict(W['captain'], rare=14.1, transcendent=30, immortal=2)}
 SLOTS = ['QB', 'RB', 'WR', 'WR', 'WR', 'TE', 'OT', 'OG', 'C', 'OG', 'OT']
 TIERS = [(20001, 'GOAT'), (17001, 'HOF'), (14001, 'SB Dynasty'), (11001, 'All-Pro'), (8001, 'Pro Bowl'), (5001, 'Starter'), (2001, 'Backup'), (0, 'PS')]
 

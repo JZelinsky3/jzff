@@ -41,6 +41,16 @@ export function rememberMega(id: string) {
   }
 }
 
+export function forgetMega(id: string) {
+  try {
+    const list = JSON.parse(localStorage.getItem(MINE) || '[]') as string[]
+    localStorage.setItem(MINE, JSON.stringify(list.filter((x) => x !== id)))
+    storageChanged()
+  } catch {
+    // nothing to forget it from
+  }
+}
+
 function parseMine(raw: string | null): string[] {
   try {
     const list = JSON.parse(raw || '[]')

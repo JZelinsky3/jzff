@@ -4,9 +4,9 @@ import pandas as pd, numpy as np
 
 S = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, f'{S}/build')
-from seasons import norm, club, FRANCHISE
+from seasons import dealt, norm, club, FRANCHISE
 import allpro
-from select_skill import interp, rarity_for, BANDS, SCORE_AT
+from select_skill import interp, rarity_for, BANDS, SCORE_AT, TOP_BANDS
 
 TARGETS = {
     'OT': {'immortal': 3, 'transcendent': 6, 'dynasty': 11, 'rare': 20, 'common': 51},
@@ -149,6 +149,13 @@ def choose(pos, t, off):
     p['score'] = [int(interp(m, anchors) // 5 * 5) for m in p.metric]
     p['band'] = p.score.map(rarity_for)
 
+    # What's already dealt stays in, at its new value (see seasons.dealt).
+    kept = dealt()
+    for r in p.itertuples():
+        if (r.pid, r.season) not in kept or r.Index in picked: continue
+        if can_take(r.pid, r.band): take(r.Index, r.band)
+        else: print('  DROPPED (man already has that band):', r.display, r.season, r.band)
+
     # Legends: best pre-2000 season, rare or better, if he isn't in yet.
     for name in LEGENDS:
         old = p[(p.key == norm(name)) & (p.season < LEGEND_BEFORE) & p.face]
@@ -185,6 +192,19 @@ def choose(pos, t, off):
             else:
                 stall += 1
             b = (b - 1) % nb
+
+    # A man on a single card at dynasty or better gets a lesser year too, so his
+    # binder page has somewhere to go: his best rare or best common, taking turns.
+    turn = 0
+    for pid, bands in list(held.items()):
+        if len(bands) != 1 or not bands & TOP_BANDS: continue
+        mine = p[(p.pid == pid) & (~p.index.isin(picked.keys())) & p.band.isin(['rare', 'common']) & p.era & p.face]
+        mine = mine[[s >= LEGEND_BEFORE or b != 'common' for s, b in zip(mine.season, mine.band)]]
+        if not len(mine):
+            print('  ONE CARD, no lesser year:', p[p.pid == pid].display.iloc[0], list(bands)); continue
+        want = mine[mine.band == ('rare' if turn % 2 == 0 else 'common')]
+        take((want if len(want) else mine).index[0], (want if len(want) else mine).band.iloc[0])
+        turn += 1
 
     out = p.loc[list(picked.keys())].copy()
     out['band'] = [picked[i] for i in out.index]

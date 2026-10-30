@@ -353,6 +353,32 @@ export async function submitVersusSeat(
   return { ok: true, view: view(fresh, seat, userId) }
 }
 
+/**
+ * Takes back a challenge nobody answered. Only the host's to delete, and only
+ * while the other seat is empty: once somebody has sat down it's their game
+ * too. A held seat counts as empty, since the friend hasn't opened it. Checked
+ * in the delete itself, so someone taking the seat that same moment wins.
+ */
+export async function deleteVersus(id: string, userId: string): Promise<{ ok: true } | Fail> {
+  const row = await load(id)
+  if (!row) return { ok: false, error: 'No such challenge.', status: 404 }
+  if (row.host_id !== userId) return { ok: false, error: 'Only whoever opened it can delete it.', status: 403 }
+
+  const { data } = await createAdminClient()
+    .from('pe_versus')
+    .delete()
+    .eq('id', id)
+    .eq('host_id', userId)
+    .eq('status', 'open')
+    .is('guest_id', null)
+    .is('guest_key', null)
+    .eq('guest_bot', false)
+    .select('id')
+    .maybeSingle()
+  if (!data) return { ok: false, error: 'Somebody has taken the other seat, so it stays.' }
+  return { ok: true }
+}
+
 export type VersusListItem = {
   id: string
   status: Row['status']
@@ -363,6 +389,8 @@ export type VersusListItem = {
   theirScore: number | null
   /** A friend sent it to you and you haven't opened it yet. */
   waitingOnYou: boolean
+  /** Yours, and nobody has taken the other seat. */
+  canDelete: boolean
 }
 
 /** A signed-in player's challenges, newest first, including ones a friend
@@ -374,7 +402,7 @@ export async function listVersus(userId: string): Promise<VersusListItem[]> {
     .select('id, status, created_at, host_id, host_name, host_result, guest_id, guest_name, guest_result, invited_id')
     .or(`host_id.eq.${userId},guest_id.eq.${userId},invited_id.eq.${userId}`)
     .order('created_at', { ascending: false })
-    .limit(20)
+    .limit(50)
   return ((data ?? []) as Row[]).map((r) => {
     const you: Seat = r.host_id === userId ? 'host' : 'guest'
     const mine = you === 'host' ? r.host_result : r.guest_result
@@ -388,6 +416,7 @@ export async function listVersus(userId: string): Promise<VersusListItem[]> {
       yourScore: mine?.score ?? null,
       theirScore: theirs?.score ?? null,
       waitingOnYou: r.invited_id === userId && !r.guest_id,
+      canDelete: you === 'host' && r.status === 'open',
     }
   })
 }

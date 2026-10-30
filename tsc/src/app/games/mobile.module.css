@@ -153,7 +153,9 @@
   grid-template-columns: repeat(4, 1fr);
   padding: 0 0 env(safe-area-inset-bottom, 0px);
   height: calc(3.4rem + env(safe-area-inset-bottom, 0px));
-  background: rgba(9, 14, 20, 0.96);
+  /* A token for the same reason as the bar's: a game with its own page theme
+     has to be able to move this with it. */
+  background: var(--gp-dock, rgba(9, 14, 20, 0.96));
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-top: 1px solid var(--gp-line);
@@ -229,7 +231,7 @@
 }
 
 .sheet::backdrop {
-  background: rgba(6, 10, 16, 0.6);
+  background: var(--gp-scrim, rgba(6, 10, 16, 0.6));
 }
 
 .sheetHandle {

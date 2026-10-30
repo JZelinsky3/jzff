@@ -4,7 +4,7 @@ import pandas as pd, numpy as np
 
 S = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, f'{S}/build')
-from seasons import norm
+from seasons import dealt, norm
 
 BANDS = ['immortal', 'transcendent', 'dynasty', 'rare', 'common']
 
@@ -37,6 +37,7 @@ T_DYN.update(_json.loads(os.environ.get('PE_T_DYN', '{}')))
 SAMPLE_FLOOR.update(_json.loads(os.environ.get('PE_SAMPLE_FLOOR', '{}')))
 
 MAX_PER_MAN = 4
+TOP_BANDS = {'dynasty', 'transcendent', 'immortal'}
 # Seasons per year per position, so one deep year can't crowd out the rest.
 PER_SEASON = 6
 
@@ -204,6 +205,14 @@ def choose(pos, t):
     p['score'] = [int(interp(m, anchors) // 5 * 5) for m in p.metric]
     p['band'] = p.score.map(rarity_for)
 
+    # 1b. What's already dealt stays in, at its new value. Best season first, so
+    #     if two of a man's cards land on one rarity the better one is the keeper.
+    kept = dealt()
+    for r in p.itertuples():
+        if (r.pid, r.season) not in kept or r.Index in picked: continue
+        if can_take(r.pid, r.band): take(r.Index, r.band)
+        else: print('  DROPPED (man already has that band):', r.display, r.season, r.band)
+
     # 2. Must-includes, wherever they land (the top was already walked).
     for name, year in MUST.get(pos, []):
         rows = p[(p.key == norm(name)) & (p.season == year)]
@@ -278,6 +287,22 @@ def choose(pos, t):
             else:
                 stall += 1
             b = (b - 1) % nb
+
+    # 4. A man on a single card at dynasty or better gets a lesser year too, so
+    #    his binder page has somewhere to go: his best rare or his best common,
+    #    taking turns so the additions split about evenly.
+    turn = 0
+    for pid, bands in list(held.items()):
+        if len(bands) != 1 or not bands & TOP_BANDS: continue
+        mine = p[(p.pid == pid) & (~p.index.isin(picked.keys())) & p.band.isin(['rare', 'common'])
+                 & (p.metric >= SAMPLE_FLOOR[pos])]
+        mine = mine[[era_ok(k, s) and (s >= LEGEND_BEFORE or b != 'common')
+                     for k, s, b in zip(mine.key, mine.season, mine.band)]]
+        if not len(mine):
+            print('  ONE CARD, no lesser year:', p[p.pid == pid].display.iloc[0], list(bands)); continue
+        want = mine[mine.band == ('rare' if turn % 2 == 0 else 'common')]
+        take((want if len(want) else mine).index[0], (want if len(want) else mine).band.iloc[0])
+        turn += 1
 
     out = p.loc[list(picked.keys())].copy()
     out['band'] = [picked[i] for i in out.index]

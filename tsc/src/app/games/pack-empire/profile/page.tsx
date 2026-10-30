@@ -45,8 +45,7 @@ export default async function GamesProfilePage() {
       back="/games/pack-empire/"
       backLabel="Pack Empire"
       kicker="Pack Empire"
-      title="Games"
-      titleEm="Profile"
+      title="Friends"
     />
   )
   const foot = mobile ? <PeDock signedIn={!!user} /> : <SiteFooter />

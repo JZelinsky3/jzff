@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { tierFor } from '@/lib/packEmpire/rules'
 import type { VersusView } from '@/lib/packEmpire/versus'
 import { CaptainDraft, type DraftDone } from '../CaptainDraft'
+import { DeleteGame } from '../GameList'
 import { LineupSheet } from '../cards'
 import { storageChanged, useStored } from '../clientStore'
 import { ShareLink } from '../share'
@@ -204,6 +205,9 @@ export function VersusRoom({
     const gs = g.score ?? 0
     const winner = hs === gs ? null : hs > gs ? h : g
     const youWon = mine && winner === mine
+    // Your own number goes green or red; theirs stays as it is.
+    const tone = (seat: typeof h) =>
+      mine === seat && winner ? { color: winner === seat ? 'var(--pe-green)' : 'var(--pe-red)' } : undefined
     return (
       <div className="pe-table">
         {header}
@@ -213,7 +217,9 @@ export function VersusRoom({
             {winner ? (mine ? (youWon ? 'You win.' : `${winner.name} wins.`) : `${winner.name} wins.`) : 'Dead even.'}
           </div>
           <div className="pe-recap-score pe-recap-score--pair">
-            {hs.toLocaleString()} <span style={{ color: 'var(--pe-ink-mute)' }}>·</span> {gs.toLocaleString()}
+            <span style={tone(h)}>{hs.toLocaleString()}</span>{' '}
+            <span style={{ color: 'var(--pe-ink-mute)' }}>·</span>{' '}
+            <span style={tone(g)}>{gs.toLocaleString()}</span>
           </div>
           <div className="pe-recap-lbl pe-note">
             {winner ? `By ${Math.abs(hs - gs).toLocaleString()} accolades` : 'Not a point between them'}
@@ -359,6 +365,16 @@ export function VersusRoom({
   }
 
   // ── Your seat ─────────────────────────────────────────────────
+  // Sent out and nobody came: the host can take it back.
+  const deletable = view.you === 'host' && view.status === 'open'
+  const deleteIt = (
+    <DeleteGame
+      api="/api/games/pack-empire/versus/"
+      id={id}
+      label="Delete this challenge"
+      onGone={() => router.push('/games/pack-empire/versus/')}
+    />
+  )
   const opponentLine = view.bot
     ? 'The CPU has its own eleven packs, dealt when this opened. It drafts the moment you lock yours in.'
     : !theirs?.name
@@ -381,6 +397,7 @@ export function VersusRoom({
         {view.you === 'host' && (!view.guest.name || view.reserved) && (
           <div style={{ maxWidth: 620, margin: '0 auto 1.2rem' }}>
             <ShareLink path={path} title="Pack Empire" text={shareText} />
+            {deletable && <div style={{ marginTop: '0.8rem' }}>{deleteIt}</div>}
           </div>
         )}
         {error && (
@@ -421,6 +438,7 @@ export function VersusRoom({
               : 'Whoever opens it first takes the other seat. No account needed on their end.'}
           </p>
           <ShareLink path={path} title="Pack Empire" text={shareText} />
+          {deletable && <div style={{ marginTop: '0.9rem' }}>{deleteIt}</div>}
         </div>
       )}
     </div>

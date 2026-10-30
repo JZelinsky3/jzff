@@ -97,7 +97,8 @@ def main():
     assert len(ids) == len(set(ids)), [i for i in ids if ids.count(i) > 1]
 
     order = ['QB', 'RB', 'WR', 'TE', 'OT', 'OG', 'C']
-    cards.sort(key=lambda c: (order.index(c['pos']), -c['score']))
+    # Ties by id: deals depend on this order, so a rebuild can't be left to shuffle it.
+    cards.sort(key=lambda c: (order.index(c['pos']), -c['score'], c['id']))
     keys = ['id', 'pid', 'name', 'pos', 'team', 'club', 'year', 'score', 'rarity', 'accolades', 'img']
     cards = [{k: c[k] for k in keys} for c in cards]
     with open(OUT, 'w') as f:

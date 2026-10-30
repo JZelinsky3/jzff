@@ -116,6 +116,7 @@ export async function GameBoardPage({
           title="The"
           titleEm="Board"
           signedIn={!!user}
+          right={game === 'pack-empire' ? 'friends' : undefined}
         />
       ) : (
         <nav className="nav">

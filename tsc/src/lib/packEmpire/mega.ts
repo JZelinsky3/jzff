@@ -15,6 +15,8 @@
 // and nothing more, and drafts like a person would: the best man at a
 // position it still needs, weighed by how much worse the position gets once
 // you've had your share of it, with a little variance so it isn't a machine.
+// Once you've filled a position it knows nobody can take from it, so it leaves
+// that one until late and spends its picks where you're still competing.
 // The room asks it to pick, one pick at a time, after a beat, so it plays at
 // a person's pace. A draft can also be sent to one friend: the seat is held
 // for them and the draft shows in their list.
@@ -158,8 +160,13 @@ function view(row: Row, role: Role | null, viewerId: string | null = null): Mega
   }
 }
 
-/** The CPU's pick: the best megaWorth it has a slot for, with a few percent
-    of noise so two drafts off the same board don't go the same way. */
+/** The CPU's pick: the best megaWorth it has a slot for, misjudging each man by
+    up to 30% either way, so it can be outdrafted and no two drafts go alike.
+    That's a person's eye: it beats a top-card drafter about as often as it did
+    before it knew to wait on a filled position, and a player who also knows
+    that gets about an even game (sim/mega-sim.ts). A position you've filled
+    gets no noise: nobody can take those men, so it always waits, then takes the
+    best of them. */
 function cpuChoice(row: Row, seat: 0 | 1): Player | null {
   const lineups = lineupsFrom(row)
   const mine = lineups[seat]
@@ -173,8 +180,9 @@ function cpuChoice(row: Row, seat: 0 | 1): Player | null {
   let bestValue = -Infinity
   for (const p of left) {
     if (open(mine, p.pos) === 0) continue
-    const noise = (randomInt(1001) / 1000 - 0.5) * 0.1 * p.score
-    const value = megaWorth(p, left, open(theirs, p.pos)) + noise
+    const rivals = open(theirs, p.pos)
+    const noise = rivals > 0 ? (randomInt(1001) / 1000 - 0.5) * 0.6 * p.score : 0
+    const value = megaWorth(p, left, rivals) + noise
     if (value > bestValue) {
       bestValue = value
       best = p
@@ -371,6 +379,30 @@ export async function pickMega(
   return { ok: true, view: view(data as Row, role, userId) }
 }
 
+/**
+ * Takes back a draft nobody sat down at. The host's to delete, an account or a
+ * signed-out seat's key, and only while it's waiting: the delete itself checks
+ * the seat is empty, so someone sitting down that same moment wins.
+ */
+export async function deleteMega(id: string, userId: string | null, key: unknown): Promise<{ ok: true } | Fail> {
+  const row = await load(id)
+  if (!row) return { ok: false, error: 'No draft with that code.', status: 404 }
+  if (roleFor(row, userId, key) !== 'host') return { ok: false, error: 'Only whoever opened it can delete it.', status: 403 }
+
+  const { data } = await createAdminClient()
+    .from('pe_mega_drafts')
+    .delete()
+    .eq('id', id)
+    .eq('status', 'waiting')
+    .is('guest_id', null)
+    .is('guest_key', null)
+    .eq('guest_bot', false)
+    .select('id')
+    .maybeSingle()
+  if (!data) return { ok: false, error: 'Somebody has sat down, so it stays.' }
+  return { ok: true }
+}
+
 /** The other account in a draft, for "add as a friend" off the result. Null
     unless the viewer sat in it, or the other seat was a guest or the CPU. */
 export async function megaOpponent(id: unknown, userId: string): Promise<string | null> {
@@ -394,6 +426,8 @@ export type MegaListItem = {
   theirScore: number | null
   /** A friend sent it to you and you haven't sat down yet. */
   waitingOnYou: boolean
+  /** Yours, and nobody has sat down. */
+  canDelete: boolean
 }
 
 export type MegaResultRow = { opponentId: string | null; yours: number; theirs: number }
@@ -430,7 +464,7 @@ export async function listMega(userId: string): Promise<MegaListItem[]> {
     .select('*')
     .or(`host_id.eq.${userId},guest_id.eq.${userId},invited_id.eq.${userId}`)
     .order('created_at', { ascending: false })
-    .limit(15)
+    .limit(40)
   return ((data ?? []) as Row[]).map((r) => {
     const role: Role = r.host_id === userId ? 'host' : 'guest'
     const v = view(r, role, userId)
@@ -443,6 +477,7 @@ export async function listMega(userId: string): Promise<MegaListItem[]> {
       yourScore: mine && r.status !== 'waiting' ? mine.score : null,
       theirScore: theirs && r.status !== 'waiting' ? theirs.score : null,
       waitingOnYou: r.invited_id === userId && !r.guest_id && r.status === 'waiting',
+      canDelete: role === 'host' && r.host_id === userId && r.status === 'waiting',
     }
   })
 }

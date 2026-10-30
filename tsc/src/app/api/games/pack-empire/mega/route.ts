@@ -7,6 +7,7 @@
 //   POST { action: 'join', id, name, key }  -> { view }
 //   POST { action: 'pick', id, player, key } -> { view }
 //   POST { action: 'cpu', id, key }         -> { view }   (the CPU's pick, if it's on the clock)
+//   POST { action: 'delete', id, key }      -> {}         (the host, while nobody has sat down)
 //
 // Both seats can be signed out: a seat is the account, or else a random key
 // the browser keeps (stored here only as a hash). The room polls GET while
@@ -15,7 +16,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { cpuPickMega, createMega, getMega, joinMega, pickMega } from '@/lib/packEmpire/mega'
+import { cpuPickMega, createMega, deleteMega, getMega, joinMega, pickMega } from '@/lib/packEmpire/mega'
 
 export const dynamic = 'force-dynamic'
 
@@ -68,6 +69,10 @@ export async function POST(req: NextRequest) {
     }
     case 'cpu': {
       const out = await cpuPickMega(id, userId, body.key)
+      return out.ok ? reply(out) : reply(out, out.status ?? 400)
+    }
+    case 'delete': {
+      const out = await deleteMega(id, userId, body.key)
       return out.ok ? reply(out) : reply(out, out.status ?? 400)
     }
     default:

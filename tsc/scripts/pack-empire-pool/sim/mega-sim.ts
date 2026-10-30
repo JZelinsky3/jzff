@@ -7,6 +7,12 @@
 // (+488 a draft). With the fair-board check: top card v top card 49%, reading
 // the board both ways 51%, and a board reader beats a top-card picker about
 // 67% from either seat. Immortals on a board 0/1/2/3: 34/33/24/7%, unchanged.
+//
+// 2026-10-30, the CPU waits on positions the other seat has filled (megaWorth):
+// at the old 10% noise that beat a top-card drafter 90% and the old CPU 83%, too
+// close to perfect. At 60% noise: 67% against top card (the old CPU's 68%) and
+// 53% against a player who also waits, so it stays beatable. It fills such a
+// position around pick 18 of 22, never before 14, and takes the best man left.
 import { dealMegaBoard, newServerSeed } from '../../../src/lib/packEmpire/deal'
 import { MEGA_TOTAL_PICKS, SLOTS, megaPickOwner, megaWorth, type Player } from '../../../src/lib/packEmpire/rules'
 
@@ -30,7 +36,14 @@ const best =
 
 const topCard = best((p) => p.score)
 const reader = best(megaWorth)
-const cpu = best((p, left, rivals) => megaWorth(p, left, rivals) + (Math.random() - 0.5) * 0.1 * p.score)
+// Same as cpuChoice in mega.ts: noise only where the other seat is still competing.
+const cpu = best((p, left, rivals) => megaWorth(p, left, rivals) + (rivals > 0 ? (Math.random() - 0.5) * 0.6 * p.score : 0))
+// The CPU before it knew a filled position can wait.
+const oldWorth = (p: Player, left: Player[], rivalOpen: number) => {
+  const rest = left.filter((q) => q.pos === p.pos && q.id !== p.id).map((q) => q.score).sort((a, b) => b - a)
+  return p.score - (rest.length ? rest[Math.min(rivalOpen, rest.length - 1)] : 0) + 0.4 * p.score
+}
+const oldCpu = best((p, left, rivals) => oldWorth(p, left, rivals) + (Math.random() - 0.5) * 0.1 * p.score)
 
 function margin(board: Player[], a: Pick, b: Pick): number {
   const need = (): Record<string, number> => {
@@ -59,6 +72,10 @@ const pairs: [string, Pick, Pick][] = [
   ['cpu v cpu', cpu, cpu],
   ['top card first, reader second', topCard, reader],
   ['reader first, top card second', reader, topCard],
+  ['cpu first, top card second', cpu, topCard],
+  ['top card first, cpu second', topCard, cpu],
+  ['cpu first, old cpu second', cpu, oldCpu],
+  ['old cpu first, cpu second', oldCpu, cpu],
 ]
 const wins = pairs.map(() => 0)
 const immortals = [0, 0, 0, 0, 0]

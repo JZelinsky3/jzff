@@ -68,6 +68,17 @@
   --gp-gold: #e8a84b;
   --gp-bright: #f4c06a;
   --gp-bar: rgba(20, 19, 17, 0.94);
+  --gp-dock: rgba(16, 15, 13, 0.96);
+  --gp-scrim: rgba(10, 9, 8, 0.6);
+}
+
+/* What's behind <main>: the strip under the home indicator, the overscroll
+   above the bar, and what the browser tints its own toolbars from. The site's
+   navy lives on html and body, so it showed around everything on this page
+   that was already charcoal. */
+html:has(.pe-theme),
+html:has(.pe-theme) body {
+  background: #141311;
 }
 
 .pe-theme .nav {
@@ -4519,6 +4530,108 @@ a.pe-row:hover {
   color: var(--pe-ink);
   text-align: right;
   white-space: nowrap;
+}
+
+/* A game you can still take back: the row, then its delete on a line of its
+   own, because a link can't hold a button. */
+.pe-row-item {
+  border-bottom: 1px solid var(--pe-line-soft);
+}
+
+.pe-row-item:last-child {
+  border-bottom: 0;
+}
+
+.pe-row-item > .pe-row {
+  border-bottom: 0;
+  padding-bottom: 0.45rem;
+}
+
+.pe-row-tools {
+  padding: 0 1.1rem 0.75rem;
+}
+
+.pe-del {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.pe-del.on {
+  color: var(--pe-red);
+}
+
+.pe-del:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pe-del:hover {
+    color: var(--pe-red);
+  }
+}
+
+.pe-del-ask {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.9rem;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  color: var(--pe-ink-soft);
+}
+
+.pe-del-err {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  line-height: 1.5;
+  color: var(--pe-red);
+}
+
+/* The drawer of older games. Closed until asked. */
+.pe-row-more > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.1rem;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pe-ink-soft);
+}
+
+.pe-row-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pe-row-more > summary::after {
+  content: '▾';
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.pe-row-more[open] > summary {
+  border-bottom: 1px solid var(--pe-line-soft);
+}
+
+.pe-row-more[open] > summary::after {
+  content: '▴';
 }
 
 .pe-status {

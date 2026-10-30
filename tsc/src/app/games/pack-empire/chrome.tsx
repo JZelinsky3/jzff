@@ -9,7 +9,9 @@
 // finds it.
 //
 // Phones get the games section's bar, the Pocket Clubhouse shape: square
-// buttons, equal side columns, back on the left and the reader on the right.
+// buttons, equal side columns, back on the left and friends on the right. The
+// friends page itself puts the profile there, so the dock doesn't need a tab
+// for either.
 //
 // Back always goes UP one level, never to wherever the browser was: a mode
 // goes back to Pack Empire, Pack Empire goes back to the Games Page.
@@ -40,6 +42,17 @@ function FriendsIcon() {
       <path d="M3.2 19.5c.6-3.3 3-5.2 5.8-5.2s5.2 1.9 5.8 5.2" />
       <circle cx="16.6" cy="9.4" r="2.5" />
       <path d="M15.6 14.4c2.6-.3 4.7 1.4 5.2 4.3" />
+    </svg>
+  )
+}
+
+/** The Home tab's house, at the mode glyphs' size. */
+function HomeGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M3.6 10.4 12 4l8.4 6.4" />
+      <path d="M5.6 12v7.6h12.8V12" />
+      <path d="M9.9 19.6v-5h4.2v5" />
     </svg>
   )
 }
@@ -82,6 +95,7 @@ export function PeChrome({
         title={title}
         titleEm={titleEm}
         signedIn={signedIn}
+        right={active === 'profile' ? 'profile' : 'friends'}
       />
     )
   }
@@ -96,7 +110,7 @@ export function PeChrome({
             <polyline points="7 1 1 7 7 13" />
           </svg>
         </Link>
-        <Link href="/games/pack-empire/" className={`pe-nav-mark${on === 'home' ? ' on' : ''}`}>
+        <Link href="/games/pack-empire/" className="pe-nav-mark">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/games/pack-empire/packs/qb.webp" alt="" className="pe-nav-mark-pack" />
           <span className="pe-nav-mark-word">
@@ -109,6 +123,15 @@ export function PeChrome({
       </div>
 
       <div className="pe-nav-modes">
+        <Link
+          href="/games/pack-empire/"
+          className={`pe-nav-mode${on === 'home' ? ' on' : ''}`}
+          style={{ '--mode': 'var(--pe-ink)' } as React.CSSProperties}
+          aria-current={on === 'home' ? 'page' : undefined}
+        >
+          <HomeGlyph />
+          <span>Home</span>
+        </Link>
         {MODES.map((m) => (
           <Link
             key={m.id}
