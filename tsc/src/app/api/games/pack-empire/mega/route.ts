@@ -1,9 +1,12 @@
 // /api/games/pack-empire/mega
 //
 //   GET  ?id=&key=                          -> { view }
-//   POST { action: 'create', name, key }    -> { id }
+//   POST { action: 'create', name, key, cpu?, friend? } -> { id }
+//                                           (cpu = true seats the CPU and starts at once;
+//                                            friend = a friendship id, signed in, holds the seat)
 //   POST { action: 'join', id, name, key }  -> { view }
 //   POST { action: 'pick', id, player, key } -> { view }
+//   POST { action: 'cpu', id, key }         -> { view }   (the CPU's pick, if it's on the clock)
 //
 // Both seats can be signed out: a seat is the account, or else a random key
 // the browser keeps (stored here only as a hash). The room polls GET while
@@ -12,7 +15,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createMega, getMega, joinMega, pickMega } from '@/lib/packEmpire/mega'
+import { cpuPickMega, createMega, getMega, joinMega, pickMega } from '@/lib/packEmpire/mega'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,7 +52,10 @@ export async function POST(req: NextRequest) {
 
   switch (body.action) {
     case 'create': {
-      const out = await createMega(userId, body.name, body.key)
+      const out = await createMega(userId, body.name, body.key, {
+        cpu: body.cpu === true,
+        friend: body.friend ?? undefined,
+      })
       return out.ok ? reply(out) : reply(out, out.status ?? 400)
     }
     case 'join': {
@@ -58,6 +64,10 @@ export async function POST(req: NextRequest) {
     }
     case 'pick': {
       const out = await pickMega(id, userId, body.key, body.player)
+      return out.ok ? reply(out) : reply(out, out.status ?? 400)
+    }
+    case 'cpu': {
+      const out = await cpuPickMega(id, userId, body.key)
       return out.ok ? reply(out) : reply(out, out.status ?? 400)
     }
     default:

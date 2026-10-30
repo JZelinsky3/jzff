@@ -75,7 +75,9 @@ def main():
     men = {}
     for c in cards: men.setdefault(c['pid'], c)
     photo = headshots.resolve([{'pid': k, 'name': c['name'], 'img': c['img']} for k, c in men.items()], legacy)
-    for c in cards: c['img'] = photo.get(c['pid'])
+    # Then the photo from the card's own season where NFL.com has one (2016 on).
+    season = headshots.season_photos([{'pid': c['pid'], 'year': c['year']} for c in cards])
+    for c in cards: c['img'] = season.get((c['pid'], c['year'])) or photo.get(c['pid'])
 
     # Two different men under one name: the later one gets his suffix.
     by_name = {}
@@ -103,6 +105,7 @@ def main():
     print('wrote', len(cards), 'cards to', OUT)
     print(pd.DataFrame(cards).groupby(['pos', 'rarity']).size().unstack(fill_value=0)[['common', 'rare', 'dynasty', 'transcendent', 'immortal']])
     print('no headshot:', sum(1 for c in cards if not c['img']), 'cards,', len({c['pid'] for c in cards if not c['img']}), 'men')
+    print('season photos:', len(season), 'of', len(cards), 'cards')
     print('max accolade len', max(len(a) for c in cards for a in c['accolades']))
     for c in cards:
         if any(x in c['name'] for x in ('(', 'II')): print('  renamed:', c['name'], c['year'])

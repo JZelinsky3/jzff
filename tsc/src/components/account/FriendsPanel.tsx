@@ -150,11 +150,16 @@ export function FriendsPanel({ initial: start, phone = false }: { initial: Frien
           <span className={styles.who}>
             <div className={styles.name}>{c.from}</div>
             <div className={styles.sub}>
-              Pack Empire challenge{c.score != null ? ` · beat ${c.score.toLocaleString()}` : ''}
+              {c.kind === 'mega'
+                ? 'Pack Empire Mega Draft · your seat is held'
+                : `Pack Empire challenge${c.score != null ? ` · beat ${c.score.toLocaleString()}` : ''}`}
             </div>
           </span>
           <span className={styles.acts}>
-            <Link href={`/games/pack-empire/versus/${c.id}/`} className={styles.btn}>
+            <Link
+              href={c.kind === 'mega' ? `/games/pack-empire/mega-draft/${c.id}/` : `/games/pack-empire/versus/${c.id}/`}
+              className={styles.btn}
+            >
               Play
             </Link>
           </span>

@@ -290,7 +290,7 @@
 
 .link {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     gap: .5rem;
     margin-top: .7rem;
     min-width: 0;
@@ -301,12 +301,16 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
     font-family: var(--mono);
-    font-size: .72rem;
+    font-size: .8rem;
+    line-height: 1.2;
     color: var(--cream-soft);
     background: var(--ink);
     border: 1px solid var(--ink-line);
-    padding: .5rem .6rem;
+    padding: .55rem .65rem;
+    border-radius: 2px;
 }
 .hint {
     margin-top: .6rem;
@@ -326,7 +330,10 @@
 }
 .hint button:hover { color: var(--cream); }
 
-.codeForm { display: flex; gap: .5rem; margin-top: .7rem; }
+.codeForm { display: flex; align-items: stretch; gap: .5rem; margin-top: .7rem; }
+/* The invite link and the code box sit one over the other: same height, and
+   their buttons the same width, so both boxes end on the same line. */
+.link > button, .codeForm > button { min-width: 5.6rem; }
 .codeForm input {
     flex: 1;
     min-width: 0;
@@ -334,10 +341,11 @@
     border: 1px solid var(--ink-line);
     color: var(--cream);
     font-family: var(--mono);
-    font-size: .85rem;
+    font-size: .8rem;
+    line-height: 1.2;
     letter-spacing: .2em;
     text-transform: uppercase;
-    padding: .5rem .65rem;
+    padding: .55rem .65rem;
     border-radius: 2px;
 }
 .codeForm input:focus { outline: none; border-color: var(--gold-deep); }

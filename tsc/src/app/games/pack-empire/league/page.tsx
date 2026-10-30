@@ -37,6 +37,7 @@ export default async function LeagueLobbyPage() {
   return (
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.boardRoot : ''}`.trim()}>
       <PeChrome
+        active="league"
         mobile={mobile}
         signedIn={!!user}
         back="/games/pack-empire/"

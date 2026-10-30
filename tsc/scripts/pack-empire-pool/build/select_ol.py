@@ -9,21 +9,34 @@ import allpro
 from select_skill import interp, rarity_for, BANDS, SCORE_AT
 
 TARGETS = {
-    'OT': {'immortal': 5, 'transcendent': 4, 'dynasty': 7, 'rare': 14, 'common': 44},   # 74, old pool 74
-    'OG': {'immortal': 5, 'transcendent': 4, 'dynasty': 7, 'rare': 16, 'common': 48},   # 80, old pool 80
-    'C': {'immortal': 4, 'transcendent': 3, 'dynasty': 4, 'rare': 10, 'common': 31},    # 52, old pool 52
+    'OT': {'immortal': 3, 'transcendent': 6, 'dynasty': 11, 'rare': 20, 'common': 51},
+    'OG': {'immortal': 3, 'transcendent': 6, 'dynasty': 11, 'rare': 20, 'common': 44},  # one common per man caps it
+    'C': {'immortal': 2, 'transcendent': 5, 'dynasty': 8, 'rare': 15, 'common': 38},
 }
 # Calibration runs (sim/variant.sh) override these from the environment.
 import json as _json
 TARGETS.update(_json.loads(os.environ.get('PE_TARGETS', '{}')))
 
 MAX_PER_MAN = 4
-# By band: pre-2000 linemen only at dynasty and up (see select_skill.DECADES).
+PER_SEASON = 5
+# By band, 2000 on (see select_skill.DECADES). The 1970s and 80s line seasons
+# that used to fill the top bands were the names nobody had heard of.
 DECADES = {
-    'dynasty': {1970: 0.10, 1980: 0.14, 1990: 0.18, 2000: 0.20, 2010: 0.20, 2020: 0.18},
-    'rare': {2000: 0.30, 2010: 0.38, 2020: 0.32},
-    'common': {2000: 0.28, 2010: 0.38, 2020: 0.34},
+    'dynasty': {2000: 0.26, 2010: 0.38, 2020: 0.36},
+    'rare': {2000: 0.20, 2010: 0.40, 2020: 0.40},
+    'common': {2000: 0.16, 2010: 0.40, 2020: 0.44},
 }
+LEGEND_BEFORE = 2000
+# Linemen people know from before 2000: the only old line seasons dealt.
+LEGENDS = ['Anthony Munoz', 'John Hannah', 'Mike Webster', 'Bruce Matthews', 'Gary Zimmerman', 'Tony Boselli',
+           'Larry Allen', 'Randall McDaniel', 'Will Shields', 'Dermontti Dawson', 'Jonathan Ogden', 'Orlando Pace',
+           'Willie Roaf', 'Kevin Mawae', 'Mike Munchak']
+
+try:
+    from headshots import has_photo
+    PHOTO = has_photo()
+except Exception:
+    PHOTO = {}
 OFFENSE_WEIGHT = 2.5
 # Honors top out (first team, Pro Bowl, every selector), so the best line
 # seasons are separated by their offense alone; a flatter top keeps a few tenths
@@ -104,6 +117,9 @@ def choose(pos, t, off):
 
     target = TARGETS[pos]
     held, picked = {}, {}
+    legends = {norm(n) for n in LEGENDS}
+    p['face'] = p.pid.map(lambda x: PHOTO.get(x, False))
+    p['era'] = (p.season >= LEGEND_BEFORE) | p.key.isin(legends)
 
     def can_take(pid, band):
         have = held.get(pid, set())
@@ -112,11 +128,13 @@ def choose(pos, t, off):
     def take(i, band):
         held.setdefault(p.at[i, 'pid'], set()).add(band); picked[i] = band
 
+    # The all-time walk, over seasons from 2000 on (or a legend's) with a photo.
     floors, ceiling = {}, 1e9
     for band in ['immortal', 'transcendent']:
         n, last = 0, None
         for r in p.itertuples():
             if r.metric >= ceiling or r.Index in picked or not can_take(r.pid, band): continue
+            if not r.era or not r.face: continue
             if n == target[band]:
                 floors[band] = (last + r.metric) / 2; break
             take(r.Index, band); n += 1; last = r.metric
@@ -131,10 +149,21 @@ def choose(pos, t, off):
     p['score'] = [int(interp(m, anchors) // 5 * 5) for m in p.metric]
     p['band'] = p.score.map(rarity_for)
 
+    # Legends: best pre-2000 season, rare or better, if he isn't in yet.
+    for name in LEGENDS:
+        old = p[(p.key == norm(name)) & (p.season < LEGEND_BEFORE) & p.face]
+        if not len(old) or any(i in picked for i in p.index[p.key == norm(name)]): continue
+        for r in old.itertuples():
+            if r.band in ('immortal', 'transcendent', 'common'): continue
+            if can_take(r.pid, r.band): take(r.Index, r.band); break
+
     per_season = {}
+    for i in picked: per_season[p.at[i, 'season']] = per_season.get(p.at[i, 'season'], 0) + 1
     for band in ['dynasty', 'rare', 'common']:
-        need = target[band]
-        pool = p[(p.band == band) & (~p.index.isin(picked.keys())) & p.decade.isin(DECADES[band].keys())].copy()
+        need = target[band] - sum(1 for b in picked.values() if b == band)
+        if need <= 0: continue
+        pool = p[(p.band == band) & (~p.index.isin(picked.keys())) & p.decade.isin(DECADES[band].keys())
+                 & p.face].copy()
         pool['interest'] = pool.fame + 0.15 * pool.offense
         quota = {d: need * w for d, w in DECADES[band].items()}
         got = {d: 0 for d in DECADES[band]}
@@ -145,7 +174,7 @@ def choose(pos, t, off):
         while need > 0 and stall < nb * 3:
             cand = pool[(pool.bin == b) & (~pool.index.isin(picked.keys()))]
             if len(cand): cand = cand[[can_take(x, band) for x in cand.pid]]
-            if len(cand): cand = cand[[per_season.get(s, 0) < 3 for s in cand.season]]
+            if len(cand): cand = cand[[per_season.get(s, 0) < PER_SEASON for s in cand.season]]
             if len(cand):
                 lag = {d: got[d] - quota[d] for d in DECADES[band]}
                 cand = cand.assign(lag=cand.decade.map(lag)).sort_values(['lag', 'interest'], ascending=[True, False])

@@ -93,6 +93,222 @@
   color: var(--pe-ink-soft);
 }
 
+/* ── The game's masthead (desktop) ──────────────────────────── */
+/* Wordmark, the four modes as tabs in their own colours, tools on the right.
+   Built on the site's sticky .nav, re-laid out. */
+
+.pe-theme .nav.pe-nav {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 1.2rem;
+  padding: 0.7rem 1.6rem;
+  background:
+    linear-gradient(180deg, rgba(232, 168, 75, 0.05), transparent 70%),
+    rgba(20, 19, 17, 0.97);
+  border-bottom: 1px solid var(--pe-line);
+  box-shadow: 0 1px 0 rgba(232, 168, 75, 0.08);
+}
+
+.pe-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.pe-nav-mark {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.pe-nav-mark-pack {
+  width: 26px;
+  height: auto;
+  aspect-ratio: 125 / 183;
+  border-radius: 3px;
+  object-fit: cover;
+  transform: rotate(-8deg);
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.5),
+    0 0 12px rgba(232, 168, 75, 0.25);
+  transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+
+.pe-nav-mark:hover .pe-nav-mark-pack {
+  transform: rotate(-2deg) translateY(-2px);
+}
+
+.pe-nav-mark-word {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pe-nav-mark-kicker {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.5rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+  white-space: nowrap;
+}
+
+.pe-nav-mark-name {
+  font-family: var(--serif);
+  font-size: 1.28rem;
+  line-height: 1.05;
+  color: var(--pe-ink);
+  white-space: nowrap;
+}
+
+.pe-nav-mark-name em {
+  font-style: italic;
+  color: var(--pe-amber);
+}
+
+/* The modes: one segmented rail, each tab underlined in its mode's colour
+   when you're in it. */
+.pe-nav-modes {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--pe-line);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.pe-nav-mode {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.95rem;
+  border-radius: 999px;
+  color: var(--pe-ink-soft);
+  text-decoration: none;
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition:
+    color 0.18s,
+    background 0.18s;
+}
+
+.pe-nav-mode svg {
+  color: var(--mode);
+  opacity: 0.75;
+  transition: opacity 0.18s;
+}
+
+.pe-nav-mode:hover {
+  color: var(--pe-ink);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.pe-nav-mode:hover svg {
+  opacity: 1;
+}
+
+.pe-nav-mode.on {
+  color: var(--mode);
+  background: color-mix(in srgb, var(--mode) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mode) 45%, transparent);
+}
+
+.pe-nav-mode.on svg {
+  opacity: 1;
+}
+
+.pe-nav-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.pe-nav-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--pe-line);
+  border-radius: 6px;
+  color: var(--pe-ink-soft);
+  text-decoration: none;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition:
+    color 0.18s,
+    border-color 0.18s,
+    background 0.18s;
+}
+
+.pe-nav-tool:hover,
+.pe-nav-tool.on {
+  color: var(--pe-amber);
+  border-color: color-mix(in srgb, var(--pe-amber) 60%, transparent);
+  background: rgba(232, 168, 75, 0.06);
+}
+
+.pe-nav-cta {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.95rem;
+  border-radius: 6px;
+  background: var(--pe-amber);
+  color: var(--pe-bg);
+  text-decoration: none;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.pe-nav-cta:hover {
+  background: #f4c06a;
+}
+
+/* Narrower desktops: the tools drop their words, then the rail its icons. */
+@media (max-width: 1180px) {
+  .pe-nav-tool span {
+    display: none;
+  }
+
+  .pe-nav-mode {
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+@media (max-width: 960px) {
+  .pe-theme .nav.pe-nav {
+    padding: 0.7rem 1rem;
+    gap: 0.8rem;
+  }
+
+  .pe-nav-mode svg,
+  .pe-nav-mark-kicker {
+    display: none;
+  }
+
+  .pe-nav-mode {
+    font-size: 0.82rem;
+    padding: 0.45rem 0.6rem;
+  }
+}
+
 /* ── Page frame ─────────────────────────────────────────────── */
 
 .pe-wrap {
@@ -472,14 +688,66 @@
   font-size: 1rem;
 }
 
+/* Empire Builder: three packs fanned, the middle one up front and lit. */
+.pe-mk-fan {
+  position: relative;
+  width: 100%;
+  height: 10.5em;
+}
+
+.pe-mk-fan-glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 9em;
+  height: 9em;
+  margin: -4.5em 0 0 -4.5em;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--mode) 38%, transparent), transparent);
+  filter: blur(6px);
+}
+
 .pe-mk-pack {
-  width: 4.6em;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5.2em;
   aspect-ratio: 125 / 183;
   border-radius: 0.35em;
   background-size: cover;
   background-position: center;
-  box-shadow: 0 0.8em 1.2em rgba(0, 0, 0, 0.45);
-  transform: rotate(-6deg);
+  box-shadow: 0 0.8em 1.4em rgba(0, 0, 0, 0.55);
+  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.pe-mk-pack.c {
+  width: 5.9em;
+  transform: translate(-50%, -50%) rotate(-3deg);
+  box-shadow:
+    0 0 1.6em color-mix(in srgb, var(--mode) 45%, transparent),
+    0 1em 1.6em rgba(0, 0, 0, 0.6);
+}
+
+.pe-mk-pack.l {
+  transform: translate(-105%, -46%) rotate(-17deg);
+  filter: brightness(0.72);
+}
+
+.pe-mk-pack.r {
+  transform: translate(5%, -46%) rotate(13deg);
+  filter: brightness(0.72);
+}
+
+.pe-mode:hover .pe-mk-pack.c {
+  transform: translate(-50%, -56%) rotate(-1deg);
+}
+
+.pe-mode:hover .pe-mk-pack.l {
+  transform: translate(-112%, -46%) rotate(-21deg);
+}
+
+.pe-mode:hover .pe-mk-pack.r {
+  transform: translate(12%, -46%) rotate(17deg);
 }
 
 .pe-mk-vs {
@@ -1701,7 +1969,12 @@
   color: #2c4a78;
 }
 
+/* The front is a column: top bar, art, season ribbon, body. The art takes
+   whatever height the rest leaves, so a two-line honors row or a long name
+   squeezes the picture a touch instead of pushing the stat box off the card. */
 .pe-card-front {
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(170deg, #080e24, #0b1438);
   border: 2px solid var(--sh, #333);
   transform: rotateY(180deg) translateZ(0);
@@ -1710,33 +1983,57 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
+/* A strip in the card's colour, fading out across the top. */
 .pe-cf-topbar {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.35em 0.5em 0.15em;
+  gap: 0.3em;
+  padding: 0.3em 0.45em 0.3em 0;
   position: relative;
   z-index: 11;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--rc) 30%, transparent), transparent 78%);
+  border-bottom: 1px solid color-mix(in srgb, var(--rc) 38%, transparent);
 }
 
+/* The position on a slanted tab off the left edge. */
 .pe-cf-pos {
   font-family: var(--pe-cond);
   font-weight: 800;
-  font-size: 0.62em;
+  font-size: 0.6em;
+  line-height: 1;
   letter-spacing: 0.12em;
-  color: #fff;
-  padding: 2px 5px;
-  border-radius: 3px;
+  color: #060c1c;
+  background: var(--rc);
+  padding: 0.28em 0.85em 0.28em 0.75em;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 0.45em) 100%, 0 100%);
 }
 
 .pe-cf-rlab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
   font-family: var(--pe-cond);
   font-weight: 800;
-  font-size: 0.52em;
-  letter-spacing: 0.18em;
+  font-size: 0.5em;
+  line-height: 1;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--rc);
-  opacity: 0.9;
+  white-space: nowrap;
+}
+
+/* A cut gem before the word. Drawn, so it takes the colour, not the clip. */
+.pe-cf-rlab::before {
+  content: '';
+  width: 0.75em;
+  height: 0.75em;
+  flex-shrink: 0;
+  background: var(--rc);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  box-shadow: 0 0 6px var(--rg);
+  -webkit-text-fill-color: initial;
 }
 
 .pe-cf-rlab.transcendent {
@@ -1757,6 +2054,15 @@
   animation: pe-holo-shift 1.6s linear infinite;
 }
 
+/* The clipped text fill would swallow the gem; it keeps its own. */
+.pe-cf-rlab.transcendent::before {
+  background: #ff90ff;
+}
+
+.pe-cf-rlab.immortal::before {
+  background: #80ffb8;
+}
+
 @keyframes pe-holo-shift {
   from {
     background-position: 0%;
@@ -1767,7 +2073,8 @@
 }
 
 .pe-cf-art {
-  height: 5.625em;
+  flex: 1 1 auto;
+  min-height: 3.6em;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -1800,8 +2107,59 @@
   z-index: 1;
 }
 
+/* The season, on a ribbon under the man: the year in the card's colour and
+   the club as it was called that year. Part of what you're choosing on, so
+   it reads before the stat box does. */
+.pe-cf-season {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 11;
+  display: flex;
+  align-items: baseline;
+  gap: 0.42em;
+  min-width: 0;
+  padding: 0.24em 0.5em 0.22em;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--rc) 24%, #050a18), #050a18 72%);
+  border-top: 1px solid color-mix(in srgb, var(--rc) 60%, transparent);
+  box-shadow: 0 -6px 12px rgba(4, 8, 20, 0.55);
+}
+
+.pe-cf-season b {
+  flex-shrink: 0;
+  font-family: var(--pe-display);
+  font-weight: 900;
+  font-size: 0.78em;
+  line-height: 1;
+  letter-spacing: 0.05em;
+  color: var(--rc);
+  text-shadow: 0 0 10px var(--rg);
+}
+
+.pe-cf-season span {
+  min-width: 0;
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.5em;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a8bccf;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* "New England Patriots" doesn't fit in capitals beside the year; in
+   upper and lower case it does. */
+.pe-cf-season span.long {
+  font-size: 0.54em;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
 .pe-cf-body {
-  padding: 0.35em 0.5em 0.4em;
+  flex-shrink: 0;
+  padding: 0.3em 0.45em 0.42em;
   position: relative;
   z-index: 11;
 }
@@ -1809,61 +2167,121 @@
 .pe-cf-name {
   font-family: var(--pe-cond);
   font-weight: 700;
-  font-size: 0.88em;
-  color: #e0eef8;
+  font-size: 0.9em;
+  color: #e8f2fb;
   letter-spacing: 0.02em;
-  line-height: 1.15;
-  margin-bottom: 1px;
-}
-
-.pe-cf-team {
-  font-family: var(--pe-cond);
-  font-weight: 600;
-  font-size: 0.56em;
-  color: #5a7a98;
-  letter-spacing: 0.04em;
+  line-height: 1.1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.pe-cf-line {
-  height: 1.5px;
-  margin: 0.3em 0 0.25em;
-  opacity: 0.4;
-  border-radius: 1px;
+.pe-cf-name.long {
+  font-size: 0.78em;
+  line-height: 1.27;
 }
 
 .pe-cf-score-row {
   display: flex;
   align-items: baseline;
   gap: 0.3em;
-  margin-bottom: 0.25em;
+  margin: 0.08em 0 0.28em;
 }
 
 .pe-cf-score {
   font-family: var(--pe-display);
   font-weight: 900;
-  font-size: 1.4em;
+  font-size: 1.32em;
   line-height: 1;
+  color: var(--rc);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--rc) 35%, transparent);
 }
 
 .pe-cf-ovr {
   font-family: var(--pe-cond);
   font-weight: 700;
-  font-size: 0.5em;
-  color: #3a5a80;
-  letter-spacing: 0.18em;
+  font-size: 0.48em;
+  color: #4d6c8e;
+  letter-spacing: 0.2em;
 }
 
-.pe-cf-acc {
-  font-family: var(--pe-cond);
-  font-size: 0.52em;
-  color: #5a7a98;
-  line-height: 1.5;
+/* The stat box: what the season did, number over label. */
+.pe-cf-stats {
+  display: grid;
+  gap: 0.26em;
+  padding: 0.3em 0.25em 0.28em;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.pe-cf-statrow {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+.pe-cf-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1em;
+  min-width: 0;
+}
+
+.pe-cf-cell + .pe-cf-cell {
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pe-cf-cell b {
+  font-family: var(--pe-display);
+  font-weight: 700;
+  font-size: 0.55em;
+  line-height: 1;
+  color: #dbe8f4;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.pe-cf-cell i {
+  font-style: normal;
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.41em;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6f8ba8;
+  white-space: nowrap;
+}
+
+.pe-cf-cell.txt {
+  justify-content: center;
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.42em;
+  color: #a8bccf;
+}
+
+/* A lineman's honors: chips in the card's colour, wrapping if they must. */
+.pe-cf-honors {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.2em;
+}
+
+.pe-cf-honors span {
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.42em;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rc);
+  padding: 0.28em 0.5em;
+  border: 1px solid color-mix(in srgb, var(--rc) 50%, transparent);
+  border-radius: 2px;
+  white-space: nowrap;
 }
 
 /* League packs print what a card would do to the team's chemistry. */
@@ -1896,6 +2314,7 @@
   position: fixed;
   inset: 0;
   z-index: 300;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2330,6 +2749,259 @@
   }
 }
 
+/* ── The pack going off (RipBurst) ─────────────────────────── */
+/* Centred where the wrapper drops away, behind the cards as they fan out.
+   Everything in it ends transparent, so it can stay mounted. Intensity by the
+   best card inside: --fl (the table flash), --rs (how far the rings go). */
+
+.pe-boom {
+  --fl: 0.3;
+  --rs: 4;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.pe-boom[data-tier='1'] {
+  --fl: 0.5;
+  --rs: 5;
+}
+
+.pe-boom[data-tier='2'] {
+  --fl: 0.72;
+  --rs: 6.5;
+}
+
+.pe-boom[data-tier='3'] {
+  --fl: 0.85;
+  --rs: 8;
+}
+
+.pe-boom[data-tier='4'] {
+  --fl: 1;
+  --rs: 9.5;
+}
+
+/* Over the whole table, in the card's colour, from the pack outward. */
+.pe-boom-flash {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--bx, 50%) var(--by, 50%),
+    color-mix(in srgb, var(--glow) 55%, #fff) 0,
+    color-mix(in srgb, var(--glow) 60%, transparent) 14%,
+    color-mix(in srgb, var(--glow) 18%, transparent) 38%,
+    transparent 62%
+  );
+  mix-blend-mode: screen;
+  opacity: 0;
+  animation: pe-boom-flash 1s ease-out both;
+}
+
+@keyframes pe-boom-flash {
+  0% {
+    opacity: 0;
+  }
+  7% {
+    opacity: var(--fl);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Light rays turning as they spread. */
+.pe-boom-rays {
+  position: absolute;
+  left: -220px;
+  top: -220px;
+  width: 440px;
+  height: 440px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    color-mix(in srgb, var(--glow) 75%, #fff) 0deg 4deg,
+    transparent 4deg 15deg
+  );
+  -webkit-mask: radial-gradient(closest-side, #000 8%, rgba(0, 0, 0, 0.6) 40%, transparent);
+  mask: radial-gradient(closest-side, #000 8%, rgba(0, 0, 0, 0.6) 40%, transparent);
+  opacity: 0;
+  animation: pe-boom-rays 1.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes pe-boom-rays {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) rotate(0deg);
+  }
+  12% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(calc(0.6 + var(--rs) * 0.18)) rotate(55deg);
+  }
+}
+
+/* The white-hot middle. */
+.pe-boom-core {
+  position: absolute;
+  left: -90px;
+  top: -90px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, #fff, color-mix(in srgb, var(--glow) 80%, #fff) 30%, transparent 75%);
+  filter: blur(4px);
+  opacity: 0;
+  animation: pe-boom-core 0.75s ease-out both;
+}
+
+@keyframes pe-boom-core {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  15% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+/* Shockwaves. */
+.pe-boom-ring {
+  position: absolute;
+  left: -50px;
+  top: -50px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--glow) 80%, #fff);
+  box-shadow:
+    0 0 24px var(--glow-soft),
+    inset 0 0 18px var(--glow-soft);
+  opacity: 0;
+  animation: pe-boom-ring 0.9s cubic-bezier(0.15, 0.7, 0.3, 1) both;
+}
+
+.pe-boom-ring.r2 {
+  border-width: 2px;
+  animation-delay: 0.12s;
+  animation-duration: 1.1s;
+}
+
+.pe-boom-ring.r3 {
+  border-width: 1.5px;
+  animation-delay: 0.26s;
+  animation-duration: 1.3s;
+}
+
+@keyframes pe-boom-ring {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(var(--rs));
+  }
+}
+
+/* Sparks: each turned to its angle, then thrown along it. */
+.pe-boom-spark {
+  position: absolute;
+  left: -1.5px;
+  top: -9px;
+  width: 3px;
+  height: 18px;
+  border-radius: 2px;
+  background: linear-gradient(#fff, color-mix(in srgb, var(--glow) 85%, #fff) 45%, transparent);
+  box-shadow: 0 0 8px var(--glow-soft);
+  opacity: 0;
+  animation: pe-boom-spark 0.95s cubic-bezier(0.1, 0.75, 0.3, 1) var(--s, 0ms) both;
+}
+
+@keyframes pe-boom-spark {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--a)) translateY(0) scaleY(0.4);
+  }
+  65% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateY(calc(var(--d) * -1)) scaleY(1.1);
+  }
+}
+
+/* Dynasty and up shake the table; the top two harder. Not while it's
+   leaving, which has its own animation. */
+.pe-stage:not(.leaving):has(.pe-boom[data-tier='2']) {
+  animation: pe-boom-shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.pe-stage:not(.leaving):has(.pe-boom[data-tier='3']),
+.pe-stage:not(.leaving):has(.pe-boom[data-tier='4']) {
+  animation: pe-boom-shake-hard 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes pe-boom-shake {
+  10%,
+  90% {
+    transform: translate(-1px, 1px);
+  }
+  20%,
+  80% {
+    transform: translate(3px, -2px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translate(-4px, 2px);
+  }
+  40%,
+  60% {
+    transform: translate(4px, -1px);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes pe-boom-shake-hard {
+  10%,
+  90% {
+    transform: translate(-2px, 2px);
+  }
+  20%,
+  80% {
+    transform: translate(6px, -4px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translate(-7px, 4px);
+  }
+  40%,
+  60% {
+    transform: translate(7px, -3px);
+  }
+  100% {
+    transform: none;
+  }
+}
+
 @keyframes pe-pack-shake {
   0%,
   100% {
@@ -2683,7 +3355,7 @@
   animation-duration: 0.09s;
 }
 
-.pe-stage[data-wo='pos'] .pe-card.charging:not(.rev) .pe-card-back {
+.pe-stage[data-wo='stat'] .pe-card.charging:not(.rev) .pe-card-back {
   animation-duration: 0.06s;
 }
 
@@ -2724,14 +3396,15 @@
   animation: pe-wo-slam 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
 }
 
-.pe-wo-pos {
-  margin-top: 0.45rem;
+.pe-wo-stat {
+  margin-top: 0.55rem;
   font-family: var(--pe-cond);
   font-weight: 800;
-  font-size: 0.9rem;
-  letter-spacing: 0.34em;
+  font-size: clamp(0.85rem, 2.6vw, 1.15rem);
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--wo);
+  text-shadow: 0 0 16px var(--wo-glow);
   animation: pe-wo-slam 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both;
 }
 
@@ -3093,6 +3766,128 @@
 
 .pe-panel + .pe-panel {
   margin-top: 1rem;
+}
+
+/* Panels side by side are peers: the same height, the margin above dropped
+   (it pushed the right one down and short), and the action row pinned to the
+   bottom so the two buttons end on the same line however much text sits
+   above them. */
+.pe-twoup > .pe-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.pe-twoup > .pe-panel + .pe-panel {
+  margin-top: 0;
+}
+
+.pe-panel-foot {
+  margin-top: auto;
+  display: grid;
+  gap: 0.6rem;
+  padding-top: 0.9rem;
+}
+
+.pe-friend-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.pe-friend-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.38rem 0.75rem 0.38rem 0.38rem;
+  border: 1px solid var(--pe-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--pe-ink);
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition:
+    border-color 0.18s,
+    background 0.18s;
+}
+
+.pe-friend-pick:hover:not(:disabled) {
+  border-color: var(--pe-amber);
+  background: rgba(232, 168, 75, 0.07);
+}
+
+.pe-friend-pick:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.pe-friend-pick-mono {
+  width: 1.55rem;
+  height: 1.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--pe-amber) 22%, transparent);
+  color: var(--pe-amber);
+  font-family: var(--serif);
+  font-size: 0.85rem;
+}
+
+/* Mega Draft: one name for both ways to start, signed out. */
+.pe-mega-name {
+  display: grid;
+  gap: 0.4rem;
+  max-width: 420px;
+  margin-bottom: 1rem;
+}
+
+/* Join by code: a strip under the two ways to start, the box and its button
+   the same height. */
+.pe-join-strip {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  margin-top: 1rem;
+}
+
+.pe-join-strip-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pe-join-strip-text .pe-panel-text {
+  margin-top: 0.3rem;
+}
+
+.pe-join-strip .pe-share {
+  flex: 0 0 auto;
+  width: min(100%, 22rem);
+}
+
+.pe-join-strip .pe-share .pe-input {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 700px) {
+  .pe-join-strip {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.8rem;
+  }
+
+  .pe-join-strip .pe-share {
+    width: 100%;
+  }
+}
+
+.pe-input.pe-input--code {
+  font-family: var(--mono);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  text-align: center;
 }
 
 .pe-panel-title {
@@ -3633,7 +4428,7 @@ a.pe-row:hover {
   .pe-rip-light,
   .pe-rip-light::after,
   .pe-wo-team,
-  .pe-wo-pos,
+  .pe-wo-stat,
   .pe-fsl.has-p.landed,
   .pe-ladder.climb .pe-rung,
   .pe-ladder.climb .pe-rung-mark,
@@ -3645,6 +4440,16 @@ a.pe-row:hover {
   .pe-rip.ripping .pe-rip-strip,
   .pe-rip.open .pe-rip-strip {
     animation-duration: 0.01s;
+  }
+
+  .pe-boom-spark,
+  .pe-boom-ring,
+  .pe-boom-rays {
+    display: none;
+  }
+
+  .pe-stage:has(.pe-boom) {
+    animation: none !important;
   }
 }
 
@@ -4911,7 +5716,7 @@ a.pe-row:hover {
 
 .pe-bd-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.8rem;
 }
 
@@ -4973,12 +5778,16 @@ a.pe-row:hover {
   margin-top: 0.65rem;
 }
 
+/* A man has four seasons at most, so a slot is a quarter of the row: four
+   always fit, at three columns or one. */
 .pe-bd-slot {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
-  width: 4.9rem;
+  width: calc((100% - 1.5rem) / 4);
+  max-width: 5.4rem;
+  min-width: 0;
   flex-shrink: 0;
 }
 
@@ -5159,7 +5968,7 @@ a.pe-row:hover {
   display: flex;
   gap: 2rem;
   align-items: center;
-  max-width: 640px;
+  max-width: 720px;
   width: 100%;
   padding: 1.8rem;
   background: var(--pe-bg-soft);
@@ -5271,10 +6080,55 @@ a.pe-row:hover {
   color: var(--pe-ink-soft);
 }
 
+/* Yours and everyone's, side by side and never mistaken for each other:
+   yours in amber, the site's in the room's quiet ink. */
+.pe-bd-counts {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 0.6rem;
+  margin-top: 1.1rem;
+}
+
+.pe-bd-count {
+  padding: 0.7rem 0.8rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid var(--pe-line);
+  min-width: 0;
+}
+
+.pe-bd-count.you {
+  border-color: color-mix(in srgb, var(--pe-amber) 55%, transparent);
+  background: rgba(232, 168, 75, 0.06);
+}
+
+.pe-bd-count.site {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.pe-bd-count-head {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.56rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+.pe-bd-count.you .pe-bd-count-head {
+  color: var(--pe-amber);
+}
+
+.pe-bd-count .pe-bd-sheet-miss {
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 .pe-bd-stats {
   display: flex;
-  gap: 1.6rem;
-  margin: 1.1rem 0 0;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.1rem;
+  margin: 0.5rem 0 0;
 }
 
 .pe-bd-stats dt {
@@ -5289,8 +6143,26 @@ a.pe-row:hover {
   margin: 0.2rem 0 0;
   font-family: var(--pe-display);
   font-weight: 900;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   color: var(--pe-ink);
+  white-space: nowrap;
+}
+
+.pe-bd-count.you .pe-bd-stats dd {
+  color: var(--pe-amber);
+}
+
+.pe-bd-stats dd small {
+  font-size: 0.62em;
+  color: var(--pe-ink-mute);
+}
+
+.pe-bd-stats dd.word {
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  color: var(--pe-ink-soft);
 }
 
 .pe-bd-sheet-miss {
@@ -5340,9 +6212,20 @@ a.pe-row:hover {
   border-color: var(--rc);
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1080px) {
+  .pe-bd-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
   .pe-bd-list {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pe-bd-counts {
+    grid-template-columns: minmax(0, 1fr);
+    text-align: left;
   }
 }
 
@@ -5379,7 +6262,7 @@ a.pe-row:hover {
 
   .pe-bd-slot {
     width: calc((100% - 1.2rem) / 4);
-    min-width: 0;
+    max-width: none;
   }
 
   .pe-bd-sheet-in {

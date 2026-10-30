@@ -50,23 +50,30 @@ function parseMine(raw: string | null): string[] {
   }
 }
 
-export function MegaLobby({ signedIn }: { signedIn: boolean }) {
+export function MegaLobby({
+  signedIn,
+  friends = [],
+}: {
+  signedIn: boolean
+  friends?: { id: string; name: string }[]
+}) {
   const router = useRouter()
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const stored = useStored(MINE)
   const mine = signedIn ? [] : parseMine(stored)
+  const named = signedIn || name.trim().length >= 2
 
-  const create = async () => {
-    setBusy(true)
+  const create = async (tag: string, extra: Record<string, unknown> = {}) => {
+    setBusy(tag)
     setError(null)
     try {
       const res = await fetch('/api/games/pack-empire/mega/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create', name, key: signedIn ? null : megaKey() }),
+        body: JSON.stringify({ action: 'create', name, key: signedIn ? null : megaKey(), ...extra }),
       })
       const out = await res.json().catch(() => null)
       if (!res.ok || !out?.ok) throw new Error(out?.error ?? 'Could not open a draft.')
@@ -74,7 +81,7 @@ export function MegaLobby({ signedIn }: { signedIn: boolean }) {
       router.push(`/games/pack-empire/mega-draft/${out.id}/`)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not open a draft.')
-      setBusy(false)
+      setBusy(null)
     }
   }
 
@@ -82,59 +89,98 @@ export function MegaLobby({ signedIn }: { signedIn: boolean }) {
 
   return (
     <>
+      {!signedIn && (
+        <label className="pe-mega-name">
+          <span className="pe-note">Your name at the table</span>
+          <input
+            className="pe-input"
+            placeholder="Your name"
+            value={name}
+            maxLength={24}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </label>
+      )}
       <div className="pe-twoup">
         <div className="pe-panel">
           <div className="pe-kicker">Host</div>
           <div className="pe-panel-title">Open a draft</div>
-          <p className="pe-panel-text" style={{ marginBottom: '0.9rem' }}>
-            A fresh board of thirty-six, dealt the moment you open it. Send the code to one person.
+          <p className="pe-panel-text">
+            A fresh board of thirty-six, dealt the moment you open it.{' '}
+            {signedIn ? 'Send it to a friend, or open it and share the code.' : 'Share the code with one person.'}
           </p>
-          <div style={{ display: 'grid', gap: '0.6rem' }}>
-            {!signedIn && (
-              <input
-                className="pe-input"
-                placeholder="Your name"
-                value={name}
-                maxLength={24}
-                onChange={(e) => setName(e.target.value)}
-              />
+          <div className="pe-panel-foot">
+            {signedIn && friends.length > 0 && (
+              <div className="pe-friend-picks" role="group" aria-label="Send it to a friend">
+                {friends.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    className="pe-friend-pick"
+                    onClick={() => create(`f:${f.id}`, { friend: f.id })}
+                    disabled={!!busy}
+                  >
+                    <span className="pe-friend-pick-mono" aria-hidden>
+                      {f.name.charAt(0).toUpperCase()}
+                    </span>
+                    {busy === `f:${f.id}` ? 'Sending' : f.name}
+                  </button>
+                ))}
+              </div>
             )}
-            <button
-              type="button"
-              className="pe-btn"
-              onClick={create}
-              disabled={busy || (!signedIn && name.trim().length < 2)}
-            >
-              {busy ? 'Dealing the board' : 'Open a draft'}
+            {signedIn && friends.length === 0 && (
+              <p className="pe-note">
+                <Link href="/account/#friends" className="pe-link">
+                  Add friends
+                </Link>{' '}
+                to send a draft straight to them.
+              </p>
+            )}
+            <button type="button" className="pe-btn" onClick={() => create('open')} disabled={!!busy || !named}>
+              {busy === 'open' ? 'Dealing the board' : 'Open with a code'}
             </button>
           </div>
         </div>
         <div className="pe-panel">
-          <div className="pe-kicker">Join</div>
-          <div className="pe-panel-title">Have a code?</div>
-          <p className="pe-panel-text" style={{ marginBottom: '0.9rem' }}>
-            Six characters, from whoever opened the draft. You pick your name at the table.
+          <div className="pe-kicker">Solo</div>
+          <div className="pe-panel-title">Draft against the CPU</div>
+          <p className="pe-panel-text">
+            Same board, same snake. The CPU sees what you see and nothing more, and drafts like a person:
+            the best man it has a slot for, weighed by what&apos;s left behind him.
           </p>
-          <div className="pe-share">
-            <input
-              className="pe-input"
-              placeholder="CODE"
-              value={clean}
-              onChange={(e) => setCode(e.target.value)}
-              style={{ fontFamily: 'var(--mono)', letterSpacing: '0.3em', textTransform: 'uppercase' }}
-              onKeyDown={(e) => e.key === 'Enter' && clean.length === 6 && router.push(`/games/pack-empire/mega-draft/${clean}/`)}
-            />
-            <Link
-              href={clean.length === 6 ? `/games/pack-empire/mega-draft/${clean}/` : '#'}
-              className="pe-btn pe-btn--ghost"
-              aria-disabled={clean.length !== 6}
-              style={clean.length === 6 ? undefined : { opacity: 0.5, pointerEvents: 'none' }}
-            >
-              Sit down
-            </Link>
+          <div className="pe-panel-foot">
+            <button type="button" className="pe-btn" onClick={() => create('cpu', { cpu: true })} disabled={!!busy || !named}>
+              {busy === 'cpu' ? 'Dealing the board' : 'Play the CPU'}
+            </button>
           </div>
         </div>
       </div>
+
+      <div className="pe-panel pe-join-strip">
+        <div className="pe-join-strip-text">
+          <div className="pe-kicker">Join</div>
+          <p className="pe-panel-text">Have a code? Six characters, from whoever opened the draft.</p>
+        </div>
+        <div className="pe-share">
+          <input
+            className="pe-input pe-input--code"
+            placeholder="CODE"
+            aria-label="Draft code"
+            value={clean}
+            onChange={(e) => setCode(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && clean.length === 6 && router.push(`/games/pack-empire/mega-draft/${clean}/`)}
+          />
+          <Link
+            href={clean.length === 6 ? `/games/pack-empire/mega-draft/${clean}/` : '#'}
+            className="pe-btn pe-btn--ghost"
+            aria-disabled={clean.length !== 6}
+            style={clean.length === 6 ? undefined : { opacity: 0.5, pointerEvents: 'none' }}
+          >
+            Sit down
+          </Link>
+        </div>
+      </div>
+
       {error && (
         <div className="pe-error" style={{ marginTop: '1rem' }}>
           {error}

@@ -155,7 +155,7 @@ export function VersusRoom({
   const rematch = async () => {
     setBusy(true)
     try {
-      const out = await call({ action: 'create' })
+      const out = await call({ action: 'create', ...(view.bot ? { cpu: true } : {}) })
       router.push(`/games/pack-empire/versus/${out.id}/`)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not start a rematch.')
@@ -221,7 +221,7 @@ export function VersusRoom({
           <div className="pe-recap-actions">
             {signedIn ? (
               <button type="button" className="pe-btn" onClick={rematch} disabled={busy}>
-                New challenge
+                {view.bot ? 'Play the CPU again' : 'New challenge'}
               </button>
             ) : (
               <Link href="/games/pack-empire/play/" className="pe-btn">
@@ -359,7 +359,9 @@ export function VersusRoom({
   }
 
   // ── Your seat ─────────────────────────────────────────────────
-  const opponentLine = !theirs?.name
+  const opponentLine = view.bot
+    ? 'The CPU has its own eleven packs, dealt when this opened. It drafts the moment you lock yours in.'
+    : !theirs?.name
     ? 'Nobody has taken the other seat yet. Send the link.'
     : view.reserved
       ? `Held for ${theirs.name}. It's waiting in their challenges, or send them the link.`

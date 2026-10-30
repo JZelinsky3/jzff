@@ -39,6 +39,7 @@ export default async function LeagueDraftPage({ params }: { params: Promise<{ id
   return (
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.boardRoot : ''}`.trim()}>
       <PeChrome
+        active="league"
         mobile={mobile}
         signedIn
         back={`/games/pack-empire/league/${id}/`}

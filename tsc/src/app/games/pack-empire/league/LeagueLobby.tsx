@@ -147,27 +147,23 @@ export function JoinByCode() {
     <div className="pe-panel">
       <div className="pe-kicker">Join</div>
       <div className="pe-panel-title">Have a code?</div>
-      <p className="pe-panel-text" style={{ marginBottom: '0.9rem' }}>
+      <p className="pe-panel-text">
         Six characters from your commissioner. Leagues take new teams until the season starts.
       </p>
-      <div className="pe-share">
+      <div className="pe-panel-foot">
         <input
-          className="pe-input"
+          className="pe-input pe-input--code"
           placeholder="CODE"
+          aria-label="League code"
           value={clean}
           onChange={(e) => setCode(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && clean.length === 6 && join()}
-          style={{ fontFamily: 'var(--mono)', letterSpacing: '0.3em' }}
         />
         <button type="button" className="pe-btn pe-btn--ghost" disabled={busy || clean.length !== 6} onClick={join}>
           Join
         </button>
+        {error && <div className="pe-error">{error}</div>}
       </div>
-      {error && (
-        <div className="pe-error" style={{ marginTop: '0.8rem' }}>
-          {error}
-        </div>
-      )}
     </div>
   )
 }

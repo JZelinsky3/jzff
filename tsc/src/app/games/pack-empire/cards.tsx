@@ -448,6 +448,62 @@ function YearMark({ player, className, short = false }: { player: Player; classN
   )
 }
 
+// ── The stat box ───────────────────────────────────────────────
+// Accolades are stored as sentences ("4,643 yds · 45 TD · 6 INT"), the shape
+// every lineup banked before now carries too, so the card splits them here
+// rather than the pool growing a second copy: a number and its label is a
+// cell, and a line with no numbers in it (a lineman's honors) is a row of
+// chips. Cells share the row, so a long line wraps into its cells instead of
+// running off the edge of the card.
+
+type StatCell = { v: string; l: string } | { t: string }
+
+const STAT_LABEL: Record<string, string> = { 'a game': 'PPG', 'in scoring': 'Scoring', 'rush yds': 'Rush yds' }
+
+function statCells(line: string): StatCell[] {
+  return line.split(' · ').map((part) => {
+    const m = /^([\d,.]+(?:st|nd|rd|th)?)\s+(.+)$/.exec(part.trim())
+    return m ? { v: m[1], l: STAT_LABEL[m[2]] ?? m[2] } : { t: part.trim() }
+  })
+}
+
+function StatBox({ accolades }: { accolades: string[] }) {
+  const lines = accolades.slice(0, 2)
+  if (lines.length === 0) return null
+  return (
+    <div className="pe-cf-stats">
+      {lines.map((line, j) => {
+        const cells = statCells(line)
+        if (cells.every((c) => 't' in c)) {
+          return (
+            <div key={j} className="pe-cf-honors">
+              {cells.map((c, k) => (
+                <span key={k}>{'t' in c ? c.t : ''}</span>
+              ))}
+            </div>
+          )
+        }
+        return (
+          <div key={j} className="pe-cf-statrow">
+            {cells.map((c, k) =>
+              't' in c ? (
+                <span key={k} className="pe-cf-cell txt">
+                  {c.t}
+                </span>
+              ) : (
+                <span key={k} className="pe-cf-cell">
+                  <b>{c.v}</b>
+                  <i>{c.l}</i>
+                </span>
+              )
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 /** Mouse only: the card leans toward the pointer and the shine follows it.
     Written straight to the element's style, so a pointermove never renders.
     The pending frame is kept per element, not per render, so a re-render
@@ -482,9 +538,11 @@ const TILT = {
 }
 
 /**
- * Face down until revealed, then flipped. The front is the original card:
- * position chip and rarity label, the cut-out standing in the art, name,
- * season and team, the accolades score and two lines: the stat line and the points.
+ * Face down until revealed, then flipped. The front is the original card's
+ * stock (11px corners, Orbitron numbers, Barlow names, every rarity effect),
+ * laid out so the three things you choose on read at a glance: the position
+ * tab and rarity across the top, the SEASON on a ribbon under the man, then
+ * his name, his value and the stat box that earned it.
  *
  * Face down, the back gives a little away: a rare's edge catches the light,
  * a dynasty breathes gold, and the two at the top shake and leak colour.
@@ -570,9 +628,7 @@ export function PackCard({
           </div>
           <div className="pe-card-front">
             <div className="pe-cf-topbar">
-              <div className="pe-cf-pos" style={{ background: rc.color }}>
-                {player.pos}
-              </div>
+              <div className="pe-cf-pos">{player.pos}</div>
               <div className={`pe-cf-rlab ${player.rarity}`}>{rc.label}</div>
             </div>
             <div className="pe-cf-art" style={{ background: rc.art }}>
@@ -590,21 +646,19 @@ export function PackCard({
                 </span>
               )}
             </div>
+            <div className="pe-cf-season">
+              {player.year ? <b>{player.year}</b> : null}
+              <span className={(player.club ?? player.team).length > 16 ? 'long' : undefined}>
+                {player.club ?? player.team}
+              </span>
+            </div>
             <div className="pe-cf-body">
-              <div className="pe-cf-name">{player.name}</div>
-              <div className="pe-cf-team">{seasonLabel(player)}</div>
-              <div className="pe-cf-line" style={{ background: rc.color }} />
+              <div className={`pe-cf-name${player.name.length > 16 ? ' long' : ''}`}>{player.name}</div>
               <div className="pe-cf-score-row">
-                <div className="pe-cf-score" style={{ color: rc.color }}>
-                  {player.score.toLocaleString()}
-                </div>
+                <div className="pe-cf-score">{player.score.toLocaleString()}</div>
                 <div className="pe-cf-ovr">OVR</div>
               </div>
-              {player.accolades.slice(0, 2).map((a, j) => (
-                <div key={j} className="pe-cf-acc">
-                  · {a}
-                </div>
-              ))}
+              <StatBox accolades={player.accolades} />
             </div>
             <div className="pe-glare" aria-hidden />
           </div>

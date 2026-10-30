@@ -256,9 +256,13 @@ export type Weights = Record<Rarity, number>
  * immortal depends on how many immortals the pool holds as well as on the 1.
  * That is how the original dealt, and the rebuilt pool should be sized with
  * it in mind (see `packOdds` for the real figure off any pool).
+ *
+ * The 2026-10-30 pool doubled the transcendents and halved the immortals, so
+ * transcendent dropped from 10 to 8 to keep greedy play where it was (median
+ * about 18.8k, about 35% GOAT, sim/fastsim.py).
  */
 export const SOLO_WEIGHTS: { normal: Weights; captain: Weights } = {
-  normal: { common: 45, rare: 27, dynasty: 17, transcendent: 10, immortal: 1 },
+  normal: { common: 45, rare: 27, dynasty: 17, transcendent: 8, immortal: 1 },
   captain: { common: 5, rare: 22, dynasty: 41, transcendent: 27, immortal: 5 },
 }
 
@@ -309,11 +313,13 @@ export const PACK_TIER_COLOR: Record<PackTier, string> = {
   elite_drop: '#28dc78',
 }
 
+/** Transcendent weights cut by a fifth with the 2026-10-30 pool, which holds
+    nearly twice as many of them, so a pack is as likely to hold one as before. */
 export const LEAGUE_WEIGHTS: Record<PackTier, Weights> = {
-  standard_pack: { common: 51, rare: 23, dynasty: 15, transcendent: 10, immortal: 1 },
-  rising_pack: { common: 33, rare: 30, dynasty: 20, transcendent: 15, immortal: 2 },
-  prime_pack: { common: 18, rare: 35, dynasty: 23, transcendent: 20, immortal: 4 },
-  elite_drop: { common: 13, rare: 25, dynasty: 27, transcendent: 27, immortal: 8 },
+  standard_pack: { common: 51, rare: 23, dynasty: 15, transcendent: 8, immortal: 1 },
+  rising_pack: { common: 33, rare: 30, dynasty: 20, transcendent: 12, immortal: 2 },
+  prime_pack: { common: 18, rare: 35, dynasty: 23, transcendent: 16, immortal: 4 },
+  elite_drop: { common: 13, rare: 25, dynasty: 27, transcendent: 22, immortal: 8 },
 }
 
 /** League packs have a second table too; in the original it only differs
@@ -389,7 +395,7 @@ export const MEGA_POOL_COUNTS: Record<PoolKey, number> = {
   C: 4,
 }
 
-export const MEGA_WEIGHTS: Weights = { common: 30, rare: 35, dynasty: 22, transcendent: 10, immortal: 3 }
+export const MEGA_WEIGHTS: Weights = { common: 30, rare: 35, dynasty: 22, transcendent: 8, immortal: 3 }
 
 export const MEGA_TOTAL_PICKS = SLOT_COUNT * 2
 

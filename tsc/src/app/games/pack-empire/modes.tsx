@@ -63,7 +63,16 @@ export const MODES: ModeDef[] = [
 /** The desktop card's art plate: the moment each mode puts you in. */
 export function ModeMark({ id }: { id: ModeDef['id'] }) {
   if (id === 'solo') {
-    return <span className="pe-mk pe-mk-pack" style={{ backgroundImage: `url(${PACK_ART.QB})` }} />
+    // A hand of packs, the middle one lifted and lit: the run you're about to
+    // open, big enough to fill its plate.
+    return (
+      <span className="pe-mk pe-mk-fan">
+        <span className="pe-mk-fan-glow" />
+        <span className="pe-mk-pack l" style={{ backgroundImage: `url(${PACK_ART.RB})` }} />
+        <span className="pe-mk-pack r" style={{ backgroundImage: `url(${PACK_ART.WR})` }} />
+        <span className="pe-mk-pack c" style={{ backgroundImage: `url(${PACK_ART.QB})` }} />
+      </span>
+    )
   }
   if (id === 'versus') {
     return (

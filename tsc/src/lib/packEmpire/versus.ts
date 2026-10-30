@@ -9,13 +9,21 @@
 //   · the other side's SCORE once they have finished, so a challenger knows
 //     the number to beat, which is the fun of being second;
 //   · both lineups only once both are in.
+//
+// Against the CPU, the other seat is the server. Its seed is dealt the moment
+// the challenge opens, before you open a pack, and it keeps the best card in
+// each of its own eleven, which is what a person playing for the high score
+// does. So it can't see your draft and can't react to it: its lineup is
+// settled before yours starts. It drafts when you lock yours in, and the two
+// go up together.
 
+import { randomInt } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { newCaptainSeed } from './deal'
+import { newCaptainSeed, readCaptainSeed } from './deal'
 import { friendOf } from '@/lib/friends'
 import { hashKey, nameForUser, cleanGuestName, newId, isId } from './people'
 import { recordSoloRun } from './binder'
-import { replaySolo, type SoloPick } from './solo'
+import { replaySolo, soloPack, type SoloPick } from './solo'
 import { SLOT_COUNT, tierFor, type Player } from './rules'
 
 export type Seat = 'host' | 'guest'
@@ -45,6 +53,8 @@ type Row = {
   completed_at: string | null
   /** A challenge sent to one friend: only that account can take the seat. */
   invited_id: string | null
+  /** The other seat is the CPU. */
+  guest_bot: boolean
 }
 
 export type SideView = {
@@ -73,6 +83,8 @@ export type VersusView = {
   /** Sent to one friend, who hasn't taken the seat yet. The guest's name is
       already theirs, so the seat reads as held rather than open. */
   reserved: boolean
+  /** The other seat is the CPU. */
+  bot: boolean
 }
 
 function side(row: Row, seat: Seat, reveal: boolean): SideView {
@@ -98,7 +110,7 @@ export function seatFor(row: Row, userId: string | null, key: unknown): Seat | n
 
 function view(row: Row, you: Seat | null, viewerId: string | null): VersusView {
   const both = !!row.host_result && !!row.guest_result
-  const empty = !row.guest_id && !row.guest_key
+  const empty = !row.guest_id && !row.guest_key && !row.guest_bot
   return {
     id: row.id,
     status: row.status,
@@ -109,6 +121,39 @@ function view(row: Row, you: Seat | null, viewerId: string | null): VersusView {
     yourSeed: you === 'host' ? row.host_seed : you === 'guest' ? row.guest_seed : null,
     canJoin: you == null && empty && (!row.invited_id || row.invited_id === viewerId),
     reserved: empty && !!row.invited_id,
+    bot: !!row.guest_bot,
+  }
+}
+
+/** The CPU's name on the scoreboard. */
+export const CPU_NAME = 'CPU'
+
+/**
+ * The CPU's draft: open its eleven packs in order and keep the best card in
+ * each. Deterministic off its seed, so the lineup is fixed the moment the
+ * seed is dealt, whatever the other seat does.
+ */
+function cpuDraft(seed: string): VersusResult | null {
+  const parsed = readCaptainSeed(seed)
+  if (!parsed) return null
+  const taken: string[] = []
+  const picks: SoloPick[] = []
+  for (let slot = 0; slot < SLOT_COUNT; slot++) {
+    const pack = soloPack(seed, parsed.captain, slot, taken)
+    if (pack.length === 0) return null
+    const best = pack.reduce((a, b) => (b.score > a.score ? b : a))
+    taken.push(best.id)
+    picks.push({ slot, id: best.id })
+  }
+  const run = replaySolo(seed, picks)
+  if (!run.ok) return null
+  return {
+    lineup: run.lineup,
+    score: run.score,
+    tier: tierFor(run.score).label,
+    captain: run.captain,
+    picks,
+    at: new Date().toISOString(),
   }
 }
 
@@ -134,11 +179,20 @@ export type Fail = { ok: false; error: string; status?: number }
  */
 export async function createVersus(
   userId: string,
-  friendship?: unknown
+  friendship?: unknown,
+  cpu = false
 ): Promise<{ ok: true; id: string } | Fail> {
   const db = createAdminClient()
-  let invite: { invited_id: string; guest_name: string } | null = null
-  if (friendship != null) {
+  let invite: Record<string, unknown> | null = null
+  if (cpu) {
+    // A skill position for its captain, the way most people pick one.
+    invite = {
+      guest_bot: true,
+      guest_name: CPU_NAME,
+      guest_seed: newCaptainSeed(randomInt(6)),
+      status: 'playing',
+    }
+  } else if (friendship != null) {
     const friend = await friendOf(userId, friendship)
     if (!friend) return { ok: false, error: 'You can only send a challenge to a friend.', status: 403 }
     invite = { invited_id: friend, guest_name: await nameForUser(db, friend) }
@@ -163,7 +217,7 @@ export async function joinVersus(
   if (!row) return { ok: false, error: 'No such challenge.', status: 404 }
   const already = seatFor(row, userId, key)
   if (already) return { ok: true, view: view(row, already, userId) }
-  if (row.guest_id || row.guest_key) return { ok: false, error: 'Somebody already took this challenge.' }
+  if (row.guest_id || row.guest_key || row.guest_bot) return { ok: false, error: 'Somebody already took this challenge.' }
   if (row.invited_id && row.invited_id !== userId) {
     return { ok: false, error: `This challenge was sent to ${row.guest_name ?? 'someone else'}.`, status: 403 }
   }
@@ -188,6 +242,7 @@ export async function joinVersus(
     .eq('id', id)
     .is('guest_id', null)
     .is('guest_key', null)
+    .eq('guest_bot', false)
     .select('*')
     .maybeSingle()
   if (error || !data) return { ok: false, error: 'Somebody already took this challenge.' }
@@ -261,8 +316,16 @@ export async function submitVersusSeat(
     at: new Date().toISOString(),
   }
 
-  const other = seat === 'host' ? row.guest_result : row.host_result
+  let other = seat === 'host' ? row.guest_result : row.host_result
   const patch: Record<string, unknown> = { [seat === 'host' ? 'host_result' : 'guest_result']: result }
+  // The CPU drafts now, off the seed it was dealt when the challenge opened.
+  if (row.guest_bot && seat === 'host' && !row.guest_result && row.guest_seed) {
+    const cpu = cpuDraft(row.guest_seed)
+    if (cpu) {
+      patch.guest_result = cpu
+      other = cpu
+    }
+  }
   if (other) {
     patch.status = 'done'
     patch.completed_at = new Date().toISOString()
@@ -346,6 +409,8 @@ export async function versusResults(userId: string): Promise<VersusResultRow[]> 
     .from('pe_versus')
     .select('id, completed_at, created_at, host_id, host_name, guest_id, guest_name, host_score:host_result->score, guest_score:guest_result->score')
     .eq('status', 'done')
+    // A record is against people; games with the CPU stay in the lobby list.
+    .eq('guest_bot', false)
     .or(`host_id.eq.${userId},guest_id.eq.${userId}`)
     .order('completed_at', { ascending: false })
     .limit(500)

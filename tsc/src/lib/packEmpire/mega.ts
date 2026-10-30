@@ -9,9 +9,18 @@
 // Here a pick is a request: the server checks whose turn it is, that the
 // player is still on the board and that the picker has a slot left for him,
 // and writes it only if nobody else wrote first (updated_at is the version).
+//
+// The second seat can be the CPU. It sees what you see (the board is public)
+// and nothing more, and drafts like a person would: the best man at a
+// position it still needs, weighed by how much worse the position gets once
+// you've had your share of it, with a little variance so it isn't a machine.
+// The room asks it to pick, one pick at a time, after a beat, so it plays at
+// a person's pace. A draft can also be sent to one friend: the seat is held
+// for them and the draft shows in their list.
 
 import { randomInt } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { friendOf } from '@/lib/friends'
 import { dealMegaBoard, newServerSeed } from './deal'
 import { cleanGuestName, hashKey, isId, nameForUser, newId } from './people'
 import {
@@ -41,6 +50,10 @@ type Row = {
   host_first: boolean | null
   status: 'waiting' | 'live' | 'done'
   completed_at: string | null
+  /** The second seat is the CPU. */
+  guest_bot: boolean
+  /** Sent to one friend: only that account can take the second seat. */
+  invited_id: string | null
 }
 
 export type MegaSeatView = {
@@ -66,7 +79,14 @@ export type MegaView = {
   canJoin: boolean
   /** Before the coin: the host's name, for the waiting room. */
   hostName: string
+  /** The CPU's seat, when it has one. */
+  botSeat: 0 | 1 | null
+  /** Sent to a friend who hasn't sat down: their name, for the waiting room. */
+  reservedFor: string | null
 }
+
+/** The CPU's name on the board. */
+export const CPU_NAME = 'CPU'
 
 type Role = 'host' | 'guest'
 
@@ -99,7 +119,7 @@ function lineupsFrom(row: Row): [(Player | null)[], (Player | null)[]] {
   return out
 }
 
-function view(row: Row, role: Role | null): MegaView {
+function view(row: Row, role: Role | null, viewerId: string | null = null): MegaView {
   const [a, b] = lineupsFrom(row)
   const names: [string | null, string | null] =
     row.host_first == null
@@ -123,9 +143,53 @@ function view(row: Row, role: Role | null): MegaView {
     you: role ? seatOf(row, role) : null,
     onClock: row.status === 'live' ? megaPickOwner(pickNo) : null,
     pickNo,
-    canJoin: !role && row.status === 'waiting' && !row.guest_id && !row.guest_key,
+    canJoin:
+      !role &&
+      row.status === 'waiting' &&
+      !row.guest_id &&
+      !row.guest_key &&
+      !row.guest_bot &&
+      (!row.invited_id || row.invited_id === viewerId),
     hostName: row.host_name,
+    botSeat: row.guest_bot ? seatOf(row, 'guest') : null,
+    reservedFor: row.status === 'waiting' && row.invited_id ? row.guest_name : null,
   }
+}
+
+/**
+ * The CPU's pick. Every man on the board it has a slot for is worth his score,
+ * plus how far the position falls off if it passes on him: the best one left
+ * there once the other seat has filled its own slots at the position. A deep
+ * position can wait; the last good center can't. A few percent of noise, so
+ * two drafts off the same board don't go the same way.
+ */
+function cpuChoice(row: Row, seat: 0 | 1): Player | null {
+  const lineups = lineupsFrom(row)
+  const mine = lineups[seat]
+  const theirs = lineups[seat === 0 ? 1 : 0]
+  const gone = new Set(row.picks.map((p) => p.id))
+  const left = row.board.filter((p) => !gone.has(p.id))
+  const open = (lineup: (Player | null)[], pos: Player['pos']) =>
+    SLOTS.filter((s, i) => s.pool === pos && !lineup[i]).length
+
+  let best: Player | null = null
+  let bestValue = -Infinity
+  for (const p of left) {
+    if (open(mine, p.pos) === 0) continue
+    const rivals = open(theirs, p.pos)
+    const rest = left
+      .filter((q) => q.pos === p.pos && q.id !== p.id)
+      .map((q) => q.score)
+      .sort((a, b) => b - a)
+    const fallback = rest.length ? rest[Math.min(rivals, rest.length - 1)] : 0
+    const noise = (randomInt(1001) / 1000 - 0.5) * 0.1 * p.score
+    const value = p.score - fallback + 0.4 * p.score + noise
+    if (value > bestValue) {
+      bestValue = value
+      best = p
+    }
+  }
+  return best
 }
 
 /** Six characters: a code someone reads out across a room. */
@@ -153,11 +217,27 @@ async function identity(userId: string | null, rawName: unknown, key: unknown) {
 export async function createMega(
   userId: string | null,
   rawName: unknown,
-  key: unknown
+  key: unknown,
+  opts: { cpu?: boolean; friend?: unknown } = {}
 ): Promise<{ ok: true; id: string } | Fail> {
   const who = await identity(userId, rawName, key)
   if (!who.ok) return { ok: false, error: who.error }
   const db = createAdminClient()
+  let second: Record<string, unknown> = {}
+  if (opts.cpu) {
+    // The coin is flipped now: there is nobody else to wait for.
+    second = {
+      guest_bot: true,
+      guest_name: CPU_NAME,
+      host_first: randomInt(2) === 0,
+      status: 'live',
+    }
+  } else if (opts.friend != null) {
+    if (!userId) return { ok: false, error: 'Sign in to send a draft to a friend.', status: 401 }
+    const friend = await friendOf(userId, opts.friend)
+    if (!friend) return { ok: false, error: 'You can only send a draft to a friend.', status: 403 }
+    second = { invited_id: friend, guest_name: await nameForUser(db, friend) }
+  }
   const seed = newServerSeed()
   const board = dealMegaBoard(seed)
   for (let attempt = 0; attempt < 4; attempt++) {
@@ -169,6 +249,7 @@ export async function createMega(
       host_id: who.id,
       host_key: who.key,
       host_name: who.name,
+      ...second,
     })
     if (!error) return { ok: true, id }
     if (error.code !== '23505') return { ok: false, error: 'Could not open a draft.' }
@@ -178,7 +259,7 @@ export async function createMega(
 
 export async function getMega(id: string, userId: string | null, key: unknown): Promise<MegaView | null> {
   const row = await load(id)
-  return row ? view(row, roleFor(row, userId, key)) : null
+  return row ? view(row, roleFor(row, userId, key), userId) : null
 }
 
 export async function joinMega(
@@ -190,9 +271,12 @@ export async function joinMega(
   const row = await load(id)
   if (!row) return { ok: false, error: 'No draft with that code.', status: 404 }
   const already = roleFor(row, userId, key)
-  if (already) return { ok: true, view: view(row, already) }
-  if (row.status !== 'waiting' || row.guest_id || row.guest_key) {
+  if (already) return { ok: true, view: view(row, already, userId) }
+  if (row.status !== 'waiting' || row.guest_id || row.guest_key || row.guest_bot) {
     return { ok: false, error: 'This draft already has two players.' }
+  }
+  if (row.invited_id && row.invited_id !== userId) {
+    return { ok: false, error: `This draft was sent to ${row.guest_name ?? 'someone else'}.`, status: 403 }
   }
   const who = await identity(userId, rawName, key)
   if (!who.ok) return { ok: false, error: who.error }
@@ -211,10 +295,47 @@ export async function joinMega(
     .eq('status', 'waiting')
     .is('guest_id', null)
     .is('guest_key', null)
+    .eq('guest_bot', false)
     .select('*')
     .maybeSingle()
   if (!data) return { ok: false, error: 'This draft already has two players.' }
-  return { ok: true, view: view(data as Row, 'guest') }
+  return { ok: true, view: view(data as Row, 'guest', userId) }
+}
+
+/**
+ * The CPU makes its pick, if it is on the clock. Anyone at the table can ask
+ * (the room asks after a beat); asking when it isn't the CPU's turn, or twice
+ * for the same pick, changes nothing.
+ */
+export async function cpuPickMega(
+  id: string,
+  userId: string | null,
+  key: unknown
+): Promise<{ ok: true; view: MegaView } | Fail> {
+  const row = await load(id)
+  if (!row) return { ok: false, error: 'No such draft.', status: 404 }
+  const role = roleFor(row, userId, key)
+  const seat = seatOf(row, 'guest')
+  const n = row.picks.length
+  if (!row.guest_bot || row.status !== 'live' || seat == null || megaPickOwner(n) !== seat) {
+    return { ok: true, view: view(row, role, userId) }
+  }
+  const player = cpuChoice(row, seat)
+  if (!player) return { ok: true, view: view(row, role, userId) }
+  const slot = openSlotFor(lineupsFrom(row)[seat], player)
+  const picks: MegaPick[] = [...row.picks, { n, seat, id: player.id, slot }]
+  const done = picks.length >= MEGA_TOTAL_PICKS
+  const now = new Date().toISOString()
+  const { data } = await createAdminClient()
+    .from('pe_mega_drafts')
+    .update({ picks, updated_at: now, ...(done ? { status: 'done', completed_at: now } : {}) })
+    .eq('id', id)
+    .eq('updated_at', row.updated_at)
+    .select('*')
+    .maybeSingle()
+  // Somebody else's request got there first; theirs is the pick.
+  const fresh = (data as Row | null) ?? (await load(id)) ?? row
+  return { ok: true, view: view(fresh, role, userId) }
 }
 
 export async function pickMega(
@@ -256,7 +377,7 @@ export async function pickMega(
     .select('*')
     .maybeSingle()
   if (!data) return { ok: false, error: 'The board moved under you. Try that pick again.' }
-  return { ok: true, view: view(data as Row, role) }
+  return { ok: true, view: view(data as Row, role, userId) }
 }
 
 export type MegaListItem = {
@@ -265,6 +386,8 @@ export type MegaListItem = {
   opponent: string | null
   yourScore: number | null
   theirScore: number | null
+  /** A friend sent it to you and you haven't sat down yet. */
+  waitingOnYou: boolean
 }
 
 export type MegaResultRow = { opponentId: string | null; yours: number; theirs: number }
@@ -276,6 +399,8 @@ export async function megaResults(userId: string): Promise<MegaResultRow[]> {
     .from('pe_mega_drafts')
     .select('*')
     .eq('status', 'done')
+    // A record is against people; drafts with the CPU stay in the lobby list.
+    .eq('guest_bot', false)
     .or(`host_id.eq.${userId},guest_id.eq.${userId}`)
     .order('completed_at', { ascending: false })
     .limit(300)
@@ -297,12 +422,12 @@ export async function listMega(userId: string): Promise<MegaListItem[]> {
   const { data } = await createAdminClient()
     .from('pe_mega_drafts')
     .select('*')
-    .or(`host_id.eq.${userId},guest_id.eq.${userId}`)
+    .or(`host_id.eq.${userId},guest_id.eq.${userId},invited_id.eq.${userId}`)
     .order('created_at', { ascending: false })
     .limit(15)
   return ((data ?? []) as Row[]).map((r) => {
     const role: Role = r.host_id === userId ? 'host' : 'guest'
-    const v = view(r, role)
+    const v = view(r, role, userId)
     const mine = v.you != null ? v.seats[v.you] : null
     const theirs = v.you != null ? v.seats[v.you === 0 ? 1 : 0] : null
     return {
@@ -311,6 +436,7 @@ export async function listMega(userId: string): Promise<MegaListItem[]> {
       opponent: role === 'host' ? r.guest_name : r.host_name,
       yourScore: mine && r.status !== 'waiting' ? mine.score : null,
       theirScore: theirs && r.status !== 'waiting' ? theirs.score : null,
+      waitingOnYou: r.invited_id === userId && !r.guest_id && r.status === 'waiting',
     }
   })
 }

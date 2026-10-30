@@ -8,7 +8,7 @@ import { friendPicker } from '@/lib/friends'
 import mobileStyles from '../../mobile.module.css'
 import { PeChrome } from '../chrome'
 import { peFonts } from '../fonts'
-import { NewChallenge } from './NewChallenge'
+import { ChallengePanels } from './NewChallenge'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,6 +36,7 @@ export default async function VersusLobby() {
   return (
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.boardRoot : ''}`.trim()}>
       <PeChrome
+        active="versus"
         mobile={mobile}
         signedIn={!!user}
         back="/games/pack-empire/"
@@ -52,42 +53,24 @@ export default async function VersusLobby() {
             Draft against <span className="pe-em">a friend.</span>
           </h1>
           <p className="pe-table-sub">
-            Open a challenge and send the link. You each open your own eleven packs, and whoever builds
-            the bigger offense wins.
+            You each open your own eleven packs, and whoever builds the bigger offense wins. Send it to a
+            friend, or play the CPU.
           </p>
         </div>
 
-        <div className="pe-panel" style={{ textAlign: 'center' }}>
-          {user ? (
-            <>
-              <NewChallenge friends={friends} />
-              <p className="pe-note" style={{ marginTop: '0.9rem' }}>
-                {friends.length
-                  ? 'An open challenge goes to whoever opens the link first. One sent to a friend waits for them.'
-                  : 'Whoever opens your link first takes the other seat'}
-              </p>
-              {friends.length === 0 && (
-                <p className="pe-note" style={{ marginTop: '0.4rem' }}>
-                  Add friends on{' '}
-                  <Link href="/account/#friends" className="pe-link">
-                    your profile
-                  </Link>{' '}
-                  to send one straight to them.
-                </p>
-              )}
-            </>
-          ) : (
-            <>
-              <p className="pe-panel-text" style={{ marginBottom: '1rem' }}>
-                Starting a challenge needs an account, so it has somewhere to come back to. Answering one
-                doesn&apos;t: if a friend sent you a link, just open it.
-              </p>
-              <Link href="/login?next=%2Fgames%2Fpack-empire%2Fversus%2F" className="pe-btn">
-                Sign in to start one
-              </Link>
-            </>
-          )}
-        </div>
+        {user ? (
+          <ChallengePanels friends={friends} />
+        ) : (
+          <div className="pe-panel" style={{ textAlign: 'center' }}>
+            <p className="pe-panel-text" style={{ marginBottom: '1rem' }}>
+              Starting a challenge needs an account, so it has somewhere to come back to. Answering one
+              doesn&apos;t: if a friend sent you a link, just open it.
+            </p>
+            <Link href="/login?next=%2Fgames%2Fpack-empire%2Fversus%2F" className="pe-btn">
+              Sign in to start one
+            </Link>
+          </div>
+        )}
 
         <section className="pe-sec">
           <div className="pe-sec-head">

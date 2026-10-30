@@ -46,6 +46,7 @@ export default async function VersusChallengePage({ params }: { params: Promise<
   return (
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.boardRoot : ''}`.trim()}>
       <PeChrome
+        active="versus"
         mobile={mobile}
         signedIn={!!user}
         back="/games/pack-empire/versus/"

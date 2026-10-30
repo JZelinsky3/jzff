@@ -8,14 +8,15 @@ from seasons import norm
 
 BANDS = ['immortal', 'transcendent', 'dynasty', 'rare', 'common']
 
-# How many of each, per position: the old pool's sizes (QB 71, RB 80, WR 87,
-# TE 70), with the mix tuned so greedy play lands where it did on the old pool
-# (median about 18.5k, about 30% GOAT). sim/fastsim.py checks it.
+# How many of each, per position. Joey (2026-10-30): immortal is the rarest,
+# so there should be fewer of them than of anything else, and more of
+# everything else. Each rarity is now about half the one under it. The weights
+# in rules.ts are tuned to this mix (sim/fastsim.py checks it).
 TARGETS = {
-    'QB': {'immortal': 5, 'transcendent': 5, 'dynasty': 9, 'rare': 15, 'common': 38},
-    'RB': {'immortal': 6, 'transcendent': 6, 'dynasty': 10, 'rare': 17, 'common': 42},
-    'WR': {'immortal': 7, 'transcendent': 7, 'dynasty': 11, 'rare': 19, 'common': 44},
-    'TE': {'immortal': 5, 'transcendent': 5, 'dynasty': 9, 'rare': 15, 'common': 38},
+    'QB': {'immortal': 4, 'transcendent': 7, 'dynasty': 13, 'rare': 24, 'common': 50},
+    'RB': {'immortal': 4, 'transcendent': 8, 'dynasty': 16, 'rare': 26, 'common': 56},
+    'WR': {'immortal': 4, 'transcendent': 9, 'dynasty': 18, 'rare': 30, 'common': 62},
+    'TE': {'immortal': 3, 'transcendent': 6, 'dynasty': 12, 'rare': 22, 'common': 48},
 }
 
 # Metric floors for the middle bands, off the median season at each finish,
@@ -36,44 +37,67 @@ T_DYN.update(_json.loads(os.environ.get('PE_T_DYN', '{}')))
 SAMPLE_FLOOR.update(_json.loads(os.environ.get('PE_SAMPLE_FLOOR', '{}')))
 
 MAX_PER_MAN = 4
+# Seasons per year per position, so one deep year can't crowd out the rest.
+PER_SEASON = 6
 
-# Where the sampled (non-headline) seasons come from, by band. Joey: the old
-# names are known for their great years, so pre-2000 seasons only go in at
-# dynasty and up; the bronze and rare cards are men people have watched.
+# Where the sampled (non-headline) seasons come from, by band. Joey: too many
+# old players, a third of a draft with no photo and a few nobody had heard of.
+# So every band samples from 2000 on, leaning recent, and a season from before
+# 2000 only gets in for a name on LEGENDS (or a MUST).
 DECADES = {
-    'dynasty': {1970: 0.08, 1980: 0.12, 1990: 0.18, 2000: 0.22, 2010: 0.22, 2020: 0.18},
-    'rare': {2000: 0.26, 2010: 0.38, 2020: 0.36},
-    'common': {2000: 0.22, 2010: 0.38, 2020: 0.40},
+    'dynasty': {2000: 0.24, 2010: 0.38, 2020: 0.38},
+    'rare': {2000: 0.18, 2010: 0.40, 2020: 0.42},
+    'common': {2000: 0.14, 2010: 0.40, 2020: 0.46},
 }
 LEGEND_BEFORE = 2000
 
-# Names people know from before 2000: each gets his best pre-2000 season at
-# whatever it's worth, as long as that's rare or better (never a bronze). Some
-# of them never had a fantasy year past rare (Montana, Elway, Kelly), and the
-# rest just miss the headline bands.
+# Names people know from before 2000, the only men whose old seasons are
+# dealt. Each gets his best pre-2000 season at whatever it's worth, as long as
+# that's rare or better (never a bronze), and the all-time walk for the top two
+# bands passes over any old season that isn't one of theirs.
 LEGENDS = {
-    'QB': ['Joe Montana', 'John Elway', 'Jim Kelly', 'Warren Moon', 'Dan Fouts', 'Kurt Warner', 'Randall Cunningham'],
-    'RB': ['Eric Dickerson', 'Marcus Allen', 'Roger Craig', 'Thurman Thomas', 'Earl Campbell', 'Jerome Bettis',
-           'Tony Dorsett', 'Franco Harris', 'Barry Sanders', 'Emmitt Smith', 'Walter Payton'],
-    'WR': ['Sterling Sharpe', 'Randy Moss', 'Steve Largent', 'Art Monk', 'Tim Brown', 'Andre Reed', 'Cris Carter',
-           'Michael Irvin', 'Jerry Rice', 'Isaac Bruce'],
-    'TE': ['Ben Coates', 'Mark Bavaro', 'Ozzie Newsome', 'Kellen Winslow', 'Shannon Sharpe', 'Dave Casper',
-           'Tony Gonzalez'],
+    'QB': ['Joe Montana', 'John Elway', 'Dan Marino', 'Steve Young', 'Brett Favre', 'Jim Kelly', 'Warren Moon',
+           'Troy Aikman', 'Kurt Warner', 'Peyton Manning', 'Randall Cunningham', 'Dan Fouts'],
+    'RB': ['Barry Sanders', 'Emmitt Smith', 'Walter Payton', 'Eric Dickerson', 'Marshall Faulk', 'Terrell Davis',
+           'Marcus Allen', 'Thurman Thomas', 'Earl Campbell', 'Jerome Bettis', 'Tony Dorsett', 'O.J. Simpson',
+           'Curtis Martin', 'Roger Craig', 'Franco Harris'],
+    'WR': ['Jerry Rice', 'Randy Moss', 'Cris Carter', 'Michael Irvin', 'Tim Brown', 'Andre Reed', 'Sterling Sharpe',
+           'Isaac Bruce', 'Marvin Harrison', 'Steve Largent', 'Art Monk'],
+    'TE': ['Shannon Sharpe', 'Tony Gonzalez', 'Kellen Winslow', 'Ozzie Newsome', 'Ben Coates', 'Dave Casper'],
 }
+
+# Men with no photo anywhere (NFL.com and ESPN both come back empty) who are
+# famous enough to deal anyway, on the drawn portrait. Everyone else needs a
+# real face to be picked.
+NO_PHOTO_OK = {'Priest Holmes', 'Edgerrin James', 'Shaun Alexander', 'Eddie George', 'Isaac Bruce', 'Roger Craig',
+               'Randall Cunningham', 'Sterling Sharpe', 'Ben Coates', 'Mike Alstott'}
 
 # Players people have on their fantasy teams now: each gets at least one card,
 # his best season (dynasty at most, since the top bands were already walked).
 CURRENT = {
     'QB': ['Kyler Murray', 'Jordan Love', 'Tua Tagovailoa', 'Trevor Lawrence', 'Caleb Williams', 'Jared Goff',
-           'Justin Herbert'],
+           'Justin Herbert', 'Jalen Hurts', 'C.J. Stroud', 'Bo Nix', 'Drake Maye', 'Baker Mayfield',
+           'Matthew Stafford', 'Brock Purdy', 'Dak Prescott', 'Kirk Cousins', 'Geno Smith'],
     'RB': ['Jahmyr Gibbs', 'Bijan Robinson', "De'Von Achane", 'Josh Jacobs', 'Kyren Williams', 'Breece Hall',
-           'James Cook', 'Jonathan Taylor', 'Alvin Kamara', 'Ashton Jeanty'],
+           'James Cook', 'Jonathan Taylor', 'Alvin Kamara', 'Ashton Jeanty', 'Derrick Henry', 'Saquon Barkley',
+           'Christian McCaffrey', 'Chase Brown', 'Bucky Irving', 'Kenneth Walker', 'Joe Mixon', 'Aaron Jones',
+           'Austin Ekeler', 'Nick Chubb', 'Tony Pollard', 'Rhamondre Stevenson', 'Najee Harris', 'David Montgomery'],
     'WR': ['Deebo Samuel', 'Garrett Wilson', 'Drake London', 'Mike Evans', 'DK Metcalf', 'Terry McLaurin',
            'Chris Olave', 'DJ Moore', 'Tee Higgins', 'George Pickens', 'Jaylen Waddle', 'Marvin Harrison Jr.',
-           'Justin Jefferson', 'Amon-Ra St. Brown', 'Malik Nabers', 'Jaxon Smith-Njigba', 'Brian Thomas'],
+           'Justin Jefferson', 'Amon-Ra St. Brown', 'Malik Nabers', 'Jaxon Smith-Njigba', 'Brian Thomas',
+           'Puka Nacua', 'Nico Collins', 'Ladd McConkey', 'Zay Flowers', 'DeVonta Smith', 'Rashee Rice',
+           'Davante Adams', 'Tyreek Hill', 'Stefon Diggs', 'Cooper Kupp', 'Chris Godwin', 'Calvin Ridley',
+           'Jordan Addison', 'Jameson Williams', 'Courtland Sutton', 'Xavier Worthy'],
     'TE': ['Dalton Kincaid', 'T.J. Hockenson', 'Kyle Pitts', 'Evan Engram', 'David Njoku', 'Jake Ferguson',
-           'Tucker Kraft', 'Dallas Goedert', 'Tyler Warren', 'George Kittle', 'Sam LaPorta'],
+           'Tucker Kraft', 'Dallas Goedert', 'Tyler Warren', 'George Kittle', 'Sam LaPorta', 'Brock Bowers',
+           'Trey McBride', 'Mark Andrews', 'Travis Kelce', 'Hunter Henry', 'Cole Kmet', 'Pat Freiermuth'],
 }
+
+try:
+    from headshots import has_photo
+    PHOTO = has_photo()
+except Exception:
+    PHOTO = {}
 
 # Seasons people remember, pulled in wherever they land.
 MUST = {
@@ -141,6 +165,14 @@ def choose(pos, t):
     target = TARGETS[pos]
     held = {}                      # pid -> set of bands
     picked = {}                    # row index -> band
+    legends = {norm(n) for n in LEGENDS.get(pos, [])}
+    faceless = {norm(n) for n in NO_PHOTO_OK}
+
+    def era_ok(key, season):
+        return season >= LEGEND_BEFORE or key in legends
+
+    def face_ok(pid, key):
+        return PHOTO.get(pid, False) or key in faceless
 
     def can_take(pid, band):
         have = held.get(pid, set())
@@ -149,7 +181,8 @@ def choose(pos, t):
     def take(i, band):
         held.setdefault(p.at[i, 'pid'], set()).add(band); picked[i] = band
 
-    # 1. The top two bands walk the all-time list. Each floor sits halfway
+    # 1. The top two bands walk the all-time list, passing over old seasons
+    #    that aren't a legend's and men with no photo. Each floor sits halfway
     #    between the last season in and the next one that could have been.
     floors = {}
     ceiling = 1e9
@@ -157,6 +190,7 @@ def choose(pos, t):
         n, last = 0, None
         for r in p.itertuples():
             if r.metric >= ceiling or r.Index in picked: continue
+            if not era_ok(r.key, r.season) or not face_ok(r.pid, r.key): continue
             if not can_take(r.pid, band): continue
             if n == target[band]:
                 floors[band] = (last + r.metric) / 2; break
@@ -181,6 +215,8 @@ def choose(pos, t):
             print('  MUST left out (top band full / repeat):', name, year, r.band); continue
         if r.season < LEGEND_BEFORE and r.band == 'common':
             print('  MUST left out (old season, bronze):', name, year); continue
+        if not face_ok(r.pid, r.key):
+            print('  MUST left out (no photo):', name, year); continue
         if can_take(r.pid, r.band): take(r.name, r.band)
         else: print('  MUST left out (man already has that band):', name, year)
 
@@ -190,6 +226,7 @@ def choose(pos, t):
         if not len(old): print('  LEGEND missing from data:', name); continue
         r = old.iloc[0]
         if r.name in picked: continue
+        if not face_ok(r.pid, r.key): print('  LEGEND has no photo:', name); continue
         if r.band == 'common': print('  LEGEND has no season past bronze:', name); continue
         if r.band in ('immortal', 'transcendent'):
             # just missed the top walk; his next-best old year can stand in at dynasty
@@ -200,23 +237,25 @@ def choose(pos, t):
 
     # 2c. Current players: one card each, if they have none yet.
     for name in CURRENT.get(pos, []):
-        mine = p[p.key == norm(name)]
+        mine = p[(p.key == norm(name)) & (p.season >= LEGEND_BEFORE)]
         if not len(mine): print('  CURRENT missing from data:', name); continue
         if any(i in picked for i in mine.index): continue
+        if not face_ok(mine.iloc[0].pid, mine.iloc[0].key): print('  CURRENT has no photo:', name); continue
         for r in mine.itertuples():
             if r.band in ('immortal', 'transcendent'): continue
             if can_take(r.pid, r.band): take(r.Index, r.band); break
 
     # 3. The rest of each lower band: decade quotas, spread across the band's
-    #    range, favouring names people know and a man's one big year.
+    #    range, favouring names people know and a man's one big year. Only men
+    #    with a photo.
     per_season = {}
     for i in picked: per_season[p.at[i, 'season']] = per_season.get(p.at[i, 'season'], 0) + 1
     for band in ['dynasty', 'rare', 'common']:
         need = target[band] - sum(1 for b in picked.values() if b == band)
         if need <= 0: continue
         pool = p[(p.band == band) & (~p.index.isin(picked.keys())) & (p.metric >= SAMPLE_FLOOR[pos])
-                 & p.decade.isin(DECADES[band].keys())].copy()
-        pool['interest'] = 0.7 * pool.fame + 0.3 * np.clip(pool.share * 2.5, 0, 1)
+                 & p.decade.isin(DECADES[band].keys()) & p.pid.map(lambda x: PHOTO.get(x, False))].copy()
+        pool['interest'] = 0.8 * pool.fame + 0.2 * np.clip(pool.share * 2.5, 0, 1)
         quota = {d: need * w for d, w in DECADES[band].items()}
         got = {d: 0 for d in DECADES[band]}
         lo, hi = pool.metric.min(), pool.metric.max()
@@ -228,7 +267,7 @@ def choose(pos, t):
             # the decade furthest behind its quota, among those with someone left in this bin
             cand = pool[(pool.bin == b) & (~pool.index.isin(picked.keys()))]
             cand = cand[[can_take(x, band) for x in cand.pid]]
-            cand = cand[[per_season.get(s, 0) < 4 for s in cand.season]]
+            cand = cand[[per_season.get(s, 0) < PER_SEASON for s in cand.season]]
             if len(cand):
                 lag = {d: got[d] - quota[d] for d in DECADES[band]}
                 cand = cand.assign(lag=cand.decade.map(lag)).sort_values(['lag', 'interest'], ascending=[True, False])

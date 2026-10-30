@@ -1,61 +1,103 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-/** Opens a challenge and drops you straight into your own draft, with the
-    link to send sitting above the field. With friends, each one is a button
-    that opens a challenge with their seat held for them. */
-export function NewChallenge({
-  label = 'Start a challenge',
-  friends = [],
-}: {
-  label?: string
-  friends?: { id: string; name: string }[]
-}) {
+type Friend = { id: string; name: string }
+
+async function open(body: Record<string, unknown>): Promise<string> {
+  const res = await fetch('/api/games/pack-empire/versus/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'create', ...body }),
+  })
+  const out = await res.json().catch(() => null)
+  if (!res.ok || !out?.ok) throw new Error(out?.error ?? 'Could not open a challenge.')
+  return out.id as string
+}
+
+/**
+ * The two ways to start: a person (one friend, whose seat is held for them,
+ * or an open link for whoever opens it first) or the CPU. Side by side and
+ * the same height, buttons on the same line. Either drops you straight into
+ * your own draft.
+ */
+export function ChallengePanels({ friends }: { friends: Friend[] }) {
   const router = useRouter()
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const go = async (friend?: string) => {
-    setBusy(true)
+  const go = async (key: string, body: Record<string, unknown>) => {
+    setBusy(key)
     setError(null)
     try {
-      const res = await fetch('/api/games/pack-empire/versus/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create', friend }),
-      })
-      const out = await res.json().catch(() => null)
-      if (!res.ok || !out?.ok) throw new Error(out?.error ?? 'Could not open a challenge.')
-      router.push(`/games/pack-empire/versus/${out.id}/`)
+      router.push(`/games/pack-empire/versus/${await open(body)}/`)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not open a challenge.')
-      setBusy(false)
+      setBusy(null)
     }
   }
 
   return (
     <>
-      <button type="button" className="pe-btn" onClick={() => go()} disabled={busy}>
-        {busy ? 'Opening' : label}
-      </button>
-      {friends.length > 0 && (
-        <div style={{ marginTop: '1.1rem' }}>
-          <div className="pe-note" style={{ marginBottom: '0.55rem' }}>
-            Or send it to one friend
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', justifyContent: 'center' }}>
-            {friends.map((f) => (
-              <button key={f.id} type="button" className="pe-btn pe-btn--sm pe-btn--quiet" onClick={() => go(f.id)} disabled={busy}>
-                {f.name}
-              </button>
-            ))}
+      <div className="pe-twoup">
+        <div className="pe-panel">
+          <div className="pe-kicker">A friend</div>
+          <div className="pe-panel-title">Send a challenge</div>
+          <p className="pe-panel-text">
+            Pick a friend and the other seat waits for them, in their challenges. Or open a link and
+            whoever opens it first takes the seat.
+          </p>
+          <div className="pe-panel-foot">
+            {friends.length > 0 ? (
+              <div className="pe-friend-picks" role="group" aria-label="Send it to a friend">
+                {friends.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    className="pe-friend-pick"
+                    onClick={() => go(`f:${f.id}`, { friend: f.id })}
+                    disabled={!!busy}
+                  >
+                    <span className="pe-friend-pick-mono" aria-hidden>
+                      {f.name.charAt(0).toUpperCase()}
+                    </span>
+                    {busy === `f:${f.id}` ? 'Sending' : f.name}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="pe-note">
+                No friends yet.{' '}
+                <Link href="/account/#friends" className="pe-link">
+                  Add some on your profile
+                </Link>{' '}
+                to send one straight to them.
+              </p>
+            )}
+            <button type="button" className="pe-btn pe-btn--ghost" onClick={() => go('link', {})} disabled={!!busy}>
+              {busy === 'link' ? 'Opening' : 'Open a link instead'}
+            </button>
           </div>
         </div>
-      )}
+
+        <div className="pe-panel">
+          <div className="pe-kicker">Solo</div>
+          <div className="pe-panel-title">Draft against the CPU</div>
+          <p className="pe-panel-text">
+            Its eleven packs are dealt the moment you start, before you open yours, and it keeps the best
+            card in each. It never sees your picks. Both totals go up when you lock yours in.
+          </p>
+          <div className="pe-panel-foot">
+            <button type="button" className="pe-btn" onClick={() => go('cpu', { cpu: true })} disabled={!!busy}>
+              {busy === 'cpu' ? 'Dealing' : 'Play the CPU'}
+            </button>
+          </div>
+        </div>
+      </div>
       {error && (
-        <div className="pe-error" style={{ marginTop: '0.8rem' }}>
+        <div className="pe-error" style={{ marginTop: '0.9rem' }}>
           {error}
         </div>
       )}

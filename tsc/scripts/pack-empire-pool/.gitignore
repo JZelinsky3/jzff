@@ -7,3 +7,4 @@ build/*_report.txt
 build/__pycache__/
 sim/*.json
 sim/*.txt
+sim/__pycache__/

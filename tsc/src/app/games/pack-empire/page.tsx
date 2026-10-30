@@ -50,11 +50,11 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image', title: TITLE, description: DESC },
 }
 
-/** One face per rarity for the index: the best skill player at each. */
+/** One face per rarity for the index: the best recent skill player at each. */
 function showcase(): Player[] {
   const skill = [...POOL.QB, ...POOL.RB, ...POOL.WR, ...POOL.TE]
   return RARITIES.map((r) => {
-    const of = skill.filter((p) => p.rarity === r && p.img)
+    const of = skill.filter((p) => p.rarity === r && p.img && (p.year ?? 0) >= 2000)
     return of.sort((a, b) => b.score - a.score)[0]
   }).filter(Boolean) as Player[]
 }
@@ -125,8 +125,8 @@ function BinderStrip({ totals }: { totals: BinderTotals | null }) {
     return (
       <div className="pe-bd-strip-home">
         <p>
-          Every card you pull goes in a binder, each player&apos;s seasons best to worst, with how many times
-          you&apos;ve pulled each one.
+          The card you keep from every pack goes in a binder, each player&apos;s seasons best to worst, with
+          how many times you&apos;ve pulled each one.
         </p>
         <Link href="/login?next=%2Fgames%2Fpack-empire%2Fbinder%2F" className="pe-btn pe-btn--ghost pe-btn--sm">
           Sign in to keep one

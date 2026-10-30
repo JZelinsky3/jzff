@@ -54,6 +54,8 @@ export type Suggestion = {
 
 export type WaitingChallenge = {
   id: string
+  /** A Versus Challenge, or a Mega Draft with your seat held. */
+  kind: 'versus' | 'mega'
   from: string
   at: string
   /** The number to beat, if they've already drafted. */
@@ -392,24 +394,46 @@ async function suggestionsFor(userId: string, skip: Set<string>): Promise<Sugges
   })
 }
 
-/** Friend challenges sitting in your list that you haven't opened. */
+/** Friend challenges and Mega Drafts sitting in your list that you haven't
+    opened, newest first. */
 async function waitingChallenges(userId: string): Promise<WaitingChallenge[]> {
-  const { data } = await db()
-    .from('pe_versus')
-    .select('id, created_at, host_name, host_score:host_result->score')
-    .eq('invited_id', userId)
-    .is('guest_id', null)
-    .neq('status', 'done')
-    .order('created_at', { ascending: false })
-    .limit(10)
-  return ((data ?? []) as { id: string; created_at: string; host_name: string; host_score: number | null }[]).map(
-    (r) => ({
+  const [vs, mega] = await Promise.all([
+    db()
+      .from('pe_versus')
+      .select('id, created_at, host_name, host_score:host_result->score')
+      .eq('invited_id', userId)
+      .is('guest_id', null)
+      .neq('status', 'done')
+      .order('created_at', { ascending: false })
+      .limit(10),
+    db()
+      .from('pe_mega_drafts')
+      .select('id, created_at, host_name')
+      .eq('invited_id', userId)
+      .is('guest_id', null)
+      .eq('status', 'waiting')
+      .order('created_at', { ascending: false })
+      .limit(10),
+  ])
+  const out: WaitingChallenge[] = [
+    ...((vs.data ?? []) as { id: string; created_at: string; host_name: string; host_score: number | null }[]).map(
+      (r) => ({
+        id: r.id,
+        kind: 'versus' as const,
+        from: r.host_name,
+        at: r.created_at,
+        score: r.host_score == null ? null : Number(r.host_score),
+      })
+    ),
+    ...((mega.data ?? []) as { id: string; created_at: string; host_name: string }[]).map((r) => ({
       id: r.id,
+      kind: 'mega' as const,
       from: r.host_name,
       at: r.created_at,
-      score: r.host_score == null ? null : Number(r.host_score),
-    })
-  )
+      score: null,
+    })),
+  ]
+  return out.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 10)
 }
 
 export async function friendsState(userId: string): Promise<FriendsState> {

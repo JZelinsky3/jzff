@@ -4,6 +4,7 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { listMega } from '@/lib/packEmpire/mega'
+import { friendPicker } from '@/lib/friends'
 import mobileStyles from '../../mobile.module.css'
 import { PeChrome } from '../chrome'
 import { peFonts } from '../fonts'
@@ -30,11 +31,12 @@ export default async function MegaDraftLobby() {
     data: { user },
   } = await supabase.auth.getUser()
   const mobile = (await getViewMode()) === 'mobile'
-  const mine = user ? await listMega(user.id) : []
+  const [mine, friends] = user ? await Promise.all([listMega(user.id), friendPicker(user.id)]) : [[], []]
 
   return (
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.boardRoot : ''}`.trim()}>
       <PeChrome
+        active="mega"
         mobile={mobile}
         signedIn={!!user}
         back="/games/pack-empire/"
@@ -52,11 +54,11 @@ export default async function MegaDraftLobby() {
           </h1>
           <p className="pe-table-sub">
             Thirty-six players on the table, at least one star at every position. Snake order, eleven
-            picks each, and every man you take is one they can&apos;t.
+            picks each, and every man you take is one they can&apos;t. Against a friend or the CPU.
           </p>
         </div>
 
-        <MegaLobby signedIn={!!user} />
+        <MegaLobby signedIn={!!user} friends={friends} />
 
         <section className="pe-sec">
           <div className="pe-sec-head">
@@ -90,7 +92,7 @@ export default async function MegaDraftLobby() {
             </div>
             <div className="pe-row-list">
               {mine.map((d) => {
-                const st = STATUS[d.status]
+                const st = d.waitingOnYou ? { label: 'Sent to you', color: '#e8a84b' } : STATUS[d.status]
                 return (
                   <Link key={d.id} href={`/games/pack-empire/mega-draft/${d.id}/`} className="pe-row">
                     <span style={{ minWidth: 0 }}>

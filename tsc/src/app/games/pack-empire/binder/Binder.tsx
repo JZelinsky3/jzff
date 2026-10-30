@@ -1,8 +1,9 @@
 'use client'
 
 // The binder: a row per man, his seasons best first, each with its count.
-// Pulled cards are the real card; the ones still out there are face down,
-// showing only the rarity and the year you're chasing.
+// Pulled cards (the one you kept from a pack) are the real card; the ones
+// still out there are face down, showing only the rarity and the year you're
+// chasing. Up close, a card shows your count beside the whole site's.
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -86,8 +87,8 @@ export function Binder({ view, mobile }: { view: BinderView; mobile: boolean }) 
           </div>
           <div className="pe-note">Seasons pulled</div>
           <div className="pe-bd-sum-sub">
-            {t.menOwned.toLocaleString()} of {t.men.toLocaleString()} players · {t.pulls.toLocaleString()} cards
-            opened
+            {t.menOwned.toLocaleString()} of {t.men.toLocaleString()} players · {t.pulls.toLocaleString()}{' '}
+            {t.pulls === 1 ? 'pack' : 'packs'} opened. One card from each pack goes in: the one you keep.
           </div>
         </div>
         <div className="pe-bd-rar">
@@ -111,7 +112,7 @@ export function Binder({ view, mobile }: { view: BinderView; mobile: boolean }) 
 
       {t.owned === 0 && (
         <p className="pe-empty pe-bd-first">
-          Nothing in here yet. Finish a run and every card from your eleven packs lands in the binder.{' '}
+          Nothing in here yet. Finish a run and the eleven players you kept land in the binder.{' '}
           <Link href="/games/pack-empire/play/" className="pe-link">
             Open packs
           </Link>
@@ -194,7 +195,15 @@ export function Binder({ view, mobile }: { view: BinderView; mobile: boolean }) 
         </div>
       )}
 
-      {open && <CardSheet man={open.man} card={open.card} onPick={(card) => setOpen({ man: open.man, card })} onClose={() => setOpen(null)} />}
+      {open && (
+        <CardSheet
+          man={open.man}
+          card={open.card}
+          site={view.site}
+          onPick={(card) => setOpen({ man: open.man, card })}
+          onClose={() => setOpen(null)}
+        />
+      )}
     </div>
   )
 }
@@ -202,7 +211,6 @@ export function Binder({ view, mobile }: { view: BinderView; mobile: boolean }) 
 function ManRow({ man, mobile, onOpen }: { man: BinderMan; mobile: boolean; onOpen: (c: BinderCard) => void }) {
   const have = man.cards.filter(owned)
   const pulls = man.cards.reduce((s, c) => s + c.pulls, 0)
-  const keeps = have.reduce((s, c) => s + c.keeps, 0)
   return (
     <div className={`pe-bd-man${have.length ? '' : ' none'}`}>
       <div className="pe-bd-man-head">
@@ -210,13 +218,7 @@ function ManRow({ man, mobile, onOpen }: { man: BinderMan; mobile: boolean; onOp
         <span className="pe-bd-man-name">{man.name}</span>
         <span className="pe-bd-man-meta">
           {have.length}/{man.cards.length}
-          {pulls > 0 && !mobile && (
-            <>
-              {' '}
-              · Pulled {pulls}
-              {keeps > 0 ? ` · Kept ${keeps}` : ''}
-            </>
-          )}
+          {pulls > 0 && !mobile && <> · Pulled {pulls}</>}
         </span>
       </div>
       <div className="pe-bd-strip">
@@ -261,14 +263,23 @@ function Tile({ card, caption, onClick }: { card: BinderCard; caption: string | 
   )
 }
 
+/** How rare a card has been across the site, in packs: "1 in 412". */
+function siteRarity(card: BinderCard): string {
+  if (card.site.pulls === 0 || card.site.share === 0) return 'Never pulled'
+  const n = Math.max(1, Math.round(1 / card.site.share))
+  return n === 1 ? 'Every pack' : `1 in ${n.toLocaleString()}`
+}
+
 function CardSheet({
   man,
   card,
+  site,
   onPick,
   onClose,
 }: {
   man: BinderMan
   card: BinderCard
+  site: BinderView['site']
   onPick: (c: BinderCard) => void
   onClose: () => void
 }) {
@@ -313,24 +324,47 @@ function CardSheet({
           <div className="pe-bd-sheet-club">
             {card.year} {card.club}
           </div>
-          {owned(card) ? (
-            <dl className="pe-bd-stats">
-              <div>
-                <dt>Pulled</dt>
-                <dd>{card.pulls}</dd>
-              </div>
-              <div>
-                <dt>Kept</dt>
-                <dd>{card.keeps}</dd>
-              </div>
-              <div>
-                <dt>First</dt>
-                <dd>{shortDate(card.firstAt)}</dd>
-              </div>
-            </dl>
-          ) : (
-            <p className="pe-bd-sheet-miss">Not pulled yet. It comes out of the {POOL_LABEL[card.pos].toLowerCase()} pack.</p>
-          )}
+          <div className="pe-bd-counts">
+            <div className="pe-bd-count you">
+              <div className="pe-bd-count-head">You</div>
+              {owned(card) ? (
+                <dl className="pe-bd-stats">
+                  <div>
+                    <dt>Pulled</dt>
+                    <dd>×{card.pulls}</dd>
+                  </div>
+                  <div>
+                    <dt>First</dt>
+                    <dd>{shortDate(card.firstAt)}</dd>
+                  </div>
+                </dl>
+              ) : (
+                <p className="pe-bd-sheet-miss">
+                  Not pulled yet. It comes out of the {POOL_LABEL[card.pos].toLowerCase()} pack.
+                </p>
+              )}
+            </div>
+            <div className="pe-bd-count site">
+              <div className="pe-bd-count-head">Everyone</div>
+              <dl className="pe-bd-stats">
+                <div>
+                  <dt>Pulled</dt>
+                  <dd>×{card.site.pulls.toLocaleString()}</dd>
+                </div>
+                <div>
+                  <dt>Players</dt>
+                  <dd>
+                    {card.site.holders.toLocaleString()}
+                    <small>/{site.players.toLocaleString()}</small>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Packs</dt>
+                  <dd className={card.site.pulls === 0 ? 'word' : undefined}>{siteRarity(card)}</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
 
           {man.cards.length > 1 && (
             <div className="pe-bd-sheet-vers" role="group" aria-label="His seasons">

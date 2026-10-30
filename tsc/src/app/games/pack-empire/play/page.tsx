@@ -34,6 +34,7 @@ export default async function EmpireBuilderPage() {
     // owns the bottom of the screen, so there's no dock under it.
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.boardRoot : ''}`.trim()}>
       <PeChrome
+        active="solo"
         mobile={mobile}
         signedIn={!!user}
         back="/games/pack-empire/"

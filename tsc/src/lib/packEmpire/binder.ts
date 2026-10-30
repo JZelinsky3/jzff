@@ -1,16 +1,18 @@
 // The binder. SERVER ONLY.
 //
-// Every card a signed-in player has pulled, counted. A card is a season, so a
-// man's page runs from his best year down to his worst, and each version
-// keeps its own count: how many times it came out of a pack, how many times
-// it was the one kept.
+// Every card a signed-in player has pulled, counted. "Pulled" means KEPT: one
+// card per pack goes in the binder, the one you took, and the four you passed
+// on don't (Joey: finishing it should be hard, not a prize for whoever opens
+// the most packs). A card is a season, so a man's page runs from his best
+// year down to his worst, and each version keeps its own count, yours and the
+// whole site's. Mega Draft boards aren't packs and never file here.
 //
 // Nothing here trusts the browser. A pack is recorded only after the server
 // has dealt it itself: a run re-dealt on its way to the board (which is also
 // how a run played signed out reaches the binder, once it's claimed), a
 // Versus lineup re-dealt on submit, a League pick checked against its pack.
 // The table keys on (user, deal, slot), so the same pack recorded twice
-// counts once. See 0083_pack_empire_binder.sql.
+// counts once. See 0083_pack_empire_binder.sql and 0084.
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { POOL_KEYS, personOf, RARITIES, type Player, type PoolKey, type Rarity } from './rules'
@@ -22,14 +24,14 @@ export type BinderSource = 'solo' | 'versus' | 'league'
 export type BinderPack = { deal: string; slot: number; cards: string[]; kept: string | null }
 
 /**
- * Record packs and return the ids this player had never pulled before. Never
- * throws: the binder is a side effect of playing, and a run that posted must
- * not fail because its packs didn't file.
+ * Record packs and return the kept ids this player had never kept before.
+ * Never throws: the binder is a side effect of playing, and a run that posted
+ * must not fail because its packs didn't file.
  */
 export async function recordPacks(userId: string, source: BinderSource, packs: BinderPack[]): Promise<string[]> {
   if (packs.length === 0) return []
   try {
-    const { data, error } = await createAdminClient().rpc('pe_binder_record', {
+    const { data, error } = await createAdminClient().rpc('pe_binder_file', {
       p_user: userId,
       p_source: source,
       p_pool: POOL_VERSION,
@@ -99,11 +101,18 @@ export async function syncBinder(userId: string): Promise<void> {
 // The view
 // ============================================================
 
+/** How a card has gone across the whole site: times kept, by how many
+    players, and its share of every pack ever kept (so "1 in 412"). */
+export type SiteCount = { pulls: number; holders: number; share: number }
+
 /** A version the player has pulled: the whole card, and its counts. */
-export type BinderOwned = Player & { pulls: number; keeps: number; firstAt: string }
+export type BinderOwned = Player & { pulls: number; firstAt: string; site: SiteCount }
 
 /** A version they haven't: enough to show what they're chasing, no more. */
-export type BinderMissing = Pick<Player, 'id' | 'name' | 'pos' | 'year' | 'club' | 'rarity'> & { pulls: 0 }
+export type BinderMissing = Pick<Player, 'id' | 'name' | 'pos' | 'year' | 'club' | 'rarity'> & {
+  pulls: 0
+  site: SiteCount
+}
 
 export type BinderCard = BinderOwned | BinderMissing
 
@@ -125,43 +134,77 @@ export type BinderTotals = {
   owned: number
   men: number
   menOwned: number
+  /** Packs filed: one card kept out of each. */
   pulls: number
   byRarity: Record<Rarity, { owned: number; of: number }>
   byPos: Record<PoolKey, { owned: number; of: number }>
 }
 
-export type BinderView = { men: BinderMan[]; totals: BinderTotals }
+export type BinderView = {
+  men: BinderMan[]
+  totals: BinderTotals
+  /** Every pack kept from across the site, and by how many players. */
+  site: { pulls: number; players: number }
+}
 
-type Count = { card_id: string; pulls: number; keeps: number; first_at: string }
+type Count = { card_id: string; pulls: number; first_at: string }
+type Site = { card_id: string; pulls: number; holders: number }
 
 async function counts(userId: string): Promise<Map<string, Count>> {
-  const { data } = await createAdminClient().rpc('pe_binder_counts', { p_user: userId })
+  const { data } = await createAdminClient().rpc('pe_binder_kept', { p_user: userId })
   return new Map(((data as Count[] | null) ?? []).map((c) => [c.card_id, c]))
+}
+
+async function siteCounts(): Promise<Map<string, Site>> {
+  const { data } = await createAdminClient().rpc('pe_binder_site')
+  return new Map(((data as Site[] | null) ?? []).map((c) => [c.card_id, c]))
+}
+
+async function sitePlayers(): Promise<number> {
+  const { data } = await createAdminClient().rpc('pe_binder_players')
+  return Number(data ?? 0)
 }
 
 /** Just the totals, for the Pack Empire front page. */
 export async function binderTotals(userId: string): Promise<BinderTotals> {
-  return build(await counts(userId)).totals
+  return build(await counts(userId), new Map(), 0).totals
 }
 
 export async function loadBinder(userId: string): Promise<BinderView> {
   await syncBinder(userId)
-  return build(await counts(userId))
+  const [mine, site, players] = await Promise.all([counts(userId), siteCounts(), sitePlayers()])
+  return build(mine, site, players)
 }
 
-function build(have: Map<string, Count>): BinderView {
+function build(have: Map<string, Count>, site: Map<string, Site>, players: number): BinderView {
   const byRarity = Object.fromEntries(RARITIES.map((r) => [r, { owned: 0, of: 0 }])) as BinderTotals['byRarity']
   const byPos = Object.fromEntries(POOL_KEYS.map((k) => [k, { owned: 0, of: 0 }])) as BinderTotals['byPos']
   const men = new Map<string, BinderMan>()
   let owned = 0
   let pulls = 0
+  // Ids from an older pool still have rows; only today's cards count.
+  let siteTotal = 0
+  for (const k of POOL_KEYS) for (const p of POOL[k]) siteTotal += site.get(p.id)?.pulls ?? 0
+  const siteOf = (id: string): SiteCount => {
+    const s = site.get(id)
+    return { pulls: s?.pulls ?? 0, holders: s?.holders ?? 0, share: siteTotal && s ? s.pulls / siteTotal : 0 }
+  }
 
   for (const k of POOL_KEYS) {
     for (const p of POOL[k]) {
       const c = have.get(p.id)
       const card: BinderCard = c
-        ? { ...p, pulls: c.pulls, keeps: c.keeps, firstAt: c.first_at }
-        : { id: p.id, name: p.name, pos: p.pos, year: p.year, club: p.club, rarity: p.rarity, pulls: 0 }
+        ? { ...p, pulls: c.pulls, firstAt: c.first_at, site: siteOf(p.id) }
+        : {
+            id: p.id,
+            name: p.name,
+            pos: p.pos,
+            year: p.year,
+            club: p.club,
+            rarity: p.rarity,
+            pulls: 0,
+            site: siteOf(p.id),
+          }
       byRarity[p.rarity].of++
       byPos[p.pos].of++
       if (c) {
@@ -189,6 +232,7 @@ function build(have: Map<string, Count>): BinderView {
 
   return {
     men: list,
+    site: { pulls: siteTotal, players },
     totals: {
       cards: POOL_SIZE,
       owned,

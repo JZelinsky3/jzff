@@ -36,6 +36,7 @@ export default async function MegaDraftRoomPage({ params }: { params: Promise<{ 
   return (
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.boardRoot : ''}`.trim()}>
       <PeChrome
+        active="mega"
         mobile={mobile}
         signedIn={!!user}
         back="/games/pack-empire/mega-draft/"

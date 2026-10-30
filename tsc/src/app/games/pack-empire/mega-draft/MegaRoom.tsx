@@ -4,11 +4,14 @@
 // side, and whoever is on the clock lit up. The server is the referee; this
 // only asks it things. It polls while the draft is live, and a pick shows up
 // for the other player on their next poll, about a second and a half later.
+// Against the CPU, the room asks the server for the CPU's pick after a beat,
+// so it plays at a person's pace rather than all at once.
 //
 // Phones get the board and the two elevens as three tabs under a sticky
 // clock, because three columns at 390px is three unreadable columns.
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   MEGA_TOTAL_PICKS,
@@ -225,6 +228,43 @@ export function MegaRoom({ initial, signedIn }: { initial: MegaView; signedIn: b
     [id, key]
   )
 
+  // The CPU on the clock: give it a beat, then ask for its pick. Keyed on the
+  // pick number, so a snake turn of two asks twice.
+  const cpuTurn = view.status === 'live' && view.botSeat != null && view.onClock === view.botSeat
+  useEffect(() => {
+    if (!cpuTurn) return
+    const t = window.setTimeout(
+      () => {
+        post({ action: 'cpu' })
+          .then((out) => setView(out.view))
+          .catch(() => {})
+      },
+      900 + Math.floor(Math.random() * 700)
+    )
+    return () => window.clearTimeout(t)
+  }, [cpuTurn, view.pickNo, post, setView])
+
+  const router = useRouter()
+  const againCpu = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      const mine = view.you != null ? view.seats[view.you].name : null
+      const res = await fetch('/api/games/pack-empire/mega/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create', cpu: true, name: mine ?? '', key }),
+      })
+      const out = await res.json().catch(() => null)
+      if (!res.ok || !out?.ok) throw new Error(out?.error ?? 'Could not deal a new board.')
+      rememberMega(out.id)
+      router.push(`/games/pack-empire/mega-draft/${out.id}/`)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not deal a new board.')
+      setBusy(false)
+    }
+  }
+
   const join = async () => {
     setBusy(true)
     setError(null)
@@ -296,9 +336,19 @@ export function MegaRoom({ initial, signedIn }: { initial: MegaView; signedIn: b
         </div>
         {you === 0 ? (
           <div className="pe-panel">
-            <div className="pe-kicker">Waiting for a second seat</div>
+            <div className="pe-kicker">{view.reservedFor ? `Held for ${view.reservedFor}` : 'Waiting for a second seat'}</div>
             <p className="pe-panel-text" style={{ margin: '0.5rem 0 0.9rem' }}>
-              Send the link, or read out the code <b style={{ fontFamily: 'var(--mono)', letterSpacing: '0.2em' }}>{id}</b>.
+              {view.reservedFor ? (
+                <>
+                  It&apos;s waiting in their Mega Drafts, and only they can sit down. Send them the link to get
+                  them here faster.
+                </>
+              ) : (
+                <>
+                  Send the link, or read out the code{' '}
+                  <b style={{ fontFamily: 'var(--mono)', letterSpacing: '0.2em' }}>{id}</b>.
+                </>
+              )}{' '}
               The coin for first pick is flipped the moment they sit down. This page updates by itself.
             </p>
             <ShareLink path={`/games/pack-empire/mega-draft/${id}/`} title="Pack Empire" text="Mega Draft: sit down" />
@@ -332,6 +382,31 @@ export function MegaRoom({ initial, signedIn }: { initial: MegaView; signedIn: b
                 {error}
               </div>
             )}
+          </div>
+        ) : view.reservedFor ? (
+          <div className="pe-panel">
+            <div className="pe-kicker">A friend draft</div>
+            <div className="pe-panel-title">
+              {view.hostName} sent this one to {view.reservedFor}.
+            </div>
+            <p className="pe-panel-text">
+              {signedIn ? (
+                'Open your own and send the code to someone.'
+              ) : (
+                <>
+                  If that&apos;s you,{' '}
+                  <Link href={`/login?next=${encodeURIComponent(`/games/pack-empire/mega-draft/${id}/`)}`} className="pe-link">
+                    sign in
+                  </Link>{' '}
+                  and the seat is yours.
+                </>
+              )}
+            </p>
+            <div className="pe-recap-actions" style={{ justifyContent: 'flex-start' }}>
+              <Link href="/games/pack-empire/mega-draft/" className="pe-btn pe-btn--quiet">
+                Open your own
+              </Link>
+            </div>
           </div>
         ) : (
           <p className="pe-empty">Waiting for the draft to start.</p>
@@ -369,10 +444,22 @@ export function MegaRoom({ initial, signedIn }: { initial: MegaView; signedIn: b
             {winner == null ? 'Not a point between them' : `By ${Math.abs(a.score - b.score).toLocaleString()} accolades`}
           </div>
           <div className="pe-recap-actions">
-            <Link href="/games/pack-empire/mega-draft/" className="pe-btn">
-              Another draft
-            </Link>
+            {view.botSeat != null && you != null ? (
+              <>
+                <button type="button" className="pe-btn" onClick={againCpu} disabled={busy}>
+                  Play the CPU again
+                </button>
+                <Link href="/games/pack-empire/mega-draft/" className="pe-btn pe-btn--quiet">
+                  Another draft
+                </Link>
+              </>
+            ) : (
+              <Link href="/games/pack-empire/mega-draft/" className="pe-btn">
+                Another draft
+              </Link>
+            )}
           </div>
+          {error && <p className="pe-recap-post">{error}</p>}
         </div>
         <div className="pe-twoup">
           <LineupSheet name={seatName(0)} sub="Picked first" lineup={a.lineup} total={a.score} totalColor={tierFor(a.score).color} />

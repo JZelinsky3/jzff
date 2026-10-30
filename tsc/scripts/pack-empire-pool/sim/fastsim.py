@@ -2,7 +2,7 @@
 # one boosted card per pack, best of five kept, no repeats of a man.
 import json, random, sys
 import numpy as np
-W = {'normal': {'common': 45, 'rare': 27, 'dynasty': 17, 'transcendent': 10, 'immortal': 1},
+W = {'normal': {'common': 45, 'rare': 27, 'dynasty': 17, 'transcendent': 8, 'immortal': 1},
      'captain': {'common': 5, 'rare': 22, 'dynasty': 41, 'transcendent': 27, 'immortal': 5}}
 B = {'normal': dict(W['normal'], common=40, rare=38), 'captain': dict(W['captain'], rare=18, transcendent=30, immortal=2)}
 SLOTS = ['QB', 'RB', 'WR', 'WR', 'WR', 'TE', 'OT', 'OG', 'C', 'OG', 'OT']

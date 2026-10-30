@@ -1,8 +1,9 @@
 // /games/pack-empire/binder
 //
-// Every card you've pulled, a man to a row, his seasons best first. Each
-// version carries its own count, so you can see that you've pulled Jerry
-// Rice's 2003 four times and his 1995 never.
+// Every card you've pulled (the one you kept from each pack), a man to a row,
+// his seasons best first. Each version carries its own count, so you can see
+// that you've pulled Jerry Rice's 1995 four times and his 2002 never, and how
+// often the whole site has.
 //
 // Signed in only: the binder is filed by the server as it deals (see
 // lib/packEmpire/binder.ts). Runs played signed out still get here, the
@@ -42,6 +43,7 @@ export default async function BinderPage() {
   return (
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.root : ''}`.trim()}>
       <PeChrome
+        active="binder"
         mobile={mobile}
         signedIn={!!user}
         back="/games/pack-empire/"
@@ -67,8 +69,9 @@ export default async function BinderPage() {
         ) : (
           <div className="pe-bd-out">
             <p className="pe-bd-out-lede">
-              Every card that comes out of your packs goes in here, {POOL_SIZE} seasons in all. Each player gets a
-              row, his best season first, with how many times you&apos;ve pulled each one.
+              The card you keep from every pack goes in here, {POOL_SIZE} seasons to find. Each player gets a
+              row, his best season first, with how many times you&apos;ve pulled each one and how rare it is
+              across the site.
             </p>
             <p className="pe-bd-out-sub">
               Sign in to start yours. Runs you&apos;ve already played on this device come with you.

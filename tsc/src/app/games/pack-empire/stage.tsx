@@ -17,7 +17,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   PACK_ART,
-  POOL_LABEL,
   RARITIES,
   RARITY_LOOK,
   SLOTS,
@@ -26,11 +25,12 @@ import {
   type Rarity,
 } from '@/lib/packEmpire/rules'
 import { Bolt, CaptainMark, PackCard } from './cards'
-import { SealedPack, SpentPack } from './rip'
+import { RipBurst, SealedPack, SpentPack } from './rip'
 
-/** The slow reveal on one card: its rarity, then its team, then its
-    position, then the flip. */
-export type Walkout = { i: number; step: 'charge' | 'team' | 'pos' | 'flip'; id: number }
+/** The slow reveal on one card: its rarity, then its season and team, then
+    what that season did, then the flip shows who. (It used to spell out the
+    position, which a position-locked pack has already told you.) */
+export type Walkout = { i: number; step: 'charge' | 'team' | 'stat' | 'flip'; id: number }
 
 type Rect = { left: number; top: number; width: number; height: number }
 
@@ -62,8 +62,8 @@ export type Landing = { slot: number; phase: 'incoming' | 'landed' }
 /** Rarities that get the slow reveal rather than a plain flip. */
 const BIG = new Set<Rarity>(['transcendent', 'immortal'])
 
-const STEP_MS: Record<Walkout['step'], number> = { charge: 750, team: 800, pos: 800, flip: 1200 }
-const NEXT_STEP = { charge: 'team', team: 'pos', pos: 'flip' } as const
+const STEP_MS: Record<Walkout['step'], number> = { charge: 750, team: 850, stat: 1100, flip: 1200 }
+const NEXT_STEP = { charge: 'team', team: 'stat', stat: 'flip' } as const
 
 /** How long the picked card hangs, lifted, before it flies. */
 const HOLD_MS = 480
@@ -490,11 +490,12 @@ export function PackStage({
   const w = stage.walkout
   const woCard = w && cards ? cards[w.i] : null
   const woLook = woCard ? RARITY_LOOK[woCard.rarity] : null
-  const glow = cards ? RARITY_LOOK[bestRarity(cards)].color : '#e8a84b'
+  const best = cards ? bestRarity(cards) : null
+  const glow = best ? RARITY_LOOK[best].color : '#e8a84b'
 
   let status = 'Swipe across the top or tap to rip it open'
   if (stage.error) status = stage.error
-  else if (!stage.torn) status = 'Swipe across the top or tap to rip it open'
+  else if (!stage.torn) status = 'Swipe across the top, or tap, to rip it open'
   else if (!cards) status = 'Dealing'
   else if (woLook) status = `${woLook.label} pull`
   else if (stage.queue.length) status = 'Revealing'
@@ -554,7 +555,9 @@ export function PackStage({
             <div className="pe-wo-cap" data-step={w.step} aria-live="polite">
               <div className="pe-wo-rar">{woLook.label}</div>
               {w.step !== 'charge' && <div className="pe-wo-team">{seasonLabel(woCard)}</div>}
-              {(w.step === 'pos' || w.step === 'flip') && <div className="pe-wo-pos">{POOL_LABEL[woCard.pos]}</div>}
+              {(w.step === 'stat' || w.step === 'flip') && woCard.accolades[0] && (
+                <div className="pe-wo-stat">{woCard.accolades[0]}</div>
+              )}
             </div>
           )}
         </div>
@@ -566,6 +569,7 @@ export function PackStage({
         {cards && stage.torn && (
           <div className="pe-stage-cards">
             {!stage.restored && <SpentPack art={art} />}
+            {!stage.restored && best && <RipBurst rarity={best} />}
             {cards.map((card, i) => {
               const isPick = stage.pickedId === card.id
               const isRej = !!stage.pickedId && !isPick

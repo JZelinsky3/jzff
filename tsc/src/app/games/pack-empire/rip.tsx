@@ -3,18 +3,28 @@
 // The sealed pack, and tearing it.
 //
 // Drag across the top and the strip peels away under your finger; let go past
-// halfway (or just tap) and it tears off. The light that leaks out of the
-// opening is the colour of the best card inside, which the pack already knows
-// because the deal is fetched while it sits sealed. If the deal is still in
-// flight when the strip comes off, the open pack shakes until it lands.
+// halfway (or just tap) and it tears off. On a Mac trackpad a two-finger
+// swipe across the pack does the same: that gesture arrives as scroll
+// events, not a drag, so the wheel peels the strip too and tears it once it
+// passes halfway.
+//
+// The light that leaks out of the opening is the colour of the best card
+// inside, which the pack already knows because the deal is fetched while it
+// sits sealed. If the deal is still in flight when the strip comes off, the
+// open pack shakes until it lands. Then RipBurst goes off where the cards
+// come out, sized to the best of them.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { RARITY_LOOK, RARITIES } from '@/lib/packEmpire/rules'
 
 /** How long the strip takes to come off before the stage is told. */
 const RIP_MS = 460
 
 /** Past this much of a drag, letting go finishes the tear. */
 const COMMIT_AT = 0.5
+
+/** Sparks off the tear, by tier (common up to immortal). */
+const SPARKS = [8, 14, 22, 28, 36]
 
 export function SealedPack({
   art,
@@ -34,6 +44,8 @@ export function SealedPack({
   const [dragging, setDragging] = useState(false)
   const start = useRef<{ x: number; w: number; id: number } | null>(null)
   const moved = useRef(false)
+  const packRef = useRef<HTMLButtonElement>(null)
+  const wheel = useRef({ acc: 0, timer: 0 })
 
   useEffect(() => {
     if (phase !== 'ripping') return
@@ -50,6 +62,43 @@ export function SealedPack({
     setPull(1)
     setPhase('ripping')
   }
+
+  // The trackpad. A native listener, because React's wheel handler is
+  // passive and can't stop a sideways swipe from going Back a page.
+  useEffect(() => {
+    const el = packRef.current
+    if (!el || phase !== 'sealed') return
+    const w = wheel.current
+    const on = (e: WheelEvent) => {
+      const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
+      if (!d) return
+      e.preventDefault()
+      const width = el.getBoundingClientRect().width || 172
+      w.acc = Math.min(1, w.acc + Math.abs(d) / (width * 1.6))
+      setDragging(true)
+      setPull(w.acc)
+      window.clearTimeout(w.timer)
+      if (w.acc >= COMMIT_AT) {
+        // The same as rip(): this listener only exists while it's sealed.
+        w.acc = 0
+        setDragging(false)
+        setPull(1)
+        setPhase('ripping')
+        return
+      }
+      // Stopped short: spring back, like a drag let go too early.
+      w.timer = window.setTimeout(() => {
+        w.acc = 0
+        setDragging(false)
+        setPull(0)
+      }, 220)
+    }
+    el.addEventListener('wheel', on, { passive: false })
+    return () => {
+      el.removeEventListener('wheel', on)
+      window.clearTimeout(w.timer)
+    }
+  }, [phase])
 
   const down = (e: React.PointerEvent<HTMLButtonElement>) => {
     if (phase !== 'sealed') return
@@ -87,6 +136,7 @@ export function SealedPack({
   return (
     <div className={cls} style={{ '--pull': pull, '--glow': glow } as React.CSSProperties}>
       <button
+        ref={packRef}
         type="button"
         className="pe-rip-pack"
         aria-label="Rip the pack open"
@@ -115,6 +165,60 @@ export function SealedPack({
         </span>
         <span className="pe-rip-seam" aria-hidden />
       </button>
+    </div>
+  )
+}
+
+/**
+ * The pack going off, where the cards come out of it. Every tier gets light
+ * rays and sparks in its colour; rare and up add a shockwave and a flash over
+ * the whole table; dynasty and up a second ring and a shake; the top two the
+ * biggest of everything. Plays once and leaves nothing behind (every layer
+ * ends transparent), so it can stay mounted under the cards.
+ */
+export function RipBurst({ rarity }: { rarity: (typeof RARITIES)[number] }) {
+  const tier = RARITIES.indexOf(rarity)
+  const look = RARITY_LOOK[rarity]
+  const ref = useRef<HTMLDivElement>(null)
+
+  // The flash is fixed to the screen, so it needs to know where "here" is.
+  useLayoutEffect(() => {
+    const el = ref.current
+    const r = el?.getBoundingClientRect()
+    if (!el || !r) return
+    el.style.setProperty('--bx', `${r.left + r.width / 2}px`)
+    el.style.setProperty('--by', `${r.top + r.height / 2}px`)
+  }, [])
+
+  return (
+    <div
+      ref={ref}
+      className="pe-boom"
+      data-tier={tier}
+      aria-hidden
+      style={{ '--glow': look.color, '--glow-soft': look.glow } as React.CSSProperties}
+    >
+      {tier >= 1 && <span className="pe-boom-flash" />}
+      <span className="pe-boom-rays" />
+      <span className="pe-boom-core" />
+      {tier >= 1 && <span className="pe-boom-ring" />}
+      {tier >= 2 && <span className="pe-boom-ring r2" />}
+      {tier >= 3 && <span className="pe-boom-ring r3" />}
+      {Array.from({ length: SPARKS[tier] ?? 8 }, (_, i) => (
+        <span
+          key={i}
+          className="pe-boom-spark"
+          style={
+            {
+              // Golden-angle spread so the sparks never clump, a little
+              // longer reach on every third.
+              '--a': `${(i * 137.5) % 360}deg`,
+              '--d': `${110 + tier * 45 + (i % 3) * 30}px`,
+              '--s': `${(i % 5) * 24}ms`,
+            } as React.CSSProperties
+          }
+        />
+      ))}
     </div>
   )
 }
