@@ -352,6 +352,42 @@
   }
 }
 
+/* A board with no faces (Pack Empire). Its badge line is too wide to sit
+   between a rank and a score on a half-width plaque, so second and third
+   stack: rank and score across the top, the name and badges under them. */
+.noFace .plaqueMeta,
+.noFace .sub {
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.15rem;
+}
+
+.plaque.noFace:not(.plaqueFirst) .plaqueRank {
+  color: var(--gp-mute);
+}
+
+@media (max-width: 640px) {
+  .plaque.noFace:not(.plaqueFirst) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.5rem 0.75rem;
+  }
+
+  .plaque.noFace:not(.plaqueFirst) .plaqueBody {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .plaque.noFace:not(.plaqueFirst) .plaqueStat {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .plaque.noFace:not(.plaqueFirst) .plaqueName {
+    font-size: 0.98rem;
+  }
+}
+
 /* ── Rows ─────────────────────────────────────────────────── */
 
 /* Column header over the agate list, so the two numbers on the right have
@@ -395,6 +431,13 @@
 
 .row:first-child {
   border-top: 1px solid var(--gp-line);
+}
+
+/* No plate, so the rank column can close up too. Sized for a three-figure
+   pinned row. */
+.colhead.noFace,
+.row.noFace {
+  grid-template-columns: 1.6rem minmax(0, 1fr) auto;
 }
 
 /* The viewer's own runs. A tint and nothing else: a coloured spine down the
@@ -475,6 +518,20 @@
   font-size: 0.56rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+  color: var(--gp-mute);
+  white-space: nowrap;
+}
+
+/* The date as a small badge, for a board that sets it beside a tier. */
+.dateChip {
+  flex: none;
+  padding: 0.16rem 0.32rem;
+  border: 1px solid var(--gp-line);
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  line-height: 1.25;
+  letter-spacing: 0.06em;
   color: var(--gp-mute);
   white-space: nowrap;
 }

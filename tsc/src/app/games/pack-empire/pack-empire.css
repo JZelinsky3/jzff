@@ -1072,7 +1072,16 @@
   color: var(--pe-amber);
 }
 
+.pe-top-who {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
 .pe-top-name {
+  max-width: 100%;
   font-family: var(--serif);
   font-size: 1.05rem;
   color: var(--pe-ink);
@@ -1081,14 +1090,21 @@
   white-space: nowrap;
 }
 
-.pe-top-tier {
-  display: block;
+/* A run's tier, here and on the board. --tc is the rung's colour. */
+.pe-tier-badge {
+  flex: none;
+  padding: 0.16rem 0.38rem;
+  border: 1px solid var(--tc);
+  border-radius: 3px;
+  background: var(--tc);
   font-family: var(--mono);
-  font-size: 0.58rem;
-  letter-spacing: 0.14em;
+  font-weight: 700;
+  font-size: 0.52rem;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--pe-ink-mute);
-  margin-top: 0.15rem;
+  color: var(--pe-bg);
+  white-space: nowrap;
 }
 
 .pe-top-score {

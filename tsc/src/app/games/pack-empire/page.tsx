@@ -22,6 +22,7 @@ import { Ladder, PackCard } from './cards'
 import { PeChrome } from './chrome'
 import { peFonts } from './fonts'
 import { MODES, ModeGlyph, ModeMark } from './modes'
+import { TierBadge } from './TierBadge'
 
 export const dynamic = 'force-dynamic'
 
@@ -109,9 +110,9 @@ function BoardTop({ rows }: { rows: BestRow[] }) {
       {rows.map((r) => (
         <div key={r.runId} className="pe-top-row">
           <span className="pe-top-rank">{r.rank}</span>
-          <span style={{ minWidth: 0 }}>
+          <span className="pe-top-who">
             <span className="pe-top-name">{r.name}</span>
-            <span className="pe-top-tier">{r.display.tier ?? ''}</span>
+            <TierBadge score={r.score} />
           </span>
           <span className="pe-top-score">{Number(r.display.accolades ?? r.score).toLocaleString()}</span>
         </div>

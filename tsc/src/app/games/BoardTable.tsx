@@ -17,6 +17,7 @@
 import type { Board, BestRow, CareerRow, GameId } from '@/lib/minigames/leaderboard'
 import { runStat } from '@/lib/minigames/runStat'
 import { BoardFace } from './BoardFace'
+import { TierBadge } from './pack-empire/TierBadge'
 import styles from './board.module.css'
 
 function ordinal(n: number): string {
@@ -73,6 +74,33 @@ function statFor(game: GameId, row: BestRow): { big: string; small: string } {
   return runStat(game, row.display, row.score)
 }
 
+/** Pack Empire's board is one site-wide pool with no avatars to show, so its
+    rows go without the plate, and a run's tier is a badge beside the date. */
+const faceless = (game: GameId) => game === 'pack-empire'
+
+/** The line under a name. */
+function RunMeta({ row, game }: { row: BestRow; game: GameId }) {
+  if (game === 'pack-empire') {
+    return (
+      <>
+        <TierBadge score={row.score} />
+        <span className={styles.dateChip}>{when(row.at)}</span>
+      </>
+    )
+  }
+  const chip = game === 'multiverse' ? playoffChip(row.display.round as string | undefined) : null
+  return (
+    <>
+      <span className={styles.date}>{when(row.at)}</span>
+      {chip && (
+        <span className={styles.roundChip} data-won={chip.won ? 'yes' : undefined}>
+          {chip.label}
+        </span>
+      )}
+    </>
+  )
+}
+
 export function BoardTable({
   board,
   game,
@@ -123,9 +151,9 @@ export function BoardTable({
 
       {rest.length > 0 && (
         <>
-          <div className={styles.colhead} aria-hidden>
+          <div className={`${styles.colhead} ${faceless(game) ? styles.noFace : ''}`} aria-hidden>
             <span className={styles.colheadRank}>#</span>
-            <span />
+            {!faceless(game) && <span />}
             <span>Manager</span>
             <span className={styles.colheadStat}>Run</span>
           </div>
@@ -178,31 +206,28 @@ function Plaque({
   mine: boolean
 }) {
   const stat = statFor(game, row)
-  const chip = game === 'multiverse' ? playoffChip(row.display.round as string | undefined) : null
+  const plain = faceless(game)
   return (
     <div
-      className={`${styles.plaque} ${place === 1 ? styles.plaqueFirst : ''} ${mine ? styles.rowMine : ''}`}
+      className={`${styles.plaque} ${place === 1 ? styles.plaqueFirst : ''} ${plain ? styles.noFace : ''} ${mine ? styles.rowMine : ''}`}
     >
       <span className={styles.plaqueRank} aria-hidden>
         {place}
       </span>
-      <span className={styles.plaqueFace}>
-        <BoardFace name={row.name} avatar={row.avatar} />
-      </span>
+      {!plain && (
+        <span className={styles.plaqueFace}>
+          <BoardFace name={row.name} avatar={row.avatar} />
+        </span>
+      )}
       <span className={styles.plaqueBody}>
         <span className={styles.plaqueName}>{row.name}</span>
         <span className={styles.plaqueMeta}>
-          <span className={styles.date}>{when(row.at)}</span>
-          {chip && (
-            <span className={styles.roundChip} data-won={chip.won ? 'yes' : undefined}>
-              {chip.label}
-            </span>
-          )}
+          <RunMeta row={row} game={game} />
         </span>
       </span>
       <span className={styles.plaqueStat}>
         <span className={styles.plaqueBig}>{stat.big}</span>
-        <span className={styles.statSmall}>{stat.small}</span>
+        {!plain && <span className={styles.statSmall}>{stat.small}</span>}
       </span>
     </div>
   )
@@ -210,25 +235,20 @@ function Plaque({
 
 function Row({ row, game, mine }: { row: BestRow; game: GameId; mine: boolean }) {
   const stat = statFor(game, row)
-  const chip = game === 'multiverse' ? playoffChip(row.display.round as string | undefined) : null
+  const plain = faceless(game)
   return (
-    <li className={`${styles.row} ${mine ? styles.rowMine : ''}`}>
+    <li className={`${styles.row} ${plain ? styles.noFace : ''} ${mine ? styles.rowMine : ''}`}>
       <span className={styles.rank}>{row.rank}</span>
-      <BoardFace name={row.name} avatar={row.avatar} />
+      {!plain && <BoardFace name={row.name} avatar={row.avatar} />}
       <span className={styles.who}>
         <span className={styles.name}>{row.name}</span>
         <span className={styles.sub}>
-          <span className={styles.date}>{when(row.at)}</span>
-          {chip && (
-            <span className={styles.roundChip} data-won={chip.won ? 'yes' : undefined}>
-              {chip.label}
-            </span>
-          )}
+          <RunMeta row={row} game={game} />
         </span>
       </span>
       <span className={styles.stat}>
         <span className={styles.statBig}>{stat.big}</span>
-        <span className={styles.statSmall}>{stat.small}</span>
+        {!plain && <span className={styles.statSmall}>{stat.small}</span>}
       </span>
     </li>
   )
@@ -305,10 +325,11 @@ function CareerRowLine({
   // Pack Empire posts every run as score over one, so its "rate" is already
   // the average lineup. A percentage of that would be a seven-digit number.
   const average = game === 'pack-empire'
+  const plain = faceless(game)
   return (
-    <li className={`${styles.row} ${mine ? styles.rowMine : ''}`}>
+    <li className={`${styles.row} ${plain ? styles.noFace : ''} ${mine ? styles.rowMine : ''}`}>
       <span className={styles.rank}>{row.rank != null ? row.rank : '·'}</span>
-      <BoardFace name={row.name} avatar={row.avatar} />
+      {!plain && <BoardFace name={row.name} avatar={row.avatar} />}
       <span className={styles.who}>
         <span className={styles.name}>{row.name}</span>
         <span className={styles.date}>
