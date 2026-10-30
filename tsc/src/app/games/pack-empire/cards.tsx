@@ -40,7 +40,13 @@ export function CaptainMark({ ghost = false, inline = false }: { ghost?: boolean
       aria-hidden={ghost || undefined}
     >
       <span className="pe-capmark-shield">
-        <span className="pe-capmark-c">C</span>
+        {/* Drawn, not typed: a serif C sits wherever its font's spacing puts
+            it, which at 18px was visibly low. This is centred on the shield's
+            visual middle (a little above halfway, the point being at the
+            bottom) at every size. */}
+        <svg className="pe-capmark-c" viewBox="0 0 24 27.36" aria-hidden>
+          <path d="M15.68 8.32A5.2 5.2 0 1 0 15.68 15.68" />
+        </svg>
       </span>
     </span>
   )

@@ -3,10 +3,12 @@
 // The key to the table: how a run works, what the captain does, what each
 // rarity means, how to read a card, and the ladder with your total on it.
 //
-// Wide screens get it as a column beside the field. Anything narrower (a
-// phone, the Versus room's narrow table) gets an (i) on the field that opens
-// the same thing as a bottom sheet, the way the PAMS power rankings show their
-// formula: a handle, a title, tap outside or drag down to close.
+// Wide screens get it as a column beside the field, the same height as the
+// field. It never takes width from the field: below the width where both fit
+// at full size it becomes a "How it works" button above the field (off the
+// turf, away from the packs) that opens the same thing as a bottom sheet, the
+// way the PAMS power rankings show their formula: a handle, a title, tap
+// outside or drag down to close.
 //
 // The sheet is portalled up to the page's <main>: the field is its own
 // stacking context (it isolates its painted lines), and a fixed sheet left
@@ -83,20 +85,25 @@ function KeyBody({ score }: { score: number }) {
 /** The column beside the field, on screens wide enough for one. */
 export function KeyAside({ score }: { score: number }) {
   return (
-    <aside className="pe-key" aria-label="How it works">
-      <div className="pe-kicker">★ The key ★</div>
-      <KeyBody score={score} />
-    </aside>
+    <div className="pe-key-col">
+      <aside className="pe-key" aria-label="How it works">
+        <div className="pe-key-title">The Key</div>
+        <KeyBody score={score} />
+      </aside>
+    </div>
   )
 }
 
-/** The (i) on the field, and the sheet it opens. */
+/** The button above the field, and the sheet it opens. */
 export function KeyButton({ score }: { score: number }) {
   const [open, setOpen] = useState(false)
   return (
     <>
-      <button type="button" className="pe-key-btn" onClick={() => setOpen(true)} aria-label="How it works">
-        i
+      <button type="button" className="pe-key-btn" onClick={() => setOpen(true)}>
+        <span className="pe-key-btn-i" aria-hidden>
+          i
+        </span>
+        How it works
       </button>
       {open &&
         createPortal(
@@ -152,13 +159,13 @@ function KeySheet({ score, onClose }: { score: number; onClose: () => void }) {
         className={`pe-ksheet${shown ? ' on' : ''}`}
         role="dialog"
         aria-modal="true"
-        aria-label="How it works"
+        aria-label="The key"
         onClick={(e) => e.stopPropagation()}
         style={drag ? { transform: `translateY(${drag}px)`, transition: 'none' } : undefined}
       >
         <div className="pe-ksheet-grab" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
           <span className="pe-ksheet-handle" aria-hidden />
-          <div className="pe-ksheet-title">How It Works</div>
+          <div className="pe-ksheet-title">The Key</div>
           <button type="button" className="pe-ksheet-x" onClick={close} aria-label="Close">
             <svg viewBox="0 0 24 24" aria-hidden>
               <path d="M6 6l12 12M18 6L6 18" />

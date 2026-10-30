@@ -6382,12 +6382,13 @@ a.pe-row:hover {
 
 .pe-capmark-c {
   position: relative;
-  margin-top: -6%;
-  font-family: var(--serif);
-  font-size: calc(var(--cm) * 0.66);
-  line-height: 1;
-  color: #f4c06a;
-  text-shadow: 0 0 6px rgba(244, 192, 106, 0.55);
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: #f4c06a;
+  stroke-width: 2.7;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 2px rgba(244, 192, 106, 0.6));
 }
 
 /* In a line of text: the banner, the stage tag, the key. */
@@ -6483,6 +6484,22 @@ a.pe-row:hover {
    THE BOARD: the field, the key beside it, the (i) under it
    ============================================================ */
 
+/* Wide screens: the whole draft (strip, banner, field, key) grows past the
+   1080 table, so the field keeps its full width and the key goes beside it
+   instead of out of it. Centred with margins, not a transform: the pack
+   stage inside is position: fixed, and a transform would trap it. */
+@media (min-width: 1300px) {
+  .pe-draft {
+    --pe-draft-w: min(calc(100vw - 3rem), 1400px);
+    width: var(--pe-draft-w);
+    margin-inline: calc((100% - var(--pe-draft-w)) / 2);
+  }
+
+  .pe-draft .pe-strip {
+    max-width: none;
+  }
+}
+
 .pe-board {
   container-type: inline-size;
 }
@@ -6491,31 +6508,35 @@ a.pe-row:hover {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 1.2rem;
-  align-items: start;
+  align-items: stretch;
 }
 
-.pe-key {
+/* The key's column, when there's room for it AND a full-size field. */
+.pe-key-col {
   display: none;
 }
 
-.pe-key-btn {
-  position: absolute;
-  top: 0.7rem;
-  right: 0.7rem;
-  z-index: 15;
-  width: 26px;
-  height: 26px;
+/* Otherwise a button above the field, off the turf and clear of the packs. */
+.pe-board-bar {
   display: flex;
+  justify-content: flex-end;
+  margin: 0 0 0.55rem;
+}
+
+.pe-key-btn {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(232, 168, 75, 0.5);
-  border-radius: 50%;
+  gap: 0.45rem;
+  padding: 0.32rem 0.75rem 0.32rem 0.34rem;
+  border: 1px solid rgba(232, 168, 75, 0.45);
+  border-radius: 999px;
   background: rgba(20, 19, 17, 0.85);
   color: var(--pe-amber);
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 0.95rem;
-  line-height: 1;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -6525,26 +6546,71 @@ a.pe-row:hover {
   background: rgba(232, 168, 75, 0.1);
 }
 
-/* Room for a column: the key sits beside the field and the (i) goes. */
-@container (min-width: 1020px) {
+.pe-key-btn-i {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(232, 168, 75, 0.6);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.82rem;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1;
+}
+
+@container (min-width: 1240px) {
   .pe-board-in {
-    grid-template-columns: minmax(0, 1fr) 15.5rem;
+    grid-template-columns: minmax(0, 1fr) 17rem;
   }
 
-  .pe-key {
+  .pe-key-col {
     display: block;
+    position: relative;
   }
 
-  .pe-key-btn {
+  .pe-board-bar {
     display: none;
   }
 }
 
+/* The key fills its column to exactly the field's height (it adds none of
+   its own to the row) and scrolls inside if it runs longer. */
 .pe-key {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--pe-line) transparent;
   padding: 1.1rem 1.05rem 1.2rem;
   background: var(--pe-bg-soft);
   border: 1px solid var(--pe-line);
-  border-radius: 8px;
+  border-radius: 10px;
+}
+
+/* A fade along the bottom while there's more below; at the end it falls in
+   after the last line and covers nothing. */
+.pe-key::after {
+  content: '';
+  position: sticky;
+  bottom: -1.2rem;
+  display: block;
+  height: 2.2rem;
+  margin: 0 -1.05rem -1.2rem;
+  background: linear-gradient(transparent, var(--pe-bg-soft) 80%);
+  pointer-events: none;
+}
+
+.pe-key-title {
+  text-align: center;
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  line-height: 1.1;
+  color: var(--pe-ink);
 }
 
 .pe-key-sec {
@@ -6720,7 +6786,10 @@ a.pe-row:hover {
   left: 0;
   right: 0;
   bottom: 0;
-  max-height: 86vh;
+  /* Under the phone's toolbars, with room above it: dvh is the height that's
+     actually visible (vh counts the space the address bar covers). */
+  max-height: 74vh;
+  max-height: 74dvh;
   display: flex;
   flex-direction: column;
   background: var(--pe-bg-soft);
@@ -6869,7 +6938,6 @@ a.pe-row:hover {
   }
 
   .pe-turf {
-    padding-top: 2.4rem;
     border-radius: 8px;
   }
 

@@ -104,15 +104,16 @@ type DraftProps = {
   restartable?: boolean
 }
 
-/** The field and, beside it on a wide screen, the key. */
+/** The field and, beside it on a wide screen, the key; narrower, a button
+    above the field that opens the key. */
 function Board({ score, children }: { score: number; children: React.ReactNode }) {
   return (
     <div className="pe-board">
+      <div className="pe-board-bar">
+        <KeyButton score={score} />
+      </div>
       <div className="pe-board-in">
-        <div className="pe-turf">
-          <KeyButton score={score} />
-          {children}
-        </div>
+        <div className="pe-turf">{children}</div>
         <KeyAside score={score} />
       </div>
     </div>
@@ -314,7 +315,7 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro, restartable =
   const capDef = captain != null ? SLOTS[captain] : null
 
   return (
-    <>
+    <div className="pe-draft">
       {flash && <ImmortalFlash />}
 
       {choosing ? (
@@ -399,6 +400,6 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro, restartable =
           onSkip={skip}
         />
       )}
-    </>
+    </div>
   )
 }
