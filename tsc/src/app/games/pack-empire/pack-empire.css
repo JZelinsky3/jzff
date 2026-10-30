@@ -4583,3 +4583,794 @@ a.pe-row:hover {
   font-size: clamp(1.9rem, 7.4vw, 4.2rem);
   white-space: nowrap;
 }
+
+/* ============================================================
+   THE BINDER
+   A row per man, his seasons best first. Pulled versions are
+   small cards in the original stock; the ones still out there
+   are face down in their rarity's colour.
+   ============================================================ */
+
+.pe-bd-out {
+  max-width: 560px;
+  margin: 2.2rem auto 0;
+  padding: 2rem 1.6rem;
+  text-align: center;
+  background: var(--pe-card);
+  border: 1px solid var(--pe-line);
+  border-radius: 4px;
+}
+
+.pe-bd-out-lede {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  line-height: 1.4;
+  color: var(--pe-ink);
+}
+
+.pe-bd-out-sub {
+  margin-top: 0.8rem;
+  color: var(--pe-ink-soft);
+  font-size: 0.92rem;
+}
+
+.pe-bd-out-ctas {
+  margin-top: 1.4rem;
+  display: flex;
+  gap: 0.7rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ── Totals ── */
+
+.pe-bd-sum {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr);
+  gap: 2rem;
+  align-items: center;
+  padding: 1.4rem 1.6rem;
+  background: var(--pe-card);
+  border: 1px solid var(--pe-line);
+  border-radius: 4px;
+}
+
+.pe-bd-sum-num {
+  font-family: var(--pe-display);
+  font-weight: 900;
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--pe-amber);
+}
+
+.pe-bd-sum-num span {
+  font-size: 1.2rem;
+  color: var(--pe-ink-mute);
+  margin-left: 0.2rem;
+}
+
+.pe-bd-sum-main .pe-note {
+  margin-top: 0.45rem;
+}
+
+.pe-bd-sum-sub {
+  margin-top: 0.6rem;
+  color: var(--pe-ink-soft);
+  font-size: 0.85rem;
+}
+
+.pe-bd-rar {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.pe-bd-rar-row {
+  display: grid;
+  grid-template-columns: 6.6rem minmax(0, 1fr) 3.6rem;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.pe-bd-rar-name {
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--rc);
+}
+
+.pe-bd-rar-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--pe-line-soft);
+  overflow: hidden;
+}
+
+.pe-bd-rar-bar span {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  background: var(--rc);
+  box-shadow: 0 0 10px var(--rc);
+}
+
+.pe-bd-rar-n {
+  font-family: var(--pe-display);
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-align: right;
+  color: var(--pe-ink);
+}
+
+.pe-bd-rar-n em {
+  font-style: normal;
+  color: var(--pe-ink-mute);
+}
+
+.pe-bd-first {
+  margin-top: 1.4rem;
+}
+
+/* ── Controls ── */
+
+.pe-bd-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 2rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.pe-bd-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.pe-bd-tab {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  flex-shrink: 0;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--pe-line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--pe-ink-soft);
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.pe-bd-tab em {
+  font-style: normal;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  color: var(--pe-ink-mute);
+}
+
+.pe-bd-tab.on {
+  border-color: var(--pe-amber);
+  color: var(--pe-amber);
+  background: rgba(232, 168, 75, 0.07);
+}
+
+.pe-bd-ctl {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0.9rem 0 1.2rem;
+}
+
+.pe-bd-seg {
+  display: inline-flex;
+  border: 1px solid var(--pe-line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.pe-bd-seg button {
+  padding: 0.5rem 0.8rem;
+  background: transparent;
+  border: 0;
+  color: var(--pe-ink-mute);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.pe-bd-seg button + button {
+  border-left: 1px solid var(--pe-line);
+}
+
+.pe-bd-seg button.on {
+  background: var(--pe-raise);
+  color: var(--pe-ink);
+}
+
+.pe-bd-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pe-bd-sort select {
+  background: var(--pe-bg);
+  color: var(--pe-ink);
+  border: 1px solid var(--pe-line);
+  border-radius: 4px;
+  padding: 0.45rem 0.6rem;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+}
+
+.pe-bd-q.pe-input {
+  width: auto;
+  flex: 1 1 12rem;
+  max-width: 18rem;
+  margin-left: auto;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+/* ── Rows ── */
+
+.pe-bd-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.pe-bd-man {
+  padding: 0.85rem 0.95rem 0.75rem;
+  background: var(--pe-card);
+  border: 1px solid var(--pe-line-soft);
+  border-radius: 4px;
+  min-width: 0;
+}
+
+.pe-bd-man.none {
+  background: transparent;
+}
+
+.pe-bd-man-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.pe-bd-man-pos {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.56rem;
+  letter-spacing: 0.12em;
+  color: var(--pe-amber);
+}
+
+.pe-bd-man-name {
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 1.08rem;
+  color: var(--pe-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.pe-bd-man.none .pe-bd-man-name {
+  color: var(--pe-ink-mute);
+}
+
+.pe-bd-man-meta {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+.pe-bd-strip {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.pe-bd-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  width: 4.9rem;
+  flex-shrink: 0;
+}
+
+.pe-bd-cap {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+.pe-bd-tile {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border-radius: 8px;
+  border: 1.5px solid var(--rc);
+  background: rgba(4, 8, 16, 0.9);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--rc) 35%, transparent);
+  overflow: hidden;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.18s,
+    box-shadow 0.18s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pe-bd-tile:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 18px var(--rg);
+}
+
+.pe-bd-tile-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.22rem 0.35rem;
+  background: rgba(4, 8, 16, 0.95);
+}
+
+.pe-bd-tile-year {
+  font-family: var(--pe-display);
+  font-weight: 700;
+  font-size: 0.56rem;
+  color: #e0eef8;
+}
+
+.pe-bd-tile-rar {
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  color: var(--rc);
+}
+
+.pe-bd-tile-art {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 3.6rem;
+  background: var(--art);
+  overflow: hidden;
+}
+
+.pe-bd-tile-art img {
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 108%;
+  width: auto;
+  max-width: none;
+  object-fit: contain;
+  object-position: center bottom;
+  z-index: 2;
+}
+
+.pe-bd-tile-initial {
+  font-family: var(--pe-display);
+  font-weight: 900;
+  font-size: 1.7rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.18);
+}
+
+.pe-bd-tile-count {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.2rem;
+  z-index: 3;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.65);
+  font-family: var(--pe-display);
+  font-weight: 700;
+  font-size: 0.52rem;
+  color: #fff;
+}
+
+.pe-bd-tile-foot {
+  display: block;
+  padding: 0.22rem 0.35rem 0.28rem;
+  background: rgba(4, 8, 16, 0.95);
+  font-family: var(--pe-display);
+  font-weight: 900;
+  font-size: 0.66rem;
+  color: var(--rc);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Face down: the rarity's colour on the edge, a ? where the man would be. */
+.pe-bd-tile.back {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--rc) 70%, transparent);
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.025) 0 6px, transparent 6px 12px),
+    #0c0b0a;
+  box-shadow: none;
+}
+
+.pe-bd-tile.back .pe-bd-tile-top,
+.pe-bd-tile.back .pe-bd-tile-foot {
+  background: transparent;
+}
+
+.pe-bd-tile.back .pe-bd-tile-art {
+  background: transparent;
+}
+
+.pe-bd-tile.back .pe-bd-tile-initial {
+  color: color-mix(in srgb, var(--rc) 45%, transparent);
+}
+
+.pe-bd-tile.back .pe-bd-tile-year {
+  color: var(--pe-ink-mute);
+}
+
+.pe-bd-tile.back .pe-bd-tile-foot {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.48rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+.pe-bd-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.4rem;
+}
+
+/* ── One card, up close ── */
+
+.pe-bd-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+  background: rgba(10, 9, 8, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: pe-fade-in 0.2s ease both;
+  overflow-y: auto;
+}
+
+.pe-bd-sheet-in {
+  position: relative;
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  max-width: 640px;
+  width: 100%;
+  padding: 1.8rem;
+  background: var(--pe-bg-soft);
+  border: 1px solid var(--pe-line);
+  border-radius: 6px;
+}
+
+.pe-bd-x {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 2.2rem;
+  height: 2.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--pe-line);
+  border-radius: 4px;
+  color: var(--pe-ink-soft);
+  cursor: pointer;
+}
+
+.pe-bd-x svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.pe-bd-sheet-card {
+  flex-shrink: 0;
+}
+
+.pe-bd-sheet-card .pe-card {
+  --pe-cs: 1.35;
+  cursor: default;
+}
+
+.pe-bd-ghost {
+  width: calc(8.5em * 1.35);
+  font-size: 16px;
+  aspect-ratio: 5 / 7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 2px dashed var(--rc);
+  border-radius: 11px;
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.03) 0 8px, transparent 8px 16px),
+    #0c0b0a;
+  box-shadow: 0 0 30px color-mix(in srgb, var(--rc) 25%, transparent);
+  text-align: center;
+  padding: 1rem;
+}
+
+.pe-bd-ghost-rar {
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--rc);
+}
+
+.pe-bd-ghost-year {
+  font-family: var(--pe-display);
+  font-weight: 900;
+  font-size: 1.7rem;
+  color: var(--pe-ink);
+}
+
+.pe-bd-ghost-club {
+  font-family: var(--pe-cond);
+  font-size: 0.8rem;
+  color: var(--pe-ink-mute);
+}
+
+.pe-bd-ghost-q {
+  margin-top: 0.6rem;
+  font-family: var(--pe-display);
+  font-weight: 900;
+  font-size: 3rem;
+  line-height: 1;
+  color: color-mix(in srgb, var(--rc) 40%, transparent);
+}
+
+.pe-bd-sheet-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.pe-bd-sheet-name {
+  margin-top: 0.5rem;
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  line-height: 1.1;
+  color: var(--pe-ink);
+}
+
+.pe-bd-sheet-club {
+  margin-top: 0.3rem;
+  font-family: var(--pe-cond);
+  font-size: 0.95rem;
+  color: var(--pe-ink-soft);
+}
+
+.pe-bd-stats {
+  display: flex;
+  gap: 1.6rem;
+  margin: 1.1rem 0 0;
+}
+
+.pe-bd-stats dt {
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+.pe-bd-stats dd {
+  margin: 0.2rem 0 0;
+  font-family: var(--pe-display);
+  font-weight: 900;
+  font-size: 1.25rem;
+  color: var(--pe-ink);
+}
+
+.pe-bd-sheet-miss {
+  margin-top: 1rem;
+  color: var(--pe-ink-soft);
+  font-size: 0.9rem;
+}
+
+.pe-bd-sheet-vers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 1.3rem;
+}
+
+.pe-bd-ver {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--rc) 60%, transparent);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--pe-ink);
+  font-family: var(--pe-display);
+  font-weight: 700;
+  font-size: 0.66rem;
+  cursor: pointer;
+}
+
+.pe-bd-ver em {
+  font-style: normal;
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  color: var(--rc);
+}
+
+.pe-bd-ver.back {
+  border-style: dashed;
+  color: var(--pe-ink-mute);
+}
+
+.pe-bd-ver.on {
+  background: color-mix(in srgb, var(--rc) 16%, transparent);
+  border-color: var(--rc);
+}
+
+@media (max-width: 860px) {
+  .pe-bd-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .pe-bd-sum {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.1rem;
+    padding: 1.1rem 1rem;
+  }
+
+  .pe-bd-sum-num {
+    font-size: 2.3rem;
+  }
+
+  .pe-bd-rar-row {
+    grid-template-columns: 5.6rem minmax(0, 1fr) 3.2rem;
+    gap: 0.6rem;
+  }
+
+  .pe-bd-tabs {
+    margin-top: 1.4rem;
+  }
+
+  .pe-bd-q.pe-input {
+    max-width: none;
+    flex-basis: 100%;
+    margin-left: 0;
+    order: -1;
+  }
+
+  .pe-bd-strip {
+    gap: 0.4rem;
+  }
+
+  .pe-bd-slot {
+    width: calc((100% - 1.2rem) / 4);
+    min-width: 0;
+  }
+
+  .pe-bd-sheet-in {
+    flex-direction: column;
+    gap: 1.1rem;
+    padding: 1.4rem 1rem 1.2rem;
+    text-align: center;
+  }
+
+  .pe-bd-sheet-card .pe-card {
+    --pe-cs: 1.15;
+  }
+
+  .pe-bd-ghost {
+    width: calc(8.5em * 1.15);
+  }
+
+  .pe-bd-stats,
+  .pe-bd-sheet-vers {
+    justify-content: center;
+  }
+}
+
+/* The binder on the Pack Empire front page. */
+.pe-bd-strip-home {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  padding: 1.1rem 1.3rem;
+  background: var(--pe-card);
+  border: 1px solid var(--pe-line);
+  border-radius: 4px;
+  color: var(--pe-ink-soft);
+  text-decoration: none;
+}
+
+.pe-bd-strip-home p {
+  flex: 1;
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.pe-bd-strip-home--in:hover {
+  border-color: var(--pe-amber);
+}
+
+.pe-bd-strip-home-num {
+  font-family: var(--pe-display);
+  font-weight: 900;
+  font-size: 1.9rem;
+  line-height: 1;
+  color: var(--pe-amber);
+}
+
+.pe-bd-strip-home-num em {
+  font-style: normal;
+  font-size: 0.85rem;
+  color: var(--pe-ink-mute);
+  margin-left: 0.15rem;
+}
+
+.pe-bd-strip-home-rar {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 700px) {
+  .pe-bd-strip-home {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.9rem;
+  }
+}

@@ -28,6 +28,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { containsHateSpeech } from '@/lib/contentModeration'
+import { recordPacks } from './binder'
 import { dealPack, newServerSeed } from './deal'
 import { isId, nameForUser, newId } from './people'
 import {
@@ -642,6 +643,11 @@ export async function pickLeagueCard(
     .maybeSingle()
   const fresh = (data as DraftRow | null) ?? (await weekDraft(league, member))
   if (!fresh) return { ok: false, error: 'That pick did not save.' }
+  if (data) {
+    await recordPacks(userId, 'league', [
+      { deal: `league:${d.seed}`, slot: d.open_slot, cards: pack.map((p) => p.id), kept: card.id },
+    ])
+  }
   return { ok: true, view: draftView(league, member, fresh) }
 }
 

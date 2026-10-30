@@ -13,7 +13,7 @@
 // Refreshing re-deals the identical pack, so there is nothing to reroll.
 
 import { createHmac, hkdfSync, randomBytes } from 'crypto'
-import { POOL, POOL_VERSION } from './pool'
+import { POOL, POOL_VERSION, personOfId } from './pool'
 import {
   MEGA_POOL_COUNTS,
   MEGA_WEIGHTS,
@@ -22,6 +22,7 @@ import {
   SEED_ALPHABET,
   SLOTS,
   SLOT_COUNT,
+  personOf,
   type Player,
   type Weights,
 } from './rules'
@@ -152,8 +153,9 @@ const LANE_DEPTH = 40
  * Five cards for one slot.
  *
  * Each card position has its own LANE: a fixed sequence of weighted draws off
- * its own stream. A card is the first candidate in its lane that isn't
- * excluded and isn't already in the pack. One lane in five draws off the
+ * its own stream. A card is the first candidate in its lane whose MAN isn't
+ * excluded and isn't already in the pack: cards are seasons, and Jerry Rice's
+ * 1995 and his 1994 are still one Jerry Rice. One lane in five draws off the
  * boosted table, exactly as the original did.
  *
  * Lanes rather than one shared stream because of the three receiver slots
@@ -181,8 +183,9 @@ export function dealPack({
   if (!def) return []
   const pool = POOL[def.pool]
   const out: Player[] = []
-  const taken = new Set(exclude)
-  const left = pool.filter((p) => !taken.has(p.id)).length
+  // by man, not by card; ids from an older pool are their own man
+  const taken = new Set([...exclude].map(personOfId))
+  const left = new Set(pool.map(personOf).filter((m) => !taken.has(m))).size
   const size = Math.min(PACK_SIZE, left)
 
   const head = stream(`${label}|${def.key}|head`)
@@ -196,15 +199,15 @@ export function dealPack({
     let pick: Player | null = null
     for (let n = 0; n < LANE_DEPTH && !pick; n++) {
       const p = draw(lane())
-      if (p && !taken.has(p.id)) pick = p
+      if (p && !taken.has(personOf(p))) pick = p
     }
     if (!pick) {
       // A pool nearly drafted dry. Still deterministic: same lane, same order.
-      const rest = pool.filter((p) => !taken.has(p.id))
+      const rest = pool.filter((p) => !taken.has(personOf(p)))
       if (rest.length === 0) break
       pick = rest[Math.floor(lane() * rest.length)]
     }
-    taken.add(pick.id)
+    taken.add(personOf(pick))
     out.push(pick)
   }
 
@@ -224,7 +227,8 @@ export function dealPack({
 /**
  * The shared board for a Mega Draft: 36 players, at least one dynasty-or-
  * better at every position, the rest weighted off MEGA_WEIGHTS without
- * replacement, then shuffled.
+ * replacement, then shuffled. One version of a man per board, so the two
+ * seats can't both draft him.
  */
 export function dealMegaBoard(seed: string): Player[] {
   const out: Player[] = []
@@ -237,17 +241,17 @@ export function dealMegaBoard(seed: string): Player[] {
     const stars = pool.filter((p) => p.rarity === 'dynasty' || p.rarity === 'transcendent' || p.rarity === 'immortal')
     if (stars.length) {
       const s = stars[Math.floor(rnd() * stars.length)]
-      picked.add(s.id)
+      picked.add(personOf(s))
       out.push(s)
     }
 
     let guard = 0
     while (picked.size < want && guard++ < 500) {
-      const avail = pool.filter((p) => !picked.has(p.id))
+      const avail = pool.filter((p) => !picked.has(personOf(p)))
       if (avail.length === 0) break
       const p = sampler(avail, MEGA_WEIGHTS)(rnd())
-      if (p && !picked.has(p.id)) {
-        picked.add(p.id)
+      if (p && !picked.has(personOf(p))) {
+        picked.add(personOf(p))
         out.push(p)
       }
     }

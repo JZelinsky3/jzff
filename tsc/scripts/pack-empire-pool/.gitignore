@@ -1,0 +1,9 @@
+# downloaded sources and build intermediates (./fetch.sh, ./build.sh)
+nflv/
+fdp/
+wiki/
+build/*.pkl
+build/*_report.txt
+build/__pycache__/
+sim/*.json
+sim/*.txt

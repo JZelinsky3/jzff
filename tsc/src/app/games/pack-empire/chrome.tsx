@@ -66,6 +66,11 @@ export function PeChrome({
           <span className="pricing-nav-link-text">{home ? 'All games' : 'Pack Empire'}</span>
         </Link>
         {signedIn && (
+          <Link href="/games/pack-empire/binder/" className="pricing-nav-link">
+            <span className="pricing-nav-link-text">Binder</span>
+          </Link>
+        )}
+        {signedIn && (
           <Link href="/account/#friends" className="pricing-nav-link">
             <span className="pricing-nav-link-text">Friends</span>
           </Link>

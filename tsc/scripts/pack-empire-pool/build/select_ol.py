@@ -1,0 +1,184 @@
+# Offensive line seasons: that year's honors plus what his offense put up.
+import os, sys, re
+import pandas as pd, numpy as np
+
+S = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, f'{S}/build')
+from seasons import norm, club, FRANCHISE
+import allpro
+from select_skill import interp, rarity_for, BANDS, SCORE_AT
+
+TARGETS = {
+    'OT': {'immortal': 5, 'transcendent': 4, 'dynasty': 7, 'rare': 14, 'common': 44},   # 74, old pool 74
+    'OG': {'immortal': 5, 'transcendent': 4, 'dynasty': 7, 'rare': 16, 'common': 48},   # 80, old pool 80
+    'C': {'immortal': 4, 'transcendent': 3, 'dynasty': 4, 'rare': 10, 'common': 31},    # 52, old pool 52
+}
+# Calibration runs (sim/variant.sh) override these from the environment.
+import json as _json
+TARGETS.update(_json.loads(os.environ.get('PE_TARGETS', '{}')))
+
+MAX_PER_MAN = 4
+# By band: pre-2000 linemen only at dynasty and up (see select_skill.DECADES).
+DECADES = {
+    'dynasty': {1970: 0.10, 1980: 0.14, 1990: 0.18, 2000: 0.20, 2010: 0.20, 2020: 0.18},
+    'rare': {2000: 0.30, 2010: 0.38, 2020: 0.32},
+    'common': {2000: 0.28, 2010: 0.38, 2020: 0.34},
+}
+OFFENSE_WEIGHT = 2.5
+# Honors top out (first team, Pro Bowl, every selector), so the best line
+# seasons are separated by their offense alone; a flatter top keeps a few tenths
+# of a point from being worth 1,500.
+OL_TOP = 4800
+
+# Wikipedia vandalism / typos, by (season, name as parsed)
+FIX = {(2003, 'Brennan'): 'Alan Faneca'}
+
+
+def honors_table():
+    ap = allpro.build()
+    pb = []
+    for y in range(1970, 2026):
+        r = allpro.parse_pro_bowl(y)
+        if r is None: print('  no Pro Bowl page for season', y); continue
+        pb += r
+    pb = pd.DataFrame(pb, columns=['season', 'pos', 'name', 'fr'])
+    pb['name'] = [FIX.get((s, n), n) for s, n in zip(pb.season, pb.name)]
+    pb['key'] = pb.name.map(norm)
+    pb = pb.drop_duplicates(['season', 'key'])
+    pb['pro_bowl'] = True
+    t = ap.merge(pb[['season', 'key', 'pro_bowl', 'name', 'pos', 'fr']], on=['season', 'key'], how='outer', suffixes=('', '_pb'))
+    for c in ('name', 'pos', 'fr'):
+        t[c] = t[c].fillna(t[c + '_pb'])
+    t = t.drop(columns=['name_pb', 'pos_pb', 'fr_pb'])
+    t['pro_bowl'] = t.pro_bowl.notna() & (t.pro_bowl == True)
+    for c in ('ap1', 'ap2'):
+        t[c] = t[c] == True
+    for c in ('others1', 'others2', 'tags'):
+        t[c] = t[c].apply(lambda v: v if isinstance(v, list) else [])
+    # list-style Pro Bowl pages only say "OL", and a few lines drop the team:
+    # fill both from the man's other honors, else nflverse's position
+    pl = pd.read_csv(f'{S}/nflv/players.csv', low_memory=False)
+    pl = pl[pl.position.isin(['T', 'OT', 'G', 'OG', 'C', 'OL'])].copy()
+    pl['key'] = pl.display_name.map(norm)
+    pl_pos = pl.drop_duplicates('key').set_index('key').position.map({'T': 'OT', 'OT': 'OT', 'G': 'OG', 'OG': 'OG', 'C': 'C'})
+    known = t[t.pos != 'OL'].groupby('key').pos.agg(lambda s: s.mode().iloc[0])
+    t['pos'] = [p if p != 'OL' else known.get(k, pl_pos.get(k, 'OL')) for p, k in zip(t.pos, t.key)]
+    t = t[t.pos.isin(['OT', 'OG', 'C'])].copy()
+    for i in t.index[t.fr.isna()]:
+        k, y = t.at[i, 'key'], t.at[i, 'season']
+        o = t[(t.key == k) & t.fr.notna()]
+        if len(o): t.at[i, 'fr'] = o.iloc[(o.season - y).abs().argsort().iloc[0]].fr
+    t['honors'] = (10 * t.ap1 + 5 * t.ap2 + np.minimum(1.5 * t.others1.str.len(), 3.0)
+                   + np.minimum(0.5 * t.others2.str.len(), 1.0) + 3 * t.pro_bowl)
+    return t
+
+
+def resolve(t):
+    pl = pd.read_csv(f'{S}/nflv/players.csv', low_memory=False)
+    pl = pl[pl.position.isin(['T', 'OT', 'G', 'OG', 'C', 'OL'])]
+    pl['key'] = pl.display_name.map(norm)
+    by = {k: g for k, g in pl.groupby('key')}
+    pids, imgs, names = [], [], []
+    for r in t.itertuples():
+        g = by.get(r.key)
+        hit = None
+        if g is not None:
+            span = g[(g.rookie_season - 1 <= r.season) & (r.season <= g.last_season + 1)]
+            hit = span.iloc[0] if len(span) else (g.iloc[0] if len(g) == 1 else None)
+        pids.append(hit.gsis_id if hit is not None else 'k:' + r.key)
+        imgs.append(hit.headshot if hit is not None and isinstance(hit.headshot, str) else None)
+        names.append(hit.display_name if hit is not None else r.name)
+    t['pid'] = pids; t['img'] = imgs; t['display'] = names
+    t['matched'] = ~t.pid.str.startswith('k:')
+    return t
+
+
+def choose(pos, t, off):
+    p = t[(t.pos == pos) & t.fr.notna()].merge(off[['season', 'fr', 'ppg', 'rpg', 'spg', 'offense']], on=['season', 'fr'], how='left')
+    p['offense'] = p.offense.fillna(0)
+    p['metric'] = p.honors + OFFENSE_WEIGHT * p.offense
+    p = p.sort_values('metric', ascending=False).reset_index(drop=True)
+    career = t.groupby('pid').honors.sum()
+    p['fame'] = p.pid.map(career.rank(pct=True))
+    p['decade'] = (p.season // 10 * 10)
+
+    target = TARGETS[pos]
+    held, picked = {}, {}
+
+    def can_take(pid, band):
+        have = held.get(pid, set())
+        return len(have) < MAX_PER_MAN and band not in have
+
+    def take(i, band):
+        held.setdefault(p.at[i, 'pid'], set()).add(band); picked[i] = band
+
+    floors, ceiling = {}, 1e9
+    for band in ['immortal', 'transcendent']:
+        n, last = 0, None
+        for r in p.itertuples():
+            if r.metric >= ceiling or r.Index in picked or not can_take(r.pid, band): continue
+            if n == target[band]:
+                floors[band] = (last + r.metric) / 2; break
+            take(r.Index, band); n += 1; last = r.metric
+        ceiling = floors[band]
+
+    # Dynasty: an All-Pro first-teamer on an average offense. Rare: a
+    # second-teamer who also made the Pro Bowl. Below that, common.
+    t_dyn, t_rare, m_floor = 13.0, 7.0, -2.0
+    anchors = [(m_floor, SCORE_AT['floor']), (t_rare, SCORE_AT['rare']), (t_dyn, SCORE_AT['dynasty']),
+               (floors['transcendent'], SCORE_AT['transcendent']), (floors['immortal'], SCORE_AT['immortal']),
+               (p.metric.max(), OL_TOP)]
+    p['score'] = [int(interp(m, anchors) // 5 * 5) for m in p.metric]
+    p['band'] = p.score.map(rarity_for)
+
+    per_season = {}
+    for band in ['dynasty', 'rare', 'common']:
+        need = target[band]
+        pool = p[(p.band == band) & (~p.index.isin(picked.keys())) & p.decade.isin(DECADES[band].keys())].copy()
+        pool['interest'] = pool.fame + 0.15 * pool.offense
+        quota = {d: need * w for d, w in DECADES[band].items()}
+        got = {d: 0 for d in DECADES[band]}
+        lo, hi = pool.metric.min(), pool.metric.max()
+        nb = max(3, need // 3)
+        pool['bin'] = np.minimum(((pool.metric - lo) / max(hi - lo, 1e-6) * nb).astype(int), nb - 1)
+        b, stall = nb - 1, 0
+        while need > 0 and stall < nb * 3:
+            cand = pool[(pool.bin == b) & (~pool.index.isin(picked.keys()))]
+            if len(cand): cand = cand[[can_take(x, band) for x in cand.pid]]
+            if len(cand): cand = cand[[per_season.get(s, 0) < 3 for s in cand.season]]
+            if len(cand):
+                lag = {d: got[d] - quota[d] for d in DECADES[band]}
+                cand = cand.assign(lag=cand.decade.map(lag)).sort_values(['lag', 'interest'], ascending=[True, False])
+                i = cand.index[0]
+                take(i, band); need -= 1; got[p.at[i, 'decade']] += 1
+                per_season[p.at[i, 'season']] = per_season.get(p.at[i, 'season'], 0) + 1
+                stall = 0
+            else:
+                stall += 1
+            b = (b - 1) % nb
+
+    out = p.loc[list(picked.keys())].copy()
+    out['band'] = [picked[i] for i in out.index]
+    assert (out.band == out.score.map(rarity_for)).all()
+    out['club'] = [club(f, y) for f, y in zip(out.fr, out.season)]
+    out['team'] = out.fr.map(FRANCHISE)
+    return out.sort_values('score', ascending=False), anchors
+
+
+if __name__ == '__main__':
+    off = pd.read_pickle(f'{S}/build/offense.pkl')
+    t = resolve(honors_table())
+    print('honored OL seasons', len(t), 'unmatched to nflverse:', int((~t.matched).sum()))
+    print(t[~t.matched][['season', 'name', 'pos', 'fr', 'tags', 'pro_bowl']].head(15).to_string())
+    t = t[t.matched]
+    allp = []
+    for pos in ['OT', 'OG', 'C']:
+        out, anchors = choose(pos, t, off)
+        print(f'\n===== {pos} n={len(out)}', {b: int((out.band == b).sum()) for b in BANDS},
+              'decades', dict(out.decade.value_counts().sort_index()), 'men', out.pid.nunique())
+        print('anchors', [(round(a, 2), b) for a, b in anchors])
+        out['tagstr'] = [('AP ' if a else '') + ('AP2 ' if b2 else '') + ('PB ' if pb else '') + ','.join(o1)
+                         for a, b2, pb, o1 in zip(out.ap1, out.ap2, out.pro_bowl, out.others1)]
+        print(out[['display', 'season', 'club', 'tagstr', 'honors', 'offense', 'metric', 'score', 'band']].to_string(index=False))
+        allp.append(out)
+    pd.concat(allp).to_pickle(f'{S}/build/ol_pool.pkl')

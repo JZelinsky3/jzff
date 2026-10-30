@@ -14,6 +14,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { newCaptainSeed } from './deal'
 import { friendOf } from '@/lib/friends'
 import { hashKey, nameForUser, cleanGuestName, newId, isId } from './people'
+import { recordSoloRun } from './binder'
 import { replaySolo, type SoloPick } from './solo'
 import { SLOT_COUNT, tierFor, type Player } from './rules'
 
@@ -284,6 +285,8 @@ export async function submitVersusSeat(
     await db.from('pe_versus').update({ status: 'done', completed_at: new Date().toISOString() }).eq('id', id)
     fresh.status = 'done'
   }
+  // A seat with an account files its packs in the binder; a guest's go nowhere.
+  if (userId) await recordSoloRun(userId, 'versus', seed, picks)
   return { ok: true, view: view(fresh, seat, userId) }
 }
 

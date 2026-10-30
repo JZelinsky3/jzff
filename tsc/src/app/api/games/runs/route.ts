@@ -14,6 +14,8 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyRun } from '@/lib/minigames/verifyRun'
+import { recordSoloRun } from '@/lib/packEmpire/binder'
+import { parseSoloPicks } from '@/lib/packEmpire/solo'
 import {
   isGameId,
   weekStartFor,
@@ -53,6 +55,8 @@ type Outcome = {
       request to say "4th of 812". */
   rank?: number
   total?: number
+  /** Pack Empire: cards from this run's packs that were new to the binder. */
+  newCards?: number
 }
 
 export async function POST(req: NextRequest) {
@@ -169,7 +173,10 @@ async function postOne(
 
   const runId = data.id as string
   const key = { game: game as GameId, mode, poolId }
-  const [{ data: rank }, total] = await Promise.all([
+  // A Pack Empire run files its fifty-five cards in the binder on the way
+  // past. Only once it's on the board: a re-post is a duplicate, already filed.
+  const soloPicks = game === 'pack-empire' ? parseSoloPicks(item.picks) : null
+  const [{ data: rank }, total, fresh] = await Promise.all([
     db.rpc('game_rank', {
       p_game: game,
       p_pool: poolId,
@@ -178,6 +185,7 @@ async function postOne(
       p_run: runId,
     }),
     boardSize(key, weekStart),
+    soloPicks ? recordSoloRun(userId, 'solo', seed, soloPicks) : Promise.resolve(null),
   ])
 
   return {
@@ -186,5 +194,6 @@ async function postOne(
     score: verdict.score,
     rank: Number(rank ?? 0),
     total,
+    ...(fresh ? { newCards: fresh.length } : {}),
   }
 }

@@ -32,6 +32,8 @@ export type PostOutcome = {
   /** Where the run landed, so the recap can say it without a second request. */
   rank?: number
   total?: number
+  /** Pack Empire: cards from the run that were new to the binder. */
+  newCards?: number
 }
 
 const KEY = 'tsc_game_bank_v1'
@@ -97,6 +99,7 @@ export async function postRun(run: Omit<PendingRun, 'at'>): Promise<PostOutcome>
         runId: first.runId,
         rank: first.rank,
         total: first.total,
+        newCards: first.newCards,
       }
     }
     return {

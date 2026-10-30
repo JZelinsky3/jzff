@@ -7,9 +7,9 @@
 // server reads it to deal and to re-score, so the two can never disagree about
 // what a pack is worth.
 //
-// What is NOT in here is the player pool. Who gets which value is being
-// rebuilt from scratch; see ./pool.ts. Everything below is the SCALE that pool
-// has to fit: the score ranges, the rarity floors, the odds, the ladder.
+// What is NOT in here is the player pool (./pool.ts): single seasons, valued
+// off their fantasy points. Everything below is the SCALE that pool fits: the
+// score ranges, the rarity floors, the odds, the ladder.
 
 // ============================================================
 // Players and rarity
@@ -25,18 +25,45 @@ export type PoolKey = 'QB' | 'RB' | 'WR' | 'TE' | 'OT' | 'OG' | 'C'
 
 export const POOL_KEYS: PoolKey[] = ['QB', 'RB', 'WR', 'TE', 'OT', 'OG', 'C']
 
+/**
+ * One card is one man's season: Cooper Kupp's 2021, not Cooper Kupp. The same
+ * man can hold several cards, a different season and value on each.
+ *
+ * `pid`, `year` and `club` arrived with the season pool. Lineups banked before
+ * it (league rosters, Mega Draft boards, Versus runs store whole cards) don't
+ * carry them, so they are optional and every reader falls back to the id and
+ * `team`.
+ */
 export type Player = {
   id: string
+  /** The man, across all his seasons. */
+  pid?: string
   name: string
   pos: PoolKey
+  /** The franchise by its current name. Chemistry keys on this, so a 2000 St.
+      Louis Ram and a 2021 Los Angeles Ram are teammates. */
   team: string
+  /** The season. */
+  year?: number
+  /** The team as it was called that season: "St. Louis Rams". */
+  club?: string
   /** Accolades score. The whole game is the sum of these. */
   score: number
   rarity: Rarity
-  /** Short bullets printed on the card front. */
+  /** Short bullets printed on the card front: the stat line, then the points. */
   accolades: string[]
   /** Headshot cut-out, or null to fall back to the initial. */
   img: string | null
+}
+
+/** The man behind a card; a card from before the season pool is its own man. */
+export function personOf(p: Pick<Player, 'id' | 'pid'>): string {
+  return p.pid ?? p.id
+}
+
+/** "2021 Los Angeles Rams": what a card prints under the name. */
+export function seasonLabel(p: Pick<Player, 'team' | 'year' | 'club'>): string {
+  return p.year ? `${p.year} ${p.club ?? p.team}` : p.team
 }
 
 /**
@@ -91,10 +118,10 @@ export const RARITY_LOOK: Record<
 }
 
 /**
- * The value scale the rebuilt pool has to fit. A player's rarity is a
- * function of his score and nothing else; these are the floors the original
- * data used (its own comment said dynasty started at 1,500, its code said
- * 1,600, and the code is what dealt every pack).
+ * The value scale. A card's rarity is a function of its score and nothing
+ * else; these are the floors the original data used (its own comment said
+ * dynasty started at 1,500, its code said 1,600, and the code is what dealt
+ * every pack).
  */
 export const RARITY_FLOOR: Record<Rarity, number> = {
   common: 0,
@@ -112,24 +139,21 @@ export function rarityForScore(score: number): Rarity {
   return 'common'
 }
 
-/**
- * How the original pool turned a career into a score. Kept here as the brief
- * for the rebuild rather than as code anything runs: the new values should
- * land on the same scale (a solid starter around 600, a perennial Pro Bowler
- * past 1,600, an all-time great past 4,000) or every tier on the ladder moves.
- */
-export const ACCOLADE_POINTS: { award: string; points: string }[] = [
-  { award: 'Pro Bowl', points: '+80 each' },
-  { award: 'AP Second-Team All-Pro', points: '+100 each' },
-  { award: 'AP First-Team All-Pro', points: '+220 each' },
-  { award: 'Super Bowl ring', points: '+150 each' },
-  { award: 'Super Bowl MVP', points: '+300' },
-  { award: 'League MVP', points: '+420 each' },
-  { award: 'Offensive Player of the Year', points: '+260' },
-  { award: 'Offensive Rookie of the Year', points: '+120' },
-  { award: 'Rushing or receiving title', points: '+120 each' },
-  { award: 'Major record or milestone', points: '+80 to +180' },
-]
+// How a season becomes a score (scripts/pack-empire-pool builds the pool; this
+// is for reading, nothing here runs it):
+//
+//   · Skill players: full PPR, 4 per passing TD. The rating is 65% points per
+//     game, the games divided by at least 14 (12 in the 14-game era) so half a
+//     season can't ride its average, and 35% points per game over the whole
+//     schedule. Each position has its own curve, so the best tight end season
+//     ever is worth what the best receiver season is worth.
+//   · Linemen: that season's honors plus what his offense did. First-team AP
+//     All-Pro 10, second team 5, Pro Bowl 3, other selectors a little more,
+//     then points, rushing and sacks allowed against that season's league.
+//
+// Immortal and transcendent are the best seasons ever at the position; dynasty
+// is about what the second- or third-best at the position does in a year, rare
+// about what the tenth-best does, common everything under that.
 
 // ============================================================
 // The eleven

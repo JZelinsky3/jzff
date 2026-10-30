@@ -21,6 +21,7 @@ import {
   RARITIES,
   RARITY_LOOK,
   SLOTS,
+  seasonLabel,
   type Player,
   type Rarity,
 } from '@/lib/packEmpire/rules'
@@ -551,7 +552,7 @@ export function PackStage({
           {w && woCard && woLook && (
             <div className="pe-wo-cap" data-step={w.step} aria-live="polite">
               <div className="pe-wo-rar">{woLook.label}</div>
-              {w.step !== 'charge' && <div className="pe-wo-team">{woCard.team}</div>}
+              {w.step !== 'charge' && <div className="pe-wo-team">{seasonLabel(woCard)}</div>}
               {(w.step === 'pos' || w.step === 'flip') && <div className="pe-wo-pos">{POOL_LABEL[woCard.pos]}</div>}
             </div>
           )}

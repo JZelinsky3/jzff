@@ -14,6 +14,7 @@ import {
   RARITY_LOOK,
   SLOTS,
   TIERS,
+  seasonLabel,
   surname,
   tierFor,
   type Player,
@@ -440,7 +441,7 @@ const TILT = {
 /**
  * Face down until revealed, then flipped. The front is the original card:
  * position chip and rarity label, the cut-out standing in the art, name,
- * team, the accolades score and two lines of accolades.
+ * season and team, the accolades score and two lines: the stat line and the points.
  *
  * Face down, the back gives a little away: a rare's edge catches the light,
  * a dynasty breathes gold, and the two at the top shake and leak colour.
@@ -547,7 +548,7 @@ export function PackCard({
             </div>
             <div className="pe-cf-body">
               <div className="pe-cf-name">{player.name}</div>
-              <div className="pe-cf-team">{player.team}</div>
+              <div className="pe-cf-team">{seasonLabel(player)}</div>
               <div className="pe-cf-line" style={{ background: rc.color }} />
               <div className="pe-cf-score-row">
                 <div className="pe-cf-score" style={{ color: rc.color }}>
@@ -628,7 +629,7 @@ function FilledSlot({
             {surname(player.name)}
           </div>
           <div className="pe-fc-score">{player.score.toLocaleString()}</div>
-          <div className="pe-fc-team-tag">{player.team}</div>
+          <div className="pe-fc-team-tag">{seasonLabel(player)}</div>
         </div>
         <div className="pe-fc-shine" />
       </div>

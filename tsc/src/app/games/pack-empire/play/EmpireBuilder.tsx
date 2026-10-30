@@ -167,6 +167,22 @@ function Recap({
             <>
               That is <b>{ordinal(post.rank)}</b> of {(post.total ?? post.rank).toLocaleString()} runs on the
               board.
+              {post.newCards != null && (
+                <>
+                  {' '}
+                  {post.newCards > 0 ? (
+                    <>
+                      <b>{post.newCards}</b> new {post.newCards === 1 ? 'card' : 'cards'} for your{' '}
+                    </>
+                  ) : (
+                    'Nothing new for your '
+                  )}
+                  <Link className="pe-link" href="/games/pack-empire/binder/">
+                    binder
+                  </Link>
+                  .
+                </>
+              )}
             </>
           )}
           {post && typeof post === 'object' && !post.ok && post.error}

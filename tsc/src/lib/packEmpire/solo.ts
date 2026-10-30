@@ -43,7 +43,15 @@ export function parseSoloPicks(raw: unknown): SoloPick[] | null {
 }
 
 export type SoloReplay =
-  | { ok: true; lineup: Player[]; score: number; captain: number }
+  | {
+      ok: true
+      lineup: Player[]
+      score: number
+      captain: number
+      /** Every pack as it was dealt, in the order it was opened: what the
+          binder records. */
+      packs: { slot: number; cards: Player[]; kept: string }[]
+    }
   | { ok: false; error: string }
 
 /**
@@ -57,6 +65,7 @@ export function replaySolo(seed: string, picks: SoloPick[]): SoloReplay {
   const seen = new Set<number>()
   const lineup: (Player | null)[] = Array(SLOT_COUNT).fill(null)
   const taken: string[] = []
+  const packs: { slot: number; cards: Player[]; kept: string }[] = []
 
   for (const pick of picks) {
     if (seen.has(pick.slot)) return { ok: false, error: 'A slot was filled twice.' }
@@ -66,11 +75,12 @@ export function replaySolo(seed: string, picks: SoloPick[]): SoloReplay {
     if (!card) return { ok: false, error: `The ${SLOTS[pick.slot].label.toLowerCase()} pick is not in that pack.` }
     lineup[pick.slot] = card
     taken.push(card.id)
+    packs.push({ slot: pick.slot, cards: pack, kept: card.id })
   }
 
   if (lineup.some((p) => !p)) return { ok: false, error: 'The lineup is not complete.' }
   const full = lineup as Player[]
-  return { ok: true, lineup: full, score: lineupScore(full), captain: parsed.captain }
+  return { ok: true, lineup: full, score: lineupScore(full), captain: parsed.captain, packs }
 }
 
 /** What a board row and a share card print. */

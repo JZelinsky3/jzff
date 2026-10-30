@@ -15,6 +15,7 @@ import {
   POOL_KEYS,
   RARITY_LOOK,
   SLOTS,
+  seasonLabel,
   shortName,
   tierFor,
   type Player,
@@ -70,7 +71,7 @@ function PoolCard({
         <span className="pe-pc-name" style={{ color: rc.color }}>
           {shortName(player.name)}
         </span>
-        <span className="pe-pc-team">{player.team}</span>
+        <span className="pe-pc-team">{seasonLabel(player)}</span>
         <span className="pe-pc-score" style={{ color: rc.color }}>
           {player.score.toLocaleString()}
         </span>

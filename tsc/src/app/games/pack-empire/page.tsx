@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { loadBoard, type BestRow } from '@/lib/minigames/leaderboard'
 import { POOL, POOL_SIZE } from '@/lib/packEmpire/pool'
+import { binderTotals, type BinderTotals } from '@/lib/packEmpire/binder'
 import {
   RARITIES,
   RARITY_LOOK,
@@ -118,6 +119,39 @@ function BoardTop({ rows }: { rows: BestRow[] }) {
   )
 }
 
+/** Where the binder stands, or what it is if there's nobody to keep one for. */
+function BinderStrip({ totals }: { totals: BinderTotals | null }) {
+  if (!totals) {
+    return (
+      <div className="pe-bd-strip-home">
+        <p>
+          Every card you pull goes in a binder, each player&apos;s seasons best to worst, with how many times
+          you&apos;ve pulled each one.
+        </p>
+        <Link href="/login?next=%2Fgames%2Fpack-empire%2Fbinder%2F" className="pe-btn pe-btn--ghost pe-btn--sm">
+          Sign in to keep one
+        </Link>
+      </div>
+    )
+  }
+  return (
+    <Link href="/games/pack-empire/binder/" className="pe-bd-strip-home pe-bd-strip-home--in">
+      <span className="pe-bd-strip-home-num">
+        {totals.owned.toLocaleString()}
+        <em>/{totals.cards.toLocaleString()}</em>
+      </span>
+      <span className="pe-bd-strip-home-rar">
+        {[...RARITIES].reverse().map((r) => (
+          <span key={r} style={{ color: RARITY_LOOK[r].color }}>
+            {RARITY_LOOK[r].short} {totals.byRarity[r].owned}/{totals.byRarity[r].of}
+          </span>
+        ))}
+      </span>
+      <span className="pe-btn pe-btn--ghost pe-btn--sm">Open the binder</span>
+    </Link>
+  )
+}
+
 export default async function PackEmpireHome() {
   const supabase = await createClient()
   const {
@@ -132,6 +166,8 @@ export default async function PackEmpireHome() {
     { limit: 5 }
   ).catch(() => null)
   const top = board && board.kind !== 'career' ? board.rows.slice(0, mobile ? 3 : 5) : []
+
+  const binder = user ? await binderTotals(user.id).catch(() => null) : null
 
   const cards = showcase()
   const normal = oddsBySlot(SOLO_WEIGHTS.normal)
@@ -187,7 +223,7 @@ export default async function PackEmpireHome() {
             </Link>
             <div className="pe-hero-meta">
               <span className="pe-chip">No account</span>
-              <span className="pe-chip">{POOL_SIZE} players</span>
+              <span className="pe-chip">{POOL_SIZE} seasons</span>
               <span className="pe-chip">Five rarities</span>
             </div>
           </section>
@@ -248,6 +284,14 @@ export default async function PackEmpireHome() {
             </div>
             <BoardTop rows={top} />
           </section>
+
+          <section className="pe-sec">
+            <div className="pe-sec-head">
+              <span className="pe-sec-num">§ 05 · Binder</span>
+              <span className="pe-sec-title">Your cards</span>
+            </div>
+            <BinderStrip totals={binder} />
+          </section>
         </div>
 
         <MobileGamesDock signedIn={!!user} boardHref="/games/pack-empire/board/" />
@@ -291,7 +335,7 @@ export default async function PackEmpireHome() {
             </div>
             <div className="pe-hero-meta">
               <span className="pe-chip">No account to play</span>
-              <span className="pe-chip">{POOL_SIZE} players</span>
+              <span className="pe-chip">{POOL_SIZE} seasons</span>
               <span className="pe-chip">Five rarities</span>
             </div>
           </div>
@@ -364,6 +408,15 @@ export default async function PackEmpireHome() {
             <BoardTop rows={top} />
           </section>
         </div>
+
+        <section className="pe-sec">
+          <div className="pe-sec-head">
+            <span className="pe-sec-num">§ 05 · Binder</span>
+            <span className="pe-sec-title">Your cards</span>
+            <span className="pe-sec-meta">Every season you&apos;ve pulled</span>
+          </div>
+          <BinderStrip totals={binder} />
+        </section>
 
         <div className="pe-soon">
           <span className="pe-chip">In development</span>
