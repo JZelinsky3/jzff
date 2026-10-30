@@ -10731,6 +10731,21 @@ body.tsc-hdr-collapsed .mprof-bar {
     line-height: 1.4;
     margin-top: .25rem;
 }
+.mprof-card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+.mprof-card-waiting {
+    flex: none;
+    padding: .15rem .45rem;
+    border-radius: 999px;
+    background: #d2544a;
+    color: #fff;
+    font-family: var(--mono);
+    font-size: .56rem;
+    font-weight: 700;
+}
 .mprof-badge {
     font-family: var(--mono);
     font-size: .48rem;

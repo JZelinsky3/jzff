@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { BackButton } from '@/components/BackButton'
 import { SiteFooter } from '@/components/SiteFooter'
 import { MobileProfile } from '@/components/account/MobileProfile'
@@ -6,11 +7,8 @@ import { createClient } from '@/lib/supabase/server'
 import { getUserSubscription, isCompUser, TIER_LABELS, advertisedTrialDays } from '@/lib/stripe'
 import { compExpiryLabel } from '@/lib/siteAdmin'
 import { getViewMode } from '@/lib/viewMode'
-import { friendIds, friendsState } from '@/lib/friends'
+import { friendsWaiting } from '@/lib/friends'
 import { publicNames } from '@/lib/minigames/boardIdentity'
-import { loadRecords } from '@/lib/minigames/profileRecords'
-import { PlayHub } from '@/components/account/PlayHub'
-import { RecordBook } from '@/components/account/RecordBook'
 import { AccountForms } from './account-forms'
 import { AccountNavMenu } from './account-nav-menu'
 
@@ -79,16 +77,13 @@ export default async function AccountPage({
   // the offer opens or the standard length changes.
   const trialDays = advertisedTrialDays()
 
-  // Games and friends. Friends first, because the record book sets each of
-  // your bests against the best any friend has done on the same board.
+  // Friends and the record book live on the games profile. This page only
+  // points there, with a count if something is waiting on you.
   const boardName = (profileRes.data?.board_name as string | null | undefined) ?? ''
-  const [friends, shownAs, friendList] = await Promise.all([
-    friendsState(user.id),
+  const [waiting, shownAs] = await Promise.all([
+    friendsWaiting(user.id),
     publicNames([user.id]).then((m) => m.get(user.id) ?? memberCode),
-    friendIds(user.id),
   ])
-  const records = await loadRecords(user.id, friendList)
-  const totalRuns = records.reduce((n, g) => n + g.runs, 0)
 
   if ((await getViewMode()) === 'mobile') {
     return (
@@ -117,7 +112,7 @@ export default async function AccountPage({
         referralOther={referralOther}
         boardName={boardName}
         shownAs={shownAs}
-        hub={<PlayHub initial={friends} games={<RecordBook records={records} />} phone />}
+        waiting={waiting}
       />
     )
   }
@@ -171,19 +166,23 @@ export default async function AccountPage({
         boardName={boardName}
         shownAs={shownAs}
       >
-        <div className="section" id="friends">
+        <div className="section" id="games">
           <div className="section-header">
-            <span className="section-num">§ 01 · Games and Friends</span>
-            <span className="section-title">The Record Book</span>
-            <span className="section-meta">
-              {friends.incoming.length
-                ? `${friends.incoming.length} waiting on you`
-                : totalRuns
-                  ? `${totalRuns} ${totalRuns === 1 ? 'run' : 'runs'} posted`
-                  : 'Nothing posted yet'}
-            </span>
+            <span className="section-num">§ 01 · Games</span>
+            <span className="section-title">Your Games Profile</span>
+            <span className="section-meta">{waiting ? `${waiting} waiting on you` : 'Friends and records'}</span>
           </div>
-          <PlayHub initial={friends} games={<RecordBook records={records} />} />
+          <div className="dc-card-row">
+            <div>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem' }}>Friends and the Record Book</div>
+              <div style={{ opacity: 0.65, fontSize: '.85rem', marginTop: '.35rem' }}>
+                Your friends, your record against each of them and your best runs.
+              </div>
+            </div>
+            <Link href="/games/pack-empire/profile/" className="dc-btn-ghost">
+              Open
+            </Link>
+          </div>
         </div>
       </AccountForms>
 

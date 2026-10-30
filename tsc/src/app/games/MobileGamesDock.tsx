@@ -30,9 +30,9 @@ import s from './mobile.module.css'
 // absorbs the old MobileGamesFoot.
 //
 // Pack Empire is big enough to be its own hub, so inside it the same dock
-// turns to face it (`empire`): Shelf · Play · Board · Binder, with Play opening
-// the four modes. Shelf is the way out, and the shelf itself is back to the
-// ordinary tabs.
+// turns to face it (`empire`): Shelf · Play · Board · Binder · Friends, with
+// Play opening the four modes. Shelf is the way out, and the shelf itself is
+// back to the ordinary tabs.
 //
 // NOT rendered on a board. Every board owns the bottom of the screen already
 // (Roulette's lineup HUD, Guess the Draft's answer bar, the Multiverse
@@ -149,6 +149,15 @@ const BINDER_ICON = (
   </>
 )
 
+const FRIENDS_ICON = (
+  <>
+    <circle cx="9" cy="8.5" r="3.2" />
+    <path d="M3.2 19.5c.6-3.3 3-5.2 5.8-5.2s5.2 1.9 5.8 5.2" />
+    <circle cx="16.6" cy="9.4" r="2.5" />
+    <path d="M15.6 14.4c2.6-.3 4.7 1.4 5.2 4.3" />
+  </>
+)
+
 const MORE_ICON = (
   <>
     <circle cx="5" cy="12" r="1.7" fill="currentColor" stroke="none" />
@@ -229,12 +238,13 @@ export type GamesDockProps = {
       the almanac's own rows to the More sheet. */
   leagueSlug?: string
   leagueName?: string
-  /** Inside Pack Empire: Play and Binder in place of Games and More. */
+  /** Inside Pack Empire: Play, Binder and Friends in place of Games and More. */
   empire?: boolean
 }
 
 const EMPIRE_HOME = '/games/pack-empire/'
 const EMPIRE_BINDER = '/games/pack-empire/binder/'
+const EMPIRE_FRIENDS = '/games/pack-empire/profile/'
 
 export function MobileGamesDock({
   base = '/games/',
@@ -274,8 +284,9 @@ export function MobileGamesDock({
   })
   const onBoard = !!boardHref && pathname.replace(/\/$/, '') === boardHref.replace(/\/$/, '')
   const onBinder = empire && pathname.replace(/\/$/, '') === EMPIRE_BINDER.replace(/\/$/, '')
+  const onFriends = empire && pathname.replace(/\/$/, '') === EMPIRE_FRIENDS.replace(/\/$/, '')
 
-  const cols = boardHref ? 4 : 3
+  const cols = empire ? 5 : boardHref ? 4 : 3
 
   return (
     <>
@@ -296,7 +307,7 @@ export function MobileGamesDock({
         {empire ? (
           <button
             type="button"
-            className={`${s.dockItem} ${!onBoard && !onBinder ? s.dockOn : ''}`}
+            className={`${s.dockItem} ${!onBoard && !onBinder && !onFriends ? s.dockOn : ''}`}
             aria-haspopup="dialog"
             onClick={() => setSheet('modes')}
           >
@@ -328,14 +339,24 @@ export function MobileGamesDock({
         )}
 
         {empire ? (
-          <Link
-            href={EMPIRE_BINDER}
-            className={`${s.dockItem} ${onBinder ? s.dockOn : ''}`}
-            aria-current={onBinder ? 'page' : undefined}
-          >
-            <Glyph>{BINDER_ICON}</Glyph>
-            Binder
-          </Link>
+          <>
+            <Link
+              href={EMPIRE_BINDER}
+              className={`${s.dockItem} ${onBinder ? s.dockOn : ''}`}
+              aria-current={onBinder ? 'page' : undefined}
+            >
+              <Glyph>{BINDER_ICON}</Glyph>
+              Binder
+            </Link>
+            <Link
+              href={EMPIRE_FRIENDS}
+              className={`${s.dockItem} ${onFriends ? s.dockOn : ''}`}
+              aria-current={onFriends ? 'page' : undefined}
+            >
+              <Glyph>{FRIENDS_ICON}</Glyph>
+              Friends
+            </Link>
+          </>
         ) : (
           <button
             type="button"

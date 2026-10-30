@@ -38,7 +38,7 @@ export function MobileProfile({
   referralOther,
   boardName,
   shownAs,
-  hub,
+  waiting,
 }: {
   email: string
   memberCode: string
@@ -56,8 +56,8 @@ export function MobileProfile({
   referralOther: string
   boardName: string
   shownAs: string
-  /** Games and friends, one tabbed card. See PlayHub. */
-  hub: React.ReactNode
+  /** Friend requests and challenges waiting on the games profile. */
+  waiting: number
 }) {
   return (
     <main className="mprof">
@@ -83,9 +83,15 @@ export function MobileProfile({
 
       <MobileBoardNameSection boardName={boardName} shownAs={shownAs} />
 
-      <div className="mprof-section" id="friends">
-        <div className="mprof-section-label">Games and Friends</div>
-        {hub}
+      <div className="mprof-section" id="games">
+        <div className="mprof-section-label">Games</div>
+        <Link href="/games/pack-empire/profile/" className="mprof-card mprof-card-link">
+          <div className="mprof-card-row">
+            <span className="mprof-card-title">Games Profile</span>
+            {waiting > 0 && <span className="mprof-card-waiting">{waiting} waiting</span>}
+          </div>
+          <div className="mprof-card-detail">Friends and the Record Book</div>
+        </Link>
       </div>
 
       {/* ── Subscription ── */}

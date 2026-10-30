@@ -37,7 +37,7 @@ export function AcceptInvite({ token, name }: { token: string; name: string }) {
           Pack Empire challenges.
         </p>
         <div className={styles.nameButtons}>
-          <Link href="/account/#friends" className={styles.btn}>
+          <Link href="/games/pack-empire/profile/" className={styles.btn}>
             Your friends
           </Link>
           <Link href="/games/pack-empire/" className={styles.btnGhost}>

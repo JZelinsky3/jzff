@@ -203,7 +203,7 @@ async function request(
   const { error } = await db().from('friendships').insert({ requester_id: userId, addressee_id: target, source })
   // A unique-pair collision is the other side asking in the same second.
   if (error && error.code !== '23505') return { ok: false, error: 'Could not send that request.' }
-  return { ok: true, message: `Asked ${name}. They'll see it on their profile.` }
+  return { ok: true, message: `Asked ${name}. They'll see it in their friends.` }
 }
 
 const CODE_RE = /^[2-9A-HJKMNP-Z]{7}$/
@@ -452,6 +452,18 @@ async function waitingChallenges(userId: string): Promise<WaitingChallenge[]> {
     })),
   ]
   return out.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 10)
+}
+
+/** Requests and held challenges waiting on you: the account page's badge. */
+export async function friendsWaiting(userId: string): Promise<number> {
+  const count = (q: PromiseLike<{ count: number | null }>) => Promise.resolve(q).then((r) => r.count ?? 0)
+  const head = { count: 'exact', head: true } as const
+  const [requests, versus, mega] = await Promise.all([
+    count(db().from('friendships').select('id', head).eq('addressee_id', userId).eq('status', 'pending')),
+    count(db().from('pe_versus').select('id', head).eq('invited_id', userId).is('guest_id', null).neq('status', 'done')),
+    count(db().from('pe_mega_drafts').select('id', head).eq('invited_id', userId).is('guest_id', null).eq('status', 'waiting')),
+  ])
+  return requests + versus + mega
 }
 
 export async function friendsBrief(userId: string): Promise<FriendsBrief> {

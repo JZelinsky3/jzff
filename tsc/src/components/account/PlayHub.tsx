@@ -1,13 +1,8 @@
 'use client'
 
-// Games and friends on the profile, phone and desktop alike. Three tabs, so
-// only one short list is ever on screen: your games, your friends, and every
-// way of adding one. It was a dozen panels in one long column, with the
-// invite link, the member code and the league suggestions all sat between
-// your friends list and the rest of the page.
-//
-// It opens on Friends when something is waiting on you, and /account/#friends
-// (the nav's link) always lands there.
+// The games profile's body: your friends, your record book and every way of
+// adding someone, in three tabs, so only one short list is ever on screen.
+// Friends comes first because that's what the page is for.
 //
 // Every action posts to /api/friends and gets the whole list back, so the hub
 // never has to reconcile its own guesses with the server.
@@ -19,21 +14,12 @@ import type { Friend, FriendsState } from '@/lib/friends'
 import { h2hLine } from './h2h'
 import styles from './play.module.css'
 
-type Tab = 'games' | 'friends' | 'add'
+type Tab = 'friends' | 'records' | 'add'
 
 const noop = () => () => {}
 
 function useOrigin(): string {
   return useSyncExternalStore(noop, () => window.location.origin, () => '')
-}
-
-function subscribeHash(cb: () => void) {
-  window.addEventListener('hashchange', cb)
-  return () => window.removeEventListener('hashchange', cb)
-}
-
-function useHash(): string {
-  return useSyncExternalStore(subscribeHash, () => window.location.hash, () => '')
 }
 
 function initial(name: string): string {
@@ -60,19 +46,21 @@ const SHORT_LIST = 3
 
 export function PlayHub({
   initial: start,
-  games,
+  records,
+  memberCode,
   phone = false,
 }: {
   initial: FriendsState
   /** The record book, rendered by the page. */
-  games: React.ReactNode
+  records: React.ReactNode
+  /** Yours, to read out to someone adding you. */
+  memberCode: string
   phone?: boolean
 }) {
   const router = useRouter()
   const origin = useOrigin()
-  const hash = useHash()
   const [state, setState] = useState(start)
-  const [picked, setPicked] = useState<Tab | null>(null)
+  const [tab, setTab] = useState<Tab>('friends')
   const [busy, setBusy] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -85,7 +73,6 @@ export function PlayHub({
   const [allLeagues, setAllLeagues] = useState(false)
 
   const waitingCount = state.incoming.length + state.challenges.length
-  const tab: Tab = picked ?? (hash === '#friends' || waitingCount > 0 ? 'friends' : 'games')
 
   const path = `/friends/${state.invite}/`
   const url = `${origin}${path}`
@@ -227,7 +214,7 @@ export function PlayHub({
       {state.friends.length === 0 ? (
         <div className={styles.nothing}>
           <p>Nobody yet.</p>
-          <button type="button" className={styles.btnGhost} onClick={() => setPicked('add')}>
+          <button type="button" className={styles.btnGhost} onClick={() => setTab('add')}>
             Add Friends
           </button>
         </div>
@@ -373,13 +360,18 @@ export function PlayHub({
             {busy === 'code' ? 'Asking' : 'Ask'}
           </button>
         </form>
+        {memberCode && (
+          <p className={styles.hint}>
+            Yours is <b>{memberCode}</b>
+          </p>
+        )}
       </div>
     </div>
   )
 
   const tabs: { id: Tab; label: string; count?: number }[] = [
-    { id: 'games', label: 'Games' },
     { id: 'friends', label: 'Friends', count: waitingCount },
+    { id: 'records', label: 'Record Book' },
     { id: 'add', label: 'Add Friends' },
   ]
 
@@ -394,7 +386,7 @@ export function PlayHub({
             aria-selected={tab === t.id}
             className={`${styles.tab}${tab === t.id ? ` ${styles.tabOn}` : ''}`}
             onClick={() => {
-              setPicked(t.id)
+              setTab(t.id)
               setNote(null)
               setError(null)
             }}
@@ -408,14 +400,14 @@ export function PlayHub({
       {note && <p className={styles.note}>{note}</p>}
       {error && <p className={styles.err}>{error}</p>}
 
-      {tab === 'games' && games}
-
       {tab === 'friends' && (
         <div className={waiting ? styles.pair : undefined}>
           {waiting}
           {list}
         </div>
       )}
+
+      {tab === 'records' && records}
 
       {tab === 'add' && (
         <div className={people ? styles.pair : undefined}>

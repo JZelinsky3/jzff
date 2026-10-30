@@ -20,7 +20,7 @@ import { MobileGamesDock } from '../MobileGamesDock'
 import { FriendsMenu } from './FriendsMenu'
 import { MODES, ModeGlyph, type ModeDef } from './modes'
 
-export type PeSection = ModeDef['id'] | 'home' | 'binder'
+export type PeSection = ModeDef['id'] | 'home' | 'binder' | 'profile'
 
 function BinderIcon() {
   return (
@@ -135,7 +135,7 @@ export function PeChrome({
           </Link>
         )}
         {signedIn && (
-          <FriendsMenu>
+          <FriendsMenu on={on === 'profile'}>
             <FriendsIcon />
             <span>Friends</span>
           </FriendsMenu>

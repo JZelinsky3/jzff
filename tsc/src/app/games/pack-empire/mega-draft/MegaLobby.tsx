@@ -130,7 +130,7 @@ export function MegaLobby({
             )}
             {signedIn && friends.length === 0 && (
               <p className="pe-note">
-                <Link href="/account/#friends" className="pe-link">
+                <Link href="/games/pack-empire/profile/" className="pe-link">
                   Add friends
                 </Link>{' '}
                 to send a draft straight to them.

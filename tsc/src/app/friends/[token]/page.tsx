@@ -72,7 +72,7 @@ export default async function FriendInvitePage({ params }: { params: Promise<{ t
     }
     action = (
       <div className={styles.nameButtons}>
-        <Link href="/account/#friends" className={styles.btn}>
+        <Link href="/games/pack-empire/profile/" className={styles.btn}>
           Your friends
         </Link>
       </div>
@@ -81,11 +81,11 @@ export default async function FriendInvitePage({ params }: { params: Promise<{ t
     copy = {
       kicker: 'Invite link',
       title: `You and ${owner.name} Are Already Friends`,
-      body: 'Nothing to do here. Your records and theirs are side by side on your profile.',
+      body: 'Nothing to do here. Your records and theirs are side by side in your games profile.',
     }
     action = (
       <div className={styles.nameButtons}>
-        <Link href="/account/#friends" className={styles.btn}>
+        <Link href="/games/pack-empire/profile/" className={styles.btn}>
           Your friends
         </Link>
       </div>

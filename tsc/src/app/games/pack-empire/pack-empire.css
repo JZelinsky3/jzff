@@ -4556,11 +4556,107 @@ a.pe-row:hover {
   border: 1px dashed var(--pe-line);
   border-radius: 4px;
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: 0.7rem;
+  line-height: 1.4;
   color: var(--pe-ink-soft);
+  /* The whole link, on as many lines as it takes: it's 65 characters and a
+     phone has room for about 35, so one line just cut it in half. */
+  overflow-wrap: anywhere;
+}
+
+/* On a phone the button goes underneath, so the link gets the whole width
+   and runs two lines instead of four. */
+@media (max-width: 700px) {
+  .pe-share {
+    flex-direction: column;
+  }
+
+  .pe-share .pe-btn {
+    width: 100%;
+  }
+}
+
+/* ── The games profile ─────────────────────────────────────── */
+
+/* The hub is built on the site's tokens; in here they're the room's. */
+.pe-prof {
+  --ink: var(--pe-bg);
+  --ink-card: var(--pe-card);
+  --ink-line: var(--pe-line);
+  --ink-line-soft: var(--pe-line-soft);
+  --cream: var(--pe-ink);
+  --cream-soft: var(--pe-ink-soft);
+  --cream-mute: var(--pe-ink-mute);
+  --gold: var(--pe-amber);
+  --gold-bright: var(--pe-amber-bright);
+  --gold-deep: var(--pe-amber-deep);
+  padding-bottom: 1.5rem;
+}
+
+.pe-prof-id {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.pe-prof-mono {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  border: 1px solid var(--pe-amber-deep);
+  background: rgba(232, 168, 75, 0.07);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--pe-amber);
+}
+
+.pe-prof-who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.pe-prof-name {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  line-height: 1.15;
+  color: var(--pe-ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.pe-prof-sub {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+.pe-prof-edit {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--pe-ink-mute);
+  border-bottom: 1px solid var(--pe-line);
+  padding-bottom: 0.1rem;
+}
+
+.pe-prof-edit:hover {
+  color: var(--pe-amber);
+  border-bottom-color: var(--pe-amber);
 }
 
 .pe-twoup {

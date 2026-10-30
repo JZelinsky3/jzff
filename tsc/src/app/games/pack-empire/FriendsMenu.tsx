@@ -1,18 +1,17 @@
 'use client'
 
 // Friends on the desktop nav. Hovering shows who you have and your record
-// against each; clicking goes to the whole list on the profile, the same as
-// it did before this existed. The list loads on the first hover rather than
-// with the page, since most page views never open it.
+// against each; clicking goes to the games profile. The list loads on the
+// first hover rather than with the page, since most page views never open it.
 
 import Link from 'next/link'
 import { useState } from 'react'
 import { h2hLine } from '@/components/account/h2h'
 import type { FriendsBrief } from '@/lib/friends'
 
-const FRIENDS = '/account/#friends'
+const FRIENDS = '/games/pack-empire/profile/'
 
-export function FriendsMenu({ children }: { children: React.ReactNode }) {
+export function FriendsMenu({ on, children }: { on: boolean; children: React.ReactNode }) {
   const [brief, setBrief] = useState<FriendsBrief | 'loading' | 'failed' | null>(null)
 
   const load = async () => {
@@ -29,7 +28,7 @@ export function FriendsMenu({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="pe-fm" onMouseEnter={load} onFocus={load}>
-      <Link href={FRIENDS} className="pe-nav-tool">
+      <Link href={FRIENDS} className={`pe-nav-tool${on ? ' on' : ''}`} aria-current={on ? 'page' : undefined}>
         {children}
       </Link>
       <div className="pe-fm-drop">
@@ -50,7 +49,7 @@ export function FriendsMenu({ children }: { children: React.ReactNode }) {
                 </Link>
               )}
               {brief.friends.length === 0 ? (
-                <p className="pe-fm-note">Nobody yet. Your invite link is on your profile.</p>
+                <p className="pe-fm-note">Nobody yet.</p>
               ) : (
                 <ul className="pe-fm-list">
                   {brief.friends.map((f) => {

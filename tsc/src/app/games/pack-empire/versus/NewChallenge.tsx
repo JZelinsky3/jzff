@@ -70,8 +70,8 @@ export function ChallengePanels({ friends }: { friends: Friend[] }) {
             ) : (
               <p className="pe-note">
                 No friends yet.{' '}
-                <Link href="/account/#friends" className="pe-link">
-                  Add some on your profile
+                <Link href="/games/pack-empire/profile/" className="pe-link">
+                  Add some
                 </Link>{' '}
                 to send one straight to them.
               </p>

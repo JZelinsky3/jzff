@@ -1,5 +1,6 @@
-/* The profile's games and friends sections, desktop and phone.
+/* The games profile, desktop and phone, and the friend invite page.
    Built on the site tokens (main.css): navy ink, cream, the bottle-cap gold.
+   Pack Empire's room re-points them at its charcoal (.pe-prof).
    Each game card carries its own --accent off its GameDef, the same colour
    it wears on the Games Page, so the shelf and the record book match. */
 
@@ -7,7 +8,7 @@
 
 .tabs {
     display: grid;
-    grid-template-columns: 1fr 1fr 1.25fr;
+    grid-template-columns: 1fr 1.2fr 1.2fr;
     gap: 2px;
     max-width: 30rem;
     margin-bottom: 1rem;
@@ -61,6 +62,7 @@
 @media (max-width: 860px) {
     .pair { grid-template-columns: minmax(0, 1fr); }
 }
+.pair > .panel + .panel, .phone .pair > .panel + .panel { margin-top: 0; }
 
 /* ── Record book ───────────────────────────────────────────── */
 
@@ -413,14 +415,14 @@
 .link code {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    /* Written out whole: it's there to be read and copied by hand. It wraps
+       rather than clips, because no font fits one on a phone's line. */
+    overflow-wrap: anywhere;
     display: flex;
     align-items: center;
     font-family: var(--mono);
-    font-size: .8rem;
-    line-height: 1.2;
+    font-size: .7rem;
+    line-height: 1.4;
     color: var(--cream-soft);
     background: var(--ink);
     border: 1px solid var(--ink-line);
@@ -497,7 +499,7 @@
 .phone .tab { min-height: 2.75rem; font-size: .6rem; letter-spacing: .08em; }
 .phone .pair { gap: .6rem; }
 .phone .friendRow { min-height: 3.2rem; padding: .55rem 0; }
-.phone .link code, .phone .codeForm input { font-size: 16px; letter-spacing: .02em; }
+.phone .codeForm input { font-size: 16px; letter-spacing: .02em; }
 .phone .book { border-radius: 10px; padding: .8rem .85rem .7rem; background: rgba(255, 255, 255, .02); }
 .phone .bookTitle { font-size: 1.1rem; }
 .phone .lineBig { font-size: 1.3rem; }
