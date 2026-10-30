@@ -9,6 +9,7 @@
 import { createHash, randomBytes } from 'crypto'
 import { containsHateSpeech } from '@/lib/contentModeration'
 import { publicNames } from '@/lib/minigames/boardIdentity'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { SEED_ALPHABET } from './rules'
 
 type Db = { from: (t: string) => any } // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -27,6 +28,25 @@ export function cleanGuestName(raw: unknown): string | null {
   if (name.length < 2 || name.length > 24) return null
   if (name.includes('@') || containsHateSpeech(name)) return null
   return name
+}
+
+/** A guest can't turn up on the board as somebody already on it: another
+    guest, or an account going by that name. `key` is the guest's own hashed
+    key, so their own name stays theirs. */
+export async function guestNameTaken(name: string, key: string): Promise<boolean> {
+  const { data } = await createAdminClient()
+    .from('game_runs')
+    .select('user_id, guest_key, guest_name')
+    .eq('game', 'pack-empire')
+    .eq('pool_id', 'site')
+    .limit(5000)
+  const rows = (data ?? []) as { user_id: string | null; guest_key: string | null; guest_name: string | null }[]
+
+  const wanted = name.toLowerCase()
+  if (rows.some((r) => r.guest_key !== key && r.guest_name?.toLowerCase() === wanted)) return true
+
+  const accounts = await publicNames(rows.flatMap((r) => (r.user_id ? [r.user_id] : [])))
+  return [...accounts.values()].some((n) => n.toLowerCase() === wanted)
 }
 
 /** Seat keys come from the browser as 32+ hex characters. */

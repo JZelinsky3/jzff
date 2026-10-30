@@ -10,7 +10,16 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { TIERS, tierFor, type Player } from '@/lib/packEmpire/rules'
-import { bankRun, claimBank, postRun, type PostOutcome } from '../../runBank'
+import {
+  bankRun,
+  claimBank,
+  guestPoster,
+  postRun,
+  readGuest,
+  rememberGuest,
+  unbankRun,
+  type PostOutcome,
+} from '../../runBank'
 import { CaptainDraft, type DraftDone } from '../CaptainDraft'
 import { Field, Ladder } from '../cards'
 import { easeClimb, useCountUp } from '../stage'
@@ -34,6 +43,10 @@ async function startSeed(captain: number): Promise<string> {
   return body.seed as string
 }
 
+function soloPayload(run: DraftDone) {
+  return { game: 'pack-empire', mode: 'offense', pool: 'site', seed: run.seed, picks: run.picks }
+}
+
 function shareText(score: number) {
   const t = tierFor(score)
   return `Pack Empire · ${t.label} · ${score.toLocaleString()} accolades`
@@ -44,6 +57,7 @@ export function EmpireBuilder({ signedIn }: { signedIn: boolean }) {
   const [post, setPost] = useState<PostOutcome | 'posting' | 'banked' | null>(null)
   const [round, setRound] = useState(0)
   const [shared, setShared] = useState<'copied' | null>(null)
+  const [nameError, setNameError] = useState<string | null>(null)
 
   // Runs played signed out on this device go up the moment there's an
   // account to post them as.
@@ -54,26 +68,40 @@ export function EmpireBuilder({ signedIn }: { signedIn: boolean }) {
   const onDone = useCallback(async (r: DraftDone) => {
     setRun(r)
     setPost('posting')
-    const payload = {
-      game: 'pack-empire',
-      mode: 'offense',
-      pool: 'site',
-      seed: r.seed,
-      picks: r.picks,
-    }
-    const out = await postRun(payload)
-    if (out.needsAuth) {
+    setNameError(null)
+    const payload = soloPayload(r)
+    // A name already used on this device goes straight up.
+    const guest = signedIn ? null : readGuest()
+    const out = await postRun(guest ? { ...payload, guest } : payload)
+    if (out.needsAuth || (guest && !out.ok)) {
       bankRun({ ...payload, at: Date.now() })
       setPost('banked')
+      if (guest) setNameError(out.error ?? null)
     } else {
       setPost(out)
     }
-  }, [])
+  }, [signedIn])
+
+  /** The recap's name box. The run stays banked until a name is accepted. */
+  const postAsGuest = async (name: string) => {
+    if (!run) return
+    setNameError(null)
+    const guest = guestPoster(name)
+    const out = await postRun({ ...soloPayload(run), guest })
+    if (out.ok) {
+      rememberGuest(guest)
+      unbankRun(run.seed)
+      setPost(out)
+    } else {
+      setNameError(out.error ?? 'Could not reach the board.')
+    }
+  }
 
   const again = () => {
     setRun(null)
     setPost(null)
     setShared(null)
+    setNameError(null)
     setRound((n) => n + 1)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -107,7 +135,18 @@ export function EmpireBuilder({ signedIn }: { signedIn: boolean }) {
     )
   }
 
-  return <Recap run={run} post={post} shared={shared} onAgain={again} onShare={share} />
+  return (
+    <Recap
+      run={run}
+      post={post}
+      shared={shared}
+      signedIn={signedIn}
+      nameError={nameError}
+      onGuestName={postAsGuest}
+      onAgain={again}
+      onShare={share}
+    />
+  )
 }
 
 /** How long the climb takes: longer the higher it goes, so a GOAT run gets
@@ -115,6 +154,47 @@ export function EmpireBuilder({ signedIn }: { signedIn: boolean }) {
 function climbMs(score: number): number {
   const rungs = TIERS.filter((t) => score >= t.min).length
   return Math.min(4200, 600 + rungs * 450)
+}
+
+const SIGN_IN_HREF = '/login?next=%2Fgames%2Fpack-empire%2Fplay%2F'
+
+/** No account: a name puts the run on the board, an account keeps the rest. */
+function GuestName({ error, onPost }: { error: string | null; onPost: (name: string) => Promise<void> }) {
+  const [name, setName] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const submit = async () => {
+    if (busy || name.trim().length < 2) return
+    setBusy(true)
+    await onPost(name)
+    setBusy(false)
+  }
+
+  return (
+    <div className="pe-recap-name">
+      <div className="pe-recap-name-row">
+        <input
+          className="pe-input"
+          placeholder="Your name"
+          aria-label="Your name for the board"
+          value={name}
+          maxLength={24}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && submit()}
+        />
+        <button type="button" className="pe-btn" onClick={submit} disabled={busy || name.trim().length < 2}>
+          {busy ? 'Posting' : 'Post'}
+        </button>
+      </div>
+      {error && <div className="pe-error">{error}</div>}
+      <p className="pe-note">
+        <Link className="pe-link" href={SIGN_IN_HREF}>
+          Sign in
+        </Link>{' '}
+        instead to save your drafts and binder.
+      </p>
+    </div>
+  )
 }
 
 /**
@@ -127,12 +207,18 @@ function Recap({
   run,
   post,
   shared,
+  signedIn,
+  nameError,
+  onGuestName,
   onAgain,
   onShare,
 }: {
   run: DraftDone
   post: PostOutcome | 'posting' | 'banked' | null
   shared: 'copied' | null
+  signedIn: boolean
+  nameError: string | null
+  onGuestName: (name: string) => Promise<void>
   onAgain: () => void
   onShare: () => void
 }) {
@@ -154,15 +240,7 @@ function Recap({
 
         <p className={`pe-recap-post${landed ? '' : ' wait'}`} aria-live="polite">
           {post === 'posting' && 'Putting it on the board…'}
-          {post === 'banked' && (
-            <>
-              Saved on this device.{' '}
-              <Link className="pe-link" href="/login?next=%2Fgames%2Fpack-empire%2Fplay%2F">
-                Sign in
-              </Link>{' '}
-              and it goes on the board.
-            </>
-          )}
+          {post === 'banked' && 'Add your name to put this on the board.'}
           {post && typeof post === 'object' && post.ok && post.rank != null && (
             <>
               That is <b>{ordinal(post.rank)}</b> of {(post.total ?? post.rank).toLocaleString()} runs on the
@@ -183,10 +261,21 @@ function Recap({
                   .
                 </>
               )}
+              {!signedIn && (
+                <>
+                  {' '}
+                  <Link className="pe-link" href={SIGN_IN_HREF}>
+                    Sign in
+                  </Link>{' '}
+                  to save your drafts and binder.
+                </>
+              )}
             </>
           )}
           {post && typeof post === 'object' && !post.ok && post.error}
         </p>
+
+        {post === 'banked' && landed && <GuestName error={nameError} onPost={onGuestName} />}
 
         <div className="pe-recap-actions">
           <button type="button" className="pe-btn" onClick={onAgain}>

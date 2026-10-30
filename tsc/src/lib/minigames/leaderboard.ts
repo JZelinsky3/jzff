@@ -102,7 +102,9 @@ export type RunDisplay = {
 export type BestRow = {
   rank: number
   runId: string
-  userId: string
+  /** Null on a guest's run: Pack Empire's board takes a typed name with no
+      account, and `name` is that name. */
+  userId: string | null
   /** The name this person claimed — their manager in this league on a league
       board, their claim elsewhere on any other board — and their site display
       name if they have never claimed one. See boardIdentity.ts. */
@@ -193,7 +195,7 @@ export function weeklySeed(key: BoardKey, week: string): string {
 type BestRpcRow = {
   rank: number
   run_id: string
-  user_id: string
+  user_id: string | null
   name: string | null
   score: number
   display: RunDisplay | null
@@ -217,15 +219,20 @@ type CareerRpcRow = {
  * claimed anything keeps the site display name with no branching at the call
  * site. See boardIdentity.ts.
  */
-function withIdentities<T extends { userId: string; name: string; avatar?: string | null }>(
+function withIdentities<T extends { userId: string | null; name: string; avatar?: string | null }>(
   rows: T[],
   ids: Map<string, BoardIdentity>
 ): T[] {
   if (ids.size === 0) return rows
   return rows.map((r) => {
-    const found = ids.get(r.userId)
+    const found = r.userId ? ids.get(r.userId) : undefined
     return found ? { ...r, name: found.name, avatar: found.avatar } : r
   })
+}
+
+/** The accounts on a page of rows, for looking up their names. */
+function accounts(rows: BestRow[]): string[] {
+  return rows.flatMap((r) => (r.userId ? [r.userId] : []))
 }
 
 function toBestRow(r: BestRpcRow): BestRow {
@@ -301,7 +308,7 @@ export async function loadBoard(
     })
     const raw = ((data ?? []) as BestRpcRow[]).map(toBestRow)
     const [ids, total, found] = await Promise.all([
-      resolveBoardIdentities(key.poolId, [...raw.map((r) => r.userId), ...(viewerId ? [viewerId] : [])]),
+      resolveBoardIdentities(key.poolId, [...accounts(raw), ...(viewerId ? [viewerId] : [])]),
       boardSize(key, week),
       // One attempt each means a player is on this board at most once, so if
       // they're in the page that IS their row. Only look one up when the
@@ -327,10 +334,7 @@ export async function loadBoard(
   const [mine, total, ids] = await Promise.all([
     viewerId ? loadYourBest(key, viewerId) : null,
     boardSize(key, null),
-    resolveBoardIdentities(key.poolId, [
-      ...raw.map((r) => r.userId),
-      ...(viewerId ? [viewerId] : []),
-    ]),
+    resolveBoardIdentities(key.poolId, [...accounts(raw), ...(viewerId ? [viewerId] : [])]),
   ])
 
   return {

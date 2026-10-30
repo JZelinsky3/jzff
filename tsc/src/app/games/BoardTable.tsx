@@ -75,19 +75,12 @@ function statFor(game: GameId, row: BestRow): { big: string; small: string } {
 }
 
 /** Pack Empire's board is one site-wide pool with no avatars to show, so its
-    rows go without the plate, and a run's tier is a badge beside the date. */
+    rows go without the plate. Its date is a chip and its tier a badge. */
 const faceless = (game: GameId) => game === 'pack-empire'
 
 /** The line under a name. */
 function RunMeta({ row, game }: { row: BestRow; game: GameId }) {
-  if (game === 'pack-empire') {
-    return (
-      <>
-        <TierBadge score={row.score} />
-        <span className={styles.dateChip}>{when(row.at)}</span>
-      </>
-    )
-  }
+  if (game === 'pack-empire') return <span className={styles.dateChip}>{when(row.at)}</span>
   const chip = game === 'multiverse' ? playoffChip(row.display.round as string | undefined) : null
   return (
     <>
@@ -227,7 +220,7 @@ function Plaque({
       </span>
       <span className={styles.plaqueStat}>
         <span className={styles.plaqueBig}>{stat.big}</span>
-        {!plain && <span className={styles.statSmall}>{stat.small}</span>}
+        {plain ? <TierBadge score={row.score} /> : <span className={styles.statSmall}>{stat.small}</span>}
       </span>
     </div>
   )
@@ -248,7 +241,7 @@ function Row({ row, game, mine }: { row: BestRow; game: GameId; mine: boolean })
       </span>
       <span className={styles.stat}>
         <span className={styles.statBig}>{stat.big}</span>
-        {!plain && <span className={styles.statSmall}>{stat.small}</span>}
+        {plain ? <TierBadge score={row.score} /> : <span className={styles.statSmall}>{stat.small}</span>}
       </span>
     </li>
   )

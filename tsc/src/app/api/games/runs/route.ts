@@ -9,12 +9,17 @@
 // signed out and get claimed in one go when you sign in. A banked run is
 // verified exactly like a live one — the server re-deals its seed either way
 // — so there is no reason to trust it less for having waited.
+//
+// Pack Empire's board also takes a run with a typed name and no account. It's
+// replayed the same way, under the same one-post-per-deal rule; it just has no
+// binder to file into until that device signs in (see runs/claim).
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyRun } from '@/lib/minigames/verifyRun'
 import { recordSoloRun } from '@/lib/packEmpire/binder'
+import { cleanGuestName, guestNameTaken, hashKey } from '@/lib/packEmpire/people'
 import { parseSoloPicks } from '@/lib/packEmpire/solo'
 import {
   isGameId,
@@ -28,6 +33,34 @@ export const dynamic = 'force-dynamic'
 
 /** Runs one claim may carry. A long session banks a handful, not hundreds. */
 const MAX_BATCH = 25
+
+// Per-IP throttle on posts with no account: 12 per 10 minutes per warm
+// instance, which is more runs than anyone can play in that time. Best-effort
+// on serverless, the same as the support form's.
+const GUEST_WINDOW_MS = 10 * 60 * 1000
+const GUEST_MAX_PER_WINDOW = 12
+const guestHits = new Map<string, number[]>()
+
+function guestThrottled(ip: string): boolean {
+  const now = Date.now()
+  const recent = (guestHits.get(ip) ?? []).filter((t) => now - t < GUEST_WINDOW_MS)
+  if (recent.length >= GUEST_MAX_PER_WINDOW) {
+    guestHits.set(ip, recent)
+    return true
+  }
+  recent.push(now)
+  guestHits.set(ip, recent)
+  // Cheap leak guard: the map only ever holds recent posters.
+  if (guestHits.size > 2000) {
+    for (const [k, v] of guestHits) {
+      if (v.every((t) => now - t >= GUEST_WINDOW_MS)) guestHits.delete(k)
+    }
+  }
+  return false
+}
+
+/** Who a run is posted as. */
+type Owner = { userId: string } | { guestKey: string; guestName: string }
 
 type Incoming = {
   game?: unknown
@@ -43,6 +76,8 @@ type Incoming = {
   shared?: unknown
   /** Set when the run was played on the week's shared board. */
   weekly?: unknown
+  /** Pack Empire, signed out: the name typed and the browser's own key. */
+  guest?: { name?: unknown; key?: unknown }
 }
 
 type Outcome = {
@@ -65,15 +100,6 @@ export async function POST(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) {
-    // Not an error state in the UI: the recap shows "sign in to put this on
-    // the board" and keeps the run banked until they do.
-    return NextResponse.json(
-      { ok: false, needsAuth: true, error: 'Sign in to put a run on the board.' },
-      { status: 401, headers: { 'Cache-Control': 'no-store' } }
-    )
-  }
-
   let body: unknown
   try {
     body = await req.json()
@@ -94,10 +120,45 @@ export async function POST(req: NextRequest) {
   }
 
   const db = createAdminClient()
+
+  let owner: Owner
+  if (user) {
+    owner = { userId: user.id }
+  } else {
+    const item = list[0]
+    const onEmpireBoard = item.game === 'pack-empire' && item.pool === 'site' && item.mode === 'offense'
+    if (list.length > 1 || !item.guest || !onEmpireBoard || item.weekly === true) {
+      // Not an error state in the UI: the recap shows "sign in to put this on
+      // the board" and keeps the run banked until they do.
+      return NextResponse.json(
+        { ok: false, needsAuth: true, error: 'Sign in to put a run on the board.' },
+        { status: 401, headers: { 'Cache-Control': 'no-store' } }
+      )
+    }
+
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+    if (guestThrottled(ip)) {
+      return NextResponse.json({ ok: false, error: 'Too many runs in a row. Give it a few minutes.' }, { status: 429 })
+    }
+
+    const guestKey = hashKey(item.guest.key)
+    if (!guestKey) return NextResponse.json({ ok: false, error: 'Malformed request.' }, { status: 400 })
+
+    const guestName = cleanGuestName(item.guest.name)
+    if (!guestName) {
+      return NextResponse.json({ ok: false, error: 'Pick a different name, 2 to 24 characters.' }, { status: 400 })
+    }
+    if (await guestNameTaken(guestName, guestKey)) {
+      return NextResponse.json({ ok: false, error: 'That name is already on the board.' }, { status: 409 })
+    }
+
+    owner = { guestKey, guestName }
+  }
+
   const results: Outcome[] = []
 
   for (const item of list) {
-    results.push(await postOne(db, user.id, item))
+    results.push(await postOne(db, owner, item))
   }
 
   return NextResponse.json(
@@ -108,7 +169,7 @@ export async function POST(req: NextRequest) {
 
 async function postOne(
   db: ReturnType<typeof createAdminClient>,
-  userId: string,
+  owner: Owner,
   item: Incoming
 ): Promise<Outcome> {
   const game = typeof item.game === 'string' ? item.game : ''
@@ -146,7 +207,9 @@ async function postOne(
       pool_id: poolId,
       week_start: weekStart,
       seed,
-      user_id: userId,
+      ...('userId' in owner
+        ? { user_id: owner.userId }
+        : { guest_key: owner.guestKey, guest_name: owner.guestName }),
       score: verdict.score,
       rate_num: verdict.rateNum,
       rate_den: verdict.rateDen,
@@ -175,7 +238,7 @@ async function postOne(
   const key = { game: game as GameId, mode, poolId }
   // A Pack Empire run files its fifty-five cards in the binder on the way
   // past. Only once it's on the board: a re-post is a duplicate, already filed.
-  const soloPicks = game === 'pack-empire' ? parseSoloPicks(item.picks) : null
+  const soloPicks = game === 'pack-empire' && 'userId' in owner ? parseSoloPicks(item.picks) : null
   const [{ data: rank }, total, fresh] = await Promise.all([
     db.rpc('game_rank', {
       p_game: game,
@@ -185,7 +248,7 @@ async function postOne(
       p_run: runId,
     }),
     boardSize(key, weekStart),
-    soloPicks ? recordSoloRun(userId, 'solo', seed, soloPicks) : Promise.resolve(null),
+    soloPicks && 'userId' in owner ? recordSoloRun(owner.userId, 'solo', seed, soloPicks) : Promise.resolve(null),
   ])
 
   return {

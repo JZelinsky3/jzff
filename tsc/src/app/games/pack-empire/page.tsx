@@ -110,11 +110,11 @@ function BoardTop({ rows }: { rows: BestRow[] }) {
       {rows.map((r) => (
         <div key={r.runId} className="pe-top-row">
           <span className="pe-top-rank">{r.rank}</span>
-          <span className="pe-top-who">
-            <span className="pe-top-name">{r.name}</span>
+          <span className="pe-top-name">{r.name}</span>
+          <span className="pe-top-run">
+            <span className="pe-top-score">{Number(r.display.accolades ?? r.score).toLocaleString()}</span>
             <TierBadge score={r.score} />
           </span>
-          <span className="pe-top-score">{Number(r.display.accolades ?? r.score).toLocaleString()}</span>
         </div>
       ))}
     </div>

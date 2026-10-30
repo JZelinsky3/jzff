@@ -352,14 +352,17 @@
   }
 }
 
-/* A board with no faces (Pack Empire). Its badge line is too wide to sit
-   between a rank and a score on a half-width plaque, so second and third
-   stack: rank and score across the top, the name and badges under them. */
+/* A board with no faces (Pack Empire). Name and date on the left, score and
+   tier badge on the right, which needs more room than half a phone: second
+   and third take the full width there, so all three line up down the score. */
 .noFace .plaqueMeta,
 .noFace .sub {
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  margin-top: 0.15rem;
+  margin-top: 0.2rem;
+}
+
+.noFace .plaqueStat,
+.noFace .stat {
+  gap: 0.28rem;
 }
 
 .plaque.noFace:not(.plaqueFirst) .plaqueRank {
@@ -367,24 +370,8 @@
 }
 
 @media (max-width: 640px) {
-  .plaque.noFace:not(.plaqueFirst) {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 0.5rem 0.75rem;
-  }
-
-  .plaque.noFace:not(.plaqueFirst) .plaqueBody {
+  .plaque.noFace {
     grid-column: 1 / -1;
-    grid-row: 2;
-  }
-
-  .plaque.noFace:not(.plaqueFirst) .plaqueStat {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  .plaque.noFace:not(.plaqueFirst) .plaqueName {
-    font-size: 0.98rem;
   }
 }
 

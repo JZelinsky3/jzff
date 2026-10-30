@@ -161,7 +161,6 @@ export function SealedPack({
         }}
       >
         <span className="pe-mouth" aria-hidden>
-          <i className="pe-mouth-beam" />
           <i className="pe-mouth-halo" />
         </span>
         <span className="pe-rip-body" aria-hidden>

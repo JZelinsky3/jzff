@@ -1072,16 +1072,8 @@
   color: var(--pe-amber);
 }
 
-.pe-top-who {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.28rem;
-  min-width: 0;
-}
-
 .pe-top-name {
-  max-width: 100%;
+  min-width: 0;
   font-family: var(--serif);
   font-size: 1.05rem;
   color: var(--pe-ink);
@@ -1090,21 +1082,66 @@
   white-space: nowrap;
 }
 
-/* A run's tier, here and on the board. --tc is the rung's colour. */
+/* A run's tier, here and on the board. The base is the bottom of the ladder,
+   V to VIII: one outlined tag, each in its rung's colour (--tc). The top four
+   are each their own object, climbing to the GOAT's neon. Static on purpose:
+   there can be fifty on a page. */
 .pe-tier-badge {
   flex: none;
   padding: 0.16rem 0.38rem;
-  border: 1px solid var(--tc);
+  border: 1px solid color-mix(in srgb, var(--tc) 70%, transparent);
   border-radius: 3px;
-  background: var(--tc);
+  background: color-mix(in srgb, var(--tc) 10%, transparent);
   font-family: var(--mono);
   font-weight: 700;
   font-size: 0.52rem;
   line-height: 1.2;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--pe-bg);
+  color: var(--tc);
   white-space: nowrap;
+}
+
+/* IV All-Pro Elite: a stripe down the leading edge. */
+.pe-tier-badge[data-rung='4'] {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--tc) 20%, transparent);
+  box-shadow: inset 3px 0 0 var(--tc);
+  padding-left: 0.56rem;
+  color: #bfe0ec;
+}
+
+/* III Super Bowl Dynasty: a double-ruled ring. */
+.pe-tier-badge[data-rung='3'] {
+  border: 3px double var(--tc);
+  background: none;
+  padding: 0.12rem 0.34rem;
+}
+
+/* II Hall of Fame: solid gold plate. */
+.pe-tier-badge[data-rung='2'] {
+  border-color: #f7dfaa;
+  background: linear-gradient(135deg, #f7dfaa, var(--tc) 48%, #c8923c);
+  color: var(--pe-bg);
+}
+
+/* I GOAT Offense: purple type on the room's own background, a pink neon edge. */
+.pe-tier-badge[data-rung='1'] {
+  border-color: #ff5cd6;
+  border-radius: 999px;
+  background: var(--pe-bg);
+  padding: 0.16rem 0.5rem;
+  box-shadow:
+    0 0 9px rgba(255, 92, 214, 0.65),
+    inset 0 0 6px rgba(255, 92, 214, 0.22);
+  color: #c79bff;
+}
+
+.pe-top-run {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
 }
 
 .pe-top-score {
@@ -2132,12 +2169,13 @@
   bottom: 0;
   z-index: 11;
   text-align: center;
-  padding: 0.8em 0.5em 0.22em;
+  padding: 0.8em 0.5em 0;
   background: linear-gradient(to top, rgba(5, 10, 24, 0.94) 28%, rgba(5, 10, 24, 0.62) 60%, transparent);
   pointer-events: none;
 }
 
 .pe-cf-season b {
+  display: block;
   font-family: var(--pe-display);
   font-weight: 900;
   font-size: 0.76em;
@@ -2663,11 +2701,12 @@
   }
 }
 
-/* The light inside. It stands on the new top edge of the pack, behind the
-   body, so the torn edge cuts across it and it reads as coming up out of the
-   opening: a tall soft beam and a wide halo. Its colour is the best card's
-   rarity and --gs and --gb, off that rarity, set how big and how bright. All
-   gradients, no blur: they're painted once and only ever faded and scaled. */
+/* The light inside. It sits on the new top edge of the pack, behind the
+   body, so the torn edge cuts across it and it reads as a glow around the
+   opening. Its colour is the best card's rarity and --gs and --gb, off that
+   rarity, set how wide and how bright. Height barely grows with rarity, so
+   the big pulls spread along the tear rather than climbing the screen. A
+   gradient, no blur: it's painted once and only ever faded and scaled. */
 .pe-rip,
 .pe-boom,
 .pe-rip-spent {
@@ -2714,33 +2753,14 @@
   transition: none;
 }
 
-.pe-mouth-beam,
 .pe-mouth-halo {
   position: absolute;
   display: block;
-}
-
-.pe-mouth-beam {
-  left: calc(-115px * var(--gs));
-  bottom: calc(-36px * var(--gs));
-  width: calc(230px * var(--gs));
-  height: calc(410px * var(--gs));
-  background: radial-gradient(
-    ellipse 50% 100% at 50% 100%,
-    color-mix(in srgb, var(--glow) 80%, #fff) 0,
-    color-mix(in srgb, var(--glow) 60%, transparent) 38%,
-    transparent 100%
-  );
-  /* Its foot fades out behind the pack, or the flat edge shows either side. */
-  -webkit-mask: linear-gradient(to top, transparent, #000 16%);
-  mask: linear-gradient(to top, transparent, #000 16%);
-}
-
-.pe-mouth-halo {
+  --gh: calc(120px + 60px * var(--gs));
   left: calc(-175px * var(--gs));
-  top: calc(-125px * var(--gs));
+  top: calc(var(--gh) / -2);
   width: calc(350px * var(--gs));
-  height: calc(250px * var(--gs));
+  height: var(--gh);
   background: radial-gradient(
     closest-side,
     color-mix(in srgb, var(--glow) 65%, #fff) 0,
@@ -2941,13 +2961,15 @@
   }
 }
 
-/* The pack's light, carried on as it swells out and fades. */
+/* The pack's light, carried on as it swells out and fades. Flat like the
+   halo it follows, so it spreads along the tear. */
 .pe-boom-bloom {
+  --gh: calc(150px + 75px * var(--gs));
   position: absolute;
   left: calc(-190px * var(--gs));
-  top: calc(-180px * var(--gs));
+  top: calc(var(--gh) / -2);
   width: calc(380px * var(--gs));
-  height: calc(360px * var(--gs));
+  height: var(--gh);
   background: radial-gradient(
     closest-side,
     color-mix(in srgb, var(--glow) 65%, #fff) 0,
@@ -3883,6 +3905,32 @@
   color: var(--pe-amber);
 }
 
+/* No account: the name that puts the run on the board. */
+.pe-recap-name {
+  display: grid;
+  gap: 0.55rem;
+  max-width: 26rem;
+  margin: 0.2rem auto 1.1rem;
+}
+
+.pe-recap-name-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pe-recap-name-row .pe-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.pe-recap-name-row .pe-btn {
+  flex: none;
+}
+
+.pe-recap-name .pe-note {
+  margin: 0;
+}
+
 .pe-recap-actions {
   display: flex;
   flex-wrap: wrap;
@@ -4435,16 +4483,17 @@ a.pe-row:hover {
   .pe-fc-topbar {
     height: 15px;
     padding: 0 3px;
-    justify-content: center;
   }
 
   .pe-fc-rar-badge {
-    display: none;
+    font-size: 0.46rem;
+    letter-spacing: 0.06em;
+    line-height: 1;
   }
 
   .pe-fc-pos-badge {
     font-size: 0.48rem;
-    padding: 0 4px;
+    padding: 0 3px;
     border-radius: 2px;
   }
 

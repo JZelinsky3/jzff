@@ -23,6 +23,9 @@ export type PendingRun = {
   at: number
 }
 
+/** Pack Empire, signed out: the name it goes on the board under. */
+export type GuestPoster = { name: string; key: string }
+
 export type PostOutcome = {
   ok: boolean
   needsAuth: boolean
@@ -71,6 +74,12 @@ export function bankRun(run: PendingRun) {
   writeBank([...readBank(), run])
 }
 
+/** It went up some other way, so signing in shouldn't send it again. */
+export function unbankRun(seed: string) {
+  if (typeof window === 'undefined') return
+  writeBank(readBank().filter((r) => r.seed !== seed))
+}
+
 export function clearBank() {
   try {
     window.localStorage.removeItem(KEY)
@@ -80,7 +89,7 @@ export function clearBank() {
 }
 
 /** Post one run. Never throws: the recap shows what came back. */
-export async function postRun(run: Omit<PendingRun, 'at'>): Promise<PostOutcome> {
+export async function postRun(run: Omit<PendingRun, 'at'> & { guest?: GuestPoster }): Promise<PostOutcome> {
   try {
     const res = await fetch('/api/games/runs/', {
       method: 'POST',
@@ -109,6 +118,61 @@ export async function postRun(run: Omit<PendingRun, 'at'>): Promise<PostOutcome>
     }
   } catch {
     return { ok: false, needsAuth: false, error: 'Could not reach the board.' }
+  }
+}
+
+// ============================================================
+// Posting under a name, with no account
+// ============================================================
+//
+// Pack Empire's board takes a typed name. The name is remembered so the next
+// run goes straight up, and the random key is what proves these runs are this
+// browser's when it signs in: the server only ever holds the key's hash.
+
+const GUEST_KEY = 'tsc_game_guest_v1'
+
+export function readGuest(): GuestPoster | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(GUEST_KEY) ?? 'null')
+    return parsed && typeof parsed.key === 'string' && typeof parsed.name === 'string' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+/** This browser's poster under `name`, keeping its key if it already has one. */
+export function guestPoster(name: string): GuestPoster {
+  const known = readGuest()
+  if (known) return { ...known, name }
+  const bytes = new Uint8Array(16)
+  crypto.getRandomValues(bytes)
+  return { name, key: Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('') }
+}
+
+/** Only called once a name has gone up: a refused one isn't worth keeping. */
+export function rememberGuest(guest: GuestPoster) {
+  try {
+    window.localStorage.setItem(GUEST_KEY, JSON.stringify(guest))
+  } catch {
+    /* private browsing: they type it again next run */
+  }
+}
+
+/** Hand this browser's guest runs to the account that just signed in. */
+async function claimGuestRuns() {
+  const guest = readGuest()
+  if (!guest) return
+  try {
+    const res = await fetch('/api/games/runs/claim/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: guest.key }),
+    })
+    // Still signed out: keep the key, try again next time.
+    if (res.ok) window.localStorage.removeItem(GUEST_KEY)
+  } catch {
+    /* it'll go on the next visit */
   }
 }
 
@@ -201,6 +265,7 @@ export async function claimPendingIdentities(): Promise<number> {
  * on every page load.
  */
 export async function claimBank(): Promise<number> {
+  await claimGuestRuns()
   const runs = readBank()
   if (runs.length === 0) return 0
   try {
