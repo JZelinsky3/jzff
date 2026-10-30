@@ -8,6 +8,7 @@
 // captain's lightning bolt are drawn), and real buttons where something is
 // tappable.
 
+import { useState } from 'react'
 import {
   FORMATION,
   PACK_ART,
@@ -24,6 +25,38 @@ import {
 // ============================================================
 // Glyphs
 // ============================================================
+
+/**
+ * The captain's patch: a gold-rimmed shield with a C, pinned to the corner of
+ * the captain's pack and then his card. The shadow sits on the outer span
+ * because a filter on the clipped element would be clipped with it.
+ */
+export function CaptainMark({ ghost = false, inline = false }: { ghost?: boolean; inline?: boolean }) {
+  return (
+    <span
+      className={`pe-capmark${ghost ? ' ghost' : ''}${inline ? ' inline' : ''}`}
+      role={ghost ? undefined : 'img'}
+      aria-label={ghost ? undefined : 'Captain'}
+      aria-hidden={ghost || undefined}
+    >
+      <span className="pe-capmark-shield">
+        <span className="pe-capmark-c">C</span>
+      </span>
+    </span>
+  )
+}
+
+/** Drawn in where there's no photo: head, neck and pads, in the card's
+    rarity, so a man without a headshot still reads as a player. */
+function Portrait({ className }: { className: string }) {
+  return (
+    <svg className={`${className} pe-portrait`} viewBox="0 0 100 100" preserveAspectRatio="xMidYMax meet" aria-hidden>
+      <path d="M50 12c-10.5 0-18 8-18 19.5 0 12.2 7.6 23.5 18 23.5s18-11.3 18-23.5C68 20 60.5 12 50 12z" />
+      <path d="M43 52h14v12H43z" />
+      <path d="M6 100c1.5-15 9-26 22-31l9-3.5c3.5 4 8 6 13 6s9.5-2 13-6l9 3.5c13 5 20.5 16 22 31z" />
+    </svg>
+  )
+}
 
 export function Bolt({ className = 'pe-bolt' }: { className?: string }) {
   return (
@@ -389,7 +422,9 @@ export function RarityEffects({ rarity, position = 'inner' }: { rarity: Rarity; 
 // ============================================================
 
 function Headshot({ player, className, eager = false }: { player: Player; className: string; eager?: boolean }) {
-  if (!player.img) return null
+  // A photo that won't load gets the drawn portrait, same as no photo at all.
+  const [broken, setBroken] = useState<string | null>(null)
+  if (!player.img || broken === player.img) return <Portrait className={className} />
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -398,10 +433,18 @@ function Headshot({ player, className, eager = false }: { player: Player; classN
       className={className}
       loading={eager ? 'eager' : 'lazy'}
       decoding="async"
-      onError={(e) => {
-        e.currentTarget.style.display = 'none'
-      }}
+      onError={() => setBroken(player.img)}
     />
+  )
+}
+
+/** The season, big and hollow behind the man: what makes a card a year. */
+function YearMark({ player, className, short = false }: { player: Player; className: string; short?: boolean }) {
+  if (!player.year) return null
+  return (
+    <div className={className} aria-hidden>
+      {short ? `'${String(player.year).slice(2)}` : player.year}
+    </div>
   )
 }
 
@@ -537,8 +580,9 @@ export function PackCard({
               {/* Only mounted on the front once it turns. The pack's faces are
                   already cached by then (see preloadFaces), so this is instant
                   but can never be seen through the back. */}
+              <YearMark player={player} className="pe-cf-year" />
               {revealed && <Headshot player={player} className="pe-cf-img" eager />}
-              <div className="pe-cf-initial">{player.name.charAt(0)}</div>
+              {!player.year && <div className="pe-cf-initial">{player.name.charAt(0)}</div>}
               {chem != null && chem !== 0 && (
                 <span className={`pe-cf-chem ${chem > 0 ? 'up' : 'down'}`}>
                   {chem > 0 ? '+' : ''}
@@ -584,8 +628,12 @@ export type SlotView = {
   dim?: boolean
   /** Over the pack: CAPTAIN, BOOST. */
   badge?: { text: string; color?: string } | null
-  /** Over a filled card: CAP, LOCKED. */
+  /** Over a filled card: LOCKED. */
   flag?: { text: string; color?: string } | null
+  /** The captain's slot: the patch on its pack, then on its card. */
+  captain?: boolean
+  /** Choosing a captain: a faint patch on the pack under the pointer. */
+  capHint?: boolean
   /** Pulsing outline on the pack. */
   glow?: 'cap' | 'boost' | null
   /** Tint the label under the slot. */
@@ -595,10 +643,12 @@ export type SlotView = {
 function FilledSlot({
   player,
   flag,
+  captain = false,
   landing,
 }: {
   player: Player
   flag?: SlotView['flag']
+  captain?: boolean
   /** Hidden while its card is still flying down; pops when it lands. */
   landing?: 'incoming' | 'landed' | null
 }) {
@@ -621,8 +671,9 @@ function FilledSlot({
         <div className="pe-fc-art" style={{ background: rc.art }}>
           <div className="pe-fc-field-lines" />
           <RarityEffects rarity={player.rarity} position="inner" />
+          <YearMark player={player} className="pe-fc-year" short />
           <Headshot player={player} className="pe-fc-img" />
-          <div className="pe-fc-initial">{player.name.charAt(0)}</div>
+          {!player.year && <div className="pe-fc-initial">{player.name.charAt(0)}</div>}
         </div>
         <div className="pe-fc-info">
           <div className="pe-fc-name" style={{ color: rc.color }}>
@@ -638,6 +689,7 @@ function FilledSlot({
           {flag.text}
         </div>
       )}
+      {captain && <CaptainMark />}
     </div>
   )
 }
@@ -660,7 +712,7 @@ function Slot({
 
   let body: React.ReactNode
   if (player) {
-    body = <FilledSlot player={player} flag={view.flag} landing={landing} />
+    body = <FilledSlot player={player} flag={view.flag} captain={view.captain} landing={landing} />
   } else if (view.opening) {
     body = (
       <div className="pe-fsl active">
@@ -675,7 +727,8 @@ function Slot({
       'pe-pack-wrap',
       view.clickable ? 'clickable' : '',
       view.dim ? 'dim' : '',
-      view.glow === 'cap' ? 'is-cap' : view.glow === 'boost' ? 'is-boost' : '',
+      view.glow === 'cap' || view.captain ? 'is-cap' : view.glow === 'boost' ? 'is-boost' : '',
+      view.capHint && !view.captain ? 'cap-hint' : '',
     ]
       .filter(Boolean)
       .join(' ')
@@ -685,7 +738,7 @@ function Slot({
         className={cls}
         disabled={!view.clickable}
         onClick={() => view.clickable && onSlot?.(index)}
-        aria-label={`${def.label} pack`}
+        aria-label={`${def.label} pack${view.captain ? ', your captain' : ''}`}
         style={view.badge?.color ? ({ '--boost': view.badge.color } as React.CSSProperties) : undefined}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -695,6 +748,7 @@ function Slot({
             {view.badge.text}
           </span>
         )}
+        {view.captain ? <CaptainMark /> : view.capHint ? <CaptainMark ghost /> : null}
       </button>
     )
   }
@@ -702,7 +756,7 @@ function Slot({
   return (
     <div className={`pe-slot-outer${isHB ? ' hb-back' : ''}`} data-pe-slot={index}>
       {body}
-      <div className={`pe-slot-label${view.tone ? ` ${view.tone}` : ''}`}>{def.short}</div>
+      <div className={`pe-slot-label${view.tone ? ` ${view.tone}` : view.captain ? ' cap' : ''}`}>{def.short}</div>
     </div>
   )
 }

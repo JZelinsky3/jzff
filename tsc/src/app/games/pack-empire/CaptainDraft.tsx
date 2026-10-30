@@ -15,8 +15,14 @@
 // players), so a refresh or a dropped connection puts you back at the table
 // rather than throwing away an immortal. Nothing in it is worth editing: the
 // board re-deals every pack from the seed and refuses a pick that isn't in it.
+//
+// A saved run can outlive its deal: a seed is signed with the pool it was
+// dealt from, so when the pool changes, the server stops recognising it. The
+// table checks a restored seed once on the way in and says so, rather than
+// leaving a half-built lineup nobody can finish. Empire Builder can also be
+// started over by hand; a Versus seat can't, the seed is the commitment.
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   SLOTS,
   SLOT_COUNT,
@@ -25,7 +31,8 @@ import {
   tierFor,
   type Player,
 } from '@/lib/packEmpire/rules'
-import { Bolt, Field, type SlotView } from './cards'
+import { CaptainMark, Field, type SlotView } from './cards'
+import { KeyAside, KeyButton } from './DraftKey'
 import { useHydrated } from './clientStore'
 import { ImmortalFlash, PackStage, ScoreStrip, usePackStage, useStripOffset } from './stage'
 
@@ -93,6 +100,38 @@ type DraftProps = {
   onDone: (run: DraftDone) => void
   /** What sits above the table before the first pack. */
   intro?: React.ReactNode
+  /** Empire Builder: the run can be thrown away and started again. */
+  restartable?: boolean
+}
+
+/** The field and, beside it on a wide screen, the key. */
+function Board({ score, children }: { score: number; children: React.ReactNode }) {
+  return (
+    <div className="pe-board">
+      <div className="pe-board-in">
+        <div className="pe-turf">
+          <KeyButton score={score} />
+          {children}
+        </div>
+        <KeyAside score={score} />
+      </div>
+    </div>
+  )
+}
+
+async function seedIsLive(seed: string): Promise<boolean> {
+  try {
+    const res = await fetch('/api/games/pack-empire/deal/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'check', seed }),
+    })
+    const body = await res.json().catch(() => null)
+    // Only a definite no counts; a dropped connection shouldn't eat a run.
+    return !(res.ok && body?.ok && body.live === false)
+  } catch {
+    return true
+  }
 }
 
 /**
@@ -110,9 +149,9 @@ export function CaptainDraft(props: DraftProps) {
     return (
       <>
         {props.intro}
-        <div className="pe-turf">
+        <Board score={0}>
           <Field lineup={EMPTY} view={() => ({ clickable: false })} />
-        </div>
+        </Board>
       </>
     )
   }
@@ -146,7 +185,7 @@ function startingState(saveKey: string, fixedSeed: string | null | undefined): S
   return { seed: null, captain: null, lineup: EMPTY, picks: [], restored: false }
 }
 
-function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro }: DraftProps) {
+function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro, restartable = false }: DraftProps) {
   const [start] = useState(() => startingState(saveKey, fixedSeed))
   const [captain, setCaptain] = useState<number | null>(start.captain)
   const [seed, setSeed] = useState<string | null>(start.seed)
@@ -154,8 +193,42 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro }: DraftProps)
   const [picks, setPicks] = useState<DraftPick[]>(start.picks)
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const restored = start.restored
+  const [restored, setRestored] = useState(start.restored)
+  /** The seed this table holds was dealt from a pool that's since changed. */
+  const [stale, setStale] = useState(false)
+  /** First tap on Start over arms it; the second throws the run away. */
+  const [armed, setArmed] = useState(false)
   const { stage, flash, landing, open, tear, reveal, revealAll, skip, pick, dismiss, settle } = usePackStage()
+
+  // Check a seed brought back from storage (or held by a Versus seat) once.
+  useEffect(() => {
+    if (!start.seed) return
+    let gone = false
+    seedIsLive(start.seed).then((live) => {
+      if (!gone && !live) setStale(true)
+    })
+    return () => {
+      gone = true
+    }
+  }, [start.seed])
+
+  useEffect(() => {
+    if (!armed) return
+    const t = window.setTimeout(() => setArmed(false), 3500)
+    return () => window.clearTimeout(t)
+  }, [armed])
+
+  const restart = useCallback(() => {
+    writeSaved(saveKey, null)
+    setCaptain(null)
+    setSeed(null)
+    setLineup(EMPTY)
+    setPicks([])
+    setError(null)
+    setStale(false)
+    setRestored(false)
+    setArmed(false)
+  }, [saveKey])
 
   useStripOffset()
 
@@ -229,20 +302,12 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro }: DraftProps)
   const view = (i: number): SlotView => {
     const isCap = captain === i
     if (choosing) {
-      return {
-        clickable: !starting,
-        badge: isCap ? { text: 'CAPTAIN' } : null,
-        glow: isCap ? 'cap' : null,
-        tone: isCap ? 'cap' : null,
-      }
+      return { clickable: !starting, captain: isCap, capHint: !starting }
     }
     return {
-      clickable: !stage && !lineup[i],
+      clickable: !stale && !stage && !lineup[i],
       opening: stage?.slot === i,
-      badge: isCap ? { text: 'CAPTAIN' } : null,
-      glow: isCap ? 'cap' : null,
-      tone: isCap ? 'cap' : null,
-      flag: isCap ? { text: 'CAP' } : null,
+      captain: isCap,
     }
   }
 
@@ -256,7 +321,7 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro }: DraftProps)
         <>
           {intro}
           <div className="pe-banner">
-            <Bolt />
+            <CaptainMark inline />
             <span>
               Tap any position to make it your <b>captain</b>. Its pack deals off the captain table: five
               times the weight on immortals.
@@ -266,16 +331,16 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro }: DraftProps)
       ) : (
         <>
           <ScoreStrip score={score} filled={filled} tier={tier} />
-          {capDef && captain != null && !lineup[captain] && (
+          {capDef && captain != null && !lineup[captain] && !stale && (
             <div className="pe-banner">
-              <Bolt />
+              <CaptainMark inline />
               <span>
                 Your <b>{capDef.label.toLowerCase()}</b> pack is the captain pack. Open it whenever you
                 like.
               </span>
             </div>
           )}
-          {restored && filled < SLOT_COUNT && (
+          {restored && !stale && filled < SLOT_COUNT && (
             <p className="pe-note" style={{ textAlign: 'center', marginBottom: '0.8rem' }}>
               Picked up where you left off · {filled} of {SLOT_COUNT} signed
             </p>
@@ -283,26 +348,50 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro }: DraftProps)
         </>
       )}
 
-      {error && (
+      {stale && (
+        <div className="pe-stale">
+          <p>
+            {restartable
+              ? 'This run was dealt from an older set of cards, so its packs can’t be opened anymore.'
+              : 'This draft was dealt from an older set of cards, so its packs can’t be opened anymore.'}
+          </p>
+          {restartable && (
+            <button type="button" className="pe-btn pe-btn--sm" onClick={restart}>
+              Start a new run
+            </button>
+          )}
+        </div>
+      )}
+
+      {error && !stale && (
         <div className="pe-error" style={{ maxWidth: 560, margin: '0 auto 1rem' }}>
           {error}
         </div>
       )}
 
-      <div className="pe-turf">
+      <Board score={score}>
         <Field lineup={lineup} view={view} onSlot={choosing ? chooseCaptain : openSlot} landing={landing} />
-        {!choosing && !stage && filled < SLOT_COUNT && (
-          <p className="pe-turf-note pe-note">
-            Tap a pack to open it · {SLOT_COUNT - filled} to go
-          </p>
+        {!choosing && !stage && !stale && filled < SLOT_COUNT && (
+          <div className="pe-turf-foot">
+            <p className="pe-turf-note pe-note">Tap a pack to open it · {SLOT_COUNT - filled} to go</p>
+            {restartable && (
+              <button
+                type="button"
+                className={`pe-restart${armed ? ' armed' : ''}`}
+                onClick={() => (armed ? restart() : setArmed(true))}
+              >
+                {armed ? 'Tap again to throw this run away' : 'Start over'}
+              </button>
+            )}
+          </div>
         )}
         {choosing && starting && <p className="pe-turf-note pe-note">Sealing the captain pack</p>}
-      </div>
+      </Board>
 
       {stage && (
         <PackStage
           stage={stage}
-          tag={stage.slot === captain ? { text: 'Captain pack' } : null}
+          tag={stage.slot === captain ? { text: 'Captain pack', captain: true } : null}
           onCard={onCard}
           onRevealAll={revealAll}
           onDismiss={dismiss}

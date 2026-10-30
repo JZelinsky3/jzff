@@ -68,6 +68,15 @@ def main():
                           score=int(r.score), rarity=r.band, accolades=ol_lines(r, off),
                           img=r.img if isinstance(r.img, str) else None))
 
+    # One small real photo per man, or none (see headshots.py).
+    import headshots
+    legacy_path = f'{S}/sim/legacy.json'  # the pre-season pool, for a couple of Hall of Famers' photos
+    legacy = json.load(open(legacy_path)) if os.path.exists(legacy_path) else []
+    men = {}
+    for c in cards: men.setdefault(c['pid'], c)
+    photo = headshots.resolve([{'pid': k, 'name': c['name'], 'img': c['img']} for k, c in men.items()], legacy)
+    for c in cards: c['img'] = photo.get(c['pid'])
+
     # Two different men under one name: the later one gets his suffix.
     by_name = {}
     for c in cards: by_name.setdefault(c['name'], set()).add(c['pid'])
@@ -93,7 +102,7 @@ def main():
         f.write('[\n' + ',\n'.join(json.dumps(c, ensure_ascii=False) for c in cards) + '\n]\n')
     print('wrote', len(cards), 'cards to', OUT)
     print(pd.DataFrame(cards).groupby(['pos', 'rarity']).size().unstack(fill_value=0)[['common', 'rare', 'dynasty', 'transcendent', 'immortal']])
-    print('no headshot:', sum(1 for c in cards if not c['img']))
+    print('no headshot:', sum(1 for c in cards if not c['img']), 'cards,', len({c['pid'] for c in cards if not c['img']}), 'men')
     print('max accolade len', max(len(a) for c in cards for a in c['accolades']))
     for c in cards:
         if any(x in c['name'] for x in ('(', 'II')): print('  renamed:', c['name'], c['year'])

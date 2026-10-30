@@ -102,7 +102,7 @@ export function EmpireBuilder({ signedIn }: { signedIn: boolean }) {
   if (!run) {
     return (
       <div className="pe-table">
-        <CaptainDraft key={round} saveKey={SAVE_KEY} startSeed={startSeed} onDone={onDone} />
+        <CaptainDraft key={round} saveKey={SAVE_KEY} startSeed={startSeed} onDone={onDone} restartable />
       </div>
     )
   }
@@ -207,8 +207,7 @@ function Recap({
             lineup={run.lineup as (Player | null)[]}
             view={(i) => ({
               clickable: false,
-              flag: i === run.captain ? { text: 'CAP' } : null,
-              tone: i === run.captain ? 'cap' : null,
+              captain: i === run.captain,
             })}
           />
         </div>

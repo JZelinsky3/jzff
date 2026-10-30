@@ -2,6 +2,7 @@
 //
 //   { action: 'start', captain }        -> { seed }
 //   { action: 'pack', seed, slot, taken } -> { cards }
+//   { action: 'check', seed }             -> { live }
 //
 // Empire Builder and Versus Challenge both draft through here. 'start' is the
 // commitment: the captain is signed into the seed, so it can't be swapped
@@ -38,6 +39,13 @@ export async function POST(req: NextRequest) {
       return bad('Pick a captain first.')
     }
     return NextResponse.json({ ok: true, seed: newCaptainSeed(captain as number) }, { headers: NO_STORE })
+  }
+
+  // A seed is signed with the pool it was dealt from. One saved on a device
+  // before the pool changed no longer reads, and the table says so.
+  if (body.action === 'check') {
+    const seed = typeof body.seed === 'string' ? body.seed.trim().toUpperCase() : ''
+    return NextResponse.json({ ok: true, live: !!readCaptainSeed(seed) }, { headers: NO_STORE })
   }
 
   if (body.action === 'pack') {

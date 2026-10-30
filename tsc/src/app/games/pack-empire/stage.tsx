@@ -25,7 +25,7 @@ import {
   type Player,
   type Rarity,
 } from '@/lib/packEmpire/rules'
-import { Bolt, PackCard } from './cards'
+import { Bolt, CaptainMark, PackCard } from './cards'
 import { SealedPack, SpentPack } from './rip'
 
 /** The slow reveal on one card: its rarity, then its team, then its
@@ -363,7 +363,8 @@ export function usePackStage(initial: StageState | null = null) {
   return { stage, flash, landing, open, tear, reveal, revealAll, skip, pick, dismiss, settle }
 }
 
-export type PackTag = { text: string; color?: string } | null
+/** Over the stage: 'Captain pack' (with the patch), a League boost. */
+export type PackTag = { text: string; color?: string; captain?: boolean } | null
 
 function bestRarity(cards: Player[]): Rarity {
   let best = 0
@@ -535,10 +536,10 @@ export function PackStage({
           <div className="pe-stage-norm">
             {tag && (
               <div
-                className="pe-stage-tag"
+                className={`pe-stage-tag${tag.captain ? ' cap' : ''}`}
                 style={tag.color ? ({ '--tag': tag.color } as React.CSSProperties) : undefined}
               >
-                <Bolt className="pe-bolt" />
+                {tag.captain ? <CaptainMark inline /> : <Bolt className="pe-bolt" />}
                 {tag.text}
               </div>
             )}
