@@ -1,5 +1,6 @@
 # How much each team's offense put up, every season 1970-2025: points, rushing
-# yards, sacks allowed (1999+ only), as z-scores within the season.
+# yards, sacks allowed (1999+ only), as z-scores within the season. Passing yards
+# are printed on a lineman's card and don't go into his score.
 import glob, os, sys
 import pandas as pd, numpy as np
 
@@ -43,6 +44,25 @@ def rushing():
     return pd.concat(rows, ignore_index=True)
 
 
+def passing():
+    # 1999 on, nflverse's team totals. Before that the only source is player
+    # lines, and a man who changed teams mid-season sits on a 2TM row with no
+    # team (Kerry Collins, 1998), so a team's passers can fall thousands short.
+    # Its catchers rarely do, and neither can overshoot: take the larger.
+    rows = []
+    for y in range(1970, 1999):
+        d = pd.read_csv(f'{S}/fdp/{y}.csv')
+        d['fr'] = [pfr_franchise(c, y) for c in d.Tm]
+        d = d[d.fr.notna()]
+        t = d.groupby('fr')[['PassingYds', 'ReceivingYds']].sum().max(axis=1)
+        rows.append(t.rename('pass_yds').reset_index().assign(season=y))
+    for f in sorted(glob.glob(f'{S}/nflv/team/team_*.csv')):
+        d = pd.read_csv(f, usecols=['season', 'team', 'passing_yards'])
+        d['fr'] = d.team.map(nflverse_franchise)
+        rows.append(d.rename(columns={'passing_yards': 'pass_yds'})[['season', 'fr', 'pass_yds']])
+    return pd.concat(rows, ignore_index=True)
+
+
 def sacks():
     rows = []
     for f in sorted(glob.glob(f'{S}/nflv/raw/reg_*.csv')):
@@ -54,6 +74,7 @@ def sacks():
 
 def build():
     t = points().merge(rushing(), on=['season', 'fr'], how='left').merge(sacks(), on=['season', 'fr'], how='left')
+    t = t.merge(passing(), on=['season', 'fr'], how='left')
     t['rpg'] = t.rush / t.gp
     t['spg'] = t.sacks / t.gp
 

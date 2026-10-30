@@ -8,13 +8,14 @@
 // captain's lightning bolt are drawn), and real buttons where something is
 // tappable.
 
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import {
   FORMATION,
   PACK_ART,
   RARITY_LOOK,
   SLOTS,
   TIERS,
+  nickname,
   seasonLabel,
   surname,
   tierFor,
@@ -132,8 +133,18 @@ function Football() {
  * `outer` sits behind the card (the spinning borders and the immortal's
  * halo); `inner` sits inside the art. Structure unchanged from the original,
  * down to the number of children: the CSS addresses them with nth-child.
+ *
+ * Every element here is a running animation, so only mount what's on show: a
+ * face-down card has no inner effects, and a card on the field has only its
+ * outer edge.
  */
-export function RarityEffects({ rarity, position = 'inner' }: { rarity: Rarity; position?: 'outer' | 'inner' }) {
+export const RarityEffects = memo(function RarityEffects({
+  rarity,
+  position = 'inner',
+}: {
+  rarity: Rarity
+  position?: 'outer' | 'inner'
+}) {
   if (position === 'outer') {
     return (
       <>
@@ -163,18 +174,6 @@ export function RarityEffects({ rarity, position = 'inner' }: { rarity: Rarity; 
             <div className="pe-imm-glow-2" />
             <div className="pe-imm-glow-3" />
             <div className="pe-imm-glow-4" />
-            <div className="pe-imm-corner-arcs">
-              <svg viewBox="0 0 125 183" xmlns="http://www.w3.org/2000/svg">
-                <path className="pe-imm-arc-glow a1" d="M -6,34 Q -6,-6 34,-6" />
-                <path className="pe-imm-arc-line a1" d="M -6,34 Q -6,-6 34,-6" />
-                <path className="pe-imm-arc-glow a2" d="M 91,-6 Q 131,-6 131,34" />
-                <path className="pe-imm-arc-line a2" d="M 91,-6 Q 131,-6 131,34" />
-                <path className="pe-imm-arc-glow a3" d="M 131,149 Q 131,189 91,189" />
-                <path className="pe-imm-arc-line a3" d="M 131,149 Q 131,189 91,189" />
-                <path className="pe-imm-arc-glow a4" d="M 34,189 Q -6,189 -6,149" />
-                <path className="pe-imm-arc-line a4" d="M 34,189 Q -6,189 -6,149" />
-              </svg>
-            </div>
             <div className="pe-imm-plasma-wrap">
               <div className="pe-imm-plasma-arc1" />
               <div className="pe-imm-plasma-arc2" />
@@ -196,12 +195,6 @@ export function RarityEffects({ rarity, position = 'inner' }: { rarity: Rarity; 
           <div className="pe-cm-corner tr" />
           <div className="pe-cm-corner bl" />
           <div className="pe-cm-corner br" />
-          <div className="pe-cm-heat">
-            <div className="pe-cm-heat-wave" />
-            <div className="pe-cm-heat-wave" />
-            <div className="pe-cm-heat-wave" />
-            <div className="pe-cm-heat-wave" />
-          </div>
           <div className="pe-cm-geo">
             <div className="pe-cm-geo-line" />
             <div className="pe-cm-geo-line" />
@@ -421,7 +414,7 @@ export function RarityEffects({ rarity, position = 'inner' }: { rarity: Rarity; 
       )}
     </>
   )
-}
+})
 
 // ============================================================
 // A card from a pack
@@ -459,12 +452,22 @@ function YearMark({ player, className, short = false }: { player: Player; classN
 // every lineup banked before now carries too, so the card splits them here
 // rather than the pool growing a second copy: a number and its label is a
 // cell, and a line with no numbers in it (a lineman's honors) is a row of
-// chips. Cells share the row, so a long line wraps into its cells instead of
-// running off the edge of the card.
+// chips, short enough that two of them share a line. Cells share the row, so a
+// long line wraps into its cells instead of running off the edge of the card.
 
 type StatCell = { v: string; l: string } | { t: string }
 
-const STAT_LABEL: Record<string, string> = { 'a game': 'PPG', 'in scoring': 'Scoring', 'rush yds': 'Rush yds' }
+const STAT_LABEL: Record<string, string> = {
+  'a game': 'PPG',
+  'in scoring': 'Scoring',
+  'rush yds': 'Rush yds',
+  'pass yds': 'Pass yds',
+}
+
+const HONOR_LABEL: Record<string, string> = {
+  'First-Team All-Pro': '1st-Team AP',
+  'Second-Team All-Pro': '2nd-Team AP',
+}
 
 function statCells(line: string): StatCell[] {
   return line.split(' · ').map((part) => {
@@ -483,9 +486,10 @@ function StatBox({ accolades }: { accolades: string[] }) {
         if (cells.every((c) => 't' in c)) {
           return (
             <div key={j} className="pe-cf-honors">
-              {cells.map((c, k) => (
-                <span key={k}>{'t' in c ? c.t : ''}</span>
-              ))}
+              {cells.map((c, k) => {
+                const text = 't' in c ? c.t : ''
+                return <span key={k}>{HONOR_LABEL[text] ?? text}</span>
+              })}
             </div>
           )
         }
@@ -510,6 +514,24 @@ function StatBox({ accolades }: { accolades: string[] }) {
   )
 }
 
+/** Lean a card: x and y run 0 to 1 across it. Written straight to the two
+    elements that move. A custom property on the card would be inherited by
+    every effect inside it and re-style all of them on every frame. */
+export function leanCard(card: Element, x: number, y: number) {
+  const tilt = card.querySelector<HTMLElement>('.pe-tilt')
+  const glare = card.querySelector<HTMLElement>('.pe-glare')
+  if (tilt) tilt.style.transform = `rotateX(${(0.5 - y) * 18}deg) rotateY(${(x - 0.5) * 22}deg)`
+  glare?.style.setProperty('--pe-gx', `${x * 100}%`)
+  glare?.style.setProperty('--pe-gy', `${y * 100}%`)
+}
+
+function straightenCard(card: Element) {
+  card.querySelector<HTMLElement>('.pe-tilt')?.style.removeProperty('transform')
+  const glare = card.querySelector<HTMLElement>('.pe-glare')
+  glare?.style.removeProperty('--pe-gx')
+  glare?.style.removeProperty('--pe-gy')
+}
+
 /** Mouse only: the card leans toward the pointer and the shine follows it.
     Written straight to the element's style, so a pointermove never renders.
     The pending frame is kept per element, not per render, so a re-render
@@ -528,10 +550,7 @@ const TILT = {
       el,
       requestAnimationFrame(() => {
         el.dataset.tilt = '1'
-        el.style.setProperty('--pe-tx', `${(x - 0.5) * 22}deg`)
-        el.style.setProperty('--pe-ty', `${(0.5 - y) * 18}deg`)
-        el.style.setProperty('--pe-gx', `${x * 100}%`)
-        el.style.setProperty('--pe-gy', `${y * 100}%`)
+        leanCard(el, x, y)
       })
     )
   },
@@ -539,16 +558,17 @@ const TILT = {
     const el = e.currentTarget
     cancelAnimationFrame(tiltFrame.get(el) ?? 0)
     delete el.dataset.tilt
-    for (const p of ['--pe-tx', '--pe-ty', '--pe-gx', '--pe-gy']) el.style.removeProperty(p)
+    straightenCard(el)
   },
 }
 
 /**
  * Face down until revealed, then flipped. The front is the original card's
  * stock (11px corners, Orbitron numbers, Barlow names, every rarity effect),
- * laid out so the three things you choose on read at a glance: the position
- * tab and rarity across the top, the SEASON on a ribbon under the man, then
- * his name, his value and the stat box that earned it.
+ * laid out so the man fills the top half with the three things you choose on
+ * printed over him: the position tab and rarity along the top, the SEASON
+ * across his chest, then below him his name, his value and the stat box that
+ * earned it.
  *
  * Face down, the back gives a little away: a rare's edge catches the light,
  * a dynasty breathes gold, and the two at the top shake and leak colour.
@@ -561,6 +581,7 @@ export function PackCard({
   selectable = false,
   charging = false,
   burst = false,
+  still = false,
   index = 0,
   chem = null,
   onClick,
@@ -576,6 +597,8 @@ export function PackCard({
   charging?: boolean
   /** The walkout's flip: a ring of light off the card. */
   burst?: boolean
+  /** In the air: the card without its effects, which only cost frames there. */
+  still?: boolean
   /** Deal order, for the staggered entrance. */
   index?: number
   /** League packs: what this card would add to the team's chemistry. */
@@ -626,19 +649,15 @@ export function PackCard({
     >
       <div className="pe-tilt">
         <div className="pe-ci">
-          <RarityEffects rarity={player.rarity} position="outer" />
+          {!still && <RarityEffects rarity={player.rarity} position="outer" />}
           <div className="pe-card-back">
             <div className="pe-back-grid" />
             <Football />
             <div className="pe-back-label">TAP TO REVEAL</div>
           </div>
           <div className="pe-card-front">
-            <div className="pe-cf-topbar">
-              <div className="pe-cf-pos">{player.pos}</div>
-              <div className={`pe-cf-rlab ${player.rarity}`}>{rc.label}</div>
-            </div>
             <div className="pe-cf-art" style={{ background: rc.art }}>
-              <RarityEffects rarity={player.rarity} position="inner" />
+              {revealed && !still && <RarityEffects rarity={player.rarity} position="inner" />}
               {/* Only mounted on the front once it turns. The pack's faces are
                   already cached by then (see preloadFaces), so this is instant
                   but can never be seen through the back. */}
@@ -651,12 +670,14 @@ export function PackCard({
                   {chem}
                 </span>
               )}
+              <div className="pe-cf-season">
+                {player.year ? <b>{player.year}</b> : null}
+                <span>{nickname(player)}</span>
+              </div>
             </div>
-            <div className="pe-cf-season">
-              {player.year ? <b>{player.year}</b> : null}
-              <span className={(player.club ?? player.team).length > 16 ? 'long' : undefined}>
-                {player.club ?? player.team}
-              </span>
+            <div className="pe-cf-topbar">
+              <div className="pe-cf-pos">{player.pos}</div>
+              <div className={`pe-cf-rlab ${player.rarity}`}>{rc.label}</div>
             </div>
             <div className="pe-cf-body">
               <div className={`pe-cf-name${player.name.length > 16 ? ' long' : ''}`}>{player.name}</div>
@@ -730,7 +751,6 @@ function FilledSlot({
         </div>
         <div className="pe-fc-art" style={{ background: rc.art }}>
           <div className="pe-fc-field-lines" />
-          <RarityEffects rarity={player.rarity} position="inner" />
           <YearMark player={player} className="pe-fc-year" short />
           <Headshot player={player} className="pe-fc-img" />
           {!player.year && <div className="pe-fc-initial">{player.name.charAt(0)}</div>}

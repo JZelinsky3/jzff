@@ -456,6 +456,8 @@
 }
 
 .pe-input {
+  -webkit-appearance: none;
+  appearance: none;
   width: 100%;
   background: var(--pe-bg);
   color: var(--pe-ink);
@@ -470,6 +472,11 @@
 
 .pe-input:focus {
   border-color: var(--pe-amber);
+}
+
+/* Safari draws a search box its own way unless told not to. */
+.pe-input[type='search']::-webkit-search-decoration {
+  -webkit-appearance: none;
 }
 
 .pe-input::placeholder {
@@ -1537,9 +1544,11 @@
     filter 0.18s ease;
 }
 
-.pe-pack-wrap.clickable:hover {
-  transform: translateY(-6px) scale(1.06);
-  filter: drop-shadow(0 0 10px rgba(232, 168, 75, 0.7));
+@media (hover: hover) {
+  .pe-pack-wrap.clickable:hover {
+    transform: translateY(-6px) scale(1.06);
+    filter: drop-shadow(0 0 10px rgba(232, 168, 75, 0.7));
+  }
 }
 
 .pe-pack-wrap.clickable:focus-visible {
@@ -1877,15 +1886,19 @@
   z-index: 10;
 }
 
-.pe-card.rev.selectable:hover {
-  transform: translateY(-14px) scale(1.07);
-}
+/* A real pointer only: on a touch screen :hover sticks to whatever was last
+   tapped, or to whatever appears under the finger. */
+@media (hover: hover) {
+  .pe-card.rev.selectable:hover {
+    transform: translateY(-14px) scale(1.07);
+  }
 
-.pe-card.rev.selectable:hover .pe-card-front {
-  box-shadow:
-    0 0 40px var(--rg),
-    0 16px 36px rgba(0, 0, 0, 0.7);
-  border-color: var(--rc);
+  .pe-card.rev.selectable:hover .pe-card-front {
+    box-shadow:
+      0 0 40px var(--rg),
+      0 16px 36px rgba(0, 0, 0, 0.7);
+    border-color: var(--rc);
+  }
 }
 
 .pe-card.picked {
@@ -1896,7 +1909,6 @@
 .pe-card.rejected {
   opacity: 0.22;
   transform: scale(0.9);
-  filter: grayscale(0.6);
 }
 
 .pe-card:disabled {
@@ -1969,9 +1981,9 @@
   color: #2c4a78;
 }
 
-/* The front is a column: top bar, art, season ribbon, body. The art takes
-   whatever height the rest leaves, so a two-line honors row or a long name
-   squeezes the picture a touch instead of pushing the stat box off the card. */
+/* The front is the art over the body. The art takes whatever height the body
+   leaves, and the top bar and the season ribbon are printed over it, so the
+   man gets the room and the words stay out of his way. */
 .pe-card-front {
   display: flex;
   flex-direction: column;
@@ -1983,18 +1995,20 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-/* A strip in the card's colour, fading out across the top. */
+/* Over the top of the art, fading out so the photo runs up behind it. */
 .pe-cf-topbar {
-  flex-shrink: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 11;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.3em;
-  padding: 0.3em 0.45em 0.3em 0;
-  position: relative;
-  z-index: 11;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--rc) 30%, transparent), transparent 78%);
-  border-bottom: 1px solid color-mix(in srgb, var(--rc) 38%, transparent);
+  padding: 0.3em 0.45em 0.7em 0;
+  background: linear-gradient(to bottom, rgba(5, 10, 24, 0.82), transparent);
+  pointer-events: none;
 }
 
 /* The position on a slanted tab off the left edge. */
@@ -2038,20 +2052,16 @@
 
 .pe-cf-rlab.transcendent {
   background: linear-gradient(90deg, #d060f0, #ff90ff, #d060f0);
-  background-size: 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: pe-holo-shift 2s linear infinite;
 }
 
 .pe-cf-rlab.immortal {
   background: linear-gradient(90deg, #20c060, #80ffb8, #20c060);
-  background-size: 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: pe-holo-shift 1.6s linear infinite;
 }
 
 /* The clipped text fill would swallow the gem; it keeps its own. */
@@ -2063,15 +2073,6 @@
   background: #80ffb8;
 }
 
-@keyframes pe-holo-shift {
-  from {
-    background-position: 0%;
-  }
-  to {
-    background-position: 200%;
-  }
-}
-
 .pe-cf-art {
   flex: 1 1 auto;
   min-height: 3.6em;
@@ -2080,6 +2081,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border-bottom: 1px solid color-mix(in srgb, var(--rc) 60%, transparent);
 }
 
 .pe-cf-img {
@@ -2107,28 +2109,29 @@
   z-index: 1;
 }
 
-/* The season, on a ribbon under the man: the year in the card's colour and
-   the club as it was called that year. Part of what you're choosing on, so
-   it reads before the stat box does. */
+/* The season, across the man's chest: the year in the card's colour and the
+   club as it was called that year. Part of what you're choosing on, so it
+   reads before the stat box does. */
 .pe-cf-season {
-  flex-shrink: 0;
-  position: relative;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 11;
   display: flex;
   align-items: baseline;
   gap: 0.42em;
   min-width: 0;
-  padding: 0.24em 0.5em 0.22em;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--rc) 24%, #050a18), #050a18 72%);
-  border-top: 1px solid color-mix(in srgb, var(--rc) 60%, transparent);
-  box-shadow: 0 -6px 12px rgba(4, 8, 20, 0.55);
+  padding: 1.05em 0.5em 0.24em;
+  background: linear-gradient(to top, rgba(5, 10, 24, 0.94) 28%, rgba(5, 10, 24, 0.62) 60%, transparent);
+  pointer-events: none;
 }
 
 .pe-cf-season b {
   flex-shrink: 0;
   font-family: var(--pe-display);
   font-weight: 900;
-  font-size: 0.78em;
+  font-size: 0.76em;
   line-height: 1;
   letter-spacing: 0.05em;
   color: var(--rc);
@@ -2138,23 +2141,15 @@
 .pe-cf-season span {
   min-width: 0;
   font-family: var(--pe-cond);
-  font-weight: 700;
-  font-size: 0.5em;
-  line-height: 1.2;
-  letter-spacing: 0.08em;
+  font-weight: 800;
+  font-size: 0.64em;
+  line-height: 1;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #a8bccf;
+  color: #dbe8f4;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* "New England Patriots" doesn't fit in capitals beside the year; in
-   upper and lower case it does. */
-.pe-cf-season span.long {
-  font-size: 0.54em;
-  letter-spacing: 0.01em;
-  text-transform: none;
 }
 
 .pe-cf-body {
@@ -2262,10 +2257,9 @@
   color: #a8bccf;
 }
 
-/* A lineman's honors: chips in the card's colour, wrapping if they must. */
+/* A lineman's honors: chips in the card's colour, on one line. */
 .pe-cf-honors {
   display: flex;
-  flex-wrap: wrap;
   justify-content: center;
   gap: 0.2em;
 }
@@ -2287,8 +2281,8 @@
 /* League packs print what a card would do to the team's chemistry. */
 .pe-cf-chem {
   position: absolute;
-  bottom: 0.4em;
-  right: 0.45em;
+  top: 2.3em;
+  right: 0.7em;
   z-index: 12;
   font-family: var(--pe-display);
   font-weight: 700;
@@ -2320,11 +2314,19 @@
   align-items: center;
   justify-content: center;
   padding: 1.5rem 1rem;
-  background: rgba(10, 9, 8, 0.88);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  /* No backdrop blur: re-blurring the page behind every frame of a card
+     animation is the most expensive thing a phone can be asked to do. */
+  background: rgba(10, 9, 8, 0.94);
   animation: pe-fade-in 0.22s ease both;
-  overflow-y: auto;
+  overflow: hidden auto;
+  --pe-pack-w: 172px;
+}
+
+/* Nothing on the table is on show behind the stage, so nothing there runs. */
+:is(.pe-draft, .pe-table):has(> .pe-stage) .pe-field *,
+:is(.pe-draft, .pe-table):has(> .pe-stage) .pe-field *::before,
+:is(.pe-draft, .pe-table):has(> .pe-stage) .pe-field *::after {
+  animation-play-state: paused !important;
 }
 
 .pe-stage.leaving {
@@ -2474,7 +2476,7 @@
 
 .pe-rip-pack {
   position: relative;
-  width: 172px;
+  width: var(--pe-pack-w);
   aspect-ratio: 125 / 183;
   padding: 0;
   border: 0;
@@ -2485,7 +2487,20 @@
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
   animation: pe-pack-float 3.2s ease-in-out infinite;
-  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.55));
+}
+
+/* Its shadow on the table. A drop-shadow filter here would be redrawn on every
+   frame the seam's glint moves. */
+.pe-rip-pack::after {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -26px;
+  height: 44px;
+  z-index: 0;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.6), transparent);
+  pointer-events: none;
 }
 
 .pe-rip-pack:focus-visible {
@@ -2563,9 +2578,13 @@
   transition: none;
 }
 
-/* A hint on desktop: the strip lifts a touch under the pointer. */
-.pe-rip.sealed:not(.dragging) .pe-rip-pack:hover .pe-rip-strip {
-  transform: translate(1px, -3px) rotate(2deg);
+/* A hint for a mouse: the strip lifts a touch under the pointer. Never on a
+   touch screen, where the pack lands under the finger that opened it and
+   would sit half-torn before anyone had swiped. */
+@media (hover: hover) and (pointer: fine) {
+  .pe-rip.sealed:not(.dragging) .pe-rip-pack:hover .pe-rip-strip {
+    transform: translate(1px, -3px) rotate(2deg);
+  }
 }
 
 .pe-rip-body,
@@ -2615,49 +2634,137 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  left: -30%;
+  left: 0;
   width: 30%;
   background: linear-gradient(90deg, transparent, rgba(255, 240, 210, 0.95), transparent);
+  transform: translateX(-100%);
   animation: pe-seam-glint 2.4s ease-in-out infinite;
 }
 
 @keyframes pe-seam-glint {
   0% {
-    left: -30%;
+    transform: translateX(-100%);
   }
   55%,
   100% {
-    left: 104%;
+    transform: translateX(347%);
   }
 }
 
-/* The light inside, centred on the tear line. Its colour is the best card's
-   rarity, so a gold glow off the opening means a dynasty or better is in. */
-.pe-rip-light {
+/* The light inside. It stands on the new top edge of the pack, behind the
+   body, so the torn edge cuts across it and it reads as coming up out of the
+   opening: a tall soft beam and a wide halo. Its colour is the best card's
+   rarity and --gs and --gb, off that rarity, set how big and how bright. All
+   gradients, no blur: they're painted once and only ever faded and scaled. */
+.pe-rip,
+.pe-boom,
+.pe-rip-spent {
+  --gs: 0.72;
+  --gb: 0.6;
+}
+
+:is(.pe-rip, .pe-boom, .pe-rip-spent)[data-tier='1'] {
+  --gs: 0.95;
+  --gb: 0.78;
+}
+
+:is(.pe-rip, .pe-boom, .pe-rip-spent)[data-tier='2'] {
+  --gs: 1.25;
+  --gb: 0.92;
+}
+
+:is(.pe-rip, .pe-boom, .pe-rip-spent)[data-tier='3'] {
+  --gs: 1.6;
+  --gb: 1;
+}
+
+:is(.pe-rip, .pe-boom, .pe-rip-spent)[data-tier='4'] {
+  --gs: 2.1;
+  --gb: 1;
+}
+
+.pe-mouth {
   position: absolute;
-  left: -45%;
-  right: -45%;
-  top: -34%;
-  height: 100%;
+  left: 50%;
+  top: 16.5%;
+  width: 0;
+  height: 0;
   z-index: 1;
-  background: radial-gradient(ellipse 58% 36% at 50% 50%, var(--glow), transparent 72%);
-  opacity: calc(var(--pull) * 0.9);
-  filter: blur(6px);
-  transition: opacity 0.3s;
+  opacity: calc(var(--pull) * var(--gb));
+  transform: scale(calc(0.55 + var(--pull) * 0.45));
+  transition:
+    opacity 0.25s,
+    transform 0.25s;
   pointer-events: none;
 }
 
-.pe-rip-light::after {
+.pe-rip.dragging .pe-mouth {
+  transition: none;
+}
+
+.pe-mouth-beam,
+.pe-mouth-halo {
+  position: absolute;
+  display: block;
+}
+
+.pe-mouth-beam {
+  left: calc(-115px * var(--gs));
+  bottom: calc(-36px * var(--gs));
+  width: calc(230px * var(--gs));
+  height: calc(410px * var(--gs));
+  background: radial-gradient(
+    ellipse 50% 100% at 50% 100%,
+    color-mix(in srgb, var(--glow) 80%, #fff) 0,
+    color-mix(in srgb, var(--glow) 60%, transparent) 38%,
+    transparent 100%
+  );
+  /* Its foot fades out behind the pack, or the flat edge shows either side. */
+  -webkit-mask: linear-gradient(to top, transparent, #000 16%);
+  mask: linear-gradient(to top, transparent, #000 16%);
+}
+
+.pe-mouth-halo {
+  left: calc(-175px * var(--gs));
+  top: calc(-125px * var(--gs));
+  width: calc(350px * var(--gs));
+  height: calc(250px * var(--gs));
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--glow) 65%, #fff) 0,
+    var(--glow) 26%,
+    color-mix(in srgb, var(--glow) 42%, transparent) 55%,
+    transparent 100%
+  );
+}
+
+/* The torn edge itself catches the light: a wash down from the jagged line,
+   clipped to it by the body's own clip-path. */
+.pe-rip-body::after,
+.pe-rip-spent::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: repeating-conic-gradient(
-    color-mix(in srgb, var(--glow) 55%, transparent) 0deg 5deg,
-    transparent 5deg 18deg
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--glow) 72%, #fff) 15%,
+    color-mix(in srgb, var(--glow) 55%, transparent) 21%,
+    transparent 40%
   );
-  -webkit-mask: radial-gradient(closest-side, #000 18%, transparent);
-  mask: radial-gradient(closest-side, #000 18%, transparent);
-  opacity: 0;
+  pointer-events: none;
+}
+
+.pe-rip-body::after {
+  opacity: calc(var(--pull) * var(--gb));
+  transition: opacity 0.25s;
+}
+
+.pe-rip.dragging .pe-rip-body::after {
+  transition: none;
+}
+
+.pe-rip-spent::after {
+  opacity: var(--gb);
 }
 
 .pe-rip.ripping .pe-rip-strip,
@@ -2676,30 +2783,46 @@
   }
 }
 
-.pe-rip.ripping .pe-rip-light,
-.pe-rip.open .pe-rip-light {
-  opacity: 1;
-  animation: pe-rip-burst 0.6s ease-out both;
+.pe-rip.ripping .pe-rip-body::after,
+.pe-rip.open .pe-rip-body::after {
+  opacity: var(--gb);
 }
 
-.pe-rip.ripping .pe-rip-light::after,
-.pe-rip.open .pe-rip-light::after {
-  opacity: 1;
-  animation: pe-border-spin 7s linear infinite;
+.pe-rip.ripping .pe-mouth,
+.pe-rip.open .pe-mouth {
+  opacity: var(--gb);
+  transform: none;
+  animation: pe-mouth-open 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 
-@keyframes pe-rip-burst {
-  0% {
-    transform: scale(0.6);
-    opacity: 0.4;
+.pe-rip.open .pe-mouth-halo {
+  animation: pe-mouth-breathe 1.3s ease-in-out infinite;
+}
+
+@keyframes pe-mouth-open {
+  from {
+    opacity: 0.3;
+    transform: scale(0.55, 0.3);
   }
   40% {
-    transform: scale(1.25);
     opacity: 1;
+    transform: scale(1.14);
   }
+  to {
+    opacity: var(--gb);
+    transform: none;
+  }
+}
+
+@keyframes pe-mouth-breathe {
+  0%,
   100% {
+    opacity: 1;
     transform: scale(1);
-    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.06);
   }
 }
 
@@ -2721,18 +2844,14 @@
   animation: pe-pack-shake 0.5s ease-in-out infinite;
 }
 
-.pe-rip.waiting .pe-rip-light {
-  animation: pe-center-glow 1s ease-in-out infinite;
-}
-
 /* The empty wrapper, dropping away behind the cards. */
 .pe-rip-spent {
   inset: auto;
   left: 50%;
   top: 50%;
-  width: 172px;
+  width: var(--pe-pack-w);
   aspect-ratio: 125 / 183;
-  margin-left: -86px;
+  margin-left: calc(var(--pe-pack-w) / -2);
   z-index: 0;
   pointer-events: none;
   animation: pe-spent-drop 0.55s cubic-bezier(0.5, 0, 0.75, 0) forwards;
@@ -2750,16 +2869,17 @@
 }
 
 /* ── The pack going off (RipBurst) ─────────────────────────── */
-/* Centred where the wrapper drops away, behind the cards as they fan out.
-   Everything in it ends transparent, so it can stay mounted. Intensity by the
-   best card inside: --fl (the table flash), --rs (how far the rings go). */
+/* Centred on the torn edge of the wrapper dropping away, behind it and the
+   cards. Everything in it ends transparent, so it can stay mounted. Size and
+   brightness by the best card inside, the same --gs and --gb as the pack's
+   light; --fl is the table flash. */
 
 .pe-boom {
   --fl: 0.3;
-  --rs: 4;
   position: absolute;
   left: 50%;
-  top: 50%;
+  /* The tear is 16% down a pack, 34% of its height above the middle. */
+  top: calc(50% + var(--pe-pack-w) * -0.498);
   width: 0;
   height: 0;
   z-index: 0;
@@ -2767,23 +2887,19 @@
 }
 
 .pe-boom[data-tier='1'] {
-  --fl: 0.5;
-  --rs: 5;
+  --fl: 0.45;
 }
 
 .pe-boom[data-tier='2'] {
-  --fl: 0.72;
-  --rs: 6.5;
+  --fl: 0.62;
 }
 
 .pe-boom[data-tier='3'] {
-  --fl: 0.85;
-  --rs: 8;
+  --fl: 0.75;
 }
 
 .pe-boom[data-tier='4'] {
-  --fl: 1;
-  --rs: 9.5;
+  --fl: 0.9;
 }
 
 /* Over the whole table, in the card's colour, from the pack outward. */
@@ -2793,13 +2909,12 @@
   background: radial-gradient(
     circle at var(--bx, 50%) var(--by, 50%),
     color-mix(in srgb, var(--glow) 55%, #fff) 0,
-    color-mix(in srgb, var(--glow) 60%, transparent) 14%,
-    color-mix(in srgb, var(--glow) 18%, transparent) 38%,
+    color-mix(in srgb, var(--glow) 45%, transparent) 14%,
+    color-mix(in srgb, var(--glow) 14%, transparent) 38%,
     transparent 62%
   );
-  mix-blend-mode: screen;
   opacity: 0;
-  animation: pe-boom-flash 1s ease-out both;
+  animation: pe-boom-flash 0.9s ease-out both;
 }
 
 @keyframes pe-boom-flash {
@@ -2814,106 +2929,63 @@
   }
 }
 
-/* Light rays turning as they spread. */
-.pe-boom-rays {
+/* The pack's light, carried on as it swells out and fades. */
+.pe-boom-bloom {
   position: absolute;
-  left: -220px;
-  top: -220px;
-  width: 440px;
-  height: 440px;
-  border-radius: 50%;
-  background: repeating-conic-gradient(
-    color-mix(in srgb, var(--glow) 75%, #fff) 0deg 4deg,
-    transparent 4deg 15deg
+  left: calc(-190px * var(--gs));
+  top: calc(-180px * var(--gs));
+  width: calc(380px * var(--gs));
+  height: calc(360px * var(--gs));
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--glow) 65%, #fff) 0,
+    var(--glow) 24%,
+    color-mix(in srgb, var(--glow) 38%, transparent) 55%,
+    transparent 100%
   );
-  -webkit-mask: radial-gradient(closest-side, #000 8%, rgba(0, 0, 0, 0.6) 40%, transparent);
-  mask: radial-gradient(closest-side, #000 8%, rgba(0, 0, 0, 0.6) 40%, transparent);
   opacity: 0;
-  animation: pe-boom-rays 1.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  animation: pe-boom-bloom 1.15s ease-out both;
 }
 
-@keyframes pe-boom-rays {
+@keyframes pe-boom-bloom {
   0% {
-    opacity: 0;
-    transform: scale(0.2) rotate(0deg);
+    opacity: var(--gb);
+    transform: scale(0.8);
   }
-  12% {
-    opacity: 0.95;
+  30% {
+    opacity: var(--gb);
+    transform: scale(1.08);
   }
   100% {
     opacity: 0;
-    transform: scale(calc(0.6 + var(--rs) * 0.18)) rotate(55deg);
+    transform: scale(1.3);
   }
 }
 
 /* The white-hot middle. */
 .pe-boom-core {
   position: absolute;
-  left: -90px;
-  top: -90px;
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, #fff, color-mix(in srgb, var(--glow) 80%, #fff) 30%, transparent 75%);
-  filter: blur(4px);
+  left: calc(-80px * var(--gs));
+  top: calc(-60px * var(--gs));
+  width: calc(160px * var(--gs));
+  height: calc(120px * var(--gs));
+  background: radial-gradient(closest-side, #fff, color-mix(in srgb, var(--glow) 80%, #fff) 34%, transparent);
   opacity: 0;
-  animation: pe-boom-core 0.75s ease-out both;
+  animation: pe-boom-core 0.7s ease-out both;
 }
 
 @keyframes pe-boom-core {
   0% {
     opacity: 0;
-    transform: scale(0.3);
+    transform: scale(0.4);
   }
   15% {
-    opacity: 1;
-    transform: scale(1.3);
+    opacity: var(--gb);
+    transform: scale(1.2);
   }
   100% {
     opacity: 0;
     transform: scale(0.9);
-  }
-}
-
-/* Shockwaves. */
-.pe-boom-ring {
-  position: absolute;
-  left: -50px;
-  top: -50px;
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  border: 3px solid color-mix(in srgb, var(--glow) 80%, #fff);
-  box-shadow:
-    0 0 24px var(--glow-soft),
-    inset 0 0 18px var(--glow-soft);
-  opacity: 0;
-  animation: pe-boom-ring 0.9s cubic-bezier(0.15, 0.7, 0.3, 1) both;
-}
-
-.pe-boom-ring.r2 {
-  border-width: 2px;
-  animation-delay: 0.12s;
-  animation-duration: 1.1s;
-}
-
-.pe-boom-ring.r3 {
-  border-width: 1.5px;
-  animation-delay: 0.26s;
-  animation-duration: 1.3s;
-}
-
-@keyframes pe-boom-ring {
-  0% {
-    opacity: 0;
-    transform: scale(0.2);
-  }
-  10% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: scale(var(--rs));
   }
 }
 
@@ -2947,12 +3019,12 @@
 
 /* Dynasty and up shake the table; the top two harder. Not while it's
    leaving, which has its own animation. */
-.pe-stage:not(.leaving):has(.pe-boom[data-tier='2']) {
+.pe-stage:not(.leaving)[data-boom='2'] {
   animation: pe-boom-shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
-.pe-stage:not(.leaving):has(.pe-boom[data-tier='3']),
-.pe-stage:not(.leaving):has(.pe-boom[data-tier='4']) {
+.pe-stage:not(.leaving)[data-boom='3'],
+.pe-stage:not(.leaving)[data-boom='4'] {
   animation: pe-boom-shake-hard 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
@@ -3015,27 +3087,54 @@
   }
 }
 
-/* Immortal pull. */
-.pe-imm-flash {
+/* ── Immortal Pull ─────────────────────────────────────────── */
+/* An immortal stops the show the moment the pack is open. The room goes dark
+   but the pack stays lit, and a banner runs the width of the screen right
+   above it, in the stage's head, where no card can be behind the words. Tap
+   to skip. The cards come out when it clears. */
+
+.pe-imp-veil {
   position: fixed;
   inset: 0;
-  z-index: 320;
-  pointer-events: none;
-  background: radial-gradient(ellipse at center, rgba(40, 220, 120, 0.35), rgba(10, 60, 30, 0.2) 40%, transparent 70%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: pe-imm-in 2.4s ease both;
+  z-index: 40;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  background: rgba(2, 10, 6, 0.74);
+  animation: pe-fade-in 0.25s ease both;
+  -webkit-tap-highlight-color: transparent;
 }
 
-@keyframes pe-imm-in {
+.pe-stage.pulling .pe-rip {
+  position: relative;
+  z-index: 45;
+  pointer-events: none;
+}
+
+.pe-imp-band {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100vw;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.05rem 1rem 0.95rem;
+  overflow: hidden;
+  background: linear-gradient(90deg, transparent, rgba(2, 16, 9, 0.96) 16%, rgba(2, 16, 9, 0.96) 84%, transparent);
+  pointer-events: none;
+  animation: pe-imp-life 2.3s linear both;
+}
+
+@keyframes pe-imp-life {
   0% {
     opacity: 0;
   }
-  10% {
-    opacity: 1;
-  }
-  80% {
+  4%,
+  90% {
     opacity: 1;
   }
   100% {
@@ -3043,61 +3142,113 @@
   }
 }
 
-.pe-imm-text {
-  font-family: var(--pe-display);
-  font-weight: 900;
-  font-size: clamp(1.6rem, 5vw, 3rem);
-  letter-spacing: 0.18em;
-  color: #28dc78;
-  text-shadow:
-    0 0 40px #28dc78,
-    0 0 80px rgba(40, 220, 120, 0.7);
-  animation: pe-imm-pop 0.55s cubic-bezier(0.36, 1.6, 0.64, 1) both;
+/* The rules along the band's edges, drawn out from the middle. */
+.pe-imp-band::before,
+.pe-imp-band::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #28dc78 24%, #c8ffe0 50%, #28dc78 76%, transparent);
+  animation: pe-imp-rule 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-@keyframes pe-imm-pop {
+.pe-imp-band::before {
+  top: 0;
+}
+
+.pe-imp-band::after {
+  bottom: 0;
+}
+
+@keyframes pe-imp-rule {
   from {
-    transform: scale(0.4);
-    opacity: 0;
+    transform: scaleX(0);
   }
   to {
-    transform: scale(1);
-    opacity: 1;
+    transform: scaleX(1);
   }
+}
+
+.pe-imp-word {
+  font-family: var(--pe-display);
+  font-weight: 900;
+  font-size: clamp(2.4rem, 10.4vw, 5.4rem);
+  line-height: 1.06;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #eafff3;
+  text-shadow:
+    0 0 16px rgba(40, 220, 120, 0.95),
+    0 0 48px rgba(40, 220, 120, 0.6);
+  animation: pe-imp-slam 0.5s cubic-bezier(0.2, 1.3, 0.4, 1) 0.1s both;
+}
+
+/* One pass of light along the band once the word has landed. */
+.pe-imp-sweep {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 30%;
+  background: linear-gradient(100deg, transparent, rgba(190, 255, 220, 0.34), transparent);
+  transform: translateX(-100%);
+  animation: pe-imp-sweep 1s ease-in-out 0.7s both;
+}
+
+@keyframes pe-imp-slam {
+  from {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pe-imp-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}
+
+.pe-imp-pull {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: min(84vw, 34rem);
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: clamp(0.95rem, 2.6vw, 1.3rem);
+  line-height: 1;
+  letter-spacing: 0.62em;
+  text-indent: 0.62em;
+  text-transform: uppercase;
+  color: #8dffc0;
+  animation: pe-rise 0.4s ease 0.34s both;
+}
+
+.pe-imp-pull::before,
+.pe-imp-pull::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(141, 255, 192, 0.45);
 }
 
 /* ── Tilt and shine ────────────────────────────────────────── */
-/* Registered so they inherit (the stage sets them for the whole pack off a
-   phone's tilt) and so the sway below can animate them. */
-
-@property --pe-tx {
-  syntax: '<angle>';
-  inherits: true;
-  initial-value: 0deg;
-}
-
-@property --pe-ty {
-  syntax: '<angle>';
-  inherits: true;
-  initial-value: 0deg;
-}
-
-@property --pe-gx {
-  syntax: '<percentage>';
-  inherits: true;
-  initial-value: 50%;
-}
-
-@property --pe-gy {
-  syntax: '<percentage>';
-  inherits: true;
-  initial-value: 30%;
-}
+/* leanCard (cards.tsx) writes the tilt straight onto .pe-tilt and the light's
+   position onto .pe-glare, and the sway below is a plain transform, so none of
+   it re-styles the effects inside the card. */
 
 .pe-tilt {
   position: relative;
   transform-style: preserve-3d;
-  transform: rotateX(var(--pe-ty)) rotateY(var(--pe-tx));
   transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -3114,12 +3265,11 @@
   border-radius: inherit;
   pointer-events: none;
   background: radial-gradient(
-    circle at var(--pe-gx) var(--pe-gy),
+    circle at var(--pe-gx, 50%) var(--pe-gy, 30%),
     rgba(255, 255, 255, 0.2),
     rgba(255, 255, 255, 0.05) 30%,
     transparent 60%
   );
-  mix-blend-mode: screen;
   opacity: 0;
   transition: opacity 0.4s ease;
 }
@@ -3141,7 +3291,7 @@
     transparent 75%
   );
   background-size: 260% 260%;
-  background-position: var(--pe-gx) var(--pe-gy);
+  background-position: var(--pe-gx, 50%) var(--pe-gy, 30%);
 }
 
 .pe-card[data-tilt] .pe-glare,
@@ -3150,7 +3300,8 @@
 }
 
 /* Touch screens have no pointer to follow: the turned cards sway on their
-   own, out of step with each other, unless the phone's tilt is driving. */
+   own, out of step with each other, and the light drifts across them, unless
+   the phone's tilt is driving. */
 @media (hover: none) {
   .pe-stage-cards .pe-card.rev .pe-tilt {
     animation: pe-sway 6s ease-in-out infinite;
@@ -3159,62 +3310,110 @@
   }
 
   .pe-stage-cards .pe-card.rev .pe-glare {
+    inset: -30%;
+    border-radius: 0;
     opacity: 1;
+    animation: pe-sway-glare 6s ease-in-out infinite;
+    animation-delay: calc(var(--i) * -1.3s);
   }
 
   .pe-stage[data-gyro] .pe-stage-cards .pe-card.rev .pe-tilt {
     animation: none;
     transition: transform 0.12s linear;
   }
+
+  .pe-stage[data-gyro] .pe-stage-cards .pe-card.rev .pe-glare {
+    inset: 0;
+    border-radius: inherit;
+    animation: none;
+  }
 }
 
 @keyframes pe-sway {
   0%,
   100% {
-    --pe-tx: -6deg;
-    --pe-ty: 3deg;
-    --pe-gx: 18%;
-    --pe-gy: 15%;
+    transform: rotateX(3deg) rotateY(-6deg);
   }
   50% {
-    --pe-tx: 6deg;
-    --pe-ty: -2deg;
-    --pe-gx: 82%;
-    --pe-gy: 48%;
+    transform: rotateX(-2deg) rotateY(6deg);
+  }
+}
+
+@keyframes pe-sway-glare {
+  0%,
+  100% {
+    transform: translate(-22%, -10%);
+  }
+  50% {
+    transform: translate(22%, 12%);
   }
 }
 
 /* ── The tell ──────────────────────────────────────────────── */
-/* Face down, a card's back gives its rarity away by degrees. --tell scales
-   the glow: nothing on a common, a catch of light on a rare, a slow gold
-   breath on a dynasty, and the top two shake and leak colour at the seams. */
+/* Face down, a card gives its rarity away by degrees. --tell scales the glow:
+   nothing on a common, a catch of light on a rare, a slow gold breath on a
+   dynasty, and the top two shake and leak colour at the seams. The glow lives
+   on the card's own ::before and only its opacity moves, so breathing costs no
+   repaint however many cards are on the table. */
+
+.pe-card[data-r='rare'] {
+  --tell: 0.35;
+}
+
+.pe-card[data-r='dynasty'] {
+  --tell: 0.6;
+}
+
+.pe-card[data-r='transcendent'] {
+  --tell: 0.85;
+}
+
+.pe-card[data-r='immortal'] {
+  --tell: 1;
+}
+
+.pe-card:not(.rev):not([data-r='common'])::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 11px;
+  box-shadow: 0 0 calc(30px * var(--tell)) var(--rg);
+  pointer-events: none;
+  animation: pe-tell-breathe var(--tell-t, 2.4s) ease-in-out infinite;
+}
+
+.pe-card:not(.rev)[data-r='dynasty']::before {
+  --tell-t: 1.8s;
+}
+
+.pe-card:not(.rev)[data-r='transcendent']::before {
+  --tell-t: 1.2s;
+}
+
+.pe-card:not(.rev)[data-r='immortal']::before {
+  --tell-t: 0.9s;
+}
 
 .pe-card:not(.rev)[data-r='rare'] .pe-card-back {
-  --tell: 0.35;
   border-color: #2a6890;
-  animation: pe-tell-breathe 2.4s ease-in-out infinite;
+  box-shadow: inset 0 0 calc(22px * var(--tell)) color-mix(in srgb, var(--rc) 28%, transparent);
 }
 
 .pe-card:not(.rev)[data-r='dynasty'] .pe-card-back {
-  --tell: 0.6;
   border-color: #8a7020;
-  animation: pe-tell-breathe 1.8s ease-in-out infinite;
+  box-shadow: inset 0 0 calc(22px * var(--tell)) color-mix(in srgb, var(--rc) 28%, transparent);
 }
 
 .pe-card:not(.rev)[data-r='transcendent'] .pe-card-back {
-  --tell: 0.85;
   border-color: #8a30b0;
-  animation:
-    pe-tell-breathe 1.2s ease-in-out infinite,
-    pe-tell-jitter 2.6s linear infinite;
+  box-shadow: inset 0 0 calc(22px * var(--tell)) color-mix(in srgb, var(--rc) 28%, transparent);
+  animation: pe-tell-jitter 2.6s linear infinite;
 }
 
 .pe-card:not(.rev)[data-r='immortal'] .pe-card-back {
-  --tell: 1;
   border-color: #20a050;
-  animation:
-    pe-tell-breathe 0.9s ease-in-out infinite,
-    pe-tell-jitter 1.7s linear infinite;
+  box-shadow: inset 0 0 calc(22px * var(--tell)) color-mix(in srgb, var(--rc) 28%, transparent);
+  animation: pe-tell-jitter 1.7s linear infinite;
 }
 
 .pe-card:not(.rev)[data-r='dynasty'] .pe-back-icon,
@@ -3232,21 +3431,16 @@
   background:
     radial-gradient(ellipse at 50% 120%, color-mix(in srgb, var(--rc) 55%, transparent), transparent 60%),
     radial-gradient(ellipse at 50% -20%, color-mix(in srgb, var(--rc) 35%, transparent), transparent 55%);
-  mix-blend-mode: screen;
   animation: pe-center-glow 1.4s ease-in-out infinite;
 }
 
 @keyframes pe-tell-breathe {
   0%,
   100% {
-    box-shadow:
-      0 0 calc(10px * var(--tell)) var(--rg),
-      inset 0 0 calc(12px * var(--tell)) color-mix(in srgb, var(--rc) 18%, transparent);
+    opacity: 0.35;
   }
   50% {
-    box-shadow:
-      0 0 calc(28px * var(--tell)) var(--rg),
-      inset 0 0 calc(28px * var(--tell)) color-mix(in srgb, var(--rc) 38%, transparent);
+    opacity: 1;
   }
 }
 
@@ -3412,12 +3606,10 @@
   from {
     opacity: 0;
     transform: scale(1.5);
-    filter: blur(6px);
   }
   to {
     opacity: 1;
     transform: none;
-    filter: none;
   }
 }
 
@@ -3486,12 +3678,17 @@
   pointer-events: none;
   transform-origin: 50% 50%;
   will-change: transform;
-  filter: drop-shadow(0 0 18px var(--rg)) drop-shadow(0 14px 24px rgba(0, 0, 0, 0.6));
 }
 
 .pe-flight .pe-card {
   --pe-cs: var(--pe-fly-cs, 1);
   cursor: default;
+}
+
+.pe-flight .pe-card-front {
+  box-shadow:
+    0 0 18px var(--rg),
+    0 14px 24px rgba(0, 0, 0, 0.6);
 }
 
 .pe-flight .pe-cf-img {
@@ -3702,8 +3899,7 @@
 }
 
 .pe-dialog::backdrop {
-  background: rgba(8, 7, 6, 0.78);
-  backdrop-filter: blur(4px);
+  background: rgba(8, 7, 6, 0.86);
 }
 
 .pe-dialog-body {
@@ -4324,13 +4520,12 @@ a.pe-row:hover {
     padding-top: 1.4rem;
   }
 
-  .pe-rip-pack,
-  .pe-rip-spent {
-    width: 150px;
+  .pe-stage {
+    --pe-pack-w: 150px;
   }
 
-  .pe-rip-spent {
-    margin-left: -75px;
+  .pe-imp-band {
+    background: rgba(2, 16, 9, 0.96);
   }
 
   .pe-wo-team {
@@ -4425,8 +4620,12 @@ a.pe-row:hover {
   .pe-card-back::after,
   .pe-rip-pack,
   .pe-rip-seam::after,
-  .pe-rip-light,
-  .pe-rip-light::after,
+  .pe-mouth,
+  .pe-mouth-halo,
+  .pe-imp-band::before,
+  .pe-imp-band::after,
+  .pe-imp-word,
+  .pe-imp-pull,
   .pe-wo-team,
   .pe-wo-stat,
   .pe-fsl.has-p.landed,
@@ -4442,13 +4641,11 @@ a.pe-row:hover {
     animation-duration: 0.01s;
   }
 
-  .pe-boom-spark,
-  .pe-boom-ring,
-  .pe-boom-rays {
+  .pe-boom-spark {
     display: none;
   }
 
-  .pe-stage:has(.pe-boom) {
+  .pe-stage[data-boom] {
     animation: none !important;
   }
 }
@@ -4464,27 +4661,23 @@ a.pe-row:hover {
 @keyframes pe-sp-anim       {0%{transform:scale(0) rotate(0deg);opacity:0}20%{transform:scale(1) rotate(45deg);opacity:1}70%{transform:scale(.8) rotate(180deg);opacity:.8}100%{transform:scale(0) rotate(360deg);opacity:0}}
 @keyframes pe-aurora-wave   {0%{transform:translateX(-6%) skewX(-1deg);opacity:.6}100%{transform:translateX(6%) skewX(1deg);opacity:1}}
 @keyframes pe-tear-glitch   {0%,82%,100%{opacity:0;transform:translateX(0)}83%,86%{opacity:1;transform:translateX(-8px)}84%,87%{opacity:.5;transform:translateX(5px)}85%{opacity:1;transform:translateX(-3px)}88%{opacity:0}}
-@keyframes pe-holo-sweep    {0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@keyframes pe-holo-sweep    {0%,100%{transform:translateX(0)}50%{transform:translateX(-66.66%)}}
 @keyframes pe-glow-breathe  {0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.04)}}
-@keyframes pe-foil-scroll   {0%{top:-50%}100%{top:120%}}
+@keyframes pe-foil-scroll   {0%{transform:translateY(-100%)}100%{transform:translateY(240%)}}
 @keyframes pe-coin-flip     {0%,38%{transform:translateX(0)}39%,100%{transform:translateX(420px)}}
-@keyframes pe-pulse-expand  {0%{width:14px;height:14px;opacity:.9;box-shadow:0 0 8px rgba(66,192,248,.6)}100%{width:140px;height:140px;opacity:0}}
-@keyframes pe-ring-expand   {0%{width:10px;height:10px;opacity:.75}100%{width:220px;height:220px;opacity:0}}
-@keyframes pe-shock-expand  {0%{width:8px;height:8px;opacity:1;border-width:4px}25%{opacity:.9;border-width:2.5px}100%{width:280px;height:280px;opacity:0;border-width:.5px}}
+@keyframes pe-pulse-expand  {0%{transform:scale(.1);opacity:.9}100%{transform:scale(1);opacity:0}}
+@keyframes pe-ring-expand   {0%{transform:scale(.05);opacity:.75}100%{transform:scale(1);opacity:0}}
+@keyframes pe-shock-expand  {0%{transform:scale(.03);opacity:1}25%{opacity:.9}100%{transform:scale(1);opacity:0}}
 @keyframes pe-core-pulse    {0%{transform:scale(0);opacity:0}7%{transform:scale(3.5);opacity:1}28%{transform:scale(1.4);opacity:.35}100%{transform:scale(1);opacity:0}}
-@keyframes pe-shock-flash   {0%,5%,20%,100%{background:rgba(0,0,0,0)}7%{background:rgba(80,255,160,.5)}10%{background:rgba(40,220,120,.1)}15%{background:rgba(0,0,0,0)}}
+@keyframes pe-shock-flash   {0%,5%,15%,100%{opacity:0}7%{opacity:1}10%{opacity:.2}}
 @keyframes pe-slab-pulse    {0%{opacity:.07;transform:rotate(18deg) scaleY(.96)}100%{opacity:.52;transform:rotate(18deg) scaleY(1.02)}}
-@keyframes pe-corner-arc-fade{0%,55%,100%{opacity:0}65%{opacity:1}85%{opacity:.9}95%{opacity:0}}
-@keyframes pe-heat-drift    {0%{transform:translateY(0) scaleX(1);opacity:0}15%{opacity:1}100%{transform:translateY(-65px) scaleX(.5);opacity:0}}
-@keyframes pe-geo-shimmer   {0%{opacity:.1}100%{opacity:.55}}
-@keyframes pe-scratch-flick {0%,100%{opacity:.15}45%,55%{opacity:.7}}
 @keyframes pe-ember-rise    {0%{transform:translateY(0) scale(1);opacity:0}12%{opacity:.8}100%{transform:translateY(-90px) translateX(6px) scale(0);opacity:0}}
-@keyframes pe-scan-line     {0%{top:-2px;opacity:0}8%{opacity:1}92%{opacity:.6}100%{top:100%;opacity:0}}
+@keyframes pe-scan-line     {0%{transform:translateY(-2px);opacity:0}8%{opacity:1}92%{opacity:.6}100%{transform:translateY(100%);opacity:0}}
 @keyframes pe-crackle-flash {0%,84%,93%,100%{opacity:0}85%,92%{opacity:1}88%{opacity:.3}}
 @keyframes pe-center-glow   {0%,100%{opacity:.6}50%{opacity:1}}
 @keyframes pe-bolt-flash    {0%,43%,50%,100%{opacity:0}44%,48%{opacity:1}46%{opacity:.25}}
-@keyframes pe-whiteout-leg  {0%,42%,52%,100%{background:rgba(255,255,255,0)}44%{background:rgba(255,200,255,.65)}47%{background:rgba(255,220,255,.12)}50%{background:rgba(255,255,255,.04)}}
-@keyframes pe-inner-border-pulse{0%,100%{box-shadow:inset 0 0 18px rgba(40,220,120,.16),inset 0 0 44px rgba(40,220,120,.05)}50%{box-shadow:inset 0 0 30px rgba(80,255,160,.35),inset 0 0 65px rgba(40,220,120,.12)}}
+@keyframes pe-whiteout-leg  {0%,42%,52%,100%{opacity:0}44%{opacity:1}47%{opacity:.18}50%{opacity:.06}}
+@keyframes pe-inner-border-pulse{0%,100%{opacity:.45}50%{opacity:1}}
 
 .pe-cm-corner{position:absolute;z-index:5;width:10px;height:10px;pointer-events:none}
 .pe-cm-corner::before,.pe-cm-corner::after{content:'';position:absolute;background:#c87840;opacity:.5}
@@ -4494,24 +4687,18 @@ a.pe-row:hover {
 .pe-cm-corner.tr{top:-1px;right:-1px;transform:scaleX(-1)}
 .pe-cm-corner.bl{bottom:-1px;left:-1px;transform:scaleY(-1)}
 .pe-cm-corner.br{bottom:-1px;right:-1px;transform:scale(-1)}
-.pe-cm-scan{position:absolute;left:-2px;right:-2px;height:2px;z-index:6;background:linear-gradient(90deg,transparent,rgba(210,130,70,.8),transparent);animation:pe-scan-line 3.8s ease-in-out infinite;pointer-events:none}
-.pe-cm-heat{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;opacity:.4}
-.pe-cm-heat-wave{position:absolute;left:-10%;width:120%;height:1px;background:linear-gradient(90deg,transparent,rgba(210,120,50,.7),transparent);animation:pe-heat-drift linear infinite}
-.pe-cm-heat-wave:nth-child(1){animation-duration:3.2s;bottom:22%}
-.pe-cm-heat-wave:nth-child(2){animation-duration:2.9s;animation-delay:.9s;bottom:46%}
-.pe-cm-heat-wave:nth-child(3){animation-duration:3.7s;animation-delay:1.7s;bottom:68%}
-.pe-cm-heat-wave:nth-child(4){animation-duration:3.1s;animation-delay:2.5s;bottom:82%}
+.pe-cm-scan{position:absolute;left:-2px;right:-2px;top:0;height:100%;z-index:6;background:linear-gradient(90deg,transparent,rgba(210,130,70,.8),transparent) no-repeat top/100% 2px;animation:pe-scan-line 3.8s ease-in-out infinite;pointer-events:none}
 .pe-cm-geo{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}
-.pe-cm-geo-line{position:absolute;width:1px;background:linear-gradient(to bottom,transparent,rgba(200,120,60,.5),transparent);animation:pe-geo-shimmer ease-in-out infinite alternate}
-.pe-cm-geo-line:nth-child(1){height:65%;top:8%;left:18%;transform:rotate(22deg);animation-duration:3.0s}
-.pe-cm-geo-line:nth-child(2){height:72%;top:4%;left:40%;transform:rotate(22deg);animation-duration:3.8s;animation-delay:.7s}
-.pe-cm-geo-line:nth-child(3){height:60%;top:12%;left:62%;transform:rotate(22deg);animation-duration:3.3s;animation-delay:1.4s}
-.pe-cm-geo-line:nth-child(4){height:68%;top:6%;left:80%;transform:rotate(22deg);animation-duration:4.0s;animation-delay:.3s}
+.pe-cm-geo-line{position:absolute;width:1px;background:linear-gradient(to bottom,transparent,rgba(200,120,60,.5),transparent);opacity:.3}
+.pe-cm-geo-line:nth-child(1){height:65%;top:8%;left:18%;transform:rotate(22deg)}
+.pe-cm-geo-line:nth-child(2){height:72%;top:4%;left:40%;transform:rotate(22deg)}
+.pe-cm-geo-line:nth-child(3){height:60%;top:12%;left:62%;transform:rotate(22deg)}
+.pe-cm-geo-line:nth-child(4){height:68%;top:6%;left:80%;transform:rotate(22deg)}
 .pe-cm-scratch-layer{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden}
-.pe-cm-scratch{position:absolute;background:rgba(255,200,140,.22);animation:pe-scratch-flick ease-in-out infinite}
-.pe-cm-scratch:nth-child(1){width:28%;height:1px;top:30%;left:12%;transform:rotate(-8deg);animation-duration:5s}
-.pe-cm-scratch:nth-child(2){width:18%;height:1px;top:57%;left:52%;transform:rotate(4deg);animation-duration:6s;animation-delay:1.2s}
-.pe-cm-scratch:nth-child(3){width:22%;height:1px;top:74%;left:22%;transform:rotate(-3deg);animation-duration:4.5s;animation-delay:2.5s}
+.pe-cm-scratch{position:absolute;background:rgba(255,200,140,.22);opacity:.4}
+.pe-cm-scratch:nth-child(1){width:28%;height:1px;top:30%;left:12%;transform:rotate(-8deg)}
+.pe-cm-scratch:nth-child(2){width:18%;height:1px;top:57%;left:52%;transform:rotate(4deg)}
+.pe-cm-scratch:nth-child(3){width:22%;height:1px;top:74%;left:22%;transform:rotate(-3deg)}
 .pe-cm-ember-layer{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden}
 .pe-cm-ember{position:absolute;bottom:-4px;border-radius:50%;background:radial-gradient(circle,#ffb060,#d06020 50%,transparent);animation:pe-ember-rise linear infinite;opacity:0}
 .pe-cm-ember:nth-child(1){width:3px;height:3px;left:12%;animation-duration:2.9s}
@@ -4525,7 +4712,7 @@ a.pe-row:hover {
 .pe-ra-spin-arc{position:absolute;inset:0;background:conic-gradient(from 0deg,transparent 55%,rgba(66,192,248,.9) 73%,rgba(160,230,255,1) 80%,rgba(66,192,248,.9) 87%,transparent 100%);animation:pe-border-spin 2.8s linear infinite}
 .pe-ra-spin-inner{position:absolute;inset:2px;border-radius:11px;background:#062840}
 .pe-ra-pulse-layer{position:absolute;inset:0;z-index:3;pointer-events:none;display:flex;align-items:center;justify-content:center}
-.pe-ra-pulse-ring{position:absolute;border-radius:50%;border:1.5px solid rgba(66,192,248,.7);animation:pe-pulse-expand ease-out infinite;opacity:0}
+.pe-ra-pulse-ring{position:absolute;width:140px;height:140px;border-radius:50%;border:1.5px solid rgba(66,192,248,.7);animation:pe-pulse-expand ease-out infinite;opacity:0}
 .pe-ra-pulse-ring:nth-child(1){animation-duration:2.6s}
 .pe-ra-pulse-ring:nth-child(2){animation-duration:2.6s;animation-delay:.87s}
 .pe-ra-pulse-ring:nth-child(3){animation-duration:2.6s;animation-delay:1.74s}
@@ -4554,8 +4741,8 @@ a.pe-row:hover {
 .pe-ep-sparkle:nth-child(6){width:4px;height:4px;left:90%;top:46%;animation-duration:2.4s;animation-delay:1.5s}
 .pe-ep-sparkle:nth-child(7){width:6px;height:6px;left:32%;top:30%;animation-duration:2.1s;animation-delay:.9s}
 .pe-ep-foil{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden;border-radius:9px}
-.pe-ep-foil::before{content:'';position:absolute;top:-50%;left:0;right:0;height:50%;background:linear-gradient(180deg,transparent,rgba(255,240,100,.12),rgba(255,215,0,.06),transparent);animation:pe-foil-scroll 4.5s ease-in-out infinite}
-.pe-ep-foil::after{content:'';position:absolute;top:-100%;left:0;right:0;height:30%;background:linear-gradient(180deg,transparent,rgba(255,255,180,.08),transparent);animation:pe-foil-scroll 4.5s ease-in-out infinite;animation-delay:1.8s}
+.pe-ep-foil::before{content:'';position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(180deg,transparent,rgba(255,240,100,.12),rgba(255,215,0,.06),transparent);animation:pe-foil-scroll 4.5s ease-in-out infinite}
+.pe-ep-foil::after{content:'';position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(180deg,transparent,rgba(255,255,180,.08),transparent);animation:pe-foil-scroll 4.5s ease-in-out infinite;animation-delay:1.8s}
 .pe-ep-shine{position:absolute;inset:0;z-index:5;pointer-events:none;border-radius:9px;overflow:hidden}
 .pe-ep-shine::after{content:'';position:absolute;top:-100%;left:-60%;width:40%;height:300%;background:linear-gradient(105deg,transparent 30%,rgba(255,245,120,.42) 50%,transparent 70%);animation:pe-coin-flip 3.5s ease-in-out infinite}
 
@@ -4576,9 +4763,9 @@ a.pe-row:hover {
 .pe-le-orb:nth-child(3){width:9px;height:9px;left:48%;top:13%;animation-duration:4.8s;animation-delay:1.6s}
 .pe-le-orb:nth-child(4){width:5px;height:5px;left:28%;top:70%;animation-duration:3.2s;animation-delay:2.2s}
 .pe-le-orb:nth-child(5){width:8px;height:8px;left:88%;top:38%;animation-duration:4.2s;animation-delay:.4s}
-.pe-le-holo{position:absolute;inset:0;z-index:4;pointer-events:none;background:linear-gradient(45deg,rgba(224,64,255,.12),rgba(100,64,255,.1),rgba(64,128,255,.12),rgba(64,240,200,.08),rgba(224,64,255,.12));background-size:300% 300%;animation:pe-holo-sweep 3s ease-in-out infinite;mix-blend-mode:screen}
+.pe-le-holo{position:absolute;top:0;bottom:0;left:0;width:300%;z-index:4;pointer-events:none;background:linear-gradient(45deg,rgba(224,64,255,.12),rgba(100,64,255,.1),rgba(64,128,255,.12),rgba(64,240,200,.08),rgba(224,64,255,.12));animation:pe-holo-sweep 3s ease-in-out infinite}
 .pe-le-depth-rings{position:absolute;inset:0;z-index:2;pointer-events:none;display:flex;align-items:center;justify-content:center}
-.pe-le-depth-ring{position:absolute;border-radius:50%;border:1px solid rgba(224,64,255,.22);animation:pe-ring-expand ease-out infinite;opacity:0}
+.pe-le-depth-ring{position:absolute;width:220px;height:220px;border-radius:50%;border:1px solid rgba(224,64,255,.22);animation:pe-ring-expand ease-out infinite;opacity:0}
 .pe-le-depth-ring:nth-child(1){animation-duration:4s}
 .pe-le-depth-ring:nth-child(2){animation-duration:4s;animation-delay:1.33s}
 .pe-le-depth-ring:nth-child(3){animation-duration:4s;animation-delay:2.66s}
@@ -4600,7 +4787,7 @@ a.pe-row:hover {
 .pe-le-tear:nth-child(1){top:22%;animation-duration:5.0s;animation-delay:.4s}
 .pe-le-tear:nth-child(2){top:56%;animation-duration:6.2s;animation-delay:2.3s}
 .pe-le-tear:nth-child(3){top:74%;animation-duration:4.6s;animation-delay:3.8s}
-.pe-le-whiteout{position:absolute;inset:0;z-index:6;pointer-events:none;border-radius:9px;background:rgba(255,255,255,0)}
+.pe-le-whiteout{position:absolute;inset:0;z-index:6;pointer-events:none;border-radius:9px;background:rgba(255,200,255,.65);opacity:0}
 .pe-le-whiteout.w1{animation:pe-whiteout-leg 7.0s ease-in-out infinite;animation-delay:3.84s}
 .pe-le-whiteout.w2{animation:pe-whiteout-leg 9.5s ease-in-out infinite;animation-delay:2.24s}
 .pe-le-whiteout.w3{animation:pe-whiteout-leg 6.8s ease-in-out infinite;animation-delay:5.14s}
@@ -4609,22 +4796,14 @@ a.pe-row:hover {
 .pe-imm-glow-2{position:absolute;inset:-16px;border-radius:24px;z-index:-2;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,rgba(40,220,120,.26) 0%,rgba(20,160,70,.12) 45%,transparent 72%);animation:pe-glow-breathe 2s ease-in-out infinite;animation-delay:.3s}
 .pe-imm-glow-3{position:absolute;inset:-44px;border-radius:52px;z-index:-3;pointer-events:none;background:radial-gradient(ellipse at 50% 55%,rgba(20,200,80,.14) 0%,rgba(10,120,50,.06) 50%,transparent 72%);animation:pe-glow-breathe 3.2s ease-in-out infinite;animation-delay:.8s}
 .pe-imm-glow-4{position:absolute;inset:-80px;border-radius:90px;z-index:-4;pointer-events:none;background:radial-gradient(ellipse at 50% 55%,rgba(10,160,60,.08) 0%,rgba(5,80,30,.04) 45%,transparent 70%);animation:pe-glow-breathe 4s ease-in-out infinite;animation-delay:1.2s}
-.pe-imm-corner-arcs{position:absolute;inset:0;z-index:7;pointer-events:none}
-.pe-imm-corner-arcs svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.pe-imm-arc-glow{fill:none;stroke-linecap:round;stroke:rgba(40,220,120,.18);stroke-width:0}
-.pe-imm-arc-line{fill:none;}
-.pe-imm-arc-glow.a1,.pe-imm-arc-line.a1{animation:pe-corner-arc-fade 4s ease-in-out infinite;animation-delay:0s}
-.pe-imm-arc-glow.a2,.pe-imm-arc-line.a2{animation:pe-corner-arc-fade 4s ease-in-out infinite;animation-delay:1s}
-.pe-imm-arc-glow.a3,.pe-imm-arc-line.a3{animation:pe-corner-arc-fade 4s ease-in-out infinite;animation-delay:2s}
-.pe-imm-arc-glow.a4,.pe-imm-arc-line.a4{animation:pe-corner-arc-fade 4s ease-in-out infinite;animation-delay:3s}
 .pe-imm-plasma-wrap{position:absolute;inset:-5px;border-radius:17px;overflow:hidden;z-index:0;pointer-events:none}
 .pe-imm-plasma-arc1{position:absolute;inset:0;background:conic-gradient(from 0deg,transparent 35%,rgba(20,160,70,.6) 50%,rgba(80,255,160,1) 59%,rgba(40,220,120,.9) 67%,transparent 80%);animation:pe-border-spin 1.6s linear infinite}
 .pe-imm-plasma-arc2{position:absolute;inset:0;background:conic-gradient(from 120deg,transparent 40%,rgba(10,120,50,.5) 54%,rgba(60,220,120,.85) 62%,transparent 76%);animation:pe-border-spin 2.6s linear infinite reverse}
 .pe-imm-plasma-arc3{position:absolute;inset:0;background:conic-gradient(from 240deg,transparent 48%,rgba(40,255,130,.45) 62%,rgba(120,255,190,.75) 68%,transparent 79%);animation:pe-border-spin 3.8s linear infinite}
 .pe-imm-plasma-inner{position:absolute;inset:4px;border-radius:13px;background:#021a0a}
-.pe-imm-inner-border{position:absolute;inset:1px;border-radius:11px;z-index:6;pointer-events:none;border:1px solid rgba(80,255,160,.26);animation:pe-inner-border-pulse 2.2s ease-in-out infinite}
+.pe-imm-inner-border{position:absolute;inset:1px;border-radius:11px;z-index:6;pointer-events:none;border:1px solid rgba(80,255,160,.26);box-shadow:inset 0 0 30px rgba(80,255,160,.35),inset 0 0 65px rgba(40,220,120,.12);animation:pe-inner-border-pulse 2.2s ease-in-out infinite}
 .pe-imm-slab-layer{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}
-.pe-imm-slab{position:absolute;top:-10%;height:120%;transform:rotate(18deg);transform-origin:top center;background:linear-gradient(to bottom,transparent 0%,rgba(40,220,120,.45) 20%,rgba(120,255,190,.75) 50%,rgba(40,220,120,.45) 80%,transparent 100%);filter:blur(1.5px);animation:pe-slab-pulse ease-in-out infinite alternate}
+.pe-imm-slab{position:absolute;top:-10%;height:120%;transform:rotate(18deg);transform-origin:top center;background:linear-gradient(to bottom,transparent 0%,rgba(40,220,120,.45) 20%,rgba(120,255,190,.75) 50%,rgba(40,220,120,.45) 80%,transparent 100%);animation:pe-slab-pulse ease-in-out infinite alternate}
 .pe-imm-slab:nth-child(1){width:7px;left:10%;animation-duration:2.8s;animation-delay:0s}
 .pe-imm-slab:nth-child(2){width:5px;left:28%;animation-duration:3.5s;animation-delay:.5s}
 .pe-imm-slab:nth-child(3){width:9px;left:48%;animation-duration:3.0s;animation-delay:1.1s}
@@ -4637,7 +4816,7 @@ a.pe-row:hover {
 .pe-imm-aurora-band:nth-child(3){height:15px;top:44%;background:linear-gradient(90deg,transparent,rgba(60,220,120,.12),rgba(40,220,255,.12),transparent);animation-duration:4.2s;animation-delay:1.4s}
 .pe-imm-aurora-band:nth-child(4){height:13px;top:63%;background:linear-gradient(90deg,transparent,rgba(80,255,180,.1),rgba(40,220,120,.16),transparent);animation-duration:5.5s;animation-delay:2.1s}
 .pe-imm-rings{position:absolute;inset:0;z-index:2;pointer-events:none;display:flex;align-items:center;justify-content:center}
-.pe-imm-ring{position:absolute;border-radius:50%;border:1px solid rgba(40,220,120,.24);animation:pe-ring-expand ease-out infinite;opacity:0}
+.pe-imm-ring{position:absolute;width:220px;height:220px;border-radius:50%;border:1px solid rgba(40,220,120,.24);animation:pe-ring-expand ease-out infinite;opacity:0}
 .pe-imm-ring:nth-child(1){animation-duration:3.5s}
 .pe-imm-ring:nth-child(2){animation-duration:3.5s;animation-delay:1.17s}
 .pe-imm-ring:nth-child(3){animation-duration:3.5s;animation-delay:2.34s}
@@ -4649,7 +4828,7 @@ a.pe-row:hover {
 .pe-imm-orb:nth-child(4){width:6px;height:6px;left:26%;top:68%;animation-duration:3.0s;animation-delay:2.0s}
 .pe-imm-orb:nth-child(5){width:8px;height:8px;left:90%;top:36%;animation-duration:4.0s;animation-delay:.3s}
 .pe-imm-orb:nth-child(6){width:6px;height:6px;left:62%;top:78%;animation-duration:3.6s;animation-delay:1.0s}
-.pe-imm-holo{position:absolute;inset:0;z-index:4;pointer-events:none;background:linear-gradient(45deg,rgba(40,220,120,.14),rgba(20,180,80,.1),rgba(80,255,160,.16),rgba(40,200,255,.1),rgba(40,220,120,.14));background-size:300% 300%;animation:pe-holo-sweep 2.4s ease-in-out infinite;mix-blend-mode:screen}
+.pe-imm-holo{position:absolute;top:0;bottom:0;left:0;width:300%;z-index:4;pointer-events:none;background:linear-gradient(45deg,rgba(40,220,120,.14),rgba(20,180,80,.1),rgba(80,255,160,.16),rgba(40,200,255,.1),rgba(40,220,120,.14));animation:pe-holo-sweep 2.4s ease-in-out infinite}
 .pe-imm-spark-layer{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden}
 .pe-imm-spark{position:absolute;background:#60ffb0;clip-path:polygon(50% 0%,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0% 50%,38% 38%);animation:pe-sp-anim linear infinite;opacity:0}
 .pe-imm-spark:nth-child(1){width:6px;height:6px;left:6%;top:16%;animation-duration:2.0s}
@@ -4667,18 +4846,18 @@ a.pe-row:hover {
 .pe-imm-tear:nth-child(2){top:54%;animation-duration:6.0s;animation-delay:2.5s}
 .pe-imm-tear:nth-child(3){top:74%;animation-duration:4.8s;animation-delay:4.0s}
 .pe-imm-foil{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden;border-radius:11px}
-.pe-imm-foil::before{content:'';position:absolute;top:-50%;left:0;right:0;height:50%;background:linear-gradient(180deg,transparent,rgba(100,255,180,.1),rgba(40,220,120,.05),transparent);animation:pe-foil-scroll 4.5s ease-in-out infinite}
-.pe-imm-foil::after{content:'';position:absolute;top:-100%;left:0;right:0;height:30%;background:linear-gradient(180deg,transparent,rgba(140,255,200,.08),transparent);animation:pe-foil-scroll 4.5s ease-in-out infinite;animation-delay:1.8s}
+.pe-imm-foil::before{content:'';position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(180deg,transparent,rgba(100,255,180,.1),rgba(40,220,120,.05),transparent);animation:pe-foil-scroll 4.5s ease-in-out infinite}
+.pe-imm-foil::after{content:'';position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(180deg,transparent,rgba(140,255,200,.08),transparent);animation:pe-foil-scroll 4.5s ease-in-out infinite;animation-delay:1.8s}
 .pe-imm-shine{position:absolute;inset:0;z-index:5;pointer-events:none;border-radius:11px;overflow:hidden}
 .pe-imm-shine::after{content:'';position:absolute;top:-100%;left:-60%;width:40%;height:300%;background:linear-gradient(105deg,transparent 30%,rgba(140,255,200,.52) 50%,transparent 70%);animation:pe-coin-flip 2.8s ease-in-out infinite}
 .pe-imm-shock{position:absolute;inset:0;z-index:4;pointer-events:none;display:flex;align-items:center;justify-content:center}
-.pe-imm-shock-ring{position:absolute;border-radius:50%;border:3px solid rgba(80,255,160,.9);box-shadow:0 0 14px rgba(40,220,120,.9),0 0 36px rgba(40,220,120,.4);animation:pe-shock-expand ease-out infinite;opacity:0}
+.pe-imm-shock-ring{position:absolute;width:280px;height:280px;border-radius:50%;border:1.5px solid rgba(80,255,160,.9);box-shadow:0 0 14px rgba(40,220,120,.9),0 0 36px rgba(40,220,120,.4);animation:pe-shock-expand ease-out infinite;opacity:0}
 .pe-imm-shock-ring:nth-child(1){animation-duration:2.8s}
 .pe-imm-shock-ring:nth-child(2){animation-duration:2.8s;animation-delay:.55s}
 .pe-imm-shock-ring:nth-child(3){animation-duration:2.8s;animation-delay:1.1s}
 .pe-imm-shock-ring:nth-child(4){animation-duration:2.8s;animation-delay:1.65s}
 .pe-imm-shock-core{position:absolute;width:20px;height:20px;border-radius:50%;z-index:5;background:radial-gradient(circle,rgba(220,255,230,.95),rgba(40,220,120,.35),transparent 70%);animation:pe-core-pulse 2.8s ease-out infinite}
-.pe-imm-shock-flash{position:absolute;inset:0;z-index:6;pointer-events:none;border-radius:11px;background:rgba(0,0,0,0);animation:pe-shock-flash 2.8s ease-out infinite}
+.pe-imm-shock-flash{position:absolute;inset:0;z-index:6;pointer-events:none;border-radius:11px;background:rgba(80,255,160,.5);opacity:0;animation:pe-shock-flash 2.8s ease-out infinite}
 
 /* ============================================================
    MEGA DRAFT
@@ -5693,14 +5872,30 @@ a.pe-row:hover {
   gap: 0.5rem;
 }
 
+/* appearance off and our own chevron: left alone, iOS and macOS Safari draw
+   their own glossy control whatever the background and border say. */
 .pe-bd-sort select {
-  background: var(--pe-bg);
+  -webkit-appearance: none;
+  appearance: none;
+  color-scheme: dark;
+  background-color: var(--pe-bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23e8a84b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 0.6rem;
   color: var(--pe-ink);
   border: 1px solid var(--pe-line);
   border-radius: 4px;
-  padding: 0.45rem 0.6rem;
+  padding: 0.45rem 1.65rem 0.45rem 0.6rem;
   font-family: var(--sans);
   font-size: 0.82rem;
+  line-height: 1.25;
+  cursor: pointer;
+  outline: none;
+}
+
+.pe-bd-sort select:focus-visible {
+  border-color: var(--pe-amber);
 }
 
 .pe-bd-q.pe-input {
@@ -5791,14 +5986,6 @@ a.pe-row:hover {
   flex-shrink: 0;
 }
 
-.pe-bd-cap {
-  font-family: var(--mono);
-  font-size: 0.5rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--pe-ink-mute);
-}
-
 .pe-bd-tile {
   display: block;
   width: 100%;
@@ -5817,9 +6004,11 @@ a.pe-row:hover {
   -webkit-tap-highlight-color: transparent;
 }
 
-.pe-bd-tile:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 0 18px var(--rg);
+@media (hover: hover) {
+  .pe-bd-tile:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 18px var(--rg);
+  }
 }
 
 .pe-bd-tile-top {
@@ -5956,9 +6145,7 @@ a.pe-row:hover {
   align-items: center;
   justify-content: center;
   padding: 1.5rem 1rem;
-  background: rgba(10, 9, 8, 0.88);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(10, 9, 8, 0.94);
   animation: pe-fade-in 0.2s ease both;
   overflow-y: auto;
 }
@@ -6432,16 +6619,19 @@ a.pe-row:hover {
 /* The year, big and hollow behind the man. Static text: no layer to animate. */
 .pe-cf-year {
   position: absolute;
-  top: 0.12em;
+  top: 0.55em;
   left: 0;
   right: 0;
   z-index: 3;
   text-align: center;
   font-family: var(--pe-display);
   font-weight: 900;
-  font-size: 2.85em;
+  /* Sized for the widest years: 2s and 0s are half again as wide as a 1, and
+     a card holds 3.75em of them at the card's own size. */
+  font-size: 2.2em;
   line-height: 1;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
   color: transparent;
   -webkit-text-stroke: 1px color-mix(in srgb, var(--rc, #fff) 70%, transparent);
   opacity: 0.4;
@@ -6954,5 +7144,15 @@ a.pe-row:hover {
     flex-direction: column;
     align-items: stretch;
     text-align: center;
+  }
+}
+
+/* iOS zooms the page into any field set under 16px, and doesn't zoom back. */
+@media (hover: none) {
+  .pe-input,
+  .pe-input.pe-input--code,
+  .pe-bd-q.pe-input,
+  .pe-bd-sort select {
+    font-size: 16px;
   }
 }

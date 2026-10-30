@@ -66,6 +66,12 @@ export function seasonLabel(p: Pick<Player, 'team' | 'year' | 'club'>): string {
   return p.year ? `${p.year} ${p.club ?? p.team}` : p.team
 }
 
+/** The club as the card front prints it: "Eagles", "49ers". */
+export function nickname(p: Pick<Player, 'team' | 'club'>): string {
+  const club = p.club ?? p.team
+  return club === 'Washington Football Team' ? 'Football Team' : club.slice(club.lastIndexOf(' ') + 1)
+}
+
 /**
  * How each rarity looks. Unchanged from the original cards: these drive the
  * rarity effects (scan lines, crackle, plasma, the immortal arcs), and the
@@ -150,6 +156,7 @@ export function rarityForScore(score: number): Rarity {
 //   · Linemen: that season's honors plus what his offense did. First-team AP
 //     All-Pro 10, second team 5, Pro Bowl 3, other selectors a little more,
 //     then points, rushing and sacks allowed against that season's league.
+//     The team's passing yards are printed on the card but don't score.
 //
 // Immortal and transcendent are the best seasons ever at the position; dynasty
 // is about what the second- or third-best at the position does in a year, rare

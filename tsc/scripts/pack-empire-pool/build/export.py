@@ -48,8 +48,8 @@ def ol_lines(r, off):
     else: a = f'Second-Team All-Pro ({", ".join(x[:-2] for x in r.others2)})'
     season = off[off.season == r.season]
     rank = int((season.ppg > r.ppg).sum()) + 1
-    rush = r.rpg * season[season.fr == r.fr].gp.iloc[0]
-    b = f'{ordinal(rank)} in scoring · {n(rush)} rush yds'
+    team = season[season.fr == r.fr].iloc[0]
+    b = f'{ordinal(rank)} in scoring · {n(r.rpg * team.gp)} rush yds · {n(team.pass_yds)} pass yds'
     return [a, b]
 
 

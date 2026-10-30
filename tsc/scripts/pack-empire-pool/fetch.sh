@@ -2,6 +2,7 @@
 # Pack Empire season pool: download every source into this folder (gitignored).
 #
 #   nflv/raw/reg_YYYY.csv   nflverse regular-season player stats, 1999-2025
+#   nflv/team/team_YYYY.csv nflverse regular-season team stats, 1999-2025
 #   nflv/players.csv        nflverse players (ids, career spans, headshots)
 #   nflv/rosters/roster_YYYY.csv  nflverse season rosters, 2016-2025: each holds the
 #                           NFL.com headshot as it was that season (headshots.py)
@@ -15,13 +16,14 @@
 # retry with backoff. Re-running skips anything already downloaded.
 set -e
 cd "$(dirname $0)"
-mkdir -p nflv/raw nflv/rosters fdp wiki/pb
+mkdir -p nflv/raw nflv/team nflv/rosters fdp wiki/pb
 UA="PackEmpireResearch/1.0 (personal football stats project)"
 get() { [ -s "$2" ] || curl -sSL -o "$2" "$1"; }
 
 NV=https://github.com/nflverse/nflverse-data/releases/download
 LAST=${LAST_SEASON:-2025}
 for y in $(seq 1999 $LAST); do get "$NV/stats_player/stats_player_reg_$y.csv" nflv/raw/reg_$y.csv; done
+for y in $(seq 1999 $LAST); do get "$NV/stats_team/stats_team_reg_$y.csv" nflv/team/team_$y.csv; done
 get "$NV/players/players.csv" nflv/players.csv
 for y in $(seq 2016 $LAST); do get "$NV/rosters/roster_$y.csv" nflv/rosters/roster_$y.csv; done
 get https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv nflv/games.csv

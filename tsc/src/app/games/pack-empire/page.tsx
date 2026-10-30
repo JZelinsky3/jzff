@@ -125,7 +125,7 @@ function BinderStrip({ totals }: { totals: BinderTotals | null }) {
     return (
       <div className="pe-bd-strip-home">
         <p>
-          The card you keep from every pack goes in a binder, each player&apos;s seasons best to worst, with
+          The card you keep from every pack goes in a binder, each player&apos;s cards best to worst, with
           how many times you&apos;ve pulled each one.
         </p>
         <Link href="/login?next=%2Fgames%2Fpack-empire%2Fbinder%2F" className="pe-btn pe-btn--ghost pe-btn--sm">
@@ -223,7 +223,7 @@ export default async function PackEmpireHome() {
             </Link>
             <div className="pe-hero-meta">
               <span className="pe-chip">No account</span>
-              <span className="pe-chip">{POOL_SIZE} seasons</span>
+              <span className="pe-chip">{POOL_SIZE} cards</span>
               <span className="pe-chip">Five rarities</span>
             </div>
           </section>
@@ -335,7 +335,7 @@ export default async function PackEmpireHome() {
             </div>
             <div className="pe-hero-meta">
               <span className="pe-chip">No account to play</span>
-              <span className="pe-chip">{POOL_SIZE} seasons</span>
+              <span className="pe-chip">{POOL_SIZE} cards</span>
               <span className="pe-chip">Five rarities</span>
             </div>
           </div>
@@ -413,7 +413,7 @@ export default async function PackEmpireHome() {
           <div className="pe-sec-head">
             <span className="pe-sec-num">§ 05 · Binder</span>
             <span className="pe-sec-title">Your cards</span>
-            <span className="pe-sec-meta">Every season you&apos;ve pulled</span>
+            <span className="pe-sec-meta">Every card you&apos;ve pulled</span>
           </div>
           <BinderStrip totals={binder} />
         </section>

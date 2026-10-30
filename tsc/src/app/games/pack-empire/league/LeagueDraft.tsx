@@ -30,7 +30,7 @@ import {
 } from '@/lib/packEmpire/rules'
 import type { DraftView } from '@/lib/packEmpire/league'
 import { Field, LockGlyph, type SlotView } from '../cards'
-import { ImmortalFlash, PackStage, ScoreStrip, restoredStage, usePackStage, useStripOffset } from '../stage'
+import { PackStage, ScoreStrip, restoredStage, usePackStage, useStripOffset } from '../stage'
 
 async function post(body: Record<string, unknown>): Promise<DraftView> {
   const res = await fetch('/api/games/pack-empire/league/', {
@@ -70,7 +70,7 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // A pack left open before a refresh is waiting on the stage, face down.
-  const { stage, flash, landing, open, tear, reveal, revealAll, skip, pick, dismiss, settle } = usePackStage(
+  const { stage, landing, open, tear, reveal, revealAll, skip, pick, dismiss, settle } = usePackStage(
     initial.status === 'drafting' && initial.openSlot != null && initial.openCards
       ? restoredStage(initial.openSlot, initial.openCards)
       : null
@@ -287,7 +287,6 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
 
   return (
     <div className="pe-table">
-      {flash && <ImmortalFlash />}
       <ScoreStrip
         score={score + chem.total}
         filled={filled}

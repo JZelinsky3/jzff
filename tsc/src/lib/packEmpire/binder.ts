@@ -3,9 +3,9 @@
 // Every card a signed-in player has pulled, counted. "Pulled" means KEPT: one
 // card per pack goes in the binder, the one you took, and the four you passed
 // on don't (Joey: finishing it should be hard, not a prize for whoever opens
-// the most packs). A card is a season, so a man's page runs from his best
-// year down to his worst, and each version keeps its own count, yours and the
-// whole site's. Mega Draft boards aren't packs and never file here.
+// the most packs). A card is a season, so a man's row runs from his most
+// valuable card down, and each card keeps its own count, yours and the whole
+// site's. Mega Draft boards aren't packs and never file here.
 //
 // Nothing here trusts the browser. A pack is recorded only after the server
 // has dealt it itself: a run re-dealt on its way to the board (which is also
@@ -15,7 +15,18 @@
 // counts once. See 0083_pack_empire_binder.sql and 0084.
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { POOL_KEYS, personOf, RARITIES, type Player, type PoolKey, type Rarity } from './rules'
+import {
+  PACK_SIZE,
+  POOL_KEYS,
+  SOLO_BOOSTED,
+  SOLO_WEIGHTS,
+  packOdds,
+  personOf,
+  RARITIES,
+  type Player,
+  type PoolKey,
+  type Rarity,
+} from './rules'
 import { POOL, POOL_SIZE, POOL_VERSION } from './pool'
 import { parseSoloPicks, replaySolo, type SoloPick } from './solo'
 
@@ -101,9 +112,11 @@ export async function syncBinder(userId: string): Promise<void> {
 // The view
 // ============================================================
 
-/** How a card has gone across the whole site: times kept, by how many
-    players, and its share of every pack ever kept (so "1 in 412"). */
-export type SiteCount = { pulls: number; holders: number; share: number }
+/** How a card stands with everyone: times kept across the site, and the odds
+    of it being in an ordinary pack of its position. The odds are the game's own
+    so they mean the same on day one as in a year; a share of the packs kept so
+    far would swing wildly while the player base is small. */
+export type SiteCount = { pulls: number; oneIn: number }
 
 /** A version the player has pulled: the whole card, and its counts. */
 export type BinderOwned = Player & { pulls: number; firstAt: string; site: SiteCount }
@@ -125,7 +138,7 @@ export type BinderMan = {
   name: string
   /** His best card's position: the tab he sits under. */
   pos: PoolKey
-  /** Best season first. */
+  /** Most valuable card first. */
   cards: BinderCard[]
 }
 
@@ -143,12 +156,10 @@ export type BinderTotals = {
 export type BinderView = {
   men: BinderMan[]
   totals: BinderTotals
-  /** Every pack kept from across the site, and by how many players. */
-  site: { pulls: number; players: number }
 }
 
 type Count = { card_id: string; pulls: number; first_at: string }
-type Site = { card_id: string; pulls: number; holders: number }
+type Site = { card_id: string; pulls: number }
 
 async function counts(userId: string): Promise<Map<string, Count>> {
   const { data } = await createAdminClient().rpc('pe_binder_kept', { p_user: userId })
@@ -160,41 +171,45 @@ async function siteCounts(): Promise<Map<string, Site>> {
   return new Map(((data as Site[] | null) ?? []).map((c) => [c.card_id, c]))
 }
 
-async function sitePlayers(): Promise<number> {
-  const { data } = await createAdminClient().rpc('pe_binder_players')
-  return Number(data ?? 0)
-}
-
 /** Just the totals, for the Pack Empire front page. */
 export async function binderTotals(userId: string): Promise<BinderTotals> {
-  return build(await counts(userId), new Map(), 0).totals
+  return build(await counts(userId), new Map()).totals
 }
 
 export async function loadBinder(userId: string): Promise<BinderView> {
   await syncBinder(userId)
-  const [mine, site, players] = await Promise.all([counts(userId), siteCounts(), sitePlayers()])
-  return build(mine, site, players)
+  const [mine, site] = await Promise.all([counts(userId), siteCounts()])
+  return build(mine, site)
 }
 
-function build(have: Map<string, Count>, site: Map<string, Site>, players: number): BinderView {
+/** 1 in how many ordinary packs of its position hold each rarity's one card.
+    A pack is four draws off the base table and one off the boosted one. */
+function oneInByRarity(pool: Player[]): Record<Rarity, number> {
+  const base = packOdds(pool, SOLO_WEIGHTS.normal)
+  const boosted = packOdds(pool, SOLO_BOOSTED.normal)
+  const out = {} as Record<Rarity, number>
+  for (const r of RARITIES) {
+    const of = pool.filter((p) => p.rarity === r).length || 1
+    const miss = Math.pow(1 - base[r] / of, PACK_SIZE - 1) * (1 - boosted[r] / of)
+    out[r] = Math.round(1 / (1 - miss))
+  }
+  return out
+}
+
+function build(have: Map<string, Count>, site: Map<string, Site>): BinderView {
   const byRarity = Object.fromEntries(RARITIES.map((r) => [r, { owned: 0, of: 0 }])) as BinderTotals['byRarity']
   const byPos = Object.fromEntries(POOL_KEYS.map((k) => [k, { owned: 0, of: 0 }])) as BinderTotals['byPos']
   const men = new Map<string, BinderMan>()
   let owned = 0
   let pulls = 0
-  // Ids from an older pool still have rows; only today's cards count.
-  let siteTotal = 0
-  for (const k of POOL_KEYS) for (const p of POOL[k]) siteTotal += site.get(p.id)?.pulls ?? 0
-  const siteOf = (id: string): SiteCount => {
-    const s = site.get(id)
-    return { pulls: s?.pulls ?? 0, holders: s?.holders ?? 0, share: siteTotal && s ? s.pulls / siteTotal : 0 }
-  }
 
   for (const k of POOL_KEYS) {
+    const oneIn = oneInByRarity(POOL[k])
     for (const p of POOL[k]) {
+      const siteCount: SiteCount = { pulls: site.get(p.id)?.pulls ?? 0, oneIn: oneIn[p.rarity] }
       const c = have.get(p.id)
       const card: BinderCard = c
-        ? { ...p, pulls: c.pulls, firstAt: c.first_at, site: siteOf(p.id) }
+        ? { ...p, pulls: c.pulls, firstAt: c.first_at, site: siteCount }
         : {
             id: p.id,
             name: p.name,
@@ -203,7 +218,7 @@ function build(have: Map<string, Count>, site: Map<string, Site>, players: numbe
             club: p.club,
             rarity: p.rarity,
             pulls: 0,
-            site: siteOf(p.id),
+            site: siteCount,
           }
       byRarity[p.rarity].of++
       byPos[p.pos].of++
@@ -220,7 +235,7 @@ function build(have: Map<string, Count>, site: Map<string, Site>, players: numbe
     }
   }
 
-  // Best season first. A missing card has no score on it, so order off the
+  // Most valuable first. A missing card has no score on it, so order off the
   // pool's own numbers.
   const score = new Map(POOL_KEYS.flatMap((k) => POOL[k].map((p) => [p.id, p.score] as const)))
   const list = [...men.values()]
@@ -232,7 +247,6 @@ function build(have: Map<string, Count>, site: Map<string, Site>, players: numbe
 
   return {
     men: list,
-    site: { pulls: siteTotal, players },
     totals: {
       cards: POOL_SIZE,
       owned,

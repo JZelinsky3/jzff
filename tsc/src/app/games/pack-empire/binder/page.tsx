@@ -1,7 +1,7 @@
 // /games/pack-empire/binder
 //
 // Every card you've pulled (the one you kept from each pack), a man to a row,
-// his seasons best first. Each version carries its own count, so you can see
+// his best card first. Each version carries its own count, so you can see
 // that you've pulled Jerry Rice's 1995 four times and his 2002 never, and how
 // often the whole site has.
 //
@@ -28,7 +28,7 @@ export const viewport: Viewport = { themeColor: '#141311', width: 'device-width'
 
 export const metadata: Metadata = {
   title: 'The Binder · Pack Empire',
-  description: 'Every card you have pulled in Pack Empire, every season of every player, best to worst.',
+  description: 'Every card you have pulled in Pack Empire, every version of every player, best to worst.',
   robots: { index: false, follow: true },
 }
 
@@ -69,9 +69,9 @@ export default async function BinderPage() {
         ) : (
           <div className="pe-bd-out">
             <p className="pe-bd-out-lede">
-              The card you keep from every pack goes in here, {POOL_SIZE} seasons to find. Each player gets a
-              row, his best season first, with how many times you&apos;ve pulled each one and how rare it is
-              across the site.
+              The card you keep from every pack goes in here, {POOL_SIZE} cards to find. Each player gets a
+              row, his best card first, with how many times you&apos;ve pulled each one and the odds of finding
+              it in a pack.
             </p>
             <p className="pe-bd-out-sub">
               Sign in to start yours. Runs you&apos;ve already played on this device come with you.

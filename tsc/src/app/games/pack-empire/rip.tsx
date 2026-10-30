@@ -8,33 +8,39 @@
 // events, not a drag, so the wheel peels the strip too and tears it once it
 // passes halfway.
 //
-// The light that leaks out of the opening is the colour of the best card
-// inside, which the pack already knows because the deal is fetched while it
-// sits sealed. If the deal is still in flight when the strip comes off, the
-// open pack shakes until it lands. Then RipBurst goes off where the cards
-// come out, sized to the best of them.
+// The light comes up out of the torn top edge of the pack, the colour of the
+// best card inside, and bigger and brighter the better that card is. The pack
+// already knows, because the deal is fetched while it sits sealed. If the deal
+// is still in flight when the strip comes off, the open pack shakes until it
+// lands. Then RipBurst goes off from the same edge as the cards come out.
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { RARITY_LOOK, RARITIES } from '@/lib/packEmpire/rules'
 
-/** How long the strip takes to come off before the stage is told. */
+/** How long the strip takes to come off. */
 const RIP_MS = 460
+
+/** Then the open pack holds, by tier, so the light gets its moment. */
+const HOLD_MS = [40, 90, 220, 340, 340]
 
 /** Past this much of a drag, letting go finishes the tear. */
 const COMMIT_AT = 0.5
 
 /** Sparks off the tear, by tier (common up to immortal). */
-const SPARKS = [8, 14, 22, 28, 36]
+const SPARKS = [6, 10, 16, 22, 30]
 
 export function SealedPack({
   art,
   glow,
+  tier,
   ready,
   onTorn,
 }: {
   art: string
   /** The light inside: the best rarity's colour once the cards are in. */
   glow: string
+  /** That rarity's index, common up: sets the size of the light. */
+  tier: number
   /** The deal has come back. */
   ready: boolean
   onTorn: () => void
@@ -52,9 +58,9 @@ export function SealedPack({
     const t = window.setTimeout(() => {
       setPhase('open')
       onTorn()
-    }, RIP_MS)
+    }, RIP_MS + (HOLD_MS[tier] ?? 0))
     return () => window.clearTimeout(t)
-  }, [phase, onTorn])
+  }, [phase, onTorn, tier])
 
   const rip = () => {
     if (phase !== 'sealed') return
@@ -134,7 +140,7 @@ export function SealedPack({
     .join(' ')
 
   return (
-    <div className={cls} style={{ '--pull': pull, '--glow': glow } as React.CSSProperties}>
+    <div className={cls} data-tier={tier} style={{ '--pull': pull, '--glow': glow } as React.CSSProperties}>
       <button
         ref={packRef}
         type="button"
@@ -154,7 +160,10 @@ export function SealedPack({
           if (e.detail === 0) rip()
         }}
       >
-        <span className="pe-rip-light" aria-hidden />
+        <span className="pe-mouth" aria-hidden>
+          <i className="pe-mouth-beam" />
+          <i className="pe-mouth-halo" />
+        </span>
         <span className="pe-rip-body" aria-hidden>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={art} alt="" draggable={false} />
@@ -170,11 +179,11 @@ export function SealedPack({
 }
 
 /**
- * The pack going off, where the cards come out of it. Every tier gets light
- * rays and sparks in its colour; rare and up add a shockwave and a flash over
- * the whole table; dynasty and up a second ring and a shake; the top two the
- * biggest of everything. Plays once and leaves nothing behind (every layer
- * ends transparent), so it can stay mounted under the cards.
+ * The pack going off, from its torn edge, as the cards come out. Every tier
+ * gets the bloom and sparks thrown up out of the opening, in its colour; rare
+ * and up add a flash over the whole table; dynasty and up a shake. Plays once
+ * and leaves nothing behind (every layer ends transparent), so it can stay
+ * mounted under the cards.
  */
 export function RipBurst({ rarity }: { rarity: (typeof RARITIES)[number] }) {
   const tier = RARITIES.indexOf(rarity)
@@ -199,21 +208,18 @@ export function RipBurst({ rarity }: { rarity: (typeof RARITIES)[number] }) {
       style={{ '--glow': look.color, '--glow-soft': look.glow } as React.CSSProperties}
     >
       {tier >= 1 && <span className="pe-boom-flash" />}
-      <span className="pe-boom-rays" />
+      <span className="pe-boom-bloom" />
       <span className="pe-boom-core" />
-      {tier >= 1 && <span className="pe-boom-ring" />}
-      {tier >= 2 && <span className="pe-boom-ring r2" />}
-      {tier >= 3 && <span className="pe-boom-ring r3" />}
-      {Array.from({ length: SPARKS[tier] ?? 8 }, (_, i) => (
+      {Array.from({ length: SPARKS[tier] ?? 6 }, (_, i) => (
         <span
           key={i}
           className="pe-boom-spark"
           style={
             {
-              // Golden-angle spread so the sparks never clump, a little
-              // longer reach on every third.
-              '--a': `${(i * 137.5) % 360}deg`,
-              '--d': `${110 + tier * 45 + (i % 3) * 30}px`,
+              // A fan up out of the opening: the golden ratio so they never
+              // clump, a little longer reach on every third.
+              '--a': `${((i * 0.618) % 1) * 130 - 65}deg`,
+              '--d': `${130 + tier * 55 + (i % 3) * 40}px`,
               '--s': `${(i % 5) * 24}ms`,
             } as React.CSSProperties
           }
@@ -223,10 +229,11 @@ export function RipBurst({ rarity }: { rarity: (typeof RARITIES)[number] }) {
   )
 }
 
-/** The empty wrapper falling away as the cards come out of it. */
-export function SpentPack({ art }: { art: string }) {
+/** The empty wrapper falling away as the cards come out of it, its torn edge
+    still lit. */
+export function SpentPack({ art, tier, glow }: { art: string; tier: number; glow: string }) {
   return (
-    <div className="pe-rip-spent" aria-hidden>
+    <div className="pe-rip-spent" data-tier={tier} aria-hidden style={{ '--glow': glow } as React.CSSProperties}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={art} alt="" draggable={false} />
     </div>

@@ -24,7 +24,7 @@ import {
   type Player,
   type Rarity,
 } from '@/lib/packEmpire/rules'
-import { Bolt, CaptainMark, PackCard } from './cards'
+import { Bolt, CaptainMark, PackCard, leanCard } from './cards'
 import { RipBurst, SealedPack, SpentPack } from './rip'
 
 /** The slow reveal on one card: its rarity, then its season and team, then
@@ -63,6 +63,9 @@ export type Landing = { slot: number; phase: 'incoming' | 'landed' }
 const BIG = new Set<Rarity>(['transcendent', 'immortal'])
 
 const STEP_MS: Record<Walkout['step'], number> = { charge: 750, team: 850, stat: 1100, flip: 1200 }
+
+/** How long the Immortal Pull banner holds the cards back. */
+const PULL_MS = 2300
 const NEXT_STEP = { charge: 'team', team: 'stat', stat: 'flip' } as const
 
 /** How long the picked card hangs, lifted, before it flies. */
@@ -126,7 +129,6 @@ function rectOf(el: Element | null): Rect | null {
     before a refresh) straight back on the stage. */
 export function usePackStage(initial: StageState | null = null) {
   const [stage, setStage] = useState<StageState | null>(initial)
-  const [flash, setFlash] = useState(false)
   const [landing, setLanding] = useState<Landing | null>(null)
   const busy = useRef(false)
   const timers = useRef<number[]>([])
@@ -146,11 +148,6 @@ export function usePackStage(initial: StageState | null = null) {
   const later = useCallback((fn: () => void, ms: number) => {
     timers.current.push(window.setTimeout(fn, ms))
   }, [])
-
-  const flashImmortal = useCallback(() => {
-    setFlash(true)
-    later(() => setFlash(false), 2400)
-  }, [later])
 
   // Nothing behind the stage should scroll while a pack is open.
   const staged = !!stage
@@ -247,13 +244,11 @@ export function usePackStage(initial: StageState | null = null) {
   }, [])
 
   const walkout = stage?.walkout ?? null
-  const stageCards = stage?.cards ?? null
   useEffect(() => {
     if (!walkout) return
-    if (walkout.step === 'flip' && stageCards?.[walkout.i]?.rarity === 'immortal') flashImmortal()
     const t = window.setTimeout(() => advance(walkout.id), STEP_MS[walkout.step])
     return () => window.clearTimeout(t)
-  }, [walkout, stageCards, advance, flashImmortal])
+  }, [walkout, advance])
 
   /** A tap during a walkout: straight to the flip, or past the hold. */
   const skip = useCallback(() => {
@@ -360,7 +355,7 @@ export function usePackStage(initial: StageState | null = null) {
     [landing]
   )
 
-  return { stage, flash, landing, open, tear, reveal, revealAll, skip, pick, dismiss, settle }
+  return { stage, landing, open, tear, reveal, revealAll, skip, pick, dismiss, settle }
 }
 
 /** Over the stage: 'Captain pack' (with the patch), a League boost. */
@@ -415,7 +410,7 @@ function CardFlight({ flight }: { flight: Flight }) {
         } as React.CSSProperties
       }
     >
-      <PackCard player={player} revealed />
+      <PackCard player={player} revealed still />
     </div>
   )
 }
@@ -445,10 +440,7 @@ function useGyroTilt(ref: React.RefObject<HTMLElement | null>) {
       const y = clamp((e.beta - base.b) / 22)
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
-        el.style.setProperty('--pe-tx', `${x * 12}deg`)
-        el.style.setProperty('--pe-ty', `${-y * 10}deg`)
-        el.style.setProperty('--pe-gx', `${50 + x * 40}%`)
-        el.style.setProperty('--pe-gy', `${35 + y * 30}%`)
+        el.querySelectorAll('.pe-stage-cards .pe-card.rev').forEach((card) => leanCard(card, 0.5 + x * 0.45, 0.5 + y * 0.45))
       })
     }
     window.addEventListener('deviceorientation', on)
@@ -492,11 +484,20 @@ export function PackStage({
   const woLook = woCard ? RARITY_LOOK[woCard.rarity] : null
   const best = cards ? bestRarity(cards) : null
   const glow = best ? RARITY_LOOK[best].color : '#e8a84b'
+  const tier = best ? RARITIES.indexOf(best) : 0
+
+  // An immortal stops the show as the pack comes open: the pack stays on the
+  // table, lit, with the banner over it, and the cards wait until it's done.
+  const [pullShown, setPullShown] = useState(false)
+  const endPull = useCallback(() => setPullShown(true), [])
+  const pulling = !!cards && stage.torn && !stage.restored && best === 'immortal' && !pullShown
+  const open = !!cards && stage.torn && !pulling
 
   let status = 'Swipe across the top or tap to rip it open'
   if (stage.error) status = stage.error
   else if (!stage.torn) status = 'Swipe across the top, or tap, to rip it open'
   else if (!cards) status = 'Dealing'
+  else if (pulling) status = 'Immortal pull'
   else if (woLook) status = `${woLook.label} pull`
   else if (stage.queue.length) status = 'Revealing'
   else if (stage.pickedId) status = 'Signed'
@@ -508,6 +509,7 @@ export function PackStage({
     stage.leaving ? 'leaving' : '',
     stage.flight ? 'flying' : '',
     w ? 'walkout' : '',
+    pulling ? 'pulling' : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -521,8 +523,11 @@ export function PackStage({
         aria-modal="true"
         aria-label={`${def.label} pack`}
         data-wo={w?.step}
+        data-boom={open && !stage.restored ? tier : undefined}
         style={woLook ? ({ '--wo': woLook.color, '--wo-glow': woLook.glow } as React.CSSProperties) : undefined}
       >
+        {pulling && <ImmortalPull onDone={endPull} />}
+
         {w && (
           <button
             type="button"
@@ -533,7 +538,7 @@ export function PackStage({
           />
         )}
 
-        <div className={`pe-stage-head${w ? ' wo' : ''}`}>
+        <div className={`pe-stage-head${w || pulling ? ' wo' : ''}`}>
           <div className="pe-stage-norm">
             {tag && (
               <div
@@ -551,6 +556,13 @@ export function PackStage({
               {status}
             </div>
           </div>
+          {pulling && (
+            <div className="pe-imp-band" aria-hidden>
+              <span className="pe-imp-word">Immortal</span>
+              <span className="pe-imp-pull">Pull</span>
+              <span className="pe-imp-sweep" />
+            </div>
+          )}
           {w && woCard && woLook && (
             <div className="pe-wo-cap" data-step={w.step} aria-live="polite">
               <div className="pe-wo-rar">{woLook.label}</div>
@@ -562,14 +574,12 @@ export function PackStage({
           )}
         </div>
 
-        {(!stage.torn || !cards) && !stage.error && (
-          <SealedPack art={art} glow={glow} ready={!!cards} onTorn={onTear} />
-        )}
+        {!open && !stage.error && <SealedPack art={art} glow={glow} tier={tier} ready={!!cards} onTorn={onTear} />}
 
-        {cards && stage.torn && (
+        {open && (
           <div className="pe-stage-cards">
-            {!stage.restored && <SpentPack art={art} />}
             {!stage.restored && best && <RipBurst rarity={best} />}
+            {!stage.restored && <SpentPack art={art} tier={tier} glow={glow} />}
             {cards.map((card, i) => {
               const isPick = stage.pickedId === card.id
               const isRej = !!stage.pickedId && !isPick
@@ -595,7 +605,7 @@ export function PackStage({
         )}
 
         <div className="pe-stage-foot">
-          {cards && stage.torn && !stage.pickedId && !w && !stage.queue.length && hidden > 0 && (
+          {open && !stage.pickedId && !w && !stage.queue.length && hidden > 0 && (
             <button type="button" className="pe-btn pe-btn--ghost" onClick={onRevealAll}>
               Reveal all {hidden}
             </button>
@@ -613,12 +623,14 @@ export function PackStage({
   )
 }
 
-export function ImmortalFlash() {
-  return (
-    <div className="pe-imm-flash" aria-hidden>
-      <div className="pe-imm-text">IMMORTAL PULL</div>
-    </div>
-  )
+/** The dark and the light behind the Immortal Pull banner. Tapping it skips
+    ahead; the banner itself sits in the stage's head, right above the pack. */
+function ImmortalPull({ onDone }: { onDone: () => void }) {
+  useEffect(() => {
+    const t = window.setTimeout(onDone, reducedMotion() ? PULL_MS / 2 : PULL_MS)
+    return () => window.clearTimeout(t)
+  }, [onDone])
+  return <button type="button" className="pe-imp-veil" onClick={onDone} aria-label="Immortal pull. Show the cards" />
 }
 
 /** Ease out: the low numbers fly by and the last stretch slows down. */

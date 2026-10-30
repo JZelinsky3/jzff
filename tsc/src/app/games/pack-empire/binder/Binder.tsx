@@ -1,9 +1,9 @@
 'use client'
 
-// The binder: a row per man, his seasons best first, each with its count.
-// Pulled cards (the one you kept from a pack) are the real card; the ones
-// still out there are face down, showing only the rarity and the year you're
-// chasing. Up close, a card shows your count beside the whole site's.
+// The binder: a row per man, his most valuable card first, each with its
+// count. Pulled cards (the one you kept from a pack) are the real card; the
+// ones still out there are face down, showing only the rarity and the year
+// you're chasing. Up close, a card shows your count beside the whole site's.
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -72,6 +72,18 @@ export function Binder({ view, mobile }: { view: BinderView; mobile: boolean }) 
       return [...list].sort((a, b) => pulls(b) - pulls(a))
     }
     if (sort === 'name') return [...list].sort((a, b) => a.name.localeCompare(b.name))
+    // Best card first, counting only the cards this view is about: a man whose
+    // only pull is his common sorts as that common in Collected, however good
+    // the immortal he's still missing. A missing card carries no score, so
+    // Missing sorts by rarity, keeping the pool's order inside each.
+    if (show === 'have') {
+      const top = (m: BinderMan) => m.cards.find(owned)?.score ?? 0
+      return [...list].sort((a, b) => top(b) - top(a))
+    }
+    if (show === 'missing') {
+      const top = (m: BinderMan) => RARITIES.indexOf(m.cards.find((c) => !owned(c))?.rarity ?? 'common')
+      return [...list].sort((a, b) => top(b) - top(a))
+    }
     return list
   }, [view.men, tab, show, sort, q])
 
@@ -85,7 +97,7 @@ export function Binder({ view, mobile }: { view: BinderView; mobile: boolean }) 
             {t.owned.toLocaleString()}
             <span>/{t.cards.toLocaleString()}</span>
           </div>
-          <div className="pe-note">Seasons pulled</div>
+          <div className="pe-note">Cards collected</div>
           <div className="pe-bd-sum-sub">
             {t.menOwned.toLocaleString()} of {t.men.toLocaleString()} players · {t.pulls.toLocaleString()}{' '}
             {t.pulls === 1 ? 'pack' : 'packs'} opened. One card from each pack goes in: the one you keep.
@@ -157,7 +169,7 @@ export function Binder({ view, mobile }: { view: BinderView; mobile: boolean }) 
         <label className="pe-bd-sort">
           <span className="pe-note">Sort</span>
           <select value={sort} onChange={(e) => pickSort(e.target.value as Sort)}>
-            <option value="best">Best season</option>
+            <option value="best">Best card</option>
             <option value="pulls">Most pulled</option>
             <option value="name">Name</option>
           </select>
@@ -199,7 +211,6 @@ export function Binder({ view, mobile }: { view: BinderView; mobile: boolean }) 
         <CardSheet
           man={open.man}
           card={open.card}
-          site={view.site}
           onPick={(card) => setOpen({ man: open.man, card })}
           onClose={() => setOpen(null)}
         />
@@ -222,20 +233,15 @@ function ManRow({ man, mobile, onOpen }: { man: BinderMan; mobile: boolean; onOp
         </span>
       </div>
       <div className="pe-bd-strip">
-        {man.cards.map((c, i) => (
-          <Tile
-            key={c.id}
-            card={c}
-            caption={man.cards.length > 1 ? (i === 0 ? 'Best' : i === man.cards.length - 1 ? 'Worst' : null) : null}
-            onClick={() => onOpen(c)}
-          />
+        {man.cards.map((c) => (
+          <Tile key={c.id} card={c} onClick={() => onOpen(c)} />
         ))}
       </div>
     </div>
   )
 }
 
-function Tile({ card, caption, onClick }: { card: BinderCard; caption: string | null; onClick: () => void }) {
+function Tile({ card, onClick }: { card: BinderCard; onClick: () => void }) {
   const rc = RARITY_LOOK[card.rarity]
   const style = { '--rc': rc.color, '--rg': rc.glow, '--art': rc.art } as React.CSSProperties
   const label = owned(card)
@@ -258,28 +264,18 @@ function Tile({ card, caption, onClick }: { card: BinderCard; caption: string | 
         </span>
         <span className="pe-bd-tile-foot">{owned(card) ? card.score.toLocaleString() : 'Not pulled'}</span>
       </button>
-      {caption && <span className="pe-bd-cap">{caption}</span>}
     </span>
   )
-}
-
-/** How rare a card has been across the site, in packs: "1 in 412". */
-function siteRarity(card: BinderCard): string {
-  if (card.site.pulls === 0 || card.site.share === 0) return 'Never pulled'
-  const n = Math.max(1, Math.round(1 / card.site.share))
-  return n === 1 ? 'Every pack' : `1 in ${n.toLocaleString()}`
 }
 
 function CardSheet({
   man,
   card,
-  site,
   onPick,
   onClose,
 }: {
   man: BinderMan
   card: BinderCard
-  site: BinderView['site']
   onPick: (c: BinderCard) => void
   onClose: () => void
 }) {
@@ -318,7 +314,8 @@ function CardSheet({
 
         <div className="pe-bd-sheet-body">
           <div className="pe-kicker" style={{ color: rc.color }}>
-            {rc.label} · {i === 0 ? 'His best season' : i === man.cards.length - 1 ? 'His worst season' : `No. ${i + 1} of ${man.cards.length}`}
+            {rc.label}
+            {man.cards.length > 1 && ` · Card ${i + 1} of ${man.cards.length}`}
           </div>
           <div className="pe-bd-sheet-name">{man.name}</div>
           <div className="pe-bd-sheet-club">
@@ -352,15 +349,8 @@ function CardSheet({
                   <dd>×{card.site.pulls.toLocaleString()}</dd>
                 </div>
                 <div>
-                  <dt>Players</dt>
-                  <dd>
-                    {card.site.holders.toLocaleString()}
-                    <small>/{site.players.toLocaleString()}</small>
-                  </dd>
-                </div>
-                <div>
-                  <dt>Packs</dt>
-                  <dd className={card.site.pulls === 0 ? 'word' : undefined}>{siteRarity(card)}</dd>
+                  <dt>Pack odds</dt>
+                  <dd>1 in {card.site.oneIn.toLocaleString()}</dd>
                 </div>
               </dl>
             </div>

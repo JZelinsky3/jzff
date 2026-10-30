@@ -34,7 +34,7 @@ import {
 import { CaptainMark, Field, type SlotView } from './cards'
 import { KeyAside, KeyButton } from './DraftKey'
 import { useHydrated } from './clientStore'
-import { ImmortalFlash, PackStage, ScoreStrip, usePackStage, useStripOffset } from './stage'
+import { PackStage, ScoreStrip, usePackStage, useStripOffset } from './stage'
 
 export type DraftPick = { slot: number; id: string }
 
@@ -199,7 +199,7 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro, restartable =
   const [stale, setStale] = useState(false)
   /** First tap on Start over arms it; the second throws the run away. */
   const [armed, setArmed] = useState(false)
-  const { stage, flash, landing, open, tear, reveal, revealAll, skip, pick, dismiss, settle } = usePackStage()
+  const { stage, landing, open, tear, reveal, revealAll, skip, pick, dismiss, settle } = usePackStage()
 
   // Check a seed brought back from storage (or held by a Versus seat) once.
   useEffect(() => {
@@ -316,8 +316,6 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro, restartable =
 
   return (
     <div className="pe-draft">
-      {flash && <ImmortalFlash />}
-
       {choosing ? (
         <>
           {intro}
