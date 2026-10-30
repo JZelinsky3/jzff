@@ -90,6 +90,7 @@ function Column({
   score,
   filled,
   picking,
+  yours = false,
 }: {
   label: string
   name: string | null
@@ -97,13 +98,18 @@ function Column({
   score: number
   filled: number
   picking: boolean
+  /** The viewer's own column. */
+  yours?: boolean
 }) {
   const tier = tierFor(score)
   return (
     <div className={`pe-lc${picking ? ' picking' : ''}`}>
       <div className="pe-lc-head">
-        {picking && <span className="pe-lc-flag">On the clock</span>}
-        <span className="pe-lc-label">{label}</span>
+        {/* On one line, so a column doesn't grow when the clock lands on it. */}
+        <span className="pe-lc-label">
+          {label}
+          {picking && <b> · {yours ? 'Your pick' : 'On the clock'}</b>}
+        </span>
         <span className="pe-lc-name">{name ?? 'Open seat'}</span>
         <span className="pe-lc-score" style={{ color: tier.color }}>
           {score.toLocaleString()}
@@ -151,7 +157,21 @@ function Column({
   )
 }
 
-export function MegaRoom({ initial, signedIn }: { initial: MegaView; signedIn: boolean }) {
+/** Which seats still need a position: empty slots left, yours and theirs. */
+function posNeed(lineup: (Player | null)[], pos: PoolKey): number {
+  return SLOTS.filter((s, i) => s.pool === pos && !lineup[i]).length
+}
+
+export function MegaRoom({
+  initial,
+  signedIn,
+  canFriend = false,
+}: {
+  initial: MegaView
+  signedIn: boolean
+  /** Signed in, a real account in the other seat, and not friends yet. */
+  canFriend?: boolean
+}) {
   const [view, setViewRaw] = useState<MegaView>(initial)
   // A signed-out seat is this browser's key (one key for every Mega Draft it
   // sits at). The one made this visit wins until storage catches up.
@@ -244,6 +264,23 @@ export function MegaRoom({ initial, signedIn }: { initial: MegaView; signedIn: b
     return () => window.clearTimeout(t)
   }, [cpuTurn, view.pickNo, post, setView])
 
+  // "Add as a friend" off the result. A request, which they accept.
+  const [friendNote, setFriendNote] = useState<string | null>(null)
+  const addFriend = async () => {
+    setBusy(true)
+    try {
+      const res = await fetch('/api/friends/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'mega', id }),
+      })
+      const out = await res.json().catch(() => null)
+      setFriendNote(out?.ok ? (out.message ?? 'Asked.') : (out?.error ?? 'Could not send that.'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const router = useRouter()
   const againCpu = async () => {
     setBusy(true)
@@ -321,6 +358,14 @@ export function MegaRoom({ initial, signedIn }: { initial: MegaView; signedIn: b
   }
 
   const shown = view.board.filter((p) => filter === 'ALL' || p.pos === filter)
+
+  /** What a position tab says: filled by you, contested, or yours alone to
+      take whenever you like. Spectators get plain tabs. */
+  const posState = (k: PoolKey): 'both' | 'mine' | 'filled' | null => {
+    if (you == null || them == null) return null
+    if (posNeed(view.seats[you].lineup, k) === 0) return 'filled'
+    return posNeed(view.seats[them].lineup, k) > 0 ? 'both' : 'mine'
+  }
   const seatName = (s: number) => view.seats[s].name ?? 'Open seat'
 
   // ── Waiting room ──────────────────────────────────────────────
@@ -458,7 +503,13 @@ export function MegaRoom({ initial, signedIn }: { initial: MegaView; signedIn: b
                 Another draft
               </Link>
             )}
+            {canFriend && !friendNote && them != null && (
+              <button type="button" className="pe-btn pe-btn--quiet" onClick={addFriend} disabled={busy}>
+                Add {seatName(them)} as a friend
+              </button>
+            )}
           </div>
+          {friendNote && <p className="pe-recap-post">{friendNote}</p>}
           {error && <p className="pe-recap-post">{error}</p>}
         </div>
         <div className="pe-twoup">
@@ -524,6 +575,7 @@ export function MegaRoom({ initial, signedIn }: { initial: MegaView; signedIn: b
             score={view.seats[left].score}
             filled={view.seats[left].filled}
             picking={view.onClock === left}
+            yours={you != null}
           />
         </div>
 
@@ -534,12 +586,20 @@ export function MegaRoom({ initial, signedIn }: { initial: MegaView; signedIn: b
                 key={k}
                 type="button"
                 className={`pe-filter${filter === k ? ' on' : ''}`}
+                data-need={k === 'ALL' ? undefined : (posState(k) ?? undefined)}
                 onClick={() => setFilter(k)}
               >
                 {k === 'ALL' ? 'All' : k}
               </button>
             ))}
           </div>
+          {you != null && (
+            <div className="pe-need-key" aria-hidden>
+              <span data-need="both">Both need</span>
+              <span data-need="mine">Only you need</span>
+              <span data-need="filled">You&apos;re full</span>
+            </div>
+          )}
           <div className="pe-pool">
             {shown.map((p) => (
               <PoolCard

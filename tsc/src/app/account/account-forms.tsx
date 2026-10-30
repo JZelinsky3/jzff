@@ -200,14 +200,14 @@ export function AccountForms({
         <div className="acct-two-col">
           <div>
             <div className="section-header">
-              <span className="section-num">§ 03 · Communication</span>
+              <span className="section-num">§ 02 · Communication</span>
               <span className="section-title">What we send you,</span>
             </div>
             <MarketingForm initialOptIn={marketingOptIn} email={email} />
           </div>
           <div>
             <div className="section-header">
-              <span className="section-num">§ 04 · Referral</span>
+              <span className="section-num">§ 03 · Referral</span>
               <span className="section-title">Where you heard of us,</span>
             </div>
             <ReferralForm initialSource={referralSource} initialOther={referralOther} />
@@ -217,7 +217,7 @@ export function AccountForms({
 
       <div className="section">
         <div className="section-header">
-          <span className="section-num">§ 05 · Sign out</span>
+          <span className="section-num">§ 04 · Sign out</span>
           <span className="section-title">See you next time,</span>
           <span className="section-meta">Ends this session</span>
         </div>

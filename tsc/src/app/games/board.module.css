@@ -512,22 +512,16 @@
 /* The date as a small badge, for a board that sets it beside a tier. */
 .dateChip {
   flex: none;
-  padding: 0.16rem 0.32rem;
+  /* Whole pixels so it centres; see .pe-tier-badge. */
+  padding: 3px 5px;
   border: 1px solid var(--gp-line);
   border-radius: 3px;
   font-family: var(--mono);
-  font-size: 0.5rem;
-  line-height: 1.25;
+  font-size: 8px;
+  line-height: 10px;
   letter-spacing: 0.06em;
   color: var(--gp-mute);
   white-space: nowrap;
-}
-
-@supports (text-box: trim-both cap alphabetic) {
-  .dateChip {
-    text-box: trim-both cap alphabetic;
-    padding-block: 0.26rem;
-  }
 }
 
 /* Where a Multiverse run ended: QF, SF, Final, Champ. Two or three

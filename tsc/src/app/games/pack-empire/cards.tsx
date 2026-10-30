@@ -782,8 +782,8 @@ function FilledSlot({
           <div className="pe-fc-pos-badge" style={{ background: rc.color }}>
             {player.pos}
           </div>
-          <div className="pe-fc-rar-badge" style={{ color: rc.color }}>
-            {rc.short}
+          <div className={`pe-fc-rar-badge ${player.rarity}`} style={{ color: rc.color }}>
+            {rc.label}
           </div>
         </div>
         <div className="pe-fc-art" style={{ background: rc.art }}>

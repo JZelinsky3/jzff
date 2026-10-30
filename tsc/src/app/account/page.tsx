@@ -9,7 +9,7 @@ import { getViewMode } from '@/lib/viewMode'
 import { friendIds, friendsState } from '@/lib/friends'
 import { publicNames } from '@/lib/minigames/boardIdentity'
 import { loadRecords } from '@/lib/minigames/profileRecords'
-import { FriendsPanel } from '@/components/account/FriendsPanel'
+import { PlayHub } from '@/components/account/PlayHub'
 import { RecordBook } from '@/components/account/RecordBook'
 import { AccountForms } from './account-forms'
 import { AccountNavMenu } from './account-nav-menu'
@@ -117,9 +117,7 @@ export default async function AccountPage({
         referralOther={referralOther}
         boardName={boardName}
         shownAs={shownAs}
-        records={<RecordBook records={records} phone />}
-        friends={<FriendsPanel initial={friends} phone />}
-        waiting={friends.incoming.length + friends.challenges.length}
+        hub={<PlayHub initial={friends} games={<RecordBook records={records} />} phone />}
       />
     )
   }
@@ -173,28 +171,19 @@ export default async function AccountPage({
         boardName={boardName}
         shownAs={shownAs}
       >
-        <div className="section" id="records">
-          <div className="section-header">
-            <span className="section-num">§ 01 · Games</span>
-            <span className="section-title">The Record Book</span>
-            <span className="section-meta">
-              {totalRuns ? `${totalRuns} ${totalRuns === 1 ? 'run' : 'runs'} posted` : 'Nothing posted yet'}
-            </span>
-          </div>
-          <RecordBook records={records} />
-        </div>
-
         <div className="section" id="friends">
           <div className="section-header">
-            <span className="section-num">§ 02 · Friends</span>
-            <span className="section-title">Your Friends</span>
+            <span className="section-num">§ 01 · Games and Friends</span>
+            <span className="section-title">The Record Book</span>
             <span className="section-meta">
               {friends.incoming.length
                 ? `${friends.incoming.length} waiting on you`
-                : `${friends.friends.length} ${friends.friends.length === 1 ? 'friend' : 'friends'}`}
+                : totalRuns
+                  ? `${totalRuns} ${totalRuns === 1 ? 'run' : 'runs'} posted`
+                  : 'Nothing posted yet'}
             </span>
           </div>
-          <FriendsPanel initial={friends} />
+          <PlayHub initial={friends} games={<RecordBook records={records} />} />
         </div>
       </AccountForms>
 

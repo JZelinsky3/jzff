@@ -1283,7 +1283,7 @@
   position: absolute;
   left: 50%;
   bottom: 0;
-  height: 112%;
+  height: 86%;
   width: auto;
   max-width: none;
   transform: translateX(-50%);
@@ -1333,14 +1333,20 @@
    there can be fifty on a page. */
 .pe-tier-badge {
   flex: none;
-  padding: 0.16rem 0.38rem;
+  display: block;
+  /* Whole pixels, all of it. These are the sizes that centre this face: at 8px
+     its capitals sit 2px off both edges of a 10px line. In rem or trimmed with
+     text-box the badge lands on fractions, and the box and the text then round
+     to the pixel grid in different directions depending where it falls on the
+     page, leaving the words up to 1.5px high. */
+  padding: 3px 6px;
   border: 1px solid color-mix(in srgb, var(--tc) 70%, transparent);
   border-radius: 3px;
   background: color-mix(in srgb, var(--tc) 10%, transparent);
   font-family: var(--mono);
   font-weight: 700;
-  font-size: 0.52rem;
-  line-height: 1.2;
+  font-size: 8px;
+  line-height: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--tc);
@@ -1352,7 +1358,7 @@
   border-color: transparent;
   background: color-mix(in srgb, var(--tc) 20%, transparent);
   box-shadow: inset 3px 0 0 var(--tc);
-  padding-left: 0.56rem;
+  padding-left: 9px;
   color: #bfe0ec;
 }
 
@@ -1360,7 +1366,7 @@
 .pe-tier-badge[data-rung='3'] {
   border: 3px double var(--tc);
   background: none;
-  padding: 0.12rem 0.34rem;
+  padding: 1px 5px;
 }
 
 /* II Hall of Fame: solid gold plate. */
@@ -1375,7 +1381,7 @@
    moves on transform only; the rest is static. */
 .pe-tier-badge[data-rung='1'] {
   position: relative;
-  padding-inline: 0.62rem;
+  padding-inline: 9px;
   border-color: transparent;
   border-radius: 999px;
   background:
@@ -1385,15 +1391,9 @@
     0 0 9px color-mix(in srgb, var(--tc) 70%, transparent),
     0 0 22px color-mix(in srgb, var(--tc) 32%, transparent),
     inset 0 0 7px color-mix(in srgb, var(--tc) 22%, transparent);
-  font-size: 0.56rem;
   letter-spacing: 0.15em;
   color: var(--tc);
   text-shadow: 0 0 7px color-mix(in srgb, var(--tc) 75%, transparent);
-}
-
-.pe-tier-badge[data-rung='1']::before {
-  content: '★';
-  margin-right: 0.4em;
 }
 
 .pe-tier-shine {
@@ -1428,19 +1428,6 @@
 @media (prefers-reduced-motion: reduce) {
   .pe-tier-shine {
     display: none;
-  }
-}
-
-/* Mono capitals sit high in their line box, whatever the padding says. Trim
-   the box to the capitals so the padding is the same above and below them. */
-@supports (text-box: trim-both cap alphabetic) {
-  .pe-tier-badge {
-    text-box: trim-both cap alphabetic;
-    padding-block: 0.28rem;
-  }
-
-  .pe-tier-badge[data-rung='3'] {
-    padding-block: 0.2rem;
   }
 }
 
@@ -2098,9 +2085,15 @@
   font-family: var(--pe-cond);
   font-weight: 800;
   font-size: 0.5rem;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
+  white-space: nowrap;
   opacity: 0.9;
+}
+
+.pe-fc-rar-badge.transcendent {
+  font-size: 0.46rem;
+  letter-spacing: 0.08em;
 }
 
 .pe-fc-art {
@@ -4799,9 +4792,14 @@ a.pe-row:hover {
   }
 
   .pe-fc-rar-badge {
-    font-size: 0.46rem;
-    letter-spacing: 0.06em;
+    font-size: 0.44rem;
+    letter-spacing: 0.05em;
     line-height: 1;
+  }
+
+  .pe-fc-rar-badge.transcendent {
+    font-size: 0.35rem;
+    letter-spacing: 0;
   }
 
   .pe-fc-pos-badge {
@@ -5338,6 +5336,61 @@ a.pe-row:hover {
   background: rgba(95, 179, 232, 0.08);
 }
 
+/* Where a position stands: amber when both seats still want it, so it's a
+   race; green when only you do, so it can wait. Filled is the plain chip. */
+.pe-filter[data-need='both'],
+.pe-need-key [data-need='both'] {
+  --need: #e8a84b;
+}
+
+.pe-filter[data-need='mine'],
+.pe-need-key [data-need='mine'] {
+  --need: #68c08a;
+}
+
+.pe-filter[data-need='both'],
+.pe-filter[data-need='mine'] {
+  border-color: color-mix(in srgb, var(--need) 55%, transparent);
+  background: color-mix(in srgb, var(--need) 11%, transparent);
+  color: color-mix(in srgb, var(--need) 80%, var(--pe-ink));
+}
+
+.pe-filter[data-need='filled'] {
+  opacity: 0.55;
+}
+
+.pe-filter[data-need].on {
+  border-color: var(--need, #5fb3e8);
+  box-shadow: inset 0 0 0 1px var(--need, #5fb3e8);
+}
+
+.pe-need-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.9rem;
+  margin: -0.35rem 0 0.75rem 0.15rem;
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+.pe-need-key span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pe-need-key span::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--need, var(--pe-ink-mute)) 70%, transparent);
+  background: color-mix(in srgb, var(--need, transparent) 30%, transparent);
+}
+
 .pe-pool {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
@@ -5541,21 +5594,18 @@ a.pe-row:hover {
   text-align: center;
 }
 
-.pe-lc-flag {
-  font-family: var(--mono);
-  font-weight: 700;
-  font-size: 0.5rem;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: #8fd0f6;
-}
-
 .pe-lc-label {
   font-family: var(--mono);
   font-size: 0.52rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--pe-ink-mute);
+  white-space: nowrap;
+}
+
+.pe-lc-label b {
+  font-weight: 700;
+  color: #8fd0f6;
 }
 
 .pe-lc-name {
@@ -5669,6 +5719,24 @@ a.pe-row:hover {
 @media (max-width: 1000px) {
   .pe-mega-grid {
     grid-template-columns: 13rem minmax(0, 1fr) 13rem;
+  }
+}
+
+/* Desktop: out past the page's 1180 so the board can run seven across. */
+@media (min-width: 1240px) {
+  .pe-mega {
+    --mega-w: min(1560px, calc(100vw - 2.5rem));
+    width: var(--mega-w);
+    max-width: none;
+    margin-inline: calc((100% - var(--mega-w)) / 2);
+  }
+
+  .pe-mega-grid {
+    grid-template-columns: 14rem minmax(0, 1fr) 14rem;
+  }
+
+  .pe-pool {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 }
 

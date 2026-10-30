@@ -16,12 +16,15 @@ import { createHmac, hkdfSync, randomBytes } from 'crypto'
 import { POOL, POOL_VERSION, personOfId } from './pool'
 import {
   MEGA_POOL_COUNTS,
+  MEGA_TOTAL_PICKS,
   MEGA_WEIGHTS,
   PACK_SIZE,
   POOL_KEYS,
   SEED_ALPHABET,
   SLOTS,
   SLOT_COUNT,
+  megaPickOwner,
+  megaWorth,
   personOf,
   type Player,
   type Weights,
@@ -224,16 +227,22 @@ export function dealPack({
 // Mega Draft
 // ============================================================
 
-/**
- * The shared board for a Mega Draft: 36 players, at least one dynasty-or-
- * better at every position, the rest weighted off MEGA_WEIGHTS without
- * replacement, then shuffled. One version of a man per board, so the two
- * seats can't both draft him.
- */
-export function dealMegaBoard(seed: string): Player[] {
+/** How far apart the two seats may finish when the same draft is played from
+    both sides. Tested against the pool with scripts/pack-empire-pool/sim/
+    mega-sim.ts: an unchecked board gave first pick 65% between equal players. */
+const MEGA_FAIR_TOP_CARD = 100
+const MEGA_FAIR_READ = 150
+
+/** A typical board takes about 70 deals to pass, one in a thousand 600. */
+const MEGA_MAX_DEALS = 700
+
+/** A board's cards: at least one dynasty-or-better at every position, the
+    rest weighted off MEGA_WEIGHTS without replacement. One version of a man
+    per board, so the two seats can't both draft him. */
+function megaCards(seed: string, deal: number): Player[] {
   const out: Player[] = []
   for (const k of POOL_KEYS) {
-    const rnd = stream(`mega:${seed}|${k}`)
+    const rnd = stream(`mega:${seed}|${deal}|${k}`)
     const pool = POOL[k]
     const picked = new Set<string>()
     const want = MEGA_POOL_COUNTS[k]
@@ -256,7 +265,65 @@ export function dealMegaBoard(seed: string): Player[] {
       }
     }
   }
+  return out
+}
 
+/** Both seats draft a board the same way: first seat's total minus second's. */
+function draftMargin(board: Player[], worth: (p: Player, left: Player[], rivalOpen: number) => number): number {
+  const open = (lineup: Player[], pos: Player['pos']) =>
+    SLOTS.filter((s) => s.pool === pos).length - lineup.filter((p) => p.pos === pos).length
+  const seats: [Player[], Player[]] = [[], []]
+  let left = board
+  for (let n = 0; n < MEGA_TOTAL_PICKS; n++) {
+    const seat = megaPickOwner(n)
+    const [mine, theirs] = seat === 0 ? seats : [seats[1], seats[0]]
+    let best: Player | null = null
+    let bestWorth = -Infinity
+    for (const p of left) {
+      if (open(mine, p.pos) <= 0) continue
+      const w = worth(p, left, open(theirs, p.pos))
+      if (w > bestWorth) {
+        bestWorth = w
+        best = p
+      }
+    }
+    if (!best) break
+    mine.push(best)
+    const taken = best
+    left = left.filter((p) => p !== taken)
+  }
+  const total = (lineup: Player[]) => lineup.reduce((sum, p) => sum + p.score, 0)
+  return total(seats[0]) - total(seats[1])
+}
+
+/**
+ * The shared board for a Mega Draft: 36 players, shuffled.
+ *
+ * Left alone, the seat that wins the coin takes the best card on the board
+ * and, with one immortal out on its own, usually the game. So a board only
+ * goes out if it's level from either seat, played out here two ways: both
+ * seats taking the top card, and both reading the board (megaWorth). That
+ * leaves the choices to decide it. It's a filter, not a rule: boards still
+ * carry none, one or several immortals in the same proportions as before.
+ * Dealt once and stored, so this never runs against a draft already going.
+ */
+export function dealMegaBoard(seed: string): Player[] {
+  let out = megaCards(seed, 0)
+  let closest = Infinity
+  for (let deal = 0; deal < MEGA_MAX_DEALS; deal++) {
+    const cards = megaCards(seed, deal)
+    const gap = Math.max(
+      Math.abs(draftMargin(cards, (p) => p.score)) / MEGA_FAIR_TOP_CARD,
+      Math.abs(draftMargin(cards, megaWorth)) / MEGA_FAIR_READ
+    )
+    if (gap < closest) {
+      closest = gap
+      out = cards
+    }
+    if (gap <= 1) break
+  }
+
+  out = [...out]
   const rnd = stream(`mega:${seed}|shuffle`)
   for (let i = out.length - 1; i > 0; i--) {
     const j = Math.floor(rnd() * (i + 1))

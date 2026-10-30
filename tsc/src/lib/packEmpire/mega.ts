@@ -3,7 +3,8 @@
 // A live two-seat snake draft off one shared board of 36, eleven picks each,
 // P1 P2 P2 P1 P1 P2 … Who picks first is a coin flipped when the second
 // player sits down. The board is public (both players see every card), so it
-// is dealt once at creation and stored whole.
+// is dealt once at creation and stored whole. dealMegaBoard only hands out
+// boards that are level from either seat, so the coin doesn't decide the game.
 //
 // The original let each browser write its own pick straight into the row.
 // Here a pick is a request: the server checks whose turn it is, that the
@@ -29,6 +30,7 @@ import {
   SLOT_COUNT,
   lineupScore,
   megaPickOwner,
+  megaWorth,
   type Player,
 } from './rules'
 
@@ -156,13 +158,8 @@ function view(row: Row, role: Role | null, viewerId: string | null = null): Mega
   }
 }
 
-/**
- * The CPU's pick. Every man on the board it has a slot for is worth his score,
- * plus how far the position falls off if it passes on him: the best one left
- * there once the other seat has filled its own slots at the position. A deep
- * position can wait; the last good center can't. A few percent of noise, so
- * two drafts off the same board don't go the same way.
- */
+/** The CPU's pick: the best megaWorth it has a slot for, with a few percent
+    of noise so two drafts off the same board don't go the same way. */
 function cpuChoice(row: Row, seat: 0 | 1): Player | null {
   const lineups = lineupsFrom(row)
   const mine = lineups[seat]
@@ -176,14 +173,8 @@ function cpuChoice(row: Row, seat: 0 | 1): Player | null {
   let bestValue = -Infinity
   for (const p of left) {
     if (open(mine, p.pos) === 0) continue
-    const rivals = open(theirs, p.pos)
-    const rest = left
-      .filter((q) => q.pos === p.pos && q.id !== p.id)
-      .map((q) => q.score)
-      .sort((a, b) => b - a)
-    const fallback = rest.length ? rest[Math.min(rivals, rest.length - 1)] : 0
     const noise = (randomInt(1001) / 1000 - 0.5) * 0.1 * p.score
-    const value = p.score - fallback + 0.4 * p.score + noise
+    const value = megaWorth(p, left, open(theirs, p.pos)) + noise
     if (value > bestValue) {
       bestValue = value
       best = p
@@ -378,6 +369,21 @@ export async function pickMega(
     .maybeSingle()
   if (!data) return { ok: false, error: 'The board moved under you. Try that pick again.' }
   return { ok: true, view: view(data as Row, role, userId) }
+}
+
+/** The other account in a draft, for "add as a friend" off the result. Null
+    unless the viewer sat in it, or the other seat was a guest or the CPU. */
+export async function megaOpponent(id: unknown, userId: string): Promise<string | null> {
+  if (!isId(id, CODE_LEN)) return null
+  const { data } = await createAdminClient()
+    .from('pe_mega_drafts')
+    .select('host_id, guest_id')
+    .eq('id', id)
+    .maybeSingle()
+  if (!data) return null
+  if (data.host_id === userId) return data.guest_id ?? null
+  if (data.guest_id === userId) return data.host_id ?? null
+  return null
 }
 
 export type MegaListItem = {

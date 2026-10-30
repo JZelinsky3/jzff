@@ -453,6 +453,22 @@ export function megaPickOwner(pick: number): 0 | 1 {
   return pick % 2 === 0 ? 1 : 0
 }
 
+/**
+ * What a man is worth to the seat on the clock: his score, plus how far his
+ * position falls off if they pass on him, which is the best one left there
+ * once the other seat has filled its own slots. A deep position can wait; the
+ * last good center can't. The CPU drafts by this, and the dealer plays it out
+ * to check a board is fair.
+ */
+export function megaWorth(p: Player, left: Player[], rivalOpen: number): number {
+  const rest = left
+    .filter((q) => q.pos === p.pos && q.id !== p.id)
+    .map((q) => q.score)
+    .sort((a, b) => b - a)
+  const fallback = rest.length ? rest[Math.min(rivalOpen, rest.length - 1)] : 0
+  return p.score - fallback + 0.4 * p.score
+}
+
 // ============================================================
 // Chemistry (League Mode)
 // ============================================================

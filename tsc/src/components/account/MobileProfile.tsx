@@ -38,9 +38,7 @@ export function MobileProfile({
   referralOther,
   boardName,
   shownAs,
-  records,
-  friends,
-  waiting,
+  hub,
 }: {
   email: string
   memberCode: string
@@ -58,24 +56,9 @@ export function MobileProfile({
   referralOther: string
   boardName: string
   shownAs: string
-  records: React.ReactNode
-  friends: React.ReactNode
-  /** Friend requests and challenges waiting; when there are any, friends
-      jump above the record book so they're on the first screen. */
-  waiting: number
+  /** Games and friends, one tabbed card. See PlayHub. */
+  hub: React.ReactNode
 }) {
-  const recordSection = (
-    <div className="mprof-section" id="records">
-      <div className="mprof-section-label">Record Book</div>
-      {records}
-    </div>
-  )
-  const friendSection = (
-    <div className="mprof-section" id="friends">
-      <div className="mprof-section-label">Friends</div>
-      {friends}
-    </div>
-  )
   return (
     <main className="mprof">
       {/* ── Top bar ── */}
@@ -100,17 +83,10 @@ export function MobileProfile({
 
       <MobileBoardNameSection boardName={boardName} shownAs={shownAs} />
 
-      {waiting > 0 ? (
-        <>
-          {friendSection}
-          {recordSection}
-        </>
-      ) : (
-        <>
-          {recordSection}
-          {friendSection}
-        </>
-      )}
+      <div className="mprof-section" id="friends">
+        <div className="mprof-section-label">Games and Friends</div>
+        {hub}
+      </div>
 
       {/* ── Subscription ── */}
       <MobileSubscriptionCard

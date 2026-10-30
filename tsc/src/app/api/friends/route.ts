@@ -4,6 +4,7 @@
 //   GET ?brief=1                          -> { brief }           the nav's hover list
 //   POST { action: 'add', code, via? }    -> { state, message }  a member code; via 'league' off a suggestion
 //   POST { action: 'versus', id }         -> { state, message }  the other seat of a Versus challenge
+//   POST { action: 'mega', id }           -> { state, message }  the other seat of a Mega Draft
 //   POST { action: 'invite', token }      -> { name }            accepting someone's invite link
 //   POST { action: 'accept', id }         -> { state }
 //   POST { action: 'remove', id }         -> { state }           decline, cancel and unfriend
@@ -23,6 +24,7 @@ import {
   requestOpponent,
   resetInvite,
 } from '@/lib/friends'
+import { megaOpponent } from '@/lib/packEmpire/mega'
 import { versusOpponent } from '@/lib/packEmpire/versus'
 
 export const dynamic = 'force-dynamic'
@@ -68,6 +70,8 @@ export async function POST(req: NextRequest) {
       return after(await requestByCode(userId, body.code, body.via))
     case 'versus':
       return after(await requestOpponent(userId, await versusOpponent(body.id, userId)))
+    case 'mega':
+      return after(await requestOpponent(userId, await megaOpponent(body.id, userId)))
     case 'invite': {
       const out = await acceptInvite(userId, body.token)
       return out.ok ? reply(out) : reply(out, out.status ?? 400)

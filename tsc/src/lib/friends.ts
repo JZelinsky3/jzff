@@ -52,6 +52,14 @@ export type Suggestion = {
   via: string
 }
 
+/** Someone you've played who isn't a friend yet. Guests and the CPU aren't
+    accounts, so they never show up here. */
+export type PlayedOpponent = {
+  name: string
+  code: string
+  h2h: HeadToHead
+}
+
 export type WaitingChallenge = {
   id: string
   /** A Versus Challenge, or a Mega Draft with your seat held. */
@@ -69,6 +77,8 @@ export type FriendsState = {
   incoming: Friend[]
   outgoing: Friend[]
   suggestions: Suggestion[]
+  /** People you've played who aren't friends yet, most games first. */
+  played: PlayedOpponent[]
   challenges: WaitingChallenge[]
 }
 
@@ -84,6 +94,7 @@ export type Fail = { ok: false; error: string; status?: number }
 /** Requests you can have waiting on other people at once. */
 const MAX_OUTGOING = 25
 const MAX_SUGGESTIONS = 8
+const MAX_PLAYED = 8
 
 const db = () => createAdminClient()
 
@@ -207,7 +218,7 @@ export async function requestByCode(
   if (!CODE_RE.test(code)) return { ok: false, error: 'Member codes are seven letters and numbers.' }
   const { data } = await db().from('profiles').select('id').eq('member_code', code).maybeSingle()
   if (!data) return { ok: false, error: 'No member has that code.' }
-  return request(userId, data.id as string, via === 'league' ? 'league' : 'code')
+  return request(userId, data.id as string, via === 'league' || via === 'versus' ? via : 'code')
 }
 
 /** The account you just played in a Versus challenge. */
@@ -486,11 +497,28 @@ export async function friendsState(userId: string): Promise<FriendsState> {
     everyone.length
       ? db().from('profiles').select('id, member_code').in('id', everyone)
       : Promise.resolve({ data: [] as { id: string; member_code: string }[] }),
-    rows.some((r) => r.status === 'accepted') ? headToHeads(userId) : Promise.resolve(new Map<string, HeadToHead>()),
+    headToHeads(userId),
     suggestionsFor(userId, new Set(everyone)),
     waitingChallenges(userId),
   ])
   const codeOf = new Map(((codes.data ?? []) as { id: string; member_code: string }[]).map((p) => [p.id, p.member_code]))
+
+  const games = (h: HeadToHead) => h.w + h.l + h.t
+  const strangers = [...h2h.entries()]
+    .filter(([id]) => id !== userId && !everyone.includes(id))
+    .sort((a, b) => games(b[1]) - games(a[1]))
+    .slice(0, MAX_PLAYED)
+  const strangerIds = strangers.map(([id]) => id)
+  const [strangerNames, strangerCodes] = strangerIds.length
+    ? await Promise.all([publicNames(strangerIds), db().from('profiles').select('id, member_code').in('id', strangerIds)])
+    : [new Map<string, string>(), { data: [] as { id: string; member_code: string }[] }]
+  const strangerCode = new Map(
+    ((strangerCodes.data ?? []) as { id: string; member_code: string }[]).map((p) => [p.id, p.member_code])
+  )
+  const played = strangers.flatMap(([id, h]) => {
+    const code = strangerCode.get(id)
+    return code ? [{ name: strangerNames.get(id) ?? code, code, h2h: h }] : []
+  })
 
   const toFriend = (r: FriendshipRow): Friend => {
     const id = other(r)
@@ -513,6 +541,7 @@ export async function friendsState(userId: string): Promise<FriendsState> {
     incoming: rows.filter((r) => r.status === 'pending' && r.addressee_id === userId).map(toFriend),
     outgoing: rows.filter((r) => r.status === 'pending' && r.requester_id === userId).map(toFriend),
     suggestions,
+    played,
     challenges,
   }
 }

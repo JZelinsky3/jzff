@@ -119,7 +119,17 @@ export async function GameBoardPage({
         />
       ) : (
         <nav className="nav">
-          <BackButton fallbackHref={playHref} ariaLabel="Back" />
+          {/* A game with its own front page goes back to it, the same as the
+              phone's bar: up a level, not to wherever the browser was. */}
+          {def.global ? (
+            <Link href={def.href} className="dc-nav-icon" aria-label={`${def.title} ${def.titleEm}`}>
+              <svg viewBox="0 0 8 14" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="7 1 1 7 7 13" />
+              </svg>
+            </Link>
+          ) : (
+            <BackButton fallbackHref={playHref} ariaLabel="Back" />
+          )}
           <div className="nav-center">
             <div className="nav-kicker">The Games Page</div>
             <div className="nav-title">

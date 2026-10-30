@@ -3,7 +3,8 @@ import { notFound } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
-import { getMega } from '@/lib/packEmpire/mega'
+import { areFriends } from '@/lib/friends'
+import { getMega, megaOpponent } from '@/lib/packEmpire/mega'
 import mobileStyles from '../../../mobile.module.css'
 import { PeChrome } from '../../chrome'
 import { peFonts } from '../../fonts'
@@ -32,6 +33,8 @@ export default async function MegaDraftRoomPage({ params }: { params: Promise<{ 
   const view = await getMega(id.toUpperCase(), user?.id ?? null, null)
   if (!view) notFound()
   const mobile = (await getViewMode()) === 'mobile'
+  const opponent = user && view.status === 'done' ? await megaOpponent(view.id, user.id) : null
+  const canFriend = !!opponent && !(await areFriends(user!.id, opponent))
 
   return (
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.boardRoot : ''}`.trim()}>
@@ -46,7 +49,7 @@ export default async function MegaDraftRoomPage({ params }: { params: Promise<{ 
         titleEm="Draft"
       />
       <div className="pe-wrap">
-        <MegaRoom initial={view} signedIn={!!user} />
+        <MegaRoom initial={view} signedIn={!!user} canFriend={canFriend} />
       </div>
       {!mobile && <SiteFooter />}
     </main>

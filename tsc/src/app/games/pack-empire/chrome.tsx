@@ -15,7 +15,6 @@
 // goes back to Pack Empire, Pack Empire goes back to the Games Page.
 
 import Link from 'next/link'
-import { BackButton } from '@/components/BackButton'
 import { MobileGameBar } from '../MobileGameBar'
 import { MobileGamesDock } from '../MobileGamesDock'
 import { FriendsMenu } from './FriendsMenu'
@@ -92,7 +91,11 @@ export function PeChrome({
   return (
     <nav className="nav pe-nav" aria-label="Pack Empire">
       <div className="pe-nav-left">
-        <BackButton fallbackHref={back} ariaLabel={backLabel} />
+        <Link href={back} className="dc-nav-icon" aria-label={backLabel}>
+          <svg viewBox="0 0 8 14" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="7 1 1 7 7 13" />
+          </svg>
+        </Link>
         <Link href="/games/pack-empire/" className={`pe-nav-mark${on === 'home' ? ' on' : ''}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/games/pack-empire/packs/qb.webp" alt="" className="pe-nav-mark-pack" />

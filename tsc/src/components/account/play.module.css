@@ -3,6 +3,65 @@
    Each game card carries its own --accent off its GameDef, the same colour
    it wears on the Games Page, so the shelf and the record book match. */
 
+/* ── The tabs ──────────────────────────────────────────────── */
+
+.tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.25fr;
+    gap: 2px;
+    max-width: 30rem;
+    margin-bottom: 1rem;
+    padding: 2px;
+    border: 1px solid var(--ink-line);
+    border-radius: 8px;
+    background: var(--ink-card);
+}
+.tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    min-height: 2.5rem;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--cream-mute);
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .62rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+.tab:hover { color: var(--cream); }
+.tabOn, .tabOn:hover { background: var(--gold); color: var(--ink); }
+.tabCount {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.05rem;
+    height: 1.05rem;
+    padding: 0 .25rem;
+    border-radius: 999px;
+    background: #d2544a;
+    color: #fff;
+    font-size: .56rem;
+    letter-spacing: 0;
+}
+
+/* Two columns on a desktop, stacked on a phone. */
+.pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    align-items: start;
+}
+@media (max-width: 860px) {
+    .pair { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* ── Record book ───────────────────────────────────────────── */
 
 .books {
@@ -58,6 +117,7 @@
     text-decoration: none;
 }
 .line:last-of-type { border-bottom: 0; }
+.book > .line { padding-bottom: .65rem; border-bottom: 0; }
 .line:hover .lineBig { color: var(--gold-bright); }
 .lineBoard {
     font-family: var(--mono);
@@ -116,43 +176,60 @@
 .lineFriend b { font-weight: 700; color: var(--cream-soft); }
 .lineFriend .ahead { color: var(--gold); }
 
-.extras {
-    margin-top: .3rem;
-    padding-top: .6rem;
-    border-top: 1px solid var(--ink-line-soft);
-    display: grid;
+.chips {
+    display: flex;
+    flex-wrap: wrap;
     gap: .35rem;
+    padding-bottom: .2rem;
 }
-.extra {
-    display: grid;
-    grid-template-columns: auto 1fr auto auto;
-    align-items: baseline;
-    gap: .55rem;
+.chip {
+    padding: .28rem .5rem;
+    border: 1px solid var(--ink-line);
+    border-radius: 999px;
     font-family: var(--mono);
-    font-size: .66rem;
+    font-size: .58rem;
+    letter-spacing: .04em;
+    color: var(--cream-soft);
+    white-space: nowrap;
+}
+.chip b { font-weight: 700; color: var(--cream); }
+
+.more { margin-top: .5rem; }
+.more > summary {
+    padding: .35rem 0;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    cursor: pointer;
+}
+.more > summary:hover { color: var(--cream); }
+
+/* The games you haven't touched, in one line. */
+.unplayed {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .35rem 1rem;
+    padding: .7rem .1rem;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.unplayed a {
+    font-family: var(--serif);
+    font-size: 1rem;
+    letter-spacing: 0;
+    text-transform: none;
+    text-decoration: none;
     color: var(--cream-soft);
 }
-.extraDots { border-bottom: 1px dotted var(--ink-line); transform: translateY(-.2rem); }
-.extraValue {
-    font-family: var(--serif);
-    font-size: 1rem;
-    color: var(--cream);
-}
-.extraNote { color: var(--cream-mute); font-size: .6rem; white-space: nowrap; }
-
-.empty {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    gap: .7rem;
-    padding: 1rem 0 .4rem;
-    font-family: var(--serif);
-    font-style: italic;
-    color: var(--cream-mute);
-    font-size: 1rem;
-}
+.unplayed a em { font-style: italic; color: var(--accent, var(--gold)); }
+.unplayed a:hover { color: var(--cream); }
 
 /* ── Buttons, shared ───────────────────────────────────────── */
 
@@ -182,19 +259,6 @@
 .btn:disabled, .btnGhost:disabled, .btnQuiet:disabled { opacity: .5; cursor: default; }
 
 /* ── Friends ───────────────────────────────────────────────── */
-
-.friends {
-    display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-    gap: 1.25rem;
-    align-items: start;
-}
-/* minmax(0, ...), not 1fr: a bare 1fr won't go narrower than its longest
-   unbroken line, and an invite link is one, so the phone ran 100px off the
-   side of the screen. */
-@media (max-width: 860px) {
-    .friends { grid-template-columns: minmax(0, 1fr); }
-}
 
 .panel {
     background: var(--ink-card);
@@ -268,28 +332,76 @@
 .sub .trail { color: #d98b73; }
 .acts { display: flex; gap: .4rem; flex-shrink: 0; align-items: center; }
 
-.x {
-    width: 1.8rem;
-    height: 1.8rem;
-    display: inline-flex;
+/* A friend is one line. Tapping it opens what you can do with them. */
+.friend { border-bottom: 1px solid var(--ink-line-soft); }
+.friend:last-of-type { border-bottom: 0; }
+.friendRow {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: 1px solid var(--ink-line);
-    border-radius: 2px;
-    color: var(--cream-mute);
+    gap: .75rem;
+    width: 100%;
+    padding: .65rem 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    text-align: left;
     cursor: pointer;
 }
-.x:hover { color: var(--cream); border-color: var(--cream-mute); }
+.friendRow .name { display: block; }
+.friendRow:hover .name { color: var(--gold-bright); }
+.rec {
+    flex: none;
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .04em;
+    color: var(--cream-mute);
+}
+.rec .lead { color: var(--gold); }
+.rec .trail { color: #d98b73; }
+.caret { flex: none; color: var(--cream-mute); transition: transform .15s; }
+.friendRow[aria-expanded='true'] .caret { transform: rotate(180deg); }
+.friendActs {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    padding: 0 0 .75rem 2.85rem;
+}
+.friendActs > span {
+    flex: 1;
+    min-width: 0;
+    font-size: .8rem;
+    color: var(--cream-soft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
 .nothing {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
     padding: .9rem 0 .3rem;
     font-family: var(--serif);
     font-style: italic;
     color: var(--cream-mute);
     font-size: .98rem;
-    line-height: 1.45;
 }
+
+.showAll {
+    width: 100%;
+    margin-top: .3rem;
+    padding: .5rem;
+    border: 0;
+    background: none;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    cursor: pointer;
+}
+.showAll:hover { color: var(--cream); }
 
 .link {
     display: flex;
@@ -321,17 +433,19 @@
     line-height: 1.5;
     color: var(--cream-soft);
 }
-.hint button {
-    background: none;
-    border: 0;
+.resetLink {
+    margin-top: .55rem;
     padding: 0;
+    border: 0;
+    background: none;
+    font-family: var(--mono);
+    font-size: .56rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
     color: var(--cream-mute);
-    text-decoration: underline;
-    text-underline-offset: 2px;
     cursor: pointer;
-    font: inherit;
 }
-.hint button:hover { color: var(--cream); }
+.resetLink:hover { color: var(--cream); }
 
 .codeForm { display: flex; align-items: stretch; gap: .5rem; margin-top: .7rem; }
 /* The invite link and the code box sit one over the other: same height, and
@@ -378,13 +492,17 @@
 /* Inside .mprof-section, which already supplies the side gutter. Cards go
    rounded to sit with the rest of the Pocket profile. */
 
-.books.phone { grid-template-columns: minmax(0, 1fr); gap: .6rem; }
+.phone .books { grid-template-columns: minmax(0, 1fr); gap: .6rem; }
+.phone .tabs { max-width: none; margin-bottom: .7rem; border-radius: 10px; }
+.phone .tab { min-height: 2.75rem; font-size: .6rem; letter-spacing: .08em; }
+.phone .pair { gap: .6rem; }
+.phone .friendRow { min-height: 3.2rem; padding: .55rem 0; }
+.phone .link code, .phone .codeForm input { font-size: 16px; letter-spacing: .02em; }
 .phone .book { border-radius: 10px; padding: .8rem .85rem .7rem; background: rgba(255, 255, 255, .02); }
 .phone .bookTitle { font-size: 1.1rem; }
 .phone .lineBig { font-size: 1.3rem; }
 .phone .line { padding: .6rem 0; }
 .phone .panel { border-radius: 10px; padding: .8rem .85rem; background: rgba(255, 255, 255, .02); }
 .phone .panel + .panel { margin-top: .6rem; }
-.phone .friends { gap: .6rem; }
 .phone .name { font-size: .98rem; }
 .phone .btn, .phone .btnGhost, .phone .btnQuiet { padding: .5rem .65rem; font-size: .54rem; }
