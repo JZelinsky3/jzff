@@ -17,6 +17,8 @@
 import Link from 'next/link'
 import { BackButton } from '@/components/BackButton'
 import { MobileGameBar } from '../MobileGameBar'
+import { MobileGamesDock } from '../MobileGamesDock'
+import { FriendsMenu } from './FriendsMenu'
 import { MODES, ModeGlyph, type ModeDef } from './modes'
 
 export type PeSection = ModeDef['id'] | 'home' | 'binder'
@@ -41,6 +43,11 @@ function FriendsIcon() {
       <path d="M15.6 14.4c2.6-.3 4.7 1.4 5.2 4.3" />
     </svg>
   )
+}
+
+/** The phone's tabs, on every Pack Empire page that isn't a table. */
+export function PeDock({ signedIn }: { signedIn: boolean }) {
+  return <MobileGamesDock empire signedIn={signedIn} boardHref="/games/pack-empire/board/" />
 }
 
 export function PeChrome({
@@ -125,10 +132,10 @@ export function PeChrome({
           </Link>
         )}
         {signedIn && (
-          <Link href="/account/#friends" className="pe-nav-tool">
+          <FriendsMenu>
             <FriendsIcon />
             <span>Friends</span>
-          </Link>
+          </FriendsMenu>
         )}
         <Link href={signedIn ? '/dashboard' : '/login'} className="pe-nav-cta">
           {signedIn ? 'Library' : 'Login'}

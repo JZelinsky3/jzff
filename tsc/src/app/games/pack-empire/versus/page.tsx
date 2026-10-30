@@ -6,7 +6,7 @@ import { getViewMode } from '@/lib/viewMode'
 import { listVersus } from '@/lib/packEmpire/versus'
 import { friendPicker } from '@/lib/friends'
 import mobileStyles from '../../mobile.module.css'
-import { PeChrome } from '../chrome'
+import { PeChrome, PeDock } from '../chrome'
 import { peFonts } from '../fonts'
 import { ChallengePanels } from './NewChallenge'
 
@@ -34,7 +34,7 @@ export default async function VersusLobby() {
   const [mine, friends] = user ? await Promise.all([listVersus(user.id), friendPicker(user.id)]) : [[], []]
 
   return (
-    <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.boardRoot : ''}`.trim()}>
+    <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.root : ''}`.trim()}>
       <PeChrome
         active="versus"
         mobile={mobile}
@@ -134,7 +134,7 @@ export default async function VersusLobby() {
         )}
       </div>
 
-      {!mobile && <SiteFooter />}
+      {mobile ? <PeDock signedIn={!!user} /> : <SiteFooter />}
     </main>
   )
 }

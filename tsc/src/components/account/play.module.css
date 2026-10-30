@@ -189,8 +189,11 @@
     gap: 1.25rem;
     align-items: start;
 }
+/* minmax(0, ...), not 1fr: a bare 1fr won't go narrower than its longest
+   unbroken line, and an invite link is one, so the phone ran 100px off the
+   side of the screen. */
 @media (max-width: 860px) {
-    .friends { grid-template-columns: 1fr; }
+    .friends { grid-template-columns: minmax(0, 1fr); }
 }
 
 .panel {
@@ -375,7 +378,7 @@
 /* Inside .mprof-section, which already supplies the side gutter. Cards go
    rounded to sit with the rest of the Pocket profile. */
 
-.books.phone { grid-template-columns: 1fr; gap: .6rem; }
+.books.phone { grid-template-columns: minmax(0, 1fr); gap: .6rem; }
 .phone .book { border-radius: 10px; padding: .8rem .85rem .7rem; background: rgba(255, 255, 255, .02); }
 .phone .bookTitle { font-size: 1.1rem; }
 .phone .lineBig { font-size: 1.3rem; }

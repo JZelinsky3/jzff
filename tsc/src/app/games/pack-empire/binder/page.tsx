@@ -16,9 +16,8 @@ import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { loadBinder } from '@/lib/packEmpire/binder'
 import { POOL_SIZE } from '@/lib/packEmpire/pool'
-import { MobileGamesDock } from '../../MobileGamesDock'
 import mobileStyles from '../../mobile.module.css'
-import { PeChrome } from '../chrome'
+import { PeChrome, PeDock } from '../chrome'
 import { peFonts } from '../fonts'
 import { Binder } from './Binder'
 
@@ -88,7 +87,7 @@ export default async function BinderPage() {
         )}
       </div>
 
-      {mobile ? <MobileGamesDock signedIn={!!user} boardHref="/games/pack-empire/board/" /> : <SiteFooter />}
+      {mobile ? <PeDock signedIn={!!user} /> : <SiteFooter />}
     </main>
   )
 }

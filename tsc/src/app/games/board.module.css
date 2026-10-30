@@ -523,6 +523,13 @@
   white-space: nowrap;
 }
 
+@supports (text-box: trim-both cap alphabetic) {
+  .dateChip {
+    text-box: trim-both cap alphabetic;
+    padding-block: 0.26rem;
+  }
+}
+
 /* Where a Multiverse run ended: QF, SF, Final, Champ. Two or three
    characters, because the alternative was "Out in the semi-final" wrapping
    inside 90px of a phone. */

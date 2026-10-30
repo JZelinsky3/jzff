@@ -62,6 +62,7 @@ export async function GameBoardPage({
   kind,
   themeClass,
   play,
+  dock,
 }: {
   game: GameId
   def: GameDef
@@ -73,6 +74,8 @@ export async function GameBoardPage({
   themeClass?: string
   /** Where "Play" goes, for a game whose front page isn't its board. */
   play?: string
+  /** A game with its own hub (Pack Empire) keeps its tabs on its board. */
+  dock?: (signedIn: boolean) => React.ReactNode
 }) {
   const supabase = await createClient()
   const {
@@ -96,7 +99,12 @@ export async function GameBoardPage({
     // was the only way in, and isn't now that the game links to it. Same
     // chrome the game wears, so leaving a board and leaving a wheel are the
     // same gesture.
-    <main className={[themeClass, mobile ? mobileStyles.boardRoot : ''].filter(Boolean).join(' ') || undefined}>
+    <main
+      className={
+        [themeClass, mobile ? (dock ? mobileStyles.root : mobileStyles.boardRoot) : ''].filter(Boolean).join(' ') ||
+        undefined
+      }
+    >
       {mobile ? (
         <MobileGameBar
           left="back"
@@ -183,9 +191,9 @@ export async function GameBoardPage({
       </div>
       </div>
 
-      {/* The phone gets the bar's back button and nothing else down there;
+      {/* The phone gets the bar's back button and at most a game's own tabs;
           a full site footer under a leaderboard is a second page. */}
-      {!mobile && <SiteFooter />}
+      {mobile ? dock?.(!!user) : <SiteFooter />}
     </main>
   )
 }

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { GAMES } from './gameDefs'
+import { MODES, ModeGlyph } from './pack-empire/modes'
 import s from './mobile.module.css'
 
 // The section's nav at the thumb, in the almanac's grammar.
@@ -27,6 +28,11 @@ import s from './mobile.module.css'
 // a pool is known — inside a league, where it means that league's board —
 // because a leaderboard tab that can't name its pool has nowhere to go. More
 // absorbs the old MobileGamesFoot.
+//
+// Pack Empire is big enough to be its own hub, so inside it the same dock
+// turns to face it (`empire`): Shelf · Play · Board · Binder, with Play opening
+// the four modes. Shelf is the way out, and the shelf itself is back to the
+// ordinary tabs.
 //
 // NOT rendered on a board. Every board owns the bottom of the screen already
 // (Roulette's lineup HUD, Guess the Draft's answer bar, the Multiverse
@@ -134,6 +140,15 @@ const BOARD_ICON = (
   </>
 )
 
+const BINDER_ICON = (
+  <>
+    <rect x="5" y="3.5" width="14" height="17" rx="1.6" />
+    <path d="M9 3.5v17" />
+    <path d="M3.5 7.5h3M3.5 12h3M3.5 16.5h3" />
+    <rect x="11.5" y="7.5" width="4.5" height="6" rx="0.6" />
+  </>
+)
+
 const MORE_ICON = (
   <>
     <circle cx="5" cy="12" r="1.7" fill="currentColor" stroke="none" />
@@ -214,7 +229,12 @@ export type GamesDockProps = {
       the almanac's own rows to the More sheet. */
   leagueSlug?: string
   leagueName?: string
+  /** Inside Pack Empire: Play and Binder in place of Games and More. */
+  empire?: boolean
 }
+
+const EMPIRE_HOME = '/games/pack-empire/'
+const EMPIRE_BINDER = '/games/pack-empire/binder/'
 
 export function MobileGamesDock({
   base = '/games/',
@@ -223,9 +243,10 @@ export function MobileGamesDock({
   signedIn = false,
   leagueSlug,
   leagueName,
+  empire = false,
 }: GamesDockProps) {
   const pathname = usePathname()
-  const [sheet, setSheet] = useState<'games' | 'more' | null>(null)
+  const [sheet, setSheet] = useState<'games' | 'more' | 'modes' | null>(null)
 
   // Every row in a sheet closes it on the way out, so the ordinary path needs
   // nothing here. The back button is the exception: Next keeps this component
@@ -252,6 +273,7 @@ export function MobileGamesDock({
     return pathname === h || pathname.startsWith(`${h}/`)
   })
   const onBoard = !!boardHref && pathname.replace(/\/$/, '') === boardHref.replace(/\/$/, '')
+  const onBinder = empire && pathname.replace(/\/$/, '') === EMPIRE_BINDER.replace(/\/$/, '')
 
   const cols = boardHref ? 4 : 3
 
@@ -271,16 +293,28 @@ export function MobileGamesDock({
           {home.label}
         </Link>
 
-        <button
-          type="button"
-          className={`${s.dockItem} ${activeGame ? s.dockOn : ''}`}
-          style={activeGame ? ({ '--accent': activeGame.accent } as React.CSSProperties) : undefined}
-          aria-haspopup="dialog"
-          onClick={() => setSheet('games')}
-        >
-          <Glyph>{GAMES_ICON}</Glyph>
-          {activeGame ? activeGame.shortName : 'Games'}
-        </button>
+        {empire ? (
+          <button
+            type="button"
+            className={`${s.dockItem} ${!onBoard && !onBinder ? s.dockOn : ''}`}
+            aria-haspopup="dialog"
+            onClick={() => setSheet('modes')}
+          >
+            <Glyph>{ICONS['pack-empire']}</Glyph>
+            Play
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={`${s.dockItem} ${activeGame ? s.dockOn : ''}`}
+            style={activeGame ? ({ '--accent': activeGame.accent } as React.CSSProperties) : undefined}
+            aria-haspopup="dialog"
+            onClick={() => setSheet('games')}
+          >
+            <Glyph>{GAMES_ICON}</Glyph>
+            {activeGame ? activeGame.shortName : 'Games'}
+          </button>
+        )}
 
         {boardHref && (
           <Link
@@ -293,16 +327,62 @@ export function MobileGamesDock({
           </Link>
         )}
 
-        <button
-          type="button"
-          className={s.dockItem}
-          aria-haspopup="dialog"
-          onClick={() => setSheet('more')}
-        >
-          <Glyph>{MORE_ICON}</Glyph>
-          More
-        </button>
+        {empire ? (
+          <Link
+            href={EMPIRE_BINDER}
+            className={`${s.dockItem} ${onBinder ? s.dockOn : ''}`}
+            aria-current={onBinder ? 'page' : undefined}
+          >
+            <Glyph>{BINDER_ICON}</Glyph>
+            Binder
+          </Link>
+        ) : (
+          <button
+            type="button"
+            className={s.dockItem}
+            aria-haspopup="dialog"
+            onClick={() => setSheet('more')}
+          >
+            <Glyph>{MORE_ICON}</Glyph>
+            More
+          </button>
+        )}
       </nav>
+
+      <Sheet
+        open={sheet === 'modes'}
+        onClose={() => setSheet(null)}
+        title={
+          <>
+            Pick a <em>mode</em>
+          </>
+        }
+      >
+        <div className={s.sheetGames}>
+          {MODES.map((m) => (
+            <Link
+              key={m.id}
+              href={m.href}
+              className={s.sheetGame}
+              style={{ '--accent': m.color } as React.CSSProperties}
+              onClick={() => setSheet(null)}
+            >
+              <span className={s.sheetGameIco} aria-hidden>
+                <ModeGlyph id={m.id} />
+              </span>
+              <span className={s.sheetGameBody}>
+                <span className={s.sheetGameName}>
+                  {m.name} <em>{m.nameEm}</em>
+                </span>
+                <span className={s.sheetGameLine}>{m.line}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+        <Link href={EMPIRE_HOME} className={s.sheetLink} onClick={() => setSheet(null)}>
+          Pack Empire home
+        </Link>
+      </Sheet>
 
       <Sheet
         open={sheet === 'games'}

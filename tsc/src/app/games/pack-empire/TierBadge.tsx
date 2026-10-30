@@ -4,13 +4,15 @@ import { TIERS, tierFor } from '@/lib/packEmpire/rules'
     the ladder is. Read off the score so it always agrees with that ladder. */
 export function TierBadge({ score }: { score: number }) {
   const tier = tierFor(score)
+  const rung = TIERS.indexOf(tier) + 1
   return (
     <span
       className="pe-tier-badge"
-      data-rung={TIERS.indexOf(tier) + 1}
+      data-rung={rung}
       style={{ '--tc': tier.color } as React.CSSProperties}
     >
       {tier.label}
+      {rung === 1 && <i className="pe-tier-shine" aria-hidden />}
     </span>
   )
 }

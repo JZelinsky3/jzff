@@ -437,12 +437,26 @@ function Headshot({ player, className, eager = false }: { player: Player; classN
   )
 }
 
-/** The season, big and hollow behind the man: what makes a card a year. */
-function YearMark({ player, className, short = false }: { player: Player; className: string; short?: boolean }) {
+/** Orbitron's digits at 100px. A 1 is under half a 0, so 2011 would sit a
+    quarter narrower than 2020 and read as a smaller year. */
+const DIGIT_WIDTH: Record<string, number> = { 1: 39, 4: 73, 7: 66 }
+
+/** How far to scale a year, in height and again in width, so every year
+    spans the card the way a 2020 does. Half in each, because all of it in
+    height would make 2011 a third taller than 2020. */
+function yearFit(year: number): number {
+  let width = 0
+  for (const d of String(year)) width += DIGIT_WIDTH[d] ?? 83
+  return Math.round(Math.sqrt(332 / width) * 1000) / 1000
+}
+
+/** The season, big and hollow behind the man: what makes a card a year.
+    Always all four digits: it spans the card so the man only covers the middle. */
+function YearMark({ player, className }: { player: Player; className: string }) {
   if (!player.year) return null
   return (
-    <div className={className} aria-hidden>
-      {short ? `'${String(player.year).slice(2)}` : player.year}
+    <div className={className} style={{ '--yf': yearFit(player.year) } as React.CSSProperties} aria-hidden>
+      {player.year}
     </div>
   )
 }
@@ -774,7 +788,7 @@ function FilledSlot({
         </div>
         <div className="pe-fc-art" style={{ background: rc.art }}>
           <div className="pe-fc-field-lines" />
-          <YearMark player={player} className="pe-fc-year" short />
+          <YearMark player={player} className="pe-fc-year" />
           <Headshot player={player} className="pe-fc-img" />
           {!player.year && <div className="pe-fc-initial">{player.name.charAt(0)}</div>}
         </div>

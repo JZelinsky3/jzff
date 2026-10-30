@@ -26,6 +26,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   SLOTS,
   SLOT_COUNT,
+  TIERS,
   captainFromSeed,
   lineupScore,
   tierFor,
@@ -104,12 +105,33 @@ type DraftProps = {
   restartable?: boolean
 }
 
+/** Where the run stands, on the left of the row with the key's button. */
+function ChaseLine({ score, choosing }: { score: number; choosing: boolean }) {
+  if (choosing) return <span className="pe-board-next">Pick your captain</span>
+  const next = [...TIERS].reverse().find((t) => t.min > score)
+  if (!next) return <span className="pe-board-next">Top of the ladder</span>
+  return (
+    <span className="pe-board-next">
+      <b>{(next.min - score).toLocaleString()}</b> to {next.label}
+    </span>
+  )
+}
+
 /** The field and, beside it on a wide screen, the key; narrower, a button
     above the field that opens the key. */
-function Board({ score, children }: { score: number; children: React.ReactNode }) {
+function Board({
+  score,
+  choosing = true,
+  children,
+}: {
+  score: number
+  choosing?: boolean
+  children: React.ReactNode
+}) {
   return (
     <div className="pe-board">
       <div className="pe-board-bar">
+        <ChaseLine score={score} choosing={choosing} />
         <KeyButton score={score} />
       </div>
       <div className="pe-board-in">
@@ -368,7 +390,7 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro, restartable =
         </div>
       )}
 
-      <Board score={score}>
+      <Board score={score} choosing={choosing}>
         <Field lineup={lineup} view={view} onSlot={choosing ? chooseCaptain : openSlot} landing={landing} />
         {!choosing && !stage && !stale && filled < SLOT_COUNT && (
           <div className="pe-turf-foot">

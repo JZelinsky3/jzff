@@ -47,8 +47,7 @@
 
 /* The lead game gets the back page's top billing and the art to match. */
 .lead {
-  font-size: 1.7rem;
-  padding: 1.1em 1.2em;
+  padding: 1rem 1.2rem;
 }
 
 /* ── Roster Roulette: the landed spin, and the sheet ──────────
@@ -361,71 +360,172 @@
   color: var(--accent);
 }
 
-/* ── Pack Empire: a pack, opened ──────────────────────────────
-   Five cards on the table, three still face down in the original
-   card back's navy, two flipped in their rarity's colour. The
-   immortal glows; nothing else on the shelf does, which is the
-   point of pulling one.
+/* ── Pack Empire: the game in three beats ─────────────────────
+   Open, keep one, build. Sized off the art's own width (cqw) rather
+   than the plate's font-size, because the phone's banner and the
+   desktop's lead plate are different shapes and this has to read
+   in both. The kept card glows; nothing else on the shelf does,
+   which is the point of pulling one.
    ------------------------------------------------------------ */
 
-.packHead {
-  display: block;
-  margin-bottom: 0.7em;
-  font-family: var(--mono);
-  font-weight: 700;
-  font-size: 0.42em;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--gp-mute, #7d8a99);
-  white-space: nowrap;
+.story {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1.15fr;
+  gap: 0.5rem;
+  width: 100%;
 }
 
-.packHead b {
+.beat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.beatArt {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 29cqw;
+}
+
+.beatCap {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: clamp(0.5rem, 2.7cqw, 0.64rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--gp-soft, #c2bba9);
+}
+
+.beatCap b {
+  margin-right: 0.25em;
   color: var(--accent);
 }
 
-.packRow {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.32em;
-  max-width: 12.5em;
-}
-
-.packCard,
-.packCardUp {
-  position: relative;
+.beatPack {
   display: block;
-  aspect-ratio: 5 / 7.6;
-  border-radius: 0.24em;
-  overflow: hidden;
+  height: 100%;
+  width: auto;
+  border-radius: 0.2rem;
+  transform: rotate(-4deg);
+  filter: drop-shadow(0 0.35rem 0.5rem rgba(0, 0, 0, 0.55));
 }
 
-.packCard {
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 0.42em 0.42em,
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 0.42em 0.42em,
-    linear-gradient(155deg, #080e24, #0c1840);
-  border: 1px solid #1a3060;
-}
-
-.packCardUp {
-  border: 1px solid var(--rc);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--rc) 38%, transparent) 0 52%, transparent 52%),
-    linear-gradient(170deg, #080e24, #0b1438);
-  box-shadow: 0 0 0.55em color-mix(in srgb, var(--rc) 45%, transparent);
-  transform: translateY(-0.18em);
-}
-
-.packScore {
+.fanCard,
+.fanKeep {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0.35em;
-  text-align: center;
+  left: 50%;
+  bottom: 0;
+  border-radius: 1cqw;
+}
+
+.fanCard {
+  width: 11.5cqw;
+  height: 17.5cqw;
+  transform-origin: 50% 130%;
+  transform: translateX(calc(-50% + var(--n) * 5cqw)) rotate(calc(var(--n) * 8deg));
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 2cqw 2cqw,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 2cqw 2cqw,
+    linear-gradient(155deg, #0a1230, #0e1c4a);
+  border: 1px solid #24407a;
+}
+
+.fanKeep {
+  --rc: #28dc78;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: 15cqw;
+  height: 23.5cqw;
+  bottom: 3.5cqw;
+  padding-bottom: 1.4cqw;
+  transform: translateX(-50%);
+  overflow: hidden;
+  border: 1px solid var(--rc);
+  background: linear-gradient(170deg, color-mix(in srgb, var(--rc) 42%, #071410), #081322 66%);
+  box-shadow:
+    0 0 2.6cqw color-mix(in srgb, var(--rc) 60%, transparent),
+    0 1cqw 2cqw rgba(0, 0, 0, 0.5);
+}
+
+/* A bust, drawn: the head and shoulders every card has, and nobody's. */
+.fanKeep i {
+  position: absolute;
+  left: 50%;
+  top: 4.2cqw;
+  width: 5cqw;
+  height: 5cqw;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--rc) 70%, #fff);
+}
+
+.fanKeep i::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 5.6cqw;
+  width: 10cqw;
+  height: 6cqw;
+  border-radius: 50% 50% 0 0;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--rc) 70%, #fff);
+}
+
+.fanKeep b {
+  position: relative;
+  padding: 0 1cqw;
+  border-radius: 0.5cqw;
+  background: #081322;
   font-family: var(--mono);
   font-weight: 700;
-  font-size: 0.42em;
-  letter-spacing: 0.02em;
+  font-size: clamp(0.5rem, 2.9cqw, 0.72rem);
   color: var(--rc);
+}
+
+.beatField {
+  flex-direction: column;
+  gap: 1.5cqw;
+}
+
+.fieldRow {
+  display: flex;
+  justify-content: center;
+  gap: 1cqw;
+}
+
+/* The receivers split wide, the way the field sets them. */
+.fieldRow:nth-child(2) {
+  gap: 1cqw;
+}
+
+.fieldRow:nth-child(2) i:nth-child(2) {
+  margin-right: 2.6cqw;
+}
+
+.fieldRow i {
+  display: block;
+  width: 3.9cqw;
+  height: 5.4cqw;
+  border-radius: 0.6cqw;
+  background: var(--rc);
+  box-shadow: 0 0 1.3cqw color-mix(in srgb, var(--rc) 55%, transparent);
+}
+
+.fieldTotal {
+  margin-top: 0.8cqw;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: clamp(0.62rem, 4.1cqw, 0.92rem);
+  letter-spacing: 0.02em;
+  color: #ff5cd6;
+  text-shadow: 0 0 1.6cqw rgba(255, 92, 214, 0.6);
 }

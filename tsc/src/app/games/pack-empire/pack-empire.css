@@ -612,6 +612,7 @@
 
 .pe-mode-art {
   position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -693,6 +694,172 @@
 
 .pe-mk {
   font-size: 1rem;
+}
+
+/* ── Friends on the desktop nav ────────────────────────────── */
+
+.pe-fm {
+  position: relative;
+}
+
+/* Padding, not a margin: the pointer crosses it on the way down, and a gap
+   would drop the hover. */
+.pe-fm-drop {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 60;
+  width: 19rem;
+  padding-top: 0.6rem;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition:
+    opacity 0.14s,
+    transform 0.14s,
+    visibility 0.14s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pe-fm:hover .pe-fm-drop,
+  .pe-fm:focus-within .pe-fm-drop {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+}
+
+.pe-fm-panel {
+  padding: 0.85rem 0.9rem 0.8rem;
+  border: 1px solid var(--pe-line);
+  border-radius: 6px;
+  background: var(--pe-card);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
+}
+
+.pe-fm-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--pe-line-soft);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pe-amber);
+}
+
+.pe-fm-head em {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--pe-ink-mute);
+}
+
+.pe-fm-note {
+  margin: 0;
+  padding: 0.8rem 0.1rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--pe-ink-mute);
+}
+
+.pe-fm-waiting {
+  display: block;
+  margin-top: 0.55rem;
+  padding: 0.42rem 0.55rem;
+  border-radius: 4px;
+  background: rgba(232, 168, 75, 0.1);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--pe-amber);
+}
+
+.pe-fm-list {
+  list-style: none;
+  max-height: 17rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+
+.pe-fm-list li {
+  display: grid;
+  grid-template-columns: 1.7rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.48rem 0;
+  border-bottom: 1px solid var(--pe-line-soft);
+}
+
+.pe-fm-list li:last-child {
+  border-bottom: 0;
+}
+
+.pe-fm-mono {
+  display: grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 50%;
+  border: 1px solid var(--pe-amber-deep);
+  background: rgba(232, 168, 75, 0.07);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.86rem;
+  line-height: 1;
+  color: var(--pe-amber);
+}
+
+.pe-fm-name {
+  font-family: var(--serif);
+  font-size: 0.98rem;
+  color: var(--pe-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pe-fm-rec {
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.04em;
+  color: var(--pe-ink-mute);
+  white-space: nowrap;
+}
+
+.pe-fm-rec.lead {
+  color: var(--pe-amber);
+}
+
+.pe-fm-rec.trail {
+  color: #d98b73;
+}
+
+.pe-fm-all {
+  display: block;
+  margin-top: 0.55rem;
+  padding: 0.5rem;
+  border: 1px solid var(--pe-line);
+  border-radius: 4px;
+  text-align: center;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--pe-ink-soft);
+}
+
+.pe-fm-all:hover {
+  border-color: var(--pe-amber);
+  color: var(--pe-amber);
 }
 
 /* Empire Builder: three packs fanned, the middle one up front and lit. */
@@ -1047,9 +1214,24 @@
 
 .pe-top {
   display: grid;
+  grid-auto-rows: 1fr;
+  flex: 1;
   border: 1px solid var(--pe-line);
   border-radius: 4px;
   background: var(--pe-card);
+}
+
+/* The two columns of this section are one height: the ladder sets it and the
+   board's rows share it out. */
+.pe-twoup > section {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pe-twoup > section > .pe-ladder {
+  flex: 1;
+  grid-auto-rows: 1fr;
 }
 
 .pe-top-row {
@@ -1061,6 +1243,11 @@
   border-bottom: 1px solid var(--pe-line-soft);
 }
 
+.pe-top-row--card {
+  grid-template-columns: 2.2rem 3.5rem minmax(0, 1fr) auto;
+  padding-block: 0.5rem;
+}
+
 .pe-top-row:last-child {
   border-bottom: 0;
 }
@@ -1068,18 +1255,76 @@
 .pe-top-rank {
   font-family: var(--serif);
   font-style: italic;
-  font-size: 1.3rem;
+  font-size: 1.7rem;
   color: var(--pe-amber);
+}
+
+.pe-top-face {
+  position: relative;
+  display: block;
+  width: 3.5rem;
+  height: 3.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  overflow: hidden;
+  --ring: var(--rc, var(--pe-amber-deep));
+  border: 1px solid var(--ring);
+  background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--ring) 34%, transparent), var(--pe-bg) 78%);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--ring) 24%, transparent);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--pe-amber);
+}
+
+.pe-top-face img {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  height: 112%;
+  width: auto;
+  max-width: none;
+  transform: translateX(-50%);
+}
+
+.pe-top-who {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
 }
 
 .pe-top-name {
   min-width: 0;
   font-family: var(--serif);
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   color: var(--pe-ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.pe-top-row--card .pe-top-name {
+  font-size: 1.55rem;
+  line-height: 1.1;
+}
+
+.pe-top-led {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pe-top-led b {
+  font-weight: 700;
+  color: var(--rc);
 }
 
 /* A run's tier, here and on the board. The base is the bottom of the ladder,
@@ -1125,16 +1370,78 @@
   color: var(--pe-bg);
 }
 
-/* I GOAT Offense: purple type on the room's own background, a pink neon edge. */
+/* I GOAT Offense: the best thing on the board. Pink type and a lit pink edge
+   on a near-black pill, with a sweep of light every few seconds. The sweep
+   moves on transform only; the rest is static. */
 .pe-tier-badge[data-rung='1'] {
-  border-color: #ff5cd6;
+  position: relative;
+  padding-inline: 0.62rem;
+  border-color: transparent;
   border-radius: 999px;
-  background: var(--pe-bg);
-  padding: 0.16rem 0.5rem;
+  background:
+    linear-gradient(#1c0a18, #100710) padding-box,
+    linear-gradient(100deg, var(--tc), #ffd6f3 48%, #ff2fbf) border-box;
   box-shadow:
-    0 0 9px rgba(255, 92, 214, 0.65),
-    inset 0 0 6px rgba(255, 92, 214, 0.22);
-  color: #c79bff;
+    0 0 9px color-mix(in srgb, var(--tc) 70%, transparent),
+    0 0 22px color-mix(in srgb, var(--tc) 32%, transparent),
+    inset 0 0 7px color-mix(in srgb, var(--tc) 22%, transparent);
+  font-size: 0.56rem;
+  letter-spacing: 0.15em;
+  color: var(--tc);
+  text-shadow: 0 0 7px color-mix(in srgb, var(--tc) 75%, transparent);
+}
+
+.pe-tier-badge[data-rung='1']::before {
+  content: '★';
+  margin-right: 0.4em;
+}
+
+.pe-tier-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.pe-tier-shine::after {
+  content: '';
+  position: absolute;
+  top: -40%;
+  bottom: -40%;
+  left: -34%;
+  width: 34%;
+  background: linear-gradient(100deg, transparent, rgba(255, 225, 246, 0.6), transparent);
+  animation: pe-tier-sweep 4.6s ease-in-out infinite;
+}
+
+@keyframes pe-tier-sweep {
+  0%,
+  58% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(420%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pe-tier-shine {
+    display: none;
+  }
+}
+
+/* Mono capitals sit high in their line box, whatever the padding says. Trim
+   the box to the capitals so the padding is the same above and below them. */
+@supports (text-box: trim-both cap alphabetic) {
+  .pe-tier-badge {
+    text-box: trim-both cap alphabetic;
+    padding-block: 0.28rem;
+  }
+
+  .pe-tier-badge[data-rung='3'] {
+    padding-block: 0.2rem;
+  }
 }
 
 .pe-top-run {
@@ -2169,7 +2476,7 @@
   bottom: 0;
   z-index: 11;
   text-align: center;
-  padding: 0.8em 0.5em 0;
+  padding: 0.8em 0.5em 0.13em;
   background: linear-gradient(to top, rgba(5, 10, 24, 0.94) 28%, rgba(5, 10, 24, 0.62) 60%, transparent);
   pointer-events: none;
 }
@@ -2305,6 +2612,12 @@
   font-weight: 700;
   font-size: 0.42em;
   color: #a8bccf;
+}
+
+/* The box's padding is set for a row of numbers. A row of chips carries its
+   own air, so it comes up a touch to sit even between the top and the stats. */
+.pe-cf-stats:has(> .pe-cf-honors:first-child) {
+  padding-top: 0.14em;
 }
 
 /* A lineman's honors: chips in the card's colour, on one line. */
@@ -4492,8 +4805,9 @@ a.pe-row:hover {
   }
 
   .pe-fc-pos-badge {
-    font-size: 0.48rem;
-    padding: 0 3px;
+    font-size: 0.42rem;
+    letter-spacing: 0.08em;
+    padding: 0 2px;
     border-radius: 2px;
   }
 
@@ -4542,6 +4856,11 @@ a.pe-row:hover {
 
   .pe-strip-tier {
     font-size: 0.85rem;
+  }
+
+  /* The longest thing in the strip: Super Bowl Dynasty beside a 10/11. */
+  .pe-strip-cell:has(.pe-strip-tier) {
+    flex: 1.7;
   }
 
   .pe-strip-lbl {
@@ -6665,12 +6984,12 @@ a.pe-row:hover {
   transform: scale(1);
 }
 
-/* On a card the top corner holds the rarity, so the patch sits on the bottom
-   corner instead, over the empty end of the score line. */
+/* On a card it goes inside, in the empty end of the name and score. */
 .pe-fsl > .pe-capmark {
-  --cm: 26px;
+  --cm: 24px;
   top: auto;
-  bottom: calc(var(--cm) * -0.36);
+  right: 6px;
+  bottom: 21px;
 }
 
 /* ============================================================
@@ -6687,9 +7006,10 @@ a.pe-row:hover {
   text-align: center;
   font-family: var(--pe-display);
   font-weight: 900;
-  /* Sized so the widest years (a 2 or a 0 is half again as wide as a 1) just
-     fill the card edge to edge. */
-  font-size: 2.5em;
+  /* Sized so a 2020 just fills the card edge to edge; --yf brings the thinner
+     years up to the same span (yearFit in cards.tsx). */
+  font-size: calc(2.5em * var(--yf, 1));
+  transform: scaleX(var(--yf, 1));
   line-height: 1;
   letter-spacing: -0.02em;
   white-space: nowrap;
@@ -6708,8 +7028,11 @@ a.pe-row:hover {
   text-align: center;
   font-family: var(--pe-display);
   font-weight: 900;
-  font-size: 2.05rem;
+  font-size: calc(var(--pe-sw) * 0.29 * var(--yf, 1));
+  transform: scaleX(var(--yf, 1));
   line-height: 1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
   color: transparent;
   -webkit-text-stroke: 1px color-mix(in srgb, var(--rc, #fff) 70%, transparent);
   opacity: 0.42;
@@ -6770,8 +7093,29 @@ a.pe-row:hover {
 /* Otherwise a button above the field, off the turf and clear of the packs. */
 .pe-board-bar {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
   margin: 0 0 0.55rem;
+}
+
+.pe-board-next {
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  line-height: 1.4;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+.pe-board-next b {
+  font-weight: 700;
+  color: var(--pe-ink-soft);
+}
+
+.pe-key-btn {
+  flex: none;
 }
 
 .pe-key-btn {
@@ -7131,6 +7475,36 @@ a.pe-row:hover {
   margin-top: 0;
 }
 
+@media (max-width: 700px) {
+  .pe-turf:has(> .pe-turf-foot) {
+    padding-bottom: 0;
+  }
+
+  /* Its own strip across the bottom of the field, so the line is centred in
+     something: the yard lines behind it land wherever the field's height
+     puts them. */
+  .pe-turf-foot {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: 0.6rem;
+    min-height: 3.1rem;
+    margin: 1.1rem -0.5rem 0;
+    padding: 0.45rem 0.7rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 0 0 8px 8px;
+    background: rgba(0, 0, 0, 0.26);
+  }
+
+  .pe-turf-foot .pe-turf-note {
+    text-align: left;
+    line-height: 1.5;
+  }
+
+  .pe-turf-foot .pe-restart {
+    flex: none;
+  }
+}
+
 .pe-restart {
   padding: 0.35rem 0.7rem;
   background: transparent;
@@ -7178,13 +7552,17 @@ a.pe-row:hover {
 }
 
 @media (max-width: 700px) {
-  .pe-capmark,
-  .pe-fsl > .pe-capmark {
+  .pe-capmark {
     --cm: 19px;
   }
 
+  .pe-fsl > .pe-capmark {
+    --cm: 14px;
+    right: 3px;
+    bottom: 4px;
+  }
+
   .pe-fc-year {
-    font-size: 1.05rem;
     top: 2px;
   }
 

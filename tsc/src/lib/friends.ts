@@ -72,6 +72,13 @@ export type FriendsState = {
   challenges: WaitingChallenge[]
 }
 
+/** Just enough for the nav's hover list. */
+export type FriendsBrief = {
+  friends: Pick<Friend, 'id' | 'name' | 'h2h'>[]
+  /** Requests waiting on your answer. */
+  waiting: number
+}
+
 export type Fail = { ok: false; error: string; status?: number }
 
 /** Requests you can have waiting on other people at once. */
@@ -434,6 +441,32 @@ async function waitingChallenges(userId: string): Promise<WaitingChallenge[]> {
     })),
   ]
   return out.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 10)
+}
+
+export async function friendsBrief(userId: string): Promise<FriendsBrief> {
+  const { data } = await db()
+    .from('friendships')
+    .select('id, requester_id, addressee_id, status')
+    .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
+    .limit(500)
+  const rows = (data ?? []) as Pick<FriendshipRow, 'id' | 'requester_id' | 'addressee_id' | 'status'>[]
+  const accepted = rows.filter((r) => r.status === 'accepted')
+  const other = (r: (typeof rows)[number]) => (r.requester_id === userId ? r.addressee_id : r.requester_id)
+
+  const [names, h2h] = await Promise.all([
+    publicNames(accepted.map(other)),
+    accepted.length ? headToHeads(userId) : Promise.resolve(new Map<string, HeadToHead>()),
+  ])
+  return {
+    friends: accepted
+      .map((r) => ({
+        id: r.id,
+        name: names.get(other(r)) ?? 'Member',
+        h2h: h2h.get(other(r)) ?? null,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+    waiting: rows.filter((r) => r.status === 'pending' && r.addressee_id === userId).length,
+  }
 }
 
 export async function friendsState(userId: string): Promise<FriendsState> {

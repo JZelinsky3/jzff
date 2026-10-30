@@ -246,7 +246,7 @@
 /* Full width, bigger art, bigger name. */
 .gameLead {
   grid-column: 1 / -1;
-  grid-template-columns: 20rem minmax(0, 1fr);
+  grid-template-columns: 26rem minmax(0, 1fr);
 }
 
 .gameCardBody {

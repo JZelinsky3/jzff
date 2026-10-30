@@ -1,6 +1,7 @@
 // /api/friends
 //
 //   GET                                   -> { state }
+//   GET ?brief=1                          -> { brief }           the nav's hover list
 //   POST { action: 'add', code, via? }    -> { state, message }  a member code; via 'league' off a suggestion
 //   POST { action: 'versus', id }         -> { state, message }  the other seat of a Versus challenge
 //   POST { action: 'invite', token }      -> { name }            accepting someone's invite link
@@ -15,6 +16,7 @@ import { createClient } from '@/lib/supabase/server'
 import {
   acceptInvite,
   acceptRequest,
+  friendsBrief,
   friendsState,
   removeFriendship,
   requestByCode,
@@ -39,9 +41,10 @@ async function viewer() {
   return user?.id ?? null
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const userId = await viewer()
   if (!userId) return reply({ ok: false, needsAuth: true, error: 'Sign in to see your friends.' }, 401)
+  if (req.nextUrl.searchParams.has('brief')) return reply({ ok: true, brief: await friendsBrief(userId) })
   return reply({ ok: true, state: await friendsState(userId) })
 }
 

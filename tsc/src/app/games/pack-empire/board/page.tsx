@@ -8,6 +8,7 @@ import type { Metadata, Viewport } from 'next'
 import type { BoardKind } from '@/lib/minigames/leaderboard'
 import { GameBoardPage } from '../../GameBoardPage'
 import { PACK_EMPIRE } from '../../gameDefs'
+import { PeDock } from '../chrome'
 import { peFonts } from '../fonts'
 
 export const dynamic = 'force-dynamic'
@@ -41,6 +42,7 @@ export default async function PackEmpireBoard({
       kind={kind}
       themeClass={`pe-theme ${peFonts}`}
       play="/games/pack-empire/play/"
+      dock={(signedIn) => <PeDock signedIn={signedIn} />}
     />
   )
 }

@@ -6,7 +6,7 @@ import { getViewMode } from '@/lib/viewMode'
 import { listMega } from '@/lib/packEmpire/mega'
 import { friendPicker } from '@/lib/friends'
 import mobileStyles from '../../mobile.module.css'
-import { PeChrome } from '../chrome'
+import { PeChrome, PeDock } from '../chrome'
 import { peFonts } from '../fonts'
 import { MegaLobby } from './MegaLobby'
 
@@ -34,7 +34,7 @@ export default async function MegaDraftLobby() {
   const [mine, friends] = user ? await Promise.all([listMega(user.id), friendPicker(user.id)]) : [[], []]
 
   return (
-    <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.boardRoot : ''}`.trim()}>
+    <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.root : ''}`.trim()}>
       <PeChrome
         active="mega"
         mobile={mobile}
@@ -118,7 +118,7 @@ export default async function MegaDraftLobby() {
         )}
       </div>
 
-      {!mobile && <SiteFooter />}
+      {mobile ? <PeDock signedIn={!!user} /> : <SiteFooter />}
     </main>
   )
 }

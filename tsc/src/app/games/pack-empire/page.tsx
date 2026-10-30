@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from 'next'
 import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { loadBoard, type BestRow } from '@/lib/minigames/leaderboard'
-import { POOL, POOL_SIZE } from '@/lib/packEmpire/pool'
+import { POOL, POOL_SIZE, playerById } from '@/lib/packEmpire/pool'
+import { parseSoloPicks } from '@/lib/packEmpire/solo'
 import { binderTotals, type BinderTotals } from '@/lib/packEmpire/binder'
 import {
   RARITIES,
@@ -15,11 +17,10 @@ import {
   type Player,
   type Rarity,
 } from '@/lib/packEmpire/rules'
-import { MobileGamesDock } from '../MobileGamesDock'
 import { Chevron } from '../MobileGameBar'
 import mobileStyles from '../mobile.module.css'
 import { Ladder, PackCard } from './cards'
-import { PeChrome } from './chrome'
+import { PeChrome, PeDock } from './chrome'
 import { peFonts } from './fonts'
 import { MODES, ModeGlyph, ModeMark } from './modes'
 import { TierBadge } from './TierBadge'
@@ -101,22 +102,67 @@ function PackFan() {
   )
 }
 
-function BoardTop({ rows }: { rows: BestRow[] }) {
+/** The best card in each run, off the picks it posted. A run from an older
+    pool has ids that no longer resolve, so it just doesn't get one. */
+async function runLeaders(rows: BestRow[]): Promise<Map<string, Player>> {
+  const out = new Map<string, Player>()
+  if (rows.length === 0) return out
+  const { data } = await createAdminClient()
+    .from('game_runs')
+    .select('id, detail')
+    .in(
+      'id',
+      rows.map((r) => r.runId)
+    )
+  for (const run of (data ?? []) as { id: string; detail: { picks?: unknown } | null }[]) {
+    const cards = (parseSoloPicks(run.detail?.picks) ?? []).flatMap((p) => playerById(p.id) ?? [])
+    const best = cards.sort((a, b) => b.score - a.score)[0]
+    if (best) out.set(run.id, best)
+  }
+  return out
+}
+
+function BoardTop({ rows, leaders }: { rows: BestRow[]; leaders?: Map<string, Player> }) {
   if (rows.length === 0) {
     return <p className="pe-empty">Nothing on the board yet. The first finished run takes the top spot.</p>
   }
   return (
     <div className="pe-top">
-      {rows.map((r) => (
-        <div key={r.runId} className="pe-top-row">
-          <span className="pe-top-rank">{r.rank}</span>
-          <span className="pe-top-name">{r.name}</span>
-          <span className="pe-top-run">
-            <span className="pe-top-score">{Number(r.display.accolades ?? r.score).toLocaleString()}</span>
-            <TierBadge score={r.score} />
-          </span>
-        </div>
-      ))}
+      {rows.map((r) => {
+        const led = leaders?.get(r.runId)
+        return (
+          <div
+            key={r.runId}
+            className={`pe-top-row${leaders ? ' pe-top-row--card' : ''}`}
+            style={led ? ({ '--rc': RARITY_LOOK[led.rarity].color } as React.CSSProperties) : undefined}
+          >
+            <span className="pe-top-rank">{r.rank}</span>
+            {leaders && (
+              <span className="pe-top-face" aria-hidden>
+                {led?.img ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={led.img} alt="" loading="lazy" />
+                ) : (
+                  (r.name.trim()[0] ?? '?').toUpperCase()
+                )}
+              </span>
+            )}
+            <span className="pe-top-who">
+              <span className="pe-top-name">{r.name}</span>
+              {led && (
+                <span className="pe-top-led">
+                  Led by <b>{led.name}</b>
+                  {led.year ? ` ${led.year}` : ''}
+                </span>
+              )}
+            </span>
+            <span className="pe-top-run">
+              <span className="pe-top-score">{Number(r.display.accolades ?? r.score).toLocaleString()}</span>
+              <TierBadge score={r.score} />
+            </span>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -170,6 +216,7 @@ export default async function PackEmpireHome() {
   const top = board && board.kind !== 'career' ? board.rows.slice(0, mobile ? 3 : 5) : []
 
   const binder = user ? await binderTotals(user.id).catch(() => null) : null
+  const leaders = mobile ? undefined : await runLeaders(top).catch(() => new Map<string, Player>())
 
   const cards = showcase()
   const normal = oddsBySlot(SOLO_WEIGHTS.normal)
@@ -296,7 +343,7 @@ export default async function PackEmpireHome() {
           </section>
         </div>
 
-        <MobileGamesDock signedIn={!!user} boardHref="/games/pack-empire/board/" />
+        <PeDock signedIn={!!user} />
       </main>
     )
   }
@@ -407,7 +454,7 @@ export default async function PackEmpireHome() {
                 Full board
               </Link>
             </div>
-            <BoardTop rows={top} />
+            <BoardTop rows={top} leaders={leaders} />
           </section>
         </div>
 

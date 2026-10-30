@@ -127,7 +127,7 @@ export const RARITY_LOOK: Record<
   },
   rare: {
     label: 'Rare',
-    short: 'RAR',
+    short: 'RARE',
     color: '#42c0f8',
     glow: 'rgba(66,192,248,.7)',
     art: 'linear-gradient(150deg,#062840,#104870)',
@@ -266,7 +266,7 @@ export type Tier = { min: number; label: string; color: string }
 /** Highest first. The original printed an emoji beside each; the site
     doesn't use them, so a tier is its name, its colour and its rung. */
 export const TIERS: Tier[] = [
-  { min: 20001, label: 'GOAT Offense', color: '#e040ff' },
+  { min: 20001, label: 'GOAT Offense', color: '#ff5cd6' },
   { min: 17001, label: 'Hall of Fame', color: '#f4c06a' },
   { min: 14001, label: 'Super Bowl Dynasty', color: '#e8a84b' },
   { min: 11001, label: 'All-Pro Elite', color: '#6ba8c0' },

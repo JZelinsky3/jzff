@@ -10,7 +10,8 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useSyncExternalStore } from 'react'
-import type { Friend, FriendsState, HeadToHead } from '@/lib/friends'
+import type { Friend, FriendsState } from '@/lib/friends'
+import { h2hLine } from './h2h'
 import styles from './play.module.css'
 
 const noop = () => () => {}
@@ -21,14 +22,6 @@ function useOrigin(): string {
 
 function initial(name: string): string {
   return (name.trim()[0] ?? '?').toUpperCase()
-}
-
-function h2hLine(h: HeadToHead | null): { text: string; tone: 'lead' | 'trail' | null } {
-  if (!h) return { text: "Haven't played yet", tone: null }
-  const rec = h.t ? `${h.w}-${h.l}-${h.t}` : `${h.w}-${h.l}`
-  if (h.w > h.l) return { text: `You lead ${rec}`, tone: 'lead' }
-  if (h.w < h.l) return { text: `You trail ${rec}`, tone: 'trail' }
-  return { text: `Level at ${rec}`, tone: null }
 }
 
 async function post(body: Record<string, unknown>) {

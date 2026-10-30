@@ -22,41 +22,73 @@ import {
   MULTIVERSE_DRAFT,
   PACK_EMPIRE,
 } from './gameDefs'
+import { PACK_ART } from '@/lib/packEmpire/rules'
 import s from './marks.module.css'
 
 /**
- * A pack, opened: five cards on the table, two of them flipped, and one of
- * those two an immortal. The colours are the game's own rarity colours, so
- * the mark is the same green and blue the cards inside will be.
+ * The whole game, left to right, because a pack on its own doesn't say what
+ * you do with it: open a pack, keep one of its five cards, build an eleven
+ * and watch the total climb.
  *
- * Names nobody, for the reason every mark here doesn't: a face on the shelf
- * would date the game to whoever is in the pool this month.
+ * The pack is the real one. The colours are the game's own rarity colours, and
+ * the eleven are laid out the way the field is, line across the top. Names
+ * nobody, for the reason every mark here doesn't: a face on the shelf would
+ * date the game to whoever is in the pool this month.
  */
+const RARITY_INK = ['#c87840', '#42c0f8', '#ffd700', '#e040ff', '#28dc78']
+
+/** Who's on the field: an index into RARITY_INK, line first, then the skill
+    players, then the backfield. Reads as a run that got lucky once or twice. */
+const ELEVEN = [
+  [1, 0, 2, 1, 0],
+  [2, 1, 4, 1],
+  [3, 1],
+]
+
 function PackMark() {
-  const cards: (null | { tone: string; score: string })[] = [
-    null,
-    { tone: '#42c0f8', score: '1,420' },
-    null,
-    { tone: '#28dc78', score: '4,910' },
-    null,
-  ]
   return (
-    <>
-      <span className={s.packHead}>
-        Captain pack · <b>QB</b>
+    <span className={s.story}>
+      <span className={s.beat}>
+        <span className={s.beatArt}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={PACK_ART.QB} alt="" className={s.beatPack} loading="lazy" />
+        </span>
+        <span className={s.beatCap}>
+          <b>1</b> Open
+        </span>
       </span>
-      <span className={s.packRow}>
-        {cards.map((c, i) =>
-          c ? (
-            <span key={i} className={s.packCardUp} style={{ '--rc': c.tone } as React.CSSProperties}>
-              <span className={s.packScore}>{c.score}</span>
+
+      <span className={s.beat}>
+        <span className={`${s.beatArt} ${s.beatFan}`}>
+          {[-2, -1, 1, 2].map((n) => (
+            <span key={n} className={s.fanCard} style={{ '--n': n } as React.CSSProperties} />
+          ))}
+          <span className={s.fanKeep}>
+            <i />
+            <b>5,600</b>
+          </span>
+        </span>
+        <span className={s.beatCap}>
+          <b>2</b> Keep one
+        </span>
+      </span>
+
+      <span className={s.beat}>
+        <span className={`${s.beatArt} ${s.beatField}`}>
+          {ELEVEN.map((row, r) => (
+            <span key={r} className={s.fieldRow}>
+              {row.map((tone, i) => (
+                <i key={i} style={{ '--rc': RARITY_INK[tone] } as React.CSSProperties} />
+              ))}
             </span>
-          ) : (
-            <span key={i} className={s.packCard} />
-          )
-        )}
+          ))}
+          <span className={s.fieldTotal}>20,480</span>
+        </span>
+        <span className={s.beatCap}>
+          <b>3</b> Build
+        </span>
       </span>
-    </>
+    </span>
   )
 }
 

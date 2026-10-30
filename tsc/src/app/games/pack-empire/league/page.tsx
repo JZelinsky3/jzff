@@ -6,7 +6,7 @@ import { getViewMode } from '@/lib/viewMode'
 import { myLeagues, openLeagues, type LeagueCard } from '@/lib/packEmpire/league'
 import { PHASE_LABEL, REGULAR_WEEKS } from '@/lib/packEmpire/rules'
 import mobileStyles from '../../mobile.module.css'
-import { PeChrome } from '../chrome'
+import { PeChrome, PeDock } from '../chrome'
 import { peFonts } from '../fonts'
 import { CreateLeague, JoinByCode, JoinPublic } from './LeagueLobby'
 
@@ -35,7 +35,7 @@ export default async function LeagueLobbyPage() {
   const [mine, open] = await Promise.all([user ? myLeagues(user.id) : [], openLeagues(user?.id ?? null)])
 
   return (
-    <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.boardRoot : ''}`.trim()}>
+    <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.root : ''}`.trim()}>
       <PeChrome
         active="league"
         mobile={mobile}
@@ -162,7 +162,7 @@ export default async function LeagueLobbyPage() {
         </section>
       </div>
 
-      {!mobile && <SiteFooter />}
+      {mobile ? <PeDock signedIn={!!user} /> : <SiteFooter />}
     </main>
   )
 }
