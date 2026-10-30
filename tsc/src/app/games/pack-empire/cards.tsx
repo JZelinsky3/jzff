@@ -15,9 +15,9 @@ import {
   RARITY_LOOK,
   SLOTS,
   TIERS,
-  nickname,
   seasonLabel,
   surname,
+  teamLogo,
   tierFor,
   type Player,
   type Rarity,
@@ -562,13 +562,24 @@ const TILT = {
   },
 }
 
+/** The logo beside the name takes room from it, so a long name shrinks to
+    fit: each gets the largest size its letters allow, estimated off their
+    widths in Barlow Condensed (m and w run wide; i, l, t, f, r, spaces and
+    punctuation narrow). Calibrated against every name in the pool at phone
+    size, with 2% to spare; re-measure if the pool gains a much longer one. */
+function nameFit(name: string): number {
+  let width = 0
+  for (const ch of name) width += 'mwMW'.includes(ch) ? 1.45 : "iljtfrI.' -".includes(ch) ? 0.7 : 1
+  return Math.round(Math.min(0.9, 10.83 / width) * 1000) / 1000
+}
+
 /**
  * Face down until revealed, then flipped. The front is the original card's
  * stock (11px corners, Orbitron numbers, Barlow names, every rarity effect),
- * laid out so the man fills the top half with the three things you choose on
- * printed over him: the position tab and rarity along the top, the SEASON
- * across his chest, then below him his name, his value and the stat box that
- * earned it.
+ * laid out so the three things you choose on read at a glance: the position
+ * tab and rarity on their own bar across the top, the SEASON across the man's
+ * chest, then below him his name, his value, his team's logo and the stat box
+ * that earned it.
  *
  * Face down, the back gives a little away: a rare's edge catches the light,
  * a dynasty breathes gold, and the two at the top shake and leak colour.
@@ -610,6 +621,7 @@ export function PackCard({
   label?: string
 }) {
   const rc = RARITY_LOOK[player.rarity]
+  const logo = teamLogo(player)
   const cls = [
     'pe-card',
     revealed ? 'rev' : '',
@@ -656,6 +668,10 @@ export function PackCard({
             <div className="pe-back-label">TAP TO REVEAL</div>
           </div>
           <div className="pe-card-front">
+            <div className="pe-cf-topbar">
+              <div className="pe-cf-pos">{player.pos}</div>
+              <div className={`pe-cf-rlab ${player.rarity}`}>{rc.label}</div>
+            </div>
             <div className="pe-cf-art" style={{ background: rc.art }}>
               {revealed && !still && <RarityEffects rarity={player.rarity} position="inner" />}
               {/* Only mounted on the front once it turns. The pack's faces are
@@ -670,20 +686,27 @@ export function PackCard({
                   {chem}
                 </span>
               )}
-              <div className="pe-cf-season">
-                {player.year ? <b>{player.year}</b> : null}
-                <span>{nickname(player)}</span>
-              </div>
-            </div>
-            <div className="pe-cf-topbar">
-              <div className="pe-cf-pos">{player.pos}</div>
-              <div className={`pe-cf-rlab ${player.rarity}`}>{rc.label}</div>
+              {player.year ? (
+                <div className="pe-cf-season">
+                  <b>{player.year}</b>
+                </div>
+              ) : null}
             </div>
             <div className="pe-cf-body">
-              <div className={`pe-cf-name${player.name.length > 16 ? ' long' : ''}`}>{player.name}</div>
-              <div className="pe-cf-score-row">
-                <div className="pe-cf-score">{player.score.toLocaleString()}</div>
-                <div className="pe-cf-ovr">OVR</div>
+              <div className="pe-cf-id">
+                <div className="pe-cf-id-main">
+                  <div className="pe-cf-name" style={{ '--nf': nameFit(player.name) } as React.CSSProperties}>
+                    {player.name}
+                  </div>
+                  <div className="pe-cf-score-row">
+                    <div className="pe-cf-score">{player.score.toLocaleString()}</div>
+                    <div className="pe-cf-ovr">OVR</div>
+                  </div>
+                </div>
+                {revealed && logo && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="pe-cf-logo" src={logo} alt={player.team} draggable={false} />
+                )}
               </div>
               <StatBox accolades={player.accolades} />
             </div>

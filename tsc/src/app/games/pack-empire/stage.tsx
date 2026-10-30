@@ -21,6 +21,7 @@ import {
   RARITY_LOOK,
   SLOTS,
   seasonLabel,
+  teamLogo,
   type Player,
   type Rarity,
 } from '@/lib/packEmpire/rules'
@@ -97,19 +98,20 @@ export function restoredStage(slot: number, cards: Player[]): StageState {
   }
 }
 
-// Faces are fetched the moment a pack is dealt so they're in the cache when
-// a card turns. They are only ever DRAWN on a card's front, which is hidden
-// until the flip passes edge-on, so fetching early can't show one early.
-// Held here so a pending fetch isn't dropped with its Image.
+// Faces and logos are fetched the moment a pack is dealt so they're in the
+// cache when a card turns. They are only ever DRAWN on a card's front, which
+// is hidden until the flip passes edge-on, so fetching early can't show one
+// early. Held here so a pending fetch isn't dropped with its Image.
 const heldFaces: HTMLImageElement[] = []
 
 function preloadFaces(cards: Player[]) {
   const faces = cards
-    .filter((c) => c.img)
-    .map((c) => {
+    .flatMap((c) => [c.img, teamLogo(c)])
+    .filter((src): src is string => !!src)
+    .map((src) => {
       const im = new Image()
       im.decoding = 'async'
-      im.src = c.img as string
+      im.src = src
       im.decode?.().catch(() => {})
       return im
     })

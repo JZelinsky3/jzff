@@ -66,10 +66,46 @@ export function seasonLabel(p: Pick<Player, 'team' | 'year' | 'club'>): string {
   return p.year ? `${p.year} ${p.club ?? p.team}` : p.team
 }
 
-/** The club as the card front prints it: "Eagles", "49ers". */
-export function nickname(p: Pick<Player, 'team' | 'club'>): string {
-  const club = p.club ?? p.team
-  return club === 'Washington Football Team' ? 'Football Team' : club.slice(club.lastIndexOf(' ') + 1)
+const LOGO_FILE: Record<string, string> = {
+  'Arizona Cardinals': 'ari',
+  'Atlanta Falcons': 'atl',
+  'Baltimore Ravens': 'bal',
+  'Buffalo Bills': 'buf',
+  'Carolina Panthers': 'car',
+  'Chicago Bears': 'chi',
+  'Cincinnati Bengals': 'cin',
+  'Cleveland Browns': 'cle',
+  'Dallas Cowboys': 'dal',
+  'Denver Broncos': 'den',
+  'Detroit Lions': 'det',
+  'Green Bay Packers': 'gb',
+  'Houston Texans': 'hou',
+  'Indianapolis Colts': 'ind',
+  'Jacksonville Jaguars': 'jax',
+  'Kansas City Chiefs': 'kc',
+  'Las Vegas Raiders': 'lv',
+  'Los Angeles Chargers': 'lac',
+  'Los Angeles Rams': 'lar',
+  'Miami Dolphins': 'mia',
+  'Minnesota Vikings': 'min',
+  'New England Patriots': 'ne',
+  'New Orleans Saints': 'no',
+  'New York Giants': 'nyg',
+  'New York Jets': 'nyj',
+  'Philadelphia Eagles': 'phi',
+  'Pittsburgh Steelers': 'pit',
+  'San Francisco 49ers': 'sf',
+  'Seattle Seahawks': 'sea',
+  'Tampa Bay Buccaneers': 'tb',
+  'Tennessee Titans': 'ten',
+  'Washington Commanders': 'wsh',
+}
+
+/** The team's logo for the card front. Keyed on the franchise, so every era
+    wears today's logo: an Oiler carries the Titans', a '99 Ram the current Rams'. */
+export function teamLogo(p: Pick<Player, 'team'>): string | null {
+  const file = LOGO_FILE[p.team]
+  return file ? `/games/pack-empire/logos/${file}.webp` : null
 }
 
 /**
@@ -264,22 +300,26 @@ export type Weights = Record<Rarity, number>
  * That is how the original dealt, and the rebuilt pool should be sized with
  * it in mind (see `packOdds` for the real figure off any pool).
  *
- * The 2026-10-30 pool doubled the transcendents and halved the immortals, so
- * transcendent dropped from 10 to 8 to keep greedy play where it was (median
- * about 18.8k, about 35% GOAT, sim/fastsim.py).
+ * Tuned 2026-10-30: playing the best card from every pack reached GOAT 35% of
+ * the time, and Joey wants a top rung you can't just tick off and leave. These
+ * put that same perfect play at a median around 15.6k, about 6% GOAT and 24%
+ * Hall of Fame, so sim/sim.ts is the check on any change here. The best card
+ * in an ordinary pack is about 36% common, 41% rare, 19% dynasty, 4% transcendent.
  */
 export const SOLO_WEIGHTS: { normal: Weights; captain: Weights } = {
-  normal: { common: 45, rare: 27, dynasty: 17, transcendent: 8, immortal: 1 },
+  normal: { common: 50, rare: 17, dynasty: 10, transcendent: 3.5, immortal: 1 },
   captain: { common: 5, rare: 22, dynasty: 41, transcendent: 27, immortal: 5 },
 }
 
 /**
- * One card in every pack is drawn off a second table. Note the captain's
- * second table trades immortals for transcendents; that is the original's
- * number, kept as found.
+ * One card in every pack is drawn off a second table, an unadvertised bonus:
+ * the site prints the base odds only. It only moves commons up to rares, so it
+ * has no say in how many dynasties and up get dealt. Note the captain's second
+ * table trades immortals for transcendents; that is the original's number,
+ * kept as found.
  */
 export const SOLO_BOOSTED: { normal: Weights; captain: Weights } = {
-  normal: { ...SOLO_WEIGHTS.normal, common: 40, rare: 38 },
+  normal: { ...SOLO_WEIGHTS.normal, common: 47, rare: 21 },
   captain: { ...SOLO_WEIGHTS.captain, rare: 18, transcendent: 30, immortal: 2 },
 }
 

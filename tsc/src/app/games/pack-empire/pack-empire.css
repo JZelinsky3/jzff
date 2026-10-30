@@ -1981,9 +1981,9 @@
   color: #2c4a78;
 }
 
-/* The front is the art over the body. The art takes whatever height the body
-   leaves, and the top bar and the season ribbon are printed over it, so the
-   man gets the room and the words stay out of his way. */
+/* The front is a column: top bar, art, body. The art takes whatever height the
+   rest leaves, and the season ribbon is printed over the bottom of it, so the
+   man gets the room and a long name can't push the stat box off the card. */
 .pe-card-front {
   display: flex;
   flex-direction: column;
@@ -1995,20 +1995,18 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-/* Over the top of the art, fading out so the photo runs up behind it. */
+/* A strip in the card's colour, fading out across the top. */
 .pe-cf-topbar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 11;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.3em;
-  padding: 0.3em 0.45em 0.7em 0;
-  background: linear-gradient(to bottom, rgba(5, 10, 24, 0.82), transparent);
-  pointer-events: none;
+  padding: 0.14em 0.45em 0.14em 0;
+  position: relative;
+  z-index: 11;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--rc) 30%, transparent), transparent 78%);
+  border-bottom: 1px solid color-mix(in srgb, var(--rc) 38%, transparent);
 }
 
 /* The position on a slanted tab off the left edge. */
@@ -2089,7 +2087,7 @@
   bottom: -10px;
   left: 50%;
   transform: translateX(-50%);
-  height: 118%;
+  height: 110%;
   width: auto;
   max-width: none;
   object-fit: contain;
@@ -2109,26 +2107,21 @@
   z-index: 1;
 }
 
-/* The season, across the man's chest: the year in the card's colour and the
-   club as it was called that year. Part of what you're choosing on, so it
-   reads before the stat box does. */
+/* The season, across the man's chest, in the card's colour. Part of what
+   you're choosing on, so it reads before the stat box does. */
 .pe-cf-season {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 11;
-  display: flex;
-  align-items: baseline;
-  gap: 0.42em;
-  min-width: 0;
-  padding: 1.05em 0.5em 0.24em;
+  text-align: center;
+  padding: 0.8em 0.5em 0.22em;
   background: linear-gradient(to top, rgba(5, 10, 24, 0.94) 28%, rgba(5, 10, 24, 0.62) 60%, transparent);
   pointer-events: none;
 }
 
 .pe-cf-season b {
-  flex-shrink: 0;
   font-family: var(--pe-display);
   font-weight: 900;
   font-size: 0.76em;
@@ -2138,23 +2131,9 @@
   text-shadow: 0 0 10px var(--rg);
 }
 
-.pe-cf-season span {
-  min-width: 0;
-  font-family: var(--pe-cond);
-  font-weight: 800;
-  font-size: 0.64em;
-  line-height: 1;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #dbe8f4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .pe-cf-body {
   flex-shrink: 0;
-  padding: 0.3em 0.45em 0.42em;
+  padding: 0.26em 0.45em 0.34em;
   position: relative;
   z-index: 11;
 }
@@ -2162,31 +2141,48 @@
 .pe-cf-name {
   font-family: var(--pe-cond);
   font-weight: 700;
-  font-size: 0.9em;
+  /* --nf shrinks a long name to fit (nameFit in cards.tsx); the line height
+     moves with it so the row stays one height. */
+  font-size: calc(var(--nf, 0.9) * 1em);
   color: #e8f2fb;
   letter-spacing: 0.02em;
-  line-height: 1.1;
+  line-height: calc(0.99 / var(--nf, 0.9));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.pe-cf-name.long {
-  font-size: 0.78em;
-  line-height: 1.27;
+/* Name and value on the left, the team's logo in the space they leave. */
+.pe-cf-id {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  min-width: 0;
+}
+
+.pe-cf-id-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pe-cf-logo {
+  flex-shrink: 0;
+  width: 1.85em;
+  height: 1.85em;
+  object-fit: contain;
 }
 
 .pe-cf-score-row {
   display: flex;
   align-items: baseline;
-  gap: 0.3em;
-  margin: 0.08em 0 0.28em;
+  gap: 0.22em;
+  margin: 0.04em 0 0.22em;
 }
 
 .pe-cf-score {
   font-family: var(--pe-display);
   font-weight: 900;
-  font-size: 1.32em;
+  font-size: 1.14em;
   line-height: 1;
   color: var(--rc);
   text-shadow: 0 0 14px color-mix(in srgb, var(--rc) 35%, transparent);
@@ -2195,16 +2191,16 @@
 .pe-cf-ovr {
   font-family: var(--pe-cond);
   font-weight: 700;
-  font-size: 0.48em;
+  font-size: 0.4em;
   color: #4d6c8e;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.08em;
 }
 
 /* The stat box: what the season did, number over label. */
 .pe-cf-stats {
   display: grid;
-  gap: 0.26em;
-  padding: 0.3em 0.25em 0.28em;
+  gap: 0.2em;
+  padding: 0.22em 0.25em 0.2em;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.055);
@@ -2281,7 +2277,7 @@
 /* League packs print what a card would do to the team's chemistry. */
 .pe-cf-chem {
   position: absolute;
-  top: 2.3em;
+  top: 0.7em;
   right: 0.7em;
   z-index: 12;
   font-family: var(--pe-display);
@@ -6619,18 +6615,18 @@ a.pe-row:hover {
 /* The year, big and hollow behind the man. Static text: no layer to animate. */
 .pe-cf-year {
   position: absolute;
-  top: 0.55em;
+  top: 0.32em;
   left: 0;
   right: 0;
   z-index: 3;
   text-align: center;
   font-family: var(--pe-display);
   font-weight: 900;
-  /* Sized for the widest years: 2s and 0s are half again as wide as a 1, and
-     a card holds 3.75em of them at the card's own size. */
-  font-size: 2.2em;
+  /* Sized so the widest years (a 2 or a 0 is half again as wide as a 1) just
+     fill the card edge to edge. */
+  font-size: 2.5em;
   line-height: 1;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.02em;
   white-space: nowrap;
   color: transparent;
   -webkit-text-stroke: 1px color-mix(in srgb, var(--rc, #fff) 70%, transparent);

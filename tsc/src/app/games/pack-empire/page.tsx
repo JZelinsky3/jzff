@@ -7,16 +7,13 @@ import { loadBoard, type BestRow } from '@/lib/minigames/leaderboard'
 import { POOL, POOL_SIZE } from '@/lib/packEmpire/pool'
 import { binderTotals, type BinderTotals } from '@/lib/packEmpire/binder'
 import {
-  PACK_SIZE,
   RARITIES,
   RARITY_LOOK,
   SLOTS,
-  SOLO_BOOSTED,
   SOLO_WEIGHTS,
   packOdds,
   type Player,
   type Rarity,
-  type Weights,
 } from '@/lib/packEmpire/rules'
 import { MobileGamesDock } from '../MobileGamesDock'
 import { Chevron } from '../MobileGameBar'
@@ -63,14 +60,13 @@ function showcase(): Player[] {
 }
 
 /** The chance any one card is a given rarity, averaged over the eleven
-    packs, off the pool as it actually is. Four cards in a pack draw off the
-    base table and one off the boosted table. */
-function oddsBySlot(base: Weights, boosted: Weights): Record<Rarity, number> {
+    packs, off the pool as it actually is. Base odds only: the boosted card in
+    each pack is a bonus the page doesn't print (Joey's call). */
+function oddsBySlot(weights: Record<Rarity, number>): Record<Rarity, number> {
   const acc: Record<Rarity, number> = { common: 0, rare: 0, dynasty: 0, transcendent: 0, immortal: 0 }
   for (const s of SLOTS) {
-    const a = packOdds(POOL[s.pool], base)
-    const b = packOdds(POOL[s.pool], boosted)
-    for (const r of RARITIES) acc[r] += (a[r] * (PACK_SIZE - 1) + b[r]) / PACK_SIZE / SLOTS.length
+    const o = packOdds(POOL[s.pool], weights)
+    for (const r of RARITIES) acc[r] += o[r] / SLOTS.length
   }
   return acc
 }
@@ -175,8 +171,8 @@ export default async function PackEmpireHome() {
   const binder = user ? await binderTotals(user.id).catch(() => null) : null
 
   const cards = showcase()
-  const normal = oddsBySlot(SOLO_WEIGHTS.normal, SOLO_BOOSTED.normal)
-  const captain = oddsBySlot(SOLO_WEIGHTS.captain, SOLO_BOOSTED.captain)
+  const normal = oddsBySlot(SOLO_WEIGHTS.normal)
+  const captain = oddsBySlot(SOLO_WEIGHTS.captain)
 
   const index = (
     <div className="pe-index">
@@ -388,9 +384,9 @@ export default async function PackEmpireHome() {
           </div>
           {index}
           <p className="pe-index-foot">
-            Every card in a pack is drawn on its own, weighted by rarity, and one card in every pack draws
-            off a richer table. The captain pack deals off the captain table for all five. These are the
-            real figures off today&apos;s pool, averaged over the eleven packs.
+            Every card in a pack is drawn on its own, weighted by rarity. The captain pack deals off the
+            captain table for all five. These are the base odds off today&apos;s pool, averaged over the
+            eleven packs.
           </p>
         </section>
 

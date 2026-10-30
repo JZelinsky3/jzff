@@ -14,9 +14,9 @@
 // versions run from his best year down. Two versions of one man never share a
 // pack or a lineup (see dealPack).
 //
-// Bump POOL_VERSION whenever this changes: it is folded into every deal, so a
-// run banked against an older pool fails to replay rather than being re-scored
-// against players it never saw.
+// Bump POOL_VERSION whenever this changes, or the odds in ./rules.ts do: it is
+// folded into every deal, so a run banked against an older pool fails to replay
+// rather than being re-scored against players it never saw.
 //
 // Never import this from a client component. It is ~140KB, and the whole
 // point of dealing on the server is that the browser never holds the pool.
@@ -24,7 +24,7 @@
 import seasons from './data/season-pool.json'
 import { POOL_KEYS, personOf, type Player, type PoolKey } from './rules'
 
-export const POOL_VERSION = 'seasons-2026-10b'
+export const POOL_VERSION = 'seasons-2026-10c'
 
 const ALL = seasons as Player[]
 
