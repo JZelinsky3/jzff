@@ -387,7 +387,7 @@ export function RarityEffects({ rarity, position = 'inner' }: { rarity: Rarity; 
 // A card from a pack
 // ============================================================
 
-function Headshot({ player, className }: { player: Player; className: string }) {
+function Headshot({ player, className, eager = false }: { player: Player; className: string; eager?: boolean }) {
   if (!player.img) return null
   return (
     // eslint-disable-next-line @next/next/no-img-element
@@ -395,7 +395,7 @@ function Headshot({ player, className }: { player: Player; className: string }) 
       src={player.img}
       alt=""
       className={className}
-      loading="lazy"
+      loading={eager ? 'eager' : 'lazy'}
       decoding="async"
       onError={(e) => {
         e.currentTarget.style.display = 'none'
@@ -404,10 +404,46 @@ function Headshot({ player, className }: { player: Player; className: string }) 
   )
 }
 
+/** Mouse only: the card leans toward the pointer and the shine follows it.
+    Written straight to the element's style, so a pointermove never renders.
+    The pending frame is kept per element, not per render, so a re-render
+    mid-hover can't leave a frame behind that tilts the card after it's left. */
+const tiltFrame = new WeakMap<Element, number>()
+
+const TILT = {
+  onPointerMove(e: React.PointerEvent<HTMLElement>) {
+    if (e.pointerType !== 'mouse') return
+    const el = e.currentTarget
+    const r = el.getBoundingClientRect()
+    const x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width))
+    const y = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height))
+    cancelAnimationFrame(tiltFrame.get(el) ?? 0)
+    tiltFrame.set(
+      el,
+      requestAnimationFrame(() => {
+        el.dataset.tilt = '1'
+        el.style.setProperty('--pe-tx', `${(x - 0.5) * 22}deg`)
+        el.style.setProperty('--pe-ty', `${(0.5 - y) * 18}deg`)
+        el.style.setProperty('--pe-gx', `${x * 100}%`)
+        el.style.setProperty('--pe-gy', `${y * 100}%`)
+      })
+    )
+  },
+  onPointerLeave(e: React.PointerEvent<HTMLElement>) {
+    const el = e.currentTarget
+    cancelAnimationFrame(tiltFrame.get(el) ?? 0)
+    delete el.dataset.tilt
+    for (const p of ['--pe-tx', '--pe-ty', '--pe-gx', '--pe-gy']) el.style.removeProperty(p)
+  },
+}
+
 /**
  * Face down until revealed, then flipped. The front is the original card:
  * position chip and rarity label, the cut-out standing in the art, name,
  * team, the accolades score and two lines of accolades.
+ *
+ * Face down, the back gives a little away: a rare's edge catches the light,
+ * a dynasty breathes gold, and the two at the top shake and leak colour.
  */
 export function PackCard({
   player,
@@ -415,9 +451,12 @@ export function PackCard({
   picked = false,
   rejected = false,
   selectable = false,
+  charging = false,
+  burst = false,
   index = 0,
   chem = null,
   onClick,
+  disabled = false,
   label,
 }: {
   player: Player
@@ -425,11 +464,18 @@ export function PackCard({
   picked?: boolean
   rejected?: boolean
   selectable?: boolean
+  /** Mid-walkout: lifted over the veil, shaking. */
+  charging?: boolean
+  /** The walkout's flip: a ring of light off the card. */
+  burst?: boolean
   /** Deal order, for the staggered entrance. */
   index?: number
   /** League packs: what this card would add to the team's chemistry. */
   chem?: number | null
   onClick?: () => void
+  /** Stop taking taps without dropping the button. Swapping the element for
+      a div remounts the card and replays the deal-in under the closing stage. */
+  disabled?: boolean
   label?: string
 }) {
   const rc = RARITY_LOOK[player.rarity]
@@ -439,6 +485,7 @@ export function PackCard({
     picked ? 'picked' : '',
     rejected ? 'rejected' : '',
     revealed && selectable ? 'selectable' : '',
+    charging ? 'charging' : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -458,56 +505,67 @@ export function PackCard({
       className={cls}
       style={style}
       onClick={onClick}
+      data-r={player.rarity}
+      data-pe-card={player.id}
+      {...TILT}
       {...(onClick
         ? {
             type: 'button' as const,
+            disabled,
             'aria-label': label ?? (revealed ? `Take ${player.name}` : 'Reveal this card'),
           }
         : {})}
     >
-      <div className="pe-ci">
-        <RarityEffects rarity={player.rarity} position="outer" />
-        <div className="pe-card-back">
-          <div className="pe-back-grid" />
-          <Football />
-          <div className="pe-back-label">TAP TO REVEAL</div>
-        </div>
-        <div className="pe-card-front">
-          <div className="pe-cf-topbar">
-            <div className="pe-cf-pos" style={{ background: rc.color }}>
-              {player.pos}
-            </div>
-            <div className={`pe-cf-rlab ${player.rarity}`}>{rc.label}</div>
+      <div className="pe-tilt">
+        <div className="pe-ci">
+          <RarityEffects rarity={player.rarity} position="outer" />
+          <div className="pe-card-back">
+            <div className="pe-back-grid" />
+            <Football />
+            <div className="pe-back-label">TAP TO REVEAL</div>
           </div>
-          <div className="pe-cf-art" style={{ background: rc.art }}>
-            <RarityEffects rarity={player.rarity} position="inner" />
-            {revealed && <Headshot player={player} className="pe-cf-img" />}
-            <div className="pe-cf-initial">{player.name.charAt(0)}</div>
-            {chem != null && chem !== 0 && (
-              <span className={`pe-cf-chem ${chem > 0 ? 'up' : 'down'}`}>
-                {chem > 0 ? '+' : ''}
-                {chem}
-              </span>
-            )}
-          </div>
-          <div className="pe-cf-body">
-            <div className="pe-cf-name">{player.name}</div>
-            <div className="pe-cf-team">{player.team}</div>
-            <div className="pe-cf-line" style={{ background: rc.color }} />
-            <div className="pe-cf-score-row">
-              <div className="pe-cf-score" style={{ color: rc.color }}>
-                {player.score.toLocaleString()}
+          <div className="pe-card-front">
+            <div className="pe-cf-topbar">
+              <div className="pe-cf-pos" style={{ background: rc.color }}>
+                {player.pos}
               </div>
-              <div className="pe-cf-ovr">OVR</div>
+              <div className={`pe-cf-rlab ${player.rarity}`}>{rc.label}</div>
             </div>
-            {player.accolades.slice(0, 2).map((a, j) => (
-              <div key={j} className="pe-cf-acc">
-                · {a}
+            <div className="pe-cf-art" style={{ background: rc.art }}>
+              <RarityEffects rarity={player.rarity} position="inner" />
+              {/* Only mounted on the front once it turns. The pack's faces are
+                  already cached by then (see preloadFaces), so this is instant
+                  but can never be seen through the back. */}
+              {revealed && <Headshot player={player} className="pe-cf-img" eager />}
+              <div className="pe-cf-initial">{player.name.charAt(0)}</div>
+              {chem != null && chem !== 0 && (
+                <span className={`pe-cf-chem ${chem > 0 ? 'up' : 'down'}`}>
+                  {chem > 0 ? '+' : ''}
+                  {chem}
+                </span>
+              )}
+            </div>
+            <div className="pe-cf-body">
+              <div className="pe-cf-name">{player.name}</div>
+              <div className="pe-cf-team">{player.team}</div>
+              <div className="pe-cf-line" style={{ background: rc.color }} />
+              <div className="pe-cf-score-row">
+                <div className="pe-cf-score" style={{ color: rc.color }}>
+                  {player.score.toLocaleString()}
+                </div>
+                <div className="pe-cf-ovr">OVR</div>
               </div>
-            ))}
+              {player.accolades.slice(0, 2).map((a, j) => (
+                <div key={j} className="pe-cf-acc">
+                  · {a}
+                </div>
+              ))}
+            </div>
+            <div className="pe-glare" aria-hidden />
           </div>
         </div>
       </div>
+      {burst && <span className="pe-burst" aria-hidden />}
     </Tag>
   )
 }
@@ -533,11 +591,20 @@ export type SlotView = {
   tone?: 'cap' | 'locked' | 'boosted' | null
 }
 
-function FilledSlot({ player, flag }: { player: Player; flag?: SlotView['flag'] }) {
+function FilledSlot({
+  player,
+  flag,
+  landing,
+}: {
+  player: Player
+  flag?: SlotView['flag']
+  /** Hidden while its card is still flying down; pops when it lands. */
+  landing?: 'incoming' | 'landed' | null
+}) {
   const rc = RARITY_LOOK[player.rarity]
   return (
     <div
-      className="pe-fsl has-p"
+      className={`pe-fsl has-p${landing ? ` ${landing}` : ''}`}
       style={{ '--rc': rc.color, '--rg': rc.glow, '--art': rc.art } as React.CSSProperties}
     >
       <RarityEffects rarity={player.rarity} position="outer" />
@@ -579,18 +646,20 @@ function Slot({
   player,
   view,
   onSlot,
+  landing,
 }: {
   index: number
   player: Player | null
   view: SlotView
   onSlot?: (index: number) => void
+  landing?: 'incoming' | 'landed' | null
 }) {
   const def = SLOTS[index]
   const isHB = index === 1
 
   let body: React.ReactNode
   if (player) {
-    body = <FilledSlot player={player} flag={view.flag} />
+    body = <FilledSlot player={player} flag={view.flag} landing={landing} />
   } else if (view.opening) {
     body = (
       <div className="pe-fsl active">
@@ -630,7 +699,7 @@ function Slot({
   }
 
   return (
-    <div className={`pe-slot-outer${isHB ? ' hb-back' : ''}`}>
+    <div className={`pe-slot-outer${isHB ? ' hb-back' : ''}`} data-pe-slot={index}>
       {body}
       <div className={`pe-slot-label${view.tone ? ` ${view.tone}` : ''}`}>{def.short}</div>
     </div>
@@ -645,12 +714,24 @@ export function Field({
   lineup,
   view,
   onSlot,
+  landing,
 }: {
   lineup: (Player | null)[]
   view: (index: number) => SlotView
   onSlot?: (index: number) => void
+  /** The slot a kept card is flying to, from usePackStage. */
+  landing?: { slot: number; phase: 'incoming' | 'landed' } | null
 }) {
-  const slot = (i: number) => <Slot key={SLOTS[i].key} index={i} player={lineup[i]} view={view(i)} onSlot={onSlot} />
+  const slot = (i: number) => (
+    <Slot
+      key={SLOTS[i].key}
+      index={i}
+      player={lineup[i]}
+      view={view(i)}
+      onSlot={onSlot}
+      landing={landing?.slot === i ? landing.phase : null}
+    />
+  )
   return (
     <div className="pe-field">
       <div className="pe-form-row">{FORMATION.line.map(slot)}</div>
@@ -670,11 +751,13 @@ export function Field({
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII']
 
 /** The eight rungs, top first. `score` marks every rung it reached and
-    highlights the one it landed on; pass -1 to show the ladder bare. */
-export function Ladder({ score }: { score: number }) {
+    highlights the one it landed on; pass -1 to show the ladder bare.
+    `climb` is the recap's version: fed a score that's counting up, each rung
+    flashes as it's passed, and `landed` stamps the one it stops on. */
+export function Ladder({ score, climb = false, landed = false }: { score: number; climb?: boolean; landed?: boolean }) {
   const here = score >= 0 ? tierFor(score) : null
   return (
-    <div className="pe-ladder">
+    <div className={`pe-ladder${climb ? ' climb' : ''}${landed ? ' landed' : ''}`}>
       {TIERS.map((t, i) => {
         const reached = score >= t.min
         return (

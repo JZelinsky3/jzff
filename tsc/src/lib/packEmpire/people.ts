@@ -8,20 +8,15 @@
 
 import { createHash, randomBytes } from 'crypto'
 import { containsHateSpeech } from '@/lib/contentModeration'
+import { publicNames } from '@/lib/minigames/boardIdentity'
 import { SEED_ALPHABET } from './rules'
 
 type Db = { from: (t: string) => any } // eslint-disable-line @typescript-eslint/no-explicit-any
 
-/** Same rule as the board's game_board_name(): never print an email. */
-export function boardName(display: string | null | undefined, code: string | null | undefined): string {
-  const d = (display ?? '').trim()
-  if (!d || d.includes('@')) return code || 'Manager'
-  return d.slice(0, 40)
-}
-
-export async function nameForUser(db: Db, userId: string): Promise<string> {
-  const { data } = await db.from('profiles').select('display_name, member_code').eq('id', userId).maybeSingle()
-  return boardName(data?.display_name, data?.member_code)
+/** The name this account goes by at the table: its board name, else its
+    league claim, else the board's own fallback. See publicNames(). */
+export async function nameForUser(_db: Db, userId: string): Promise<string> {
+  return (await publicNames([userId])).get(userId) ?? 'Manager'
 }
 
 /** A name typed by someone without an account. Ordinary swearing passes, as

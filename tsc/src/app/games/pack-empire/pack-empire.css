@@ -700,6 +700,74 @@
   box-shadow: inset 3px 0 0 var(--tc);
 }
 
+/* The recap's climb. The marker rides up the ladder with the count; each
+   rung flashes and ticks as it's passed, and the last one is stamped. */
+.pe-ladder.climb .pe-rung {
+  transition:
+    background 0.3s,
+    box-shadow 0.3s;
+}
+
+.pe-ladder.climb .pe-rung.reached {
+  animation: pe-rung-hit 0.6s ease-out;
+}
+
+.pe-ladder.climb .pe-rung.reached .pe-rung-mark {
+  animation: pe-check-pop 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+.pe-ladder.climb.landed .pe-rung.here {
+  animation: pe-rung-land 1s ease-out both;
+}
+
+.pe-ladder.climb.landed .pe-rung.here .pe-rung-name {
+  transform-origin: left center;
+  animation: pe-name-stamp 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+@keyframes pe-rung-hit {
+  from {
+    background: color-mix(in srgb, var(--tc) 32%, transparent);
+  }
+}
+
+@keyframes pe-check-pop {
+  from {
+    opacity: 0;
+    transform: scale(0) rotate(-25deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pe-rung-land {
+  0% {
+    background: color-mix(in srgb, var(--tc) 40%, transparent);
+    box-shadow:
+      inset 3px 0 0 var(--tc),
+      inset 0 0 26px color-mix(in srgb, var(--tc) 50%, transparent);
+  }
+  100% {
+    background: color-mix(in srgb, var(--tc) 14%, transparent);
+    box-shadow:
+      inset 3px 0 0 var(--tc),
+      inset 0 0 0 1px color-mix(in srgb, var(--tc) 40%, transparent);
+  }
+}
+
+@keyframes pe-name-stamp {
+  from {
+    opacity: 0.3;
+    transform: scale(1.4);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ── The board teaser ──────────────────────────────────────── */
 
 .pe-top {
@@ -1483,6 +1551,10 @@
   filter: grayscale(0.6);
 }
 
+.pe-card:disabled {
+  cursor: default;
+}
+
 .pe-card:focus-visible {
   outline: 2px solid var(--pe-amber);
   outline-offset: 6px;
@@ -1779,6 +1851,8 @@
 }
 
 .pe-stage-head {
+  position: relative;
+  z-index: 50;
   text-align: center;
   margin-bottom: 1.6rem;
 }
@@ -1821,6 +1895,7 @@
 }
 
 .pe-stage-cards {
+  position: relative;
   display: flex;
   gap: 14px;
   justify-content: center;
@@ -1828,8 +1903,10 @@
   padding: 0.6rem 0;
 }
 
+/* Backwards, not both: a held end frame would pin every card at full opacity
+   and no transform, and the picked lift and the rejected fade never show. */
 .pe-stage-cards .pe-card {
-  animation: pe-deal-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  animation: pe-deal-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards;
   animation-delay: calc(var(--i) * 70ms + 120ms);
 }
 
@@ -1853,20 +1930,318 @@
   min-height: 3rem;
 }
 
-.pe-stage-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
+/* Desktop deals five abreast, so the cards can fan out of the pack's spot in
+   the middle: each starts stacked on the centre card and slides to its own.
+   Phones wrap three over two and keep the plain rise. */
+@media (min-width: 701px) {
+  .pe-stage-cards .pe-card {
+    animation-name: pe-deal-fan;
+    animation-duration: 0.6s;
+  }
 }
 
-.pe-stage-loading img {
-  width: 140px;
+@keyframes pe-deal-fan {
+  from {
+    opacity: 0;
+    transform: translateX(calc((2 - var(--i)) * (100% + 14px))) translateY(24px) rotate(calc((var(--i) - 2) * 5deg))
+      scale(0.62);
+  }
+  35% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── The sealed pack ───────────────────────────────────────── */
+/* Two copies of the cover, cut along the same jagged line: the strip on top,
+   the body under it. --pull (0 to 1) is how far the strip has been peeled. */
+
+.pe-rip {
+  --pull: 0;
+  --glow: #e8a84b;
+  display: flex;
+  justify-content: center;
+  padding: 0.6rem 0 0;
+}
+
+.pe-rip-pack {
+  position: relative;
+  width: 172px;
   aspect-ratio: 125 / 183;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  animation: pe-pack-float 3.2s ease-in-out infinite;
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.55));
+}
+
+.pe-rip-pack:focus-visible {
+  outline: 2px solid var(--pe-amber);
+  outline-offset: 6px;
+  border-radius: 8px;
+}
+
+.pe-rip.dragging .pe-rip-pack {
+  cursor: grabbing;
+  animation-play-state: paused;
+}
+
+.pe-rip-pack:disabled {
+  cursor: default;
+}
+
+@keyframes pe-pack-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(1deg);
+  }
+}
+
+.pe-rip-body,
+.pe-rip-strip,
+.pe-rip-spent {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.pe-rip-body img,
+.pe-rip-strip img,
+.pe-rip-spent img {
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   border-radius: 6px;
+  pointer-events: none;
+}
+
+.pe-rip-strip {
+  z-index: 3;
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 16.8%,
+    95% 15.8%,
+    89% 17.6%,
+    82% 15.5%,
+    75% 17.3%,
+    68% 15.6%,
+    61% 17.7%,
+    54% 15.5%,
+    47% 17.6%,
+    40% 15.4%,
+    33% 17.4%,
+    26% 15.6%,
+    19% 17.8%,
+    12% 15.5%,
+    6% 17.5%,
+    0 16%
+  );
+  transform-origin: 100% 16%;
+  transform: translate(calc(var(--pull) * 4px), calc(var(--pull) * -10px)) rotate(calc(var(--pull) * 12deg));
+  transition: transform 0.35s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+.pe-rip.dragging .pe-rip-strip {
+  transition: none;
+}
+
+/* A hint on desktop: the strip lifts a touch under the pointer. */
+.pe-rip.sealed:not(.dragging) .pe-rip-pack:hover .pe-rip-strip {
+  transform: translate(1px, -3px) rotate(2deg);
+}
+
+.pe-rip-body,
+.pe-rip-spent {
+  clip-path: polygon(
+    0 16%,
+    6% 17.5%,
+    12% 15.5%,
+    19% 17.8%,
+    26% 15.6%,
+    33% 17.4%,
+    40% 15.4%,
+    47% 17.6%,
+    54% 15.5%,
+    61% 17.7%,
+    68% 15.6%,
+    75% 17.3%,
+    82% 15.5%,
+    89% 17.6%,
+    95% 15.8%,
+    100% 16.8%,
+    100% 100%,
+    0 100%
+  );
+}
+
+.pe-rip-body {
+  z-index: 2;
+}
+
+/* The perforation, with a glint running along it. */
+.pe-rip-seam {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: 15.8%;
+  height: 2px;
+  z-index: 4;
+  overflow: hidden;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.5) 0 5px, transparent 5px 9px);
+  opacity: calc(0.6 - var(--pull) * 0.6);
+  pointer-events: none;
+}
+
+.pe-rip-seam::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -30%;
+  width: 30%;
+  background: linear-gradient(90deg, transparent, rgba(255, 240, 210, 0.95), transparent);
+  animation: pe-seam-glint 2.4s ease-in-out infinite;
+}
+
+@keyframes pe-seam-glint {
+  0% {
+    left: -30%;
+  }
+  55%,
+  100% {
+    left: 104%;
+  }
+}
+
+/* The light inside, centred on the tear line. Its colour is the best card's
+   rarity, so a gold glow off the opening means a dynasty or better is in. */
+.pe-rip-light {
+  position: absolute;
+  left: -45%;
+  right: -45%;
+  top: -34%;
+  height: 100%;
+  z-index: 1;
+  background: radial-gradient(ellipse 58% 36% at 50% 50%, var(--glow), transparent 72%);
+  opacity: calc(var(--pull) * 0.9);
+  filter: blur(6px);
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.pe-rip-light::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-conic-gradient(
+    color-mix(in srgb, var(--glow) 55%, transparent) 0deg 5deg,
+    transparent 5deg 18deg
+  );
+  -webkit-mask: radial-gradient(closest-side, #000 18%, transparent);
+  mask: radial-gradient(closest-side, #000 18%, transparent);
+  opacity: 0;
+}
+
+.pe-rip.ripping .pe-rip-strip,
+.pe-rip.open .pe-rip-strip {
+  animation: pe-strip-off 0.46s cubic-bezier(0.25, 0.6, 0.35, 1) forwards;
+}
+
+@keyframes pe-strip-off {
+  from {
+    transform: translate(4px, -10px) rotate(12deg);
+    opacity: 1;
+  }
+  to {
+    transform: translate(120px, -130px) rotate(38deg);
+    opacity: 0;
+  }
+}
+
+.pe-rip.ripping .pe-rip-light,
+.pe-rip.open .pe-rip-light {
+  opacity: 1;
+  animation: pe-rip-burst 0.6s ease-out both;
+}
+
+.pe-rip.ripping .pe-rip-light::after,
+.pe-rip.open .pe-rip-light::after {
+  opacity: 1;
+  animation: pe-border-spin 7s linear infinite;
+}
+
+@keyframes pe-rip-burst {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+}
+
+.pe-rip.ripping .pe-rip-pack {
+  animation: pe-rip-jolt 0.3s ease-out;
+}
+
+@keyframes pe-rip-jolt {
+  30% {
+    transform: translateY(6px) rotate(1.5deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* Torn, and the deal still hasn't come back. */
+.pe-rip.waiting .pe-rip-pack {
   animation: pe-pack-shake 0.5s ease-in-out infinite;
-  filter: drop-shadow(0 0 22px rgba(232, 168, 75, 0.45));
+}
+
+.pe-rip.waiting .pe-rip-light {
+  animation: pe-center-glow 1s ease-in-out infinite;
+}
+
+/* The empty wrapper, dropping away behind the cards. */
+.pe-rip-spent {
+  inset: auto;
+  left: 50%;
+  top: 50%;
+  width: 172px;
+  aspect-ratio: 125 / 183;
+  margin-left: -86px;
+  z-index: 0;
+  pointer-events: none;
+  animation: pe-spent-drop 0.55s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+}
+
+@keyframes pe-spent-drop {
+  from {
+    transform: translateY(-50%);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(5%) scale(0.85) rotate(4deg);
+    opacity: 0;
+  }
 }
 
 @keyframes pe-pack-shake {
@@ -1931,6 +2306,511 @@
     transform: scale(1);
     opacity: 1;
   }
+}
+
+/* ── Tilt and shine ────────────────────────────────────────── */
+/* Registered so they inherit (the stage sets them for the whole pack off a
+   phone's tilt) and so the sway below can animate them. */
+
+@property --pe-tx {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+
+@property --pe-ty {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+
+@property --pe-gx {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+
+@property --pe-gy {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 30%;
+}
+
+.pe-tilt {
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--pe-ty)) rotateY(var(--pe-tx));
+  transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pe-card[data-tilt] .pe-tilt {
+  transition: transform 0.08s linear;
+}
+
+/* A soft light where the card faces the pointer, and on dynasty and up a
+   foil band that slides across with it. */
+.pe-glare {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at var(--pe-gx) var(--pe-gy),
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0.05) 30%,
+    transparent 60%
+  );
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.pe-card[data-r='dynasty'] .pe-glare::after,
+.pe-card[data-r='transcendent'] .pe-glare::after,
+.pe-card[data-r='immortal'] .pe-glare::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    transparent 25%,
+    rgba(255, 80, 160, 0.2) 38%,
+    rgba(255, 220, 80, 0.2) 46%,
+    rgba(80, 255, 190, 0.2) 54%,
+    rgba(90, 140, 255, 0.2) 62%,
+    transparent 75%
+  );
+  background-size: 260% 260%;
+  background-position: var(--pe-gx) var(--pe-gy);
+}
+
+.pe-card[data-tilt] .pe-glare,
+.pe-stage[data-gyro] .pe-glare {
+  opacity: 1;
+}
+
+/* Touch screens have no pointer to follow: the turned cards sway on their
+   own, out of step with each other, unless the phone's tilt is driving. */
+@media (hover: none) {
+  .pe-stage-cards .pe-card.rev .pe-tilt {
+    animation: pe-sway 6s ease-in-out infinite;
+    animation-delay: calc(var(--i) * -1.3s);
+    transition: none;
+  }
+
+  .pe-stage-cards .pe-card.rev .pe-glare {
+    opacity: 1;
+  }
+
+  .pe-stage[data-gyro] .pe-stage-cards .pe-card.rev .pe-tilt {
+    animation: none;
+    transition: transform 0.12s linear;
+  }
+}
+
+@keyframes pe-sway {
+  0%,
+  100% {
+    --pe-tx: -6deg;
+    --pe-ty: 3deg;
+    --pe-gx: 18%;
+    --pe-gy: 15%;
+  }
+  50% {
+    --pe-tx: 6deg;
+    --pe-ty: -2deg;
+    --pe-gx: 82%;
+    --pe-gy: 48%;
+  }
+}
+
+/* ── The tell ──────────────────────────────────────────────── */
+/* Face down, a card's back gives its rarity away by degrees. --tell scales
+   the glow: nothing on a common, a catch of light on a rare, a slow gold
+   breath on a dynasty, and the top two shake and leak colour at the seams. */
+
+.pe-card:not(.rev)[data-r='rare'] .pe-card-back {
+  --tell: 0.35;
+  border-color: #2a6890;
+  animation: pe-tell-breathe 2.4s ease-in-out infinite;
+}
+
+.pe-card:not(.rev)[data-r='dynasty'] .pe-card-back {
+  --tell: 0.6;
+  border-color: #8a7020;
+  animation: pe-tell-breathe 1.8s ease-in-out infinite;
+}
+
+.pe-card:not(.rev)[data-r='transcendent'] .pe-card-back {
+  --tell: 0.85;
+  border-color: #8a30b0;
+  animation:
+    pe-tell-breathe 1.2s ease-in-out infinite,
+    pe-tell-jitter 2.6s linear infinite;
+}
+
+.pe-card:not(.rev)[data-r='immortal'] .pe-card-back {
+  --tell: 1;
+  border-color: #20a050;
+  animation:
+    pe-tell-breathe 0.9s ease-in-out infinite,
+    pe-tell-jitter 1.7s linear infinite;
+}
+
+.pe-card:not(.rev)[data-r='dynasty'] .pe-back-icon,
+.pe-card:not(.rev)[data-r='transcendent'] .pe-back-icon,
+.pe-card:not(.rev)[data-r='immortal'] .pe-back-icon {
+  color: color-mix(in srgb, var(--rc) 55%, transparent);
+}
+
+.pe-card:not(.rev)[data-r='transcendent'] .pe-card-back::after,
+.pe-card:not(.rev)[data-r='immortal'] .pe-card-back::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 120%, color-mix(in srgb, var(--rc) 55%, transparent), transparent 60%),
+    radial-gradient(ellipse at 50% -20%, color-mix(in srgb, var(--rc) 35%, transparent), transparent 55%);
+  mix-blend-mode: screen;
+  animation: pe-center-glow 1.4s ease-in-out infinite;
+}
+
+@keyframes pe-tell-breathe {
+  0%,
+  100% {
+    box-shadow:
+      0 0 calc(10px * var(--tell)) var(--rg),
+      inset 0 0 calc(12px * var(--tell)) color-mix(in srgb, var(--rc) 18%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 calc(28px * var(--tell)) var(--rg),
+      inset 0 0 calc(28px * var(--tell)) color-mix(in srgb, var(--rc) 38%, transparent);
+  }
+}
+
+/* The back's resting transform is translateZ(0); every frame keeps it. */
+@keyframes pe-tell-jitter {
+  0%,
+  84%,
+  100% {
+    transform: translateZ(0);
+  }
+  86% {
+    transform: translateZ(0) translateX(-2px) rotate(-1.2deg);
+  }
+  88% {
+    transform: translateZ(0) translateX(2px) rotate(1.2deg);
+  }
+  90% {
+    transform: translateZ(0) translateX(-1.5px) rotate(-0.6deg);
+  }
+  92% {
+    transform: translateZ(0) translateX(1px);
+  }
+}
+
+@keyframes pe-tell-shake {
+  0%,
+  100% {
+    transform: translateZ(0);
+  }
+  25% {
+    transform: translateZ(0) translate(-2px, 1px) rotate(-1deg);
+  }
+  50% {
+    transform: translateZ(0) translate(2px, -1px) rotate(1deg);
+  }
+  75% {
+    transform: translateZ(0) translate(-1px, -1px) rotate(-0.5deg);
+  }
+}
+
+/* The faces rise into the art as the front comes round, never before it. */
+.pe-stage-cards .pe-card.rev .pe-cf-img {
+  animation: pe-face-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s both;
+}
+
+@keyframes pe-face-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+}
+
+/* ── The walkout ───────────────────────────────────────────── */
+/* A transcendent or an immortal doesn't just flip. The table goes dark, the
+   card lifts and shakes, and the head spells it out: rarity, team,
+   position. Then it turns. Tapping the dark skips ahead. */
+
+.pe-wo-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  background: radial-gradient(ellipse at 50% 55%, color-mix(in srgb, var(--wo) 20%, transparent), rgba(6, 5, 4, 0.93) 65%);
+  animation: pe-fade-in 0.35s ease both;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pe-wo-veil[data-step='flip'] {
+  animation: pe-veil-lift 1.2s ease forwards;
+}
+
+@keyframes pe-veil-lift {
+  0%,
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.pe-card.charging {
+  z-index: 50;
+  pointer-events: none;
+  transform: scale(1.12);
+  transition: transform 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+
+.pe-card.charging:not(.rev) .pe-card-back {
+  border-color: var(--rc);
+  box-shadow:
+    0 0 34px var(--rg),
+    0 0 80px var(--rg),
+    inset 0 0 30px color-mix(in srgb, var(--rc) 45%, transparent);
+  animation: pe-tell-shake 0.12s linear infinite;
+}
+
+.pe-stage[data-wo='team'] .pe-card.charging:not(.rev) .pe-card-back {
+  animation-duration: 0.09s;
+}
+
+.pe-stage[data-wo='pos'] .pe-card.charging:not(.rev) .pe-card-back {
+  animation-duration: 0.06s;
+}
+
+.pe-stage-head.wo .pe-stage-norm {
+  visibility: hidden;
+}
+
+.pe-wo-cap {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(92vw, 640px);
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.pe-wo-rar {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.66rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--wo);
+  text-shadow: 0 0 14px var(--wo-glow);
+  animation: pe-rise 0.4s ease both;
+}
+
+.pe-wo-team {
+  margin-top: 0.35rem;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(1.5rem, 5vw, 2.8rem);
+  line-height: 1.05;
+  white-space: nowrap;
+  color: var(--pe-ink);
+  text-shadow: 0 0 30px var(--wo-glow);
+  animation: pe-wo-slam 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.pe-wo-pos {
+  margin-top: 0.45rem;
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--wo);
+  animation: pe-wo-slam 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+@keyframes pe-wo-slam {
+  from {
+    opacity: 0;
+    transform: scale(1.5);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* Rings of light off the card as it turns. Behind the card, so they show
+   round its edges without washing out the face. */
+.pe-burst {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Siblings, not nested: a ring inside the flare would take its scale too. */
+.pe-burst::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: radial-gradient(closest-side, var(--rg), transparent);
+  animation: pe-burst-flare 1s ease-out forwards;
+}
+
+.pe-burst::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  border: 2px solid var(--rc);
+  box-shadow:
+    0 0 24px var(--rg),
+    inset 0 0 24px var(--rg);
+  animation: pe-burst-ring 0.9s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+
+@keyframes pe-burst-flare {
+  from {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  to {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+@keyframes pe-burst-ring {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+
+/* ── Into the slot ─────────────────────────────────────────── */
+
+.pe-stage.flying .pe-card.picked {
+  visibility: hidden;
+}
+
+.pe-flight {
+  position: fixed;
+  z-index: 310;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+  will-change: transform;
+  filter: drop-shadow(0 0 18px var(--rg)) drop-shadow(0 14px 24px rgba(0, 0, 0, 0.6));
+}
+
+.pe-flight .pe-card {
+  --pe-cs: var(--pe-fly-cs, 1);
+  cursor: default;
+}
+
+.pe-flight .pe-cf-img {
+  animation: none;
+}
+
+.pe-fsl.has-p.incoming {
+  visibility: hidden;
+}
+
+.pe-fsl.has-p.landed {
+  animation: pe-land 0.55s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+.pe-fsl.has-p.landed::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  z-index: 30;
+  border-radius: 13px;
+  border: 2px solid var(--rc);
+  box-shadow: 0 0 22px var(--rg);
+  pointer-events: none;
+  animation: pe-burst-ring 0.7s ease-out forwards;
+}
+
+@keyframes pe-land {
+  from {
+    transform: scale(1.14);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* The strip's running total: what the card added, floating off the number. */
+.pe-strip-val {
+  position: relative;
+}
+
+.pe-strip-delta {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  margin-left: 0.35em;
+  font-family: var(--pe-display);
+  font-weight: 900;
+  font-size: 0.62rem;
+  color: #7be0a2;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: pe-delta-rise 1.4s ease-out forwards;
+}
+
+.pe-strip-delta.down {
+  color: #f08a80;
+}
+
+@keyframes pe-delta-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(-20%);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(-50%);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-130%);
+  }
+}
+
+.pe-strip-tier {
+  animation: pe-rise 0.5s ease both;
 }
 
 /* ── Recap ─────────────────────────────────────────────────── */
@@ -2012,6 +2892,23 @@
   font-size: 0.92rem;
   line-height: 1.55;
   color: var(--pe-ink-soft);
+  transition: opacity 0.5s ease;
+}
+
+/* Where it sits on the board waits for the count to land. */
+.pe-recap-post.wait {
+  opacity: 0;
+}
+
+.pe-recap.landed .pe-recap-score {
+  animation: pe-score-land 0.55s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+@keyframes pe-score-land {
+  40% {
+    transform: scale(1.08);
+    text-shadow: 0 0 34px var(--tc);
+  }
 }
 
 .pe-recap-post b {
@@ -2406,6 +3303,11 @@ a.pe-row:hover {
   .pe-recap-grid {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  /* One column: the ladder goes above the field so the climb is on screen. */
+  .pe-recap-grid > .pe-ladder {
+    order: -1;
+  }
 }
 
 @media (max-width: 700px) {
@@ -2537,6 +3439,23 @@ a.pe-row:hover {
     margin-top: 1rem;
   }
 
+  .pe-rip {
+    padding-top: 1.4rem;
+  }
+
+  .pe-rip-pack,
+  .pe-rip-spent {
+    width: 150px;
+  }
+
+  .pe-rip-spent {
+    margin-left: -75px;
+  }
+
+  .pe-wo-team {
+    font-size: 1.45rem;
+  }
+
   .pe-index {
     grid-template-columns: none;
     grid-auto-flow: column;
@@ -2612,6 +3531,34 @@ a.pe-row:hover {
   .pe-recap-score,
   .pe-recap-tier {
     animation: none;
+  }
+
+  /* The tell keeps its colours and loses the shaking; the strip still comes
+     off, just without the throw. */
+  .pe-tilt {
+    transform: none !important;
+    animation: none !important;
+  }
+
+  .pe-card-back,
+  .pe-card-back::after,
+  .pe-rip-pack,
+  .pe-rip-seam::after,
+  .pe-rip-light,
+  .pe-rip-light::after,
+  .pe-wo-team,
+  .pe-wo-pos,
+  .pe-fsl.has-p.landed,
+  .pe-ladder.climb .pe-rung,
+  .pe-ladder.climb .pe-rung-mark,
+  .pe-ladder.climb .pe-rung-name,
+  .pe-recap.landed .pe-recap-score {
+    animation: none !important;
+  }
+
+  .pe-rip.ripping .pe-rip-strip,
+  .pe-rip.open .pe-rip-strip {
+    animation-duration: 0.01s;
   }
 }
 

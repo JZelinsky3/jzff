@@ -4,6 +4,7 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { listVersus } from '@/lib/packEmpire/versus'
+import { friendPicker } from '@/lib/friends'
 import mobileStyles from '../../mobile.module.css'
 import { PeChrome } from '../chrome'
 import { peFonts } from '../fonts'
@@ -30,7 +31,7 @@ export default async function VersusLobby() {
     data: { user },
   } = await supabase.auth.getUser()
   const mobile = (await getViewMode()) === 'mobile'
-  const mine = user ? await listVersus(user.id) : []
+  const [mine, friends] = user ? await Promise.all([listVersus(user.id), friendPicker(user.id)]) : [[], []]
 
   return (
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.boardRoot : ''}`.trim()}>
@@ -59,10 +60,21 @@ export default async function VersusLobby() {
         <div className="pe-panel" style={{ textAlign: 'center' }}>
           {user ? (
             <>
-              <NewChallenge />
+              <NewChallenge friends={friends} />
               <p className="pe-note" style={{ marginTop: '0.9rem' }}>
-                Whoever opens your link first takes the other seat
+                {friends.length
+                  ? 'An open challenge goes to whoever opens the link first. One sent to a friend waits for them.'
+                  : 'Whoever opens your link first takes the other seat'}
               </p>
+              {friends.length === 0 && (
+                <p className="pe-note" style={{ marginTop: '0.4rem' }}>
+                  Add friends on{' '}
+                  <Link href="/account/#friends" className="pe-link">
+                    your profile
+                  </Link>{' '}
+                  to send one straight to them.
+                </p>
+              )}
             </>
           ) : (
             <>
@@ -112,7 +124,7 @@ export default async function VersusLobby() {
             ) : (
               <div className="pe-row-list">
                 {mine.map((c) => {
-                  const st = STATUS[c.status]
+                  const st = c.waitingOnYou ? { label: 'Sent to you', color: '#e8a84b' } : STATUS[c.status]
                   const score =
                     c.yourScore != null && c.theirScore != null
                       ? `${c.yourScore.toLocaleString()} · ${c.theirScore.toLocaleString()}`

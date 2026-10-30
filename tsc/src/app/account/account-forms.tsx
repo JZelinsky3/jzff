@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { REFERRAL_OPTIONS } from '@/lib/referralChannels'
 import { createClient as createBrowserSupabase } from '@/lib/supabase/client'
 import { updateEmail, updatePassword, updateMarketingOptIn, updateBackupEmail, updateReferralSource } from './actions'
+import { BoardNameForm } from '@/components/account/BoardNameForm'
 import { MemberCodeChip } from './member-code-chip'
 
 type Result = { ok: false; error: string } | { ok: true; message?: string } | null
@@ -37,6 +38,9 @@ export function AccountForms({
   justSubscribed,
   referralSource,
   referralOther,
+  boardName,
+  shownAs,
+  children,
 }: {
   email: string
   memberCode: string
@@ -54,12 +58,19 @@ export function AccountForms({
   justSubscribed: boolean
   referralSource: string | null
   referralOther: string
+  /** Set by the player, or '' for none. */
+  boardName: string
+  /** What people see them as right now. */
+  shownAs: string
+  /** The record book and friends sections, between the card and the
+      settings below it. */
+  children?: React.ReactNode
 }) {
   // The credential card is the account. Plan / email / password are rows
   // on the card; tapping one opens its form in a drawer inside the card.
   // Only one drawer at a time. Fresh checkout lands with the plan drawer
   // open so the "subscription started" note is visible immediately.
-  type Panel = 'plan' | 'email' | 'password'
+  type Panel = 'plan' | 'email' | 'password' | 'name'
   const [panel, setPanel] = useState<Panel | null>(justSubscribed ? 'plan' : null)
   function toggle(p: Panel) {
     setPanel((v) => (v === p ? null : p))
@@ -120,6 +131,16 @@ export function AccountForms({
                 </span>
               </button>
             )}
+            <button
+              type="button"
+              className={`acct-pass-row is-action${panel === 'name' ? ' is-open' : ''}`}
+              onClick={() => toggle('name')}
+              aria-expanded={panel === 'name'}
+            >
+              <span>Goes by</span>
+              <strong>{boardName || shownAs}</strong>
+              <span className="acct-pass-chip">{panel === 'name' ? 'Close' : boardName ? 'Change' : 'Set'}</span>
+            </button>
             <div className="acct-pass-row">
               <span>Since</span>
               <strong>{memberSince}</strong>
@@ -162,6 +183,9 @@ export function AccountForms({
                 : <EmailForm currentEmail={email} startEditing />
             )}
             {panel === 'password' && <PasswordForm hasPassword={hasPassword} startEditing />}
+            {panel === 'name' && (
+              <BoardNameForm initial={boardName} fallback={shownAs} onDone={() => setPanel(null)} />
+            )}
           </div>
         </div>
 
@@ -170,18 +194,20 @@ export function AccountForms({
         </div>
       </div>
 
+      {children}
+
       <div className="section">
         <div className="acct-two-col">
           <div>
             <div className="section-header">
-              <span className="section-num">§ 01 · Communication</span>
+              <span className="section-num">§ 03 · Communication</span>
               <span className="section-title">What we send you,</span>
             </div>
             <MarketingForm initialOptIn={marketingOptIn} email={email} />
           </div>
           <div>
             <div className="section-header">
-              <span className="section-num">§ 02 · Referral</span>
+              <span className="section-num">§ 04 · Referral</span>
               <span className="section-title">Where you heard of us,</span>
             </div>
             <ReferralForm initialSource={referralSource} initialOther={referralOther} />
@@ -191,7 +217,7 @@ export function AccountForms({
 
       <div className="section">
         <div className="section-header">
-          <span className="section-num">§ 03 · Sign out</span>
+          <span className="section-num">§ 05 · Sign out</span>
           <span className="section-title">See you next time,</span>
           <span className="section-meta">Ends this session</span>
         </div>

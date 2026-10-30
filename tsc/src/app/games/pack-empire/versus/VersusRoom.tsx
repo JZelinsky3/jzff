@@ -52,10 +52,13 @@ export function VersusRoom({
   initial,
   signedIn,
   yourName,
+  canFriend = false,
 }: {
   initial: VersusView
   signedIn: boolean
   yourName: string | null
+  /** Signed in, an account in the other seat, and not friends yet. */
+  canFriend?: boolean
 }) {
   const router = useRouter()
   const [view, setView] = useState<VersusView>(initial)
@@ -160,6 +163,23 @@ export function VersusRoom({
     }
   }
 
+  // "Add as a friend" off the result. A request, which they accept.
+  const [friendNote, setFriendNote] = useState<string | null>(null)
+  const addFriend = async () => {
+    setBusy(true)
+    try {
+      const res = await fetch('/api/friends/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'versus', id }),
+      })
+      const out = await res.json().catch(() => null)
+      setFriendNote(out?.ok ? (out.message ?? 'Asked.') : (out?.error ?? 'Could not send that.'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const path = `/games/pack-empire/versus/${id}/`
   const shareText = mine?.done && mine.score != null ? `Pack Empire: beat ${mine.score.toLocaleString()}` : 'Pack Empire: draft against me'
 
@@ -211,12 +231,45 @@ export function VersusRoom({
             <Link href="/games/pack-empire/versus/" className="pe-btn pe-btn--quiet">
               Your challenges
             </Link>
+            {canFriend && !friendNote && theirs?.name && (
+              <button type="button" className="pe-btn pe-btn--quiet" onClick={addFriend} disabled={busy}>
+                Add {theirs.name} as a friend
+              </button>
+            )}
           </div>
+          {friendNote && <p className="pe-recap-post">{friendNote}</p>}
           {error && <p className="pe-recap-post">{error}</p>}
         </div>
         <div className="pe-twoup">
           <LineupSheet name={h.name ?? 'Host'} sub={h.tier} lineup={h.lineup ?? []} total={hs} totalColor={tierFor(hs).color} />
           <LineupSheet name={g.name ?? 'Challenger'} sub={g.tier} lineup={g.lineup ?? []} total={gs} totalColor={tierFor(gs).color} />
+        </div>
+      </div>
+    )
+  }
+
+  // ── A seat held for a friend, opened by someone signed out ────
+  // Could be the friend on another device, so it asks them to sign in
+  // rather than telling them it isn't theirs.
+  if (!view.you && view.reserved && !signedIn) {
+    return (
+      <div className="pe-table pe-wrap--narrow">
+        {header}
+        <div className="pe-panel">
+          <div className="pe-kicker">A friend challenge</div>
+          <div className="pe-panel-title">{view.host.name} sent this one to {view.guest.name}.</div>
+          <p className="pe-panel-text">
+            If that&apos;s you, sign in and the seat is yours. If it isn&apos;t, start your own and send the link
+            to someone.
+          </p>
+          <div className="pe-recap-actions" style={{ justifyContent: 'flex-start' }}>
+            <Link href={`/login?next=${encodeURIComponent(path)}`} className="pe-btn">
+              Sign in
+            </Link>
+            <Link href="/games/pack-empire/versus/" className="pe-btn pe-btn--quiet">
+              Start your own
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -228,10 +281,14 @@ export function VersusRoom({
       <div className="pe-table pe-wrap--narrow">
         {header}
         <div className="pe-panel">
-          <div className="pe-kicker">In progress</div>
-          <div className="pe-panel-title">This one is already taken.</div>
+          <div className="pe-kicker">{view.reserved ? 'A friend challenge' : 'In progress'}</div>
+          <div className="pe-panel-title">
+            {view.reserved ? `This one was sent to ${view.guest.name}.` : 'This one is already taken.'}
+          </div>
           <p className="pe-panel-text">
-            {view.host.name} and {view.guest.name} are drafting. Start your own and send the link to someone.
+            {view.reserved
+              ? `${view.host.name} is waiting on them. Start your own and send the link to someone.`
+              : `${view.host.name} and ${view.guest.name} are drafting. Start your own and send the link to someone.`}
           </p>
           <div className="pe-recap-actions" style={{ justifyContent: 'flex-start' }}>
             <Link href="/games/pack-empire/versus/" className="pe-btn">
@@ -304,7 +361,9 @@ export function VersusRoom({
   // ── Your seat ─────────────────────────────────────────────────
   const opponentLine = !theirs?.name
     ? 'Nobody has taken the other seat yet. Send the link.'
-    : theirs.done
+    : view.reserved
+      ? `Held for ${theirs.name}. It's waiting in their challenges, or send them the link.`
+      : theirs.done
       ? `${theirs.name} is in with ${theirs.score?.toLocaleString()}.`
       : theirs.started
         ? `${theirs.name} is drafting.`
@@ -317,7 +376,7 @@ export function VersusRoom({
         <p className="pe-note" style={{ textAlign: 'center', marginBottom: '1rem' }}>
           {opponentLine}
         </p>
-        {view.you === 'host' && !view.guest.name && (
+        {view.you === 'host' && (!view.guest.name || view.reserved) && (
           <div style={{ maxWidth: 620, margin: '0 auto 1.2rem' }}>
             <ShareLink path={path} title="Pack Empire" text={shareText} />
           </div>
@@ -351,11 +410,13 @@ export function VersusRoom({
         <div className="pe-recap-score">{myScore.toLocaleString()}</div>
         <p className="pe-recap-post">{opponentLine} This page updates by itself.</p>
       </div>
-      {view.you === 'host' && !view.guest.name && (
+      {view.you === 'host' && (!view.guest.name || view.reserved) && (
         <div className="pe-panel">
           <div className="pe-kicker">Send the link</div>
           <p className="pe-panel-text" style={{ margin: '0.5rem 0 0.9rem' }}>
-            Whoever opens it first takes the other seat. No account needed on their end.
+            {view.reserved
+              ? `The seat is held for ${view.guest.name}, so only they can take it.`
+              : 'Whoever opens it first takes the other seat. No account needed on their end.'}
           </p>
           <ShareLink path={path} title="Pack Empire" text={shareText} />
         </div>

@@ -83,6 +83,8 @@ export type MemberRow = {
   permanent_locks: Lock[]
   playoff_active: boolean
   playoff_seed: number | null
+  /** Leagues won, across every season (0082). */
+  titles: number
 }
 
 export type DraftRow = {
@@ -878,17 +880,27 @@ export async function advanceWeek(leagueId: string, userId: string): Promise<{ o
     return { ok: true, to: 'finals' }
   }
 
-  // The Final.
+  // The Final. The phase flips first and only if it is still the Final, so
+  // a double-tapped button can't hand the champion a second title.
+  const { data: closed } = await db()
+    .from('pe_leagues')
+    .update({ phase: 'complete' })
+    .eq('id', league.id)
+    .eq('phase', 'finals')
+    .select('id')
+  if (!closed?.length) return { ok: true, to: 'complete' }
   await Promise.all(
     order.map((m, i) =>
       update(m.id, {
         playoff_score: playoff.get(m.id),
         playoff_active: i === 0,
         playoff_seed: i === 0 ? 1 : null,
+        // Kept across seasons, unlike everything above: a new season wipes
+        // the standings, and this is the one thing it shouldn't.
+        ...(i === 0 ? { titles: (m.titles ?? 0) + 1 } : {}),
       })
     )
   )
-  await db().from('pe_leagues').update({ phase: 'complete' }).eq('id', league.id)
   return { ok: true, to: 'complete' }
 }
 

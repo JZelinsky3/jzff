@@ -267,6 +267,32 @@ export type MegaListItem = {
   theirScore: number | null
 }
 
+export type MegaResultRow = { opponentId: string | null; yours: number; theirs: number }
+
+/** Every finished Mega Draft this account sat in, for its record and its
+    head-to-heads. */
+export async function megaResults(userId: string): Promise<MegaResultRow[]> {
+  const { data } = await createAdminClient()
+    .from('pe_mega_drafts')
+    .select('*')
+    .eq('status', 'done')
+    .or(`host_id.eq.${userId},guest_id.eq.${userId}`)
+    .order('completed_at', { ascending: false })
+    .limit(300)
+  return ((data ?? []) as Row[]).flatMap((r) => {
+    const role: Role = r.host_id === userId ? 'host' : 'guest'
+    const v = view(r, role)
+    if (v.you == null) return []
+    return [
+      {
+        opponentId: role === 'host' ? r.guest_id : r.host_id,
+        yours: v.seats[v.you].score,
+        theirs: v.seats[v.you === 0 ? 1 : 0].score,
+      },
+    ]
+  })
+}
+
 export async function listMega(userId: string): Promise<MegaListItem[]> {
   const { data } = await createAdminClient()
     .from('pe_mega_drafts')

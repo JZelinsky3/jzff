@@ -1,0 +1,379 @@
+/* The profile's games and friends sections, desktop and phone.
+   Built on the site tokens (main.css): navy ink, cream, the bottle-cap gold.
+   Each game card carries its own --accent off its GameDef, the same colour
+   it wears on the Games Page, so the shelf and the record book match. */
+
+/* ── Record book ───────────────────────────────────────────── */
+
+.books {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.book {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    border-top: 3px solid var(--accent, var(--gold));
+    padding: 1.1rem 1.2rem 1rem;
+    min-width: 0;
+}
+
+.bookHead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .75rem;
+    padding-bottom: .7rem;
+    border-bottom: 1px solid var(--ink-line-soft);
+}
+.bookTitle {
+    font-family: var(--serif);
+    font-size: 1.35rem;
+    line-height: 1.1;
+    color: var(--cream);
+    text-decoration: none;
+}
+.bookTitle em { font-style: italic; color: var(--accent, var(--gold)); }
+.bookTitle:hover { color: var(--gold-bright); }
+.bookRuns {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    white-space: nowrap;
+}
+
+.line {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .15rem .9rem;
+    padding: .8rem 0;
+    border-bottom: 1px dotted var(--ink-line);
+    color: inherit;
+    text-decoration: none;
+}
+.line:last-of-type { border-bottom: 0; }
+.line:hover .lineBig { color: var(--gold-bright); }
+.lineBoard {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.lineRank {
+    grid-row: span 2;
+    align-self: center;
+    text-align: right;
+    font-family: var(--mono);
+    font-size: .62rem;
+    letter-spacing: .08em;
+    color: var(--cream-soft);
+    line-height: 1.5;
+}
+.lineRank b {
+    display: block;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 1.15rem;
+    letter-spacing: 0;
+    color: var(--accent, var(--gold));
+}
+.lineStat { display: flex; align-items: baseline; gap: .55rem; min-width: 0; }
+.lineBig {
+    font-family: var(--serif);
+    font-size: 1.6rem;
+    line-height: 1.1;
+    color: var(--cream);
+    transition: color .15s;
+}
+.lineSmall {
+    font-family: var(--mono);
+    font-size: .66rem;
+    color: var(--cream-soft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.lineFriend {
+    grid-column: 1 / -1;
+    font-family: var(--mono);
+    font-size: .62rem;
+    letter-spacing: .04em;
+    color: var(--cream-mute);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.lineFriend b { font-weight: 700; color: var(--cream-soft); }
+.lineFriend .ahead { color: var(--gold); }
+
+.extras {
+    margin-top: .3rem;
+    padding-top: .6rem;
+    border-top: 1px solid var(--ink-line-soft);
+    display: grid;
+    gap: .35rem;
+}
+.extra {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: baseline;
+    gap: .55rem;
+    font-family: var(--mono);
+    font-size: .66rem;
+    color: var(--cream-soft);
+}
+.extraDots { border-bottom: 1px dotted var(--ink-line); transform: translateY(-.2rem); }
+.extraValue {
+    font-family: var(--serif);
+    font-size: 1rem;
+    color: var(--cream);
+}
+.extraNote { color: var(--cream-mute); font-size: .6rem; white-space: nowrap; }
+
+.empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: .7rem;
+    padding: 1rem 0 .4rem;
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--cream-mute);
+    font-size: 1rem;
+}
+
+/* ── Buttons, shared ───────────────────────────────────────── */
+
+.btn, .btnGhost, .btnQuiet {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .6rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    padding: .5rem .8rem;
+    border-radius: 2px;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background .15s, color .15s, border-color .15s;
+}
+.btn { background: var(--gold); color: var(--ink); border: 1px solid var(--gold); }
+.btn:hover { background: var(--gold-bright); }
+.btnGhost { background: transparent; color: var(--gold); border: 1px solid var(--gold-deep); }
+.btnGhost:hover { border-color: var(--gold); }
+.btnQuiet { background: transparent; color: var(--cream-mute); border: 1px solid var(--ink-line); }
+.btnQuiet:hover { color: var(--cream); border-color: var(--cream-mute); }
+.btn:disabled, .btnGhost:disabled, .btnQuiet:disabled { opacity: .5; cursor: default; }
+
+/* ── Friends ───────────────────────────────────────────────── */
+
+.friends {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+}
+@media (max-width: 860px) {
+    .friends { grid-template-columns: 1fr; }
+}
+
+.panel {
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    padding: 1rem 1.15rem;
+}
+.panel + .panel { margin-top: 1rem; }
+.panelHot { border-left: 3px solid var(--gold); }
+
+.label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: .6rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .6rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    padding-bottom: .55rem;
+    margin-bottom: .2rem;
+    border-bottom: 1px solid var(--ink-line-soft);
+}
+.label span { color: var(--cream-mute); font-weight: 400; letter-spacing: .16em; }
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .65rem 0;
+    border-bottom: 1px solid var(--ink-line-soft);
+    min-width: 0;
+}
+.row:last-child { border-bottom: 0; }
+.mono {
+    flex-shrink: 0;
+    width: 2.1rem;
+    height: 2.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgba(232, 200, 137, .07);
+    border: 1px solid var(--gold-deep);
+    color: var(--gold);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1rem;
+    line-height: 1;
+}
+.who { flex: 1; min-width: 0; }
+.name {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    color: var(--cream);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sub {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .06em;
+    color: var(--cream-mute);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sub .lead { color: var(--gold); }
+.sub .trail { color: #d98b73; }
+.acts { display: flex; gap: .4rem; flex-shrink: 0; align-items: center; }
+
+.x {
+    width: 1.8rem;
+    height: 1.8rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--ink-line);
+    border-radius: 2px;
+    color: var(--cream-mute);
+    cursor: pointer;
+}
+.x:hover { color: var(--cream); border-color: var(--cream-mute); }
+
+.nothing {
+    padding: .9rem 0 .3rem;
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--cream-mute);
+    font-size: .98rem;
+    line-height: 1.45;
+}
+
+.link {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-top: .7rem;
+    min-width: 0;
+}
+.link code {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--mono);
+    font-size: .72rem;
+    color: var(--cream-soft);
+    background: var(--ink);
+    border: 1px solid var(--ink-line);
+    padding: .5rem .6rem;
+}
+.hint {
+    margin-top: .6rem;
+    font-size: .8rem;
+    line-height: 1.5;
+    color: var(--cream-soft);
+}
+.hint button {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--cream-mute);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    font: inherit;
+}
+.hint button:hover { color: var(--cream); }
+
+.codeForm { display: flex; gap: .5rem; margin-top: .7rem; }
+.codeForm input {
+    flex: 1;
+    min-width: 0;
+    background: var(--ink);
+    border: 1px solid var(--ink-line);
+    color: var(--cream);
+    font-family: var(--mono);
+    font-size: .85rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    padding: .5rem .65rem;
+    border-radius: 2px;
+}
+.codeForm input:focus { outline: none; border-color: var(--gold-deep); }
+.codeForm input::placeholder { letter-spacing: .08em; text-transform: none; color: var(--cream-mute); }
+
+.note { margin-top: .6rem; font-size: .78rem; color: var(--gold); }
+.err { margin-top: .6rem; font-size: .78rem; color: #e0866d; }
+
+/* ── Board name ────────────────────────────────────────────── */
+
+.nameForm { display: grid; gap: .55rem; }
+.nameForm input {
+    width: 100%;
+    background: var(--ink);
+    border: 1px solid var(--ink-line);
+    color: var(--cream);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    padding: .5rem .7rem;
+    border-radius: 2px;
+}
+.nameForm input:focus { outline: none; border-color: var(--gold-deep); }
+.nameButtons { display: flex; gap: .5rem; flex-wrap: wrap; }
+.nameHint { font-size: .78rem; line-height: 1.5; color: var(--cream-soft); margin: 0; }
+
+/* ── Phone ─────────────────────────────────────────────────── */
+/* Inside .mprof-section, which already supplies the side gutter. Cards go
+   rounded to sit with the rest of the Pocket profile. */
+
+.books.phone { grid-template-columns: 1fr; gap: .6rem; }
+.phone .book { border-radius: 10px; padding: .8rem .85rem .7rem; background: rgba(255, 255, 255, .02); }
+.phone .bookTitle { font-size: 1.1rem; }
+.phone .lineBig { font-size: 1.3rem; }
+.phone .line { padding: .6rem 0; }
+.phone .panel { border-radius: 10px; padding: .8rem .85rem; background: rgba(255, 255, 255, .02); }
+.phone .panel + .panel { margin-top: .6rem; }
+.phone .friends { gap: .6rem; }
+.phone .name { font-size: .98rem; }
+.phone .btn, .phone .btnGhost, .phone .btnQuiet { padding: .5rem .65rem; font-size: .54rem; }

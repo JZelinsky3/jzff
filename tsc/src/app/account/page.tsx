@@ -6,6 +6,11 @@ import { createClient } from '@/lib/supabase/server'
 import { getUserSubscription, isCompUser, TIER_LABELS, advertisedTrialDays } from '@/lib/stripe'
 import { compExpiryLabel } from '@/lib/siteAdmin'
 import { getViewMode } from '@/lib/viewMode'
+import { friendIds, friendsState } from '@/lib/friends'
+import { publicNames } from '@/lib/minigames/boardIdentity'
+import { loadRecords } from '@/lib/minigames/profileRecords'
+import { FriendsPanel } from '@/components/account/FriendsPanel'
+import { RecordBook } from '@/components/account/RecordBook'
 import { AccountForms } from './account-forms'
 import { AccountNavMenu } from './account-nav-menu'
 
@@ -53,7 +58,7 @@ export default async function AccountPage({
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false }),
     getUserSubscription(user.id),
-    supabase.from('profiles').select('member_code, referral_source, referral_source_other').eq('id', user.id).single(),
+    supabase.from('profiles').select('member_code, referral_source, referral_source_other, board_name').eq('id', user.id).single(),
   ])
   const navLeagues = (leaguesRes.data ?? []).map((l) => ({
     slug: l.slug as string,
@@ -73,6 +78,17 @@ export default async function AccountPage({
   // Follows the launch offer, so this card stops saying "7-day" the moment
   // the offer opens or the standard length changes.
   const trialDays = advertisedTrialDays()
+
+  // Games and friends. Friends first, because the record book sets each of
+  // your bests against the best any friend has done on the same board.
+  const boardName = (profileRes.data?.board_name as string | null | undefined) ?? ''
+  const [friends, shownAs, friendList] = await Promise.all([
+    friendsState(user.id),
+    publicNames([user.id]).then((m) => m.get(user.id) ?? memberCode),
+    friendIds(user.id),
+  ])
+  const records = await loadRecords(user.id, friendList)
+  const totalRuns = records.reduce((n, g) => n + g.runs, 0)
 
   if ((await getViewMode()) === 'mobile') {
     return (
@@ -99,6 +115,11 @@ export default async function AccountPage({
         justSubscribed={justSubscribed}
         referralSource={referralSource}
         referralOther={referralOther}
+        boardName={boardName}
+        shownAs={shownAs}
+        records={<RecordBook records={records} phone />}
+        friends={<FriendsPanel initial={friends} phone />}
+        waiting={friends.incoming.length + friends.challenges.length}
       />
     )
   }
@@ -120,7 +141,7 @@ export default async function AccountPage({
           The <em>Chronicler.</em>
         </h1>
         <p className="hero-sub">
-          Your plan, email, password, and what we send you. All of it lives on the card.
+          Your card, your record book and your friends. Plan, email and password all live on the card.
         </p>
       </section>
 
@@ -149,7 +170,33 @@ export default async function AccountPage({
         justSubscribed={justSubscribed}
         referralSource={referralSource}
         referralOther={referralOther}
-      />
+        boardName={boardName}
+        shownAs={shownAs}
+      >
+        <div className="section" id="records">
+          <div className="section-header">
+            <span className="section-num">§ 01 · Games</span>
+            <span className="section-title">The Record Book</span>
+            <span className="section-meta">
+              {totalRuns ? `${totalRuns} ${totalRuns === 1 ? 'run' : 'runs'} posted` : 'Nothing posted yet'}
+            </span>
+          </div>
+          <RecordBook records={records} />
+        </div>
+
+        <div className="section" id="friends">
+          <div className="section-header">
+            <span className="section-num">§ 02 · Friends</span>
+            <span className="section-title">Your Friends</span>
+            <span className="section-meta">
+              {friends.incoming.length
+                ? `${friends.incoming.length} waiting on you`
+                : `${friends.friends.length} ${friends.friends.length === 1 ? 'friend' : 'friends'}`}
+            </span>
+          </div>
+          <FriendsPanel initial={friends} />
+        </div>
+      </AccountForms>
 
       <SiteFooter />
     </main>

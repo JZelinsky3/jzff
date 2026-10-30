@@ -9,10 +9,11 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
-import { tierFor, type Player } from '@/lib/packEmpire/rules'
+import { TIERS, tierFor, type Player } from '@/lib/packEmpire/rules'
 import { bankRun, claimBank, postRun, type PostOutcome } from '../../runBank'
 import { CaptainDraft, type DraftDone } from '../CaptainDraft'
 import { Field, Ladder } from '../cards'
+import { easeClimb, useCountUp } from '../stage'
 
 const SAVE_KEY = 'pe_solo_run_v1'
 
@@ -106,17 +107,52 @@ export function EmpireBuilder({ signedIn }: { signedIn: boolean }) {
     )
   }
 
-  const tier = tierFor(run.score)
+  return <Recap run={run} post={post} shared={shared} onAgain={again} onShare={share} />
+}
+
+/** How long the climb takes: longer the higher it goes, so a GOAT run gets
+    its moment and a practice squad run doesn't make you wait. */
+function climbMs(score: number): number {
+  const rungs = TIERS.filter((t) => score >= t.min).length
+  return Math.min(4200, 600 + rungs * 450)
+}
+
+/**
+ * The final roster. The total counts up from nothing and climbs the ladder
+ * as it goes: each rung flashes as it's passed, the tier name above changes
+ * with it, and the rung it stops on is stamped. Where it sits on the board
+ * comes in once it lands.
+ */
+function Recap({
+  run,
+  post,
+  shared,
+  onAgain,
+  onShare,
+}: {
+  run: DraftDone
+  post: PostOutcome | 'posting' | 'banked' | null
+  shared: 'copied' | null
+  onAgain: () => void
+  onShare: () => void
+}) {
+  const shown = useCountUp(run.score, climbMs(run.score), 0, easeClimb)
+  const landed = shown === run.score
+  const tier = tierFor(shown)
 
   return (
     <div className="pe-table">
-      <div className="pe-recap" style={{ '--tc': tier.color } as React.CSSProperties}>
+      <div className={`pe-recap${landed ? ' landed' : ''}`} style={{ '--tc': tier.color } as React.CSSProperties}>
         <div className="pe-kicker">§ Final roster</div>
-        <div className="pe-recap-tier">{tier.label}</div>
-        <div className="pe-recap-score">{run.score.toLocaleString()}</div>
+        <div key={tier.label} className="pe-recap-tier">
+          {tier.label}
+        </div>
+        <div className="pe-recap-score" aria-label={`${run.score.toLocaleString()} accolades`}>
+          {shown.toLocaleString()}
+        </div>
         <div className="pe-recap-lbl pe-note">Total accolades</div>
 
-        <p className="pe-recap-post" aria-live="polite">
+        <p className={`pe-recap-post${landed ? '' : ' wait'}`} aria-live="polite">
           {post === 'posting' && 'Putting it on the board…'}
           {post === 'banked' && (
             <>
@@ -137,10 +173,10 @@ export function EmpireBuilder({ signedIn }: { signedIn: boolean }) {
         </p>
 
         <div className="pe-recap-actions">
-          <button type="button" className="pe-btn" onClick={again}>
+          <button type="button" className="pe-btn" onClick={onAgain}>
             New run
           </button>
-          <button type="button" className="pe-btn pe-btn--ghost" onClick={share}>
+          <button type="button" className="pe-btn pe-btn--ghost" onClick={onShare}>
             {shared === 'copied' ? 'Copied' : 'Share'}
           </button>
           <Link href="/games/pack-empire/board/" className="pe-btn pe-btn--quiet">
@@ -160,7 +196,7 @@ export function EmpireBuilder({ signedIn }: { signedIn: boolean }) {
             })}
           />
         </div>
-        <Ladder score={run.score} />
+        <Ladder score={shown} climb landed={landed} />
       </div>
     </div>
   )

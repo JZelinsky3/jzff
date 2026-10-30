@@ -73,7 +73,7 @@ const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/g
 // for a page nothing linked to, so it moved to tsc/archive/old (still in
 // git, no longer served). Nothing answers on /old/ now, so the exemption
 // went with it.
-const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/demo-m/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/api/mock-board', '/api/support', '/hub/', '/api/hub/', '/see/', '/games/', '/api/games/', '/ballot/', '/goat/', '/exam/', '/recap/', '/api/recap/']
+const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/demo-m/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/api/mock-board', '/api/support', '/hub/', '/api/hub/', '/see/', '/games/', '/api/games/', '/ballot/', '/goat/', '/exam/', '/recap/', '/api/recap/', '/friends/', '/api/friends']
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })

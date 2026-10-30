@@ -3,6 +3,7 @@
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { REFERRAL_CHANNELS } from '@/lib/referralChannels'
+import { containsHateSpeech } from '@/lib/contentModeration'
 import { createClient } from '@/lib/supabase/server'
 
 type Result = { ok: false; error: string } | { ok: true; message?: string }
@@ -211,4 +212,32 @@ export async function updateMarketingOptIn(input: z.infer<typeof MarketingSchema
 
   revalidatePath('/account')
   return { ok: true }
+}
+
+// ─── Board name ───────────────────────────────────────────────────────────
+// What the player goes by on site-wide boards, to friends and at the Pack
+// Empire table (0082). Ordinary swearing passes, as it does in team names;
+// slurs and email addresses don't. Blank clears it, which drops back to the
+// name from their league claim or their member code.
+
+export async function updateBoardName(input: { name: string }): Promise<Result> {
+  const name = String(input?.name ?? '').replace(/\s+/g, ' ').trim()
+  if (name && (name.length < 2 || name.length > 24)) {
+    return { ok: false, error: 'Between 2 and 24 characters.' }
+  }
+  if (name.includes('@')) return { ok: false, error: 'No email addresses. This name is public.' }
+  if (containsHateSpeech(name)) return { ok: false, error: 'Pick a different name.' }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Not signed in.' }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ board_name: name || null })
+    .eq('id', user.id)
+  if (error) return { ok: false, error: 'Could not save that name.' }
+
+  revalidatePath('/account')
+  return { ok: true, message: name ? 'Saved.' : 'Cleared.' }
 }

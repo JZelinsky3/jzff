@@ -30,7 +30,7 @@ import {
 } from '@/lib/packEmpire/rules'
 import type { DraftView } from '@/lib/packEmpire/league'
 import { Field, LockGlyph, type SlotView } from '../cards'
-import { ImmortalFlash, PackStage, ScoreStrip, usePackStage, useStripOffset } from '../stage'
+import { ImmortalFlash, PackStage, ScoreStrip, restoredStage, usePackStage, useStripOffset } from '../stage'
 
 async function post(body: Record<string, unknown>): Promise<DraftView> {
   const res = await fetch('/api/games/pack-empire/league/', {
@@ -70,16 +70,9 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // A pack left open before a refresh is waiting on the stage, face down.
-  const { stage, flash, open, reveal, revealAll, pick, dismiss } = usePackStage(
+  const { stage, flash, landing, open, tear, reveal, revealAll, skip, pick, dismiss, settle } = usePackStage(
     initial.status === 'drafting' && initial.openSlot != null && initial.openCards
-      ? {
-          slot: initial.openSlot,
-          cards: initial.openCards,
-          revealed: initial.openCards.map(() => false),
-          pickedId: null,
-          error: null,
-          leaving: false,
-        }
+      ? restoredStage(initial.openSlot, initial.openCards)
       : null
   )
 
@@ -104,9 +97,11 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
   )
 
   const roster = view.lineup.filter((p): p is Player => !!p)
-  const filled = roster.length
-  const score = lineupScore(view.lineup)
-  const chem = chemistryFor(roster)
+  // What the strip shows: a card in the air hasn't landed, chemistry and all.
+  const settledRoster = settle(view.lineup).filter((p): p is Player => !!p)
+  const filled = settledRoster.length
+  const score = lineupScore(settledRoster)
+  const chem = chemistryFor(settledRoster)
   const tier = tierFor(score + chem.total)
   const carried = new Set(view.carried)
   const tierColor = PACK_TIER_COLOR[view.tier]
@@ -315,7 +310,7 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
       {error && <div className="pe-error" style={{ maxWidth: 560, margin: '0 auto 1rem' }}>{error}</div>}
 
       <div className="pe-turf">
-        <Field lineup={view.lineup} view={fieldView} onSlot={openSlot} />
+        <Field lineup={view.lineup} view={fieldView} onSlot={openSlot} landing={landing} />
       </div>
 
       {view.status === 'drafting' && toOpen === 0 && (
@@ -345,6 +340,8 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
           onCard={onCard}
           onRevealAll={revealAll}
           onDismiss={dismiss}
+          onTear={tear}
+          onSkip={skip}
           chemFor={(p) => chemistryPreview(p, roster)}
         />
       )}

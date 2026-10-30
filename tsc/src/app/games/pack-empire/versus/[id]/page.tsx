@@ -4,7 +4,8 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getViewMode } from '@/lib/viewMode'
-import { getVersus } from '@/lib/packEmpire/versus'
+import { getVersus, versusOpponent } from '@/lib/packEmpire/versus'
+import { areFriends } from '@/lib/friends'
 import { nameForUser } from '@/lib/packEmpire/people'
 import mobileStyles from '../../../mobile.module.css'
 import { PeChrome } from '../../chrome'
@@ -37,6 +38,10 @@ export default async function VersusChallengePage({ params }: { params: Promise<
 
   const mobile = (await getViewMode()) === 'mobile'
   const yourName = user ? await nameForUser(createAdminClient(), user.id) : null
+  // Offer "add as a friend" off the result only when there's an account on
+  // the other side and the two of you aren't friends already.
+  const opponent = user && view.you ? await versusOpponent(view.id, user.id) : null
+  const canFriend = !!opponent && !(await areFriends(user!.id, opponent))
 
   return (
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.boardRoot : ''}`.trim()}>
@@ -50,7 +55,7 @@ export default async function VersusChallengePage({ params }: { params: Promise<
         titleEm="Challenge"
       />
       <div className="pe-wrap">
-        <VersusRoom initial={view} signedIn={!!user} yourName={yourName} />
+        <VersusRoom initial={view} signedIn={!!user} yourName={yourName} canFriend={canFriend} />
       </div>
       {!mobile && <SiteFooter />}
     </main>

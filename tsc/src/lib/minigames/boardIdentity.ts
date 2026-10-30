@@ -161,16 +161,78 @@ async function resolveClaimedNames(userIds: string[]): Promise<Map<string, Board
 }
 
 /**
+ * The board names players have set on their profile (0082).
+ *
+ * A name somebody picked for themselves, so it outranks one inferred from a
+ * league claim everywhere except a league's own board, where the manager
+ * name is what everyone reading it calls them.
+ */
+async function resolveChosenNames(userIds: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>()
+  const ids = [...new Set(userIds)]
+  if (ids.length === 0) return out
+  const { data } = await createAdminClient()
+    .from('profiles')
+    .select('id, board_name')
+    .in('id', ids)
+    .not('board_name', 'is', null)
+  for (const p of (data ?? []) as { id: string; board_name: string | null }[]) {
+    const name = p.board_name?.trim()
+    if (name) out.set(p.id, name)
+  }
+  return out
+}
+
+/**
  * The name and face for every account on one board, whichever board it is.
  *
  * One call for both cases so the leaderboard never has to ask which kind of
  * pool it is holding.
  */
-export function resolveBoardIdentities(
+export async function resolveBoardIdentities(
   poolId: string,
   userIds: string[]
 ): Promise<Map<string, BoardIdentity>> {
-  return soleLeagueSlug(poolId)
-    ? resolveLeagueIdentities(poolId, userIds)
-    : resolveClaimedNames(userIds)
+  const league = !!soleLeagueSlug(poolId)
+  const [ids, chosen] = await Promise.all([
+    league ? resolveLeagueIdentities(poolId, userIds) : resolveClaimedNames(userIds),
+    resolveChosenNames(userIds),
+  ])
+  for (const [id, name] of chosen) {
+    if (league && ids.has(id)) continue
+    ids.set(id, { name, avatar: null })
+  }
+  return ids
+}
+
+/**
+ * What to call each account in front of other people, off any board: the
+ * friends list, a Pack Empire seat, a challenge.
+ *
+ * The site-board rule (a chosen board name, then the most recent league
+ * claim), and failing both the display name unless it is an email address,
+ * then the member code. Every account in `userIds` gets a name.
+ */
+export async function publicNames(userIds: string[]): Promise<Map<string, string>> {
+  const ids = [...new Set(userIds)]
+  const out = new Map<string, string>()
+  if (ids.length === 0) return out
+  const [{ data }, resolved] = await Promise.all([
+    createAdminClient().from('profiles').select('id, display_name, member_code').in('id', ids),
+    resolveBoardIdentities('site', ids),
+  ])
+  const profiles = new Map(
+    ((data ?? []) as { id: string; display_name: string | null; member_code: string | null }[]).map((p) => [p.id, p])
+  )
+  for (const id of ids) {
+    const found = resolved.get(id)?.name
+    if (found) {
+      out.set(id, found)
+      continue
+    }
+    const p = profiles.get(id)
+    const shown = (p?.display_name ?? '').trim()
+    out.set(id, shown && !shown.includes('@') ? shown.slice(0, 40) : (p?.member_code ?? 'Manager'))
+  }
+  return out
 }

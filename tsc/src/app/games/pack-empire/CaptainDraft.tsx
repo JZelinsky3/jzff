@@ -155,12 +155,14 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro }: DraftProps)
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const restored = start.restored
-  const { stage, flash, open, reveal, revealAll, pick, dismiss } = usePackStage()
+  const { stage, flash, landing, open, tear, reveal, revealAll, skip, pick, dismiss, settle } = usePackStage()
 
   useStripOffset()
 
-  const filled = lineup.filter(Boolean).length
-  const score = lineupScore(lineup)
+  // The strip counts a card once it lands, not while it's in the air.
+  const settled = settle(lineup)
+  const filled = settled.filter(Boolean).length
+  const score = lineupScore(settled)
   const tier = tierFor(score)
 
   const chooseCaptain = useCallback(
@@ -200,6 +202,7 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro }: DraftProps)
         return
       }
       const slot = stage.slot
+      let done: DraftDone | null = null
       pick(i, (card) => {
         const nextLineup = [...lineup]
         nextLineup[slot] = card
@@ -209,14 +212,14 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro }: DraftProps)
         if (nextPicks.length === SLOT_COUNT) {
           writeSaved(saveKey, null)
           const full = nextLineup as Player[]
-          // After the stage has cleared, so the last card is seen landing.
-          window.setTimeout(
-            () => onDone({ seed, captain, picks: nextPicks, lineup: full, score: lineupScore(full) }),
-            420
-          )
+          done = { seed, captain, picks: nextPicks, lineup: full, score: lineupScore(full) }
         } else {
           writeSaved(saveKey, { seed, captain, picks: nextPicks, lineup: nextLineup, at: Date.now() })
         }
+      }).then((landed) => {
+        // After the last card has landed and the count has run up.
+        const run = done
+        if (landed && run) window.setTimeout(() => onDone(run), 900)
       })
     },
     [stage, captain, seed, reveal, pick, lineup, picks, saveKey, onDone]
@@ -287,7 +290,7 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro }: DraftProps)
       )}
 
       <div className="pe-turf">
-        <Field lineup={lineup} view={view} onSlot={choosing ? chooseCaptain : openSlot} />
+        <Field lineup={lineup} view={view} onSlot={choosing ? chooseCaptain : openSlot} landing={landing} />
         {!choosing && !stage && filled < SLOT_COUNT && (
           <p className="pe-turf-note pe-note">
             Tap a pack to open it · {SLOT_COUNT - filled} to go
@@ -303,6 +306,8 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro }: DraftProps)
           onCard={onCard}
           onRevealAll={revealAll}
           onDismiss={dismiss}
+          onTear={tear}
+          onSkip={skip}
         />
       )}
     </>

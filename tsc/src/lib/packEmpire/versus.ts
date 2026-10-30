@@ -12,6 +12,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { newCaptainSeed } from './deal'
+import { friendOf } from '@/lib/friends'
 import { hashKey, nameForUser, cleanGuestName, newId, isId } from './people'
 import { replaySolo, type SoloPick } from './solo'
 import { SLOT_COUNT, tierFor, type Player } from './rules'
@@ -41,6 +42,8 @@ type Row = {
   guest_result: VersusResult | null
   status: 'open' | 'playing' | 'done'
   completed_at: string | null
+  /** A challenge sent to one friend: only that account can take the seat. */
+  invited_id: string | null
 }
 
 export type SideView = {
@@ -66,6 +69,9 @@ export type VersusView = {
   yourSeed: string | null
   /** True when the guest seat is empty and the viewer isn't the host. */
   canJoin: boolean
+  /** Sent to one friend, who hasn't taken the seat yet. The guest's name is
+      already theirs, so the seat reads as held rather than open. */
+  reserved: boolean
 }
 
 function side(row: Row, seat: Seat, reveal: boolean): SideView {
@@ -89,8 +95,9 @@ export function seatFor(row: Row, userId: string | null, key: unknown): Seat | n
   return null
 }
 
-function view(row: Row, you: Seat | null): VersusView {
+function view(row: Row, you: Seat | null, viewerId: string | null): VersusView {
   const both = !!row.host_result && !!row.guest_result
+  const empty = !row.guest_id && !row.guest_key
   return {
     id: row.id,
     status: row.status,
@@ -99,7 +106,8 @@ function view(row: Row, you: Seat | null): VersusView {
     guest: side(row, 'guest', both),
     you,
     yourSeed: you === 'host' ? row.host_seed : you === 'guest' ? row.guest_seed : null,
-    canJoin: you == null && !row.guest_id && !row.guest_key,
+    canJoin: you == null && empty && (!row.invited_id || row.invited_id === viewerId),
+    reserved: empty && !!row.invited_id,
   }
 }
 
@@ -113,17 +121,31 @@ async function load(id: string): Promise<Row | null> {
 export async function getVersus(id: string, userId: string | null, key: unknown): Promise<VersusView | null> {
   const row = await load(id)
   if (!row) return null
-  return view(row, seatFor(row, userId, key))
+  return view(row, seatFor(row, userId, key), userId)
 }
 
 export type Fail = { ok: false; error: string; status?: number }
 
-export async function createVersus(userId: string): Promise<{ ok: true; id: string } | Fail> {
+/**
+ * Opens a challenge. With `friendship`, it is sent to that friend: their seat
+ * is held for them and their name goes on it now, and it shows in their list
+ * of challenges before they have ever opened the link.
+ */
+export async function createVersus(
+  userId: string,
+  friendship?: unknown
+): Promise<{ ok: true; id: string } | Fail> {
   const db = createAdminClient()
+  let invite: { invited_id: string; guest_name: string } | null = null
+  if (friendship != null) {
+    const friend = await friendOf(userId, friendship)
+    if (!friend) return { ok: false, error: 'You can only send a challenge to a friend.', status: 403 }
+    invite = { invited_id: friend, guest_name: await nameForUser(db, friend) }
+  }
   const name = await nameForUser(db, userId)
   for (let attempt = 0; attempt < 4; attempt++) {
     const id = newId()
-    const { error } = await db.from('pe_versus').insert({ id, host_id: userId, host_name: name })
+    const { error } = await db.from('pe_versus').insert({ id, host_id: userId, host_name: name, ...invite })
     if (!error) return { ok: true, id }
     if (error.code !== '23505') return { ok: false, error: 'Could not open a challenge.' }
   }
@@ -139,8 +161,11 @@ export async function joinVersus(
   const row = await load(id)
   if (!row) return { ok: false, error: 'No such challenge.', status: 404 }
   const already = seatFor(row, userId, key)
-  if (already) return { ok: true, view: view(row, already) }
+  if (already) return { ok: true, view: view(row, already, userId) }
   if (row.guest_id || row.guest_key) return { ok: false, error: 'Somebody already took this challenge.' }
+  if (row.invited_id && row.invited_id !== userId) {
+    return { ok: false, error: `This challenge was sent to ${row.guest_name ?? 'someone else'}.`, status: 403 }
+  }
 
   const db = createAdminClient()
   let patch: Record<string, unknown>
@@ -166,7 +191,7 @@ export async function joinVersus(
     .maybeSingle()
   if (error || !data) return { ok: false, error: 'Somebody already took this challenge.' }
   const fresh = data as Row
-  return { ok: true, view: view(fresh, seatFor(fresh, userId, key)) }
+  return { ok: true, view: view(fresh, seatFor(fresh, userId, key), userId) }
 }
 
 export async function startVersusSeat(
@@ -212,7 +237,7 @@ export async function submitVersusSeat(
 
   const seed = seat === 'host' ? row.host_seed : row.guest_seed
   if (!seed) return { ok: false, error: 'That draft was never started.' }
-  if (seat === 'host' ? row.host_result : row.guest_result) return { ok: true, view: view(row, seat) }
+  if (seat === 'host' ? row.host_result : row.guest_result) return { ok: true, view: view(row, seat, userId) }
 
   if (!Array.isArray(rawPicks) || rawPicks.length !== SLOT_COUNT) return { ok: false, error: 'That lineup is incomplete.' }
   const picks: SoloPick[] = []
@@ -259,7 +284,7 @@ export async function submitVersusSeat(
     await db.from('pe_versus').update({ status: 'done', completed_at: new Date().toISOString() }).eq('id', id)
     fresh.status = 'done'
   }
-  return { ok: true, view: view(fresh, seat) }
+  return { ok: true, view: view(fresh, seat, userId) }
 }
 
 export type VersusListItem = {
@@ -270,15 +295,18 @@ export type VersusListItem = {
   opponent: string | null
   yourScore: number | null
   theirScore: number | null
+  /** A friend sent it to you and you haven't opened it yet. */
+  waitingOnYou: boolean
 }
 
-/** A signed-in player's challenges, newest first. */
+/** A signed-in player's challenges, newest first, including ones a friend
+    has sent them and they haven't opened. */
 export async function listVersus(userId: string): Promise<VersusListItem[]> {
   const db = createAdminClient()
   const { data } = await db
     .from('pe_versus')
-    .select('id, status, created_at, host_id, host_name, host_result, guest_id, guest_name, guest_result')
-    .or(`host_id.eq.${userId},guest_id.eq.${userId}`)
+    .select('id, status, created_at, host_id, host_name, host_result, guest_id, guest_name, guest_result, invited_id')
+    .or(`host_id.eq.${userId},guest_id.eq.${userId},invited_id.eq.${userId}`)
     .order('created_at', { ascending: false })
     .limit(20)
   return ((data ?? []) as Row[]).map((r) => {
@@ -293,6 +321,66 @@ export async function listVersus(userId: string): Promise<VersusListItem[]> {
       opponent: you === 'host' ? r.guest_name : r.host_name,
       yourScore: mine?.score ?? null,
       theirScore: theirs?.score ?? null,
+      waitingOnYou: r.invited_id === userId && !r.guest_id,
     }
   })
+}
+
+export type VersusResultRow = {
+  id: string
+  /** The other seat's account, or null for a signed-out challenger. */
+  opponentId: string | null
+  opponent: string | null
+  yours: number
+  theirs: number
+  at: string
+}
+
+/** Every finished challenge this account sat in, for its record and its
+    head-to-heads. Scores only; the lineups stay in the room. */
+export async function versusResults(userId: string): Promise<VersusResultRow[]> {
+  const { data } = await createAdminClient()
+    .from('pe_versus')
+    .select('id, completed_at, created_at, host_id, host_name, guest_id, guest_name, host_score:host_result->score, guest_score:guest_result->score')
+    .eq('status', 'done')
+    .or(`host_id.eq.${userId},guest_id.eq.${userId}`)
+    .order('completed_at', { ascending: false })
+    .limit(500)
+  type R = {
+    id: string
+    completed_at: string | null
+    created_at: string
+    host_id: string
+    host_name: string
+    guest_id: string | null
+    guest_name: string | null
+    host_score: number | null
+    guest_score: number | null
+  }
+  return ((data ?? []) as R[]).map((r) => {
+    const host = r.host_id === userId
+    return {
+      id: r.id,
+      opponentId: host ? r.guest_id : r.host_id,
+      opponent: host ? r.guest_name : r.host_name,
+      yours: Number((host ? r.host_score : r.guest_score) ?? 0),
+      theirs: Number((host ? r.guest_score : r.host_score) ?? 0),
+      at: r.completed_at ?? r.created_at,
+    }
+  })
+}
+
+/** The other account in a finished or running challenge, for "add as a
+    friend" off the result. Null unless the viewer sat in it. */
+export async function versusOpponent(id: unknown, userId: string): Promise<string | null> {
+  if (!isId(id)) return null
+  const { data } = await createAdminClient()
+    .from('pe_versus')
+    .select('host_id, guest_id')
+    .eq('id', id)
+    .maybeSingle()
+  if (!data) return null
+  if (data.host_id === userId) return data.guest_id ?? null
+  if (data.guest_id === userId) return data.host_id
+  return null
 }

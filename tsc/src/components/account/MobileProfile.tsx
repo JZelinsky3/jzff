@@ -7,6 +7,7 @@ import { REFERRAL_OPTIONS } from '@/lib/referralChannels'
 import { createClient as createBrowserSupabase } from '@/lib/supabase/client'
 import { updateEmail, updatePassword, updateMarketingOptIn, updateBackupEmail, updateReferralSource } from '@/app/account/actions'
 import { MemberCodeChip } from '@/app/account/member-code-chip'
+import { BoardNameForm } from './BoardNameForm'
 
 type Result = { ok: false; error: string } | { ok: true; message?: string } | null
 
@@ -35,6 +36,11 @@ export function MobileProfile({
   justSubscribed,
   referralSource,
   referralOther,
+  boardName,
+  shownAs,
+  records,
+  friends,
+  waiting,
 }: {
   email: string
   memberCode: string
@@ -50,7 +56,26 @@ export function MobileProfile({
   justSubscribed: boolean
   referralSource: string | null
   referralOther: string
+  boardName: string
+  shownAs: string
+  records: React.ReactNode
+  friends: React.ReactNode
+  /** Friend requests and challenges waiting; when there are any, friends
+      jump above the record book so they're on the first screen. */
+  waiting: number
 }) {
+  const recordSection = (
+    <div className="mprof-section" id="records">
+      <div className="mprof-section-label">Record Book</div>
+      {records}
+    </div>
+  )
+  const friendSection = (
+    <div className="mprof-section" id="friends">
+      <div className="mprof-section-label">Friends</div>
+      {friends}
+    </div>
+  )
   return (
     <main className="mprof">
       {/* ── Top bar ── */}
@@ -72,6 +97,20 @@ export function MobileProfile({
         <div className="mprof-identity-email">{email}</div>
         {memberCode && <MemberCodeChip code={memberCode} />}
       </div>
+
+      <MobileBoardNameSection boardName={boardName} shownAs={shownAs} />
+
+      {waiting > 0 ? (
+        <>
+          {friendSection}
+          {recordSection}
+        </>
+      ) : (
+        <>
+          {recordSection}
+          {friendSection}
+        </>
+      )}
 
       {/* ── Subscription ── */}
       <MobileSubscriptionCard
@@ -125,6 +164,29 @@ export function MobileProfile({
         <Link href="/pricing" className="mprof-footer-link">Pricing</Link>
       </div>
     </main>
+  )
+}
+
+/* ─── Board name ─── */
+
+function MobileBoardNameSection({ boardName, shownAs }: { boardName: string; shownAs: string }) {
+  const [editing, setEditing] = useState(false)
+  return (
+    <div className="mprof-section">
+      <div className="mprof-section-label">Goes by</div>
+      <div className="mprof-card">
+        {!editing ? (
+          <div className="mprof-card-row">
+            <span className="mprof-card-title">{boardName || shownAs}</span>
+            <button type="button" className="mprof-badge-btn" onClick={() => setEditing(true)}>
+              {boardName ? 'Change' : 'Set'}
+            </button>
+          </div>
+        ) : (
+          <BoardNameForm initial={boardName} fallback={shownAs} onDone={() => setEditing(false)} />
+        )}
+      </div>
+    </div>
   )
 }
 

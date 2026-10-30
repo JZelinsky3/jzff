@@ -15,6 +15,7 @@
 // over every run, with a minimum so one hot wheel can't top it.
 
 import type { Board, BestRow, CareerRow, GameId } from '@/lib/minigames/leaderboard'
+import { runStat } from '@/lib/minigames/runStat'
 import { BoardFace } from './BoardFace'
 import styles from './board.module.css'
 
@@ -66,29 +67,10 @@ function playoffChip(round: string | undefined): { label: string; won: boolean }
   return null
 }
 
-/** What a row prints on the right, per game. */
+/** What a row prints on the right, per game. For Multiverse the round goes
+    in a chip next to the date, so this line stays one fact. */
 function statFor(game: GameId, row: BestRow): { big: string; small: string } {
-  const d = row.display
-  switch (game) {
-    case 'roulette':
-      return { big: d.record ?? String(row.score), small: `${d.ppg ?? row.score} PPG` }
-    case 'gauntlet':
-      return d.streak != null
-        ? { big: String(d.streak), small: 'straight' }
-        : { big: `${d.correct ?? row.score}/${d.asked ?? 10}`, small: 'correct' }
-    case 'redraft':
-      return { big: d.record ?? String(row.score), small: `${d.margin ?? 0} a game` }
-    case 'multiverse':
-      // Never `row.score`: that one is a packed sort key (wins, then win
-      // rate, then scoring) and printing it would put a ten-digit number on
-      // the board. The record is the display and it always exists.
-      // The round goes in a chip next to the date; this line stays one fact.
-      return { big: d.record ?? '·', small: `${d.ppg ?? 0} PPG` }
-    case 'pack-empire':
-      return { big: (d.accolades ?? row.score).toLocaleString(), small: d.tier ?? 'accolades' }
-    default:
-      return { big: `${d.correct ?? row.score}/${d.asked ?? 10}`, small: 'correct' }
-  }
+  return runStat(game, row.display, row.score)
 }
 
 export function BoardTable({
