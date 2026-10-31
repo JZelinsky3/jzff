@@ -446,9 +446,14 @@ function teamSeasons(era: Era): Player[][] {
  * One real team hidden across a shared deal: its men drop into different packs
  * among everything else, nothing marks them, and finding them pays double
  * chemistry. It's the reason to know who actually played together in 2019.
+ *
+ * Always the teams the odds were tuned on, whatever the pool holds now. A team's
+ * cards go in with no weighted draw, so as the pool gains commons a team would
+ * bring more of them with it: the 1,000-card pool put Even packs about a point
+ * more common, and its totals about 3% down.
  */
-function plantedSeason(rnd: () => number, era: Era = CURRENT_ERA): Player[] {
-  const seasons = teamSeasons(era)
+function plantedSeason(rnd: () => number): Player[] {
+  const seasons = teamSeasons(BEFORE_ERA)
   const cards = shuffled(seasons[Math.floor(rnd() * seasons.length)], rnd)
   const seen = new Set<string>()
   return cards.filter((c) => !seen.has(personOf(c)) && !!seen.add(personOf(c)))
@@ -571,7 +576,7 @@ export function dailySet(day: string, version: string): DailySet {
 
   // In the first ten packs, so a day with a captain can still reach them all.
   const packOrder = shuffled(Array.from({ length: SLOT_COUNT - 1 }, (_, i) => i), rnd)
-  for (const card of plantedSeason(rnd, era)) {
+  for (const card of plantedSeason(rnd)) {
     const pack = packOrder.find((i) => !wild[i].length)
     if (pack == null) break
     if (!pools[pack].includes(card.pos)) pools[pack][Math.floor(rnd() * PACK_SIZE)] = card.pos
@@ -659,6 +664,10 @@ const MEGA_FAIR_READ = 150
 /** A typical board takes about 70 deals to pass, one in a thousand 600. */
 const MEGA_MAX_DEALS = 700
 
+/** The star at each position is any dynasty-or-better, all alike. Through the
+    sampler anyway, so a pool that gains dynasties doesn't crowd out immortals. */
+const ONE_EACH: Weights = { common: 1, rare: 1, dynasty: 1, transcendent: 1, immortal: 1 }
+
 /** A board's cards: at least one dynasty-or-better at every position, the
     rest weighted off MEGA_WEIGHTS without replacement. One version of a man
     per board, so the two seats can't both draft him. */
@@ -672,7 +681,7 @@ function megaCards(seed: string, deal: number): Player[] {
 
     const stars = pool.filter((p) => p.rarity === 'dynasty' || p.rarity === 'transcendent' || p.rarity === 'immortal')
     if (stars.length) {
-      const s = stars[Math.floor(rnd() * stars.length)]
+      const s = sampler(stars, ONE_EACH)(rnd()) as Player
       picked.add(personOf(s))
       out.push(s)
     }

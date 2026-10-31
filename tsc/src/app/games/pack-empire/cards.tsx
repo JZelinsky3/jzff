@@ -911,7 +911,6 @@ function FilledSlot({
           </div>
           {!blind && (
             <div className={`pe-fc-rar-badge ${player.rarity}`} style={{ color: rc.color }}>
-              <RarityGem rarity={player.rarity} />
               {RARITY_LOOK[player.rarity].label}
             </div>
           )}
@@ -1160,7 +1159,6 @@ export function LineupSheet({
             <span className="pe-line-name">
               {p.name}
               <small>
-                <RarityGem rarity={p.rarity} />
                 {rc.label}
                 {p.year ? ` · ${p.year}` : ''}
                 {captain === i ? ' · Captain' : ''}

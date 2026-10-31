@@ -10,8 +10,13 @@
 //
 // The room's own palette and type: charcoal, each mode's colour, DM Serif for
 // the words and Orbitron for the numbers. Text left, object right. The packs are
-// the game's real torn packs with its real light, rendered once by
-// scripts/pack-empire-fx/og-art.mjs into public/og/pack-empire.
+// the game's real torn packs with its real light, rendered once into
+// public/og/pack-empire.
+//
+// iMessage lays a bar over the bottom of the card (title and link) and tints it
+// from the picture. So two rules. Nothing that matters goes in the bottom 80px,
+// and the whole card, edges included, is steeped in its mode's colour: on the
+// room's charcoal with a coloured glow, every card came out with a brown bar.
 //
 // Satori traps, all hit on other cards: every helper here is CALLED, never used
 // as a <Component>, because a component returning mapped children hangs the
@@ -46,9 +51,6 @@ export const runtime = 'nodejs'
 const W = 1200
 const H = 630
 
-const ROOM = '#141311'
-const PANEL = '#1e1c19'
-const LINE = '#34302a'
 const CREAM = '#f4ead6'
 const MUTE = '#a79d8b'
 const DIM = '#6f675a'
@@ -129,6 +131,18 @@ function mix(hex: string, alpha: number): string {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`
 }
 
+/** A colour sunk toward black, as a solid. */
+function steep(hex: string, amount: number): string {
+  const n = parseInt(hex.slice(1), 16)
+  const at = (v: number, under: number) => Math.round(under + (v - under) * amount)
+  return `rgb(${at((n >> 16) & 255, 9)}, ${at((n >> 8) & 255, 10)}, ${at(n & 255, 12)})`
+}
+
+/** The card's ground, the plates on it and their hairlines, all in its colour. */
+const ground = (accent: string) => steep(accent, 0.2)
+const plate = (accent: string) => steep(accent, 0.13)
+const rule = (accent: string) => steep(accent, 0.34)
+
 const num = (n: number) => n.toLocaleString('en-US')
 
 /** Anything a person typed, shown large to whoever gets the link. */
@@ -203,7 +217,7 @@ function chips(list: string[], accent: string) {
           style={{
             display: 'flex',
             padding: '9px 16px',
-            border: `2px solid ${i === 0 ? accent : LINE}`,
+            border: `2px solid ${i === 0 ? accent : rule(accent)}`,
             borderRadius: 8,
             fontFamily: 'Mono',
             fontWeight: 700,
@@ -237,43 +251,52 @@ function room(accent: string, kicker: string, left: React.ReactNode, right: Reac
         display: 'flex',
         position: 'relative',
         overflow: 'hidden',
-        backgroundColor: ROOM,
-        backgroundImage: `radial-gradient(circle at 82% 44%, ${mix(accent, 0.15)} 0%, ${ROOM} 62%)`,
+        backgroundColor: ground(accent),
+        backgroundImage: `radial-gradient(circle at 82% 40%, ${mix(accent, 0.3)} 0%, ${mix(accent, 0.17)} 34%, ${mix(accent, 0.07)} 62%, ${mix(accent, 0)} 92%)`,
         color: CREAM,
       }}
     >
       <div style={{ position: 'absolute', left: 0, top: 0, width: W, height: 10, background: accent, display: 'flex' }} />
+      {/* What the bar under the card picks its colour from. */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          bottom: 0,
+          width: W,
+          height: 150,
+          display: 'flex',
+          backgroundImage: `linear-gradient(to bottom, ${mix(accent, 0)} 0%, ${steep(accent, 0.46)} 100%)`,
+        }}
+      />
       <div style={{ position: 'absolute', left: 660, top: 0, width: 540, height: H, display: 'flex' }}>{right}</div>
-      <div style={{ position: 'absolute', left: 64, top: 54, bottom: 44, width: 660, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'absolute', left: 64, top: 48, bottom: 78, width: 660, display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
           <div style={{ display: 'flex', fontFamily: 'Orbitron', fontWeight: 800, fontSize: 25, letterSpacing: 3, color: AMBER }}>
             PACK EMPIRE
           </div>
-          <div style={{ display: 'flex', width: 2, height: 22, background: LINE, flexShrink: 0 }} />
+          <div style={{ display: 'flex', width: 2, height: 22, background: rule(accent), flexShrink: 0 }} />
           <div style={{ display: 'flex', fontFamily: 'Mono', fontWeight: 700, fontSize: 19, letterSpacing: 2, color: MUTE }}>
             {kicker.toUpperCase()}
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'center', marginTop: 8 }}>{left}</div>
-        <div style={{ display: 'flex', fontFamily: 'Mono', fontSize: 19, letterSpacing: 1, color: DIM, flexShrink: 0 }}>
-          thesundaychronicle.app
-        </div>
       </div>
     </div>
   )
 }
 
-/** One torn pack, standing on the bottom edge. */
-function pack(src: string, size = 1, x = 0, spin = 0) {
-  const w = 596 * 0.86 * size
-  const h = 854 * 0.86 * size
+/** One torn pack, whole, its foot clear of the bar that sits over the card. */
+function pack(src: string, size = 1, x = 0, spin = 0, ratio = 596 / 854) {
+  const h = 532 * size
+  const w = h * ratio
   return (
     <img
       src={src}
       alt=""
       width={w}
       height={h}
-      style={{ position: 'absolute', left: 270 - w / 2 + x, top: 46 + (H - 46 - h) / 2, ...(spin ? { transform: `rotate(${spin}deg)` } : {}) }}
+      style={{ position: 'absolute', left: 270 - w / 2 + x, top: 546 - h, ...(spin ? { transform: `rotate(${spin}deg)` } : {}) }}
     />
   )
 }
@@ -288,7 +311,7 @@ function tiles(cols: number, rows: number, w: number, gap: number, accent: strin
       style={{
         position: 'absolute',
         left: 270 - (cols * w + (cols - 1) * gap) / 2,
-        top: 40 + (H - 40 - (rows * h + (rows - 1) * gap)) / 2,
+        top: 26 + (530 - (rows * h + (rows - 1) * gap)) / 2,
         width: cols * w + (cols - 1) * gap,
         display: 'flex',
         flexWrap: 'wrap',
@@ -308,8 +331,8 @@ function tiles(cols: number, rows: number, w: number, gap: number, accent: strin
               width: w,
               height: h,
               borderRadius: 8,
-              border: `2px solid ${c ?? LINE}`,
-              backgroundColor: c ? mix(c, 0.18) : PANEL,
+              border: `2px solid ${c ?? rule(accent)}`,
+              backgroundColor: c ? mix(c, 0.18) : plate(accent),
               ...(c ? { boxShadow: `0 0 26px ${mix(c, 0.55)}` } : {}),
             }}
           >
@@ -399,9 +422,9 @@ async function fan(lineup: (Player | null)[]) {
   const shots = await Promise.all(top.map((p) => photo(faces[p.id] ?? p.img)))
   // Best card in the middle. Satori has no z-index, so it's drawn last.
   const seats: [number, number, number][] = [
-    [180, 150, 0],
-    [40, 188, -8],
-    [316, 188, 8],
+    [180, 110, 0],
+    [40, 148, -8],
+    [316, 148, 8],
   ]
   return (
     <div style={{ display: 'flex', position: 'relative', width: 540, height: H }}>
@@ -418,7 +441,7 @@ function scoreboard(
   accent: string
 ) {
   return (
-    <div style={{ position: 'absolute', left: 16, top: 64, width: 500, height: H - 108, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 18 }}>
+    <div style={{ position: 'absolute', left: 16, top: 40, width: 500, height: 510, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 18 }}>
       {rows.map((r, i) => (
         <div
           key={i}
@@ -427,8 +450,8 @@ function scoreboard(
             flexDirection: 'column',
             padding: '20px 26px 22px',
             borderRadius: 14,
-            border: `2px solid ${r.win ? accent : LINE}`,
-            backgroundColor: r.win ? mix(accent, 0.12) : PANEL,
+            border: `2px solid ${r.win ? accent : rule(accent)}`,
+            backgroundColor: r.win ? mix(accent, 0.14) : plate(accent),
             ...(r.win ? { boxShadow: `0 0 44px ${mix(accent, 0.34)}` } : {}),
           }}
         >
@@ -457,7 +480,7 @@ function scoreboard(
 /** Ranked names, for the board and a league's table. */
 function table(rows: { name: string; score: number }[], accent: string, title: string) {
   return (
-    <div style={{ position: 'absolute', left: 16, top: 64, width: 500, height: H - 108, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12 }}>
+    <div style={{ position: 'absolute', left: 16, top: 40, width: 500, height: 510, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12 }}>
       <div style={{ display: 'flex', fontFamily: 'Mono', fontWeight: 700, fontSize: 19, letterSpacing: 2, color: accent, marginBottom: 4 }}>
         {title.toUpperCase()}
       </div>
@@ -469,8 +492,8 @@ function table(rows: { name: string; score: number }[], accent: string, title: s
             alignItems: 'center',
             padding: '14px 22px',
             borderRadius: 12,
-            border: `2px solid ${i === 0 ? accent : LINE}`,
-            backgroundColor: i === 0 ? mix(accent, 0.12) : PANEL,
+            border: `2px solid ${i === 0 ? accent : rule(accent)}`,
+            backgroundColor: i === 0 ? mix(accent, 0.14) : plate(accent),
           }}
         >
           <div style={{ display: 'flex', width: 46, fontFamily: 'Orbitron', fontWeight: 800, fontSize: 26, color: i === 0 ? accent : DIM }}>{i + 1}</div>
@@ -487,7 +510,9 @@ function table(rows: { name: string; score: number }[], accent: string, title: s
 // ── Scenes ───────────────────────────────────────────────────
 
 async function modeScene(c: string, day: string | null) {
-  const stage = (src: string) => <div style={{ display: 'flex', position: 'relative', width: 540, height: H }}>{pack(src)}</div>
+  const stage = (src: string, ratio?: number) => (
+    <div style={{ display: 'flex', position: 'relative', width: 540, height: H }}>{pack(src, 1, 0, 0, ratio)}</div>
+  )
 
   if (c === 'builder') {
     return room(
@@ -510,8 +535,8 @@ async function modeScene(c: string, day: string | null) {
         {sub('Send a friend the link. You each draft your own eleven and the bigger total wins.')}
       </div>,
       <div style={{ display: 'flex', position: 'relative', width: 540, height: H }}>
-        {pack(b, 0.8, 104, 7)}
-        {pack(a, 0.8, -96, -7)}
+        {pack(b, 0.94, 112, 7)}
+        {pack(a, 0.94, -104, -7)}
       </div>
     )
   }
@@ -593,12 +618,12 @@ async function modeScene(c: string, day: string | null) {
       {sub('Keep one player from each pack and build the best offense anyone has opened.')}
       {chips([`${num(POOL_SIZE)} cards`, 'Free to play'], AMBER)}
     </div>,
-    stage(await art('home'))
+    stage(await art('home'), 668 / 918)
   )
 }
 
 function megaBoard() {
-  return tiles(6, 6, 58, 9, MODE.mega, { 3: 'dynasty', 8: 'rare', 14: 'immortal', 19: 'common', 22: 'transcendent', 27: 'rare', 33: 'dynasty' })
+  return tiles(6, 6, 52, 9, MODE.mega, { 3: 'dynasty', 8: 'rare', 14: 'immortal', 19: 'common', 22: 'transcendent', 27: 'rare', 33: 'dynasty' })
 }
 
 /** A friend invite: the two of you, side by side. */
@@ -625,7 +650,7 @@ function seats(name: string, other: string | null) {
     </div>
   )
   return (
-    <div style={{ display: 'flex', position: 'relative', width: 540, height: H, alignItems: 'center', justifyContent: 'center', gap: 22, paddingTop: 30 }}>
+    <div style={{ display: 'flex', position: 'relative', width: 540, height: H, alignItems: 'center', justifyContent: 'center', gap: 22, paddingBottom: 60 }}>
       {plate(clean(name, 14), clean(name, 1).toUpperCase() || 'P', true)}
       {plate(other ?? 'You', '+', false)}
     </div>
@@ -667,8 +692,8 @@ async function versusScene(id: string) {
   const [a, b] = await Promise.all([art('versus-a'), art('versus-b')])
   const duo = (
     <div style={{ display: 'flex', position: 'relative', width: 540, height: H }}>
-      {pack(b, 0.8, 104, 7)}
-      {pack(a, 0.8, -96, -7)}
+      {pack(b, 0.94, 112, 7)}
+      {pack(a, 0.94, -104, -7)}
     </div>
   )
 

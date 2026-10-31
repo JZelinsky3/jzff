@@ -5278,7 +5278,7 @@ a.pe-row:hover {
   }
 
   .pe-fc-rar-badge.transcendent {
-    font-size: 0.35rem;
+    font-size: 0.4rem;
     letter-spacing: 0;
   }
 
@@ -8172,24 +8172,6 @@ a.pe-row:hover {
 .pe-bd-sheet-card .pe-cf-rlab .pe-gem {
   width: 1.15em;
   height: 1.15em;
-}
-
-.pe-fc-rar-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25em;
-}
-
-.pe-fc-rar-badge .pe-gem {
-  width: 1.15em;
-  height: 1.15em;
-}
-
-.pe-line-name small .pe-gem {
-  width: 1em;
-  height: 1em;
-  vertical-align: -0.14em;
-  margin-right: 0.3em;
 }
 
 /* Whole pixels: a fractional gem and its label snap apart at 1x and 2x. */

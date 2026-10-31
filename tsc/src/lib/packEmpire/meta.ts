@@ -8,7 +8,7 @@ import type { Metadata } from 'next'
 const SITE = 'The Sunday Chronicle'
 
 /** Bump on a redesign: scrapers hold a card by its URL for weeks. */
-const CARD_VERSION = 1
+const CARD_VERSION = 2
 
 export function peCard(params: Record<string, string | number | null | undefined>): string {
   const q = new URLSearchParams({ v: String(CARD_VERSION) })

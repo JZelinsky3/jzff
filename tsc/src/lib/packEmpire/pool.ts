@@ -26,7 +26,7 @@ import addedAfterE from './data/added-after-10e.json'
 import seasons from './data/season-pool.json'
 import { POOL_KEYS, personOf, type Player, type PoolKey, type Rarity, type Weights } from './rules'
 
-export const POOL_VERSION = 'seasons-2026-10f'
+export const POOL_VERSION = 'seasons-2026-10g'
 
 const ALL = seasons as Player[]
 
@@ -74,9 +74,26 @@ const TUNED_ON: Record<PoolKey, Record<Rarity, number>> = {
 const HOLDS = new Map<string, number>()
 for (const p of ALL) HOLDS.set(`${p.pos}|${p.rarity}`, (HOLDS.get(`${p.pos}|${p.rarity}`) ?? 0) + 1)
 
+/**
+ * Immortals come in levels, off the value on the card: the very top of the game
+ * is three times as hard to pull as an immortal just over the line. Shares are
+ * only moved around inside the position's immortals, which together stay exactly
+ * as likely as the tables say.
+ */
+function immortalLevel(score: number): number {
+  return score >= 5000 ? 1 : score >= 4500 ? 2 : 3
+}
+
+const LEVEL_SHARE = new Map<string, number>()
+for (const k of POOL_KEYS) {
+  const top = POOL[k].filter((p) => p.rarity === 'immortal')
+  const whole = top.reduce((sum, p) => sum + immortalLevel(p.score), 0)
+  for (const p of top) LEVEL_SHARE.set(p.id, (immortalLevel(p.score) * top.length) / whole)
+}
+
 /** One card's weight on a table. Every draw goes through this. */
 export function cardWeight(p: Player, weights: Weights): number {
-  const base = Math.max(0, weights[p.rarity] ?? 0)
+  const base = Math.max(0, weights[p.rarity] ?? 0) * (LEVEL_SHARE.get(p.id) ?? 1)
   const now = HOLDS.get(`${p.pos}|${p.rarity}`)
   const tuned = TUNED_ON[p.pos as PoolKey]?.[p.rarity]
   return now && tuned ? (base * tuned) / now : base

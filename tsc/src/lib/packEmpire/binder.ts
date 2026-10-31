@@ -22,12 +22,12 @@ import {
   POOL_KEYS,
   SOLO_BOOSTED,
   SOLO_WEIGHTS,
-  packOdds,
   personOf,
   RARITIES,
   type Player,
   type PoolKey,
   type Rarity,
+  type Weights,
 } from './rules'
 import { POOL, POOL_SIZE, POOL_VERSION, cardWeight } from './pool'
 import { parseSoloPicks, replaySolo, type SoloPick } from './solo'
@@ -191,18 +191,21 @@ export async function loadCompleteBinder(): Promise<BinderView> {
   return build(new Map(all), await siteCounts())
 }
 
-/** 1 in how many ordinary packs of its position hold each rarity's one card.
-    A pack is four draws off the base table and one off the boosted one. */
-function oneInByRarity(pool: Player[]): Record<Rarity, number> {
-  const base = packOdds(pool, (p) => cardWeight(p, SOLO_WEIGHTS.normal))
-  const boosted = packOdds(pool, (p) => cardWeight(p, SOLO_BOOSTED.normal))
-  const out = {} as Record<Rarity, number>
-  for (const r of RARITIES) {
-    const of = pool.filter((p) => p.rarity === r).length || 1
-    const miss = Math.pow(1 - base[r] / of, PACK_SIZE - 1) * (1 - boosted[r] / of)
-    out[r] = Math.round(1 / (1 - miss))
-  }
-  return out
+/** 1 in how many ordinary packs of its position hold this one card. A pack is
+    four draws off the base table and one off the boosted one. Per card, not per
+    rarity, because immortals have levels. */
+function oneInByCard(pool: Player[]): Map<string, number> {
+  const total = (table: Weights) => pool.reduce((sum, p) => sum + cardWeight(p, table), 0) || 1
+  const base = total(SOLO_WEIGHTS.normal)
+  const boosted = total(SOLO_BOOSTED.normal)
+  return new Map(
+    pool.map((p) => {
+      const miss =
+        Math.pow(1 - cardWeight(p, SOLO_WEIGHTS.normal) / base, PACK_SIZE - 1) *
+        (1 - cardWeight(p, SOLO_BOOSTED.normal) / boosted)
+      return [p.id, Math.round(1 / (1 - miss))]
+    })
+  )
 }
 
 function build(have: Map<string, Count>, site: Map<string, Site>): BinderView {
@@ -213,9 +216,9 @@ function build(have: Map<string, Count>, site: Map<string, Site>): BinderView {
   let pulls = 0
 
   for (const k of POOL_KEYS) {
-    const oneIn = oneInByRarity(POOL[k])
+    const oneIn = oneInByCard(POOL[k])
     for (const p of POOL[k]) {
-      const siteCount: SiteCount = { pulls: site.get(p.id)?.pulls ?? 0, oneIn: oneIn[p.rarity] }
+      const siteCount: SiteCount = { pulls: site.get(p.id)?.pulls ?? 0, oneIn: oneIn.get(p.id) ?? 0 }
       const c = have.get(p.id)
       const card: BinderCard = c
         ? { ...p, pulls: c.pulls, firstAt: c.first_at, site: siteCount }
