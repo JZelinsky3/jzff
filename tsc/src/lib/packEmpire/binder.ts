@@ -29,7 +29,7 @@ import {
   type Rarity,
   type Weights,
 } from './rules'
-import { POOL, POOL_SIZE, POOL_VERSION, cardWeight } from './pool'
+import { POOL, POOL_SIZE, POOL_VERSION, VAULTED, cardWeight } from './pool'
 import { parseSoloPicks, replaySolo, type SoloPick } from './solo'
 
 export type BinderSource = 'solo' | 'versus' | 'league'
@@ -117,7 +117,8 @@ export async function syncBinder(userId: string): Promise<void> {
 /** How a card stands with everyone: times kept across the site, and the odds
     of it being in an ordinary pack of its position. The odds are the game's own
     so they mean the same on day one as in a year; a share of the packs kept so
-    far would swing wildly while the player base is small. */
+    far would swing wildly while the player base is small. A vaulted card is in
+    no pack, so its oneIn is 0. */
 export type SiteCount = { pulls: number; oneIn: number }
 
 /** A version the player has pulled: the whole card, and its counts. */
@@ -157,6 +158,9 @@ export type BinderTotals = {
 
 export type BinderView = {
   men: BinderMan[]
+  /** Vaulted cards this binder holds. Out of the packs and out of the totals:
+      nobody can chase one, so it can't count against finishing the set. */
+  vaulted: BinderMan[]
   totals: BinderTotals
 }
 
@@ -187,7 +191,7 @@ export async function loadBinder(userId: string): Promise<BinderView> {
 /** Every card in the game face up, for the complete binder. Each is filed as
     held so it arrives whole; `pulls` means nothing here, `site` is the count. */
 export async function loadCompleteBinder(): Promise<BinderView> {
-  const all = POOL_KEYS.flatMap((k) => POOL[k].map((p) => [p.id, { card_id: p.id, pulls: 1, first_at: '' }] as const))
+  const all = [...POOL_KEYS.flatMap((k) => POOL[k]), ...VAULTED].map((p) => [p.id, { card_id: p.id, pulls: 1, first_at: '' }] as const)
   return build(new Map(all), await siteCounts())
 }
 
@@ -257,8 +261,19 @@ function build(have: Map<string, Count>, site: Map<string, Site>): BinderView {
   }
   list.sort((a, b) => (score.get(b.cards[0].id) ?? 0) - (score.get(a.cards[0].id) ?? 0))
 
+  const vaulted = new Map<string, BinderMan>()
+  for (const p of VAULTED) {
+    const c = have.get(p.id)
+    if (!c) continue
+    const pid = personOf(p)
+    const man = vaulted.get(pid) ?? { pid, name: p.name, pos: p.pos, cards: [] }
+    man.cards.push({ ...p, pulls: c.pulls, firstAt: c.first_at, site: { pulls: site.get(p.id)?.pulls ?? 0, oneIn: 0 } })
+    vaulted.set(pid, man)
+  }
+
   return {
     men: list,
+    vaulted: [...vaulted.values()],
     totals: {
       cards: POOL_SIZE,
       owned,

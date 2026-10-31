@@ -4,7 +4,7 @@ import pandas as pd, numpy as np
 
 S = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, f'{S}/build')
-from seasons import dealt, norm
+from seasons import dealt, norm, vaulted
 
 BANDS = ['immortal', 'transcendent', 'dynasty', 'rare', 'common']
 
@@ -39,6 +39,7 @@ T_DYN.update(_json.loads(os.environ.get('PE_T_DYN', '{}')))
 SAMPLE_FLOOR.update(_json.loads(os.environ.get('PE_SAMPLE_FLOOR', '{}')))
 
 MAX_PER_MAN = 4
+OPEN_1987 = set()              # norm() of a man allowed a new 1987 card
 TOP_BANDS = {'dynasty', 'transcendent', 'immortal'}
 # Seasons per year per position, so one deep year can't crowd out the rest.
 # Raised from 6 when the pool grew: it had filled every year from 2020 on, so
@@ -180,6 +181,13 @@ def next_open_band(band, pid, can_take):
 def choose(pos, t):
     t = t[t.pos == pos]
     p = t[t.team.notna() & (t.g >= np.where(t.L >= 16, 10, 9))].sort_values('metric', ascending=False).reset_index(drop=True)
+    vault = vaulted()
+    kept = dealt()
+    # On games played, Rice's 1987 is the best WR season there is. A season from
+    # that year joins the pool by decision, not by the walk: it would take a top
+    # seat and re-anchor the whole position. Add one by putting him in OPEN_1987.
+    p = p[[(a, b) not in vault and (b != 1987 or (a, b) in kept or k in OPEN_1987)
+           for a, b, k in zip(p.pid, p.season, p.key)]].reset_index(drop=True)
     career = t.groupby('pid').pts.sum()
     real = career[career >= 400]
     # fame: half the career, half the best year, so a young star counts as a
@@ -208,7 +216,6 @@ def choose(pos, t):
     def take(i, band):
         held.setdefault(p.at[i, 'pid'], set()).add(band); picked[i] = band
 
-    kept = dealt()
     held_under = []                # row index, kept just below the immortal line
 
     # 1. The top two bands walk the all-time list, passing over old seasons
@@ -240,6 +247,7 @@ def choose(pos, t):
                (m_top, SCORE_AT['top'])]
     # rounded DOWN to the 5, so rounding never lifts a season over a rarity floor
     p['score'] = [int(interp(m, anchors) // 5 * 5) for m in p.metric]
+    p['true'] = p.score            # what settle.py works from: the curve, before any holding
     p.loc[held_under, 'score'] = SCORE_AT['immortal'] - 5
     p['band'] = p.score.map(rarity_for)
 
@@ -307,9 +315,12 @@ def choose(pos, t):
 
     per_season = {}
     for i in picked: per_season[p.at[i, 'season']] = per_season.get(p.at[i, 'season'], 0) + 1
+    # A rebuild keeps the pool as it is. Adding is a decision: PE_ADD=1 fills each
+    # band to its target, and that includes what the vault left open.
+    fill = not kept or os.environ.get('PE_ADD')
     for band in ['dynasty', 'rare', 'common']:
         need = target[band] - sum(1 for b in picked.values() if b == band)
-        if need <= 0: continue
+        if need <= 0 or not fill: continue
         pool = p[(p.band == band) & (~p.index.isin(picked.keys())) & (p.metric >= SAMPLE_FLOOR[pos])
                  & (p.season >= RECENT_FROM)].copy()
         pool = pool[[(a, b) in SEASON_PHOTO for a, b in zip(pool.pid, pool.season)]]
@@ -341,9 +352,11 @@ def choose(pos, t):
     # 4. A man on a single card at dynasty or better gets a lesser year too, so
     #    his binder page has somewhere to go: his best rare or his best common,
     #    taking turns so the additions split about evenly.
+    #    Not a man with a card in the vault: filling that gap is a decision (settle.py).
     turn = 0
+    resting = {a for a, _ in vault}
     for pid, bands in list(held.items()):
-        if len(bands) != 1 or not bands & TOP_BANDS: continue
+        if len(bands) != 1 or not bands & TOP_BANDS or pid in resting: continue
         mine = p[(p.pid == pid) & (~p.index.isin(picked.keys())) & p.band.isin(['rare', 'common'])
                  & (p.metric >= SAMPLE_FLOOR[pos])]
         mine = mine[[era_ok(k, s) and (s >= LEGEND_BEFORE or b != 'common')

@@ -14,13 +14,19 @@
 
 import { createHmac, hkdfSync, randomBytes } from 'crypto'
 import {
+  DAILY_H_FROM,
   DAILY_NEW_POOL_FROM,
   POOL,
   POOL_BEFORE,
   POOL_BEFORE_VERSION,
+  POOL_H,
+  POOL_H_VERSION,
   POOL_VERSION,
   cardWeight,
+  cardWeightH,
+  liveCard,
   personOfId,
+  playerById,
 } from './pool'
 import {
   MEGA_POOL_COUNTS,
@@ -102,8 +108,17 @@ const BEFORE_ERA: Era = {
   weigh: (p, weights) => Math.max(0, weights[p.rarity] ?? 0),
 }
 
+const H_ERA: Era = { version: POOL_H_VERSION, pool: POOL_H, weigh: cardWeightH }
+
 function dailyEra(day: string): Era {
-  return day < DAILY_NEW_POOL_FROM ? BEFORE_ERA : CURRENT_ERA
+  if (day < DAILY_H_FROM) return BEFORE_ERA
+  return day < DAILY_NEW_POOL_FROM ? H_ERA : CURRENT_ERA
+}
+
+/** A card as a day's Daily dealt it, at the value that day started with. */
+export function dailyCard(day: string, id: string): Player | null {
+  const era = dailyEra(day)
+  return era.pool[id.split('-')[0].toUpperCase() as PoolKey]?.find((p) => p.id === id) ?? playerById(id)
 }
 
 // ============================================================
@@ -345,7 +360,7 @@ function rangeBefore(p: Player): { lo: number; hi: number } {
 /** A Daily card's range. Its own draw, so a card reads differently here than in
     the Builder, and a day that's already out keeps what it printed. */
 export function dailyRange(p: Player, day: string): { lo: number; hi: number } {
-  return day < DAILY_NEW_POOL_FROM ? rangeBefore(p) : rangeOf(p, 'daily-range')
+  return day < DAILY_H_FROM ? rangeBefore(p) : rangeOf(p, 'daily-range')
 }
 
 /** A card on the Daily's table. */
@@ -475,11 +490,14 @@ function teamSeasons(era: Era): Player[][] {
  * bring more of them with it: the 1,000-card pool put Even packs about a point
  * more common, and its totals about 3% down.
  */
-function plantedSeason(rnd: () => number): Player[] {
+function plantedSeason(rnd: () => number, era: Era = CURRENT_ERA): Player[] {
   const seasons = teamSeasons(BEFORE_ERA)
   const cards = shuffled(seasons[Math.floor(rnd() * seasons.length)], rnd)
   const seen = new Set<string>()
-  return cards.filter((c) => !seen.has(personOf(c)) && !!seen.add(personOf(c)))
+  const team = cards.filter((c) => !seen.has(personOf(c)) && !!seen.add(personOf(c)))
+  // The teams are fixed, their cards are as the pool has them now: at today's
+  // value, and a man in the vault sits this one out.
+  return era === CURRENT_ERA ? team.map((c) => liveCard(c.id)).filter((c): c is Player => !!c) : team
 }
 
 /** The eleven packs of an Even Versus, one per slot, the same for both seats. */
@@ -599,7 +617,7 @@ export function dailySet(day: string, version: string): DailySet {
 
   // In the first ten packs, so a day with a captain can still reach them all.
   const packOrder = shuffled(Array.from({ length: SLOT_COUNT - 1 }, (_, i) => i), rnd)
-  for (const card of plantedSeason(rnd)) {
+  for (const card of plantedSeason(rnd, era)) {
     const pack = packOrder.find((i) => !wild[i].length)
     if (pack == null) break
     if (!pools[pack].includes(card.pos)) pools[pack][Math.floor(rnd() * PACK_SIZE)] = card.pos

@@ -10,8 +10,10 @@
 # Reports of every pick land in build/skill_report.txt and build/ol_report.txt.
 # After a rebuild, bump POOL_VERSION in src/lib/packEmpire/pool.ts.
 #
-# A rebuild only adds: every card already dealt stays, re-valued, because people
-# hold them in binders (seasons.dealt). PE_FRESH=1 samples from scratch.
+# A rebuild adds nothing and drops nothing: every card already dealt stays,
+# re-valued, because people hold them in binders (seasons.dealt). PE_ADD=1 fills
+# each rarity to its target, PE_FRESH=1 samples from scratch. A man's two seasons
+# landing on one rarity settle in build/settle.py; vault.json is what it took out.
 set -e
 cd "$(dirname $0)"
 python3 build/seasons.py

@@ -4,7 +4,7 @@ import pandas as pd, numpy as np
 
 S = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, f'{S}/build')
-from seasons import dealt, norm, club, FRANCHISE
+from seasons import dealt, norm, club, FRANCHISE, vaulted
 import allpro
 from select_skill import interp, next_open_band, rarity_for, BANDS, SCORE_AT, TOP_BANDS, RECENT_FROM, SEASON_PHOTO
 
@@ -111,6 +111,8 @@ def choose(pos, t, off):
     p['offense'] = p.offense.fillna(0)
     p['metric'] = p.honors + OFFENSE_WEIGHT * p.offense
     p = p.sort_values('metric', ascending=False).reset_index(drop=True)
+    vault = vaulted()
+    p = p[[(a, b) not in vault for a, b in zip(p.pid, p.season)]].reset_index(drop=True)
     career = t.groupby('pid').honors.sum()
     p['fame'] = p.pid.map(career.rank(pct=True))
     p['decade'] = (p.season // 10 * 10)
@@ -155,6 +157,7 @@ def choose(pos, t, off):
                (floors['transcendent'], SCORE_AT['transcendent']), (floors['immortal'], SCORE_AT['immortal']),
                (p.metric.max(), OL_TOP)]
     p['score'] = [int(interp(m, anchors) // 5 * 5) for m in p.metric]
+    p['true'] = p.score            # what settle.py works from
     p.loc[held_under, 'score'] = SCORE_AT['immortal'] - 5
     p['band'] = p.score.map(rarity_for)
 
@@ -181,9 +184,12 @@ def choose(pos, t, off):
 
     per_season = {}
     for i in picked: per_season[p.at[i, 'season']] = per_season.get(p.at[i, 'season'], 0) + 1
+    # A rebuild keeps the pool as it is. Adding is a decision: PE_ADD=1 fills each
+    # band to its target, and that includes what the vault left open.
+    fill = not kept or os.environ.get('PE_ADD')
     for band in ['dynasty', 'rare', 'common']:
         need = target[band] - sum(1 for b in picked.values() if b == band)
-        if need <= 0: continue
+        if need <= 0 or not fill: continue
         pool = p[(p.band == band) & (~p.index.isin(picked.keys())) & (p.season >= RECENT_FROM) & p.face].copy()
         pool = pool[[(a, b) in SEASON_PHOTO for a, b in zip(pool.pid, pool.season)]]
         pool['interest'] = pool.fame + 0.15 * pool.offense
@@ -210,9 +216,11 @@ def choose(pos, t, off):
 
     # A man on a single card at dynasty or better gets a lesser year too, so his
     # binder page has somewhere to go: his best rare or best common, taking turns.
+    # Not a man with a card in the vault: filling that gap is a decision (settle.py).
     turn = 0
+    resting = {a for a, _ in vault}
     for pid, bands in list(held.items()):
-        if len(bands) != 1 or not bands & TOP_BANDS: continue
+        if len(bands) != 1 or not bands & TOP_BANDS or pid in resting: continue
         mine = p[(p.pid == pid) & (~p.index.isin(picked.keys())) & p.band.isin(['rare', 'common']) & p.era & p.face]
         mine = mine[[s >= LEGEND_BEFORE or b != 'common' for s, b in zip(mine.season, mine.band)]]
         if not len(mine):

@@ -172,7 +172,8 @@ function KeyBody({ score, flavor }: { score: number; flavor: KeyFlavor }) {
         <h3 className="pe-key-h">Reading A Card</h3>
         <p className="pe-key-p">
           Every card is one player&apos;s season. The big number is what it adds to your total; under it are
-          his stat line and his fantasy points that year.
+          his stat line and his fantasy points that year. Value runs on points per game and games played out of
+          that year&apos;s schedule, so a 14-game season isn&apos;t marked down.
         </p>
       </section>
 

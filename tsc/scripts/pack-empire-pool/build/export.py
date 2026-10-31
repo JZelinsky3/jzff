@@ -58,15 +58,32 @@ def main():
     ol = pd.read_pickle(f'{S}/build/ol_pool.pkl')
     off = pd.read_pickle(f'{S}/build/offense.pkl')
 
+    # Every position is on the table here, so this is where a man's cards meet.
+    sys.path.insert(0, f'{S}/build')
+    from settle import settle, remember
+    shared = ['display', 'pos', 'season', 'pid', 'true']
+    both = pd.concat([skill.assign(side='skill')[shared + ['side']], ol.assign(side='ol')[shared + ['side']]])
+    both['at'] = both.side + ':' + both.pos + ':' + both.pid + ':' + both.season.astype(str)
+    settled, gone, notes = settle(both.reset_index(drop=True))
+    print('\n'.join(notes) or '  nothing to settle')
+    settled = settled.set_index('at')
+    tagged = {}
+    for frame, side in ((skill, 'skill'), (ol, 'ol')):
+        keys = side + ':' + frame.pos + ':' + frame.pid + ':' + frame.season.astype(str)
+        frame['score'] = keys.map(settled.score).astype(int).values
+        frame['band'] = keys.map(settled.band).values
+        tagged[side] = keys
+    vault_keys = set(both.reset_index(drop=True).loc[gone, 'at'])
+
     cards = []
-    for r in skill.itertuples():
+    for r, key in zip(skill.itertuples(), tagged['skill']):
         cards.append(dict(pid=r.pid, name=r.display, pos=r.pos, team=r.team, club=r.club, year=int(r.season),
                           score=int(r.score), rarity=r.band, accolades=skill_lines(r),
-                          img=r.img if isinstance(r.img, str) else None))
-    for r in ol.itertuples():
+                          img=r.img if isinstance(r.img, str) else None, vault=key in vault_keys))
+    for r, key in zip(ol.itertuples(), tagged['ol']):
         cards.append(dict(pid=r.pid, name=r.display, pos=r.pos, team=r.team, club=r.club, year=int(r.season),
                           score=int(r.score), rarity=r.band, accolades=ol_lines(r, off),
-                          img=r.img if isinstance(r.img, str) else None))
+                          img=r.img if isinstance(r.img, str) else None, vault=key in vault_keys))
 
     # One small real photo per man, or none (see headshots.py).
     import headshots
@@ -97,17 +114,31 @@ def main():
         assert len(c['id']) <= 40, c['id']
     ids = [c['id'] for c in cards]
     assert len(ids) == len(set(ids)), [i for i in ids if ids.count(i) > 1]
+    out_cards = [c for c in cards if c['vault']]
+    cards = [c for c in cards if not c['vault']]
     held = pd.Series([c['pid'] for c in cards]).value_counts()
     assert held.max() <= 4, held.head()
+    twice = pd.Series([(c['pid'], c['rarity']) for c in cards]).value_counts()
+    assert twice.max() == 1, twice.head()
 
     order = ['QB', 'RB', 'WR', 'TE', 'OT', 'OG', 'C']
     # Ties by id: deals depend on this order, so a rebuild can't be left to shuffle it.
     cards.sort(key=lambda c: (order.index(c['pos']), -c['score'], c['id']))
     keys = ['id', 'pid', 'name', 'pos', 'team', 'club', 'year', 'score', 'rarity', 'accolades', 'img']
     cards = [{k: c[k] for k in keys} for c in cards]
+    # A vaulted card reads as it was last dealt: that's what saved lineups hold.
+    last = {c['id']: c for c in json.load(open(OUT))} if os.path.exists(OUT) else {}
     with open(OUT, 'w') as f:
         f.write('[\n' + ',\n'.join(json.dumps(c, ensure_ascii=False) for c in cards) + '\n]\n')
     print('wrote', len(cards), 'cards to', OUT)
+    if not os.environ.get('PE_DRY'):
+        remember(out_cards)
+        path = os.path.join(os.path.dirname(OUT), 'vaulted.json')
+        before = json.load(open(path)) if os.path.exists(path) else []
+        have = {c['id'] for c in before}
+        out = before + [last.get(c['id'], {k: c[k] for k in keys}) for c in out_cards if c['id'] not in have]
+        with open(path, 'w') as f:
+            f.write('[\n' + ',\n'.join(json.dumps(c, ensure_ascii=False) for c in out) + '\n]\n')
     print(pd.DataFrame(cards).groupby(['pos', 'rarity']).size().unstack(fill_value=0)[['common', 'rare', 'dynasty', 'transcendent', 'immortal']])
     print('no headshot:', sum(1 for c in cards if not c['img']), 'cards,', len({c['pid'] for c in cards if not c['img']}), 'men')
     print('season photos:', len(season), 'of', len(cards), 'cards')

@@ -34,6 +34,16 @@ def dealt():
     with open(f'{S}/../../src/lib/packEmpire/data/season-pool.json') as f:
         return {(c['pid'].replace('k-', 'k:', 1), c['year']) for c in json.load(f)}
 
+VAULT_FILE = f'{S}/vault.json'
+
+def vaulted():
+    """(pid, season) of every card taken out under the one-card-a-rarity rule
+    (see settle.py). Selection never sees them, so a rebuild can't bring one back.
+    Take a line out of vault.json to return a card to the pool."""
+    if not os.path.exists(VAULT_FILE): return set()
+    with open(VAULT_FILE) as f:
+        return {(c['pid'].replace('k-', 'k:', 1), c['year']) for c in json.load(f)}
+
 def norm(name):
     s = unicodedata.normalize('NFKD', str(name)).encode('ascii', 'ignore').decode()
     s = re.sub(r'[*+]', '', s).lower()
@@ -172,7 +182,10 @@ def build():
     t['L'] = t.season.map(season_len); t['ming'] = t.season.map(min_games)
     t['ppg'] = t.pts / t.g.clip(lower=1)
     t['avg_eff'] = t.pts / np.maximum(t.g, t.ming)
-    t['full'] = t.pts / t.L
+    # 1987: the players struck for three games, so most regulars could only play
+    # 12 and a few who crossed played more (Montana 13, Largent 13, Craig 14).
+    # Joey: score that year on the games a man played, not the ones he couldn't.
+    t['full'] = t.pts / np.where(t.season == 1987, t.g.clip(lower=1), t.L)
     t['metric'] = 0.65 * t.avg_eff + 0.35 * t.full
     t['club'] = [club(f, y) if isinstance(f, str) else None for f, y in zip(t.fr, t.season)]
     t['team'] = [FRANCHISE[f] if isinstance(f, str) else None for f in t.fr]

@@ -25,9 +25,8 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ruleForDay, ruleView, scoreLineup, type DailyScore, type DayRuleView } from './dayRules'
-import { dailyCapLeft, dailyPack, dailySet, dailyUsable, maskDaily, priced, type DailyPick } from './deal'
+import { dailyCapLeft, dailyCard, dailyPack, dailySet, dailyUsable, maskDaily, priced, type DailyPick } from './deal'
 import { cleanGuestName, guestNameTaken, nameForUser } from './people'
-import { playerById } from './pool'
 import { signDaily } from './share'
 import { DAILY_PACK_SECONDS, SALARY_CAP, SLOT_COUNT, signingPrice, slotForCard, type Player } from './rules'
 
@@ -206,7 +205,7 @@ async function stateOf(day: string, version: DailyVersion, row: Row | null): Pro
   const show = (c: Player) => (rule.salaryCap ? { ...maskDaily(c, version, day), salary: priced(c).salary } : maskDaily(c, version, day))
   const lineup = [...base.lineup]
   for (const pick of row.picks) {
-    const card = playerById(pick.id)
+    const card = dailyCard(day, pick.id)
     if (card) lineup[pick.slot] = show(card)
   }
   const set = dailySet(day, version)
@@ -367,7 +366,7 @@ async function signCard(row: Row, day: string, card: Player): Promise<Row | null
   const finished = picks.length === SLOT_COUNT
   if (finished) {
     const lineup = Array<Player | null>(SLOT_COUNT).fill(null)
-    for (const p of picks) lineup[p.slot] = playerById(p.id)
+    for (const p of picks) lineup[p.slot] = dailyCard(day, p.id)
     const full = lineup as Player[]
     const scored = scoreLineup(full, row.captain, ruleForDay(day))
     patch.done = true

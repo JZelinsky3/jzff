@@ -1,8 +1,8 @@
 // The player pool. SERVER ONLY.
 //
-// Every card is one season: 1,000 of them, 626 men (QB 153, RB 200, WR 222,
-// TE 150, OT 104, OG 95, C 76). Each rarity is about half the one under it:
-// 526 common, 269 rare, 113 dynasty, 59 transcendent, 33 immortal. Seasons
+// Every card is one season: 994 of them, 626 men. Each rarity is about half
+// the one under it: 524 common, 270 rare, 111 dynasty, 56 transcendent, 33
+// immortal. Seasons
 // before 2000 belong to a short list of names people know (LEGENDS in the
 // build), and every other card is a man with a real photo; nine famous
 // men with none anywhere draw the portrait. Built by
@@ -10,10 +10,13 @@
 // Pro Bowl rosters; see the note under rarityForScore in ./rules.ts for how a
 // season becomes a score.
 //
-// A man can hold up to four cards, never two of the same rarity, so his
-// versions run from his best year down, and nobody at dynasty or better is on
-// just one if he had a lesser year to add. Two versions of one man never share
-// a pack or a lineup (see dealPack).
+// A man can hold up to four cards, never two of the same rarity, across every
+// position he's listed at, so his versions run from his best year down, and
+// nobody at dynasty or better is on just one if he had a lesser year to add. Two
+// seasons landing on one rarity settle in the build: within 200 of a line, one
+// crosses it; otherwise the lesser goes in the vault (data/vaulted.json), never
+// dealt again but still readable by any lineup or binder that holds it. Two
+// versions of one man never share a pack or a lineup (see dealPack).
 //
 // Bump POOL_VERSION whenever this changes, or the odds in ./rules.ts do: it is
 // folded into every deal, so a run banked against an older pool fails to replay
@@ -23,35 +26,44 @@
 // point of dealing on the server is that the browser never holds the pool.
 
 import addedAfterE from './data/added-after-10e.json'
+import frozen from './data/season-pool-10h.json'
 import seasons from './data/season-pool.json'
+import vaulted from './data/vaulted.json'
 import { POOL_KEYS, RARITY_FLOOR, VALUE_TOP, personOf, type Player, type PoolKey, type Rarity, type Weights } from './rules'
 
-export const POOL_VERSION = 'seasons-2026-10h'
+export const POOL_VERSION = 'seasons-2026-10i'
 
 const ALL = seasons as Player[]
 
-export const POOL: Record<PoolKey, Player[]> = Object.fromEntries(
-  POOL_KEYS.map((k) => [k, ALL.filter((p) => p.pos === k)])
-) as Record<PoolKey, Player[]>
+function byPosition(cards: Player[]): Record<PoolKey, Player[]> {
+  return Object.fromEntries(POOL_KEYS.map((k) => [k, cards.filter((p) => p.pos === k)])) as Record<PoolKey, Player[]>
+}
+
+export const POOL = byPosition(ALL)
 
 /**
- * The pool as it stood at 'seasons-2026-10e', for Dailies dealt before
- * DAILY_NEW_POOL_FROM. A Daily can't change once it's out: people are part way
- * through it, and it re-deals for anyone who looks at their recap. Every card
- * from then is still here, unchanged and in the same order, so the old pool is
- * this one less what was added.
+ * What older Dailies are dealt from. A Daily can't change once it's out: people
+ * are part way through it, and it re-deals for anyone who looks at their recap.
+ * So data/season-pool-10h.json is the pool as it stood at 'seasons-2026-10h', kept
+ * as it was: cards' values feed the deal, its traps and its ranges, so a card can
+ * no longer be read off the live pool for a past day.
+ *
+ * Days before DAILY_H_FROM are on the older 10e pool, which is that file less
+ * what was added after it. Days from DAILY_H_FROM on are on all of it.
  */
 export const POOL_BEFORE_VERSION = 'seasons-2026-10e'
+export const POOL_H_VERSION = 'seasons-2026-10h'
+export const DAILY_H_FROM = '2026-11-01'
 
 /** The first Daily off the current pool. Set it to a day that hasn't started
     yet whenever POOL_VERSION moves, or that day's Daily re-deals under people. */
-export const DAILY_NEW_POOL_FROM = '2026-11-01'
+export const DAILY_NEW_POOL_FROM = '2026-11-02'
 
+const FROZEN = frozen as Player[]
 const ADDED = new Set(addedAfterE as string[])
 
-export const POOL_BEFORE: Record<PoolKey, Player[]> = Object.fromEntries(
-  POOL_KEYS.map((k) => [k, POOL[k].filter((p) => !ADDED.has(p.id))])
-) as Record<PoolKey, Player[]>
+export const POOL_H = byPosition(FROZEN)
+export const POOL_BEFORE = byPosition(FROZEN.filter((p) => !ADDED.has(p.id)))
 
 /**
  * How many of each rarity every position held when the odds tables in
@@ -71,9 +83,6 @@ const TUNED_ON: Record<PoolKey, Record<Rarity, number>> = {
   C: { common: 38, rare: 19, dynasty: 10, transcendent: 6, immortal: 3 },
 }
 
-const HOLDS = new Map<string, number>()
-for (const p of ALL) HOLDS.set(`${p.pos}|${p.rarity}`, (HOLDS.get(`${p.pos}|${p.rarity}`) ?? 0) + 1)
-
 /**
  * How much harder the best card in the game is to pull than an immortal right
  * on the line. Every immortal gets its own odds off its value, so the odds open
@@ -89,25 +98,45 @@ function immortalPull(score: number): number {
   return IMMORTAL_SPREAD ** -up
 }
 
-const LEVEL_SHARE = new Map<string, number>()
-for (const k of POOL_KEYS) {
-  const top = POOL[k].filter((p) => p.rarity === 'immortal')
-  const whole = top.reduce((sum, p) => sum + immortalPull(p.score), 0)
-  for (const p of top) LEVEL_SHARE.set(p.id, (immortalPull(p.score) * top.length) / whole)
+function weigher(cards: Player[]): (p: Player, weights: Weights) => number {
+  const holds = new Map<string, number>()
+  for (const p of cards) holds.set(`${p.pos}|${p.rarity}`, (holds.get(`${p.pos}|${p.rarity}`) ?? 0) + 1)
+
+  const shares = new Map<string, number>()
+  for (const [, list] of Object.entries(byPosition(cards))) {
+    const top = list.filter((p) => p.rarity === 'immortal')
+    const whole = top.reduce((sum, p) => sum + immortalPull(p.score), 0)
+    for (const p of top) shares.set(p.id, (immortalPull(p.score) * top.length) / whole)
+  }
+
+  return (p, weights) => {
+    const base = Math.max(0, weights[p.rarity] ?? 0) * (shares.get(p.id) ?? 1)
+    const now = holds.get(`${p.pos}|${p.rarity}`)
+    const tuned = TUNED_ON[p.pos as PoolKey]?.[p.rarity]
+    return now && tuned ? (base * tuned) / now : base
+  }
 }
 
 /** One card's weight on a table. Every draw goes through this. */
-export function cardWeight(p: Player, weights: Weights): number {
-  const base = Math.max(0, weights[p.rarity] ?? 0) * (LEVEL_SHARE.get(p.id) ?? 1)
-  const now = HOLDS.get(`${p.pos}|${p.rarity}`)
-  const tuned = TUNED_ON[p.pos as PoolKey]?.[p.rarity]
-  return now && tuned ? (base * tuned) / now : base
-}
+export const cardWeight = weigher(ALL)
 
-const BY_ID = new Map(ALL.map((p) => [p.id, p]))
+/** The same, for the Dailies dealt off POOL_H. */
+export const cardWeightH = weigher(FROZEN)
 
+/** Cards out of the packs, as they were last dealt. */
+export const VAULTED = vaulted as Player[]
+
+const LIVE = new Map(ALL.map((p) => [p.id, p]))
+const BY_ID = new Map([...VAULTED, ...ALL].map((p) => [p.id, p]))
+
+/** Any card there has been, vault included, so a saved lineup still reads. */
 export function playerById(id: string): Player | null {
   return BY_ID.get(id) ?? null
+}
+
+/** A card as the game deals it now, or null if it's in the vault. */
+export function liveCard(id: string): Player | null {
+  return LIVE.get(id) ?? null
 }
 
 /** The man a card id belongs to. An id from an older pool is its own man. */

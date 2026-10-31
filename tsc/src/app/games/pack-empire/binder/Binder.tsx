@@ -208,6 +208,18 @@ export function Binder({ view, mobile }: { view: BinderView; mobile: boolean }) 
         </div>
       )}
 
+      {view.vaulted.length > 0 && (
+        <section className="pe-bd-vault">
+          <h2 className="pe-bd-vault-h">Vaulted</h2>
+          <p className="pe-bd-vault-p">Out of the packs for now. Yours to keep, and they don&apos;t count toward the set.</p>
+          <div className="pe-bd-list">
+            {view.vaulted.map((m) => (
+              <ManRow key={m.pid} man={m} mobile={mobile} onOpen={(card) => setOpen({ man: m, card })} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {open && (
         <CardSheet
           man={open.man}
@@ -317,7 +329,7 @@ function CardSheet({
         <div className="pe-bd-sheet-body">
           <div className="pe-kicker" style={{ color: rc.color }}>
             {rc.label}
-            {man.cards.length > 1 && ` · Card ${i + 1} of ${man.cards.length}`}
+            {card.site.oneIn === 0 ? ' · Vaulted' : man.cards.length > 1 && ` · Card ${i + 1} of ${man.cards.length}`}
           </div>
           <div className="pe-bd-sheet-name">{man.name}</div>
           <div className="pe-bd-sheet-club">
@@ -352,7 +364,7 @@ function CardSheet({
                 </div>
                 <div>
                   <dt>Pack odds</dt>
-                  <dd>1 in {card.site.oneIn.toLocaleString()}</dd>
+                  <dd>{card.site.oneIn ? `1 in ${card.site.oneIn.toLocaleString()}` : 'Vaulted'}</dd>
                 </div>
               </dl>
             </div>

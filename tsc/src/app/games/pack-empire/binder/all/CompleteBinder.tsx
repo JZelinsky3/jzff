@@ -11,7 +11,7 @@ import { PackCard } from '../../cards'
 import { FacesProvider, useFaces } from '../../faces'
 
 type Tab = 'ALL' | PoolKey
-type Show = 'all' | 'none' | 'uploaded'
+type Show = 'all' | 'none' | 'uploaded' | 'vaulted'
 type Sort = 'best' | 'name'
 
 const PAGE = 40
@@ -64,19 +64,20 @@ export function CompleteBinder({ view }: { view: BinderView }) {
       all: cards.length,
       none: cards.filter((c) => !c.img && !faces[c.id]).length,
       uploaded: cards.filter((c) => faces[c.id]).length,
+      vaulted: view.vaulted.flatMap(whole).length,
     }
-  }, [view.men, faces])
+  }, [view.men, view.vaulted, faces])
 
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase()
-    const list = view.men.filter((m) => {
+    const list = (show === 'vaulted' ? view.vaulted : view.men).filter((m) => {
       if (tab !== 'ALL' && m.pos !== tab) return false
       if (show === 'none' && !whole(m).some((c) => !c.img && !faces[c.id])) return false
       if (show === 'uploaded' && !whole(m).some((c) => faces[c.id])) return false
       return !needle || m.name.toLowerCase().includes(needle)
     })
     return sort === 'name' ? [...list].sort((a, b) => a.name.localeCompare(b.name)) : list
-  }, [view.men, tab, show, sort, q, faces])
+  }, [view.men, view.vaulted, tab, show, sort, q, faces])
 
   const filter = <T,>(set: (v: T) => void) => (v: T) => {
     set(v)
@@ -91,7 +92,7 @@ export function CompleteBinder({ view }: { view: BinderView }) {
     <FacesProvider faces={faces}>
       <div className="pe-bd">
         <p className="pe-bd-all-sum">
-          {view.totals.cards.toLocaleString()} cards · {view.totals.men.toLocaleString()} players
+          {view.totals.cards.toLocaleString()} cards · {view.totals.men.toLocaleString()} players · {counts.vaulted} vaulted
         </p>
 
         <div className="pe-bd-tabs" role="tablist" aria-label="Position">
@@ -117,6 +118,7 @@ export function CompleteBinder({ view }: { view: BinderView }) {
                 ['all', 'All'],
                 ['none', `No Photo ${counts.none}`],
                 ['uploaded', `Uploaded ${counts.uploaded}`],
+                ['vaulted', `Vaulted ${counts.vaulted}`],
               ] as [Show, string][]
             ).map(([k, label]) => (
               <button key={k} type="button" className={show === k ? 'on' : ''} onClick={() => pickShow(k)}>
@@ -142,7 +144,7 @@ export function CompleteBinder({ view }: { view: BinderView }) {
         </div>
 
         {rows.length === 0 ? (
-          <p className="pe-empty">{show === 'none' ? 'Every card has a photo.' : 'No one matches that.'}</p>
+          <p className="pe-empty">{show === 'none' ? 'Every card has a photo.' : show === 'vaulted' ? 'Nothing vaulted at this position.' : 'No one matches that.'}</p>
         ) : (
           <div className="pe-bd-list">
             {rows.slice(0, limit).map((m) => (
@@ -329,7 +331,7 @@ function CardSheet({
         <div className="pe-bd-sheet-body">
           <div className="pe-kicker" style={{ color: rc.color }}>
             {rc.label}
-            {cards.length > 1 && ` · Card ${cards.findIndex((c) => c.id === card.id) + 1} of ${cards.length}`}
+            {card.site.oneIn === 0 ? ' · Vaulted' : cards.length > 1 && ` · Card ${cards.findIndex((c) => c.id === card.id) + 1} of ${cards.length}`}
           </div>
           <div className="pe-bd-sheet-name">{man.name}</div>
           <div className="pe-bd-sheet-club">
@@ -345,7 +347,7 @@ function CardSheet({
                 </div>
                 <div>
                   <dt>Pack odds</dt>
-                  <dd>1 in {card.site.oneIn.toLocaleString()}</dd>
+                  <dd>{card.site.oneIn ? `1 in ${card.site.oneIn.toLocaleString()}` : 'Vaulted'}</dd>
                 </div>
               </dl>
             </div>
