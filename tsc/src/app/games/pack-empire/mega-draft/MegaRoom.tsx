@@ -27,6 +27,7 @@ import {
 import type { MegaView } from '@/lib/packEmpire/mega'
 import { DeleteGame } from '../GameList'
 import { LineupSheet } from '../cards'
+import { useFace, useFaces } from '../faces'
 import { ShareLink } from '../share'
 import { useStored } from '../clientStore'
 import { forgetMega, megaKey, rememberMega } from './MegaLobby'
@@ -45,6 +46,7 @@ function PoolCard({
   onPick: () => void
 }) {
   const rc = RARITY_LOOK[player.rarity]
+  const img = useFace(player)
   return (
     <button
       type="button"
@@ -63,9 +65,9 @@ function PoolCard({
         </span>
       </span>
       <span className="pe-pc-art" style={{ background: rc.art }}>
-        {player.img ? (
+        {img ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={player.img} alt="" className="pe-pc-img" loading="lazy" />
+          <img src={img} alt="" className="pe-pc-img" loading="lazy" />
         ) : (
           <span className="pe-pc-initial">{player.name.charAt(0)}</span>
         )}
@@ -103,6 +105,7 @@ function Column({
   yours?: boolean
 }) {
   const tier = tierFor(score)
+  const faces = useFaces()
   return (
     <div className={`pe-lc${picking ? ' picking' : ''}`}>
       <div className="pe-lc-head">
@@ -134,9 +137,9 @@ function Column({
               </span>
               {p ? (
                 <>
-                  {p.img ? (
+                  {(faces[p.id] ?? p.img) ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.img} alt="" className="pe-lcs-img" />
+                    <img src={(faces[p.id] ?? p.img) as string} alt="" className="pe-lcs-img" />
                   ) : (
                     <span className="pe-lcs-initial">{p.name.charAt(0)}</span>
                   )}

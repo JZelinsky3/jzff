@@ -13,7 +13,7 @@
 // Refreshing re-deals the identical pack, so there is nothing to reroll.
 
 import { createHmac, hkdfSync, randomBytes } from 'crypto'
-import { POOL, POOL_VERSION, personOfId } from './pool'
+import { POOL, POOL_VERSION, personOfId, versionsOf } from './pool'
 import {
   MEGA_POOL_COUNTS,
   MEGA_TOTAL_PICKS,
@@ -21,17 +21,22 @@ import {
   EVEN_MARK,
   PACK_SIZE,
   POOL_KEYS,
+  RARITY_FLOOR,
   RESERVE_WEIGHTS,
+  SALARY_CAP,
   SEED_ALPHABET,
   SEED_DIFF,
   SHARED_WEIGHTS,
   SLOTS,
   SLOT_COUNT,
   SOLO_WEIGHTS,
+  VALUE_TOP,
   difficultyFromSeed,
   megaPickOwner,
   megaWorth,
   personOf,
+  signingPrice,
+  slotForCard,
   type Difficulty,
   type Player,
   type PoolKey,
@@ -260,25 +265,62 @@ export const RANGE_WIDTH = 2000
 
 /**
  * The range a card prints. Where the real value sits inside it comes off the
- * secret and the card alone, 8% to 92% of the way up, so it's rarely the
- * middle, it's the same every time that card is dealt (asking for it a hundred
- * times can't narrow it down), and the bands don't line up with the rarity
- * floors, which would hand you the rarity.
+ * secret and the card alone, so it's rarely the middle, it's the same every time
+ * that card is dealt (asking for it a hundred times can't narrow it down), and
+ * the bands don't line up with the rarity floors, which would hand you the rarity.
+ *
+ * A range can't start under zero or run past the best card there is, and a
+ * cheap card's low end stays a long way under its value, or every one of them
+ * would read "0-2,000" and that would be the rarity again.
  */
-export function rangeOf(p: Player): { lo: number; hi: number } {
-  const at = 0.08 + 0.84 * (hmac(`range|${p.id}`).readUInt16LE(0) / 65535)
-  const under = p.score - RANGE_WIDTH * at
-  // A range can't start under zero, and if every cheap card's stopped there
-  // they'd all read "0-2,000" and that would be the rarity again. So those
-  // start part of the way up the card's own value, always at or under it.
-  const lo = under > 0 ? Math.round(under / 100) * 100 : Math.floor((p.score * at) / 100) * 100
-  return { lo, hi: lo + RANGE_WIDTH }
+export function rangeOf(p: Player, width: number = RANGE_WIDTH, label = 'range'): { lo: number; hi: number } {
+  const at = hmac(`${label}|${p.id}`).readUInt16LE(0) / 65535
+  const lowest = Math.max(0, p.score - 0.92 * width)
+  const highest = p.score > 0.08 * width ? p.score - 0.08 * width : p.score / 2
+  const lo = Math.floor((lowest + at * (highest - lowest)) / 100) * 100
+  const over = Math.max(0, lo + width - VALUE_TOP)
+  return { lo: Math.max(0, lo - over), hi: Math.min(lo + width, VALUE_TOP) }
+}
+
+/**
+ * A Daily card's range. Some are tight and some are barely a hint, and which is
+ * which has nothing to do with the card's value (a width that grew with value
+ * would give it away). So not every card is impossible, but you can't trust
+ * them all alike. Tested with sim/hard-sim.ts: one width for everything left
+ * midpoint reading within 2% of knowing every value.
+ */
+const DAILY_WIDTHS = [1400, 2800, 4000]
+
+export function dailyRange(p: Player): { lo: number; hi: number } {
+  return rangeOf(p, DAILY_WIDTHS[hmac(`daily-width|${p.id}`)[0] % DAILY_WIDTHS.length], 'daily-range')
+}
+
+/** A card on the Daily's table. */
+export function maskDaily(p: Player, version: 'range' | 'season'): Player {
+  const card = maskCard(p, version)
+  return version === 'range' ? { ...card, blind: { level: 'range', ...dailyRange(p) } } : card
+}
+
+/**
+ * What a card costs under a salary cap, in $M: its value at $1M a hundred, give
+ * or take 40%, off the secret and the card alone. If salary were simply value,
+ * spending the whole budget would be the whole game. The swing is what makes a
+ * bargain worth finding, and on a blind card it's as much of a clue as you get.
+ */
+export function salaryOf(p: Player): number {
+  const at = hmac(`salary|${p.id}`).readUInt16LE(0) / 65535
+  return Math.max(1, Math.round((p.score / 100) * (0.6 + 0.8 * at)))
+}
+
+export function priced(p: Player): Player {
+  return { ...p, salary: salaryOf(p) }
 }
 
 /** A card as the browser may see it on a blind difficulty. A new object with
     only the visible fields, so nothing can be read off the network tab. */
 export function maskCard(p: Player, diff: Difficulty): Player {
   if (diff === 'open') return p
+  if (diff === 'cap') return priced(p)
   const shared = { id: p.id, name: p.name, pos: p.pos, year: p.year, img: p.img, score: 0, rarity: 'common' as const, accolades: [] }
   return diff === 'range'
     ? { ...shared, team: p.team, club: p.club, blind: { level: 'range', ...rangeOf(p) } }
@@ -292,7 +334,7 @@ export function maskCard(p: Player, diff: Difficulty): Player {
  * moment its seed is dealt.
  */
 export function cpuEye(seed: string, diff: Difficulty): (p: Player) => number {
-  if (diff === 'open') return (p) => p.score
+  if (diff === 'open' || diff === 'cap') return (p) => p.score
   if (diff === 'range') {
     return (p) => {
       const { lo, hi } = rangeOf(p)
@@ -383,6 +425,39 @@ export function evenPacks(seed: string): Player[][] {
   return packs.map((p) => shuffled(p, rnd))
 }
 
+/** A big name in a bad year, dropped into the Daily on purpose: a star at
+    dynasty or better on a card worth under 40% of his best. Taking the most
+    famous man in the pack is a real strategy, and these are what beat it. */
+const TRAP_CHANCE = 0.8
+
+let cachedTraps: Map<PoolKey, Player[]> | null = null
+
+function trapsAt(k: PoolKey): Player[] {
+  if (!cachedTraps) {
+    cachedTraps = new Map()
+    for (const key of POOL_KEYS) {
+      cachedTraps.set(
+        key,
+        POOL[key].filter((p) => {
+          const best = versionsOf(personOf(p))[0]?.score ?? 0
+          return best >= RARITY_FLOOR.dynasty && p.score <= best * 0.4
+        })
+      )
+    }
+  }
+  return cachedTraps.get(k) ?? []
+}
+
+/** One trap at this position, if one's left. */
+function drawTrap(out: Player[], k: PoolKey, used: Set<string>, rnd: () => number): boolean {
+  const open = trapsAt(k).filter((p) => !used.has(personOf(p)))
+  if (open.length === 0) return false
+  const p = open[Math.floor(rnd() * open.length)]
+  used.add(personOf(p))
+  out.push(p)
+  return true
+}
+
 /** How often a position turns up in a wild pack. Weighted toward the slots it
     has to fill, and flatter than that, so the scarce ones aren't a rumour. */
 const WILD_POOL_WEIGHT: Record<PoolKey, number> = { QB: 1.5, RB: 1.5, WR: 3, TE: 1.5, OT: 2, OG: 2, C: 1.5 }
@@ -409,6 +484,25 @@ export type DailySet = {
   /** For a pack with nothing in it that fits: one card per slot at the
       position, replacement level. */
   reserves: Record<PoolKey, Player[]>
+}
+
+/** What a Daily run has left under a salary cap, walking its picks in order. */
+export function dailyCapLeft(set: DailySet, captain: number | null, picks: DailyPick[]): number {
+  let left: number = SALARY_CAP.shared
+  picks.forEach((pick, i) => {
+    const before = picks.slice(0, i)
+    const usable = dailyUsable(dailyPack(set, captain, before).cards, captain, before).map(priced)
+    const card = usable.find((c) => c.id === pick.id)
+    if (card) left -= signingPrice(card, usable, left) ?? 0
+  })
+  return left
+}
+
+/** The cards in a pack that have a slot to go to. */
+export function dailyUsable(cards: Player[], captain: number | null, picks: DailyPick[]): Player[] {
+  if (captain != null && picks.length === 0) return cards
+  const filled = new Set(picks.map((p) => p.slot))
+  return cards.filter((c) => slotForCard(c.pos, filled) >= 0)
 }
 
 const SET_CACHE_SIZE = 8
@@ -440,6 +534,10 @@ export function dailySet(day: string, version: string): DailySet {
     const needed = [...list]
     const held = wild[i][0]
     if (held) needed.splice(needed.indexOf(held.pos), 1)
+    if (rnd() < TRAP_CHANCE) {
+      const k = needed[Math.floor(rnd() * needed.length)]
+      if (drawTrap(wild[i], k, used, rnd)) needed.splice(needed.indexOf(k), 1)
+    }
     for (const k of needed) drawInto(wild[i], POOL[k], 1, SHARED_WEIGHTS, used, rnd)
   })
 
@@ -447,7 +545,9 @@ export function dailySet(day: string, version: string): DailySet {
   const reserves = {} as DailySet['reserves']
   for (const k of POOL_KEYS) {
     captains[k] = []
-    drawInto(captains[k], POOL[k], PACK_SIZE, SOLO_WEIGHTS.captain, used, rnd)
+    const trapped = drawTrap(captains[k], k, used, rnd)
+    drawInto(captains[k], POOL[k], PACK_SIZE - (trapped ? 1 : 0), SOLO_WEIGHTS.captain, used, rnd)
+    captains[k] = shuffled(captains[k], rnd)
   }
   for (const k of POOL_KEYS) {
     reserves[k] = []

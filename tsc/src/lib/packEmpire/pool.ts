@@ -1,10 +1,10 @@
 // The player pool. SERVER ONLY.
 //
-// Every card is one season: 720 of them, 477 men (QB 109, RB 126, WR 137,
-// TE 100, OT 92, OG 87, C 69). Each rarity is about half the one under it:
-// 361 common, 200 rare, 89 dynasty, 47 transcendent, 23 immortal. Seasons
+// Every card is one season: 833 of them, 516 men (QB 129, RB 152, WR 163,
+// TE 121, OT 100, OG 92, C 76). Each rarity is about half the one under it:
+// 399 common, 233 rare, 109 dynasty, 59 transcendent, 33 immortal. Seasons
 // before 2000 belong to a short list of names people know (LEGENDS in the
-// build), and every other card is a man with a real photo; eight famous
+// build), and every other card is a man with a real photo; nine famous
 // men with none anywhere draw the portrait. Built by
 // scripts/pack-empire-pool off official stats, nflverse and the All-Pro and
 // Pro Bowl rosters; see the note under rarityForScore in ./rules.ts for how a
@@ -25,7 +25,7 @@
 import seasons from './data/season-pool.json'
 import { POOL_KEYS, personOf, type Player, type PoolKey } from './rules'
 
-export const POOL_VERSION = 'seasons-2026-10d'
+export const POOL_VERSION = 'seasons-2026-10e'
 
 const ALL = seasons as Player[]
 

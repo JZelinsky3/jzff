@@ -7,13 +7,24 @@
 // coming back on another phone finds the same pack waiting.
 
 import Link from 'next/link'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { dayChemPreview, dayChemTotal, ruleChip } from '@/lib/packEmpire/dayRules'
-import { DIFFICULTY_LOOK, SLOT_COUNT, WILD_PACK_ART, shortName, slotForCard, type Player } from '@/lib/packEmpire/rules'
+import {
+  DIFFICULTY_LOOK,
+  PACK_ART,
+  SALARY_CAP,
+  SLOTS,
+  SLOT_COUNT,
+  WILD_PACK_ART,
+  shortName,
+  signingPrice,
+  slotForCard,
+  type Player,
+} from '@/lib/packEmpire/rules'
 import type { DailyResult, DailyState } from '@/lib/packEmpire/daily'
 import { KeyAside, KeyButton, type KeyFlavor } from '../DraftKey'
-import { Bonds, CaptainMark, Field, LineupSheet, PackCard, blindValue, type SlotView } from '../cards'
-import { PackStage, ScoreStrip, usePackStage, useStripOffset } from '../stage'
+import { Bonds, CaptainMark, Field, LineupSheet, PackCard, blindTotal, type SlotView } from '../cards'
+import { PackStage, ScoreStrip, restoredStage, usePackStage, useStripOffset } from '../stage'
 
 async function call(body: Record<string, unknown>): Promise<DailyState> {
   const res = await fetch('/api/games/pack-empire/daily/', {
@@ -26,6 +37,39 @@ async function call(body: Record<string, unknown>): Promise<DailyState> {
   return out.state as DailyState
 }
 
+/** The shot clock. Its own component so the seconds re-render this and not
+    every card on the stage, and the bar runs on a transform alone. */
+function PackClock({ seconds, onOut }: { seconds: number; onOut: () => void }) {
+  const [left, setLeft] = useState(seconds)
+  const ends = useRef(0)
+  const out = useRef(onOut)
+  useEffect(() => {
+    out.current = onOut
+  }, [onOut])
+  useEffect(() => {
+    ends.current = Date.now() + seconds * 1000
+    let fired = false
+    const t = window.setInterval(() => {
+      const n = Math.max(0, Math.ceil((ends.current - Date.now()) / 1000))
+      setLeft(n)
+      if (n === 0 && !fired) {
+        fired = true
+        window.clearInterval(t)
+        out.current()
+      }
+    }, 200)
+    return () => window.clearInterval(t)
+  }, [seconds])
+  return (
+    <div className={`pe-shot${left <= 5 ? ' low' : ''}`} role="timer" aria-label={`${left} seconds left`}>
+      <span className="pe-shot-n">{left}</span>
+      <span className="pe-shot-bar" aria-hidden>
+        <i style={{ animationDuration: `${seconds}s` }} />
+      </span>
+    </div>
+  )
+}
+
 export function DailyDraft({ initial, other }: { initial: DailyState; other: { href: string; label: string; done: boolean } }) {
   const [state, setState] = useState(initial)
   const [error, setError] = useState<string | null>(null)
@@ -33,11 +77,17 @@ export function DailyDraft({ initial, other }: { initial: DailyState; other: { h
   // A finished run read from the page goes straight to the recap; one finished
   // here waits for its last card to land.
   const [turned, setTurned] = useState(initial.done)
-  const { stage, landing, open, tear, reveal, revealAll, skip, pick, dismiss, settle } = usePackStage()
+  // Left a pack open and came back: it's still open, on the same clock.
+  const { stage, landing, open, tear, reveal, revealAll, skip, pick, dismiss, settle } = usePackStage(
+    initial.pack ? restoredStage(initial.captain != null && initial.step === 0 ? initial.captain : initial.step, initial.pack) : null
+  )
+  const [clockNote, setClockNote] = useState<string | null>(null)
+  /** A pick is on its way to the server. */
+  const [saving, setSaving] = useState(false)
   useStripOffset()
 
-  const { version, rule, captain, step, pack, reserve } = state
-  const flavor: KeyFlavor = { difficulty: version, even: false, daily: true }
+  const { version, rule, captain, step, pack, reserve, capLeft } = state
+  const flavor: KeyFlavor = { difficulty: version, even: false, daily: true, salaryCap: rule.salaryCap }
   const lineup = state.lineup
   const settled = settle(lineup)
   const signed = settled.filter((p): p is Player => !!p)
@@ -63,17 +113,45 @@ export function DailyDraft({ initial, other }: { initial: DailyState; other: { h
   )
 
   const openNext = useCallback(() => {
-    if (!pack || stage) return
-    const cards = pack
-    open(captainPack && captain != null ? captain : step, async () => cards)
-  }, [pack, stage, open, captainPack, captain, step])
+    if (stage) return
+    setClockNote(null)
+    open(captainPack && captain != null ? captain : step, async () => {
+      const next = await call({ action: 'open', version })
+      setState(next)
+      if (!next.pack) throw new Error('The pack would not open. Try again.')
+      return next.pack
+    })
+  }, [stage, open, captainPack, captain, step, version])
+
+  const timeUp = useCallback(async () => {
+    try {
+      const next = await call({ action: 'expire', version })
+      if (!next.timedOut) return
+      dismiss()
+      setState(next)
+      setClockNote(`Time ran out. ${next.timedOut} signed.`)
+      if (next.done) setTurned(true)
+    } catch {
+      // The next thing you do settles it: the server's clock is the real one.
+    }
+  }, [version, dismiss])
 
   const blockedFor = useCallback(
-    (p: Player) => !captainPack && slotForCard(p.pos, filled) < 0,
+    (p: Player): string | null => {
+      if (!captainPack && slotForCard(p.pos, filled) < 0) return 'No slot'
+      if (capLeft == null || !pack) return null
+      const usable = pack.filter((c) => captainPack || slotForCard(c.pos, filled) >= 0)
+      return signingPrice(p, usable, capLeft) == null ? 'Over cap' : null
+    },
     // `filled` is rebuilt every render from `lineup`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [captainPack, lineup]
+    [captainPack, lineup, capLeft, pack]
   )
+
+  const skint =
+    capLeft != null &&
+    !!pack &&
+    pack.filter((c) => captainPack || slotForCard(c.pos, filled) >= 0).every((c) => (c.salary ?? 0) > capLeft)
 
   const onCard = useCallback(
     (i: number) => {
@@ -86,31 +164,53 @@ export function DailyDraft({ initial, other }: { initial: DailyState; other: { h
       if (blockedFor(card)) return
       const to = captainPack && captain != null ? captain : slotForCard(card.pos, filled)
       let finished = false
+      // The card flies now and the server catches up. If it refuses (a clock
+      // that ran out on it, a dropped connection), what comes back is the truth.
+      const price = card.salary ?? 0
       pick(
         i,
         async () => {
-          const next = await call({ action: 'pick', version, id: card.id })
-          finished = next.done
-          setState(next)
+          setSaving(true)
+          setState((s) => {
+            const lineup = [...s.lineup]
+            lineup[to] = card
+            const usable = capLeft != null && price > capLeft
+            return { ...s, lineup, capLeft: s.capLeft == null ? null : s.capLeft - (usable ? 0 : price) }
+          })
+          try {
+            const next = await call({ action: 'pick', version, id: card.id })
+            finished = next.done
+            if (next.timedOut) setClockNote(`Too late. ${next.timedOut} signed.`)
+            setState(next)
+          } catch (e) {
+            setError(e instanceof Error ? e.message : 'That pick did not save.')
+            const res = await fetch(`/api/games/pack-empire/daily/?v=${version}`, { cache: 'no-store' })
+            const out = await res.json().catch(() => null)
+            if (out?.state) setState(out.state)
+          } finally {
+            setSaving(false)
+          }
         },
-        to
+        to,
+        true
       ).then((landed) => {
         if (landed && finished) window.setTimeout(() => setTurned(true), 900)
       })
     },
     // `filled` is rebuilt every render from `lineup`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [stage, reveal, blockedFor, captainPack, captain, pick, version, lineup]
+    [stage, reveal, blockedFor, captainPack, captain, pick, version, lineup, capLeft]
   )
 
   if (state.done && turned && state.result) return <DailyRecap state={state} result={state.result} other={other} />
 
   const view = (i: number): SlotView => {
-    if (!state.started) return { clickable: !busy && !rule.noCaptain, captain: captain === i, capHint: !busy && !rule.noCaptain }
-    return { clickable: false, captain: captain === i, opening: !!stage && captainPack && captain === i }
+    if (!state.started) {
+      return { clickable: !busy && !rule.noCaptain, captain: captain === i, capHint: !busy && !rule.noCaptain, empty: true }
+    }
+    return { clickable: false, captain: captain === i, opening: !!stage && captainPack && captain === i, empty: true }
   }
 
-  const left = SLOT_COUNT - step
   const range = version === 'range'
   const lo = signed.reduce((sum, p) => sum + (p.blind?.lo ?? 0), 0)
   const hi = signed.reduce((sum, p) => sum + (p.blind?.hi ?? 0), 0)
@@ -128,8 +228,9 @@ export function DailyDraft({ initial, other }: { initial: DailyState; other: { h
           filled={signed.length}
           tier={{ label: '', color: '' }}
           hidden={
-            range ? { value: blindValue({ level: 'range', lo, hi }), label: 'Could be' } : { value: '?', label: 'Hidden' }
+            range ? { value: blindTotal(lo, hi), label: 'Could be' } : { value: '?', label: 'Hidden' }
           }
+          capLeft={capLeft}
           extra={chemShown ? { value: `${chem >= 0 ? '+' : '−'}${Math.abs(chem).toLocaleString()}`, label: 'Chemistry' } : undefined}
         />
       )}
@@ -149,6 +250,11 @@ export function DailyDraft({ initial, other }: { initial: DailyState; other: { h
           {error}
         </div>
       )}
+      {clockNote && (
+        <p className="pe-note" style={{ textAlign: 'center', marginBottom: '0.8rem' }}>
+          {clockNote}
+        </p>
+      )}
 
       <div className="pe-board">
         <div className="pe-board-bar">
@@ -164,16 +270,24 @@ export function DailyDraft({ initial, other }: { initial: DailyState; other: { h
                   {busy ? 'Dealing' : 'Open the first pack'}
                 </button>
               )}
-              {state.started && pack && !state.done && !stage && (
-                <button type="button" className="pe-daily-next" onClick={openNext}>
-                  {!captainPack && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={WILD_PACK_ART} alt="" />
-                  )}
-                  <span>
-                    <b>{captainPack ? 'Open your captain pack' : `Open pack ${step + 1} of ${SLOT_COUNT}`}</b>
-                    <small>{left === 1 ? 'Last pack' : `${left} to go`}</small>
+              {state.started && !state.done && !stage && (
+                <button type="button" className="pe-nextpack" onClick={openNext} disabled={saving}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    className="pe-nextpack-art"
+                    src={captainPack && captain != null ? PACK_ART[SLOTS[captain].pool] : WILD_PACK_ART}
+                    alt=""
+                    draggable={false}
+                  />
+                  <span className="pe-nextpack-body">
+                    <b>{captainPack ? 'Captain Pack' : `Pack ${step + 1} of ${SLOT_COUNT}`}</b>
+                    <span className="pe-nextpack-pips" aria-hidden>
+                      {Array.from({ length: SLOT_COUNT }, (_, i) => (
+                        <i key={i} className={i < step ? 'done' : i === step ? 'now' : undefined} />
+                      ))}
+                    </span>
                   </span>
+                  <span className="pe-nextpack-go">Open</span>
                 </button>
               )}
             </div>
@@ -197,6 +311,12 @@ export function DailyDraft({ initial, other }: { initial: DailyState; other: { h
                 }
           }
           blockedFor={blockedFor}
+          note={skint ? 'You can’t afford anyone here, so the cheapest card signs for free' : null}
+          clock={
+            state.secondsLeft != null && stage.cards && !stage.pickedId ? (
+              <PackClock key={step} seconds={state.secondsLeft} onOut={timeUp} />
+            ) : null
+          }
           chipFor={(p) => ruleChip(rule.id, p)}
           chemFor={chemShown ? (p) => dayChemPreview(rule.id, p, signed) : undefined}
           onCard={onCard}
@@ -243,9 +363,15 @@ function DailyRecap({
           <span>
             <b>{result.cards.toLocaleString()}</b> Cards
           </span>
-          <span>
-            <b>{signedDelta(result.ruleDelta)}</b> Rule
-          </span>
+          {result.spent != null ? (
+            <span>
+              <b>${result.spent}M</b> of ${SALARY_CAP.shared}M
+            </span>
+          ) : (
+            <span>
+              <b>{signedDelta(result.ruleDelta)}</b> Rule
+            </span>
+          )}
           <span>
             <b>{signedDelta(result.chem.total)}</b> Chemistry
           </span>

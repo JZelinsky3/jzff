@@ -6,6 +6,7 @@
 // rule repeats.
 
 import {
+  SALARY_CAP,
   SLOT_COUNT,
   chemistryFor,
   type BlindFace,
@@ -41,8 +42,8 @@ export type DayRule = {
   /** What on a card's face shows the rule applies: a rule keyed on something a
       blind card hides (its rarity, a Ball Knower's team) marks nothing. */
   hint?: 'team' | 'year' | 'pos'
-  /** The most any one card can count for. */
-  cap?: number
+  /** Every card has a salary and the eleven share one budget. */
+  salaryCap?: boolean
   captainMult?: number
   /** The lowest card in the lineup counts this many times over. */
   weakest?: number
@@ -89,7 +90,12 @@ export const DAY_RULES: DayRule[] = [
     line: 'Every dynasty card counts 1.5x.',
     mult: (p) => (p.rarity === 'dynasty' ? 1.5 : 1),
   },
-  { id: 'cap', title: 'Salary Cap', line: 'No card counts for more than 3,000.', cap: 3000 },
+  {
+    id: 'cap',
+    title: 'Salary Cap',
+    line: `Every card has a salary, and you get $${SALARY_CAP.shared}M for all eleven.`,
+    salaryCap: true,
+  },
   {
     id: 'throwback',
     title: 'Throwback Day',
@@ -165,10 +171,10 @@ export function ruleForDay(day: string): DayRule {
 }
 
 /** What the browser gets: everything but the functions. */
-export type DayRuleView = { id: string; title: string; line: string; noCaptain: boolean }
+export type DayRuleView = { id: string; title: string; line: string; noCaptain: boolean; salaryCap: boolean }
 
 export function ruleView(rule: DayRule): DayRuleView {
-  return { id: rule.id, title: rule.title, line: rule.line, noCaptain: !!rule.noCaptain }
+  return { id: rule.id, title: rule.title, line: rule.line, noCaptain: !!rule.noCaptain, salaryCap: !!rule.salaryCap }
 }
 
 /** "1.5x" on a card in the pack, when its face shows the rule touches it. */
@@ -236,7 +242,6 @@ export function dayChemPreview(ruleId: string, card: ChemCard, lineup: ChemCard[
 
 export function scoreLineup(lineup: Player[], captain: number | null, rule: DayRule): DailyScore {
   const counted = lineup.map((p) => Math.round(p.score * (rule.mult?.(p) ?? 1)))
-  if (rule.cap != null) counted.forEach((v, i) => (counted[i] = Math.min(v, rule.cap as number)))
   if (rule.weakest != null && counted.length === SLOT_COUNT) {
     const low = counted.indexOf(Math.min(...counted))
     counted[low] *= rule.weakest

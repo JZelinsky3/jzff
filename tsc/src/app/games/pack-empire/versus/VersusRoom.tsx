@@ -15,7 +15,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { formatLine, tierFor } from '@/lib/packEmpire/rules'
+import { SALARY_CAP, formatLine, tierFor } from '@/lib/packEmpire/rules'
 import type { VersusView } from '@/lib/packEmpire/versus'
 import { CaptainDraft, type DraftDone } from '../CaptainDraft'
 import { DeleteGame } from '../GameList'
@@ -353,6 +353,8 @@ export function VersusRoom({
             {even && ' This one is Even: you both open the same eleven packs with no captain, so chemistry decides it.'}
             {view.difficulty === 'range' && ' Cards show a value range and the team, nothing else.'}
             {view.difficulty === 'season' && ' Cards show only the name and the season.'}
+            {view.difficulty === 'cap' &&
+              ` Every card has a salary and you each get $${even ? SALARY_CAP.shared : SALARY_CAP.own}M for all eleven.`}
           </p>
           {signedIn ? (
             <div className="pe-recap-actions" style={{ justifyContent: 'flex-start' }}>

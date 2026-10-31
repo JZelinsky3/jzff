@@ -8,6 +8,7 @@ import { loadBoard, type BestRow } from '@/lib/minigames/leaderboard'
 import { POOL, POOL_SIZE, playerById } from '@/lib/packEmpire/pool'
 import { parseSoloPicks } from '@/lib/packEmpire/solo'
 import { binderTotals, type BinderTotals } from '@/lib/packEmpire/binder'
+import { loadFaces, type FaceMap } from '@/lib/packEmpire/faces'
 import { dayKey } from '@/lib/packEmpire/daily'
 import { ruleForDay } from '@/lib/packEmpire/dayRules'
 import {
@@ -109,17 +110,20 @@ function PackFan() {
 async function runLeaders(rows: BestRow[]): Promise<Map<string, Player>> {
   const out = new Map<string, Player>()
   if (rows.length === 0) return out
-  const { data } = await createAdminClient()
-    .from('game_runs')
-    .select('id, detail')
-    .in(
-      'id',
-      rows.map((r) => r.runId)
-    )
+  const [{ data }, faces] = await Promise.all([
+    createAdminClient()
+      .from('game_runs')
+      .select('id, detail')
+      .in(
+        'id',
+        rows.map((r) => r.runId)
+      ),
+    loadFaces().catch(() => ({} as FaceMap)),
+  ])
   for (const run of (data ?? []) as { id: string; detail: { picks?: unknown } | null }[]) {
     const cards = (parseSoloPicks(run.detail?.picks) ?? []).flatMap((p) => playerById(p.id) ?? [])
     const best = cards.sort((a, b) => b.score - a.score)[0]
-    if (best) out.set(run.id, best)
+    if (best) out.set(run.id, { ...best, img: faces[best.id] ?? best.img })
   }
   return out
 }

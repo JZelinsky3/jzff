@@ -5,8 +5,9 @@
 // it issued it to. An Even Versus goes through here as well: its seed has no
 // captain, and its eleven packs are laid out once for both seats.
 
-import { dealPack, evenPacks, readSeed, type SeedInfo } from './deal'
+import { dealPack, evenPacks, priced, readSeed, type SeedInfo } from './deal'
 import {
+  SALARY_CAP,
   SLOTS,
   SLOT_COUNT,
   SOLO_BOOSTED,
@@ -14,6 +15,7 @@ import {
   chemistryCounts,
   chemistryFor,
   lineupScore,
+  signingPrice,
   tierFor,
   type Chemistry,
   type Difficulty,
@@ -67,6 +69,8 @@ export type SoloReplay =
       captain: number | null
       diff: Difficulty
       even: boolean
+      /** Under a salary cap, what the eleven cost. */
+      spent: number
       /** Every pack as it was dealt, in the order it was opened: what the
           binder records. */
       packs: { slot: number; cards: Player[]; kept: string }[]
@@ -85,6 +89,8 @@ export function replaySolo(seed: string, picks: SoloPick[]): SoloReplay {
   const lineup: (Player | null)[] = Array(SLOT_COUNT).fill(null)
   const taken: string[] = []
   const packs: { slot: number; cards: Player[]; kept: string }[] = []
+  const budget: number = parsed.even ? SALARY_CAP.shared : SALARY_CAP.own
+  let left = budget
 
   for (const pick of picks) {
     if (seen.has(pick.slot)) return { ok: false, error: 'A slot was filled twice.' }
@@ -92,6 +98,11 @@ export function replaySolo(seed: string, picks: SoloPick[]): SoloReplay {
     const pack = seedPack(seed, parsed, pick.slot, taken)
     const card = pack.find((p) => p.id === pick.id)
     if (!card) return { ok: false, error: `The ${SLOTS[pick.slot].label.toLowerCase()} pick is not in that pack.` }
+    if (parsed.diff === 'cap') {
+      const price = signingPrice(priced(card), pack.map(priced), left)
+      if (price == null) return { ok: false, error: 'That lineup is over the cap.' }
+      left -= price
+    }
     lineup[pick.slot] = card
     taken.push(card.id)
     packs.push({ slot: pick.slot, cards: pack, kept: card.id })
@@ -110,6 +121,7 @@ export function replaySolo(seed: string, picks: SoloPick[]): SoloReplay {
     captain: parsed.captain,
     diff: parsed.diff,
     even: parsed.even,
+    spent: budget - left,
     packs,
   }
 }

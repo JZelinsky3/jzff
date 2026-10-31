@@ -9,6 +9,7 @@ import { isLifetimeUser, TIER_LABELS, TIER_PRICES, trialSlotActive, type Tier, t
 import { ownAccountIds } from '@/lib/ownAccounts'
 import { socialLive } from '@/lib/social/config'
 import { KIND_LABELS, type Kind } from '@/lib/social/content'
+import { POOL_SIZE } from '@/lib/packEmpire/pool'
 import { SHARE_PAGES } from '@/lib/sharePages'
 import { ADMIN_TZ, PLATFORM_LABEL, fmtDay } from './format'
 
@@ -66,7 +67,7 @@ export type Tile = { label: string; today: number; week: number; strip: number[]
 export type Attention = { tone: 'rust' | 'gold' | 'steel'; title: string; detail: string; href?: string }
 
 export type Room = { href: string; name: string; em: string; stat: string; icon: RoomIcon }
-export type RoomIcon = 'return' | 'pulse' | 'social' | 'mail' | 'star' | 'share'
+export type RoomIcon = 'return' | 'pulse' | 'social' | 'mail' | 'star' | 'share' | 'cards'
 
 export type AdminData = {
   asOf: string
@@ -362,6 +363,7 @@ export async function loadAdmin(): Promise<AdminData> {
     { href: '/admin/mailing-lists', name: 'Mailing', em: 'lists', icon: 'mail', stat: `${subscribersRes.count ?? 0} recap subscribers` },
     { href: '/admin/reviews', name: 'The', em: 'reviews', icon: 'star', stat: ratings.length ? `${ratings.length} · ${avg.toFixed(1)} average` : 'None yet' },
     { href: '/admin/share', name: 'Share', em: 'hub', icon: 'share', stat: `${SHARE_PAGES.length} landing pages` },
+    { href: '/games/pack-empire/binder/all/', name: 'Complete', em: 'binder', icon: 'cards', stat: `All ${POOL_SIZE} Pack Empire cards` },
   ]
 
   return {

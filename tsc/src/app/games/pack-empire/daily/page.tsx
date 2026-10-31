@@ -4,8 +4,11 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { dailyLobby, type DailyBoard } from '@/lib/packEmpire/daily'
-import { CHEM_LINES, DIFFICULTY_LOOK, SLOT_COUNT } from '@/lib/packEmpire/rules'
+import { maskCard } from '@/lib/packEmpire/deal'
+import { playerById } from '@/lib/packEmpire/pool'
+import { CHEM_LINES, DAILY_PACK_SECONDS, DIFFICULTY_LOOK, SLOT_COUNT } from '@/lib/packEmpire/rules'
 import mobileStyles from '../../mobile.module.css'
+import { PackCard } from '../cards'
 import { PeChrome, PeDock } from '../chrome'
 import { peFonts } from '../fonts'
 import { DailyTop, longDay, shortDay } from './parts'
@@ -20,36 +23,50 @@ export const metadata: Metadata = {
 }
 
 const VERSION_LINE: Record<DailyBoard['version'], string> = {
-  range: 'A value range and the team on every card.',
-  season: 'Just the name and the season. For real ball knowers.',
+  range: 'A value range and the team on every card. Some ranges are tight, some barely help.',
+  season: 'Just the name and the season. No team, no value. For real ball knowers.',
+}
+
+/** The card on each game's cover, masked the way it would be dealt. */
+const COVER: Record<DailyBoard['version'], string> = {
+  range: 'wr-justin-jefferson-2022',
+  season: 'qb-tom-brady-2007',
 }
 
 function PlayTile({ board, signedIn }: { board: DailyBoard; signedIn: boolean }) {
   const href = `/games/pack-empire/daily/play/?v=${board.version}`
   const done = board.yourStep === SLOT_COUNT
   const started = board.yourStep != null && !done
+  const cover = playerById(COVER[board.version])
   return (
-    <div className="pe-panel pe-dplay">
-      <div className="pe-kicker">{done ? 'Played' : started ? 'In progress' : 'One try'}</div>
-      <div className="pe-panel-title">{DIFFICULTY_LOOK[board.version].label}</div>
-      <p className="pe-panel-text">{VERSION_LINE[board.version]}</p>
-      <div className="pe-panel-foot">
-        {done && board.you ? (
-          <Link href={href} className="pe-dplay-done">
-            <b>{board.you.score.toLocaleString()}</b>
-            <span>
-              {board.yourRank === 1 ? 'First' : `No. ${board.yourRank}`} of {board.entrants.toLocaleString()}
-            </span>
-          </Link>
-        ) : signedIn ? (
-          <Link href={href} className="pe-btn">
-            {started ? `Pick up at pack ${(board.yourStep ?? 0) + 1}` : 'Play'}
-          </Link>
-        ) : (
-          <Link href={`/login?next=${encodeURIComponent(href)}`} className="pe-btn">
-            Sign in to play
-          </Link>
-        )}
+    <div className="pe-dgame" data-v={board.version}>
+      {cover && (
+        <div className="pe-dgame-art" aria-hidden>
+          <PackCard player={maskCard(cover, board.version)} revealed still />
+        </div>
+      )}
+      <div className="pe-dgame-body">
+        <div className="pe-dgame-kicker">{done ? 'Played' : started ? 'In Progress' : 'One Try'}</div>
+        <h2 className="pe-dgame-title">{DIFFICULTY_LOOK[board.version].label}</h2>
+        <p className="pe-dgame-line">{VERSION_LINE[board.version]}</p>
+        <div className="pe-dgame-foot">
+          {done && board.you ? (
+            <Link href={href} className="pe-dplay-done">
+              <b>{board.you.score.toLocaleString()}</b>
+              <span>
+                {board.yourRank === 1 ? 'First' : `No. ${board.yourRank}`} of {board.entrants.toLocaleString()}
+              </span>
+            </Link>
+          ) : signedIn ? (
+            <Link href={href} className="pe-btn">
+              {started ? `Pick Up At Pack ${(board.yourStep ?? 0) + 1}` : 'Play'}
+            </Link>
+          ) : (
+            <Link href={`/login?next=${encodeURIComponent(href)}`} className="pe-btn">
+              Sign In To Play
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -85,7 +102,7 @@ export default async function DailyPage() {
           <p className="pe-table-sub">{lobby.rule.line}</p>
         </div>
 
-        <div className="pe-twoup">
+        <div className="pe-dgames">
           {lobby.boards.map((b) => (
             <PlayTile key={b.version} board={b} signedIn={!!user} />
           ))}
@@ -122,6 +139,18 @@ export default async function DailyPage() {
             </div>
             <div className="pe-rule">
               <span>
+                <b>The clock runs.</b> You get {DAILY_PACK_SECONDS} seconds a pack from the moment you open it. Run out
+                and the first card that fits signs. There&apos;s no clock between packs.
+              </span>
+            </div>
+            <div className="pe-rule">
+              <span>
+                <b>Big names aren&apos;t always big seasons.</b> Stars turn up in their worst years here, on purpose.
+                On Range, some ranges are tight and some barely tell you anything.
+              </span>
+            </div>
+            <div className="pe-rule">
+              <span>
                 <b>Packs are wild.</b> Five positions in each. Keep one you have a slot for, and it takes that slot.
                 The others stay on the table so you can see what you passed up.
               </span>
@@ -137,6 +166,12 @@ export default async function DailyPage() {
             <div className="pe-rule">
               <span>
                 <b>Chemistry counts double.</b> {CHEM_LINES[1]} One real team is hidden across the packs every day.
+              </span>
+            </div>
+            <div className="pe-rule">
+              <span>
+                <b>It&apos;s all for the board.</b> Everyone gets these same packs, so nothing from the Daily goes in
+                your binder.
               </span>
             </div>
           </div>

@@ -28,6 +28,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import {
+  SALARY_CAP,
   SLOTS,
   SLOT_COUNT,
   TIERS,
@@ -35,12 +36,14 @@ import {
   chemistryCounts,
   chemistryFor,
   chemistryPreview,
+  isBlind,
   lineupScore,
+  signingPrice,
   tierFor,
   type Difficulty,
   type Player,
 } from '@/lib/packEmpire/rules'
-import { CaptainMark, Field, blindValue, type SlotView } from './cards'
+import { CaptainMark, Field, blindTotal, type SlotView } from './cards'
 import { KeyAside, KeyButton, type KeyFlavor } from './DraftKey'
 import { useHydrated } from './clientStore'
 import { PackStage, ScoreStrip, usePackStage, useStripOffset } from './stage'
@@ -53,6 +56,8 @@ export type DraftDone = {
   picks: DraftPick[]
   lineup: Player[]
   score: number
+  /** Under a salary cap, what the eleven cost. */
+  spent: number
 }
 
 type Saved = {
@@ -60,6 +65,8 @@ type Saved = {
   captain: number | null
   picks: DraftPick[]
   lineup: (Player | null)[]
+  /** Under a salary cap. */
+  spent?: number
   at: number
 }
 
@@ -123,12 +130,12 @@ type DraftProps = {
 /** A blind draft's stand-in for the total: on Range the sum of what its cards
     could be worth, on Ball Knower nothing at all. */
 function hiddenTotal(lineup: (Player | null)[], diff: Difficulty) {
-  if (diff === 'open') return null
+  if (!isBlind(diff)) return null
   if (diff === 'season') return { value: '?', label: 'Hidden' }
   const signed = lineup.filter((p): p is Player => !!p)
   const lo = signed.reduce((sum, p) => sum + (p.blind?.lo ?? 0), 0)
   const hi = signed.reduce((sum, p) => sum + (p.blind?.hi ?? 0), 0)
-  return { value: blindValue({ level: 'range', lo, hi }), label: 'Could be' }
+  return { value: blindTotal(lo, hi), label: 'Could be' }
 }
 
 /** Where the run stands, on the left of the row with the key's button. */
@@ -161,7 +168,7 @@ function Board({
   return (
     <div className="pe-board">
       <div className="pe-board-bar">
-        <ChaseLine score={score} choosing={choosing} blind={flavor.difficulty !== 'open'} even={flavor.even} />
+        <ChaseLine score={score} choosing={choosing} blind={isBlind(flavor.difficulty)} even={flavor.even} />
         <KeyButton score={score} flavor={flavor} />
       </div>
       <div className="pe-board-in">
@@ -218,6 +225,7 @@ type Start = {
   captain: number | null
   lineup: (Player | null)[]
   picks: DraftPick[]
+  spent: number
   restored: boolean
 }
 
@@ -229,13 +237,14 @@ function startingState(saveKey: string, fixedSeed: string | null | undefined): S
       captain: saved.captain,
       lineup: saved.lineup,
       picks: saved.picks,
+      spent: saved.spent ?? 0,
       restored: saved.picks.length > 0,
     }
   }
   if (fixedSeed) {
-    return { seed: fixedSeed, captain: captainFromSeed(fixedSeed), lineup: EMPTY, picks: [], restored: false }
+    return { seed: fixedSeed, captain: captainFromSeed(fixedSeed), lineup: EMPTY, picks: [], spent: 0, restored: false }
   }
-  return { seed: null, captain: null, lineup: EMPTY, picks: [], restored: false }
+  return { seed: null, captain: null, lineup: EMPTY, picks: [], spent: 0, restored: false }
 }
 
 function LiveDraft({
@@ -254,6 +263,7 @@ function LiveDraft({
   const [seed, setSeed] = useState<string | null>(start.seed)
   const [lineup, setLineup] = useState<(Player | null)[]>(start.lineup)
   const [picks, setPicks] = useState<DraftPick[]>(start.picks)
+  const [spent, setSpent] = useState(start.spent)
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [restored, setRestored] = useState(start.restored)
@@ -287,6 +297,7 @@ function LiveDraft({
     setSeed(null)
     setLineup(EMPTY)
     setPicks([])
+    setSpent(0)
     setError(null)
     setStale(false)
     setRestored(false)
@@ -306,6 +317,12 @@ function LiveDraft({
   const chem = chemShown ? chemistryFor(signed, true).total : 0
   const score = lineupScore(settled) + chem
   const tier = tierFor(score)
+  const capped = difficulty === 'cap'
+  const budget: number = even ? SALARY_CAP.shared : SALARY_CAP.own
+  const capLeft = budget - spent
+  const packCards = stage?.cards ?? null
+  const priceOf = (p: Player) => signingPrice(p, packCards ?? [p], capLeft)
+  const skint = capped && !!packCards && packCards.every((p) => (p.salary ?? 0) > capLeft)
 
   const chooseCaptain = useCallback(
     async (i: number) => {
@@ -362,19 +379,24 @@ function LiveDraft({
         return
       }
       const slot = stage.slot
+      const price = capped ? signingPrice(stage.cards[i], stage.cards, budget - spent) : 0
+      if (price == null) return
       let done: DraftDone | null = null
       pick(i, (card) => {
         const nextLineup = [...lineup]
         nextLineup[slot] = card
         const nextPicks = [...picks, { slot, id: card.id }]
+        const nextSpent = spent + price
         setLineup(nextLineup)
         setPicks(nextPicks)
+        setSpent(nextSpent)
         if (nextPicks.length === SLOT_COUNT) {
           writeSaved(saveKey, null)
           const full = nextLineup as Player[]
-          done = { seed, captain, picks: nextPicks, lineup: full, score: lineupScore(full) }
+          const total = lineupScore(full) + (chemShown ? chemistryFor(full, true).total : 0)
+          done = { seed, captain, picks: nextPicks, lineup: full, score: total, spent: nextSpent }
         } else {
-          writeSaved(saveKey, { seed, captain, picks: nextPicks, lineup: nextLineup, at: Date.now() })
+          writeSaved(saveKey, { seed, captain, picks: nextPicks, lineup: nextLineup, spent: nextSpent, at: Date.now() })
         }
       }).then((landed) => {
         // After the last card has landed and the count has run up.
@@ -382,7 +404,7 @@ function LiveDraft({
         if (landed && run) window.setTimeout(() => onDone(run), 900)
       })
     },
-    [stage, captain, even, seed, reveal, pick, lineup, picks, saveKey, onDone]
+    [stage, captain, even, seed, reveal, pick, lineup, picks, saveKey, onDone, capped, budget, spent, chemShown]
   )
 
   const choosing = !seed && !even
@@ -422,6 +444,7 @@ function LiveDraft({
             tier={tier}
             hidden={hiddenTotal(settled, difficulty)}
             noTier={even}
+            capLeft={capped ? capLeft : null}
             extra={chemShown ? { value: `${chem >= 0 ? '+' : '−'}${Math.abs(chem).toLocaleString()}`, label: 'Chemistry' } : undefined}
           />
           {capDef && captain != null && !lineup[captain] && !stale && (
@@ -491,6 +514,8 @@ function LiveDraft({
           onTear={tear}
           onSkip={skip}
           chemFor={chemShown ? (p) => chemistryPreview(p, signed, true) : undefined}
+          blockedFor={capped ? (p) => (priceOf(p) == null ? 'Over cap' : null) : undefined}
+          note={skint ? 'You can’t afford anyone here, so the cheapest card signs for free' : null}
         />
       )}
     </div>

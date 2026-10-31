@@ -31,7 +31,7 @@ import {
   type MvCard,
 } from './multiverse'
 import { parseSoloPicks, replaySolo, soloDisplay } from '@/lib/packEmpire/solo'
-import { difficultyForMode, type Chemistry, type Player } from '@/lib/packEmpire/rules'
+import { difficultyForMode, isBlind, type Chemistry, type Player } from '@/lib/packEmpire/rules'
 import type { GameId, RunDisplay } from './leaderboard'
 
 export type VerifiedRun = {
@@ -334,7 +334,7 @@ function verifyPackEmpire(poolId: string, mode: string | null, seed: string, pic
     display: soloDisplay(run.score),
     detail: { captain: run.captain, picks: parsed },
     // A blind run hasn't seen its own numbers yet: this is where it does.
-    ...(run.diff === 'open' ? {} : { reveal: { lineup: run.lineup, base: run.base, chem: run.chem, score: run.score } }),
+    ...(!isBlind(run.diff) ? {} : { reveal: { lineup: run.lineup, base: run.base, chem: run.chem, score: run.score } }),
   }
 }
 

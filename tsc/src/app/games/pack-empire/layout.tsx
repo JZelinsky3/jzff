@@ -1,9 +1,14 @@
+import { loadFaces } from '@/lib/packEmpire/faces'
+import { FacesProvider } from './faces'
 import './pack-empire.css'
 
-// Only here to load the game's stylesheet for every Pack Empire route. It
-// renders nothing of its own: each page owns its <main>, because the games
-// section's mobile chrome hides the site hamburger with `main ~ .msm-root`,
-// which a wrapper element here would break.
-export default function PackEmpireLayout({ children }: { children: React.ReactNode }) {
-  return children
+// Loads the game's stylesheet and hands uploaded photos to every Pack Empire
+// route. It renders nothing of its own: each page owns its <main>, because the
+// games section's mobile chrome hides the site hamburger with
+// `main ~ .msm-root`, which a wrapper element here would break.
+export default async function PackEmpireLayout({ children }: { children: React.ReactNode }) {
+  // Cards fall back to the pool's photos: a missing upload is no reason to
+  // take the game down.
+  const faces = await loadFaces().catch(() => ({}))
+  return <FacesProvider faces={faces}>{children}</FacesProvider>
 }

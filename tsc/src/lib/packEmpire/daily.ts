@@ -14,16 +14,21 @@
 // today's answers. Someone determined can still scout with a second account;
 // it costs them that account's Daily, and that's as far as this goes.
 //
+// Each pack has a clock, which is what keeps Ball Knower about what you know
+// rather than what you can look up. A pack isn't sent until you open it, and
+// that's when its clock starts, so it can't be read early or restarted with a
+// refresh. If it runs out, the first card that fits signs. Between packs
+// there's no clock: you can put your phone down, you just can't see what's next.
+//
 // Top lineups are the other leak. Today's stay hidden until you've finished
 // that version, otherwise the board is an answer sheet. Past days are open.
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { recordPacks } from './binder'
 import { ruleForDay, ruleView, scoreLineup, type DailyScore, type DayRuleView } from './dayRules'
-import { dailyPack, dailySet, maskCard, type DailyPick } from './deal'
+import { dailyCapLeft, dailyPack, dailySet, dailyUsable, maskDaily, priced, type DailyPick } from './deal'
 import { nameForUser } from './people'
 import { playerById } from './pool'
-import { SLOT_COUNT, slotForCard, type Player } from './rules'
+import { DAILY_PACK_SECONDS, SALARY_CAP, SLOT_COUNT, signingPrice, slotForCard, type Player } from './rules'
 
 export type DailyVersion = 'range' | 'season'
 
@@ -62,12 +67,16 @@ type Row = {
   detail: DailyDetail | null
   started_at: string
   finished_at: string | null
+  /** When the current pack was handed over. Null until it's opened. */
+  pack_opened_at: string | null
 }
 
 export type PackLook = { cards: Player[]; kept: string; reserve: boolean }
 
 export type DailyResult = DailyDetail & {
   captain: number | null
+  /** On a salary cap day, what the eleven cost. */
+  spent: number | null
   rank: number
   entrants: number
   /** Every pack as it was, cards turned over, with what you kept. */
@@ -83,10 +92,16 @@ export type DailyState = {
   /** Masked until the run is done. */
   lineup: (Player | null)[]
   step: number
-  /** The pack you're on, masked. Null before you've started and once done. */
+  /** The pack you've opened, masked. Null until you open it. */
   pack: Player[] | null
+  /** What's left on the clock, while a pack is open. */
+  secondsLeft: number | null
+  /** The card that signed because the clock ran out, on the reply that did it. */
+  timedOut: string | null
   /** The card in it that's a reserve. */
   reserve: string | null
+  /** On a salary cap day, what's left to spend. */
+  capLeft: number | null
   done: boolean
   result: DailyResult | null
 }
@@ -129,7 +144,10 @@ async function resultOf(row: Row): Promise<DailyResult | null> {
     return (await q).count ?? 0
   }
   const [above, entrants] = await Promise.all([count(true), count(false)])
-  return { ...row.detail, captain: row.captain, rank: above + 1, entrants, packs: packsOf(row) }
+  const spent = ruleForDay(row.day).salaryCap
+    ? SALARY_CAP.shared - dailyCapLeft(dailySet(row.day, row.version), row.captain, row.picks)
+    : null
+  return { ...row.detail, captain: row.captain, spent, rank: above + 1, entrants, packs: packsOf(row) }
 }
 
 async function stateOf(day: string, version: DailyVersion, row: Row | null): Promise<DailyState> {
@@ -143,27 +161,71 @@ async function stateOf(day: string, version: DailyVersion, row: Row | null): Pro
     lineup: Array(SLOT_COUNT).fill(null),
     step: row?.step ?? 0,
     pack: null,
+    secondsLeft: null,
+    timedOut: null,
     reserve: null,
+    capLeft: rule.salaryCap ? SALARY_CAP.shared : null,
     done: !!row?.done,
     result: null,
   }
   if (!row) return base
   if (row.done) return { ...base, lineup: row.detail?.lineup ?? base.lineup, result: await resultOf(row) }
 
+  const show = (c: Player) => (rule.salaryCap ? { ...maskDaily(c, version), salary: priced(c).salary } : maskDaily(c, version))
   const lineup = [...base.lineup]
   for (const pick of row.picks) {
     const card = playerById(pick.id)
-    if (card) lineup[pick.slot] = maskCard(card, version)
+    if (card) lineup[pick.slot] = show(card)
   }
-  const { cards, reserve } = dailyPack(dailySet(day, version), row.captain, row.picks)
-  return { ...base, lineup, pack: cards.map((c) => maskCard(c, version)), reserve }
+  const set = dailySet(day, version)
+  const capLeft = rule.salaryCap ? dailyCapLeft(set, row.captain, row.picks) : null
+  if (!row.pack_opened_at) return { ...base, lineup, capLeft }
+  const { cards, reserve } = dailyPack(set, row.captain, row.picks)
+  return {
+    ...base,
+    lineup,
+    pack: cards.map(show),
+    reserve,
+    capLeft,
+    secondsLeft: Math.max(0, Math.ceil(clockLeftMs(row) / 1000)),
+  }
+}
+
+/** What's left on the clock of an open pack, below zero once it's run out. */
+function clockLeftMs(row: Pick<Row, 'pack_opened_at'>): number {
+  if (!row.pack_opened_at) return Infinity
+  return DAILY_PACK_SECONDS * 1000 - (Date.now() - Date.parse(row.pack_opened_at))
+}
+
+/** A slow connection isn't a slow pick: a pick landing this late still counts. */
+const CLOCK_GRACE_MS = 3000
+
+/** The card that signs when the clock runs out: the first one you could have
+    taken, in the order they were dealt. */
+function clockCard(row: Row): Player | null {
+  const set = dailySet(row.day, row.version)
+  const usable = dailyUsable(dailyPack(set, row.captain, row.picks).cards, row.captain, row.picks)
+  if (!ruleForDay(row.day).salaryCap) return usable[0] ?? null
+  const left = dailyCapLeft(set, row.captain, row.picks)
+  const table = usable.map(priced)
+  return table.find((c) => signingPrice(c, table, left) != null) ?? null
+}
+
+/** A clock that ran out while nobody was asking: the card signs now. */
+async function settle(row: Row | null, day: string): Promise<{ row: Row | null; timedOut: string | null }> {
+  if (!row || row.done || clockLeftMs(row) > -CLOCK_GRACE_MS) return { row, timedOut: null }
+  const card = clockCard(row)
+  if (!card) return { row, timedOut: null }
+  const fresh = await signCard(row, day, card)
+  return { row: fresh, timedOut: card.name }
 }
 
 /** Where this account stands on today's Daily. Signed out, a run that hasn't
     started, which is enough to show the rule. */
 export async function dailyState(userId: string | null, version: DailyVersion): Promise<DailyState> {
   const day = dayKey()
-  return stateOf(day, version, userId ? await load(day, version, userId) : null)
+  const { row, timedOut } = await settle(userId ? await load(day, version, userId) : null, day)
+  return { ...(await stateOf(day, version, row)), timedOut }
 }
 
 /** Sign in for today. The captain is the commitment: it decides the first
@@ -193,29 +255,84 @@ export async function startDaily(
   return { ok: true, state: await stateOf(day, version, await load(day, version, userId)) }
 }
 
-/** Keep one card from the current pack. The eleventh is the one that scores
-    the run and turns everything over. */
+/** Open the next pack, which is what starts its clock. Asking again hands
+    back the same open pack, on the same clock. */
+export async function openDaily(userId: string, version: DailyVersion): Promise<{ ok: true; state: DailyState } | Fail> {
+  const day = dayKey()
+  const { row, timedOut } = await settle(await load(day, version, userId), day)
+  if (!row) return { ok: false, error: 'That Daily has ended. A new one is up.', status: 409 }
+  if (row.done || row.pack_opened_at) return { ok: true, state: { ...(await stateOf(day, version, row)), timedOut } }
+  await db()
+    .from('pe_daily_runs')
+    .update({ pack_opened_at: new Date().toISOString() })
+    .eq('day', day)
+    .eq('version', version)
+    .eq('user_id', userId)
+    .eq('step', row.step)
+    .is('pack_opened_at', null)
+  return { ok: true, state: { ...(await stateOf(day, version, await load(day, version, userId))), timedOut } }
+}
+
+/** The browser saying its clock hit zero. The server's clock is the one that
+    counts, so this only ever signs a card once that one has run out too. */
+export async function expireDaily(userId: string, version: DailyVersion): Promise<{ ok: true; state: DailyState } | Fail> {
+  const day = dayKey()
+  const row = await load(day, version, userId)
+  if (!row) return { ok: false, error: 'That Daily has ended. A new one is up.', status: 409 }
+  if (row.done || !row.pack_opened_at || clockLeftMs(row) > 1000) return { ok: true, state: await stateOf(day, version, row) }
+  const card = clockCard(row)
+  if (!card) return { ok: true, state: await stateOf(day, version, row) }
+  return { ok: true, state: { ...(await stateOf(day, version, await signCard(row, day, card))), timedOut: card.name } }
+}
+
+/** Keep one card from the open pack. The eleventh is the one that scores the
+    run and turns everything over. */
 export async function pickDaily(
   userId: string,
   version: DailyVersion,
   id: unknown
 ): Promise<{ ok: true; state: DailyState } | Fail> {
   const day = dayKey()
-  const row = await load(day, version, userId)
-  if (!row) return { ok: false, error: 'That Daily has ended. A new one is up.', status: 409 }
-  if (row.done) return { ok: true, state: await stateOf(day, version, row) }
+  const found = await load(day, version, userId)
+  if (!found) return { ok: false, error: 'That Daily has ended. A new one is up.', status: 409 }
+  if (found.done) return { ok: true, state: await stateOf(day, version, found) }
+  if (!found.pack_opened_at) return { ok: false, error: 'Open the pack first.' }
 
-  const { cards } = dailyPack(dailySet(day, version), row.captain, row.picks)
+  // Too late: the clock already decided.
+  const { row, timedOut } = await settle(found, day)
+  if (!row) return { ok: false, error: 'Could not save that pick.' }
+  if (timedOut) return { ok: true, state: { ...(await stateOf(day, version, row)), timedOut } }
+
+  const set = dailySet(day, version)
+  const { cards } = dailyPack(set, row.captain, row.picks)
   const card = cards.find((c) => c.id === id)
   if (!card) return { ok: false, error: 'That card is not in this pack.' }
 
   const filled = new Set(row.picks.map((p) => p.slot))
   const locked = row.captain != null && row.picks.length === 0
-  const slot = locked ? (row.captain as number) : slotForCard(card.pos, filled)
-  if (slot < 0) return { ok: false, error: `You have no ${card.pos} slot left. Take a card you have a slot for.` }
+  if (!locked && slotForCard(card.pos, filled) < 0) {
+    return { ok: false, error: `You have no ${card.pos} slot left. Take a card you have a slot for.` }
+  }
 
+  if (ruleForDay(day).salaryCap) {
+    const usable = dailyUsable(cards, row.captain, row.picks).map(priced)
+    if (signingPrice(priced(card), usable, dailyCapLeft(set, row.captain, row.picks)) == null) {
+      return { ok: false, error: 'You can’t afford him. Take someone you can pay for.' }
+    }
+  }
+  return { ok: true, state: await stateOf(day, version, await signCard(row, day, card)) }
+}
+
+/** Put a card in its slot and, on the eleventh, score the run. Nothing here
+    reaches the binder: everybody opens these same packs, so filing them would
+    pile pulls onto the same few cards without anyone having found them. */
+async function signCard(row: Row, day: string, card: Player): Promise<Row | null> {
+  const { version, user_id: userId } = row
+  const filled = new Set(row.picks.map((p) => p.slot))
+  const locked = row.captain != null && row.picks.length === 0
+  const slot = locked ? (row.captain as number) : slotForCard(card.pos, filled)
   const picks = [...row.picks, { id: card.id, slot }]
-  const patch: Record<string, unknown> = { picks, step: picks.length }
+  const patch: Record<string, unknown> = { picks, step: picks.length, pack_opened_at: null }
 
   const finished = picks.length === SLOT_COUNT
   if (finished) {
@@ -238,22 +355,7 @@ export async function pickDaily(
     .eq('step', row.step)
     .select('*')
     .maybeSingle()
-  const fresh = (data as Row | null) ?? (await load(day, version, userId))
-  if (!fresh) return { ok: false, error: 'Could not save that pick.' }
-
-  if (finished && data) {
-    await recordPacks(
-      userId,
-      'daily',
-      packsOf(fresh).map((p, i) => ({
-        deal: `daily:${day}:${version}`,
-        slot: i,
-        cards: p.cards.map((c) => c.id),
-        kept: p.kept,
-      }))
-    )
-  }
-  return { ok: true, state: await stateOf(day, version, fresh) }
+  return (data as Row | null) ?? (await load(day, version, userId))
 }
 
 // ============================================================

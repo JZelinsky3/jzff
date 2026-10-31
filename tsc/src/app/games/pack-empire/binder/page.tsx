@@ -13,6 +13,7 @@ import type { Metadata, Viewport } from 'next'
 import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 import { getViewMode } from '@/lib/viewMode'
 import { loadBinder } from '@/lib/packEmpire/binder'
 import { POOL_SIZE } from '@/lib/packEmpire/pool'
@@ -37,7 +38,7 @@ export default async function BinderPage() {
     data: { user },
   } = await supabase.auth.getUser()
   const mobile = (await getViewMode()) === 'mobile'
-  const view = user ? await loadBinder(user.id) : null
+  const [view, admin] = await Promise.all([user ? loadBinder(user.id) : null, isSiteAdmin(user?.id)])
 
   return (
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.root : ''}`.trim()}>
@@ -62,6 +63,13 @@ export default async function BinderPage() {
           </div>
         )}
         {mobile && <div style={{ height: '0.9rem' }} />}
+        {admin && (
+          <p className="pe-bd-commish">
+            <Link href="/games/pack-empire/binder/all/" className="pe-link">
+              Complete Binder
+            </Link>
+          </p>
+        )}
 
         {view ? (
           <Binder view={view} mobile={mobile} />

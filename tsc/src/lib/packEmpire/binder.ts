@@ -5,13 +5,14 @@
 // on don't (Joey: finishing it should be hard, not a prize for whoever opens
 // the most packs). A card is a season, so a man's row runs from his most
 // valuable card down, and each card keeps its own count, yours and the whole
-// site's. Mega Draft boards aren't packs and never file here.
+// site's. Mega Draft boards aren't packs and never file here, and neither does
+// the Daily: everyone opens the same packs that day, so its pulls say nothing
+// about what anyone found (0089 stops counting the Daily rows already filed).
 //
 // Nothing here trusts the browser. A pack is recorded only after the server
 // has dealt it itself: a run re-dealt on its way to the board (which is also
 // how a run played signed out reaches the binder, once it's claimed), a
-// Versus lineup re-dealt on submit, a League pick checked against its pack, a
-// finished Daily.
+// Versus lineup re-dealt on submit, a League pick checked against its pack.
 // The table keys on (user, deal, slot), so the same pack recorded twice
 // counts once. See 0083_pack_empire_binder.sql and 0084.
 
@@ -31,7 +32,7 @@ import {
 import { POOL, POOL_SIZE, POOL_VERSION } from './pool'
 import { parseSoloPicks, replaySolo, type SoloPick } from './solo'
 
-export type BinderSource = 'solo' | 'versus' | 'league' | 'daily'
+export type BinderSource = 'solo' | 'versus' | 'league'
 
 export type BinderPack = { deal: string; slot: number; cards: string[]; kept: string | null }
 
@@ -181,6 +182,13 @@ export async function loadBinder(userId: string): Promise<BinderView> {
   await syncBinder(userId)
   const [mine, site] = await Promise.all([counts(userId), siteCounts()])
   return build(mine, site)
+}
+
+/** Every card in the game face up, for the complete binder. Each is filed as
+    held so it arrives whole; `pulls` means nothing here, `site` is the count. */
+export async function loadCompleteBinder(): Promise<BinderView> {
+  const all = POOL_KEYS.flatMap((k) => POOL[k].map((p) => [p.id, { card_id: p.id, pulls: 1, first_at: '' }] as const))
+  return build(new Map(all), await siteCounts())
 }
 
 /** 1 in how many ordinary packs of its position hold each rarity's one card.

@@ -663,3 +663,15 @@
   color: var(--gp-gold);
   border-bottom-color: var(--gp-gold);
 }
+
+/* Four tabs on a phone: one line each, or the two-word ones wrap and sit
+   higher than their neighbours. */
+@media (max-width: 640px) {
+  .segDense .segItem {
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
+    font-size: 0.56rem;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+}

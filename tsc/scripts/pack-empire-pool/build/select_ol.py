@@ -6,25 +6,25 @@ S = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, f'{S}/build')
 from seasons import dealt, norm, club, FRANCHISE
 import allpro
-from select_skill import interp, rarity_for, BANDS, SCORE_AT, TOP_BANDS
+from select_skill import interp, next_open_band, rarity_for, BANDS, SCORE_AT, TOP_BANDS
 
 TARGETS = {
-    'OT': {'immortal': 3, 'transcendent': 6, 'dynasty': 11, 'rare': 20, 'common': 51},
-    'OG': {'immortal': 3, 'transcendent': 6, 'dynasty': 11, 'rare': 20, 'common': 44},  # one common per man caps it
-    'C': {'immortal': 2, 'transcendent': 5, 'dynasty': 8, 'rare': 15, 'common': 38},
+    'OT': {'immortal': 3, 'transcendent': 8, 'dynasty': 13, 'rare': 24, 'common': 56},
+    'OG': {'immortal': 3, 'transcendent': 7, 'dynasty': 13, 'rare': 25, 'common': 44},  # one common per man caps it
+    'C': {'immortal': 3, 'transcendent': 6, 'dynasty': 10, 'rare': 19, 'common': 41},
 }
 # Calibration runs (sim/variant.sh) override these from the environment.
 import json as _json
 TARGETS.update(_json.loads(os.environ.get('PE_TARGETS', '{}')))
 
 MAX_PER_MAN = 4
-PER_SEASON = 5
+PER_SEASON = 10
 # By band, 2000 on (see select_skill.DECADES). The 1970s and 80s line seasons
 # that used to fill the top bands were the names nobody had heard of.
 DECADES = {
-    'dynasty': {2000: 0.26, 2010: 0.38, 2020: 0.36},
-    'rare': {2000: 0.20, 2010: 0.40, 2020: 0.40},
-    'common': {2000: 0.16, 2010: 0.40, 2020: 0.44},
+    'dynasty': {2000: 0.05, 2010: 0.30, 2020: 0.65},
+    'rare': {2000: 0.03, 2010: 0.27, 2020: 0.70},
+    'common': {2000: 0.02, 2010: 0.23, 2020: 0.75},
 }
 LEGEND_BEFORE = 2000
 # Linemen people know from before 2000: the only old line seasons dealt.
@@ -128,6 +128,9 @@ def choose(pos, t, off):
     def take(i, band):
         held.setdefault(p.at[i, 'pid'], set()).add(band); picked[i] = band
 
+    kept = dealt()
+    held_under = []  # kept just below the immortal line (see select_skill)
+
     # The all-time walk, over seasons from 2000 on (or a legend's) with a photo.
     floors, ceiling = {}, 1e9
     for band in ['immortal', 'transcendent']:
@@ -139,6 +142,11 @@ def choose(pos, t, off):
                 floors[band] = (last + r.metric) / 2; break
             take(r.Index, band); n += 1; last = r.metric
         ceiling = floors[band]
+        if band == 'immortal':
+            for r in p.itertuples():
+                if r.metric < ceiling: break
+                if (r.pid, r.season) in kept and r.Index not in picked and can_take(r.pid, 'transcendent'):
+                    take(r.Index, 'transcendent'); held_under.append(r.Index)
 
     # Dynasty: an All-Pro first-teamer on an average offense. Rare: a
     # second-teamer who also made the Pro Bowl. Below that, common.
@@ -147,14 +155,21 @@ def choose(pos, t, off):
                (floors['transcendent'], SCORE_AT['transcendent']), (floors['immortal'], SCORE_AT['immortal']),
                (p.metric.max(), OL_TOP)]
     p['score'] = [int(interp(m, anchors) // 5 * 5) for m in p.metric]
+    p.loc[held_under, 'score'] = SCORE_AT['immortal'] - 5
     p['band'] = p.score.map(rarity_for)
 
-    # What's already dealt stays in, at its new value (see seasons.dealt).
-    kept = dealt()
+    # What's already dealt stays in, at its new value (see seasons.dealt). If two
+    # of a man's cards land on one rarity, the other sits at the top of the next
+    # band down: it's in people's binders.
     for r in p.itertuples():
         if (r.pid, r.season) not in kept or r.Index in picked: continue
-        if can_take(r.pid, r.band): take(r.Index, r.band)
-        else: print('  DROPPED (man already has that band):', r.display, r.season, r.band)
+        band = next_open_band(r.band, r.pid, can_take)
+        if band is None:
+            print('  DROPPED (man already has every band):', r.display, r.season, r.band); continue
+        if band != r.band:
+            p.at[r.Index, 'score'] = SCORE_AT[BANDS[BANDS.index(band) - 1]] - 5
+            p.at[r.Index, 'band'] = band
+        take(r.Index, band)
 
     # Legends: best pre-2000 season, rare or better, if he isn't in yet.
     for name in LEGENDS:

@@ -2,14 +2,16 @@
 //
 //   GET  ?v=range|season                        -> { state }
 //   POST { action: 'start', version, captain }  -> { state }
+//   POST { action: 'open', version }            -> { state }  starts the clock
 //   POST { action: 'pick', version, id }        -> { state }
+//   POST { action: 'expire', version }          -> { state }  the browser's clock hit zero
 //
 // A run lives on the server (see lib/packEmpire/daily.ts), so these only ever
 // move it forward: there's no way to ask for a pack but the one you're on.
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { dailyState, isDailyVersion, pickDaily, startDaily } from '@/lib/packEmpire/daily'
+import { dailyState, expireDaily, isDailyVersion, openDaily, pickDaily, startDaily } from '@/lib/packEmpire/daily'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,8 +49,12 @@ export async function POST(req: NextRequest) {
   const out =
     body.action === 'start'
       ? await startDaily(userId, body.version, body.captain)
-      : body.action === 'pick'
-        ? await pickDaily(userId, body.version, body.id)
-        : { ok: false as const, error: 'Unknown action.' }
+      : body.action === 'open'
+        ? await openDaily(userId, body.version)
+        : body.action === 'pick'
+          ? await pickDaily(userId, body.version, body.id)
+          : body.action === 'expire'
+            ? await expireDaily(userId, body.version)
+            : { ok: false as const, error: 'Unknown action.' }
   return out.ok ? reply(out) : reply(out, ('status' in out ? out.status : undefined) ?? 400)
 }

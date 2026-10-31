@@ -12,6 +12,7 @@ import type { BinderCard, BinderMan, BinderOwned, BinderView } from '@/lib/packE
 import { POOL_KEYS, POOL_LABEL, RARITIES, RARITY_LOOK, type PoolKey } from '@/lib/packEmpire/rules'
 import { claimBank } from '../../runBank'
 import { PackCard } from '../cards'
+import { useFace } from '../faces'
 
 type Tab = 'ALL' | PoolKey
 type Show = 'all' | 'have' | 'missing'
@@ -243,6 +244,7 @@ function ManRow({ man, mobile, onOpen }: { man: BinderMan; mobile: boolean; onOp
 
 function Tile({ card, onClick }: { card: BinderCard; onClick: () => void }) {
   const rc = RARITY_LOOK[card.rarity]
+  const img = useFace(owned(card) ? card : { id: '', img: null })
   const style = { '--rc': rc.color, '--rg': rc.glow, '--art': rc.art } as React.CSSProperties
   const label = owned(card)
     ? `${card.name} ${card.year}, ${rc.label}, pulled ${card.pulls}`
@@ -255,9 +257,9 @@ function Tile({ card, onClick }: { card: BinderCard; onClick: () => void }) {
           <span className="pe-bd-tile-rar">{rc.short}</span>
         </span>
         <span className="pe-bd-tile-art">
-          {owned(card) && card.img ? (
+          {owned(card) && img ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={card.img} alt="" loading="lazy" decoding="async" onError={(e) => (e.currentTarget.style.display = 'none')} />
+            <img src={img} alt="" loading="lazy" decoding="async" onError={(e) => (e.currentTarget.style.display = 'none')} />
           ) : null}
           <span className="pe-bd-tile-initial">{owned(card) ? card.name.charAt(0) : '?'}</span>
           {owned(card) && <span className="pe-bd-tile-count">×{card.pulls}</span>}

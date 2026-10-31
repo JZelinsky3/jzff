@@ -133,6 +133,12 @@ export default async function VersusLobby() {
                 chemistry decides it.
               </span>
             </div>
+            <div className="pe-rule">
+              <span>
+                <b>Salary Cap</b> puts a price on every card and gives you each one budget, so spending big
+                early can leave you broke when the good pack turns up.
+              </span>
+            </div>
           </div>
         </section>
 

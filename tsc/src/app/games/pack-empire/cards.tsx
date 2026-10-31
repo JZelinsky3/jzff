@@ -15,6 +15,7 @@ import {
   RARITY_LOOK,
   SLOTS,
   TIERS,
+  VALUE_TOP,
   seasonLabel,
   surname,
   teamLogo,
@@ -24,18 +25,20 @@ import {
   type Player,
   type Rarity,
 } from '@/lib/packEmpire/rules'
+import { useFace } from './faces'
 
 // ============================================================
 // Glyphs
 // ============================================================
 
-/** A star of `points` points on a 24 box. */
-function starPath(points: number, outer: number, inner: number): string {
+/** A star of `points` points on a 24 box. `drop` moves it down: an odd star has
+    one point up and two lower feet, so centred on its hub it reads high. */
+function starPath(points: number, outer: number, inner: number, drop = 0): string {
   const step = Math.PI / points
   const at = Array.from({ length: points * 2 }, (_, i) => {
     const r = i % 2 === 0 ? outer : inner
     const a = i * step - Math.PI / 2
-    return `${(12 + r * Math.cos(a)).toFixed(2)} ${(12 + r * Math.sin(a)).toFixed(2)}`
+    return `${(12 + r * Math.cos(a)).toFixed(2)} ${(12 + drop + r * Math.sin(a)).toFixed(2)}`
   })
   return `M${at.join('L')}z`
 }
@@ -49,7 +52,7 @@ function starPath(points: number, outer: number, inner: number): string {
 const GEM: Record<Rarity, { d: string; cut?: string; fill: string }> = {
   common: { d: 'M12 3.5 20.5 12 12 20.5 3.5 12z', fill: '#c87840' },
   rare: { d: 'M12 1.8 20.8 6.9v10.2L12 22.2l-8.8-5.1V6.9z', cut: 'M12 7.4 16 9.7v4.6l-4 2.3-4-2.3V9.7z', fill: '#42c0f8' },
-  dynasty: { d: starPath(5, 11.6, 5), cut: starPath(5, 4.2, 1.9), fill: '#ffd700' },
+  dynasty: { d: starPath(5, 11.6, 5, 1.1), cut: starPath(5, 4.2, 1.9, 1.1), fill: '#ffd700' },
   transcendent: { d: starPath(8, 11.8, 4.8), cut: starPath(4, 4.6, 1.7), fill: '#ff90ff' },
   immortal: { d: starPath(12, 12, 6.8), cut: starPath(6, 5, 2.5), fill: '#80ffb8' },
 }
@@ -460,16 +463,17 @@ export const RarityEffects = memo(function RarityEffects({
 function Headshot({ player, className, eager = false }: { player: Player; className: string; eager?: boolean }) {
   // A photo that won't load gets the drawn portrait, same as no photo at all.
   const [broken, setBroken] = useState<string | null>(null)
-  if (!player.img || broken === player.img) return <Portrait className={className} />
+  const img = useFace(player)
+  if (!img || broken === img) return <Portrait className={className} />
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={player.img}
+      src={img}
       alt=""
       className={className}
       loading={eager ? 'eager' : 'lazy'}
       decoding="async"
-      onError={() => setBroken(player.img)}
+      onError={() => setBroken(img)}
     />
   )
 }
@@ -504,12 +508,33 @@ export function blindValue(blind: BlindFace): string {
   return `${(blind.lo ?? 0).toLocaleString()}-${(blind.hi ?? 0).toLocaleString()}`
 }
 
+/** A lineup's range, up in the strip. A full one runs to 38,000 and the cell
+    is 90px wide on a phone, so past 10,000 it goes to thousands. */
+export function blindTotal(lo: number, hi: number): string {
+  if (hi < 10000) return blindValue({ level: 'range', lo, hi })
+  return `${Math.round(lo / 1000)}k-${Math.round(hi / 1000)}k`
+}
+
 /** A blind card wears no rarity at all, front or back. */
 const BLIND_LOOK = {
-  color: '#bfb5a0',
-  glow: 'rgba(191, 181, 160, 0.3)',
-  art: 'linear-gradient(150deg, #24211c, #38332b)',
+  color: '#d8d0c0',
+  glow: 'rgba(255, 248, 234, 0.34)',
+  art: 'linear-gradient(155deg, #1b2029 0%, #2c3545 60%, #3b4658 100%)',
   shimmer: '#8d8473',
+}
+
+/** Ball Knower is the harder of the two, so it's the darker one: black and
+    brass, like a file you weren't meant to see. Every card in it looks the
+    same, so nothing here can be a tell. */
+const SEASON_LOOK = {
+  ...BLIND_LOOK,
+  color: '#e8c98a',
+  glow: 'rgba(232, 201, 138, 0.3)',
+  art: 'linear-gradient(155deg, #0c0c0e 0%, #17161a 62%, #262219 100%)',
+}
+
+function blindLook(blind: BlindFace) {
+  return blind.level === 'season' ? SEASON_LOOK : BLIND_LOOK
 }
 
 // ── The stat box ───────────────────────────────────────────────
@@ -661,7 +686,7 @@ export function PackCard({
   index = 0,
   chem = null,
   chip = null,
-  blocked = false,
+  blocked = null,
   onClick,
   disabled = false,
   label,
@@ -684,8 +709,9 @@ export function PackCard({
   chem?: number | null
   /** The Daily: what the day's rule does to this card, where its face shows it. */
   chip?: string | null
-  /** The Daily: a card you have no slot left for. Still there to look at. */
-  blocked?: boolean
+  /** A card you can't take right now, and why: no slot left, or over the cap.
+      Still there to look at. */
+  blocked?: string | null
   onClick?: () => void
   /** Stop taking taps without dropping the button. Swapping the element for
       a div remounts the card and replays the deal-in under the closing stage. */
@@ -693,7 +719,7 @@ export function PackCard({
   label?: string
 }) {
   const blind = player.blind
-  const rc = blind ? BLIND_LOOK : RARITY_LOOK[player.rarity]
+  const rc = blind ? blindLook(blind) : RARITY_LOOK[player.rarity]
   const logo = player.team ? teamLogo(player) : null
   const cls = [
     'pe-card',
@@ -723,6 +749,7 @@ export function PackCard({
       style={style}
       onClick={onClick}
       data-r={blind ? 'blind' : player.rarity}
+      data-level={blind?.level}
       data-pe-card={player.id}
       {...TILT}
       {...(onClick
@@ -745,14 +772,19 @@ export function PackCard({
             <div className="pe-cf-topbar">
               <div className="pe-cf-pos">{player.pos}</div>
               {blocked && revealed ? (
-                <div className="pe-cf-noslot">No slot</div>
+                <div className="pe-cf-noslot">{blocked}</div>
+              ) : blind ? (
+                <div className="pe-cf-rlab pe-cf-rlab--hidden">
+                  <svg className="pe-gem" viewBox="0 0 24 24" aria-hidden>
+                    <path d="M12 3.5 20.5 12 12 20.5 3.5 12z" fill="none" stroke="currentColor" strokeWidth="2.4" />
+                  </svg>
+                  Hidden
+                </div>
               ) : (
-                !blind && (
-                  <div className={`pe-cf-rlab ${player.rarity}`}>
-                    <RarityGem rarity={player.rarity} />
-                    {RARITY_LOOK[player.rarity].label}
-                  </div>
-                )
+                <div className={`pe-cf-rlab ${player.rarity}`}>
+                  <RarityGem rarity={player.rarity} />
+                  {RARITY_LOOK[player.rarity].label}
+                </div>
               )}
             </div>
             <div className="pe-cf-art" style={{ background: rc.art }}>
@@ -770,6 +802,7 @@ export function PackCard({
                 </span>
               )}
               {chip && <span className="pe-cf-rule">{chip}</span>}
+              {player.salary != null && <span className="pe-cf-salary">${player.salary}M</span>}
               {player.year ? (
                 <div className="pe-cf-season">
                   <b>{player.year}</b>
@@ -798,6 +831,16 @@ export function PackCard({
                   <img className="pe-cf-logo" src={logo} alt={player.team} draggable={false} />
                 )}
               </div>
+              {blind?.level === 'range' && (
+                <div className="pe-cf-gauge" aria-hidden>
+                  <i
+                    style={{
+                      left: `${((blind.lo ?? 0) / VALUE_TOP) * 100}%`,
+                      width: `${(((blind.hi ?? 0) - (blind.lo ?? 0)) / VALUE_TOP) * 100}%`,
+                    }}
+                  />
+                </div>
+              )}
               {blind ? (
                 <div className="pe-cf-blindnote">{blind.level === 'range' ? (player.club ?? player.team) : 'Season only'}</div>
               ) : (
@@ -836,6 +879,9 @@ export type SlotView = {
   glow?: 'cap' | 'boost' | null
   /** Tint the label under the slot. */
   tone?: 'cap' | 'locked' | 'boosted' | null
+  /** The Daily: a blank card for the position, not a pack. Nothing here opens,
+      so nothing here should look like it does. */
+  empty?: boolean
 }
 
 function FilledSlot({
@@ -851,7 +897,7 @@ function FilledSlot({
   landing?: 'incoming' | 'landed' | null
 }) {
   const blind = player.blind
-  const rc = blind ? BLIND_LOOK : RARITY_LOOK[player.rarity]
+  const rc = blind ? blindLook(blind) : RARITY_LOOK[player.rarity]
   return (
     <div
       className={`pe-fsl has-p${landing ? ` ${landing}` : ''}`}
@@ -875,6 +921,7 @@ function FilledSlot({
           <YearMark player={player} className="pe-fc-year" />
           <Headshot player={player} className="pe-fc-img" />
           {!player.year && <div className="pe-fc-initial">{player.name.charAt(0)}</div>}
+          {player.salary != null && <span className="pe-fc-salary">${player.salary}M</span>}
         </div>
         <div className="pe-fc-info">
           <div className="pe-fc-name" style={{ color: rc.color }}>
@@ -925,6 +972,22 @@ function Slot({
         </div>
       </div>
     )
+  } else if (view.empty) {
+    const cls = ['pe-blank', view.clickable ? 'clickable' : '', view.captain ? 'is-cap' : ''].filter(Boolean).join(' ')
+    const inner = (
+      <>
+        <span className="pe-blank-pos">{def.short}</span>
+        <Portrait className="pe-blank-man" />
+        {view.captain ? <CaptainMark /> : view.capHint ? <CaptainMark ghost /> : null}
+      </>
+    )
+    body = view.clickable ? (
+      <button type="button" className={cls} onClick={() => onSlot?.(index)} aria-label={`${def.label}, make captain`}>
+        {inner}
+      </button>
+    ) : (
+      <div className={cls}>{inner}</div>
+    )
   } else {
     const cls = [
       'pe-pack-wrap',
@@ -959,7 +1022,9 @@ function Slot({
   return (
     <div className={`pe-slot-outer${isHB ? ' hb-back' : ''}`} data-pe-slot={index}>
       {body}
-      <div className={`pe-slot-label${view.tone ? ` ${view.tone}` : view.captain ? ' cap' : ''}`}>{def.short}</div>
+      <div className={`pe-slot-label${view.tone ? ` ${view.tone}` : view.captain ? ' cap' : ''}${view.empty && !player ? ' blank' : ''}`}>
+        {def.short}
+      </div>
     </div>
   )
 }

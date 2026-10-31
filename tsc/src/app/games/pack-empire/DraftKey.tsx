@@ -16,12 +16,23 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { CHEM_LINES, RARITIES, RARITY_FLOOR, RARITY_LOOK, type Difficulty, type Rarity } from '@/lib/packEmpire/rules'
+import {
+  CAP_LINES,
+  CHEM_LINES,
+  DAILY_PACK_SECONDS,
+  RARITIES,
+  RARITY_FLOOR,
+  RARITY_LOOK,
+  SALARY_CAP,
+  isBlind,
+  type Difficulty,
+  type Rarity,
+} from '@/lib/packEmpire/rules'
 import { CaptainMark, Ladder, RarityGem } from './cards'
 
 /** Which table the key is sitting beside: it describes the game in front of
     you, and on a blind draft it can't print a score it doesn't have. */
-export type KeyFlavor = { difficulty: Difficulty; even: boolean; daily?: boolean }
+export type KeyFlavor = { difficulty: Difficulty; even: boolean; daily?: boolean; salaryCap?: boolean }
 
 const OPEN: KeyFlavor = { difficulty: 'open', even: false }
 
@@ -38,8 +49,9 @@ function floor(r: Rarity): string {
 }
 
 function KeyBody({ score, flavor }: { score: number; flavor: KeyFlavor }) {
-  const blind = flavor.difficulty !== 'open'
-  const chem = blind || flavor.even
+  const blind = isBlind(flavor.difficulty)
+  const capped = flavor.difficulty === 'cap' || !!flavor.salaryCap
+  const chem = blind || flavor.even || capped
   return (
     <>
       <section className="pe-key-sec">
@@ -48,6 +60,7 @@ function KeyBody({ score, flavor }: { score: number; flavor: KeyFlavor }) {
           <ol className="pe-key-steps">
             <li>Everyone gets these packs, in this order, once a day.</li>
             <li>Each pack mixes five positions. Keep one you have a slot for.</li>
+            <li>You get {DAILY_PACK_SECONDS} seconds a pack. Run out and the first card that fits signs.</li>
             <li>If nothing fits, one card is swapped for a reserve.</li>
             <li>The rule of the day changes what counts.</li>
           </ol>
@@ -71,8 +84,9 @@ function KeyBody({ score, flavor }: { score: number; flavor: KeyFlavor }) {
         <section className="pe-key-sec">
           <h3 className="pe-key-h">Reading A Range</h3>
           <p className="pe-key-p">
-            The real value is somewhere inside the range, and rarely in the middle. Rarity and stats stay hidden until your
-            lineup is locked.
+            The real value is somewhere inside the range, and rarely in the middle.{' '}
+            {flavor.daily ? 'Some ranges are tight and some barely tell you anything. ' : ''}Rarity and stats stay hidden until
+            your lineup is locked.
           </p>
         </section>
       )}
@@ -83,6 +97,18 @@ function KeyBody({ score, flavor }: { score: number; flavor: KeyFlavor }) {
             A name and a season. You have to know what he did that year and who he played for. Everything turns over when
             your lineup is locked.
           </p>
+        </section>
+      )}
+
+      {capped && (
+        <section className="pe-key-sec">
+          <h3 className="pe-key-h">The Salary Cap</h3>
+          <ul className="pe-key-steps pe-key-steps--plain">
+            <li>You get ${flavor.even || flavor.daily ? SALARY_CAP.shared : SALARY_CAP.own}M for all eleven.</li>
+            {CAP_LINES.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
         </section>
       )}
 

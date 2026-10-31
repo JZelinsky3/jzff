@@ -184,7 +184,7 @@ export function SealedPack({
  * and leaves nothing behind (every layer ends transparent), so it can stay
  * mounted under the cards.
  */
-export function RipBurst({ rarity }: { rarity: (typeof RARITIES)[number] }) {
+export function RipBurst({ rarity, glow }: { rarity: (typeof RARITIES)[number]; glow?: string }) {
   const tier = RARITIES.indexOf(rarity)
   const look = RARITY_LOOK[rarity]
   const ref = useRef<HTMLDivElement>(null)
@@ -204,7 +204,7 @@ export function RipBurst({ rarity }: { rarity: (typeof RARITIES)[number] }) {
       className="pe-boom"
       data-tier={tier}
       aria-hidden
-      style={{ '--glow': look.color, '--glow-soft': look.glow } as React.CSSProperties}
+      style={{ '--glow': glow ?? look.color, '--glow-soft': glow ? 'rgba(255, 248, 234, 0.6)' : look.glow } as React.CSSProperties}
     >
       {tier >= 1 && <span className="pe-boom-flash" />}
       <span className="pe-boom-bloom" />

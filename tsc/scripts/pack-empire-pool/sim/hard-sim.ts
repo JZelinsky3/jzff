@@ -6,10 +6,11 @@
 // every rule. Even: what chemistry is worth. Check this after any change to
 // SHARED_WEIGHTS, RANGE_WIDTH, HARD_CHEM, the wild position weights or the
 // planted team-seasons.
-import { dailyPack, dailySet, evenPacks, newEvenSeed, newCaptainSeed, rangeOf, type DailyPick } from '../../../src/lib/packEmpire/deal'
+import { dailyPack, dailyRange, dailySet, evenPacks, newEvenSeed, newCaptainSeed, priced, rangeOf, type DailyPick } from '../../../src/lib/packEmpire/deal'
+import { versionsOf } from '../../../src/lib/packEmpire/pool'
 import { soloPack } from '../../../src/lib/packEmpire/solo'
 import { ruleForDay, scoreLineup, DAY_RULES } from '../../../src/lib/packEmpire/dayRules'
-import { SLOTS, SLOT_COUNT, chemistryFor, chemistryPreview, lineupScore, slotForCard, type Player } from '../../../src/lib/packEmpire/rules'
+import { SALARY_CAP, SLOTS, SLOT_COUNT, chemistryFor, chemistryPreview, lineupScore, signingPrice, slotForCard, type Player } from '../../../src/lib/packEmpire/rules'
 
 const N = Number(process.argv[2] ?? 300)
 const q = (a: number[], p: number) => [...a].sort((x, y) => x - y)[Math.floor(p * (a.length - 1))]
@@ -23,6 +24,12 @@ const scoutRange: Eye = (p, r) => {
   const { lo, hi } = rangeOf(p)
   return (lo + hi) / 2 + chemistryPreview(p, r, true)
 }
+const dailyScout: Eye = (p, r) => {
+  const { lo, hi } = dailyRange(p)
+  return (lo + hi) / 2 + chemistryPreview(p, r, true)
+}
+// What someone who only knows names does: takes the most famous man in the pack.
+const fame: Eye = (p) => versionsOf(p.pid ?? p.id)[0]?.score ?? p.score
 const guess: Eye = () => Math.random()
 
 function playDaily(day: string, version: string, captain: number | null, eye: Eye) {
@@ -59,7 +66,7 @@ const days = Array.from({ length: N }, (_, i) => {
   return d.toISOString().slice(0, 10)
 })
 
-for (const [name, eye] of [['knows every value', knower], ['range midpoint', scoutRange], ['blind guess', guess]] as [string, Eye][]) {
+for (const [name, eye] of [['knows every value', knower], ['range midpoint', dailyScout], ['biggest name', fame], ['blind guess', guess]] as [string, Eye][]) {
   const runs = days.map((d, i) => playDaily(d, 'range', [0, 1, 5, 8][i % 4], eye))
   row(`Daily, ${name}`, runs.map((r) => r.score.total))
   row(`  face value`, runs.map((r) => r.score.cards))
@@ -124,6 +131,46 @@ for (let i = 0; i < N; i++) {
 }
 row('Builder, perfect value', open)
 row('Builder, Range midpoint', mid)
+// Salary Cap: a budget that bites, a reader beating a top-card drafter, and no
+// one trick (value per dollar) that solves it.
+{
+  const dollar = 70
+  const packsFor = (even: boolean): Player[][] => {
+    if (even) return evenPacks(newEvenSeed('cap'))
+    const captain = Math.floor(Math.random() * SLOT_COUNT)
+    const seed = newCaptainSeed(captain, 'cap')
+    const out: Player[][] = []
+    const t: string[] = []
+    for (let s = 0; s < SLOT_COUNT; s++) {
+      const p = soloPack(seed, captain, s, t)
+      t.push(p[0].id)
+      out.push(p)
+    }
+    return out
+  }
+  const draft = (packs: Player[][], budget: number, worth: (p: Player, r: Player[]) => number) => {
+    let left = budget
+    const r: Player[] = []
+    for (const raw of packs) {
+      const pack = raw.map(priced)
+      const best = pack
+        .filter((p) => signingPrice(p, pack, left) != null)
+        .reduce((a, b) => (worth(b, r) > worth(a, r) ? b : a))
+      left -= signingPrice(best, pack, left) ?? 0
+      if (left < 0) throw new Error('over the cap')
+      r.push(best)
+    }
+    return lineupScore(r) + chemistryFor(r, true).total
+  }
+  for (const even of [false, true]) {
+    const budget = even ? SALARY_CAP.shared : SALARY_CAP.own
+    const decks = Array.from({ length: N }, () => packsFor(even))
+    row(`Cap ${even ? 'shared' : 'own'} $${budget}M, top card`, decks.map((d) => draft(d, budget, knower)))
+    row(`  weighing price`, decks.map((d) => draft(d, budget, (p, r) => knower(p, r) - dollar * (p.salary ?? 0))))
+    row(`  value per dollar`, decks.map((d) => draft(d, budget, (p, r) => knower(p, r) / (p.salary ?? 1))))
+  }
+}
+
 const rules = new Map<string, number>()
 for (const d of days) rules.set(ruleForDay(d).id, (rules.get(ruleForDay(d).id) ?? 0) + 1)
 console.log(`rules ${DAY_RULES.length}, seen in ${N} days: ${rules.size}`)

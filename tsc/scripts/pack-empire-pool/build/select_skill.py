@@ -11,12 +11,14 @@ BANDS = ['immortal', 'transcendent', 'dynasty', 'rare', 'common']
 # How many of each, per position. Joey (2026-10-30): immortal is the rarest,
 # so there should be fewer of them than of anything else, and more of
 # everything else. Each rarity is now about half the one under it. The weights
-# in rules.ts are tuned to this mix (sim/fastsim.py checks it).
+# in rules.ts are tuned to this mix (sim/fastsim.py checks it). Rare and common
+# run a little over these, since MUST, CURRENT and step 4 don't count against
+# them; each is set from what's really dealt at that band.
 TARGETS = {
-    'QB': {'immortal': 4, 'transcendent': 7, 'dynasty': 13, 'rare': 24, 'common': 50},
-    'RB': {'immortal': 4, 'transcendent': 8, 'dynasty': 16, 'rare': 26, 'common': 56},
-    'WR': {'immortal': 4, 'transcendent': 9, 'dynasty': 18, 'rare': 30, 'common': 62},
-    'TE': {'immortal': 3, 'transcendent': 6, 'dynasty': 12, 'rare': 22, 'common': 48},
+    'QB': {'immortal': 7, 'transcendent': 8, 'dynasty': 16, 'rare': 36, 'common': 60},
+    'RB': {'immortal': 7, 'transcendent': 8, 'dynasty': 20, 'rare': 44, 'common': 68},
+    'WR': {'immortal': 6, 'transcendent': 11, 'dynasty': 22, 'rare': 44, 'common': 78},
+    'TE': {'immortal': 4, 'transcendent': 6, 'dynasty': 15, 'rare': 33, 'common': 58},
 }
 
 # Metric floors for the middle bands, off the median season at each finish,
@@ -39,16 +41,20 @@ SAMPLE_FLOOR.update(_json.loads(os.environ.get('PE_SAMPLE_FLOOR', '{}')))
 MAX_PER_MAN = 4
 TOP_BANDS = {'dynasty', 'transcendent', 'immortal'}
 # Seasons per year per position, so one deep year can't crowd out the rest.
-PER_SEASON = 6
+# Raised from 6 when the pool grew: it had filled every year from 2020 on, so
+# new cards could only come from older seasons, the opposite of what's wanted.
+PER_SEASON = 13
 
 # Where the sampled (non-headline) seasons come from, by band. Joey: too many
 # old players, a third of a draft with no photo and a few nobody had heard of.
 # So every band samples from 2000 on, leaning recent, and a season from before
-# 2000 only gets in for a name on LEGENDS (or a MUST).
+# 2000 only gets in for a name on LEGENDS (or a MUST). What's already dealt is
+# kept, so these only steer what's added: Joey on the 2026-10-30 batch, recent
+# players over old ones, so people recognize them.
 DECADES = {
-    'dynasty': {2000: 0.24, 2010: 0.38, 2020: 0.38},
-    'rare': {2000: 0.18, 2010: 0.40, 2020: 0.42},
-    'common': {2000: 0.14, 2010: 0.40, 2020: 0.46},
+    'dynasty': {2000: 0.05, 2010: 0.30, 2020: 0.65},
+    'rare': {2000: 0.03, 2010: 0.27, 2020: 0.70},
+    'common': {2000: 0.02, 2010: 0.23, 2020: 0.75},
 }
 LEGEND_BEFORE = 2000
 
@@ -107,14 +113,16 @@ MUST = {
            ('Blake Bortles', 2015), ('Robert Griffin', 2012), ('Michael Vick', 2010), ('Tim Tebow', 2011), ('Geno Smith', 2022), ('Sam Darnold', 2024), ('Jayden Daniels', 2024),
            ('Baker Mayfield', 2018), ('Gardner Minshew', 2019), ('Case Keenum', 2017), ('Brock Purdy', 2023),
            ('Dan Marino', 1984), ('Steve Young', 1998), ('Doug Flutie', 1998),
-           ('Vince Young', 2006), ('Brett Favre', 1995), ('Joe Burrow', 2024), ('Russell Wilson', 2020), ('Justin Herbert', 2021), ('Dak Prescott', 2025), ('C.J. Stroud', 2023)],
+           ('Vince Young', 2006), ('Brett Favre', 1995), ('Joe Burrow', 2024), ('Russell Wilson', 2020), ('Justin Herbert', 2021), ('Dak Prescott', 2025), ('C.J. Stroud', 2023),
+           ('Andrew Luck', 2014), ('Tony Romo', 2007), ('Justin Fields', 2022), ('Colin Kaepernick', 2013), ('Jimmy Garoppolo', 2019)],
     'RB': [('Peyton Hillis', 2010), ('BenJarvus Green-Ellis', 2010), ('Alfred Morris', 2012), ('Jamaal Williams', 2022),
            ('James Robinson', 2020), ('Phillip Lindsay', 2018), ('Chris Johnson', 2009), ('Adrian Peterson', 2012), ('Derrick Henry', 2020), ('Saquon Barkley', 2024),
            ('Knowshon Moreno', 2013), ('LeGarrette Blount', 2016), ('Raheem Mostert', 2023),
            ('Ickey Woods', 1988), ('Terrell Davis', 1998),
            ('Barry Sanders', 1997), ('Eric Dickerson', 1984), ('Walter Payton', 1977),
            ('Earl Campbell', 1980), ('Jerome Bettis', 1997), ('Mike Alstott', 2001), ('Kareem Hunt', 2017), ('Shaun Alexander', 2005),
-           ("Le'Veon Bell", 2014), ('Bijan Robinson', 2023)],
+           ("Le'Veon Bell", 2014), ('Bijan Robinson', 2023),
+           ('Doug Martin', 2012), ('Leonard Fournette', 2021), ('Eddie Lacy', 2014), ('Marshawn Lynch', 2012), ('James White', 2018)],
     'WR': [('Travis Fulgham', 2020), ('Brandon Lloyd', 2010), ('Laurent Robinson', 2011), ('Victor Cruz', 2011),
            ('Mike Williams', 2010), ('Josh Gordon', 2013), ('Steve Johnson', 2010), ('Marques Colston', 2006),
            ('Steve Smith', 2005), ('Randy Moss', 1998), ('Allen Hurns', 2015),
@@ -123,13 +131,16 @@ MUST = {
            ('Chad Johnson', 2005), ('Odell Beckham', 2015), ('Kenny Golladay', 2019),
            ('Plaxico Burress', 2007), ('Justin Jefferson', 2022), ('Amon-Ra St. Brown', 2023), ('Terrell Owens', 2002),
            ('Larry Fitzgerald', 2008), ('A.J. Brown', 2022),
-           ('Keenan Allen', 2017), ('Nico Collins', 2023)],
+           ('Keenan Allen', 2017), ('Nico Collins', 2023),
+           ('Dez Bryant', 2014), ('Allen Robinson', 2015), ('JuJu Smith-Schuster', 2018), ('Eric Decker', 2013), ('Jarvis Landry', 2015),
+           ('Julian Edelman', 2019), ('Wes Welker', 2011), ('Tyreek Hill', 2020), ('Tyler Lockett', 2020)],
     'TE': [('Gary Barnidge', 2015), ('Sam LaPorta', 2023),
            ('Brock Bowers', 2024), ('Robert Tonyan', 2020),
            ('Jared Cook', 2018), ('Kellen Winslow', 1980), ('Mark Bavaro', 1986), ('Shannon Sharpe', 1996),
            ('Jeremy Shockey', 2002), ('Dawson Knox', 2021),
            ('Chris Cooley', 2005), ('Jimmy Graham', 2013), ('Tony Gonzalez', 2004),
-           ('George Kittle', 2018), ('Kyle Pitts', 2021), ('Evan Engram', 2017)],
+           ('George Kittle', 2018), ('Kyle Pitts', 2021), ('Evan Engram', 2017),
+           ('Julius Thomas', 2013), ('Delanie Walker', 2015)],
 }
 
 
@@ -149,6 +160,13 @@ def rarity_for(score):
     if score >= 1600: return 'dynasty'
     if score >= 700: return 'rare'
     return 'common'
+
+
+def next_open_band(band, pid, can_take):
+    """The highest band at or under this one that a man's cards leave free."""
+    for b in BANDS[BANDS.index(band):]:
+        if can_take(pid, b): return b
+    return None
 
 
 def choose(pos, t):
@@ -182,9 +200,15 @@ def choose(pos, t):
     def take(i, band):
         held.setdefault(p.at[i, 'pid'], set()).add(band); picked[i] = band
 
+    kept = dealt()
+    held_under = []                # row index, kept just below the immortal line
+
     # 1. The top two bands walk the all-time list, passing over old seasons
     #    that aren't a legend's and men with no photo. Each floor sits halfway
     #    between the last season in and the next one that could have been.
+    #    Lowering the immortal line can lift a man's second dealt card over it,
+    #    where one per rarity won't let it in. It's in people's binders, so it
+    #    stays, just under the line, and the walk works around it.
     floors = {}
     ceiling = 1e9
     for band in ['immortal', 'transcendent']:
@@ -197,21 +221,32 @@ def choose(pos, t):
                 floors[band] = (last + r.metric) / 2; break
             take(r.Index, band); n += 1; last = r.metric
         ceiling = floors[band]
+        if band == 'immortal':
+            for r in p.itertuples():
+                if r.metric < ceiling: break
+                if (r.pid, r.season) in kept and r.Index not in picked and can_take(r.pid, 'transcendent'):
+                    take(r.Index, 'transcendent'); held_under.append(r.Index)
     m_top = p.metric.max()
     anchors = [(M_FLOOR[pos], SCORE_AT['floor']), (T_RARE[pos], SCORE_AT['rare']), (T_DYN[pos], SCORE_AT['dynasty']),
                (floors['transcendent'], SCORE_AT['transcendent']), (floors['immortal'], SCORE_AT['immortal']),
                (m_top, SCORE_AT['top'])]
     # rounded DOWN to the 5, so rounding never lifts a season over a rarity floor
     p['score'] = [int(interp(m, anchors) // 5 * 5) for m in p.metric]
+    p.loc[held_under, 'score'] = SCORE_AT['immortal'] - 5
     p['band'] = p.score.map(rarity_for)
 
     # 1b. What's already dealt stays in, at its new value. Best season first, so
-    #     if two of a man's cards land on one rarity the better one is the keeper.
-    kept = dealt()
+    #     if two of a man's cards land on one rarity the better one is the keeper
+    #     and the other sits at the top of the next band down.
     for r in p.itertuples():
         if (r.pid, r.season) not in kept or r.Index in picked: continue
-        if can_take(r.pid, r.band): take(r.Index, r.band)
-        else: print('  DROPPED (man already has that band):', r.display, r.season, r.band)
+        band = next_open_band(r.band, r.pid, can_take)
+        if band is None:
+            print('  DROPPED (man already has every band):', r.display, r.season, r.band); continue
+        if band != r.band:
+            p.at[r.Index, 'score'] = SCORE_AT[BANDS[BANDS.index(band) - 1]] - 5
+            p.at[r.Index, 'band'] = band
+        take(r.Index, band)
 
     # 2. Must-includes, wherever they land (the top was already walked).
     for name, year in MUST.get(pos, []):

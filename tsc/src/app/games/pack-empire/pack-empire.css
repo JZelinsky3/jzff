@@ -7104,7 +7104,8 @@ a.pe-row:hover {
   }
 
   .pe-bd-stats,
-  .pe-bd-sheet-vers {
+  .pe-bd-sheet-vers,
+  .pe-bd-photo-acts {
     justify-content: center;
   }
 }
@@ -7884,14 +7885,21 @@ a.pe-row:hover {
   margin-right: 0.3em;
 }
 
+/* Whole pixels: a fractional gem and its label snap apart at 1x and 2x. */
 .pe-key-gem {
-  width: 0.9rem;
-  height: 0.9rem;
-  align-self: center;
+  width: 14px;
+  height: 14px;
+  transform: translateY(0.4px);
 }
 
 .pe-key-rar li {
-  grid-template-columns: 0.9rem minmax(0, 1fr) auto;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.pe-key-rname,
+.pe-key-rfloor {
+  line-height: 18px;
 }
 
 .pe-index-name .pe-gem {
@@ -7934,8 +7942,13 @@ a.pe-row:hover {
   background: #6f675a;
 }
 
+/* Condensed: a range is eleven characters in a slot 62px wide on a phone. */
 .pe-fc-score.blind {
-  font-size: 0.74em;
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.76em;
+  letter-spacing: 0;
+  white-space: nowrap;
   color: var(--pe-amber-bright);
 }
 
@@ -7977,6 +7990,41 @@ a.pe-row:hover {
   white-space: nowrap;
 }
 
+.pe-strip-val--cap {
+  color: #4fc3b0;
+}
+
+/* What a card costs. Bottom left of the art, clear of the year on the right
+   and of the chips along the top. */
+.pe-cf-salary,
+.pe-fc-salary {
+  position: absolute;
+  z-index: 12;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.66);
+  font-family: var(--pe-display);
+  font-weight: 700;
+  color: #4fc3b0;
+}
+
+.pe-cf-salary {
+  top: 0.7em;
+  right: 0.7em;
+  font-size: 0.6em;
+}
+
+.pe-cf-chem + .pe-cf-rule + .pe-cf-salary,
+.pe-cf-chem + .pe-cf-salary {
+  top: 2.1em;
+}
+
+.pe-fc-salary {
+  top: 3px;
+  right: 3px;
+  font-size: 0.5rem;
+}
+
 .pe-strip-val--mark {
   font-family: var(--pe-cond);
   font-size: 1.35rem;
@@ -7986,14 +8034,15 @@ a.pe-row:hover {
 
 .pe-pick {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.6rem;
-  max-width: 900px;
+  max-width: 1040px;
   margin: 0 auto 1rem;
 }
 
 .pe-pick--two {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 900px;
 }
 
 .pe-pick-item {
@@ -8082,6 +8131,7 @@ a.pe-row:hover {
    the screen before you'd opened a pack. */
 @media (max-width: 640px) {
   .pe-pick {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.35rem;
     margin-bottom: 0.8rem;
   }
@@ -8269,38 +8319,192 @@ a.pe-row:hover {
   justify-content: center;
 }
 
-.pe-daily-next {
-  display: inline-flex;
+@media (max-width: 700px) {
+  .pe-turf-foot.pe-turf-foot--daily {
+    margin: 1rem 0 0.7rem;
+    padding: 0;
+    border-top: 0;
+    background: none;
+  }
+}
+
+/* The next pack: what it is, how far along you are, and one thing to press. */
+.pe-nextpack {
+  display: flex;
   align-items: center;
-  gap: 0.8rem;
-  padding: 0.5rem 1.2rem 0.5rem 0.6rem;
-  border: 1px solid var(--pe-amber);
-  border-radius: 4px;
-  background: rgba(232, 168, 75, 0.12);
+  gap: 0.85rem;
+  width: 100%;
+  max-width: 26rem;
+  padding: 0.55rem 0.65rem 0.55rem 0.8rem;
+  border: 1px solid var(--pe-line);
+  border-radius: 12px;
+  background: var(--pe-card);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.38);
   color: var(--pe-ink);
   font: inherit;
   text-align: left;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color 0.15s,
+    transform 0.12s;
 }
 
-.pe-daily-next img {
-  width: 2.3rem;
+.pe-nextpack:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.pe-nextpack:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.pe-nextpack:focus-visible {
+  outline: 2px solid var(--pe-amber);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pe-nextpack:hover:not(:disabled) {
+    border-color: var(--pe-amber-deep);
+  }
+}
+
+.pe-nextpack-art {
+  flex: none;
+  width: 2.2rem;
   height: auto;
   display: block;
+  transform: rotate(-6deg);
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.5));
+  user-select: none;
 }
 
-.pe-daily-next b {
-  display: block;
+.pe-nextpack-body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 0.42rem;
+}
+
+.pe-nextpack-body b {
   font-family: var(--pe-cond);
   font-weight: 800;
-  font-size: 1.02rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 1.08rem;
+  letter-spacing: 0.03em;
+  line-height: 1;
 }
 
-.pe-daily-next small {
-  font-size: 0.74rem;
+.pe-nextpack-pips {
+  display: flex;
+  gap: 3px;
+}
+
+.pe-nextpack-pips i {
+  flex: 1;
+  max-width: 1.1rem;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--pe-line);
+}
+
+.pe-nextpack-pips i.done {
+  background: var(--pe-amber-deep);
+}
+
+.pe-nextpack-pips i.now {
+  background: var(--pe-amber-bright);
+}
+
+.pe-nextpack-go {
+  flex: none;
+  padding: 0.58rem 1.15rem;
+  border-radius: 8px;
+  background: var(--pe-amber);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #141311;
+}
+
+/* An empty place in the lineup on the Daily: a blank card with the position on
+   top. A pack art here read as something to tap, and nothing here opens. */
+.pe-blank {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: var(--pe-sw);
+  height: var(--pe-sh);
+  flex-shrink: 0;
+  padding: 0;
+  overflow: visible;
+  border: 1.5px dashed rgba(244, 235, 216, 0.2);
+  border-radius: 11px;
+  background: linear-gradient(180deg, rgba(244, 235, 216, 0.05), rgba(244, 235, 216, 0.012));
   color: var(--pe-ink-mute);
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pe-blank-pos {
+  padding: 0.5em 0 0;
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.92rem;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-align: center;
+  color: var(--pe-ink-soft);
+}
+
+.pe-blank-man {
+  flex: 1;
+  min-height: 0;
+  width: 62%;
+  margin: 0.2rem auto 0;
+  opacity: 0.1;
+}
+
+.pe-blank-man path {
+  fill: var(--pe-ink);
+}
+
+.pe-blank.clickable {
+  cursor: pointer;
+  border-color: rgba(232, 168, 75, 0.42);
+}
+
+.pe-blank.is-cap {
+  border-style: solid;
+  border-color: var(--pe-amber);
+}
+
+.pe-blank .pe-capmark.ghost {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pe-blank.clickable:hover {
+    border-color: var(--pe-amber);
+  }
+
+  .pe-blank.clickable:hover .pe-capmark.ghost {
+    opacity: 0.7;
+  }
+}
+
+.pe-blank.clickable:focus-visible {
+  outline: 2px solid var(--pe-amber);
+  outline-offset: 2px;
+}
+
+/* The position's already on the card. */
+.pe-slot-label.blank {
+  visibility: hidden;
 }
 
 .pe-daily-sum {
@@ -8318,9 +8522,6 @@ a.pe-row:hover {
   color: var(--pe-ink);
 }
 
-.pe-dplay .pe-panel-title {
-  color: var(--pe-ink);
-}
 
 .pe-dplay-done {
   display: flex;
@@ -8370,7 +8571,7 @@ a.pe-row:hover {
 
 .pe-dtop-row {
   display: grid;
-  grid-template-columns: 1.4rem minmax(0, 1fr) auto;
+  grid-template-columns: 1.4rem minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0.6rem;
   padding: 0.6rem 0.9rem;
@@ -8511,4 +8712,316 @@ a.pe-row:hover {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #141311;
+}
+
+/* A Range card's bar: where its range sits on the scale of every card. */
+.pe-cf-gauge {
+  position: relative;
+  height: 0.3em;
+  margin-top: 0.5em;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.pe-cf-gauge i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 99px;
+  background: var(--pe-amber-bright);
+}
+
+/* The Daily's shot clock. The bar is a transform, so it never touches layout. */
+.pe-shot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: min(20rem, 80vw);
+  margin: 0.55rem auto 0;
+}
+
+.pe-shot-n {
+  min-width: 1.6em;
+  font-family: var(--pe-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--pe-ink);
+  text-align: right;
+}
+
+.pe-shot-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--pe-line);
+  overflow: hidden;
+}
+
+.pe-shot-bar i {
+  display: block;
+  height: 100%;
+  background: var(--pe-amber);
+  transform-origin: left;
+  animation: pe-shot-run linear forwards;
+}
+
+.pe-shot.low .pe-shot-n {
+  color: var(--pe-red);
+}
+
+.pe-shot.low .pe-shot-bar i {
+  background: var(--pe-red);
+}
+
+@keyframes pe-shot-run {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* A phone's slot is 62px wide, and a salary chip that size sits on his face. */
+@media (max-width: 640px) {
+  .pe-fc-salary {
+    top: 1px;
+    right: 1px;
+    padding: 0 2px;
+    font-size: 0.42rem;
+  }
+}
+
+/* The captain each top lineup took, tucked beside the score: readable if you
+   look for it, and enough to make you doubt your own pick. */
+.pe-dtop-cap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-width: 2.5rem;
+  justify-content: flex-end;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  color: var(--pe-ink-mute);
+}
+
+.pe-dtop-cap .pe-capmark {
+  transform: scale(0.72);
+  opacity: 0.75;
+}
+
+/* A hidden card's top bar: where the rarity would be, on purpose. */
+.pe-cf-rlab--hidden {
+  color: rgba(244, 235, 216, 0.5);
+}
+
+.pe-cf-rlab--hidden .pe-gem {
+  filter: none;
+}
+
+/* Blind cards. Fine hatching over the art, static, so a hard card looks like
+   it was made that way and not like the colour fell off. */
+.pe-card[data-r='blind'] .pe-cf-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 7px);
+}
+
+.pe-card[data-r='blind'] .pe-card-front {
+  background: linear-gradient(180deg, #0d1017, #07090e);
+}
+
+.pe-card[data-level='season'] .pe-card-front {
+  background: linear-gradient(180deg, #100f0c, #070706);
+  border-color: rgba(232, 201, 138, 0.55);
+}
+
+.pe-card[data-level='season'] .pe-cf-score--season {
+  color: #e8c98a;
+}
+
+.pe-card[data-level='season'] .pe-cf-blindnote {
+  color: rgba(232, 201, 138, 0.62);
+}
+
+.pe-card[data-level='season'] .pe-cf-rlab--hidden {
+  color: rgba(232, 201, 138, 0.6);
+}
+
+.pe-card[data-level='season'] .pe-cf-topbar {
+  background: linear-gradient(90deg, #1b1913, #0d0c0a);
+}
+
+/* The two games on the Daily's page. */
+.pe-dgames {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.pe-dgame {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 15.5rem;
+  border: 1px solid var(--pe-line);
+  border-radius: 14px;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(120, 150, 190, 0.22), transparent 62%),
+    linear-gradient(160deg, #1f2430, #15171d);
+}
+
+.pe-dgame[data-v='season'] {
+  border-color: rgba(232, 201, 138, 0.3);
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(232, 201, 138, 0.16), transparent 62%),
+    linear-gradient(160deg, #1a1812, #0e0d0b);
+}
+
+.pe-dgame-body {
+  order: -1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 1.15rem 0 1.15rem 1.25rem;
+}
+
+.pe-dgame-kicker {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--pe-amber);
+}
+
+.pe-dgame[data-v='season'] .pe-dgame-kicker {
+  color: #e8c98a;
+}
+
+.pe-dgame-title {
+  margin: 0.4rem 0 0.45rem;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 2rem;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  color: var(--pe-ink);
+}
+
+.pe-dgame-line {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--pe-ink-soft);
+}
+
+.pe-dgame-foot {
+  margin-top: auto;
+  padding-top: 1rem;
+}
+
+.pe-dgame-foot .pe-btn {
+  width: 100%;
+  text-align: center;
+}
+
+.pe-dgame[data-v='season'] .pe-dgame-foot .pe-btn {
+  background: #e8c98a;
+  border-color: #e8c98a;
+}
+
+.pe-dgame-foot .pe-dplay-done {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+}
+
+/* A real card, dealt the way it would be, leaning out of the corner. */
+.pe-dgame-art {
+  align-self: center;
+  padding: 0.6rem 0.9rem 0.6rem 0.7rem;
+}
+
+.pe-dgame-art .pe-card {
+  --pe-cs: 0.8;
+  cursor: default;
+  transform: rotate(5deg);
+  box-shadow: none;
+}
+
+@media (max-width: 860px) {
+  .pe-dgames {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+
+  .pe-dgame {
+    min-height: 0;
+  }
+
+  .pe-dgame-art .pe-card {
+    --pe-cs: 0.68;
+  }
+
+  .pe-dgame-title {
+    font-size: 1.7rem;
+  }
+
+  .pe-dgame-line {
+    font-size: 0.8rem;
+  }
+}
+
+/* ── The complete binder ───────────────────────────────────── */
+
+.pe-bd-commish {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+}
+
+.pe-bd-all-sum {
+  margin: 0 0 1rem;
+  color: var(--pe-ink-soft);
+  font-size: 0.9rem;
+}
+
+.pe-bd-tile.nophoto {
+  outline: 1px dashed var(--pe-amber);
+  outline-offset: 1px;
+}
+
+.pe-bd-tile.nophoto .pe-bd-tile-foot {
+  color: var(--pe-amber);
+}
+
+.pe-bd-photo {
+  margin-top: 1rem;
+}
+
+.pe-bd-photo-line {
+  margin: 0.3rem 0 0.6rem;
+  color: var(--pe-ink-soft);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.pe-bd-photo-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pe-bd-photo-error {
+  margin: 0.6rem 0 0;
+  color: #ff8f7a;
+  font-size: 0.82rem;
 }

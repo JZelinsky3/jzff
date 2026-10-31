@@ -1,9 +1,9 @@
 // The Daily's shared pieces: a day's date as a reader wants it, and a top-five
 // board with the lineups folded under each name.
 
-import { DIFFICULTY_LOOK } from '@/lib/packEmpire/rules'
+import { DIFFICULTY_LOOK, SLOTS } from '@/lib/packEmpire/rules'
 import type { DailyBoard, DailyRow } from '@/lib/packEmpire/daily'
-import { Bonds, LineupSheet } from '../cards'
+import { Bonds, CaptainMark, LineupSheet } from '../cards'
 
 function ordinal(n: number): string {
   const v = n % 100
@@ -25,12 +25,23 @@ export function shortDay(day: string): string {
 }
 
 function Row({ row }: { row: DailyRow }) {
+  // Shown even while the lineup is hidden: nothing to copy, but it does get
+  // you wondering whether everyone else knows something about tight ends.
+  const pos = row.captain != null ? SLOTS[row.captain]?.pool : null
   const head = (
     <>
       <span className="pe-dtop-rank">{row.rank}</span>
       <span className="pe-dtop-name">
         {row.name}
         {row.you && <em>You</em>}
+      </span>
+      <span className="pe-dtop-cap" aria-label={pos ? `${pos} captain` : undefined}>
+        {pos && (
+          <>
+            <CaptainMark inline />
+            {pos}
+          </>
+        )}
       </span>
       <span className="pe-dtop-score">{row.score.toLocaleString()}</span>
     </>

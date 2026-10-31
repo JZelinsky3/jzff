@@ -27,16 +27,18 @@
 
 import { randomInt } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { cpuEye, newCaptainSeed, newEvenSeed, readSeed } from './deal'
+import { cpuEye, newCaptainSeed, newEvenSeed, priced, readSeed } from './deal'
 import { friendOf } from '@/lib/friends'
 import { hashKey, nameForUser, cleanGuestName, newId, isId } from './people'
 import { recordSoloRun } from './binder'
 import { replaySolo, seedPack, type SoloPick } from './solo'
 import {
+  SALARY_CAP,
   SLOT_COUNT,
   chemistryCounts,
   chemistryPreview,
   isDifficulty,
+  signingPrice,
   tierFor,
   type Chemistry,
   type Difficulty,
@@ -162,6 +164,9 @@ function view(row: Row, you: Seat | null, viewerId: string | null): VersusView {
 /** The CPU's name on the scoreboard. */
 export const CPU_NAME = 'CPU'
 
+/** What $1M is worth to the CPU in accolades, under a salary cap. */
+const CPU_DOLLAR = 70
+
 /**
  * The CPU's draft: open its eleven packs in order and keep the card that reads
  * best, counting what it does for the team where chemistry counts. It reads
@@ -176,11 +181,19 @@ function cpuDraft(seed: string): VersusResult | null {
   const taken: string[] = []
   const roster: Player[] = []
   const picks: SoloPick[] = []
+  const capped = parsed.diff === 'cap'
+  let left: number = parsed.even ? SALARY_CAP.shared : SALARY_CAP.own
   for (let slot = 0; slot < SLOT_COUNT; slot++) {
-    const pack = seedPack(seed, parsed, slot, taken)
+    const pack = capped ? seedPack(seed, parsed, slot, taken).map(priced) : seedPack(seed, parsed, slot, taken)
     if (pack.length === 0) return null
-    const read = pack.map((p) => ({ p, worth: eye(p) + (chem ? chemistryPreview(p, roster, true) : 0) }))
+    // Under a cap it prices a dollar the way a good drafter does (hard-sim.ts).
+    const onTable = capped ? pack.filter((p) => signingPrice(p, pack, left) != null) : pack
+    const read = onTable.map((p) => ({
+      p,
+      worth: eye(p) + (chem ? chemistryPreview(p, roster, true) : 0) - (capped ? CPU_DOLLAR * (p.salary ?? 0) : 0),
+    }))
     const best = read.reduce((a, b) => (b.worth > a.worth ? b : a)).p
+    if (capped) left -= signingPrice(best, pack, left) ?? 0
     taken.push(best.id)
     roster.push(best)
     picks.push({ slot, id: best.id })

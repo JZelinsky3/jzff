@@ -56,6 +56,8 @@ export type Player = {
   img: string | null
   /** Dealt face-hidden: Range and Ball Knower. See `BlindFace`. */
   blind?: BlindFace
+  /** Dealt under a salary cap: what he costs, in $M. */
+  salary?: number
 }
 
 /**
@@ -218,9 +220,9 @@ export function rarityForScore(score: number): Rarity {
 // Difficulty
 // ============================================================
 
-export type Difficulty = 'open' | 'range' | 'season'
+export type Difficulty = 'open' | 'range' | 'season' | 'cap'
 
-export const DIFFICULTIES: Difficulty[] = ['open', 'range', 'season']
+export const DIFFICULTIES: Difficulty[] = ['open', 'range', 'season', 'cap']
 
 /** Each difficulty is its own board: a blind 13,000 and an open 13,000 aren't
     the same number. `mode` is what game_runs files it under. */
@@ -240,6 +242,11 @@ export const DIFFICULTY_LOOK: Record<Difficulty, { label: string; line: string; 
     line: 'Just the name and the season. No team, no value, no colours. Chemistry counts.',
     mode: 'offense-season',
   },
+  cap: {
+    label: 'Salary Cap',
+    line: 'Cards face up, each with a salary, and a budget for all eleven. Chemistry counts.',
+    mode: 'offense-cap',
+  },
 }
 
 export function difficultyForMode(mode: string | null): Difficulty | null {
@@ -247,8 +254,48 @@ export function difficultyForMode(mode: string | null): Difficulty | null {
 }
 
 export function isDifficulty(v: unknown): v is Difficulty {
-  return v === 'open' || v === 'range' || v === 'season'
+  return v === 'open' || v === 'range' || v === 'season' || v === 'cap'
 }
+
+/** The difficulties that hide a card's numbers until the lineup locks. */
+export function isBlind(diff: Difficulty): boolean {
+  return diff === 'range' || diff === 'season'
+}
+
+/**
+ * The budget for all eleven, in $M: about 70% of what taking the top card in
+ * every pack costs off your own packs, 60% off the richer shared ones. Set with
+ * sim/hard-sim.ts: someone weighing price against value beats someone taking
+ * the top card they can afford by 700 to 1,400, and chasing the best value per
+ * dollar loses to both, so there's no one trick that solves it.
+ */
+export const SALARY_CAP = { own: 110, shared: 130 } as const
+
+/** A signing is one of the cards you could use, at his salary if you can pay
+    it. If you can't pay anyone's, the cheapest of them signs for nothing, so a
+    pack can never leave a hole, it just leaves you the worst of it. Null means
+    this card isn't on the table. Runs on both sides, so they always agree. */
+export function signingPrice<T extends { id: string; salary?: number }>(card: T, usable: T[], left: number): number | null {
+  const price = card.salary ?? 0
+  if (price <= left) return price
+  if (usable.some((c) => (c.salary ?? 0) <= left)) return null
+  const cheapest = usable.reduce((a, b) => ((b.salary ?? 0) < (a.salary ?? 0) ? b : a))
+  return cheapest.id === card.id ? 0 : null
+}
+
+/** Seconds on the Daily's clock for each pack, from the moment it's handed
+    over: about 20 to read once it's ripped and flipped. */
+export const DAILY_PACK_SECONDS = 25
+
+/** The most a card can be worth, which is where a range's scale tops out. */
+export const VALUE_TOP = 5600
+
+export const CAP_LINES = [
+  'Every card has a salary, and you can only keep what you can pay for.',
+  'A salary tracks a card’s value but can run well over or under it, so bargains are out there.',
+  'You never see the next pack, so every dollar spent now is one you may want later.',
+  'If you can’t afford anyone in a pack, its cheapest card signs for free.',
+]
 
 /** The two blind difficulties always play for chemistry, and so does an Even
     Versus, where chemistry is the whole game. */
@@ -377,17 +424,19 @@ export type Weights = Record<Rarity, number>
  *
  * Tuned 2026-10-30: playing the best card from every pack reached GOAT 35% of
  * the time, and Joey wants a top rung you can't just tick off and leave. These
- * put that same perfect play at a median around 15.6k, about 6% GOAT and 24%
+ * put that same perfect play at a median around 15.8k, about 7% GOAT and 25%
  * Hall of Fame, so sim/sim.ts is the check on any change here. The best card
  * in an ordinary pack is about 36% common, 41% rare, 19% dynasty, 4% transcendent.
  *
  * Because they're per card, growing a rarity raises its odds. Every table here
- * and below was scaled when the pool went to 361 common and 200 rare (common
- * x.967, rare x.785), so more cards to collect didn't change what a pack holds.
+ * and below was scaled when the pool went to 399 common, 233 rare, 109 dynasty,
+ * 59 transcendent and 33 immortal, so more cards to collect didn't change what
+ * a pack holds. (Dynasty took a little extra off the ordinary table: the new
+ * cards run slightly stronger, which had Hall of Fame at 26%.)
  */
 export const SOLO_WEIGHTS: { normal: Weights; captain: Weights } = {
-  normal: { common: 48, rare: 13.5, dynasty: 10, transcendent: 3.5, immortal: 1 },
-  captain: { common: 4.8, rare: 17.3, dynasty: 41, transcendent: 27, immortal: 5 },
+  normal: { common: 43.4, rare: 11.6, dynasty: 7.8, transcendent: 2.8, immortal: 0.7 },
+  captain: { common: 4.3, rare: 14.8, dynasty: 33.5, transcendent: 21.5, immortal: 3.5 },
 }
 
 /**
@@ -398,8 +447,8 @@ export const SOLO_WEIGHTS: { normal: Weights; captain: Weights } = {
  * kept as found.
  */
 export const SOLO_BOOSTED: { normal: Weights; captain: Weights } = {
-  normal: { ...SOLO_WEIGHTS.normal, common: 45.5, rare: 16.5 },
-  captain: { ...SOLO_WEIGHTS.captain, rare: 14.1, transcendent: 30, immortal: 2 },
+  normal: { ...SOLO_WEIGHTS.normal, common: 41.2, rare: 14.2 },
+  captain: { ...SOLO_WEIGHTS.captain, rare: 12.1, transcendent: 23.9, immortal: 1.4 },
 }
 
 /**
@@ -423,11 +472,11 @@ export function packOdds(pool: { rarity: Rarity }[], weights: Weights): Record<R
  * choice and picking the right card is the game. There's no captain table
  * under it in an Even Versus, and no second table anywhere.
  */
-export const SHARED_WEIGHTS: Weights = { common: 29, rare: 27.5, dynasty: 22, transcendent: 8, immortal: 3 }
+export const SHARED_WEIGHTS: Weights = { common: 26.2, rare: 23.6, dynasty: 18, transcendent: 6.4, immortal: 2.1 }
 
 /** The Daily's reserve card, dealt only when nothing in a pack fits an open
     slot: replacement level on purpose, so filling wrong still costs you. */
-export const RESERVE_WEIGHTS: Weights = { common: 62, rare: 38, dynasty: 0, transcendent: 0, immortal: 0 }
+export const RESERVE_WEIGHTS: Weights = { common: 56.1, rare: 32.6, dynasty: 0, transcendent: 0, immortal: 0 }
 
 // ============================================================
 // League Mode
@@ -455,17 +504,17 @@ export const PACK_TIER_COLOR: Record<PackTier, string> = {
 /** Transcendent weights cut by a fifth with the 2026-10-30 pool, which holds
     nearly twice as many of them, so a pack is as likely to hold one as before. */
 export const LEAGUE_WEIGHTS: Record<PackTier, Weights> = {
-  standard_pack: { common: 49.3, rare: 18.1, dynasty: 15, transcendent: 8, immortal: 1 },
-  rising_pack: { common: 31.9, rare: 23.6, dynasty: 20, transcendent: 12, immortal: 2 },
-  prime_pack: { common: 17.4, rare: 27.5, dynasty: 23, transcendent: 16, immortal: 4 },
-  elite_drop: { common: 12.6, rare: 19.6, dynasty: 27, transcendent: 22, immortal: 8 },
+  standard_pack: { common: 44.6, rare: 15.5, dynasty: 12.2, transcendent: 6.4, immortal: 0.7 },
+  rising_pack: { common: 28.9, rare: 20.3, dynasty: 16.3, transcendent: 9.6, immortal: 1.4 },
+  prime_pack: { common: 15.7, rare: 23.6, dynasty: 18.8, transcendent: 12.7, immortal: 2.8 },
+  elite_drop: { common: 11.4, rare: 16.8, dynasty: 22, transcendent: 17.5, immortal: 5.6 },
 }
 
 /** League packs have a second table too; in the original it only differs
     from the first by one point, on the Elite Drop's rares. Kept as found. */
 export const LEAGUE_BOOSTED: Record<PackTier, Weights> = {
   ...LEAGUE_WEIGHTS,
-  elite_drop: { ...LEAGUE_WEIGHTS.elite_drop, rare: 18.8 },
+  elite_drop: { ...LEAGUE_WEIGHTS.elite_drop, rare: 16.1 },
 }
 
 export const REGULAR_WEEKS = 8
@@ -534,7 +583,7 @@ export const MEGA_POOL_COUNTS: Record<PoolKey, number> = {
   C: 4,
 }
 
-export const MEGA_WEIGHTS: Weights = { common: 29, rare: 27.5, dynasty: 22, transcendent: 8, immortal: 3 }
+export const MEGA_WEIGHTS: Weights = { common: 26.2, rare: 23.6, dynasty: 18, transcendent: 6.4, immortal: 2.1 }
 
 export const MEGA_TOTAL_PICKS = SLOT_COUNT * 2
 
@@ -802,7 +851,7 @@ export const EVEN_MARK = '9'
 
 /** The tenth character of a sixteen-character seed. Seeds dealt before there
     were difficulties are fifteen characters, and those are all open. */
-export const SEED_DIFF: Record<string, Difficulty> = { A: 'open', R: 'range', S: 'season' }
+export const SEED_DIFF: Record<string, Difficulty> = { A: 'open', R: 'range', S: 'season', C: 'cap' }
 
 export function difficultyFromSeed(seed: string): Difficulty {
   return seed.length === 16 ? (SEED_DIFF[seed[9]] ?? 'open') : 'open'

@@ -25,7 +25,9 @@ import {
   type Player,
   type Rarity,
 } from '@/lib/packEmpire/rules'
+import type { FaceMap } from '@/lib/packEmpire/faces'
 import { Bolt, CaptainMark, PackCard, leanCard } from './cards'
+import { useFaces } from './faces'
 import { RipBurst, SealedPack, SpentPack } from './rip'
 
 /** The slow reveal on one card: its rarity, then its season and team, then
@@ -70,9 +72,14 @@ const PULL_MS = 2300
 const NEXT_STEP = { charge: 'team', team: 'stat', stat: 'flip' } as const
 
 /** How long the picked card hangs, lifted, before it flies. */
-const HOLD_MS = 480
-const FLIGHT_MS = 620
+const HOLD_MS = 200
+const FLIGHT_MS = 420
 const LANDED_MS = 750
+
+/** The light in a pack whose cards are hidden. One colour for every blind
+    pack, whatever's in it: a rarity's colour here would be a tell, and the
+    common's brown read as one even when it wasn't. */
+const BLIND_GLOW = '#fff8ea'
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -104,9 +111,9 @@ export function restoredStage(slot: number, cards: Player[]): StageState {
 // early. Held here so a pending fetch isn't dropped with its Image.
 const heldFaces: HTMLImageElement[] = []
 
-function preloadFaces(cards: Player[]) {
+function preloadFaces(cards: Player[], uploaded: FaceMap) {
   const faces = cards
-    .flatMap((c) => [c.img, teamLogo(c)])
+    .flatMap((c) => [uploaded[c.id] ?? c.img, teamLogo(c)])
     .filter((src): src is string => !!src)
     .map((src) => {
       const im = new Image()
@@ -135,6 +142,7 @@ export function usePackStage(initial: StageState | null = null) {
   const busy = useRef(false)
   const timers = useRef<number[]>([])
   const walkoutId = useRef(0)
+  const uploaded = useFaces()
 
   useEffect(() => {
     const t = timers.current
@@ -142,7 +150,7 @@ export function usePackStage(initial: StageState | null = null) {
   }, [])
 
   useEffect(() => {
-    if (initial?.cards) preloadFaces(initial.cards)
+    if (initial?.cards) preloadFaces(initial.cards, uploaded)
     // Only the pack the page loaded with.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -180,7 +188,7 @@ export function usePackStage(initial: StageState | null = null) {
     try {
       // No floor on the wait any more: the rip is the pause.
       const cards = await deal()
-      preloadFaces(cards)
+      preloadFaces(cards, uploaded)
       setStage((s) => (s && s.slot === slot ? { ...s, cards, revealed: cards.map(() => false) } : s))
     } catch (e) {
       setStage((s) => (s ? { ...s, error: e instanceof Error ? e.message : 'The pack would not open.' } : s))
@@ -306,10 +314,19 @@ export function usePackStage(initial: StageState | null = null) {
    * `slot` is where the card lands, when that isn't the pack's own slot: a
    * Daily's wild pack isn't any position's until you keep something from it.
    *
-   * Resolves true once the card has landed in its slot.
+   * `background` is for a commit that goes over the network and handles its
+   * own failure: the card flies straight away instead of hanging in the air
+   * waiting on the server.
+   *
+   * Resolves true once the card has landed in its slot and the commit is done.
    */
   const pick = useCallback(
-    async (i: number, commit: (card: Player) => Promise<void> | void, slot?: number): Promise<boolean> => {
+    async (
+      i: number,
+      commit: (card: Player) => Promise<void> | void,
+      slot?: number,
+      background = false
+    ): Promise<boolean> => {
       const s = stage
       if (!s || !s.cards || s.pickedId || s.walkout || s.queue.length || busy.current) return false
       const card = s.cards[i]
@@ -320,7 +337,8 @@ export function usePackStage(initial: StageState | null = null) {
       // card flying down to it arrives.
       setLanding({ slot: target, phase: 'incoming' })
       try {
-        await Promise.all([commit(card), wait(HOLD_MS)])
+        const saving = Promise.resolve(commit(card))
+        await (background ? wait(HOLD_MS) : Promise.all([saving, wait(HOLD_MS)]))
         const from = rectOf(document.querySelector(`.pe-stage-cards [data-pe-card="${CSS.escape(card.id)}"]`))
         const to = rectOf(document.querySelector(`[data-pe-slot="${target}"] .pe-fsl`))
         if (from && to && !reducedMotion()) {
@@ -333,6 +351,7 @@ export function usePackStage(initial: StageState | null = null) {
         setStage(null)
         setLanding({ slot: target, phase: 'landed' })
         later(() => setLanding((l) => (l && l.slot === target && l.phase === 'landed' ? null : l)), LANDED_MS)
+        await saving
         return true
       } catch (e) {
         setLanding(null)
@@ -469,6 +488,8 @@ export function PackStage({
   wild = null,
   blockedFor,
   chipFor,
+  note = null,
+  clock = null,
 }: {
   stage: StageState
   tag?: PackTag
@@ -481,10 +502,14 @@ export function PackStage({
   chemFor?: (p: Player) => number | null
   /** The Daily's mixed packs, which aren't any one position's. */
   wild?: { art: string; first: string; rest: string; note?: string } | null
-  /** A card with no slot left: on the table, not takeable. */
-  blockedFor?: (p: Player) => boolean
+  /** Why a card is on the table but not takeable, if it isn't. */
+  blockedFor?: (p: Player) => string | null
   /** The Daily's rule, marked on the cards it visibly touches. */
   chipFor?: (p: Player) => string | null
+  /** Said over the cards in place of the usual prompt. */
+  note?: string | null
+  /** The Daily's shot clock, under the status line. */
+  clock?: React.ReactNode
 }) {
   const root = useRef<HTMLDivElement>(null)
   useGyroTilt(root)
@@ -497,8 +522,10 @@ export function PackStage({
   const w = stage.walkout
   const woCard = w && cards ? cards[w.i] : null
   const woLook = woCard ? RARITY_LOOK[woCard.rarity] : null
-  const best = cards ? bestRarity(cards) : null
-  const glow = best ? RARITY_LOOK[best].color : '#e8a84b'
+  // A blind pack opens the same way every time, at the size of a rare's.
+  const blind = !!wild || !!cards?.some((c) => c.blind)
+  const best: Rarity | null = cards ? (blind ? 'rare' : bestRarity(cards)) : null
+  const glow = blind ? BLIND_GLOW : best ? RARITY_LOOK[best].color : '#e8a84b'
   const tier = best ? RARITIES.indexOf(best) : 0
 
   // An immortal stops the show as the pack comes open: the pack stays on the
@@ -516,6 +543,7 @@ export function PackStage({
   else if (woLook) status = `${woLook.label} pull`
   else if (stage.queue.length) status = 'Revealing'
   else if (stage.pickedId) status = 'Signed'
+  else if (note) status = note
   else if (wild?.note) status = wild.note
   else if (shown > 0) status = `${shown} of ${cards.length} revealed · tap one to keep him`
   else status = 'Tap a card to flip it, or reveal them all'
@@ -572,6 +600,7 @@ export function PackStage({
             <div className="pe-stage-status" aria-live="polite">
               {status}
             </div>
+            {clock}
           </div>
           {pulling && (
             <div className="pe-imp-band" aria-hidden>
@@ -595,7 +624,7 @@ export function PackStage({
 
         {open && (
           <div className="pe-stage-cards">
-            {!stage.restored && best && <RipBurst rarity={best} />}
+            {!stage.restored && best && <RipBurst rarity={best} glow={blind ? BLIND_GLOW : undefined} />}
             {!stage.restored && <SpentPack art={art} tier={tier} glow={glow} />}
             {cards.map((card, i) => {
               const isPick = stage.pickedId === card.id
@@ -614,7 +643,7 @@ export function PackStage({
                   burst={charging && w?.step === 'flip'}
                   chem={stage.revealed[i] && chemFor ? chemFor(card) : null}
                   chip={stage.revealed[i] && chipFor ? chipFor(card) : null}
-                  blocked={blockedFor?.(card) ?? false}
+                  blocked={blockedFor?.(card) ?? null}
                   onClick={() => onCard(i)}
                   disabled={!!stage.pickedId || !!w}
                 />
@@ -694,6 +723,7 @@ export function ScoreStrip({
   extra,
   hidden = null,
   noTier = false,
+  capLeft = null,
 }: {
   score: number
   filled: number
@@ -703,6 +733,8 @@ export function ScoreStrip({
   hidden?: { value: string; label: string } | null
   /** An Even Versus: richer packs, so the ladder means nothing there. */
   noTier?: boolean
+  /** Under a salary cap: what's left to spend, in $M. */
+  capLeft?: number | null
 }) {
   const shown = useCountUp(score)
   const prev = useRef(score)
@@ -742,13 +774,19 @@ export function ScoreStrip({
         </div>
         <div className="pe-strip-lbl">Signed</div>
       </div>
+      {capLeft != null && (
+        <div className="pe-strip-cell">
+          <div className="pe-strip-val pe-strip-val--cap">${capLeft}M</div>
+          <div className="pe-strip-lbl">Cap left</div>
+        </div>
+      )}
       {extra && (
         <div className="pe-strip-cell">
           <div className="pe-strip-val">{extra.value}</div>
           <div className="pe-strip-lbl">{extra.label}</div>
         </div>
       )}
-      {!hidden && !noTier && (
+      {!hidden && !noTier && capLeft == null && (
         <div className="pe-strip-cell">
           <div key={tier.label} className="pe-strip-tier" style={{ color: tier.color }}>
             {tier.label}

@@ -16,8 +16,11 @@ import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import {
   DIFFICULTY_LOOK,
+  SALARY_CAP,
   TIERS,
+  chemistryFor,
   difficultyFromSeed,
+  isBlind,
   tierFor,
   type Difficulty,
   type Player,
@@ -43,6 +46,7 @@ const SAVE_KEYS: Record<Difficulty, string> = {
   open: 'pe_solo_run_v1',
   range: 'pe_solo_run_range_v1',
   season: 'pe_solo_run_season_v1',
+  cap: 'pe_solo_run_cap_v1',
 }
 
 /** The difficulty you last played, so a regular on Ball Knower stays there. */
@@ -76,7 +80,7 @@ function shareText(score: number) {
 }
 
 function readDifficulty(raw: string | null): Difficulty {
-  return raw === 'range' || raw === 'season' ? raw : 'open'
+  return raw === 'range' || raw === 'season' || raw === 'cap' ? raw : 'open'
 }
 
 export function EmpireBuilder({ signedIn, initial }: { signedIn: boolean; initial?: Difficulty }) {
@@ -191,7 +195,7 @@ export function EmpireBuilder({ signedIn, initial }: { signedIn: boolean; initia
   }
 
   // A blind run has no numbers to show until the post comes back.
-  if (difficultyFromSeed(run.seed) !== 'open' && !reveal) {
+  if (isBlind(difficultyFromSeed(run.seed)) && !reveal) {
     return (
       <Sealed
         run={run}
@@ -343,6 +347,9 @@ function Recap({
   const shown = useCountUp(run.score, climbMs(run.score), 0, easeClimb)
   const landed = shown === run.score
   const tier = tierFor(shown)
+  const capped = difficultyFromSeed(run.seed) === 'cap'
+  const chem = reveal?.chem ?? (capped ? chemistryFor(run.lineup, true) : null)
+  const cards = reveal?.base ?? run.score - (chem?.total ?? 0)
 
   return (
     <div className="pe-table">
@@ -355,9 +362,10 @@ function Recap({
           {shown.toLocaleString()}
         </div>
         <div className="pe-recap-lbl pe-note">
-          {reveal?.chem
-            ? `${reveal.base.toLocaleString()} in cards, ${reveal.chem.total >= 0 ? '+' : '−'}${Math.abs(reveal.chem.total).toLocaleString()} chemistry`
+          {chem
+            ? `${cards.toLocaleString()} in cards, ${chem.total >= 0 ? '+' : '−'}${Math.abs(chem.total).toLocaleString()} chemistry`
             : 'Total accolades'}
+          {capped && ` · $${run.spent}M of $${SALARY_CAP.own}M spent`}
         </div>
 
         <p className={`pe-recap-post${landed ? '' : ' wait'}`} aria-live="polite">
@@ -425,10 +433,10 @@ function Recap({
         <Ladder score={shown} climb landed={landed} />
       </div>
 
-      {reveal?.chem && (
+      {chem && (
         <div className="pe-panel pe-recap-chem">
           <div className="pe-kicker">Chemistry</div>
-          <Bonds chem={reveal.chem} />
+          <Bonds chem={chem} />
         </div>
       )}
     </div>

@@ -179,6 +179,7 @@ function RoomGlyph({ icon }: { icon: RoomIcon }) {
     case 'social': return <svg {...p}><path d="M4 5h16v11H9l-5 4z" /></svg>
     case 'mail': return <svg {...p}><rect x="3" y="5" width="18" height="14" rx="1.5" /><polyline points="3 7 12 13 21 7" /></svg>
     case 'star': return <svg {...p}><polygon points="12 3 14.8 9 21 9.6 16.3 13.8 17.7 20 12 16.8 6.3 20 7.7 13.8 3 9.6 9.2 9" /></svg>
+    case 'cards': return <svg {...p}><rect x="4" y="7" width="12" height="14" rx="1.5" /><path d="M8 3h10.5A1.5 1.5 0 0 1 20 4.5V17" /></svg>
     case 'share': return <svg {...p}><circle cx="18" cy="5" r="2.5" /><circle cx="6" cy="12" r="2.5" /><circle cx="18" cy="19" r="2.5" /><line x1="8.2" y1="10.8" x2="15.8" y2="6.2" /><line x1="8.2" y1="13.2" x2="15.8" y2="17.8" /></svg>
   }
 }

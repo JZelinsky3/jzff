@@ -189,6 +189,7 @@ export async function GameBoardPage({
           active={activeMode}
           href={(k) => modeTabs.find((t) => t.kind === k)?.href ?? tabHref(kind)}
           label="Difficulty"
+          dense
         />
       )}
       <KindSeg kinds={TABS} active={kind} href={tabHref} />
