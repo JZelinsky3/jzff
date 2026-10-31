@@ -8,7 +8,7 @@ import type { Metadata } from 'next'
 const SITE = 'The Sunday Chronicle'
 
 /** Bump on a redesign: scrapers hold a card by its URL for weeks. */
-const CARD_VERSION = 2
+const CARD_VERSION = 3
 
 export function peCard(params: Record<string, string | number | null | undefined>): string {
   const q = new URLSearchParams({ v: String(CARD_VERSION) })
@@ -25,7 +25,8 @@ export function peMeta({
   robots,
 }: {
   title: string
-  description: string
+  /** Left off a shared score: the number says it all. */
+  description?: string
   card: Record<string, string | number | null | undefined>
   alt: string
   url?: string
@@ -34,17 +35,18 @@ export function peMeta({
   const image = peCard(card)
   return {
     title,
-    description,
+    // null, not left out: left out, a page takes the site's own pitch from the root layout
+    description: description ?? null,
     ...(robots ? { robots } : {}),
     ...(url ? { alternates: { canonical: url } } : {}),
     openGraph: {
       type: 'website',
       ...(url ? { url } : {}),
       title,
-      description,
+      ...(description ? { description } : {}),
       siteName: SITE,
       images: [{ url: image, width: 1200, height: 630, alt }],
     },
-    twitter: { card: 'summary_large_image', title, description, images: [image] },
+    twitter: { card: 'summary_large_image', title, ...(description ? { description } : {}), images: [image] },
   }
 }

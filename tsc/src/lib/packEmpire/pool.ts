@@ -24,9 +24,9 @@
 
 import addedAfterE from './data/added-after-10e.json'
 import seasons from './data/season-pool.json'
-import { POOL_KEYS, personOf, type Player, type PoolKey, type Rarity, type Weights } from './rules'
+import { POOL_KEYS, RARITY_FLOOR, VALUE_TOP, personOf, type Player, type PoolKey, type Rarity, type Weights } from './rules'
 
-export const POOL_VERSION = 'seasons-2026-10g'
+export const POOL_VERSION = 'seasons-2026-10h'
 
 const ALL = seasons as Player[]
 
@@ -75,20 +75,25 @@ const HOLDS = new Map<string, number>()
 for (const p of ALL) HOLDS.set(`${p.pos}|${p.rarity}`, (HOLDS.get(`${p.pos}|${p.rarity}`) ?? 0) + 1)
 
 /**
- * Immortals come in levels, off the value on the card: the very top of the game
- * is three times as hard to pull as an immortal just over the line. Shares are
- * only moved around inside the position's immortals, which together stay exactly
- * as likely as the tables say.
+ * How much harder the best card in the game is to pull than an immortal right
+ * on the line. Every immortal gets its own odds off its value, so the odds open
+ * up exactly where the values do: Faulk's 370 over Holmes is a real step, Holmes
+ * and Tomlinson 10 apart are as good as level, Gronk and Kelce are close. Shares
+ * only move inside a position's immortals, which together stay exactly as likely
+ * as the tables say.
  */
-function immortalLevel(score: number): number {
-  return score >= 5000 ? 1 : score >= 4500 ? 2 : 3
+const IMMORTAL_SPREAD = 6
+
+function immortalPull(score: number): number {
+  const up = (score - RARITY_FLOOR.immortal) / (VALUE_TOP - RARITY_FLOOR.immortal)
+  return IMMORTAL_SPREAD ** -up
 }
 
 const LEVEL_SHARE = new Map<string, number>()
 for (const k of POOL_KEYS) {
   const top = POOL[k].filter((p) => p.rarity === 'immortal')
-  const whole = top.reduce((sum, p) => sum + immortalLevel(p.score), 0)
-  for (const p of top) LEVEL_SHARE.set(p.id, (immortalLevel(p.score) * top.length) / whole)
+  const whole = top.reduce((sum, p) => sum + immortalPull(p.score), 0)
+  for (const p of top) LEVEL_SHARE.set(p.id, (immortalPull(p.score) * top.length) / whole)
 }
 
 /** One card's weight on a table. Every draw goes through this. */

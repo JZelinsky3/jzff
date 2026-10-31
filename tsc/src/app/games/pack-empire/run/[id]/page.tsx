@@ -26,8 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const run = await loadRun(id)
   if (!run) return { title: 'Empire Builder · Pack Empire', robots: { index: false, follow: false } }
   return peMeta({
-    title: `${run.name}'s Offense: ${run.score.toLocaleString('en-US')} · Pack Empire`,
-    description: `${run.tier.label} on ${DIFFICULTY_LOOK[run.difficulty].label}. Open eleven packs and beat it.`,
+    title: `${run.score.toLocaleString('en-US')} in Empire Builder`,
     card: { c: 'run', id: run.id },
     alt: `${run.name}'s offense`,
     robots: { index: false, follow: false },

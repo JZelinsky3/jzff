@@ -203,7 +203,7 @@ async function stateOf(day: string, version: DailyVersion, row: Row | null): Pro
   if (!row) return base
   if (row.done) return { ...base, lineup: row.detail?.lineup ?? base.lineup, result: await resultOf(row) }
 
-  const show = (c: Player) => (rule.salaryCap ? { ...maskDaily(c, version), salary: priced(c).salary } : maskDaily(c, version))
+  const show = (c: Player) => (rule.salaryCap ? { ...maskDaily(c, version, day), salary: priced(c).salary } : maskDaily(c, version, day))
   const lineup = [...base.lineup]
   for (const pick of row.picks) {
     const card = playerById(pick.id)
@@ -517,6 +517,20 @@ async function boardFor(day: string, version: DailyVersion, who: DailyWho | null
 }
 
 /** A day's rule for a link preview, any day. A bad day falls back to today. */
+/** "October 31st". */
+export function longDate(day: string): string {
+  const d = new Date(`${day}T12:00:00Z`)
+  const month = d.toLocaleDateString('en-US', { month: 'long', timeZone: 'UTC' })
+  const n = d.getUTCDate()
+  const th = n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'
+  return `${month} ${n}${th}`
+}
+
+/** Which Daily a shared score was on: "today's Daily" until it isn't. */
+export function dailyScoreLine(day: string): string {
+  return day === dayKey() ? "today's Daily" : `the ${longDate(day)} Daily`
+}
+
 export function dailySpec(day: string | null): { day: string; title: string; line: string } {
   const d = day && isDay(day) && day <= dayKey() ? day : dayKey()
   const rule = ruleView(ruleForDay(d))

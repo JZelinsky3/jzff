@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
-import { dailyLobby, dailySpec, type DailyBoard } from '@/lib/packEmpire/daily'
+import { dailyLobby, dailyScoreLine, dailySpec, type DailyBoard } from '@/lib/packEmpire/daily'
 import { dailyViewer } from '@/lib/packEmpire/dailyWho'
 import { maskCard } from '@/lib/packEmpire/deal'
 import { peMeta } from '@/lib/packEmpire/meta'
@@ -26,8 +26,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const rule = dailySpec(score?.day ?? null)
   if (score) {
     return peMeta({
-      title: `${score.name} put up ${score.score.toLocaleString('en-US')} on the Daily · Pack Empire`,
-      description: `Same packs for everyone, one try. Rule: ${rule.title}.`,
+      title: `${score.score.toLocaleString('en-US')} on ${dailyScoreLine(score.day)}`,
       card: { c: 'day', r },
       alt: 'A score on the Daily',
     })

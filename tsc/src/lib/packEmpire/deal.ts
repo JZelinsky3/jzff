@@ -297,24 +297,44 @@ export function dealPack({
 // Masking
 // ============================================================
 
-/** How wide a Range card's range runs. Always this wide, whatever the card:
-    a width that grew with the value would give the value away. Tested with
-    sim/hard-sim.ts: at 1,400 just reading the midpoints scored within 2% of
-    knowing every value, so the range wasn't hiding anything. */
-export const RANGE_WIDTH = 2000
+/**
+ * How wide a range can run. Which of these a card gets comes off the secret and
+ * the card alone, nothing to do with its value (a width that grew with value
+ * would give it away), so some cards are easy to read and some aren't. With one
+ * width for everything the top, the middle and the bottom of a range all rank a
+ * pack the same way, and just taking the highest read scored 93% of a perfect
+ * draft. Off sim/range-sim.ts: with these, the top alone scores 82% and no one
+ * read beats 92%.
+ */
+export const RANGE_WIDTHS = [1400, 2000, 2500]
 
 /**
- * The range a card prints. Where the real value sits inside it comes off the
- * secret and the card alone, so it's rarely the middle, it's the same every time
- * that card is dealt (asking for it a hundred times can't narrow it down), and
- * the bands don't line up with the rarity floors, which would hand you the rarity.
+ * Where a range sits on a card. The real value can be anywhere inside, right up
+ * to either end, so a 1,100 can read 1,000-3,000 and a 2,500 can read 500-2,500,
+ * and the card with the higher top isn't always the better card. The value is
+ * always truly inside: `lo` is on the hundreds, rounded in, never out.
  *
- * A range can't start under zero or run past the best card there is, and a
- * cheap card's low end stays a long way under its value, or every one of them
- * would read "0-2,000" and that would be the rarity again.
+ * A cheap card's start runs anywhere from zero to its own value, or every one of
+ * them would read "0-2,000" and that would be the rarity again.
  */
-export function rangeOf(p: Player, width: number = RANGE_WIDTH, label = 'range'): { lo: number; hi: number } {
-  const at = cardHash(`${label}|${p.id}`).readUInt16LE(0) / 65535
+function placeRange(p: Player, width: number, at: number): { lo: number; hi: number } {
+  const first = Math.ceil(Math.max(0, p.score - width) / 100)
+  const last = Math.floor(p.score / 100)
+  const lo = Math.min((first + Math.round(at * (last - first))) * 100, VALUE_TOP - width)
+  return { lo, hi: lo + width }
+}
+
+/** The range a card prints. Same every time it's dealt, so asking for it a
+    hundred times can't narrow it down. */
+export function rangeOf(p: Player, label = 'range'): { lo: number; hi: number } {
+  const width = RANGE_WIDTHS[cardHash(`${label}-width|${p.id}`)[0] % RANGE_WIDTHS.length]
+  return placeRange(p, width, cardHash(`${label}-at|${p.id}`).readUInt16LE(0) / 65535)
+}
+
+/** The ranges a Daily printed before RANGE_WIDTHS, for days already out. */
+function rangeBefore(p: Player): { lo: number; hi: number } {
+  const width = [1400, 2800, 4000][cardHash(`daily-width|${p.id}`)[0] % 3]
+  const at = cardHash(`daily-range|${p.id}`).readUInt16LE(0) / 65535
   const lowest = Math.max(0, p.score - 0.92 * width)
   const highest = p.score > 0.08 * width ? p.score - 0.08 * width : p.score / 2
   const lo = Math.floor((lowest + at * (highest - lowest)) / 100) * 100
@@ -322,23 +342,16 @@ export function rangeOf(p: Player, width: number = RANGE_WIDTH, label = 'range')
   return { lo: Math.max(0, lo - over), hi: Math.min(lo + width, VALUE_TOP) }
 }
 
-/**
- * A Daily card's range. Some are tight and some are barely a hint, and which is
- * which has nothing to do with the card's value (a width that grew with value
- * would give it away). So not every card is impossible, but you can't trust
- * them all alike. Tested with sim/hard-sim.ts: one width for everything left
- * midpoint reading within 2% of knowing every value.
- */
-const DAILY_WIDTHS = [1400, 2800, 4000]
-
-export function dailyRange(p: Player): { lo: number; hi: number } {
-  return rangeOf(p, DAILY_WIDTHS[cardHash(`daily-width|${p.id}`)[0] % DAILY_WIDTHS.length], 'daily-range')
+/** A Daily card's range. Its own draw, so a card reads differently here than in
+    the Builder, and a day that's already out keeps what it printed. */
+export function dailyRange(p: Player, day: string): { lo: number; hi: number } {
+  return day < DAILY_NEW_POOL_FROM ? rangeBefore(p) : rangeOf(p, 'daily-range')
 }
 
 /** A card on the Daily's table. */
-export function maskDaily(p: Player, version: 'range' | 'season'): Player {
+export function maskDaily(p: Player, version: 'range' | 'season', day: string): Player {
   const card = maskCard(p, version)
-  return version === 'range' ? { ...card, blind: { level: 'range', ...dailyRange(p) } } : card
+  return version === 'range' ? { ...card, blind: { level: 'range', ...dailyRange(p, day) } } : card
 }
 
 /**
@@ -368,21 +381,31 @@ export function maskCard(p: Player, diff: Difficulty): Player {
 }
 
 /**
+ * How sharp the CPU is on the blind modes, set to an average player: people score
+ * about 83% of a perfect draft on Range and 72% on Ball Knower (pe_daily_runs,
+ * October 2026), and this lands there in Classic and Even (sim/cpu-sim.ts).
+ * `misread` is how far out a read can be, as a power of e: 1.8 is anywhere from
+ * a sixth of a card's worth to six times it, so a star stays a star and it's the
+ * mid cards it gets wrong. `chem` is how much of the chemistry on offer it spots.
+ */
+export const CPU_SKILL: Partial<Record<Difficulty, { misread: number; chem: number }>> = {
+  range: { misread: 0.3, chem: 0.5 },
+  season: { misread: 1.8, chem: 0.5 },
+}
+
+/**
  * How the CPU reads a card on a Versus. It gets no more than a person would: a
- * Range card's midpoint, and on Ball Knower what a good memory gets you, the
- * real value give or take 40%. Off its own stream, so its draft is settled the
- * moment its seed is dealt.
+ * Range card's midpoint, and on Ball Knower a memory of the value. Off its own
+ * stream, so its draft is settled the moment its seed is dealt.
  */
 export function cpuEye(seed: string, diff: Difficulty): (p: Player) => number {
-  if (diff === 'open' || diff === 'cap') return (p) => p.score
-  if (diff === 'range') {
-    return (p) => {
-      const { lo, hi } = rangeOf(p)
-      return (lo + hi) / 2
-    }
-  }
+  const skill = CPU_SKILL[diff]
+  if (!skill) return (p) => p.score
   const rnd = stream(`cpu:${seed}`)
-  return (p) => p.score * (0.6 + 0.8 * rnd())
+  return (p) => {
+    const { lo, hi } = rangeOf(p)
+    return (diff === 'range' ? (lo + hi) / 2 : p.score) * Math.exp(skill.misread * (2 * rnd() - 1))
+  }
 }
 
 // ============================================================

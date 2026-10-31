@@ -32,7 +32,7 @@
 import { randomInt } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { battlesFrom, drawBattles, settleBattles, type BattleOutcome } from './battles'
-import { cpuEye, newCaptainSeed, newEvenSeed, priced, readSeed } from './deal'
+import { CPU_SKILL, cpuEye, newCaptainSeed, newEvenSeed, priced, readSeed } from './deal'
 import { friendOf } from '@/lib/friends'
 import { hashKey, nameForUser, cleanGuestName, newId, isId } from './people'
 import { recordSoloRun } from './binder'
@@ -201,6 +201,7 @@ function cpuDraft(seed: string, battleIds: string[] | null): VersusResult | null
   const parsed = readSeed(seed)
   if (!parsed) return null
   const eye = cpuEye(seed, parsed.diff)
+  const spots = CPU_SKILL[parsed.diff]?.chem ?? 1
   const battles = battlesFrom(battleIds)
   const chem = chemistryCounts(parsed.diff, parsed.even)
   const taken: string[] = []
@@ -217,9 +218,9 @@ function cpuDraft(seed: string, battleIds: string[] | null): VersusResult | null
       p,
       worth:
         eye(p) +
-        (chem ? chemistryPreview(p, roster, true) : 0) -
+        (chem ? spots * chemistryPreview(p, roster, true) : 0) -
         (capped ? CPU_DOLLAR * (p.salary ?? 0) : 0) +
-        CPU_BATTLE * battles.reduce((sum, b) => sum + b.lean(p, roster), 0),
+        spots * CPU_BATTLE * battles.reduce((sum, b) => sum + b.lean(p, roster), 0),
     }))
     const best = read.reduce((a, b) => (b.worth > a.worth ? b : a)).p
     if (capped) left -= signingPrice(best, pack, left) ?? 0

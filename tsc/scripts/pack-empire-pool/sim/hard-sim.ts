@@ -4,7 +4,7 @@
 // Daily: how often a pack leaves nothing to take, and what the spread looks
 // like between someone who knows every value and someone guessing, across
 // every rule. Even: what chemistry and Battles are worth. Check this after any change to
-// SHARED_WEIGHTS, RANGE_WIDTH, HARD_CHEM, the wild position weights or the
+// SHARED_WEIGHTS, RANGE_WIDTHS, HARD_CHEM, the wild position weights or the
 // planted team-seasons.
 import { dailyPack, dailyRange, dailySet, evenPacks, newEvenSeed, newCaptainSeed, priced, rangeOf, type DailyPick } from '../../../src/lib/packEmpire/deal'
 import { BATTLES, BATTLE_BONUS, battlesFrom, drawBattles, settleBattles, type Battle } from '../../../src/lib/packEmpire/battles'
@@ -26,7 +26,7 @@ const scoutRange: Eye = (p, r) => {
   return (lo + hi) / 2 + chemistryPreview(p, r, true)
 }
 const dailyScout: Eye = (p, r) => {
-  const { lo, hi } = dailyRange(p)
+  const { lo, hi } = dailyRange(p, '2026-11-01')
   return (lo + hi) / 2 + chemistryPreview(p, r, true)
 }
 // What someone who only knows names does: takes the most famous man in the pack.

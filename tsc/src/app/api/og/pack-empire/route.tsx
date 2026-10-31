@@ -8,15 +8,16 @@
 //   ?c=day&r=      a Daily score, off its signed link
 //   ?c=fr&t=       a friend invite
 //
-// The room's own palette and type: charcoal, each mode's colour, DM Serif for
-// the words and Orbitron for the numbers. Text left, object right. The packs are
-// the game's real torn packs with its real light, rendered once into
-// public/og/pack-empire.
+// The room's own type: DM Serif for the words and Orbitron for the numbers, on a
+// dark ground in each mode's colour. Text left, object right. The game cards sit
+// on a stage rendered once into public/og/pack-empire: real cards bursting out of
+// the real torn pack (scripts/pack-empire-fx/og-stages.mjs). Everything else gets
+// rays.png over its colour.
 //
 // iMessage lays a bar over the bottom of the card (title and link) and tints it
-// from the picture. So two rules. Nothing that matters goes in the bottom 80px,
-// and the whole card, edges included, is steeped in its mode's colour: on the
-// room's charcoal with a coloured glow, every card came out with a brown bar.
+// from the picture. So nothing that matters goes in the bottom 84px, and that
+// strip is the top bar's colour, solid: the bar has to read as its own colour.
+// It used to fade into the ground, and the bar melted into the middle of the card.
 //
 // Satori traps, all hit on other cards: every helper here is CALLED, never used
 // as a <Component>, because a component returning mapped children hangs the
@@ -29,7 +30,7 @@ import path from 'path'
 import { ImageResponse } from 'next/og'
 import { loadBoard } from '@/lib/minigames/leaderboard'
 import { inviteOwner } from '@/lib/friends'
-import { dailySpec } from '@/lib/packEmpire/daily'
+import { dailyScoreLine, dailySpec, longDate } from '@/lib/packEmpire/daily'
 import { loadFaces } from '@/lib/packEmpire/faces'
 import { getMega } from '@/lib/packEmpire/mega'
 import { getVersus } from '@/lib/packEmpire/versus'
@@ -50,6 +51,8 @@ export const runtime = 'nodejs'
 
 const W = 1200
 const H = 630
+const BAR_TOP = 12
+const BAR_FOOT = 84
 
 const CREAM = '#f4ead6'
 const MUTE = '#a79d8b'
@@ -98,14 +101,18 @@ function loadFonts() {
 
 const artCache = new Map<string, Promise<string>>()
 
-function art(name: 'home' | 'builder' | 'versus-a' | 'versus-b' | 'mega' | 'league' | 'daily'): Promise<string> {
-  let hit = artCache.get(name)
+function art(file: string, type: string): Promise<string> {
+  let hit = artCache.get(file)
   if (!hit) {
-    hit = readFile(path.join(ART_DIR, `${name}.png`)).then((b) => `data:image/png;base64,${b.toString('base64')}`)
-    artCache.set(name, hit)
+    hit = readFile(path.join(ART_DIR, file)).then((b) => `data:image/${type};base64,${b.toString('base64')}`)
+    artCache.set(file, hit)
   }
   return hit
 }
+
+type Stage = 'home' | 'builder' | 'versus' | 'mega' | 'league' | 'daily'
+
+const stage = (name: Stage) => art(`stage-${name}.jpg`, 'jpeg')
 
 /** A card photo as something satori can draw: PNG or JPEG, whatever the
     host's URL or content type claims (NFL.com serves webp to anyone who'll
@@ -139,7 +146,7 @@ function steep(hex: string, amount: number): string {
 }
 
 /** The card's ground, the plates on it and their hairlines, all in its colour. */
-const ground = (accent: string) => steep(accent, 0.2)
+const ground = (accent: string) => steep(accent, 0.07)
 const plate = (accent: string) => steep(accent, 0.13)
 const rule = (accent: string) => steep(accent, 0.34)
 
@@ -148,15 +155,6 @@ const num = (n: number) => n.toLocaleString('en-US')
 /** Anything a person typed, shown large to whoever gets the link. */
 function clean(raw: string | null | undefined, max = 28): string {
   return (raw ?? '').replace(/[\u0000-\u001f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, max)
-}
-
-/** "October 31st". */
-function longDate(day: string): string {
-  const d = new Date(`${day}T12:00:00Z`)
-  const month = d.toLocaleDateString('en-US', { month: 'long', timeZone: 'UTC' })
-  const n = d.getUTCDate()
-  const th = n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'
-  return `${month} ${n}${th}`
 }
 
 // ── Pieces ───────────────────────────────────────────────────
@@ -241,8 +239,12 @@ function bigScore(score: number, color: string) {
   )
 }
 
-/** The room, the brand line, the column of words, the object on the right. */
-function room(accent: string, kicker: string, left: React.ReactNode, right: React.ReactNode) {
+/** rays.png, read in GET: what goes over a card with no stage of its own. */
+let RAYS = ''
+
+/** The room, the brand line, the column of words, and either a stage or an
+    object on the right. */
+function room(accent: string, kicker: string, left: React.ReactNode, right: React.ReactNode, backdrop?: string) {
   return (
     <div
       style={{
@@ -252,25 +254,25 @@ function room(accent: string, kicker: string, left: React.ReactNode, right: Reac
         position: 'relative',
         overflow: 'hidden',
         backgroundColor: ground(accent),
-        backgroundImage: `radial-gradient(circle at 82% 40%, ${mix(accent, 0.3)} 0%, ${mix(accent, 0.17)} 34%, ${mix(accent, 0.07)} 62%, ${mix(accent, 0)} 92%)`,
+        ...(backdrop
+          ? {}
+          : { backgroundImage: `radial-gradient(circle at 78% 42%, ${mix(accent, 0.42)} 0%, ${mix(accent, 0.2)} 36%, ${mix(accent, 0.06)} 64%, ${mix(accent, 0)} 92%)` }),
         color: CREAM,
       }}
     >
-      <div style={{ position: 'absolute', left: 0, top: 0, width: W, height: 10, background: accent, display: 'flex' }} />
-      {/* What the bar under the card picks its colour from. */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          bottom: 0,
-          width: W,
-          height: 150,
-          display: 'flex',
-          backgroundImage: `linear-gradient(to bottom, ${mix(accent, 0)} 0%, ${steep(accent, 0.46)} 100%)`,
-        }}
-      />
-      <div style={{ position: 'absolute', left: 660, top: 0, width: 540, height: H, display: 'flex' }}>{right}</div>
-      <div style={{ position: 'absolute', left: 64, top: 48, bottom: 78, width: 660, display: 'flex', flexDirection: 'column' }}>
+      {backdrop ? (
+        <img src={backdrop} alt="" width={W} height={H} style={{ position: 'absolute', left: 0, top: 0 }} />
+      ) : RAYS ? (
+        <img src={RAYS} alt="" width={W} height={H} style={{ position: 'absolute', left: 0, top: 0, opacity: 0.4 }} />
+      ) : (
+        <div style={{ display: 'flex' }} />
+      )}
+      <div style={{ position: 'absolute', left: 0, top: 0, width: W, height: BAR_TOP, background: accent, display: 'flex' }} />
+      {right ? <div style={{ position: 'absolute', left: 660, top: 0, width: 540, height: H, display: 'flex' }}>{right}</div> : <div style={{ display: 'flex' }} />}
+      {/* What the bar under the card picks its colour from. Solid, and over the
+          stage, so a pack stands on it. */}
+      <div style={{ position: 'absolute', left: 0, bottom: 0, width: W, height: BAR_FOOT, display: 'flex', background: accent }} />
+      <div style={{ position: 'absolute', left: 64, top: 48, bottom: BAR_FOOT + 16, width: 660, display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
           <div style={{ display: 'flex', fontFamily: 'Orbitron', fontWeight: 800, fontSize: 25, letterSpacing: 3, color: AMBER }}>
             PACK EMPIRE
@@ -283,21 +285,6 @@ function room(accent: string, kicker: string, left: React.ReactNode, right: Reac
         <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'center', marginTop: 8 }}>{left}</div>
       </div>
     </div>
-  )
-}
-
-/** One torn pack, whole, its foot clear of the bar that sits over the card. */
-function pack(src: string, size = 1, x = 0, spin = 0, ratio = 596 / 854) {
-  const h = 532 * size
-  const w = h * ratio
-  return (
-    <img
-      src={src}
-      alt=""
-      width={w}
-      height={h}
-      style={{ position: 'absolute', left: 270 - w / 2 + x, top: 546 - h, ...(spin ? { transform: `rotate(${spin}deg)` } : {}) }}
-    />
   )
 }
 
@@ -510,10 +497,6 @@ function table(rows: { name: string; score: number }[], accent: string, title: s
 // ── Scenes ───────────────────────────────────────────────────
 
 async function modeScene(c: string, day: string | null) {
-  const stage = (src: string, ratio?: number) => (
-    <div style={{ display: 'flex', position: 'relative', width: 540, height: H }}>{pack(src, 1, 0, 0, ratio)}</div>
-  )
-
   if (c === 'builder') {
     return room(
       MODE.builder,
@@ -522,11 +505,11 @@ async function modeScene(c: string, day: string | null) {
         {head('Empire Builder.', 'Builder.', MODE.builder)}
         {sub('Pick a captain, open eleven packs and keep one player from each. The best offenses go on the board.')}
       </div>,
-      stage(await art('builder'))
+      null,
+      await stage('builder')
     )
   }
   if (c === 'versus') {
-    const [a, b] = await Promise.all([art('versus-a'), art('versus-b')])
     return room(
       MODE.versus,
       'Two players',
@@ -534,10 +517,8 @@ async function modeScene(c: string, day: string | null) {
         {head('Versus Challenge.', 'Challenge.', MODE.versus)}
         {sub('Send a friend the link. You each draft your own eleven and the bigger total wins.')}
       </div>,
-      <div style={{ display: 'flex', position: 'relative', width: 540, height: H }}>
-        {pack(b, 0.94, 112, 7)}
-        {pack(a, 0.94, -104, -7)}
-      </div>
+      null,
+      await stage('versus')
     )
   }
   if (c === 'mega') {
@@ -548,7 +529,8 @@ async function modeScene(c: string, day: string | null) {
         {head('Mega Draft.', 'Draft.', MODE.mega)}
         {sub('One shared board of thirty-six. A live snake draft, and every pick is one they don’t get.')}
       </div>,
-      megaBoard()
+      null,
+      await stage('mega')
     )
   }
   if (c === 'league') {
@@ -559,7 +541,8 @@ async function modeScene(c: string, day: string | null) {
         {head('League Mode.', 'Mode.', MODE.league)}
         {sub('Eight weeks of drafts with keepers, chemistry and boosted packs, then a Gauntlet and a Final.')}
       </div>,
-      stage(await art('league'))
+      null,
+      await stage('league')
     )
   }
   if (c === 'daily') {
@@ -572,7 +555,8 @@ async function modeScene(c: string, day: string | null) {
         {sub(`Today's rule: ${spec.title}. ${spec.line}`)}
         {chips(['One deal for everyone', 'One try'], MODE.daily)}
       </div>,
-      stage(await art('daily'))
+      null,
+      await stage('daily')
     )
   }
   if (c === 'board') {
@@ -585,7 +569,8 @@ async function modeScene(c: string, day: string | null) {
         {head('The Board.', 'Board.', MODE.board)}
         {sub('The best offenses anyone has opened, every pack re-dealt and checked.')}
       </div>,
-      rows.length ? table(rows, MODE.board, 'All-Time Best') : stage(await art('builder'))
+      rows.length ? table(rows, MODE.board, 'All-Time Best') : null,
+      rows.length ? undefined : await stage('builder')
     )
   }
   if (c === 'binder') {
@@ -618,12 +603,9 @@ async function modeScene(c: string, day: string | null) {
       {sub('Keep one player from each pack and build the best offense anyone has opened.')}
       {chips([`${num(POOL_SIZE)} cards`, 'Free to play'], AMBER)}
     </div>,
-    stage(await art('home'), 668 / 918)
+    null,
+    await stage('home')
   )
-}
-
-function megaBoard() {
-  return tiles(6, 6, 52, 9, MODE.mega, { 3: 'dynasty', 8: 'rare', 14: 'immortal', 19: 'common', 22: 'transcendent', 27: 'rare', 33: 'dynasty' })
 }
 
 /** A friend invite: the two of you, side by side. */
@@ -689,13 +671,7 @@ async function versusScene(id: string) {
     )
   }
 
-  const [a, b] = await Promise.all([art('versus-a'), art('versus-b')])
-  const duo = (
-    <div style={{ display: 'flex', position: 'relative', width: 540, height: H }}>
-      {pack(b, 0.94, 112, 7)}
-      {pack(a, 0.94, -104, -7)}
-    </div>
-  )
+  const duo = await stage('versus')
 
   // In, and waiting on the other seat. A guest who beat the host to it counts.
   const inSide = v.host.done ? v.host : v.guest.done ? v.guest : null
@@ -710,6 +686,7 @@ async function versusScene(id: string) {
         {sub('Your move. Open eleven packs and beat it.')}
         {chips(label, c)}
       </div>,
+      null,
       duo
     )
   }
@@ -726,6 +703,7 @@ async function versusScene(id: string) {
       {sub(live ? 'Both drafting now. Eleven packs each.' : 'Eleven packs each. The bigger offense wins.')}
       {chips(label, c)}
     </div>,
+    null,
     duo
   )
 }
@@ -766,7 +744,8 @@ async function megaScene(id: string) {
         {head(`${one} vs ${two}`, 'vs', c)}
         {sub(`Live now, pick ${Math.min(v.pickNo + 1, 22)} of 22 off one shared board.`)}
       </div>,
-      megaBoard()
+      null,
+      await stage('mega')
     )
   }
   const host = clean(v.hostName) || 'Someone'
@@ -778,7 +757,8 @@ async function megaScene(id: string) {
       {head(reserved ? `${host} wants to draft ${reserved}.` : `${host} saved you a seat.`, reserved ? 'draft' : 'seat.', c)}
       {sub('One board of thirty-six. A live snake draft. Every pick is one they don’t get.')}
     </div>,
-    megaBoard()
+    null,
+    await stage('mega')
   )
 }
 
@@ -811,7 +791,8 @@ async function leagueScene(id: string) {
         {sub('Eight weeks of pack drafts with keepers and chemistry, then a Gauntlet and a Final.')}
         {chips([`${v.standings.length} of ${v.league.max_players} teams`, 'Join now'], c)}
       </div>,
-      <div style={{ display: 'flex', position: 'relative', width: 540, height: H }}>{pack(await art('league'))}</div>
+      null,
+      await stage('league')
     )
   }
   const week = v.league.phase === 'regular' ? `Week ${v.league.current_week} of ${REGULAR_WEEKS}` : PHASE_LABEL[v.league.phase]
@@ -839,7 +820,8 @@ async function runScene(id: string) {
       <div style={{ display: 'flex', marginTop: 10 }}>{bigScore(run.score, c)}</div>
       <div style={{ display: 'flex', marginTop: 20 }}>{chips([run.tier.label], c)}</div>
     </div>,
-    object ?? <div style={{ display: 'flex', position: 'relative', width: 540, height: H }}>{pack(await art('builder'))}</div>
+    object,
+    object ? undefined : await stage('builder')
   )
 }
 
@@ -847,17 +829,16 @@ async function dailyScoreScene(token: string | null) {
   const s = readDaily(token)
   if (!s) return null
   const c = MODE.daily
-  const spec = dailySpec(s.day)
+  const line = dailyScoreLine(s.day)
   return room(
     c,
-    `The Daily · ${longDate(s.day)}`,
+    `${DIFFICULTY_LOOK[s.version].label} · ${clean(s.name)}`,
     <div style={{ display: 'flex', flexDirection: 'column' }}>
-      {head(`${clean(s.name)} put up`, 'put up', c, 590, 64)}
-      <div style={{ display: 'flex', marginTop: 6 }}>{bigScore(s.score, c)}</div>
-      {sub(`Same packs for everyone, one try. Rule: ${spec.title}.`)}
-      {chips([DIFFICULTY_LOOK[s.version].label], c)}
+      {bigScore(s.score, c)}
+      <div style={{ display: 'flex', marginTop: 14 }}>{head(`on ${line[0].toUpperCase()}${line.slice(1)}`, 'Daily', c, 590, 64)}</div>
     </div>,
-    <div style={{ display: 'flex', position: 'relative', width: 540, height: H }}>{pack(await art('daily'))}</div>
+    null,
+    await stage('daily')
   )
 }
 
@@ -890,7 +871,8 @@ async function scene(p: URLSearchParams): Promise<React.ReactElement | null> {
 
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams
-  const fonts = await loadFonts()
+  const [fonts, rays] = await Promise.all([loadFonts(), art('rays.png', 'png')])
+  RAYS = rays
   // A broken preview is a link nobody clicks, so anything that goes wrong
   // (a reset invite, a deleted game, a slow database) is the front door instead.
   const element = (await scene(params).catch(() => null)) ?? (await modeScene('home', null))

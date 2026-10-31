@@ -76,8 +76,7 @@ function soloPayload(run: DraftDone) {
 }
 
 function shareText(score: number) {
-  const t = tierFor(score)
-  return `Pack Empire · ${t.label} · ${score.toLocaleString()} accolades`
+  return `${score.toLocaleString()} in Empire Builder`
 }
 
 function readDifficulty(raw: string | null): Difficulty {

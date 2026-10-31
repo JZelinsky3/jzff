@@ -429,7 +429,7 @@ function DailyRecap({
           {result.share && (
             <ShareButton
               path={`/games/pack-empire/daily/?r=${encodeURIComponent(result.share)}`}
-              text={`${result.total.toLocaleString()} on today's Daily. Same packs, one try.`}
+              text={`${result.total.toLocaleString()} on today's Daily`}
             />
           )}
           <Link href="/games/pack-empire/daily/" className="pe-btn pe-btn--quiet">

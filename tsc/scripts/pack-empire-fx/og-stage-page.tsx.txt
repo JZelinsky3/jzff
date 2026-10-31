@@ -1,0 +1,172 @@
+import { maskCard } from '@/lib/packEmpire/deal'
+import { playerById } from '@/lib/packEmpire/pool'
+import type { Player } from '@/lib/packEmpire/rules'
+import { PackCard } from '../cards'
+import { peFonts } from '../fonts'
+
+// Temporary: the stage behind each Pack Empire link preview. Captured by
+// scripts/pack-empire-fx/og-stages.mjs, then removed. No text: the route draws it.
+
+type Seat = { id: string; x: number; y: number; spin: number; cs: number; blind?: boolean; down?: boolean }
+type Spec = {
+  accent: string
+  hot: string
+  ink: string
+  burst: [number, number]
+  seats: Seat[]
+  packs: { src: string; ratio: number; x: number; h: number; spin?: number }[]
+  front?: Seat[]
+}
+
+const fan = (ids: string[], cx: number, cy: number, reach: number, spread: number, cs: number, blind = false): Seat[] => {
+  const mid = (ids.length - 1) / 2
+  const order = ids.map((id, i) => ({ id, off: i - mid })).sort((a, b) => Math.abs(b.off) - Math.abs(a.off))
+  return order.map(({ id, off }) => {
+    const spin = (off / Math.max(mid, 1)) * spread
+    const a = (spin * Math.PI) / 180
+    return { id, x: cx + reach * Math.sin(a) * 1.5, y: cy - reach * Math.cos(a), spin, cs, blind }
+  })
+}
+
+const SPECS: Record<string, Spec> = {
+  home: {
+    accent: '#e8a84b', hot: '#ffd98a', ink: '#100c07', burst: [930, 236],
+    seats: fan(['wr-tyreek-hill-2023', 'wr-justin-jefferson-2022', 'qb-patrick-mahomes-2018', 'wr-jamarr-chase-2024', 'te-travis-kelce-2021'], 930, 262, 84, 42, 1.12),
+    packs: [{ src: 'home', ratio: 668 / 918, x: 930, h: 500 }],
+  },
+  builder: {
+    accent: '#e8a84b', hot: '#ffd98a', ink: '#100c07', burst: [930, 236],
+    seats: fan(['wr-justin-jefferson-2022', 'wr-jamarr-chase-2024', 'qb-lamar-jackson-2019', 'te-travis-kelce-2021'], 930, 232, 90, 36, 1.26),
+    packs: [{ src: 'builder', ratio: 596 / 854, x: 930, h: 500 }],
+  },
+  league: {
+    accent: '#b48cf0', hot: '#e4d2ff', ink: '#0c0814', burst: [930, 236],
+    seats: fan(['te-rob-gronkowski-2015', 'wr-jerry-rice-1995', 'qb-josh-allen-2022', 'wr-tyreek-hill-2020'], 930, 232, 90, 36, 1.26),
+    packs: [{ src: 'league', ratio: 596 / 854, x: 930, h: 500 }],
+  },
+  daily: {
+    accent: '#4fc3b0', hot: '#c8fff3', ink: '#06110f', burst: [930, 236],
+    seats: fan(['qb-tom-brady-2007', 'wr-justin-jefferson-2022', 'rb-christian-mccaffrey-2019', 'te-travis-kelce-2020'], 930, 232, 90, 36, 1.26, true),
+    packs: [{ src: 'daily', ratio: 596 / 854, x: 930, h: 500 }],
+  },
+  versus: {
+    accent: '#e2725b', hot: '#ffcdbf', ink: '#120807', burst: [930, 250],
+    seats: [
+      ...fan(['wr-jamarr-chase-2024', 'qb-patrick-mahomes-2018'], 800, 214, 78, 20, 1.14),
+      ...fan(['qb-josh-allen-2022', 'te-travis-kelce-2021'], 1060, 214, 78, 20, 1.14),
+    ],
+    packs: [
+      { src: 'versus-a', ratio: 596 / 854, x: 804, h: 470, spin: -7 },
+      { src: 'versus-b', ratio: 596 / 854, x: 1056, h: 470, spin: 7 },
+    ],
+  },
+  mega: {
+    accent: '#5fb3e8', hot: '#d3eeff', ink: '#060c13', burst: [930, 270],
+    seats: [],
+    packs: [],
+  },
+}
+
+const WALL = [
+  'qb-patrick-mahomes-2018', 'wr-cooper-kupp-2021', 'rb-christian-mccaffrey-2019', 'te-travis-kelce-2020',
+  'wr-jamarr-chase-2024', 'qb-lamar-jackson-2019', 'wr-tyreek-hill-2023', 'qb-josh-allen-2022',
+  'te-rob-gronkowski-2011', 'wr-puka-nacua-2025', 'wr-justin-jefferson-2022', 'rb-bijan-robinson-2025',
+]
+const FLIPPED = new Set([1, 6, 8, 11])
+
+function rng(seed: number) {
+  let s = seed
+  return () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646
+}
+
+function sparks(cx: number, cy: number, hot: string, n: number) {
+  const r = rng(77)
+  return Array.from({ length: n }, (_, i) => {
+    const a = r() * Math.PI * 2
+    const d = 120 + r() ** 0.7 * 560
+    const x = cx + Math.sin(a) * d * 1.25
+    const y = cy - Math.cos(a) * d * 0.72
+    const long = 6 + r() * 26
+    const fade = Math.max(0.15, 1 - d / 760)
+    if (x < 640) return null
+    return (
+      <i
+        key={i}
+        style={{
+          position: 'absolute', left: x, top: y, width: r() > 0.7 ? 3 : 2, height: long, borderRadius: 2,
+          background: r() > 0.5 ? '#fff' : hot, boxShadow: `0 0 8px ${hot}`, opacity: fade,
+          transform: `rotate(${(a * 180) / Math.PI}deg)`,
+        }}
+      />
+    )
+  })
+}
+
+function CardAt({ seat, front }: { seat: Seat; front?: boolean }) {
+  const p = playerById(seat.id) as Player
+  if (!p) return null
+  const player = seat.blind ? maskCard(p, 'season') : p
+  return (
+    <div style={{ position: 'absolute', left: seat.x, top: seat.y, width: 0, height: 0, zIndex: front ? 6 : 2 }}>
+      <div style={{ position: 'absolute', transform: `translate(-50%, -50%) rotate(${seat.spin}deg)`, ['--seat-cs' as string]: seat.cs, filter: 'drop-shadow(0 14px 22px rgba(0,0,0,.6))' }}>
+        <PackCard player={player} revealed={!seat.down} index={0} still disabled />
+      </div>
+    </div>
+  )
+}
+
+export default async function Page({ searchParams }: { searchParams: Promise<{ s?: string }> }) {
+  const { s = 'builder' } = await searchParams
+  if (s === 'photos') {
+    const cards = ['rb-arian-foster-2010', 'rb-adrian-peterson-2012', 'rb-arian-foster-2014', 'rb-adrian-peterson-2018', 'qb-lamar-jackson-2019']
+    return (
+      <main className={`pe-theme photos ${peFonts}`} style={{ padding: 30, display: 'flex', gap: 30, background: '#141311', minHeight: '100vh' }}>
+        <style>{`.photos .pe-card { --pe-cs: 1.7; } nextjs-portal { display: none; }`}</style>
+        {cards.map((id, i) => {
+          const p = playerById(id) as Player
+          const local = i < 2 ? { ...p, img: `/tmp-pe/${id}.webp` } : p
+          return <div key={id}><PackCard player={local} revealed index={0} disabled /></div>
+        })}
+      </main>
+    )
+  }
+  const spec = SPECS[s] ?? SPECS.builder
+  const [bx, by] = spec.burst
+  const pctX = (bx / 1200) * 100
+  const pctY = (by / 630) * 100
+  return (
+    <main className={`pe-theme ${peFonts}`} style={{ margin: 0, padding: 0 }}>
+      <style>{`
+        nextjs-portal { display: none !important; }
+        html, body { margin: 0; padding: 0; background: ${spec.ink} !important; }
+        nav, header, footer, .nav, .dock { display: none !important; }
+        #stage { position: fixed; left: 0; top: 0; width: 1200px; height: 630px; overflow: hidden; background: ${spec.ink}; z-index: 9999; }
+        #stage .pe-card { cursor: default; animation: none !important; --pe-cs: var(--seat-cs, 1); }
+        .photos .pe-card { --pe-cs: 2; }
+        #stage .pe-card * { animation-delay: 0s; }
+      `}</style>
+      <div id="stage">
+        <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse 620px 420px at ${pctX}% ${pctY}%, ${spec.accent}cc 0%, ${spec.accent}66 34%, ${spec.accent}1f 66%, transparent 100%)` }} />
+        <div style={{ position: 'absolute', inset: 0, background: `repeating-conic-gradient(from -4deg at ${pctX}% ${pctY}%, ${spec.hot}2e 0deg 5deg, transparent 5deg 11deg, ${spec.accent}3a 11deg 14deg, transparent 14deg 19deg)`, WebkitMaskImage: `radial-gradient(ellipse 900px 640px at ${pctX}% ${pctY}%, #000 22%, rgba(0,0,0,.45) 56%, transparent 100%)` }} />
+        <div style={{ position: 'absolute', inset: 0, opacity: 0.05, background: `repeating-linear-gradient(115deg, ${spec.hot} 0 1px, transparent 1px 9px)` }} />
+        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${spec.ink} 0%, ${spec.ink}f2 34%, ${spec.ink}8c 50%, transparent 66%)`, zIndex: 3 }} />
+        {s === 'mega' ? (
+          <div style={{ position: 'absolute', left: 930, top: 280, width: 0, height: 0, zIndex: 4 }}>
+            <div style={{ position: 'absolute', transform: 'translate(-50%, -50%) perspective(1400px) rotateY(-16deg) rotateZ(4deg)', display: 'grid', gridTemplateColumns: 'repeat(4, auto)', gap: 12, ['--seat-cs' as string]: 0.74 }}>
+              {WALL.map((id, i) => <PackCard key={id} player={playerById(id) as Player} revealed={!FLIPPED.has(i)} index={0} still disabled />)}
+            </div>
+          </div>
+        ) : (
+          <div style={{ position: 'absolute', inset: 0, zIndex: 4 }}>
+            {spec.seats.map((seat) => <CardAt key={seat.id} seat={seat} />)}
+            {spec.packs.map((p) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={p.src} src={`/og/pack-empire/${p.src}.png`} alt="" style={{ position: 'absolute', left: p.x - (p.h * p.ratio) / 2, top: 546 - p.h, height: p.h, width: p.h * p.ratio, zIndex: 5, transform: p.spin ? `rotate(${p.spin}deg)` : undefined, transformOrigin: '50% 100%' }} />
+            ))}
+          </div>
+        )}
+        <div style={{ position: 'absolute', inset: 0, zIndex: 3 }}>{sparks(bx, by - 30, spec.hot, 150)}</div>
+      </div>
+    </main>
+  )
+}
