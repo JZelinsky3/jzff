@@ -11,6 +11,7 @@ import { socialLive } from '@/lib/social/config'
 import { KIND_LABELS, type Kind } from '@/lib/social/content'
 import { POOL_SIZE } from '@/lib/packEmpire/pool'
 import { SHARE_PAGES } from '@/lib/sharePages'
+import { signupPlace } from '@/lib/signupFrom'
 import { ADMIN_TZ, PLATFORM_LABEL, fmtDay } from './format'
 
 type Db = ReturnType<typeof createAdminClient>
@@ -34,6 +35,8 @@ export type Member = {
   joined: string
   heardVia: string | null
   heardOther: string | null
+  /** The page they signed up from (lib/signupFrom). Null before 2026-10-31. */
+  cameFrom: string | null
   lastSeen: string | null
   plan: Plan
   /** Their Stripe row when the plan shown is a comp, so the drawer can say both. */
@@ -80,6 +83,8 @@ export type AdminData = {
   attention: Attention[]
   rooms: Room[]
   members: Member[]
+  /** Where signups came from, most first. Only accounts from 2026-10-31 on have one. */
+  signupPlaces: { place: string; n: number }[]
   ownLeftOut: number
   leagues: LeagueItem[]
   emptyLeagues: LeagueItem[]
@@ -147,6 +152,7 @@ export async function loadAdmin(): Promise<AdminData> {
   ])
 
   const users = authRes.data?.users ?? []
+  const signupFromById = new Map(users.map((u) => [u.id, u.user_metadata?.signup_from as string | undefined]))
   const own = await ownAccountIds(db, users)
   const emailById = new Map(users.map((u) => [u.id, u.email ?? null]))
   const subByUser = new Map(((subsRes.data ?? []) as Sub[]).map((s) => [s.user_id, s]))
@@ -224,6 +230,7 @@ export async function loadAdmin(): Promise<AdminData> {
   }
 
   // ── Members ──
+  const leagueNameBySlug = new Map(leagues.map((l) => [l.slug, l.name]))
   const leaguesByOwner = new Map<string, { name: string; slug: string; empty: boolean }[]>()
   for (const l of leagues) {
     if (!leaguesByOwner.has(l.owner_id)) leaguesByOwner.set(l.owner_id, [])
@@ -259,6 +266,7 @@ export async function loadAdmin(): Promise<AdminData> {
       joined: p.created_at,
       heardVia: p.referral_source ? REFERRAL_LABELS[p.referral_source] ?? p.referral_source : p.referral_source_other ? 'Other' : null,
       heardOther: p.referral_source_other,
+      cameFrom: signupPlace(signupFromById.get(p.id), (slug) => leagueNameBySlug.get(slug)),
       lastSeen: lastSeen.get(p.id) ?? null,
       plan,
       subNote,
@@ -267,6 +275,10 @@ export async function loadAdmin(): Promise<AdminData> {
       bookmarks: bookmarksByUser.get(p.id) ?? [],
     }
   })
+
+  const placeCounts = new Map<string, number>()
+  for (const m of members) if (m.cameFrom) placeCounts.set(m.cameFrom, (placeCounts.get(m.cameFrom) ?? 0) + 1)
+  const signupPlaces = [...placeCounts].map(([place, n]) => ({ place, n })).sort((a, b) => b.n - a.n)
 
   // ── Accounts ──
   const accounts = { paying: 0, mrrCents: 0, trial: 0, trialCancels: 0, comped: 0, canceled: 0, free: 0 }
@@ -386,6 +398,7 @@ export async function loadAdmin(): Promise<AdminData> {
     attention,
     rooms,
     members,
+    signupPlaces,
     ownLeftOut: profiles.length - members.length,
     leagues: withData,
     emptyLeagues,

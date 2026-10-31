@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
+import { peMeta } from '@/lib/packEmpire/meta'
 import { leagueView } from '@/lib/packEmpire/league'
 import { PACK_TIER_COLOR, PACK_TIER_LABEL, PHASE_LABEL, REGULAR_WEEKS } from '@/lib/packEmpire/rules'
 import mobileStyles from '../../../mobile.module.css'
@@ -19,10 +20,20 @@ export const viewport: Viewport = { themeColor: '#141311', width: 'device-width'
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
   const v = await leagueView(id.toUpperCase(), null)
-  return {
+  const champ = v?.champion ? v.standings.find((s) => s.memberId === v.champion) : null
+  return peMeta({
     title: v ? `${v.league.name} · Pack Empire League` : 'League Mode · Pack Empire',
+    description: champ
+      ? `${champ.team ?? champ.name} won it all.`
+      : v?.league.phase === 'pregame'
+        ? `${v.standings.length} of ${v.league.max_players} teams are in. Eight weeks of pack drafts, then a Gauntlet and a Final.`
+        : 'Eight weeks of pack drafts with keepers and chemistry, then a Gauntlet and a Final.',
+    card: v
+      ? { c: 'lg', id: v.league.id, s: `${v.league.phase}${v.league.current_week}-${v.standings.length}${v.champion ? '-c' : ''}` }
+      : { c: 'league' },
+    alt: 'A Pack Empire league',
     robots: { index: false, follow: false },
-  }
+  })
 }
 
 export default async function LeagueHome({ params }: { params: Promise<{ id: string }> }) {

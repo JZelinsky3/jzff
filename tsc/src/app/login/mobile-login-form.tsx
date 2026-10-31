@@ -1,5 +1,6 @@
 'use client'
 
+import { signupFrom } from '@/lib/signupFrom'
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -45,12 +46,14 @@ export function MobileLoginForm({ next, initialMode = 'signin' }: { next?: strin
     }
 
     const redirectTo = new URL('/auth/callback', window.location.origin)
+    redirectTo.searchParams.set('from', signupFrom())
     if (next) redirectTo.searchParams.set('next', next)
     // Optional referral metadata — handle_new_user picks these up.
     const meta: Record<string, string> = {}
     if (referral) meta.referral_source = referral
     const otherTrim = referralOther.trim()
     if (otherTrim) meta.referral_source_other = otherTrim.slice(0, 120)
+    meta.signup_from = signupFrom()
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -72,6 +75,7 @@ export function MobileLoginForm({ next, initialMode = 'signin' }: { next?: strin
     reset(); setStatus('submitting')
     const supabase = createClient()
     const redirectTo = new URL('/auth/callback', window.location.origin)
+    redirectTo.searchParams.set('from', signupFrom())
     if (next) redirectTo.searchParams.set('next', next)
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -91,6 +95,7 @@ export function MobileLoginForm({ next, initialMode = 'signin' }: { next?: strin
     reset(); setStatus('submitting')
     const supabase = createClient()
     const redirectTo = new URL('/auth/callback', window.location.origin)
+    redirectTo.searchParams.set('from', signupFrom())
     redirectTo.searchParams.set('next', '/account')
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectTo.toString(),
@@ -131,6 +136,7 @@ export function MobileLoginForm({ next, initialMode = 'signin' }: { next?: strin
     reset(); setStatus('submitting')
     const supabase = createClient()
     const redirectTo = new URL('/auth/callback', window.location.origin)
+    redirectTo.searchParams.set('from', signupFrom())
     if (next) redirectTo.searchParams.set('next', next)
     if (mode === 'signup' && referral) {
       redirectTo.searchParams.set('ref', referral)

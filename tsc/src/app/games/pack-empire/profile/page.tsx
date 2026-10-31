@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { PlayHub } from '@/components/account/PlayHub'
 import { RecordBook } from '@/components/account/RecordBook'
 import { SiteFooter } from '@/components/SiteFooter'
+import { peMeta } from '@/lib/packEmpire/meta'
 import { friendIds, friendsState } from '@/lib/friends'
 import { publicNames } from '@/lib/minigames/boardIdentity'
 import { loadRecords } from '@/lib/minigames/profileRecords'
@@ -24,11 +25,13 @@ export const dynamic = 'force-dynamic'
 
 export const viewport: Viewport = { themeColor: '#141311', width: 'device-width', initialScale: 1 }
 
-export const metadata: Metadata = {
+export const metadata: Metadata = peMeta({
   title: 'Games Profile · Pack Empire',
   description: 'Your friends, your head-to-head records and your record book across the Games Page.',
+  card: { c: 'profile' },
+  alt: 'Games Profile',
   robots: { index: false, follow: false },
-}
+})
 
 export default async function GamesProfilePage() {
   const supabase = await createClient()

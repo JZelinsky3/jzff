@@ -3,13 +3,16 @@ import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
-import { dailyLobby, type DailyBoard } from '@/lib/packEmpire/daily'
+import { dailyLobby, dailySpec, type DailyBoard } from '@/lib/packEmpire/daily'
+import { dailyViewer } from '@/lib/packEmpire/dailyWho'
 import { maskCard } from '@/lib/packEmpire/deal'
+import { peMeta } from '@/lib/packEmpire/meta'
 import { playerById } from '@/lib/packEmpire/pool'
+import { readDaily } from '@/lib/packEmpire/share'
 import { CHEM_LINES, DAILY_PACK_SECONDS, DIFFICULTY_LOOK, SLOT_COUNT } from '@/lib/packEmpire/rules'
 import mobileStyles from '../../mobile.module.css'
 import { PackCard } from '../cards'
-import { PeChrome, PeDock } from '../chrome'
+import { HowItWorks, PeChrome, PeDock } from '../chrome'
 import { peFonts } from '../fonts'
 import { DailyTop, longDay, shortDay } from './parts'
 
@@ -17,9 +20,24 @@ export const dynamic = 'force-dynamic'
 
 export const viewport: Viewport = { themeColor: '#141311', width: 'device-width', initialScale: 1 }
 
-export const metadata: Metadata = {
-  title: 'The Daily · Pack Empire',
-  description: 'One deal for everyone, one try. Blind cards, wild packs and a new rule every day.',
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ r?: string }> }): Promise<Metadata> {
+  const { r } = await searchParams
+  const score = readDaily(r)
+  const rule = dailySpec(score?.day ?? null)
+  if (score) {
+    return peMeta({
+      title: `${score.name} put up ${score.score.toLocaleString('en-US')} on the Daily · Pack Empire`,
+      description: `Same packs for everyone, one try. Rule: ${rule.title}.`,
+      card: { c: 'day', r },
+      alt: 'A score on the Daily',
+    })
+  }
+  return peMeta({
+    title: 'The Daily · Pack Empire',
+    description: `Today's rule: ${rule.title}. One deal for everyone, one try.`,
+    card: { c: 'daily', d: rule.day },
+    alt: 'The Daily',
+  })
 }
 
 const VERSION_LINE: Record<DailyBoard['version'], string> = {
@@ -33,7 +51,7 @@ const COVER: Record<DailyBoard['version'], string> = {
   season: 'qb-tom-brady-2007',
 }
 
-function PlayTile({ board, signedIn }: { board: DailyBoard; signedIn: boolean }) {
+function PlayTile({ board }: { board: DailyBoard }) {
   const href = `/games/pack-empire/daily/play/?v=${board.version}`
   const done = board.yourStep === SLOT_COUNT
   const started = board.yourStep != null && !done
@@ -57,13 +75,9 @@ function PlayTile({ board, signedIn }: { board: DailyBoard; signedIn: boolean })
                 {board.yourRank === 1 ? 'First' : `No. ${board.yourRank}`} of {board.entrants.toLocaleString()}
               </span>
             </Link>
-          ) : signedIn ? (
+          ) : (
             <Link href={href} className="pe-btn">
               {started ? `Pick Up At Pack ${(board.yourStep ?? 0) + 1}` : 'Play'}
-            </Link>
-          ) : (
-            <Link href={`/login?next=${encodeURIComponent(href)}`} className="pe-btn">
-              Sign In To Play
             </Link>
           )}
         </div>
@@ -78,7 +92,60 @@ export default async function DailyPage() {
     data: { user },
   } = await supabase.auth.getUser()
   const mobile = (await getViewMode()) === 'mobile'
-  const lobby = await dailyLobby(user?.id ?? null)
+  const lobby = await dailyLobby(await dailyViewer(user?.id ?? null))
+
+  const rules = (
+    <div className="pe-rules">
+      <div className="pe-rule">
+        <span>
+          <b>Everybody opens the same packs in the same order,</b> and you only get one try at each version.
+        </span>
+      </div>
+      <div className="pe-rule">
+        <span>
+          <b>Every card is blind.</b> No rarity colours, no stats, no running total. It all turns over on your
+          last pick.
+        </span>
+      </div>
+      <div className="pe-rule">
+        <span>
+          <b>The clock runs.</b> You get {DAILY_PACK_SECONDS} seconds a pack from the moment you open it. Run out
+          and the first card that fits signs. There&apos;s no clock between packs.
+        </span>
+      </div>
+      <div className="pe-rule">
+        <span>
+          <b>Big names aren&apos;t always big seasons.</b> Stars turn up in their worst years here, on purpose.
+          On Range, some ranges are tight and some barely tell you anything.
+        </span>
+      </div>
+      <div className="pe-rule">
+        <span>
+          <b>Packs are wild.</b> Five positions in each. Keep one you have a slot for, and it takes that slot.
+          The others stay on the table so you can see what you passed up.
+        </span>
+      </div>
+      <div className="pe-rule">
+        <span>
+          <b>You can&apos;t get stuck.</b>{' '}
+          If nothing in a pack fits, one card is swapped for a reserve at the
+          position you need. It&apos;s the same reserve for everyone, and it&apos;s never a star, so leaving a
+          position late costs you.
+        </span>
+      </div>
+      <div className="pe-rule">
+        <span>
+          <b>Chemistry counts double.</b> {CHEM_LINES[1]} One real team is hidden across the packs every day.
+        </span>
+      </div>
+      <div className="pe-rule">
+        <span>
+          <b>It&apos;s all for the board.</b> Everyone gets these same packs, so nothing from the Daily goes in
+          your binder.
+        </span>
+      </div>
+    </div>
+  )
 
   return (
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.root : ''}`.trim()}>
@@ -104,7 +171,7 @@ export default async function DailyPage() {
 
         <div className="pe-dgames">
           {lobby.boards.map((b) => (
-            <PlayTile key={b.version} board={b} signedIn={!!user} />
+            <PlayTile key={b.version} board={b} />
           ))}
         </div>
 
@@ -121,61 +188,7 @@ export default async function DailyPage() {
           </div>
         </section>
 
-        <section className="pe-sec">
-          <div className="pe-sec-head">
-            <span className="pe-sec-num">§ How it works</span>
-          </div>
-          <div className="pe-rules">
-            <div className="pe-rule">
-              <span>
-                <b>Everybody opens the same packs in the same order,</b> and you only get one try at each version.
-              </span>
-            </div>
-            <div className="pe-rule">
-              <span>
-                <b>Every card is blind.</b> No rarity colours, no stats, no running total. It all turns over on your
-                last pick.
-              </span>
-            </div>
-            <div className="pe-rule">
-              <span>
-                <b>The clock runs.</b> You get {DAILY_PACK_SECONDS} seconds a pack from the moment you open it. Run out
-                and the first card that fits signs. There&apos;s no clock between packs.
-              </span>
-            </div>
-            <div className="pe-rule">
-              <span>
-                <b>Big names aren&apos;t always big seasons.</b> Stars turn up in their worst years here, on purpose.
-                On Range, some ranges are tight and some barely tell you anything.
-              </span>
-            </div>
-            <div className="pe-rule">
-              <span>
-                <b>Packs are wild.</b> Five positions in each. Keep one you have a slot for, and it takes that slot.
-                The others stay on the table so you can see what you passed up.
-              </span>
-            </div>
-            <div className="pe-rule">
-              <span>
-                <b>You can&apos;t get stuck.</b>{' '}
-                If nothing in a pack fits, one card is swapped for a reserve at the
-                position you need. It&apos;s the same reserve for everyone, and it&apos;s never a star, so leaving a
-                position late costs you.
-              </span>
-            </div>
-            <div className="pe-rule">
-              <span>
-                <b>Chemistry counts double.</b> {CHEM_LINES[1]} One real team is hidden across the packs every day.
-              </span>
-            </div>
-            <div className="pe-rule">
-              <span>
-                <b>It&apos;s all for the board.</b> Everyone gets these same packs, so nothing from the Daily goes in
-                your binder.
-              </span>
-            </div>
-          </div>
-        </section>
+        <HowItWorks mobile={mobile}>{rules}</HowItWorks>
 
         {lobby.yours.length > 0 && (
           <section className="pe-sec">

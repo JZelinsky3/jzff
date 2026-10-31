@@ -82,7 +82,9 @@ def main():
     # Two different men under one name: the later one gets his suffix.
     by_name = {}
     for c in cards: by_name.setdefault(c['name'], set()).add(c['pid'])
-    SUFFIX = {'Kellen Winslow': 'Kellen Winslow II'}
+    # (Two Mike Williamses share the plain name: one's a 2010 Buccaneer, the
+    # other a Charger, and neither ever went by anything else.)
+    SUFFIX = {'Kellen Winslow': 'Kellen Winslow II', 'Michael Pittman': 'Michael Pittman Jr.', 'Mike Williams': 'Mike Williams'}
     for c in cards:
         if len(by_name[c['name']]) > 1:
             first = min(cc['year'] for cc in cards if cc['name'] == c['name'] and cc['pid'] == c['pid'])
@@ -95,6 +97,8 @@ def main():
         assert len(c['id']) <= 40, c['id']
     ids = [c['id'] for c in cards]
     assert len(ids) == len(set(ids)), [i for i in ids if ids.count(i) > 1]
+    held = pd.Series([c['pid'] for c in cards]).value_counts()
+    assert held.max() <= 4, held.head()
 
     order = ['QB', 'RB', 'WR', 'TE', 'OT', 'OG', 'C']
     # Ties by id: deals depend on this order, so a rebuild can't be left to shuffle it.

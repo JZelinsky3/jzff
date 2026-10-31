@@ -2,7 +2,7 @@
 // open in slot order, keep the best card in every pack.
 import { newCaptainSeed } from '../../../src/lib/packEmpire/deal'
 import { soloPack } from '../../../src/lib/packEmpire/solo'
-import { POOL } from '../../../src/lib/packEmpire/pool'
+import { POOL, cardWeight } from '../../../src/lib/packEmpire/pool'
 import { SLOT_COUNT, TIERS, tierFor, packOdds, SOLO_WEIGHTS, RARITIES, POOL_KEYS } from '../../../src/lib/packEmpire/rules'
 
 const N = Number(process.argv[2] ?? 3000)
@@ -32,6 +32,6 @@ for (const t of TIERS) {
 const med = (a: number[]) => a.sort((x, y) => x - y)[Math.floor(a.length / 2)]
 console.log('median by captain slot', byCap.map(med).join(' '))
 for (const k of POOL_KEYS) {
-  const o = packOdds(POOL[k], SOLO_WEIGHTS.normal)
+  const o = packOdds(POOL[k], (p) => cardWeight(p, SOLO_WEIGHTS.normal))
   console.log(k.padEnd(3), POOL[k].length, RARITIES.map((r) => `${r.slice(0, 3)} ${(o[r] * 100).toFixed(1)}%`).join('  '))
 }

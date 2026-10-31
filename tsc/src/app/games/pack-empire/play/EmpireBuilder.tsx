@@ -38,6 +38,7 @@ import {
 } from '../../runBank'
 import { CaptainDraft, type DraftDone } from '../CaptainDraft'
 import { DifficultyPicker, DifficultyTabs } from '../Difficulty'
+import { GuestName } from '../GuestName'
 import { Bonds, Field, Ladder } from '../cards'
 import { easeClimb, useCountUp } from '../stage'
 import { storageChanged, useStored } from '../clientStore'
@@ -158,7 +159,10 @@ export function EmpireBuilder({ signedIn, initial }: { signedIn: boolean; initia
 
   const share = async () => {
     if (!run) return
-    const url = `${window.location.origin}/games/pack-empire/`
+    // A run on the board has its own page, and its own preview. One that never
+    // posted has nothing to point at but the game.
+    const page = post && typeof post === 'object' && post.runId ? `run/${post.runId}/` : 'play/'
+    const url = `${window.location.origin}/games/pack-empire/${page}`
     const text = shareText(reveal?.score ?? run.score)
     try {
       if (navigator.share) {
@@ -236,45 +240,6 @@ function boardHref(diff: Difficulty): string {
   return `/games/pack-empire/board/${diff === 'open' ? '' : `?diff=${diff}`}`
 }
 
-/** No account: a name puts the run on the board, an account keeps the rest. */
-function GuestName({ error, onPost }: { error: string | null; onPost: (name: string) => Promise<void> }) {
-  const [name, setName] = useState('')
-  const [busy, setBusy] = useState(false)
-
-  const submit = async () => {
-    if (busy || name.trim().length < 2) return
-    setBusy(true)
-    await onPost(name)
-    setBusy(false)
-  }
-
-  return (
-    <div className="pe-recap-name">
-      <div className="pe-recap-name-row">
-        <input
-          className="pe-input"
-          placeholder="Your name"
-          aria-label="Your name for the board"
-          value={name}
-          maxLength={24}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && submit()}
-        />
-        <button type="button" className="pe-btn" onClick={submit} disabled={busy || name.trim().length < 2}>
-          {busy ? 'Posting' : 'Post'}
-        </button>
-      </div>
-      {error && <div className="pe-error">{error}</div>}
-      <p className="pe-note">
-        <Link className="pe-link" href={SIGN_IN_HREF}>
-          Sign in
-        </Link>{' '}
-        instead to save your drafts and binder.
-      </p>
-    </div>
-  )
-}
-
 /** A blind lineup, locked and not yet turned over. */
 function Sealed({
   run,
@@ -300,7 +265,7 @@ function Sealed({
           {post === 'banked' && 'Add a name and your eleven turn over. This is final: a run only gets scored once.'}
           {failed && (post as PostOutcome).error}
         </p>
-        {post === 'banked' && <GuestName error={nameError} onPost={onGuestName} />}
+        {post === 'banked' && <GuestName error={nameError} onPost={onGuestName} signIn={SIGN_IN_HREF} />}
         {failed && (
           <div className="pe-recap-actions">
             <button type="button" className="pe-btn" onClick={onAgain}>
@@ -405,7 +370,7 @@ function Recap({
           {post && typeof post === 'object' && !post.ok && post.error}
         </p>
 
-        {post === 'banked' && landed && <GuestName error={nameError} onPost={onGuestName} />}
+        {post === 'banked' && landed && <GuestName error={nameError} onPost={onGuestName} signIn={SIGN_IN_HREF} />}
 
         <div className="pe-recap-actions">
           <button type="button" className="pe-btn" onClick={onAgain}>

@@ -3,10 +3,9 @@
 import { useState } from 'react'
 import { useOrigin } from './clientStore'
 
-/** The link to send, with the phone's own share sheet behind the button and
-    a copy to the clipboard where there isn't one. The URL is written out in
-    full so it can be copied by hand if both fail. */
-export function ShareLink({ path, title, text }: { path: string; title: string; text: string }) {
+/** The phone's own share sheet, or a copy to the clipboard where there isn't
+    one. A link preview is what sells it, so nothing but the URL is needed. */
+function useShare(path: string, title: string, text: string) {
   const [copied, setCopied] = useState(false)
   const origin = useOrigin()
   const url = `${origin}${path}`
@@ -25,9 +24,37 @@ export function ShareLink({ path, title, text }: { path: string; title: string; 
       setCopied(true)
       window.setTimeout(() => setCopied(false), 2000)
     } catch {
-      // Nothing else to try; the link is on screen to copy by hand.
+      // Nothing else to try.
     }
   }
+
+  return { url, copied, share }
+}
+
+/** A result's button: the score's own link behind a plain Share. */
+export function ShareButton({
+  path,
+  title = 'Pack Empire',
+  text,
+  className = 'pe-btn pe-btn--ghost',
+}: {
+  path: string
+  title?: string
+  text: string
+  className?: string
+}) {
+  const { copied, share } = useShare(path, title, text)
+  return (
+    <button type="button" className={className} onClick={share}>
+      {copied ? 'Copied' : 'Share'}
+    </button>
+  )
+}
+
+/** The link to send, written out in full so it can be copied by hand if the
+    button fails. */
+export function ShareLink({ path, title, text }: { path: string; title: string; text: string }) {
+  const { url, copied, share } = useShare(path, title, text)
 
   return (
     <div className="pe-share">

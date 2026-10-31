@@ -13,7 +13,15 @@
 // Refreshing re-deals the identical pack, so there is nothing to reroll.
 
 import { createHmac, hkdfSync, randomBytes } from 'crypto'
-import { POOL, POOL_VERSION, personOfId, versionsOf } from './pool'
+import {
+  DAILY_NEW_POOL_FROM,
+  POOL,
+  POOL_BEFORE,
+  POOL_BEFORE_VERSION,
+  POOL_VERSION,
+  cardWeight,
+  personOfId,
+} from './pool'
 import {
   MEGA_POOL_COUNTS,
   MEGA_TOTAL_PICKS,
@@ -62,8 +70,40 @@ function key(): Buffer {
   return cachedKey
 }
 
-function hmac(label: string): Buffer {
-  return createHmac('sha256', key()).update(`${POOL_VERSION}|${label}`).digest()
+function hmac(label: string, version: string = POOL_VERSION): Buffer {
+  return createHmac('sha256', key()).update(`${version}|${label}`).digest()
+}
+
+/** For what belongs to a card rather than a deal, its range and its salary.
+    Tied to one fixed version, so they hold still when the pool grows. */
+function cardHash(label: string): Buffer {
+  return hmac(label, POOL_BEFORE_VERSION)
+}
+
+/**
+ * What a deal is dealt from. Only the Daily ever asks for anything but the
+ * current one: a day's deal is fixed by its date, so a day already under way
+ * stays on the pool it started on (see DAILY_NEW_POOL_FROM).
+ */
+type Era = {
+  version: string
+  pool: Record<PoolKey, Player[]>
+  weigh: (p: Player, weights: Weights) => number
+  seasons?: Player[][]
+  traps?: Map<PoolKey, Player[]>
+}
+
+const CURRENT_ERA: Era = { version: POOL_VERSION, pool: POOL, weigh: cardWeight }
+
+/** Raw table weights: cardWeight only exists for pools that have grown since. */
+const BEFORE_ERA: Era = {
+  version: POOL_BEFORE_VERSION,
+  pool: POOL_BEFORE,
+  weigh: (p, weights) => Math.max(0, weights[p.rarity] ?? 0),
+}
+
+function dailyEra(day: string): Era {
+  return day < DAILY_NEW_POOL_FROM ? BEFORE_ERA : CURRENT_ERA
 }
 
 // ============================================================
@@ -132,8 +172,8 @@ export function newServerSeed(): string {
 // ============================================================
 
 /** sfc32, seeded from an HMAC so every stream is unguessable and replayable. */
-function stream(label: string): () => number {
-  const d = hmac(label)
+function stream(label: string, version?: string): () => number {
+  const d = hmac(label, version)
   let a = d.readUInt32LE(0)
   let b = d.readUInt32LE(4)
   let c = d.readUInt32LE(8)
@@ -154,11 +194,11 @@ function stream(label: string): () => number {
   }
 }
 
-function sampler(pool: Player[], weights: Weights): (r: number) => Player | null {
+function sampler(pool: Player[], weights: Weights, weigh: Era['weigh'] = cardWeight): (r: number) => Player | null {
   const cum: number[] = []
   let total = 0
   for (const p of pool) {
-    total += Math.max(0, weights[p.rarity] ?? 0)
+    total += weigh(p, weights)
     cum.push(total)
   }
   return (r: number) => {
@@ -274,7 +314,7 @@ export const RANGE_WIDTH = 2000
  * would read "0-2,000" and that would be the rarity again.
  */
 export function rangeOf(p: Player, width: number = RANGE_WIDTH, label = 'range'): { lo: number; hi: number } {
-  const at = hmac(`${label}|${p.id}`).readUInt16LE(0) / 65535
+  const at = cardHash(`${label}|${p.id}`).readUInt16LE(0) / 65535
   const lowest = Math.max(0, p.score - 0.92 * width)
   const highest = p.score > 0.08 * width ? p.score - 0.08 * width : p.score / 2
   const lo = Math.floor((lowest + at * (highest - lowest)) / 100) * 100
@@ -292,7 +332,7 @@ export function rangeOf(p: Player, width: number = RANGE_WIDTH, label = 'range')
 const DAILY_WIDTHS = [1400, 2800, 4000]
 
 export function dailyRange(p: Player): { lo: number; hi: number } {
-  return rangeOf(p, DAILY_WIDTHS[hmac(`daily-width|${p.id}`)[0] % DAILY_WIDTHS.length], 'daily-range')
+  return rangeOf(p, DAILY_WIDTHS[cardHash(`daily-width|${p.id}`)[0] % DAILY_WIDTHS.length], 'daily-range')
 }
 
 /** A card on the Daily's table. */
@@ -308,7 +348,7 @@ export function maskDaily(p: Player, version: 'range' | 'season'): Player {
  * bargain worth finding, and on a blind card it's as much of a clue as you get.
  */
 export function salaryOf(p: Player): number {
-  const at = hmac(`salary|${p.id}`).readUInt16LE(0) / 65535
+  const at = cardHash(`salary|${p.id}`).readUInt16LE(0) / 65535
   return Math.max(1, Math.round((p.score / 100) * (0.6 + 0.8 * at)))
 }
 
@@ -356,10 +396,18 @@ export function cpuEye(seed: string, diff: Difficulty): (p: Player) => number {
 // same five men in a different order.
 
 /** One card per man, drawn weighted without replacement. */
-function drawInto(out: Player[], pool: Player[], want: number, weights: Weights, used: Set<string>, rnd: () => number) {
+function drawInto(
+  out: Player[],
+  pool: Player[],
+  want: number,
+  weights: Weights,
+  used: Set<string>,
+  rnd: () => number,
+  weigh: Era['weigh'] = cardWeight
+) {
   for (let n = 0; n < want; n++) {
     const open = pool.filter((p) => !used.has(personOf(p)))
-    const p = open.length ? sampler(open, weights)(rnd()) : null
+    const p = open.length ? sampler(open, weights, weigh)(rnd()) : null
     if (!p) return
     used.add(personOf(p))
     out.push(p)
@@ -375,25 +423,23 @@ function shuffled<T>(list: T[], rnd: () => number): T[] {
   return out
 }
 
-let cachedSeasons: Player[][] | null = null
-
 /** Real team-seasons deep enough to build around: four cards or more at three
     positions or more. Sorted, because a deal must not depend on JSON order. */
-function teamSeasons(): Player[][] {
-  if (cachedSeasons) return cachedSeasons
+function teamSeasons(era: Era): Player[][] {
+  if (era.seasons) return era.seasons
   const by = new Map<string, Player[]>()
   for (const k of POOL_KEYS) {
-    for (const p of POOL[k]) {
+    for (const p of era.pool[k]) {
       if (!p.year) continue
       const key = `${p.year} ${p.team}`
       by.set(key, [...(by.get(key) ?? []), p])
     }
   }
-  cachedSeasons = [...by.keys()]
+  era.seasons = [...by.keys()]
     .sort()
     .map((key) => by.get(key) as Player[])
     .filter((cards) => cards.length >= 4 && new Set(cards.map((c) => c.pos)).size >= 3)
-  return cachedSeasons
+  return era.seasons
 }
 
 /**
@@ -401,8 +447,8 @@ function teamSeasons(): Player[][] {
  * among everything else, nothing marks them, and finding them pays double
  * chemistry. It's the reason to know who actually played together in 2019.
  */
-function plantedSeason(rnd: () => number): Player[] {
-  const seasons = teamSeasons()
+function plantedSeason(rnd: () => number, era: Era = CURRENT_ERA): Player[] {
+  const seasons = teamSeasons(era)
   const cards = shuffled(seasons[Math.floor(rnd() * seasons.length)], rnd)
   const seen = new Set<string>()
   return cards.filter((c) => !seen.has(personOf(c)) && !!seen.add(personOf(c)))
@@ -430,27 +476,29 @@ export function evenPacks(seed: string): Player[][] {
     famous man in the pack is a real strategy, and these are what beat it. */
 const TRAP_CHANCE = 0.8
 
-let cachedTraps: Map<PoolKey, Player[]> | null = null
-
-function trapsAt(k: PoolKey): Player[] {
-  if (!cachedTraps) {
-    cachedTraps = new Map()
+function trapsAt(k: PoolKey, era: Era): Player[] {
+  if (!era.traps) {
+    const best = new Map<string, number>()
     for (const key of POOL_KEYS) {
-      cachedTraps.set(
+      for (const p of era.pool[key]) best.set(personOf(p), Math.max(best.get(personOf(p)) ?? 0, p.score))
+    }
+    era.traps = new Map()
+    for (const key of POOL_KEYS) {
+      era.traps.set(
         key,
-        POOL[key].filter((p) => {
-          const best = versionsOf(personOf(p))[0]?.score ?? 0
-          return best >= RARITY_FLOOR.dynasty && p.score <= best * 0.4
+        era.pool[key].filter((p) => {
+          const top = best.get(personOf(p)) ?? 0
+          return top >= RARITY_FLOOR.dynasty && p.score <= top * 0.4
         })
       )
     }
   }
-  return cachedTraps.get(k) ?? []
+  return era.traps.get(k) ?? []
 }
 
 /** One trap at this position, if one's left. */
-function drawTrap(out: Player[], k: PoolKey, used: Set<string>, rnd: () => number): boolean {
-  const open = trapsAt(k).filter((p) => !used.has(personOf(p)))
+function drawTrap(out: Player[], k: PoolKey, used: Set<string>, rnd: () => number, era: Era): boolean {
+  const open = trapsAt(k, era).filter((p) => !used.has(personOf(p)))
   if (open.length === 0) return false
   const p = open[Math.floor(rnd() * open.length)]
   used.add(personOf(p))
@@ -515,14 +563,15 @@ export function dailySet(day: string, version: string): DailySet {
   const hit = dailySets.get(label)
   if (hit) return hit
 
-  const rnd = stream(`${label}|deal`)
+  const era = dailyEra(day)
+  const rnd = stream(`${label}|deal`, era.version)
   const used = new Set<string>()
   const pools = Array.from({ length: SLOT_COUNT }, () => wildPools(rnd))
   const wild: Player[][] = pools.map(() => [])
 
   // In the first ten packs, so a day with a captain can still reach them all.
   const packOrder = shuffled(Array.from({ length: SLOT_COUNT - 1 }, (_, i) => i), rnd)
-  for (const card of plantedSeason(rnd)) {
+  for (const card of plantedSeason(rnd, era)) {
     const pack = packOrder.find((i) => !wild[i].length)
     if (pack == null) break
     if (!pools[pack].includes(card.pos)) pools[pack][Math.floor(rnd() * PACK_SIZE)] = card.pos
@@ -536,22 +585,22 @@ export function dailySet(day: string, version: string): DailySet {
     if (held) needed.splice(needed.indexOf(held.pos), 1)
     if (rnd() < TRAP_CHANCE) {
       const k = needed[Math.floor(rnd() * needed.length)]
-      if (drawTrap(wild[i], k, used, rnd)) needed.splice(needed.indexOf(k), 1)
+      if (drawTrap(wild[i], k, used, rnd, era)) needed.splice(needed.indexOf(k), 1)
     }
-    for (const k of needed) drawInto(wild[i], POOL[k], 1, SHARED_WEIGHTS, used, rnd)
+    for (const k of needed) drawInto(wild[i], era.pool[k], 1, SHARED_WEIGHTS, used, rnd, era.weigh)
   })
 
   const captains = {} as DailySet['captains']
   const reserves = {} as DailySet['reserves']
   for (const k of POOL_KEYS) {
     captains[k] = []
-    const trapped = drawTrap(captains[k], k, used, rnd)
-    drawInto(captains[k], POOL[k], PACK_SIZE - (trapped ? 1 : 0), SOLO_WEIGHTS.captain, used, rnd)
+    const trapped = drawTrap(captains[k], k, used, rnd, era)
+    drawInto(captains[k], era.pool[k], PACK_SIZE - (trapped ? 1 : 0), SOLO_WEIGHTS.captain, used, rnd, era.weigh)
     captains[k] = shuffled(captains[k], rnd)
   }
   for (const k of POOL_KEYS) {
     reserves[k] = []
-    drawInto(reserves[k], POOL[k], SLOTS.filter((s) => s.pool === k).length, RESERVE_WEIGHTS, used, rnd)
+    drawInto(reserves[k], era.pool[k], SLOTS.filter((s) => s.pool === k).length, RESERVE_WEIGHTS, used, rnd, era.weigh)
   }
 
   const set: DailySet = { wild: wild.map((p) => shuffled(p, rnd)), captains, reserves }

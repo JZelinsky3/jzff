@@ -44,6 +44,7 @@ import {
   type Player,
 } from '@/lib/packEmpire/rules'
 import { CaptainMark, Field, blindTotal, type SlotView } from './cards'
+import { BattleNote, BattleStrip } from './Battles'
 import { KeyAside, KeyButton, type KeyFlavor } from './DraftKey'
 import { useHydrated } from './clientStore'
 import { PackStage, ScoreStrip, usePackStage, useStripOffset } from './stage'
@@ -125,6 +126,8 @@ type DraftProps = {
   difficulty?: Difficulty
   /** An Even Versus: no captain, and chemistry decides it. */
   even?: boolean
+  /** An Even Versus's three Battles. */
+  battles?: string[] | null
 }
 
 /** A blind draft's stand-in for the total: on Range the sum of what its cards
@@ -209,7 +212,7 @@ export function CaptainDraft(props: DraftProps) {
     return (
       <>
         {props.intro}
-        <Board score={0} flavor={{ difficulty: props.difficulty ?? 'open', even: !!props.even }}>
+        <Board score={0} flavor={{ difficulty: props.difficulty ?? 'open', even: !!props.even, battles: props.battles }}>
           <Field lineup={EMPTY} view={() => ({ clickable: false })} />
         </Board>
       </>
@@ -257,6 +260,7 @@ function LiveDraft({
   restartable = false,
   difficulty = 'open',
   even = false,
+  battles = null,
 }: DraftProps) {
   const [start] = useState(() => startingState(saveKey, fixedSeed))
   const [captain, setCaptain] = useState<number | null>(start.captain)
@@ -485,7 +489,9 @@ function LiveDraft({
         </div>
       )}
 
-      <Board score={score} choosing={choosing} flavor={{ difficulty, even }}>
+      {!!battles?.length && !choosing && <BattleStrip ids={battles} />}
+
+      <Board score={score} choosing={choosing} flavor={{ difficulty, even, battles }}>
         <Field lineup={lineup} view={view} onSlot={choosing ? chooseCaptain : openSlot} landing={landing} />
         {!choosing && !stage && !stale && filled < SLOT_COUNT && (
           <div className="pe-turf-foot">
@@ -516,6 +522,7 @@ function LiveDraft({
           chemFor={chemShown ? (p) => chemistryPreview(p, signed, true) : undefined}
           blockedFor={capped ? (p) => (priceOf(p) == null ? 'Over cap' : null) : undefined}
           note={skint ? 'You can’t afford anyone here, so the cheapest card signs for free' : null}
+          clock={battles?.length ? <BattleNote ids={battles} /> : null}
         />
       )}
     </div>

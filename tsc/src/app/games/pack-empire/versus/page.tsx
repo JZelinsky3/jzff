@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
+import { peMeta } from '@/lib/packEmpire/meta'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { listVersus } from '@/lib/packEmpire/versus'
@@ -9,7 +10,7 @@ import { formatLine } from '@/lib/packEmpire/rules'
 import mobileStyles from '../../mobile.module.css'
 import { GameList } from '../GameList'
 import { splitGames, type GameRow } from '../gameRows'
-import { PeChrome, PeDock } from '../chrome'
+import { HowItWorks, PeChrome, PeDock } from '../chrome'
 import { peFonts } from '../fonts'
 import { ChallengePanels } from './NewChallenge'
 
@@ -17,10 +18,12 @@ export const dynamic = 'force-dynamic'
 
 export const viewport: Viewport = { themeColor: '#141311', width: 'device-width', initialScale: 1 }
 
-export const metadata: Metadata = {
+export const metadata: Metadata = peMeta({
   title: 'Versus Challenge · Pack Empire',
   description: 'Send a friend a link. You each open eleven packs, and the bigger offense wins.',
-}
+  card: { c: 'versus' },
+  alt: 'Versus Challenge',
+})
 
 const STATUS: Record<string, { label: string; color: string }> = {
   open: { label: 'Waiting for someone', color: '#8d8473' },
@@ -107,10 +110,7 @@ export default async function VersusLobby() {
           </div>
         )}
 
-        <section className="pe-sec">
-          <div className="pe-sec-head">
-            <span className="pe-sec-num">§ How it works</span>
-          </div>
+        <HowItWorks mobile={mobile}>
           <div className="pe-rules">
             <div className="pe-rule">
               <span>
@@ -140,7 +140,7 @@ export default async function VersusLobby() {
               </span>
             </div>
           </div>
-        </section>
+        </HowItWorks>
 
         {user && games.waiting.length > 0 && (
           <section className="pe-sec">

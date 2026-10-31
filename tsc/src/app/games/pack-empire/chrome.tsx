@@ -62,6 +62,40 @@ export function PeDock({ signedIn }: { signedIn: boolean }) {
   return <MobileGamesDock empire signedIn={signedIn} boardHref="/games/pack-empire/board/" />
 }
 
+/** The how-to on a setup page: laid out on desktop, and a closed drawer on a
+    phone, where it would otherwise push what you came for down the screen. */
+export function HowItWorks({
+  mobile,
+  num = '§ How it works',
+  title,
+  children,
+}: {
+  mobile: boolean
+  num?: string
+  title?: string
+  children: React.ReactNode
+}) {
+  if (mobile) {
+    return (
+      <details className="pe-sec pe-ddrawer">
+        <summary>
+          <span className="pe-sec-num">§ How It Works</span>
+        </summary>
+        {children}
+      </details>
+    )
+  }
+  return (
+    <section className="pe-sec">
+      <div className="pe-sec-head">
+        <span className="pe-sec-num">{num}</span>
+        {title && <span className="pe-sec-title">{title}</span>}
+      </div>
+      {children}
+    </section>
+  )
+}
+
 export function PeChrome({
   mobile,
   signedIn,

@@ -84,6 +84,19 @@ SEASON_CACHE = f'{S}/headshots_season.json'
 SEASON_FROM = 2016
 
 
+def season_rosters():
+    """{(pid, year): the headshot NFL.com had for him that season}."""
+    roster = {}
+    for y in range(SEASON_FROM, 2100):
+        path = f'{S}/nflv/rosters/roster_{y}.csv'
+        if not os.path.exists(path): break
+        r = pd.read_csv(path, low_memory=False, usecols=['gsis_id', 'headshot_url'])
+        for g, u in zip(r.gsis_id, r.headshot_url):
+            if isinstance(g, str) and isinstance(u, str) and (g, y) not in roster:
+                roster[(g, y)] = u
+    return roster
+
+
 def season_photos(cards):
     """cards: {pid, year} per card. Returns {(pid, year): url} for the cards
     that have a photo from their own season.
@@ -97,14 +110,7 @@ def season_photos(cards):
     2011 Rodgers is a Packer, not a Steeler). No season photo, or a dead or
     blank one: the man's own photo from resolve() stands.
     """
-    roster = {}
-    for y in range(SEASON_FROM, 2100):
-        path = f'{S}/nflv/rosters/roster_{y}.csv'
-        if not os.path.exists(path): break
-        r = pd.read_csv(path, low_memory=False, usecols=['gsis_id', 'headshot_url'])
-        for g, u in zip(r.gsis_id, r.headshot_url):
-            if isinstance(g, str) and isinstance(u, str) and (g, y) not in roster:
-                roster[(g, y)] = u
+    roster = season_rosters()
     first = {}
     for (g, y) in sorted(roster, key=lambda k: k[1]):
         first.setdefault(g, y)
@@ -132,6 +138,14 @@ def season_photos(cards):
         with open(SEASON_CACHE, 'w') as f:
             json.dump(cache, f, indent=0, sort_keys=True)
     return {k: u for k, u in want.items() if cache.get(u)}
+
+
+def own_season_photos():
+    """{(pid, year): url} for every season with a live photo of its own, from
+    what's been checked so far (build/photos.py checks every candidate)."""
+    cache = json.load(open(SEASON_CACHE)) if os.path.exists(SEASON_CACHE) else {}
+    out = {k: nfl_small(u) for k, u in season_rosters().items()}
+    return {k: u for k, u in out.items() if cache.get(u)}
 
 
 def has_photo():

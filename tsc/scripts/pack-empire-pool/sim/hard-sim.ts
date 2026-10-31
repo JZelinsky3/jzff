@@ -3,10 +3,11 @@
 //
 // Daily: how often a pack leaves nothing to take, and what the spread looks
 // like between someone who knows every value and someone guessing, across
-// every rule. Even: what chemistry is worth. Check this after any change to
+// every rule. Even: what chemistry and Battles are worth. Check this after any change to
 // SHARED_WEIGHTS, RANGE_WIDTH, HARD_CHEM, the wild position weights or the
 // planted team-seasons.
 import { dailyPack, dailyRange, dailySet, evenPacks, newEvenSeed, newCaptainSeed, priced, rangeOf, type DailyPick } from '../../../src/lib/packEmpire/deal'
+import { BATTLES, BATTLE_BONUS, battlesFrom, drawBattles, settleBattles, type Battle } from '../../../src/lib/packEmpire/battles'
 import { versionsOf } from '../../../src/lib/packEmpire/pool'
 import { soloPack } from '../../../src/lib/packEmpire/solo'
 import { ruleForDay, scoreLineup, DAY_RULES } from '../../../src/lib/packEmpire/dayRules'
@@ -107,6 +108,52 @@ row('Even, top card', plain)
 row('Even, card + chemistry', chem)
 row('  chemistry', chemGain)
 console.log(`  chem drafter wins ${(chemWins / N * 100).toFixed(0)}% head to head`)
+
+// Even's Battles: can each one be contested, and does leaning into them pay?
+// A category that mostly ties, or one a lean can't move, is dead weight: keep
+// "lean takes it" well over the tie. In the table, ignoring them should lose
+// and going all in should be no better than a moderate lean (CPU_BATTLE).
+{
+  const games = Array.from({ length: Math.min(N, 200) }, () => evenPacks(newEvenSeed('open')))
+  const noisy = (packs: Player[][], set: Battle[], lean: number) => {
+    const out: Player[] = []
+    for (const p of packs) {
+      const read = (c: Player) =>
+        knower(c, out) + lean * set.reduce((s, b) => s + b.lean(c, out), 0) + (Math.random() + Math.random() - 1) * 500
+      out.push(p.map((c) => ({ c, v: read(c) })).reduce((x, y) => (y.v > x.v ? y : x)).c)
+    }
+    return out
+  }
+  for (const b of BATTLES) {
+    let take = 0
+    let tie = 0
+    for (const g of games) {
+      const x = b.value(noisy(g, [b], 900))
+      const y = b.value(noisy(g, [b], 0))
+      if (x > y) take++
+      else if (x === y) tie++
+    }
+    console.log(`${b.title.padEnd(26)} lean takes it ${Math.round((take / games.length) * 100)}%, tied ${Math.round((tie / games.length) * 100)}%`)
+  }
+  const leans = [0, 300, 700, 1400]
+  console.log(`Battles at +${BATTLE_BONUS}, row's win % by how hard each side leans: ${leans.join(' / ')}`)
+  for (const mine of leans) {
+    const cells = leans.map((theirs) => {
+      let won = 0
+      for (const g of games) {
+        const ids = drawBattles((n) => Math.floor(Math.random() * n))
+        const set = battlesFrom(ids)
+        const a = noisy(g, set, mine)
+        const b = noisy(g, set, theirs)
+        const paid = settleBattles(ids, a, b)
+        const gap = lineupScore(a) + chemistryFor(a, true).total + paid.host - lineupScore(b) - chemistryFor(b, true).total - paid.guest
+        won += gap > 0 ? 1 : gap === 0 ? 0.5 : 0
+      }
+      return Math.round((won / games.length) * 100)
+    })
+    console.log(`  ${String(mine).padEnd(6)} ${cells.join('  ')}`)
+  }
+}
 
 // Empire Builder on Range: how far a midpoint reader falls short of perfect.
 const open: number[] = []

@@ -428,11 +428,12 @@ export type Weights = Record<Rarity, number>
  * Hall of Fame, so sim/sim.ts is the check on any change here. The best card
  * in an ordinary pack is about 36% common, 41% rare, 19% dynasty, 4% transcendent.
  *
- * Because they're per card, growing a rarity raises its odds. Every table here
- * and below was scaled when the pool went to 399 common, 233 rare, 109 dynasty,
- * 59 transcendent and 33 immortal, so more cards to collect didn't change what
- * a pack holds. (Dynasty took a little extra off the ordinary table: the new
- * cards run slightly stronger, which had Hall of Fame at 26%.)
+ * These are weights per card, read through cardWeight in ./pool.ts, which holds
+ * each position to the mix they were tuned on: 399 common, 233 rare, 109 dynasty,
+ * 59 transcendent, 33 immortal. So the pool can grow without touching any table
+ * here, and more cards to collect doesn't change what a pack holds. (Dynasty took
+ * a little extra off the ordinary table: that batch ran slightly stronger, which
+ * had Hall of Fame at 26%.)
  */
 export const SOLO_WEIGHTS: { normal: Weights; captain: Weights } = {
   normal: { common: 43.4, rare: 11.6, dynasty: 7.8, transcendent: 2.8, immortal: 0.7 },
@@ -456,9 +457,9 @@ export const SOLO_BOOSTED: { normal: Weights; captain: Weights } = {
  * The hub used to print the raw weights as "base odds", which they are only
  * when every rarity holds the same number of players.
  */
-export function packOdds(pool: { rarity: Rarity }[], weights: Weights): Record<Rarity, number> {
+export function packOdds<T extends { rarity: Rarity }>(pool: T[], weigh: (p: T) => number): Record<Rarity, number> {
   const mass: Record<Rarity, number> = { common: 0, rare: 0, dynasty: 0, transcendent: 0, immortal: 0 }
-  for (const p of pool) mass[p.rarity] += weights[p.rarity]
+  for (const p of pool) mass[p.rarity] += weigh(p)
   const total = RARITIES.reduce((s, r) => s + mass[r], 0) || 1
   const out = { ...mass }
   for (const r of RARITIES) out[r] = mass[r] / total

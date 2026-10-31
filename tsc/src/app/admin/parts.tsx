@@ -131,6 +131,24 @@ export function Accounts({ a }: { a: AdminData['accounts'] }) {
   )
 }
 
+// ── Signups ──────────────────────────────────────────────────────────────
+
+/** The page each new account was on when they signed up, most first. Accounts
+    from before this was tracked (2026-10-31) have no place, so aren't counted. */
+export function SignupPlaces({ places }: { places: AdminData['signupPlaces'] }) {
+  if (places.length === 0) return <p className={s.signupsEmpty}>New signups will show here, by the page they signed up from.</p>
+  return (
+    <ul className={s.signups}>
+      {places.slice(0, 12).map((p) => (
+        <li key={p.place}>
+          <span>{p.place}</span>
+          <b>{p.n}</b>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 // ── Library ──────────────────────────────────────────────────────────────
 // Leagues with data only. The empty ones are counted on their own line, not
 // in the total.

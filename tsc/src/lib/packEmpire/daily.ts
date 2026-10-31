@@ -26,8 +26,9 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ruleForDay, ruleView, scoreLineup, type DailyScore, type DayRuleView } from './dayRules'
 import { dailyCapLeft, dailyPack, dailySet, dailyUsable, maskDaily, priced, type DailyPick } from './deal'
-import { nameForUser } from './people'
+import { cleanGuestName, guestNameTaken, nameForUser } from './people'
 import { playerById } from './pool'
+import { signDaily } from './share'
 import { DAILY_PACK_SECONDS, SALARY_CAP, SLOT_COUNT, signingPrice, slotForCard, type Player } from './rules'
 
 export type DailyVersion = 'range' | 'season'
@@ -54,10 +55,25 @@ export function isDay(v: unknown): v is string {
 
 export type DailyDetail = DailyScore & { lineup: Player[] }
 
+/**
+ * Whose run it is: an account, or a browser with no account. A guest is the
+ * hash of a long-lived cookie (see ./dailyWho), so a refresh or a closed tab
+ * keeps their one try, and a private window is a new guest, the same as a second
+ * account would be. A guest's name is blank until they give one at the end, and
+ * a blank name stays off the boards.
+ */
+export type DailyWho = { userId: string } | { guestKey: string }
+
+function ownedBy(who: DailyWho): ['user_id' | 'guest_key', string] {
+  return 'userId' in who ? ['user_id', who.userId] : ['guest_key', who.guestKey]
+}
+
 type Row = {
+  id: string
   day: string
   version: DailyVersion
-  user_id: string
+  user_id: string | null
+  guest_key: string | null
   name: string
   captain: number | null
   picks: DailyPick[]
@@ -81,6 +97,10 @@ export type DailyResult = DailyDetail & {
   entrants: number
   /** Every pack as it was, cards turned over, with what you kept. */
   packs: PackLook[]
+  /** A guest hasn't put a name on it yet, so it isn't on the board. */
+  named: boolean
+  /** The signed token for a link to this score (see ./share), once it has a name. */
+  share: string | null
 }
 
 export type DailyState = {
@@ -110,13 +130,13 @@ export type Fail = { ok: false; error: string; status?: number }
 
 const db = () => createAdminClient()
 
-async function load(day: string, version: DailyVersion, userId: string): Promise<Row | null> {
+async function load(day: string, version: DailyVersion, who: DailyWho): Promise<Row | null> {
   const { data } = await db()
     .from('pe_daily_runs')
     .select('*')
     .eq('day', day)
     .eq('version', version)
-    .eq('user_id', userId)
+    .eq(...ownedBy(who))
     .maybeSingle()
   return (data as Row | null) ?? null
 }
@@ -136,10 +156,11 @@ async function resultOf(row: Row): Promise<DailyResult | null> {
   const count = async (better: boolean) => {
     let q = db()
       .from('pe_daily_runs')
-      .select('user_id', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('day', row.day)
       .eq('version', row.version)
       .eq('done', true)
+      .neq('name', '')
     if (better) q = q.gt('score', row.score as number)
     return (await q).count ?? 0
   }
@@ -147,7 +168,18 @@ async function resultOf(row: Row): Promise<DailyResult | null> {
   const spent = ruleForDay(row.day).salaryCap
     ? SALARY_CAP.shared - dailyCapLeft(dailySet(row.day, row.version), row.captain, row.picks)
     : null
-  return { ...row.detail, captain: row.captain, spent, rank: above + 1, entrants, packs: packsOf(row) }
+  const named = !!row.name
+  const share = named ? signDaily({ day: row.day, version: row.version, score: row.score, name: row.name }) : null
+  return {
+    ...row.detail,
+    captain: row.captain,
+    spent,
+    rank: above + 1,
+    entrants: entrants + (named ? 0 : 1),
+    packs: packsOf(row),
+    named,
+    share,
+  }
 }
 
 async function stateOf(day: string, version: DailyVersion, row: Row | null): Promise<DailyState> {
@@ -222,21 +254,21 @@ async function settle(row: Row | null, day: string): Promise<{ row: Row | null; 
 
 /** Where this account stands on today's Daily. Signed out, a run that hasn't
     started, which is enough to show the rule. */
-export async function dailyState(userId: string | null, version: DailyVersion): Promise<DailyState> {
+export async function dailyState(who: DailyWho | null, version: DailyVersion): Promise<DailyState> {
   const day = dayKey()
-  const { row, timedOut } = await settle(userId ? await load(day, version, userId) : null, day)
+  const { row, timedOut } = await settle(who ? await load(day, version, who) : null, day)
   return { ...(await stateOf(day, version, row)), timedOut }
 }
 
 /** Sign in for today. The captain is the commitment: it decides the first
     pack, and asking again changes nothing. */
 export async function startDaily(
-  userId: string,
+  who: DailyWho,
   version: DailyVersion,
   rawCaptain: unknown
 ): Promise<{ ok: true; state: DailyState } | Fail> {
   const day = dayKey()
-  const existing = await load(day, version, userId)
+  const existing = await load(day, version, who)
   if (existing) return { ok: true, state: await stateOf(day, version, existing) }
 
   const rule = ruleForDay(day)
@@ -248,36 +280,35 @@ export async function startDaily(
     captain = rawCaptain as number
   }
 
-  const name = await nameForUser(db(), userId)
-  const { error } = await db().from('pe_daily_runs').insert({ day, version, user_id: userId, name, captain })
+  const name = 'userId' in who ? await nameForUser(db(), who.userId) : ''
+  const [column, owner] = ownedBy(who)
+  const { error } = await db().from('pe_daily_runs').insert({ day, version, [column]: owner, name, captain })
   // 23505 is this account's other tab getting there first.
   if (error && error.code !== '23505') return { ok: false, error: 'Could not start your Daily.' }
-  return { ok: true, state: await stateOf(day, version, await load(day, version, userId)) }
+  return { ok: true, state: await stateOf(day, version, await load(day, version, who)) }
 }
 
 /** Open the next pack, which is what starts its clock. Asking again hands
     back the same open pack, on the same clock. */
-export async function openDaily(userId: string, version: DailyVersion): Promise<{ ok: true; state: DailyState } | Fail> {
+export async function openDaily(who: DailyWho, version: DailyVersion): Promise<{ ok: true; state: DailyState } | Fail> {
   const day = dayKey()
-  const { row, timedOut } = await settle(await load(day, version, userId), day)
+  const { row, timedOut } = await settle(await load(day, version, who), day)
   if (!row) return { ok: false, error: 'That Daily has ended. A new one is up.', status: 409 }
   if (row.done || row.pack_opened_at) return { ok: true, state: { ...(await stateOf(day, version, row)), timedOut } }
   await db()
     .from('pe_daily_runs')
     .update({ pack_opened_at: new Date().toISOString() })
-    .eq('day', day)
-    .eq('version', version)
-    .eq('user_id', userId)
+    .eq('id', row.id)
     .eq('step', row.step)
     .is('pack_opened_at', null)
-  return { ok: true, state: { ...(await stateOf(day, version, await load(day, version, userId))), timedOut } }
+  return { ok: true, state: { ...(await stateOf(day, version, await load(day, version, who))), timedOut } }
 }
 
 /** The browser saying its clock hit zero. The server's clock is the one that
     counts, so this only ever signs a card once that one has run out too. */
-export async function expireDaily(userId: string, version: DailyVersion): Promise<{ ok: true; state: DailyState } | Fail> {
+export async function expireDaily(who: DailyWho, version: DailyVersion): Promise<{ ok: true; state: DailyState } | Fail> {
   const day = dayKey()
-  const row = await load(day, version, userId)
+  const row = await load(day, version, who)
   if (!row) return { ok: false, error: 'That Daily has ended. A new one is up.', status: 409 }
   if (row.done || !row.pack_opened_at || clockLeftMs(row) > 1000) return { ok: true, state: await stateOf(day, version, row) }
   const card = clockCard(row)
@@ -288,12 +319,12 @@ export async function expireDaily(userId: string, version: DailyVersion): Promis
 /** Keep one card from the open pack. The eleventh is the one that scores the
     run and turns everything over. */
 export async function pickDaily(
-  userId: string,
+  who: DailyWho,
   version: DailyVersion,
   id: unknown
 ): Promise<{ ok: true; state: DailyState } | Fail> {
   const day = dayKey()
-  const found = await load(day, version, userId)
+  const found = await load(day, version, who)
   if (!found) return { ok: false, error: 'That Daily has ended. A new one is up.', status: 409 }
   if (found.done) return { ok: true, state: await stateOf(day, version, found) }
   if (!found.pack_opened_at) return { ok: false, error: 'Open the pack first.' }
@@ -327,7 +358,6 @@ export async function pickDaily(
     reaches the binder: everybody opens these same packs, so filing them would
     pile pulls onto the same few cards without anyone having found them. */
 async function signCard(row: Row, day: string, card: Player): Promise<Row | null> {
-  const { version, user_id: userId } = row
   const filled = new Set(row.picks.map((p) => p.slot))
   const locked = row.captain != null && row.picks.length === 0
   const slot = locked ? (row.captain as number) : slotForCard(card.pos, filled)
@@ -349,13 +379,56 @@ async function signCard(row: Row, day: string, card: Player): Promise<Row | null
   const { data } = await db()
     .from('pe_daily_runs')
     .update(patch)
-    .eq('day', day)
-    .eq('version', version)
-    .eq('user_id', userId)
+    .eq('id', row.id)
     .eq('step', row.step)
     .select('*')
     .maybeSingle()
-  return (data as Row | null) ?? (await load(day, version, userId))
+  if (data) return data as Row
+  // Lost a race with another tab: whatever it wrote stands.
+  const { data: fresh } = await db().from('pe_daily_runs').select('*').eq('id', row.id).maybeSingle()
+  return (fresh as Row | null) ?? null
+}
+
+/**
+ * A guest's name, on a run they've finished. It's what puts them on the board,
+ * so the same rules as a guest's name on the Builder board: no slurs, no email
+ * addresses, nobody else's name. `key` is that browser's poster key, so a name
+ * they already post under isn't refused as someone else's.
+ */
+export async function nameDaily(
+  who: DailyWho,
+  version: DailyVersion,
+  rawName: unknown,
+  key: string | null
+): Promise<{ ok: true; state: DailyState } | Fail> {
+  const day = dayKey()
+  const row = await load(day, version, who)
+  if (!row?.done) return { ok: false, error: 'Finish your Daily first.' }
+  if (row.name) return { ok: true, state: await stateOf(day, version, row) }
+  const name = cleanGuestName(rawName)
+  if (!name) return { ok: false, error: 'Pick a different name, 2 to 24 characters.' }
+
+  const { data: others } = await db().from('pe_daily_runs').select('name, user_id, guest_key').eq('day', day).neq('name', '')
+  const wanted = name.toLowerCase()
+  const mine = (r: Pick<Row, 'user_id' | 'guest_key'>) => r.guest_key === row.guest_key && !r.user_id
+  const taken = ((others ?? []) as Pick<Row, 'name' | 'user_id' | 'guest_key'>[]).some((r) => r.name.toLowerCase() === wanted && !mine(r))
+  if (taken || (await guestNameTaken(name, key ?? ''))) return { ok: false, error: 'That name is already on the board.' }
+
+  const { data } = await db().from('pe_daily_runs').update({ name }).eq('id', row.id).select('*').maybeSingle()
+  return { ok: true, state: await stateOf(day, version, (data as Row | null) ?? row) }
+}
+
+/** A guest signed up: their runs are the account's now, so the one try carries
+    over. A day the account already played stays as the account played it. */
+export async function claimDaily(userId: string, guestKey: string): Promise<void> {
+  const { data } = await db().from('pe_daily_runs').select('id').eq('guest_key', guestKey)
+  const rows = (data ?? []) as { id: string }[]
+  if (rows.length === 0) return
+  const name = await nameForUser(db(), userId)
+  for (const r of rows) {
+    const { error } = await db().from('pe_daily_runs').update({ user_id: userId, guest_key: null, name }).eq('id', r.id)
+    if (error?.code === '23505') await db().from('pe_daily_runs').delete().eq('id', r.id)
+  }
 }
 
 // ============================================================
@@ -387,7 +460,7 @@ export type DailyBoard = {
   locked: boolean
 }
 
-async function boardFor(day: string, version: DailyVersion, userId: string | null, isToday: boolean): Promise<DailyBoard> {
+async function boardFor(day: string, version: DailyVersion, who: DailyWho | null, isToday: boolean): Promise<DailyBoard> {
   const [top, mine, count] = await Promise.all([
     db()
       .from('pe_daily_runs')
@@ -395,24 +468,26 @@ async function boardFor(day: string, version: DailyVersion, userId: string | nul
       .eq('day', day)
       .eq('version', version)
       .eq('done', true)
+      .neq('name', '')
       .order('score', { ascending: false })
       .order('finished_at', { ascending: true })
       .limit(DAILY_TOP),
-    userId ? load(day, version, userId) : Promise.resolve(null),
+    who ? load(day, version, who) : Promise.resolve(null),
     db()
       .from('pe_daily_runs')
-      .select('user_id', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('day', day)
       .eq('version', version)
-      .eq('done', true),
+      .eq('done', true)
+      .neq('name', ''),
   ])
 
   const locked = isToday && !mine?.done
   const shown = (r: Row, rank: number): DailyRow => ({
     rank,
-    name: r.name,
+    name: r.name || 'You',
     score: r.score ?? 0,
-    you: r.user_id === userId,
+    you: r.id === mine?.id,
     detail: locked ? null : r.detail,
     captain: r.captain,
   })
@@ -422,22 +497,30 @@ async function boardFor(day: string, version: DailyVersion, userId: string | nul
   if (mine?.done && mine.score != null) {
     const { count: above } = await db()
       .from('pe_daily_runs')
-      .select('user_id', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('day', day)
       .eq('version', version)
       .eq('done', true)
+      .neq('name', '')
       .gt('score', mine.score)
     yourRank = (above ?? 0) + 1
   }
   return {
     version,
     rows,
-    entrants: count.count ?? 0,
+    entrants: (count.count ?? 0) + (mine?.done && !mine.name ? 1 : 0),
     you: mine?.done && yourRank ? shown(mine, yourRank) : null,
     yourStep: mine ? (mine.done ? SLOT_COUNT : mine.step) : null,
     yourRank,
     locked,
   }
+}
+
+/** A day's rule for a link preview, any day. A bad day falls back to today. */
+export function dailySpec(day: string | null): { day: string; title: string; line: string } {
+  const d = day && isDay(day) && day <= dayKey() ? day : dayKey()
+  const rule = ruleView(ruleForDay(d))
+  return { day: d, title: rule.title, line: rule.line }
 }
 
 export type DayRecap = { day: string; rule: DayRuleView; winners: { version: DailyVersion; name: string; score: number }[] }
@@ -461,23 +544,24 @@ function daysBefore(day: string, n: number): string {
   return d.toISOString().slice(0, 10)
 }
 
-export async function dailyLobby(userId: string | null): Promise<DailyLobby> {
+export async function dailyLobby(who: DailyWho | null): Promise<DailyLobby> {
   const day = dayKey()
   const [boards, recent, yours] = await Promise.all([
-    Promise.all(DAILY_VERSIONS.map((v) => boardFor(day, v, userId, true))),
+    Promise.all(DAILY_VERSIONS.map((v) => boardFor(day, v, who, true))),
     db()
       .from('pe_daily_runs')
       .select('day, version, name, score')
       .eq('done', true)
+      .neq('name', '')
       .lt('day', day)
       .gte('day', daysBefore(day, PAST_DAYS))
       .order('score', { ascending: false })
       .limit(500),
-    userId
+    who
       ? db()
           .from('pe_daily_runs')
           .select('day, version, score')
-          .eq('user_id', userId)
+          .eq(...ownedBy(who))
           .eq('done', true)
           .lt('day', day)
           .order('day', { ascending: false })
@@ -506,12 +590,12 @@ export async function dailyLobby(userId: string | null): Promise<DailyLobby> {
 }
 
 /** One day's page: the top lineups in both versions. */
-export async function dailyDay(day: string, userId: string | null) {
+export async function dailyDay(day: string, who: DailyWho | null) {
   const today = dayKey()
   return {
     day,
     isToday: day === today,
     rule: ruleView(ruleForDay(day)),
-    boards: await Promise.all(DAILY_VERSIONS.map((v) => boardFor(day, v, userId, day === today))),
+    boards: await Promise.all(DAILY_VERSIONS.map((v) => boardFor(day, v, who, day === today))),
   }
 }

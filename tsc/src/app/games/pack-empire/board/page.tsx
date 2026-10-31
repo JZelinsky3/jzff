@@ -6,6 +6,7 @@
 // merged: a blind 13,000 isn't an open 13,000.
 
 import type { Metadata, Viewport } from 'next'
+import { peMeta } from '@/lib/packEmpire/meta'
 import type { BoardKind } from '@/lib/minigames/leaderboard'
 import { DIFFICULTIES, DIFFICULTY_LOOK, isDifficulty } from '@/lib/packEmpire/rules'
 import { GameBoardPage } from '../../GameBoardPage'
@@ -21,11 +22,13 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-export const metadata: Metadata = {
+export const metadata: Metadata = peMeta({
   title: 'The Board · Pack Empire',
   description: 'The best offenses anyone has opened, every pack re-dealt and checked.',
+  card: { c: 'board' },
+  alt: 'The Pack Empire board',
   robots: { index: false, follow: true },
-}
+})
 
 export default async function PackEmpireBoard({
   searchParams,

@@ -5,7 +5,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { loadBoard, type BestRow } from '@/lib/minigames/leaderboard'
-import { POOL, POOL_SIZE, playerById } from '@/lib/packEmpire/pool'
+import { peMeta } from '@/lib/packEmpire/meta'
+import { POOL, POOL_SIZE, cardWeight, playerById } from '@/lib/packEmpire/pool'
 import { parseSoloPicks } from '@/lib/packEmpire/solo'
 import { binderTotals, type BinderTotals } from '@/lib/packEmpire/binder'
 import { loadFaces, type FaceMap } from '@/lib/packEmpire/faces'
@@ -41,19 +42,13 @@ const TITLE = 'Pack Empire · Open packs, build an offense'
 const DESC =
   'Open eleven card packs, keep one player from each and build the highest-scoring offense on the board. Solo, head-to-head, a live snake draft, or a full league season.'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = peMeta({
   title: TITLE,
   description: DESC,
-  alternates: { canonical: 'https://thesundaychronicle.app/games/pack-empire/' },
-  openGraph: {
-    type: 'website',
-    url: 'https://thesundaychronicle.app/games/pack-empire/',
-    title: TITLE,
-    description: DESC,
-    siteName: 'The Sunday Chronicle',
-  },
-  twitter: { card: 'summary_large_image', title: TITLE, description: DESC },
-}
+  card: { c: 'home' },
+  alt: 'Pack Empire',
+  url: 'https://thesundaychronicle.app/games/pack-empire/',
+})
 
 /** One face per rarity for the index: the best recent skill player at each. */
 function showcase(): Player[] {
@@ -70,7 +65,7 @@ function showcase(): Player[] {
 function oddsBySlot(weights: Record<Rarity, number>): Record<Rarity, number> {
   const acc: Record<Rarity, number> = { common: 0, rare: 0, dynasty: 0, transcendent: 0, immortal: 0 }
   for (const s of SLOTS) {
-    const o = packOdds(POOL[s.pool], weights)
+    const o = packOdds(POOL[s.pool], (p) => cardWeight(p, weights))
     for (const r of RARITIES) acc[r] += o[r] / SLOTS.length
   }
   return acc

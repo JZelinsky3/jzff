@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from 'next'
 import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
+import { peMeta } from '@/lib/packEmpire/meta'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { myLeagues, openLeagues, type LeagueCard } from '@/lib/packEmpire/league'
 import { PHASE_LABEL, REGULAR_WEEKS } from '@/lib/packEmpire/rules'
 import mobileStyles from '../../mobile.module.css'
-import { PeChrome, PeDock } from '../chrome'
+import { HowItWorks, PeChrome, PeDock } from '../chrome'
 import { peFonts } from '../fonts'
 import { CreateLeague, JoinByCode, JoinPublic } from './LeagueLobby'
 
@@ -14,11 +15,13 @@ export const dynamic = 'force-dynamic'
 
 export const viewport: Viewport = { themeColor: '#141311', width: 'device-width', initialScale: 1 }
 
-export const metadata: Metadata = {
+export const metadata: Metadata = peMeta({
   title: 'League Mode · Pack Empire',
   description:
     'An eight-week season of weekly pack drafts with keepers, chemistry and boosted packs, then a Gauntlet and a Final.',
-}
+  card: { c: 'league' },
+  alt: 'League Mode',
+})
 
 function where(l: LeagueCard): string {
   if (l.phase === 'pregame') return `${l.members} of ${l.maxPlayers} teams`
@@ -122,11 +125,7 @@ export default async function LeagueLobbyPage() {
           </section>
         )}
 
-        <section className="pe-sec">
-          <div className="pe-sec-head">
-            <span className="pe-sec-num">§ The rules</span>
-            <span className="pe-sec-title">How a season runs</span>
-          </div>
+        <HowItWorks mobile={mobile} num="§ The rules" title="How a season runs">
           <div className="pe-rules">
             <div className="pe-rule">
               <span>
@@ -159,7 +158,7 @@ export default async function LeagueLobbyPage() {
               </span>
             </div>
           </div>
-        </section>
+        </HowItWorks>
       </div>
 
       {mobile ? <PeDock signedIn={!!user} /> : <SiteFooter />}

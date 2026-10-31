@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { BackButton } from '@/components/BackButton'
 import { SiteFooter } from '@/components/SiteFooter'
 import { areFriends, inviteOwner } from '@/lib/friends'
+import { peMeta } from '@/lib/packEmpire/meta'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import styles from '@/components/account/play.module.css'
@@ -15,10 +16,16 @@ import { AcceptInvite } from './AcceptInvite'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = {
-  title: 'Friend Invite · The Sunday Chronicle',
-  description: 'Add a friend on The Sunday Chronicle: records side by side, and Pack Empire challenges.',
-  robots: { index: false, follow: false },
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
+  const { token } = await params
+  const owner = await inviteOwner(token)
+  return peMeta({
+    title: owner ? `${owner.name} wants you as a friend · The Sunday Chronicle` : 'Friend Invite · The Sunday Chronicle',
+    description: 'Records side by side, and Pack Empire challenges whenever you want them.',
+    card: owner ? { c: 'fr', t: token } : { c: 'profile' },
+    alt: 'A friend invite',
+    robots: { index: false, follow: false },
+  })
 }
 
 type Copy = { kicker: string; title: string; body: string }

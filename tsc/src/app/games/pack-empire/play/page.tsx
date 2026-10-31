@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { SiteFooter } from '@/components/SiteFooter'
+import { peMeta } from '@/lib/packEmpire/meta'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { isDifficulty } from '@/lib/packEmpire/rules'
@@ -16,12 +17,14 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-export const metadata: Metadata = {
+export const metadata: Metadata = peMeta({
   title: 'Empire Builder · Pack Empire',
   description:
     'Pick a captain, open eleven packs and keep one player from each. The best offenses anyone has built go on the board.',
-  alternates: { canonical: 'https://thesundaychronicle.app/games/pack-empire/play/' },
-}
+  card: { c: 'builder' },
+  alt: 'Empire Builder',
+  url: 'https://thesundaychronicle.app/games/pack-empire/play/',
+})
 
 export default async function EmpireBuilderPage({
   searchParams,

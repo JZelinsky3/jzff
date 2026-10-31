@@ -12,6 +12,7 @@
 import type { Metadata, Viewport } from 'next'
 import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
+import { peMeta } from '@/lib/packEmpire/meta'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 import { getViewMode } from '@/lib/viewMode'
@@ -26,11 +27,13 @@ export const dynamic = 'force-dynamic'
 
 export const viewport: Viewport = { themeColor: '#141311', width: 'device-width', initialScale: 1 }
 
-export const metadata: Metadata = {
+export const metadata: Metadata = peMeta({
   title: 'The Binder · Pack Empire',
   description: 'Every card you have pulled in Pack Empire, every version of every player, best to worst.',
+  card: { c: 'binder' },
+  alt: 'The Binder',
   robots: { index: false, follow: true },
-}
+})
 
 export default async function BinderPage() {
   const supabase = await createClient()

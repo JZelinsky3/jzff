@@ -17,11 +17,12 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { SALARY_CAP, formatLine, tierFor } from '@/lib/packEmpire/rules'
 import type { VersusView } from '@/lib/packEmpire/versus'
+import { BattleResults } from '../Battles'
 import { CaptainDraft, type DraftDone } from '../CaptainDraft'
 import { DeleteGame } from '../GameList'
 import { Bonds, LineupSheet } from '../cards'
 import { storageChanged, useStored } from '../clientStore'
-import { ShareLink } from '../share'
+import { ShareButton, ShareLink } from '../share'
 
 const keyName = (id: string) => `pe_vs_key_${id}`
 
@@ -203,6 +204,7 @@ export function VersusRoom({
   }, [view.host.name, view.guest.name, view.format, view.difficulty])
 
   const even = view.format === 'even'
+  const battled = !!view.battles?.length
 
   // ── Both in: the result ───────────────────────────────────────
   if (both) {
@@ -244,6 +246,11 @@ export function VersusRoom({
             <Link href="/games/pack-empire/versus/" className="pe-btn pe-btn--quiet">
               Your challenges
             </Link>
+            <ShareButton
+              path={path}
+              className="pe-btn pe-btn--quiet"
+              text={winner ? `${winner.name} won ${Math.max(hs, gs).toLocaleString()} to ${Math.min(hs, gs).toLocaleString()} on Pack Empire.` : 'Dead even on Pack Empire.'}
+            />
             {canFriend && !friendNote && theirs?.name && (
               <button type="button" className="pe-btn pe-btn--quiet" onClick={addFriend} disabled={busy}>
                 Add {theirs.name} as a friend
@@ -253,6 +260,9 @@ export function VersusRoom({
           {friendNote && <p className="pe-recap-post">{friendNote}</p>}
           {error && <p className="pe-recap-post">{error}</p>}
         </div>
+        {view.outcome && (
+          <BattleResults outcome={view.outcome} host={h.name ?? 'Host'} guest={g.name ?? 'Challenger'} />
+        )}
         <div className="pe-twoup">
           {[
             { seat: h, name: h.name ?? 'Host', total: hs },
@@ -263,7 +273,9 @@ export function VersusRoom({
                 name={name}
                 sub={
                   seat.chem
-                    ? `${seat.chem.total >= 0 ? '+' : '−'}${Math.abs(seat.chem.total).toLocaleString()} chemistry`
+                    ? `${seat.chem.total >= 0 ? '+' : '−'}${Math.abs(seat.chem.total).toLocaleString()} chemistry${
+                        seat.battlePoints != null ? ` · +${seat.battlePoints.toLocaleString()} Battles` : ''
+                      }`
                     : seat.tier
                 }
                 lineup={seat.lineup ?? []}
@@ -344,13 +356,16 @@ export function VersusRoom({
           <p className="pe-panel-text">
             {view.host.done && view.host.score != null ? (
               <>
-                They have already drafted, and put up <b>{view.host.score.toLocaleString()}</b>. You each open your
-                own eleven packs; the bigger total wins.
+                They have already drafted, and put up <b>{view.host.score.toLocaleString()}</b>
+                {battled ? ' before Battles' : ''}. You each open your own eleven packs; the bigger total wins.
               </>
             ) : (
               <>You each open your own eleven packs, one keeper from each. The bigger accolades total wins.</>
             )}
-            {even && ' This one is Even: you both open the same eleven packs with no captain, so chemistry decides it.'}
+            {even &&
+              (battled
+                ? ' This one is Even: you both open the same eleven packs with no captain, so chemistry and three Battles decide it.'
+                : ' This one is Even: you both open the same eleven packs with no captain, so chemistry decides it.')}
             {view.difficulty === 'range' && ' Cards show a value range and the team, nothing else.'}
             {view.difficulty === 'season' && ' Cards show only the name and the season.'}
             {view.difficulty === 'cap' &&
@@ -414,7 +429,7 @@ export function VersusRoom({
     : view.reserved
       ? `Held for ${theirs.name}. It's waiting in their challenges, or send them the link.`
       : theirs.done
-      ? `${theirs.name} is in with ${theirs.score?.toLocaleString()}.`
+      ? `${theirs.name} is in with ${theirs.score?.toLocaleString()}${battled ? ' before Battles' : ''}.`
       : theirs.started
         ? `${theirs.name} is drafting.`
         : `${theirs.name} has the link and hasn't opened a pack yet.`
@@ -452,6 +467,7 @@ export function VersusRoom({
           onDone={onDone}
           difficulty={view.difficulty}
           even={even}
+          battles={view.battles}
         />
       </div>
     )
@@ -466,6 +482,7 @@ export function VersusRoom({
         <div className="pe-kicker">§ Your eleven</div>
         <div className="pe-recap-tier">{even ? 'Locked in.' : mine?.tier}</div>
         <div className="pe-recap-score">{myScore.toLocaleString()}</div>
+        {battled && <div className="pe-recap-lbl pe-note">Before Battles</div>}
         <p className="pe-recap-post">{opponentLine} This page updates by itself.</p>
       </div>
       {view.you === 'host' && (!view.guest.name || view.reserved) && (

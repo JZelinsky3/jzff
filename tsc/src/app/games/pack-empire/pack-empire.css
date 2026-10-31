@@ -2069,13 +2069,13 @@ html:has(.pe-theme) body {
 }
 
 .pe-fc-topbar {
-  height: 25px;
+  height: 21px;
   flex-shrink: 0;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.25rem 0.35rem;
+  padding: 0 0.35rem;
   background: rgba(4, 8, 16, 0.95);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   position: relative;
@@ -2085,10 +2085,10 @@ html:has(.pe-theme) body {
 .pe-fc-pos-badge {
   font-family: var(--pe-cond);
   font-weight: 800;
-  font-size: 0.56rem;
-  letter-spacing: 0.12em;
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
   color: #fff;
-  padding: 1px 5px;
+  padding: 0 4px;
   border-radius: 3px;
 }
 
@@ -2121,7 +2121,7 @@ html:has(.pe-theme) body {
   bottom: 3px;
   left: 50%;
   transform: translateX(-50%);
-  height: 105%;
+  height: 100%;
   width: auto;
   max-width: none;
   object-fit: contain;
@@ -2933,8 +2933,7 @@ html:has(.pe-theme) body {
   }
 }
 
-.pe-rip-body,
-.pe-rip-spent {
+.pe-rip-body {
   clip-path: polygon(
     0 16%,
     6% 17.5%,
@@ -2997,12 +2996,14 @@ html:has(.pe-theme) body {
   }
 }
 
-/* The light inside. It sits on the new top edge of the pack, behind the
-   body, so the torn edge cuts across it and it reads as a glow around the
-   opening. Its colour is the best card's rarity and --gs and --gb, off that
-   rarity, set how wide and how bright. Height barely grows with rarity, so
-   the big pulls spread along the tear rather than climbing the screen. A
-   gradient, no blur: it's painted once and only ever faded and scaled. */
+/* The light. The eye reads a torn pack off three things a soft glow behind it
+   can't give: an opening with an inside, a source too bright to look at, and
+   light crossing in front of the thing it's coming out of. So, back to front:
+   the wrapper's back flap, lit from inside (.pe-mouth-back), the white-hot slit,
+   the rays out of that slit, the pack's front, a rim along its torn edge, and a
+   glare over the lot. --glow is the best card's rarity colour; --gs and --gb,
+   off that rarity, set how wide and how bright. Rays are masks over the colour,
+   rendered by scripts/pack-empire-fx: painted once, only ever faded and scaled. */
 .pe-rip,
 .pe-boom,
 .pe-rip-spent {
@@ -3033,12 +3034,14 @@ html:has(.pe-theme) body {
 .pe-mouth {
   position: absolute;
   left: 50%;
-  top: 16.5%;
+  /* Just under the lowest point of the tear, so the front cuts the rays off. */
+  top: 18%;
   width: 0;
   height: 0;
   z-index: 1;
   opacity: calc(var(--pull) * var(--gb));
-  transform: scale(calc(0.55 + var(--pull) * 0.45));
+  transform: scale(calc(0.6 + var(--pull) * 0.4));
+  transform-origin: 0 0;
   transition:
     opacity 0.25s,
     transform 0.25s;
@@ -3049,35 +3052,206 @@ html:has(.pe-theme) body {
   transition: none;
 }
 
-.pe-mouth-halo {
+/* The inside of the back of the wrapper. It rises as the strip comes off,
+   bowed in the middle where the pack puffs open, its own torn edge out of step
+   with the front's. White where it meets the slit, then the card's colour,
+   going dark at its top edge so there's a lip to see. */
+.pe-mouth-back {
+  position: absolute;
+  left: 5%;
+  right: 5.4%;
+  top: 9.8%;
+  height: 9.2%;
+  z-index: 1;
+  background: linear-gradient(
+    to top,
+    #fff 10%,
+    color-mix(in srgb, var(--glow) 46%, #fff) 26%,
+    var(--glow) 46%,
+    color-mix(in srgb, var(--glow) 58%, #0d0a07) 76%,
+    color-mix(in srgb, var(--glow) 26%, #0d0a07) 100%
+  );
+  /* Fine teeth over the bow: foil tears in small bites, not scallops. */
+  clip-path: polygon(
+    0 78%,
+    3% 66%,
+    6% 72%,
+    9% 54%,
+    12% 60%,
+    15% 43%,
+    19% 48%,
+    22% 30%,
+    25% 37%,
+    29% 21%,
+    32% 27%,
+    36% 12%,
+    39% 19%,
+    43% 6%,
+    47% 13%,
+    51% 2%,
+    54% 9%,
+    58% 0,
+    62% 8%,
+    65% 4%,
+    69% 15%,
+    72% 10%,
+    76% 24%,
+    79% 19%,
+    83% 35%,
+    86% 30%,
+    90% 49%,
+    93% 44%,
+    97% 64%,
+    100% 70%,
+    100% 100%,
+    0 100%
+  );
+  transform: scaleY(calc(0.25 + var(--pull) * 0.75));
+  transform-origin: 50% 100%;
+  transition: transform 0.3s cubic-bezier(0.3, 1.5, 0.5, 1);
+  pointer-events: none;
+}
+
+.pe-rip.dragging .pe-mouth-back {
+  transition: none;
+}
+
+/* The source: a lens of pure white between the two lips. It's small and hard
+   edged on purpose, the one thing here with no falloff. */
+.pe-mouth-slit {
   position: absolute;
   display: block;
-  --gh: calc(120px + 60px * var(--gs));
-  left: calc(-175px * var(--gs));
-  top: calc(var(--gh) / -2);
-  width: calc(350px * var(--gs));
+  left: calc(var(--pe-pack-w) * -0.43);
+  bottom: 0;
+  width: calc(var(--pe-pack-w) * 0.86);
+  height: calc(var(--pe-pack-w) * 0.062);
+  background: #fff;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+}
+
+/* The fan out of the slit. Always twice the pack wide, because the mask's rays
+   start in its middle half and that has to land on the opening. Rarity sets how
+   far it reaches, not how wide: it stays low enough to spread along the tear and
+   never turn into a beam up the screen. */
+.pe-mouth-rays {
+  --rw: calc(var(--pe-pack-w) * 2);
+  position: absolute;
+  display: block;
+  left: calc(var(--rw) / -2);
+  bottom: 0;
+  width: var(--rw);
+  height: calc(var(--rw) * 0.62 * (0.34 + 0.32 * var(--gs)));
+  background: linear-gradient(
+    to top,
+    #fff 0,
+    color-mix(in srgb, var(--glow) 50%, #fff) 9%,
+    var(--glow) 34%
+  );
+  -webkit-mask: url('/games/pack-empire/fx/rays.webp') center / 100% 100% no-repeat;
+  mask: url('/games/pack-empire/fx/rays.webp') center / 100% 100% no-repeat;
+  transform-origin: 50% 100%;
+}
+
+.pe-mouth-rays.fine {
+  -webkit-mask-image: url('/games/pack-empire/fx/rays-fine.webp');
+  mask-image: url('/games/pack-empire/fx/rays-fine.webp');
+}
+
+/* The air around it. Far quieter than the rays: enough of this and the whole
+   thing goes back to being a smudge. */
+.pe-mouth-bloom {
+  --gh: calc(84px + 34px * var(--gs));
+  --bw: calc(var(--pe-pack-w) * (1.15 + 0.42 * var(--gs)));
+  position: absolute;
+  display: block;
+  left: calc(var(--bw) / -2);
+  bottom: calc(var(--gh) * -0.42);
+  width: var(--bw);
   height: var(--gh);
   background: radial-gradient(
     closest-side,
-    color-mix(in srgb, var(--glow) 65%, #fff) 0,
-    var(--glow) 26%,
-    color-mix(in srgb, var(--glow) 42%, transparent) 55%,
+    color-mix(in srgb, var(--glow) 34%, transparent) 0,
+    color-mix(in srgb, var(--glow) 13%, transparent) 52%,
     transparent 100%
   );
 }
 
-/* The torn edge itself catches the light: a wash down from the jagged line,
-   clipped to it by the body's own clip-path. */
-.pe-rip-body::after,
-.pe-rip-spent::after {
-  content: '';
+/* The torn edge of the front, burning: a band the width of a line, cut along
+   the same jagged path as the pack, so it can't sit a pixel off it. */
+.pe-rip-rim {
   position: absolute;
   inset: 0;
+  z-index: 3;
+  /* The covers have clear margins down each side, so it stops where the foil
+     does, or it hangs off the corners. */
+  background: linear-gradient(
+    90deg,
+    transparent 4.4%,
+    color-mix(in srgb, var(--glow) 70%, #fff) 4.4%,
+    #fff 18%,
+    #fff 82%,
+    color-mix(in srgb, var(--glow) 70%, #fff) 95.2%,
+    transparent 95.2%
+  );
+  clip-path: polygon(
+    0 16%,
+    6% 17.5%,
+    12% 15.5%,
+    19% 17.8%,
+    26% 15.6%,
+    33% 17.4%,
+    40% 15.4%,
+    47% 17.6%,
+    54% 15.5%,
+    61% 17.7%,
+    68% 15.6%,
+    75% 17.3%,
+    82% 15.5%,
+    89% 17.6%,
+    95% 15.8%,
+    100% 16.8%,
+    100% 17.5%,
+    95% 16.5%,
+    89% 18.3%,
+    82% 16.2%,
+    75% 18%,
+    68% 16.3%,
+    61% 18.4%,
+    54% 16.2%,
+    47% 18.3%,
+    40% 16.1%,
+    33% 18.1%,
+    26% 16.3%,
+    19% 18.5%,
+    12% 16.2%,
+    6% 18.2%,
+    0 16.7%
+  );
+  opacity: var(--pull);
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+
+.pe-rip.dragging .pe-rip-rim {
+  transition: none;
+}
+
+/* The light catching the foil of the front, just under the tear: quick to fall
+   away, because foil lit from behind doesn't glow far. Clipped to the jagged
+   line by the body's own clip-path. */
+.pe-rip-body::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4.4%;
+  right: 4.8%;
   background: linear-gradient(
     to bottom,
-    color-mix(in srgb, var(--glow) 72%, #fff) 15%,
-    color-mix(in srgb, var(--glow) 55%, transparent) 21%,
-    transparent 40%
+    color-mix(in srgb, var(--glow) 55%, #fff) 16%,
+    color-mix(in srgb, var(--glow) 60%, transparent) 19.5%,
+    color-mix(in srgb, var(--glow) 16%, transparent) 25%,
+    transparent 34%
   );
   pointer-events: none;
 }
@@ -3091,8 +3265,70 @@ html:has(.pe-theme) body {
   transition: none;
 }
 
-.pe-rip-spent::after {
+.pe-rip-spent .pe-rip-body::after {
   opacity: var(--gb);
+}
+
+/* A hard horizontal streak through the slit, over the front of the pack: what
+   a lens does with a light this bright, and what puts the light in front of
+   the wrapper instead of behind it. */
+.pe-mouth-glare {
+  --gw: calc(var(--pe-pack-w) * (0.72 + 0.6 * var(--gs)));
+  position: absolute;
+  left: calc(50% - var(--gw) / 2);
+  top: calc(16.8% - 7px);
+  width: var(--gw);
+  height: 14px;
+  z-index: 5;
+  background:
+    linear-gradient(90deg, transparent 8%, #fff 50%, transparent 92%) center / 100% 1.5px no-repeat,
+    radial-gradient(closest-side, color-mix(in srgb, var(--glow) 62%, #fff), transparent);
+  opacity: calc(var(--pull) * var(--pull) * var(--gb));
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+
+.pe-rip.dragging .pe-mouth-glare {
+  transition: none;
+}
+
+/* Motes of it getting out, in front of the pack. */
+.pe-motes {
+  position: absolute;
+  left: 50%;
+  top: 16.5%;
+  width: 0;
+  height: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.pe-motes i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3px;
+  height: 3px;
+  margin-left: calc(var(--pe-pack-w) * var(--x));
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 6px 1px var(--glow);
+  opacity: 0;
+  animation: pe-mote var(--t) ease-out var(--s) infinite;
+}
+
+@keyframes pe-mote {
+  0% {
+    opacity: 0;
+    transform: translate(0, 2px) scale(1);
+  }
+  14% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), calc(var(--r) * -1)) scale(0.35);
+  }
 }
 
 .pe-rip.ripping .pe-rip-strip,
@@ -3116,6 +3352,21 @@ html:has(.pe-theme) body {
   opacity: var(--gb);
 }
 
+.pe-rip.ripping .pe-rip-rim,
+.pe-rip.open .pe-rip-rim {
+  opacity: 1;
+}
+
+.pe-rip.ripping .pe-mouth-glare,
+.pe-rip.open .pe-mouth-glare {
+  opacity: var(--gb);
+}
+
+.pe-rip.ripping .pe-mouth-back,
+.pe-rip.open .pe-mouth-back {
+  transform: none;
+}
+
 .pe-rip.ripping .pe-mouth,
 .pe-rip.open .pe-mouth {
   opacity: var(--gb);
@@ -3123,18 +3374,26 @@ html:has(.pe-theme) body {
   animation: pe-mouth-open 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 
-.pe-rip.open .pe-mouth-halo {
-  animation: pe-mouth-breathe 1.3s ease-in-out infinite;
+/* The two sets of rays drift against each other, which is what makes still
+   masks shimmer like light. They only ever rotate about the slit. */
+.pe-rip.ripping .pe-mouth-rays,
+.pe-rip.open .pe-mouth-rays {
+  animation: pe-rays-drift 3.4s ease-in-out infinite alternate;
+}
+
+.pe-rip.ripping .pe-mouth-rays.fine,
+.pe-rip.open .pe-mouth-rays.fine {
+  animation: pe-rays-drift-back 2.6s ease-in-out infinite alternate;
 }
 
 @keyframes pe-mouth-open {
   from {
     opacity: 0.3;
-    transform: scale(0.55, 0.3);
+    transform: scale(0.6, 0.15);
   }
   40% {
     opacity: 1;
-    transform: scale(1.14);
+    transform: scale(1.12);
   }
   to {
     opacity: var(--gb);
@@ -3142,15 +3401,21 @@ html:has(.pe-theme) body {
   }
 }
 
-@keyframes pe-mouth-breathe {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
+@keyframes pe-rays-drift {
+  from {
+    transform: rotate(-1.4deg) scaleY(0.97);
   }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.06);
+  to {
+    transform: rotate(1.4deg) scaleY(1.03);
+  }
+}
+
+@keyframes pe-rays-drift-back {
+  from {
+    transform: rotate(2deg) scaleY(1.04);
+  }
+  to {
+    transform: rotate(-2deg) scaleY(0.96);
   }
 }
 
@@ -3257,20 +3522,47 @@ html:has(.pe-theme) body {
   }
 }
 
-/* The pack's light, carried on as it swells out and fades. Flat like the
-   halo it follows, so it spreads along the tear. */
-.pe-boom-bloom {
-  --gh: calc(150px + 75px * var(--gs));
+/* The rays again as the pack lets go: the same masks thrown outward, so the
+   light in the pack and the burst are one thing. */
+.pe-boom-rays {
+  --rw: calc(var(--pe-pack-w) * 2);
   position: absolute;
-  left: calc(-190px * var(--gs));
+  left: calc(var(--rw) / -2);
+  bottom: calc(var(--pe-pack-w) * -0.02);
+  width: var(--rw);
+  height: calc(var(--rw) * 0.62 * (0.34 + 0.32 * var(--gs)));
+  background: linear-gradient(to top, #fff 0, color-mix(in srgb, var(--glow) 50%, #fff) 9%, var(--glow) 34%);
+  -webkit-mask: url('/games/pack-empire/fx/rays.webp') center / 100% 100% no-repeat;
+  mask: url('/games/pack-empire/fx/rays.webp') center / 100% 100% no-repeat;
+  transform-origin: 50% 100%;
+  opacity: 0;
+  animation: pe-boom-rays 0.95s cubic-bezier(0.15, 0.7, 0.3, 1) both;
+}
+
+@keyframes pe-boom-rays {
+  0% {
+    opacity: var(--gb);
+    transform: scale(0.82);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5, 1.34);
+  }
+}
+
+/* The pack's light, carried on as it swells out and fades. Flat, so it spreads
+   along the tear. */
+.pe-boom-bloom {
+  --gh: calc(120px + 70px * var(--gs));
+  position: absolute;
+  left: calc(-180px * var(--gs));
   top: calc(var(--gh) / -2);
-  width: calc(380px * var(--gs));
+  width: calc(360px * var(--gs));
   height: var(--gh);
   background: radial-gradient(
     closest-side,
-    color-mix(in srgb, var(--glow) 65%, #fff) 0,
-    var(--glow) 24%,
-    color-mix(in srgb, var(--glow) 38%, transparent) 55%,
+    color-mix(in srgb, var(--glow) 50%, transparent) 0,
+    color-mix(in srgb, var(--glow) 24%, transparent) 50%,
     transparent 100%
   );
   opacity: 0;
@@ -4975,7 +5267,7 @@ a.pe-row:hover {
   }
 
   .pe-fc-topbar {
-    height: 15px;
+    height: 13px;
     padding: 0 3px;
   }
 
@@ -4991,8 +5283,8 @@ a.pe-row:hover {
   }
 
   .pe-fc-pos-badge {
-    font-size: 0.42rem;
-    letter-spacing: 0.08em;
+    font-size: 0.38rem;
+    letter-spacing: 0.06em;
     padding: 0 2px;
     border-radius: 2px;
   }
@@ -5187,7 +5479,8 @@ a.pe-row:hover {
   .pe-rip-pack,
   .pe-rip-seam::after,
   .pe-mouth,
-  .pe-mouth-halo,
+  .pe-mouth-rays,
+  .pe-motes i,
   .pe-imp-band::before,
   .pe-imp-band::after,
   .pe-imp-word,
@@ -7862,26 +8155,40 @@ a.pe-row:hover {
 .pe-gem {
   display: inline-block;
   flex-shrink: 0;
-  width: 1.5em;
-  height: 1.5em;
-  vertical-align: -0.34em;
+  width: 1.3em;
+  height: 1.3em;
+  vertical-align: -0.3em;
   overflow: visible;
 }
 
 .pe-cf-rlab .pe-gem {
-  width: 1.65em;
-  height: 1.65em;
+  width: 1.35em;
+  height: 1.35em;
   filter: drop-shadow(0 0 2px var(--rg));
   -webkit-text-fill-color: initial;
 }
 
+/* The binder draws its card larger, so the gem reads bigger there. */
+.pe-bd-sheet-card .pe-cf-rlab .pe-gem {
+  width: 1.15em;
+  height: 1.15em;
+}
+
+.pe-fc-rar-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+}
+
 .pe-fc-rar-badge .pe-gem {
-  width: 1.4em;
-  height: 1.4em;
-  margin-right: 0.25em;
+  width: 1.15em;
+  height: 1.15em;
 }
 
 .pe-line-name small .pe-gem {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.14em;
   margin-right: 0.3em;
 }
 
@@ -8925,13 +9232,16 @@ a.pe-row:hover {
 }
 
 .pe-dgame-foot {
+  display: flex;
+  justify-content: center;
   margin-top: auto;
   padding-top: 1rem;
 }
 
 .pe-dgame-foot .pe-btn {
-  width: 100%;
-  text-align: center;
+  padding: 0.6rem 1.4rem;
+  font-size: 0.72rem;
+  white-space: nowrap;
 }
 
 .pe-dgame[data-v='season'] .pe-dgame-foot .pe-btn {
@@ -8939,9 +9249,39 @@ a.pe-row:hover {
   border-color: #e8c98a;
 }
 
+/* The rules on a phone: closed on arrival, so the games and the board come first. */
+.pe-ddrawer > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  border-top: 1px solid var(--pe-line);
+  border-bottom: 1px solid var(--pe-line);
+  list-style: none;
+  cursor: pointer;
+}
+
+.pe-ddrawer > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pe-ddrawer > summary::after {
+  content: '▾';
+  color: var(--pe-amber);
+  font-size: 0.9rem;
+}
+
+.pe-ddrawer[open] > summary {
+  margin-bottom: 1rem;
+}
+
+.pe-ddrawer[open] > summary::after {
+  transform: rotate(180deg);
+}
+
 .pe-dgame-foot .pe-dplay-done {
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.15rem;
 }
 
@@ -9024,4 +9364,163 @@ a.pe-row:hover {
   margin: 0.6rem 0 0;
   color: #ff8f7a;
   font-size: 0.82rem;
+}
+
+/* ── Even's Battles ────────────────────────────────────────── */
+
+.pe-battles {
+  margin: 0 auto 1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--pe-line);
+  border-radius: 6px;
+  background: var(--pe-card);
+}
+
+.pe-battles-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.2rem 1rem;
+  margin-bottom: 0.55rem;
+}
+
+.pe-battles-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.pe-battle {
+  min-width: 0;
+}
+
+.pe-battle b {
+  display: block;
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pe-amber-bright);
+}
+
+.pe-battle span {
+  display: block;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: var(--pe-ink-soft);
+}
+
+.pe-battle-note {
+  margin-top: 0.3rem;
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pe-amber-bright);
+}
+
+.pe-bres-names,
+.pe-bres-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6.5rem 6.5rem;
+  align-items: baseline;
+  gap: 0.2rem 0.7rem;
+}
+
+.pe-bres-names {
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--pe-line);
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+.pe-bres-names span:first-child {
+  grid-column: 2;
+}
+
+.pe-bres-names span,
+.pe-bres-val {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.pe-bres-row {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--pe-line);
+}
+
+.pe-bres-title {
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.92rem;
+  letter-spacing: 0.03em;
+  color: var(--pe-ink);
+}
+
+.pe-bres-val {
+  font-size: 0.82rem;
+  color: var(--pe-ink-mute);
+}
+
+.pe-bres-val.won {
+  font-weight: 700;
+  color: var(--pe-amber-bright);
+}
+
+.pe-bres-tie {
+  grid-column: 1 / -1;
+  font-style: normal;
+  font-size: 0.72rem;
+  color: var(--pe-ink-mute);
+}
+
+.pe-bres-total {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* On a phone the table comes first: the three names, and How It Works has the rest. */
+@media (max-width: 700px) {
+  .pe-battles {
+    padding: 0.55rem 0.7rem;
+    margin-bottom: 0.7rem;
+  }
+
+  .pe-battles-head {
+    flex-wrap: nowrap;
+    margin-bottom: 0.3rem;
+  }
+
+  .pe-battles-more,
+  .pe-battle span {
+    display: none;
+  }
+
+  .pe-battles-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem 0.9rem;
+  }
+
+  .pe-battle b {
+    font-size: 0.84rem;
+    letter-spacing: 0.02em;
+  }
+
+  .pe-bres-names,
+  .pe-bres-row {
+    grid-template-columns: minmax(0, 1fr) 4.9rem 4.9rem;
+    gap: 0.2rem 0.4rem;
+  }
+
+  .pe-bres-val {
+    font-size: 0.74rem;
+  }
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import { signupFrom } from '@/lib/signupFrom'
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -55,6 +56,7 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
     // enabled in the project's Auth settings (it is by default). Until they
     // click the link the session is null and we can't redirect to /dashboard.
     const redirectTo = new URL('/auth/callback', window.location.origin)
+    redirectTo.searchParams.set('from', signupFrom())
     if (next) redirectTo.searchParams.set('next', next)
     // Referral fields are optional — only pass them when something is set
     // so existing user_metadata defaults stay clean for blank submissions.
@@ -62,6 +64,7 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
     if (referral) meta.referral_source = referral
     const otherTrim = referralOther.trim()
     if (otherTrim) meta.referral_source_other = otherTrim.slice(0, 120)
+    meta.signup_from = signupFrom()
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -89,6 +92,7 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
     reset(); setStatus('submitting')
     const supabase = createClient()
     const redirectTo = new URL('/auth/callback', window.location.origin)
+    redirectTo.searchParams.set('from', signupFrom())
     if (next) redirectTo.searchParams.set('next', next)
 
     const { error } = await supabase.auth.signInWithOtp({
@@ -116,6 +120,7 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
     reset(); setStatus('submitting')
     const supabase = createClient()
     const redirectTo = new URL('/auth/callback', window.location.origin)
+    redirectTo.searchParams.set('from', signupFrom())
     redirectTo.searchParams.set('next', '/account')
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -168,6 +173,7 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
     reset(); setStatus('submitting')
     const supabase = createClient()
     const redirectTo = new URL('/auth/callback', window.location.origin)
+    redirectTo.searchParams.set('from', signupFrom())
     if (next) redirectTo.searchParams.set('next', next)
     // OAuth has no form fields, so we round-trip the referral selection
     // through the redirectTo URL. /auth/callback picks it up and writes to

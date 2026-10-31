@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from 'next'
-import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
-import { dailyState, isDailyVersion } from '@/lib/packEmpire/daily'
+import { dailyState, dayKey, isDailyVersion } from '@/lib/packEmpire/daily'
+import { dailyViewer } from '@/lib/packEmpire/dailyWho'
+import { peMeta } from '@/lib/packEmpire/meta'
 import { DIFFICULTY_LOOK } from '@/lib/packEmpire/rules'
 import mobileStyles from '../../../mobile.module.css'
 import { PeChrome } from '../../chrome'
@@ -14,7 +15,15 @@ export const dynamic = 'force-dynamic'
 
 export const viewport: Viewport = { themeColor: '#141311', width: 'device-width', initialScale: 1 }
 
-export const metadata: Metadata = { title: 'The Daily · Pack Empire', robots: { index: false, follow: true } }
+export async function generateMetadata(): Promise<Metadata> {
+  return peMeta({
+    title: 'The Daily · Pack Empire',
+    description: 'One deal for everyone, one try. Blind cards, wild packs and a new rule every day.',
+    card: { c: 'daily', d: dayKey() },
+    alt: 'The Daily',
+    robots: { index: false, follow: true },
+  })
+}
 
 export default async function DailyPlayPage({ searchParams }: { searchParams: Promise<{ v?: string }> }) {
   const { v } = await searchParams
@@ -25,9 +34,8 @@ export default async function DailyPlayPage({ searchParams }: { searchParams: Pr
   } = await supabase.auth.getUser()
   const mobile = (await getViewMode()) === 'mobile'
   const otherVersion = version === 'range' ? 'season' : 'range'
-  const [state, other] = user
-    ? await Promise.all([dailyState(user.id, version), dailyState(user.id, otherVersion)])
-    : [null, null]
+  const who = await dailyViewer(user?.id ?? null)
+  const [state, other] = await Promise.all([dailyState(who, version), dailyState(who, otherVersion)])
 
   return (
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.boardRoot : ''}`.trim()}>
@@ -52,28 +60,16 @@ export default async function DailyPlayPage({ searchParams }: { searchParams: Pr
           </div>
         )}
         {mobile && <div style={{ height: '0.9rem' }} />}
-        {state && other ? (
-          <div className="pe-table">
-            <DailyDraft
-              initial={state}
-              other={{
-                href: `/games/pack-empire/daily/play/?v=${otherVersion}`,
-                label: DIFFICULTY_LOOK[otherVersion].label,
-                done: other.done,
-              }}
-            />
-          </div>
-        ) : (
-          <div className="pe-panel" style={{ textAlign: 'center', maxWidth: 560, margin: '0 auto' }}>
-            <p className="pe-panel-text" style={{ marginBottom: '1rem' }}>
-              The Daily is one try each, so it needs an account to keep to it. Empire Builder is still free to play
-              with no account.
-            </p>
-            <Link href={`/login?next=${encodeURIComponent(`/games/pack-empire/daily/play/?v=${version}`)}`} className="pe-btn">
-              Sign in to play
-            </Link>
-          </div>
-        )}
+        <div className="pe-table">
+          <DailyDraft
+            initial={state}
+            other={{
+              href: `/games/pack-empire/daily/play/?v=${otherVersion}`,
+              label: DIFFICULTY_LOOK[otherVersion].label,
+              done: other.done,
+            }}
+          />
+        </div>
       </div>
 
       {!mobile && <SiteFooter />}

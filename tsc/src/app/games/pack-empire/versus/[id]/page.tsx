@@ -4,7 +4,8 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getViewMode } from '@/lib/viewMode'
-import { getVersus, versusOpponent } from '@/lib/packEmpire/versus'
+import { peMeta } from '@/lib/packEmpire/meta'
+import { getVersus, versusOpponent, type VersusView } from '@/lib/packEmpire/versus'
 import { areFriends } from '@/lib/friends'
 import { nameForUser } from '@/lib/packEmpire/people'
 import mobileStyles from '../../../mobile.module.css'
@@ -19,11 +20,39 @@ export const viewport: Viewport = { themeColor: '#141311', width: 'device-width'
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
   const view = await getVersus(id.toUpperCase(), null, null)
-  const title = view ? `${view.host.name} challenged you · Pack Empire` : 'Versus Challenge · Pack Empire'
-  return {
-    title,
-    description: 'Open eleven packs, keep one player from each, and build a bigger offense than theirs.',
+  const copy = view ? versusCopy(view) : null
+  return peMeta({
+    title: copy?.title ?? 'Versus Challenge · Pack Empire',
+    description: copy?.description ?? 'Open eleven packs, keep one player from each, and build a bigger offense than theirs.',
+    card: view ? { c: 'vs', id: view.id, s: `${view.status}${+view.host.done}${+view.guest.done}` } : { c: 'versus' },
+    alt: 'A Pack Empire challenge',
     robots: { index: false, follow: false },
+  })
+}
+
+/** What the link says, by where the challenge has got to. */
+function versusCopy(v: VersusView): { title: string; description: string } {
+  const { host, guest } = v
+  const them = v.bot ? 'the CPU' : guest.name
+  if (host.score != null && guest.score != null) {
+    const a = `${host.score.toLocaleString('en-US')} to ${guest.score.toLocaleString('en-US')}`
+    if (host.score === guest.score) return { title: `${host.name} and ${them} tied · Pack Empire`, description: `Dead even at ${host.score.toLocaleString('en-US')}.` }
+    const hostWon = host.score > guest.score
+    return {
+      title: `${hostWon ? host.name : them} beat ${hostWon ? them : host.name} · Pack Empire`,
+      description: hostWon ? `Final: ${a}.` : `Final: ${guest.score.toLocaleString('en-US')} to ${host.score.toLocaleString('en-US')}.`,
+    }
+  }
+  const inSide = host.done ? host : guest.done ? guest : null
+  if (inSide?.score != null) {
+    return {
+      title: `${inSide.name} put up ${inSide.score.toLocaleString('en-US')} · Pack Empire`,
+      description: 'Your move. Open eleven packs and beat it.',
+    }
+  }
+  return {
+    title: `${host.name} challenged ${v.reserved ? guest.name : 'you'} · Pack Empire`,
+    description: 'Open eleven packs, keep one player from each, and build a bigger offense than theirs.',
   }
 }
 

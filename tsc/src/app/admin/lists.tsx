@@ -229,6 +229,7 @@ function MemberDrawer({ m }: { m: Member }) {
         <div><dt>Code</dt><dd className={s.mono}>{m.code ?? '·'}</dd></div>
         <div><dt>Joined</dt><dd>{fmtDay(m.joined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })} ET</dd></div>
         <div><dt>Heard via</dt><dd>{m.heardVia ?? '·'}{m.heardOther ? `, “${m.heardOther}”` : ''}</dd></div>
+        <div><dt>Signed up from</dt><dd>{m.cameFrom ?? '·'}</dd></div>
         <div><dt>Stripe</dt><dd>{sub}</dd></div>
         {m.endedComp && <div><dt>Old comp</dt><dd>Ended {fmtDay(m.endedComp.ended)}{m.endedComp.note ? `, ${m.endedComp.note}` : ''}</dd></div>}
         <div className={s.factWide}>

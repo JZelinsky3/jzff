@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { AdminData } from './data'
-import { Accounts, Downloads, Library, NeedsYou, Rooms, Section, Tiles } from './parts'
+import { Accounts, Downloads, Library, NeedsYou, Rooms, Section, SignupPlaces, Tiles } from './parts'
 import { LeagueList, MemberList } from './lists'
 import { fmtDay } from './format'
 import s from './admin.module.css'
@@ -59,6 +59,10 @@ export function MobileAdmin({ data, filter }: { data: AdminData; filter?: string
 
         <Section kicker="Accounts" side={<span className={s.sideNote}>{data.members.length} members</span>}>
           <Accounts a={data.accounts} />
+        </Section>
+
+        <Section kicker="Signed up from">
+          <SignupPlaces places={data.signupPlaces} />
         </Section>
 
         <Section kicker="Library">

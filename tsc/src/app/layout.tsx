@@ -1,3 +1,4 @@
+import { LastPageNote } from '@/components/LastPageNote'
 import type { Metadata, Viewport } from "next";
 import { DM_Serif_Display, Inter, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
@@ -304,6 +305,7 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body>
+        <LastPageNote />
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=AW-18343050789"
           strategy="beforeInteractive"

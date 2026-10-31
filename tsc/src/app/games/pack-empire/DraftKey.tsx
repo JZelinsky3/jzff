@@ -28,11 +28,12 @@ import {
   type Difficulty,
   type Rarity,
 } from '@/lib/packEmpire/rules'
+import { BATTLE_BONUS, battlesFrom } from '@/lib/packEmpire/battles'
 import { CaptainMark, Ladder, RarityGem } from './cards'
 
 /** Which table the key is sitting beside: it describes the game in front of
     you, and on a blind draft it can't print a score it doesn't have. */
-export type KeyFlavor = { difficulty: Difficulty; even: boolean; daily?: boolean; salaryCap?: boolean }
+export type KeyFlavor = { difficulty: Difficulty; even: boolean; daily?: boolean; salaryCap?: boolean; battles?: string[] | null }
 
 const OPEN: KeyFlavor = { difficulty: 'open', even: false }
 
@@ -69,6 +70,7 @@ function KeyBody({ score, flavor }: { score: number; flavor: KeyFlavor }) {
             <li>You and your opponent open the same eleven packs.</li>
             <li>There is no captain.</li>
             <li>Keep one card from each. Values plus chemistry is your total.</li>
+            {flavor.battles?.length ? <li>Three Battles pay out once you&apos;re both in.</li> : null}
           </ol>
         ) : (
           <ol className="pe-key-steps">
@@ -79,6 +81,25 @@ function KeyBody({ score, flavor }: { score: number; flavor: KeyFlavor }) {
           </ol>
         )}
       </section>
+
+      {!!flavor.battles?.length && (
+        <section className="pe-key-sec">
+          <h3 className="pe-key-h">The Battles</h3>
+          <p className="pe-key-p">
+            Beat your opponent on one and it&apos;s worth {BATTLE_BONUS.toLocaleString()}. You don&apos;t need the best
+            number, just a better one than theirs. A tie pays nobody.
+          </p>
+          <ul className="pe-key-steps pe-key-steps--plain">
+            {battlesFrom(flavor.battles).map((b) => (
+              <li key={b.id}>
+                <span>
+                  <b>{b.title}.</b> {b.line}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {flavor.difficulty === 'range' && (
         <section className="pe-key-sec">

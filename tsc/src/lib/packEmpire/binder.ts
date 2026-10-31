@@ -29,7 +29,7 @@ import {
   type PoolKey,
   type Rarity,
 } from './rules'
-import { POOL, POOL_SIZE, POOL_VERSION } from './pool'
+import { POOL, POOL_SIZE, POOL_VERSION, cardWeight } from './pool'
 import { parseSoloPicks, replaySolo, type SoloPick } from './solo'
 
 export type BinderSource = 'solo' | 'versus' | 'league'
@@ -194,8 +194,8 @@ export async function loadCompleteBinder(): Promise<BinderView> {
 /** 1 in how many ordinary packs of its position hold each rarity's one card.
     A pack is four draws off the base table and one off the boosted one. */
 function oneInByRarity(pool: Player[]): Record<Rarity, number> {
-  const base = packOdds(pool, SOLO_WEIGHTS.normal)
-  const boosted = packOdds(pool, SOLO_BOOSTED.normal)
+  const base = packOdds(pool, (p) => cardWeight(p, SOLO_WEIGHTS.normal))
+  const boosted = packOdds(pool, (p) => cardWeight(p, SOLO_BOOSTED.normal))
   const out = {} as Record<Rarity, number>
   for (const r of RARITIES) {
     const of = pool.filter((p) => p.rarity === r).length || 1

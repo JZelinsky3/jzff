@@ -52,7 +52,7 @@ export function DifficultyTabs({ value, onChange }: { value: Difficulty; onChang
 
 const FORMATS: { id: VersusFormat; label: string; line: string }[] = [
   { id: 'classic', label: 'Classic', line: 'Your own eleven packs and a captain each. The better pulls win.' },
-  { id: 'even', label: 'Even', line: 'The same eleven packs, no captain. Chemistry decides it.' },
+  { id: 'even', label: 'Even', line: 'The same eleven packs, no captain. Chemistry and three Battles decide it.' },
 ]
 
 export function FormatPicker({ value, onChange }: { value: VersusFormat; onChange: (f: VersusFormat) => void }) {

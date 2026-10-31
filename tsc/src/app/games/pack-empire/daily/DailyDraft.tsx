@@ -22,7 +22,10 @@ import {
   type Player,
 } from '@/lib/packEmpire/rules'
 import type { DailyResult, DailyState } from '@/lib/packEmpire/daily'
+import { guestPoster, readGuest, rememberGuest } from '../../runBank'
 import { KeyAside, KeyButton, type KeyFlavor } from '../DraftKey'
+import { GuestName } from '../GuestName'
+import { ShareButton } from '../share'
 import { Bonds, CaptainMark, Field, LineupSheet, PackCard, blindTotal, type SlotView } from '../cards'
 import { PackStage, ScoreStrip, restoredStage, usePackStage, useStripOffset } from '../stage'
 
@@ -202,7 +205,9 @@ export function DailyDraft({ initial, other }: { initial: DailyState; other: { h
     [stage, reveal, blockedFor, captainPack, captain, pick, version, lineup, capLeft]
   )
 
-  if (state.done && turned && state.result) return <DailyRecap state={state} result={state.result} other={other} />
+  if (state.done && turned && state.result) {
+    return <DailyRecap state={state} result={state.result} other={other} onNamed={setState} />
+  }
 
   const view = (i: number): SlotView => {
     if (!state.started) {
@@ -340,15 +345,55 @@ function ordinal(n: number): string {
   return n + ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] ?? 'th')
 }
 
+/** No account, at the end of a run: a name puts it on today's board. A browser
+    that's posted a name before doesn't get asked twice. */
+function NameYourRun({ version, onNamed }: { version: DailyState['version']; onNamed: (state: DailyState) => void }) {
+  const [error, setError] = useState<string | null>(null)
+
+  const post = useCallback(
+    async (name: string) => {
+      const guest = guestPoster(name)
+      try {
+        const next = await call({ action: 'name', version, name, key: guest.key })
+        rememberGuest(guest)
+        onNamed(next)
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Could not save that name.')
+      }
+    },
+    [version, onNamed]
+  )
+
+  useEffect(() => {
+    const known = readGuest()
+    if (!known) return
+    const t = window.setTimeout(() => void post(known.name), 0)
+    return () => window.clearTimeout(t)
+  }, [post])
+
+  return (
+    <div style={{ marginTop: '0.9rem' }}>
+      <p className="pe-recap-post">Add your name to go on today&apos;s board.</p>
+      <GuestName
+        error={error}
+        onPost={post}
+        signIn={`/login?mode=signup&next=${encodeURIComponent(`/games/pack-empire/daily/play/?v=${version}`)}`}
+      />
+    </div>
+  )
+}
+
 /** Everything turned over: the score, how it got there, and what you passed. */
 function DailyRecap({
   state,
   result,
   other,
+  onNamed,
 }: {
   state: DailyState
   result: DailyResult
   other: { href: string; label: string; done: boolean }
+  onNamed: (state: DailyState) => void
 }) {
   const { rule, version } = state
   return (
@@ -376,10 +421,17 @@ function DailyRecap({
             <b>{signedDelta(result.chem.total)}</b> Chemistry
           </span>
         </div>
+        {!result.named && <NameYourRun version={version} onNamed={onNamed} />}
         <div className="pe-recap-actions">
           <Link href={other.href} className="pe-btn">
             {other.done ? `See ${other.label}` : `Play ${other.label}`}
           </Link>
+          {result.share && (
+            <ShareButton
+              path={`/games/pack-empire/daily/?r=${encodeURIComponent(result.share)}`}
+              text={`${result.total.toLocaleString()} on today's Daily. Same packs, one try.`}
+            />
+          )}
           <Link href="/games/pack-empire/daily/" className="pe-btn pe-btn--quiet">
             Top lineups
           </Link>

@@ -11,15 +11,15 @@ import s from './mobile.module.css'
 // else in the mobile trees is, and its side columns are 36px against a 32px
 // spacer, which pushes the title four pixels off centre on every page.
 
-function Ico({ children }: { children: React.ReactNode }) {
+function Ico({ children, size = 17, weight = 1.6 }: { children: React.ReactNode; size?: number; weight?: number }) {
   return (
     <svg
       viewBox="0 0 24 24"
-      width="17"
-      height="17"
+      width={size}
+      height={size}
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.6"
+      strokeWidth={weight}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
@@ -59,10 +59,12 @@ export function ProfileIcon() {
   )
 }
 
-/** Two people, for the Pack Empire friends page. */
+/** Two people, for the Pack Empire friends page. It sits across the bar from
+    the back arrow, and two heads only fill about 14 of the box's 24 units, so
+    it's drawn larger and heavier to stand as tall as the arrow does. */
 export function FriendsIcon() {
   return (
-    <Ico>
+    <Ico size={24} weight={1.45}>
       <circle cx="9" cy="8.5" r="3.2" />
       <path d="M3.2 19.5c.6-3.3 3-5.2 5.8-5.2s5.2 1.9 5.8 5.2" />
       <circle cx="16.6" cy="9.4" r="2.5" />
@@ -208,7 +210,7 @@ export function MobileGameBar({
         }
       >
         {!signedIn ? (
-          <Ico>
+          <Ico size={right === 'friends' ? 22 : 17} weight={right === 'friends' ? 1.5 : 1.6}>
             <path d="M10 4.5H5.5v15H10" />
             <path d="M14 8l4 4-4 4" />
             <path d="M18 12H9" />

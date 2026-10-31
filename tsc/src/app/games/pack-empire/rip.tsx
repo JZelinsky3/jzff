@@ -8,11 +8,16 @@
 // events, not a drag, so the wheel peels the strip too and tears it once it
 // passes halfway.
 //
-// The light comes up out of the torn top edge of the pack, the colour of the
-// best card inside, and bigger and brighter the better that card is. The pack
-// already knows, because the deal is fetched while it sits sealed. If the deal
-// is still in flight when the strip comes off, the open pack shakes until it
-// lands. Then RipBurst goes off from the same edge as the cards come out.
+// The light comes out of the pack, not from behind it. Tearing the strip opens
+// the wrapper: its back flap rises, lit from inside, with a white-hot slit
+// between the two lips. The rays start in that slit, between the flaps, so the
+// torn front edge cuts across them, and a rim and a glare sit on top of the
+// front, because light that strong spills over whatever is in front of it. It's
+// the colour of the best card inside, and bigger and brighter the better that
+// card is. The pack already knows, because the deal is fetched while it sits
+// sealed. If the deal is still in flight when the strip comes off, the open
+// pack shakes until it lands. Then RipBurst goes off from the same edge as the
+// cards come out.
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { RARITY_LOOK, RARITIES } from '@/lib/packEmpire/rules'
@@ -28,6 +33,9 @@ const COMMIT_AT = 0.5
 
 /** Sparks off the tear, by tier (common up to immortal). */
 const SPARKS = [6, 10, 16, 22, 30]
+
+/** Motes drifting up out of the open pack while it holds, by tier. */
+const MOTES = [3, 5, 8, 12, 16]
 
 export function SealedPack({
   art,
@@ -160,18 +168,43 @@ export function SealedPack({
           if (e.detail === 0) rip()
         }}
       >
+        <span className="pe-mouth-back" aria-hidden />
         <span className="pe-mouth" aria-hidden>
-          <i className="pe-mouth-halo" />
+          <i className="pe-mouth-bloom" />
+          <i className="pe-mouth-slit" />
+          <i className="pe-mouth-rays" />
+          <i className="pe-mouth-rays fine" />
         </span>
         <span className="pe-rip-body" aria-hidden>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={art} alt="" draggable={false} />
         </span>
+        <span className="pe-rip-rim" aria-hidden />
         <span className="pe-rip-strip" aria-hidden>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={art} alt="" draggable={false} />
         </span>
         <span className="pe-rip-seam" aria-hidden />
+        <span className="pe-mouth-glare" aria-hidden />
+        {phase !== 'sealed' && (
+          <span className="pe-motes" aria-hidden>
+            {Array.from({ length: MOTES[tier] ?? 3 }, (_, i) => (
+              <i
+                key={i}
+                style={
+                  {
+                    // The golden ratio again, so they never line up.
+                    '--x': ((i * 0.618) % 1) * 0.84 - 0.42,
+                    '--r': `${90 + (i % 4) * 26 + tier * 14}px`,
+                    '--dx': `${((i * 0.382) % 1) * 36 - 18}px`,
+                    '--t': `${1050 + (i % 5) * 170}ms`,
+                    '--s': `${(i * 137) % 900}ms`,
+                  } as React.CSSProperties
+                }
+              />
+            ))}
+          </span>
+        )}
       </button>
     </div>
   )
@@ -208,6 +241,7 @@ export function RipBurst({ rarity, glow }: { rarity: (typeof RARITIES)[number]; 
     >
       {tier >= 1 && <span className="pe-boom-flash" />}
       <span className="pe-boom-bloom" />
+      <span className="pe-boom-rays" />
       <span className="pe-boom-core" />
       {Array.from({ length: SPARKS[tier] ?? 6 }, (_, i) => (
         <span
@@ -232,9 +266,13 @@ export function RipBurst({ rarity, glow }: { rarity: (typeof RARITIES)[number]; 
     still lit. */
 export function SpentPack({ art, tier, glow }: { art: string; tier: number; glow: string }) {
   return (
-    <div className="pe-rip-spent" data-tier={tier} aria-hidden style={{ '--glow': glow } as React.CSSProperties}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={art} alt="" draggable={false} />
+    <div className="pe-rip-spent" data-tier={tier} aria-hidden style={{ '--glow': glow, '--pull': 1 } as React.CSSProperties}>
+      <span className="pe-mouth-back" />
+      <span className="pe-rip-body">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={art} alt="" draggable={false} />
+      </span>
+      <span className="pe-rip-rim" />
     </div>
   )
 }

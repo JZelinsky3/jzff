@@ -15,10 +15,10 @@ BANDS = ['immortal', 'transcendent', 'dynasty', 'rare', 'common']
 # run a little over these, since MUST, CURRENT and step 4 don't count against
 # them; each is set from what's really dealt at that band.
 TARGETS = {
-    'QB': {'immortal': 7, 'transcendent': 8, 'dynasty': 16, 'rare': 36, 'common': 60},
-    'RB': {'immortal': 7, 'transcendent': 8, 'dynasty': 20, 'rare': 44, 'common': 68},
-    'WR': {'immortal': 6, 'transcendent': 11, 'dynasty': 22, 'rare': 44, 'common': 78},
-    'TE': {'immortal': 4, 'transcendent': 6, 'dynasty': 15, 'rare': 33, 'common': 58},
+    'QB': {'immortal': 7, 'transcendent': 8, 'dynasty': 17, 'rare': 44, 'common': 76},
+    'RB': {'immortal': 7, 'transcendent': 8, 'dynasty': 22, 'rare': 59, 'common': 104},
+    'WR': {'immortal': 6, 'transcendent': 11, 'dynasty': 25, 'rare': 62, 'common': 132},
+    'TE': {'immortal': 4, 'transcendent': 6, 'dynasty': 17, 'rare': 43, 'common': 78},
 }
 
 # Metric floors for the middle bands, off the median season at each finish,
@@ -43,18 +43,22 @@ TOP_BANDS = {'dynasty', 'transcendent', 'immortal'}
 # Seasons per year per position, so one deep year can't crowd out the rest.
 # Raised from 6 when the pool grew: it had filled every year from 2020 on, so
 # new cards could only come from older seasons, the opposite of what's wanted.
-PER_SEASON = 13
+PER_SEASON = 24
 
 # Where the sampled (non-headline) seasons come from, by band. Joey: too many
 # old players, a third of a draft with no photo and a few nobody had heard of.
 # So every band samples from 2000 on, leaning recent, and a season from before
 # 2000 only gets in for a name on LEGENDS (or a MUST). What's already dealt is
-# kept, so these only steer what's added: Joey on the 2026-10-30 batch, recent
-# players over old ones, so people recognize them.
+# kept, so these only steer what's added. Joey on the 2026-10-31 batch: more
+# players from the years that have a photo of their own, and that's where the
+# line is: nothing is sampled from before RECENT_FROM, or without a live photo
+# from that exact season. Rosters carry one snapshot for 2016-19 and a new one
+# most years from 2020, so the 2020s take most of it.
+RECENT_FROM = 2016
 DECADES = {
-    'dynasty': {2000: 0.05, 2010: 0.30, 2020: 0.65},
-    'rare': {2000: 0.03, 2010: 0.27, 2020: 0.70},
-    'common': {2000: 0.02, 2010: 0.23, 2020: 0.75},
+    'dynasty': {2010: 0.25, 2020: 0.75},
+    'rare': {2010: 0.20, 2020: 0.80},
+    'common': {2010: 0.20, 2020: 0.80},
 }
 LEGEND_BEFORE = 2000
 
@@ -84,27 +88,31 @@ NO_PHOTO_OK = {'Priest Holmes', 'Edgerrin James', 'Shaun Alexander', 'Eddie Geor
 CURRENT = {
     'QB': ['Kyler Murray', 'Jordan Love', 'Tua Tagovailoa', 'Trevor Lawrence', 'Caleb Williams', 'Jared Goff',
            'Justin Herbert', 'Jalen Hurts', 'C.J. Stroud', 'Bo Nix', 'Drake Maye', 'Baker Mayfield',
-           'Matthew Stafford', 'Brock Purdy', 'Dak Prescott', 'Kirk Cousins', 'Geno Smith'],
+           'Matthew Stafford', 'Brock Purdy', 'Dak Prescott', 'Kirk Cousins', 'Geno Smith', 'Jaxson Dart'],
     'RB': ['Jahmyr Gibbs', 'Bijan Robinson', "De'Von Achane", 'Josh Jacobs', 'Kyren Williams', 'Breece Hall',
            'James Cook', 'Jonathan Taylor', 'Alvin Kamara', 'Ashton Jeanty', 'Derrick Henry', 'Saquon Barkley',
            'Christian McCaffrey', 'Chase Brown', 'Bucky Irving', 'Kenneth Walker', 'Joe Mixon', 'Aaron Jones',
-           'Austin Ekeler', 'Nick Chubb', 'Tony Pollard', 'Rhamondre Stevenson', 'Najee Harris', 'David Montgomery'],
+           'Austin Ekeler', 'Nick Chubb', 'Tony Pollard', 'Rhamondre Stevenson', 'Najee Harris', 'David Montgomery',
+           'Rico Dowdle', 'Zach Charbonnet', 'Tyler Allgeier', 'Kenneth Gainwell', 'Samaje Perine'],
     'WR': ['Deebo Samuel', 'Garrett Wilson', 'Drake London', 'Mike Evans', 'DK Metcalf', 'Terry McLaurin',
            'Chris Olave', 'DJ Moore', 'Tee Higgins', 'George Pickens', 'Jaylen Waddle', 'Marvin Harrison Jr.',
            'Justin Jefferson', 'Amon-Ra St. Brown', 'Malik Nabers', 'Jaxon Smith-Njigba', 'Brian Thomas',
            'Puka Nacua', 'Nico Collins', 'Ladd McConkey', 'Zay Flowers', 'DeVonta Smith', 'Rashee Rice',
            'Davante Adams', 'Tyreek Hill', 'Stefon Diggs', 'Cooper Kupp', 'Chris Godwin', 'Calvin Ridley',
-           'Jordan Addison', 'Jameson Williams', 'Courtland Sutton', 'Xavier Worthy'],
+           'Jordan Addison', 'Jameson Williams', 'Courtland Sutton', 'Xavier Worthy', "Wan'Dale Robinson", 'Romeo Doubs',
+           'Darius Slayton', 'Kendrick Bourne', 'Allen Lazard'],
     'TE': ['Dalton Kincaid', 'T.J. Hockenson', 'Kyle Pitts', 'Evan Engram', 'David Njoku', 'Jake Ferguson',
            'Tucker Kraft', 'Dallas Goedert', 'Tyler Warren', 'George Kittle', 'Sam LaPorta', 'Brock Bowers',
-           'Trey McBride', 'Mark Andrews', 'Travis Kelce', 'Hunter Henry', 'Cole Kmet', 'Pat Freiermuth'],
+           'Trey McBride', 'Mark Andrews', 'Travis Kelce', 'Hunter Henry', 'Cole Kmet', 'Pat Freiermuth',
+           'Isaiah Likely', 'Chig Okonkwo'],
 }
 
 try:
-    from headshots import has_photo
+    from headshots import has_photo, own_season_photos
     PHOTO = has_photo()
+    SEASON_PHOTO = own_season_photos()
 except Exception:
-    PHOTO = {}
+    PHOTO, SEASON_PHOTO = {}, {}
 
 # Seasons people remember, pulled in wherever they land.
 MUST = {
@@ -290,15 +298,21 @@ def choose(pos, t):
             if can_take(r.pid, r.band): take(r.Index, r.band); break
 
     # 3. The rest of each lower band: decade quotas, spread across the band's
-    #    range, favouring names people know and a man's one big year. Only men
-    #    with a photo.
+    #    range, favouring names people know and a man's one big year. Only
+    #    seasons with a photo of their own, and never the photo he already has
+    #    on another card, so each of a man's cards looks like its year.
+    def fresh_photo(pid, season):
+        return SEASON_PHOTO.get((pid, season)) not in {
+            SEASON_PHOTO.get((p.at[i, 'pid'], p.at[i, 'season'])) for i in picked if p.at[i, 'pid'] == pid}
+
     per_season = {}
     for i in picked: per_season[p.at[i, 'season']] = per_season.get(p.at[i, 'season'], 0) + 1
     for band in ['dynasty', 'rare', 'common']:
         need = target[band] - sum(1 for b in picked.values() if b == band)
         if need <= 0: continue
         pool = p[(p.band == band) & (~p.index.isin(picked.keys())) & (p.metric >= SAMPLE_FLOOR[pos])
-                 & p.decade.isin(DECADES[band].keys()) & p.pid.map(lambda x: PHOTO.get(x, False))].copy()
+                 & (p.season >= RECENT_FROM)].copy()
+        pool = pool[[(a, b) in SEASON_PHOTO for a, b in zip(pool.pid, pool.season)]]
         pool['interest'] = 0.8 * pool.fame + 0.2 * np.clip(pool.share * 2.5, 0, 1)
         quota = {d: need * w for d, w in DECADES[band].items()}
         got = {d: 0 for d in DECADES[band]}
@@ -310,8 +324,9 @@ def choose(pos, t):
         while need > 0 and stall < nb * 3:
             # the decade furthest behind its quota, among those with someone left in this bin
             cand = pool[(pool.bin == b) & (~pool.index.isin(picked.keys()))]
-            cand = cand[[can_take(x, band) for x in cand.pid]]
-            cand = cand[[per_season.get(s, 0) < PER_SEASON for s in cand.season]]
+            if len(cand): cand = cand[[can_take(x, band) for x in cand.pid]]
+            if len(cand): cand = cand[[per_season.get(s, 0) < PER_SEASON for s in cand.season]]
+            if len(cand): cand = cand[[fresh_photo(a, s) for a, s in zip(cand.pid, cand.season)]]
             if len(cand):
                 lag = {d: got[d] - quota[d] for d in DECADES[band]}
                 cand = cand.assign(lag=cand.decade.map(lag)).sort_values(['lag', 'interest'], ascending=[True, False])

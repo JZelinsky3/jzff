@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { SiteFooter } from '@/components/SiteFooter'
+import { peMeta } from '@/lib/packEmpire/meta'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { listMega } from '@/lib/packEmpire/mega'
@@ -7,7 +8,7 @@ import { friendPicker } from '@/lib/friends'
 import mobileStyles from '../../mobile.module.css'
 import { GameList } from '../GameList'
 import { splitGames, type GameRow } from '../gameRows'
-import { PeChrome, PeDock } from '../chrome'
+import { HowItWorks, PeChrome, PeDock } from '../chrome'
 import { peFonts } from '../fonts'
 import { MegaLobby } from './MegaLobby'
 
@@ -15,10 +16,12 @@ export const dynamic = 'force-dynamic'
 
 export const viewport: Viewport = { themeColor: '#141311', width: 'device-width', initialScale: 1 }
 
-export const metadata: Metadata = {
+export const metadata: Metadata = peMeta({
   title: 'Mega Draft · Pack Empire',
   description: 'A live two-player snake draft off one shared board of thirty-six players.',
-}
+  card: { c: 'mega' },
+  alt: 'Mega Draft',
+})
 
 const STATUS: Record<string, { label: string; color: string }> = {
   waiting: { label: 'Waiting for a seat', color: '#8d8473' },
@@ -92,10 +95,7 @@ export default async function MegaDraftLobby() {
 
         <MegaLobby signedIn={!!user} friends={friends} />
 
-        <section className="pe-sec">
-          <div className="pe-sec-head">
-            <span className="pe-sec-num">§ How it works</span>
-          </div>
+        <HowItWorks mobile={mobile}>
           <div className="pe-rules">
             <div className="pe-rule">
               <span>
@@ -114,7 +114,7 @@ export default async function MegaDraftLobby() {
               </span>
             </div>
           </div>
-        </section>
+        </HowItWorks>
 
         {user && games.waiting.length > 0 && (
           <section className="pe-sec">

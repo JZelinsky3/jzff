@@ -21,6 +21,18 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      // Where a new account came from. Password signups already carry it; a
+      // magic link or Google can only bring it through this URL. Only on an
+      // account minutes old, so an old member signing in from a league page
+      // doesn't read as having signed up from it.
+      const from = url.searchParams.get('from')
+      if (from) {
+        const { data: { user } } = await supabase.auth.getUser()
+        const fresh = !!user && Date.now() - Date.parse(user.created_at) < 15 * 60 * 1000
+        if (fresh && !user.user_metadata?.signup_from) {
+          await supabase.auth.updateUser({ data: { signup_from: from.slice(0, 200) } })
+        }
+      }
       if (refRaw && REFERRAL_CHANNEL_SET.has(refRaw)) {
         // Only fill if the profile doesn't already have a referral on file —
         // we never want to overwrite a deliberate /account edit with stale

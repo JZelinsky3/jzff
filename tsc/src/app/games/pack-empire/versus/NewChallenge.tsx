@@ -95,7 +95,7 @@ export function ChallengePanels({ friends }: { friends: Friend[] }) {
           <div className="pe-panel-title">Draft against the CPU</div>
           <p className="pe-panel-text">
             {format === 'even'
-              ? 'It gets the same eleven packs and drafts for value and chemistry. It never sees your picks, and it can only read what you can read.'
+              ? 'It gets the same eleven packs and drafts for value, chemistry and the Battles. It never sees your picks, and it can only read what you can read.'
               : 'Its eleven packs are dealt the moment you start, before you open yours, and it keeps the best card in each. It never sees your picks.'}{' '}
             Both totals go up when you lock yours in.
           </p>

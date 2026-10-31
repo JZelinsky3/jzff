@@ -508,7 +508,7 @@ export function PackStage({
   chipFor?: (p: Player) => string | null
   /** Said over the cards in place of the usual prompt. */
   note?: string | null
-  /** The Daily's shot clock, under the status line. */
+  /** Under the status line: the Daily's shot clock, Even's Battles. */
   clock?: React.ReactNode
 }) {
   const root = useRef<HTMLDivElement>(null)

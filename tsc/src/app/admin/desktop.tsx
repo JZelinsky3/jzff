@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
 import type { AdminData } from './data'
-import { Accounts, Downloads, Library, NeedsYou, Rooms, Section, Tiles, asOfLine } from './parts'
+import { Accounts, Downloads, Library, NeedsYou, Rooms, Section, SignupPlaces, Tiles, asOfLine } from './parts'
 import { LeagueList, MemberList } from './lists'
 import s from './admin.module.css'
 
@@ -46,6 +46,9 @@ export function DesktopAdmin({ data, filter }: { data: AdminData; filter?: strin
           <div className={s.splitSide}>
             <Section kicker="Accounts" title={<>{data.members.length} <em>members</em></>}>
               <Accounts a={data.accounts} />
+            </Section>
+            <Section kicker="Signed up from">
+              <SignupPlaces places={data.signupPlaces} />
             </Section>
             <Section kicker="Library">
               <Library lib={data.library} nudge={data.followNudge} />

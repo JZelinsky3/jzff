@@ -28,7 +28,7 @@ import type { MegaView } from '@/lib/packEmpire/mega'
 import { DeleteGame } from '../GameList'
 import { LineupSheet } from '../cards'
 import { useFace, useFaces } from '../faces'
-import { ShareLink } from '../share'
+import { ShareButton, ShareLink } from '../share'
 import { useStored } from '../clientStore'
 import { forgetMega, megaKey, rememberMega } from './MegaLobby'
 
@@ -529,6 +529,10 @@ export function MegaRoom({
                 Add {seatName(them)} as a friend
               </button>
             )}
+            <ShareButton
+              path={`/games/pack-empire/mega-draft/${id}/`}
+              text={winner == null ? 'Dead even on the Mega Draft.' : `${seatName(winner)} won the Mega Draft by ${Math.abs(a.score - b.score).toLocaleString()}.`}
+            />
           </div>
           {friendNote && <p className="pe-recap-post">{friendNote}</p>}
           {error && <p className="pe-recap-post">{error}</p>}

@@ -818,3 +818,30 @@ a.mbarIco:active { background: rgba(232, 200, 137, .08); }
   text-transform: uppercase;
 }
 .dockItem:active { color: var(--gold); background: rgba(232, 200, 137, .06); }
+
+/* Where signups came from: one quiet line a place. */
+.signups {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.signups li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--ink-line-soft);
+  font-size: 0.86rem;
+  color: var(--cream);
+}
+
+.signups li:last-child {
+  border-bottom: 0;
+}
+
+.signupsEmpty {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--cream-mute);
+}

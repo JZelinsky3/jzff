@@ -20,13 +20,18 @@
 // Two choices are made when a challenge opens and hold for both seats:
 //   · the format. Classic is your own eleven packs and a captain. Even is the
 //     same eleven packs for both and no captain, so the card values wash out
-//     and chemistry decides it. One seed, kept in `even_seed` until a seat
-//     starts, so a seat that hasn't drafted still reads as not started.
+//     and chemistry and three Battles decide it (see ./battles). One seed,
+//     kept in `even_seed` until a seat starts, so a seat that hasn't drafted
+//     still reads as not started. The Battles are drawn here too, and a game
+//     opened before they existed has none. They pay out once both lineups are
+//     in, written into each side's score, so a seat's number is cards and
+//     chemistry until then, and records and lists need nothing special.
 //   · the difficulty, the same three as Empire Builder. The seed carries it,
 //     so the deal route masks the cards without knowing whose seat this is.
 
 import { randomInt } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { battlesFrom, drawBattles, settleBattles, type BattleOutcome } from './battles'
 import { cpuEye, newCaptainSeed, newEvenSeed, priced, readSeed } from './deal'
 import { friendOf } from '@/lib/friends'
 import { hashKey, nameForUser, cleanGuestName, newId, isId } from './people'
@@ -51,8 +56,12 @@ export type VersusFormat = 'classic' | 'even'
 
 export type VersusResult = {
   lineup: Player[]
-  /** Cards plus chemistry, where chemistry counts. */
+  /** Cards plus chemistry, where chemistry counts, plus Battles once settled. */
   score: number
+  /** The score before Battles paid out. */
+  before?: number
+  /** Even's Battles, once both sides are in. */
+  battles?: BattleOutcome
   /** Results from before chemistry could count have neither of these two. */
   base?: number
   chem?: Chemistry | null
@@ -84,6 +93,8 @@ type Row = {
   difficulty: Difficulty
   /** An Even challenge's one seed, until a seat starts on it. */
   even_seed: string | null
+  /** An Even challenge's Battles. Null on Classic and on older games. */
+  battles: string[] | null
 }
 
 export type SideView = {
@@ -98,6 +109,8 @@ export type SideView = {
   captain: number | null
   /** Only once both sides are in, like the lineup. */
   chem: Chemistry | null
+  /** What Battles added to the score, once both sides are in. */
+  battlePoints: number | null
 }
 
 export type VersusView = {
@@ -118,6 +131,10 @@ export type VersusView = {
   bot: boolean
   format: VersusFormat
   difficulty: Difficulty
+  /** The three categories, known before the first pack. */
+  battles: string[] | null
+  /** How they went, once both sides are in. */
+  outcome: BattleOutcome | null
 }
 
 function side(row: Row, seat: Seat, reveal: boolean): SideView {
@@ -131,6 +148,7 @@ function side(row: Row, seat: Seat, reveal: boolean): SideView {
     lineup: reveal && r ? r.lineup : null,
     captain: reveal && r ? r.captain : null,
     chem: reveal && r ? (r.chem ?? null) : null,
+    battlePoints: reveal && r?.battles ? r.battles[seat] : null,
   }
 }
 
@@ -158,6 +176,8 @@ function view(row: Row, you: Seat | null, viewerId: string | null): VersusView {
     bot: !!row.guest_bot,
     format: row.format,
     difficulty: row.difficulty,
+    battles: row.battles,
+    outcome: both ? (row.host_result?.battles ?? null) : null,
   }
 }
 
@@ -167,16 +187,21 @@ export const CPU_NAME = 'CPU'
 /** What $1M is worth to the CPU in accolades, under a salary cap. */
 const CPU_DOLLAR = 70
 
+/** How hard it leans into a Battle: the sim's best, past this it gives away
+    more in value than the Battles pay (hard-sim.ts). */
+const CPU_BATTLE = 700
+
 /**
  * The CPU's draft: open its eleven packs in order and keep the card that reads
  * best, counting what it does for the team where chemistry counts. It reads
  * only what a person could (see cpuEye). Deterministic off its seed, so the
  * lineup is fixed the moment the seed is dealt, whatever the other seat does.
  */
-function cpuDraft(seed: string): VersusResult | null {
+function cpuDraft(seed: string, battleIds: string[] | null): VersusResult | null {
   const parsed = readSeed(seed)
   if (!parsed) return null
   const eye = cpuEye(seed, parsed.diff)
+  const battles = battlesFrom(battleIds)
   const chem = chemistryCounts(parsed.diff, parsed.even)
   const taken: string[] = []
   const roster: Player[] = []
@@ -190,7 +215,11 @@ function cpuDraft(seed: string): VersusResult | null {
     const onTable = capped ? pack.filter((p) => signingPrice(p, pack, left) != null) : pack
     const read = onTable.map((p) => ({
       p,
-      worth: eye(p) + (chem ? chemistryPreview(p, roster, true) : 0) - (capped ? CPU_DOLLAR * (p.salary ?? 0) : 0),
+      worth:
+        eye(p) +
+        (chem ? chemistryPreview(p, roster, true) : 0) -
+        (capped ? CPU_DOLLAR * (p.salary ?? 0) : 0) +
+        CPU_BATTLE * battles.reduce((sum, b) => sum + b.lean(p, roster), 0),
     }))
     const best = read.reduce((a, b) => (b.worth > a.worth ? b : a)).p
     if (capped) left -= signingPrice(best, pack, left) ?? 0
@@ -243,6 +272,7 @@ export async function createVersus(
   const format: VersusFormat = rawFormat === 'even' ? 'even' : 'classic'
   const difficulty: Difficulty = isDifficulty(rawDifficulty) ? rawDifficulty : 'open'
   const even_seed = format === 'even' ? newEvenSeed(difficulty) : null
+  const battles = format === 'even' ? drawBattles(randomInt) : null
   let invite: Record<string, unknown> | null = null
   if (cpu) {
     // A skill position for its captain, the way most people pick one.
@@ -262,7 +292,7 @@ export async function createVersus(
     const id = newId()
     const { error } = await db
       .from('pe_versus')
-      .insert({ id, host_id: userId, host_name: name, format, difficulty, even_seed, ...invite })
+      .insert({ id, host_id: userId, host_name: name, format, difficulty, even_seed, battles, ...invite })
     if (!error) return { ok: true, id }
     if (error.code !== '23505') return { ok: false, error: 'Could not open a challenge.' }
   }
@@ -343,6 +373,17 @@ export async function startVersusSeat(
   return { ok: true, seed }
 }
 
+/** Both results with the Battles paid. Counted from `before`, so two seats
+    landing together write the same numbers rather than paying twice. */
+function withBattles(ids: string[], host: VersusResult, guest: VersusResult): [VersusResult, VersusResult] {
+  const battles = settleBattles(ids, host.lineup, guest.lineup)
+  const paid = (r: VersusResult, won: number): VersusResult => {
+    const before = r.before ?? r.score
+    return { ...r, before, score: before + won, battles }
+  }
+  return [paid(host, battles.host), paid(guest, battles.guest)]
+}
+
 export async function submitVersusSeat(
   id: string,
   userId: string | null,
@@ -385,7 +426,7 @@ export async function submitVersusSeat(
   const patch: Record<string, unknown> = { [seat === 'host' ? 'host_result' : 'guest_result']: result }
   // The CPU drafts now, off the seed it was dealt when the challenge opened.
   if (row.guest_bot && seat === 'host' && !row.guest_result && row.guest_seed) {
-    const cpu = cpuDraft(row.guest_seed)
+    const cpu = cpuDraft(row.guest_seed, row.battles)
     if (cpu) {
       patch.guest_result = cpu
       other = cpu
@@ -407,11 +448,20 @@ export async function submitVersusSeat(
   const fresh = (data as Row | null) ?? (await load(id))
   if (!fresh) return { ok: false, error: 'Could not save your lineup.' }
 
-  // If the other side landed between our read and our write, the row we just
-  // wrote says 'playing' with both results in. Close it out.
-  if (fresh.host_result && fresh.guest_result && fresh.status !== 'done') {
-    await db.from('pe_versus').update({ status: 'done', completed_at: new Date().toISOString() }).eq('id', id)
-    fresh.status = 'done'
+  // Both in: pay out the Battles. And if the other side landed between our read
+  // and our write, the row we just wrote says 'playing'. Close it out.
+  if (fresh.host_result && fresh.guest_result) {
+    const unpaid = !!fresh.battles?.length && !fresh.host_result.battles
+    if (unpaid || fresh.status !== 'done') {
+      const close: Record<string, unknown> = { status: 'done', completed_at: fresh.completed_at ?? new Date().toISOString() }
+      if (unpaid) {
+        const [host, guest] = withBattles(fresh.battles as string[], fresh.host_result, fresh.guest_result)
+        close.host_result = fresh.host_result = host
+        close.guest_result = fresh.guest_result = guest
+      }
+      await db.from('pe_versus').update(close).eq('id', id)
+      fresh.status = 'done'
+    }
   }
   // A seat with an account files its packs in the binder; a guest's go nowhere.
   if (userId) await recordSoloRun(userId, 'versus', seed, picks)

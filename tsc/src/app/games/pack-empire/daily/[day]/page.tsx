@@ -4,6 +4,8 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { dailyDay, dayKey, isDay } from '@/lib/packEmpire/daily'
+import { dailyViewer } from '@/lib/packEmpire/dailyWho'
+import { peMeta } from '@/lib/packEmpire/meta'
 import mobileStyles from '../../../mobile.module.css'
 import { PeChrome, PeDock } from '../../chrome'
 import { peFonts } from '../../fonts'
@@ -13,7 +15,16 @@ export const dynamic = 'force-dynamic'
 
 export const viewport: Viewport = { themeColor: '#141311', width: 'device-width', initialScale: 1 }
 
-export const metadata: Metadata = { title: 'A Past Daily · Pack Empire', robots: { index: false, follow: true } }
+export async function generateMetadata({ params }: { params: Promise<{ day: string }> }): Promise<Metadata> {
+  const { day } = await params
+  return peMeta({
+    title: 'A Past Daily · Pack Empire',
+    description: 'One deal for everyone, one try. See how that day went.',
+    card: { c: 'daily', d: day },
+    alt: 'The Daily',
+    robots: { index: false, follow: true },
+  })
+}
 
 export default async function DailyDayPage({ params }: { params: Promise<{ day: string }> }) {
   const { day } = await params
@@ -23,7 +34,7 @@ export default async function DailyDayPage({ params }: { params: Promise<{ day: 
     data: { user },
   } = await supabase.auth.getUser()
   const mobile = (await getViewMode()) === 'mobile'
-  const data = await dailyDay(day, user?.id ?? null)
+  const data = await dailyDay(day, await dailyViewer(user?.id ?? null))
 
   return (
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.root : ''}`.trim()}>

@@ -16,6 +16,12 @@ const projectRoot = dirname(fileURLToPath(import.meta.url));
 const nextConfig: NextConfig = {
   ...(process.env.VERCEL ? {} : { outputFileTracingRoot: projectRoot }),
 
+  // The Pack Empire card reads these by a name it works out at run time, which
+  // the tracer can't follow, and without them the function has no fonts.
+  outputFileTracingIncludes: {
+    '/api/og/pack-empire': ['./public/og/fonts/**', './public/og/pack-empire/**'],
+  },
+
   // Preserve trailing slashes on subdirectory index requests
   // (/demo/managers/ stays as-is rather than redirecting to /demo/managers).
   // Without this, browsers strip the trailing slash and then relative paths

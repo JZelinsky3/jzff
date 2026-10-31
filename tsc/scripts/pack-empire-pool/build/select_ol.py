@@ -6,25 +6,25 @@ S = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, f'{S}/build')
 from seasons import dealt, norm, club, FRANCHISE
 import allpro
-from select_skill import interp, next_open_band, rarity_for, BANDS, SCORE_AT, TOP_BANDS
+from select_skill import interp, next_open_band, rarity_for, BANDS, SCORE_AT, TOP_BANDS, RECENT_FROM, SEASON_PHOTO
 
 TARGETS = {
-    'OT': {'immortal': 3, 'transcendent': 8, 'dynasty': 13, 'rare': 24, 'common': 56},
-    'OG': {'immortal': 3, 'transcendent': 7, 'dynasty': 13, 'rare': 25, 'common': 44},  # one common per man caps it
-    'C': {'immortal': 3, 'transcendent': 6, 'dynasty': 10, 'rare': 19, 'common': 41},
+    'OT': {'immortal': 3, 'transcendent': 8, 'dynasty': 13, 'rare': 28, 'common': 60},
+    'OG': {'immortal': 3, 'transcendent': 7, 'dynasty': 13, 'rare': 29, 'common': 46},  # one common per man caps it
+    'C': {'immortal': 3, 'transcendent': 6, 'dynasty': 10, 'rare': 22, 'common': 44},
 }
 # Calibration runs (sim/variant.sh) override these from the environment.
 import json as _json
 TARGETS.update(_json.loads(os.environ.get('PE_TARGETS', '{}')))
 
 MAX_PER_MAN = 4
-PER_SEASON = 10
-# By band, 2000 on (see select_skill.DECADES). The 1970s and 80s line seasons
-# that used to fill the top bands were the names nobody had heard of.
+PER_SEASON = 12
+# See select_skill.DECADES. The 1970s and 80s line seasons that used to fill
+# the top bands were the names nobody had heard of.
 DECADES = {
-    'dynasty': {2000: 0.05, 2010: 0.30, 2020: 0.65},
-    'rare': {2000: 0.03, 2010: 0.27, 2020: 0.70},
-    'common': {2000: 0.02, 2010: 0.23, 2020: 0.75},
+    'dynasty': {2010: 0.25, 2020: 0.75},
+    'rare': {2010: 0.20, 2020: 0.80},
+    'common': {2010: 0.20, 2020: 0.80},
 }
 LEGEND_BEFORE = 2000
 # Linemen people know from before 2000: the only old line seasons dealt.
@@ -184,8 +184,8 @@ def choose(pos, t, off):
     for band in ['dynasty', 'rare', 'common']:
         need = target[band] - sum(1 for b in picked.values() if b == band)
         if need <= 0: continue
-        pool = p[(p.band == band) & (~p.index.isin(picked.keys())) & p.decade.isin(DECADES[band].keys())
-                 & p.face].copy()
+        pool = p[(p.band == band) & (~p.index.isin(picked.keys())) & (p.season >= RECENT_FROM) & p.face].copy()
+        pool = pool[[(a, b) in SEASON_PHOTO for a, b in zip(pool.pid, pool.season)]]
         pool['interest'] = pool.fame + 0.15 * pool.offense
         quota = {d: need * w for d, w in DECADES[band].items()}
         got = {d: 0 for d in DECADES[band]}
