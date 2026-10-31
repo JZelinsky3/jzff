@@ -10,7 +10,8 @@
 // Nothing here trusts the browser. A pack is recorded only after the server
 // has dealt it itself: a run re-dealt on its way to the board (which is also
 // how a run played signed out reaches the binder, once it's claimed), a
-// Versus lineup re-dealt on submit, a League pick checked against its pack.
+// Versus lineup re-dealt on submit, a League pick checked against its pack, a
+// finished Daily.
 // The table keys on (user, deal, slot), so the same pack recorded twice
 // counts once. See 0083_pack_empire_binder.sql and 0084.
 
@@ -30,7 +31,7 @@ import {
 import { POOL, POOL_SIZE, POOL_VERSION } from './pool'
 import { parseSoloPicks, replaySolo, type SoloPick } from './solo'
 
-export type BinderSource = 'solo' | 'versus' | 'league'
+export type BinderSource = 'solo' | 'versus' | 'league' | 'daily'
 
 export type BinderPack = { deal: string; slot: number; cards: string[]; kept: string | null }
 

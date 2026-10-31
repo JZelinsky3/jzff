@@ -8,6 +8,8 @@ import { loadBoard, type BestRow } from '@/lib/minigames/leaderboard'
 import { POOL, POOL_SIZE, playerById } from '@/lib/packEmpire/pool'
 import { parseSoloPicks } from '@/lib/packEmpire/solo'
 import { binderTotals, type BinderTotals } from '@/lib/packEmpire/binder'
+import { dayKey } from '@/lib/packEmpire/daily'
+import { ruleForDay } from '@/lib/packEmpire/dayRules'
 import {
   RARITIES,
   RARITY_LOOK,
@@ -19,7 +21,7 @@ import {
 } from '@/lib/packEmpire/rules'
 import { Chevron } from '../MobileGameBar'
 import mobileStyles from '../mobile.module.css'
-import { Ladder, PackCard } from './cards'
+import { Ladder, PackCard, RarityGem } from './cards'
 import { PeChrome, PeDock } from './chrome'
 import { peFonts } from './fonts'
 import { MODES, ModeGlyph, ModeMark } from './modes'
@@ -200,6 +202,25 @@ function BinderStrip({ totals }: { totals: BinderTotals | null }) {
   )
 }
 
+/** Today's rule on the front page: the Daily's whole pitch is that it changed. */
+function DailyStrip() {
+  const rule = ruleForDay(dayKey())
+  return (
+    <Link href="/games/pack-empire/daily/" className="pe-today">
+      <span className="pe-today-ico">
+        <ModeGlyph id="daily" />
+      </span>
+      <span className="pe-today-body">
+        <span className="pe-today-kicker">Today&apos;s Daily · {rule.title}</span>
+        <span className="pe-today-line">
+          {rule.line} Blind cards, wild packs, one try.
+        </span>
+      </span>
+      <span className="pe-btn pe-btn--sm pe-today-go">Play</span>
+    </Link>
+  )
+}
+
 export default async function PackEmpireHome() {
   const supabase = await createClient()
   const {
@@ -229,6 +250,7 @@ export default async function PackEmpireHome() {
           <PackCard player={p} revealed />
           <div className="pe-index-odds">
             <span className="pe-index-name" style={{ color: RARITY_LOOK[p.rarity].color }}>
+              <RarityGem rarity={p.rarity} />
               {RARITY_LOOK[p.rarity].label}
             </span>
             <span className="pe-index-row">
@@ -276,6 +298,8 @@ export default async function PackEmpireHome() {
               <span className="pe-chip">Five rarities</span>
             </div>
           </section>
+
+          <DailyStrip />
 
           <section className="pe-sec">
             <div className="pe-sec-head">
@@ -390,6 +414,8 @@ export default async function PackEmpireHome() {
           </div>
           <PackFan />
         </header>
+
+        <DailyStrip />
 
         <section className="pe-sec">
           <div className="pe-sec-head">

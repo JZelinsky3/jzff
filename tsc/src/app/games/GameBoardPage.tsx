@@ -63,6 +63,9 @@ export async function GameBoardPage({
   themeClass,
   play,
   dock,
+  modeTabs,
+  activeMode,
+  tabQuery,
 }: {
   game: GameId
   def: GameDef
@@ -76,6 +79,11 @@ export async function GameBoardPage({
   play?: string
   /** A game with its own hub (Pack Empire) keeps its tabs on its board. */
   dock?: (signedIn: boolean) => React.ReactNode
+  /** A game with several boards of its own (Pack Empire's difficulties). */
+  modeTabs?: { kind: string; label: string; href: string }[]
+  activeMode?: string
+  /** Carried on the best/career switch, so flipping it keeps the board. */
+  tabQuery?: string
 }) {
   const supabase = await createClient()
   const {
@@ -89,7 +97,7 @@ export async function GameBoardPage({
 
   const playHref = play ?? `${def.href}?pool=${encodeURIComponent(poolId)}`
   const tabHref = (k: BoardKind) =>
-    `${def.href}board/?pool=${encodeURIComponent(poolId)}${k === 'best' ? '' : `&kind=${k}`}`
+    `${def.href}board/?pool=${encodeURIComponent(poolId)}${k === 'best' ? '' : `&kind=${k}`}${tabQuery ? `&${tabQuery}` : ''}`
 
   const mobile = (await getViewMode()) === 'mobile'
 
@@ -175,6 +183,14 @@ export async function GameBoardPage({
         activeId={game}
         href={(g) => `${g.href}board/?pool=${encodeURIComponent(poolId)}${kind === 'best' ? '' : `&kind=${kind}`}`}
       />
+      {modeTabs && activeMode && (
+        <KindSeg
+          kinds={modeTabs}
+          active={activeMode}
+          href={(k) => modeTabs.find((t) => t.kind === k)?.href ?? tabHref(kind)}
+          label="Difficulty"
+        />
+      )}
       <KindSeg kinds={TABS} active={kind} href={tabHref} />
 
       {/* The board is where a wrong name is actually visible, so it is also

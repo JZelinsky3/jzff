@@ -29,7 +29,7 @@ import {
   type Player,
 } from '@/lib/packEmpire/rules'
 import type { DraftView } from '@/lib/packEmpire/league'
-import { Field, LockGlyph, type SlotView } from '../cards'
+import { Bonds, Field, LockGlyph, type SlotView } from '../cards'
 import { PackStage, ScoreStrip, restoredStage, usePackStage, useStripOffset } from '../stage'
 
 async function post(body: Record<string, unknown>): Promise<DraftView> {
@@ -41,26 +41,6 @@ async function post(body: Record<string, unknown>): Promise<DraftView> {
   const out = await res.json().catch(() => null)
   if (!res.ok || !out?.ok) throw new Error(out?.error ?? 'Something went wrong.')
   return out.view as DraftView
-}
-
-function Bonds({ chem }: { chem: NonNullable<DraftView['chemistry']> }) {
-  if (!chem.bonds.length) return <p className="pe-note">No chemistry either way this week.</p>
-  return (
-    <div className="pe-chem">
-      {chem.bonds.map((b, i) => (
-        <div key={i} className={`pe-bond ${b.type}`}>
-          <span>
-            {b.aName} and {b.bName}
-            <small>{b.reason}</small>
-          </span>
-          <b>
-            {b.points > 0 ? '+' : ''}
-            {b.points}
-          </b>
-        </div>
-      ))}
-    </div>
-  )
 }
 
 export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: DraftView }) {
@@ -262,7 +242,7 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
           </div>
           <div className="pe-panel">
             <div className="pe-kicker">Chemistry</div>
-            {view.chemistry && <Bonds chem={view.chemistry} />}
+            {view.chemistry && <Bonds chem={view.chemistry} empty="No chemistry either way this week." />}
           </div>
         </div>
       </div>
@@ -319,7 +299,7 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
             {score.toLocaleString()} accolades, {chem.total >= 0 ? '+' : '−'}
             {Math.abs(chem.total).toLocaleString()} chemistry
           </div>
-          <Bonds chem={chem} />
+          <Bonds chem={chem} empty="No chemistry either way this week." />
           <div className="pe-recap-actions" style={{ justifyContent: 'flex-start' }}>
             <button type="button" className="pe-btn" disabled={busy} onClick={() => act({ action: 'submit' })}>
               Submit {(score + chem.total).toLocaleString()}

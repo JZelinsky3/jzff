@@ -426,6 +426,8 @@ export type MegaListItem = {
   theirScore: number | null
   /** A friend sent it to you and you haven't sat down yet. */
   waitingOnYou: boolean
+  /** Live, and the pick is yours. */
+  yourPick: boolean
   /** Yours, and nobody has sat down. */
   canDelete: boolean
 }
@@ -477,6 +479,7 @@ export async function listMega(userId: string): Promise<MegaListItem[]> {
       yourScore: mine && r.status !== 'waiting' ? mine.score : null,
       theirScore: theirs && r.status !== 'waiting' ? theirs.score : null,
       waitingOnYou: r.invited_id === userId && !r.guest_id && r.status === 'waiting',
+      yourPick: v.onClock != null && v.onClock === v.you,
       canDelete: role === 'host' && r.host_id === userId && r.status === 'waiting',
     }
   })

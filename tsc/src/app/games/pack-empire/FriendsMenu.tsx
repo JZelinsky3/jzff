@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { h2hLine } from '@/components/account/h2h'
 import type { FriendsBrief } from '@/lib/friends'
+import { WaitingBadge } from './WaitingBadge'
 
 const FRIENDS = '/games/pack-empire/profile/'
 
@@ -30,6 +31,7 @@ export function FriendsMenu({ on, children }: { on: boolean; children: React.Rea
     <div className="pe-fm" onMouseEnter={load} onFocus={load}>
       <Link href={FRIENDS} className={`pe-nav-tool${on ? ' on' : ''}`} aria-current={on ? 'page' : undefined}>
         {children}
+        <WaitingBadge />
       </Link>
       <div className="pe-fm-drop">
         <div className="pe-fm-panel">

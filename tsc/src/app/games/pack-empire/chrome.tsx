@@ -20,7 +20,7 @@ import Link from 'next/link'
 import { MobileGameBar } from '../MobileGameBar'
 import { MobileGamesDock } from '../MobileGamesDock'
 import { FriendsMenu } from './FriendsMenu'
-import { MODES, ModeGlyph, type ModeDef } from './modes'
+import { DAILY, MODES, ModeGlyph, type ModeDef } from './modes'
 
 export type PeSection = ModeDef['id'] | 'home' | 'binder' | 'profile'
 
@@ -132,7 +132,7 @@ export function PeChrome({
           <HomeGlyph />
           <span>Home</span>
         </Link>
-        {MODES.map((m) => (
+        {[DAILY, ...MODES].map((m) => (
           <Link
             key={m.id}
             href={m.href}
@@ -141,7 +141,7 @@ export function PeChrome({
             aria-current={on === m.id ? 'page' : undefined}
           >
             <ModeGlyph id={m.id} />
-            <span>{m.id === 'solo' ? m.nameEm : m.id === 'mega' ? `${m.name} ${m.nameEm}` : m.name}</span>
+            <span>{m.id === 'solo' || m.id === 'daily' ? m.nameEm : m.id === 'mega' ? `${m.name} ${m.nameEm}` : m.name}</span>
           </Link>
         ))}
       </div>

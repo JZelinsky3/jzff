@@ -303,22 +303,26 @@ export function usePackStage(initial: StageState | null = null) {
    * throws (a League pick the server refused), the card goes back on the
    * table with the reason above it instead of quietly vanishing.
    *
+   * `slot` is where the card lands, when that isn't the pack's own slot: a
+   * Daily's wild pack isn't any position's until you keep something from it.
+   *
    * Resolves true once the card has landed in its slot.
    */
   const pick = useCallback(
-    async (i: number, commit: (card: Player) => Promise<void> | void): Promise<boolean> => {
+    async (i: number, commit: (card: Player) => Promise<void> | void, slot?: number): Promise<boolean> => {
       const s = stage
       if (!s || !s.cards || s.pickedId || s.walkout || s.queue.length || busy.current) return false
       const card = s.cards[i]
+      const target = slot ?? s.slot
       busy.current = true
       setStage({ ...s, pickedId: card.id, error: null })
       // The slot fills the moment the pick commits; it stays hidden until the
       // card flying down to it arrives.
-      setLanding({ slot: s.slot, phase: 'incoming' })
+      setLanding({ slot: target, phase: 'incoming' })
       try {
         await Promise.all([commit(card), wait(HOLD_MS)])
         const from = rectOf(document.querySelector(`.pe-stage-cards [data-pe-card="${CSS.escape(card.id)}"]`))
-        const to = rectOf(document.querySelector(`[data-pe-slot="${s.slot}"] .pe-fsl`))
+        const to = rectOf(document.querySelector(`[data-pe-slot="${target}"] .pe-fsl`))
         if (from && to && !reducedMotion()) {
           setStage((cur) => (cur ? { ...cur, leaving: true, flight: { player: card, from, to } } : cur))
           await wait(FLIGHT_MS)
@@ -327,8 +331,8 @@ export function usePackStage(initial: StageState | null = null) {
           await wait(280)
         }
         setStage(null)
-        setLanding({ slot: s.slot, phase: 'landed' })
-        later(() => setLanding((l) => (l && l.slot === s.slot && l.phase === 'landed' ? null : l)), LANDED_MS)
+        setLanding({ slot: target, phase: 'landed' })
+        later(() => setLanding((l) => (l && l.slot === target && l.phase === 'landed' ? null : l)), LANDED_MS)
         return true
       } catch (e) {
         setLanding(null)
@@ -462,6 +466,9 @@ export function PackStage({
   onTear,
   onSkip,
   chemFor,
+  wild = null,
+  blockedFor,
+  chipFor,
 }: {
   stage: StageState
   tag?: PackTag
@@ -472,13 +479,19 @@ export function PackStage({
   onTear: () => void
   onSkip: () => void
   chemFor?: (p: Player) => number | null
+  /** The Daily's mixed packs, which aren't any one position's. */
+  wild?: { art: string; first: string; rest: string; note?: string } | null
+  /** A card with no slot left: on the table, not takeable. */
+  blockedFor?: (p: Player) => boolean
+  /** The Daily's rule, marked on the cards it visibly touches. */
+  chipFor?: (p: Player) => string | null
 }) {
   const root = useRef<HTMLDivElement>(null)
   useGyroTilt(root)
 
   const def = SLOTS[stage.slot]
   const cards = stage.cards
-  const art = PACK_ART[def.pool]
+  const art = wild?.art ?? PACK_ART[def.pool]
   const hidden = stage.revealed.filter((r) => !r).length
   const shown = stage.revealed.length - hidden
   const w = stage.walkout
@@ -503,6 +516,7 @@ export function PackStage({
   else if (woLook) status = `${woLook.label} pull`
   else if (stage.queue.length) status = 'Revealing'
   else if (stage.pickedId) status = 'Signed'
+  else if (wild?.note) status = wild.note
   else if (shown > 0) status = `${shown} of ${cards.length} revealed · tap one to keep him`
   else status = 'Tap a card to flip it, or reveal them all'
 
@@ -523,7 +537,7 @@ export function PackStage({
         className={cls}
         role="dialog"
         aria-modal="true"
-        aria-label={`${def.label} pack`}
+        aria-label={wild ? `${wild.first} ${wild.rest}` : `${def.label} pack`}
         data-wo={w?.step}
         data-boom={open && !stage.restored ? tier : undefined}
         style={woLook ? ({ '--wo': woLook.color, '--wo-glow': woLook.glow } as React.CSSProperties) : undefined}
@@ -552,7 +566,8 @@ export function PackStage({
               </div>
             )}
             <div className="pe-stage-pos">
-              {def.label.split(' ')[0]} <em>{def.label.split(' ').slice(1).join(' ')}</em>
+              {wild ? wild.first : def.label.split(' ')[0]}{' '}
+              <em>{wild ? wild.rest : def.label.split(' ').slice(1).join(' ')}</em>
             </div>
             <div className="pe-stage-status" aria-live="polite">
               {status}
@@ -598,6 +613,8 @@ export function PackStage({
                   charging={charging}
                   burst={charging && w?.step === 'flip'}
                   chem={stage.revealed[i] && chemFor ? chemFor(card) : null}
+                  chip={stage.revealed[i] && chipFor ? chipFor(card) : null}
+                  blocked={blockedFor?.(card) ?? false}
                   onClick={() => onCard(i)}
                   disabled={!!stage.pickedId || !!w}
                 />
@@ -675,11 +692,17 @@ export function ScoreStrip({
   filled,
   tier,
   extra,
+  hidden = null,
+  noTier = false,
 }: {
   score: number
   filled: number
   tier: { label: string; color: string }
   extra?: { value: React.ReactNode; label: string }
+  /** A blind draft: what stands in for the total, which nobody knows yet. */
+  hidden?: { value: string; label: string } | null
+  /** An Even Versus: richer packs, so the ladder means nothing there. */
+  noTier?: boolean
 }) {
   const shown = useCountUp(score)
   const prev = useRef(score)
@@ -697,16 +720,20 @@ export function ScoreStrip({
   return (
     <div className="pe-strip">
       <div className="pe-strip-cell">
-        <div className="pe-strip-val" style={{ color: tier.color }}>
-          {shown.toLocaleString()}
-          {delta && (
-            <span key={delta.key} className={`pe-strip-delta${delta.n < 0 ? ' down' : ''}`} aria-hidden>
-              {delta.n > 0 ? '+' : '−'}
-              {Math.abs(delta.n).toLocaleString()}
-            </span>
-          )}
-        </div>
-        <div className="pe-strip-lbl">Accolades</div>
+        {hidden ? (
+          <div className={`pe-strip-val pe-strip-val--hidden${hidden.value === '?' ? ' pe-strip-val--mark' : ''}`}>{hidden.value}</div>
+        ) : (
+          <div className="pe-strip-val" style={{ color: tier.color }}>
+            {shown.toLocaleString()}
+            {delta && (
+              <span key={delta.key} className={`pe-strip-delta${delta.n < 0 ? ' down' : ''}`} aria-hidden>
+                {delta.n > 0 ? '+' : '−'}
+                {Math.abs(delta.n).toLocaleString()}
+              </span>
+            )}
+          </div>
+        )}
+        <div className="pe-strip-lbl">{hidden?.label ?? 'Accolades'}</div>
       </div>
       <div className="pe-strip-cell">
         <div className="pe-strip-val">
@@ -721,12 +748,14 @@ export function ScoreStrip({
           <div className="pe-strip-lbl">{extra.label}</div>
         </div>
       )}
-      <div className="pe-strip-cell">
-        <div key={tier.label} className="pe-strip-tier" style={{ color: tier.color }}>
-          {tier.label}
+      {!hidden && !noTier && (
+        <div className="pe-strip-cell">
+          <div key={tier.label} className="pe-strip-tier" style={{ color: tier.color }}>
+            {tier.label}
+          </div>
+          <div className="pe-strip-lbl">Tier</div>
         </div>
-        <div className="pe-strip-lbl">Tier</div>
-      </div>
+      )}
       <div className="pe-strip-bar">
         <div className="pe-strip-fill" style={{ width: `${(filled / SLOTS.length) * 100}%` }} />
       </div>

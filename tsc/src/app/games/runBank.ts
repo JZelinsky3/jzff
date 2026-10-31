@@ -9,6 +9,8 @@
 // The bank holds CHOICES, never scores. There is nothing in localStorage
 // worth editing: a tampered bank just fails to replay.
 
+import type { Chemistry, Player } from '@/lib/packEmpire/rules'
+
 export type PendingRun = {
   game: string
   mode: string | null
@@ -37,7 +39,11 @@ export type PostOutcome = {
   total?: number
   /** Pack Empire: cards from the run that were new to the binder. */
   newCards?: number
+  /** Pack Empire, a blind run: the real cards, seen here for the first time. */
+  reveal?: RunReveal
 }
+
+export type RunReveal = { lineup: Player[]; base: number; chem: Chemistry | null; score: number }
 
 const KEY = 'tsc_game_bank_v1'
 
@@ -109,6 +115,7 @@ export async function postRun(run: Omit<PendingRun, 'at'> & { guest?: GuestPoste
         rank: first.rank,
         total: first.total,
         newCards: first.newCards,
+        reveal: first.reveal,
       }
     }
     return {

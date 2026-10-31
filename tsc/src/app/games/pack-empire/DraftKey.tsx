@@ -16,8 +16,14 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { RARITIES, RARITY_FLOOR, RARITY_LOOK, type Rarity } from '@/lib/packEmpire/rules'
-import { CaptainMark, Ladder } from './cards'
+import { CHEM_LINES, RARITIES, RARITY_FLOOR, RARITY_LOOK, type Difficulty, type Rarity } from '@/lib/packEmpire/rules'
+import { CaptainMark, Ladder, RarityGem } from './cards'
+
+/** Which table the key is sitting beside: it describes the game in front of
+    you, and on a blind draft it can't print a score it doesn't have. */
+export type KeyFlavor = { difficulty: Difficulty; even: boolean; daily?: boolean }
+
+const OPEN: KeyFlavor = { difficulty: 'open', even: false }
 
 const MEANS: Record<Rarity, string> = {
   immortal: 'One of the best seasons ever at the position',
@@ -31,33 +37,82 @@ function floor(r: Rarity): string {
   return r === 'common' ? `Under ${RARITY_FLOOR.rare.toLocaleString()}` : `${RARITY_FLOOR[r].toLocaleString()}+`
 }
 
-function KeyBody({ score }: { score: number }) {
+function KeyBody({ score, flavor }: { score: number; flavor: KeyFlavor }) {
+  const blind = flavor.difficulty !== 'open'
+  const chem = blind || flavor.even
   return (
     <>
       <section className="pe-key-sec">
         <h3 className="pe-key-h">How It Works</h3>
-        <ol className="pe-key-steps">
-          <li>Pick a captain. That pack deals off the captain table.</li>
-          <li>Open all eleven packs, in any order.</li>
-          <li>Keep one card from each. Their values add up.</li>
-          <li>Your total sets your rung on the ladder.</li>
-        </ol>
+        {flavor.daily ? (
+          <ol className="pe-key-steps">
+            <li>Everyone gets these packs, in this order, once a day.</li>
+            <li>Each pack mixes five positions. Keep one you have a slot for.</li>
+            <li>If nothing fits, one card is swapped for a reserve.</li>
+            <li>The rule of the day changes what counts.</li>
+          </ol>
+        ) : flavor.even ? (
+          <ol className="pe-key-steps">
+            <li>You and your opponent open the same eleven packs.</li>
+            <li>There is no captain.</li>
+            <li>Keep one card from each. Values plus chemistry is your total.</li>
+          </ol>
+        ) : (
+          <ol className="pe-key-steps">
+            <li>Pick a captain. That pack deals off the captain table.</li>
+            <li>Open all eleven packs, in any order.</li>
+            <li>Keep one card from each. Their values add up.</li>
+            <li>Your total sets your rung on the ladder.</li>
+          </ol>
+        )}
       </section>
 
-      <section className="pe-key-sec">
-        <h3 className="pe-key-h">The Captain</h3>
-        <p className="pe-key-cap">
-          <CaptainMark inline />
-          <span>Its pack draws far more dynasty-and-up cards, and five times the immortals.</span>
-        </p>
-      </section>
+      {flavor.difficulty === 'range' && (
+        <section className="pe-key-sec">
+          <h3 className="pe-key-h">Reading A Range</h3>
+          <p className="pe-key-p">
+            The real value is somewhere inside the range, and rarely in the middle. Rarity and stats stay hidden until your
+            lineup is locked.
+          </p>
+        </section>
+      )}
+      {flavor.difficulty === 'season' && (
+        <section className="pe-key-sec">
+          <h3 className="pe-key-h">Ball Knower</h3>
+          <p className="pe-key-p">
+            A name and a season. You have to know what he did that year and who he played for. Everything turns over when
+            your lineup is locked.
+          </p>
+        </section>
+      )}
+
+      {chem && (
+        <section className="pe-key-sec">
+          <h3 className="pe-key-h">Chemistry</h3>
+          <ul className="pe-key-steps pe-key-steps--plain">
+            {CHEM_LINES.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {!flavor.even && !flavor.daily && (
+        <section className="pe-key-sec">
+          <h3 className="pe-key-h">The Captain</h3>
+          <p className="pe-key-cap">
+            <CaptainMark inline />
+            <span>Its pack draws far more dynasty-and-up cards, and five times the immortals.</span>
+          </p>
+        </section>
+      )}
 
       <section className="pe-key-sec">
         <h3 className="pe-key-h">Rarities</h3>
         <ul className="pe-key-rar">
           {[...RARITIES].reverse().map((r) => (
             <li key={r} style={{ '--rc': RARITY_LOOK[r].color } as React.CSSProperties}>
-              <span className="pe-key-dot" />
+              <RarityGem rarity={r} className="pe-key-gem" />
               <span className="pe-key-rname">{RARITY_LOOK[r].label}</span>
               <span className="pe-key-rfloor">{floor(r)}</span>
               <span className="pe-key-rmeans">{MEANS[r]}</span>
@@ -74,28 +129,30 @@ function KeyBody({ score }: { score: number }) {
         </p>
       </section>
 
-      <section className="pe-key-sec">
-        <h3 className="pe-key-h">The Ladder</h3>
-        <Ladder score={score} />
-      </section>
+      {!flavor.daily && !flavor.even && (
+        <section className="pe-key-sec">
+          <h3 className="pe-key-h">The Ladder</h3>
+          <Ladder score={blind ? -1 : score} />
+        </section>
+      )}
     </>
   )
 }
 
 /** The column beside the field, on screens wide enough for one. */
-export function KeyAside({ score }: { score: number }) {
+export function KeyAside({ score, flavor = OPEN }: { score: number; flavor?: KeyFlavor }) {
   return (
     <div className="pe-key-col">
       <aside className="pe-key" aria-label="How it works">
         <div className="pe-key-title">The Key</div>
-        <KeyBody score={score} />
+        <KeyBody score={score} flavor={flavor} />
       </aside>
     </div>
   )
 }
 
 /** The button above the field, and the sheet it opens. */
-export function KeyButton({ score }: { score: number }) {
+export function KeyButton({ score, flavor = OPEN }: { score: number; flavor?: KeyFlavor }) {
   const [open, setOpen] = useState(false)
   return (
     <>
@@ -107,14 +164,14 @@ export function KeyButton({ score }: { score: number }) {
       </button>
       {open &&
         createPortal(
-          <KeySheet score={score} onClose={() => setOpen(false)} />,
+          <KeySheet score={score} flavor={flavor} onClose={() => setOpen(false)} />,
           document.querySelector('main.pe-theme') ?? document.body
         )}
     </>
   )
 }
 
-function KeySheet({ score, onClose }: { score: number; onClose: () => void }) {
+function KeySheet({ score, flavor, onClose }: { score: number; flavor: KeyFlavor; onClose: () => void }) {
   const [shown, setShown] = useState(false)
   const [drag, setDrag] = useState(0)
   const start = useRef<number | null>(null)
@@ -173,7 +230,7 @@ function KeySheet({ score, onClose }: { score: number; onClose: () => void }) {
           </button>
         </div>
         <div className="pe-ksheet-body">
-          <KeyBody score={score} />
+          <KeyBody score={score} flavor={flavor} />
         </div>
       </div>
     </div>

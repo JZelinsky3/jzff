@@ -31,6 +31,7 @@ import {
   type MvCard,
 } from './multiverse'
 import { parseSoloPicks, replaySolo, soloDisplay } from '@/lib/packEmpire/solo'
+import { difficultyForMode, type Chemistry, type Player } from '@/lib/packEmpire/rules'
 import type { GameId, RunDisplay } from './leaderboard'
 
 export type VerifiedRun = {
@@ -40,6 +41,8 @@ export type VerifiedRun = {
   display: RunDisplay
   /** Normalised choices, stored so any row can be re-verified later. */
   detail: unknown
+  /** Pack Empire, a blind run: the real cards, seen for the first time. */
+  reveal?: { lineup: Player[]; base: number; chem: Chemistry | null; score: number }
 }
 
 export type VerifyResult =
@@ -312,12 +315,17 @@ async function verifyMultiverse(
  * the average lineup a player builds, which is the honest career number for
  * a game with no wins or losses in it.
  */
-function verifyPackEmpire(poolId: string, seed: string, picks: unknown): VerifyResult {
+function verifyPackEmpire(poolId: string, mode: string | null, seed: string, picks: unknown): VerifyResult {
   if (poolId !== 'site') return { ok: false, status: 400, error: 'Pack Empire has one board.' }
   const parsed = parseSoloPicks(picks)
   if (!parsed) return { ok: false, status: 400, error: 'That lineup is incomplete.' }
   const run = replaySolo(seed, parsed)
   if (!run.ok) return { ok: false, status: 400, error: run.error }
+  // A blind run can't post to the open board or the other way round, and an
+  // Even seed is a Versus seat's, never a run of its own.
+  if (run.even || difficultyForMode(mode) !== run.diff) {
+    return { ok: false, status: 400, error: 'That run was dealt for a different board.' }
+  }
   return {
     ok: true,
     score: run.score,
@@ -325,6 +333,8 @@ function verifyPackEmpire(poolId: string, seed: string, picks: unknown): VerifyR
     rateDen: 1,
     display: soloDisplay(run.score),
     detail: { captain: run.captain, picks: parsed },
+    // A blind run hasn't seen its own numbers yet: this is where it does.
+    ...(run.diff === 'open' ? {} : { reveal: { lineup: run.lineup, base: run.base, chem: run.chem, score: run.score } }),
   }
 }
 
@@ -341,7 +351,8 @@ export async function verifyRun(
   game: GameId,
   poolId: string,
   seed: string,
-  picks: unknown
+  picks: unknown,
+  mode: string | null = null
 ): Promise<VerifyResult> {
   switch (game) {
     case 'roulette':
@@ -349,7 +360,7 @@ export async function verifyRun(
     case 'multiverse':
       return verifyMultiverse(poolId, seed, picks)
     case 'pack-empire':
-      return verifyPackEmpire(poolId, seed, picks)
+      return verifyPackEmpire(poolId, mode, seed, picks)
     default:
       return { ok: false, status: 501, error: 'That game has no leaderboard yet.' }
   }

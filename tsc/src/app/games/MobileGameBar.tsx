@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { WaitingBadge } from './pack-empire/WaitingBadge'
 import s from './mobile.module.css'
 
 // Chrome for the mobile games tree, shaped like the Pocket Clubhouse's
@@ -215,7 +216,10 @@ export function MobileGameBar({
         ) : right === 'library' ? (
           <LibraryIcon />
         ) : right === 'friends' ? (
-          <FriendsIcon />
+          <>
+            <FriendsIcon />
+            <WaitingBadge />
+          </>
         ) : (
           <ProfileIcon />
         )}

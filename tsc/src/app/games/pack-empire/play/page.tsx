@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
+import { isDifficulty } from '@/lib/packEmpire/rules'
 import mobileStyles from '../../mobile.module.css'
 import { PeChrome } from '../chrome'
 import { peFonts } from '../fonts'
@@ -22,7 +23,12 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://thesundaychronicle.app/games/pack-empire/play/' },
 }
 
-export default async function EmpireBuilderPage() {
+export default async function EmpireBuilderPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ diff?: string }>
+}) {
+  const { diff } = await searchParams
   const supabase = await createClient()
   const {
     data: { user },
@@ -54,7 +60,7 @@ export default async function EmpireBuilderPage() {
           </div>
         )}
         {mobile && <div style={{ height: '0.9rem' }} />}
-        <EmpireBuilder signedIn={!!user} />
+        <EmpireBuilder signedIn={!!user} initial={isDifficulty(diff) ? diff : undefined} />
       </div>
 
       {!mobile && <SiteFooter />}

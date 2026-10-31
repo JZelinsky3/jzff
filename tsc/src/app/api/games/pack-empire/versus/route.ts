@@ -1,9 +1,11 @@
 // /api/games/pack-empire/versus
 //
 //   GET  ?id=&key=                         -> { view }
-//   POST { action: 'create', friend?, cpu? } -> { id }        (signed in; friend = a friendship id,
+//   POST { action: 'create', friend?, cpu?, format?, difficulty? } -> { id }
+//                                                             (signed in; friend = a friendship id,
 //                                                              which holds the other seat for them;
-//                                                              cpu = true puts the CPU in it)
+//                                                              cpu = true puts the CPU in it;
+//                                                              format = 'classic' or 'even')
 //   POST { action: 'join', id, name, key } -> { view }
 //   POST { action: 'start', id, captain, key } -> { seed }
 //   POST { action: 'submit', id, picks, key }  -> { view }
@@ -62,7 +64,7 @@ export async function POST(req: NextRequest) {
   switch (body.action) {
     case 'create': {
       if (!userId) return reply({ ok: false, needsAuth: true, error: 'Sign in to start a challenge.' }, 401)
-      const out = await createVersus(userId, body.friend ?? undefined, body.cpu === true)
+      const out = await createVersus(userId, body.friend ?? undefined, body.cpu === true, body.format, body.difficulty)
       return out.ok ? reply(out) : reply(out, out.status ?? 400)
     }
     case 'join': {

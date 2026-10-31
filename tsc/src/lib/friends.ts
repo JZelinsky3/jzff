@@ -85,7 +85,7 @@ export type FriendsState = {
 /** Just enough for the nav's hover list. */
 export type FriendsBrief = {
   friends: Pick<Friend, 'id' | 'name' | 'h2h'>[]
-  /** Requests waiting on your answer. */
+  /** Requests and held challenges waiting on you. */
   waiting: number
 }
 
@@ -454,7 +454,7 @@ async function waitingChallenges(userId: string): Promise<WaitingChallenge[]> {
   return out.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 10)
 }
 
-/** Requests and held challenges waiting on you: the account page's badge. */
+/** Requests and held challenges waiting on you: the badge on the Friends tab. */
 export async function friendsWaiting(userId: string): Promise<number> {
   const count = (q: PromiseLike<{ count: number | null }>) => Promise.resolve(q).then((r) => r.count ?? 0)
   const head = { count: 'exact', head: true } as const
@@ -476,9 +476,10 @@ export async function friendsBrief(userId: string): Promise<FriendsBrief> {
   const accepted = rows.filter((r) => r.status === 'accepted')
   const other = (r: (typeof rows)[number]) => (r.requester_id === userId ? r.addressee_id : r.requester_id)
 
-  const [names, h2h] = await Promise.all([
+  const [names, h2h, waiting] = await Promise.all([
     publicNames(accepted.map(other)),
     accepted.length ? headToHeads(userId) : Promise.resolve(new Map<string, HeadToHead>()),
+    friendsWaiting(userId),
   ])
   return {
     friends: accepted
@@ -488,7 +489,7 @@ export async function friendsBrief(userId: string): Promise<FriendsBrief> {
         h2h: h2h.get(other(r)) ?? null,
       }))
       .sort((a, b) => a.name.localeCompare(b.name)),
-    waiting: rows.filter((r) => r.status === 'pending' && r.addressee_id === userId).length,
+    waiting,
   }
 }
 

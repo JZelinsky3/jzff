@@ -8,6 +8,10 @@
 //   2. Open the other ten in any order, captain whenever you like.
 //   3. Five cards a pack, face down. Flip them, keep one.
 //
+// On Range and Ball Knower the server masks every card and the total stays
+// hidden until the lineup is locked. An Even Versus skips step one: there's no
+// captain, the seat just sits down on the shared seed.
+//
 // The captain is a commitment: the server signs it into the seed before a
 // single pack is dealt, so it can't be moved after a look at the packs.
 //
@@ -28,12 +32,16 @@ import {
   SLOT_COUNT,
   TIERS,
   captainFromSeed,
+  chemistryCounts,
+  chemistryFor,
+  chemistryPreview,
   lineupScore,
   tierFor,
+  type Difficulty,
   type Player,
 } from '@/lib/packEmpire/rules'
-import { CaptainMark, Field, type SlotView } from './cards'
-import { KeyAside, KeyButton } from './DraftKey'
+import { CaptainMark, Field, blindValue, type SlotView } from './cards'
+import { KeyAside, KeyButton, type KeyFlavor } from './DraftKey'
 import { useHydrated } from './clientStore'
 import { PackStage, ScoreStrip, usePackStage, useStripOffset } from './stage'
 
@@ -41,7 +49,7 @@ export type DraftPick = { slot: number; id: string }
 
 export type DraftDone = {
   seed: string
-  captain: number
+  captain: number | null
   picks: DraftPick[]
   lineup: Player[]
   score: number
@@ -49,7 +57,7 @@ export type DraftDone = {
 
 type Saved = {
   seed: string
-  captain: number
+  captain: number | null
   picks: DraftPick[]
   lineup: (Player | null)[]
   at: number
@@ -101,13 +109,33 @@ type DraftProps = {
   onDone: (run: DraftDone) => void
   /** What sits above the table before the first pack. */
   intro?: React.ReactNode
+  /** What sits above it once a run is going. */
+  running?: React.ReactNode
   /** Empire Builder: the run can be thrown away and started again. */
   restartable?: boolean
+  /** What the cards show. The seed is what really decides it: masked cards
+      are all the server sends. */
+  difficulty?: Difficulty
+  /** An Even Versus: no captain, and chemistry decides it. */
+  even?: boolean
+}
+
+/** A blind draft's stand-in for the total: on Range the sum of what its cards
+    could be worth, on Ball Knower nothing at all. */
+function hiddenTotal(lineup: (Player | null)[], diff: Difficulty) {
+  if (diff === 'open') return null
+  if (diff === 'season') return { value: '?', label: 'Hidden' }
+  const signed = lineup.filter((p): p is Player => !!p)
+  const lo = signed.reduce((sum, p) => sum + (p.blind?.lo ?? 0), 0)
+  const hi = signed.reduce((sum, p) => sum + (p.blind?.hi ?? 0), 0)
+  return { value: blindValue({ level: 'range', lo, hi }), label: 'Could be' }
 }
 
 /** Where the run stands, on the left of the row with the key's button. */
-function ChaseLine({ score, choosing }: { score: number; choosing: boolean }) {
+function ChaseLine({ score, choosing, blind, even }: { score: number; choosing: boolean; blind: boolean; even: boolean }) {
+  if (even) return <span className="pe-board-next">Same packs on both sides</span>
   if (choosing) return <span className="pe-board-next">Pick your captain</span>
+  if (blind) return <span className="pe-board-next">Scored when you lock in</span>
   const next = [...TIERS].reverse().find((t) => t.min > score)
   if (!next) return <span className="pe-board-next">Top of the ladder</span>
   return (
@@ -122,21 +150,23 @@ function ChaseLine({ score, choosing }: { score: number; choosing: boolean }) {
 function Board({
   score,
   choosing = true,
+  flavor,
   children,
 }: {
   score: number
   choosing?: boolean
+  flavor: KeyFlavor
   children: React.ReactNode
 }) {
   return (
     <div className="pe-board">
       <div className="pe-board-bar">
-        <ChaseLine score={score} choosing={choosing} />
-        <KeyButton score={score} />
+        <ChaseLine score={score} choosing={choosing} blind={flavor.difficulty !== 'open'} even={flavor.even} />
+        <KeyButton score={score} flavor={flavor} />
       </div>
       <div className="pe-board-in">
         <div className="pe-turf">{children}</div>
-        <KeyAside score={score} />
+        <KeyAside score={score} flavor={flavor} />
       </div>
     </div>
   )
@@ -172,7 +202,7 @@ export function CaptainDraft(props: DraftProps) {
     return (
       <>
         {props.intro}
-        <Board score={0}>
+        <Board score={0} flavor={{ difficulty: props.difficulty ?? 'open', even: !!props.even }}>
           <Field lineup={EMPTY} view={() => ({ clickable: false })} />
         </Board>
       </>
@@ -208,7 +238,17 @@ function startingState(saveKey: string, fixedSeed: string | null | undefined): S
   return { seed: null, captain: null, lineup: EMPTY, picks: [], restored: false }
 }
 
-function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro, restartable = false }: DraftProps) {
+function LiveDraft({
+  saveKey,
+  startSeed,
+  fixedSeed,
+  onDone,
+  intro,
+  running,
+  restartable = false,
+  difficulty = 'open',
+  even = false,
+}: DraftProps) {
   const [start] = useState(() => startingState(saveKey, fixedSeed))
   const [captain, setCaptain] = useState<number | null>(start.captain)
   const [seed, setSeed] = useState<string | null>(start.seed)
@@ -258,7 +298,13 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro, restartable =
   // The strip counts a card once it lands, not while it's in the air.
   const settled = settle(lineup)
   const filled = settled.filter(Boolean).length
-  const score = lineupScore(settled)
+  const chemOn = chemistryCounts(difficulty, even)
+  // A Ball Knower card has no team to read, so nothing on the table can say
+  // what chemistry is doing until the lineup is locked.
+  const chemShown = chemOn && difficulty !== 'season'
+  const signed = settled.filter((p): p is Player => !!p)
+  const chem = chemShown ? chemistryFor(signed, true).total : 0
+  const score = lineupScore(settled) + chem
   const tier = tierFor(score)
 
   const chooseCaptain = useCallback(
@@ -281,6 +327,24 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro, restartable =
     [starting, seed, startSeed, saveKey]
   )
 
+  // An Even seat has nothing to commit: it sits straight down on the shared seed.
+  useEffect(() => {
+    if (!even || start.seed) return
+    let gone = false
+    startSeed(0)
+      .then((s) => {
+        if (gone) return
+        setSeed(s)
+        writeSaved(saveKey, { seed: s, captain: null, picks: [], lineup: EMPTY, at: Date.now() })
+      })
+      .catch((e) => {
+        if (!gone) setError(e instanceof Error ? e.message : 'Could not start the run.')
+      })
+    return () => {
+      gone = true
+    }
+  }, [even, start.seed, startSeed, saveKey])
+
   const openSlot = useCallback(
     (i: number) => {
       if (!seed || stage || lineup[i]) return
@@ -292,7 +356,7 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro, restartable =
 
   const onCard = useCallback(
     (i: number) => {
-      if (!stage?.cards || captain == null || !seed) return
+      if (!stage?.cards || (captain == null && !even) || !seed) return
       if (!stage.revealed[i]) {
         reveal(i)
         return
@@ -318,17 +382,17 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro, restartable =
         if (landed && run) window.setTimeout(() => onDone(run), 900)
       })
     },
-    [stage, captain, seed, reveal, pick, lineup, picks, saveKey, onDone]
+    [stage, captain, even, seed, reveal, pick, lineup, picks, saveKey, onDone]
   )
 
-  const choosing = !seed
+  const choosing = !seed && !even
   const view = (i: number): SlotView => {
     const isCap = captain === i
     if (choosing) {
       return { clickable: !starting, captain: isCap, capHint: !starting }
     }
     return {
-      clickable: !stale && !stage && !lineup[i],
+      clickable: !!seed && !stale && !stage && !lineup[i],
       opening: stage?.slot === i,
       captain: isCap,
     }
@@ -351,7 +415,15 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro, restartable =
         </>
       ) : (
         <>
-          <ScoreStrip score={score} filled={filled} tier={tier} />
+          {running}
+          <ScoreStrip
+            score={score}
+            filled={filled}
+            tier={tier}
+            hidden={hiddenTotal(settled, difficulty)}
+            noTier={even}
+            extra={chemShown ? { value: `${chem >= 0 ? '+' : '−'}${Math.abs(chem).toLocaleString()}`, label: 'Chemistry' } : undefined}
+          />
           {capDef && captain != null && !lineup[captain] && !stale && (
             <div className="pe-banner">
               <CaptainMark inline />
@@ -390,7 +462,7 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro, restartable =
         </div>
       )}
 
-      <Board score={score} choosing={choosing}>
+      <Board score={score} choosing={choosing} flavor={{ difficulty, even }}>
         <Field lineup={lineup} view={view} onSlot={choosing ? chooseCaptain : openSlot} landing={landing} />
         {!choosing && !stage && !stale && filled < SLOT_COUNT && (
           <div className="pe-turf-foot">
@@ -418,6 +490,7 @@ function LiveDraft({ saveKey, startSeed, fixedSeed, onDone, intro, restartable =
           onDismiss={dismiss}
           onTear={tear}
           onSkip={skip}
+          chemFor={chemShown ? (p) => chemistryPreview(p, signed, true) : undefined}
         />
       )}
     </div>

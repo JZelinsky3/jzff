@@ -130,14 +130,16 @@ export function KindSeg<K extends string>({
   kinds,
   active,
   href,
+  label = 'Ranking',
 }: {
   kinds: { kind: K; label: string }[]
   active: K
   href: (k: K) => string
+  label?: string
 }) {
   return (
     <div className={styles.segWrap}>
-      <nav className={styles.seg} aria-label="Ranking">
+      <nav className={styles.seg} aria-label={label}>
         {kinds.map((t) => (
           <Link
             key={t.kind}

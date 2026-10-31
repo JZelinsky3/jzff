@@ -2,12 +2,14 @@
 //
 // Peers that must not look alike: each mode carries its own colour and its
 // own drawing, because four cards in one shape with four different sentences
-// read as one list.
+// read as one list. The Daily isn't one of the four: it's a thing that happens
+// today rather than a way to play, so it gets its own strip on the front page
+// and its own tab, and stays out of the grid.
 
 import { PACK_ART } from '@/lib/packEmpire/rules'
 
 export type ModeDef = {
-  id: 'solo' | 'versus' | 'mega' | 'league'
+  id: 'solo' | 'versus' | 'mega' | 'league' | 'daily'
   no: string
   name: string
   nameEm: string
@@ -59,6 +61,17 @@ export const MODES: ModeDef[] = [
     color: '#b48cf0',
   },
 ]
+
+export const DAILY: ModeDef = {
+  id: 'daily',
+  no: '',
+  name: 'The',
+  nameEm: 'Daily',
+  line: 'One deal for everyone, one try. Blind cards, wild packs and a new rule every day.',
+  chip: 'Once a day',
+  href: '/games/pack-empire/daily/',
+  color: '#4fc3b0',
+}
 
 /** The desktop card's art plate: the moment each mode puts you in. */
 export function ModeMark({ id }: { id: ModeDef['id'] }) {
@@ -149,6 +162,13 @@ export function ModeGlyph({ id }: { id: ModeDef['id'] }) {
         <path d="M7 4.5h10v3.5a5 5 0 0 1-10 0z" />
         <path d="M12 13v3.5M8.5 19.5h7" />
         <path d="M7 6H4.5a2.5 2.5 0 0 0 2.6 3M17 6h2.5a2.5 2.5 0 0 1-2.6 3" />
+      </>
+    ),
+    daily: (
+      <>
+        <rect x="4" y="5.5" width="16" height="15" rx="1.6" />
+        <path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" />
+        <path d="m12 12.2.8 1.6 1.8.3-1.3 1.2.3 1.8-1.6-.9-1.6.9.3-1.8-1.3-1.2 1.8-.3z" />
       </>
     ),
   }

@@ -15,6 +15,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { GAMES } from '@/app/games/gameDefs'
+import { DIFFICULTY_LOOK, difficultyForMode } from '@/lib/packEmpire/rules'
 import { DEMO_POOL_ID } from './demoPool'
 import { publicNames } from './boardIdentity'
 import { runStat } from './runStat'
@@ -65,10 +66,19 @@ const LINES_PER_GAME = 4
 const groupKey = (r: { game: string; mode: string | null; pool_id: string }) =>
   `${r.game}|${r.mode ?? ''}|${r.pool_id}`
 
-function boardHref(href: string, game: GameId, poolId: string): string {
-  // Pack Empire has the one board, and its page takes no pool.
-  if (game === 'pack-empire') return `${href}board/`
+function boardHref(href: string, game: GameId, poolId: string, mode: string | null): string {
+  // Pack Empire has one board per difficulty, and its page takes no pool.
+  if (game === 'pack-empire') {
+    const diff = difficultyForMode(mode)
+    return `${href}board/${diff && diff !== 'open' ? `?diff=${diff}` : ''}`
+  }
   return `${href}board/?pool=${encodeURIComponent(poolId)}`
+}
+
+/** What a Pack Empire line calls its board. */
+function empireBoard(mode: string | null): string {
+  const diff = difficultyForMode(mode)
+  return diff && diff !== 'open' ? `${DIFFICULTY_LOOK[diff].label} board` : 'The board'
 }
 
 /** W-L, with the ties only when there are any. */
@@ -226,13 +236,13 @@ export async function loadRecords(userId: string, friends: string[] = []): Promi
         const f = friendBest.get(groupKey(r))
         const fStat = f ? runStat(g.id as GameId, f.display ?? {}, Number(f.score)) : null
         return {
-          board: g.id === 'pack-empire' ? 'The board' : (labels.get(r.pool_id) ?? r.pool_id),
+          board: g.id === 'pack-empire' ? empireBoard(r.mode) : (labels.get(r.pool_id) ?? r.pool_id),
           ...stat,
           rank,
           of,
           runs: x.runs,
           at: r.created_at,
-          href: boardHref(g.href, g.id as GameId, r.pool_id),
+          href: boardHref(g.href, g.id as GameId, r.pool_id, r.mode),
           friend:
             f && fStat
               ? { name: friendNames.get(f.user_id) ?? 'A friend', ...fStat, ahead: Number(f.score) > Number(r.score) }

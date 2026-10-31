@@ -5,8 +5,10 @@ import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { listVersus } from '@/lib/packEmpire/versus'
 import { friendPicker } from '@/lib/friends'
+import { formatLine } from '@/lib/packEmpire/rules'
 import mobileStyles from '../../mobile.module.css'
 import { GameList } from '../GameList'
+import { splitGames, type GameRow } from '../gameRows'
 import { PeChrome, PeDock } from '../chrome'
 import { peFonts } from '../fonts'
 import { ChallengePanels } from './NewChallenge'
@@ -34,6 +36,28 @@ export default async function VersusLobby() {
   const mobile = (await getViewMode()) === 'mobile'
   const [mine, friends] = user ? await Promise.all([listVersus(user.id), friendPicker(user.id)]) : [[], []]
 
+  const games = splitGames(
+    mine.map(
+      (c): GameRow => ({
+        id: c.id,
+        href: `/games/pack-empire/versus/${c.id}/`,
+        opponent: c.opponent ?? 'Anyone',
+        status: c.waitingOnYou
+          ? { label: 'Sent to you', color: '#e8a84b' }
+          : c.status !== 'done' && c.yourScore == null
+            ? { label: 'Your draft', color: '#e8a84b' }
+            : STATUS[c.status],
+        format: formatLine(c.format, c.difficulty, true),
+        done: c.status === 'done',
+        yours: c.yourScore,
+        theirs: c.theirScore,
+        canDelete: c.canDelete,
+        // Sent to you, or you've sat down and haven't locked your eleven in.
+        onYou: c.waitingOnYou || (c.status !== 'done' && c.yourScore == null),
+      })
+    )
+  )
+
   return (
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.root : ''}`.trim()}>
       <PeChrome
@@ -58,6 +82,16 @@ export default async function VersusLobby() {
             friend, or play the CPU.
           </p>
         </div>
+
+        {games.onYou.length > 0 && (
+          <section className="pe-sec pe-sec--first">
+            <div className="pe-sec-head">
+              <span className="pe-sec-num">§ Now</span>
+              <span className="pe-sec-title">Waiting On You</span>
+            </div>
+            <GameList api="/api/games/pack-empire/versus/" rows={games.onYou} />
+          </section>
+        )}
 
         {user ? (
           <ChallengePanels friends={friends} />
@@ -93,32 +127,36 @@ export default async function VersusLobby() {
                 <b>Bigger accolades total wins.</b> Both lineups go up side by side when the second one lands.
               </span>
             </div>
+            <div className="pe-rule">
+              <span>
+                <b>Even</b> gives you both the same eleven packs and no captain. The cards cancel out, so
+                chemistry decides it.
+              </span>
+            </div>
           </div>
         </section>
+
+        {user && games.waiting.length > 0 && (
+          <section className="pe-sec">
+            <div className="pe-sec-head">
+              <span className="pe-sec-num">§ Out</span>
+              <span className="pe-sec-title">In Progress</span>
+            </div>
+            <GameList api="/api/games/pack-empire/versus/" rows={games.waiting} />
+          </section>
+        )}
 
         {user && (
           <section className="pe-sec">
             <div className="pe-sec-head">
-              <span className="pe-sec-num">§ Yours</span>
-              <span className="pe-sec-title">Your challenges</span>
-              <span className="pe-sec-meta">{mine.length ? `${mine.length} recent` : 'None yet'}</span>
+              <span className="pe-sec-num">§ Past</span>
+              <span className="pe-sec-title">Finished</span>
+              <span className="pe-sec-meta">{games.finished.length ? `${games.finished.length} played` : 'None yet'}</span>
             </div>
-            {mine.length === 0 ? (
-              <p className="pe-empty">Nothing yet. Open one and send it to somebody.</p>
+            {games.finished.length === 0 ? (
+              <p className="pe-empty">Nothing finished yet. Open one and send it to somebody.</p>
             ) : (
-              <GameList
-                api="/api/games/pack-empire/versus/"
-                rows={mine.map((c) => ({
-                  id: c.id,
-                  href: `/games/pack-empire/versus/${c.id}/`,
-                  opponent: c.opponent ?? 'Anyone',
-                  status: c.waitingOnYou ? { label: 'Sent to you', color: '#e8a84b' } : STATUS[c.status],
-                  done: c.status === 'done',
-                  yours: c.yourScore,
-                  theirs: c.theirScore,
-                  canDelete: c.canDelete,
-                }))}
-              />
+              <GameList api="/api/games/pack-empire/versus/" rows={games.finished} />
             )}
           </section>
         )}

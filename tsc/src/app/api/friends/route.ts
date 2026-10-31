@@ -2,6 +2,7 @@
 //
 //   GET                                   -> { state }
 //   GET ?brief=1                          -> { brief }           the nav's hover list
+//   GET ?waiting=1                        -> { waiting }         the nav's red badge
 //   POST { action: 'add', code, via? }    -> { state, message }  a member code; via 'league' off a suggestion
 //   POST { action: 'versus', id }         -> { state, message }  the other seat of a Versus challenge
 //   POST { action: 'mega', id }           -> { state, message }  the other seat of a Mega Draft
@@ -19,6 +20,7 @@ import {
   acceptRequest,
   friendsBrief,
   friendsState,
+  friendsWaiting,
   removeFriendship,
   requestByCode,
   requestOpponent,
@@ -46,6 +48,7 @@ async function viewer() {
 export async function GET(req: NextRequest) {
   const userId = await viewer()
   if (!userId) return reply({ ok: false, needsAuth: true, error: 'Sign in to see your friends.' }, 401)
+  if (req.nextUrl.searchParams.has('waiting')) return reply({ ok: true, waiting: await friendsWaiting(userId) })
   if (req.nextUrl.searchParams.has('brief')) return reply({ ok: true, brief: await friendsBrief(userId) })
   return reply({ ok: true, state: await friendsState(userId) })
 }

@@ -16,23 +16,46 @@
 // does. So it can't see your draft and can't react to it: its lineup is
 // settled before yours starts. It drafts when you lock yours in, and the two
 // go up together.
+//
+// Two choices are made when a challenge opens and hold for both seats:
+//   · the format. Classic is your own eleven packs and a captain. Even is the
+//     same eleven packs for both and no captain, so the card values wash out
+//     and chemistry decides it. One seed, kept in `even_seed` until a seat
+//     starts, so a seat that hasn't drafted still reads as not started.
+//   · the difficulty, the same three as Empire Builder. The seed carries it,
+//     so the deal route masks the cards without knowing whose seat this is.
 
 import { randomInt } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { newCaptainSeed, readCaptainSeed } from './deal'
+import { cpuEye, newCaptainSeed, newEvenSeed, readSeed } from './deal'
 import { friendOf } from '@/lib/friends'
 import { hashKey, nameForUser, cleanGuestName, newId, isId } from './people'
 import { recordSoloRun } from './binder'
-import { replaySolo, soloPack, type SoloPick } from './solo'
-import { SLOT_COUNT, tierFor, type Player } from './rules'
+import { replaySolo, seedPack, type SoloPick } from './solo'
+import {
+  SLOT_COUNT,
+  chemistryCounts,
+  chemistryPreview,
+  isDifficulty,
+  tierFor,
+  type Chemistry,
+  type Difficulty,
+  type Player,
+} from './rules'
 
 export type Seat = 'host' | 'guest'
 
+export type VersusFormat = 'classic' | 'even'
+
 export type VersusResult = {
   lineup: Player[]
+  /** Cards plus chemistry, where chemistry counts. */
   score: number
+  /** Results from before chemistry could count have neither of these two. */
+  base?: number
+  chem?: Chemistry | null
   tier: string
-  captain: number
+  captain: number | null
   picks: SoloPick[]
   at: string
 }
@@ -55,6 +78,10 @@ type Row = {
   invited_id: string | null
   /** The other seat is the CPU. */
   guest_bot: boolean
+  format: VersusFormat
+  difficulty: Difficulty
+  /** An Even challenge's one seed, until a seat starts on it. */
+  even_seed: string | null
 }
 
 export type SideView = {
@@ -67,6 +94,8 @@ export type SideView = {
   /** Only once both sides are in. */
   lineup: Player[] | null
   captain: number | null
+  /** Only once both sides are in, like the lineup. */
+  chem: Chemistry | null
 }
 
 export type VersusView = {
@@ -85,6 +114,8 @@ export type VersusView = {
   reserved: boolean
   /** The other seat is the CPU. */
   bot: boolean
+  format: VersusFormat
+  difficulty: Difficulty
 }
 
 function side(row: Row, seat: Seat, reveal: boolean): SideView {
@@ -97,6 +128,7 @@ function side(row: Row, seat: Seat, reveal: boolean): SideView {
     tier: r ? r.tier : null,
     lineup: reveal && r ? r.lineup : null,
     captain: reveal && r ? r.captain : null,
+    chem: reveal && r ? (r.chem ?? null) : null,
   }
 }
 
@@ -122,6 +154,8 @@ function view(row: Row, you: Seat | null, viewerId: string | null): VersusView {
     canJoin: you == null && empty && (!row.invited_id || row.invited_id === viewerId),
     reserved: empty && !!row.invited_id,
     bot: !!row.guest_bot,
+    format: row.format,
+    difficulty: row.difficulty,
   }
 }
 
@@ -129,20 +163,26 @@ function view(row: Row, you: Seat | null, viewerId: string | null): VersusView {
 export const CPU_NAME = 'CPU'
 
 /**
- * The CPU's draft: open its eleven packs in order and keep the best card in
- * each. Deterministic off its seed, so the lineup is fixed the moment the
- * seed is dealt, whatever the other seat does.
+ * The CPU's draft: open its eleven packs in order and keep the card that reads
+ * best, counting what it does for the team where chemistry counts. It reads
+ * only what a person could (see cpuEye). Deterministic off its seed, so the
+ * lineup is fixed the moment the seed is dealt, whatever the other seat does.
  */
 function cpuDraft(seed: string): VersusResult | null {
-  const parsed = readCaptainSeed(seed)
+  const parsed = readSeed(seed)
   if (!parsed) return null
+  const eye = cpuEye(seed, parsed.diff)
+  const chem = chemistryCounts(parsed.diff, parsed.even)
   const taken: string[] = []
+  const roster: Player[] = []
   const picks: SoloPick[] = []
   for (let slot = 0; slot < SLOT_COUNT; slot++) {
-    const pack = soloPack(seed, parsed.captain, slot, taken)
+    const pack = seedPack(seed, parsed, slot, taken)
     if (pack.length === 0) return null
-    const best = pack.reduce((a, b) => (b.score > a.score ? b : a))
+    const read = pack.map((p) => ({ p, worth: eye(p) + (chem ? chemistryPreview(p, roster, true) : 0) }))
+    const best = read.reduce((a, b) => (b.worth > a.worth ? b : a)).p
     taken.push(best.id)
+    roster.push(best)
     picks.push({ slot, id: best.id })
   }
   const run = replaySolo(seed, picks)
@@ -150,6 +190,8 @@ function cpuDraft(seed: string): VersusResult | null {
   return {
     lineup: run.lineup,
     score: run.score,
+    base: run.base,
+    chem: run.chem,
     tier: tierFor(run.score).label,
     captain: run.captain,
     picks,
@@ -180,16 +222,21 @@ export type Fail = { ok: false; error: string; status?: number }
 export async function createVersus(
   userId: string,
   friendship?: unknown,
-  cpu = false
+  cpu = false,
+  rawFormat?: unknown,
+  rawDifficulty?: unknown
 ): Promise<{ ok: true; id: string } | Fail> {
   const db = createAdminClient()
+  const format: VersusFormat = rawFormat === 'even' ? 'even' : 'classic'
+  const difficulty: Difficulty = isDifficulty(rawDifficulty) ? rawDifficulty : 'open'
+  const even_seed = format === 'even' ? newEvenSeed(difficulty) : null
   let invite: Record<string, unknown> | null = null
   if (cpu) {
     // A skill position for its captain, the way most people pick one.
     invite = {
       guest_bot: true,
       guest_name: CPU_NAME,
-      guest_seed: newCaptainSeed(randomInt(6)),
+      guest_seed: even_seed ?? newCaptainSeed(randomInt(6), difficulty),
       status: 'playing',
     }
   } else if (friendship != null) {
@@ -200,7 +247,9 @@ export async function createVersus(
   const name = await nameForUser(db, userId)
   for (let attempt = 0; attempt < 4; attempt++) {
     const id = newId()
-    const { error } = await db.from('pe_versus').insert({ id, host_id: userId, host_name: name, ...invite })
+    const { error } = await db
+      .from('pe_versus')
+      .insert({ id, host_id: userId, host_name: name, format, difficulty, even_seed, ...invite })
     if (!error) return { ok: true, id }
     if (error.code !== '23505') return { ok: false, error: 'Could not open a challenge.' }
   }
@@ -256,9 +305,6 @@ export async function startVersusSeat(
   key: unknown,
   captain: unknown
 ): Promise<{ ok: true; seed: string } | Fail> {
-  if (!Number.isInteger(captain) || (captain as number) < 0 || (captain as number) >= SLOT_COUNT) {
-    return { ok: false, error: 'Pick a captain first.' }
-  }
   const row = await load(id)
   if (!row) return { ok: false, error: 'No such challenge.', status: 404 }
   const seat = seatFor(row, userId, key)
@@ -267,7 +313,11 @@ export async function startVersusSeat(
   const existing = seat === 'host' ? row.host_seed : row.guest_seed
   if (existing) return { ok: true, seed: existing }
 
-  const seed = newCaptainSeed(captain as number)
+  // An Even challenge has no captain to commit: both seats sit on its one seed.
+  if (!row.even_seed && (!Number.isInteger(captain) || (captain as number) < 0 || (captain as number) >= SLOT_COUNT)) {
+    return { ok: false, error: 'Pick a captain first.' }
+  }
+  const seed = row.even_seed ?? newCaptainSeed(captain as number, row.difficulty)
   const col = seat === 'host' ? 'host_seed' : 'guest_seed'
   const db = createAdminClient()
   const { data } = await db.from('pe_versus').update({ [col]: seed }).eq('id', id).is(col, null).select(col).maybeSingle()
@@ -310,6 +360,8 @@ export async function submitVersusSeat(
   const result: VersusResult = {
     lineup: run.lineup,
     score: run.score,
+    base: run.base,
+    chem: run.chem,
     tier: tierFor(run.score).label,
     captain: run.captain,
     picks,
@@ -391,6 +443,8 @@ export type VersusListItem = {
   waitingOnYou: boolean
   /** Yours, and nobody has taken the other seat. */
   canDelete: boolean
+  format: VersusFormat
+  difficulty: Difficulty
 }
 
 /** A signed-in player's challenges, newest first, including ones a friend
@@ -399,7 +453,7 @@ export async function listVersus(userId: string): Promise<VersusListItem[]> {
   const db = createAdminClient()
   const { data } = await db
     .from('pe_versus')
-    .select('id, status, created_at, host_id, host_name, host_result, guest_id, guest_name, guest_result, invited_id')
+    .select('id, status, created_at, host_id, host_name, host_result, guest_id, guest_name, guest_result, invited_id, format, difficulty')
     .or(`host_id.eq.${userId},guest_id.eq.${userId},invited_id.eq.${userId}`)
     .order('created_at', { ascending: false })
     .limit(50)
@@ -417,6 +471,8 @@ export async function listVersus(userId: string): Promise<VersusListItem[]> {
       theirScore: theirs?.score ?? null,
       waitingOnYou: r.invited_id === userId && !r.guest_id,
       canDelete: you === 'host' && r.status === 'open',
+      format: r.format,
+      difficulty: r.difficulty,
     }
   })
 }

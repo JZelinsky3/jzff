@@ -3,6 +3,9 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import type { Difficulty } from '@/lib/packEmpire/rules'
+import type { VersusFormat } from '@/lib/packEmpire/versus'
+import { DifficultyPicker, FormatPicker } from '../Difficulty'
 
 type Friend = { id: string; name: string }
 
@@ -21,18 +24,21 @@ async function open(body: Record<string, unknown>): Promise<string> {
  * The two ways to start: a person (one friend, whose seat is held for them,
  * or an open link for whoever opens it first) or the CPU. Side by side and
  * the same height, buttons on the same line. Either drops you straight into
- * your own draft.
+ * your own draft. The format and the cards are picked once, above both, and
+ * hold for whichever you go with.
  */
 export function ChallengePanels({ friends }: { friends: Friend[] }) {
   const router = useRouter()
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [format, setFormat] = useState<VersusFormat>('classic')
+  const [difficulty, setDifficulty] = useState<Difficulty>('open')
 
   const go = async (key: string, body: Record<string, unknown>) => {
     setBusy(key)
     setError(null)
     try {
-      router.push(`/games/pack-empire/versus/${await open(body)}/`)
+      router.push(`/games/pack-empire/versus/${await open({ ...body, format, difficulty })}/`)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not open a challenge.')
       setBusy(null)
@@ -41,6 +47,8 @@ export function ChallengePanels({ friends }: { friends: Friend[] }) {
 
   return (
     <>
+      <FormatPicker value={format} onChange={setFormat} />
+      <DifficultyPicker value={difficulty} onChange={setDifficulty} />
       <div className="pe-twoup">
         <div className="pe-panel">
           <div className="pe-kicker">A friend</div>
@@ -86,8 +94,10 @@ export function ChallengePanels({ friends }: { friends: Friend[] }) {
           <div className="pe-kicker">Solo</div>
           <div className="pe-panel-title">Draft against the CPU</div>
           <p className="pe-panel-text">
-            Its eleven packs are dealt the moment you start, before you open yours, and it keeps the best
-            card in each. It never sees your picks. Both totals go up when you lock yours in.
+            {format === 'even'
+              ? 'It gets the same eleven packs and drafts for value and chemistry. It never sees your picks, and it can only read what you can read.'
+              : 'Its eleven packs are dealt the moment you start, before you open yours, and it keeps the best card in each. It never sees your picks.'}{' '}
+            Both totals go up when you lock yours in.
           </p>
           <div className="pe-panel-foot">
             <button type="button" className="pe-btn" onClick={() => go('cpu', { cpu: true })} disabled={!!busy}>

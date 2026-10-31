@@ -19,6 +19,8 @@ import {
   surname,
   teamLogo,
   tierFor,
+  type BlindFace,
+  type Chemistry,
   type Player,
   type Rarity,
 } from '@/lib/packEmpire/rules'
@@ -26,6 +28,41 @@ import {
 // ============================================================
 // Glyphs
 // ============================================================
+
+/** A star of `points` points on a 24 box. */
+function starPath(points: number, outer: number, inner: number): string {
+  const step = Math.PI / points
+  const at = Array.from({ length: points * 2 }, (_, i) => {
+    const r = i % 2 === 0 ? outer : inner
+    const a = i * step - Math.PI / 2
+    return `${(12 + r * Math.cos(a)).toFixed(2)} ${(12 + r * Math.sin(a)).toFixed(2)}`
+  })
+  return `M${at.join('L')}z`
+}
+
+/**
+ * The gem beside a rarity's name, more points and more cuts the rarer it gets:
+ * a diamond, a cut hexagon, a star, an eight-point star, a twelve-point burst
+ * with a jewel set in it. Drawn rather than clipped so it keeps its shape at
+ * 11px and survives the gradient text on the top two rarities.
+ */
+const GEM: Record<Rarity, { d: string; cut?: string; fill: string }> = {
+  common: { d: 'M12 3.5 20.5 12 12 20.5 3.5 12z', fill: '#c87840' },
+  rare: { d: 'M12 1.8 20.8 6.9v10.2L12 22.2l-8.8-5.1V6.9z', cut: 'M12 7.4 16 9.7v4.6l-4 2.3-4-2.3V9.7z', fill: '#42c0f8' },
+  dynasty: { d: starPath(5, 11.6, 5), cut: starPath(5, 4.2, 1.9), fill: '#ffd700' },
+  transcendent: { d: starPath(8, 11.8, 4.8), cut: starPath(4, 4.6, 1.7), fill: '#ff90ff' },
+  immortal: { d: starPath(12, 12, 6.8), cut: starPath(6, 5, 2.5), fill: '#80ffb8' },
+}
+
+export function RarityGem({ rarity, className = '' }: { rarity: Rarity; className?: string }) {
+  const g = GEM[rarity]
+  return (
+    <svg className={`pe-gem ${className}`.trim()} viewBox="0 0 24 24" aria-hidden>
+      <path d={g.d} fill={g.fill} fillRule="evenodd" />
+      {g.cut && <path d={g.cut} fill="rgba(0, 0, 0, 0.42)" />}
+    </svg>
+  )
+}
 
 /**
  * The captain's patch: a gold-rimmed shield with a C, pinned to the corner of
@@ -461,6 +498,20 @@ function YearMark({ player, className }: { player: Player; className: string }) 
   )
 }
 
+/** What a blind card prints where its value would be. */
+export function blindValue(blind: BlindFace): string {
+  if (blind.level === 'season') return '?,???'
+  return `${(blind.lo ?? 0).toLocaleString()}-${(blind.hi ?? 0).toLocaleString()}`
+}
+
+/** A blind card wears no rarity at all, front or back. */
+const BLIND_LOOK = {
+  color: '#bfb5a0',
+  glow: 'rgba(191, 181, 160, 0.3)',
+  art: 'linear-gradient(150deg, #24211c, #38332b)',
+  shimmer: '#8d8473',
+}
+
 // ── The stat box ───────────────────────────────────────────────
 // Accolades are stored as sentences ("4,643 yds · 45 TD · 6 INT"), the shape
 // every lineup banked before now carries too, so the card splits them here
@@ -609,6 +660,8 @@ export function PackCard({
   still = false,
   index = 0,
   chem = null,
+  chip = null,
+  blocked = false,
   onClick,
   disabled = false,
   label,
@@ -626,23 +679,30 @@ export function PackCard({
   still?: boolean
   /** Deal order, for the staggered entrance. */
   index?: number
-  /** League packs: what this card would add to the team's chemistry. */
+  /** League packs and the hard modes: what this card would add to the team's
+      chemistry. */
   chem?: number | null
+  /** The Daily: what the day's rule does to this card, where its face shows it. */
+  chip?: string | null
+  /** The Daily: a card you have no slot left for. Still there to look at. */
+  blocked?: boolean
   onClick?: () => void
   /** Stop taking taps without dropping the button. Swapping the element for
       a div remounts the card and replays the deal-in under the closing stage. */
   disabled?: boolean
   label?: string
 }) {
-  const rc = RARITY_LOOK[player.rarity]
-  const logo = teamLogo(player)
+  const blind = player.blind
+  const rc = blind ? BLIND_LOOK : RARITY_LOOK[player.rarity]
+  const logo = player.team ? teamLogo(player) : null
   const cls = [
     'pe-card',
     revealed ? 'rev' : '',
     picked ? 'picked' : '',
     rejected ? 'rejected' : '',
-    revealed && selectable ? 'selectable' : '',
+    revealed && selectable && !blocked ? 'selectable' : '',
     charging ? 'charging' : '',
+    blocked && revealed ? 'blocked' : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -662,7 +722,7 @@ export function PackCard({
       className={cls}
       style={style}
       onClick={onClick}
-      data-r={player.rarity}
+      data-r={blind ? 'blind' : player.rarity}
       data-pe-card={player.id}
       {...TILT}
       {...(onClick
@@ -675,7 +735,7 @@ export function PackCard({
     >
       <div className="pe-tilt">
         <div className="pe-ci">
-          {!still && <RarityEffects rarity={player.rarity} position="outer" />}
+          {!still && !blind && <RarityEffects rarity={player.rarity} position="outer" />}
           <div className="pe-card-back">
             <div className="pe-back-grid" />
             <Football />
@@ -684,10 +744,19 @@ export function PackCard({
           <div className="pe-card-front">
             <div className="pe-cf-topbar">
               <div className="pe-cf-pos">{player.pos}</div>
-              <div className={`pe-cf-rlab ${player.rarity}`}>{rc.label}</div>
+              {blocked && revealed ? (
+                <div className="pe-cf-noslot">No slot</div>
+              ) : (
+                !blind && (
+                  <div className={`pe-cf-rlab ${player.rarity}`}>
+                    <RarityGem rarity={player.rarity} />
+                    {RARITY_LOOK[player.rarity].label}
+                  </div>
+                )
+              )}
             </div>
             <div className="pe-cf-art" style={{ background: rc.art }}>
-              {revealed && !still && <RarityEffects rarity={player.rarity} position="inner" />}
+              {revealed && !still && !blind && <RarityEffects rarity={player.rarity} position="inner" />}
               {/* Only mounted on the front once it turns. The pack's faces are
                   already cached by then (see preloadFaces), so this is instant
                   but can never be seen through the back. */}
@@ -700,6 +769,7 @@ export function PackCard({
                   {chem}
                 </span>
               )}
+              {chip && <span className="pe-cf-rule">{chip}</span>}
               {player.year ? (
                 <div className="pe-cf-season">
                   <b>{player.year}</b>
@@ -712,17 +782,27 @@ export function PackCard({
                   <div className="pe-cf-name" style={{ '--nf': nameFit(player.name) } as React.CSSProperties}>
                     {player.name}
                   </div>
-                  <div className="pe-cf-score-row">
-                    <div className="pe-cf-score">{player.score.toLocaleString()}</div>
-                    <div className="pe-cf-ovr">OVR</div>
-                  </div>
+                  {blind ? (
+                    <div className="pe-cf-score-row">
+                      <div className={`pe-cf-score pe-cf-score--${blind.level}`}>{blindValue(blind)}</div>
+                    </div>
+                  ) : (
+                    <div className="pe-cf-score-row">
+                      <div className="pe-cf-score">{player.score.toLocaleString()}</div>
+                      <div className="pe-cf-ovr">OVR</div>
+                    </div>
+                  )}
                 </div>
                 {revealed && logo && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img className="pe-cf-logo" src={logo} alt={player.team} draggable={false} />
                 )}
               </div>
-              <StatBox accolades={player.accolades} />
+              {blind ? (
+                <div className="pe-cf-blindnote">{blind.level === 'range' ? (player.club ?? player.team) : 'Season only'}</div>
+              ) : (
+                <StatBox accolades={player.accolades} />
+              )}
             </div>
             <div className="pe-glare" aria-hidden />
           </div>
@@ -770,21 +850,25 @@ function FilledSlot({
   /** Hidden while its card is still flying down; pops when it lands. */
   landing?: 'incoming' | 'landed' | null
 }) {
-  const rc = RARITY_LOOK[player.rarity]
+  const blind = player.blind
+  const rc = blind ? BLIND_LOOK : RARITY_LOOK[player.rarity]
   return (
     <div
       className={`pe-fsl has-p${landing ? ` ${landing}` : ''}`}
       style={{ '--rc': rc.color, '--rg': rc.glow, '--art': rc.art } as React.CSSProperties}
     >
-      <RarityEffects rarity={player.rarity} position="outer" />
+      {!blind && <RarityEffects rarity={player.rarity} position="outer" />}
       <div className="pe-filled-card">
         <div className="pe-fc-topbar">
-          <div className="pe-fc-pos-badge" style={{ background: rc.color }}>
+          <div className="pe-fc-pos-badge" style={{ background: blind ? '#6f675a' : rc.color }}>
             {player.pos}
           </div>
-          <div className={`pe-fc-rar-badge ${player.rarity}`} style={{ color: rc.color }}>
-            {rc.label}
-          </div>
+          {!blind && (
+            <div className={`pe-fc-rar-badge ${player.rarity}`} style={{ color: rc.color }}>
+              <RarityGem rarity={player.rarity} />
+              {RARITY_LOOK[player.rarity].label}
+            </div>
+          )}
         </div>
         <div className="pe-fc-art" style={{ background: rc.art }}>
           <div className="pe-fc-field-lines" />
@@ -796,8 +880,10 @@ function FilledSlot({
           <div className="pe-fc-name" style={{ color: rc.color }}>
             {surname(player.name)}
           </div>
-          <div className="pe-fc-score">{player.score.toLocaleString()}</div>
-          <div className="pe-fc-team-tag">{seasonLabel(player)}</div>
+          <div className={`pe-fc-score${blind ? ' blind' : ''}`}>
+            {blind ? blindValue(blind) : player.score.toLocaleString()}
+          </div>
+          <div className="pe-fc-team-tag">{blind?.level === 'season' ? player.year : seasonLabel(player)}</div>
         </div>
         <div className="pe-fc-shine" />
       </div>
@@ -961,12 +1047,17 @@ export function LineupSheet({
   total,
   totalColor,
   sub,
+  counted,
+  captain = null,
 }: {
   name: React.ReactNode
   lineup: (Player | null)[]
   total?: number
   totalColor?: string
   sub?: React.ReactNode
+  /** The Daily: what each slot counted for once the rule had its say. */
+  counted?: number[]
+  captain?: number | null
 }) {
   return (
     <div className="pe-sheet">
@@ -994,6 +1085,7 @@ export function LineupSheet({
           )
         }
         const rc = RARITY_LOOK[p.rarity]
+        const value = counted?.[i] ?? p.score
         return (
           <div key={s.key} className="pe-line" style={{ '--rc': rc.color, '--rart': rc.art } as React.CSSProperties}>
             <span className="pe-line-pos">{s.short}</span>
@@ -1002,12 +1094,41 @@ export function LineupSheet({
             </span>
             <span className="pe-line-name">
               {p.name}
-              <small>{rc.label}</small>
+              <small>
+                <RarityGem rarity={p.rarity} />
+                {rc.label}
+                {p.year ? ` · ${p.year}` : ''}
+                {captain === i ? ' · Captain' : ''}
+              </small>
             </span>
-            <span className="pe-line-score">{p.score.toLocaleString()}</span>
+            <span className="pe-line-score">
+              {value.toLocaleString()}
+              {value !== p.score && <small>{p.score.toLocaleString()}</small>}
+            </span>
           </div>
         )
       })}
+    </div>
+  )
+}
+
+/** Every bond in a lineup, good and bad, with what each one paid. */
+export function Bonds({ chem, empty = 'No chemistry either way.' }: { chem: Chemistry; empty?: string }) {
+  if (!chem.bonds.length) return <p className="pe-note">{empty}</p>
+  return (
+    <div className="pe-chem">
+      {chem.bonds.map((b, i) => (
+        <div key={i} className={`pe-bond ${b.type}`}>
+          <span>
+            {surname(b.aName)} and {surname(b.bName)}
+            <small>{b.reason}</small>
+          </span>
+          <b>
+            {b.points > 0 ? '+' : '−'}
+            {Math.abs(b.points).toLocaleString()}
+          </b>
+        </div>
+      ))}
     </div>
   )
 }

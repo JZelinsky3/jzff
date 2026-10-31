@@ -89,6 +89,7 @@ const STATIC_PAGES: Array<[string, MetadataRoute.Sitemap[number]['changeFrequenc
   ['/games/multiverse/', 'monthly', 0.55],
   ['/games/pack-empire/', 'monthly', 0.55],
   ['/games/pack-empire/play/', 'monthly', 0.5],
+  ['/games/pack-empire/daily/', 'daily', 0.5],
   ['/privacy/', 'yearly', 0.3],
   ['/terms/', 'yearly', 0.3],
 ]

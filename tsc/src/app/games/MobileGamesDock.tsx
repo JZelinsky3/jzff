@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { GAMES } from './gameDefs'
-import { MODES, ModeGlyph } from './pack-empire/modes'
+import { DAILY, MODES, ModeGlyph } from './pack-empire/modes'
 import s from './mobile.module.css'
 
 // The section's nav at the thumb, in the almanac's grammar.
@@ -31,7 +31,7 @@ import s from './mobile.module.css'
 //
 // Pack Empire is big enough to be its own hub, so inside it the same dock
 // turns to face it (`empire`): Shelf · Play · Board · Binder, with Play opening
-// the four modes. Friends is the top bar's right button. Shelf is the way out,
+// the Daily and the four modes. Friends is the top bar's right button. Shelf is the way out,
 // and the shelf itself is back to the ordinary tabs.
 //
 // NOT rendered on a board. Every board owns the bottom of the screen already
@@ -361,7 +361,7 @@ export function MobileGamesDock({
         }
       >
         <div className={s.sheetGames}>
-          {MODES.map((m) => (
+          {[DAILY, ...MODES].map((m) => (
             <Link
               key={m.id}
               href={m.href}

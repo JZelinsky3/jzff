@@ -15,11 +15,11 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { tierFor } from '@/lib/packEmpire/rules'
+import { formatLine, tierFor } from '@/lib/packEmpire/rules'
 import type { VersusView } from '@/lib/packEmpire/versus'
 import { CaptainDraft, type DraftDone } from '../CaptainDraft'
 import { DeleteGame } from '../GameList'
-import { LineupSheet } from '../cards'
+import { Bonds, LineupSheet } from '../cards'
 import { storageChanged, useStored } from '../clientStore'
 import { ShareLink } from '../share'
 
@@ -156,7 +156,12 @@ export function VersusRoom({
   const rematch = async () => {
     setBusy(true)
     try {
-      const out = await call({ action: 'create', ...(view.bot ? { cpu: true } : {}) })
+      const out = await call({
+        action: 'create',
+        format: view.format,
+        difficulty: view.difficulty,
+        ...(view.bot ? { cpu: true } : {}),
+      })
       router.push(`/games/pack-empire/versus/${out.id}/`)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not start a rematch.')
@@ -189,13 +194,15 @@ export function VersusRoom({
     const guest = view.guest.name
     return (
       <div className="pe-table-head">
-        <div className="pe-kicker">★ Versus Challenge ★</div>
+        <div className="pe-kicker">★ {formatLine(view.format, view.difficulty) ?? 'Versus Challenge'} ★</div>
         <h1 className="pe-table-title">
           {host} <span className="pe-em">vs</span> {guest ?? 'Anyone'}
         </h1>
       </div>
     )
-  }, [view.host.name, view.guest.name])
+  }, [view.host.name, view.guest.name, view.format, view.difficulty])
+
+  const even = view.format === 'even'
 
   // ── Both in: the result ───────────────────────────────────────
   if (both) {
@@ -247,8 +254,26 @@ export function VersusRoom({
           {error && <p className="pe-recap-post">{error}</p>}
         </div>
         <div className="pe-twoup">
-          <LineupSheet name={h.name ?? 'Host'} sub={h.tier} lineup={h.lineup ?? []} total={hs} totalColor={tierFor(hs).color} />
-          <LineupSheet name={g.name ?? 'Challenger'} sub={g.tier} lineup={g.lineup ?? []} total={gs} totalColor={tierFor(gs).color} />
+          {[
+            { seat: h, name: h.name ?? 'Host', total: hs },
+            { seat: g, name: g.name ?? 'Challenger', total: gs },
+          ].map(({ seat, name, total }) => (
+            <div key={name} className="pe-versus-side">
+              <LineupSheet
+                name={name}
+                sub={
+                  seat.chem
+                    ? `${seat.chem.total >= 0 ? '+' : '−'}${Math.abs(seat.chem.total).toLocaleString()} chemistry`
+                    : seat.tier
+                }
+                lineup={seat.lineup ?? []}
+                total={total}
+                totalColor={even ? undefined : tierFor(total).color}
+                captain={seat.captain}
+              />
+              {seat.chem && <Bonds chem={seat.chem} />}
+            </div>
+          ))}
         </div>
       </div>
     )
@@ -325,6 +350,9 @@ export function VersusRoom({
             ) : (
               <>You each open your own eleven packs, one keeper from each. The bigger accolades total wins.</>
             )}
+            {even && ' This one is Even: you both open the same eleven packs with no captain, so chemistry decides it.'}
+            {view.difficulty === 'range' && ' Cards show a value range and the team, nothing else.'}
+            {view.difficulty === 'season' && ' Cards show only the name and the season.'}
           </p>
           {signedIn ? (
             <div className="pe-recap-actions" style={{ justifyContent: 'flex-start' }}>
@@ -376,7 +404,9 @@ export function VersusRoom({
     />
   )
   const opponentLine = view.bot
-    ? 'The CPU has its own eleven packs, dealt when this opened. It drafts the moment you lock yours in.'
+    ? even
+      ? 'The CPU has these same eleven packs. It drafted when this opened, and only sees what you see.'
+      : 'The CPU has its own eleven packs, dealt when this opened. It drafts the moment you lock yours in.'
     : !theirs?.name
     ? 'Nobody has taken the other seat yet. Send the link.'
     : view.reserved
@@ -413,7 +443,14 @@ export function VersusRoom({
             )}
           </div>
         )}
-        <CaptainDraft saveKey={`pe_vs_${id}`} startSeed={startSeed} fixedSeed={view.yourSeed} onDone={onDone} />
+        <CaptainDraft
+          saveKey={`pe_vs_${id}`}
+          startSeed={startSeed}
+          fixedSeed={view.yourSeed}
+          onDone={onDone}
+          difficulty={view.difficulty}
+          even={even}
+        />
       </div>
     )
   }
@@ -425,7 +462,7 @@ export function VersusRoom({
       {header}
       <div className="pe-recap" style={{ '--tc': tierFor(myScore).color } as React.CSSProperties}>
         <div className="pe-kicker">§ Your eleven</div>
-        <div className="pe-recap-tier">{mine?.tier}</div>
+        <div className="pe-recap-tier">{even ? 'Locked in.' : mine?.tier}</div>
         <div className="pe-recap-score">{myScore.toLocaleString()}</div>
         <p className="pe-recap-post">{opponentLine} This page updates by itself.</p>
       </div>

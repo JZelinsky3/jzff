@@ -1,10 +1,13 @@
 'use client'
 
-// Your games in a mode's lobby, newest first. A finished game reads as a win
-// or a loss at a glance: its Final and your own number go green or red, and
-// the other side's number stays as it is. The list stops at SHOWN games and
-// the older finals fold into a drawer, closed. A game still going never
-// folds, however old, because it may be waiting on you.
+// Your games in a mode's lobby, in three piles, because they're three
+// different questions. Waiting On You goes at the top of the page: a challenge
+// sent to you, or a game where the next move is yours. In Progress is what's out
+// there waiting on someone else. Finished is the record.
+//
+// A finished game reads as a win or a loss at a glance: its Final and your own
+// number go green or red, and the other side's number stays as it is. The list
+// stops at SHOWN games and the older finals fold into a drawer, closed.
 //
 // Rows are shared by Versus and Mega Draft, and so is DeleteGame, which the
 // rooms use too.
@@ -12,25 +15,13 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import type { GameRow } from './gameRows'
 
 const SHOWN = 8
 
 const WIN = '#68a878'
 const LOSS = '#d2544a'
 const TIE = '#8d8473'
-
-export type GameRow = {
-  id: string
-  href: string
-  opponent: string
-  status: { label: string; color: string }
-  /** Printed after the status: a Mega Draft's code. */
-  code?: string
-  done: boolean
-  yours: number | null
-  theirs: number | null
-  canDelete: boolean
-}
 
 function resultOf(r: GameRow): 'win' | 'loss' | 'tie' | null {
   if (!r.done || r.yours == null || r.theirs == null) return null
@@ -102,7 +93,8 @@ function Row({ row, api, onGone }: { row: GameRow; api: string; onGone: () => vo
   const result = resultOf(row)
   const color = result === 'win' ? WIN : result === 'loss' ? LOSS : result === 'tie' ? TIE : row.status.color
   const both = row.yours != null && row.theirs != null
-  const you = row.yours?.toLocaleString() ?? '·'
+  // Nothing to print yet: on a game waiting on you, that's the call to play.
+  const you = row.yours?.toLocaleString() ?? (row.onYou ? 'Play' : '·')
   const link = (
     <Link href={row.href} className="pe-row">
       <span style={{ minWidth: 0 }}>
@@ -112,6 +104,7 @@ function Row({ row, api, onGone }: { row: GameRow; api: string; onGone: () => vo
             {row.status.label}
           </span>
           {row.code ? ` · ${row.code}` : ''}
+          {row.format ? ` · ${row.format}` : ''}
         </span>
       </span>
       <span className="pe-row-side">
@@ -142,6 +135,7 @@ export function GameList({ rows: start, api }: { rows: GameRow[]; api: string })
 
   const shown = rows.filter((r, i) => i < SHOWN || !r.done)
   const older = rows.filter((r, i) => i >= SHOWN && r.done)
+  if (rows.length === 0) return null
   const row = (r: GameRow) => <Row key={r.id} row={r} api={api} onGone={() => gone(r.id)} />
 
   return (

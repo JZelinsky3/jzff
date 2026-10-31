@@ -54,6 +54,22 @@ export type Player = {
   accolades: string[]
   /** Headshot cut-out, or null to fall back to the initial. */
   img: string | null
+  /** Dealt face-hidden: Range and Ball Knower. See `BlindFace`. */
+  blind?: BlindFace
+}
+
+/**
+ * What the browser gets instead of a card's numbers on the two hard
+ * difficulties. The value, rarity and stat lines never leave the server until
+ * the lineup is locked, so a masked card's `score` is 0 and its `rarity` is a
+ * placeholder ('common'), which is also what keeps every rarity tell (the glow
+ * on a sealed pack, the shaking card back, the walkout) switched off.
+ */
+export type BlindFace = {
+  level: 'range' | 'season'
+  /** Range only: where the real value sits, somewhere inside. */
+  lo?: number
+  hi?: number
 }
 
 /** The man behind a card; a card from before the season pool is its own man. */
@@ -199,6 +215,56 @@ export function rarityForScore(score: number): Rarity {
 // about what the tenth-best does, common everything under that.
 
 // ============================================================
+// Difficulty
+// ============================================================
+
+export type Difficulty = 'open' | 'range' | 'season'
+
+export const DIFFICULTIES: Difficulty[] = ['open', 'range', 'season']
+
+/** Each difficulty is its own board: a blind 13,000 and an open 13,000 aren't
+    the same number. `mode` is what game_runs files it under. */
+export const DIFFICULTY_LOOK: Record<Difficulty, { label: string; line: string; mode: string }> = {
+  open: {
+    label: 'Standard',
+    line: 'Every card face up: value, rarity and stats.',
+    mode: 'offense',
+  },
+  range: {
+    label: 'Range',
+    line: 'A value range and the team. No rarity, no stats. Chemistry counts.',
+    mode: 'offense-range',
+  },
+  season: {
+    label: 'Ball Knower',
+    line: 'Just the name and the season. No team, no value, no colours. Chemistry counts.',
+    mode: 'offense-season',
+  },
+}
+
+export function difficultyForMode(mode: string | null): Difficulty | null {
+  return DIFFICULTIES.find((d) => DIFFICULTY_LOOK[d].mode === mode) ?? null
+}
+
+export function isDifficulty(v: unknown): v is Difficulty {
+  return v === 'open' || v === 'range' || v === 'season'
+}
+
+/** The two blind difficulties always play for chemistry, and so does an Even
+    Versus, where chemistry is the whole game. */
+export function chemistryCounts(diff: Difficulty, even = false): boolean {
+  return even || diff !== 'open'
+}
+
+/** "Even · Range" on a Versus, or null for a plain Classic game. `bare` leaves
+    out the mode's name, for a row already sitting under it. */
+export function formatLine(format: 'classic' | 'even', difficulty: Difficulty, bare = false): string | null {
+  const parts = [format === 'even' ? 'Even' : null, difficulty === 'open' ? null : DIFFICULTY_LOOK[difficulty].label].filter(Boolean)
+  if (parts.length === 0) return null
+  return bare ? parts.join(' · ') : `Versus · ${parts.join(' · ')}`
+}
+
+// ============================================================
 // The eleven
 // ============================================================
 
@@ -227,6 +293,12 @@ export function slotIndex(key: string): number {
   return SLOTS.findIndex((s) => s.key === key)
 }
 
+/** The open slot a card at this position takes: the first one left. Every
+    slot at a position scores the same, so there's nothing to choose. */
+export function slotForCard(pos: PoolKey, filled: Set<number>): number {
+  return SLOTS.findIndex((s, i) => s.pool === pos && !filled.has(i))
+}
+
 /** The formation the field draws: line on top, receivers split wide, the
     backfield underneath. Indices into SLOTS. */
 export const FORMATION = {
@@ -246,6 +318,9 @@ export const PACK_ART: Record<PoolKey, string> = {
   OG: '/games/pack-empire/packs/og.webp',
   C: '/games/pack-empire/packs/c.webp',
 }
+
+/** The Daily's mixed packs: any position can be in one. */
+export const WILD_PACK_ART = '/games/pack-empire/packs/wild.webp'
 
 export const POOL_LABEL: Record<PoolKey, string> = {
   QB: 'Quarterback',
@@ -340,6 +415,19 @@ export function packOdds(pool: { rarity: Rarity }[], weights: Weights): Record<R
   for (const r of RARITIES) out[r] = mass[r] / total
   return out
 }
+
+/**
+ * Shared packs, the ones two or more people see the same five cards in: an
+ * Even Versus and the Daily. Richer than an ordinary pack, about 57% common,
+ * 30% rare, 11% dynasty and 3% above that per card, so most packs hold a real
+ * choice and picking the right card is the game. There's no captain table
+ * under it in an Even Versus, and no second table anywhere.
+ */
+export const SHARED_WEIGHTS: Weights = { common: 29, rare: 27.5, dynasty: 22, transcendent: 8, immortal: 3 }
+
+/** The Daily's reserve card, dealt only when nothing in a pack fits an open
+    slot: replacement level on purpose, so filling wrong still costs you. */
+export const RESERVE_WEIGHTS: Weights = { common: 62, rare: 38, dynasty: 0, transcendent: 0, immortal: 0 }
 
 // ============================================================
 // League Mode
@@ -486,9 +574,31 @@ export function megaWorth(p: Player, left: Player[], rivalOpen: number): number 
 
 export const SYNERGY_POINTS = { medium: 250, conservative: 150 } as const
 
+/**
+ * The hard modes play for double. At League's numbers chemistry was worth a
+ * few hundred a run, so a card's value decided every pick and an Even Versus
+ * was tied more often than not; at double, someone drafting for it beats
+ * someone taking the top card 74% of the time and loses 1% (sim/hard-sim.ts).
+ * League Mode keeps its own numbers.
+ */
+export const HARD_CHEM = 2
+
+/** Two men off the same team in the same season aren't just one franchise,
+    they really played together: their bond doubles again. */
+export const TEAMMATE_MULTIPLIER = 2
+
 type SynergyTier = keyof typeof SYNERGY_POINTS
 
 /** Same-team pairs that click. Keys are sorted position pairs. */
+const BEST_BOND = SYNERGY_POINTS.medium * HARD_CHEM
+
+/** Chemistry on the hard modes, in the words the key and the Daily print. */
+export const CHEM_LINES = [
+  `Two men from the same franchise add up to ${BEST_BOND.toLocaleString()}, when their positions work together: a quarterback and his receiver, a center and his guard.`,
+  `Same team in the same season means they really played together, and that pays ${(BEST_BOND * TEAMMATE_MULTIPLIER).toLocaleString()}.`,
+  'Two men from rival teams cost you points. The franchise is what counts, so the Oilers are the Titans.',
+]
+
 const SYNERGY: Record<string, SynergyTier> = {}
 for (const [a, b, t] of [
   ['QB', 'WR', 'medium'],
@@ -608,21 +718,24 @@ export type Chemistry = {
   total: number
 }
 
-type ChemPlayer = Pick<Player, 'id' | 'name' | 'pos' | 'team'>
+type ChemPlayer = Pick<Player, 'id' | 'name' | 'pos' | 'team' | 'year'>
 
-function bondFor(x: ChemPlayer, y: ChemPlayer): ChemBond | null {
+function bondFor(x: ChemPlayer, y: ChemPlayer, hard: boolean): ChemBond | null {
+  // A Ball Knower card hides its team, and a blank never matches a blank.
+  if (!x.team || !y.team) return null
   const pair = [x.pos, y.pos].sort().join('|')
   if (x.team === y.team) {
     const tier = SYNERGY[pair]
     if (!tier) return null
+    const real = hard && !!x.year && x.year === y.year
     return {
       a: x.id,
       b: y.id,
       aName: x.name,
       bName: y.name,
       type: 'synergy',
-      points: SYNERGY_POINTS[tier],
-      reason: `${x.pos} and ${y.pos}, ${x.team}`,
+      points: SYNERGY_POINTS[tier] * (hard ? HARD_CHEM : 1) * (real ? TEAMMATE_MULTIPLIER : 1),
+      reason: real ? `${x.pos} and ${y.pos}, real teammates on the ${x.year} ${x.team}` : `${x.pos} and ${y.pos}, ${x.team}`,
     }
   }
   if (areRivals(x.team, y.team)) {
@@ -634,18 +747,18 @@ function bondFor(x: ChemPlayer, y: ChemPlayer): ChemBond | null {
       aName: x.name,
       bName: y.name,
       type: 'rivalry',
-      points: cost,
+      points: cost * (hard ? HARD_CHEM : 1),
       reason: `${x.pos} and ${y.pos}, ${x.team} vs ${y.team}`,
     }
   }
   return null
 }
 
-export function chemistryFor(roster: ChemPlayer[]): Chemistry {
+export function chemistryFor(roster: ChemPlayer[], hard = false): Chemistry {
   const bonds: ChemBond[] = []
   for (let i = 0; i < roster.length; i++) {
     for (let j = i + 1; j < roster.length; j++) {
-      const b = bondFor(roster[i], roster[j])
+      const b = bondFor(roster[i], roster[j], hard)
       if (b) bonds.push(b)
     }
   }
@@ -656,11 +769,11 @@ export function chemistryFor(roster: ChemPlayer[]): Chemistry {
 
 /** What one candidate would add to a partial roster: the hint on a card in a
     league pack before it is taken. */
-export function chemistryPreview(candidate: ChemPlayer, roster: ChemPlayer[]): number {
+export function chemistryPreview(candidate: ChemPlayer, roster: ChemPlayer[], hard = false): number {
   let net = 0
   for (const p of roster) {
     if (p.id === candidate.id) continue
-    const b = bondFor(candidate, p)
+    const b = bondFor(candidate, p, hard)
     if (b) net += b.points
   }
   return net
@@ -677,10 +790,22 @@ export const SEED_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 /**
  * The captain a seed was signed for. Readable by anyone (it is the ninth
  * character); only the server can sign one, which is the part that matters.
+ * An Even seed has no captain, its ninth character is past the last slot.
  */
 export function captainFromSeed(seed: string): number | null {
   const i = SEED_ALPHABET.indexOf(seed[8] ?? '')
   return i >= 0 && i < SLOT_COUNT ? i : null
+}
+
+/** The ninth character of a seed with no captain: an Even Versus. */
+export const EVEN_MARK = '9'
+
+/** The tenth character of a sixteen-character seed. Seeds dealt before there
+    were difficulties are fifteen characters, and those are all open. */
+export const SEED_DIFF: Record<string, Difficulty> = { A: 'open', R: 'range', S: 'season' }
+
+export function difficultyFromSeed(seed: string): Difficulty {
+  return seed.length === 16 ? (SEED_DIFF[seed[9]] ?? 'open') : 'open'
 }
 
 // ============================================================

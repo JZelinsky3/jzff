@@ -20,6 +20,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyRun } from '@/lib/minigames/verifyRun'
 import { recordSoloRun } from '@/lib/packEmpire/binder'
 import { cleanGuestName, guestNameTaken, hashKey } from '@/lib/packEmpire/people'
+import { difficultyForMode, type Chemistry, type Player } from '@/lib/packEmpire/rules'
 import { parseSoloPicks } from '@/lib/packEmpire/solo'
 import {
   isGameId,
@@ -92,6 +93,8 @@ type Outcome = {
   total?: number
   /** Pack Empire: cards from this run's packs that were new to the binder. */
   newCards?: number
+  /** Pack Empire, a blind run: its real lineup, shown for the first time. */
+  reveal?: { lineup: Player[]; base: number; chem: Chemistry | null; score: number }
 }
 
 export async function POST(req: NextRequest) {
@@ -126,7 +129,11 @@ export async function POST(req: NextRequest) {
     owner = { userId: user.id }
   } else {
     const item = list[0]
-    const onEmpireBoard = item.game === 'pack-empire' && item.pool === 'site' && item.mode === 'offense'
+    const onEmpireBoard =
+      item.game === 'pack-empire' &&
+      item.pool === 'site' &&
+      typeof item.mode === 'string' &&
+      difficultyForMode(item.mode) != null
     if (list.length > 1 || !item.guest || !onEmpireBoard || item.weekly === true) {
       // Not an error state in the UI: the recap shows "sign in to put this on
       // the board" and keeps the run banked until they do.
@@ -196,7 +203,7 @@ async function postOne(
     weekStart = week
   }
 
-  const verdict = await verifyRun(game, poolId, seed, item.picks)
+  const verdict = await verifyRun(game, poolId, seed, item.picks, mode)
   if (!verdict.ok) return { ok: false, error: verdict.error }
 
   const { data, error } = await db
@@ -228,7 +235,9 @@ async function postOne(
         ok: false,
         error: weekStart
           ? "You have already played this week's board."
-          : 'That wheel is already on the board.',
+          : game === 'pack-empire' && verdict.reveal
+            ? 'This run has already been scored.'
+            : 'That wheel is already on the board.',
       }
     }
     return { ok: false, error: 'Could not reach the board. Try again in a moment.' }
@@ -258,5 +267,6 @@ async function postOne(
     rank: Number(rank ?? 0),
     total,
     ...(fresh ? { newCards: fresh.length } : {}),
+    ...(verdict.reveal ? { reveal: verdict.reveal } : {}),
   }
 }
