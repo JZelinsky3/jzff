@@ -43,6 +43,13 @@ OFFENSE_WEIGHT = 2.5
 # of a point from being worth 1,500.
 OL_TOP = 4800
 
+# Seasons added on purpose, wherever they land (see select_skill.MUST).
+MUST = {'OT': [('Tristan Wirfs', 2021)], 'C': [('Max Unger', 2012)]}
+
+# Same idea as select_skill.CURVE: fixed, so a new line card never re-values one
+# already dealt. Frozen where the old pool-derived curve left them.
+CURVE = {'OT': [(-2.0, 120), (7.0, 700), (13.0, 1600), (19.0588, 2800), (20.5069, 4000), (21.7358, 4800)], 'OG': [(-2.0, 120), (7.0, 700), (13.0, 1600), (19.5152, 2800), (20.1324, 4000), (21.2344, 4800)], 'C': [(-2.0, 120), (7.0, 700), (13.0, 1600), (17.0369, 2800), (18.9778, 4000), (20.4484, 4800)]}
+
 # Wikipedia vandalism / typos, by (season, name as parsed)
 FIX = {(2003, 'Brennan'): 'Alan Faneca'}
 
@@ -127,38 +134,22 @@ def choose(pos, t, off):
         have = held.get(pid, set())
         return len(have) < MAX_PER_MAN and band not in have
 
-    def take(i, band):
-        held.setdefault(p.at[i, 'pid'], set()).add(band); picked[i] = band
-
     kept = dealt()
-    held_under = []  # kept just below the immortal line (see select_skill)
+    # See select_skill: a rebuild adds nothing unless PE_ADD asks it to.
+    fill = not kept or os.environ.get('PE_ADD')
 
-    # The all-time walk, over seasons from 2000 on (or a legend's) with a photo.
-    floors, ceiling = {}, 1e9
-    for band in ['immortal', 'transcendent']:
-        n, last = 0, None
-        for r in p.itertuples():
-            if r.metric >= ceiling or r.Index in picked or not can_take(r.pid, band): continue
-            if not r.era or not r.face: continue
-            if n == target[band]:
-                floors[band] = (last + r.metric) / 2; break
-            take(r.Index, band); n += 1; last = r.metric
-        ceiling = floors[band]
-        if band == 'immortal':
-            for r in p.itertuples():
-                if r.metric < ceiling: break
-                if (r.pid, r.season) in kept and r.Index not in picked and can_take(r.pid, 'transcendent'):
-                    take(r.Index, 'transcendent'); held_under.append(r.Index)
+    wanted = {(r.pid, r.season) for name, year in MUST.get(pos, [])
+              for r in p[(p.key == norm(name)) & (p.season == year)].itertuples()}
+
+    def take(i, band):
+        if not fill and (p.at[i, 'pid'], p.at[i, 'season']) not in kept | wanted: return
+        held.setdefault(p.at[i, 'pid'], set()).add(band); picked[i] = band
 
     # Dynasty: an All-Pro first-teamer on an average offense. Rare: a
     # second-teamer who also made the Pro Bowl. Below that, common.
-    t_dyn, t_rare, m_floor = 13.0, 7.0, -2.0
-    anchors = [(m_floor, SCORE_AT['floor']), (t_rare, SCORE_AT['rare']), (t_dyn, SCORE_AT['dynasty']),
-               (floors['transcendent'], SCORE_AT['transcendent']), (floors['immortal'], SCORE_AT['immortal']),
-               (p.metric.max(), OL_TOP)]
+    anchors = CURVE[pos]
     p['score'] = [int(interp(m, anchors) // 5 * 5) for m in p.metric]
     p['true'] = p.score            # what settle.py works from
-    p.loc[held_under, 'score'] = SCORE_AT['immortal'] - 5
     p['band'] = p.score.map(rarity_for)
 
     # What's already dealt stays in, at its new value (see seasons.dealt). If two
@@ -174,6 +165,10 @@ def choose(pos, t, off):
             p.at[r.Index, 'band'] = band
         take(r.Index, band)
 
+    for name, year in MUST.get(pos, []):
+        for r in p[(p.key == norm(name)) & (p.season == year) & p.face].itertuples():
+            if r.Index not in picked and can_take(r.pid, r.band): take(r.Index, r.band)
+
     # Legends: best pre-2000 season, rare or better, if he isn't in yet.
     for name in LEGENDS:
         old = p[(p.key == norm(name)) & (p.season < LEGEND_BEFORE) & p.face]
@@ -184,9 +179,6 @@ def choose(pos, t, off):
 
     per_season = {}
     for i in picked: per_season[p.at[i, 'season']] = per_season.get(p.at[i, 'season'], 0) + 1
-    # A rebuild keeps the pool as it is. Adding is a decision: PE_ADD=1 fills each
-    # band to its target, and that includes what the vault left open.
-    fill = not kept or os.environ.get('PE_ADD')
     for band in ['dynasty', 'rare', 'common']:
         need = target[band] - sum(1 for b in picked.values() if b == band)
         if need <= 0 or not fill: continue

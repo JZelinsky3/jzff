@@ -332,19 +332,23 @@ export const RANGE_WIDTHS = [1400, 2000, 2500]
  * A cheap card's start runs anywhere from zero to its own value, or every one of
  * them would read "0-2,000" and that would be the rarity again.
  */
-function placeRange(p: Player, width: number, at: number): { lo: number; hi: number } {
+function placeRange(p: Player, width: number, at: number, top: number): { lo: number; hi: number } {
   const first = Math.ceil(Math.max(0, p.score - width) / 100)
   const last = Math.floor(p.score / 100)
-  const lo = Math.min((first + Math.round(at * (last - first))) * 100, VALUE_TOP - width)
+  const roof = Math.max(top, Math.ceil(p.score / 100) * 100)
+  const lo = Math.min((first + Math.round(at * (last - first))) * 100, roof - width)
   return { lo, hi: lo + width }
 }
 
 /** The range a card prints. Same every time it's dealt, so asking for it a
     hundred times can't narrow it down. */
-export function rangeOf(p: Player, label = 'range'): { lo: number; hi: number } {
+export function rangeOf(p: Player, label = 'range', top: number = VALUE_TOP): { lo: number; hi: number } {
   const width = RANGE_WIDTHS[cardHash(`${label}-width|${p.id}`)[0] % RANGE_WIDTHS.length]
-  return placeRange(p, width, cardHash(`${label}-at|${p.id}`).readUInt16LE(0) / 65535)
+  return placeRange(p, width, cardHash(`${label}-at|${p.id}`).readUInt16LE(0) / 65535, top)
 }
+
+/** Where ranges topped out when no card went past 5,600. A Daily dealt then keeps it. */
+const RANGE_TOP_BEFORE = 5600
 
 /** The ranges a Daily printed before RANGE_WIDTHS, for days already out. */
 function rangeBefore(p: Player): { lo: number; hi: number } {
@@ -353,14 +357,15 @@ function rangeBefore(p: Player): { lo: number; hi: number } {
   const lowest = Math.max(0, p.score - 0.92 * width)
   const highest = p.score > 0.08 * width ? p.score - 0.08 * width : p.score / 2
   const lo = Math.floor((lowest + at * (highest - lowest)) / 100) * 100
-  const over = Math.max(0, lo + width - VALUE_TOP)
-  return { lo: Math.max(0, lo - over), hi: Math.min(lo + width, VALUE_TOP) }
+  const over = Math.max(0, lo + width - RANGE_TOP_BEFORE)
+  return { lo: Math.max(0, lo - over), hi: Math.min(lo + width, RANGE_TOP_BEFORE) }
 }
 
 /** A Daily card's range. Its own draw, so a card reads differently here than in
     the Builder, and a day that's already out keeps what it printed. */
 export function dailyRange(p: Player, day: string): { lo: number; hi: number } {
-  return day < DAILY_H_FROM ? rangeBefore(p) : rangeOf(p, 'daily-range')
+  if (day < DAILY_H_FROM) return rangeBefore(p)
+  return rangeOf(p, 'daily-range', day < DAILY_NEW_POOL_FROM ? RANGE_TOP_BEFORE : VALUE_TOP)
 }
 
 /** A card on the Daily's table. */

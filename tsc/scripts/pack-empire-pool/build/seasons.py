@@ -17,6 +17,8 @@ def season_len(y):
     if y >= 2021: return 17
     return 16
 
+FULL_GAMES = 14
+
 def min_games(y):
     """The floor the average is divided by. Joey: this was 14, which read 19 a
     game over 12 games (Beckham 2018) as a common, and 18 a game for over half a
@@ -182,10 +184,14 @@ def build():
     t['L'] = t.season.map(season_len); t['ming'] = t.season.map(min_games)
     t['ppg'] = t.pts / t.g.clip(lower=1)
     t['avg_eff'] = t.pts / np.maximum(t.g, t.ming)
+    # A season's rating never depends on anyone else's, so a card keeps its value
+    # for good: 65% points per game, 35% total points over 14 games or the games
+    # he played, whichever is more. So from 14 games up it's simply points per
+    # game, and each game short of 14 costs 2.5% (a 12-game season is 5% off).
     # 1987: the players struck for three games, so most regulars could only play
     # 12 and a few who crossed played more (Montana 13, Largent 13, Craig 14).
-    # Joey: score that year on the games a man played, not the ones he couldn't.
-    t['full'] = t.pts / np.where(t.season == 1987, t.g.clip(lower=1), t.L)
+    # Joey: nobody that year pays for games he couldn't play, so its line is 12.
+    t['full'] = t.pts / np.maximum(t.g, np.where(t.season == 1987, 12, FULL_GAMES))
     t['metric'] = 0.65 * t.avg_eff + 0.35 * t.full
     t['club'] = [club(f, y) if isinstance(f, str) else None for f, y in zip(t.fr, t.season)]
     t['team'] = [FRANCHISE[f] if isinstance(f, str) else None for f in t.fr]

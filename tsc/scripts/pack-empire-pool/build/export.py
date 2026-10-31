@@ -3,7 +3,8 @@ import os, sys, re, json, unicodedata
 import pandas as pd, numpy as np
 
 S = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.environ.get('PE_OUT', os.path.join(S, '..', '..', 'src', 'lib', 'packEmpire', 'data', 'season-pool.json'))
+OUT_LIVE = os.path.join(S, '..', '..', 'src', 'lib', 'packEmpire', 'data', 'season-pool.json')
+OUT = os.environ.get('PE_OUT', OUT_LIVE)
 
 
 def slug(s):
@@ -64,7 +65,11 @@ def main():
     shared = ['display', 'pos', 'season', 'pid', 'true']
     both = pd.concat([skill.assign(side='skill')[shared + ['side']], ol.assign(side='ol')[shared + ['side']]])
     both['at'] = both.side + ':' + both.pos + ':' + both.pid + ':' + both.season.astype(str)
-    settled, gone, notes = settle(both.reset_index(drop=True))
+    live = json.load(open(OUT_LIVE)) if os.path.exists(OUT_LIVE) else []
+    dealt_now = {(c['pos'], c['pid'].replace('k-', 'k:', 1), c['year']): c['rarity'] for c in live}
+    both['was'] = [dealt_now.get(k) for k in zip(both.pos, both.pid, both.season)]
+    both['kept'] = both.was.notna()
+    settled, gone, refused, notes = settle(both.reset_index(drop=True))
     print('\n'.join(notes) or '  nothing to settle')
     settled = settled.set_index('at')
     tagged = {}
@@ -73,14 +78,18 @@ def main():
         frame['score'] = keys.map(settled.score).astype(int).values
         frame['band'] = keys.map(settled.band).values
         tagged[side] = keys
-    vault_keys = set(both.reset_index(drop=True).loc[gone, 'at'])
+    table = both.reset_index(drop=True)
+    vault_keys = set(table.loc[gone, 'at'])
+    skip_keys = set(table.loc[refused, 'at'])
 
     cards = []
     for r, key in zip(skill.itertuples(), tagged['skill']):
+        if key in skip_keys: continue
         cards.append(dict(pid=r.pid, name=r.display, pos=r.pos, team=r.team, club=r.club, year=int(r.season),
                           score=int(r.score), rarity=r.band, accolades=skill_lines(r),
                           img=r.img if isinstance(r.img, str) else None, vault=key in vault_keys))
     for r, key in zip(ol.itertuples(), tagged['ol']):
+        if key in skip_keys: continue
         cards.append(dict(pid=r.pid, name=r.display, pos=r.pos, team=r.team, club=r.club, year=int(r.season),
                           score=int(r.score), rarity=r.band, accolades=ol_lines(r, off),
                           img=r.img if isinstance(r.img, str) else None, vault=key in vault_keys))
@@ -127,7 +136,7 @@ def main():
     keys = ['id', 'pid', 'name', 'pos', 'team', 'club', 'year', 'score', 'rarity', 'accolades', 'img']
     cards = [{k: c[k] for k in keys} for c in cards]
     # A vaulted card reads as it was last dealt: that's what saved lineups hold.
-    last = {c['id']: c for c in json.load(open(OUT))} if os.path.exists(OUT) else {}
+    last = {c['id']: c for c in live}
     with open(OUT, 'w') as f:
         f.write('[\n' + ',\n'.join(json.dumps(c, ensure_ascii=False) for c in cards) + '\n]\n')
     print('wrote', len(cards), 'cards to', OUT)

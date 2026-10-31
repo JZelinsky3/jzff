@@ -203,10 +203,11 @@ export function rarityForScore(score: number): Rarity {
 // is for reading, nothing here runs it):
 //
 //   · Skill players: full PPR, 4 per passing TD. The rating is 65% points per
-//     game, the games divided by at least 14 (12 in the 14-game era) so half a
-//     season can't ride its average, and 35% points per game over the whole
-//     schedule. Each position has its own curve, so the best tight end season
-//     ever is worth what the best receiver season is worth.
+//     game and 35% total points over 14 games or the games he played, whichever
+//     is more: from 14 games up that's points per game, and each game short
+//     costs 2.5%. 1987 counts from 12, the strike season. Each position has a
+//     fixed curve from rating to value (select_skill.CURVE), so no card's value
+//     depends on any other card, and a new best-ever season just goes higher.
 //   · Linemen: that season's honors plus what his offense did. First-team AP
 //     All-Pro 10, second team 5, Pro Bowl 3, other selectors a little more,
 //     then points, rushing and sacks allowed against that season's league.
@@ -287,8 +288,9 @@ export function signingPrice<T extends { id: string; salary?: number }>(card: T,
     over: about 20 to read once it's ripped and flipped. */
 export const DAILY_PACK_SECONDS = 25
 
-/** The most a card can be worth, which is where a range's scale tops out. */
-export const VALUE_TOP = 5600
+/** Where a range's scale tops out. Above anything dealt: values have no ceiling
+    now, and a card worth more than this widens its own range (see placeRange). */
+export const VALUE_TOP = 6400
 
 export const CAP_LINES = [
   'Every card has a salary, and you can only keep what you can pay for.',

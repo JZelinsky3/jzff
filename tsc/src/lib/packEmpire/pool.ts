@@ -1,8 +1,9 @@
 // The player pool. SERVER ONLY.
 //
-// Every card is one season: 994 of them, 626 men. Each rarity is about half
-// the one under it: 524 common, 270 rare, 111 dynasty, 56 transcendent, 33
-// immortal. Seasons
+// Every card is one season: 1,000 of them, 626 men. Each rarity is about half
+// the one under it: 518 common, 269 rare, 120 dynasty, 57 transcendent, 36
+// immortal. A card's value comes off a fixed scale per position, so it never
+// moves when another card is added, and the top has no ceiling. Seasons
 // before 2000 belong to a short list of names people know (LEGENDS in the
 // build), and every other card is a man with a real photo; nine famous
 // men with none anywhere draw the portrait. Built by
@@ -29,9 +30,9 @@ import addedAfterE from './data/added-after-10e.json'
 import frozen from './data/season-pool-10h.json'
 import seasons from './data/season-pool.json'
 import vaulted from './data/vaulted.json'
-import { POOL_KEYS, RARITY_FLOOR, VALUE_TOP, personOf, type Player, type PoolKey, type Rarity, type Weights } from './rules'
+import { POOL_KEYS, RARITY_FLOOR, personOf, type Player, type PoolKey, type Rarity, type Weights } from './rules'
 
-export const POOL_VERSION = 'seasons-2026-10i'
+export const POOL_VERSION = 'seasons-2026-10j'
 
 const ALL = seasons as Player[]
 
@@ -84,29 +85,32 @@ const TUNED_ON: Record<PoolKey, Record<Rarity, number>> = {
 }
 
 /**
- * How much harder the best card in the game is to pull than an immortal right
- * on the line. Every immortal gets its own odds off its value, so the odds open
- * up exactly where the values do: Faulk's 370 over Holmes is a real step, Holmes
- * and Tomlinson 10 apart are as good as level, Gronk and Kelce are close. Shares
- * only move inside a position's immortals, which together stay exactly as likely
- * as the tables say.
+ * Every immortal has its own odds off its value, so the odds open up exactly
+ * where the values do: Faulk's 385 over Holmes is a real step, and Gronk and
+ * Kelce, 105 apart, stay close. Each IMMORTAL_SPAN of value over the line is
+ * IMMORTAL_SPREAD times harder to pull. There's no top, so a new best-ever season
+ * needs nothing changed here. Shares only move inside a position's immortals,
+ * which together stay exactly as likely as the tables say.
  */
 const IMMORTAL_SPREAD = 6
+const IMMORTAL_SPAN = 2400
 
-function immortalPull(score: number): number {
-  const up = (score - RARITY_FLOOR.immortal) / (VALUE_TOP - RARITY_FLOOR.immortal)
-  return IMMORTAL_SPREAD ** -up
+/** The span on POOL_H, whose Dailies are already out. */
+const IMMORTAL_SPAN_H = 1600
+
+function immortalPull(score: number, span: number): number {
+  return IMMORTAL_SPREAD ** -((score - RARITY_FLOOR.immortal) / span)
 }
 
-function weigher(cards: Player[]): (p: Player, weights: Weights) => number {
+function weigher(cards: Player[], span: number): (p: Player, weights: Weights) => number {
   const holds = new Map<string, number>()
   for (const p of cards) holds.set(`${p.pos}|${p.rarity}`, (holds.get(`${p.pos}|${p.rarity}`) ?? 0) + 1)
 
   const shares = new Map<string, number>()
   for (const [, list] of Object.entries(byPosition(cards))) {
     const top = list.filter((p) => p.rarity === 'immortal')
-    const whole = top.reduce((sum, p) => sum + immortalPull(p.score), 0)
-    for (const p of top) shares.set(p.id, (immortalPull(p.score) * top.length) / whole)
+    const whole = top.reduce((sum, p) => sum + immortalPull(p.score, span), 0)
+    for (const p of top) shares.set(p.id, (immortalPull(p.score, span) * top.length) / whole)
   }
 
   return (p, weights) => {
@@ -118,10 +122,10 @@ function weigher(cards: Player[]): (p: Player, weights: Weights) => number {
 }
 
 /** One card's weight on a table. Every draw goes through this. */
-export const cardWeight = weigher(ALL)
+export const cardWeight = weigher(ALL, IMMORTAL_SPAN)
 
 /** The same, for the Dailies dealt off POOL_H. */
-export const cardWeightH = weigher(FROZEN)
+export const cardWeightH = weigher(FROZEN, IMMORTAL_SPAN_H)
 
 /** Cards out of the packs, as they were last dealt. */
 export const VAULTED = vaulted as Player[]

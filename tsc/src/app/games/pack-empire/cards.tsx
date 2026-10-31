@@ -15,7 +15,6 @@ import {
   RARITY_LOOK,
   SLOTS,
   TIERS,
-  VALUE_TOP,
   seasonLabel,
   surname,
   teamLogo,
@@ -502,6 +501,9 @@ function YearMark({ player, className }: { player: Player; className: string }) 
   )
 }
 
+/** The Range gauge's full scale: a rough read, so anything past it just fills the bar. */
+const GAUGE_TOP = 5600
+
 /** What a blind card prints where its value would be. */
 export function blindValue(blind: BlindFace): string {
   if (blind.level === 'season') return '?,???'
@@ -835,8 +837,8 @@ export function PackCard({
                 <div className="pe-cf-gauge" aria-hidden>
                   <i
                     style={{
-                      left: `${((blind.lo ?? 0) / VALUE_TOP) * 100}%`,
-                      width: `${(((blind.hi ?? 0) - (blind.lo ?? 0)) / VALUE_TOP) * 100}%`,
+                      left: `${Math.min((blind.lo ?? 0) / GAUGE_TOP, 1) * 100}%`,
+                      width: `${(Math.min((blind.hi ?? 0) / GAUGE_TOP, 1) - Math.min((blind.lo ?? 0) / GAUGE_TOP, 1)) * 100}%`,
                     }}
                   />
                 </div>

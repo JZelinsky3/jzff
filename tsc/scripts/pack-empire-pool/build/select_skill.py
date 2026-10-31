@@ -32,6 +32,21 @@ SAMPLE_FLOOR = {'QB': 9.5, 'RB': 7.5, 'WR': 8.0, 'TE': 5.0}
 
 SCORE_AT = {'floor': 120, 'rare': 700, 'dynasty': 1600, 'transcendent': 2800, 'immortal': 4000, 'top': 5600}
 
+# What a rating is worth, per position: (rating, value), straight lines between,
+# and past the last point the top line just keeps going, so a new best-ever
+# season goes over 5,600 and nobody else moves. FIXED: these numbers are why a
+# card's value never changes when cards are added. Joey (2026-10-31): don't
+# re-value made cards every time a new outlier comes along. They used to be
+# worked out from the pool (its best season, the last man into each top rarity),
+# so one new card re-valued a whole position. Frozen at where that left them, so
+# a full-schedule season kept its exact value when the rating changed.
+CURVE = {
+    'QB': [(9.0, 120), (16.5, 700), (20.6, 1600), (22.9881, 2800), (24.3475, 4000), (27.1058, 5600)],
+    'RB': [(7.0, 120), (15.0, 700), (21.0, 1600), (24.5029, 2800), (25.7062, 4000), (31.4128, 5600)],
+    'WR': [(7.5, 120), (16.1, 700), (19.9, 1600), (22.4469, 2800), (23.8651, 4000), (25.8529, 5600)],
+    'TE': [(4.5, 120), (9.4, 700), (13.8, 1600), (16.8946, 2800), (18.1471, 4000), (20.6812, 5600)],
+}
+
 # Calibration runs (sim/variant.sh) override these from the environment.
 import json as _json
 TARGETS.update(_json.loads(os.environ.get('PE_TARGETS', '{}')))
@@ -115,7 +130,9 @@ try:
 except Exception:
     PHOTO, SEASON_PHOTO = {}, {}
 
-# Seasons people remember, pulled in wherever they land.
+# Seasons people remember, pulled in wherever they land. This is how a card gets
+# added on purpose: put it here and rebuild, no flag needed. A man who already
+# holds that rarity is refused, and nothing already dealt moves.
 MUST = {
     'QB': [('Kurt Warner', 1999), ('Tom Brady', 2001), ('Peyton Manning', 1998), ('Nick Foles', 2013),
            ('Derek Anderson', 2007), ('Matt Cassel', 2008), ('Jameis Winston', 2019), ('Ryan Fitzpatrick', 2015),
@@ -131,6 +148,7 @@ MUST = {
            ('Barry Sanders', 1997), ('Eric Dickerson', 1984), ('Walter Payton', 1977),
            ('Earl Campbell', 1980), ('Jerome Bettis', 1997), ('Mike Alstott', 2001), ('Kareem Hunt', 2017), ('Shaun Alexander', 2005),
            ("Le'Veon Bell", 2014), ('Bijan Robinson', 2023),
+           ('Todd Gurley', 2017), ("Le'Veon Bell", 2016), ('Priest Holmes', 2001),
            ('Doug Martin', 2012), ('Leonard Fournette', 2021), ('Eddie Lacy', 2014), ('Marshawn Lynch', 2012), ('James White', 2018)],
     'WR': [('Travis Fulgham', 2020), ('Brandon Lloyd', 2010), ('Laurent Robinson', 2011), ('Victor Cruz', 2011),
            ('Mike Williams', 2010), ('Josh Gordon', 2013), ('Steve Johnson', 2010), ('Marques Colston', 2006),
@@ -142,7 +160,8 @@ MUST = {
            ('Larry Fitzgerald', 2008), ('A.J. Brown', 2022),
            ('Keenan Allen', 2017), ('Nico Collins', 2023),
            ('Dez Bryant', 2014), ('Allen Robinson', 2015), ('JuJu Smith-Schuster', 2018), ('Eric Decker', 2013), ('Jarvis Landry', 2015),
-           ('Julian Edelman', 2019), ('Wes Welker', 2011), ('Tyreek Hill', 2020), ('Tyler Lockett', 2020)],
+           ('Julian Edelman', 2019), ('Wes Welker', 2011), ('Tyreek Hill', 2020), ('Tyler Lockett', 2020),
+           ('Calvin Johnson', 2012)],
     'TE': [('Gary Barnidge', 2015), ('Sam LaPorta', 2023),
            ('Brock Bowers', 2024), ('Robert Tonyan', 2020),
            ('Jared Cook', 2018), ('Kellen Winslow', 1980), ('Mark Bavaro', 1986), ('Shannon Sharpe', 1996),
@@ -156,7 +175,7 @@ MUST = {
 def interp(x, pts):
     xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
     if x <= xs[0]: return ys[0]
-    if x >= xs[-1]: return ys[-1]
+    if x >= xs[-1]: return ys[-1] + (x - xs[-1]) * (ys[-1] - ys[-2]) / (xs[-1] - xs[-2])
     for i in range(1, len(xs)):
         if x <= xs[i]:
             f = (x - xs[i - 1]) / (xs[i] - xs[i - 1])
@@ -213,42 +232,22 @@ def choose(pos, t):
         have = held.get(pid, set())
         return len(have) < MAX_PER_MAN and band not in have
 
+    # A rebuild keeps the pool as it is. Adding is a decision: MUST names a season,
+    # PE_ADD=1 lets the sampler fill each band to its target. Each new card comes
+    # in at the value the curve gives it, and no card already dealt moves for one.
+    fill = not kept or os.environ.get('PE_ADD')
+
+    wanted = {(r.pid, r.season) for name, year in MUST.get(pos, [])
+              for r in p[(p.key == norm(name)) & (p.season == year)].itertuples()}
+
     def take(i, band):
+        if not fill and (p.at[i, 'pid'], p.at[i, 'season']) not in kept | wanted: return
         held.setdefault(p.at[i, 'pid'], set()).add(band); picked[i] = band
 
-    held_under = []                # row index, kept just below the immortal line
-
-    # 1. The top two bands walk the all-time list, passing over old seasons
-    #    that aren't a legend's and men with no photo. Each floor sits halfway
-    #    between the last season in and the next one that could have been.
-    #    Lowering the immortal line can lift a man's second dealt card over it,
-    #    where one per rarity won't let it in. It's in people's binders, so it
-    #    stays, just under the line, and the walk works around it.
-    floors = {}
-    ceiling = 1e9
-    for band in ['immortal', 'transcendent']:
-        n, last = 0, None
-        for r in p.itertuples():
-            if r.metric >= ceiling or r.Index in picked: continue
-            if not era_ok(r.key, r.season) or not face_ok(r.pid, r.key): continue
-            if not can_take(r.pid, band): continue
-            if n == target[band]:
-                floors[band] = (last + r.metric) / 2; break
-            take(r.Index, band); n += 1; last = r.metric
-        ceiling = floors[band]
-        if band == 'immortal':
-            for r in p.itertuples():
-                if r.metric < ceiling: break
-                if (r.pid, r.season) in kept and r.Index not in picked and can_take(r.pid, 'transcendent'):
-                    take(r.Index, 'transcendent'); held_under.append(r.Index)
-    m_top = p.metric.max()
-    anchors = [(M_FLOOR[pos], SCORE_AT['floor']), (T_RARE[pos], SCORE_AT['rare']), (T_DYN[pos], SCORE_AT['dynasty']),
-               (floors['transcendent'], SCORE_AT['transcendent']), (floors['immortal'], SCORE_AT['immortal']),
-               (m_top, SCORE_AT['top'])]
+    anchors = CURVE[pos]
     # rounded DOWN to the 5, so rounding never lifts a season over a rarity floor
     p['score'] = [int(interp(m, anchors) // 5 * 5) for m in p.metric]
-    p['true'] = p.score            # what settle.py works from: the curve, before any holding
-    p.loc[held_under, 'score'] = SCORE_AT['immortal'] - 5
+    p['true'] = p.score            # what settle.py works from
     p['band'] = p.score.map(rarity_for)
 
     # 1b. What's already dealt stays in, at its new value. Best season first, so
@@ -264,15 +263,13 @@ def choose(pos, t):
             p.at[r.Index, 'band'] = band
         take(r.Index, band)
 
-    # 2. Must-includes, wherever they land (the top was already walked).
+    # 2. Must-includes, wherever they land: a new outlier goes in here, at any value.
     for name, year in MUST.get(pos, []):
         rows = p[(p.key == norm(name)) & (p.season == year)]
         if not len(rows):
             print('  MUST missing from data:', name, year); continue
         r = rows.iloc[0]
         if r.name in picked: continue
-        if r.band in ('immortal', 'transcendent'):
-            print('  MUST left out (top band full / repeat):', name, year, r.band); continue
         if r.season < LEGEND_BEFORE and r.band == 'common':
             print('  MUST left out (old season, bronze):', name, year); continue
         if not face_ok(r.pid, r.key):
@@ -315,9 +312,6 @@ def choose(pos, t):
 
     per_season = {}
     for i in picked: per_season[p.at[i, 'season']] = per_season.get(p.at[i, 'season'], 0) + 1
-    # A rebuild keeps the pool as it is. Adding is a decision: PE_ADD=1 fills each
-    # band to its target, and that includes what the vault left open.
-    fill = not kept or os.environ.get('PE_ADD')
     for band in ['dynasty', 'rare', 'common']:
         need = target[band] - sum(1 for b in picked.values() if b == band)
         if need <= 0 or not fill: continue
