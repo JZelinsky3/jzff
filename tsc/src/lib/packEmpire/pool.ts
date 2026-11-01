@@ -32,7 +32,7 @@ import seasons from './data/season-pool.json'
 import vaulted from './data/vaulted.json'
 import { POOL_KEYS, RARITY_FLOOR, personOf, tableRarity, type Player, type PoolKey, type TableRarity, type Weights } from './rules'
 
-export const POOL_VERSION = 'seasons-2026-10k'
+export const POOL_VERSION = 'seasons-2026-10l'
 
 // Canton is set here rather than in the data, so the frozen Daily pools keep the
 // Immortals they were dealt with. Nothing about a deal reads it: see tableRarity.

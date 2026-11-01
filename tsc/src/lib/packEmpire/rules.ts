@@ -564,9 +564,13 @@ export type Weights = Record<TableRarity, number>
  * here, and more cards to collect doesn't change what a pack holds. (Dynasty took
  * a little extra off the ordinary table: that batch ran slightly stronger, which
  * had Hall of Fame at 26%.)
+ *
+ * The ordinary immortal went from 0.7 to 1 on 2026-11-01, after 451 packs in a row
+ * went by without one: a run holds one 1 time in about 9, up from 11. Canton is on
+ * this table too, so it moved with them.
  */
 export const SOLO_WEIGHTS: { normal: Weights; captain: Weights } = {
-  normal: { common: 43.4, rare: 11.6, dynasty: 7.8, transcendent: 2.8, immortal: 0.7 },
+  normal: { common: 43.4, rare: 11.6, dynasty: 7.8, transcendent: 2.8, immortal: 1 },
   captain: { common: 4.3, rare: 14.8, dynasty: 33.5, transcendent: 21.5, immortal: 3.5 },
 }
 
