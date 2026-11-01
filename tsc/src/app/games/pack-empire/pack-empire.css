@@ -2118,7 +2118,7 @@ html:has(.pe-theme) body {
 
 .pe-fc-img {
   position: absolute;
-  bottom: 3px;
+  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
   height: 100%;
@@ -5359,14 +5359,18 @@ a.pe-row:hover {
     font-size: 1.45rem;
   }
 
+  /* A sideways scroller clips top and bottom too, which took the top off the
+     borders that stand proud of a card. The padding lifts the clip into the
+     space under the head and the margin puts every card back where it was. */
   .pe-index {
     grid-template-columns: none;
     grid-auto-flow: column;
     grid-auto-columns: 9.2rem;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
+    padding-top: 1.2rem;
     padding-bottom: 0.6rem;
-    margin: 0 -0.9rem;
+    margin: -1.2rem -0.9rem 0;
     padding-left: 0.9rem;
     padding-right: 0.9rem;
     scroll-padding: 0 0.9rem;
@@ -8676,8 +8680,10 @@ a.pe-row:hover {
   color: #141311;
 }
 
-/* An empty place in the lineup on the Daily: a blank card with the position on
-   top. A pack art here read as something to tap, and nothing here opens. */
+/* An empty place in the lineup on the Daily: a card nobody's been dealt yet, built
+   like a filled one, top bar, art and name band in the same places, so a player
+   drops into a frame that already fits him. A pack art here read as something to
+   tap, and nothing here opens. */
 .pe-blank {
   position: relative;
   display: flex;
@@ -8688,45 +8694,145 @@ a.pe-row:hover {
   flex-shrink: 0;
   padding: 0;
   overflow: visible;
-  border: 1.5px dashed rgba(244, 235, 216, 0.2);
+  border: 1px solid rgba(244, 235, 216, 0.2);
   border-radius: 11px;
-  background: linear-gradient(180deg, rgba(244, 235, 216, 0.05), rgba(244, 235, 216, 0.012));
+  background: linear-gradient(160deg, #2a2620, #191714 58%, #141310);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0.4em 0.9em -0.3em rgba(0, 0, 0, 0.7);
   color: var(--pe-ink-mute);
   font: inherit;
   -webkit-tap-highlight-color: transparent;
 }
 
-.pe-blank-pos {
-  padding: 0.5em 0 0;
+.pe-blank-top {
+  display: flex;
+  flex-shrink: 0;
+  height: 21px;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(244, 235, 216, 0.14);
+  border-radius: 10px 10px 0 0;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.pe-blank-tab {
+  display: flex;
+  align-items: center;
+  padding: 0 0.85em 0 0.6em;
+  background: rgba(244, 235, 216, 0.17);
+  clip-path: polygon(0 0, 100% 0, 82% 100%, 0 100%);
   font-family: var(--pe-cond);
   font-weight: 800;
-  font-size: 0.92rem;
-  letter-spacing: 0.1em;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  color: var(--pe-ink);
+}
+
+.pe-blank-art {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(112deg, transparent 34%, rgba(244, 235, 216, 0.05) 46%, transparent 58%),
+    radial-gradient(85% 80% at 50% 34%, rgba(232, 168, 75, 0.09), transparent 74%);
+}
+
+/* The position in hollow letters, where a card keeps its season. */
+.pe-blank-mark {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 13%;
+  font-family: var(--pe-display);
+  font-weight: 900;
+  font-size: calc(var(--pe-sw) * 0.44);
+  letter-spacing: -0.01em;
   line-height: 1;
   text-align: center;
-  color: var(--pe-ink-soft);
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(244, 235, 216, 0.22);
 }
 
 .pe-blank-man {
-  flex: 1;
-  min-height: 0;
-  width: 62%;
-  margin: 0.2rem auto 0;
-  opacity: 0.1;
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 74%;
+  height: auto;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  opacity: 0.2;
+  -webkit-mask-image: linear-gradient(180deg, #000 42%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 42%, transparent 100%);
 }
 
 .pe-blank-man path {
   fill: var(--pe-ink);
 }
 
+.pe-blank-foot {
+  flex-shrink: 0;
+  padding: 0.62em 0.3em 0.58em;
+  overflow: hidden;
+  border-top: 1px solid rgba(244, 235, 216, 0.14);
+  border-radius: 0 0 10px 10px;
+  background: rgba(0, 0, 0, 0.26);
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--pe-ink-soft);
+}
+
+@media (max-width: 700px) {
+  .pe-blank {
+    border-radius: 7px;
+  }
+
+  .pe-blank-top {
+    height: 13px;
+    border-radius: 6px 6px 0 0;
+  }
+
+  .pe-blank-tab {
+    font-size: 0.46rem;
+  }
+
+  .pe-blank-foot {
+    padding: 0.42em 0.1em;
+    border-radius: 0 0 6px 6px;
+    font-size: 0.4rem;
+    letter-spacing: 0.04em;
+  }
+}
+
 .pe-blank.clickable {
   cursor: pointer;
-  border-color: rgba(232, 168, 75, 0.42);
+  border-color: rgba(232, 168, 75, 0.55);
+}
+
+.pe-blank.clickable .pe-blank-tab {
+  background: rgba(232, 168, 75, 0.85);
+  color: #1a1408;
 }
 
 .pe-blank.is-cap {
-  border-style: solid;
   border-color: var(--pe-amber);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 14px rgba(232, 168, 75, 0.3);
+}
+
+.pe-blank.is-cap .pe-blank-tab {
+  background: var(--pe-amber);
+  color: #1a1408;
 }
 
 .pe-blank .pe-capmark.ghost {

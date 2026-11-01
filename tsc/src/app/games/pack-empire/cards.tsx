@@ -56,7 +56,7 @@ const GEM: Record<Rarity, { d: string; cut?: string; fill: string }> = {
   dynasty: { d: starPath(5, 11.6, 5, 1.1), cut: starPath(5, 4.2, 1.9, 1.1), fill: '#ffd700' },
   transcendent: { d: starPath(8, 11.8, 4.8), cut: starPath(4, 4.6, 1.7), fill: '#ff90ff' },
   immortal: { d: starPath(12, 12, 6.8), cut: starPath(6, 5, 2.5), fill: '#80ffb8' },
-  canton: { d: 'M12 .8C13.6 6.7 17.3 10.4 23.2 12 17.3 13.6 13.6 17.3 12 23.2 10.4 17.3 6.7 13.6.8 12 6.7 10.4 10.4 6.7 12 .8Z', fill: '#f4dfa4' },
+  canton: { d: 'M12 .8C13.4 8.3 15.7 10.6 23.2 12 15.7 13.4 13.4 15.7 12 23.2 10.6 15.7 8.3 13.4.8 12 8.3 10.6 10.6 8.3 12 .8Z', fill: '#f4dfa4' },
 }
 
 export function RarityGem({ rarity, className = '' }: { rarity: Rarity; className?: string }) {
@@ -898,8 +898,14 @@ function Slot({
     const cls = ['pe-blank', view.clickable ? 'clickable' : '', view.captain ? 'is-cap' : ''].filter(Boolean).join(' ')
     const inner = (
       <>
-        <span className="pe-blank-pos">{def.short}</span>
-        <Portrait className="pe-blank-man" />
+        <span className="pe-blank-top">
+          <span className="pe-blank-tab">{def.short}</span>
+        </span>
+        <span className="pe-blank-art">
+          <span className="pe-blank-mark">{def.short}</span>
+          <Portrait className="pe-blank-man" />
+        </span>
+        <span className="pe-blank-foot">{def.label}</span>
         {view.captain ? <CaptainMark /> : view.capHint ? <CaptainMark ghost /> : null}
       </>
     )

@@ -1,15 +1,13 @@
 import type { Metadata, Viewport } from 'next'
 import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
-import { loadBoard, type BestRow } from '@/lib/minigames/leaderboard'
+import { loadBoard } from '@/lib/minigames/leaderboard'
 import { peMeta } from '@/lib/packEmpire/meta'
-import { POOL, POOL_SIZE, cardWeight, playerById } from '@/lib/packEmpire/pool'
-import { parseSoloPicks } from '@/lib/packEmpire/solo'
+import { POOL, POOL_SIZE, cardWeight } from '@/lib/packEmpire/pool'
 import { binderTotals, loadLeaders, type BinderTotals } from '@/lib/packEmpire/binder'
-import { loadFaces, type FaceMap } from '@/lib/packEmpire/faces'
+import { runLeaders } from '@/lib/packEmpire/boardRuns'
 import { dayKey } from '@/lib/packEmpire/daily'
 import { ruleForDay } from '@/lib/packEmpire/dayRules'
 import {
@@ -24,12 +22,12 @@ import {
 } from '@/lib/packEmpire/rules'
 import { Chevron } from '../MobileGameBar'
 import mobileStyles from '../mobile.module.css'
+import { BoardTop } from './BoardRows'
 import { Ladder, PackCard, RarityGem } from './cards'
 import { LeaderBoards } from './leaders'
 import { PeChrome, PeDock } from './chrome'
 import { peFonts } from './fonts'
 import { MODES, ModeGlyph, ModeMark } from './modes'
-import { TierBadge } from './TierBadge'
 
 export const dynamic = 'force-dynamic'
 
@@ -103,74 +101,6 @@ function PackFan() {
           <img src={`/games/pack-empire/packs/${f.pool.toLowerCase()}.webp`} alt="" />
         </span>
       ))}
-    </div>
-  )
-}
-
-/** The best card in each run, off the picks it posted. A run from an older
-    pool has ids that no longer resolve, so it just doesn't get one. */
-async function runLeaders(rows: BestRow[]): Promise<Map<string, Player>> {
-  const out = new Map<string, Player>()
-  if (rows.length === 0) return out
-  const [{ data }, faces] = await Promise.all([
-    createAdminClient()
-      .from('game_runs')
-      .select('id, detail')
-      .in(
-        'id',
-        rows.map((r) => r.runId)
-      ),
-    loadFaces().catch(() => ({} as FaceMap)),
-  ])
-  for (const run of (data ?? []) as { id: string; detail: { picks?: unknown } | null }[]) {
-    const cards = (parseSoloPicks(run.detail?.picks) ?? []).flatMap((p) => playerById(p.id) ?? [])
-    const best = cards.sort((a, b) => b.score - a.score)[0]
-    if (best) out.set(run.id, { ...best, img: faces[best.id] ?? best.img })
-  }
-  return out
-}
-
-function BoardTop({ rows, leaders }: { rows: BestRow[]; leaders?: Map<string, Player> }) {
-  if (rows.length === 0) {
-    return <p className="pe-empty">Nothing on the board yet. The first finished run takes the top spot.</p>
-  }
-  return (
-    <div className="pe-top">
-      {rows.map((r) => {
-        const led = leaders?.get(r.runId)
-        return (
-          <div
-            key={r.runId}
-            className={`pe-top-row${leaders ? ' pe-top-row--card' : ''}`}
-            style={led ? ({ '--rc': RARITY_LOOK[led.rarity].color } as React.CSSProperties) : undefined}
-          >
-            <span className="pe-top-rank">{r.rank}</span>
-            {leaders && (
-              <span className="pe-top-face" aria-hidden>
-                {led?.img ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={led.img} alt="" loading="lazy" />
-                ) : (
-                  (r.name.trim()[0] ?? '?').toUpperCase()
-                )}
-              </span>
-            )}
-            <span className="pe-top-who">
-              <span className="pe-top-name">{r.name}</span>
-              {led && (
-                <span className="pe-top-led">
-                  Led by <b>{led.name}</b>
-                  {led.year ? ` ${led.year}` : ''}
-                </span>
-              )}
-            </span>
-            <span className="pe-top-run">
-              <span className="pe-top-score">{Number(r.display.accolades ?? r.score).toLocaleString()}</span>
-              <TierBadge score={r.score} />
-            </span>
-          </div>
-        )
-      })}
     </div>
   )
 }

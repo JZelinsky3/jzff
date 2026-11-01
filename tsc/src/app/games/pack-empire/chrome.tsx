@@ -2,7 +2,7 @@
 //
 // Desktop gets the game's own bar rather than the site's: the wordmark on the
 // left, the four modes across the middle as tabs in their own colours (the
-// one you're in lit), and the binder and friends as tools on the right.
+// one you're in lit), and the board, binder and friends as tools on the right.
 // Joey: the site nav's row of words (ALL GAMES, BINDER, FRIENDS) is right for
 // the almanac and flat for a game. It keeps the `nav` class, so it stays
 // sticky and everything that measures the masthead (the score strip) still
@@ -22,7 +22,17 @@ import { MobileGamesDock } from '../MobileGamesDock'
 import { FriendsMenu } from './FriendsMenu'
 import { DAILY, MODES, ModeGlyph, type ModeDef } from './modes'
 
-export type PeSection = ModeDef['id'] | 'home' | 'binder' | 'profile'
+export type PeSection = ModeDef['id'] | 'home' | 'board' | 'binder' | 'profile'
+
+function BoardIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M9 20.5V8.5h6v12" />
+      <path d="M9 12.5H3.5v8h17V15H15" />
+      <path d="m12 2.8.7 1.5 1.6.2-1.2 1.1.3 1.6-1.4-.8-1.4.8.3-1.6-1.2-1.1 1.6-.2z" />
+    </svg>
+  )
+}
 
 function BinderIcon() {
   return (
@@ -181,6 +191,14 @@ export function PeChrome({
       </div>
 
       <div className="pe-nav-right">
+        <Link
+          href="/games/pack-empire/board/"
+          className={`pe-nav-tool${on === 'board' ? ' on' : ''}`}
+          aria-current={on === 'board' ? 'page' : undefined}
+        >
+          <BoardIcon />
+          <span>Board</span>
+        </Link>
         {signedIn && (
           <Link
             href="/games/pack-empire/binder/"

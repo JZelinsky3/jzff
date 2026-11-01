@@ -60,30 +60,15 @@ export async function GameBoardPage({
   poolId,
   mode,
   kind,
-  themeClass,
   play,
-  dock,
-  modeTabs,
-  activeMode,
-  tabQuery,
 }: {
   game: GameId
   def: GameDef
   poolId: string
   mode: string | null
   kind: BoardKind
-  /** A game that re-skins its whole page (Pack Empire) passes its theme so
-      its board is the same room as its table. */
-  themeClass?: string
   /** Where "Play" goes, for a game whose front page isn't its board. */
   play?: string
-  /** A game with its own hub (Pack Empire) keeps its tabs on its board. */
-  dock?: (signedIn: boolean) => React.ReactNode
-  /** A game with several boards of its own (Pack Empire's difficulties). */
-  modeTabs?: { kind: string; label: string; href: string }[]
-  activeMode?: string
-  /** Carried on the best/career switch, so flipping it keeps the board. */
-  tabQuery?: string
 }) {
   const supabase = await createClient()
   const {
@@ -97,7 +82,7 @@ export async function GameBoardPage({
 
   const playHref = play ?? `${def.href}?pool=${encodeURIComponent(poolId)}`
   const tabHref = (k: BoardKind) =>
-    `${def.href}board/?pool=${encodeURIComponent(poolId)}${k === 'best' ? '' : `&kind=${k}`}${tabQuery ? `&${tabQuery}` : ''}`
+    `${def.href}board/?pool=${encodeURIComponent(poolId)}${k === 'best' ? '' : `&kind=${k}`}`
 
   const mobile = (await getViewMode()) === 'mobile'
 
@@ -107,38 +92,18 @@ export async function GameBoardPage({
     // was the only way in, and isn't now that the game links to it. Same
     // chrome the game wears, so leaving a board and leaving a wheel are the
     // same gesture.
-    <main
-      className={
-        [themeClass, mobile ? (dock ? mobileStyles.root : mobileStyles.boardRoot) : ''].filter(Boolean).join(' ') ||
-        undefined
-      }
-    >
+    <main className={mobile ? mobileStyles.boardRoot : undefined}>
       {mobile ? (
         <MobileGameBar
           left="back"
-          // A game with its own front page (Pack Empire) goes back to it;
-          // the rest go back to the shelf, where their lobby lives.
-          backHref={def.global ? def.href : undefined}
-          backLabel={def.global ? `${def.title} ${def.titleEm}` : undefined}
           kicker={`${def.title} ${def.titleEm}`}
           title="The"
           titleEm="Board"
           signedIn={!!user}
-          right={game === 'pack-empire' ? 'friends' : undefined}
         />
       ) : (
         <nav className="nav">
-          {/* A game with its own front page goes back to it, the same as the
-              phone's bar: up a level, not to wherever the browser was. */}
-          {def.global ? (
-            <Link href={def.href} className="dc-nav-icon" aria-label={`${def.title} ${def.titleEm}`}>
-              <svg viewBox="0 0 8 14" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="7 1 1 7 7 13" />
-              </svg>
-            </Link>
-          ) : (
-            <BackButton fallbackHref={playHref} ariaLabel="Back" />
-          )}
+          <BackButton fallbackHref={playHref} ariaLabel="Back" />
           <div className="nav-center">
             <div className="nav-kicker">The Games Page</div>
             <div className="nav-title">
@@ -183,15 +148,6 @@ export async function GameBoardPage({
         activeId={game}
         href={(g) => `${g.href}board/?pool=${encodeURIComponent(poolId)}${kind === 'best' ? '' : `&kind=${kind}`}`}
       />
-      {modeTabs && activeMode && (
-        <KindSeg
-          kinds={modeTabs}
-          active={activeMode}
-          href={(k) => modeTabs.find((t) => t.kind === k)?.href ?? tabHref(kind)}
-          label="Difficulty"
-          dense
-        />
-      )}
       <KindSeg kinds={TABS} active={kind} href={tabHref} />
 
       {/* The board is where a wrong name is actually visible, so it is also
@@ -219,9 +175,9 @@ export async function GameBoardPage({
       </div>
       </div>
 
-      {/* The phone gets the bar's back button and at most a game's own tabs;
-          a full site footer under a leaderboard is a second page. */}
-      {mobile ? dock?.(!!user) : <SiteFooter />}
+      {/* The phone gets the bar's back button; a full site footer under a
+          leaderboard is a second page. */}
+      {!mobile && <SiteFooter />}
     </main>
   )
 }

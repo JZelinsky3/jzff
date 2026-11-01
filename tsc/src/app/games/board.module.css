@@ -352,29 +352,6 @@
   }
 }
 
-/* A board with no faces (Pack Empire). Name and date on the left, score and
-   tier badge on the right, which needs more room than half a phone: second
-   and third take the full width there, so all three line up down the score. */
-.noFace .plaqueMeta,
-.noFace .sub {
-  margin-top: 0.2rem;
-}
-
-.noFace .plaqueStat,
-.noFace .stat {
-  gap: 0.28rem;
-}
-
-.plaque.noFace:not(.plaqueFirst) .plaqueRank {
-  color: var(--gp-mute);
-}
-
-@media (max-width: 640px) {
-  .plaque.noFace {
-    grid-column: 1 / -1;
-  }
-}
-
 /* ── Rows ─────────────────────────────────────────────────── */
 
 /* Column header over the agate list, so the two numbers on the right have
@@ -418,13 +395,6 @@
 
 .row:first-child {
   border-top: 1px solid var(--gp-line);
-}
-
-/* No plate, so the rank column can close up too. Sized for a three-figure
-   pinned row. */
-.colhead.noFace,
-.row.noFace {
-  grid-template-columns: 1.6rem minmax(0, 1fr) auto;
 }
 
 /* The viewer's own runs. A tint and nothing else: a coloured spine down the
@@ -505,21 +475,6 @@
   font-size: 0.56rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--gp-mute);
-  white-space: nowrap;
-}
-
-/* The date as a small badge, for a board that sets it beside a tier. */
-.dateChip {
-  flex: none;
-  /* Whole pixels so it centres; see .pe-tier-badge. */
-  padding: 3px 5px;
-  border: 1px solid var(--gp-line);
-  border-radius: 3px;
-  font-family: var(--mono);
-  font-size: 8px;
-  line-height: 10px;
-  letter-spacing: 0.06em;
   color: var(--gp-mute);
   white-space: nowrap;
 }
@@ -666,12 +621,3 @@
 
 /* Four tabs on a phone: one line each, or the two-word ones wrap and sit
    higher than their neighbours. */
-@media (max-width: 640px) {
-  .segDense .segItem {
-    padding-left: 0.6rem;
-    padding-right: 0.6rem;
-    font-size: 0.56rem;
-    letter-spacing: 0.08em;
-    white-space: nowrap;
-  }
-}

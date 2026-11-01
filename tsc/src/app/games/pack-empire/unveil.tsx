@@ -265,7 +265,7 @@ export function Unveil({
       <Climb total={show.total} final={final} even={even} />
 
       <div className="pe-uv-pitch" ref={pitch}>
-        <ChemLinks bonds={shownBonds} lineup={lineup} count={show.links} />
+        <ChemLinks bonds={shownBonds} lineup={lineup} count={show.links} hot={show.phase === 'chem' && show.links > 0 ? show.links - 1 : null} />
         <Field
           lineup={field}
           view={(i) => ({

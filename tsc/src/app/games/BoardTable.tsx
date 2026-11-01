@@ -17,7 +17,6 @@
 import type { Board, BestRow, CareerRow, GameId } from '@/lib/minigames/leaderboard'
 import { runStat } from '@/lib/minigames/runStat'
 import { BoardFace } from './BoardFace'
-import { TierBadge } from './pack-empire/TierBadge'
 import styles from './board.module.css'
 
 function ordinal(n: number): string {
@@ -39,7 +38,7 @@ function ordinal(n: number): string {
  * the same width down it, which is the whole reason to set a date in numbers
  * rather than "Aug 3, 2026" that shifts a pixel per month.
  */
-function when(iso: string): string {
+export function when(iso: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ''
   const pad = (n: number) => String(n).padStart(2, '0')
@@ -74,13 +73,8 @@ function statFor(game: GameId, row: BestRow): { big: string; small: string } {
   return runStat(game, row.display, row.score)
 }
 
-/** Pack Empire's board is one site-wide pool with no avatars to show, so its
-    rows go without the plate. Its date is a chip and its tier a badge. */
-const faceless = (game: GameId) => game === 'pack-empire'
-
 /** The line under a name. */
 function RunMeta({ row, game }: { row: BestRow; game: GameId }) {
-  if (game === 'pack-empire') return <span className={styles.dateChip}>{when(row.at)}</span>
   const chip = game === 'multiverse' ? playoffChip(row.display.round as string | undefined) : null
   return (
     <>
@@ -103,7 +97,7 @@ export function BoardTable({
   game: GameId
   viewerId: string | null
 }) {
-  if (board.kind === 'career') return <CareerTable board={board} game={game} viewerId={viewerId} />
+  if (board.kind === 'career') return <CareerTable board={board} viewerId={viewerId} />
 
   const { rows, you, total } = board
   if (rows.length === 0) {
@@ -144,9 +138,9 @@ export function BoardTable({
 
       {rest.length > 0 && (
         <>
-          <div className={`${styles.colhead} ${faceless(game) ? styles.noFace : ''}`} aria-hidden>
+          <div className={styles.colhead} aria-hidden>
             <span className={styles.colheadRank}>#</span>
-            {!faceless(game) && <span />}
+            <span />
             <span>Manager</span>
             <span className={styles.colheadStat}>Run</span>
           </div>
@@ -199,19 +193,14 @@ function Plaque({
   mine: boolean
 }) {
   const stat = statFor(game, row)
-  const plain = faceless(game)
   return (
-    <div
-      className={`${styles.plaque} ${place === 1 ? styles.plaqueFirst : ''} ${plain ? styles.noFace : ''} ${mine ? styles.rowMine : ''}`}
-    >
+    <div className={`${styles.plaque} ${place === 1 ? styles.plaqueFirst : ''} ${mine ? styles.rowMine : ''}`}>
       <span className={styles.plaqueRank} aria-hidden>
         {place}
       </span>
-      {!plain && (
-        <span className={styles.plaqueFace}>
-          <BoardFace name={row.name} avatar={row.avatar} />
-        </span>
-      )}
+      <span className={styles.plaqueFace}>
+        <BoardFace name={row.name} avatar={row.avatar} />
+      </span>
       <span className={styles.plaqueBody}>
         <span className={styles.plaqueName}>{row.name}</span>
         <span className={styles.plaqueMeta}>
@@ -220,7 +209,7 @@ function Plaque({
       </span>
       <span className={styles.plaqueStat}>
         <span className={styles.plaqueBig}>{stat.big}</span>
-        {plain ? <TierBadge score={row.score} /> : <span className={styles.statSmall}>{stat.small}</span>}
+        <span className={styles.statSmall}>{stat.small}</span>
       </span>
     </div>
   )
@@ -228,11 +217,10 @@ function Plaque({
 
 function Row({ row, game, mine }: { row: BestRow; game: GameId; mine: boolean }) {
   const stat = statFor(game, row)
-  const plain = faceless(game)
   return (
-    <li className={`${styles.row} ${plain ? styles.noFace : ''} ${mine ? styles.rowMine : ''}`}>
+    <li className={`${styles.row} ${mine ? styles.rowMine : ''}`}>
       <span className={styles.rank}>{row.rank}</span>
-      {!plain && <BoardFace name={row.name} avatar={row.avatar} />}
+      <BoardFace name={row.name} avatar={row.avatar} />
       <span className={styles.who}>
         <span className={styles.name}>{row.name}</span>
         <span className={styles.sub}>
@@ -241,7 +229,7 @@ function Row({ row, game, mine }: { row: BestRow; game: GameId; mine: boolean })
       </span>
       <span className={styles.stat}>
         <span className={styles.statBig}>{stat.big}</span>
-        {plain ? <TierBadge score={row.score} /> : <span className={styles.statSmall}>{stat.small}</span>}
+        <span className={styles.statSmall}>{stat.small}</span>
       </span>
     </li>
   )
@@ -249,11 +237,9 @@ function Row({ row, game, mine }: { row: BestRow; game: GameId; mine: boolean })
 
 function CareerTable({
   board,
-  game,
   viewerId,
 }: {
   board: Extract<Board, { kind: 'career' }>
-  game: GameId
   viewerId: string | null
 }) {
   const { rows, minRuns } = board
@@ -279,7 +265,6 @@ function CareerTable({
           <CareerRowLine
             key={r.userId}
             row={r}
-            game={game}
             mine={viewerId != null && r.userId === viewerId}
           />
         ))}
@@ -292,7 +277,6 @@ function CareerTable({
               <CareerRowLine
                 key={r.userId}
                 row={r}
-                game={game}
                 mine={viewerId != null && r.userId === viewerId}
                 minRuns={minRuns}
               />
@@ -306,23 +290,17 @@ function CareerTable({
 
 function CareerRowLine({
   row,
-  game,
   mine,
   minRuns,
 }: {
   row: CareerRow
-  game: GameId
   mine: boolean
   minRuns?: number
 }) {
-  // Pack Empire posts every run as score over one, so its "rate" is already
-  // the average lineup. A percentage of that would be a seven-digit number.
-  const average = game === 'pack-empire'
-  const plain = faceless(game)
   return (
-    <li className={`${styles.row} ${plain ? styles.noFace : ''} ${mine ? styles.rowMine : ''}`}>
+    <li className={`${styles.row} ${mine ? styles.rowMine : ''}`}>
       <span className={styles.rank}>{row.rank != null ? row.rank : '·'}</span>
-      {!plain && <BoardFace name={row.name} avatar={row.avatar} />}
+      <BoardFace name={row.name} avatar={row.avatar} />
       <span className={styles.who}>
         <span className={styles.name}>{row.name}</span>
         <span className={styles.date}>
@@ -331,12 +309,8 @@ function CareerRowLine({
         </span>
       </span>
       <span className={styles.stat}>
-        <span className={styles.statBig}>
-          {average ? Math.round(row.rate).toLocaleString() : `${(row.rate * 100).toFixed(1)}%`}
-        </span>
-        <span className={styles.statSmall}>
-          {average ? `avg · best ${Number(row.best).toLocaleString()}` : `best ${row.best}`}
-        </span>
+        <span className={styles.statBig}>{(row.rate * 100).toFixed(1)}%</span>
+        <span className={styles.statSmall}>best {row.best}</span>
       </span>
     </li>
   )

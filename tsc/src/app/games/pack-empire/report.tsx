@@ -6,6 +6,7 @@
 
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
+  FORMATION,
   RARITY_LOOK,
   SLOTS,
   chemistryFor,
@@ -20,15 +21,27 @@ import {
 } from '@/lib/packEmpire/rules'
 import { BOND_LABEL, Bonds, Check, Face, Field, FilledSlot, bondKind } from './cards'
 
-type Line = { x: number; y: number; length: number; angle: number; kind: string; bond: number }
+type Point = { x: number; y: number }
+type Box = { l: number; t: number; r: number; b: number }
+type Kind = ReturnType<typeof bondKind>
+type Link = { bond: number; kind: Kind; slots: [number, number]; d: string; ends: [Point, Point] }
+type Ring = Box & { slot: number; kind: Kind; bonds: number[] }
+
+const centre = (b: Box): Point => ({ x: (b.l + b.r) / 2, y: (b.t + b.b) / 2 })
 
 /** Where a slot's card sits inside `box`. */
-export function slotCentre(box: HTMLElement, slot: number): { x: number; y: number } | null {
+function slotBox(box: HTMLElement, slot: number): Box | null {
   const card = box.querySelector(`[data-pe-slot="${slot}"] .pe-fsl`)
   if (!card) return null
   const a = box.getBoundingClientRect()
   const r = card.getBoundingClientRect()
-  return { x: r.left + r.width / 2 - a.left, y: r.top + r.height / 2 - a.top }
+  return { l: r.left - a.left, t: r.top - a.top, r: r.right - a.left, b: r.bottom - a.top }
+}
+
+/** The middle of a slot's card inside `box`. */
+export function slotCentre(box: HTMLElement, slot: number): Point | null {
+  const b = slotBox(box, slot)
+  return b && centre(b)
 }
 
 /** A bond's two slots. A stored bond names cards, not slots. */
@@ -38,49 +51,148 @@ export function bondSlots(b: ChemBond, lineup: (Player | null)[]): [number, numb
   return a < 0 || z < 0 ? null : [a, z]
 }
 
+/** Where a line from the middle of a card towards `to` crosses its edge. */
+function edgePoint(card: Box, to: Point): Point {
+  const from = centre(card)
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  const fit = Math.min(dx ? (card.r - from.x) / Math.abs(dx) : Infinity, dy ? (card.b - from.y) / Math.abs(dy) : Infinity)
+  return { x: from.x + dx * fit, y: from.y + dy * fit }
+}
+
+/** The three rows of the formation, front to back. */
+const ROWS: readonly (readonly number[])[] = [FORMATION.line, [...FORMATION.wrLeft, ...FORMATION.wrRight], FORMATION.backfield]
+const rowOf = (slot: number) => ROWS.findIndex((row) => row.includes(slot))
+
+type Bracket = { bond: number; slots: [number, number]; left: Box; right: Box; x1: number; x2: number; lane: number }
+
 /**
- * The bonds as lines between the cards, the way a squad screen draws its links.
- * They run under the cards, so what shows is the stretch between them. Colour says
- * what kind and so does the line itself: double for real teammates, dashed for rivals.
- * Measured off the cards, so they follow the field at any width. `count` draws the
- * first few (the final reveal does them one at a time).
+ * Two cards on one row are too close for a line between them to show (a guard and
+ * his center are 6px apart on a phone), so they get a bracket over the top. Each
+ * one has its own lane, wider ones above narrower ones, and a card's legs fan out
+ * along its top edge, nearest neighbour outermost, so no two ever run together.
+ * The space over a row is measured, so a bracket stops short of the labels above.
+ */
+function bracketPaths(box: HTMLElement, list: Bracket[]): Map<number, Pick<Link, 'd' | 'ends'>> {
+  const out = new Map<number, Pick<Link, 'd' | 'ends'>>()
+  const near = (a: Bracket, b: Bracket) => a.right.l - a.left.l - (b.right.l - b.left.l)
+  const FAN = 0.12
+
+  for (const card of new Set(list.flatMap((p) => p.slots))) {
+    const rightward = list.filter((p) => p.slots[0] === card).sort(near)
+    const leftward = list.filter((p) => p.slots[1] === card).sort(near)
+    rightward.forEach((p, rank) => (p.x1 = p.left.l + (p.left.r - p.left.l) * (0.86 - rank * FAN)))
+    leftward.forEach((p, rank) => (p.x2 = p.right.l + (p.right.r - p.right.l) * (0.14 + rank * FAN)))
+  }
+
+  ROWS.forEach((row, n) => {
+    const here = list.filter((p) => row.includes(p.slots[0])).sort((a, b) => a.x2 - a.x1 - (b.x2 - b.x1))
+    if (here.length === 0) return
+    const lanes: Bracket[][] = []
+    for (const p of here) {
+      const clear = (q: Bracket) => p.x2 < q.x1 - 4 || p.x1 > q.x2 + 4
+      let lane = lanes.findIndex((taken) => taken.every(clear))
+      if (lane < 0) lane = lanes.push([]) - 1
+      lanes[lane].push(p)
+      p.lane = lane
+    }
+
+    const height = here[0].left.b - here[0].left.t
+    const top = Math.min(...here.flatMap((p) => [p.left.t, p.right.t]))
+    const above = n > 0 ? box.querySelector(`[data-pe-slot="${ROWS[n - 1][0]}"]`)?.getBoundingClientRect() : null
+    const space = above ? top + box.getBoundingClientRect().top - above.bottom : top
+    const room = n === 0 ? Math.max(space - 4, height * 0.12) : Math.max(space * 0.85, 6)
+    const first = Math.min(height * 0.07, room * 0.45)
+    const step = lanes.length > 1 ? Math.min(height * 0.045, (room - first) / (lanes.length - 1)) : 0
+
+    for (const p of here) {
+      const y = top - first - p.lane * step
+      const r = Math.min(height * 0.05, (p.x2 - p.x1) / 2)
+      out.set(p.bond, {
+        d: `M${p.x1} ${p.left.t}V${y + r}Q${p.x1} ${y} ${p.x1 + r} ${y}H${p.x2 - r}Q${p.x2} ${y} ${p.x2} ${y + r}V${p.right.t}`,
+        ends: [
+          { x: p.x1, y: p.left.t },
+          { x: p.x2, y: p.right.t },
+        ],
+      })
+    }
+  })
+  return out
+}
+
+/** The kind a card's border wears when it's in more than one. */
+const RING_ORDER: Kind[] = ['real', 'same', 'rival']
+
+/**
+ * The bonds on the field: a border round every card in one, and a line between
+ * each pair that sits over the cards and ends at their edges, so you can always
+ * see who goes with who. Colour says what kind and so does the line itself: double
+ * for real teammates, dashed for rivals. Measured off the cards, so it follows the
+ * field at any width. `count` draws the first few (the final reveal does them one
+ * at a time). `hot` picks one bond out and `focus` one card's bonds, and either way
+ * the rest drop back.
  */
 export function ChemLinks({
   bonds,
   lineup,
   count,
   hot = null,
+  focus = null,
 }: {
   bonds: ChemBond[]
   lineup: (Player | null)[]
   count?: number
   hot?: number | null
+  focus?: number | null
 }) {
   const ref = useRef<HTMLDivElement>(null)
-  const [lines, setLines] = useState<Line[]>([])
+  const [links, setLinks] = useState<Link[]>([])
+  const [rings, setRings] = useState<Ring[]>([])
 
   useLayoutEffect(() => {
     const box = ref.current?.parentElement
     if (!box) return
     const measure = () => {
-      const next: Line[] = []
+      const placed: { bond: number; slots: [number, number]; from: Box; to: Box }[] = []
+      const round = new Map<number, Ring>()
       bonds.forEach((b, bond) => {
         const pair = bondSlots(b, lineup)
-        const from = pair && slotCentre(box, pair[0])
-        const to = pair && slotCentre(box, pair[1])
-        if (!from || !to) return
-        const dx = to.x - from.x
-        const dy = to.y - from.y
-        next.push({
-          x: from.x,
-          y: from.y,
-          length: Math.hypot(dx, dy),
-          angle: (Math.atan2(dy, dx) * 180) / Math.PI,
-          kind: bondKind(b),
-          bond,
-        })
+        const from = pair && slotBox(box, pair[0])
+        const to = pair && slotBox(box, pair[1])
+        if (!pair || !from || !to) return
+        placed.push({ bond, slots: pair, from, to })
+        for (const [slot, card] of [
+          [pair[0], from],
+          [pair[1], to],
+        ] as const) {
+          const ring = round.get(slot) ?? { ...card, slot, kind: bondKind(b), bonds: [] }
+          ring.bonds.push(bond)
+          round.set(slot, ring)
+        }
       })
-      setLines(next)
+      for (const ring of round.values()) {
+        const kinds = ring.bonds.map((n) => bondKind(bonds[n]))
+        ring.kind = RING_ORDER.find((k) => kinds.includes(k)) ?? ring.kind
+      }
+
+      const brackets = placed
+        .filter((p) => rowOf(p.slots[0]) === rowOf(p.slots[1]))
+        .map(({ bond, slots, from, to }): Bracket => {
+          const flip = from.l > to.l
+          return { bond, slots: flip ? [slots[1], slots[0]] : slots, left: flip ? to : from, right: flip ? from : to, x1: 0, x2: 0, lane: 0 }
+        })
+      const paths = bracketPaths(box, brackets)
+      setLinks(
+        placed.map(({ bond, slots, from, to }) => {
+          const kind = bondKind(bonds[bond])
+          const over = paths.get(bond)
+          if (over) return { bond, kind, slots, ...over }
+          const p = edgePoint(from, centre(to))
+          const q = edgePoint(to, centre(from))
+          return { bond, kind, slots, d: `M${p.x} ${p.y}L${q.x} ${q.y}`, ends: [p, q] }
+        })
+      )
+      setRings([...round.values()])
     }
     measure()
     const watch = new ResizeObserver(measure)
@@ -88,20 +200,34 @@ export function ChemLinks({
     return () => watch.disconnect()
   }, [bonds, lineup])
 
+  const drawn = (bond: number) => count == null || bond < count
+  const lit = (l: Link) => l.bond === hot || (focus != null && l.slots.includes(focus))
+  const litBonds = links.filter(lit).map((l) => l.bond)
+
   return (
-    <div ref={ref} className="pe-links" aria-hidden data-hot={hot != null ? '' : undefined}>
-      {lines
-        .filter((l) => count == null || l.bond < count)
-        .map((l) => (
+    <div ref={ref} className="pe-links" aria-hidden data-hot={hot != null || focus != null ? '' : undefined}>
+      {rings
+        .filter((r) => r.bonds.some(drawn))
+        .map((r) => (
           <span
-            key={l.bond}
-            className="pe-link"
-            data-kind={l.kind}
-            data-hot={hot === l.bond ? '' : undefined}
-            style={{ left: l.x, top: l.y, width: l.length, transform: `rotate(${l.angle}deg)` }}
-          >
-            <i />
-          </span>
+            key={r.slot}
+            className="pe-cring"
+            data-kind={r.kind}
+            data-hot={r.bonds.some((b) => litBonds.includes(b)) ? '' : undefined}
+            style={{ left: r.l, top: r.t, width: r.r - r.l, height: r.b - r.t }}
+          />
+        ))}
+      {links
+        .filter((l) => drawn(l.bond))
+        .map((l) => (
+          <svg key={l.bond} className="pe-clink" data-kind={l.kind} data-hot={lit(l) ? '' : undefined}>
+            <path className="case" d={l.d} />
+            <path className="line" d={l.d} />
+            {l.kind === 'real' && <path className="core" d={l.d} />}
+            {l.ends.map((e, i) => (
+              <circle key={i} className="end" cx={e.x} cy={e.y} r="3.5" />
+            ))}
+          </svg>
         ))}
     </div>
   )
@@ -146,6 +272,7 @@ export function DraftReport({
 }) {
   const [view, setView] = useState<'yours' | 'perfect'>('yours')
   const [hot, setHot] = useState<number | null>(null)
+  const [focus, setFocus] = useState<number | null>(null)
 
   // The perfect eleven goes in the slots their packs were opened for, so the
   // two formations line up card for card.
@@ -165,6 +292,20 @@ export function DraftReport({
   const pick = (v: 'yours' | 'perfect') => {
     setView(v)
     setHot(null)
+    setFocus(null)
+  }
+  const pickBond = (bond: number | null) => {
+    setHot(bond)
+    setFocus(null)
+  }
+  // A card's bonds on their own, off a tap on the card; a tap anywhere else, or on
+  // the same card, puts them all back.
+  const tapField = (e: React.MouseEvent) => {
+    const at = (e.target as Element).closest('[data-pe-slot]')?.getAttribute('data-pe-slot')
+    const slot = at == null ? null : Number(at)
+    const held = slot != null && showing.chem.bonds.some((b) => bondSlots(b, showing.lineup)?.includes(slot))
+    setFocus(held && slot !== focus ? slot : null)
+    setHot(null)
   }
 
   return (
@@ -180,8 +321,8 @@ export function DraftReport({
             </button>
           </div>
         )}
-        <div className="pe-turf pe-rep-turf">
-          <ChemLinks bonds={showing.chem.bonds} lineup={showing.lineup} hot={hot} />
+        <div className="pe-turf pe-rep-turf" onClick={tapField}>
+          <ChemLinks bonds={showing.chem.bonds} lineup={showing.lineup} hot={hot} focus={focus} />
           <Field
             lineup={showing.lineup}
             view={(i) => ({
@@ -199,6 +340,7 @@ export function DraftReport({
               {BOND_LABEL[k]}
             </span>
           ))}
+          {showing.chem.bonds.length > 0 && <span className="pe-rep-tip">Tap a card for just its bonds</span>}
         </div>
       </div>
 
@@ -233,7 +375,7 @@ export function DraftReport({
               <dd>{(counted?.total ?? cards + showing.chem.total).toLocaleString()}</dd>
             </div>
           </dl>
-          <Bonds chem={showing.chem} lineup={showing.lineup} hot={hot} onHot={setHot} />
+          <Bonds chem={showing.chem} lineup={showing.lineup} hot={hot} onHot={pickBond} />
         </div>
         {ladder}
       </div>

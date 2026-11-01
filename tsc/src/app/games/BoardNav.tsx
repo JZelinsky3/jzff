@@ -130,19 +130,14 @@ export function KindSeg<K extends string>({
   kinds,
   active,
   href,
-  label = 'Ranking',
-  dense = false,
 }: {
   kinds: { kind: K; label: string }[]
   active: K
   href: (k: K) => string
-  label?: string
-  /** Four positions or more: tighter, so they stay on one line on a phone. */
-  dense?: boolean
 }) {
   return (
-    <div className={`${styles.segWrap} ${dense ? styles.segDense : ''}`.trim()}>
-      <nav className={styles.seg} aria-label={label}>
+    <div className={styles.segWrap}>
+      <nav className={styles.seg} aria-label="Ranking">
         {kinds.map((t) => (
           <Link
             key={t.kind}
