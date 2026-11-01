@@ -32,7 +32,7 @@ import seasons from './data/season-pool.json'
 import vaulted from './data/vaulted.json'
 import { POOL_KEYS, RARITY_FLOOR, personOf, type Player, type PoolKey, type Rarity, type Weights } from './rules'
 
-export const POOL_VERSION = 'seasons-2026-10j'
+export const POOL_VERSION = 'seasons-2026-10k'
 
 const ALL = seasons as Player[]
 
@@ -98,19 +98,27 @@ const IMMORTAL_SPAN = 2400
 /** The span on POOL_H, whose Dailies are already out. */
 const IMMORTAL_SPAN_H = 1600
 
-function immortalPull(score: number, span: number): number {
-  return IMMORTAL_SPREAD ** -((score - RARITY_FLOOR.immortal) / span)
+/**
+ * The 5,200+ seasons, the top ten in the game, are this much harder again on top of
+ * the curve: half as hard again to pull. It comes out of the same shares, so a
+ * position's immortals as a whole stay exactly as likely. Not on POOL_H.
+ */
+const CANTON_LINE = 5200
+const CANTON_PULL = 2 / 3
+
+function immortalPull(score: number, span: number, canton: number): number {
+  return IMMORTAL_SPREAD ** -((score - RARITY_FLOOR.immortal) / span) * (score >= CANTON_LINE ? canton : 1)
 }
 
-function weigher(cards: Player[], span: number): (p: Player, weights: Weights) => number {
+function weigher(cards: Player[], span: number, canton = 1): (p: Player, weights: Weights) => number {
   const holds = new Map<string, number>()
   for (const p of cards) holds.set(`${p.pos}|${p.rarity}`, (holds.get(`${p.pos}|${p.rarity}`) ?? 0) + 1)
 
   const shares = new Map<string, number>()
   for (const [, list] of Object.entries(byPosition(cards))) {
     const top = list.filter((p) => p.rarity === 'immortal')
-    const whole = top.reduce((sum, p) => sum + immortalPull(p.score, span), 0)
-    for (const p of top) shares.set(p.id, (immortalPull(p.score, span) * top.length) / whole)
+    const whole = top.reduce((sum, p) => sum + immortalPull(p.score, span, canton), 0)
+    for (const p of top) shares.set(p.id, (immortalPull(p.score, span, canton) * top.length) / whole)
   }
 
   return (p, weights) => {
@@ -122,7 +130,7 @@ function weigher(cards: Player[], span: number): (p: Player, weights: Weights) =
 }
 
 /** One card's weight on a table. Every draw goes through this. */
-export const cardWeight = weigher(ALL, IMMORTAL_SPAN)
+export const cardWeight = weigher(ALL, IMMORTAL_SPAN, CANTON_PULL)
 
 /** The same, for the Dailies dealt off POOL_H. */
 export const cardWeightH = weigher(FROZEN, IMMORTAL_SPAN_H)

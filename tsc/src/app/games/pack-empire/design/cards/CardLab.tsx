@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { teamLogo, type Player } from '@/lib/packEmpire/rules'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { PACK_ART, teamLogo, type Player } from '@/lib/packEmpire/rules'
 import { useFace } from '../../faces'
+import { SealedPack } from '../../rip'
 
-export type Tier = 'common' | 'rare' | 'dynasty' | 'transcendent' | 'immortal' | 'pantheon'
-export type LabCard = { tier: Tier; player: Player }
+export type Tier = 'common' | 'rare' | 'dynasty' | 'transcendent' | 'immortal' | 'canton'
+/** `serial` is [the number you pulled, how many of this card exist]: Canton, binder. */
+export type LabCard = { tier: Tier; player: Player; serial?: [number, number] }
 
 const TIER_LABEL: Record<Tier, string> = {
   common: 'Common',
@@ -13,12 +15,12 @@ const TIER_LABEL: Record<Tier, string> = {
   dynasty: 'Dynasty',
   transcendent: 'Transcendent',
   immortal: 'Immortal',
-  pantheon: 'Pantheon',
+  canton: 'Canton',
 }
 
 const CONCEPTS = [
-  { key: 'foil', name: 'Foil Stock', line: 'Each rarity is a real material you could hold: matte paper, brushed steel, gold foil, holographic film, obsidian, pearl.' },
-  { key: 'prime', name: 'Prime Time', line: 'Broadcast graphics in the team’s own colours, with the player breaking out of the frame. Rarity lives in the frame and the value block.' },
+  { key: 'foil', name: 'Foil Stock', line: 'The standard card. Each rarity is a real material you could hold: paper, polished steel, polished gold, deep space, poured emerald glass, pearl.' },
+  { key: 'prime', name: 'Prime Time', line: 'Saved for a future game or mode. Broadcast graphics in the team’s own colours, with the player breaking out of the frame.' },
   { key: 'blackout', name: 'Blackout', line: 'One black slab where the number is the hero. A single line of light circles the card, and it speeds up and thickens by rarity.' },
 ] as const
 
@@ -32,6 +34,10 @@ const TEAM: Record<string, [string, string]> = {
   'Cleveland Browns': ['#311d00', '#ff3c00'],
   'Kansas City Chiefs': ['#e31837', '#ffb81c'],
   'Baltimore Ravens': ['#241773', '#9e7c0c'],
+  'New Orleans Saints': ['#101820', '#d3bc8d'],
+  'Seattle Seahawks': ['#002244', '#69be28'],
+  'Jacksonville Jaguars': ['#006778', '#d7a22a'],
+  'Los Angeles Chargers': ['#0080c6', '#ffc20e'],
 }
 
 /** The largest size a name fits at, off Barlow's rough letter widths in capitals. */
@@ -50,6 +56,32 @@ function stats(p: Player): { v: string; l: string }[][] {
   )
 }
 
+const SPARKLE = 'M12 .8C13.6 6.7 17.3 10.4 23.2 12 17.3 13.6 13.6 17.3 12 23.2 10.4 17.3 6.7 13.6.8 12 6.7 10.4 10.4 6.7 12 .8Z'
+
+/** Ideas for Canton's shape, shown big on the page so they can be compared. */
+const SHAPES: { name: string; art: React.ReactNode }[] = [
+  { name: 'Thick Sparkle', art: <path d={SPARKLE} fill="currentColor" /> },
+  {
+    name: 'Football',
+    art: (
+      <>
+        <path d="M3.2 20.8C2.2 12.6 12.6 2.2 20.8 3.2 21.8 11.4 11.4 21.8 3.2 20.8Z" fill="currentColor" />
+        <path d="M8.6 15.4 15.4 8.6M10 10.2l3.8 3.8M11.8 8.6l3.6 3.6M8.6 11.8l3.6 3.6" stroke="#14100a" strokeWidth="1.15" strokeLinecap="round" fill="none" />
+      </>
+    ),
+  },
+  { name: 'Crown', art: <path d="M3 20h18l1.6-12.6-6 4.4L12 3.6 7.4 11.8l-6-4.4L3 20Z" fill="currentColor" /> },
+  {
+    name: 'Cut Diamond',
+    art: (
+      <>
+        <path d="M6.2 3.5h11.6L23 9.8 12 21.5 1 9.8l5.2-6.3Z" fill="currentColor" />
+        <path d="M1.6 9.8h20.8M8.4 9.8 12 21M15.6 9.8 12 21M8.4 9.8l3.6-6.2 3.6 6.2M6.2 3.5l2.2 6.3M17.8 3.5l-2.2 6.3" stroke="#14100a" strokeWidth=".8" fill="none" />
+      </>
+    ),
+  },
+]
+
 function Gem({ tier }: { tier: Tier }) {
   const points: Record<Tier, string> = {
     common: '12,4 20,12 12,20 4,12',
@@ -57,21 +89,49 @@ function Gem({ tier }: { tier: Tier }) {
     dynasty: '12,2.5 14.8,9 22,9.6 16.5,14.2 18.2,21.5 12,17.6 5.8,21.5 7.5,14.2 2,9.6 9.2,9',
     transcendent: '12,1.5 14.2,7.2 19.8,4.2 16.8,9.8 22.5,12 16.8,14.2 19.8,19.8 14.2,16.8 12,22.5 9.8,16.8 4.2,19.8 7.2,14.2 1.5,12 7.2,9.8 4.2,4.2 9.8,7.2',
     immortal: '12,1 13.8,6.3 18.4,3.2 17.2,8.6 22.8,8.4 18.2,11.6 22.8,15.6 17.2,15.4 18.4,20.8 13.8,17.7 12,23 10.2,17.7 5.6,20.8 6.8,15.4 1.2,15.6 5.8,11.6 1.2,8.4 6.8,8.6 5.6,3.2 10.2,6.3',
-    pantheon: '12,0.5 13.4,10.6 23.5,12 13.4,13.4 12,23.5 10.6,13.4 0.5,12 10.6,10.6',
+    canton: '',
   }
   return (
     <svg className="pc-gem" viewBox="0 0 24 24" aria-hidden>
-      <polygon points={points[tier]} fill="currentColor" />
+      {tier === 'canton' ? (
+        <path d={SPARKLE} fill="currentColor" />
+      ) : (
+        <polygon points={points[tier]} fill="currentColor" />
+      )}
     </svg>
   )
 }
 
 /** Effects, all transform and opacity, mounted only for the tiers that earn them. */
-function Under({ tier }: { tier: Tier }) {
+function Under({ tier, standard = false }: { tier: Tier; standard?: boolean }) {
   return (
     <>
-      {(tier === 'transcendent' || tier === 'pantheon') && <span className="pc-holo" aria-hidden />}
-      {(tier === 'pantheon' || tier === 'immortal') && (
+      {((tier === 'transcendent' && !standard) || tier === 'canton') && <span className="pc-holo" aria-hidden />}
+      {standard && tier === 'transcendent' && (
+        <>
+          <span className="pc-nebula" aria-hidden />
+          <span className="pc-stars" aria-hidden>
+            <i />
+          </span>
+          <span className="pc-shoot" aria-hidden>
+            <i />
+            <i />
+          </span>
+        </>
+      )}
+      {standard && (tier === 'immortal' || tier === 'canton') && (
+        <span className="pc-surge" aria-hidden>
+          <i />
+        </span>
+      )}
+      {standard && tier === 'immortal' && (
+        <>
+          <span className="pc-smoke" aria-hidden>
+            <i />
+          </span>
+        </>
+      )}
+      {(tier === 'canton' || (tier === 'immortal' && !standard)) && (
         <span className="pc-rays" aria-hidden>
           <i />
         </span>
@@ -80,15 +140,15 @@ function Under({ tier }: { tier: Tier }) {
   )
 }
 
-function Over({ tier }: { tier: Tier }) {
+function Over({ tier, standard = false }: { tier: Tier; standard?: boolean }) {
   return (
     <>
-      {tier !== 'common' && (
+      {tier !== 'common' && !(standard && tier === 'rare') && (
         <span className="pc-sheen" aria-hidden>
           <i />
         </span>
       )}
-      {(tier === 'dynasty' || tier === 'pantheon') && (
+      {(tier === 'dynasty' || tier === 'canton' || (standard && tier === 'transcendent')) && (
         <span className="pc-sparks" aria-hidden>
           <i />
           <i />
@@ -96,9 +156,9 @@ function Over({ tier }: { tier: Tier }) {
           <i />
         </span>
       )}
-      {(tier === 'immortal' || tier === 'pantheon') && (
+      {(tier === 'immortal' || (tier === 'canton' && !standard)) && (
         <span className="pc-embers" aria-hidden>
-          {Array.from({ length: 7 }, (_, i) => (
+          {Array.from({ length: 4 }, (_, i) => (
             <i key={i} />
           ))}
         </span>
@@ -112,13 +172,17 @@ function Foil({ card }: { card: LabCard }) {
   const img = useFace(p)
   const logo = teamLogo(p)
   const [a, b] = stats(p)
+  const charged = tier === 'transcendent' || tier === 'canton'
   return (
     <div className="pa">
+      <div className="pa-in">
       <div className="pa-ground" />
-      <Under tier={tier} />
+      <Under tier={tier} standard />
       <div className="pa-year" aria-hidden>
         {p.year}
       </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {img && charged && <img className="pa-rim" src={img} alt="" draggable={false} />}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       {img && <img className="pa-photo" src={img} alt="" draggable={false} />}
       <div className="pa-top">
@@ -128,13 +192,21 @@ function Foil({ card }: { card: LabCard }) {
           {TIER_LABEL[tier]}
         </span>
       </div>
+      {card.serial && (
+        <div className="pa-serial">
+          <b>{card.serial[0]}</b>/{card.serial[1]}
+        </div>
+      )}
+      <div className="pa-season">{p.year}</div>
       <div className="pa-plate">
         <div className="pa-id">
           <div className="pa-who">
-            <div className="pa-name" style={{ fontSize: fit(p.name, 5.5, 0.92) }}>
+            <div className="pa-name" style={{ fontSize: fit(p.name, 5.1, 0.92) }}>
               {p.name}
             </div>
-            <div className="pa-val">{p.score.toLocaleString()}</div>
+            <div className="pa-val" data-v={p.score.toLocaleString()}>
+              {p.score.toLocaleString()}
+            </div>
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {logo && <img className="pa-logo" src={logo} alt="" draggable={false} />}
@@ -148,7 +220,8 @@ function Foil({ card }: { card: LabCard }) {
           ))}
         </div>
       </div>
-      <Over tier={tier} />
+      <Over tier={tier} standard />
+      </div>
     </div>
   )
 }
@@ -168,7 +241,7 @@ function Prime({ card }: { card: LabCard }) {
         <div className="pb-slash" />
         <Under tier={tier} />
         <div className="pb-year" aria-hidden>
-          {p.year}
+          {String(p.year).slice(-2)}
         </div>
       </div>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -187,7 +260,10 @@ function Prime({ card }: { card: LabCard }) {
         </div>
         <div className="pb-valbar">
           <div className="pb-val">{p.score.toLocaleString()}</div>
-          <div className="pb-tier">{TIER_LABEL[tier]}</div>
+          <div className="pb-tier">
+            <b>{p.year}</b>
+            {TIER_LABEL[tier]}
+          </div>
         </div>
         <div className="pb-ticker">
           {line.map((c, i) => (
@@ -267,6 +343,36 @@ function Blackout({ card }: { card: LabCard }) {
   )
 }
 
+/** The back of every card: midnight stock with a field pressed into it. The stock
+    never changes, the frame gives the rarity away, by degrees, like the live game.
+    Canton burns over the top of this: see .pc-blaze. */
+function Back({ card }: { card: LabCard }) {
+  const { tier } = card
+  return (
+    <div className="pa pk">
+      <div className="pa-in">
+        <div className="pk-stock" />
+        {(tier === 'transcendent' || tier === 'immortal') && <span className="pk-leak" aria-hidden />}
+        <span className="pk-line" aria-hidden />
+        <div className="pk-mid">
+          {/* the live back's football, kept just as faint */}
+          <svg className="pk-ball" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M9.5 38.5c-4-12 2-27 18-30.5 6-1.3 10.2-.6 11 .5.8 1.1 1.4 5.3.1 11.3-3.5 16-18.5 22-30.5 18-.2-.1-.3-.2-.4-.4-.1-.1-.2-.3-.2-.4z" />
+            <path d="M17 31 31 17" />
+            <path d="M21.2 24.6l2.2 2.2M24.4 21.4l2.2 2.2M27.6 18.2l2.2 2.2" />
+          </svg>
+          <div className="pk-tap">Tap to Reveal</div>
+        </div>
+        {(tier === 'dynasty' || tier === 'transcendent' || tier === 'immortal') && (
+          <span className="pc-sheen" aria-hidden>
+            <i />
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function lean(el: HTMLElement, e: React.PointerEvent) {
   if (e.pointerType !== 'mouse') return
   const r = el.getBoundingClientRect()
@@ -276,28 +382,98 @@ function lean(el: HTMLElement, e: React.PointerEvent) {
   if (tilt) tilt.style.transform = `rotateX(${(0.5 - y) * 16}deg) rotateY(${(x - 0.5) * 20}deg)`
 }
 
-function Card({ concept, card, onOpen, size }: { concept: Concept; card: LabCard; onOpen?: () => void; size: string }) {
-  const Face = concept === 'foil' ? Foil : concept === 'prime' ? Prime : Blackout
+function Card({ concept: picked, card, onOpen, size, down = false }: { concept: Concept; card: LabCard; onOpen?: () => void; size: string; down?: boolean }) {
+  // Every design shares one back, in the standard frame.
+  const concept: Concept = down ? 'foil' : picked
+  const Face = down ? Back : concept === 'foil' ? Foil : concept === 'prime' ? Prime : Blackout
   const Tag = onOpen ? 'button' : 'div'
   return (
     <Tag
       {...(onOpen ? { type: 'button' as const, onClick: onOpen, 'aria-label': `Pull ${card.player.name}` } : {})}
-      className={`pc pc--${concept} pc--${size}`}
+      className={`pc pc--${concept} pc--${size}${down ? ' pc--back' : ''}`}
       data-tier={card.tier}
       onPointerMove={(e: React.PointerEvent<HTMLElement>) => lean(e.currentTarget, e)}
       onPointerLeave={(e: React.PointerEvent<HTMLElement>) => e.currentTarget.querySelector<HTMLElement>('.pc-lean')?.style.removeProperty('transform')}
     >
       <span className="pc-lean">
-        {(card.tier === 'transcendent' || card.tier === 'immortal' || card.tier === 'pantheon' || concept === 'blackout') && (
+        {concept === 'foil' && (card.tier === 'transcendent' || card.tier === 'immortal' || card.tier === 'canton') && <span className="pc-aura" aria-hidden />}
+        {concept === 'foil' && card.tier === 'immortal' && (
+          <span className="pc-fire" aria-hidden>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/games/pack-empire/fx/card-fire-immortal.webp" alt="" />
+          </span>
+        )}
+        {concept === 'foil' && card.tier === 'canton' && (
+          <>
+            <span className="pc-prism" aria-hidden>
+              <i />
+            </span>
+            <span className="pc-corona" aria-hidden>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/games/pack-empire/fx/card-corona.webp" alt="" />
+            </span>
+          </>
+        )}
+        {(card.tier === 'transcendent' || card.tier === 'immortal' || card.tier === 'canton' || concept === 'blackout' || (concept === 'foil' && card.tier === 'dynasty')) && (
           <span className="pc-orbit" aria-hidden>
             <i />
+            {concept === 'foil' && card.tier !== 'dynasty' && <i />}
           </span>
         )}
         <span className="pc-body">
           <Face card={card} />
         </span>
+        {concept === 'foil' && card.tier === 'transcendent' && (
+          <span className="pc-fire" aria-hidden>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/games/pack-empire/fx/card-arcs.webp" alt="" />
+          </span>
+        )}
+        {concept === 'foil' && card.tier === 'canton' && (
+          <>
+            {down && (
+              <span className="pc-blaze" aria-hidden>
+                {/* eslint-disable @next/next/no-img-element */}
+                <img src="/games/pack-empire/fx/card-molten.webp" alt="" />
+                <img src="/games/pack-empire/fx/card-molten.webp" alt="" />
+                {/* eslint-enable @next/next/no-img-element */}
+                <b>Tap to Reveal</b>
+              </span>
+            )}
+            {!down && (
+              <>
+                <span className="pc-pave" aria-hidden />
+                <span className="pc-pave-run" aria-hidden>
+                  <i />
+                </span>
+                <span className="pc-glint" aria-hidden>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/games/pack-empire/fx/card-glint.webp" alt="" />
+                </span>
+              </>
+            )}
+          </>
+        )}
+        {concept === 'foil' && card.tier === 'dynasty' && (
+          <span className="pc-corners" aria-hidden>
+            <i />
+            <i />
+            <i />
+            <i />
+          </span>
+        )}
       </span>
     </Tag>
+  )
+}
+
+/** Both faces of a card, held for a flip. */
+function Faces({ concept, card }: { concept: Concept; card: LabCard }) {
+  return (
+    <>
+      <Card concept={concept} card={card} size="stage" />
+      <Card concept={concept} card={card} size="stage" down />
+    </>
   )
 }
 
@@ -308,6 +484,7 @@ function Pull({ concept, card, onClose }: { concept: Concept; card: LabCard; onC
     window.addEventListener('keydown', key)
     return () => window.removeEventListener('keydown', key)
   }, [onClose])
+  if (card.tier === 'canton') return <Enshrinement concept={concept} card={card} onClose={onClose} />
   return (
     <button type="button" className="pl-stage" data-tier={card.tier} onClick={onClose} aria-label="Close">
       <span className="pl-veil" />
@@ -325,7 +502,7 @@ function Pull({ concept, card, onClose }: { concept: Concept; card: LabCard; onC
       <span className="pl-flash" aria-hidden />
       <span className="pl-card">
         <span className="pl-spin">
-          <Card concept={concept} card={card} size="stage" />
+          <Faces concept={concept} card={card} />
         </span>
       </span>
       <span className="pl-name" data-tier={card.tier}>
@@ -335,16 +512,291 @@ function Pull({ concept, card, onClose }: { concept: Concept; card: LabCard; onC
   )
 }
 
-export function CardLab({ cards }: { cards: LabCard[] }) {
+/** How long Canton's show runs, in ms. Until then a tap skips ahead, not out. */
+const ENSHRINED_MS = 8700
+
+/** Gold falling once the card has landed. Fixed values, so no two pieces match. */
+const CONFETTI = Array.from({ length: 30 }, (_, i) => ({
+  '--x': `${(i * 37 + 3) % 100}%`,
+  '--w': `${((i * 41) % 34) / 10}s`,
+  '--d': `${3.6 + ((i * 7) % 5) * 0.5}s`,
+  '--s': `${0.7 + ((i * 3) % 4) * 0.22}`,
+})) as React.CSSProperties[]
+
+/**
+ * Canton's reveal, nothing shared with any other tier: the doors of the Hall. Black,
+ * then bronze doors lit through the gap, three heartbeats, and they swing open on a
+ * blaze of light. Your eyes adjust and you're walking down the Hall: the camera turns
+ * to his team on the left wall, then the year on the right, like a FIFA walkout, with
+ * no card yet. It swings back to the doorway at the far end, and there he is, facing
+ * you, the card already face up, resolving out of the light as you walk in. A burst,
+ * a thud, and gold falling in the Hall. Everything keys off --at, the moment of the
+ * burst, so skipping is one variable.
+ */
+function Enshrinement({ concept, card, onClose }: { concept: Concept; card: LabCard; onClose: () => void }) {
+  const [skipped, setSkipped] = useState(false)
+  const begun = useRef(0)
+  const { player } = card
+  const logo = teamLogo(player)
+  const [one, two] = TEAM[player.team] ?? ['#3a2c10', '#8a6412']
+  const colours = { '--c1': one, '--c2': two } as React.CSSProperties
+  useEffect(() => {
+    begun.current = performance.now()
+  }, [])
+  const tap = () => {
+    if (skipped || performance.now() - begun.current > ENSHRINED_MS) onClose()
+    else setSkipped(true)
+  }
+  return (
+    <button type="button" className="cx-stage pl-stage" data-tier="canton" data-skipped={skipped || undefined} onClick={tap} aria-label="Canton pull. Tap to continue">
+      <span className="cx-hall" aria-hidden>
+        <span className="cx-world">
+          {/* eslint-disable @next/next/no-img-element */}
+          <img className="cx-wall cx-wall--l" src="/games/pack-empire/fx/card-hall-wall.webp" alt="" />
+          <img className="cx-wall cx-wall--r" src="/games/pack-empire/fx/card-hall-wall.webp" alt="" />
+          <img className="cx-floor" src="/games/pack-empire/fx/card-hall-floor.webp" alt="" />
+          <img className="cx-ceiling" src="/games/pack-empire/fx/card-hall-ceiling.webp" alt="" />
+          <span className="cx-end" />
+          <img className="cx-portal" src="/games/pack-empire/fx/card-hall-portal.webp" alt="" />
+          <span className="cx-glow" />
+          <span className="cx-sign cx-sign--team" style={colours}>
+            <span className="cx-cloth" />
+            <img className="cx-drape" src="/games/pack-empire/fx/card-banner.webp" alt="" />
+            <span className="cx-print">
+              {logo && <img className="cx-crest" src={logo} alt="" draggable={false} />}
+              <b>{player.club ?? player.team}</b>
+            </span>
+          </span>
+          <span className="cx-sign cx-sign--year" style={colours}>
+            <span className="cx-cloth" />
+            <img className="cx-drape" src="/games/pack-empire/fx/card-banner.webp" alt="" />
+            <span className="cx-print">
+              <strong>{player.year}</strong>
+              <b>Season</b>
+            </span>
+          </span>
+          {/* eslint-enable @next/next/no-img-element */}
+        </span>
+        <span className="cx-haze" />
+      </span>
+      <span className="cx-sky" aria-hidden />
+      <span className="cx-dusk" aria-hidden />
+      <span className="cx-rays" aria-hidden>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/games/pack-empire/fx/card-rays.webp" alt="" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/games/pack-empire/fx/card-rays.webp" alt="" />
+      </span>
+      <span className="cx-gold" aria-hidden>
+        {CONFETTI.map((style, i) => (
+          <i key={i} style={style} />
+        ))}
+      </span>
+      <span className="cx-door cx-door--l" aria-hidden>
+        <i />
+      </span>
+      <span className="cx-door cx-door--r" aria-hidden>
+        <i />
+      </span>
+      <span className="cx-seam" aria-hidden />
+      <span className="pl-ring" aria-hidden />
+      <span className="pl-ring pl-ring--2" aria-hidden />
+      <span className="pl-ring pl-ring--3" aria-hidden />
+      <span className="pl-ring cx-thud" aria-hidden />
+      <span className="cx-gems" aria-hidden>
+        {Array.from({ length: 28 }, (_, i) => (
+          <i key={i} style={{ '--a': `${i * (360 / 28)}deg`, '--far': `${34 + ((i * 11) % 22)}vmin` } as React.CSSProperties} />
+        ))}
+      </span>
+      <span className="cx-land">
+        <span className="cx-fly">
+          <Card concept={concept} card={card} size="stage" />
+          <span className="cx-resolve" aria-hidden />
+        </span>
+      </span>
+      <span className="cx-title">
+        {'Canton'.split('').map((ch, i) => (
+          <b key={i} style={{ '--i': i } as React.CSSProperties}>
+            {ch}
+          </b>
+        ))}
+      </span>
+      <span className="cx-sub">1 of 10 in the game</span>
+      <span className="cx-flash" aria-hidden />
+    </button>
+  )
+}
+
+/** Canton's light in the pack: white gold. */
+const CANTON_GLOW = '#ffe6a8'
+
+/** How long the Canton Pull runs. Immortal's banner is 2.3s. */
+const CANTON_PULL_MS = 3450
+
+/** When the screen is fully white, so the pack can become the cards unseen. */
+const CANTON_WHITE_MS = 1120
+
+/**
+ * The first reveal: this is where you learn there's a Canton in the pack, so it's
+ * an event, not a banner. The tear cuts the room to black with only the pack left,
+ * shaking harder, while a beam builds out of its mouth. Then the screen whites out,
+ * the light takes the pack, and CANTON slams in a letter at a time with a hit on
+ * each. Under the white the cards go down, so when it clears they're all laid out,
+ * ready to flip. Hangs off --at, the moment of the flash. A tap skips it.
+ */
+function CantonPull({ onWhite, onDone }: { onWhite: () => void; onDone: () => void }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    const white = window.setTimeout(onWhite, CANTON_WHITE_MS)
+    const done = window.setTimeout(onDone, CANTON_PULL_MS)
+    return () => {
+      window.clearTimeout(white)
+      window.clearTimeout(done)
+    }
+  }, [onWhite, onDone])
+  // The light starts at the mouth of the pack, wherever the pack sits.
+  useLayoutEffect(() => {
+    const pack = document.querySelector('.pe-rip-pack')?.getBoundingClientRect()
+    if (!pack || !ref.current) return
+    ref.current.style.setProperty('--px', `${pack.left + pack.width / 2}px`)
+    ref.current.style.setProperty('--py', `${pack.top + pack.height * 0.1}px`)
+  }, [])
+  return (
+    <>
+      <button type="button" className="cp-veil" onClick={onDone} aria-label="Canton pull. Show the cards" />
+      <span className="cp" ref={ref} aria-hidden>
+        <span className="cp-beam" />
+        <span className="cx-rays cp-rays">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/games/pack-empire/fx/card-rays.webp" alt="" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/games/pack-empire/fx/card-rays.webp" alt="" />
+        </span>
+        <span className="cp-sparks">
+          {CONFETTI.map((style, i) => (
+            <i key={i} style={style} />
+          ))}
+        </span>
+        <span className="pl-ring" />
+        <span className="pl-ring pl-ring--2" />
+        <span className="pl-ring pl-ring--3" />
+        <span className="pl-ring cp-ring-last" />
+        <span className="cx-gems">
+          {Array.from({ length: 28 }, (_, i) => (
+            <i key={i} style={{ '--a': `${i * (360 / 28)}deg`, '--far': `${40 + ((i * 11) % 26)}vmin` } as React.CSSProperties} />
+          ))}
+        </span>
+        <span className="cp-lockup">
+          <span className="cp-word">
+            {'Canton'.split('').map((ch, i) => (
+              <b key={i} style={{ '--i': i } as React.CSSProperties}>
+                {ch}
+              </b>
+            ))}
+          </span>
+          <span className="cp-pull">Pull</span>
+        </span>
+        <span className="cp-flash" />
+      </span>
+    </>
+  )
+}
+
+/**
+ * The whole pull, start to finish: the game's own wrapper and tear, in Canton's
+ * light, then the Canton Pull where you find out. When it clears the five cards are
+ * already down, ready to flip, with Canton burning among them. Any other card just
+ * flips. A tap on Canton cuts straight to the doors.
+ */
+function PackOpen({ concept, cards, onAgain, onClose }: { concept: Concept; cards: LabCard[]; onAgain: () => void; onClose: () => void }) {
+  const [banner, setBanner] = useState(false)
+  const [laid, setLaid] = useState(false)
+  const [up, setUp] = useState<boolean[]>(() => cards.map(() => false))
+  const [pulling, setPulling] = useState<LabCard | null>(null)
+  const onTorn = useCallback(() => setBanner(true), [])
+  const layCards = useCallback(() => setLaid(true), [])
+  const endBanner = useCallback(() => {
+    setLaid(true)
+    setBanner(false)
+  }, [])
+  const closePull = useCallback(() => setPulling(null), [])
+  useEffect(() => {
+    if (pulling) return
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', key)
+    return () => window.removeEventListener('keydown', key)
+  }, [pulling, onClose])
+  const flip = (i: number) => {
+    if (up[i]) return
+    if (cards[i].tier === 'canton') setPulling(cards[i])
+    setUp((was) => was.map((v, at) => v || at === i))
+  }
+  const left = up.filter((v) => !v).length
+  const status = !laid ? 'Swipe across the top, or tap, to rip it open' : left ? 'Tap a card to flip it' : 'All revealed'
+  return (
+    <>
+      <div className={`pe-stage lab-pack${banner ? ' pulling' : ''}`} role="dialog" aria-modal="true" aria-label="QB pack">
+        {banner && <CantonPull onWhite={layCards} onDone={endBanner} />}
+        <div className={`pe-stage-head${banner ? ' wo' : ''}`}>
+          <div className="pe-stage-norm">
+            <div className="pe-stage-pos">
+              QB <em>Pack</em>
+            </div>
+            <div className="pe-stage-status" aria-live="polite">
+              {status}
+            </div>
+          </div>
+        </div>
+        {!laid && <SealedPack art={PACK_ART.QB} glow={CANTON_GLOW} tier={4} ready onTorn={onTorn} />}
+        {laid && (
+          <div className="pe-stage-cards">
+            {cards.map((card, i) => (
+              <button
+                key={card.player.id}
+                type="button"
+                className={`pk-slot${up[i] ? ' up' : ''}`}
+                onClick={() => flip(i)}
+                aria-label={up[i] ? card.player.name : 'Flip this card'}
+              >
+                <span className="pk-shake" data-tier={up[i] ? undefined : card.tier}>
+                  <span className="pk-flip">
+                    {up[i] && <Card concept={concept} card={card} size="table" />}
+                    <Card concept={concept} card={card} size="table" down />
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="pe-stage-foot">
+          {laid && !banner && !left && (
+            <button type="button" className="pe-btn pe-btn--ghost" onClick={onAgain}>
+              Open Another
+            </button>
+          )}
+          <button type="button" className="pe-btn pe-btn--quiet" onClick={onClose}>
+            Back to the Lab
+          </button>
+        </div>
+      </div>
+      {pulling && <Pull concept={concept} card={pulling} onClose={closePull} />}
+    </>
+  )
+}
+
+export function CardLab({ cards, pack, binder }: { cards: LabCard[]; pack: LabCard[]; binder: LabCard[] }) {
   const [concept, setConcept] = useState<Concept>('foil')
   const [open, setOpen] = useState<LabCard | null>(null)
+  const [opening, setOpening] = useState(false)
+  const [deal, setDeal] = useState(0)
+  const closePack = useCallback(() => setOpening(false), [])
   const active = CONCEPTS.find((c) => c.key === concept) ?? CONCEPTS[0]
   return (
     <div className="lab">
       <header className="lab-head">
         <div className="lab-kicker">Pack Empire · Dev Only</div>
         <h1>Card Lab</h1>
-        <p>Three directions for the cards, plus a new tier above Immortal for 5,500+. Tap any card to play its pull.</p>
+        <p>Three directions for the cards, plus Canton, a new tier above Immortal for 5,200+. Tap any card to play its pull, from the back.</p>
       </header>
 
       <div className="lab-tabs" role="tablist" aria-label="Concept">
@@ -356,6 +808,13 @@ export function CardLab({ cards }: { cards: LabCard[] }) {
         ))}
       </div>
       <p className="lab-line">{active.line}</p>
+
+      <div className="lab-open">
+        <button type="button" onClick={() => setOpening(true)}>
+          Open a Pack
+        </button>
+        <span>The whole Canton pull: rip the pack, flip a few, then tap the card that’s burning.</span>
+      </div>
 
       <section className="lab-row" aria-label="Every tier">
         {cards.map((card) => (
@@ -370,7 +829,42 @@ export function CardLab({ cards }: { cards: LabCard[] }) {
         ))}
       </section>
 
+      <h2 className="lab-h2">Card Backs</h2>
+      <section className="lab-row" aria-label="The back of every tier">
+        {cards.map((card) => (
+          <Card key={card.tier} concept={concept} card={card} size="hero" down onOpen={() => setOpen(card)} />
+        ))}
+      </section>
+
+      <h2 className="lab-h2">Backs At Table Size</h2>
+      <section className="lab-row lab-row--small" aria-label="The back of every tier at the size a pack deals them">
+        {cards.map((card) => (
+          <Card key={card.tier} concept={concept} card={card} size="table" down />
+        ))}
+      </section>
+
+      <h2 className="lab-h2">Canton In The Binder</h2>
+      <p className="lab-line">Your number never changes, the total climbs as others pull the same card, and every Canton counts on its own. Example numbers.</p>
+      <section className="lab-row" aria-label="Canton serial numbers in the binder">
+        {binder.map((card) => (
+          <Card key={card.player.id} concept="foil" card={card} size="hero" />
+        ))}
+      </section>
+
+      <h2 className="lab-h2">Canton Shape Ideas</h2>
+      <section className="lab-shapes" aria-label="Shape ideas for Canton">
+        {SHAPES.map((s) => (
+          <figure key={s.name}>
+            <svg viewBox="0 0 24 24" aria-hidden>
+              {s.art}
+            </svg>
+            <figcaption>{s.name}</figcaption>
+          </figure>
+        ))}
+      </section>
+
       {open && <Pull concept={concept} card={open} onClose={() => setOpen(null)} />}
+      {opening && <PackOpen key={deal} concept={concept} cards={pack} onAgain={() => setDeal((n) => n + 1)} onClose={closePack} />}
     </div>
   )
 }
