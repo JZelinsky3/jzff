@@ -32,7 +32,7 @@ import seasons from './data/season-pool.json'
 import vaulted from './data/vaulted.json'
 import { POOL_KEYS, RARITY_FLOOR, personOf, tableRarity, type Player, type PoolKey, type TableRarity, type Weights } from './rules'
 
-export const POOL_VERSION = 'seasons-2026-10l'
+export const POOL_VERSION = 'seasons-2026-10m'
 
 // Canton is set here rather than in the data, so the frozen Daily pools keep the
 // Immortals they were dealt with. Nothing about a deal reads it: see tableRarity.
@@ -102,10 +102,14 @@ const IMMORTAL_SPAN_H = 1600
 
 /**
  * Canton, the 5,200+ seasons and the top ten in the game, are this much harder again
- * on top of the curve: half as hard again to pull. It comes out of the same shares,
- * so a position's immortals as a whole stay exactly as likely. Not on POOL_H.
+ * on top of the curve. It comes out of the same shares, so a position's immortals as
+ * a whole stay exactly as likely. Not on POOL_H.
+ *
+ * It was 2/3 until the ordinary immortal went up on 2026-11-01. This holds Canton to
+ * half of that rise: all ten land within 2% of halfway between their old odds and
+ * what the new table alone would have made them.
  */
-const CANTON_PULL = 2 / 3
+const CANTON_PULL = 0.534
 
 function immortalPull(score: number, span: number, canton: number): number {
   return IMMORTAL_SPREAD ** -((score - RARITY_FLOOR.immortal) / span) * (score >= RARITY_FLOOR.canton ? canton : 1)

@@ -567,7 +567,7 @@ export type Weights = Record<TableRarity, number>
  *
  * The ordinary immortal went from 0.7 to 1 on 2026-11-01, after 451 packs in a row
  * went by without one: a run holds one 1 time in about 9, up from 11. Canton is on
- * this table too, so it moved with them.
+ * this table too, and CANTON_PULL in ./pool.ts holds it to half that rise.
  */
 export const SOLO_WEIGHTS: { normal: Weights; captain: Weights } = {
   normal: { common: 43.4, rare: 11.6, dynasty: 7.8, transcendent: 2.8, immortal: 1 },
