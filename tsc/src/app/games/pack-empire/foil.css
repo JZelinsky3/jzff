@@ -151,6 +151,17 @@
 [data-r='canton'] .pf-orbit { box-shadow: none; }
 [data-r='immortal'] .pf-orbit i { background: conic-gradient(from 0deg, transparent 0 26%, #1dd98a 35%, #eafff5 41%, transparent 45% 76%, #1dd98a 85%, #eafff5 91%, transparent 95%); }
 .pe-fsl .pf-orbit { border-radius: 11px; box-shadow: none; }
+/* A phone's slot is 7px round, so everything inside it has to come down with it. An
+   inner corner rounder than the outer one is what thickened the frame at the corners.
+   The borders still step up with rarity, from a hairline to Immortal. */
+@media (max-width: 700px) {
+  .pe-fsl .pf-orbit { border-radius: 7px; }
+  .pe-fsl.has-p .pe-filled-card { inset: 1px; border-radius: 6px; }
+  .pe-fsl[data-r='dynasty'].has-p .pe-filled-card { inset: 1.25px; border-radius: 5.75px; }
+  .pe-fsl[data-r='transcendent'].has-p .pe-filled-card { inset: 1.5px; border-radius: 5.5px; }
+  .pe-fsl[data-r='immortal'].has-p .pe-filled-card { inset: 2px; border-radius: 5px; }
+  .pe-fsl[data-r='canton'].has-p .pe-filled-card { inset: 2px; border-radius: 5px; }
+}
 @keyframes pf-turn { to { transform: rotate(360deg); } }
 
 /* the light round a top card, which swells and flickers */
