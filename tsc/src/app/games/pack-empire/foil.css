@@ -109,7 +109,7 @@
 .pe-fsl[data-r] .pe-fc-name { color: var(--ink); text-transform: uppercase; }
 .pe-fsl[data-r] .pe-fc-score { color: var(--a); }
 .pe-fsl[data-r] .pe-fc-team-tag { color: var(--mute); }
-.pe-fsl[data-r] .pe-fc-year { top: 18%; -webkit-text-stroke-color: var(--a); opacity: .34; }
+.pe-fsl[data-r] .pe-fc-year { top: 18%; -webkit-text-stroke-color: var(--a); opacity: .12; }
 .pe-fsl[data-r] .pe-fc-shine { display: none; }
 
 /* ── The small cards: the binder grid and the Mega Draft board. Palette and material

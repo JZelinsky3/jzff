@@ -55,7 +55,7 @@ function Row({ row }: { row: DailyRow }) {
         <div className="pe-kicker" style={{ marginTop: '0.9rem' }}>
           Chemistry
         </div>
-        <Bonds chem={row.detail.chem} />
+        <Bonds chem={row.detail.chem} lineup={row.detail.lineup} />
       </div>
     </details>
   )

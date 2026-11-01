@@ -16,17 +16,18 @@ import {
   SLOTS,
   SLOT_COUNT,
   WILD_PACK_ART,
-  shortName,
   signingPrice,
   slotForCard,
   type Player,
+  type Missed,
 } from '@/lib/packEmpire/rules'
 import type { DailyResult, DailyState } from '@/lib/packEmpire/daily'
 import { guestPoster, readGuest, rememberGuest } from '../../runBank'
 import { KeyAside, KeyButton, type KeyFlavor } from '../DraftKey'
 import { GuestName } from '../GuestName'
 import { ShareButton } from '../share'
-import { Bonds, CaptainMark, Field, LineupSheet, PackCard, blindTotal, type SlotView } from '../cards'
+import { CaptainMark, Field, LineupSheet, blindTotal, type SlotView } from '../cards'
+import { DraftReport, PackBoard } from '../report'
 import { PackStage, ScoreStrip, restoredStage, usePackStage, useStripOffset } from '../stage'
 
 async function call(body: Record<string, unknown>): Promise<DailyState> {
@@ -81,7 +82,7 @@ export function DailyDraft({ initial, other }: { initial: DailyState; other: { h
   // here waits for its last card to land.
   const [turned, setTurned] = useState(initial.done)
   // Left a pack open and came back: it's still open, on the same clock.
-  const { stage, landing, open, tear, reveal, revealAll, skip, pick, dismiss, settle } = usePackStage(
+  const { stage, landing, open, tear, rip, reveal, revealAll, skip, pick, dismiss, settle } = usePackStage(
     initial.pack ? restoredStage(initial.captain != null && initial.step === 0 ? initial.captain : initial.step, initial.pack) : null,
     { plainCanton: true }
   )
@@ -119,12 +120,18 @@ export function DailyDraft({ initial, other }: { initial: DailyState; other: { h
   const openNext = useCallback(() => {
     if (stage) return
     setClockNote(null)
-    open(captainPack && captain != null ? captain : step, async () => {
-      const next = await call({ action: 'open', version })
-      setState(next)
-      if (!next.pack) throw new Error('The pack would not open. Try again.')
-      return next.pack
-    })
+    // Held until the rip: asking for the pack is what starts its clock, and a
+    // pack that isn't in the browser can't be read ahead of it.
+    open(
+      captainPack && captain != null ? captain : step,
+      async () => {
+        const next = await call({ action: 'open', version })
+        setState(next)
+        if (!next.pack) throw new Error('The pack would not open. Try again.')
+        return next.pack
+      },
+      { onRip: true }
+    )
   }, [stage, open, captainPack, captain, step, version])
 
   const timeUp = useCallback(async () => {
@@ -330,6 +337,7 @@ export function DailyDraft({ initial, other }: { initial: DailyState; other: { h
           onRevealAll={revealAll}
           onDismiss={dismiss}
           onTear={tear}
+          onRip={rip}
           onSkip={skip}
         />
       )}
@@ -383,6 +391,24 @@ function NameYourRun({ version, onNamed }: { version: DailyState['version']; onN
       />
     </div>
   )
+}
+
+/** The Daily's packs on the same board as a Builder run's. Its wild packs aren't
+    any one position's, so a row goes by what you kept from it. */
+function packsLooked(result: DailyResult): Missed {
+  const rows = result.packs.map((pack, n) => {
+    const cards = [...pack.cards].sort((a, b) => b.score - a.score)
+    return {
+      slot: n,
+      kept: pack.kept,
+      perfect: pack.kept,
+      cards,
+      label: cards.find((c) => c.id === pack.kept)?.pos,
+      note: pack.reserve ? 'Reserve' : undefined,
+    }
+  })
+  const hit = rows.filter((r) => (r.cards.find((c) => c.id === r.kept)?.score ?? 0) >= r.cards[0].score).length
+  return { packs: rows.length, hit, score: result.cards, perfect: null, rows }
 }
 
 /** Everything turned over: the score, how it got there, and what you passed. */
@@ -440,50 +466,14 @@ function DailyRecap({
         </div>
       </div>
 
-      <div className="pe-twoup">
-        <div className="pe-versus-side">
-          <LineupSheet name="Your Eleven" lineup={result.lineup} total={result.total} counted={result.counted} captain={result.captain} />
-        </div>
-        <div className="pe-panel">
-          <div className="pe-kicker">Chemistry</div>
-          <Bonds chem={result.chem} />
-        </div>
-      </div>
-
-      <section className="pe-sec">
-        <div className="pe-sec-head">
-          <span className="pe-sec-num">§ Pack By Pack</span>
-          <span className="pe-sec-title">What You Passed On</span>
-        </div>
-        <div className="pe-passed">
-          {result.packs.map((pack, n) => {
-            const kept = pack.cards.find((c) => c.id === pack.kept)
-            const best = pack.cards.reduce((a, b) => (b.score > a.score ? b : a))
-            return (
-              <details key={n} className="pe-passed-pack" open={n === 0}>
-                <summary>
-                  <span>
-                    Pack {n + 1}
-                    {pack.reserve ? ' · Reserve' : ''}
-                  </span>
-                  <small>
-                    {kept && `Kept ${shortName(kept.name)} ${kept.score.toLocaleString()}`}
-                    {best.id === pack.kept ? ' · The best in the pack' : ` · Left ${shortName(best.name)} ${best.score.toLocaleString()}`}
-                  </small>
-                </summary>
-                <div className="pe-passed-cards">
-                  {pack.cards.map((c) => (
-                    <div key={c.id} className={`pe-passed-card${c.id === pack.kept ? ' kept' : ''}`}>
-                      <PackCard player={c} revealed still />
-                      {c.id === pack.kept && <span className="pe-passed-tag">Kept</span>}
-                    </div>
-                  ))}
-                </div>
-              </details>
-            )
-          })}
-        </div>
-      </section>
+      <DraftReport
+        lineup={result.lineup}
+        chem={result.chem}
+        captain={result.captain}
+        counted={{ cards: result.cards, rule: result.spent != null ? null : result.ruleDelta, total: result.total }}
+        sheet={<LineupSheet name="Your Eleven" lineup={result.lineup} total={result.total} counted={result.counted} captain={result.captain} />}
+      />
+      <PackBoard missed={packsLooked(result)} />
     </div>
   )
 }

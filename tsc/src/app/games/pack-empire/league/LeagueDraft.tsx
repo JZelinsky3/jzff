@@ -242,7 +242,7 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
           </div>
           <div className="pe-panel">
             <div className="pe-kicker">Chemistry</div>
-            {view.chemistry && <Bonds chem={view.chemistry} empty="No chemistry either way this week." />}
+            {view.chemistry && <Bonds chem={view.chemistry} lineup={view.lineup} empty="No chemistry either way this week." />}
           </div>
         </div>
       </div>
@@ -299,7 +299,7 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
             {score.toLocaleString()} accolades, {chem.total >= 0 ? '+' : '−'}
             {Math.abs(chem.total).toLocaleString()} chemistry
           </div>
-          <Bonds chem={chem} empty="No chemistry either way this week." />
+          <Bonds chem={chem} lineup={view.lineup} empty="No chemistry either way this week." />
           <div className="pe-recap-actions" style={{ justifyContent: 'flex-start' }}>
             <button type="button" className="pe-btn" disabled={busy} onClick={() => act({ action: 'submit' })}>
               Submit {(score + chem.total).toLocaleString()}

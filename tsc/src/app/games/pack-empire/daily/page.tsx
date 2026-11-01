@@ -108,7 +108,7 @@ export default async function DailyPage() {
       </div>
       <div className="pe-rule">
         <span>
-          <b>The clock runs.</b> You get {DAILY_PACK_SECONDS} seconds a pack from the moment you open it. Run out
+          <b>The clock runs.</b> You get {DAILY_PACK_SECONDS} seconds a pack from the moment you rip it. Run out
           and the first card that fits signs. There&apos;s no clock between packs.
         </span>
       </div>

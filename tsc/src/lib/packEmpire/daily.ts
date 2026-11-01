@@ -15,7 +15,7 @@
 // it costs them that account's Daily, and that's as far as this goes.
 //
 // Each pack has a clock, which is what keeps Ball Knower about what you know
-// rather than what you can look up. A pack isn't sent until you open it, and
+// rather than what you can look up. A pack isn't sent until you rip it open, and
 // that's when its clock starts, so it can't be read early or restarted with a
 // refresh. If it runs out, the first card that fits signs. Between packs
 // there's no clock: you can put your phone down, you just can't see what's next.

@@ -21,6 +21,7 @@ import {
   teamLogo,
   tierFor,
   type BlindFace,
+  type ChemBond,
   type Chemistry,
   type Player,
   type Rarity,
@@ -337,7 +338,7 @@ const CardShine = memo(function CardShine({ rarity }: { rarity: Rarity }) {
 // A card from a pack
 // ============================================================
 
-function Headshot({ player, className, eager = false }: { player: Player; className: string; eager?: boolean }) {
+export function Headshot({ player, className, eager = false }: { player: Pick<Player, 'id' | 'img'>; className: string; eager?: boolean }) {
   // A photo that won't load gets the drawn portrait, same as no photo at all.
   const [broken, setBroken] = useState<string | null>(null)
   const img = useFace(player)
@@ -559,6 +560,7 @@ export function PackCard({
   picked = false,
   rejected = false,
   kept = false,
+  best = false,
   selectable = false,
   charging = false,
   burst = false,
@@ -576,8 +578,10 @@ export function PackCard({
   revealed: boolean
   picked?: boolean
   rejected?: boolean
-  /** A blind pack that's turned over: the card you kept, still hidden. */
+  /** A blind pack that's turned over: the card you kept. */
   kept?: boolean
+  /** Under Show My Pick: the better card you passed on. */
+  best?: boolean
   selectable?: boolean
   /** Mid-walkout: lifted over the veil, shaking. */
   charging?: boolean
@@ -677,7 +681,7 @@ export function PackCard({
                   <svg className="pe-gem" viewBox="0 0 24 24" aria-hidden>
                     <path d="M12 3.5 20.5 12 12 20.5 3.5 12z" fill="none" stroke="currentColor" strokeWidth="2.4" />
                   </svg>
-                  {kept ? 'Kept' : 'Hidden'}
+                  Hidden
                 </div>
               ) : (
                 <div className={`pe-cf-rlab ${player.rarity}`}>
@@ -764,6 +768,8 @@ export function PackCard({
         </div>
       </div>
       {burst && <span className="pe-burst" aria-hidden />}
+      {kept && <span className="pe-card-tag">Yours</span>}
+      {best && <span className="pe-card-tag pe-card-tag--best">Best</span>}
     </Tag>
   )
 }
@@ -794,9 +800,13 @@ export type SlotView = {
   /** The Daily: a blank card for the position, not a pack. Nothing here opens,
       so nothing here should look like it does. */
   empty?: boolean
+  /** What this card's chemistry nets, printed under it. */
+  chem?: number | null
+  /** The final reveal: where this card is in its turn. */
+  turn?: 'out' | 'in' | null
 }
 
-function FilledSlot({
+export function FilledSlot({
   player,
   flag,
   captain = false,
@@ -932,10 +942,16 @@ function Slot({
   }
 
   return (
-    <div className={`pe-slot-outer${isHB ? ' hb-back' : ''}`} data-pe-slot={index}>
+    <div className={`pe-slot-outer${isHB ? ' hb-back' : ''}`} data-pe-slot={index} data-turn={view.turn ?? undefined}>
       {body}
       <div className={`pe-slot-label${view.tone ? ` ${view.tone}` : view.captain ? ' cap' : ''}${view.empty && !player ? ' blank' : ''}`}>
         {def.short}
+        {!!view.chem && (
+          <b className={`pe-slot-chem ${view.chem > 0 ? 'up' : 'down'}`}>
+            {view.chem > 0 ? '+' : '−'}
+            {Math.abs(view.chem).toLocaleString()}
+          </b>
+        )}
       </div>
     </div>
   )
@@ -1076,6 +1092,7 @@ export function LineupSheet({
                 {p.year ? ` · ${p.year}` : ''}
                 {captain === i ? ' · Captain' : ''}
               </small>
+              {(p.club || p.team) && <small className="pe-line-team">{p.club || p.team}</small>}
             </span>
             <span className="pe-line-score">
               {value.toLocaleString()}
@@ -1088,23 +1105,100 @@ export function LineupSheet({
   )
 }
 
-/** Every bond in a lineup, good and bad, with what each one paid. */
-export function Bonds({ chem, empty = 'No chemistry either way.' }: { chem: Chemistry; empty?: string }) {
+/** What kind of bond this is, read off the bond itself: stored lineups carry it
+    in their words. */
+export function bondKind(b: Pick<ChemBond, 'type' | 'reason'>): 'real' | 'same' | 'rival' {
+  if (b.type === 'rivalry') return 'rival'
+  return b.reason.includes('real teammates') ? 'real' : 'same'
+}
+
+export const BOND_LABEL = { real: 'Real Teammates', same: 'Same Franchise', rival: 'Rivals' } as const
+
+/** A bond's own reason, split into the positions and who it's about. */
+function bondLine(reason: string): string {
+  const cut = reason.indexOf(', ')
+  if (cut < 0) return reason
+  return `${reason.slice(0, cut)} · ${reason.slice(cut + 2).replace(/^real teammates on the /, '')}`
+}
+
+/** A man's face in a ring of his card's rarity: the reports, ledgers and leaders. */
+export function Face({ player, name }: { player?: Pick<Player, 'id' | 'img' | 'rarity'> | null; name?: string }) {
+  const ring = player ? ({ '--ring': RARITY_LOOK[player.rarity].color } as React.CSSProperties) : undefined
+  return (
+    <span className="pe-bond-face" style={ring}>
+      {player ? <Headshot player={player} className="pe-bond-img" /> : <i>{name?.charAt(0)}</i>}
+    </span>
+  )
+}
+
+function BondFace({ id, name, lineup }: { id: string; name: string; lineup?: (Player | null)[] }) {
+  return <Face player={lineup?.find((p) => p?.id === id)} name={name} />
+}
+
+/**
+ * The bonds in a lineup, biggest first: the two men, what ties them together and
+ * what it paid. `hot` and `onHot` tie a row to its line on the field.
+ */
+export function Bonds({
+  chem,
+  empty = 'No chemistry either way.',
+  lineup,
+  hot = null,
+  onHot,
+}: {
+  chem: Chemistry
+  empty?: string
+  /** Puts faces on the rows. */
+  lineup?: (Player | null)[]
+  hot?: number | null
+  onHot?: (bond: number | null) => void
+}) {
   if (!chem.bonds.length) return <p className="pe-note">{empty}</p>
+  const order = chem.bonds.map((b, i) => ({ b, i })).sort((x, y) => y.b.points - x.b.points)
   return (
     <div className="pe-chem">
-      {chem.bonds.map((b, i) => (
-        <div key={i} className={`pe-bond ${b.type}`}>
-          <span>
-            {surname(b.aName)} and {surname(b.bName)}
-            <small>{b.reason}</small>
-          </span>
-          <b>
-            {b.points > 0 ? '+' : '−'}
-            {Math.abs(b.points).toLocaleString()}
-          </b>
-        </div>
-      ))}
+      {order.map(({ b, i }) => {
+        const kind = bondKind(b)
+        const Row = onHot ? 'button' : 'div'
+        return (
+          <Row
+            key={i}
+            className={`pe-bond ${b.type}`}
+            data-kind={kind}
+            data-hot={hot === i ? '' : undefined}
+            {...(onHot
+              ? {
+                  type: 'button' as const,
+                  'aria-pressed': hot === i,
+                  onClick: () => onHot(hot === i ? null : i),
+                  onPointerEnter: (e: React.PointerEvent) => {
+                    if (e.pointerType === 'mouse') onHot(i)
+                  },
+                  onPointerLeave: (e: React.PointerEvent) => {
+                    if (e.pointerType === 'mouse') onHot(null)
+                  },
+                }
+              : {})}
+          >
+            <span className="pe-bond-pair" aria-hidden>
+              <BondFace id={b.a} name={b.aName} lineup={lineup} />
+              <i className="pe-bond-tie" />
+              <BondFace id={b.b} name={b.bName} lineup={lineup} />
+            </span>
+            <span className="pe-bond-who">
+              <span className="pe-bond-names">
+                {surname(b.aName)} and {surname(b.bName)}
+              </span>
+              <span className="pe-bond-kind">{BOND_LABEL[kind]}</span>
+              <small>{bondLine(b.reason)}</small>
+            </span>
+            <b className="pe-bond-pts">
+              {b.points > 0 ? '+' : '−'}
+              {Math.abs(b.points).toLocaleString()}
+            </b>
+          </Row>
+        )
+      })}
     </div>
   )
 }

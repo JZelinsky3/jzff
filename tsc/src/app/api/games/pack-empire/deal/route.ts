@@ -3,7 +3,7 @@
 //   { action: 'start', captain, difficulty } -> { seed }
 //   { action: 'pack', seed, slot, taken }    -> { cards }
 //   { action: 'check', seed }                -> { live }
-//   { action: 'lock', seed, picks }          -> { lock }
+//   { action: 'lock', seed, picks, open }    -> { lock }
 //
 // Empire Builder and Versus Challenge both draft through here. 'start' is the
 // commitment: the captain and the difficulty are signed into the seed, so
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     const picks = body.picks == null ? null : parseLockPicks(body.picks)
     if (body.picks != null && !picks) return bad('Malformed roster.')
 
-    const out = await lockBlindPicks(blindRun(seed, parsed), seed, parsed, picks)
+    const out = await lockBlindPicks(blindRun(seed, parsed), seed, parsed, picks, body.open === true)
     return out.ok ? NextResponse.json({ ok: true, lock: out.lock }, { headers: NO_STORE }) : bad(out.error, out.status)
   }
 

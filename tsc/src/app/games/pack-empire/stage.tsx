@@ -61,12 +61,17 @@ export type StageState = {
   queue: number[]
   flight: Flight | null
   /** A blind draft: the card you kept, and whether the pack has turned over
-      around it yet. It stays masked; the other four show what they were. */
+      around it yet. The other four show what they were. Yours stays masked,
+      unless Show My Pick is on, when it goes over last. */
   kept?: string | null
   turned?: boolean
+  /** The Daily: nothing is dealt until the wrapper starts to tear, because
+      dealing is what starts its clock. */
+  dealsOnRip?: boolean
 }
 
-/** What a blind pack turns into: `kept` stays masked, the rest come back real. */
+/** What a blind pack turns into. `kept` is still masked unless Show My Pick is
+    on; the rest come back real. */
 export type Turned = { kept: string; cards: Player[] }
 
 /** A slot whose new card is in the air (hidden) or has just landed (pops). */
@@ -89,6 +94,9 @@ const LANDED_MS = 750
 /** A card already face up swings edge-on, and its real face goes on out of sight. */
 const TURN_MS = 380
 const RIPPLE_MS = 130
+
+/** Under Show My Pick, the beat between the fourth card and yours. */
+const LAST_TURN_MS = 450
 
 /** The light in a pack whose cards are hidden. One colour for every blind
     pack, whatever's in it: a rarity's colour here would be a tell, and the
@@ -125,7 +133,7 @@ export function restoredStage(slot: number, cards: Player[]): StageState {
 // early. Held here so a pending fetch isn't dropped with its Image.
 const heldFaces: HTMLImageElement[] = []
 
-function preloadFaces(cards: Player[], uploaded: FaceMap) {
+export function preloadFaces(cards: Player[], uploaded: FaceMap) {
   const faces = [...cards.flatMap((c) => [uploaded[c.id] ?? c.img, c.rarity === 'canton' ? pearlLogo(c) : teamLogo(c)]), ...(cards.some((c) => c.rarity === 'canton') ? CANTON_ART : [])]
     .filter((src): src is string => !!src)
     .map((src) => {
@@ -154,6 +162,7 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
   const [stage, setStage] = useState<StageState | null>(initial)
   const [landing, setLanding] = useState<Landing | null>(null)
   const busy = useRef(false)
+  const waitingDeal = useRef<(() => Promise<void>) | null>(null)
   const timers = useRef<number[]>([])
   const walkoutId = useRef(0)
   const uploaded = useFaces()
@@ -184,7 +193,7 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
     }
   }, [staged])
 
-  const open = useCallback(async (slot: number, deal: () => Promise<Player[]>) => {
+  const open = useCallback(async (slot: number, deal: () => Promise<Player[]>, { onRip = false } = {}) => {
     if (busy.current) return
     busy.current = true
     setStage({
@@ -198,17 +207,32 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
       walkout: null,
       queue: [],
       flight: null,
+      dealsOnRip: onRip,
     })
-    try {
-      // No floor on the wait any more: the rip is the pause.
-      const cards = await deal()
-      preloadFaces(cards, uploaded)
-      setStage((s) => (s && s.slot === slot ? { ...s, cards, revealed: cards.map(() => false) } : s))
-    } catch (e) {
-      setStage((s) => (s ? { ...s, error: e instanceof Error ? e.message : 'The pack would not open.' } : s))
-    } finally {
-      busy.current = false
+    const dealIt = async () => {
+      busy.current = true
+      try {
+        // No floor on the wait any more: the rip is the pause.
+        const cards = await deal()
+        preloadFaces(cards, uploaded)
+        setStage((s) => (s && s.slot === slot ? { ...s, cards, revealed: cards.map(() => false) } : s))
+      } catch (e) {
+        setStage((s) => (s ? { ...s, error: e instanceof Error ? e.message : 'The pack would not open.' } : s))
+      } finally {
+        busy.current = false
+      }
     }
+    if (onRip) {
+      busy.current = false
+      waitingDeal.current = dealIt
+    } else await dealIt()
+  }, [])
+
+  /** The wrapper has started to go: a held deal goes out now. */
+  const rip = useCallback(() => {
+    const dealIt = waitingDeal.current
+    waitingDeal.current = null
+    dealIt?.()
   }, [])
 
   const tear = useCallback(() => {
@@ -394,9 +418,10 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
 
   /**
    * Keep card i on a blind draft. `lock` puts the pick on record, and only then
-   * does the server hand back the pack: the card you kept still masked, the other
-   * four as they really are. `pick` then takes it to its slot, when you're ready.
-   * Null from `lock` means the table was out of step and has been put right, so
+   * does the server hand back the pack: the other four as they really are, and
+   * the card you kept masked, or real under Show My Pick, when it turns over last
+   * and gets the walkout a big card would have had. `pick` then takes it to its
+   * slot, when you're ready. Null from `lock` means the table was out of step and has been put right, so
    * there's nothing left to show here.
    */
   const keep = useCallback(
@@ -412,20 +437,30 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
           return
         }
         preloadFaces(out.cards, uploaded)
-        const faceUp = s.revealed.some((r, n) => r && s.cards?.[n].id !== out.kept)
-        setStage((cur) => (cur ? { ...cur, kept: out.kept, revealed: out.cards.map((c) => c.id === out.kept) } : cur))
+        const at = out.cards.findIndex((c) => c.id === out.kept)
+        const mine = out.cards[at]
+        const shown = !mine.blind
+        const faceUp = s.revealed.some((r, n) => r && (shown || n !== at))
+        setStage((cur) => (cur ? { ...cur, kept: out.kept, revealed: out.cards.map((_, n) => !shown && n === at) } : cur))
         if (faceUp) await wait(TURN_MS)
         setStage((cur) => (cur ? { ...cur, cards: out.cards, turned: true } : cur))
-        out.cards.forEach((c, n) => {
-          if (c.id !== out.kept) later(() => flip(s.slot, n), n * RIPPLE_MS)
-        })
+        const passed = out.cards.map((_, n) => n).filter((n) => n !== at)
+        passed.forEach((n, step) => later(() => flip(s.slot, n), step * RIPPLE_MS))
+        if (shown) {
+          later(() => {
+            if (BIG.has(mine.rarity)) {
+              enqueue(s.slot, [at], true)
+              runQueue(s.slot)
+            } else flip(s.slot, at)
+          }, passed.length * RIPPLE_MS + LAST_TURN_MS)
+        }
       } catch (e) {
         setStage((cur) => (cur ? { ...cur, kept: null, error: e instanceof Error ? e.message : 'That pick did not save.' } : cur))
       } finally {
         busy.current = false
       }
     },
-    [stage, uploaded, later, flip]
+    [stage, uploaded, later, flip, enqueue, runQueue]
   )
 
   const dismiss = useCallback(() => setStage(null), [])
@@ -442,7 +477,7 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
     [landing]
   )
 
-  return { stage, landing, open, tear, reveal, revealAll, skip, pick, keep, dismiss, settle }
+  return { stage, landing, open, tear, rip, reveal, revealAll, skip, pick, keep, dismiss, settle }
 }
 
 /** Over the stage: 'Captain pack' (with the patch), a League boost. */
@@ -545,6 +580,7 @@ export function PackStage({
   onRevealAll,
   onDismiss,
   onTear,
+  onRip,
   onSkip,
   chemFor,
   wild = null,
@@ -563,6 +599,8 @@ export function PackStage({
   /** Only offered when the pack failed to deal: there is nothing to lose. */
   onDismiss: () => void
   onTear: () => void
+  /** The wrapper has started to go. */
+  onRip?: () => void
   onSkip: () => void
   chemFor?: (p: Player) => number | null
   /** The Daily's mixed packs, which aren't any one position's. */
@@ -593,14 +631,19 @@ export function PackStage({
   const hall = w?.step === 'hall'
   const woCard = w && cards ? cards[w.i] : null
   const woLook = woCard ? RARITY_LOOK[woCard.rarity] : null
-  // A blind pack opens the same way every time, at the size of a rare's.
-  const blind = !!wild || !!cards?.some((c) => c.blind)
-  const best: Rarity | null = cards ? (blind ? 'rare' : bestRarity(cards)) : null
+  // A blind pack opens the same way every time, at the size of a rare's, and
+  // stays that way once it's turned over.
+  const blind = !!wild || !!stage.kept || !!stage.dealsOnRip || !!cards?.some((c) => c.blind)
+  const best: Rarity | null = stage.dealsOnRip ? 'rare' : cards ? (blind ? 'rare' : bestRarity(cards)) : null
   const glow = blind ? BLIND_GLOW : best ? RARITY_LOOK[best].color : '#e8a84b'
   // The pack's light tops out at Immortal's size, and Canton's own show takes over.
   const lit = best === 'canton' ? 'immortal' : best
   const tier = lit ? RARITIES.indexOf(lit) : 0
   const cantonPack = best === 'canton' && !plainCanton
+  // Under Show My Pick, once all five are up, how yours did.
+  const keptCard = stage.kept ? (cards?.find((c) => c.id === stage.kept) ?? null) : null
+  const settled = !!stage.turned && hidden === 0 && !w && !stage.queue.length
+  const topCard = settled && keptCard && !keptCard.blind ? cards?.[0] && cards.reduce((a, b) => (b.score > a.score ? b : a)) : null
 
   // An immortal stops the show as the pack comes open: the pack stays on the
   // table, lit, with the banner over it, and the cards wait until it's done.
@@ -623,7 +666,13 @@ export function PackStage({
   else if (woLook) status = `${woLook.label} pull`
   else if (stage.queue.length) status = 'Revealing'
   else if (stage.pickedId) status = 'Signed'
-  else if (stage.kept) status = stage.turned ? 'The four you passed on' : 'Locking it in'
+  else if (stage.kept) {
+    if (!stage.turned) status = 'Locking it in'
+    else if (!settled) status = 'Turning them over'
+    else if (!topCard || !keptCard) status = 'The four you passed on'
+    else if (topCard.score <= keptCard.score) status = 'Best card in the pack'
+    else status = `${(topCard.score - keptCard.score).toLocaleString()} behind the best card`
+  }
   else if (note) status = note
   else if (wild?.note) status = wild.note
   else if (shown > 0) status = `${shown} of ${cards.length} revealed · tap one to keep him`
@@ -704,7 +753,7 @@ export function PackStage({
           )}
         </div>
 
-        {!open && !stage.error && <SealedPack art={art} glow={glow} tier={tier} ready={!!cards} onTorn={onTear} />}
+        {!open && !stage.error && <SealedPack art={art} glow={glow} tier={tier} ready={!!cards} onTorn={onTear} onRip={onRip} />}
 
         {open && (
           <div className={`pe-stage-cards${cantonPack ? ' laid' : ''}`}>
@@ -723,6 +772,7 @@ export function PackStage({
                   picked={isPick}
                   rejected={isRej}
                   kept={stage.kept === card.id && !stage.pickedId}
+                  best={!stage.pickedId && !!keptCard && topCard?.id === card.id && topCard.score > keptCard.score}
                   selectable={!stage.pickedId && !stage.kept && !w && !stage.queue.length}
                   charging={charging}
                   burst={charging && w?.step === 'flip'}
@@ -743,7 +793,7 @@ export function PackStage({
               Reveal all {hidden}
             </button>
           )}
-          {stage.turned && !stage.pickedId && (
+          {settled && !stage.pickedId && (
             <button type="button" className="pe-btn" onClick={onNext}>
               {nextLabel}
             </button>

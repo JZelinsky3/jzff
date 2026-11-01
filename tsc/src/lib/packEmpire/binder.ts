@@ -16,20 +16,26 @@
 // The table keys on (user, deal, slot), so the same pack recorded twice
 // counts once. See 0083_pack_empire_binder.sql and 0084.
 
+import { unstable_cache } from 'next/cache'
+import { publicNames } from '@/lib/minigames/boardIdentity'
+import { weekStartFor } from '@/lib/minigames/leaderboard'
 import { createAdminClient } from '@/lib/supabase/admin'
 import {
+  DIFFICULTY_LOOK,
   PACK_SIZE,
   POOL_KEYS,
   SOLO_BOOSTED,
   SOLO_WEIGHTS,
+  difficultyForMode,
   personOf,
   RARITIES,
+  type Difficulty,
   type Player,
   type PoolKey,
   type Rarity,
   type Weights,
 } from './rules'
-import { POOL, POOL_SIZE, POOL_VERSION, VAULTED, cardWeight, playerById } from './pool'
+import { POOL, POOL_SIZE, POOL_VERSION, VAULTED, cardWeight, liveCard, playerById } from './pool'
 import { parseSoloPicks, replaySolo, type SoloPick } from './solo'
 
 export type BinderSource = 'solo' | 'versus' | 'league'
@@ -315,3 +321,131 @@ function build(have: Map<string, Count>, site: Map<string, Site>, serials: Map<s
     },
   }
 }
+
+// ============================================================
+// Who has the most, and the week's best pulls
+// ============================================================
+
+export type Collector = {
+  name: string
+  cards: number
+  immortals: number
+  cantons: number
+  best: Player | null
+}
+
+export type TopPull = {
+  name: string
+  card: Player
+  /** "Range Builder". */
+  draft: string
+  /** What that lineup finished on, when it got that far. */
+  total: number | null
+  at: string
+}
+
+export type Leaders = { collectors: Collector[]; pulls: TopPull[] }
+
+/** How far down the value order to look for the week's pulls. A pull under this
+    line can't be top three unless hardly anyone played. */
+const PULL_POOL = 300
+
+async function topCollectors(): Promise<Collector[]> {
+  const { data, error } = await createAdminClient().rpc('pe_binder_collections')
+  if (error) throw error
+  const rows = (data ?? []) as { user_id: string; kept: string[] }[]
+  const counted = rows
+    .map((r) => {
+      const held = r.kept.flatMap((id) => liveCard(id) ?? [])
+      return {
+        userId: r.user_id,
+        cards: held.length,
+        immortals: held.filter((c) => c.rarity === 'immortal').length,
+        cantons: held.filter((c) => c.rarity === 'canton').length,
+        best: held.reduce<Player | null>((a, b) => (!a || b.score > a.score ? b : a), null),
+      }
+    })
+    .sort((a, b) => b.cards - a.cards || (b.best?.score ?? 0) - (a.best?.score ?? 0))
+    .slice(0, 3)
+  const names = await publicNames(counted.map((c) => c.userId))
+  return counted.map(({ userId, ...c }) => ({ ...c, name: names.get(userId) ?? 'Manager' }))
+}
+
+/** The draft a pull came from and what the lineup finished on. */
+async function pullDraft(source: string, deal: string, userId: string): Promise<{ draft: string; total: number | null }> {
+  const db = createAdminClient()
+  const seed = deal.replace(/^solo:/, '')
+  if (source === 'versus') {
+    const { data } = await db
+      .from('pe_versus')
+      .select('difficulty, host_id, host_score:host_result->score, guest_score:guest_result->score')
+      .or(`host_seed.eq.${seed},guest_seed.eq.${seed}`)
+      .or(`host_id.eq.${userId},guest_id.eq.${userId}`)
+      .limit(1)
+      .maybeSingle()
+    const row = data as { difficulty: Difficulty; host_id: string; host_score: number | null; guest_score: number | null } | null
+    if (!row) return { draft: 'Versus', total: null }
+    return {
+      draft: `${DIFFICULTY_LOOK[row.difficulty].label} Versus`,
+      total: Number((row.host_id === userId ? row.host_score : row.guest_score) ?? 0) || null,
+    }
+  }
+  const { data } = await db
+    .from('game_runs')
+    .select('score, mode')
+    .eq('game', 'pack-empire')
+    .eq('seed', seed)
+    .eq('user_id', userId)
+    .limit(1)
+    .maybeSingle()
+  const row = data as { score: number; mode: string | null } | null
+  const diff = difficultyForMode(row?.mode ?? null)
+  return { draft: `${diff ? `${DIFFICULTY_LOOK[diff].label} ` : ''}Builder`, total: row?.score ?? null }
+}
+
+/** The best cards kept since Monday, a man's same card once each. Daily keeps
+    don't count: everyone opens the same packs. */
+async function topPulls(): Promise<TopPull[]> {
+  const ids = Object.values(POOL)
+    .flat()
+    .sort((a, b) => b.score - a.score)
+    .slice(0, PULL_POOL)
+    .map((c) => c.id)
+  const { data, error } = await createAdminClient().rpc('pe_binder_pulls', {
+    p_since: `${weekStartFor()}T00:00:00Z`,
+    p_ids: ids,
+  })
+  if (error) throw error
+  const seen = new Set<string>()
+  const rows = ((data ?? []) as { user_id: string; deal: string; kept: string; source: string; created_at: string }[])
+    .flatMap((r) => {
+      const card = liveCard(r.kept)
+      return card ? [{ ...r, card }] : []
+    })
+    .sort((a, b) => b.card.score - a.card.score || a.created_at.localeCompare(b.created_at))
+    .filter((r) => {
+      const key = `${r.user_id}|${r.kept}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    .slice(0, 3)
+  const names = await publicNames(rows.map((r) => r.user_id))
+  return Promise.all(
+    rows.map(async (r) => ({
+      name: names.get(r.user_id) ?? 'Manager',
+      card: r.card,
+      at: r.created_at,
+      ...(await pullDraft(r.source, r.deal, r.user_id)),
+    }))
+  )
+}
+
+export const loadLeaders = unstable_cache(
+  async (): Promise<Leaders> => {
+    const [collectors, pulls] = await Promise.all([topCollectors(), topPulls()])
+    return { collectors, pulls }
+  },
+  ['pe-leaders'],
+  { revalidate: 300 }
+)

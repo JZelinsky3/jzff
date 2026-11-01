@@ -2275,16 +2275,6 @@ html:has(.pe-theme) body {
   transform: scale(0.9);
 }
 
-.pe-card.kept {
-  transform: translateY(-6px);
-  z-index: 5;
-}
-
-.pe-card.kept .pe-card-front {
-  border-color: var(--pe-amber);
-  box-shadow: 0 0 0 2px var(--pe-amber);
-}
-
 .pe-card:disabled {
   cursor: default;
 }
@@ -5153,6 +5143,13 @@ a.pe-row:hover {
   text-transform: uppercase;
 }
 
+.pe-line-name small.pe-line-team {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--pe-ink-mute);
+  text-transform: none;
+}
+
 .pe-line-score {
   font-family: var(--pe-display);
   font-weight: 700;
@@ -5163,45 +5160,6 @@ a.pe-row:hover {
 .pe-line.empty .pe-line-name {
   color: var(--pe-ink-mute);
   font-weight: 600;
-}
-
-.pe-chem {
-  display: grid;
-  gap: 0.35rem;
-  margin-top: 0.8rem;
-}
-
-.pe-bond {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.6rem;
-  padding: 0.45rem 0.6rem;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.025);
-  font-size: 0.8rem;
-  color: var(--pe-ink-soft);
-}
-
-.pe-bond b {
-  font-family: var(--pe-display);
-  font-weight: 700;
-}
-
-.pe-bond.synergy b {
-  color: #7be0a2;
-}
-
-.pe-bond.rivalry b {
-  color: #f08a80;
-}
-
-.pe-bond small {
-  display: block;
-  font-family: var(--mono);
-  font-size: 0.56rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--pe-ink-mute);
 }
 
 /* ============================================================
@@ -8508,94 +8466,6 @@ a.pe-row:hover {
   margin-top: 0.7rem;
 }
 
-.pe-recap-chem {
-  max-width: 760px;
-  margin: 1.2rem auto 0;
-}
-
-/* What was left in the packs, under a blind run's recap. */
-.pe-miss {
-  max-width: 760px;
-  margin: 1.2rem auto 0;
-}
-
-.pe-miss-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
-  margin: 0.7rem 0 0.8rem;
-}
-
-.pe-miss-stat b {
-  display: block;
-  font-family: var(--pe-display);
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: var(--pe-ink);
-}
-
-.pe-miss-stat span {
-  display: block;
-  margin-top: 0.15rem;
-  font-family: var(--pe-cond);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--pe-ink-mute);
-}
-
-.pe-miss-list {
-  list-style: none;
-  margin: 0.9rem 0 0;
-  padding: 0;
-}
-
-.pe-miss-row {
-  display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.5rem 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.pe-miss-pos {
-  font-family: var(--pe-cond);
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--pe-amber);
-}
-
-.pe-miss-who,
-.pe-miss-gap {
-  min-width: 0;
-  font-family: var(--pe-cond);
-}
-
-.pe-miss-who b,
-.pe-miss-gap b {
-  display: block;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--pe-ink);
-}
-
-.pe-miss-who small,
-.pe-miss-gap small {
-  display: block;
-  font-size: 0.78rem;
-  color: var(--pe-ink-mute);
-}
-
-.pe-miss-gap {
-  text-align: right;
-}
-
-.pe-miss-gap small {
-  color: var(--pe-red);
-}
-
 .pe-line-score small {
   display: block;
   font-family: var(--pe-cond);
@@ -8604,12 +8474,6 @@ a.pe-row:hover {
   text-align: right;
   color: var(--pe-ink-mute);
   text-decoration: line-through;
-}
-
-.pe-bond small {
-  display: block;
-  font-size: 0.7rem;
-  color: var(--pe-ink-mute);
 }
 
 .pe-sec--first {
@@ -9018,83 +8882,6 @@ a.pe-row:hover {
 .pe-dtop-gap {
   height: 5px;
   background: var(--pe-line-soft);
-}
-
-.pe-passed {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.4rem;
-}
-
-.pe-passed-pack {
-  min-width: 0;
-  border: 1px solid var(--pe-line);
-  border-radius: 4px;
-  background: var(--pe-card);
-}
-
-.pe-passed-pack > summary {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 1rem;
-  padding: 0.6rem 0.9rem;
-  cursor: pointer;
-  font-family: var(--pe-cond);
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--pe-ink);
-}
-
-.pe-passed-pack > summary small {
-  min-width: 0;
-  font-family: var(--mono);
-  font-weight: 400;
-  font-size: 0.6rem;
-  letter-spacing: 0.04em;
-  text-align: right;
-  color: var(--pe-ink-mute);
-}
-
-/* Sideways on a phone: five whole cards never fit across one. */
-.pe-passed-cards {
-  display: flex;
-  gap: 0.6rem;
-  padding: 0.3rem 0.8rem 0.9rem;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.pe-passed-card {
-  position: relative;
-  flex: none;
-}
-
-.pe-passed-card .pe-card {
-  --pe-cs: 0.78;
-  cursor: default;
-}
-
-.pe-passed-card:not(.kept) {
-  opacity: 0.72;
-}
-
-.pe-passed-tag {
-  position: absolute;
-  left: 50%;
-  bottom: -0.35rem;
-  z-index: 4;
-  transform: translateX(-50%);
-  padding: 1px 7px;
-  border-radius: 3px;
-  background: var(--pe-amber);
-  font-family: var(--pe-cond);
-  font-weight: 800;
-  font-size: 0.68rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #141311;
 }
 
 /* A Range card's bar: where its range sits on the scale of every card. */

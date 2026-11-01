@@ -14,11 +14,23 @@ type Pack = { slot: number; cards: Player[]; kept: string }
 /** Past this the search stops and keeps the best it has found. */
 const MAX_STEPS = 2_000_000
 
-const brief = (p: Player): MissCard => ({ name: p.name, year: p.year, score: p.score })
+const brief = ({ id, pid, name, pos, team, year, club, score, rarity, img }: Player): MissCard => ({
+  id,
+  pid,
+  name,
+  pos,
+  team,
+  year,
+  club,
+  score,
+  rarity,
+  img,
+})
 
-/** The highest score any one card from each pack can reach. Exact unless it
-    runs out of steps; the run itself is a floor, so it can never come in under. */
-export function bestEleven(packs: Player[][], floor = 0): number {
+/** The highest score any one card from each pack can reach, and the card from
+    each pack that gets there. Exact unless it runs out of steps; the run itself
+    is a floor, so it can never come in under, and no `picks` means nothing beat it. */
+export function bestEleven(packs: Player[][], floor = 0): { total: number; picks: string[] | null } {
   // The packs with the most riding on them first, which is where the bound bites.
   const order = packs
     .map((cards) => [...cards].sort((a, b) => b.score - a.score))
@@ -42,13 +54,18 @@ export function bestEleven(packs: Player[][], floor = 0): number {
   )
 
   let best = floor
+  let picks: string[] | null = null
   let steps = 0
   const chosen: number[] = []
   const men = new Set<string>()
 
   const walk = (depth: number, total: number) => {
     if (depth === order.length) {
-      if (total > best) best = total
+      if (total > best) {
+        best = total
+        const ids = chosen.map((i) => cards[i].id)
+        picks = packs.map((pack) => pack.find((c) => ids.includes(c.id))?.id ?? '')
+      }
       return
     }
     let bound = total
@@ -81,24 +98,18 @@ export function bestEleven(packs: Player[][], floor = 0): number {
     }
   }
   walk(0, 0)
-  return best
+  return { total: best, picks }
 }
 
 /** `score` is the run itself: cards plus chemistry, before any Battles. */
 export function missReport(packs: Pack[], score: number): Missed {
-  const misses: Missed['misses'] = []
-  for (const { slot, cards, kept } of packs) {
-    const mine = cards.find((c) => c.id === kept)
-    if (!mine) continue
-    const top = cards.reduce((a, b) => (b.score > a.score ? b : a))
-    if (top.score > mine.score) misses.push({ slot, kept: brief(mine), best: brief(top) })
-  }
-  misses.sort((a, b) => b.best.score - b.kept.score - (a.best.score - a.kept.score))
-  return {
-    packs: packs.length,
-    hit: packs.length - misses.length,
-    score,
-    perfect: bestEleven(packs.map((p) => p.cards), score),
-    misses,
-  }
+  const { total, picks } = bestEleven(packs.map((p) => p.cards), score)
+  const rows = packs.map(({ slot, cards, kept }, i) => ({
+    slot,
+    kept,
+    perfect: picks?.[i] || kept,
+    cards: [...cards].sort((a, b) => b.score - a.score).map(brief),
+  }))
+  const hit = rows.filter((r) => (r.cards.find((c) => c.id === r.kept)?.score ?? 0) >= r.cards[0].score).length
+  return { packs: packs.length, hit, score, perfect: total, rows }
 }

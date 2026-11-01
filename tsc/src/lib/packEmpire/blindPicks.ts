@@ -5,7 +5,9 @@
 // can't be free: anyone could ask with a throwaway pick, read the pack, and then
 // post a different one. So a pick is written down BEFORE the pack turns, it can
 // never be rewritten, and the run has to match it when it's scored. The card you
-// kept stays masked, and that first post is still when you find out what it was.
+// kept stays masked, and that first post is when you find out what it was, unless
+// you've turned on Show My Pick. A pick on record can't change, so showing it then
+// gives nothing away that the player could still use on that pack.
 //
 // A run with nothing on record is fine: nothing about its packs was ever shown.
 //
@@ -64,13 +66,15 @@ const leads = (a: SoloPick[], b: SoloPick[]) => a.every((p, i) => b[i]?.slot ===
  * Put `want` on record, the whole run so far with the new pick last, and hand
  * back that pick's pack. Null `want` just reads what's there, which is how a run
  * comes back on a new device. Whatever is already on record stands, and the
- * primary key settles two picks landing at once.
+ * primary key settles two picks landing at once. `open` is Show My Pick: picks on
+ * record come back as they really are. Nothing else ever does.
  */
 export async function lockBlindPicks(
   run: string,
   seed: string,
   info: SeedInfo,
-  want: SoloPick[] | null
+  want: SoloPick[] | null,
+  open = false
 ): Promise<{ ok: true; lock: BlindLock } | { ok: false; error: string; status: number }> {
   try {
     let locked = await readPicks(run)
@@ -84,12 +88,13 @@ export async function lockBlindPicks(
 
     const steps = walk(seed, info, locked) ?? []
     const lineup: (Player | null)[] = Array(SLOT_COUNT).fill(null)
-    for (const s of steps) lineup[s.slot] = maskCard(s.card, info.diff)
+    const shown = (c: Player) => (open ? c : maskCard(c, info.diff))
+    for (const s of steps) lineup[s.slot] = shown(s.card)
 
     const asked = want?.[want.length - 1]
     const step = asked && steps.find((s) => s.slot === asked.slot && s.card.id === asked.id)
     const seen = step
-      ? { slot: step.slot, kept: step.card.id, cards: step.pack.map((c) => (c.id === step.card.id ? maskCard(c, info.diff) : c)) }
+      ? { slot: step.slot, kept: step.card.id, cards: step.pack.map((c) => (c.id === step.card.id ? shown(c) : c)) }
       : null
     return { ok: true, lock: { picks: locked, lineup, seen } }
   } catch {

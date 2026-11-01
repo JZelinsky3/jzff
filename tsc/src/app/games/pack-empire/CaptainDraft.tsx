@@ -11,8 +11,9 @@
 // On Range and Ball Knower the server masks every card and the total stays
 // hidden until the lineup is locked. Keeping a card puts the pick on record and
 // turns over the four you passed on; yours stays hidden and goes down with a
-// second tap. An Even Versus skips step one: there's no captain, the seat just
-// sits down on the shared seed.
+// second tap, or with Show My Pick on, turns over too and goes down as it is. An
+// Even Versus skips step one: there's no captain, the seat just sits down on the
+// shared seed.
 //
 // The captain is a commitment: the server signs it into the seed before a
 // single pack is dealt, so it can't be moved after a look at the packs.
@@ -50,7 +51,7 @@ import {
 import { CaptainMark, Field, blindTotal, type SlotView } from './cards'
 import { BattleNote, BattleStrip } from './Battles'
 import { KeyAside, KeyButton, type KeyFlavor } from './DraftKey'
-import { useHydrated } from './clientStore'
+import { storageChanged, useHydrated, useStored } from './clientStore'
 import { PackStage, ScoreStrip, usePackStage, useStripOffset } from './stage'
 
 export type DraftPick = { slot: number; id: string }
@@ -110,11 +111,14 @@ async function dealPack(seed: string, slot: number, taken: string[]): Promise<Pl
   return body.cards as Player[]
 }
 
-async function lockOnDeal(seed: string, picks: DraftPick[] | null): Promise<BlindLock> {
+/** Show My Pick, kept on this device. */
+const SHOW_PICK_KEY = 'pe_show_pick_v1'
+
+async function lockOnDeal(seed: string, picks: DraftPick[] | null, open: boolean): Promise<BlindLock> {
   const res = await fetch('/api/games/pack-empire/deal/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'lock', seed, picks }),
+    body: JSON.stringify({ action: 'lock', seed, picks, open }),
   })
   const body = await res.json().catch(() => null)
   if (!res.ok || !body?.ok) throw new Error(body?.error ?? 'That pick did not save. Try again.')
@@ -143,27 +147,39 @@ type DraftProps = {
   even?: boolean
   /** An Even Versus's three Battles. */
   battles?: string[] | null
-  /** Puts a blind pick on record, or with null reads what's there. A Versus
-      seat's goes through its room, because an Even seed is two seats'. */
-  lock?: (picks: DraftPick[] | null) => Promise<BlindLock>
+  /** Puts a blind pick on record, or with null reads what's there. `open` is
+      Show My Pick. A Versus seat's goes through its room, because an Even seed
+      is two seats'. */
+  lock?: (picks: DraftPick[] | null, open: boolean) => Promise<BlindLock>
 }
 
 /** A blind draft's stand-in for the total: on Range the sum of what its cards
-    could be worth, on Ball Knower nothing at all. */
+    could be worth, on Ball Knower nothing at all. Under Show My Pick there may be
+    nothing left to stand in for. */
 function hiddenTotal(lineup: (Player | null)[], diff: Difficulty) {
   if (!isBlind(diff)) return null
-  if (diff === 'season') return { value: '?', label: 'Hidden' }
   const signed = lineup.filter((p): p is Player => !!p)
-  const lo = signed.reduce((sum, p) => sum + (p.blind?.lo ?? 0), 0)
-  const hi = signed.reduce((sum, p) => sum + (p.blind?.hi ?? 0), 0)
+  if (signed.length && signed.every((p) => !p.blind)) return null
+  if (diff === 'season') return { value: '?', label: 'Hidden' }
+  const lo = signed.reduce((sum, p) => sum + (p.blind ? (p.blind.lo ?? 0) : p.score), 0)
+  const hi = signed.reduce((sum, p) => sum + (p.blind ? (p.blind.hi ?? 0) : p.score), 0)
   return { value: blindTotal(lo, hi), label: 'Could be' }
 }
 
+/** The switch for turning your own card over the moment you keep it. */
+function ShowPick({ on, onChange }: { on: boolean; onChange: () => void }) {
+  return (
+    <button type="button" className="pe-showpick" role="switch" aria-checked={on} onClick={onChange}>
+      <i aria-hidden />
+      Show My Pick
+    </button>
+  )
+}
+
 /** Where the run stands, on the left of the row with the key's button. */
-function ChaseLine({ score, choosing, blind, even }: { score: number; choosing: boolean; blind: boolean; even: boolean }) {
+function ChaseLine({ score, choosing, even }: { score: number; choosing: boolean; even: boolean }) {
   if (even) return <span className="pe-board-next">Same packs on both sides</span>
   if (choosing) return <span className="pe-board-next">Pick your captain</span>
-  if (blind) return <span className="pe-board-next">Scored when you lock in</span>
   const next = [...TIERS].reverse().find((t) => t.min > score)
   if (!next) return <span className="pe-board-next">Top of the ladder</span>
   return (
@@ -180,16 +196,19 @@ function Board({
   choosing = true,
   flavor,
   children,
+  aside,
 }: {
   score: number
   choosing?: boolean
   flavor: KeyFlavor
   children: React.ReactNode
+  /** Takes the place of the line on the left of the bar. */
+  aside?: React.ReactNode
 }) {
   return (
     <div className="pe-board">
       <div className="pe-board-bar">
-        <ChaseLine score={score} choosing={choosing} blind={isBlind(flavor.difficulty)} even={flavor.even} />
+        {aside ?? <ChaseLine score={score} choosing={choosing} even={flavor.even} />}
         <KeyButton score={score} flavor={flavor} />
       </div>
       <div className="pe-board-in">
@@ -298,6 +317,10 @@ function LiveDraft({
   const blind = isBlind(difficulty)
   /** The eleventh pick has gone in, so `onDone` is on its way. */
   const finished = useRef(false)
+  const storedPick = useStored(SHOW_PICK_KEY)
+  const showPick = blind && storedPick === '1'
+  /** What the first read of a run asks for. */
+  const openAtStart = useRef(showPick)
 
   // Check a seed brought back from storage (or held by a Versus seat) once.
   useEffect(() => {
@@ -318,7 +341,7 @@ function LiveDraft({
   }, [armed])
 
   const sendLock = useCallback(
-    (s: string, list: DraftPick[] | null) => (lock ? lock(list) : lockOnDeal(s, list)),
+    (s: string, list: DraftPick[] | null, open: boolean) => (lock ? lock(list, open) : lockOnDeal(s, list, open)),
     [lock]
   )
 
@@ -339,7 +362,7 @@ function LiveDraft({
     if (!blind || !start.seed) return
     let gone = false
     const s = start.seed
-    sendLock(s, null)
+    sendLock(s, null, openAtStart.current)
       .then((out) => {
         if (!gone && out.picks.length > start.picks.length) adopt(s, out)
       })
@@ -357,6 +380,24 @@ function LiveDraft({
     writeSaved(saveKey, null)
     onDone({ seed, captain, picks, lineup: lineup as Player[], score: 0, spent: 0 })
   }, [blind, seed, stage, picks, lineup, captain, saveKey, onDone])
+
+  // Turned on partway through, it turns over everything already signed.
+  const toggleShowPick = () => {
+    const on = !showPick
+    try {
+      localStorage.setItem(SHOW_PICK_KEY, on ? '1' : '0')
+      storageChanged()
+    } catch {
+      // Private browsing: it just won't be remembered.
+    }
+    if (on && seed && picks.length) {
+      sendLock(seed, null, true)
+        .then((out) => {
+          if (out.picks.length >= picks.length) adopt(seed, out)
+        })
+        .catch(() => {})
+    }
+  }
 
   const restart = useCallback(() => {
     writeSaved(saveKey, null)
@@ -377,10 +418,11 @@ function LiveDraft({
   const settled = settle(lineup)
   const filled = settled.filter(Boolean).length
   const chemOn = chemistryCounts(difficulty, even)
-  // A Ball Knower card has no team to read, so nothing on the table can say
-  // what chemistry is doing until the lineup is locked.
-  const chemShown = chemOn && difficulty !== 'season'
+  // A masked Ball Knower card has no team to read, so nothing on the table can
+  // say what chemistry is doing until cards are turned over.
+  const chemReadable = chemOn && difficulty !== 'season'
   const signed = settled.filter((p): p is Player => !!p)
+  const chemShown = chemReadable || (chemOn && signed.some((p) => !p.blind))
   const chem = chemShown ? chemistryFor(signed, true).total : 0
   const score = lineupScore(settled) + chem
   const tier = tierFor(score)
@@ -455,7 +497,7 @@ function LiveDraft({
           finished.current = true
           writeSaved(saveKey, null)
           const full = nextLineup as Player[]
-          const total = lineupScore(full) + (chemShown ? chemistryFor(full, true).total : 0)
+          const total = lineupScore(full) + (chemReadable ? chemistryFor(full, true).total : 0)
           done = { seed, captain, picks: nextPicks, lineup: full, score: total, spent: nextSpent }
         } else {
           writeSaved(saveKey, { seed, captain, picks: nextPicks, lineup: nextLineup, spent: nextSpent, at: Date.now() })
@@ -466,7 +508,7 @@ function LiveDraft({
         if (landed && run) window.setTimeout(() => onDone(run), 900)
       })
     },
-    [stage, seed, captain, pick, lineup, picks, spent, saveKey, onDone, chemShown]
+    [stage, seed, captain, pick, lineup, picks, spent, saveKey, onDone, chemReadable]
   )
 
   /** A blind pick goes on record here, before the pack turns: saved on this
@@ -477,16 +519,19 @@ function LiveDraft({
       const slot = stage.slot
       keep(i, async (card) => {
         const wanted = [...picks, { slot, id: card.id }]
-        const out = await sendLock(seed, wanted)
-        if (!out.seen || out.picks.length !== wanted.length) {
+        const out = await sendLock(seed, wanted, showPick)
+        const seen = out.seen
+        if (!seen || out.picks.length !== wanted.length) {
           adopt(seed, out)
           return null
         }
-        writeSaved(saveKey, { seed, captain, picks: out.picks, lineup: out.lineup, at: Date.now() })
-        return { kept: out.seen.kept, cards: out.seen.cards }
+        const nextLineup = [...lineup]
+        nextLineup[slot] = seen.cards.find((c) => c.id === seen.kept) ?? card
+        writeSaved(saveKey, { seed, captain, picks: out.picks, lineup: nextLineup, at: Date.now() })
+        return { kept: seen.kept, cards: seen.cards }
       })
     },
-    [stage, seed, captain, picks, keep, sendLock, adopt, saveKey]
+    [stage, seed, captain, picks, lineup, keep, sendLock, adopt, saveKey, showPick]
   )
 
   const nextPack = useCallback(() => {
@@ -596,7 +641,12 @@ function LiveDraft({
 
       {!!battles?.length && !choosing && <BattleStrip ids={battles} />}
 
-      <Board score={score} choosing={choosing} flavor={{ difficulty, even, battles }}>
+      <Board
+        score={score}
+        choosing={choosing}
+        flavor={{ difficulty, even, battles }}
+        aside={blind ? <ShowPick on={showPick} onChange={toggleShowPick} /> : undefined}
+      >
         <Field lineup={lineup} view={view} onSlot={choosing ? chooseCaptain : openSlot} landing={landing} />
         {!choosing && !stage && !stale && filled < SLOT_COUNT && (
           <div className="pe-turf-foot">

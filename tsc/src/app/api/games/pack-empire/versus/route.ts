@@ -8,7 +8,7 @@
 //                                                              format = 'classic' or 'even')
 //   POST { action: 'join', id, name, key } -> { view }
 //   POST { action: 'start', id, captain, key } -> { seed }
-//   POST { action: 'lock', id, picks, key }    -> { lock }  (a blind seat's pick, see blindPicks)
+//   POST { action: 'lock', id, picks, key, open } -> { lock }  (a blind seat's pick, see blindPicks)
 //   POST { action: 'submit', id, picks, key }  -> { view }
 //   POST { action: 'delete', id }          -> {}          (the host, while nobody has taken the seat)
 //
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       return out.ok ? reply(out) : reply(out, out.status ?? 400)
     }
     case 'lock': {
-      const out = await lockVersusSeat(id, userId, body.key, body.picks)
+      const out = await lockVersusSeat(id, userId, body.key, body.picks, body.open === true)
       return out.ok ? reply(out) : reply(out, out.status ?? 400)
     }
     case 'submit': {

@@ -43,6 +43,7 @@ export function SealedPack({
   tier,
   ready,
   onTorn,
+  onRip,
 }: {
   art: string
   /** The light inside: the best rarity's colour once the cards are in. */
@@ -52,6 +53,8 @@ export function SealedPack({
   /** The deal has come back. */
   ready: boolean
   onTorn: () => void
+  /** The moment the wrapper starts to go, however it was torn. */
+  onRip?: () => void
 }) {
   const [phase, setPhase] = useState<'sealed' | 'ripping' | 'open'>('sealed')
   const [pull, setPull] = useState(0)
@@ -63,12 +66,13 @@ export function SealedPack({
 
   useEffect(() => {
     if (phase !== 'ripping') return
+    onRip?.()
     const t = window.setTimeout(() => {
       setPhase('open')
       onTorn()
     }, RIP_MS + (HOLD_MS[tier] ?? 0))
     return () => window.clearTimeout(t)
-  }, [phase, onTorn, tier])
+  }, [phase, onTorn, onRip, tier])
 
   const rip = () => {
     if (phase !== 'sealed') return

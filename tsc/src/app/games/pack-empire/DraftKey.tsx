@@ -108,7 +108,7 @@ function KeyBody({ score, flavor }: { score: number; flavor: KeyFlavor }) {
           <p className="pe-key-p">
             The real value is somewhere inside the range, and rarely in the middle.{' '}
             {flavor.daily ? 'Some ranges are tight and some barely tell you anything. ' : ''}Rarity and stats stay hidden until
-            your lineup is locked.{flavor.daily ? '' : ' Keep a card and the other four turn over, so you see what you passed on.'}
+            your lineup is locked.{flavor.daily ? '' : KEEP_LINE}
           </p>
         </section>
       )}
@@ -117,7 +117,7 @@ function KeyBody({ score, flavor }: { score: number; flavor: KeyFlavor }) {
           <h3 className="pe-key-h">Ball Knower</h3>
           <p className="pe-key-p">
             A name and a season. You have to know what he did that year and who he played for. Your eleven turn over when
-            your lineup is locked.{flavor.daily ? '' : ' Keep a card and the other four turn over, so you see what you passed on.'}
+            your lineup is locked.{flavor.daily ? '' : KEEP_LINE}
           </p>
         </section>
       )}
@@ -201,6 +201,8 @@ export function KeyAside({ score, flavor = OPEN }: { score: number; flavor?: Key
 }
 
 /** The button above the field, and the sheet it opens. */
+const KEEP_LINE = ' Keep a card and the other four turn over, so you see what you passed on. Show My Pick turns yours over too.'
+
 export function KeyButton({ score, flavor = OPEN }: { score: number; flavor?: KeyFlavor }) {
   const [open, setOpen] = useState(false)
   return (

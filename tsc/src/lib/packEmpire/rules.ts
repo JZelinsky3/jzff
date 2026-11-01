@@ -90,30 +90,60 @@ export type BlindFace = {
 }
 
 /** A blind pick once the server has it. Going by `seen`, the pack turns over
-    around the card kept, which stays masked. `picks` and `lineup` are what's on
-    record, and they win over anything the browser is holding. */
+    around the card kept, which stays masked unless the player has Show My Pick
+    on. `picks` and `lineup` are what's on record, and they win over anything the
+    browser is holding. */
 export type BlindLock = {
   picks: { slot: number; id: string }[]
-  /** By slot, masked. */
+  /** By slot, masked unless Show My Pick is on. */
   lineup: (Player | null)[]
   /** The pack that pick came from. Null if the pick asked for isn't the one on
       record, or nothing was asked. */
   seen: { slot: number; kept: string; cards: Player[] } | null
 }
 
-export type MissCard = Pick<Player, 'name' | 'year' | 'score'>
+/** A card as the hindsight report keeps it: enough to draw, nothing else. */
+export type MissCard = Pick<Player, 'id' | 'pid' | 'name' | 'pos' | 'team' | 'year' | 'club' | 'score' | 'rarity' | 'img'>
 
-/** A blind run in hindsight: what the recap shows once the cards are up. */
+/** A blind run in hindsight: what the report shows once the cards are up. */
 export type Missed = {
   packs: number
   /** Packs where you kept the best card. */
   hit: number
   /** The run: cards plus chemistry. */
   score: number
-  /** The best eleven in the packs you opened, chemistry included. */
-  perfect: number
-  /** Every pack with a better card in it, the biggest gap first. */
-  misses: { slot: number; kept: MissCard; best: MissCard }[]
+  /** The best eleven in the packs you opened, chemistry included. The Daily has
+      none: its wild packs change under you, so there's no one best eleven. */
+  perfect: number | null
+  /** Every pack in the order it was opened, its cards best first. */
+  rows: {
+    slot: number
+    kept: string
+    perfect: string
+    cards: MissCard[]
+    /** Over the slot's own name, for a pack that isn't a position's. */
+    label?: string
+    note?: string
+  }[]
+}
+
+const GRADES: [number, string][] = [
+  [0.97, 'A+'],
+  [0.92, 'A'],
+  [0.88, 'A-'],
+  [0.84, 'B+'],
+  [0.8, 'B'],
+  [0.76, 'B-'],
+  [0.72, 'C+'],
+  [0.68, 'C'],
+  [0.64, 'C-'],
+  [0.58, 'D'],
+]
+
+/** A draft's grade: how much of the perfect eleven you got. */
+export function draftGrade(score: number, perfect: number): string {
+  const share = perfect > 0 ? score / perfect : 0
+  return GRADES.find(([min]) => share >= min)?.[1] ?? 'F'
 }
 
 /** The man behind a card; a card from before the season pool is its own man. */

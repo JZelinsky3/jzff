@@ -8,7 +8,8 @@
 //   · your own seat's seed, so you can draft (and resume on another device);
 //   · the other side's SCORE once they have finished, so a challenger knows
 //     the number to beat, which is the fun of being second;
-//   · both lineups only once both are in;
+//   · both lineups only once both are in, though your own is yours as soon as
+//     you're done;
 //   · on a blind difficulty, your own packs in hindsight, once you're done.
 //
 // Against the CPU, the other seat is the server. Its seed is dealt the moment
@@ -112,7 +113,7 @@ export type SideView = {
   done: boolean
   score: number | null
   tier: string | null
-  /** Only once both sides are in. */
+  /** Yours once you're done, theirs once both sides are in. */
   lineup: Player[] | null
   captain: number | null
   /** Only once both sides are in, like the lineup. */
@@ -155,9 +156,9 @@ function side(row: Row, seat: Seat, reveal: boolean, you: Seat | null): SideView
     done: !!r,
     score: r ? r.score : null,
     tier: r ? r.tier : null,
-    lineup: reveal && r ? r.lineup : null,
-    captain: reveal && r ? r.captain : null,
-    chem: reveal && r ? (r.chem ?? null) : null,
+    lineup: (reveal || you === seat) && r ? r.lineup : null,
+    captain: (reveal || you === seat) && r ? r.captain : null,
+    chem: (reveal || you === seat) && r ? (r.chem ?? null) : null,
     battlePoints: reveal && r?.battles ? r.battles[seat] : null,
     missed: you === seat ? (r?.missed ?? null) : null,
   }
@@ -390,7 +391,8 @@ export async function lockVersusSeat(
   id: string,
   userId: string | null,
   key: unknown,
-  rawPicks: unknown
+  rawPicks: unknown,
+  open = false
 ): Promise<{ ok: true; lock: BlindLock } | Fail> {
   const row = await load(id)
   if (!row) return { ok: false, error: 'No such challenge.', status: 404 }
@@ -403,7 +405,7 @@ export async function lockVersusSeat(
 
   const picks = rawPicks == null ? null : parseLockPicks(rawPicks)
   if (rawPicks != null && !picks) return { ok: false, error: 'That lineup is incomplete.' }
-  return lockBlindPicks(blindRun(seed, parsed, seat), seed, parsed, picks)
+  return lockBlindPicks(blindRun(seed, parsed, seat), seed, parsed, picks, open)
 }
 
 /** Both results with the Battles paid. Counted from `before`, so two seats

@@ -15,15 +15,16 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { SALARY_CAP, formatLine, tierFor, type BlindLock } from '@/lib/packEmpire/rules'
+import { SALARY_CAP, formatLine, isBlind, lineupScore, tierFor, type BlindLock, type Player } from '@/lib/packEmpire/rules'
 import type { VersusView } from '@/lib/packEmpire/versus'
 import { BattleResults } from '../Battles'
 import { CaptainDraft, type DraftDone, type DraftPick } from '../CaptainDraft'
 import { DeleteGame } from '../GameList'
-import { MissedPanel } from '../Missed'
 import { Bonds, LineupSheet } from '../cards'
 import { storageChanged, useStored } from '../clientStore'
+import { DraftReport, PackBoard } from '../report'
 import { ShareButton, ShareLink } from '../share'
+import { Unveil } from '../unveil'
 
 const keyName = (id: string) => `pe_vs_key_${id}`
 
@@ -137,8 +138,8 @@ export function VersusRoom({
   )
 
   const lockPicks = useCallback(
-    async (picks: DraftPick[] | null) => {
-      const out = await call({ action: 'lock', id, picks, key })
+    async (picks: DraftPick[] | null, open: boolean) => {
+      const out = await call({ action: 'lock', id, picks, key, open })
       return out.lock as BlindLock
     },
     [id, key]
@@ -147,6 +148,8 @@ export function VersusRoom({
   // Held on to until it saves, so a dropped connection on the last pick is a
   // retry rather than a lost eleven.
   const [unsent, setUnsent] = useState<DraftDone | null>(null)
+  /** A blind lineup as the table held it, until the final reveal has played. */
+  const [unveil, setUnveil] = useState<(Player | null)[] | null>(null)
 
   const onDone = useCallback(
     async (run: DraftDone) => {
@@ -156,6 +159,7 @@ export function VersusRoom({
         const out = await call({ action: 'submit', id, picks: run.picks, key })
         setView(out.view)
         setUnsent(null)
+        if (isBlind(out.view.difficulty)) setUnveil(run.lineup)
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Your lineup did not save.')
       }
@@ -214,6 +218,26 @@ export function VersusRoom({
 
   const even = view.format === 'even'
   const battled = !!view.battles?.length
+  const reveal =
+    unveil && mine?.lineup ? (
+      <Unveil
+        lineup={mine.lineup}
+        table={unveil}
+        captain={mine.captain}
+        chem={mine.chem}
+        score={lineupScore(mine.lineup) + (mine.chem?.total ?? 0)}
+        even={even}
+        action={both ? 'See The Result' : 'Continue'}
+        onClose={() => setUnveil(null)}
+      />
+    ) : null
+  const report =
+    mine?.lineup && mine.missed ? (
+      <>
+        {mine.chem && <DraftReport lineup={mine.lineup} chem={mine.chem} captain={mine.captain} missed={mine.missed} />}
+        <PackBoard missed={mine.missed} battled={battled} />
+      </>
+    ) : null
 
   // ── Both in: the result ───────────────────────────────────────
   if (both) {
@@ -292,11 +316,12 @@ export function VersusRoom({
                 totalColor={even ? undefined : tierFor(total).color}
                 captain={seat.captain}
               />
-              {seat.chem && <Bonds chem={seat.chem} />}
+              {seat.chem && !(report && seat === mine) && <Bonds chem={seat.chem} lineup={seat.lineup ?? undefined} />}
             </div>
           ))}
         </div>
-        {mine?.missed && <MissedPanel missed={mine.missed} battled={battled} />}
+        {report}
+        {reveal}
       </div>
     )
   }
@@ -496,7 +521,8 @@ export function VersusRoom({
         {battled && <div className="pe-recap-lbl pe-note">Before Battles</div>}
         <p className="pe-recap-post">{opponentLine} This page updates by itself.</p>
       </div>
-      {mine?.missed && <MissedPanel missed={mine.missed} battled={battled} />}
+      {report}
+      {reveal}
       {view.you === 'host' && (!view.guest.name || view.reserved) && (
         <div className="pe-panel">
           <div className="pe-kicker">Send the link</div>

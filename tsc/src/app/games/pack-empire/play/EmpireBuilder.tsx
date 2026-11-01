@@ -10,7 +10,8 @@
 // Four difficulties, each its own board. On the two blind ones the browser
 // never holds the numbers of a card you kept: posting the run is what turns it
 // over, and that post is final, so a player signed out gives a name first and
-// sees the score after. The recap then says what was left in the packs.
+// sees the score after. The cards then turn over in the final reveal (see
+// unveil.tsx), and the recap says what was left in the packs.
 
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
@@ -39,9 +40,10 @@ import {
 import { CaptainDraft, type DraftDone } from '../CaptainDraft'
 import { DifficultyPicker, DifficultyTabs } from '../Difficulty'
 import { GuestName } from '../GuestName'
-import { MissedPanel } from '../Missed'
-import { Bonds, Field, Ladder } from '../cards'
+import { Field, Ladder } from '../cards'
+import { DraftReport, PackBoard } from '../report'
 import { easeClimb, useCountUp } from '../stage'
+import { Unveil } from '../unveil'
 import { storageChanged, useStored } from '../clientStore'
 
 const SAVE_KEYS: Record<Difficulty, string> = {
@@ -91,6 +93,8 @@ export function EmpireBuilder({ signedIn, initial }: { signedIn: boolean; initia
   const [shared, setShared] = useState<'copied' | null>(null)
   const [nameError, setNameError] = useState<string | null>(null)
   const [reveal, setReveal] = useState<RunReveal | null>(null)
+  /** The final reveal has played, or been skipped. */
+  const [unveiled, setUnveiled] = useState(false)
   const stored = useStored(DIFF_KEY)
   const [chosen, setChosen] = useState<Difficulty | null>(initial ?? null)
   const difficulty = chosen ?? readDifficulty(stored)
@@ -153,6 +157,7 @@ export function EmpireBuilder({ signedIn, initial }: { signedIn: boolean; initia
     setShared(null)
     setNameError(null)
     setReveal(null)
+    setUnveiled(false)
     setRound((n) => n + 1)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -211,19 +216,39 @@ export function EmpireBuilder({ signedIn, initial }: { signedIn: boolean; initia
     )
   }
 
+  const placed = post && typeof post === 'object' && post.ok && post.rank != null ? post : null
   return (
-    <Recap
-      key={reveal ? 'revealed' : 'open'}
-      run={reveal ? { ...run, lineup: reveal.lineup, score: reveal.score } : run}
-      reveal={reveal}
-      post={post}
-      shared={shared}
-      signedIn={signedIn}
-      nameError={nameError}
-      onGuestName={postAsGuest}
-      onAgain={again}
-      onShare={share}
-    />
+    <>
+      <Recap
+        key={reveal ? 'revealed' : 'open'}
+        run={reveal ? { ...run, lineup: reveal.lineup, score: reveal.score } : run}
+        reveal={reveal}
+        post={post}
+        shared={shared}
+        signedIn={signedIn}
+        nameError={nameError}
+        onGuestName={postAsGuest}
+        onAgain={again}
+        onShare={share}
+      />
+      {reveal && !unveiled && (
+        <Unveil
+          lineup={reveal.lineup}
+          table={run.lineup}
+          captain={run.captain}
+          chem={reveal.chem}
+          score={reveal.score}
+          line={
+            placed && (
+              <>
+                <b>{ordinal(placed.rank as number)}</b> of {(placed.total ?? placed.rank)?.toLocaleString()} on the board
+              </>
+            )
+          }
+          onClose={() => setUnveiled(true)}
+        />
+      )}
+    </>
   )
 }
 
@@ -309,7 +334,8 @@ function Recap({
   onAgain: () => void
   onShare: () => void
 }) {
-  const shown = useCountUp(run.score, climbMs(run.score), 0, easeClimb)
+  // A blind run has just had the final reveal, so its number is already in.
+  const shown = useCountUp(run.score, climbMs(run.score), reveal ? run.score : 0, easeClimb)
   const landed = shown === run.score
   const tier = tierFor(shown)
   const capped = difficultyFromSeed(run.seed) === 'cap'
@@ -385,27 +411,38 @@ function Recap({
         </div>
       </div>
 
-      <div className="pe-recap-grid">
-        <div className="pe-turf">
-          <Field
-            lineup={run.lineup as (Player | null)[]}
-            view={(i) => ({
-              clickable: false,
-              captain: i === run.captain,
-            })}
-          />
-        </div>
-        <Ladder score={shown} climb landed={landed} />
-      </div>
-
-      {chem && (
-        <div className="pe-panel pe-recap-chem">
-          <div className="pe-kicker">Chemistry</div>
-          <Bonds chem={chem} />
+      {chem ? (
+        <DraftReport
+          lineup={run.lineup}
+          chem={chem}
+          captain={run.captain}
+          missed={reveal?.missed}
+          ladder={
+            reveal ? (
+              <div className="pe-rep-ladder">
+                <Ladder score={shown} />
+              </div>
+            ) : (
+              <Ladder score={shown} climb landed={landed} />
+            )
+          }
+        />
+      ) : (
+        <div className="pe-recap-grid">
+          <div className="pe-turf">
+            <Field
+              lineup={run.lineup as (Player | null)[]}
+              view={(i) => ({
+                clickable: false,
+                captain: i === run.captain,
+              })}
+            />
+          </div>
+          <Ladder score={shown} climb landed={landed} />
         </div>
       )}
 
-      {reveal?.missed && <MissedPanel missed={reveal.missed} />}
+      {reveal?.missed && <PackBoard missed={reveal.missed} />}
     </div>
   )
 }

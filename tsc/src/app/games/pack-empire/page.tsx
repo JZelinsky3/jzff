@@ -8,7 +8,7 @@ import { loadBoard, type BestRow } from '@/lib/minigames/leaderboard'
 import { peMeta } from '@/lib/packEmpire/meta'
 import { POOL, POOL_SIZE, cardWeight, playerById } from '@/lib/packEmpire/pool'
 import { parseSoloPicks } from '@/lib/packEmpire/solo'
-import { binderTotals, type BinderTotals } from '@/lib/packEmpire/binder'
+import { binderTotals, loadLeaders, type BinderTotals } from '@/lib/packEmpire/binder'
 import { loadFaces, type FaceMap } from '@/lib/packEmpire/faces'
 import { dayKey } from '@/lib/packEmpire/daily'
 import { ruleForDay } from '@/lib/packEmpire/dayRules'
@@ -25,6 +25,7 @@ import {
 import { Chevron } from '../MobileGameBar'
 import mobileStyles from '../mobile.module.css'
 import { Ladder, PackCard, RarityGem } from './cards'
+import { LeaderBoards } from './leaders'
 import { PeChrome, PeDock } from './chrome'
 import { peFonts } from './fonts'
 import { MODES, ModeGlyph, ModeMark } from './modes'
@@ -243,6 +244,7 @@ export default async function PackEmpireHome() {
 
   const binder = user ? await binderTotals(user.id).catch(() => null) : null
   const leaders = mobile ? undefined : await runLeaders(top).catch(() => new Map<string, Player>())
+  const standings = await loadLeaders().catch(() => null)
 
   const cards = showcase()
   const normal = oddsBySlot(SOLO_WEIGHTS.normal)
@@ -370,6 +372,16 @@ export default async function PackEmpireHome() {
             </div>
             <BinderStrip totals={binder} />
           </section>
+
+          {standings && (
+            <section className="pe-sec">
+              <div className="pe-sec-head">
+                <span className="pe-sec-num">§ 06 · Pulls</span>
+                <span className="pe-sec-title">Best In The Binder</span>
+              </div>
+              <LeaderBoards data={standings} />
+            </section>
+          )}
         </div>
 
         <PeDock signedIn={!!user} />
@@ -497,6 +509,16 @@ export default async function PackEmpireHome() {
           </div>
           <BinderStrip totals={binder} />
         </section>
+
+        {standings && (
+          <section className="pe-sec">
+            <div className="pe-sec-head">
+              <span className="pe-sec-num">§ 06 · Pulls</span>
+              <span className="pe-sec-title">Best In The Binder</span>
+            </div>
+            <LeaderBoards data={standings} />
+          </section>
+        )}
 
         <div className="pe-soon">
           <span className="pe-chip">In development</span>
