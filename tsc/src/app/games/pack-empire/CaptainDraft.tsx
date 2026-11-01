@@ -9,8 +9,10 @@
 //   3. Five cards a pack, face down. Flip them, keep one.
 //
 // On Range and Ball Knower the server masks every card and the total stays
-// hidden until the lineup is locked. An Even Versus skips step one: there's no
-// captain, the seat just sits down on the shared seed.
+// hidden until the lineup is locked. Keeping a card puts the pick on record and
+// turns over the four you passed on; yours stays hidden and goes down with a
+// second tap. An Even Versus skips step one: there's no captain, the seat just
+// sits down on the shared seed.
 //
 // The captain is a commitment: the server signs it into the seed before a
 // single pack is dealt, so it can't be moved after a look at the packs.
@@ -19,6 +21,7 @@
 // players), so a refresh or a dropped connection puts you back at the table
 // rather than throwing away an immortal. Nothing in it is worth editing: the
 // board re-deals every pack from the seed and refuses a pick that isn't in it.
+// A blind run's picks are also on the server, and those win over this device's.
 //
 // A saved run can outlive its deal: a seed is signed with the pool it was
 // dealt from, so when the pool changes, the server stops recognising it. The
@@ -26,7 +29,7 @@
 // leaving a half-built lineup nobody can finish. Empire Builder can also be
 // started over by hand; a Versus seat can't, the seed is the commitment.
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   SALARY_CAP,
   SLOTS,
@@ -40,6 +43,7 @@ import {
   lineupScore,
   signingPrice,
   tierFor,
+  type BlindLock,
   type Difficulty,
   type Player,
 } from '@/lib/packEmpire/rules'
@@ -106,6 +110,17 @@ async function dealPack(seed: string, slot: number, taken: string[]): Promise<Pl
   return body.cards as Player[]
 }
 
+async function lockOnDeal(seed: string, picks: DraftPick[] | null): Promise<BlindLock> {
+  const res = await fetch('/api/games/pack-empire/deal/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'lock', seed, picks }),
+  })
+  const body = await res.json().catch(() => null)
+  if (!res.ok || !body?.ok) throw new Error(body?.error ?? 'That pick did not save. Try again.')
+  return body.lock as BlindLock
+}
+
 type DraftProps = {
   /** Where a run in progress is kept on this device. */
   saveKey: string
@@ -128,6 +143,9 @@ type DraftProps = {
   even?: boolean
   /** An Even Versus's three Battles. */
   battles?: string[] | null
+  /** Puts a blind pick on record, or with null reads what's there. A Versus
+      seat's goes through its room, because an Even seed is two seats'. */
+  lock?: (picks: DraftPick[] | null) => Promise<BlindLock>
 }
 
 /** A blind draft's stand-in for the total: on Range the sum of what its cards
@@ -261,6 +279,7 @@ function LiveDraft({
   difficulty = 'open',
   even = false,
   battles = null,
+  lock,
 }: DraftProps) {
   const [start] = useState(() => startingState(saveKey, fixedSeed))
   const [captain, setCaptain] = useState<number | null>(start.captain)
@@ -275,7 +294,10 @@ function LiveDraft({
   const [stale, setStale] = useState(false)
   /** First tap on Start over arms it; the second throws the run away. */
   const [armed, setArmed] = useState(false)
-  const { stage, landing, open, tear, reveal, revealAll, skip, pick, dismiss, settle } = usePackStage()
+  const { stage, landing, open, tear, reveal, revealAll, skip, pick, keep, dismiss, settle } = usePackStage()
+  const blind = isBlind(difficulty)
+  /** The eleventh pick has gone in, so `onDone` is on its way. */
+  const finished = useRef(false)
 
   // Check a seed brought back from storage (or held by a Versus seat) once.
   useEffect(() => {
@@ -294,6 +316,47 @@ function LiveDraft({
     const t = window.setTimeout(() => setArmed(false), 3500)
     return () => window.clearTimeout(t)
   }, [armed])
+
+  const sendLock = useCallback(
+    (s: string, list: DraftPick[] | null) => (lock ? lock(list) : lockOnDeal(s, list)),
+    [lock]
+  )
+
+  // What's on record stands: put the table back to it.
+  const adopt = useCallback(
+    (s: string, out: BlindLock) => {
+      setPicks(out.picks)
+      setLineup(out.lineup)
+      setRestored(true)
+      writeSaved(saveKey, { seed: s, captain: captainFromSeed(s), picks: out.picks, lineup: out.lineup, at: Date.now() })
+    },
+    [saveKey]
+  )
+
+  // A Versus seat picked up on another device, or a pick that landed just as
+  // the page went away.
+  useEffect(() => {
+    if (!blind || !start.seed) return
+    let gone = false
+    const s = start.seed
+    sendLock(s, null)
+      .then((out) => {
+        if (!gone && out.picks.length > start.picks.length) adopt(s, out)
+      })
+      .catch(() => {})
+    return () => {
+      gone = true
+    }
+  }, [blind, start, sendLock, adopt])
+
+  // A blind pick is on record before its card lands, so a refresh on the last
+  // pack comes back with all eleven in and nothing left to open.
+  useEffect(() => {
+    if (!blind || !seed || stage || finished.current || picks.length !== SLOT_COUNT || lineup.some((p) => !p)) return
+    finished.current = true
+    writeSaved(saveKey, null)
+    onDone({ seed, captain, picks, lineup: lineup as Player[], score: 0, spent: 0 })
+  }, [blind, seed, stage, picks, lineup, captain, saveKey, onDone])
 
   const restart = useCallback(() => {
     writeSaved(saveKey, null)
@@ -375,16 +438,10 @@ function LiveDraft({
     [seed, stage, lineup, picks, open]
   )
 
-  const onCard = useCallback(
-    (i: number) => {
-      if (!stage?.cards || (captain == null && !even) || !seed) return
-      if (!stage.revealed[i]) {
-        reveal(i)
-        return
-      }
+  const sign = useCallback(
+    (i: number, price: number) => {
+      if (!stage || !seed) return
       const slot = stage.slot
-      const price = capped ? signingPrice(stage.cards[i], stage.cards, budget - spent) : 0
-      if (price == null) return
       let done: DraftDone | null = null
       pick(i, (card) => {
         const nextLineup = [...lineup]
@@ -395,6 +452,7 @@ function LiveDraft({
         setPicks(nextPicks)
         setSpent(nextSpent)
         if (nextPicks.length === SLOT_COUNT) {
+          finished.current = true
           writeSaved(saveKey, null)
           const full = nextLineup as Player[]
           const total = lineupScore(full) + (chemShown ? chemistryFor(full, true).total : 0)
@@ -408,7 +466,54 @@ function LiveDraft({
         if (landed && run) window.setTimeout(() => onDone(run), 900)
       })
     },
-    [stage, captain, even, seed, reveal, pick, lineup, picks, saveKey, onDone, capped, budget, spent, chemShown]
+    [stage, seed, captain, pick, lineup, picks, spent, saveKey, onDone, chemShown]
+  )
+
+  /** A blind pick goes on record here, before the pack turns: saved on this
+      device at the same moment, so a refresh can't offer the pack again. */
+  const lockCard = useCallback(
+    (i: number) => {
+      if (!stage || !seed) return
+      const slot = stage.slot
+      keep(i, async (card) => {
+        const wanted = [...picks, { slot, id: card.id }]
+        const out = await sendLock(seed, wanted)
+        if (!out.seen || out.picks.length !== wanted.length) {
+          adopt(seed, out)
+          return null
+        }
+        writeSaved(saveKey, { seed, captain, picks: out.picks, lineup: out.lineup, at: Date.now() })
+        return { kept: out.seen.kept, cards: out.seen.cards }
+      })
+    },
+    [stage, seed, captain, picks, keep, sendLock, adopt, saveKey]
+  )
+
+  const nextPack = useCallback(() => {
+    if (!stage?.cards || !stage.turned) return
+    sign(stage.cards.findIndex((c) => c.id === stage.kept), 0)
+  }, [stage, sign])
+
+  const onCard = useCallback(
+    (i: number) => {
+      if (!stage?.cards || (captain == null && !even) || !seed) return
+      if (stage.kept) {
+        if (stage.cards[i].id === stage.kept) nextPack()
+        return
+      }
+      if (!stage.revealed[i]) {
+        reveal(i)
+        return
+      }
+      if (blind) {
+        lockCard(i)
+        return
+      }
+      const price = capped ? signingPrice(stage.cards[i], stage.cards, budget - spent) : 0
+      if (price == null) return
+      sign(i, price)
+    },
+    [stage, captain, even, seed, reveal, blind, lockCard, nextPack, sign, capped, budget, spent]
   )
 
   const choosing = !seed && !even
@@ -523,6 +628,8 @@ function LiveDraft({
           blockedFor={capped ? (p) => (priceOf(p) == null ? 'Over cap' : null) : undefined}
           note={skint ? 'You can’t afford anyone here, so the cheapest card signs for free' : null}
           clock={battles?.length ? <BattleNote ids={battles} /> : null}
+          onNext={nextPack}
+          nextLabel={picks.length + 1 === SLOT_COUNT ? 'Lock in your eleven' : 'Next pack'}
         />
       )}
     </div>

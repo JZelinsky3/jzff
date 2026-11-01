@@ -108,7 +108,7 @@ function KeyBody({ score, flavor }: { score: number; flavor: KeyFlavor }) {
           <p className="pe-key-p">
             The real value is somewhere inside the range, and rarely in the middle.{' '}
             {flavor.daily ? 'Some ranges are tight and some barely tell you anything. ' : ''}Rarity and stats stay hidden until
-            your lineup is locked.
+            your lineup is locked.{flavor.daily ? '' : ' Keep a card and the other four turn over, so you see what you passed on.'}
           </p>
         </section>
       )}
@@ -116,8 +116,8 @@ function KeyBody({ score, flavor }: { score: number; flavor: KeyFlavor }) {
         <section className="pe-key-sec">
           <h3 className="pe-key-h">Ball Knower</h3>
           <p className="pe-key-p">
-            A name and a season. You have to know what he did that year and who he played for. Everything turns over when
-            your lineup is locked.
+            A name and a season. You have to know what he did that year and who he played for. Your eleven turn over when
+            your lineup is locked.{flavor.daily ? '' : ' Keep a card and the other four turn over, so you see what you passed on.'}
           </p>
         </section>
       )}

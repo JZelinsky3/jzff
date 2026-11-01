@@ -8,7 +8,8 @@
 //   · your own seat's seed, so you can draft (and resume on another device);
 //   · the other side's SCORE once they have finished, so a challenger knows
 //     the number to beat, which is the fun of being second;
-//   · both lineups only once both are in.
+//   · both lineups only once both are in;
+//   · on a blind difficulty, your own packs in hindsight, once you're done.
 //
 // Against the CPU, the other seat is the server. Its seed is dealt the moment
 // the challenge opens, before you open a pack, and it keeps the best card in
@@ -32,21 +33,26 @@
 import { randomInt } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { battlesFrom, drawBattles, settleBattles, type BattleOutcome } from './battles'
+import { blindRun, lockBlindPicks, matchesLocks, parseLockPicks } from './blindPicks'
 import { CPU_SKILL, cpuEye, newCaptainSeed, newEvenSeed, priced, readSeed } from './deal'
 import { friendOf } from '@/lib/friends'
 import { hashKey, nameForUser, cleanGuestName, newId, isId } from './people'
 import { recordSoloRun } from './binder'
+import { missReport } from './missed'
 import { replaySolo, seedPack, type SoloPick } from './solo'
 import {
   SALARY_CAP,
   SLOT_COUNT,
   chemistryCounts,
   chemistryPreview,
+  isBlind,
   isDifficulty,
   signingPrice,
   tierFor,
+  type BlindLock,
   type Chemistry,
   type Difficulty,
+  type Missed,
   type Player,
 } from './rules'
 
@@ -69,6 +75,8 @@ export type VersusResult = {
   captain: number | null
   picks: SoloPick[]
   at: string
+  /** A blind seat's run in hindsight. Only ever shown to that seat. */
+  missed?: Missed
 }
 
 type Row = {
@@ -111,6 +119,8 @@ export type SideView = {
   chem: Chemistry | null
   /** What Battles added to the score, once both sides are in. */
   battlePoints: number | null
+  /** Your own seat's blind run in hindsight. */
+  missed: Missed | null
 }
 
 export type VersusView = {
@@ -137,7 +147,7 @@ export type VersusView = {
   outcome: BattleOutcome | null
 }
 
-function side(row: Row, seat: Seat, reveal: boolean): SideView {
+function side(row: Row, seat: Seat, reveal: boolean, you: Seat | null): SideView {
   const r = seat === 'host' ? row.host_result : row.guest_result
   return {
     name: seat === 'host' ? row.host_name : row.guest_name,
@@ -149,6 +159,7 @@ function side(row: Row, seat: Seat, reveal: boolean): SideView {
     captain: reveal && r ? r.captain : null,
     chem: reveal && r ? (r.chem ?? null) : null,
     battlePoints: reveal && r?.battles ? r.battles[seat] : null,
+    missed: you === seat ? (r?.missed ?? null) : null,
   }
 }
 
@@ -167,8 +178,8 @@ function view(row: Row, you: Seat | null, viewerId: string | null): VersusView {
     id: row.id,
     status: row.status,
     createdAt: row.created_at,
-    host: side(row, 'host', both),
-    guest: side(row, 'guest', both),
+    host: side(row, 'host', both, you),
+    guest: side(row, 'guest', both, you),
     you,
     yourSeed: you === 'host' ? row.host_seed : you === 'guest' ? row.guest_seed : null,
     canJoin: you == null && empty && (!row.invited_id || row.invited_id === viewerId),
@@ -374,6 +385,27 @@ export async function startVersusSeat(
   return { ok: true, seed }
 }
 
+/** A blind seat's pick going on record. Null `rawPicks` reads what's there. */
+export async function lockVersusSeat(
+  id: string,
+  userId: string | null,
+  key: unknown,
+  rawPicks: unknown
+): Promise<{ ok: true; lock: BlindLock } | Fail> {
+  const row = await load(id)
+  if (!row) return { ok: false, error: 'No such challenge.', status: 404 }
+  const seat = seatFor(row, userId, key)
+  if (!seat) return { ok: false, error: 'This is not your seat.', status: 403 }
+
+  const seed = seat === 'host' ? row.host_seed : row.guest_seed
+  const parsed = seed ? readSeed(seed) : null
+  if (!seed || !parsed || !isBlind(parsed.diff)) return { ok: false, error: 'That draft has nothing to lock.' }
+
+  const picks = rawPicks == null ? null : parseLockPicks(rawPicks)
+  if (rawPicks != null && !picks) return { ok: false, error: 'That lineup is incomplete.' }
+  return lockBlindPicks(blindRun(seed, parsed, seat), seed, parsed, picks)
+}
+
 /** Both results with the Battles paid. Counted from `before`, so two seats
     landing together write the same numbers rather than paying twice. */
 function withBattles(ids: string[], host: VersusResult, guest: VersusResult): [VersusResult, VersusResult] {
@@ -411,6 +443,13 @@ export async function submitVersusSeat(
 
   const run = replaySolo(seed, picks)
   if (!run.ok) return { ok: false, error: run.error }
+  const blind = isBlind(run.diff)
+  if (blind) {
+    const parsed = readSeed(seed)
+    if (!parsed || !(await matchesLocks(blindRun(seed, parsed, seat), picks))) {
+      return { ok: false, error: 'Those are not the picks you locked in.' }
+    }
+  }
 
   const result: VersusResult = {
     lineup: run.lineup,
@@ -421,6 +460,7 @@ export async function submitVersusSeat(
     captain: run.captain,
     picks,
     at: new Date().toISOString(),
+    ...(blind ? { missed: missReport(run.packs, run.score) } : {}),
   }
 
   let other = seat === 'host' ? row.guest_result : row.host_result

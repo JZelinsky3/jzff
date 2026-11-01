@@ -20,7 +20,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyRun } from '@/lib/minigames/verifyRun'
 import { recordSoloRun } from '@/lib/packEmpire/binder'
 import { cleanGuestName, guestNameTaken, hashKey } from '@/lib/packEmpire/people'
-import { difficultyForMode, type Chemistry, type Player } from '@/lib/packEmpire/rules'
+import { difficultyForMode, type Chemistry, type Missed, type Player } from '@/lib/packEmpire/rules'
 import { parseSoloPicks } from '@/lib/packEmpire/solo'
 import {
   isGameId,
@@ -94,7 +94,7 @@ type Outcome = {
   /** Pack Empire: cards from this run's packs that were new to the binder. */
   newCards?: number
   /** Pack Empire, a blind run: its real lineup, shown for the first time. */
-  reveal?: { lineup: Player[]; base: number; chem: Chemistry | null; score: number }
+  reveal?: { lineup: Player[]; base: number; chem: Chemistry | null; score: number; missed: Missed }
 }
 
 export async function POST(req: NextRequest) {

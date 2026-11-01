@@ -60,7 +60,14 @@ export type StageState = {
   /** Big cards waiting for their walkout after a Reveal All. */
   queue: number[]
   flight: Flight | null
+  /** A blind draft: the card you kept, and whether the pack has turned over
+      around it yet. It stays masked; the other four show what they were. */
+  kept?: string | null
+  turned?: boolean
 }
+
+/** What a blind pack turns into: `kept` stays masked, the rest come back real. */
+export type Turned = { kept: string; cards: Player[] }
 
 /** A slot whose new card is in the air (hidden) or has just landed (pops). */
 export type Landing = { slot: number; phase: 'incoming' | 'landed' }
@@ -78,6 +85,10 @@ const NEXT_STEP = { charge: 'team', team: 'stat', stat: 'flip' } as const
 const HOLD_MS = 200
 const FLIGHT_MS = 420
 const LANDED_MS = 750
+
+/** A card already face up swings edge-on, and its real face goes on out of sight. */
+const TURN_MS = 380
+const RIPPLE_MS = 130
 
 /** The light in a pack whose cards are hidden. One colour for every blind
     pack, whatever's in it: a rarity's colour here would be a tell, and the
@@ -381,6 +392,42 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
     [stage, later]
   )
 
+  /**
+   * Keep card i on a blind draft. `lock` puts the pick on record, and only then
+   * does the server hand back the pack: the card you kept still masked, the other
+   * four as they really are. `pick` then takes it to its slot, when you're ready.
+   * Null from `lock` means the table was out of step and has been put right, so
+   * there's nothing left to show here.
+   */
+  const keep = useCallback(
+    async (i: number, lock: (card: Player) => Promise<Turned | null>) => {
+      const s = stage
+      if (!s?.cards || s.kept || s.pickedId || s.walkout || s.queue.length || busy.current) return
+      busy.current = true
+      setStage({ ...s, kept: s.cards[i].id, error: null })
+      try {
+        const out = await lock(s.cards[i])
+        if (!out) {
+          setStage(null)
+          return
+        }
+        preloadFaces(out.cards, uploaded)
+        const faceUp = s.revealed.some((r, n) => r && s.cards?.[n].id !== out.kept)
+        setStage((cur) => (cur ? { ...cur, kept: out.kept, revealed: out.cards.map((c) => c.id === out.kept) } : cur))
+        if (faceUp) await wait(TURN_MS)
+        setStage((cur) => (cur ? { ...cur, cards: out.cards, turned: true } : cur))
+        out.cards.forEach((c, n) => {
+          if (c.id !== out.kept) later(() => flip(s.slot, n), n * RIPPLE_MS)
+        })
+      } catch (e) {
+        setStage((cur) => (cur ? { ...cur, kept: null, error: e instanceof Error ? e.message : 'That pick did not save.' } : cur))
+      } finally {
+        busy.current = false
+      }
+    },
+    [stage, uploaded, later, flip]
+  )
+
   const dismiss = useCallback(() => setStage(null), [])
 
   /** The lineup as the table should show it: a card still in the air hasn't
@@ -395,7 +442,7 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
     [landing]
   )
 
-  return { stage, landing, open, tear, reveal, revealAll, skip, pick, dismiss, settle }
+  return { stage, landing, open, tear, reveal, revealAll, skip, pick, keep, dismiss, settle }
 }
 
 /** Over the stage: 'Captain pack' (with the patch), a League boost. */
@@ -506,6 +553,8 @@ export function PackStage({
   note = null,
   clock = null,
   plainCanton = false,
+  onNext,
+  nextLabel = 'Next pack',
 }: {
   stage: StageState
   tag?: PackTag
@@ -528,6 +577,9 @@ export function PackStage({
   clock?: React.ReactNode
   /** No Canton Pull or Hall: see usePackStage. */
   plainCanton?: boolean
+  /** A blind pack that's turned over: on to the table. */
+  onNext?: () => void
+  nextLabel?: string
 }) {
   const root = useRef<HTMLDivElement>(null)
   useGyroTilt(root)
@@ -571,6 +623,7 @@ export function PackStage({
   else if (woLook) status = `${woLook.label} pull`
   else if (stage.queue.length) status = 'Revealing'
   else if (stage.pickedId) status = 'Signed'
+  else if (stage.kept) status = stage.turned ? 'The four you passed on' : 'Locking it in'
   else if (note) status = note
   else if (wild?.note) status = wild.note
   else if (shown > 0) status = `${shown} of ${cards.length} revealed · tap one to keep him`
@@ -669,14 +722,15 @@ export function PackStage({
                   revealed={stage.revealed[i]}
                   picked={isPick}
                   rejected={isRej}
-                  selectable={!stage.pickedId && !w && !stage.queue.length}
+                  kept={stage.kept === card.id && !stage.pickedId}
+                  selectable={!stage.pickedId && !stage.kept && !w && !stage.queue.length}
                   charging={charging}
                   burst={charging && w?.step === 'flip'}
-                  chem={stage.revealed[i] && chemFor ? chemFor(card) : null}
+                  chem={stage.revealed[i] && chemFor && !stage.kept ? chemFor(card) : null}
                   chip={stage.revealed[i] && chipFor ? chipFor(card) : null}
                   blocked={blockedFor?.(card) ?? null}
                   onClick={() => onCard(i)}
-                  disabled={!!stage.pickedId || !!w}
+                  disabled={!!stage.pickedId || !!w || (!!stage.kept && (!stage.turned || stage.kept !== card.id))}
                 />
               )
             })}
@@ -684,9 +738,14 @@ export function PackStage({
         )}
 
         <div className="pe-stage-foot">
-          {open && !stage.pickedId && !w && !stage.queue.length && hidden > 0 && (
+          {open && !stage.pickedId && !stage.kept && !w && !stage.queue.length && hidden > 0 && (
             <button type="button" className="pe-btn pe-btn--ghost" onClick={onRevealAll}>
               Reveal all {hidden}
+            </button>
+          )}
+          {stage.turned && !stage.pickedId && (
+            <button type="button" className="pe-btn" onClick={onNext}>
+              {nextLabel}
             </button>
           )}
           {!cards && stage.error && (

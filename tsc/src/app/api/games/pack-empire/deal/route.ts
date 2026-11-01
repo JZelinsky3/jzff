@@ -3,6 +3,7 @@
 //   { action: 'start', captain, difficulty } -> { seed }
 //   { action: 'pack', seed, slot, taken }    -> { cards }
 //   { action: 'check', seed }                -> { live }
+//   { action: 'lock', seed, picks }          -> { lock }
 //
 // Empire Builder and Versus Challenge both draft through here. 'start' is the
 // commitment: the captain and the difficulty are signed into the seed, so
@@ -11,13 +12,18 @@
 // rerolls nothing. On a blind difficulty the cards are masked here, because
 // this is the last place they exist in full before they reach the browser.
 //
-// No account needed. Nothing is written; a run only reaches the board through
-// /api/games/runs, which re-deals the whole thing from the seed.
+// 'lock' is a blind run's pick going on record, which is what turns over the
+// four cards it passed on (see lib/packEmpire/blindPicks). An Even seed belongs
+// to two seats, so those lock through /api/games/pack-empire/versus instead.
+//
+// No account needed. Picks are all that's written; a run only reaches the board
+// through /api/games/runs, which re-deals the whole thing from the seed.
 
 import { NextResponse, type NextRequest } from 'next/server'
+import { blindRun, lockBlindPicks, parseLockPicks } from '@/lib/packEmpire/blindPicks'
 import { maskCard, newCaptainSeed, readSeed } from '@/lib/packEmpire/deal'
 import { seedPack } from '@/lib/packEmpire/solo'
-import { SLOT_COUNT, isDifficulty } from '@/lib/packEmpire/rules'
+import { SLOT_COUNT, isBlind, isDifficulty } from '@/lib/packEmpire/rules'
 
 export const dynamic = 'force-dynamic'
 
@@ -68,6 +74,19 @@ export async function POST(req: NextRequest) {
 
     const cards = seedPack(seed, parsed, slot as number, taken as string[]).map((c) => maskCard(c, parsed.diff))
     return NextResponse.json({ ok: true, cards }, { headers: NO_STORE })
+  }
+
+  if (body.action === 'lock') {
+    const seed = typeof body.seed === 'string' ? body.seed.trim().toUpperCase() : ''
+    const parsed = readSeed(seed)
+    if (!parsed) return bad('That run was not dealt here. Start a new one.')
+    if (!isBlind(parsed.diff) || parsed.even) return bad('That run has nothing to lock.')
+
+    const picks = body.picks == null ? null : parseLockPicks(body.picks)
+    if (body.picks != null && !picks) return bad('Malformed roster.')
+
+    const out = await lockBlindPicks(blindRun(seed, parsed), seed, parsed, picks)
+    return out.ok ? NextResponse.json({ ok: true, lock: out.lock }, { headers: NO_STORE }) : bad(out.error, out.status)
   }
 
   return bad('Unknown action.')

@@ -2275,6 +2275,16 @@ html:has(.pe-theme) body {
   transform: scale(0.9);
 }
 
+.pe-card.kept {
+  transform: translateY(-6px);
+  z-index: 5;
+}
+
+.pe-card.kept .pe-card-front {
+  border-color: var(--pe-amber);
+  box-shadow: 0 0 0 2px var(--pe-amber);
+}
+
 .pe-card:disabled {
   cursor: default;
 }
@@ -8501,6 +8511,89 @@ a.pe-row:hover {
 .pe-recap-chem {
   max-width: 760px;
   margin: 1.2rem auto 0;
+}
+
+/* What was left in the packs, under a blind run's recap. */
+.pe-miss {
+  max-width: 760px;
+  margin: 1.2rem auto 0;
+}
+
+.pe-miss-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0.7rem 0 0.8rem;
+}
+
+.pe-miss-stat b {
+  display: block;
+  font-family: var(--pe-display);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--pe-ink);
+}
+
+.pe-miss-stat span {
+  display: block;
+  margin-top: 0.15rem;
+  font-family: var(--pe-cond);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+.pe-miss-list {
+  list-style: none;
+  margin: 0.9rem 0 0;
+  padding: 0;
+}
+
+.pe-miss-row {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pe-miss-pos {
+  font-family: var(--pe-cond);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--pe-amber);
+}
+
+.pe-miss-who,
+.pe-miss-gap {
+  min-width: 0;
+  font-family: var(--pe-cond);
+}
+
+.pe-miss-who b,
+.pe-miss-gap b {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--pe-ink);
+}
+
+.pe-miss-who small,
+.pe-miss-gap small {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--pe-ink-mute);
+}
+
+.pe-miss-gap {
+  text-align: right;
+}
+
+.pe-miss-gap small {
+  color: var(--pe-red);
 }
 
 .pe-line-score small {

@@ -8,6 +8,7 @@
 //                                                              format = 'classic' or 'even')
 //   POST { action: 'join', id, name, key } -> { view }
 //   POST { action: 'start', id, captain, key } -> { seed }
+//   POST { action: 'lock', id, picks, key }    -> { lock }  (a blind seat's pick, see blindPicks)
 //   POST { action: 'submit', id, picks, key }  -> { view }
 //   POST { action: 'delete', id }          -> {}          (the host, while nobody has taken the seat)
 //
@@ -23,6 +24,7 @@ import {
   deleteVersus,
   getVersus,
   joinVersus,
+  lockVersusSeat,
   startVersusSeat,
   submitVersusSeat,
 } from '@/lib/packEmpire/versus'
@@ -73,6 +75,10 @@ export async function POST(req: NextRequest) {
     }
     case 'start': {
       const out = await startVersusSeat(id, userId, body.key, body.captain)
+      return out.ok ? reply(out) : reply(out, out.status ?? 400)
+    }
+    case 'lock': {
+      const out = await lockVersusSeat(id, userId, body.key, body.picks)
       return out.ok ? reply(out) : reply(out, out.status ?? 400)
     }
     case 'submit': {

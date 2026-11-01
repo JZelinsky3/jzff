@@ -558,6 +558,7 @@ export function PackCard({
   revealed,
   picked = false,
   rejected = false,
+  kept = false,
   selectable = false,
   charging = false,
   burst = false,
@@ -575,6 +576,8 @@ export function PackCard({
   revealed: boolean
   picked?: boolean
   rejected?: boolean
+  /** A blind pack that's turned over: the card you kept, still hidden. */
+  kept?: boolean
   selectable?: boolean
   /** Mid-walkout: lifted over the veil, shaking. */
   charging?: boolean
@@ -608,6 +611,7 @@ export function PackCard({
     revealed ? 'rev' : '',
     picked ? 'picked' : '',
     rejected ? 'rejected' : '',
+    kept ? 'kept' : '',
     revealed && selectable && !blocked ? 'selectable' : '',
     charging ? 'charging' : '',
     blocked && revealed ? 'blocked' : '',
@@ -639,7 +643,7 @@ export function PackCard({
         ? {
             type: 'button' as const,
             disabled,
-            'aria-label': label ?? (revealed ? `Take ${player.name}` : 'Reveal this card'),
+            'aria-label': label ?? (kept ? 'Next pack' : revealed ? `Take ${player.name}` : 'Reveal this card'),
           }
         : {})}
     >
@@ -673,7 +677,7 @@ export function PackCard({
                   <svg className="pe-gem" viewBox="0 0 24 24" aria-hidden>
                     <path d="M12 3.5 20.5 12 12 20.5 3.5 12z" fill="none" stroke="currentColor" strokeWidth="2.4" />
                   </svg>
-                  Hidden
+                  {kept ? 'Kept' : 'Hidden'}
                 </div>
               ) : (
                 <div className={`pe-cf-rlab ${player.rarity}`}>

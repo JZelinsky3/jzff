@@ -15,11 +15,12 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { SALARY_CAP, formatLine, tierFor } from '@/lib/packEmpire/rules'
+import { SALARY_CAP, formatLine, tierFor, type BlindLock } from '@/lib/packEmpire/rules'
 import type { VersusView } from '@/lib/packEmpire/versus'
 import { BattleResults } from '../Battles'
-import { CaptainDraft, type DraftDone } from '../CaptainDraft'
+import { CaptainDraft, type DraftDone, type DraftPick } from '../CaptainDraft'
 import { DeleteGame } from '../GameList'
+import { MissedPanel } from '../Missed'
 import { Bonds, LineupSheet } from '../cards'
 import { storageChanged, useStored } from '../clientStore'
 import { ShareButton, ShareLink } from '../share'
@@ -131,6 +132,14 @@ export function VersusRoom({
     async (captain: number) => {
       const out = await call({ action: 'start', id, captain, key })
       return out.seed as string
+    },
+    [id, key]
+  )
+
+  const lockPicks = useCallback(
+    async (picks: DraftPick[] | null) => {
+      const out = await call({ action: 'lock', id, picks, key })
+      return out.lock as BlindLock
     },
     [id, key]
   )
@@ -287,6 +296,7 @@ export function VersusRoom({
             </div>
           ))}
         </div>
+        {mine?.missed && <MissedPanel missed={mine.missed} battled={battled} />}
       </div>
     )
   }
@@ -468,6 +478,7 @@ export function VersusRoom({
           difficulty={view.difficulty}
           even={even}
           battles={view.battles}
+          lock={lockPicks}
         />
       </div>
     )
@@ -485,6 +496,7 @@ export function VersusRoom({
         {battled && <div className="pe-recap-lbl pe-note">Before Battles</div>}
         <p className="pe-recap-post">{opponentLine} This page updates by itself.</p>
       </div>
+      {mine?.missed && <MissedPanel missed={mine.missed} battled={battled} />}
       {view.you === 'host' && (!view.guest.name || view.reserved) && (
         <div className="pe-panel">
           <div className="pe-kicker">Send the link</div>

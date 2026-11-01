@@ -7,10 +7,10 @@
 // which re-deals every pack and derives the score itself. Signed out, the run
 // is banked on this device and claimed the moment you sign in.
 //
-// Three difficulties, each its own board. On the two blind ones the browser
-// never holds a card's numbers: posting the run is what turns it over, and that
-// post is final, so a player signed out gives a name first and sees the score
-// after.
+// Four difficulties, each its own board. On the two blind ones the browser
+// never holds the numbers of a card you kept: posting the run is what turns it
+// over, and that post is final, so a player signed out gives a name first and
+// sees the score after. The recap then says what was left in the packs.
 
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
@@ -39,6 +39,7 @@ import {
 import { CaptainDraft, type DraftDone } from '../CaptainDraft'
 import { DifficultyPicker, DifficultyTabs } from '../Difficulty'
 import { GuestName } from '../GuestName'
+import { MissedPanel } from '../Missed'
 import { Bonds, Field, Ladder } from '../cards'
 import { easeClimb, useCountUp } from '../stage'
 import { storageChanged, useStored } from '../clientStore'
@@ -403,6 +404,8 @@ function Recap({
           <Bonds chem={chem} />
         </div>
       )}
+
+      {reveal?.missed && <MissedPanel missed={reveal.missed} />}
     </div>
   )
 }

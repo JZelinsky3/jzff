@@ -30,8 +30,10 @@ import {
   rankScore as mvRankScore,
   type MvCard,
 } from './multiverse'
+import { matchesLocks } from '@/lib/packEmpire/blindPicks'
+import { missReport } from '@/lib/packEmpire/missed'
 import { parseSoloPicks, replaySolo, soloDisplay } from '@/lib/packEmpire/solo'
-import { difficultyForMode, isBlind, type Chemistry, type Player } from '@/lib/packEmpire/rules'
+import { difficultyForMode, isBlind, type Chemistry, type Missed, type Player } from '@/lib/packEmpire/rules'
 import type { GameId, RunDisplay } from './leaderboard'
 
 export type VerifiedRun = {
@@ -42,7 +44,7 @@ export type VerifiedRun = {
   /** Normalised choices, stored so any row can be re-verified later. */
   detail: unknown
   /** Pack Empire, a blind run: the real cards, seen for the first time. */
-  reveal?: { lineup: Player[]; base: number; chem: Chemistry | null; score: number }
+  reveal?: { lineup: Player[]; base: number; chem: Chemistry | null; score: number; missed: Missed }
 }
 
 export type VerifyResult =
@@ -315,7 +317,7 @@ async function verifyMultiverse(
  * the average lineup a player builds, which is the honest career number for
  * a game with no wins or losses in it.
  */
-function verifyPackEmpire(poolId: string, mode: string | null, seed: string, picks: unknown): VerifyResult {
+async function verifyPackEmpire(poolId: string, mode: string | null, seed: string, picks: unknown): Promise<VerifyResult> {
   if (poolId !== 'site') return { ok: false, status: 400, error: 'Pack Empire has one board.' }
   const parsed = parseSoloPicks(picks)
   if (!parsed) return { ok: false, status: 400, error: 'That lineup is incomplete.' }
@@ -326,6 +328,10 @@ function verifyPackEmpire(poolId: string, mode: string | null, seed: string, pic
   if (run.even || difficultyForMode(mode) !== run.diff) {
     return { ok: false, status: 400, error: 'That run was dealt for a different board.' }
   }
+  // A blind pack turns over once its pick is on record, so that's the pick.
+  if (isBlind(run.diff) && !(await matchesLocks(seed, parsed))) {
+    return { ok: false, status: 400, error: 'Those are not the picks you locked in.' }
+  }
   return {
     ok: true,
     score: run.score,
@@ -334,7 +340,17 @@ function verifyPackEmpire(poolId: string, mode: string | null, seed: string, pic
     display: soloDisplay(run.score),
     detail: { captain: run.captain, picks: parsed },
     // A blind run hasn't seen its own numbers yet: this is where it does.
-    ...(!isBlind(run.diff) ? {} : { reveal: { lineup: run.lineup, base: run.base, chem: run.chem, score: run.score } }),
+    ...(!isBlind(run.diff)
+      ? {}
+      : {
+          reveal: {
+            lineup: run.lineup,
+            base: run.base,
+            chem: run.chem,
+            score: run.score,
+            missed: missReport(run.packs, run.score),
+          },
+        }),
   }
 }
 

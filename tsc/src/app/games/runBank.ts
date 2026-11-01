@@ -9,7 +9,7 @@
 // The bank holds CHOICES, never scores. There is nothing in localStorage
 // worth editing: a tampered bank just fails to replay.
 
-import type { Chemistry, Player } from '@/lib/packEmpire/rules'
+import type { Chemistry, Missed, Player } from '@/lib/packEmpire/rules'
 
 export type PendingRun = {
   game: string
@@ -43,7 +43,7 @@ export type PostOutcome = {
   reveal?: RunReveal
 }
 
-export type RunReveal = { lineup: Player[]; base: number; chem: Chemistry | null; score: number }
+export type RunReveal = { lineup: Player[]; base: number; chem: Chemistry | null; score: number; missed?: Missed }
 
 const KEY = 'tsc_game_bank_v1'
 

@@ -75,16 +75,45 @@ export type Player = {
 
 /**
  * What the browser gets instead of a card's numbers on the two hard
- * difficulties. The value, rarity and stat lines never leave the server until
- * the lineup is locked, so a masked card's `score` is 0 and its `rarity` is a
- * placeholder ('common'), which is also what keeps every rarity tell (the glow
- * on a sealed pack, the shaking card back, the walkout) switched off.
+ * difficulties. The value, rarity and stat lines of a card you keep never leave
+ * the server until the lineup is locked, and a card you pass on stays masked
+ * until the pick is on record (see `BlindLock`). So a masked card's `score` is 0
+ * and its `rarity` is a placeholder ('common'), which is also what keeps every
+ * rarity tell (the glow on a sealed pack, the shaking card back, the walkout)
+ * switched off.
  */
 export type BlindFace = {
   level: 'range' | 'season'
   /** Range only: where the real value sits, somewhere inside. */
   lo?: number
   hi?: number
+}
+
+/** A blind pick once the server has it. Going by `seen`, the pack turns over
+    around the card kept, which stays masked. `picks` and `lineup` are what's on
+    record, and they win over anything the browser is holding. */
+export type BlindLock = {
+  picks: { slot: number; id: string }[]
+  /** By slot, masked. */
+  lineup: (Player | null)[]
+  /** The pack that pick came from. Null if the pick asked for isn't the one on
+      record, or nothing was asked. */
+  seen: { slot: number; kept: string; cards: Player[] } | null
+}
+
+export type MissCard = Pick<Player, 'name' | 'year' | 'score'>
+
+/** A blind run in hindsight: what the recap shows once the cards are up. */
+export type Missed = {
+  packs: number
+  /** Packs where you kept the best card. */
+  hit: number
+  /** The run: cards plus chemistry. */
+  score: number
+  /** The best eleven in the packs you opened, chemistry included. */
+  perfect: number
+  /** Every pack with a better card in it, the biggest gap first. */
+  misses: { slot: number; kept: MissCard; best: MissCard }[]
 }
 
 /** The man behind a card; a card from before the season pool is its own man. */
