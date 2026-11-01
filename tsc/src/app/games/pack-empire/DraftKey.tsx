@@ -38,6 +38,7 @@ export type KeyFlavor = { difficulty: Difficulty; even: boolean; daily?: boolean
 const OPEN: KeyFlavor = { difficulty: 'open', even: false }
 
 const MEANS: Record<Rarity, string> = {
+  canton: 'The ten greatest seasons in the game',
   immortal: 'One of the best seasons ever at the position',
   transcendent: 'An all-time great season',
   dynasty: 'An elite year',

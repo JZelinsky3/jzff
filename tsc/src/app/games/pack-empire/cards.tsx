@@ -54,6 +54,7 @@ const GEM: Record<Rarity, { d: string; cut?: string; fill: string }> = {
   dynasty: { d: starPath(5, 11.6, 5, 1.1), cut: starPath(5, 4.2, 1.9, 1.1), fill: '#ffd700' },
   transcendent: { d: starPath(8, 11.8, 4.8), cut: starPath(4, 4.6, 1.7), fill: '#ff90ff' },
   immortal: { d: starPath(12, 12, 6.8), cut: starPath(6, 5, 2.5), fill: '#80ffb8' },
+  canton: { d: 'M12 .8C13.6 6.7 17.3 10.4 23.2 12 17.3 13.6 13.6 17.3 12 23.2 10.4 17.3 6.7 13.6.8 12 6.7 10.4 10.4 6.7 12 .8Z', fill: '#f4dfa4' },
 }
 
 export function RarityGem({ rarity, className = '' }: { rarity: Rarity; className?: string }) {
@@ -169,287 +170,163 @@ function Football() {
 // ============================================================
 
 /**
- * `outer` sits behind the card (the spinning borders and the immortal's
- * halo); `inner` sits inside the art. Structure unchanged from the original,
- * down to the number of children: the CSS addresses them with nth-child.
- *
- * Every element here is a running animation, so only mount what's on show: a
- * face-down card has no inner effects, and a card on the field has only its
- * outer edge.
+ * Foil Stock. Each rarity is a material (foil.css), and from Dynasty up the card has
+ * a border nothing below it has: racing gold light, then electricity, then fire.
+ * Every element here is a running animation moved by transform or opacity only, so
+ * only mount what's on show: a face-down card has no art effects, a card in the air
+ * has none at all, and a card on the field keeps only the light round its edge. The
+ * strips are <img>s so they cost the file's size, not the card's size times the
+ * phone's pixel density.
  */
-export const RarityEffects = memo(function RarityEffects({
-  rarity,
-  position = 'inner',
-}: {
-  rarity: Rarity
-  position?: 'outer' | 'inner'
-}) {
-  if (position === 'outer') {
+const FX = '/games/pack-empire/fx'
+
+/** Behind the card, seen through its frame. */
+const CardEdge = memo(function CardEdge({ rarity, field = false }: { rarity: Rarity; field?: boolean }) {
+  if (rarity === 'common' || rarity === 'rare') return null
+  if (rarity === 'canton') {
+    // An eclipse: the card is the moon, white light streaming off it, and a band of
+    // colour running round that the way light splits through a diamond.
     return (
       <>
-        {rarity === 'rare' && (
-          <div className="pe-ra-spin-wrap">
-            <div className="pe-ra-spin-arc" />
-            <div className="pe-ra-spin-inner" />
-          </div>
-        )}
-        {rarity === 'dynasty' && (
-          <div className="pe-ep-dual-wrap">
-            <div className="pe-ep-dual-arc1" />
-            <div className="pe-ep-dual-arc2" />
-            <div className="pe-ep-dual-inner" />
-          </div>
-        )}
-        {rarity === 'transcendent' && (
-          <div className="pe-le-plasma-wrap">
-            <div className="pe-le-plasma-arc1" />
-            <div className="pe-le-plasma-arc2" />
-            <div className="pe-le-plasma-inner" />
-          </div>
-        )}
-        {rarity === 'immortal' && (
+        {!field && (
           <>
-            <div className="pe-imm-glow-1" />
-            <div className="pe-imm-glow-2" />
-            <div className="pe-imm-glow-3" />
-            <div className="pe-imm-glow-4" />
-            <div className="pe-imm-plasma-wrap">
-              <div className="pe-imm-plasma-arc1" />
-              <div className="pe-imm-plasma-arc2" />
-              <div className="pe-imm-plasma-arc3" />
-              <div className="pe-imm-plasma-inner" />
-            </div>
+            <span className="pf-aura" aria-hidden />
+            <span className="pf-prism" aria-hidden>
+              <i />
+            </span>
+            <span className="pf-corona" aria-hidden>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`${FX}/card-corona.webp`} alt="" />
+            </span>
           </>
         )}
+        <span className="pf-orbit" aria-hidden />
       </>
     )
   }
-
+  const top = rarity !== 'dynasty'
   return (
     <>
-      {rarity === 'common' && (
-        <>
-          <div className="pe-cm-scan" />
-          <div className="pe-cm-corner tl" />
-          <div className="pe-cm-corner tr" />
-          <div className="pe-cm-corner bl" />
-          <div className="pe-cm-corner br" />
-          <div className="pe-cm-geo">
-            <div className="pe-cm-geo-line" />
-            <div className="pe-cm-geo-line" />
-            <div className="pe-cm-geo-line" />
-            <div className="pe-cm-geo-line" />
-          </div>
-          <div className="pe-cm-scratch-layer">
-            <div className="pe-cm-scratch" />
-            <div className="pe-cm-scratch" />
-            <div className="pe-cm-scratch" />
-          </div>
-          <div className="pe-cm-ember-layer">
-            <div className="pe-cm-ember" />
-            <div className="pe-cm-ember" />
-            <div className="pe-cm-ember" />
-            <div className="pe-cm-ember" />
-            <div className="pe-cm-ember" />
-          </div>
-          <div className="pe-cm-bottom-glow" />
-        </>
+      {top && !field && <span className="pf-aura" aria-hidden />}
+      {rarity === 'immortal' && !field && (
+        <span className="pf-fire" aria-hidden>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`${FX}/card-fire-immortal.webp`} alt="" />
+        </span>
       )}
-      {rarity === 'rare' && (
-        <>
-          <div className="pe-ra-depth-vig" />
-          <div className="pe-ra-center-glow" />
-          <div className="pe-ra-pulse-layer">
-            <div className="pe-ra-pulse-ring" />
-            <div className="pe-ra-pulse-ring" />
-            <div className="pe-ra-pulse-ring" />
-          </div>
-          <div className="pe-ra-crackle-layer">
-            <div className="pe-ra-crackle">
-              <svg width="100%" height="100%" viewBox="0 0 125 183">
-                <polyline className="pe-ra-crackle-path" points="0,18 12,20 8,28 22,24 16,34" />
-                <polyline className="pe-ra-crackle-path" points="113,88 121,84 117,94 125,90" />
-              </svg>
-            </div>
-            <div className="pe-ra-crackle">
-              <svg width="100%" height="100%" viewBox="0 0 125 183">
-                <polyline className="pe-ra-crackle-path" points="0,62 12,58 8,68 20,64 14,76" />
-                <polyline className="pe-ra-crackle-path" points="109,14 119,18 115,28 123,22" />
-              </svg>
-            </div>
-            <div className="pe-ra-crackle">
-              <svg width="100%" height="100%" viewBox="0 0 125 183">
-                <polyline className="pe-ra-crackle-path" points="2,108 14,104 10,114 24,108" />
-                <polyline className="pe-ra-crackle-path" points="105,50 115,46 111,58 121,52 117,64" />
-              </svg>
-            </div>
-          </div>
-        </>
-      )}
-      {rarity === 'dynasty' && (
-        <>
-          <div className="pe-ep-burst">
-            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-              <g transform="translate(100,100)">
-                <line x1="0" y1="-95" x2="0" y2="95" stroke="rgba(255,215,0,.35)" strokeWidth=".8" />
-                <line x1="-95" y1="0" x2="95" y2="0" stroke="rgba(255,215,0,.35)" strokeWidth=".8" />
-                <line x1="-67" y1="-67" x2="67" y2="67" stroke="rgba(255,215,0,.25)" strokeWidth=".8" />
-                <line x1="67" y1="-67" x2="-67" y2="67" stroke="rgba(255,215,0,.25)" strokeWidth=".8" />
-                <line x1="-36" y1="-90" x2="36" y2="90" stroke="rgba(255,215,0,.18)" strokeWidth=".6" />
-                <line x1="36" y1="-90" x2="-36" y2="90" stroke="rgba(255,215,0,.18)" strokeWidth=".6" />
-                <line x1="-90" y1="-36" x2="90" y2="36" stroke="rgba(255,215,0,.18)" strokeWidth=".6" />
-                <line x1="90" y1="-36" x2="-90" y2="36" stroke="rgba(255,215,0,.18)" strokeWidth=".6" />
-              </g>
-            </svg>
-          </div>
-          <div className="pe-ep-sparkle-layer">
-            <div className="pe-ep-sparkle" />
-            <div className="pe-ep-sparkle" />
-            <div className="pe-ep-sparkle" />
-            <div className="pe-ep-sparkle" />
-            <div className="pe-ep-sparkle" />
-            <div className="pe-ep-sparkle" />
-            <div className="pe-ep-sparkle" />
-          </div>
-          <div className="pe-ep-foil" />
-          <div className="pe-ep-shine" />
-        </>
-      )}
-      {rarity === 'transcendent' && (
-        <>
-          <div className="pe-le-aurora">
-            <div className="pe-le-aurora-band" />
-            <div className="pe-le-aurora-band" />
-            <div className="pe-le-aurora-band" />
-            <div className="pe-le-aurora-band" />
-          </div>
-          <div className="pe-le-orb-layer">
-            <div className="pe-le-orb" />
-            <div className="pe-le-orb" />
-            <div className="pe-le-orb" />
-            <div className="pe-le-orb" />
-            <div className="pe-le-orb" />
-          </div>
-          <div className="pe-le-holo" />
-          <div className="pe-le-depth-rings">
-            <div className="pe-le-depth-ring" />
-            <div className="pe-le-depth-ring" />
-            <div className="pe-le-depth-ring" />
-          </div>
-          <div className="pe-le-bolt-layer">
-            <svg className="pe-le-bolt b1" viewBox="0 0 125 183">
-              <polyline className="pe-le-bolt-glow" points="8,2 20,28 10,27 26,58 14,56 32,98" />
-              <polyline className="pe-le-bolt-mid" points="8,2 20,28 10,27 26,58 14,56 32,98" />
-              <polyline className="pe-le-bolt-core" points="8,2 20,28 10,27 26,58 14,56 32,98" />
-              <polyline className="pe-le-bolt-branch" points="26,58 40,68 34,82" />
-            </svg>
-            <svg className="pe-le-bolt b2" viewBox="0 0 125 183">
-              <polyline className="pe-le-bolt-glow" points="36,0 50,30 38,28 56,62 42,60 62,110" />
-              <polyline className="pe-le-bolt-mid" points="36,0 50,30 38,28 56,62 42,60 62,110" />
-              <polyline className="pe-le-bolt-core" points="36,0 50,30 38,28 56,62 42,60 62,110" />
-              <polyline className="pe-le-bolt-branch" points="56,62 70,74 62,90" />
-            </svg>
-            <svg className="pe-le-bolt b3" viewBox="0 0 125 183">
-              <polyline className="pe-le-bolt-glow" points="62,0 76,28 63,26 84,60 68,58 92,108 74,106 88,150" />
-              <polyline className="pe-le-bolt-mid" points="62,0 76,28 63,26 84,60 68,58 92,108 74,106 88,150" />
-              <polyline className="pe-le-bolt-core" points="62,0 76,28 63,26 84,60 68,58 92,108 74,106 88,150" />
-              <polyline className="pe-le-bolt-branch" points="84,60 100,74 90,90" />
-            </svg>
-            <svg className="pe-le-bolt b4" viewBox="0 0 125 183">
-              <polyline className="pe-le-bolt-glow" points="88,2 100,30 88,28 106,62 92,60 112,104" />
-              <polyline className="pe-le-bolt-mid" points="88,2 100,30 88,28 106,62 92,60 112,104" />
-              <polyline className="pe-le-bolt-core" points="88,2 100,30 88,28 106,62 92,60 112,104" />
-              <polyline className="pe-le-bolt-branch" points="106,62 118,76 110,92" />
-            </svg>
-            <svg className="pe-le-bolt b5" viewBox="0 0 125 183">
-              <polyline className="pe-le-bolt-glow" points="116,10 108,36 118,34 104,68 116,66 96,118" />
-              <polyline className="pe-le-bolt-mid" points="116,10 108,36 118,34 104,68 116,66 96,118" />
-              <polyline className="pe-le-bolt-core" points="116,10 108,36 118,34 104,68 116,66 96,118" />
-            </svg>
-            <svg className="pe-le-bolt b6" viewBox="0 0 125 183">
-              <polyline className="pe-le-bolt-glow" points="22,15 10,44 22,42 6,78 20,76 2,130" />
-              <polyline className="pe-le-bolt-mid" points="22,15 10,44 22,42 6,78 20,76 2,130" />
-              <polyline className="pe-le-bolt-core" points="22,15 10,44 22,42 6,78 20,76 2,130" />
-            </svg>
-          </div>
-          <div className="pe-le-tear-layer">
-            <div className="pe-le-tear">
-              <div className="pe-le-tear-inner" />
-            </div>
-            <div className="pe-le-tear">
-              <div className="pe-le-tear-inner" />
-            </div>
-            <div className="pe-le-tear">
-              <div className="pe-le-tear-inner" />
-            </div>
-          </div>
-          <div className="pe-le-whiteout w1" />
-          <div className="pe-le-whiteout w2" />
-          <div className="pe-le-whiteout w3" />
-        </>
-      )}
-      {rarity === 'immortal' && (
-        <>
-          <div className="pe-imm-slab-layer">
-            <div className="pe-imm-slab" />
-            <div className="pe-imm-slab" />
-            <div className="pe-imm-slab" />
-            <div className="pe-imm-slab" />
-            <div className="pe-imm-slab" />
-          </div>
-          <div className="pe-imm-aurora">
-            <div className="pe-imm-aurora-band" />
-            <div className="pe-imm-aurora-band" />
-            <div className="pe-imm-aurora-band" />
-            <div className="pe-imm-aurora-band" />
-          </div>
-          <div className="pe-imm-rings">
-            <div className="pe-imm-ring" />
-            <div className="pe-imm-ring" />
-            <div className="pe-imm-ring" />
-          </div>
-          <div className="pe-imm-orb-layer">
-            <div className="pe-imm-orb" />
-            <div className="pe-imm-orb" />
-            <div className="pe-imm-orb" />
-            <div className="pe-imm-orb" />
-            <div className="pe-imm-orb" />
-            <div className="pe-imm-orb" />
-          </div>
-          <div className="pe-imm-holo" />
-          <div className="pe-imm-foil" />
-          <div className="pe-imm-shock">
-            <div className="pe-imm-shock-ring" />
-            <div className="pe-imm-shock-ring" />
-            <div className="pe-imm-shock-ring" />
-            <div className="pe-imm-shock-ring" />
-            <div className="pe-imm-shock-core" />
-          </div>
-          <div className="pe-imm-spark-layer">
-            <div className="pe-imm-spark" />
-            <div className="pe-imm-spark" />
-            <div className="pe-imm-spark" />
-            <div className="pe-imm-spark" />
-            <div className="pe-imm-spark" />
-            <div className="pe-imm-spark" />
-            <div className="pe-imm-spark" />
-            <div className="pe-imm-spark" />
-          </div>
-          <div className="pe-imm-tear-layer">
-            <div className="pe-imm-tear">
-              <div className="pe-imm-tear-inner" />
-            </div>
-            <div className="pe-imm-tear">
-              <div className="pe-imm-tear-inner" />
-            </div>
-            <div className="pe-imm-tear">
-              <div className="pe-imm-tear-inner" />
-            </div>
-          </div>
-          <div className="pe-imm-shine" />
-          <div className="pe-imm-shock-flash" />
-          <div className="pe-imm-inner-border" />
-        </>
+      <span className="pf-orbit" aria-hidden>
+        <i />
+        {top && !field && <i />}
+      </span>
+    </>
+  )
+})
+
+/** Over the card's edge. */
+const CardRim = memo(function CardRim({ rarity, revealed }: { rarity: Rarity; revealed: boolean }) {
+  if (rarity === 'canton') {
+    // A ring: diamonds set in the frame, a wave of light through them, a few flaring
+    // at a time. Front only, the back has a rim of its own.
+    if (!revealed) return null
+    return (
+      <>
+        <span className="pf-pave" aria-hidden />
+        <span className="pf-pave-run" aria-hidden>
+          <i />
+        </span>
+        <span className="pf-glint" aria-hidden>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`${FX}/card-glint.webp`} alt="" />
+        </span>
+      </>
+    )
+  }
+  if (rarity === 'transcendent') {
+    return (
+      <span className="pf-fire" aria-hidden>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={`${FX}/card-arcs.webp`} alt="" />
+      </span>
+    )
+  }
+  if (rarity === 'dynasty') {
+    return (
+      <span className="pf-corners" aria-hidden>
+        <i />
+        <i />
+        <i />
+        <i />
+      </span>
+    )
+  }
+  return null
+})
+
+/** In the art, behind the man. */
+const CardArt = memo(function CardArt({ rarity }: { rarity: Rarity }) {
+  if (rarity === 'canton') {
+    return (
+      <>
+        <span className="pf-holo" aria-hidden />
+        <span className="pf-surge" aria-hidden>
+          <i />
+        </span>
+        <span className="pf-rays" aria-hidden>
+          <i />
+        </span>
+      </>
+    )
+  }
+  if (rarity === 'transcendent') {
+    return (
+      <>
+        <span className="pf-stars" aria-hidden>
+          <i />
+        </span>
+        <span className="pf-shoot" aria-hidden>
+          <i />
+          <i />
+        </span>
+      </>
+    )
+  }
+  if (rarity === 'immortal') {
+    return (
+      <>
+        <span className="pf-surge" aria-hidden>
+          <i />
+        </span>
+        <span className="pf-smoke" aria-hidden>
+          <i />
+        </span>
+      </>
+    )
+  }
+  return null
+})
+
+/** Over the whole front. Common and Rare stay still: the sheen starts at Dynasty. */
+const CardShine = memo(function CardShine({ rarity }: { rarity: Rarity }) {
+  if (rarity === 'common' || rarity === 'rare') return null
+  return (
+    <>
+      <span className="pf-sheen" aria-hidden>
+        <i />
+      </span>
+      {rarity === 'immortal' ? (
+        <span className="pf-embers" aria-hidden>
+          <i />
+          <i />
+          <i />
+          <i />
+        </span>
+      ) : (
+        <span className="pf-sparks" aria-hidden>
+          <i />
+          <i />
+          <i />
+          <i />
+        </span>
       )}
     </>
   )
@@ -552,8 +429,8 @@ type StatCell = { v: string; l: string } | { t: string }
 const STAT_LABEL: Record<string, string> = {
   'a game': 'PPG',
   'in scoring': 'Scoring',
-  'rush yds': 'Rush yds',
-  'pass yds': 'Pass yds',
+  'rush yds': 'Rush',
+  'pass yds': 'Pass',
 }
 
 const HONOR_LABEL: Record<string, string> = {
@@ -656,22 +533,21 @@ const TILT = {
 
 /** The logo beside the name takes room from it, so a long name shrinks to
     fit: each gets the largest size its letters allow, estimated off their
-    widths in Barlow Condensed (m and w run wide; i, l, t, f, r, spaces and
+    widths in Barlow Condensed capitals (M and W run wide; I, J, spaces and
     punctuation narrow). Calibrated against every name in the pool at phone
-    size, with 2% to spare; re-measure if the pool gains a much longer one. */
+    size, on the thickest frame; re-measure if the pool gains a much longer one. */
 function nameFit(name: string): number {
   let width = 0
-  for (const ch of name) width += 'mwMW'.includes(ch) ? 1.45 : "iljtfrI.' -".includes(ch) ? 0.7 : 1
-  return Math.round(Math.min(0.9, 10.83 / width) * 1000) / 1000
+  for (const ch of name.toUpperCase()) width += 'MW'.includes(ch) ? 0.62 : "IJ.' -".includes(ch) ? 0.27 : 0.47
+  return Math.round(Math.min(0.9, 4.72 / width) * 1000) / 1000
 }
 
 /**
- * Face down until revealed, then flipped. The front is the original card's
- * stock (11px corners, Orbitron numbers, Barlow names, every rarity effect),
- * laid out so the three things you choose on read at a glance: the position
- * tab and rarity on their own bar across the top, the SEASON across the man's
- * chest, then below him his name, his value, his team's logo and the stat box
- * that earned it.
+ * Face down until revealed, then flipped. The front is Foil Stock (foil.css): a
+ * frame and a material for each rarity, laid out so the three things you choose on
+ * read at a glance: the position tab and rarity on their own bar across the top, the
+ * SEASON across the man's chest, then below him his name, his value, his team's logo
+ * and the stat box that earned it.
  *
  * Face down, the back gives a little away: a rare's edge catches the light,
  * a dynasty breathes gold, and the two at the top shake and leak colour.
@@ -689,6 +565,7 @@ export function PackCard({
   chem = null,
   chip = null,
   blocked = null,
+  serial = null,
   onClick,
   disabled = false,
   label,
@@ -714,6 +591,8 @@ export function PackCard({
   /** A card you can't take right now, and why: no slot left, or over the cap.
       Still there to look at. */
   blocked?: string | null
+  /** A Canton in the binder: the number you pulled, of how many there are now. */
+  serial?: [number, number] | null
   onClick?: () => void
   /** Stop taking taps without dropping the button. Swapping the element for
       a div remounts the card and replays the deal-in under the closing stage. */
@@ -731,6 +610,7 @@ export function PackCard({
     revealed && selectable && !blocked ? 'selectable' : '',
     charging ? 'charging' : '',
     blocked && revealed ? 'blocked' : '',
+    still ? 'still' : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -764,13 +644,25 @@ export function PackCard({
     >
       <div className="pe-tilt">
         <div className="pe-ci">
-          {!still && !blind && <RarityEffects rarity={player.rarity} position="outer" />}
+          {!still && !blind && <CardEdge rarity={player.rarity} />}
           <div className="pe-card-back">
-            <div className="pe-back-grid" />
-            <Football />
-            <div className="pe-back-label">TAP TO REVEAL</div>
+            <div className="pe-back-in">
+              <span className="pe-back-line" aria-hidden />
+              <Football />
+              <div className="pe-back-label">TAP TO REVEAL</div>
+            </div>
+            {player.rarity === 'canton' && !revealed && !blind && !still && (
+              <span className="pf-blaze" aria-hidden>
+                {/* eslint-disable @next/next/no-img-element */}
+                <img src={`${FX}/card-molten.webp`} alt="" />
+                <img src={`${FX}/card-molten.webp`} alt="" />
+                {/* eslint-enable @next/next/no-img-element */}
+                <b>TAP TO REVEAL</b>
+              </span>
+            )}
           </div>
           <div className="pe-card-front">
+            <div className="pe-cf-in">
             <div className="pe-cf-topbar">
               <div className="pe-cf-pos">{player.pos}</div>
               {blocked && revealed ? (
@@ -789,12 +681,15 @@ export function PackCard({
                 </div>
               )}
             </div>
-            <div className="pe-cf-art" style={{ background: rc.art }}>
-              {revealed && !still && !blind && <RarityEffects rarity={player.rarity} position="inner" />}
+            <div className="pe-cf-art" style={blind ? { background: rc.art } : undefined}>
+              {revealed && !still && !blind && <CardArt rarity={player.rarity} />}
               {/* Only mounted on the front once it turns. The pack's faces are
                   already cached by then (see preloadFaces), so this is instant
                   but can never be seen through the back. */}
               <YearMark player={player} className="pe-cf-year" />
+              {revealed && !still && !blind && (player.rarity === 'transcendent' || player.rarity === 'canton') && (
+                <Headshot player={player} className="pe-cf-rim" eager />
+              )}
               {revealed && <Headshot player={player} className="pe-cf-img" eager />}
               {!player.year && <div className="pe-cf-initial">{player.name.charAt(0)}</div>}
               {chem != null && chem !== 0 && (
@@ -805,6 +700,11 @@ export function PackCard({
               )}
               {chip && <span className="pe-cf-rule">{chip}</span>}
               {player.salary != null && <span className="pe-cf-salary">${player.salary}M</span>}
+              {serial && (
+                <span className="pe-cf-serial">
+                  <b>{serial[0]}</b>/{serial[1]}
+                </span>
+              )}
               {player.year ? (
                 <div className="pe-cf-season">
                   <b>{player.year}</b>
@@ -823,7 +723,9 @@ export function PackCard({
                     </div>
                   ) : (
                     <div className="pe-cf-score-row">
-                      <div className="pe-cf-score">{player.score.toLocaleString()}</div>
+                      <div className="pe-cf-score" data-v={player.score.toLocaleString()}>
+                        {player.score.toLocaleString()}
+                      </div>
                       <div className="pe-cf-ovr">OVR</div>
                     </div>
                   )}
@@ -849,8 +751,11 @@ export function PackCard({
                 <StatBox accolades={player.accolades} />
               )}
             </div>
+            {revealed && !still && !blind && <CardShine rarity={player.rarity} />}
             <div className="pe-glare" aria-hidden />
+            </div>
           </div>
+          {!still && !blind && <CardRim rarity={player.rarity} revealed={revealed} />}
         </div>
       </div>
       {burst && <span className="pe-burst" aria-hidden />}
@@ -904,28 +809,29 @@ function FilledSlot({
     <div
       className={`pe-fsl has-p${landing ? ` ${landing}` : ''}`}
       style={{ '--rc': rc.color, '--rg': rc.glow, '--art': rc.art } as React.CSSProperties}
+      data-r={blind ? 'blind' : player.rarity}
+      data-level={blind?.level}
     >
-      {!blind && <RarityEffects rarity={player.rarity} position="outer" />}
+      {!blind && <CardEdge rarity={player.rarity} field />}
       <div className="pe-filled-card">
         <div className="pe-fc-topbar">
-          <div className="pe-fc-pos-badge" style={{ background: blind ? '#6f675a' : rc.color }}>
+          <div className="pe-fc-pos-badge">
             {player.pos}
           </div>
           {!blind && (
-            <div className={`pe-fc-rar-badge ${player.rarity}`} style={{ color: rc.color }}>
+            <div className={`pe-fc-rar-badge ${player.rarity}`}>
               {RARITY_LOOK[player.rarity].label}
             </div>
           )}
         </div>
-        <div className="pe-fc-art" style={{ background: rc.art }}>
-          <div className="pe-fc-field-lines" />
+        <div className="pe-fc-art" style={blind ? { background: rc.art } : undefined}>
           <YearMark player={player} className="pe-fc-year" />
           <Headshot player={player} className="pe-fc-img" />
           {!player.year && <div className="pe-fc-initial">{player.name.charAt(0)}</div>}
           {player.salary != null && <span className="pe-fc-salary">${player.salary}M</span>}
         </div>
         <div className="pe-fc-info">
-          <div className="pe-fc-name" style={{ color: rc.color }}>
+          <div className="pe-fc-name">
             {surname(player.name)}
           </div>
           <div className={`pe-fc-score${blind ? ' blind' : ''}`}>

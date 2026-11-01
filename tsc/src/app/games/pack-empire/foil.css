@@ -1,0 +1,259 @@
+/* Foil Stock: the standard card. Each rarity is a material you could hold, in a frame
+   that gets richer by tier: paper, polished steel, polished gold, deep space, poured
+   emerald glass. The structure and behaviour live in pack-empire.css and cards.tsx;
+   this is the look, and it loads after it. Effects move transform and opacity only:
+   no width, shadow, background-position or custom property ever animates. */
+
+:is(.pe-card, .pe-fsl, .pe-bd-tile, .pe-pc)[data-r='common'] { --a: #d99a68; --g2: #171311; --ink: #f6ecdf; --mute: #a8927d; --glow: rgba(217, 154, 104, .18); --fw: .105em; --flat: linear-gradient(155deg, #b9875e, #4d3323 34%, #8a5f40 62%, #33221a); --frame: var(--flat); }
+:is(.pe-card, .pe-fsl, .pe-bd-tile, .pe-pc)[data-r='rare'] { --a: #79d6ff; --g2: #08131f; --ink: #eef7ff; --mute: #8fb1c9; --glow: rgba(95, 200, 255, .32); --fw: .105em; --flat: linear-gradient(155deg, #d8f1ff, #3a86ba 26%, #123450 52%, #8fd0f6 76%, #1a4c70); --frame: var(--flat); }
+:is(.pe-card, .pe-fsl, .pe-bd-tile, .pe-pc)[data-r='dynasty'] { --a: #ffdb6b; --g2: #120d03; --ink: #fff6dc; --mute: #c0a868; --glow: rgba(255, 210, 90, .42); --orbit: 5.5s; --fw: .14em; --flat: linear-gradient(150deg, #e7c360, #a87a16 22%, #5e3e08 44%, #d9ac3c 64%, #7f5a0c 84%, #e0bc5a); --frame: none; }
+:is(.pe-card, .pe-fsl, .pe-bd-tile, .pe-pc)[data-r='transcendent'] { --a: #e98bff; --g2: #0f061e; --ink: #f9ecff; --mute: #b793cf; --glow: rgba(214, 100, 255, .5); --orbit: 4.2s; --fw: .155em; --flat: conic-gradient(from 210deg, #ff6ae6, #7b6bff, #5fe0ff, #ff9be8, #b46bff, #ff6ae6); --frame: none; --halo: rgba(226, 110, 255, .62); --leak: #d964ff; }
+:is(.pe-card, .pe-fsl, .pe-bd-tile, .pe-pc)[data-r='immortal'] { --a: #45f5a6; --g2: #020d09; --ink: #e9fff5; --mute: #7fbba0; --glow: rgba(60, 240, 160, .55); --orbit: 3.2s; --fw: .24em; --flat: linear-gradient(155deg, #16503a, #06201a 40%, #0c3a2a 70%, #051a14); --frame: none; --halo: rgba(50, 245, 165, .78); --leak: #2ff0a0; }
+:is(.pe-card, .pe-fsl, .pe-bd-tile, .pe-pc)[data-r='canton'] { --a: #8a6412; --g2: #f5efe1; --ink: #14100a; --mute: #6e6250; --glow: rgba(255, 236, 186, .85); --orbit: 2.6s; --fw: .27em; --flat: linear-gradient(150deg, #fff, #eed792 22%, #b0842a 46%, #fff6d8 64%, #c7a048 84%, #fff); --frame: none; --halo: rgba(255, 228, 160, .9); }
+/* Range and Ball Knower: no rarity anywhere, every card the same, so nothing's a tell */
+:is(.pe-card, .pe-fsl, .pe-bd-tile, .pe-pc)[data-r='blind'] { --a: #d8d0c0; --g2: #141820; --ink: #f0ece2; --mute: #9a9486; --glow: rgba(255, 248, 234, .16); --fw: .105em; --flat: linear-gradient(155deg, #a8a194, #3f3e3a 36%, #706a5e 66%, #2e2d2a); --frame: var(--flat); }
+:is(.pe-card, .pe-fsl, .pe-bd-tile, .pe-pc)[data-r='blind'][data-level='season'] { --a: #e8c98a; --g2: #0c0c0e; --mute: #a08c62; --flat: linear-gradient(155deg, #c9a862, #3a2f18 36%, #7e6a3e 66%, #231c0e); }
+.pe-card.still { --frame: var(--flat); }
+
+/* ── Both faces ───────────────────────────────────────────── */
+
+.pe-card-back, .pe-card-front { border: 0; border-radius: .62em; padding: var(--fw); background: var(--frame); }
+.pe-card-front { display: block; color: var(--ink); box-shadow: 0 .5em 1.1em rgba(0, 0, 0, .55), 0 0 1.4em var(--glow); }
+.pe-cf-in, .pe-back-in { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; overflow: hidden; border-radius: calc(.62em - var(--fw)); background: var(--g2); }
+.pe-cf-in::after, .pe-back-in::after { content: ''; position: absolute; z-index: 25; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 .03em rgba(0, 0, 0, .55); pointer-events: none; }
+
+/* ── The back: a football field pressed into midnight stock ─ */
+
+.pe-back-in { isolation: isolate; align-items: center; justify-content: center; gap: .85em; background: #0a1226 url('/games/pack-empire/fx/card-stock.webp') center / 100% 100%; }
+.pe-back-grid { display: none; }
+.pe-back-line { position: absolute; inset: .3em; border-radius: .3em; border: .03em solid color-mix(in srgb, var(--a) 60%, transparent); }
+.pe-back-icon { width: 2.5em; height: 2.5em; }
+.pe-back-label { margin-right: -.24em; font-weight: 700; font-size: .62em; line-height: 1; letter-spacing: .24em; color: var(--a); }
+
+/* ── The front ────────────────────────────────────────────── */
+
+.pe-cf-topbar { height: 1.32em; padding: 0 .5em 0 0; align-items: stretch; background: color-mix(in srgb, var(--g2) 94%, #000); border-bottom: .07em solid var(--a); }
+.pe-cf-pos { display: flex; align-items: center; padding: 0 .85em 0 .62em; background: var(--a); color: var(--g2); font-size: .72em; letter-spacing: .05em; clip-path: polygon(0 0, 100% 0, 82% 100%, 0 100%); }
+.pe-cf-rlab { align-self: center; gap: .3em; font-size: .56em; letter-spacing: .14em; color: var(--a); }
+.pe-cf-rlab.transcendent, .pe-cf-rlab.immortal { background: none; -webkit-text-fill-color: currentColor; }
+.pe-cf-rlab .pe-gem { width: 1.2em; height: 1.2em; filter: none; }
+.pe-cf-art { border-bottom: 0; }
+.pe-cf-body { padding: .42em .5em .4em; background: linear-gradient(180deg, color-mix(in srgb, var(--g2) 90%, var(--a) 10%), var(--g2)); border-top: .07em solid var(--a); }
+.pe-cf-season { padding: .62em 0 .16em; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, .7) 68%); }
+.pe-cf-season b { font-size: .7em; letter-spacing: .08em; color: var(--a); text-shadow: none; }
+.pe-cf-year { top: .1em; color: transparent; -webkit-text-stroke: .018em var(--a); opacity: .34; }
+.pe-cf-name { font-weight: 800; text-transform: uppercase; letter-spacing: .01em; color: var(--ink); }
+.pe-cf-score-row { margin: .04em 0 0; }
+.pe-cf-score { position: relative; letter-spacing: -.01em; color: var(--a); text-shadow: none; }
+.pe-card:not([data-r='blind']) .pe-cf-score { font-size: 1.28em; }
+.pe-cf-ovr { display: none; }
+.pe-cf-logo { width: 1.75em; height: 1.75em; }
+.pe-cf-stats { gap: .24em; margin-top: .3em; padding: 0; border: 0; border-radius: 0; background: none; }
+.pe-cf-statrow { grid-auto-flow: column; grid-auto-columns: auto; justify-content: space-between; column-gap: .06em; }
+.pe-cf-cell { flex-direction: row; align-items: baseline; gap: .16em; }
+.pe-cf-cell + .pe-cf-cell { border-left: 0; }
+.pe-cf-cell b { font-size: .46em; color: var(--ink); }
+.pe-cf-cell i { font-size: .36em; letter-spacing: .02em; color: var(--mute); }
+.pe-cf-cell.txt { color: var(--mute); }
+.pe-cf-honors span { color: var(--a); border-color: color-mix(in srgb, var(--a) 50%, transparent); }
+.pe-cf-blindnote { color: var(--mute); }
+
+/* The stock behind a man: real material, sized to the whole card so the dark part of
+   each one lands behind his head. Nothing here tiles or repeats. */
+.pe-card[data-r='common'] .pe-cf-art { background-color: var(--g2); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .9 0 0 0 0 .8 0 0 0 .1 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"), radial-gradient(90% 90% at 50% 40%, #2e2722, var(--g2)); }
+.pe-card:is([data-r='rare'], [data-r='dynasty'], [data-r='transcendent'], [data-r='immortal']) .pe-cf-art { background-color: var(--g2); background-position: 50% -1.25em; background-size: auto 12.7em; background-repeat: no-repeat; }
+.pe-card[data-r='rare'] .pe-cf-art { background-image: url('/games/pack-empire/fx/card-steel.webp'); }
+.pe-card[data-r='dynasty'] .pe-cf-art { background-image: url('/games/pack-empire/fx/card-gold.webp'); }
+.pe-card[data-r='transcendent'] .pe-cf-art { background-image: url('/games/pack-empire/fx/card-nebula.webp'); }
+.pe-card[data-r='immortal'] .pe-cf-art { background-image: url('/games/pack-empire/fx/card-glass.webp'); }
+
+/* a lit outline behind the man: Transcendent and Canton. On Immortal it read as
+   flames glowing round his head. A still copy, never animated. */
+.pe-cf-rim { position: absolute; bottom: -10px; left: 50%; z-index: 9; height: 110%; width: auto; max-width: none; object-fit: contain; object-position: center bottom; transform: translateX(-50%); filter: brightness(0) drop-shadow(0 0 .12em var(--rim, #ff8bf2)) drop-shadow(0 0 .3em var(--rim, #ff8bf2)); opacity: .9; }
+
+/* ── Canton: pearl, in a frame set with diamonds ──────────── */
+
+.pe-card[data-r='canton'] { --rim: #ffc64d; --surge: #d9a93c; }
+.pe-card[data-r='canton'] .pe-cf-topbar { background: #fffdf6; border-color: #b98f33; }
+.pe-card[data-r='canton'] .pe-cf-pos { background: #16110a; color: #f4dfa4; }
+.pe-card[data-r='canton'] .pe-cf-rlab .pe-gem path, .pe-fsl[data-r='canton'] .pe-gem path { fill: var(--a); }
+.pe-card[data-r='canton'] .pe-cf-art { background: radial-gradient(90% 90% at 50% 40%, #fff, #d8cdb3); }
+.pe-card[data-r='canton'] .pe-cf-season { background: linear-gradient(180deg, transparent, rgba(255, 251, 240, .88) 68%); }
+.pe-card[data-r='canton'] .pe-cf-season b { color: #5c3f08; }
+.pe-card[data-r='canton'] .pe-cf-body { padding-left: .4em; padding-right: .4em; background: linear-gradient(180deg, #fffdf6, #e7e0d1); border-color: #b98f33; }
+.pe-card[data-r='canton'] .pe-cf-logo { filter: drop-shadow(0 0 .03em rgba(30, 20, 8, .75)) drop-shadow(0 .02em .05em rgba(30, 20, 8, .4)); }
+.pe-card.rev:not(.still)[data-r='canton'] .pe-cf-score::after { content: attr(data-v); position: absolute; left: 0; top: 0; color: #5a3d06; text-shadow: 0 0 .2em #ffc95a, 0 0 .46em #ffc95a; opacity: 0; animation: pf-charge 5.2s ease-in-out infinite; }
+.pe-card:not(.rev)[data-r='canton'] .pe-card-back { box-shadow: none; animation: pe-tell-jitter 1.2s linear infinite; }
+
+/* a Canton's number in the binder, stamped like a numbered card: yours bright, the
+   total quieter, because yours is the one that never changes */
+.pe-cf-serial { position: absolute; z-index: 12; right: .4em; top: .36em; padding: .28em .46em .24em; border-radius: .22em; background: #16110a; color: #b89a5a; font: 800 .62em/1 var(--pe-display); letter-spacing: .03em; }
+.pe-cf-serial b { font-weight: 900; color: #fbe6ae; }
+
+/* ── The field ────────────────────────────────────────────── */
+
+.pe-fsl.has-p { border: 0; background: var(--frame); box-shadow: 0 .3em .7em rgba(0, 0, 0, .5), 0 0 1em var(--glow); }
+.pe-fsl.has-p .pe-filled-card { inset: 2px; border-radius: 9px; background: var(--g2); }
+.pe-fsl[data-r='immortal'].has-p .pe-filled-card { inset: 3px; border-radius: 8px; }
+.pe-fsl[data-r] .pe-fc-topbar { background: color-mix(in srgb, var(--g2) 94%, #000); border-bottom: 1px solid var(--a); padding: 0 .35rem 0 0; align-items: stretch; }
+.pe-fsl[data-r] .pe-fc-pos-badge { display: flex; align-items: center; padding: 0 .62em 0 .42em; border-radius: 0; background: var(--a); color: var(--g2); clip-path: polygon(0 0, 100% 0, 82% 100%, 0 100%); }
+.pe-fsl[data-r] .pe-fc-rar-badge { align-self: center; color: var(--a); }
+.pe-fsl[data-r] .pe-fc-art { background-color: var(--g2); background-position: 50% 12%; background-size: cover; background-repeat: no-repeat; }
+.pe-fsl[data-r='rare'] .pe-fc-art { background-image: url('/games/pack-empire/fx/card-steel.webp'); }
+.pe-fsl[data-r='dynasty'] .pe-fc-art { background-image: url('/games/pack-empire/fx/card-gold.webp'); }
+.pe-fsl[data-r='transcendent'] .pe-fc-art { background-image: url('/games/pack-empire/fx/card-nebula.webp'); }
+.pe-fsl[data-r='immortal'] .pe-fc-art { background-image: url('/games/pack-empire/fx/card-glass.webp'); }
+.pe-fsl[data-r='common'] .pe-fc-art { background-image: radial-gradient(90% 90% at 50% 40%, #2e2722, var(--g2)); }
+.pe-fsl[data-r] .pe-fc-info { background: linear-gradient(180deg, color-mix(in srgb, var(--g2) 90%, var(--a) 10%), var(--g2)); border-top: 1px solid var(--a); }
+.pe-fsl[data-r] .pe-fc-name { color: var(--ink); text-transform: uppercase; }
+.pe-fsl[data-r] .pe-fc-score { color: var(--a); }
+.pe-fsl[data-r] .pe-fc-team-tag { color: var(--mute); }
+.pe-fsl[data-r] .pe-fc-year { -webkit-text-stroke-color: var(--a); opacity: .34; }
+.pe-fsl[data-r] .pe-fc-shine { display: none; }
+
+/* ── The small cards: the binder grid and the Mega Draft board. Palette and material
+   only, no effects: there can be hundreds of these on a page. ── */
+
+.pe-bd-tile[data-r]:not(.back), .pe-pc[data-r] { border-color: color-mix(in srgb, var(--a) 62%, transparent); background: var(--g2); }
+.pe-bd-tile[data-r]:not(.back) .pe-bd-tile-top, .pe-pc[data-r] .pe-pc-top { background: color-mix(in srgb, var(--g2) 94%, #000); border-bottom: 1px solid var(--a); }
+.pe-bd-tile[data-r] .pe-bd-tile-rar, .pe-pc[data-r] .pe-pc-rar { color: var(--a); }
+.pe-bd-tile[data-r]:not(.back) .pe-bd-tile-year { color: var(--ink); }
+.pe-bd-tile[data-r]:not(.back) .pe-bd-tile-foot { color: var(--a); background: linear-gradient(180deg, color-mix(in srgb, var(--g2) 90%, var(--a) 10%), var(--g2)); border-top: 1px solid var(--a); }
+.pe-pc[data-r] .pe-pc-pos { background: var(--a); color: var(--g2); }
+.pe-pc[data-r] .pe-pc-body { background: linear-gradient(180deg, color-mix(in srgb, var(--g2) 90%, var(--a) 10%), var(--g2)); border-top: 1px solid var(--a); }
+.pe-pc[data-r] .pe-pc-name { color: var(--ink); }
+.pe-pc[data-r] .pe-pc-team { color: var(--mute); }
+.pe-pc[data-r] .pe-pc-score { color: var(--a); }
+:is(.pe-bd-tile:not(.back), .pe-pc)[data-r] :is(.pe-bd-tile-art, .pe-pc-art) { background-color: var(--g2); background-position: 50% 12%; background-size: cover; background-repeat: no-repeat; }
+:is(.pe-bd-tile:not(.back), .pe-pc)[data-r='common'] :is(.pe-bd-tile-art, .pe-pc-art) { background-image: radial-gradient(90% 90% at 50% 40%, #2e2722, var(--g2)); }
+:is(.pe-bd-tile:not(.back), .pe-pc)[data-r='rare'] :is(.pe-bd-tile-art, .pe-pc-art) { background-image: url('/games/pack-empire/fx/card-steel.webp'); }
+:is(.pe-bd-tile:not(.back), .pe-pc)[data-r='dynasty'] :is(.pe-bd-tile-art, .pe-pc-art) { background-image: url('/games/pack-empire/fx/card-gold.webp'); }
+:is(.pe-bd-tile:not(.back), .pe-pc)[data-r='transcendent'] :is(.pe-bd-tile-art, .pe-pc-art) { background-image: url('/games/pack-empire/fx/card-nebula.webp'); }
+:is(.pe-bd-tile:not(.back), .pe-pc)[data-r='immortal'] :is(.pe-bd-tile-art, .pe-pc-art) { background-image: url('/games/pack-empire/fx/card-glass.webp'); }
+
+/* Canton on the field and in the small cards: same pearl, no diamonds */
+.pe-fsl[data-r='canton'] .pe-fc-topbar { background: #fffdf6; border-color: #b98f33; }
+.pe-fsl[data-r='canton'] .pe-fc-pos-badge { background: #16110a; color: #f4dfa4; }
+.pe-fsl[data-r='canton'] .pe-fc-art, :is(.pe-bd-tile:not(.back), .pe-pc)[data-r='canton'] :is(.pe-bd-tile-art, .pe-pc-art) { background-image: radial-gradient(90% 90% at 50% 40%, #fff, #d8cdb3); }
+.pe-fsl[data-r='canton'] .pe-fc-info { background: linear-gradient(180deg, #fffdf6, #e7e0d1); border-color: #b98f33; }
+.pe-fsl[data-r='canton'].has-p .pe-filled-card { inset: 3px; border-radius: 8px; }
+.pe-pc[data-r='canton'] .pe-pc-pos { background: #16110a; color: #f4dfa4; }
+
+/* ── Effects ──────────────────────────────────────────────── */
+
+/* the light that circles a card: a square turning behind the frame */
+.pf-orbit { position: absolute; inset: 0; overflow: hidden; border-radius: .62em; background: var(--flat); box-shadow: 0 .5em 1.1em rgba(0, 0, 0, .55); pointer-events: none; }
+.pf-orbit i { position: absolute; left: 50%; top: 50%; width: 170%; aspect-ratio: 1; margin: -85% 0 0 -85%; animation: pf-turn var(--orbit) linear infinite; }
+.pf-orbit i:nth-child(2) { animation-direction: reverse; animation-duration: calc(var(--orbit) * 1.45); }
+[data-r='dynasty'] .pf-orbit i { background: conic-gradient(from 0deg, transparent 0 28%, #ffc83a 36%, #fff8d8 41%, transparent 45% 78%, #ffc83a 86%, #fff8d8 91%, transparent 95%); }
+[data-r='transcendent'] .pf-orbit i { background: conic-gradient(from 0deg, transparent 0 30%, #ffd2fa 37%, #fff 41%, transparent 44% 80%, #c8f2ff 87%, #fff 91%, transparent 94%); }
+[data-r='canton'] .pf-orbit { box-shadow: none; }
+[data-r='immortal'] .pf-orbit i { background: conic-gradient(from 0deg, transparent 0 26%, #1dd98a 35%, #eafff5 41%, transparent 45% 76%, #1dd98a 85%, #eafff5 91%, transparent 95%); }
+.pe-fsl .pf-orbit { border-radius: 11px; box-shadow: none; }
+@keyframes pf-turn { to { transform: rotate(360deg); } }
+
+/* the light round a top card, which swells and flickers */
+.pf-aura { position: absolute; inset: -.5em; border-radius: 50%; background: radial-gradient(closest-side, var(--halo), transparent); opacity: .5; pointer-events: none; animation: pf-flare 2.6s ease-in-out infinite alternate; }
+@keyframes pf-flare { 0% { opacity: .35; transform: scale(.94); } 55% { opacity: .85; transform: scale(1.03); } 70% { opacity: .55; transform: scale(1); } 100% { opacity: 1; transform: scale(1.07); } }
+
+/* Outside Canton's diamonds, an eclipse: the card is the moon. A white corona
+   streams off the stones, a band of colour runs round it the way light splits through
+   a diamond, and a bright bloom breathes behind both. */
+.pe-card[data-r='canton'] .pf-aura { inset: 0; border-radius: .62em; background: none; box-shadow: 0 0 .28em .05em rgba(255, 250, 236, .95), 0 0 1.5em .3em rgba(255, 204, 104, .26); }
+.pe-card:not(.rev)[data-r='canton'] .pf-aura { box-shadow: 0 0 .5em .2em #fff, 0 0 1.1em .5em rgba(255, 236, 180, .9), 0 0 2.4em 1em rgba(255, 196, 84, .55); }
+.pf-corona, .pf-prism { position: absolute; left: -1em; top: -1em; width: 10.5em; height: 15em; overflow: hidden; pointer-events: none; }
+.pf-corona img, .pf-glint img { position: absolute; left: 0; top: 0; width: 100%; max-width: none; height: auto; will-change: transform; animation: pf-burn .9s steps(6) infinite; }
+.pf-prism { -webkit-mask: url('/games/pack-empire/fx/card-halo.webp') center / 100% 100% no-repeat; mask: url('/games/pack-empire/fx/card-halo.webp') center / 100% 100% no-repeat; }
+.pf-prism i { position: absolute; left: 50%; top: 50%; width: 170%; aspect-ratio: 1; margin: -85% 0 0 -85%; background: conic-gradient(#ff9fd8, #9cc8ff, #9dffd6, #ffe28a, #d8a6ff, #8ceaff, #ffc096, #ff9fd8); animation: pf-turn 7s linear infinite; }
+
+/* The frame itself: a gold band set with diamonds, like a championship ring. A wave
+   of light runs through the stones, and a few flare at a time. */
+.pf-pave, .pf-pave-run { position: absolute; inset: 0; border-radius: .62em; pointer-events: none; }
+.pf-pave { background: url('/games/pack-empire/fx/card-pave.webp') center / 100% 100% no-repeat; }
+.pf-pave-run { overflow: hidden; -webkit-mask: url('/games/pack-empire/fx/card-pave.webp') center / 100% 100% no-repeat; mask: url('/games/pack-empire/fx/card-pave.webp') center / 100% 100% no-repeat; }
+.pf-pave-run i { position: absolute; left: 50%; top: 50%; width: 170%; aspect-ratio: 1; margin: -85% 0 0 -85%; background: conic-gradient(from 0deg, transparent 0 28%, #fff 40%, transparent 50% 78%, #fff 90%, transparent 100%); animation: pf-turn 3.2s linear infinite; }
+.pf-glint { position: absolute; left: -.4em; top: -.4em; width: 9.3em; height: 13.8em; overflow: hidden; pointer-events: none; }
+.pf-glint img { animation-duration: 1s; }
+
+/* Pearl, with a rainbow sliding through it and gold rays turning behind his head */
+.pf-holo { position: absolute; z-index: 1; left: -60%; top: -30%; width: 240%; height: 160%; background: linear-gradient(112deg, rgba(255, 170, 215, .4), rgba(170, 215, 255, .4) 25%, transparent 42%, rgba(255, 226, 150, .34) 60%, rgba(255, 170, 215, .4) 80%, rgba(170, 180, 255, .4)); opacity: .9; animation: pf-holo 8s ease-in-out infinite alternate; }
+@keyframes pf-holo { from { transform: translate3d(-14%, 0, 0); } to { transform: translate3d(14%, 0, 0); } }
+.pf-rays { position: absolute; z-index: 2; left: 50%; top: 42%; width: 15em; height: 15em; margin: -7.5em 0 0 -7.5em; -webkit-mask-image: radial-gradient(circle, #000 0, rgba(0, 0, 0, .55) 34%, transparent 66%); mask-image: radial-gradient(circle, #000 0, rgba(0, 0, 0, .55) 34%, transparent 66%); }
+.pf-rays i { position: absolute; inset: 0; background: repeating-conic-gradient(from 0deg, #c99a2e 0 6deg, transparent 6deg 18deg); opacity: .62; animation: pf-turn 26s linear infinite; }
+
+/* The back of a Canton, one in many thousands: a slab of molten gold light, two sheets
+   of it sliding opposite ways, with a white heart that swells. The words are only just
+   there, pressed into the gold, with a rim of its own. */
+.pf-blaze { position: absolute; inset: 0; overflow: hidden; border-radius: .62em; pointer-events: none; background: #ffd98a; }
+.pf-blaze::before { content: ''; position: absolute; z-index: 2; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 .045em #fffdf0, inset 0 0 0 .24em rgba(206, 138, 40, .5), inset 0 0 0 .275em rgba(255, 246, 214, .85), inset 0 0 .7em .3em rgba(255, 255, 255, .34); }
+.pf-blaze img { position: absolute; left: 0; top: 0; width: 100%; max-width: none; height: auto; will-change: transform; animation: pf-blaze-up 15s linear infinite; }
+.pf-blaze img:nth-child(2) { opacity: .55; transform: translateY(-50%) scaleX(-1); animation: pf-blaze-down 10s linear infinite; }
+@keyframes pf-blaze-up { to { transform: translateY(-50%); } }
+@keyframes pf-blaze-down { from { transform: translateY(-50%) scaleX(-1); } to { transform: translateY(0) scaleX(-1); } }
+.pf-blaze::after { content: ''; position: absolute; inset: -10%; background: radial-gradient(closest-side, #fff, rgba(255, 250, 232, .78) 38%, rgba(255, 240, 200, 0)); animation: pf-heart 2.6s ease-in-out infinite; }
+@keyframes pf-heart { 0%, 100% { opacity: .5; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.06); } }
+.pf-blaze b { position: absolute; z-index: 1; left: 0; right: 0; top: 50%; margin: -.5em -.24em 0 0; text-align: center; font: 700 .62em/1 var(--pe-cond); letter-spacing: .24em; color: rgba(150, 100, 24, .5); }
+
+/* Electricity and fire, each a loop of frames on a strip moved behind a window, held
+   within .8em of the card. An <img> on its own layer is drawn at the file's size. */
+.pf-fire { position: absolute; left: -.8em; top: -.8em; width: 10.1em; height: 14.6em; overflow: hidden; pointer-events: none; }
+.pf-fire img { position: absolute; left: 0; top: 0; width: 100%; max-width: none; height: auto; will-change: transform; animation: pf-burn .62s steps(6) infinite; }
+[data-r='transcendent'] .pf-fire img { animation-duration: .55s; }
+@keyframes pf-burn { to { transform: translateY(-100%); } }
+
+/* gold glints that catch a Dynasty's corners */
+.pf-corners { position: absolute; inset: 0; pointer-events: none; }
+.pf-corners i { position: absolute; width: 1.5em; height: 1.5em; margin: -.75em 0 0 -.75em; background: #fff6cf; clip-path: polygon(50% 0, 54% 46%, 100% 50%, 54% 54%, 50% 100%, 46% 54%, 0 50%, 46% 46%); opacity: 0; animation: pf-glint 5.4s ease-in-out infinite; }
+.pf-corners i:nth-child(1) { left: .3em; top: .3em; }
+.pf-corners i:nth-child(2) { left: calc(100% - .3em); top: .3em; animation-delay: 1.4s; }
+.pf-corners i:nth-child(3) { left: calc(100% - .3em); top: calc(100% - .3em); animation-delay: 2.8s; }
+.pf-corners i:nth-child(4) { left: .3em; top: calc(100% - .3em); animation-delay: 4.1s; }
+@keyframes pf-glint { 0%, 70%, 100% { opacity: 0; transform: scale(.2) rotate(0); } 80% { opacity: 1; transform: scale(1) rotate(30deg); } 90% { opacity: 0; transform: scale(.4) rotate(60deg); } }
+
+/* the band of light across a card, Dynasty up */
+.pf-sheen { position: absolute; z-index: 20; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.pf-sheen i { position: absolute; top: -30%; left: 0; width: 46%; height: 160%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .32), transparent); transform: translateX(-160%) rotate(16deg); animation: pf-sweep 4.4s ease-in-out infinite; }
+[data-r='canton'] .pf-sheen i { animation-duration: 3.4s; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .42), transparent); }
+[data-r='dynasty'] .pf-sheen i { animation-duration: 5s; background: linear-gradient(90deg, transparent, rgba(255, 236, 170, .5), transparent); }
+@keyframes pf-sweep { 0%, 55% { transform: translateX(-160%) rotate(16deg); } 100% { transform: translateX(330%) rotate(16deg); } }
+
+.pf-sparks { position: absolute; z-index: 20; inset: 0; pointer-events: none; }
+.pf-sparks i { position: absolute; width: .9em; height: .9em; background: #fff; clip-path: polygon(50% 0, 56% 44%, 100% 50%, 56% 56%, 50% 100%, 44% 56%, 0 50%, 44% 44%); opacity: 0; animation: pf-glint 4.6s ease-in-out infinite; }
+.pf-sparks i:nth-child(1) { left: 12%; top: 16%; }
+.pf-sparks i:nth-child(2) { left: 80%; top: 24%; animation-delay: 1.3s; }
+.pf-sparks i:nth-child(3) { left: 72%; top: 54%; animation-delay: 2.5s; width: .6em; height: .6em; }
+.pf-sparks i:nth-child(4) { left: 20%; top: 46%; animation-delay: 3.5s; width: .55em; height: .55em; }
+[data-r='canton'] .pf-sparks i { background: #d9b24c; }
+[data-r='transcendent'] .pf-sparks i { animation-duration: 3.2s; }
+[data-r='transcendent'] .pf-sparks i:nth-child(odd) { background: #9fe6ff; }
+[data-r='transcendent'] .pf-sparks i:nth-child(even) { background: #ffb4f4; }
+
+.pf-embers { position: absolute; z-index: 20; inset: 0; overflow: hidden; pointer-events: none; }
+.pf-embers i { position: absolute; bottom: 30%; width: .16em; height: .16em; border-radius: 50%; background: var(--a); opacity: 0; animation: pf-rise 4.2s linear infinite; }
+.pf-embers i:nth-child(1) { left: 9%; }
+.pf-embers i:nth-child(2) { left: 36%; animation-delay: 2.6s; }
+.pf-embers i:nth-child(3) { left: 52%; animation-delay: .6s; }
+.pf-embers i:nth-child(4) { left: 80%; animation-delay: 3.2s; }
+@keyframes pf-rise { 0% { transform: translateY(0) scale(1); opacity: 0; } 12% { opacity: .95; } 100% { transform: translateY(-8.5em) scale(.3); opacity: 0; } }
+
+/* Transcendent: far stars drifting behind the gas, a star falling now and then */
+.pf-stars, .pf-shoot, .pf-smoke { position: absolute; z-index: 1; inset: 0; overflow: hidden; pointer-events: none; }
+.pf-stars i { position: absolute; left: 0; top: 0; width: 100%; height: 14em; background: url('/games/pack-empire/fx/card-stars.webp') 0 0 / 8.5em 7em repeat; will-change: transform; animation: pf-drift-up 26s linear infinite; }
+@keyframes pf-drift-up { to { transform: translateY(-7em); } }
+.pf-shoot i { position: absolute; left: 100%; top: 4%; width: 3em; height: .055em; border-radius: 1em; background: linear-gradient(90deg, #fff, rgba(190, 220, 255, .5) 30%, transparent); opacity: 0; transform: rotate(-24deg); animation: pf-fall 6.4s linear infinite; }
+.pf-shoot i:nth-child(2) { top: 26%; animation-delay: 2.5s; animation-duration: 7.6s; }
+@keyframes pf-fall { 0%, 80% { opacity: 0; transform: rotate(-24deg) translateX(0); } 82%, 95% { opacity: 1; } 100% { opacity: 0; transform: rotate(-24deg) translateX(-15em); } }
+
+/* Immortal: jade smoke drifting up, and every few seconds a ring off the man while
+   his value charges */
+.pf-smoke i { position: absolute; left: 0; top: 0; width: 100%; height: 13.8em; background: url('/games/pack-empire/fx/card-smoke.webp') 0 0 / 8.5em 6.9em repeat; opacity: .42; will-change: transform; animation: pf-smoke-up 15s linear infinite; }
+@keyframes pf-smoke-up { to { transform: translateY(-6.9em); } }
+.pf-surge { position: absolute; z-index: 2; left: 50%; top: 42%; width: 0; height: 0; pointer-events: none; }
+.pf-surge i { position: absolute; left: -3em; top: -3em; width: 6em; height: 6em; border-radius: 50%; border: .08em solid var(--surge, #7dffc6); opacity: 0; animation: pf-ring 5.2s cubic-bezier(.15, .7, .3, 1) infinite; }
+@keyframes pf-ring { 0%, 44% { opacity: 0; transform: scale(.35); } 46% { opacity: .95; } 66%, 100% { opacity: 0; transform: scale(2.2); } }
+.pe-card.rev:not(.still)[data-r='immortal'] .pe-cf-score::after { content: attr(data-v); position: absolute; left: 0; top: 0; color: #fff; text-shadow: 0 0 .22em var(--a), 0 0 .5em var(--a); opacity: 0; animation: pf-charge 5.2s ease-in-out infinite; }
+@keyframes pf-charge { 0%, 42% { opacity: 0; } 50% { opacity: 1; } 62%, 100% { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-prism i, .pf-corona img, .pf-glint img, .pf-pave-run i, .pf-holo, .pf-rays i, .pf-blaze img, .pf-blaze::after, .pe-card.rev[data-r='canton'] .pe-cf-score::after, .pf-orbit i, .pf-aura, .pf-fire img, .pf-corners i, .pf-sheen i, .pf-sparks i, .pf-embers i, .pf-stars i, .pf-shoot i, .pf-smoke i, .pf-surge i, .pe-card.rev[data-r='immortal'] .pe-cf-score::after { animation: none !important; }
+}

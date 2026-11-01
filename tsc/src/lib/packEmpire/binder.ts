@@ -29,7 +29,7 @@ import {
   type Rarity,
   type Weights,
 } from './rules'
-import { POOL, POOL_SIZE, POOL_VERSION, VAULTED, cardWeight } from './pool'
+import { POOL, POOL_SIZE, POOL_VERSION, VAULTED, cardWeight, playerById } from './pool'
 import { parseSoloPicks, replaySolo, type SoloPick } from './solo'
 
 export type BinderSource = 'solo' | 'versus' | 'league'
@@ -51,10 +51,21 @@ export async function recordPacks(userId: string, source: BinderSource, packs: B
       p_packs: packs,
     })
     if (error) return []
+    await stampCantons(userId, packs)
     return (data as string[] | null) ?? []
   } catch {
     return []
   }
+}
+
+/**
+ * A kept Canton takes the next number of that card, for good: the 5th one ever is 5
+ * forever, and only the total climbs. Filing the same pack twice does nothing, so a
+ * re-filed run can't take a second number.
+ */
+async function stampCantons(userId: string, packs: BinderPack[]): Promise<void> {
+  const stamps = packs.flatMap((p) => (p.kept && playerById(p.kept)?.rarity === 'canton' ? [{ card: p.kept, deal: p.deal, slot: p.slot }] : []))
+  if (stamps.length) await createAdminClient().rpc('pe_canton_stamp', { p_user: userId, p_stamps: stamps })
 }
 
 /** An Empire Builder or Versus run: re-dealt here, all eleven packs filed. */
@@ -122,7 +133,13 @@ export async function syncBinder(userId: string): Promise<void> {
 export type SiteCount = { pulls: number; oneIn: number }
 
 /** A version the player has pulled: the whole card, and its counts. */
-export type BinderOwned = Player & { pulls: number; firstAt: string; site: SiteCount }
+export type BinderOwned = Player & {
+  pulls: number
+  firstAt: string
+  site: SiteCount
+  /** A Canton's number, and how many of that card have been pulled by anyone. */
+  serial?: [number, number]
+}
 
 /** A version they haven't: enough to show what they're chasing, no more. */
 export type BinderMissing = Pick<Player, 'id' | 'name' | 'pos' | 'year' | 'club' | 'rarity'> & {
@@ -184,8 +201,21 @@ export async function binderTotals(userId: string): Promise<BinderTotals> {
 
 export async function loadBinder(userId: string): Promise<BinderView> {
   await syncBinder(userId)
-  const [mine, site] = await Promise.all([counts(userId), siteCounts()])
-  return build(mine, site)
+  const [mine, site, serials] = await Promise.all([counts(userId), siteCounts(), cantonSerials(userId)])
+  return build(mine, site, serials)
+}
+
+/** This player's lowest number of each Canton, over that card's running total. */
+async function cantonSerials(userId: string): Promise<Map<string, [number, number]>> {
+  const { data } = await createAdminClient().from('pe_canton_serials').select('card_id, serial, user_id')
+  const rows = (data as { card_id: string; serial: number; user_id: string | null }[] | null) ?? []
+  const total = new Map<string, number>()
+  const yours = new Map<string, number>()
+  for (const r of rows) {
+    total.set(r.card_id, Math.max(total.get(r.card_id) ?? 0, r.serial))
+    if (r.user_id === userId) yours.set(r.card_id, Math.min(yours.get(r.card_id) ?? r.serial, r.serial))
+  }
+  return new Map([...yours].map(([id, n]) => [id, [n, total.get(id) ?? n]]))
 }
 
 /** Every card in the game face up, for the complete binder. Each is filed as
@@ -212,7 +242,7 @@ function oneInByCard(pool: Player[]): Map<string, number> {
   )
 }
 
-function build(have: Map<string, Count>, site: Map<string, Site>): BinderView {
+function build(have: Map<string, Count>, site: Map<string, Site>, serials: Map<string, [number, number]> = new Map()): BinderView {
   const byRarity = Object.fromEntries(RARITIES.map((r) => [r, { owned: 0, of: 0 }])) as BinderTotals['byRarity']
   const byPos = Object.fromEntries(POOL_KEYS.map((k) => [k, { owned: 0, of: 0 }])) as BinderTotals['byPos']
   const men = new Map<string, BinderMan>()
@@ -225,7 +255,7 @@ function build(have: Map<string, Count>, site: Map<string, Site>): BinderView {
       const siteCount: SiteCount = { pulls: site.get(p.id)?.pulls ?? 0, oneIn: oneIn.get(p.id) ?? 0 }
       const c = have.get(p.id)
       const card: BinderCard = c
-        ? { ...p, pulls: c.pulls, firstAt: c.first_at, site: siteCount }
+        ? { ...p, pulls: c.pulls, firstAt: c.first_at, site: siteCount, serial: serials.get(p.id) }
         : {
             id: p.id,
             name: p.name,

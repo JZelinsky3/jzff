@@ -30,11 +30,13 @@ import addedAfterE from './data/added-after-10e.json'
 import frozen from './data/season-pool-10h.json'
 import seasons from './data/season-pool.json'
 import vaulted from './data/vaulted.json'
-import { POOL_KEYS, RARITY_FLOOR, personOf, type Player, type PoolKey, type Rarity, type Weights } from './rules'
+import { POOL_KEYS, RARITY_FLOOR, personOf, tableRarity, type Player, type PoolKey, type TableRarity, type Weights } from './rules'
 
 export const POOL_VERSION = 'seasons-2026-10k'
 
-const ALL = seasons as Player[]
+// Canton is set here rather than in the data, so the frozen Daily pools keep the
+// Immortals they were dealt with. Nothing about a deal reads it: see tableRarity.
+const ALL = (seasons as Player[]).map((p) => (p.score >= RARITY_FLOOR.canton ? { ...p, rarity: 'canton' as const } : p))
 
 function byPosition(cards: Player[]): Record<PoolKey, Player[]> {
   return Object.fromEntries(POOL_KEYS.map((k) => [k, cards.filter((p) => p.pos === k)])) as Record<PoolKey, Player[]>
@@ -74,7 +76,7 @@ export const POOL_BEFORE = byPosition(FROZEN.filter((p) => !ADDED.has(p.id)))
  * tuned share over however many cards it holds now. So adding cards never moves
  * a pack's odds, in any mode, and this table doesn't change when the pool does.
  */
-const TUNED_ON: Record<PoolKey, Record<Rarity, number>> = {
+const TUNED_ON: Record<PoolKey, Record<TableRarity, number>> = {
   QB: { common: 60, rare: 37, dynasty: 16, transcendent: 9, immortal: 7 },
   RB: { common: 68, rare: 47, dynasty: 20, transcendent: 10, immortal: 7 },
   WR: { common: 78, rare: 46, dynasty: 22, transcendent: 11, immortal: 6 },
@@ -99,32 +101,33 @@ const IMMORTAL_SPAN = 2400
 const IMMORTAL_SPAN_H = 1600
 
 /**
- * The 5,200+ seasons, the top ten in the game, are this much harder again on top of
- * the curve: half as hard again to pull. It comes out of the same shares, so a
- * position's immortals as a whole stay exactly as likely. Not on POOL_H.
+ * Canton, the 5,200+ seasons and the top ten in the game, are this much harder again
+ * on top of the curve: half as hard again to pull. It comes out of the same shares,
+ * so a position's immortals as a whole stay exactly as likely. Not on POOL_H.
  */
-const CANTON_LINE = 5200
 const CANTON_PULL = 2 / 3
 
 function immortalPull(score: number, span: number, canton: number): number {
-  return IMMORTAL_SPREAD ** -((score - RARITY_FLOOR.immortal) / span) * (score >= CANTON_LINE ? canton : 1)
+  return IMMORTAL_SPREAD ** -((score - RARITY_FLOOR.immortal) / span) * (score >= RARITY_FLOOR.canton ? canton : 1)
 }
 
 function weigher(cards: Player[], span: number, canton = 1): (p: Player, weights: Weights) => number {
   const holds = new Map<string, number>()
-  for (const p of cards) holds.set(`${p.pos}|${p.rarity}`, (holds.get(`${p.pos}|${p.rarity}`) ?? 0) + 1)
+  const key = (p: Player) => `${p.pos}|${tableRarity(p.rarity)}`
+  for (const p of cards) holds.set(key(p), (holds.get(key(p)) ?? 0) + 1)
 
   const shares = new Map<string, number>()
   for (const [, list] of Object.entries(byPosition(cards))) {
-    const top = list.filter((p) => p.rarity === 'immortal')
+    const top = list.filter((p) => tableRarity(p.rarity) === 'immortal')
     const whole = top.reduce((sum, p) => sum + immortalPull(p.score, span, canton), 0)
     for (const p of top) shares.set(p.id, (immortalPull(p.score, span, canton) * top.length) / whole)
   }
 
   return (p, weights) => {
-    const base = Math.max(0, weights[p.rarity] ?? 0) * (shares.get(p.id) ?? 1)
-    const now = holds.get(`${p.pos}|${p.rarity}`)
-    const tuned = TUNED_ON[p.pos as PoolKey]?.[p.rarity]
+    const rarity = tableRarity(p.rarity)
+    const base = Math.max(0, weights[rarity] ?? 0) * (shares.get(p.id) ?? 1)
+    const now = holds.get(key(p))
+    const tuned = TUNED_ON[p.pos as PoolKey]?.[rarity]
     return now && tuned ? (base * tuned) / now : base
   }
 }

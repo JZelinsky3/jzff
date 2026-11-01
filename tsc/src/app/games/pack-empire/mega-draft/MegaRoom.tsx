@@ -51,20 +51,17 @@ function PoolCard({
     <button
       type="button"
       className={`pe-pc pe-pc--${state}${fresh ? ' fresh' : ''}`}
+      data-r={player.rarity}
       style={{ '--rc': rc.color, '--rg': rc.glow, '--art': rc.art } as React.CSSProperties}
       onClick={state === 'can' ? onPick : undefined}
       disabled={state !== 'can'}
       aria-label={state === 'can' ? `Draft ${player.name}` : player.name}
     >
       <span className="pe-pc-top">
-        <span className="pe-pc-pos" style={{ background: rc.color }}>
-          {player.pos}
-        </span>
-        <span className="pe-pc-rar" style={{ color: rc.color }}>
-          {rc.label}
-        </span>
+        <span className="pe-pc-pos">{player.pos}</span>
+        <span className="pe-pc-rar">{rc.label}</span>
       </span>
-      <span className="pe-pc-art" style={{ background: rc.art }}>
+      <span className="pe-pc-art">
         {img ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={img} alt="" className="pe-pc-img" loading="lazy" />
@@ -74,13 +71,9 @@ function PoolCard({
         {state === 'taken' && <span className="pe-pc-taken">{takenBy ?? 'Drafted'}</span>}
       </span>
       <span className="pe-pc-body">
-        <span className="pe-pc-name" style={{ color: rc.color }}>
-          {shortName(player.name)}
-        </span>
+        <span className="pe-pc-name">{shortName(player.name)}</span>
         <span className="pe-pc-team">{seasonLabel(player)}</span>
-        <span className="pe-pc-score" style={{ color: rc.color }}>
-          {player.score.toLocaleString()}
-        </span>
+        <span className="pe-pc-score">{player.score.toLocaleString()}</span>
       </span>
     </button>
   )

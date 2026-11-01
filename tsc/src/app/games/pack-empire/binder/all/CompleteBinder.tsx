@@ -199,6 +199,7 @@ function Tile({ card, img, missing, onClick }: { card: BinderOwned; img: string 
       <button
         type="button"
         className={`pe-bd-tile${missing ? ' nophoto' : ''}`}
+        data-r={card.rarity}
         style={style}
         onClick={onClick}
         aria-label={`${card.name} ${card.year}, ${rc.label}${missing ? ', no photo' : ''}`}

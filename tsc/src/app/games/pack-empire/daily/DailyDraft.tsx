@@ -82,7 +82,8 @@ export function DailyDraft({ initial, other }: { initial: DailyState; other: { h
   const [turned, setTurned] = useState(initial.done)
   // Left a pack open and came back: it's still open, on the same clock.
   const { stage, landing, open, tear, reveal, revealAll, skip, pick, dismiss, settle } = usePackStage(
-    initial.pack ? restoredStage(initial.captain != null && initial.step === 0 ? initial.captain : initial.step, initial.pack) : null
+    initial.pack ? restoredStage(initial.captain != null && initial.step === 0 ? initial.captain : initial.step, initial.pack) : null,
+    { plainCanton: true }
   )
   const [clockNote, setClockNote] = useState<string | null>(null)
   /** A pick is on its way to the server. */
@@ -304,6 +305,7 @@ export function DailyDraft({ initial, other }: { initial: DailyState; other: { h
       {stage && (
         <PackStage
           stage={stage}
+          plainCanton
           tag={captainPack ? { text: 'Captain pack', captain: true } : null}
           wild={
             captainPack

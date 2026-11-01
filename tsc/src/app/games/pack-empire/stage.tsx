@@ -26,14 +26,16 @@ import {
   type Rarity,
 } from '@/lib/packEmpire/rules'
 import type { FaceMap } from '@/lib/packEmpire/faces'
+import { CANTON_ART, CantonPull, Enshrinement } from './canton'
 import { Bolt, CaptainMark, PackCard, leanCard } from './cards'
 import { useFaces } from './faces'
 import { RipBurst, SealedPack, SpentPack } from './rip'
 
 /** The slow reveal on one card: its rarity, then its season and team, then
     what that season did, then the flip shows who. (It used to spell out the
-    position, which a position-locked pack has already told you.) */
-export type Walkout = { i: number; step: 'charge' | 'team' | 'stat' | 'flip'; id: number }
+    position, which a position-locked pack has already told you. A Canton has
+    one step of its own: the Hall, which ends when you've seen it.) */
+export type Walkout = { i: number; step: 'charge' | 'team' | 'stat' | 'flip' | 'hall'; id: number }
 
 type Rect = { left: number; top: number; width: number; height: number }
 
@@ -63,9 +65,9 @@ export type StageState = {
 export type Landing = { slot: number; phase: 'incoming' | 'landed' }
 
 /** Rarities that get the slow reveal rather than a plain flip. */
-const BIG = new Set<Rarity>(['transcendent', 'immortal'])
+const BIG = new Set<Rarity>(['transcendent', 'immortal', 'canton'])
 
-const STEP_MS: Record<Walkout['step'], number> = { charge: 750, team: 850, stat: 1100, flip: 1200 }
+const STEP_MS: Record<Exclude<Walkout['step'], 'hall'>, number> = { charge: 750, team: 850, stat: 1100, flip: 1200 }
 
 /** How long the Immortal Pull banner holds the cards back. */
 const PULL_MS = 2300
@@ -112,8 +114,7 @@ export function restoredStage(slot: number, cards: Player[]): StageState {
 const heldFaces: HTMLImageElement[] = []
 
 function preloadFaces(cards: Player[], uploaded: FaceMap) {
-  const faces = cards
-    .flatMap((c) => [uploaded[c.id] ?? c.img, teamLogo(c)])
+  const faces = [...cards.flatMap((c) => [uploaded[c.id] ?? c.img, teamLogo(c)]), ...(cards.some((c) => c.rarity === 'canton') ? CANTON_ART : [])]
     .filter((src): src is string => !!src)
     .map((src) => {
       const im = new Image()
@@ -135,8 +136,9 @@ function rectOf(el: Element | null): Rect | null {
 }
 
 /** `initial` puts a pack that was already open (a League pack left open
-    before a refresh) straight back on the stage. */
-export function usePackStage(initial: StageState | null = null) {
+    before a refresh) straight back on the stage. `plainCanton` gives a Canton the
+    ordinary walkout: the Daily, whose shot clock doesn't stop for the Hall. */
+export function usePackStage(initial: StageState | null = null, { plainCanton = false } = {}) {
   const [stage, setStage] = useState<StageState | null>(initial)
   const [landing, setLanding] = useState<Landing | null>(null)
   const busy = useRef(false)
@@ -223,6 +225,11 @@ export function usePackStage(initial: StageState | null = null) {
     })
   }, [])
 
+  const firstStep = useCallback(
+    (card: Player): Walkout['step'] => (card.rarity === 'canton' && !plainCanton ? 'hall' : 'charge'),
+    [plainCanton]
+  )
+
   /** Start the next walkout in line, unless one is already running. */
   const runQueue = useCallback((slot: number) => {
     const id = ++walkoutId.current
@@ -230,9 +237,10 @@ export function usePackStage(initial: StageState | null = null) {
       if (!cur || cur.slot !== slot || cur.walkout) return cur
       const line = cur.queue.filter((i) => !cur.revealed[i])
       if (!line.length) return cur.queue.length ? { ...cur, queue: [] } : cur
-      return { ...cur, walkout: { i: line[0], step: 'charge', id }, queue: line.slice(1) }
+      const card = cur.cards?.[line[0]]
+      return { ...cur, walkout: { i: line[0], step: card ? firstStep(card) : 'charge', id }, queue: line.slice(1) }
     })
-  }, [])
+  }, [firstStep])
 
   /** One step of a walkout forward; off the end, the next in the queue. */
   const advance = useCallback((id: number) => {
@@ -240,22 +248,28 @@ export function usePackStage(initial: StageState | null = null) {
     setStage((cur) => {
       const w = cur?.walkout
       if (!cur || !w || w.id !== id) return cur
-      if (w.step !== 'flip') {
+      if (w.step !== 'flip' && w.step !== 'hall') {
         const step = NEXT_STEP[w.step]
         if (step !== 'flip') return { ...cur, walkout: { ...w, step } }
         const revealed = [...cur.revealed]
         revealed[w.i] = true
         return { ...cur, revealed, walkout: { ...w, step } }
       }
+      // The Hall shows the card itself, so it only turns over on the table now.
+      const revealed = [...cur.revealed]
+      revealed[w.i] = true
       const [next, ...rest] = cur.queue
-      if (next != null) return { ...cur, walkout: { i: next, step: 'charge', id: nextId }, queue: rest }
-      return { ...cur, walkout: null }
+      if (next != null) {
+        const card = cur.cards?.[next]
+        return { ...cur, revealed, walkout: { i: next, step: card ? firstStep(card) : 'charge', id: nextId }, queue: rest }
+      }
+      return { ...cur, revealed, walkout: null }
     })
-  }, [])
+  }, [firstStep])
 
   const walkout = stage?.walkout ?? null
   useEffect(() => {
-    if (!walkout) return
+    if (!walkout || walkout.step === 'hall') return
     const t = window.setTimeout(() => advance(walkout.id), STEP_MS[walkout.step])
     return () => window.clearTimeout(t)
   }, [walkout, advance])
@@ -264,7 +278,7 @@ export function usePackStage(initial: StageState | null = null) {
   const skip = useCallback(() => {
     const w = stage?.walkout
     if (!w) return
-    if (w.step === 'flip') {
+    if (w.step === 'flip' || w.step === 'hall') {
       advance(w.id)
       return
     }
@@ -490,6 +504,7 @@ export function PackStage({
   chipFor,
   note = null,
   clock = null,
+  plainCanton = false,
 }: {
   stage: StageState
   tag?: PackTag
@@ -510,6 +525,8 @@ export function PackStage({
   note?: string | null
   /** Under the status line: the Daily's shot clock, Even's Battles. */
   clock?: React.ReactNode
+  /** No Canton Pull or Hall: see usePackStage. */
+  plainCanton?: boolean
 }) {
   const root = useRef<HTMLDivElement>(null)
   useGyroTilt(root)
@@ -520,26 +537,36 @@ export function PackStage({
   const hidden = stage.revealed.filter((r) => !r).length
   const shown = stage.revealed.length - hidden
   const w = stage.walkout
+  const hall = w?.step === 'hall'
   const woCard = w && cards ? cards[w.i] : null
   const woLook = woCard ? RARITY_LOOK[woCard.rarity] : null
   // A blind pack opens the same way every time, at the size of a rare's.
   const blind = !!wild || !!cards?.some((c) => c.blind)
   const best: Rarity | null = cards ? (blind ? 'rare' : bestRarity(cards)) : null
   const glow = blind ? BLIND_GLOW : best ? RARITY_LOOK[best].color : '#e8a84b'
-  const tier = best ? RARITIES.indexOf(best) : 0
+  // The pack's light tops out at Immortal's size, and Canton's own show takes over.
+  const lit = best === 'canton' ? 'immortal' : best
+  const tier = lit ? RARITIES.indexOf(lit) : 0
+  const cantonPack = best === 'canton' && !plainCanton
 
   // An immortal stops the show as the pack comes open: the pack stays on the
   // table, lit, with the banner over it, and the cards wait until it's done.
   const [pullShown, setPullShown] = useState(false)
   const endPull = useCallback(() => setPullShown(true), [])
-  const pulling = !!cards && stage.torn && !stage.restored && best === 'immortal' && !pullShown
-  const open = !!cards && stage.torn && !pulling
+  const pulling = !!cards && stage.torn && !stage.restored && lit === 'immortal' && !cantonPack && !pullShown
+  // A Canton's pack: the show runs over the table, and the cards go down under its
+  // whiteout, so when it clears they're laid out and ready to flip.
+  const [laid, setLaid] = useState(false)
+  const layCards = useCallback(() => setLaid(true), [])
+  const cantonPull = !!cards && stage.torn && !stage.restored && cantonPack && !pullShown
+  const open = !!cards && stage.torn && !pulling && (!cantonPull || laid)
 
   let status = 'Swipe across the top or tap to rip it open'
   if (stage.error) status = stage.error
   else if (!stage.torn) status = 'Swipe across the top, or tap, to rip it open'
   else if (!cards) status = 'Dealing'
   else if (pulling) status = 'Immortal pull'
+  else if (cantonPull || hall) status = 'Canton pull'
   else if (woLook) status = `${woLook.label} pull`
   else if (stage.queue.length) status = 'Revealing'
   else if (stage.pickedId) status = 'Signed'
@@ -552,8 +579,10 @@ export function PackStage({
     'pe-stage',
     stage.leaving ? 'leaving' : '',
     stage.flight ? 'flying' : '',
-    w ? 'walkout' : '',
+    w && !hall ? 'walkout' : '',
     pulling ? 'pulling' : '',
+    cantonPull ? 'cantoning' : '',
+    hall ? 'hall' : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -566,13 +595,14 @@ export function PackStage({
         role="dialog"
         aria-modal="true"
         aria-label={wild ? `${wild.first} ${wild.rest}` : `${def.label} pack`}
-        data-wo={w?.step}
-        data-boom={open && !stage.restored ? tier : undefined}
+        data-wo={hall ? undefined : w?.step}
+        data-boom={open && !stage.restored && !cantonPack ? tier : undefined}
         style={woLook ? ({ '--wo': woLook.color, '--wo-glow': woLook.glow } as React.CSSProperties) : undefined}
       >
         {pulling && <ImmortalPull onDone={endPull} />}
+        {cantonPull && <CantonPull onWhite={layCards} onDone={endPull} />}
 
-        {w && (
+        {w && !hall && (
           <button
             type="button"
             className="pe-wo-veil"
@@ -582,7 +612,7 @@ export function PackStage({
           />
         )}
 
-        <div className={`pe-stage-head${w || pulling ? ' wo' : ''}`}>
+        <div className={`pe-stage-head${(w && !hall) || pulling || cantonPull ? ' wo' : ''}`}>
           <div className="pe-stage-norm">
             {tag && (
               <div
@@ -609,7 +639,7 @@ export function PackStage({
               <span className="pe-imp-sweep" />
             </div>
           )}
-          {w && woCard && woLook && (
+          {w && !hall && woCard && woLook && (
             <div className="pe-wo-cap" data-step={w.step} aria-live="polite">
               <div className="pe-wo-rar">{woLook.label}</div>
               {w.step !== 'charge' && <div className="pe-wo-team">{seasonLabel(woCard)}</div>}
@@ -623,13 +653,13 @@ export function PackStage({
         {!open && !stage.error && <SealedPack art={art} glow={glow} tier={tier} ready={!!cards} onTorn={onTear} />}
 
         {open && (
-          <div className="pe-stage-cards">
-            {!stage.restored && best && <RipBurst rarity={best} glow={blind ? BLIND_GLOW : undefined} />}
-            {!stage.restored && <SpentPack art={art} tier={tier} glow={glow} />}
+          <div className={`pe-stage-cards${cantonPack ? ' laid' : ''}`}>
+            {!stage.restored && !cantonPack && lit && <RipBurst rarity={lit} glow={blind ? BLIND_GLOW : undefined} />}
+            {!stage.restored && !cantonPack && <SpentPack art={art} tier={tier} glow={glow} />}
             {cards.map((card, i) => {
               const isPick = stage.pickedId === card.id
               const isRej = !!stage.pickedId && !isPick
-              const charging = w?.i === i
+              const charging = !hall && w?.i === i
               return (
                 <PackCard
                   key={card.id}
@@ -667,6 +697,11 @@ export function PackStage({
       </div>
 
       {stage.flight && <CardFlight flight={stage.flight} />}
+      {hall && woCard && (
+        <Enshrinement player={woCard} onClose={onSkip}>
+          <PackCard player={woCard} revealed />
+        </Enshrinement>
+      )}
     </>
   )
 }

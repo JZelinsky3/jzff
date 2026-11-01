@@ -20,6 +20,7 @@ import {
   packOdds,
   type Player,
   type Rarity,
+  type Weights,
 } from '@/lib/packEmpire/rules'
 import { Chevron } from '../MobileGameBar'
 import mobileStyles from '../mobile.module.css'
@@ -62,8 +63,8 @@ function showcase(): Player[] {
 /** The chance any one card is a given rarity, averaged over the eleven
     packs, off the pool as it actually is. Base odds only: the boosted card in
     each pack is a bonus the page doesn't print (Joey's call). */
-function oddsBySlot(weights: Record<Rarity, number>): Record<Rarity, number> {
-  const acc: Record<Rarity, number> = { common: 0, rare: 0, dynasty: 0, transcendent: 0, immortal: 0 }
+function oddsBySlot(weights: Weights): Record<Rarity, number> {
+  const acc: Record<Rarity, number> = { common: 0, rare: 0, dynasty: 0, transcendent: 0, immortal: 0, canton: 0 }
   for (const s of SLOTS) {
     const o = packOdds(POOL[s.pool], (p) => cardWeight(p, weights))
     for (const r of RARITIES) acc[r] += o[r] / SLOTS.length

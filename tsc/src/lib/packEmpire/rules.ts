@@ -15,9 +15,22 @@
 // Players and rarity
 // ============================================================
 
-export type Rarity = 'common' | 'rare' | 'dynasty' | 'transcendent' | 'immortal'
+export type Rarity = 'common' | 'rare' | 'dynasty' | 'transcendent' | 'immortal' | 'canton'
 
-export const RARITIES: Rarity[] = ['common', 'rare', 'dynasty', 'transcendent', 'immortal']
+export const RARITIES: Rarity[] = ['common', 'rare', 'dynasty', 'transcendent', 'immortal', 'canton']
+
+/** The rarities the odds tables know. Canton is a tier you see, not one that's
+    dealt: a pack draws those seasons from the Immortal table (see tableRarity), so
+    adding it moved no pack's odds and re-dealt nothing. */
+export type TableRarity = Exclude<Rarity, 'canton'>
+
+export function tableRarity(rarity: Rarity): TableRarity {
+  return rarity === 'canton' ? 'immortal' : rarity
+}
+
+/** How many Canton cards exist, for the line under the reveal. The pool itself
+    can't reach the browser. */
+export const CANTON_CARDS = 10
 
 /** The seven pools a pack can be drawn from. OT feeds both tackles, OG both
     guards, WR all three receivers. */
@@ -121,6 +134,43 @@ const LOGO_FILE: Record<string, string> = {
 
 /** The team's logo for the card front. Keyed on the franchise, so every era
     wears today's logo: an Oiler carries the Titans', a '99 Ram the current Rams'. */
+/** Each franchise's colours, for the Hall's banners: the deep one the cloth is
+    dyed, then the trim. Keyed like LOGO_FILE, on the franchise's current name. */
+export const TEAM_COLORS: Record<string, [string, string]> = {
+  'Arizona Cardinals': ['#97233f', '#ffb612'],
+  'Atlanta Falcons': ['#a71930', '#a5acaf'],
+  'Baltimore Ravens': ['#241773', '#9e7c0c'],
+  'Buffalo Bills': ['#00338d', '#c60c30'],
+  'Carolina Panthers': ['#0085ca', '#101820'],
+  'Chicago Bears': ['#0b162a', '#c83803'],
+  'Cincinnati Bengals': ['#fb4f14', '#101820'],
+  'Cleveland Browns': ['#311d00', '#ff3c00'],
+  'Dallas Cowboys': ['#041e42', '#869397'],
+  'Denver Broncos': ['#002244', '#fb4f14'],
+  'Detroit Lions': ['#0076b6', '#b0b7bc'],
+  'Green Bay Packers': ['#203731', '#ffb612'],
+  'Houston Texans': ['#03202f', '#a71930'],
+  'Indianapolis Colts': ['#002c5f', '#a2aaad'],
+  'Jacksonville Jaguars': ['#006778', '#d7a22a'],
+  'Kansas City Chiefs': ['#c8102e', '#ffb81c'],
+  'Las Vegas Raiders': ['#1b1b1d', '#a5acaf'],
+  'Los Angeles Chargers': ['#0080c6', '#ffc20e'],
+  'Los Angeles Rams': ['#003594', '#ffa300'],
+  'Miami Dolphins': ['#008e97', '#fc4c02'],
+  'Minnesota Vikings': ['#4f2683', '#ffc62f'],
+  'New England Patriots': ['#002244', '#c60c30'],
+  'New Orleans Saints': ['#101820', '#d3bc8d'],
+  'New York Giants': ['#0b2265', '#a71930'],
+  'New York Jets': ['#125740', '#ffffff'],
+  'Philadelphia Eagles': ['#004c54', '#a5acaf'],
+  'Pittsburgh Steelers': ['#101820', '#ffb612'],
+  'San Francisco 49ers': ['#aa0000', '#b3995d'],
+  'Seattle Seahawks': ['#002244', '#69be28'],
+  'Tampa Bay Buccaneers': ['#a71930', '#34302b'],
+  'Tennessee Titans': ['#0c2340', '#4b92db'],
+  'Washington Commanders': ['#5a1414', '#ffb612'],
+}
+
 export function teamLogo(p: Pick<Player, 'team'>): string | null {
   const file = LOGO_FILE[p.team]
   return file ? `/games/pack-empire/logos/${file}.webp` : null
@@ -167,6 +217,14 @@ export const RARITY_LOOK: Record<
     art: 'linear-gradient(150deg,#280048,#6010b0)',
     shimmer: '#c020f0',
   },
+  canton: {
+    label: 'Canton',
+    short: 'CAN',
+    color: '#f4dfa4',
+    glow: 'rgba(255,228,160,.85)',
+    art: 'linear-gradient(150deg,#fffdf6,#d8cdb3)',
+    shimmer: '#d9a93c',
+  },
   immortal: {
     label: 'Immortal',
     short: 'IMM',
@@ -189,9 +247,11 @@ export const RARITY_FLOOR: Record<Rarity, number> = {
   dynasty: 1600,
   transcendent: 2800,
   immortal: 4000,
+  canton: 5200,
 }
 
 export function rarityForScore(score: number): Rarity {
+  if (score >= RARITY_FLOOR.canton) return 'canton'
   if (score >= RARITY_FLOOR.immortal) return 'immortal'
   if (score >= RARITY_FLOOR.transcendent) return 'transcendent'
   if (score >= RARITY_FLOOR.dynasty) return 'dynasty'
@@ -415,7 +475,7 @@ export function tierRung(score: number): number {
 
 export const PACK_SIZE = 5
 
-export type Weights = Record<Rarity, number>
+export type Weights = Record<TableRarity, number>
 
 /**
  * Empire Builder odds. These are weights PER CARD, not per rarity: every
@@ -460,7 +520,7 @@ export const SOLO_BOOSTED: { normal: Weights; captain: Weights } = {
  * when every rarity holds the same number of players.
  */
 export function packOdds<T extends { rarity: Rarity }>(pool: T[], weigh: (p: T) => number): Record<Rarity, number> {
-  const mass: Record<Rarity, number> = { common: 0, rare: 0, dynasty: 0, transcendent: 0, immortal: 0 }
+  const mass: Record<Rarity, number> = { common: 0, rare: 0, dynasty: 0, transcendent: 0, immortal: 0, canton: 0 }
   for (const p of pool) mass[p.rarity] += weigh(p)
   const total = RARITIES.reduce((s, r) => s + mass[r], 0) || 1
   const out = { ...mass }

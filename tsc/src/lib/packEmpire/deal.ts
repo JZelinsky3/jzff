@@ -36,6 +36,7 @@ import {
   PACK_SIZE,
   POOL_KEYS,
   RARITY_FLOOR,
+  tableRarity,
   RESERVE_WEIGHTS,
   SALARY_CAP,
   SEED_ALPHABET,
@@ -105,7 +106,7 @@ const CURRENT_ERA: Era = { version: POOL_VERSION, pool: POOL, weigh: cardWeight 
 const BEFORE_ERA: Era = {
   version: POOL_BEFORE_VERSION,
   pool: POOL_BEFORE,
-  weigh: (p, weights) => Math.max(0, weights[p.rarity] ?? 0),
+  weigh: (p, weights) => Math.max(0, weights[tableRarity(p.rarity)] ?? 0),
 }
 
 const H_ERA: Era = { version: POOL_H_VERSION, pool: POOL_H, weigh: cardWeightH }
@@ -725,7 +726,7 @@ function megaCards(seed: string, deal: number): Player[] {
     const picked = new Set<string>()
     const want = MEGA_POOL_COUNTS[k]
 
-    const stars = pool.filter((p) => p.rarity === 'dynasty' || p.rarity === 'transcendent' || p.rarity === 'immortal')
+    const stars = pool.filter((p) => p.rarity === 'dynasty' || p.rarity === 'transcendent' || tableRarity(p.rarity) === 'immortal')
     if (stars.length) {
       const s = sampler(stars, ONE_EACH)(rnd()) as Player
       picked.add(personOf(s))

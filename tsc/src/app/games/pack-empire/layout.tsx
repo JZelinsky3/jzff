@@ -1,6 +1,8 @@
 import { loadFaces } from '@/lib/packEmpire/faces'
 import { FacesProvider } from './faces'
 import './pack-empire.css'
+import './foil.css'
+import './canton.css'
 
 // Loads the game's stylesheet and hands uploaded photos to every Pack Empire
 // route. It renders nothing of its own: each page owns its <main>, because the

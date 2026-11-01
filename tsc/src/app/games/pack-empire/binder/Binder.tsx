@@ -263,7 +263,7 @@ function Tile({ card, onClick }: { card: BinderCard; onClick: () => void }) {
     : `${card.name} ${card.year}, ${rc.label}, not pulled yet`
   return (
     <span className="pe-bd-slot">
-      <button type="button" className={`pe-bd-tile${owned(card) ? '' : ' back'}`} style={style} onClick={onClick} aria-label={label}>
+      <button type="button" className={`pe-bd-tile${owned(card) ? '' : ' back'}`} data-r={card.rarity} style={style} onClick={onClick} aria-label={label}>
         <span className="pe-bd-tile-top">
           <span className="pe-bd-tile-year">{card.year}</span>
           <span className="pe-bd-tile-rar">{rc.short}</span>
@@ -274,7 +274,7 @@ function Tile({ card, onClick }: { card: BinderCard; onClick: () => void }) {
             <img src={img} alt="" loading="lazy" decoding="async" onError={(e) => (e.currentTarget.style.display = 'none')} />
           ) : null}
           <span className="pe-bd-tile-initial">{owned(card) ? card.name.charAt(0) : '?'}</span>
-          {owned(card) && <span className="pe-bd-tile-count">×{card.pulls}</span>}
+          {owned(card) && <span className="pe-bd-tile-count">{card.serial ? card.serial.join('/') : `×${card.pulls}`}</span>}
         </span>
         <span className="pe-bd-tile-foot">{owned(card) ? card.score.toLocaleString() : 'Not pulled'}</span>
       </button>
@@ -315,7 +315,7 @@ function CardSheet({
 
         <div className="pe-bd-sheet-card">
           {owned(card) ? (
-            <PackCard player={card} revealed />
+            <PackCard player={card} revealed serial={card.serial} />
           ) : (
             <div className="pe-bd-ghost" style={{ '--rc': rc.color, '--rg': rc.glow } as React.CSSProperties}>
               <span className="pe-bd-ghost-rar">{rc.label}</span>
