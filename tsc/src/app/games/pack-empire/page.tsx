@@ -8,6 +8,7 @@ import { peMeta } from '@/lib/packEmpire/meta'
 import { POOL, POOL_SIZE, cardWeight } from '@/lib/packEmpire/pool'
 import { binderTotals, loadLeaders, type BinderTotals } from '@/lib/packEmpire/binder'
 import { runLeaders } from '@/lib/packEmpire/boardRuns'
+import { lockerOpenTo } from '@/lib/packEmpire/locker/access'
 import { dayKey } from '@/lib/packEmpire/daily'
 import { ruleForDay } from '@/lib/packEmpire/dayRules'
 import {
@@ -138,6 +139,19 @@ function BinderStrip({ totals }: { totals: BinderTotals | null }) {
   )
 }
 
+/** The way in to the Locker, for whoever it's open to so far. */
+function LockerStrip() {
+  return (
+    <Link href="/games/pack-empire/locker/" className="pe-today pe-today--locker">
+      <span className="pe-today-body">
+        <span className="pe-today-kicker">The Locker</span>
+        <span className="pe-today-line">A pack a day to keep, a deck of your own, and games to play it in.</span>
+      </span>
+      <span className="pe-btn pe-btn--sm pe-today-go">Open</span>
+    </Link>
+  )
+}
+
 /** Today's rule on the front page: the Daily's whole pitch is that it changed. */
 function DailyStrip() {
   const rule = ruleForDay(dayKey())
@@ -175,6 +189,7 @@ export default async function PackEmpireHome() {
   const binder = user ? await binderTotals(user.id).catch(() => null) : null
   const leaders = mobile ? undefined : await runLeaders(top).catch(() => new Map<string, Player>())
   const standings = await loadLeaders().catch(() => null)
+  const locker = await lockerOpenTo(user?.id).catch(() => false)
 
   const cards = showcase()
   const normal = oddsBySlot(SOLO_WEIGHTS.normal)
@@ -237,6 +252,7 @@ export default async function PackEmpireHome() {
           </section>
 
           <DailyStrip />
+          {locker && <LockerStrip />}
 
           <section className="pe-sec">
             <div className="pe-sec-head">
@@ -363,6 +379,7 @@ export default async function PackEmpireHome() {
         </header>
 
         <DailyStrip />
+        {locker && <LockerStrip />}
 
         <section className="pe-sec">
           <div className="pe-sec-head">

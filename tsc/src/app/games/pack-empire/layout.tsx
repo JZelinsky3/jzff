@@ -5,6 +5,7 @@ import './foil.css'
 import './canton.css'
 import './unveil.css'
 import './board.css'
+import './locker.css'
 
 // Loads the game's stylesheet and hands uploaded photos to every Pack Empire
 // route. It renders nothing of its own: each page owns its <main>, because the

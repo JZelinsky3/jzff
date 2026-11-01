@@ -183,7 +183,7 @@ function Football() {
 const FX = '/games/pack-empire/fx'
 
 /** Behind the card, seen through its frame. */
-const CardEdge = memo(function CardEdge({ rarity, field = false }: { rarity: Rarity; field?: boolean }) {
+export const CardEdge = memo(function CardEdge({ rarity, field = false }: { rarity: Rarity; field?: boolean }) {
   if (rarity === 'common' || rarity === 'rare') return null
   if (rarity === 'canton') {
     // An eclipse: the card is the moon, white light streaming off it, and a band of

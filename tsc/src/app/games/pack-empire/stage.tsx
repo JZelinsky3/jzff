@@ -591,6 +591,7 @@ export function PackStage({
   plainCanton = false,
   onNext,
   nextLabel = 'Next pack',
+  own = null,
 }: {
   stage: StageState
   tag?: PackTag
@@ -618,13 +619,16 @@ export function PackStage({
   /** A blind pack that's turned over: on to the table. */
   onNext?: () => void
   nextLabel?: string
+  /** A pack that's all yours, the Locker's: every card is kept, so a tap only ever
+      turns one over, and the show ends when the last one's up. */
+  own?: { art: string; first: string; rest: string; done: string; onDone: () => void } | null
 }) {
   const root = useRef<HTMLDivElement>(null)
   useGyroTilt(root)
 
   const def = SLOTS[stage.slot]
   const cards = stage.cards
-  const art = wild?.art ?? PACK_ART[def.pool]
+  const art = own?.art ?? wild?.art ?? PACK_ART[def.pool]
   const hidden = stage.revealed.filter((r) => !r).length
   const shown = stage.revealed.length - hidden
   const w = stage.walkout
@@ -675,6 +679,7 @@ export function PackStage({
   }
   else if (note) status = note
   else if (wild?.note) status = wild.note
+  else if (own) status = hidden === 0 ? 'All yours' : `${shown} of ${cards.length} revealed`
   else if (shown > 0) status = `${shown} of ${cards.length} revealed · tap one to keep him`
   else status = 'Tap a card to flip it, or reveal them all'
 
@@ -697,7 +702,7 @@ export function PackStage({
         className={cls}
         role="dialog"
         aria-modal="true"
-        aria-label={wild ? `${wild.first} ${wild.rest}` : `${def.label} pack`}
+        aria-label={own ? `${own.first} ${own.rest}` : wild ? `${wild.first} ${wild.rest}` : `${def.label} pack`}
         data-wo={hall ? undefined : w?.step}
         data-boom={open && !stage.restored && !cantonPack ? tier : undefined}
         style={woLook ? ({ '--wo': woLook.color, '--wo-glow': woLook.glow } as React.CSSProperties) : undefined}
@@ -727,8 +732,8 @@ export function PackStage({
               </div>
             )}
             <div className="pe-stage-pos">
-              {wild ? wild.first : def.label.split(' ')[0]}{' '}
-              <em>{wild ? wild.rest : def.label.split(' ').slice(1).join(' ')}</em>
+              {(own ?? wild)?.first ?? def.label.split(' ')[0]}{' '}
+              <em>{(own ?? wild)?.rest ?? def.label.split(' ').slice(1).join(' ')}</em>
             </div>
             <div className="pe-stage-status" aria-live="polite">
               {status}
@@ -756,7 +761,7 @@ export function PackStage({
         {!open && !stage.error && <SealedPack art={art} glow={glow} tier={tier} ready={!!cards} onTorn={onTear} onRip={onRip} />}
 
         {open && (
-          <div className={`pe-stage-cards${cantonPack ? ' laid' : ''}`}>
+          <div className={`pe-stage-cards${cantonPack ? ' laid' : ''}${cards.length > 5 ? ' many' : ''}`}>
             {!stage.restored && !cantonPack && lit && <RipBurst rarity={lit} glow={blind ? BLIND_GLOW : undefined} />}
             {!stage.restored && !cantonPack && <SpentPack art={art} tier={tier} glow={glow} />}
             {cards.map((card, i) => {
@@ -773,7 +778,7 @@ export function PackStage({
                   rejected={isRej}
                   kept={stage.kept === card.id && !stage.pickedId}
                   best={!stage.pickedId && !!keptCard && topCard?.id === card.id && topCard.score > keptCard.score}
-                  selectable={!stage.pickedId && !stage.kept && !w && !stage.queue.length}
+                  selectable={!own && !stage.pickedId && !stage.kept && !w && !stage.queue.length}
                   charging={charging}
                   burst={charging && w?.step === 'flip'}
                   chem={stage.revealed[i] && chemFor && !stage.kept ? chemFor(card) : null}
@@ -796,6 +801,11 @@ export function PackStage({
           {settled && !stage.pickedId && (
             <button type="button" className="pe-btn" onClick={onNext}>
               {nextLabel}
+            </button>
+          )}
+          {own && open && hidden === 0 && !w && !stage.queue.length && (
+            <button type="button" className="pe-btn" onClick={own.onDone}>
+              {own.done}
             </button>
           )}
           {!cards && stage.error && (

@@ -292,12 +292,22 @@ html:has(.pe-theme) body {
   background: #f4c06a;
 }
 
-/* Narrower desktops: the tools drop their words, then the rail its icons. */
-@media (max-width: 1180px) {
+/* Narrower desktops: the tools drop their words a few at a time, then the rail its
+   icons. Measured signed in, with every tool out: they sit beside the rail, and
+   past these widths they ran into it. */
+@media (max-width: 1660px) {
+  .pe-nav-tool--tight span {
+    display: none;
+  }
+}
+
+@media (max-width: 1480px) {
   .pe-nav-tool span {
     display: none;
   }
+}
 
+@media (max-width: 1260px) {
   .pe-nav-mode {
     padding: 0.5rem 0.75rem;
   }
