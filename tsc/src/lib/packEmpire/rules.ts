@@ -176,6 +176,15 @@ export function teamLogo(p: Pick<Player, 'team'>): string | null {
   return file ? `/games/pack-empire/logos/${file}.webp` : null
 }
 
+/** The logos are drawn for dark cards, so these three are mostly white and vanish on
+    Canton's pearl. They have a version in team colours, for that plate only. */
+const PEARL_LOGO = new Set(['den', 'lar', 'nyj'])
+
+export function pearlLogo(p: Pick<Player, 'team'>): string | null {
+  const file = LOGO_FILE[p.team]
+  return file && PEARL_LOGO.has(file) ? `/games/pack-empire/logos/pearl/${file}.webp` : teamLogo(p)
+}
+
 /**
  * How each rarity looks. Unchanged from the original cards: these drive the
  * rarity effects (scan lines, crackle, plasma, the immortal arcs), and the

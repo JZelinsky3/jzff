@@ -17,6 +17,7 @@ import {
   TIERS,
   seasonLabel,
   surname,
+  pearlLogo,
   teamLogo,
   tierFor,
   type BlindFace,
@@ -601,7 +602,7 @@ export function PackCard({
 }) {
   const blind = player.blind
   const rc = blind ? blindLook(blind) : RARITY_LOOK[player.rarity]
-  const logo = player.team ? teamLogo(player) : null
+  const logo = !player.team ? null : player.rarity === 'canton' ? pearlLogo(player) : teamLogo(player)
   const cls = [
     'pe-card',
     revealed ? 'rev' : '',

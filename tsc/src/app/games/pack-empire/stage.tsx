@@ -20,6 +20,7 @@ import {
   RARITIES,
   RARITY_LOOK,
   SLOTS,
+  pearlLogo,
   seasonLabel,
   teamLogo,
   type Player,
@@ -114,7 +115,7 @@ export function restoredStage(slot: number, cards: Player[]): StageState {
 const heldFaces: HTMLImageElement[] = []
 
 function preloadFaces(cards: Player[], uploaded: FaceMap) {
-  const faces = [...cards.flatMap((c) => [uploaded[c.id] ?? c.img, teamLogo(c)]), ...(cards.some((c) => c.rarity === 'canton') ? CANTON_ART : [])]
+  const faces = [...cards.flatMap((c) => [uploaded[c.id] ?? c.img, c.rarity === 'canton' ? pearlLogo(c) : teamLogo(c)]), ...(cards.some((c) => c.rarity === 'canton') ? CANTON_ART : [])]
     .filter((src): src is string => !!src)
     .map((src) => {
       const im = new Image()

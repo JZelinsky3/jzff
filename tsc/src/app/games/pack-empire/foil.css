@@ -82,7 +82,7 @@
 .pe-card[data-r='canton'] .pe-cf-season { background: linear-gradient(180deg, transparent, rgba(255, 251, 240, .88) 68%); }
 .pe-card[data-r='canton'] .pe-cf-season b { color: #5c3f08; }
 .pe-card[data-r='canton'] .pe-cf-body { padding-left: .4em; padding-right: .4em; background: linear-gradient(180deg, #fffdf6, #e7e0d1); border-color: #b98f33; }
-.pe-card[data-r='canton'] .pe-cf-logo { filter: drop-shadow(0 0 .03em rgba(30, 20, 8, .75)) drop-shadow(0 .02em .05em rgba(30, 20, 8, .4)); }
+.pe-card[data-r='canton'] .pe-cf-logo { filter: drop-shadow(0 .02em .04em rgba(30, 20, 8, .35)); }
 .pe-card.rev:not(.still)[data-r='canton'] .pe-cf-score::after { content: attr(data-v); position: absolute; left: 0; top: 0; color: #5a3d06; text-shadow: 0 0 .2em #ffc95a, 0 0 .46em #ffc95a; opacity: 0; animation: pf-charge 5.2s ease-in-out infinite; }
 .pe-card:not(.rev)[data-r='canton'] .pe-card-back { box-shadow: none; animation: pe-tell-jitter 1.2s linear infinite; }
 

@@ -612,6 +612,38 @@ def hall(bays=6):
     Image.fromarray(np.clip(rgb, 0, 255).astype('uint8')).save(f'{OUT}/card-hall-ceiling.webp', 'WEBP', quality=66, method=6)
 
 
+def pearl_logos():
+    # The team logos are drawn for dark cards, so three of them are mostly or wholly
+    # white, and vanish on Canton's pearl. These are the same shapes in team colours:
+    # Rams blue with a gold horn, Jets green, Broncos navy with the orange mane kept.
+    # The Chargers' bolt reads fine as it is: recolouring its edge only added speckle.
+    from scipy import ndimage as ni
+    base = os.path.join(OUT, '..', 'logos')
+    dest = os.path.join(base, 'pearl')
+    os.makedirs(dest, exist_ok=True)
+    def load(team):
+        return np.asarray(Image.open(os.path.join(base, f'{team}.webp')).convert('RGBA'), dtype=np.float32)
+    def keep(team, rgb, alpha):
+        Image.fromarray(np.dstack([np.clip(rgb, 0, 255), alpha]).astype('uint8'), 'RGBA').save(os.path.join(dest, f'{team}.webp'), 'WEBP', quality=90, alpha_quality=95, method=6)
+    # The Rams file is four shapes: the L, the A, and the two curves of the horn. Edge
+    # pixels take the colour of the nearest shape, so nothing fringes.
+    a = load('lar')
+    parts, count = ni.label(a[..., 3] > 127)
+    sizes = ni.sum(parts > 0, parts, range(1, count + 1))
+    big = [i + 1 for i in np.argsort(sizes)[::-1][:4]]
+    by_top = sorted(big, key=lambda i: np.nonzero(parts == i)[0].mean())
+    horn = {by_top[0], by_top[-1]}
+    near = ni.distance_transform_edt(~np.isin(parts, big), return_distances=False, return_indices=True)
+    owner = parts[near[0], near[1]]
+    rgb = np.where(np.isin(owner, list(horn))[..., None], np.array((240, 164, 0.)), np.array((0, 53, 148.)))
+    keep('lar', rgb, a[..., 3])
+    a = load('nyj')
+    keep('nyj', np.ones_like(a[..., :3]) * np.array((18, 87, 64.)), a[..., 3])
+    a = load('den')
+    white = np.clip((a[..., :3].min(-1) - 150) / 90, 0, 1)[..., None]
+    keep('den', a[..., :3] * (1 - white) + np.array((10, 35, 67.)) * white, a[..., 3])
+
+
 def smoke():
     # Immortal: jade smoke, drifting slowly up behind the player. Joey wanted the
     # graphics limited, and this is one small tile on one layer. Seamless top to
@@ -677,5 +709,6 @@ god_rays()
 hall()
 portal()
 molten()
+pearl_logos()
 banner()
 print('ok', sorted(os.listdir(OUT)))
