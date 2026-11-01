@@ -51,12 +51,15 @@ export const metadata: Metadata = peMeta({
   url: 'https://thesundaychronicle.app/games/pack-empire/',
 })
 
+/** Common's top value is a tie of dozens, so its face is picked, not sorted. */
+const COMMON_FACE = 'wr-jamarr-chase-2023'
+
 /** One face per rarity for the index: the best recent skill player at each. */
 function showcase(): Player[] {
   const skill = [...POOL.QB, ...POOL.RB, ...POOL.WR, ...POOL.TE]
   return RARITIES.map((r) => {
     const of = skill.filter((p) => p.rarity === r && p.img && (p.year ?? 0) >= 2000)
-    return of.sort((a, b) => b.score - a.score)[0]
+    return of.find((p) => r === 'common' && p.id === COMMON_FACE) ?? of.sort((a, b) => b.score - a.score)[0]
   }).filter(Boolean) as Player[]
 }
 
@@ -72,7 +75,9 @@ function oddsBySlot(weights: Weights): Record<Rarity, number> {
   return acc
 }
 
-const pct = (n: number) => `${n < 0.1 ? (n * 100).toFixed(1) : Math.round(n * 100)}%`
+/** Canton is far under a tenth of a percent, so it needs the extra places: rounded
+    to one, it read 0.0%, as if it couldn't be pulled. */
+const pct = (n: number) => `${n < 0.001 ? (n * 100).toFixed(2) : n < 0.1 ? (n * 100).toFixed(1) : Math.round(n * 100)}%`
 
 const FAN: { pool: keyof typeof POOL; r: number; y: number }[] = [
   { pool: 'OT', r: -27, y: 24 },
