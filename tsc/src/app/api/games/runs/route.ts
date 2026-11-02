@@ -257,7 +257,7 @@ async function postOne(
       p_run: runId,
     }),
     boardSize(key, weekStart),
-    soloPicks && 'userId' in owner ? recordSoloRun(owner.userId, 'solo', seed, soloPicks) : Promise.resolve(null),
+    soloPicks && 'userId' in owner ? recordSoloRun(owner.userId, seed, soloPicks) : Promise.resolve(null),
   ])
 
   return {

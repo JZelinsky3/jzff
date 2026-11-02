@@ -4,11 +4,13 @@
 
 import { LANES, LEGAL_LANES, POSITION_RULE, stackCost, stackPower } from '@/lib/packEmpire/locker/fieldGeneral'
 import { cardMatches, eventCost, eventPower, lockerCost, lockerPower, type LockerEvent } from '@/lib/packEmpire/locker/rules'
+import { signatureOf } from '@/lib/packEmpire/locker/signatures'
 import type { Player } from '@/lib/packEmpire/rules'
 import { PackCard } from '../cards'
 
 export function CardSheet({ card, event, onClose }: { card: Player; event: LockerEvent | null; onClose: () => void }) {
   const lift = POSITION_RULE[card.pos].split('. ').slice(1).join('. ')
+  const sig = signatureOf(card)
   return (
     <button type="button" className="pe-lk-sheet" onClick={onClose} aria-label="Close">
       <PackCard player={card} revealed />
@@ -19,7 +21,13 @@ export function CardSheet({ card, event, onClose }: { card: Player; event: Locke
         <span>
           {LEGAL_LANES[card.pos].map((l) => LANES[l].label).join(' or ')}. {lift}
         </span>
-        {card.rarity === 'canton' ? <span>Always in your opening hand. Lifts its lane 2 for every teammate in it.</span> : <span>Stacks for {stackCost(card, null)}, adds {stackPower(card, null)}. Same position adds 2 more.</span>}
+        {sig && (
+          <span className="pe-lk-sheet-sig">
+            <b>{sig.title}</b>
+            {sig.line}
+          </span>
+        )}
+        {card.rarity === 'canton' ? <span>Always in your opening hand.</span> : <span>Stacks for {stackCost(card, null)}, adds {stackPower(card, null)}. Same position adds 2 more.{sig ? ' Stacked, it loses its signature.' : ''}</span>}
         {event && cardMatches(card, event.match) && (
           <span className="up">
             {event.title}: costs {eventCost(card, event)}, Power Level {eventPower(card, event)}

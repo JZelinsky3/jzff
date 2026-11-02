@@ -24,7 +24,7 @@ export type CallEffect =
   | { kind: 'draw'; n: number }
   /** This much less cap room for them next drive. */
   | { kind: 'ice'; n: number }
-  /** Counts as meeting this drive's goal, or draws a card if there isn't one. */
+  /** Counts as meeting an open goal, or draws a card if there isn't one. */
   | { kind: 'goal' }
   /** They can't play in the lane you aim it at next drive. */
   | { kind: 'close' }
@@ -58,7 +58,7 @@ export const CALL_PREFIX = 'call:'
 export const CALLS: FgCall[] = [
   { id: 'call:film-study', title: 'Film Study', line: 'Draw 3 cards.', cost: 2, does: { kind: 'draw', n: 3 } },
   { id: 'call:ice-the-kicker', title: 'Ice The Kicker', line: 'They get 4 less cap next drive.', cost: 1, does: { kind: 'ice', n: 4 } },
-  { id: 'call:game-plan', title: 'Game Plan', line: "Meet this drive's goal. No goal? Draw a card.", cost: 1, does: { kind: 'goal' } },
+  { id: 'call:game-plan', title: 'Game Plan', line: 'Meet an open goal. None open? Draw a card.', cost: 1, does: { kind: 'goal' } },
   { id: 'call:spike-it', title: 'Spike It', line: 'Keep all your unspent cap for next drive.', cost: 0, does: { kind: 'keep' } },
   { id: 'call:hard-count', title: 'Hard Count', line: "They can't play in a lane next drive.", cost: 1, does: { kind: 'close' }, aim: 'theirs' },
   { id: 'call:audible', title: 'Audible', line: 'Move one of your cards to another lane.', cost: 2, does: { kind: 'move' }, aim: 'yours' },

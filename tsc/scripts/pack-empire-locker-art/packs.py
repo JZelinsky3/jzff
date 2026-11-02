@@ -107,6 +107,7 @@ PACKS = [
     ('afc-east', 'AFC EAST', '#d8333c', True), ('afc-north', 'AFC NORTH', '#e6752a', True), ('afc-south', 'AFC SOUTH', '#d29c17', True), ('afc-west', 'AFC WEST', '#c7338d', True),
     ('nfc-east', 'NFC EAST', '#2d63df', True), ('nfc-north', 'NFC NORTH', '#1b8db4', True), ('nfc-south', 'NFC SOUTH', '#27a64c', True), ('nfc-west', 'NFC WEST', '#7a4ee0', True),
     ('00s', '2000s', '#7c97d0', True), ('10s', '2010s', '#16c2d3', True), ('20s', '2020s', '#e63b97', True), ('legends', 'LEGENDS', '#b9843a', True),
+    ('trophy', 'TROPHY', '#d9b24a', False),
 ]
 for slug, title, color, boostable in PACKS:
     make(slug, title, color)

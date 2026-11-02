@@ -1,6 +1,6 @@
 // POST /api/games/pack-empire/locker/field-general
 //
-//   { action: 'start', mode }           -> { id }
+//   { action: 'start', mode, level? }   -> { id }
 //   { action: 'challenge', friend? }    -> { id }
 //   { action: 'join', id }              -> { id }
 //   { action: 'drive', id, plays }      -> { match }
@@ -12,6 +12,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { lockerOpenTo } from '@/lib/packEmpire/locker/access'
+import { isCpuLevel } from '@/lib/packEmpire/locker/fieldGeneral'
 import { challenge, joinMatch, parsePlays, pollMatch, resignMatch, startMatch, takeDrive } from '@/lib/packEmpire/locker/fieldGeneralMatch'
 import { createClient } from '@/lib/supabase/server'
 
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (body.action === 'start') {
-    const out = await startMatch(user.id, body.mode === 'event' ? 'event' : 'standard')
+    const out = await startMatch(user.id, body.mode === 'event' ? 'event' : 'standard', isCpuLevel(body.level) ? body.level : 'pro')
     return out.ok ? NextResponse.json({ ok: true, id: out.id }, { headers: NO_STORE }) : bad(out.error, out.status)
   }
 

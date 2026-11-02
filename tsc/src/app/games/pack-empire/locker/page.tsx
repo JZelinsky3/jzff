@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { lockerOpenTo } from '@/lib/packEmpire/locker/access'
-import { lockerHome } from '@/lib/packEmpire/locker/store'
+import { lockerHome, trophyRoom } from '@/lib/packEmpire/locker/store'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import mobileStyles from '../../mobile.module.css'
@@ -29,11 +29,11 @@ export default async function LockerPage() {
   if (!(await lockerOpenTo(user?.id))) notFound()
 
   const mobile = (await getViewMode()) === 'mobile'
-  const home = user ? await lockerHome(user.id) : null
+  const [home, room] = user ? await Promise.all([lockerHome(user.id), trophyRoom(user.id)]) : [null, null]
 
   return (
     <main className={`${ROOM_CLASS} ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>
-      <LockerChrome mobile={mobile} signedIn={!!user} back="/games/pack-empire/" backLabel="Pack Empire" kicker="Pack Empire" title="Locker" titleEm="Room" tab="home" />
+      <LockerChrome mobile={mobile} userId={user?.id} back="/games/pack-empire/" backLabel="Pack Empire" kicker="Pack Empire" title="Locker" titleEm="Room" tab="home" />
       <div className="pe-wrap pe-lk">
         {!mobile && (
           <header className="pe-lk-head">
@@ -43,8 +43,8 @@ export default async function LockerPage() {
             </h1>
           </header>
         )}
-        {home ? (
-          <LockerHub home={home} />
+        {home && room ? (
+          <LockerHub home={home} trophies={{ waiting: room.waiting, claimed: room.claimed.length }} />
         ) : (
           <div className="pe-lk-signin">
             <p>The Locker Room is tied to your account. Sign in for a Starter Pack and a pack every day.</p>

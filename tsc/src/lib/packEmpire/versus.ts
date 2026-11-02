@@ -35,10 +35,9 @@ import { randomInt } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { battlesFrom, drawBattles, settleBattles, type BattleOutcome } from './battles'
 import { blindRun, lockBlindPicks, matchesLocks, parseLockPicks } from './blindPicks'
-import { CPU_SKILL, cpuEye, newCaptainSeed, newEvenSeed, priced, readSeed } from './deal'
+import { CPU_SKILL, cpuEye, newEvenSeed, newVersusSeed, priced, readSeed } from './deal'
 import { friendOf } from '@/lib/friends'
 import { hashKey, nameForUser, cleanGuestName, newId, isId } from './people'
-import { recordSoloRun } from './binder'
 import { missReport } from './missed'
 import { replaySolo, seedPack, type SoloPick } from './solo'
 import {
@@ -209,11 +208,11 @@ const CPU_BATTLE = 700
  * only what a person could (see cpuEye). Deterministic off its seed, so the
  * lineup is fixed the moment the seed is dealt, whatever the other seat does.
  */
-function cpuDraft(seed: string, battleIds: string[] | null): VersusResult | null {
+export function cpuDraft(seed: string, battleIds: string[] | null): VersusResult | null {
   const parsed = readSeed(seed)
   if (!parsed) return null
   const eye = cpuEye(seed, parsed.diff)
-  const spots = CPU_SKILL[parsed.diff]?.chem ?? 1
+  const spots = CPU_SKILL[parsed.diff].chem
   const battles = battlesFrom(battleIds)
   const chem = chemistryCounts(parsed.diff, parsed.even)
   const taken: string[] = []
@@ -292,7 +291,7 @@ export async function createVersus(
     invite = {
       guest_bot: true,
       guest_name: CPU_NAME,
-      guest_seed: even_seed ?? newCaptainSeed(randomInt(6), difficulty),
+      guest_seed: even_seed ?? newVersusSeed(randomInt(6), difficulty),
       status: 'playing',
     }
   } else if (friendship != null) {
@@ -373,7 +372,7 @@ export async function startVersusSeat(
   if (!row.even_seed && (!Number.isInteger(captain) || (captain as number) < 0 || (captain as number) >= SLOT_COUNT)) {
     return { ok: false, error: 'Pick a captain first.' }
   }
-  const seed = row.even_seed ?? newCaptainSeed(captain as number, row.difficulty)
+  const seed = row.even_seed ?? newVersusSeed(captain as number, row.difficulty)
   const col = seat === 'host' ? 'host_seed' : 'guest_seed'
   const db = createAdminClient()
   const { data } = await db.from('pe_versus').update({ [col]: seed }).eq('id', id).is(col, null).select(col).maybeSingle()
@@ -506,8 +505,6 @@ export async function submitVersusSeat(
       fresh.status = 'done'
     }
   }
-  // A seat with an account files its packs in the binder; a guest's go nowhere.
-  if (userId) await recordSoloRun(userId, 'versus', seed, picks)
   return { ok: true, view: view(fresh, seat, userId) }
 }
 

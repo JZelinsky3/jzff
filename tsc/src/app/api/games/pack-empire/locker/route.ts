@@ -6,13 +6,14 @@
 //   { action: 'deck-delete', game, id }              -> {}
 //   { action: 'sell', rarity }                       -> { faab }
 //   { action: 'buy', kind }                          -> {}
+//   { action: 'claim', id }                          -> { reward }
 //
 // The Locker itself, for every game on it. Signed-in only: what you own is an
 // account's. Packs are dealt here and nowhere else.
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { lockerOpenTo } from '@/lib/packEmpire/locker/access'
-import { buyPack, chooseDeck, deleteDeck, openPack, saveDeck, sellSpares } from '@/lib/packEmpire/locker/store'
+import { buyPack, chooseDeck, claimTrophy, deleteDeck, openPack, saveDeck, sellSpares } from '@/lib/packEmpire/locker/store'
 import { RARITIES, type Rarity } from '@/lib/packEmpire/rules'
 import { createClient } from '@/lib/supabase/server'
 
@@ -74,6 +75,12 @@ export async function POST(req: NextRequest) {
     if (typeof body.kind !== 'string') return bad('No such pack.')
     const problem = await buyPack(user.id, body.kind)
     return problem ? bad(problem) : NextResponse.json({ ok: true }, { headers: NO_STORE })
+  }
+
+  if (body.action === 'claim') {
+    if (typeof body.id !== 'string') return bad('No such trophy.')
+    const out = await claimTrophy(user.id, body.id)
+    return out.ok ? NextResponse.json({ ok: true, reward: out.reward }, { headers: NO_STORE }) : bad(out.error, out.status)
   }
 
   return bad('Unknown action.')

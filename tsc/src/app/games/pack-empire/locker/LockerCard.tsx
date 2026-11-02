@@ -5,6 +5,7 @@
 // Power Level. Any Locker game can draw one, so it takes its numbers as given rather
 // than working them out.
 
+import { signatureOf } from '@/lib/packEmpire/locker/signatures'
 import { pearlLogo, surname, teamLogo, type Player } from '@/lib/packEmpire/rules'
 import { CardEdge, Headshot } from '../cards'
 
@@ -51,6 +52,11 @@ export function LockerCard({
           <Headshot player={card} className="pe-lkc-img" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {logo && <img className="pe-lkc-logo" src={logo} alt={card.team} draggable={false} />}
+          {signatureOf(card) && (
+            <span className="pe-lkc-sig" aria-hidden>
+              ✦
+            </span>
+          )}
         </span>
         <span className="pe-lkc-foot">
           <span className="pe-lkc-name" data-fit={fit >= 13 ? 'min' : fit >= 12 ? 'least' : fit >= 9 ? 'tight' : fit >= 7 ? 'snug' : undefined}>

@@ -42,6 +42,9 @@ const FLOOR_TABLE: PackTable = { ...LOCKER_TABLE, common: 0 }
 /** The last card in a Boosted pack, which can't be under a Dynasty. */
 const BOOSTED_FLOOR: PackTable = { ...BOOSTED_TABLE, common: 0, rare: 0 }
 
+/** The last card in a Trophy Pack, which can't be under a Transcendent. */
+const TROPHY_FLOOR: PackTable = { ...BOOSTED_TABLE, common: 0, rare: 0, dynasty: 0 }
+
 /**
  * The seasons before 2000 are all names people know, so there isn't a Common among
  * them, and only 80 cards: 44 from the Nineties and 36 from before. Neither decade can
@@ -72,7 +75,7 @@ export type PackDef = {
   match?: CardMatch
 }
 
-export type LockerPackKind = 'starter' | 'daily' | 'bonus' | 'shop' | 'boost' | `theme-${string}` | `boost-theme-${string}`
+export type LockerPackKind = 'starter' | 'daily' | 'bonus' | 'shop' | 'boost' | 'trophy' | `theme-${string}` | `boost-theme-${string}`
 
 /** Every pack's wrapper: the Mystery Pack's, recoloured and renamed by
     scripts/pack-empire-locker-art/packs.py. */
@@ -110,6 +113,7 @@ export const LOCKER_PACKS: Record<string, PackDef> = {
   bonus: { label: 'Bonus Pack', line: 'Earned by winning today.', art: packArt('bonus'), ...FIVE },
   shop: { label: 'Free Agent Pack', line: 'Five cards from anywhere, the same odds as a Daily Pack.', art: packArt('free-agent'), ...FIVE },
   boost: { label: 'Boosted Free Agent Pack', line: 'Five cards, better odds, and a Dynasty or better guaranteed.', art: packArt('free-agent-boost'), ...BOOSTED },
+  trophy: { label: 'Trophy Pack', line: 'Only from the Trophy Case. Five cards, and a Transcendent or better guaranteed.', art: packArt('trophy'), size: 5, table: BOOSTED_TABLE, floor: 1, floorTable: TROPHY_FLOOR },
 }
 
 export const isPackKind = (v: unknown): v is LockerPackKind => typeof v === 'string' && v in LOCKER_PACKS
@@ -121,7 +125,7 @@ export const BONUS_WINS = 5
 // The Shop
 // ============================================================
 
-/** FAAB for a win in any Locker game. */
+/** FAAB for a win in a Locker game, unless the game says otherwise. */
 export const FAAB_WIN = 10
 
 /** FAAB for a spare copy, by rarity. The first copy of a card is never for sale. */

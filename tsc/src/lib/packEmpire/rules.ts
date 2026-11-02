@@ -601,13 +601,35 @@ export function packOdds<T extends { rarity: Rarity }>(pool: T[], weigh: (p: T) 
 }
 
 /**
- * Shared packs, the ones two or more people see the same five cards in: an
- * Even Versus and the Daily. Richer than an ordinary pack, about 57% common,
+ * Shared packs, the ones two or more people see the same five cards in: the Daily,
+ * and Even Versus games dealt before EVEN_CEILING. Richer than an ordinary pack, about 57% common,
  * 30% rare, 11% dynasty and 3% above that per card, so most packs hold a real
  * choice and picking the right card is the game. There's no captain table
  * under it in an Even Versus, and no second table anywhere.
  */
 export const SHARED_WEIGHTS: Weights = { common: 26.2, rare: 23.6, dynasty: 18, transcendent: 6.4, immortal: 2.1 }
+
+/**
+ * An Even Versus deal. Rich draws were the wrong kind of exciting: six packs in ten
+ * held one card alone at the top rarity, so the pick made itself, and a good game ran
+ * past 28,000. Now a pack rolls how high it goes first, and two or three cards sit at
+ * that height, so the top of a pack is a choice between real cards, and that's where
+ * chemistry and the Battles decide it. The rest of the pack fills in below the ceiling.
+ * Nothing here touches the Daily, which stays on SHARED_WEIGHTS.
+ */
+export const EVEN_CEILING: Weights = { common: 0, rare: 66, dynasty: 28, transcendent: 5.5, immortal: 0.5 }
+export const EVEN_THREE_AT_TOP = 0.35
+export const EVEN_PLANTED_STAR = 0.25
+
+/**
+ * Ordinary packs on a Classic Versus: a step up from Empire Builder, for a game that's
+ * about the night and not the collection. It can be, because Versus doesn't fill a
+ * binder. Captain packs are the same as Builder's.
+ */
+export const VERSUS_WEIGHTS: { normal: Weights; boosted: Weights } = {
+  normal: { common: 34, rare: 15, dynasty: 10.5, transcendent: 3.4, immortal: 1.2 },
+  boosted: { common: 31.8, rare: 17.6, dynasty: 10.5, transcendent: 3.4, immortal: 1.2 },
+}
 
 /** The Daily's reserve card, dealt only when nothing in a pack fits an open
     slot: replacement level on purpose, so filling wrong still costs you. */
@@ -986,6 +1008,11 @@ export const EVEN_MARK = '9'
 
 /** The tenth character of a sixteen-character seed. Seeds dealt before there
     were difficulties are fifteen characters, and those are all open. */
+/** An Even Versus on contested packs. EVEN_MARK seeds keep the deal they started with. */
+export const EVEN_CONTESTED_MARK = '8'
+/** A Classic Versus seat writes its captain this far along the alphabet, which is what
+    says its ordinary packs come off VERSUS_WEIGHTS. It's signed, so it can't be forged. */
+export const VERSUS_CAPTAIN_SHIFT = 11
 export const SEED_DIFF: Record<string, Difficulty> = { A: 'open', R: 'range', S: 'season', C: 'cap' }
 
 export function difficultyFromSeed(seed: string): Difficulty {

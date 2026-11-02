@@ -83,7 +83,12 @@
 .fg-plate b { display: block; overflow: hidden; font-family: var(--pe-cond); font-size: 1rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
 .fg-plate small { font-size: .74rem; color: var(--pe-ink-mute); }
 
-/* The goal, level with midfield. */
+/* The goals, level with midfield. Two can be open at once, so they share the room. */
+.fg-goals { display: grid; gap: .45rem; min-height: 0; }
+.fg-goals[data-n='2'] .fg-goal { padding: .5rem .7rem; }
+.fg-goals[data-n='2'] .fg-goal b { font-size: 1.15rem; }
+.fg-goals[data-n='2'] .fg-goal .fg-goal-line { font-size: .78rem; }
+.fg-goals[data-n='2'] .fg-goal::after { display: none; }
 .fg-goal { position: relative; display: grid; gap: .15rem; padding: .75rem .8rem; border-color: rgba(232, 168, 75, .45); background: linear-gradient(160deg, rgba(232, 168, 75, .16), rgba(16, 22, 26, .95) 60%); box-shadow: 0 0 26px rgba(232, 168, 75, .14), inset 0 1px 0 rgba(255, 255, 255, .06); }
 .fg-goal::after { content: ''; position: absolute; right: -9px; top: 50%; width: 16px; height: 16px; margin-top: -8px; border-top: 1px solid rgba(232, 168, 75, .55); border-right: 1px solid rgba(232, 168, 75, .55); background: #1a1d1b; transform: rotate(45deg); }
 .fg-goal-kick { font-family: var(--mono); font-size: .56rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--pe-amber); }
@@ -162,7 +167,7 @@
 .fg-half--you { align-content: flex-start; align-self: start; }
 .fg-half[data-closed] { opacity: .4; }
 .fg-half .pe-lkc { --lc-w: var(--card); box-shadow: 0 .35em .9em rgba(0, 0, 0, .55); }
-.fg-slot { position: relative; display: flex; flex: none; flex-direction: column; align-items: center; justify-content: center; width: var(--card); aspect-ratio: 74 / 102; border: 1px dashed rgba(240, 250, 240, .13); border-radius: calc(var(--card) * .097); background: rgba(0, 0, 0, .1); }
+.fg-slot { position: relative; display: flex; flex: none; flex-direction: column; align-items: center; justify-content: center; width: var(--card); aspect-ratio: 74 / 102; border: 1px dashed rgba(240, 250, 240, .3); border-radius: calc(var(--card) * .097); background: rgba(0, 0, 0, .16); animation: fg-fade .14s ease both; }
 .fg-slot[data-next] { border: 2px solid var(--pe-amber); background: rgba(232, 168, 75, .18); }
 .fg-slot b { font-family: var(--pe-display); font-size: calc(var(--card) * .25); font-weight: 900; white-space: nowrap; color: var(--you); }
 .fg-slot small { max-width: 96%; overflow: hidden; font-family: var(--pe-cond); font-size: calc(var(--card) * .13); font-weight: 800; text-overflow: ellipsis; white-space: nowrap; color: var(--pe-amber); }
@@ -175,7 +180,7 @@
 .fg-mid { position: relative; padding: 3px 0; background: linear-gradient(180deg, transparent, rgba(2, 12, 9, .68) 16%, rgba(2, 12, 9, .68) 84%, transparent); }
 .fg-mid::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 3px; margin-top: -1.5px; background: linear-gradient(90deg, rgba(120, 200, 255, .25), #7cd0ff 20%, #fff 50%, #7cd0ff 80%, rgba(120, 200, 255, .25)); box-shadow: 0 0 14px rgba(120, 200, 255, .7); }
 .fg-plaques { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.fg-plaque { display: grid; justify-items: center; }
+.fg-plaque { display: grid; justify-items: center; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .fg-plaque[data-lane='ground'] { --lane: var(--ground); }
 .fg-plaque[data-lane='short'] { --lane: var(--short); }
 .fg-plaque[data-lane='deep'] { --lane: var(--deep); }
@@ -189,10 +194,18 @@
 .fg-num { position: relative; min-width: 2ch; font-family: var(--pe-display); font-size: 1.5rem; font-weight: 900; line-height: 1.15; text-align: center; color: var(--pe-ink-soft); text-shadow: 0 2px 8px rgba(0, 0, 0, .7); }
 .fg-num[data-side='you'][data-lead] { color: var(--you); }
 .fg-num[data-side='foe'][data-lead] { color: var(--foe); }
-.fg-pop { position: absolute; left: calc(100% + .15rem); top: 0; font-family: var(--pe-display); font-size: .92rem; font-weight: 900; white-space: nowrap; color: var(--foe); pointer-events: none; animation: fg-pop 1.2s ease-out both; }
+.fg-pop { position: absolute; right: calc(100% + .15rem); top: 0; font-family: var(--pe-display); font-size: .92rem; font-weight: 900; white-space: nowrap; color: var(--foe); pointer-events: none; animation: fg-pop 1.2s ease-out both; }
 .fg-pop[data-down] { color: var(--you); }
 @keyframes fg-pop { 0% { opacity: 0; transform: translateY(6px); } 20% { opacity: 1; transform: none; } 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(-8px); } }
 .fg-ribbon { display: none; }
+/* A lane's number and, beside it, whatever didn't come from the cards. */
+.fg-score { display: inline-flex; align-items: center; justify-content: center; gap: .22rem; max-width: 100%; min-height: 1.72rem; }
+.fg-chip { display: inline-flex; align-items: baseline; gap: .16rem; padding: .05rem .26rem; border-radius: 4px; background: var(--c); font-family: var(--pe-display); font-size: .62rem; font-weight: 900; line-height: 1.25; white-space: nowrap; color: #06120e; }
+.fg-chip i { font-family: var(--pe-cond); font-size: .62rem; font-style: normal; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; opacity: .72; }
+.fg-chip[data-k='Form'] { --c: #7fe7c4; }
+.fg-chip[data-k='Goal'] { --c: #f4c06a; }
+.fg-chip[data-k='Call'] { --c: #c7a6ff; }
+.fg-chip[data-down] { --c: #ff9a8f; }
 
 /* The ball on each lane: it travels toward whoever's losing it. */
 .fg-tracks { position: absolute; inset: var(--ez) 0; z-index: 3; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); pointer-events: none; }
@@ -227,6 +240,8 @@
 .fg-spot { position: absolute; inset: 0; z-index: 7; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; background: radial-gradient(closest-side, rgba(0, 0, 0, .78), rgba(0, 0, 0, .2)); pointer-events: none; animation: fg-spot .28s cubic-bezier(.2, 1.3, .4, 1) both; }
 .fg-spot > small { font-family: var(--mono); font-size: .66rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--pe-ink); }
 .fg-spot .pe-lkc { --lc-w: 148px; }
+.fg-spot-sig { display: grid; gap: .1rem; max-width: min(88%, 22rem); padding: .4rem .8rem; border: 1px solid rgba(232, 168, 75, .55); border-radius: 10px; background: rgba(6, 10, 8, .92); font-size: .88rem; line-height: 1.3; text-align: center; color: var(--pe-ink-soft); }
+.fg-spot-sig b { font-family: var(--serif); font-size: 1.3rem; font-weight: 500; line-height: 1.1; color: var(--pe-amber); }
 .fg-spot > b { font-family: var(--pe-display); font-size: 2.2rem; font-weight: 900; color: var(--you); }
 .fg-spot > b[data-down] { color: var(--foe); }
 @keyframes fg-spot { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: none; } }
@@ -246,8 +261,8 @@
 .fg-gems i[data-state='left'] { background: linear-gradient(180deg, #ffd27a, #e8a84b 60%, #b57a22); }
 .fg-gems i[data-state='carry'] { background: linear-gradient(180deg, #8df5e0, #4fc3b0 60%, #2a8a7c); }
 .fg-gems i[data-state='spent'] { background: rgba(232, 168, 75, .24); }
-.fg-hand { grid-area: hand; display: flex; justify-content: center; align-items: flex-end; min-height: calc(var(--hand-w) * 1.42); padding-top: .4rem; }
-.fg-hold { flex: 0 1 calc(var(--hand-w) + 4px); min-width: 0; touch-action: none; cursor: grab; transition: transform .16s cubic-bezier(.2, .9, .3, 1.2); transform: translateY(calc(var(--d) * 3px)) rotate(calc(var(--t) * 2deg)); transform-origin: 50% 100%; }
+.fg-hand { grid-area: hand; container-type: inline-size; display: flex; justify-content: center; align-items: flex-end; min-height: calc(var(--hand-w) * 1.42); padding-top: .4rem; padding-bottom: 1.15rem; }
+.fg-hold { flex: 0 0 min(calc(var(--hand-w) + 4px), calc((100cqw - var(--hand-w) - 10px) / max(var(--n) - 1, 1))); min-width: 0; touch-action: none; cursor: grab; transition: transform .16s cubic-bezier(.2, .9, .3, 1.2); transform: translateY(calc(var(--d) * 3px)) rotate(calc(var(--t) * 2deg)); transform-origin: 50% 100%; }
 .fg-hold .pe-lkc { --lc-w: var(--hand-w); }
 .fg-hold img { -webkit-user-drag: none; pointer-events: none; }
 .fg-hold[data-on] { position: relative; z-index: 6; transform: translateY(-.8rem) scale(1.06); }
@@ -256,11 +271,23 @@
 .fg-hand-none { align-self: center; margin: 0; font-size: .85rem; color: var(--pe-ink-mute); }
 .fg-act { grid-area: act; }
 .fg-go { position: relative; width: 100%; padding-inline: .6rem; white-space: nowrap; }
-.fg-go::after { content: ''; position: absolute; inset: -3px; border-radius: inherit; box-shadow: 0 0 22px 2px rgba(232, 168, 75, .7); opacity: 0; pointer-events: none; }
-.fg-go[data-ready]::after { animation: fg-ready 1.5s ease-in-out infinite; }
+.fg-go-glow { position: absolute; inset: -9px -14px; z-index: -3; background: radial-gradient(closest-side, rgba(244, 192, 106, .6), transparent); opacity: 0; pointer-events: none; }
+.fg-go[data-ready] .fg-go-glow { animation: fg-ready 1.5s ease-in-out infinite; }
 @keyframes fg-ready { 50% { opacity: 1; } }
 .fg-either { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; }
+.fg-either[data-n='3'] { grid-template-columns: 1fr 1fr; }
+.fg-either[data-n='3'] > :last-child { grid-column: 1 / -1; }
 .fg-either .pe-btn { padding-inline: .3rem; white-space: nowrap; }
+/* The drop zone for a card you're getting rid of, and what's waiting to go. */
+.fg-bin { display: flex; align-items: center; justify-content: center; height: 52px; border: 2px dashed var(--foe); border-radius: 10px; background: rgba(255, 122, 110, .1); font-family: var(--pe-cond); font-size: 1rem; font-weight: 800; letter-spacing: .04em; color: var(--foe); }
+.fg-tossed { flex: none; align-self: center; display: grid; justify-items: center; width: 62px; margin-left: .55rem; padding: .35rem 0; border: 1px dashed rgba(255, 122, 110, .6); border-radius: 8px; background: rgba(255, 122, 110, .08); color: var(--foe); cursor: pointer; }
+.fg-tossed b { font-family: var(--pe-display); font-size: 1.2rem; font-weight: 900; line-height: 1; }
+.fg-tossed small { font-family: var(--pe-cond); font-size: .7rem; font-weight: 800; }
+/* After the whistle: the field stays, and this takes the hand's place. */
+.fg-tray--review { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: none; gap: .6rem; padding-block: .6rem max(.7rem, env(safe-area-inset-bottom)); }
+.fg-review { display: flex; align-items: baseline; gap: .6rem; min-width: 0; }
+.fg-review b { font-family: var(--serif); font-size: 1.5rem; font-weight: 500; line-height: 1; color: var(--pe-ink); }
+.fg-review span { font-family: var(--mono); font-size: .58rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--pe-ink-mute); }
 
 .fg-ghost { position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none; }
 .fg-ghost .pe-lkc { --lc-w: 104px; box-shadow: 0 1.4em 2.6em rgba(0, 0, 0, .7); }
@@ -295,6 +322,25 @@
 .fg-end-prize b { display: block; font-family: var(--pe-cond); font-size: 1.05rem; font-weight: 800; color: var(--pe-ink); }
 .fg-end-prize span span { font-size: .8rem; }
 .fg-end-btns { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; width: 100%; }
+.fg-end-look { grid-column: 1 / -1; }
+
+/* What a lane is made of, both sides side by side. */
+.fg-lanehead { display: flex; align-items: center; gap: .4rem; font-family: var(--serif); font-size: 1.5rem; line-height: 1; color: var(--pe-ink); }
+.fg-lanehead svg { width: 1.2rem; height: 1.2rem; color: var(--pe-amber); }
+.fg-lanecols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem; }
+.fg-lanecol h2 { overflow: hidden; margin: 0 0 .4rem; text-overflow: ellipsis; white-space: nowrap; }
+.fg-lanecol ul { display: grid; gap: .22rem; margin: 0; padding: 0; list-style: none; }
+.fg-lanerow { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; font-size: .84rem; color: var(--pe-ink-soft); }
+.fg-lanerow b { font-family: var(--pe-display); font-size: .82rem; font-weight: 900; color: var(--pe-ink); }
+.fg-lanerow--head span { font-family: var(--pe-cond); font-size: 1rem; font-weight: 800; color: var(--pe-ink); }
+.fg-lanerow--sub { padding-left: .55rem; font-size: .76rem; color: var(--pe-ink-mute); }
+.fg-lanerow--sub b { font-size: .7rem; color: var(--pe-ink-mute); }
+.fg-lanerow[data-k='Form'] b { color: #7fe7c4; }
+.fg-lanerow[data-k='Goal'] b { color: #f4c06a; }
+.fg-lanerow[data-k='Call'] b { color: #c7a6ff; }
+.fg-lanerow--total { margin-top: .25rem; padding-top: .3rem; border-top: 1px solid rgba(255, 255, 255, .14); font-family: var(--pe-cond); font-size: 1rem; font-weight: 800; color: var(--pe-ink); }
+.fg-lanerow--total b { font-size: 1.05rem; color: var(--pe-amber); }
+.fg-sheet-btns.fg-sheet-btns--end { justify-content: flex-end; }
 
 /* The menu. */
 .fg-sheet { position: absolute; inset: 0; z-index: 35; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(2, 6, 6, .72); animation: fg-fade .18s ease both; }
@@ -326,6 +372,19 @@
   .fg-stage { grid-template-columns: minmax(0, 1fr); padding: 0 .4rem; }
   .fg-rail { display: none; }
   .fg-pitch { --chrome: 196px; border-radius: 10px; }
+  .fg-pitch[data-goals='2'] { --chrome: 218px; }
+  .fg-score { gap: .12rem; min-height: 1.34rem; }
+  .fg-chip { padding: .02rem .18rem; font-size: .52rem; }
+  .fg-chip i { font-size: 0; }
+  .fg-chip i::before { content: attr(data-short); font-size: .52rem; }
+  .fg-hand { padding-bottom: .55rem; }
+  .fg-tray--review { grid-template-columns: repeat(2, minmax(0, 1fr)); padding-inline: .5rem; }
+  .fg-review { grid-column: 1 / -1; justify-content: center; }
+  .fg-either[data-n='3'] { grid-template-columns: 1fr 1fr 1fr; }
+  .fg-either[data-n='3'] > :last-child { grid-column: auto; }
+  .fg-bin { height: 44px; font-size: .9rem; }
+  .fg-tossed { width: 46px; margin-left: .25rem; }
+  .fg-tossed small { font-size: .56rem; }
   .fg-hud { padding-inline: .4rem; gap: .35rem; }
   .fg-hud-btn { width: 34px; height: 34px; }
   .fg-bug-team { padding: .22rem .4rem; gap: .3rem; }
@@ -340,6 +399,7 @@
   .fg-num { font-size: 1.14rem; }
   .fg-lanetag { padding: .1rem .42rem; font-size: .66rem; letter-spacing: .05em; }
   .fg-lanetag svg { width: .8rem; height: .8rem; }
+  .fg-ribbon + .fg-ribbon { margin-top: 2px; }
   .fg-ribbon { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .4rem; margin: 3px 4px 0; padding: .2rem .5rem; border: 1px solid rgba(232, 168, 75, .6); border-radius: 7px; background: #171309; }
   .fg-ribbon .fg-goal-kick { font-size: .5rem; }
   .fg-ribbon .fg-goal-line { min-width: 0; overflow: hidden; font-size: .72rem; line-height: 1.15; white-space: nowrap; text-overflow: ellipsis; color: var(--pe-ink-soft); }
@@ -374,17 +434,20 @@
   .fg { --ez: 22px; --hand-w: min(66px, calc((100vw - 28px) / 5)); }
   .fg-coach { min-height: 1.25em; font-size: .7rem; }
   .fg-pitch { --chrome: 176px; }
+  .fg-pitch[data-goals='2'] { --chrome: 198px; }
   .fg-num { font-size: .98rem; }
 }
 
 /* A short desktop window: the guide gives its room to the field. */
 @media (min-width: 1100px) and (max-height: 820px) {
   .fg { --hand-w: 86px; --ez: 36px; }
+  .fg-hand { padding-bottom: .85rem; }
+  .fg-hold[data-on] { transform: translateY(-.25rem) scale(1.02); }
   .fg-guide small { display: none; }
   .fg-goal b { font-size: 1.2rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fg-banner, .fg-spot, .fg-end, .fg-end-in, .fg-end-lane, .fg-rays, .fg-go::after, .fg-wait-ball, .fg-lanetag, .fg-sheet { animation: none !important; }
+  .fg-banner, .fg-spot, .fg-end, .fg-end-in, .fg-end-lane, .fg-rays, .fg-go-glow, .fg-wait-ball, .fg-lanetag, .fg-sheet, .fg-slot { animation: none !important; }
   .fg-track i { transition: none; }
 }

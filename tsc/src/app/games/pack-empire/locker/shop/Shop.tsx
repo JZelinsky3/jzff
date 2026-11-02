@@ -3,21 +3,48 @@
 // What FAAB buys, and the one way to raise it that isn't winning: selling spares. The
 // first copy of a card is never on offer, so nothing here can break a deck.
 //
-// A family of packs is one card with a picker on it, so the shelf stays four packs
-// long however many divisions there are, and Boosted is a switch on any of them.
+// A family of packs is one card on the shelf, so it stays four packs long however many
+// divisions there are. Tap one and a carousel opens with the whole family to swipe
+// through, and Boosted is a switch on any of them.
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { CPU_LEVELS } from '@/lib/packEmpire/locker/fieldGeneral'
 import { FAAB_WIN, LOCKER_PACKS, SHOP_SHELF, packPrice, shelfKind, type ShelfItem } from '@/lib/packEmpire/locker/rules'
 import type { Spares } from '@/lib/packEmpire/locker/store'
 import { RARITY_LOOK } from '@/lib/packEmpire/rules'
 import { lockerPost } from '../api'
 import { PackOdds } from '../PackOdds'
+import { PackCarousel } from './PackCarousel'
+
+/** A family on the shelf: its first three wrappers fanned out, and a way in. */
+function FamilyCard({ item, onOpen }: { item: ShelfItem; onOpen: () => void }) {
+  const picks = item.pick ?? []
+  const fan = picks.slice(0, 3)
+  const from = Math.min(...picks.map((p) => packPrice(shelfKind(p.id, false)) ?? 0))
+  return (
+    <button type="button" className="pe-shop-pack pe-shop-family" onClick={onOpen}>
+      <span className="pe-shop-fan" aria-hidden>
+        {fan.map((p, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={p.id} src={LOCKER_PACKS[shelfKind(p.id, false)].art} alt="" draggable={false} style={{ '--i': i - (fan.length - 1) / 2 } as React.CSSProperties} />
+        ))}
+      </span>
+      <span className="pe-shop-pack-body">
+        <b>{item.label}</b>
+        <span>{item.line}</span>
+        <span className="pe-shop-from">
+          {picks.length} To Choose From · From ${from}
+        </span>
+        <span className="pe-btn pe-btn--sm">Choose</span>
+      </span>
+    </button>
+  )
+}
 
 function ShelfCard({ item, faab, busy, onBuy }: { item: ShelfItem; faab: number; busy: boolean; onBuy: (kind: string) => void }) {
-  const [pick, setPick] = useState(item.pick?.[0]?.id ?? null)
   const [boosted, setBoosted] = useState(false)
-  const kind = shelfKind(pick, boosted)
+  const kind = shelfKind(null, boosted)
   const pack = LOCKER_PACKS[kind]
   const price = packPrice(kind) ?? 0
   return (
@@ -30,18 +57,6 @@ function ShelfCard({ item, faab, busy, onBuy }: { item: ShelfItem; faab: number;
           <PackOdds pack={pack} />
         </div>
         <span>{item.line}</span>
-        {item.pick && (
-          <label className="pe-shop-pick">
-            <span>Pick</span>
-            <select value={pick ?? ''} onChange={(e) => setPick(e.target.value)} aria-label={`Which ${item.label}`}>
-              {item.pick.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
         <div className="pe-shop-tier" role="group" aria-label="Odds">
           <button type="button" aria-pressed={!boosted} onClick={() => setBoosted(false)}>
             Standard
@@ -58,10 +73,11 @@ function ShelfCard({ item, faab, busy, onBuy }: { item: ShelfItem; faab: number;
   )
 }
 
-export function Shop({ faab, spares }: { faab: number; spares: Spares }) {
+export function Shop({ faab, spares, mobile }: { faab: number; spares: Spares; mobile: boolean }) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState<string | null>(null)
+  const [family, setFamily] = useState<ShelfItem | null>(null)
 
   const act = async (body: Record<string, unknown>, then: () => void) => {
     if (busy) return
@@ -76,12 +92,20 @@ export function Shop({ faab, spares }: { faab: number; spares: Spares }) {
     setBusy(false)
   }
 
+  const buy = (kind: string) =>
+    act({ action: 'buy', kind }, () => {
+      router.push('/games/pack-empire/locker/')
+      router.refresh()
+    })
+
   return (
     <>
-      <div className="pe-shop-purse">
-        <b>${faab}</b>
-        <span>FAAB</span>
-      </div>
+      {mobile && (
+        <div className="pe-shop-purse">
+          <b>${faab}</b>
+          <span>FAAB</span>
+        </div>
+      )}
       {note && <p className="pe-fg-error">{note}</p>}
 
       <section className="pe-sec pe-lk-first">
@@ -90,11 +114,10 @@ export function Shop({ faab, spares }: { faab: number; spares: Spares }) {
           <span className="pe-sec-title">For Sale</span>
         </div>
         <div className="pe-shop-packs">
-          {SHOP_SHELF.map((item) => (
-            <ShelfCard key={item.id} item={item} faab={faab} busy={busy} onBuy={(kind) => act({ action: 'buy', kind }, () => { router.push('/games/pack-empire/locker/'); router.refresh() })} />
-          ))}
+          {SHOP_SHELF.map((item) => (item.pick ? <FamilyCard key={item.id} item={item} onOpen={() => setFamily(item)} /> : <ShelfCard key={item.id} item={item} faab={faab} busy={busy} onBuy={buy} />))}
         </div>
       </section>
+      {family && <PackCarousel item={family} faab={faab} busy={busy} onBuy={buy} onClose={() => setFamily(null)} />}
 
       <section className="pe-sec">
         <div className="pe-sec-head">
@@ -126,7 +149,10 @@ export function Shop({ faab, spares }: { faab: number; spares: Spares }) {
           <span className="pe-sec-title">How You Earn It</span>
         </div>
         <ul className="pe-fg-how">
-          <li>Every win in a Locker game pays ${FAAB_WIN}.</li>
+          <li>
+            A win pays ${CPU_LEVELS.rookie.faab} against a Rookie, ${CPU_LEVELS.pro.faab} against a Pro, ${CPU_LEVELS['all-pro'].faab} against an All-Pro and ${FAAB_WIN} against a friend.
+          </li>
+          <li>Trophies pay it too.</li>
           <li>Sell spare copies here. Your last copy of a card always stays.</li>
           <li>FAAB only buys packs. It can&apos;t be bought or traded.</li>
         </ul>

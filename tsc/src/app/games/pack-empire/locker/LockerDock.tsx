@@ -7,9 +7,9 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import s from '../../mobile.module.css'
-import { LOCKER_TABS, LockerGlyph } from './tabs'
+import { LOCKER_TABS, LockerGlyph, SHOP_TAB } from './tabs'
 
-const ROOMS = LOCKER_TABS.filter((t) => ['home', 'shop', 'collection'].includes(t.id))
+const ROOMS = ['home', 'shop', 'collection', 'trophies'].flatMap((id) => (id === 'shop' ? SHOP_TAB : (LOCKER_TABS.find((t) => t.id === id) ?? [])))
 
 export function LockerDock() {
   const pathname = usePathname()

@@ -39,7 +39,7 @@ export default async function DeckPage({ searchParams }: { searchParams: Promise
 
   return (
     <main className={`${ROOM_CLASS} ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>
-      <LockerChrome mobile={mobile} signedIn back="/games/pack-empire/locker/field-general/" backLabel="Field General" kicker="Field General" title={saved ? 'Edit' : 'New'} titleEm="Deck" tab="field-general" />
+      <LockerChrome mobile={mobile} userId={user.id} back="/games/pack-empire/locker/field-general/" backLabel="Field General" kicker="Field General" title={saved ? 'Edit' : 'New'} titleEm="Deck" tab="field-general" />
       <div className="pe-wrap pe-lk">
         <DeckBuilder key={draft.id ?? 'new'} owned={owned} draft={draft} rule={def.deck} game={GAME} home={def.href} />
       </div>

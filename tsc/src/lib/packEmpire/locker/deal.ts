@@ -5,7 +5,8 @@
 
 import { POOL, cardWeight } from '../pool'
 import { POOL_KEYS, RARITIES, personOf, type Player, type PoolKey, type Rarity, type Weights } from '../rules'
-import { cardMatches, type LockerEvent, type PackDef, type PackTable } from './rules'
+import type { CpuLevelId } from './fieldGeneral'
+import { autoDeck, cardMatches, lockerGame, type LockerEvent, type PackDef, type PackTable } from './rules'
 
 const ALL = POOL_KEYS.flatMap((k) => POOL[k])
 const OF_RARITY = Object.fromEntries(RARITIES.map((r) => [r, ALL.filter((p) => p.rarity === r)])) as Record<Rarity, Player[]>
@@ -96,16 +97,23 @@ const CPU_CURVES: { upTo: Rarity; curve: Curve }[] = [
   { upTo: 'canton', curve: [{ rarity: 'immortal', pos: SKILL, n: 1 }, { rarity: 'dynasty', pos: SKILL, n: 2 }, { rarity: 'rare', pos: EVERYONE, n: 3 }, { rarity: 'common', pos: NO_QB, n: 6 }] },
 ]
 
+/** A Rookie's deck: under the cap, and nothing that does much. */
+const ROOKIE_CURVE: Curve = [{ rarity: 'dynasty', pos: SKILL, n: 1 }, { rarity: 'rare', pos: EVERYONE, n: 4 }, { rarity: 'common', pos: NO_QB, n: 7 }]
+
+/** What an All-Pro picks its deck from: a player's collection, not a list of slots. */
+const ALL_PRO_POOL: Record<Rarity, number> = { common: 40, rare: 30, dynasty: 16, transcendent: 6, immortal: 3, canton: 0 }
+
 /** How much less the CPU leans into an event than you did, so building for one pays. */
 const EVENT_LEAN = 0.6
 
 /** The CPU's deck for a match, on the same cap as yours and off your best card. On an
     event it holds a share of the event's cards, but never as many as you brought. */
-export function dealCpuDeck(rnd: () => number, event: LockerEvent | null, yours: Player[]): Player[] {
+export function dealCpuDeck(rnd: () => number, event: LockerEvent | null, yours: Player[], level: CpuLevelId = 'pro'): Player[] {
   const top = Math.max(0, ...yours.map((c) => RARITIES.indexOf(c.rarity)))
-  const { curve } = CPU_CURVES.find((c) => top <= RARITIES.indexOf(c.upTo)) ?? CPU_CURVES[CPU_CURVES.length - 1]
   const lean = event ? (yours.filter((c) => cardMatches(c, event.match)).length / (yours.length || 1)) * EVENT_LEAN : 0
   const men = new Set<string>()
+  if (level === 'all-pro') return buildAllProDeck(rnd, event, top, lean, men)
+  const { curve } = level === 'rookie' ? { curve: ROOKIE_CURVE } : (CPU_CURVES.find((c) => top <= RARITIES.indexOf(c.upTo)) ?? CPU_CURVES[CPU_CURVES.length - 1])
   const out: Player[] = []
   for (const { rarity, pos, n } of curve) {
     const list = OF_RARITY[rarity].filter((p) => pos.includes(p.pos))
@@ -117,6 +125,25 @@ export function dealCpuDeck(rnd: () => number, event: LockerEvent | null, yours:
     }
   }
   return out
+}
+
+/** An All-Pro builds a deck the way you would: it has a collection, never past your best
+    rarity, and the same builder Auto uses makes the best legal deck of it, with the
+    positions that set off formations and the cap used to the last point. */
+function buildAllProDeck(rnd: () => number, event: LockerEvent | null, top: number, lean: number, men: Set<string>): Player[] {
+  const rule = lockerGame('field-general')?.deck
+  if (!rule) return []
+  const owned: Player[] = []
+  for (const rarity of RARITIES) {
+    if (RARITIES.indexOf(rarity) > top) continue
+    const list = OF_RARITY[rarity]
+    const wanted = event ? list.filter((p) => cardMatches(p, event.match)) : []
+    for (let i = 0; i < ALL_PRO_POOL[rarity]; i++) {
+      const card = (wanted.length && rnd() < lean ? fresh(wanted, men, rnd) : null) ?? fresh(list, men, rnd)
+      if (card) owned.push(card)
+    }
+  }
+  return autoDeck(owned, rule)
 }
 
 /** A real source of chance for a real pack. */

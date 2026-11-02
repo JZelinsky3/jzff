@@ -3,7 +3,7 @@
 // The pieces of the table that only draw: nothing here decides anything.
 
 import { callOf } from '@/lib/packEmpire/locker/calls'
-import { DRIVES, FORMATIONS, LANES, LANE_MAX, stackAdds, type Lane } from '@/lib/packEmpire/locker/fieldGeneral'
+import { DRIVES, FORMATIONS, GOAL_DRIVES, LANES, LANE_MAX, driveGoal, fromPlayers, payLabel, stackAdds, type DriveGoal, type Lane, type LaneTotal } from '@/lib/packEmpire/locker/fieldGeneral'
 import type { LogLine, SeatView } from '@/lib/packEmpire/locker/fieldGeneralMatch'
 import { eventCost, eventPower, type LockerEvent } from '@/lib/packEmpire/locker/rules'
 import type { Player } from '@/lib/packEmpire/rules'
@@ -51,11 +51,12 @@ export function Ball({ className }: { className?: string }) {
   )
 }
 
-/** The empty places on a side. The one a card would go in shows what he'd add. */
-export function Ghosts({ used, open = false, gain = '', sub }: { used: number; open?: boolean; gain?: string; sub?: string }) {
+/** The empty places in a lane, shown only once you're holding a card that can go there.
+    The one it would go in shows what it'd add. */
+export function Ghosts({ used, gain = '', sub }: { used: number; gain?: string; sub?: string }) {
   return Array.from({ length: LANE_MAX - used }, (_, n) => (
-    <span key={n} className="fg-slot" data-next={open && n === 0 ? '' : undefined}>
-      {open && n === 0 && (
+    <span key={n} className="fg-slot" data-next={n === 0 ? '' : undefined}>
+      {n === 0 && (
         <>
           <b>{gain}</b>
           {sub && <small>{sub}</small>}
@@ -85,19 +86,119 @@ export function Backed({ man, host, event, onTap, children }: { man?: Player | n
   )
 }
 
-/** A lane's number, climbing to wherever it's just landed. On its own so a tick of the
-    count never redraws the cards. */
-export function LaneNumber({ value, side, lead, gain }: { value: number; side: 'you' | 'foe'; lead: boolean; gain?: { n: number; key: number } | null }) {
-  const shown = useCountUp(value, 420)
+const SIGNED = (n: number) => (n > 0 ? `+${n}` : `${n}`)
+
+/** One source of points that isn't the cards themselves, beside a lane's number. */
+function Chip({ kind, short, n }: { kind: string; short: string; n: number }) {
+  if (n === 0) return null
   return (
-    <b className="fg-num" data-side={side} data-lead={lead ? '' : undefined}>
-      {shown}
-      {gain && gain.n !== 0 && (
-        <span key={gain.key} className="fg-pop" data-down={gain.n < 0 ? '' : undefined} aria-hidden>
-          {gain.n > 0 ? `+${gain.n}` : gain.n}
-        </span>
-      )}
-    </b>
+    <span className="fg-chip" data-k={kind} data-down={n < 0 ? '' : undefined}>
+      <i data-short={short}>{kind}</i>
+      {SIGNED(n)}
+    </span>
+  )
+}
+
+export type LaneParts = { players: number; form: number; goal: number; call: number }
+
+/** A lane's number: what its cards scored, climbing to wherever it's just landed, and
+    what formations, goals and calls added beside it. On its own so a tick of the count
+    never redraws the cards. */
+export function LaneNumber({ parts, side, lead, gain }: { parts: LaneParts; side: 'you' | 'foe'; lead: boolean; gain?: { n: number; key: number } | null }) {
+  const shown = useCountUp(parts.players, 420)
+  return (
+    <span className="fg-score">
+      <b className="fg-num" data-side={side} data-lead={lead ? '' : undefined}>
+        {shown}
+        {gain && gain.n !== 0 && (
+          <span key={gain.key} className="fg-pop" data-down={gain.n < 0 ? '' : undefined} aria-hidden>
+            {SIGNED(gain.n)}
+          </span>
+        )}
+      </b>
+      <Chip kind="Form" short="F" n={parts.form} />
+      <Chip kind="Goal" short="G" n={parts.goal} />
+      <Chip kind="Call" short="C" n={parts.call} />
+    </span>
+  )
+}
+
+/** A goal on the rail: what it wants, what it pays, and how long it's got. */
+export function GoalCard({ goal, left, meeting }: { goal: DriveGoal; left: number; meeting: boolean }) {
+  return (
+    <div className="fg-panel fg-goal" data-met={meeting ? '' : undefined}>
+      <span className="fg-goal-kick">{meeting ? 'Goal Met' : left >= GOAL_DRIVES ? `Goal · ${left} Drives` : 'Goal · Last Drive'}</span>
+      <b>{goal.title}</b>
+      <span className="fg-goal-line">{goal.line}</span>
+      <span className="fg-goal-pay">{payLabel(goal.pay)}</span>
+    </div>
+  )
+}
+
+/** One side of a lane, line by line: how the number got there. */
+export function LaneBreakdown({ lane, name, total, side, forms, final, over }: { lane: Lane; name: string; total: LaneTotal | undefined; side: SeatView; forms: string[]; final?: number; over: boolean }) {
+  if (!total) return null
+  const players: [string, number][] = [
+    ['Power Level', total.cards],
+    ['Position Lifts', total.lifts],
+    ['Chemistry', total.chem],
+    ['Stacks', total.stacks],
+    ['Signatures', total.sig],
+  ]
+  const shown = players.filter(([, n]) => n !== 0)
+  const lifts = FORMATIONS.filter((f) => f.lane === lane && forms.includes(f.id))
+  const goals = side.goalsMet.flatMap((id) => {
+    const goal = driveGoal(id)
+    const n = goal?.pay.kind === 'every' ? goal.pay.n : goal?.pay.kind === 'lane' && goal.pay.lane === lane ? goal.pay.n : 0
+    return goal && n ? [{ id, title: goal.title, n }] : []
+  })
+  const landing = side.ongoing.filter((o) => o.lane === lane && o.delta !== 0)
+  const hit = final !== undefined ? final - total.total : null
+  return (
+    <section className="fg-lanecol">
+      <h2>{name}</h2>
+      <ul>
+        <li className="fg-lanerow fg-lanerow--head">
+          <span>From The Cards</span>
+          <b>{fromPlayers(total)}</b>
+        </li>
+        {shown.map(([label, n]) => (
+          <li key={label} className="fg-lanerow fg-lanerow--sub">
+            <span>{label}</span>
+            <b>{SIGNED(n)}</b>
+          </li>
+        ))}
+        {lifts.map((f) => (
+          <li key={f.id} className="fg-lanerow" data-k="Form">
+            <span>{f.title}</span>
+            <b>{SIGNED(f.n)}</b>
+          </li>
+        ))}
+        {goals.map((g) => (
+          <li key={g.id} className="fg-lanerow" data-k="Goal">
+            <span>{g.title}</span>
+            <b>{SIGNED(g.n)}</b>
+          </li>
+        ))}
+        {!over &&
+          landing.map((o, i) => (
+            <li key={`${o.call}${i}`} className="fg-lanerow" data-k="Call">
+              <span>{o.title}, at the end</span>
+              <b>{SIGNED(o.delta)}</b>
+            </li>
+          ))}
+        {hit !== null && hit !== 0 && (
+          <li className="fg-lanerow" data-k="Call">
+            <span>Final Tally</span>
+            <b>{SIGNED(hit)}</b>
+          </li>
+        )}
+        <li className="fg-lanerow fg-lanerow--total">
+          <span>Total</span>
+          <b>{final ?? total.total}</b>
+        </li>
+      </ul>
+    </section>
   )
 }
 
@@ -123,7 +224,7 @@ export function OnField({ you, foe }: { you: SeatView; foe: SeatView }) {
         return (
           <li key={`${r.call}${i}`} data-mine={r.mine ? '' : undefined}>
             <span>
-              <b>{call?.title}</b>
+              <b>{r.title}</b>
               <small>
                 {r.mine ? 'You' : foe.name} · {r.own === r.mine ? 'Your' : `${foe.name}'s`} {LANES[r.lane].label}
               </small>

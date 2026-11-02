@@ -11,22 +11,26 @@
 // seats lock in plays and applyDrive takes both, so the CPU and a friend are the
 // same to it.
 //
-// Five things give a drive more to think about than where to put a man:
+// Six things give a drive more to think about than where to put a man:
 //
 //   carry       Cap room you don't spend comes with you for one drive.
-//   goals       Three or four drives a game name something to do, for points in a lane,
-//               a card or cap room. Both sides see this drive's goal and either can
-//               meet it. Nobody knows which drive has the next one until it lands.
+//   discards    Any card in your hand can go, and next drive you draw one more for it.
+//   goals       Three or four goals a game, each open for two drives, for points in a
+//               lane, a card or cap room. Both sides see what's open and either can meet
+//               it. Nobody knows which drive has the next one until it lands.
 //   stacks      A card can come in behind another for half its cost and half its PL,
 //               which is how a lane gets past four. Behind its own position it's worth
 //               a little more, so a depth chart is something to build.
 //   formations  Men in the right places lift a lane: a run game sets up the deep ball.
 //               Always on, nothing to play, and both sides can read yours.
 //   calls       Cards with words on them, one in your hand at a time: see ./calls.
+//
+// And the top of the game does something of its own: see ./signatures.
 
 import { chemistryFor, type Player, type PoolKey } from '../rules'
 import { callOf } from './calls'
 import { TEAM_DIVISION, eventCost, eventPower, type LockerEvent } from './rules'
+import { signatureOf, type SigId } from './signatures'
 
 export const DRIVES = 6
 export const LANE_MAX = 4
@@ -65,8 +69,11 @@ export const POSITION_RULE: Record<PoolKey, string> = {
 
 const LINEMEN = new Set<PoolKey>(['OT', 'OG', 'C'])
 
-/** A Canton carries his lane: this much on top of his own strength per teammate. */
-const CANTON_LIFT = 2
+/** What a Canton does: this much per teammate in its lane, and flat in the other two. */
+const GOLD_JACKET = { lane: 2, other: 2 }
+
+/** What a Double Coverage takes off each card it's lined up against, at the end. */
+const COVERAGE = 1
 
 export type FgCard = Pick<Player, 'id' | 'pid' | 'name' | 'pos' | 'team' | 'year' | 'rarity' | 'score'>
 
@@ -91,8 +98,9 @@ export type Seat = {
   ongoing: Play[]
 }
 
-/** A man going down, or a call being run. `target` is the man an Audible moves. */
-export type Play = { card: string; lane: Lane; stack?: boolean; target?: string }
+/** A man going down, or a call being run. `target` is the man an Audible moves. A
+    discard is a card leaving your hand, and its lane means nothing. */
+export type Play = { card: string; lane: Lane; stack?: boolean; target?: string; discard?: boolean }
 
 export type FgMatch = {
   seed: number
@@ -103,16 +111,22 @@ export type FgMatch = {
   last: [Play[], Play[]] | null
   /** Each drive's goal, by id, first drive first. */
   goals: (string | null)[]
-  /** Who met last drive's goal. */
-  lastGoal: { id: string; met: [boolean, boolean] } | null
+  /** The goals that paid out last drive, and to whom. */
+  lastHits: GoalHit[]
+  /** The goals each side has met, by id. A goal pays a side once. */
+  goalsMet: [string[], string[]]
   /** Every drive so far, oldest first, for the play-by-play. */
   history: DriveRecord[]
   /** Level on lanes after six, so a seventh drive settles it. */
   overtime?: boolean
+  /** How good the CPU is, on a game against it: see CPU_LEVELS. */
+  level?: CpuLevelId
 }
 
-/** What went down on a drive. Plays first, then who met its goal. */
-export type DriveRecord = { drive: number; plays: [Play[], Play[]]; goal: string | null; met: [boolean, boolean] }
+export type GoalHit = { id: string; met: [boolean, boolean] }
+
+/** What went down on a drive: the plays, then the goals that paid. */
+export type DriveRecord = { drive: number; plays: [Play[], Play[]]; hits: GoalHit[] }
 
 export type Lookup = (id: string) => FgCard | null
 
@@ -162,7 +176,7 @@ function seat(deck: string[], rnd: () => number, byId: Lookup): Seat {
 
 export function newMatch(decks: [string[], string[]], seed: number, byId: Lookup): FgMatch {
   const rnd = rng(seed)
-  return { seed, drive: 1, seats: [seat(decks[0], rnd, byId), seat(decks[1], rnd, byId)], last: null, goals: dealGoals(rnd), lastGoal: null, history: [] }
+  return { seed, drive: 1, seats: [seat(decks[0], rnd, byId), seat(decks[1], rnd, byId)], last: null, goals: dealGoals(rnd), lastHits: [], goalsMet: [[], []], history: [] }
 }
 
 /** Cap room a drive gives you, before anything carried in. */
@@ -211,6 +225,7 @@ export const stackAdds = (card: FgCard, host: FgCard | undefined, event: LockerE
 
 /** What one play costs. */
 export function playCost(play: Play, byId: Lookup, event: LockerEvent | null): number {
+  if (play.discard) return 0
   const call = callOf(play.card)
   if (call) return call.cost
   const card = byId(play.card)
@@ -218,17 +233,43 @@ export function playCost(play: Play, byId: Lookup, event: LockerEvent | null): n
   return play.stack ? stackCost(card, event) : eventCost(card, event)
 }
 
-export type LaneTotal = { total: number; cards: number; lifts: number; chem: number; stacks: number; bonus: number; form: number }
+export type LaneTotal = {
+  total: number
+  /** Power Level, added up. */
+  cards: number
+  /** What a position does for its lane: a QB's lift, a lineman's. */
+  lifts: number
+  chem: number
+  stacks: number
+  /** What a Transcendent, an Immortal or a Canton adds on top of its number. */
+  sig: number
+  /** Points from goals. */
+  bonus: number
+  form: number
+}
 
-/** What one side's cards add up to in a lane, and where it came from. */
-export function laneTotal(cards: FgCard[], event: LockerEvent | null, stacked: FgCard[] = [], bonus = 0, form = 0): LaneTotal {
+/** The points in a lane that came from the cards standing in it. */
+export const fromPlayers = (t: Pick<LaneTotal, 'cards' | 'lifts' | 'chem' | 'stacks' | 'sig'>) => t.cards + t.lifts + t.chem + t.stacks + t.sig
+
+const sigOf = (card: FgCard): SigId | undefined => signatureOf(card)?.id
+
+/** What one side's cards add up to in a lane, and where it came from. `across` is what
+    a signature in another lane sends over here. */
+export function laneTotal(cards: FgCard[], event: LockerEvent | null, stacked: FgCard[] = [], bonus = 0, form = 0, across = 0): LaneTotal {
   const base = cards.reduce((sum, c) => sum + eventPower(c, event), 0)
   const carriers = cards.filter((c) => !LINEMEN.has(c.pos)).length
+  const linemen = cards.length - carriers
   let lifts = 0
+  let sig = across
   for (const c of cards) {
     if (c.pos === 'QB') lifts += cards.length - 1
     if (LINEMEN.has(c.pos)) lifts += carriers
-    if (c.rarity === 'canton') lifts += CANTON_LIFT * (cards.length - 1)
+    const has = sigOf(c)
+    if (has === 'gold-jacket') sig += GOLD_JACKET.lane * (cards.length - 1)
+    else if (has === 'bell-cow') sig += 3 * linemen
+    else if (has === 'road-grader') sig += carriers
+    else if (has === 'the-wall') sig += 2 * carriers
+    else if (has === 'seam-buster') sig += 3 * (cards.length - 1)
   }
   let chem = 0
   for (const b of chemistryFor(cards, true).bonds) {
@@ -236,7 +277,7 @@ export function laneTotal(cards: FgCard[], event: LockerEvent | null, stacked: F
     else chem += b.reason.includes('real teammates') ? 3 : 2
   }
   const stacks = pairStacks(cards, stacked).reduce((sum, c, i) => sum + (c ? stackAdds(c, cards[i], event) : 0), 0)
-  return { total: Math.max(0, base + lifts + chem + stacks + bonus + form), cards: base, lifts, chem, stacks, bonus, form }
+  return { total: Math.max(0, base + lifts + chem + stacks + sig + bonus + form), cards: base, lifts, chem, stacks, sig, bonus, form }
 }
 
 const lookupAll = (ids: string[], byId: Lookup) => ids.flatMap((id) => byId(id) ?? [])
@@ -246,7 +287,17 @@ const lookupAll = (ids: string[], byId: Lookup) => ids.flatMap((id) => byId(id) 
 export function sideTotals(lanes: FgCard[][], stacks: FgCard[][], bonus: number[], event: LockerEvent | null): LaneTotal[] {
   const form = [0, 0, 0]
   for (const f of formationsOn(lanes)) form[f.lane] += f.n
-  return lanes.map((cards, i) => laneTotal(cards, event, stacks[i], bonus[i], form[i]))
+  const across = [0, 0, 0]
+  lanes.forEach((cards, i) => {
+    for (const c of cards) {
+      const has = sigOf(c)
+      const others = ([0, 1, 2] as Lane[]).filter((l) => l !== i)
+      if (has === 'gold-jacket') for (const l of others) across[l] += GOLD_JACKET.other
+      else if (has === 'franchise') for (const l of others) across[l] += lanes[l].filter((x) => !LINEMEN.has(x.pos)).length
+      else if (has === 'dual-threat' && i < 2) across[i === 0 ? 1 : 0] += Math.ceil(eventPower(c, event) / 3)
+    }
+  })
+  return lanes.map((cards, i) => laneTotal(cards, event, stacks[i], bonus[i], form[i], across[i]))
 }
 
 export function laneTotals(side: Seat, byId: Lookup, event: LockerEvent | null): LaneTotal[] {
@@ -267,8 +318,10 @@ export function laneTotals(side: Seat, byId: Lookup, event: LockerEvent | null):
 export type Formation = { id: string; title: string; line: string; lane: Lane; n: number; met: (lanes: FgCard[][]) => boolean }
 
 const has = (lane: FgCard[], is: (c: FgCard) => boolean, n = 1) => lane.filter(is).length >= n
-const isPos = (...list: PoolKey[]) => (c: FgCard) => list.includes(c.pos)
-const isLineman = (c: FgCard) => LINEMEN.has(c.pos)
+/** A Mismatch counts as a WR and a lineman here and in goals, on top of being a TE. */
+const flex = (c: FgCard) => sigOf(c) === 'mismatch'
+const isPos = (...list: PoolKey[]) => (c: FgCard) => list.includes(c.pos) || (flex(c) && list.includes('WR'))
+const isLineman = (c: FgCard) => LINEMEN.has(c.pos) || flex(c)
 
 export const FORMATIONS: Formation[] = [
   { id: 'play-action', title: 'Play Action', line: 'A RB and a lineman on Ground, and a QB in the game.', lane: 2, n: 2, met: (l) => has(l[0], isPos('RB')) && has(l[0], isLineman) && l.some((x) => has(x, isPos('QB'))) },
@@ -291,6 +344,10 @@ export function playProblem(match: FgMatch, at: 0 | 1, plays: Play[], byId: Look
   for (const p of [...plays].sort((a, b) => Number(!!a.stack) - Number(!!b.stack))) {
     if (!side.hand.includes(p.card) || seen.has(p.card)) return "That card isn't in your hand."
     seen.add(p.card)
+    if (p.discard) {
+      if (match.drive >= lastDrive(match)) return 'Nothing to draw after the last drive.'
+      continue
+    }
     spent += playCost(p, byId, event)
     const call = callOf(p.card)
     if (call) {
@@ -318,10 +375,11 @@ export function playProblem(match: FgMatch, at: 0 | 1, plays: Play[], byId: Look
   return spent > capFor(match, at) ? 'That goes over your cap room.' : null
 }
 
-/** Both sides' plays go down at once, then calls and goals land on the full table,
-    and each side draws for the next drive. */
+/** Both sides' plays go down at once, then calls, arrivals and goals land on the full
+    table, and each side draws for the next drive. */
 export function applyDrive(match: FgMatch, plays: [Play[], Play[]], byId: Lookup, event: LockerEvent | null): FgMatch {
-  const goal = goalOn(match, match.drive)
+  const open = openGoals(match, match.drive)
+  const down = plays.map((list) => list.filter((p) => !p.discard)) as [Play[], Play[]]
   const seats = match.seats.map((s, i) => {
     const side: Seat = {
       ...s,
@@ -336,14 +394,14 @@ export function applyDrive(match: FgMatch, plays: [Play[], Play[]], byId: Lookup
     }
     for (const p of plays[i]) {
       side.hand = side.hand.filter((id) => id !== p.card)
-      if (!callOf(p.card)) (p.stack ? side.stacks : side.lanes)[p.lane].push(p.card)
+      if (!p.discard && !callOf(p.card)) (p.stack ? side.stacks : side.lanes)[p.lane].push(p.card)
     }
     return side
   }) as [Seat, Seat]
 
   // An Audible moves its man before anything else reads the table.
   seats.forEach((side, i) => {
-    for (const p of plays[i]) {
+    for (const p of down[i]) {
       if (callOf(p.card)?.does.kind !== 'move' || !p.target) continue
       const target = p.target
       const from = side.lanes.findIndex((l) => l.includes(target))
@@ -353,71 +411,94 @@ export function applyDrive(match: FgMatch, plays: [Play[], Play[]], byId: Lookup
     }
   })
 
-  // Level on lanes after the sixth, tally and all, and overtime deals everyone two more.
-  const lastSix = match.drive === DRIVES && !match.overtime
-  const preview = lastSix ? fgResult({ ...match, seats }, byId, event) : null
-  const extra = !!preview && preview.score[0] === preview.score[1]
-
-  const met: [boolean, boolean] = [false, false]
   const icing = [0, 0]
+  const draws = [1, 1]
+  const extraCalls = [0, 0]
+  const met = [[...match.goalsMet[0]], [...match.goalsMet[1]]] as FgMatch['goalsMet']
+  const hits: GoalHit[] = open.map(({ goal }) => ({ id: goal.id, met: [false, false] }))
+
   seats.forEach((side, i) => {
     const other = seats[i === 0 ? 1 : 0]
-    const spent = plays[i].reduce((sum, p) => sum + playCost(p, byId, event), 0)
+    const spent = down[i].reduce((sum, p) => sum + playCost(p, byId, event), 0)
     // The drive's own room goes first, so what's left of it is what rolls on and
     // anything that carried in has had its one drive.
     let carry = Math.max(0, roomFor(match.drive) - spent)
-    let draw = 1
-    let extraCall = 0
-    let plan = false
-    for (const p of plays[i]) {
+    let plans = 0
+    const ahead = open.filter(({ goal }) => !met[i].includes(goal.id))
+    // A man discarded is drawn back as a new one. A call discarded needs nothing: with
+    // none in your hand, the next comes up by itself.
+    draws[i] += plays[i].filter((p) => p.discard && !callOf(p.card)).length
+    for (const p of down[i]) {
+      const card = p.stack ? null : byId(p.card)
+      const arrives = card ? sigOf(card) : undefined
+      if (arrives === 'quick-release') draws[i] += 2
+      else if (arrives === 'deep-threat') other.closed = p.lane
       const call = callOf(p.card)
       if (!call) continue
       const { does } = call
       if (call.ongoing) side.ongoing.push({ card: p.card, lane: p.lane })
-      if (does.kind === 'draw') draw += does.n
+      if (does.kind === 'draw') draws[i] += does.n
       else if (does.kind === 'ice') icing[i === 0 ? 1 : 0] += does.n
       else if (does.kind === 'close') other.closed = p.lane
       else if (does.kind === 'goal') {
-        if (goal) plan = true
-        else draw += 1
+        if (ahead.length) plans++
+        else draws[i] += 1
       }
       else if (does.kind === 'keep') carry += Math.max(0, match.seats[i].carry - Math.max(0, spent - roomFor(match.drive)))
-      else if (does.kind === 'turnover') {
+      else if (does.kind === 'turnover' && !walled(other, p.lane, byId)) {
         // Whoever he had stacked behind him has nobody to stand behind now.
         const gone = other.lanes[p.lane].pop()
         if (gone) other.hand.push(gone)
         if (other.stacks[p.lane].length > other.lanes[p.lane].length) other.hand.push(other.stacks[p.lane].pop() as string)
       }
     }
-    if (goal && (plan || goal.met({ plays: drivePlays(plays[i], byId), down: downOn(side, byId), spent }))) {
-      met[i] = true
+    // A goal met by the table beats one met by a call, so a Game Plan isn't spent on one
+    // you'd have met anyway. The oldest is the one about to close.
+    const check = { plays: drivePlays(down[i], byId), down: downOn(side, byId), spent }
+    const natural = ahead.map(({ goal }) => goal.met(check))
+    ahead.forEach(({ goal }, n) => {
+      if (!natural[n] && plans === 0) return
+      if (!natural[n]) plans--
+      met[i].push(goal.id)
+      ;(hits.find((h) => h.id === goal.id) as GoalHit).met[i] = true
       const { pay } = goal
-      if (pay.kind === 'draw') draw += pay.n
+      if (pay.kind === 'draw') draws[i] += pay.n
       else if (pay.kind === 'cap') carry += pay.n
-      else if (pay.kind === 'call') extraCall += pay.n
+      else if (pay.kind === 'call') extraCalls[i] += pay.n
       else if (pay.kind === 'lane') side.bonus[pay.lane] += pay.n
       else side.bonus = side.bonus.map((n) => n + pay.n) as Seat['bonus']
-    }
+    })
     side.carry = carry
+  })
+
+  // Level on lanes after the sixth, tally and all, and overtime deals everyone two more.
+  // This reads the table last of all: a goal or a Turnover on the sixth can settle it.
+  const lastSix = match.drive === DRIVES && !match.overtime
+  const preview = lastSix ? fgResult({ ...match, seats }, byId, event) : null
+  const extra = !!preview && preview.score[0] === preview.score[1]
+
+  seats.forEach((side, i) => {
     if (match.drive < DRIVES || extra) {
-      side.hand.push(...side.deck.splice(0, extra ? 2 : draw))
+      side.hand.push(...side.deck.splice(0, extra ? 2 : draws[i]))
       // One call in hand at a time: the next comes up once you've run the last. Only a
       // goal puts a second one there.
       const holding = side.hand.some((id) => callOf(id))
-      side.hand.push(...side.book.splice(0, (holding ? 0 : 1) + extraCall))
+      side.hand.push(...side.book.splice(0, (holding ? 0 : 1) + extraCalls[i]))
     }
   })
   // Iced last, once both sides' cap is known. It can take a drive's whole room, not more.
   seats.forEach((side, i) => {
     side.carry = Math.max(-roomFor(match.drive + 1), side.carry - icing[i])
   })
+  const paid = hits.filter((h) => h.met[0] || h.met[1])
   return {
     ...match,
     drive: match.drive + 1,
     seats,
     last: plays,
-    lastGoal: goal ? { id: goal.id, met } : null,
-    history: [...match.history, { drive: match.drive, plays, goal: goal?.id ?? null, met }],
+    lastHits: paid,
+    goalsMet: met,
+    history: [...match.history, { drive: match.drive, plays, hits: paid }],
     ...(extra ? { overtime: true } : {}),
   }
 }
@@ -426,7 +507,8 @@ export const lastDrive = (match: Pick<FgMatch, 'overtime'>) => (match.overtime ?
 
 export const isOver = (match: FgMatch) => match.drive > lastDrive(match)
 
-/** One line of the tally at the end: a call on the field paying out in a lane. */
+/** One line of the tally at the end: a call on the field, or a card with a signature
+    that lands then, paying out in a lane. `call` is whichever it is, by id. */
 export type Tally = { seat: 0 | 1; call: string; lane: Lane; on: 0 | 1; delta: number }
 
 export type FgResult = {
@@ -441,18 +523,29 @@ export type FgResult = {
 
 const menIn = (side: Seat, lane: Lane, byId: Lookup) => [...lookupAll(side.lanes[lane], byId), ...lookupAll(side.stacks[lane], byId)]
 
-/** What the calls left on the field will do, off the table as it stands. */
+/** Whether a side has The Wall in a lane: nothing comes off it, and nobody leaves. */
+const walled = (side: Pick<Seat, 'lanes'>, lane: Lane, byId: Lookup) => lookupAll(side.lanes[lane], byId).some((c) => sigOf(c) === 'the-wall')
+
+/** What the calls left on the field and the signatures that land at the end will do,
+    off the table as it stands. */
 export function talliesOn(match: Pick<FgMatch, 'seats'>, byId: Lookup): Tally[] {
   return match.seats.flatMap((side, i) => {
     const seat = i as 0 | 1
     const foe = (i === 0 ? 1 : 0) as 0 | 1
-    return side.ongoing.flatMap((p): Tally[] => {
+    const against = (lane: Lane, delta: number) => (walled(match.seats[foe], lane, byId) ? 0 : delta)
+    const calls = side.ongoing.flatMap((p): Tally[] => {
       const does = callOf(p.card)?.does
-      if (does?.kind === 'blitz') return [{ seat, call: p.card, lane: p.lane, on: foe, delta: -does.each * menIn(match.seats[foe], p.lane, byId).length }]
+      if (does?.kind === 'blitz') return [{ seat, call: p.card, lane: p.lane, on: foe, delta: against(p.lane, -does.each * menIn(match.seats[foe], p.lane, byId).length) }]
       if (does?.kind === 'boost') return [{ seat, call: p.card, lane: p.lane, on: seat, delta: does.each * menIn(side, p.lane, byId).filter((c) => does.pos.includes(c.pos)).length }]
       if (does?.kind === 'stand') return [{ seat, call: p.card, lane: p.lane, on: seat, delta: 0 }]
       return []
     })
+    const cards = ([0, 1, 2] as Lane[]).flatMap((lane) =>
+      lookupAll(side.lanes[lane], byId)
+        .filter((c) => sigOf(c) === 'double-coverage')
+        .map((c): Tally => ({ seat, call: c.id, lane, on: foe, delta: against(lane, -COVERAGE * menIn(match.seats[foe], lane, byId).length) }))
+    )
+    return [...calls, ...cards]
   })
 }
 
@@ -483,9 +576,50 @@ export function fgResult(match: FgMatch, byId: Lookup, event: LockerEvent | null
   return { lanes, score, winner, tallies, before }
 }
 
+// ============================================================
+// The CPU
+// ============================================================
+
+export type CpuLevelId = 'rookie' | 'pro' | 'all-pro'
+
+/**
+ * How good the CPU is. A Rookie plays what it can afford and notices the odd goal. A Pro
+ * reads the table lane by lane. An All-Pro plays the way a good player does: for two
+ * lanes of three, giving up the one it can't get back, setting off formations, saving
+ * cap for the card it wants next and throwing away what it'll never play. None of them
+ * see your hand or what you're playing.
+ */
+export type CpuLevel = {
+  id: CpuLevelId
+  label: string
+  line: string
+  /** How often a drive goes by without it reading the table. */
+  slip: number
+  /** How often it goes after an open goal. */
+  goals: number
+  /** How often it runs the call it's holding. */
+  calls: number
+  /** Whether cap left over goes behind someone. */
+  stacks: boolean
+  /** Whether it plans the whole table: see planPlays. */
+  plans: boolean
+  /** FAAB for beating it. */
+  faab: number
+}
+
+export const CPU_LEVELS: Record<CpuLevelId, CpuLevel> = {
+  rookie: { id: 'rookie', label: 'Rookie', line: 'Still learning. Misses goals and formations.', slip: 0.55, goals: 0.3, calls: 0.5, stacks: false, plans: false, faab: 5 },
+  pro: { id: 'pro', label: 'Pro', line: 'Reads the table and goes after goals.', slip: 0.15, goals: 1, calls: 1, stacks: true, plans: false, faab: 10 },
+  'all-pro': { id: 'all-pro', label: 'All-Pro', line: 'Plays to win two lanes and plans ahead.', slip: 0, goals: 1, calls: 1, stacks: true, plans: true, faab: 20 },
+}
+
+export const isCpuLevel = (v: unknown): v is CpuLevelId => typeof v === 'string' && v in CPU_LEVELS
+
+type GoalTest = (check: GoalCheck) => boolean
+
 /** The biggest plays a hand can afford off the cap room it has, and the biggest few
-    of those that would meet the drive's goal. */
-function bestHands(hand: FgCard[], room: number, event: LockerEvent | null, goal: DriveGoal | null, already: DrivePlay[]): FgCard[][] {
+    of those that would meet a goal it's after. */
+function bestHands(hand: FgCard[], room: number, event: LockerEvent | null, chasing: DriveGoal[], meets: GoalTest, already: DrivePlay[]): FgCard[][] {
   const out: { cards: FgCard[]; worth: number; cost: number }[] = []
   const n = Math.min(hand.length, 12)
   for (let mask = 1; mask < 1 << n; mask++) {
@@ -496,19 +630,20 @@ function bestHands(hand: FgCard[], room: number, event: LockerEvent | null, goal
   }
   out.sort((x, y) => y.worth - x.worth)
   const top = out.slice(0, 6)
-  const meets = (h: (typeof out)[number]) =>
+  const lean = (card: FgCard, lane: Lane) => (LEGAL_LANES[card.pos].includes(lane) ? lane : leanLane(card, chasing))
+  const hits = (h: (typeof out)[number]) =>
     LEGAL_LANES[h.cards[0].pos].some((lane) => {
-      const plays = h.cards.map((card) => ({ card, lane: LEGAL_LANES[card.pos].includes(lane) ? lane : leanLane(card, goal) }))
-      return goal?.met({ plays, down: [...already, ...plays], spent: h.cost })
+      const plays = h.cards.map((card) => ({ card, lane: lean(card, lane) }))
+      return meets({ plays, down: [...already, ...plays], spent: h.cost })
     })
-  const meeting = goal ? out.filter((h) => !top.includes(h) && meets(h)).slice(0, 3) : []
+  const meeting = chasing.length ? out.filter((h) => !top.includes(h) && hits(h)).slice(0, 3) : []
   return [...top, ...meeting].map((h) => h.cards)
 }
 
-/** The lane a man should head for if the goal wants him somewhere. */
-function leanLane(card: FgCard, goal: DriveGoal | null): Lane {
+/** The lane a man should head for if a goal wants him somewhere. */
+function leanLane(card: FgCard, chasing: DriveGoal[]): Lane {
   const lanes = LEGAL_LANES[card.pos]
-  return goal?.lane != null && lanes.includes(goal.lane) ? goal.lane : lanes[0]
+  return lanes.find((l) => chasing.some((g) => g.lane === l)) ?? lanes[0]
 }
 
 /** What the CPU thinks a goal's pay is worth, in points on the table. */
@@ -528,13 +663,12 @@ function leastFilled(card: FgCard, lanes: FgCard[][], closed: Lane | null, rnd: 
 /**
  * The CPU's call. It sees what the table sees: what's already down, never what's
  * being played. It takes the strongest hand it can afford and works each card into
- * the lane where it changes the most, giving up on a lane it can't get back.
- *
- * `slip` is how good it is, 0 to 1: how often a drive goes by without it reading the
- * table. On a slip it takes whichever good hand comes to mind, a card goes wherever
- * there's room, and it forgets the goal and its calls.
+ * the lane where it changes the most, giving up on a lane it can't get back. On a slip
+ * it takes whichever good hand comes to mind, a card goes wherever there's room, and it
+ * forgets the goals and its calls.
  */
-export function cpuPlays(match: FgMatch, at: 0 | 1, byId: Lookup, event: LockerEvent | null, rnd: () => number, slip = 0): Play[] {
+export function cpuPlays(match: FgMatch, at: 0 | 1, byId: Lookup, event: LockerEvent | null, rnd: () => number, level: CpuLevel = CPU_LEVELS.pro): Play[] {
+  if (level.plans) return planPlays(match, at, byId, event, rnd)
   const mine = match.seats[at]
   const theirs = match.seats[at === 0 ? 1 : 0]
   const hand = lookupAll(mine.hand, byId)
@@ -546,8 +680,9 @@ export function cpuPlays(match: FgMatch, at: 0 | 1, byId: Lookup, event: LockerE
   const reading = (at0: 0 | 1, side: Seat) => laneTotals(side, byId, event).map((t, l) => t.total + seen.filter((x) => x.on === at0 && x.lane === l).reduce((sum, x) => sum + x.delta, 0))
   const foe = reading(at === 0 ? 1 : 0, theirs)
   const ours = reading(at, mine)
-  const goal = goalOn(match, match.drive)
-  const offDay = rnd() < slip
+  const offDay = rnd() < level.slip
+  const chasing = !offDay && rnd() < level.goals ? openGoals(match, match.drive).filter(({ goal }) => !match.goalsMet[at].includes(goal.id)).map(({ goal }) => goal) : []
+  const meets: GoalTest = (check) => chasing.some((g) => g.met(check))
   const already = downOn(mine, byId)
   const closeness = (gap: number) => 1 - Math.min(1, Math.abs(gap) / (10 + 14 * (1 - late)))
 
@@ -568,7 +703,7 @@ export function cpuPlays(match: FgMatch, at: 0 | 1, byId: Lookup, event: LockerE
       return swing((l) => (used(l, 'boost') ? 0 : does.each * (menIn(mine, l, byId).filter((c) => does.pos.includes(c.pos)).length + hand.filter((c) => does.pos.includes(c.pos)).length * 0.5 * (1 - late))))
     }
     if (does.kind === 'stand') return late > 0.5 ? swing((l) => (used(l, 'stand') ? 0 : 4)) : null
-    if (does.kind === 'goal') return { lane: 0, worth: goal ? payWorth(goal.pay, match.drive) : 3 * (1 - late) + 1 }
+    if (does.kind === 'goal') return { lane: 0, worth: chasing[0] ? payWorth(chasing[0].pay, match.drive) : 3 * (1 - late) + 1 }
     if (does.kind === 'close') return drawing ? swing(() => 3 + 2 * late) : null
     if (does.kind === 'turnover') return swing((l) => {
       const last = theirs.lanes[l][theirs.lanes[l].length - 1]
@@ -578,13 +713,13 @@ export function cpuPlays(match: FgMatch, at: 0 | 1, byId: Lookup, event: LockerE
     return null
   }
 
-  const options = offDay ? [null] : [null, ...mine.hand.filter((id) => callPlay(id)?.worth)]
+  const options = offDay || rnd() >= level.calls ? [null] : [null, ...mine.hand.filter((id) => callPlay(id)?.worth)]
   let best: { plays: Play[]; value: number; left: number } | null = null
   for (const id of options) {
     const call = id ? callOf(id) : null
     const aim = id ? callPlay(id) : null
     const left = room - (call?.cost ?? 0)
-    const hands = bestHands(hand, left, event, offDay ? null : goal, already)
+    const hands = bestHands(hand, left, event, chasing, meets, already)
     for (const cards of offDay ? hands.slice(Math.floor(rnd() * hands.length)).slice(0, 1) : [[], ...hands]) {
       const lanes: FgCard[][] = mine.lanes.map((ids) => lookupAll(ids, byId))
       const plays: Play[] = id && aim ? [{ card: id, lane: aim.lane }] : []
@@ -605,7 +740,7 @@ export function cpuPlays(match: FgMatch, at: 0 | 1, byId: Lookup, event: LockerE
             const gap = ours[lane] - foe[lane]
             const lost = gap < -18 * late - 8 ? -6 * late : 0
             const trial = [...placed, { card: c, lane }]
-            const wanted = goal?.met({ plays: trial, down: [...already, ...trial], spent: 0 }) ? 5 : goal?.lane === lane ? 2 : 0
+            const wanted = meets({ plays: trial, down: [...already, ...trial], spent: 0 }) ? 5 : chasing.some((g) => g.lane === lane) ? 2 : 0
             const worth = (after - before) * (1 + closeness(gap)) + lost + wanted + rnd() * 1.5
             if (!pick || worth > pick.worth) pick = { lane, worth }
           }
@@ -617,7 +752,7 @@ export function cpuPlays(match: FgMatch, at: 0 | 1, byId: Lookup, event: LockerE
         value += pick.worth
       }
       const spent = plays.reduce((sum, p) => sum + playCost(p, byId, event), 0)
-      if (!offDay && goal?.met({ plays: placed, down: [...already, ...placed], spent })) value += payWorth(goal.pay, match.drive)
+      for (const g of chasing) if (g.met({ plays: placed, down: [...already, ...placed], spent })) value += payWorth(g.pay, match.drive)
       if (!best || value > best.value) best = { plays, value, left: room - spent }
     }
   }
@@ -628,7 +763,7 @@ export function cpuPlays(match: FgMatch, at: 0 | 1, byId: Lookup, event: LockerE
   // position first, which is worth the most.
   const out = [...best.plays]
   let left = best.left
-  if (!offDay) {
+  if (!offDay && level.stacks) {
     const down = new Set(out.map((p) => p.card))
     const lanesNow = mine.lanes.map((ids, l) => [...lookupAll(ids, byId), ...lookupAll(out.filter((p) => p.lane === l && !p.stack && !callOf(p.card)).map((p) => p.card), byId)])
     const stacksNow = mine.stacks.map((ids) => lookupAll(ids, byId))
@@ -649,6 +784,198 @@ export function cpuPlays(match: FgMatch, at: 0 | 1, byId: Lookup, event: LockerE
   return out
 }
 
+/** The chance of taking at least two of three, off the chance of taking each. */
+const twoOfThree = ([a, b, c]: number[]) => a * b + a * c + b * c - 2 * a * b * c
+
+/** The most Power Level a hand can put down on a given amount of cap. */
+function bestSpend(hand: FgCard[], cap: number, event: LockerEvent | null): { worth: number; keep: FgCard[] } {
+  let worth = 0
+  let keep: FgCard[] = []
+  const n = Math.min(hand.length, 10)
+  for (let mask = 1; mask < 1 << n; mask++) {
+    let cost = 0
+    let sum = 0
+    for (let i = 0; i < n; i++) {
+      if (!(mask & (1 << i))) continue
+      cost += eventCost(hand[i], event)
+      sum += eventPower(hand[i], event)
+    }
+    if (cost <= cap && sum > worth) {
+      worth = sum
+      keep = hand.filter((_, i) => mask & (1 << i))
+    }
+  }
+  return { worth, keep }
+}
+
+/** What an All-Pro thinks a card or a point of cap next drive is worth, as a share of
+    the game. */
+const TEMPO = { card: 0.028, cap: 0.016, close: 0.03, ahead: 0.32 }
+
+/** Hands an All-Pro looks at closely. */
+const PLAN_HANDS = 14
+
+/**
+ * An All-Pro's call. Everything it can afford gets laid out on the real table and rated
+ * as the chance of taking two lanes of three, which is what makes it good: a point in a
+ * lane that's close is worth far more than a point in one that's won, and a lane that's
+ * gone isn't worth a card. How much a gap is worth shrinks as the game runs out, so it
+ * builds early and goes for the throat late. It sees only the table, the same as you.
+ */
+function planPlays(match: FgMatch, at: 0 | 1, byId: Lookup, event: LockerEvent | null, rnd: () => number): Play[] {
+  const them = (at === 0 ? 1 : 0) as 0 | 1
+  const mine = match.seats[at]
+  const theirs = match.seats[them]
+  const room = capFor(match, at)
+  const after = lastDrive(match) - match.drive
+  const swing = 3.5 + 4.5 * after
+  const seen = talliesOn(match, byId)
+  const tally = (seat: 0 | 1, lane: number) => seen.filter((x) => x.on === seat && x.lane === lane).reduce((sum, x) => sum + x.delta, 0)
+  const foeNow = laneTotals(theirs, byId, event).map((t, l) => t.total + tally(them, l))
+  const open = openGoals(match, match.drive).filter(({ goal }) => !match.goalsMet[at].includes(goal.id))
+  const men = lookupAll(mine.hand, byId)
+  const start = mine.lanes.map((ids) => lookupAll(ids, byId))
+  const behind = mine.stacks.map((ids) => lookupAll(ids, byId))
+  const already = downOn(mine, byId)
+  const nextCap = roomFor(match.drive + 1)
+  const card = after > 0 ? TEMPO.card : 0
+  const cap = after > 0 ? TEMPO.cap : 0
+
+  type Aim = { id: string; lane: Lane }
+
+  /** How a set of plays leaves the game. */
+  const rate = (placed: DrivePlay[], aim: Aim | null): number => {
+    const lanes = start.map((l) => [...l])
+    const stacks = behind.map((l) => [...l])
+    for (const p of placed) (p.stack ? stacks : lanes)[p.lane].push(p.card)
+    const bonus = [...mine.bonus]
+    const edge = [0, 0, 0]
+    let tempo = 0
+    let plans = 0
+    const call = aim ? callOf(aim.id) : null
+    const spent = placed.reduce((sum, p) => sum + (p.stack ? stackCost(p.card, event) : eventCost(p.card, event)), 0) + (call?.cost ?? 0)
+    if (call && aim) {
+      const { does } = call
+      const l = aim.lane
+      if (does.kind === 'draw') tempo += card * does.n
+      else if (does.kind === 'ice') tempo += cap * Math.min(does.n, nextCap)
+      else if (does.kind === 'goal') {
+        if (open.length) plans = 1
+        else tempo += card
+      } else if (does.kind === 'close') tempo += after > 0 ? TEMPO.close : 0
+      else if (does.kind === 'blitz') edge[l] += walled(theirs, l, byId) ? 0 : does.each * (theirs.lanes[l].length + theirs.stacks[l].length + after * 0.6)
+      else if (does.kind === 'boost') edge[l] += does.each * ([...lanes[l], ...stacks[l]].filter((c) => does.pos.includes(c.pos)).length + after * 0.4)
+      else if (does.kind === 'stand') edge[l] += does.within
+      else if (does.kind === 'turnover' && !walled(theirs, l, byId)) {
+        const out = byId(theirs.lanes[l][theirs.lanes[l].length - 1] ?? '')
+        if (out) edge[l] += eventPower(out, event) + 2
+      }
+    }
+    const check = { plays: placed, down: [...already, ...placed], spent }
+    for (const { goal } of open) {
+      const natural = goal.met(check)
+      if (!natural && plans === 0) continue
+      if (!natural) plans--
+      const { pay } = goal
+      if (pay.kind === 'lane') bonus[pay.lane] += pay.n
+      else if (pay.kind === 'every') for (let l = 0; l < 3; l++) bonus[l] += pay.n
+      else if (pay.kind === 'cap') tempo += cap * pay.n
+      else tempo += card * pay.n
+    }
+    for (const p of placed) {
+      if (p.stack) continue
+      const has = sigOf(p.card)
+      if (has === 'quick-release') tempo += card * 2
+      else if (has === 'deep-threat' && after > 0) tempo += TEMPO.close
+    }
+    const totals = sideTotals(lanes, stacks, bonus, event)
+    const chance = totals.map((t, l) => 1 / (1 + Math.exp(-(t.total + tally(at, l) + edge[l] - foeNow[l]) / swing)))
+    // What's left to play next drive counts, so it'll hold a card back for a bigger one
+    // when the cap to do it is there.
+    const used = new Set(placed.map((p) => p.card.id))
+    const carry = Math.max(0, roomFor(match.drive) - spent)
+    const next = after > 0 ? bestSpend(men.filter((c) => !used.has(c.id)), nextCap + carry, event).worth : 0
+    return twoOfThree(chance) + tempo + (TEMPO.ahead * next) / (4 * swing)
+  }
+
+  const legal = (c: FgCard, lanes: FgCard[][]) => LEGAL_LANES[c.pos].filter((l) => l !== mine.closed && lanes[l].length < LANE_MAX)
+
+  /** Lays a hand out, the strongest man first, each in the lane that rates best. */
+  const layOut = (cards: FgCard[], aim: Aim | null): { placed: DrivePlay[]; value: number } => {
+    const placed: DrivePlay[] = []
+    const lanes = start.map((l) => [...l])
+    for (const c of [...cards].sort((x, y) => eventPower(y, event) - eventPower(x, event))) {
+      let pick: { lane: Lane; value: number } | null = null
+      for (const lane of legal(c, lanes)) {
+        const value = rate([...placed, { card: c, lane }], aim)
+        if (!pick || value > pick.value) pick = { lane, value }
+      }
+      if (!pick) continue
+      placed.push({ card: c, lane: pick.lane })
+      lanes[pick.lane].push(c)
+    }
+    return { placed, value: rate(placed, aim) }
+  }
+
+  const aims: (Aim | null)[] = [null]
+  for (const id of mine.hand) {
+    const call = callOf(id)
+    if (!call || call.cost > room) continue
+    if (call.does.kind === 'move' || call.does.kind === 'keep') continue
+    if (after === 0 && ['draw', 'ice', 'close'].includes(call.does.kind)) continue
+    if (call.aim) for (const lane of [0, 1, 2] as Lane[]) aims.push({ id, lane })
+    else aims.push({ id, lane: 0 })
+  }
+
+  let best: { placed: DrivePlay[]; aim: Aim | null; value: number } = { placed: [], aim: null, value: -Infinity }
+  for (const aim of aims) {
+    const left = room - (aim ? (callOf(aim.id)?.cost ?? 0) : 0)
+    const hands = [[] as FgCard[], ...bestHands(men, left, event, open.map((o) => o.goal), (c) => open.some((o) => o.goal.met(c)), already).slice(0, PLAN_HANDS)]
+    for (const cards of hands) {
+      const { placed, value } = layOut(cards, aim)
+      const shaded = value + rnd() * 0.004
+      if (shaded > best.value) best = { placed, aim, value: shaded }
+    }
+  }
+
+  // Anything left goes behind someone, if that's worth more than keeping it.
+  const stacked: DrivePlay[] = [...best.placed]
+  const spentOn = () => stacked.reduce((sum, p) => sum + (p.stack ? stackCost(p.card, event) : eventCost(p.card, event)), 0) + (best.aim ? (callOf(best.aim.id)?.cost ?? 0) : 0)
+  let value = rate(stacked, best.aim)
+  for (const c of [...men].sort((a, b) => stackPower(b, event) - stackPower(a, event))) {
+    if (!canStack(c) || stacked.some((p) => p.card.id === c.id) || stackCost(c, event) > room - spentOn()) continue
+    let pick: { lane: Lane; value: number } | null = null
+    for (const lane of LEGAL_LANES[c.pos]) {
+      if (lane === mine.closed) continue
+      const hosts = start[lane].length + stacked.filter((p) => !p.stack && p.lane === lane).length
+      if (hosts <= behind[lane].length + stacked.filter((p) => p.stack && p.lane === lane).length) continue
+      const trial = rate([...stacked, { card: c, lane, stack: true }], best.aim)
+      if (trial > value && (!pick || trial > pick.value)) pick = { lane, value: trial }
+    }
+    if (pick) {
+      stacked.push({ card: c, lane: pick.lane, stack: true })
+      value = pick.value
+    }
+  }
+
+  const plays: Play[] = [
+    ...(best.aim ? [{ card: best.aim.id, lane: best.aim.lane }] : []),
+    ...stacked.map((p): Play => ({ card: p.card.id, lane: p.lane, ...(p.stack ? { stack: true } : {}) })),
+  ]
+
+  // What it'll never get to play goes, for a look at something it might. It can't draw
+  // more than the deck holds, and on the last drive there's nothing to draw.
+  if (after > 0 && mine.deck.length) {
+    const used = new Set(stacked.map((p) => p.card.id))
+    const rest = men.filter((c) => !used.has(c.id))
+    const comes = Array.from({ length: after }, (_, i) => roomFor(match.drive + 1 + i)).reduce((a, b) => a + b, 0)
+    const { keep } = bestSpend(rest, comes, event)
+    const spare = rest.filter((c) => !keep.includes(c)).sort((a, b) => eventPower(a, event) - eventPower(b, event))
+    for (const c of spare.slice(0, mine.deck.length)) plays.push({ card: c.id, lane: 0, discard: true })
+  }
+  return plays
+}
+
 // ============================================================
 // Goals
 // ============================================================
@@ -656,7 +983,7 @@ export function cpuPlays(match: FgMatch, at: 0 | 1, byId: Lookup, event: LockerE
 /** A card that went down this drive. */
 export type DrivePlay = { card: FgCard; lane: Lane; stack?: boolean }
 
-const drivePlays = (plays: Play[], byId: Lookup): DrivePlay[] =>
+export const drivePlays = (plays: Play[], byId: Lookup): DrivePlay[] =>
   plays.flatMap((p) => {
     const card = byId(p.card)
     return card ? [{ card, lane: p.lane, stack: p.stack }] : []
@@ -695,8 +1022,8 @@ export type DriveGoal = {
 export type GoalCheck = { plays: DrivePlay[]; down: DrivePlay[]; spent: number }
 
 type Is = (card: FgCard) => boolean
-const pos = (...list: PoolKey[]): Is => (c) => list.includes(c.pos)
-const LINEMAN: Is = (c) => LINEMEN.has(c.pos)
+const pos = isPos
+const LINEMAN: Is = isLineman
 /** Two kinds of man side by side in one lane, whenever each of them got there. */
 const together = (a: Is, b: Is) => ({ down }: GoalCheck) =>
   ([0, 1, 2] as Lane[]).some((l) => down.some((p) => p.lane === l && a(p.card)) && down.some((p) => p.lane === l && b(p.card)))
@@ -717,10 +1044,11 @@ function share(plays: DrivePlay[], key: (c: FgCard) => string | number | undefin
 /**
  * The early goals pay in tempo, a card or cap room, while there's time to use it, and
  * the late ones in points. The two-man goals look at the whole lane, so a man who went
- * down two drives ago counts, but only this drive's goal is ever on show: a table
- * that's balanced is ready for whatever lands, one that isn't has to scramble. A goal
- * for two men from one conference or one decade is what a themed deck is built to hit. Stacked men count for all of them,
- * which can meet a two-man goal on a drive with room for only one.
+ * down two drives ago counts, but only what's open is ever on show: a table that's
+ * balanced is ready for whatever lands, one that isn't has two drives to scramble. A
+ * goal for two men from one conference or one decade is what a themed deck is built to
+ * hit. Stacked men count for all of them, which can meet a two-man goal on a drive with
+ * room for only one.
  *
  * The points are what make a goal worth chasing. At +3 a lane, a bot that went after
  * goals won no more than one that ignored them; at +5, about half a typical lane's
@@ -739,11 +1067,11 @@ export const DRIVE_GOALS: DriveGoal[] = [
   { id: 'pass-pro', title: 'Pass Protection', line: 'Get a lineman and a QB in one lane.', pay: { kind: 'lane', lane: 2, n: 5 }, from: 3, to: 5, met: together(LINEMAN, pos('QB')) },
   { id: 'quick-slant', title: 'Quick Slant', line: 'Get a lineman and a WR in one lane.', pay: { kind: 'lane', lane: 1, n: 5 }, from: 3, to: 5, met: together(LINEMAN, pos('WR')) },
   { id: 'heavy-set', title: 'Heavy Set', line: 'Get a TE and a lineman in one lane.', pay: { kind: 'lane', lane: 0, n: 5 }, from: 3, to: 5, met: together(pos('TE'), LINEMAN) },
-  { id: 'twins', title: 'Twins Right', line: 'Get 2 WRs in one lane.', pay: { kind: 'lane', lane: 2, n: 5 }, from: 3, to: 5, met: ({ down }) => ([0, 1, 2] as Lane[]).some((l) => down.filter((p) => p.lane === l && p.card.pos === 'WR').length >= 2) },
-  { id: 'four-verts', title: 'Four Verticals', line: 'Get 3 cards on Deep.', pay: { kind: 'lane', lane: 2, n: 6 }, from: 6, to: 6, lane: 2, met: filled(2) },
-  { id: 'goal-line', title: 'Goal Line', line: 'Get 3 cards on Ground.', pay: { kind: 'lane', lane: 0, n: 6 }, from: 6, to: 6, lane: 0, met: filled(0) },
-  { id: 'red-zone', title: 'Red Zone', line: 'Get 3 cards on Short.', pay: { kind: 'lane', lane: 1, n: 6 }, from: 6, to: 6, lane: 1, met: filled(1) },
-  { id: 'two-minute', title: 'Two Minute Drill', line: 'Play 2 cards.', pay: { kind: 'every', n: 2 }, from: 6, to: 6, met: ({ plays }) => plays.length >= 2 },
+  { id: 'twins', title: 'Twins Right', line: 'Get 2 WRs in one lane.', pay: { kind: 'lane', lane: 2, n: 5 }, from: 3, to: 5, met: ({ down }) => ([0, 1, 2] as Lane[]).some((l) => down.filter((p) => p.lane === l && isPos('WR')(p.card)).length >= 2) },
+  { id: 'four-verts', title: 'Four Verticals', line: 'Get 3 cards on Deep.', pay: { kind: 'lane', lane: 2, n: 6 }, from: 5, to: 6, lane: 2, met: filled(2) },
+  { id: 'goal-line', title: 'Goal Line', line: 'Get 3 cards on Ground.', pay: { kind: 'lane', lane: 0, n: 6 }, from: 5, to: 6, lane: 0, met: filled(0) },
+  { id: 'red-zone', title: 'Red Zone', line: 'Get 3 cards on Short.', pay: { kind: 'lane', lane: 1, n: 6 }, from: 5, to: 6, lane: 1, met: filled(1) },
+  { id: 'two-minute', title: 'Two Minute Drill', line: 'Play 2 cards.', pay: { kind: 'every', n: 2 }, from: 5, to: 6, met: ({ plays }) => plays.length >= 2 },
 ]
 
 const GOALS_BY_ID = new Map(DRIVE_GOALS.map((g) => [g.id, g]))
@@ -752,11 +1080,27 @@ export const driveGoal = (id: string | null | undefined): DriveGoal | null => (i
 
 export const goalOn = (match: Pick<FgMatch, 'goals'>, drive: number): DriveGoal | null => driveGoal(match.goals[drive - 1])
 
-/** How many drives a game has a goal on, at the least. It's this or one more. */
+/** How long a goal stays open: the drive it lands on and the one after. */
+export const GOAL_DRIVES = 2
+
+export type OpenGoal = { goal: DriveGoal; /** Drives left on it, this one included. */ left: number }
+
+/** The goals open on a drive, the one about to close first. Two can overlap. */
+export function openGoals(match: Pick<FgMatch, 'goals' | 'overtime'>, drive: number): OpenGoal[] {
+  const last = lastDrive(match)
+  const out: OpenGoal[] = []
+  for (let d = Math.max(1, drive - GOAL_DRIVES + 1); d <= drive; d++) {
+    const goal = goalOn(match, d)
+    if (goal) out.push({ goal, left: Math.min(d + GOAL_DRIVES - 1, last) - drive + 1 })
+  }
+  return out
+}
+
+/** How many goals a game has, at the least. It's this or one more. */
 const GOALS_A_GAME = 3
 
 /** Goals land on three or four of the last five drives, and never the same one twice.
-    A drive with no goal is a drive to set up, and nobody knows which that is. */
+    Nobody knows which drive has the next one until it lands. */
 function dealGoals(rnd: () => number): (string | null)[] {
   const used = new Set<string>()
   const drives = shuffled([2, 3, 4, 5, 6], rnd).slice(0, GOALS_A_GAME + (rnd() < 0.5 ? 1 : 0))

@@ -12,6 +12,7 @@ import {
   SLOT_COUNT,
   SOLO_BOOSTED,
   SOLO_WEIGHTS,
+  VERSUS_WEIGHTS,
   chemistryCounts,
   chemistryFor,
   lineupScore,
@@ -24,14 +25,16 @@ import {
 
 export type SoloPick = { slot: number; id: string }
 
-/** The pack a slot deals, given what is already on the roster. */
-export function soloPack(seed: string, captain: number, slot: number, taken: Iterable<string>): Player[] {
+/** The pack a slot deals, given what is already on the roster. `versus` is a Classic
+    Versus seat, whose ordinary packs are richer than a Builder run's. */
+export function soloPack(seed: string, captain: number, slot: number, taken: Iterable<string>, versus = false): Player[] {
   const isCaptain = slot === captain
+  const ordinary = versus ? VERSUS_WEIGHTS : { normal: SOLO_WEIGHTS.normal, boosted: SOLO_BOOSTED.normal }
   return dealPack({
     label: `solo:${seed}`,
     slot,
-    base: isCaptain ? SOLO_WEIGHTS.captain : SOLO_WEIGHTS.normal,
-    boosted: isCaptain ? SOLO_BOOSTED.captain : SOLO_BOOSTED.normal,
+    base: isCaptain ? SOLO_WEIGHTS.captain : ordinary.normal,
+    boosted: isCaptain ? SOLO_BOOSTED.captain : ordinary.boosted,
     exclude: taken,
   })
 }
@@ -40,7 +43,7 @@ export function soloPack(seed: string, captain: number, slot: number, taken: Ite
     replay need to agree on. An Even pack is fixed, so `taken` doesn't touch it. */
 export function seedPack(seed: string, info: SeedInfo, slot: number, taken: Iterable<string>): Player[] {
   if (info.even || info.captain == null) return evenPacks(seed)[slot] ?? []
-  return soloPack(seed, info.captain, slot, taken)
+  return soloPack(seed, info.captain, slot, taken, info.versus)
 }
 
 export function parseSoloPicks(raw: unknown): SoloPick[] | null {
@@ -69,6 +72,8 @@ export type SoloReplay =
       captain: number | null
       diff: Difficulty
       even: boolean
+      /** A Classic Versus seat, on richer packs: never a run for the board. */
+      versus: boolean
       /** Under a salary cap, what the eleven cost. */
       spent: number
       /** Every pack as it was dealt, in the order it was opened: what the
@@ -121,6 +126,7 @@ export function replaySolo(seed: string, picks: SoloPick[]): SoloReplay {
     captain: parsed.captain,
     diff: parsed.diff,
     even: parsed.even,
+    versus: parsed.versus,
     spent: budget - left,
     packs,
   }

@@ -56,6 +56,11 @@ import {
   type Player,
   type PoolKey,
   type Weights,
+  EVEN_CEILING,
+  EVEN_CONTESTED_MARK,
+  EVEN_PLANTED_STAR,
+  EVEN_THREE_AT_TOP,
+  VERSUS_CAPTAIN_SHIFT,
 } from './rules'
 
 // ============================================================
@@ -154,15 +159,24 @@ export function newCaptainSeed(captain: number, diff: Difficulty = 'open'): stri
   return body + encode(hmac(`seed|${body}`), 6)
 }
 
+/** A Classic Versus seat: a captain seed whose ordinary packs are richer. A Builder run
+    can't be one, and the board refuses it, so it never reaches a binder. */
+export function newVersusSeed(captain: number, diff: Difficulty = 'open'): string {
+  const mark = diff === 'open' ? '' : Object.keys(SEED_DIFF).find((k) => SEED_DIFF[k] === diff)
+  const body = randomChars(8) + ALPHABET[captain + VERSUS_CAPTAIN_SHIFT] + mark
+  return body + encode(hmac(`seed|${body}`), 6)
+}
+
 /** An Even Versus: both seats play this one seed, and there is no captain in
     it. A different universe from every captain seed, so never reused for one. */
 export function newEvenSeed(diff: Difficulty): string {
   const mark = Object.keys(SEED_DIFF).find((k) => SEED_DIFF[k] === diff)
-  const body = randomChars(8) + EVEN_MARK + mark
+  const body = randomChars(8) + EVEN_CONTESTED_MARK + mark
   return body + encode(hmac(`seed|${body}`), 6)
 }
 
-export type SeedInfo = { captain: number | null; diff: Difficulty; even: boolean }
+/** `versus` is a Classic Versus seat, on the richer ordinary packs. */
+export type SeedInfo = { captain: number | null; diff: Difficulty; even: boolean; versus: boolean }
 
 /** What a seed commits to, or null if it wasn't signed here (or not for this
     pool, which is how a run saved before a pool change stops replaying). */
@@ -171,10 +185,12 @@ export function readSeed(seed: string): SeedInfo | null {
   const bodyLength = seed.length - 6
   const body = seed.slice(0, bodyLength)
   if (encode(hmac(`seed|${body}`), 6) !== seed.slice(bodyLength)) return null
-  if (seed[8] === EVEN_MARK) return seed.length === 16 ? { captain: null, diff: difficultyFromSeed(seed), even: true } : null
-  const captain = ALPHABET.indexOf(seed[8])
+  if (seed[8] === EVEN_MARK || seed[8] === EVEN_CONTESTED_MARK) return seed.length === 16 ? { captain: null, diff: difficultyFromSeed(seed), even: true, versus: false } : null
+  const at = ALPHABET.indexOf(seed[8])
+  const versus = at >= VERSUS_CAPTAIN_SHIFT
+  const captain = versus ? at - VERSUS_CAPTAIN_SHIFT : at
   if (captain < 0 || captain >= SLOT_COUNT) return null
-  return { captain, diff: difficultyFromSeed(seed), even: false }
+  return { captain, diff: difficultyFromSeed(seed), even: false, versus }
 }
 
 /** A plain random seed, for things the server keeps to itself (a League
@@ -402,14 +418,21 @@ export function maskCard(p: Player, diff: Difficulty): Player {
 }
 
 /**
- * How sharp the CPU is on the blind modes, set to an average player: people score
+ * How sharp the CPU is, set to an average player: on the blind modes people score
  * about 83% of a perfect draft on Range and 72% on Ball Knower (pe_daily_runs,
  * October 2026), and this lands there in Classic and Even (sim/cpu-sim.ts).
  * `misread` is how far out a read can be, as a power of e: 1.8 is anywhere from
  * a sixth of a card's worth to six times it, so a star stays a star and it's the
  * mid cards it gets wrong. `chem` is how much of the chemistry on offer it spots.
+ *
+ * Face up there's nothing to misread, so a CPU with no noise read every card right and
+ * took every bond: on an Even, where it sees your packs, the best anyone could do was
+ * tie it. Here `misread` is a person weighing one card against another, and the numbers
+ * come off sim/versus-sim.ts.
  */
-export const CPU_SKILL: Partial<Record<Difficulty, { misread: number; chem: number }>> = {
+export const CPU_SKILL: Record<Difficulty, { misread: number; chem: number }> = {
+  open: { misread: 0.3, chem: 0.5 },
+  cap: { misread: 0.3, chem: 0.5 },
   range: { misread: 0.3, chem: 0.5 },
   season: { misread: 1.8, chem: 0.5 },
 }
@@ -421,7 +444,6 @@ export const CPU_SKILL: Partial<Record<Difficulty, { misread: number; chem: numb
  */
 export function cpuEye(seed: string, diff: Difficulty): (p: Player) => number {
   const skill = CPU_SKILL[diff]
-  if (!skill) return (p) => p.score
   const rnd = stream(`cpu:${seed}`)
   return (p) => {
     const { lo, hi } = rangeOf(p)
@@ -512,15 +534,47 @@ export function evenPacks(seed: string): Player[][] {
   const used = new Set<string>()
   const packs: Player[][] = SLOTS.map(() => [])
 
-  const planted = plantedSeason(rnd)
+  const old = seed[8] === EVEN_MARK
+  // A team deep enough to plant is a good one, so all of it would lift the top of the
+  // deal well past its ceiling. Its stars only come along some of the time: the rest of
+  // the team is still there to find.
+  const planted = plantedSeason(rnd).filter((c) => old || c.score < RARITY_FLOOR.transcendent || rnd() < EVEN_PLANTED_STAR)
   for (const card of planted) {
     const open = shuffled(SLOTS.map((_, i) => i).filter((i) => SLOTS[i].pool === card.pos && !packs[i].length), rnd)
     if (open.length === 0) continue
     used.add(personOf(card))
     packs[open[0]].push(card)
   }
-  SLOTS.forEach((def, i) => drawInto(packs[i], POOL[def.pool], PACK_SIZE - packs[i].length, SHARED_WEIGHTS, used, rnd))
+  SLOTS.forEach((def, i) => {
+    if (old) drawInto(packs[i], POOL[def.pool], PACK_SIZE - packs[i].length, SHARED_WEIGHTS, used, rnd)
+    else contest(packs[i], POOL[def.pool], used, rnd)
+  })
   return packs.map((p) => shuffled(p, rnd))
+}
+
+const TABLE_RARITIES: (keyof Weights)[] = ['common', 'rare', 'dynasty', 'transcendent', 'immortal']
+
+function rollCeiling(rnd: () => number): number {
+  const total = TABLE_RARITIES.reduce((sum, r) => sum + EVEN_CEILING[r], 0)
+  let x = rnd() * total
+  for (let i = 0; i < TABLE_RARITIES.length; i++) {
+    x -= EVEN_CEILING[TABLE_RARITIES[i]]
+    if (x <= 0) return i
+  }
+  return 1
+}
+
+/** A pack with a fight at the top of it: see EVEN_CEILING. A planted card over the
+    ceiling lifts it, so it's never left standing alone. */
+function contest(pack: Player[], pool: Player[], used: Set<string>, rnd: () => number) {
+  const rank = (p: Player) => TABLE_RARITIES.indexOf(tableRarity(p.rarity))
+  const top = Math.max(rollCeiling(rnd), ...pack.map(rank))
+  const weights = (keep: (i: number) => boolean) => Object.fromEntries(TABLE_RARITIES.map((r, i) => [r, keep(i) ? SHARED_WEIGHTS[r] : 0])) as Weights
+  const want = rnd() < EVEN_THREE_AT_TOP ? 3 : 2
+  drawInto(pack, pool, want - pack.filter((p) => rank(p) === top).length, weights((i) => i === top), used, rnd)
+  drawInto(pack, pool, PACK_SIZE - pack.length, weights((i) => i < top), used, rnd)
+  // A position that's run dry at those rarities still deals a full pack.
+  drawInto(pack, pool, PACK_SIZE - pack.length, SHARED_WEIGHTS, used, rnd)
 }
 
 /** A big name in a bad year, dropped into the Daily on purpose: a star at

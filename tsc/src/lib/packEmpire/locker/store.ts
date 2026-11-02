@@ -10,6 +10,7 @@ import { playerById } from '../pool'
 import { RARITIES, type Player, type Rarity } from '../rules'
 import { dealLockerPack, packRandom } from './deal'
 import { DEFAULT_CALLS } from './calls'
+import { TROPHY_CASES, caseDone, collectionStats, trophiesWaiting, trophyById, trophyCaseById, trophyDone, type TrophyReward, type TrophyStats } from './trophies'
 import {
   BONUS_WINS,
   DECK_NAME_MAX,
@@ -131,6 +132,7 @@ export async function openPack(userId: string, packId: string): Promise<Opened> 
     const { data: again } = await db.from('pe_locker_packs').select('cards').eq('id', packId).maybeSingle()
     return { ok: true, cards: cardsOf(again?.cards ?? null), fresh: [] }
   }
+  await tallyStats(userId, { packs: 1 })
   return { ok: true, cards, fresh: ids.filter((id) => !known.has(id)) }
 }
 
@@ -251,10 +253,10 @@ export type WinCredit = { wins: number; need: number; earned: boolean }
 
 /** A win, from any game. Call it after the match row says 'won'. It pays FAAB, and the
     fifth of the day drops the bonus pack, once, however many more come after it. */
-export async function creditWin(userId: string): Promise<WinCredit> {
+export async function creditWin(userId: string, faab = FAAB_WIN): Promise<WinCredit> {
   const day = dayKey()
   const wins = await winsOn(userId, day)
-  await createAdminClient().rpc('pe_locker_earn', { p_user: userId, p_amount: FAAB_WIN })
+  await Promise.all([createAdminClient().rpc('pe_locker_earn', { p_user: userId, p_amount: faab }), tallyStats(userId, { faab })])
   let earned = false
   if (wins >= BONUS_WINS) {
     const { data } = await createAdminClient()
@@ -300,4 +302,54 @@ export async function buyPack(userId: string, kind: string): Promise<string | nu
   const { data, error } = await createAdminClient().rpc('pe_locker_buy', { p_user: userId, p_kind: kind, p_price: price })
   if (error) return 'That did not go through. Try again.'
   return data ? null : 'You need more FAAB for that.'
+}
+
+// ============================================================
+// The Trophy Case
+// ============================================================
+
+/** Adds to a player's numbers and returns where they stand. A failed write loses a tick
+    of progress, never a match: nothing that plays a game waits on this. */
+export async function tallyStats(userId: string, add: TrophyStats, set: TrophyStats = {}): Promise<TrophyStats> {
+  const { data } = await createAdminClient().rpc('pe_locker_tally', { p_user: userId, p_add: add, p_set: set })
+  return (data as TrophyStats | null) ?? {}
+}
+
+export type TrophyRoom = { stats: TrophyStats; claimed: string[]; waiting: number }
+
+export async function trophyRoom(userId: string, cards?: OwnedCard[]): Promise<TrophyRoom> {
+  const [{ data }, owned] = await Promise.all([createAdminClient().from('pe_locker_trophies').select('stats, claimed').eq('user_id', userId).maybeSingle(), cards ?? ownedCards(userId)])
+  const stats = { ...((data?.stats as TrophyStats | null) ?? {}), ...collectionStats(owned) }
+  const claimed = (data?.claimed as string[] | null) ?? []
+  return { stats, claimed, waiting: trophiesWaiting(stats, claimed) }
+}
+
+/** What the desktop bar shows on every Locker page. */
+export async function barFacts(userId: string): Promise<{ faab: number; waiting: number }> {
+  const [faab, room] = await Promise.all([walletOf(userId), trophyRoom(userId)])
+  return { faab, waiting: room.waiting }
+}
+
+export type Claimed = { ok: true; reward: TrophyReward } | { ok: false; error: string; status: number }
+
+/** Claims a trophy, or a whole case's card. The server works out whether it's earned:
+    the browser only says which one it's asking for. */
+export async function claimTrophy(userId: string, id: string): Promise<Claimed> {
+  const trophy = trophyById(id)
+  const whole = trophyCaseById(id)
+  if (!trophy && !whole) return { ok: false, error: 'No such trophy.', status: 404 }
+  const { stats } = await trophyRoom(userId)
+  if (trophy ? !trophyDone(trophy, stats) : !caseDone(whole as (typeof TROPHY_CASES)[number], stats)) return { ok: false, error: 'Not earned yet.', status: 400 }
+  const reward: TrophyReward = trophy ? trophy.reward : { kind: 'card', id: (whole as (typeof TROPHY_CASES)[number]).card }
+  const { data, error } = await createAdminClient().rpc('pe_locker_claim', {
+    p_user: userId,
+    p_id: id,
+    p_faab: reward.kind === 'faab' ? reward.n : 0,
+    p_card: reward.kind === 'card' ? reward.id : null,
+    p_pack: reward.kind === 'pack' ? reward.pack : null,
+  })
+  if (error) return { ok: false, error: 'That did not go through. Try again.', status: 500 }
+  if (!data) return { ok: false, error: 'Already claimed.', status: 409 }
+  if (reward.kind === 'faab') await tallyStats(userId, { faab: reward.n })
+  return { ok: true, reward }
 }

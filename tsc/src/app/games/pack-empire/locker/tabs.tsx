@@ -2,16 +2,35 @@
 
 import { LOCKER_GAMES } from '@/lib/packEmpire/locker/rules'
 
-export type LockerTabId = 'home' | 'shop' | 'collection' | (string & {})
+export type LockerTabId = 'empire' | 'home' | 'shop' | 'collection' | 'trophies' | (string & {})
 
-export const LOCKER_TABS: { id: LockerTabId; label: string; href: string; color: string }[] = [
+type LockerTab = { id: LockerTabId; label: string; href: string; color: string }
+
+export const SHOP_TAB: LockerTab = { id: 'shop', label: 'Shop', href: '/games/pack-empire/locker/shop/', color: '#e8a84b' }
+
+/** The desktop's middle row. The Shop sits apart from them, on the right by your FAAB. */
+export const LOCKER_TABS: LockerTab[] = [
+  { id: 'empire', label: 'Empire', href: '/games/pack-empire/', color: '#e8a84b' },
   { id: 'home', label: 'Locker', href: '/games/pack-empire/locker/', color: '#4fc3b0' },
-  { id: 'shop', label: 'Shop', href: '/games/pack-empire/locker/shop/', color: '#e8a84b' },
   { id: 'collection', label: 'Cards', href: '/games/pack-empire/locker/collection/', color: '#79d6ff' },
   ...LOCKER_GAMES.map((g) => ({ id: g.id, label: `${g.title} ${g.titleEm}`, href: g.href, color: '#7be0a2' })),
+  { id: 'trophies', label: 'Trophies', href: '/games/pack-empire/locker/trophies/', color: '#f4c06a' },
 ]
 
 const MARKS: Record<string, React.ReactNode> = {
+  empire: (
+    <>
+      <path d="M6.500 3.500h11l-.8 1.600.8 1.600v10.600l-.8 1.600.8 1.600h-11l.8-1.600-.8-1.600V6.700l.8-1.600z" />
+      <path d="m12 9.200.9 1.900 2 .3-1.500 1.400.4 2-1.800-1-1.800 1 .4-2-1.500-1.400 2-.3z" />
+    </>
+  ),
+  trophies: (
+    <>
+      <path d="M7.500 4h9v5.500a4.500 4.500 0 0 1-9 0z" />
+      <path d="M7.500 5.500H4.500c0 3 1 4.500 3.300 5M16.500 5.500h3c0 3-1 4.500-3.300 5" />
+      <path d="M12 14v3.500M8.500 20.500c0-2 1.500-3 3.500-3s3.500 1 3.500 3z" />
+    </>
+  ),
   home: (
     <>
       <rect x="5.5" y="3" width="13" height="18" rx="1.4" />

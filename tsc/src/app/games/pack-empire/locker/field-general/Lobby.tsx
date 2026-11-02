@@ -6,7 +6,8 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
+import { CPU_LEVELS, isCpuLevel, type CpuLevelId } from '@/lib/packEmpire/locker/fieldGeneral'
 import type { Challenge } from '@/lib/packEmpire/locker/fieldGeneralMatch'
 import { MAX_DECKS, lockerCost, lockerPower, type LockerEvent, type LockerGameDef } from '@/lib/packEmpire/locker/rules'
 import type { DeckSummary } from '@/lib/packEmpire/locker/store'
@@ -19,6 +20,23 @@ const DECK_PAGE = '/games/pack-empire/locker/field-general/deck/'
 const MATCH = (id: string) => `/games/pack-empire/locker/field-general/${id}/`
 
 type Friend = { id: string; name: string }
+
+const LEVEL_KEY = 'pe_fg_level_v1'
+
+const onStorage = (fn: () => void) => {
+  window.addEventListener('storage', fn)
+  return () => window.removeEventListener('storage', fn)
+}
+
+/** The level you last played. A convenience: a browser that won't say starts on Pro. */
+function savedLevel(): CpuLevelId {
+  try {
+    const saved = window.localStorage.getItem(LEVEL_KEY)
+    return isCpuLevel(saved) ? saved : 'pro'
+  } catch {
+    return 'pro'
+  }
+}
 
 export function Lobby({
   deck,
@@ -43,7 +61,17 @@ export function Lobby({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [picking, setPicking] = useState(false)
+  const saved = useSyncExternalStore(onStorage, savedLevel, () => 'pro' as CpuLevelId)
+  const [chosen, setChosen] = useState<CpuLevelId | null>(null)
+  const level = chosen ?? saved
   const cost = deck.reduce((sum, c) => sum + lockerCost(c), 0)
+
+  const pickLevel = (id: CpuLevelId) => {
+    setChosen(id)
+    try {
+      window.localStorage.setItem(LEVEL_KEY, id)
+    } catch {}
+  }
 
   // A friend's challenge turns up here while you're on the page.
   useEffect(() => {
@@ -114,9 +142,20 @@ export function Lobby({
             Back To Your Game
           </Link>
         ) : (
-          <button type="button" className="pe-btn fg-hero-go" disabled={busy} onClick={() => go({ action: 'start', mode: 'standard' })}>
-            Play The CPU
-          </button>
+          <>
+            <div className="fg-levels" role="radiogroup" aria-label="CPU difficulty">
+              {Object.values(CPU_LEVELS).map((l) => (
+                <button key={l.id} type="button" role="radio" aria-checked={level === l.id} onClick={() => pickLevel(l.id)}>
+                  <b>{l.label}</b>
+                  <small>${l.faab} A Win</small>
+                </button>
+              ))}
+            </div>
+            <div className="fg-level-line">{CPU_LEVELS[level].line}</div>
+            <button type="button" className="pe-btn fg-hero-go" disabled={busy} onClick={() => go({ action: 'start', mode: 'standard', level })}>
+              Play The {CPU_LEVELS[level].label} CPU
+            </button>
+          </>
         )}
       </section>
       {error && <p className="pe-fg-error">{error}</p>}
@@ -157,7 +196,7 @@ export function Lobby({
               </button>
             )}
           </div>
-          <button type="button" className="pe-fg-mode" style={{ '--mode': '#4fc3b0' } as React.CSSProperties} disabled={busy} onClick={() => go({ action: 'start', mode: 'event' })}>
+          <button type="button" className="pe-fg-mode" style={{ '--mode': '#4fc3b0' } as React.CSSProperties} disabled={busy} onClick={() => go({ action: 'start', mode: 'event', level })}>
             <span>
               <span className="pe-fg-mode-kick">This Week&apos;s Event</span>
               <span className="pe-fg-mode-name">{event.title}</span>

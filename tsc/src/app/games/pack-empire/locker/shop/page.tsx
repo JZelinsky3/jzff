@@ -31,7 +31,7 @@ export default async function ShopPage() {
 
   return (
     <main className={`${ROOM_CLASS} ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>
-      <LockerChrome mobile={mobile} signedIn back="/games/pack-empire/locker/" backLabel="The Locker Room" kicker="The Locker Room" title="The" titleEm="Shop" tab="shop" />
+      <LockerChrome mobile={mobile} userId={user.id} back="/games/pack-empire/locker/" backLabel="The Locker Room" kicker="The Locker Room" title="The" titleEm="Shop" tab="shop" />
       <div className="pe-wrap pe-lk">
         {!mobile && (
           <header className="pe-lk-head">
@@ -41,7 +41,7 @@ export default async function ShopPage() {
             </h1>
           </header>
         )}
-        <Shop faab={faab} spares={sparesOf(cards)} />
+        <Shop faab={faab} spares={sparesOf(cards)} mobile={mobile} />
       </div>
       {mobile ? <LockerDock /> : <SiteFooter />}
     </main>

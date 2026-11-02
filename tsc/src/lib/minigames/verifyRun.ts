@@ -323,9 +323,10 @@ async function verifyPackEmpire(poolId: string, mode: string | null, seed: strin
   if (!parsed) return { ok: false, status: 400, error: 'That lineup is incomplete.' }
   const run = replaySolo(seed, parsed)
   if (!run.ok) return { ok: false, status: 400, error: run.error }
-  // A blind run can't post to the open board or the other way round, and an
-  // Even seed is a Versus seat's, never a run of its own.
-  if (run.even || difficultyForMode(mode) !== run.diff) {
+  // A blind run can't post to the open board or the other way round, and a
+  // Versus seat's seed is never a run of its own: its packs are richer, and a
+  // run on this board is what files in a binder.
+  if (run.even || run.versus || difficultyForMode(mode) !== run.diff) {
     return { ok: false, status: 400, error: 'That run was dealt for a different board.' }
   }
   // A blind pack turns over once its pick is on record, so that's the pick.

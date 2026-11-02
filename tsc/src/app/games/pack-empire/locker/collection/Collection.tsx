@@ -9,6 +9,7 @@ import type { OwnedCard } from '@/lib/packEmpire/locker/store'
 import { RARITIES, surname } from '@/lib/packEmpire/rules'
 import { CardSheet } from '../CardSheet'
 import { LockerCard } from '../LockerCard'
+import { Picker } from '../Picker'
 
 const FILTERS = ['All', 'QB', 'RB', 'WR', 'TE', 'OL'] as const
 type Filter = (typeof FILTERS)[number]
@@ -42,16 +43,7 @@ export function Collection({ cards, event }: { cards: OwnedCard[]; event: Locker
             </button>
           ))}
         </div>
-        <label className="pe-lk-sort">
-          <span>Sort</span>
-          <select value={sort} onChange={(e) => setSort(e.target.value)}>
-            {SORTS.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Picker label="Sort" prefix="Sort" value={sort} onChange={setSort} groups={[{ options: SORTS.map((s) => ({ id: s.id, label: s.label })) }]} />
       </div>
       {shown.length === 0 ? (
         <p className="pe-lk-none">Nothing here yet. Open a pack.</p>

@@ -18,6 +18,7 @@ import { lockerPost } from '../../api'
 import { CallCard } from '../../CallCard'
 import { inFilter } from '../../collection/Collection'
 import { LockerCard } from '../../LockerCard'
+import { Picker } from '../../Picker'
 
 const FILTERS = ['All', 'QB', 'RB', 'WR', 'TE', 'OL'] as const
 const THEME_GROUPS = ['Conference', 'Division', 'Era'] as const
@@ -197,18 +198,18 @@ export function DeckBuilder({ owned, draft, rule, game, home }: { owned: OwnedCa
                   </button>
                 ))}
               </div>
-              <select className="pe-fg-theme" value={themeId} onChange={(e) => setThemeId(e.target.value)} aria-label="Theme">
-                <option value="">Any Theme</option>
-                {THEME_GROUPS.map((group) => (
-                  <optgroup key={group} label={group}>
-                    {DECK_THEMES.filter((t) => t.group === group).map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.label} ({owned.filter((c) => cardMatches(c, t.match)).length})
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+              <Picker
+                label="Theme"
+                value={themeId}
+                onChange={setThemeId}
+                groups={[
+                  { options: [{ id: '', label: 'Any Theme' }] },
+                  ...THEME_GROUPS.map((group) => ({
+                    label: group,
+                    options: DECK_THEMES.filter((t) => t.group === group).map((t) => ({ id: t.id, label: t.label, note: String(owned.filter((c) => cardMatches(c, t.match)).length) })),
+                  })),
+                ]}
+              />
             </div>
             {bench.length === 0 ? (
               <p className="pe-lk-none">Nothing here yet.</p>

@@ -1,13 +1,15 @@
 // The Locker Room's own bar. Inside Pack Empire but not of it: the modes, the board and
-// the binder give way to the Locker's tabs, with Friends and the Library still on the
-// right, so going through the door feels like going somewhere. A game on LOCKER_GAMES
-// gets a tab here without anyone touching this file.
+// the binder give way to the Locker's tabs, so going through the door feels like going
+// somewhere, with Empire first as the way back. The right side is yours: your FAAB and
+// the Shop that spends it, then Friends and the Library. A game on LOCKER_GAMES gets a
+// tab here without anyone touching this file.
 
 import Link from 'next/link'
+import { barFacts } from '@/lib/packEmpire/locker/store'
 import { MobileGameBar } from '../../MobileGameBar'
 import { FriendsMenu } from '../FriendsMenu'
 import { LockerDock } from './LockerDock'
-import { LOCKER_TABS, LockerGlyph, type LockerTabId } from './tabs'
+import { LOCKER_TABS, LockerGlyph, SHOP_TAB, type LockerTabId } from './tabs'
 
 export { LockerDock }
 
@@ -15,9 +17,9 @@ export { LockerDock }
 export const ROOM_CLASS = 'pe-theme pe-room'
 export const ROOM_COLOR = '#0f1619'
 
-export function LockerChrome({
+export async function LockerChrome({
   mobile,
-  signedIn,
+  userId,
   back,
   backLabel,
   kicker,
@@ -26,7 +28,7 @@ export function LockerChrome({
   tab,
 }: {
   mobile: boolean
-  signedIn: boolean
+  userId?: string | null
   back: string
   backLabel: string
   kicker: string
@@ -34,9 +36,12 @@ export function LockerChrome({
   titleEm?: string
   tab: LockerTabId
 }) {
+  const signedIn = !!userId
   if (mobile) {
     return <MobileGameBar left="back" backHref={back} backLabel={backLabel} kicker={kicker} title={title} titleEm={titleEm} signedIn={signedIn} right="friends" />
   }
+
+  const facts = userId ? await barFacts(userId) : null
 
   return (
     <nav className="nav pe-nav pe-nav--room" aria-label="The Locker Room">
@@ -64,11 +69,26 @@ export function LockerChrome({
           <Link key={t.id} href={t.href} className={`pe-nav-mode${tab === t.id ? ' on' : ''}`} style={{ '--mode': t.color } as React.CSSProperties} aria-current={tab === t.id ? 'page' : undefined}>
             <LockerGlyph id={t.id} />
             <span>{t.label}</span>
+            {t.id === 'trophies' && !!facts?.waiting && (
+              <i className="pe-nav-badge" aria-label={`${facts.waiting} to claim`}>
+                {facts.waiting}
+              </i>
+            )}
           </Link>
         ))}
       </div>
 
       <div className="pe-nav-right">
+        {facts && (
+          <span className="pe-nav-faab" aria-label={`${facts.faab} FAAB`}>
+            <b>${facts.faab.toLocaleString()}</b>
+            <small>FAAB</small>
+          </span>
+        )}
+        <Link href={SHOP_TAB.href} className={`pe-nav-shop${tab === 'shop' ? ' on' : ''}`} aria-current={tab === 'shop' ? 'page' : undefined}>
+          <LockerGlyph id="shop" />
+          <span>{SHOP_TAB.label}</span>
+        </Link>
         {signedIn && (
           <FriendsMenu on={false}>
             <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

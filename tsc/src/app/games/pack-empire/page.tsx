@@ -113,7 +113,7 @@ function BinderStrip({ totals }: { totals: BinderTotals | null }) {
     return (
       <div className="pe-bd-strip-home">
         <p>
-          The card you keep from every pack goes in a binder, each player&apos;s cards best to worst, with
+          The card you keep from every Empire Builder pack goes in a binder, each player&apos;s cards best to worst, with
           how many times you&apos;ve pulled each one.
         </p>
         <Link href="/login?next=%2Fgames%2Fpack-empire%2Fbinder%2F" className="pe-btn pe-btn--ghost pe-btn--sm">

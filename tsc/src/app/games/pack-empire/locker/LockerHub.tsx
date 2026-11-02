@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { LOCKER_GAMES, LOCKER_PACKS } from '@/lib/packEmpire/locker/rules'
 import type { LockerHome, WaitingPack } from '@/lib/packEmpire/locker/store'
+import { TROPHY_CASES } from '@/lib/packEmpire/locker/trophies'
 import { RARITIES, RARITY_LOOK, type Player } from '@/lib/packEmpire/rules'
 import { RarityGem } from '../cards'
 import { PackStage, usePackStage } from '../stage'
@@ -16,7 +17,9 @@ import { lockerPost } from './api'
 import { PackOdds } from './PackOdds'
 import { WinMeter } from './WinMeter'
 
-export function LockerHub({ home }: { home: LockerHome }) {
+const TROPHY_COUNT = TROPHY_CASES.reduce((sum, c) => sum + c.trophies.length, 0)
+
+export function LockerHub({ home, trophies }: { home: LockerHome; trophies: { waiting: number; claimed: number } }) {
   const router = useRouter()
   const { stage, open, tear, rip, reveal, revealAll, skip, dismiss } = usePackStage()
   const [opening, setOpening] = useState<WaitingPack | null>(null)
@@ -88,7 +91,22 @@ export function LockerHub({ home }: { home: LockerHome }) {
 
       <section className="pe-sec">
         <div className="pe-sec-head">
-          <span className="pe-sec-num">§ 03 · Collection</span>
+          <span className="pe-sec-num">§ 03 · Trophies</span>
+          <span className="pe-sec-title">
+            {trophies.claimed} Of {TROPHY_COUNT}
+          </span>
+          <Link href="/games/pack-empire/locker/trophies/" className="pe-sec-meta pe-link">
+            See All
+          </Link>
+        </div>
+        <Link href="/games/pack-empire/locker/trophies/" className="pe-lk-trophy" data-waiting={trophies.waiting ? '' : undefined}>
+          {trophies.waiting ? `${trophies.waiting} Ready To Claim` : 'FAAB, Trophy Packs, and cards that are not in any pack.'}
+        </Link>
+      </section>
+
+      <section className="pe-sec">
+        <div className="pe-sec-head">
+          <span className="pe-sec-num">§ 04 · Collection</span>
           <span className="pe-sec-title">
             {home.owned} {home.owned === 1 ? 'Card' : 'Cards'}
           </span>

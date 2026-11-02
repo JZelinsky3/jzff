@@ -74,18 +74,15 @@ async function stampCantons(userId: string, packs: BinderPack[]): Promise<void> 
   if (stamps.length) await createAdminClient().rpc('pe_canton_stamp', { p_user: userId, p_stamps: stamps })
 }
 
-/** An Empire Builder or Versus run: re-dealt here, all eleven packs filed. */
-export async function recordSoloRun(
-  userId: string,
-  source: 'solo' | 'versus',
-  seed: string,
-  picks: SoloPick[]
-): Promise<string[]> {
+/** An Empire Builder run: re-dealt here, all eleven packs filed. Builder is the one
+    mode that fills a binder, so the other modes can run richer packs without inflating
+    it. Versus and League rows from before that stay where they are. */
+export async function recordSoloRun(userId: string, seed: string, picks: SoloPick[]): Promise<string[]> {
   const run = replaySolo(seed, picks)
   if (!run.ok) return []
   return recordPacks(
     userId,
-    source,
+    'solo',
     run.packs.map((p) => ({ deal: `solo:${seed}`, slot: p.slot, cards: p.cards.map((c) => c.id), kept: p.kept }))
   )
 }
@@ -120,7 +117,7 @@ export async function syncBinder(userId: string): Promise<void> {
       .slice(0, SYNC_LIMIT)
     for (const r of todo) {
       const picks = parseSoloPicks(r.detail?.picks)
-      if (picks) await recordSoloRun(userId, 'solo', r.seed, picks)
+      if (picks) await recordSoloRun(userId, r.seed, picks)
     }
   } catch {
     // The binder still shows what it has.

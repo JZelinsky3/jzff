@@ -22,36 +22,39 @@ import type { Player } from '../rules'
 import { CALLS, callOf } from './calls'
 import { dealCpuDeck, packRandom } from './deal'
 import {
+  CPU_LEVELS,
   DRIVES,
   LANES,
   applyDrive,
   cpuPlays,
+  driveGoal,
   fgResult,
   formationsOn,
-  goalOn,
   isOver,
   laneTotals,
   lastDrive,
   newMatch,
+  openGoals,
   playProblem,
   rng,
   roomFor,
   talliesOn,
+  type CpuLevelId,
   type FgMatch,
   type FgResult,
+  type GoalHit,
   type Lane,
   type LaneTotal,
   type Lookup,
   type Play,
   type Seat,
 } from './fieldGeneral'
-import { BONUS_WINS, lockerEventById, lockerEventForDay, type LockerEvent } from './rules'
-import { creditWin, deckCalls, deckFor, winsOn, type WinCredit } from './store'
+import { BONUS_WINS, FAAB_WIN, lockerEventById, lockerEventForDay, type LockerEvent } from './rules'
+import { signatureOf } from './signatures'
+import { creditWin, deckCalls, deckFor, tallyStats, winsOn, type WinCredit } from './store'
+import type { TrophyStats } from './trophies'
 
 const GAME = 'field-general'
-
-/** How often the CPU doesn't read the table: see cpuPlays. */
-const CPU_SLIP = 0.15
 
 /** How many calls the CPU brings, at random. Spike It and Audible stay out: they only
     pay off for a side planning a drive ahead. */
@@ -100,11 +103,17 @@ export type SeatView = {
   deck: number
   /** Calls left in their pile. */
   book: number
-  /** Calls they've left on the field, and what each comes to as things stand. */
-  ongoing: { call: string; lane: Lane; own: boolean; delta: number }[]
+  /** What lands on this lane at the end, and what each comes to as things stand: calls
+      left on the field, and signatures that wait for the tally. */
+  ongoing: { call: string; title: string; lane: Lane; own: boolean; delta: number }[]
   /** Formations they have on, by id. */
   forms: string[]
+  /** Goals they've met, by id. */
+  goalsMet: string[]
 }
+
+/** A goal that's open: how many drives it has left, and who's met it, you first. */
+export type GoalView = { id: string; left: number; met: [boolean, boolean] }
 
 export type LogLine = { drive: number; who: 'you' | 'foe' | 'goal'; text: string }
 
@@ -129,10 +138,10 @@ export type MatchView = {
   hand: Player[]
   /** The play calls in your hand. */
   calls: string[]
-  /** This drive's goal, by id. The ones to come are never sent. */
-  goal: string | null
-  /** Last drive's goal, and who met it, you first. */
-  lastGoal: { id: string; met: [boolean, boolean] } | null
+  /** The goals open this drive. The ones to come are never sent. */
+  goals: GoalView[]
+  /** The goals that paid last drive, and to whom, you first. */
+  lastHits: GoalHit[]
   /** The calls each side made last drive, you first. */
   lastCalls: [Play[], Play[]]
   /** A lane you can't play in this drive. */
@@ -148,15 +157,23 @@ export type MatchView = {
   locked: { you: boolean; foe: boolean }
   /** Milliseconds left on the drive, against a person. */
   msLeft: number | null
+  /** How good the CPU is, against the CPU. */
+  level: CpuLevelId | null
+  /** What a win here pays. */
+  faab: number
 }
+
+/** How a game saved before goals ran two drives wrote down its drives. */
+type OldRecord = FgMatch['history'][number] & { goal?: string | null; met?: [boolean, boolean] }
 
 /** A game that was under way before a rule came in plays on without it. */
 function current(m: FgMatch): FgMatch {
   return {
     ...m,
     goals: m.goals ?? [],
-    lastGoal: m.lastGoal ?? null,
-    history: m.history ?? [],
+    lastHits: m.lastHits ?? [],
+    goalsMet: m.goalsMet ?? [[], []],
+    history: ((m.history ?? []) as OldRecord[]).map((r) => ({ drive: r.drive, plays: r.plays, hits: r.hits ?? (r.goal ? [{ id: r.goal, met: r.met ?? [false, false] }] : []) })),
     seats: m.seats.map((s) => ({
       ...s,
       book: s.book ?? [],
@@ -181,9 +198,15 @@ function seatView(m: FgMatch, at: 0 | 1, name: string, event: LockerEvent | null
     hand: seat.hand.length,
     deck: seat.deck.length,
     book: seat.book.length,
-    ongoing: tallies.map((t) => ({ call: t.call, lane: t.lane, own: t.on === at, delta: t.delta })),
+    ongoing: tallies.map((t) => ({ call: t.call, title: tallyTitle(t.call), lane: t.lane, own: t.on === at, delta: t.delta })),
     forms: formationsOn(seat.lanes.map(cards)).map((f) => f.id),
+    goalsMet: m.goalsMet[at],
   }
+}
+
+function tallyTitle(id: string): string {
+  const man = callOf(id) ? null : playerById(id)
+  return callOf(id)?.title ?? (man ? (signatureOf(man)?.title ?? man.name) : '')
 }
 
 /** The result from a seat: `you` is always side 0. */
@@ -204,6 +227,7 @@ function fromSeat(r: FgResult, at: 0 | 1): FgResult {
 }
 
 function describe(p: Play): string {
+  if (p.discard) return ''
   const call = callOf(p.card)
   if (call) {
     const moved = p.target ? playerById(p.target) : null
@@ -220,12 +244,16 @@ function logFrom(m: FgMatch, at: 0 | 1, you: string, foe: string): LogLine[] {
   for (const rec of m.history) {
     for (const seat of [at, at === 0 ? 1 : 0] as (0 | 1)[]) {
       const said = rec.plays[seat].map(describe).filter(Boolean)
+      const tossed = rec.plays[seat].filter((p) => p.discard).length
+      if (tossed) said.push(`discarded ${tossed === 1 ? 'a card' : `${tossed} cards`}`)
       const who = seat === at ? 'you' : 'foe'
       lines.push({ drive: rec.drive, who, text: said.length ? `${who === 'you' ? you : foe} ${said.join(', ')}.` : `${who === 'you' ? you : foe} passed.` })
     }
-    const goal = rec.goal ? goalOn({ goals: [rec.goal] }, 1) : null
-    if (goal) {
-      const met = rec.met[at] && rec.met[at === 0 ? 1 : 0] ? 'Both sides met' : rec.met[at] ? `${you} met` : rec.met[at === 0 ? 1 : 0] ? `${foe} met` : 'Nobody met'
+    for (const hit of rec.hits) {
+      const goal = driveGoal(hit.id)
+      if (!goal) continue
+      const them = at === 0 ? 1 : 0
+      const met = hit.met[at] && hit.met[them] ? 'Both sides met' : hit.met[at] ? `${you} met` : `${foe} met`
       lines.push({ drive: rec.drive, who: 'goal', text: `${met} ${goal.title}.` })
     }
   }
@@ -240,16 +268,17 @@ function outcome(row: MatchRow, at: 0 | 1, userId: string): string {
 }
 
 function emptySeat(name: string): SeatView {
-  return { name, lanes: [[], [], []], stacks: [[], [], []], totals: [], bonus: [0, 0, 0], hand: 0, deck: 0, book: 0, ongoing: [], forms: [] }
+  return { name, lanes: [[], [], []], stacks: [[], [], []], totals: [], bonus: [0, 0, 0], hand: 0, deck: 0, book: 0, ongoing: [], forms: [], goalsMet: [] }
 }
 
 async function viewOf(row: MatchRow, userId: string, wins: WinCredit): Promise<MatchView> {
   const at: 0 | 1 = row.guest_id === userId ? 1 : 0
   const other = at === 0 ? row.guest_id : row.user_id
   const client = db()
+  const level = !row.guest_id && !row.invited_id && !isOpen(row.state) ? (row.state.level ?? 'pro') : null
   const [you, foe] = await Promise.all([
     nameForUser(client, userId),
-    !row.guest_id && !row.invited_id ? 'CPU' : nameForUser(client, other ?? (row.invited_id as string)),
+    !row.guest_id && !row.invited_id ? `${level ? `${CPU_LEVELS[level].label} ` : ''}CPU` : nameForUser(client, other ?? (row.invited_id as string)),
   ])
   const event = lockerEventById(row.event)
   const versus = !!row.guest_id || isOpen(row.state)
@@ -269,8 +298,8 @@ async function viewOf(row: MatchRow, userId: string, wins: WinCredit): Promise<M
       event,
       hand: [],
       calls: [],
-      goal: null,
-      lastGoal: null,
+      goals: [],
+      lastHits: [],
       lastCalls: [[], []],
       closed: null,
       you: emptySeat(you),
@@ -281,14 +310,15 @@ async function viewOf(row: MatchRow, userId: string, wins: WinCredit): Promise<M
       log: [],
       locked: { you: false, foe: false },
       msLeft: null,
+      level: null,
+      faab: FAAB_WIN,
     }
   }
 
   const m = current(row.state)
   const them = (at === 0 ? 1 : 0) as 0 | 1
   const mine = m.seats[at]
-  const called = (plays: Play[] = []) => plays.filter((p) => callOf(p.card))
-  const goal = goalOn(m, m.drive)
+  const called = (plays: Play[] = []) => plays.filter((p) => !p.discard && callOf(p.card))
   const status = outcome(row, at, userId)
   return {
     id: row.id,
@@ -304,18 +334,20 @@ async function viewOf(row: MatchRow, userId: string, wins: WinCredit): Promise<M
     event,
     hand: cards(mine.hand),
     calls: mine.hand.filter((id) => callOf(id)),
-    goal: goal?.id ?? null,
-    lastGoal: m.lastGoal ? { id: m.lastGoal.id, met: [m.lastGoal.met[at], m.lastGoal.met[them]] } : null,
+    goals: row.status === 'live' ? openGoals(m, m.drive).map(({ goal, left }) => ({ id: goal.id, left, met: [m.goalsMet[at].includes(goal.id), m.goalsMet[them].includes(goal.id)] })) : [],
+    lastHits: m.lastHits.map((h) => ({ id: h.id, met: [h.met[at], h.met[them]] })),
     lastCalls: [called(m.last?.[at]), called(m.last?.[them])],
     closed: mine.closed,
     you: seatView(m, at, you, event),
     foe: seatView(m, them, foe, event),
-    fresh: m.last?.[them].filter((p) => !callOf(p.card)).map((p) => p.card) ?? [],
+    fresh: m.last?.[them].filter((p) => !p.discard && !callOf(p.card)).map((p) => p.card) ?? [],
     result: isOver(m) ? fromSeat(fgResult(m, byId, event), at) : null,
     wins,
     log: logFrom(m, at, you, foe),
     locked: { you: !!row.locks?.[at], foe: !!row.locks?.[them] },
     msLeft: row.deadline && row.status === 'live' ? Math.max(0, Date.parse(row.deadline) - Date.now()) : null,
+    level,
+    faab: level ? CPU_LEVELS[level].faab : FAAB_WIN,
   }
 }
 
@@ -342,7 +374,7 @@ export async function liveMatch(userId: string): Promise<string | null> {
 
 export type Started = { ok: true; id: string } | { ok: false; error: string; status: number }
 
-export async function startMatch(userId: string, mode: 'standard' | 'event'): Promise<Started> {
+export async function startMatch(userId: string, mode: 'standard' | 'event', level: CpuLevelId = 'pro'): Promise<Started> {
   const live = await liveMatch(userId)
   if (live) return { ok: true, id: live }
   const [deck, calls] = await Promise.all([deckFor(userId, GAME), deckCalls(userId, GAME)])
@@ -350,10 +382,10 @@ export async function startMatch(userId: string, mode: 'standard' | 'event'): Pr
 
   const event = mode === 'event' ? lockerEventForDay(dayKey()) : null
   const rnd = packRandom()
-  const cpu = dealCpuDeck(rnd, event, deck)
+  const cpu = dealCpuDeck(rnd, event, deck, level)
   const cpuCalls = CALLS.filter((c) => !['keep', 'move'].includes(c.does.kind)).sort(() => rnd() - 0.5).slice(0, CPU_CALLS).map((c) => c.id)
   const seed = Math.floor(rnd() * 2 ** 31)
-  const state = newMatch([[...deck.map((c) => c.id), ...calls], [...cpu.map((c) => c.id), ...cpuCalls]], seed, byId)
+  const state = { ...newMatch([[...deck.map((c) => c.id), ...calls], [...cpu.map((c) => c.id), ...cpuCalls]], seed, byId), level }
   const { data, error } = await db().from('pe_locker_matches').insert({ user_id: userId, game: GAME, event: event?.id ?? null, state }).select('id').single()
   if (error || !data) return { ok: false, error: 'That game did not start. Try again.', status: 500 }
   return { ok: true, id: data.id }
@@ -434,18 +466,77 @@ export function parsePlays(raw: unknown): Play[] | null {
   const out: Play[] = []
   for (const item of raw) {
     if (!item || typeof item !== 'object') return null
-    const { card, lane, stack, target } = item as Record<string, unknown>
+    const { card, lane, stack, target, discard } = item as Record<string, unknown>
     if (typeof card !== 'string' || card.length > 40) return null
     if (lane !== 0 && lane !== 1 && lane !== 2) return null
     if (target !== undefined && (typeof target !== 'string' || target.length > 40)) return null
-    out.push({ card, lane, ...(stack === true ? { stack: true } : {}), ...(target ? { target } : {}) })
+    out.push({ card, lane, ...(stack === true ? { stack: true } : {}), ...(target ? { target } : {}), ...(discard === true ? { discard: true } : {}) })
   }
   return out
 }
 
+/** Every card a side came with, whatever's happened to it since. */
+function broughtBy(m: FgMatch, at: 0 | 1): string[] {
+  const seat = m.seats[at]
+  const tossed = m.history.flatMap((r) => r.plays[at].filter((p) => p.discard).map((p) => p.card))
+  return [...seat.deck, ...seat.hand, ...seat.lanes.flat(), ...seat.stacks.flat(), ...tossed]
+}
+
+/** What a finished game adds to one side's numbers for the Trophy Case. */
+function matchStats(m: FgMatch, at: 0 | 1, result: FgResult, versus: boolean, event: boolean): { add: TrophyStats; set: TrophyStats } {
+  const won = result.winner === at
+  const level = versus ? null : (m.level ?? 'pro')
+  const seat = m.seats[at]
+  const lanes = seat.lanes.map(cards)
+  const add: TrophyStats = { 'fg.games': 1, 'fg.goals': m.goalsMet[at].length }
+  const set: TrophyStats = {}
+  if (formationsOn(lanes).length >= 3) add['fg.forms3'] = 1
+  if (seat.lanes.some((l, i) => l.length + seat.stacks[i].length >= 8)) add['fg.fullLane'] = 1
+  if (result.winner !== null) {
+    const streaks = level === 'all-pro' ? ['fg.streak', 'fg.streak.all-pro'] : ['fg.streak']
+    for (const key of streaks) {
+      if (won) add[key] = 1
+      else set[key] = 0
+    }
+  }
+  if (!won) return { add, set }
+  add['fg.wins'] = 1
+  if (level) add[`fg.wins.${level}`] = 1
+  if (versus) add['fg.wins.friend'] = 1
+  if (event) add['fg.wins.event'] = 1
+  if (m.overtime) add['fg.ot'] = 1
+  if (result.lanes.some((l, i) => l.winner === at && result.before[i][at] < result.before[i][at === 0 ? 1 : 0])) add['fg.flip'] = 1
+  if (level === 'all-pro') {
+    if (result.score[at] === 3) add['fg.sweeps.all-pro'] = 1
+    if (broughtBy(m, at).every((id) => !playerById(id) || ['common', 'rare'].includes((playerById(id) as Player).rarity))) add['fg.undrafted'] = 1
+  }
+  return { add, set }
+}
+
+/** Files a finished game: the win pays, and both seats' numbers move. */
+async function settle(row: MatchRow, m: FgMatch, winner: string | null): Promise<WinCredit | null> {
+  const event = lockerEventById(row.event)
+  const result = fgResult(m, byId, event)
+  const seats = [row.user_id, row.guest_id]
+  await Promise.all(
+    seats.map(async (id, at) => {
+      if (!id) return
+      const { add, set } = matchStats(m, at as 0 | 1, result, !!row.guest_id, !!row.event)
+      const stats = await tallyStats(id, add, set)
+      // The best run only ever goes up, and it has to be read after the run's been counted.
+      const best: TrophyStats = {}
+      for (const [run, top] of [['fg.streak', 'fg.bestStreak'], ['fg.streak.all-pro', 'fg.bestStreak.all-pro']]) {
+        if ((stats[run] ?? 0) > (stats[top] ?? 0)) best[top] = stats[run]
+      }
+      if (Object.keys(best).length) await tallyStats(id, {}, best)
+    })
+  )
+  return winner ? creditWin(winner, row.guest_id ? FAAB_WIN : CPU_LEVELS[m.level ?? 'pro'].faab) : null
+}
+
 /** Puts a drive down: both sides' plays go in, and a game that's over gets its winner.
     False means someone else got there first, and the caller should read again. */
-async function resolve(row: MatchRow, match: FgMatch, plays: [Play[], Play[]]): Promise<{ next: MatchRow; winner: string | null } | null> {
+async function resolve(row: MatchRow, match: FgMatch, plays: [Play[], Play[]]): Promise<{ next: MatchRow; credit: WinCredit | null; winner: string | null } | null> {
   const event = lockerEventById(row.event)
   const next = applyDrive(match, plays, byId, event)
   const over = isOver(next)
@@ -463,7 +554,7 @@ async function resolve(row: MatchRow, match: FgMatch, plays: [Play[], Play[]]): 
   }
   const { data: saved } = await db().from('pe_locker_matches').update(patch).eq('id', row.id).eq('status', 'live').eq('version', row.version).select('id')
   if (!saved?.length) return null
-  return { next: { ...row, ...patch, state: next }, winner: winnerId }
+  return { next: { ...row, ...patch, state: next }, winner: winnerId, credit: over ? await settle(row, next, winnerId) : null }
 }
 
 export type Played = { ok: true; match: MatchView } | { ok: false; error: string; status: number }
@@ -485,7 +576,7 @@ export async function takeDrive(userId: string, id: string, plays: Play[]): Prom
     if (problem) return { ok: false, error: problem, status: 400 }
 
     let both: [Play[], Play[]] | null = null
-    if (!row.guest_id) both = [plays, cpuPlays(match, 1, byId, event, rng(match.seed + match.drive * 101), CPU_SLIP)]
+    if (!row.guest_id) both = [plays, cpuPlays(match, 1, byId, event, rng(match.seed + match.drive * 101), CPU_LEVELS[match.level ?? 'pro'])]
     else if (row.locks?.[1 - at] || (row.deadline && Date.now() > Date.parse(row.deadline))) {
       const theirs = row.locks?.[1 - at] ?? []
       both = at === 0 ? [plays, theirs] : [theirs, plays]
@@ -494,8 +585,7 @@ export async function takeDrive(userId: string, id: string, plays: Play[]): Prom
     if (both) {
       const done = await resolve(row, match, both)
       if (!done) continue
-      const earned = done.winner ? await creditWin(done.winner) : null
-      const wins = done.winner === userId && earned ? earned : await homeWins(userId)
+      const wins = done.winner === userId && done.credit ? done.credit : await homeWins(userId)
       return { ok: true, match: await viewOf(done.next, userId, wins) }
     }
 
@@ -513,10 +603,7 @@ export async function pollMatch(userId: string, id: string): Promise<MatchView |
   if (!row || seatOf(row, userId) === null) return null
   if (row.status === 'live' && row.guest_id && !isOpen(row.state) && row.deadline && Date.now() > Date.parse(row.deadline) + DRIVE_GRACE_MS) {
     const done = await resolve(row, current(row.state), [row.locks?.[0] ?? [], row.locks?.[1] ?? []])
-    if (done) {
-      if (done.winner) await creditWin(done.winner)
-      return viewOf(done.next, userId, await homeWins(userId))
-    }
+    if (done) return viewOf(done.next, userId, await homeWins(userId))
     return loadMatch(userId, id)
   }
   return viewOf(row, userId, await homeWins(userId))

@@ -273,23 +273,12 @@ html:has(.pe-theme) body {
   background: rgba(232, 168, 75, 0.06);
 }
 
-.pe-nav-cta {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.5rem 0.95rem;
-  border-radius: 6px;
-  background: var(--pe-amber);
-  color: var(--pe-bg);
-  text-decoration: none;
-  font-family: var(--mono);
-  font-weight: 700;
-  font-size: 0.6rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.pe-nav-cta:hover {
-  background: #f4c06a;
+.pe-nav .pe-nav-cta {
+  --btn-h: 34px;
+  --btn-cut: 10px;
+  padding: 0.2rem calc(var(--btn-cut) + 0.5rem);
+  font-size: 0.86rem;
+  letter-spacing: 0.08em;
 }
 
 /* Narrower desktops: the tools drop their words a few at a time, then the rail its
@@ -397,73 +386,128 @@ html:has(.pe-theme) body {
 }
 
 /* ── Buttons ───────────────────────────────────────────────────
-   4px, the radius the rest of the Games Page settled on. A full pill
-   reads as a web app's primary action dropped onto a broadsheet. */
+   Cut plates, not web buttons: the hexagon is the cost gem off every card, stretched
+   to fit a label, in the same foil the cards are made of. Gold is the thing to do next,
+   steel is the other way to go, and a hairline is the quiet way out. The shape and the
+   rim are the two pseudo-elements, so nothing about a button's box changes: 52px, or
+   38px small, measured across the game. Set --btn-edge, --btn-face or --btn-ink to
+   recolour one, and --btn-h for a size of its own, and never put a background on it. */
 
-.pe-btn {
+.pe-btn,
+.pe-nav-cta,
+.pe-nextpack-go {
+  --btn-h: 52px;
+  --btn-cut: 15px;
+  --btn-edge: linear-gradient(115deg, #fff2c9 0%, #eeb257 20%, #8a5a18 44%, #f8d98f 62%, #b97d28 82%, #ffe6a8 100%);
+  --btn-face: radial-gradient(120% 170% at 50% 130%, rgba(240, 176, 80, 0.55), transparent 64%), linear-gradient(180deg, #33270f 0%, #1f160a 55%, #140e06 100%);
+  --btn-ink: #ffe9b8;
+  --btn-shape: polygon(var(--btn-cut) 0, calc(100% - var(--btn-cut)) 0, 100% 50%, calc(100% - var(--btn-cut)) 100%, var(--btn-cut) 100%, 0 50%);
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
-  padding: 0.95rem 1.6rem;
-  border: 1px solid var(--pe-amber);
-  border-radius: 4px;
-  background: var(--pe-amber);
-  color: var(--pe-bg);
-  font-family: var(--sans);
-  font-weight: 700;
-  font-size: 0.82rem;
-  letter-spacing: 0.16em;
+  min-height: var(--btn-h);
+  padding: 0.3rem calc(var(--btn-cut) + 1.1rem);
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--btn-ink);
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 1.06rem;
+  line-height: 1.05;
+  letter-spacing: 0.11em;
+  text-align: center;
   text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
-  transition:
-    background 0.2s,
-    transform 0.2s,
-    box-shadow 0.2s;
-  box-shadow: 0 8px 20px rgba(232, 168, 75, 0.14);
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5));
+  transition: transform 0.16s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  -webkit-tap-highlight-color: transparent;
 }
 
-.pe-btn:hover:not(:disabled) {
-  background: var(--pe-amber-bright);
-  transform: translateY(-1px);
-  box-shadow: 0 12px 26px rgba(232, 168, 75, 0.22);
+/* The rim, then the face inside it, with a bar of light parked off the edge. */
+.pe-btn::before,
+.pe-btn::after,
+.pe-nav-cta::before,
+.pe-nav-cta::after,
+.pe-nextpack-go::before,
+.pe-nextpack-go::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: var(--btn-edge);
+  clip-path: var(--btn-shape);
+}
+
+.pe-btn::after,
+.pe-nav-cta::after,
+.pe-nextpack-go::after {
+  inset: 1.6px;
+  z-index: -1;
+  background-image: linear-gradient(105deg, transparent 40%, rgba(255, 244, 214, 0.26) 50%, transparent 60%), var(--btn-face);
+  background-size: 280% 100%, 100% 100%, 100% 100%;
+  background-position: 130% 0, 0 0, 0 0;
+  background-repeat: no-repeat;
+  transition: background-position 0.55s ease;
+}
+
+.pe-btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.985);
+}
+
+.pe-btn:focus-visible,
+.pe-nav-cta:focus-visible,
+.pe-nextpack-go:focus-visible {
+  outline: 2px solid var(--pe-amber-bright);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pe-btn:hover:not(:disabled),
+  .pe-nav-cta:hover,
+  .pe-nextpack-go:hover {
+    transform: translateY(-1px);
+  }
+
+  .pe-btn:hover:not(:disabled)::after,
+  .pe-nav-cta:hover::after,
+  .pe-nextpack-go:hover::after {
+    background-position: -30% 0, 0 0, 0 0;
+  }
 }
 
 .pe-btn:disabled {
-  opacity: 0.55;
+  --btn-edge: linear-gradient(115deg, #6d675b, #3e3a31 50%, #5c574c);
+  --btn-face: linear-gradient(180deg, #211f1a, #181612);
+  --btn-ink: #8d8473;
   cursor: default;
+  filter: none;
 }
 
 .pe-btn--ghost {
-  background: transparent;
-  color: var(--pe-amber);
-  box-shadow: none;
-}
-
-.pe-btn--ghost:hover:not(:disabled) {
-  background: rgba(232, 168, 75, 0.08);
-  color: var(--pe-amber-bright);
-  box-shadow: none;
+  --btn-edge: linear-gradient(115deg, #dfeaf0 0%, #7c929c 30%, #3a4a52 52%, #a9bcc5 74%, #5d727c 100%);
+  --btn-face: linear-gradient(180deg, #1c282e, #111a1e);
+  --btn-ink: #dfe9ed;
 }
 
 .pe-btn--quiet {
-  background: transparent;
-  border-color: var(--pe-line);
-  color: var(--pe-ink-soft);
-  box-shadow: none;
-}
-
-.pe-btn--quiet:hover:not(:disabled) {
-  background: transparent;
-  border-color: var(--pe-amber);
-  color: var(--pe-amber);
-  box-shadow: none;
+  --btn-edge: linear-gradient(115deg, #47565d, #2e3c42);
+  --btn-face: linear-gradient(180deg, #161f23, #111a1e);
+  --btn-ink: var(--pe-ink-soft);
+  filter: none;
 }
 
 .pe-btn--sm {
-  padding: 0.6rem 1rem;
-  font-size: 0.7rem;
+  --btn-h: 38px;
+  --btn-cut: 11px;
+  padding: 0.2rem calc(var(--btn-cut) + 0.6rem);
+  font-size: 0.92rem;
+  letter-spacing: 0.08em;
 }
 
 .pe-link {
@@ -5419,10 +5463,6 @@ a.pe-row:hover {
     font-size: 1.15rem;
   }
 
-  .pe-btn {
-    border-radius: 10px;
-  }
-
   .pe-panel {
     padding: 1.1rem 1rem;
   }
@@ -8678,16 +8718,12 @@ a.pe-row:hover {
 }
 
 .pe-nextpack-go {
+  --btn-h: 38px;
+  --btn-cut: 11px;
   flex: none;
-  padding: 0.58rem 1.15rem;
-  border-radius: 8px;
-  background: var(--pe-amber);
-  font-family: var(--mono);
-  font-weight: 700;
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #141311;
+  padding: 0.2rem calc(var(--btn-cut) + 0.6rem);
+  font-size: 0.92rem;
+  letter-spacing: 0.08em;
 }
 
 /* An empty place in the lineup on the Daily: a card nobody's been dealt yet, built
@@ -9218,14 +9254,16 @@ a.pe-row:hover {
 }
 
 .pe-dgame-foot .pe-btn {
-  padding: 0.6rem 1.4rem;
-  font-size: 0.72rem;
+  --btn-h: 38px;
+  --btn-cut: 11px;
+  padding: 0.2rem calc(var(--btn-cut) + 0.9rem);
+  font-size: 0.92rem;
+  letter-spacing: 0.08em;
   white-space: nowrap;
 }
 
 .pe-dgame[data-v='season'] .pe-dgame-foot .pe-btn {
-  background: #e8c98a;
-  border-color: #e8c98a;
+  --btn-edge: linear-gradient(115deg, #fff6df, #e8c98a 40%, #96774a 60%, #f5e3bd);
 }
 
 /* The rules on a phone: closed on arrival, so the games and the board come first. */

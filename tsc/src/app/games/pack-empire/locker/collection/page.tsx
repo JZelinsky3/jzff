@@ -33,7 +33,7 @@ export default async function CollectionPage() {
 
   return (
     <main className={`${ROOM_CLASS} ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>
-      <LockerChrome mobile={mobile} signedIn back="/games/pack-empire/locker/" backLabel="The Locker Room" kicker="The Locker Room" title="Your" titleEm="Collection" tab="collection" />
+      <LockerChrome mobile={mobile} userId={user.id} back="/games/pack-empire/locker/" backLabel="The Locker Room" kicker="The Locker Room" title="Your" titleEm="Collection" tab="collection" />
       <div className="pe-wrap pe-lk">
         {!mobile && (
           <header className="pe-lk-head">

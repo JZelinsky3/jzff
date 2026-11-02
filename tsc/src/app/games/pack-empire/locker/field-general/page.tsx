@@ -40,7 +40,7 @@ export default async function FieldGeneralLobby() {
 
   return (
     <main className={`${ROOM_CLASS} ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>
-      <LockerChrome mobile={mobile} signedIn back="/games/pack-empire/locker/" backLabel="The Locker Room" kicker="The Locker Room" title={def.title} titleEm={def.titleEm} tab="field-general" />
+      <LockerChrome mobile={mobile} userId={user.id} back="/games/pack-empire/locker/" backLabel="The Locker Room" kicker="The Locker Room" title={def.title} titleEm={def.titleEm} tab="field-general" />
       <div className="pe-wrap pe-lk">
         {!mobile && (
           <header className="pe-lk-head">
