@@ -22,19 +22,16 @@ import {
   deckThemes,
   isPackKind,
   lockerCost,
-  lockerEventForDay,
   lockerGame,
   packPrice,
-  type LockerEvent,
   type LockerPackKind,
 } from './rules'
 
 export type WaitingPack = { id: string; kind: LockerPackKind }
-export type OwnedCard = Player & { count: number }
+export type OwnedCard = Player & { count: number; firstAt: string }
 
 export type LockerHome = {
   day: string
-  event: LockerEvent
   packs: WaitingPack[]
   wins: number
   need: number
@@ -62,10 +59,10 @@ export async function grantPacks(userId: string, day = dayKey()) {
 }
 
 export async function ownedCards(userId: string): Promise<OwnedCard[]> {
-  const { data } = await createAdminClient().from('pe_locker_cards').select('card_id, count').eq('user_id', userId)
-  return ((data ?? []) as { card_id: string; count: number }[]).flatMap((r) => {
+  const { data } = await createAdminClient().from('pe_locker_cards').select('card_id, count, first_at').eq('user_id', userId)
+  return ((data ?? []) as { card_id: string; count: number; first_at: string }[]).flatMap((r) => {
     const card = playerById(r.card_id)
-    return card ? [{ ...card, count: r.count }] : []
+    return card ? [{ ...card, count: r.count, firstAt: r.first_at }] : []
   })
 }
 
@@ -73,9 +70,8 @@ export async function winsOn(userId: string, day = dayKey()): Promise<number> {
   const { count } = await createAdminClient()
     .from('pe_locker_matches')
     .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
+    .eq('winner_id', userId)
     .eq('day', day)
-    .eq('status', 'won')
   return count ?? 0
 }
 
@@ -96,7 +92,6 @@ export async function lockerHome(userId: string): Promise<LockerHome> {
   for (const c of cards) byRarity[c.rarity]++
   return {
     day,
-    event: lockerEventForDay(day),
     packs,
     wins,
     need: BONUS_WINS,

@@ -13,6 +13,7 @@ import { RARITIES, RARITY_LOOK, type Player } from '@/lib/packEmpire/rules'
 import { RarityGem } from '../cards'
 import { PackStage, usePackStage } from '../stage'
 import { lockerPost } from './api'
+import { PackOdds } from './PackOdds'
 import { WinMeter } from './WinMeter'
 
 export function LockerHub({ home }: { home: LockerHome }) {
@@ -46,15 +47,18 @@ export function LockerHub({ home }: { home: LockerHome }) {
             {home.packs.map((p) => {
               const pack = LOCKER_PACKS[p.kind]
               return (
-                <button key={p.id} type="button" className="pe-lk-pack" onClick={() => start(p)}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={pack.art} alt="" draggable={false} />
-                  <span className="pe-lk-pack-body">
-                    <b>{pack.label}</b>
-                    <span>{pack.line}</span>
-                    <span className="pe-btn pe-btn--sm">Open</span>
-                  </span>
-                </button>
+                <div key={p.id} className="pe-lk-packwrap">
+                  <button type="button" className="pe-lk-pack" onClick={() => start(p)}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={pack.art} alt="" draggable={false} />
+                    <span className="pe-lk-pack-body">
+                      <b>{pack.label}</b>
+                      <span>{pack.line}</span>
+                      <span className="pe-btn pe-btn--sm">Open</span>
+                    </span>
+                  </button>
+                  {pack.table && <PackOdds pack={pack} />}
+                </div>
               )
             })}
           </div>
@@ -66,16 +70,7 @@ export function LockerHub({ home }: { home: LockerHome }) {
 
       <section className="pe-sec">
         <div className="pe-sec-head">
-          <span className="pe-sec-num">§ 02 · Today</span>
-          <span className="pe-sec-title">{home.event.title}</span>
-          <span className="pe-sec-meta">Event</span>
-        </div>
-        <p className="pe-lk-event">{home.event.line}</p>
-      </section>
-
-      <section className="pe-sec">
-        <div className="pe-sec-head">
-          <span className="pe-sec-num">§ 03 · Games</span>
+          <span className="pe-sec-num">§ 02 · Games</span>
           <span className="pe-sec-title">Play Your Deck</span>
         </div>
         <div className="pe-lk-games">
@@ -93,7 +88,7 @@ export function LockerHub({ home }: { home: LockerHome }) {
 
       <section className="pe-sec">
         <div className="pe-sec-head">
-          <span className="pe-sec-num">§ 04 · Collection</span>
+          <span className="pe-sec-num">§ 03 · Collection</span>
           <span className="pe-sec-title">
             {home.owned} {home.owned === 1 ? 'Card' : 'Cards'}
           </span>

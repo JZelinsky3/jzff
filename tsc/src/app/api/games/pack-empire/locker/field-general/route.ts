@@ -1,15 +1,18 @@
 // POST /api/games/pack-empire/locker/field-general
 //
-//   { action: 'start', mode }       -> { id }
-//   { action: 'drive', id, plays }  -> { match }
-//   { action: 'resign', id }        -> {}
+//   { action: 'start', mode }           -> { id }
+//   { action: 'challenge', friend? }    -> { id }
+//   { action: 'join', id }              -> { id }
+//   { action: 'drive', id, plays }      -> { match }
+//   { action: 'poll', id }              -> { match }
+//   { action: 'resign', id }            -> {}
 //
-// The server plays the CPU and holds the match, so all a browser can send is what
-// it wants to play. See lib/packEmpire/locker/fieldGeneralMatch.
+// The server plays the CPU, referees two people and holds the match, so all a browser
+// can send is what it wants to play. See lib/packEmpire/locker/fieldGeneralMatch.
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { lockerOpenTo } from '@/lib/packEmpire/locker/access'
-import { parsePlays, resignMatch, startMatch, takeDrive } from '@/lib/packEmpire/locker/fieldGeneralMatch'
+import { challenge, joinMatch, parsePlays, pollMatch, resignMatch, startMatch, takeDrive } from '@/lib/packEmpire/locker/fieldGeneralMatch'
 import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -42,7 +45,23 @@ export async function POST(req: NextRequest) {
     return out.ok ? NextResponse.json({ ok: true, id: out.id }, { headers: NO_STORE }) : bad(out.error, out.status)
   }
 
+  if (body.action === 'challenge') {
+    if (body.friend != null && typeof body.friend !== 'string') return bad('No such friend.')
+    const out = await challenge(user.id, (body.friend as string | undefined) ?? null)
+    return out.ok ? NextResponse.json({ ok: true, id: out.id }, { headers: NO_STORE }) : bad(out.error, out.status)
+  }
+
   if (typeof body.id !== 'string' || !UUID.test(body.id)) return bad('No such game.')
+
+  if (body.action === 'join') {
+    const out = await joinMatch(user.id, body.id)
+    return out.ok ? NextResponse.json({ ok: true, id: out.id }, { headers: NO_STORE }) : bad(out.error, out.status)
+  }
+
+  if (body.action === 'poll') {
+    const match = await pollMatch(user.id, body.id)
+    return match ? NextResponse.json({ ok: true, match }, { headers: NO_STORE }) : bad('No such game.', 404)
+  }
 
   if (body.action === 'drive') {
     const plays = parsePlays(body.plays)

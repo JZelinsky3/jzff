@@ -9,7 +9,7 @@
 //   packs    what a pack is, as data. A new kind of pack is a row in LOCKER_PACKS,
 //            which is also where priced packs with better odds would go.
 //   stats    what a card costs and how strong it is, off its rarity and value.
-//   events   a day where some cards count for more than their rarity says. A rule
+//   events   a week where some cards count for more than their rarity says. A rule
 //            on the card, so every game gets them without knowing they exist.
 //   rewards  wins across every game, so a new game feeds the bonus pack by itself.
 //   the shop FAAB, earned by winning and by selling spare copies, and spent on packs.
@@ -25,16 +25,22 @@ import { CALLS } from './calls'
 export type PackTable = Record<Rarity, number>
 
 /**
- * A pack a day has to carry the whole collection, so this is far richer per card
- * than a run's packs, which you can open all day. With the last card held to Rare
- * or better, about 1 pack in 29 holds an Immortal or better and 1 in 280 a Canton,
- * measured over 200,000 packs: nine months of daily packs, half that for anyone
- * taking the bonus every day.
+ * A pack a day has to carry the whole collection, so this is richer per card than a
+ * run's packs, which you open eleven at a time: an ordinary one deals 82% common and
+ * 13% rare off the same pool. A little richer than it was, too. At 66% common a
+ * Locker pack read as four Commons and a Rare, day after day. Still nothing crazy:
+ * the odds of the top two rarities barely moved.
  */
-export const LOCKER_TABLE: PackTable = { common: 66, rare: 24, dynasty: 7.6, transcendent: 1.9, immortal: 0.45, canton: 0.05 }
+export const LOCKER_TABLE: PackTable = { common: 60, rare: 27.5, dynasty: 9.4, transcendent: 2.5, immortal: 0.54, canton: 0.06 }
 
-/** The same table with no commons: the last card in a pack. */
+/** A Boosted pack: what the extra FAAB buys. */
+export const BOOSTED_TABLE: PackTable = { common: 30, rare: 42, dynasty: 20, transcendent: 6.4, immortal: 1.45, canton: 0.15 }
+
+/** The last card in a pack, which can't be a Common. */
 const FLOOR_TABLE: PackTable = { ...LOCKER_TABLE, common: 0 }
+
+/** The last card in a Boosted pack, which can't be under a Dynasty. */
+const BOOSTED_FLOOR: PackTable = { ...BOOSTED_TABLE, common: 0, rare: 0 }
 
 /** One card of a pack that's laid out by hand, rather than off a table. */
 export type PackSlot = { pos: PoolKey; rarity: Rarity }
@@ -55,7 +61,7 @@ export type PackDef = {
   match?: CardMatch
 }
 
-export type LockerPackKind = 'starter' | 'daily' | 'bonus' | 'shop' | `theme-${string}`
+export type LockerPackKind = 'starter' | 'daily' | 'bonus' | 'shop' | 'boost' | `theme-${string}` | `boost-theme-${string}`
 
 const PACK_ART = '/games/pack-empire/packs/wild.webp'
 
@@ -83,12 +89,14 @@ const STARTER_SLOTS: PackSlot[] = [
 ]
 
 const FIVE = { art: PACK_ART, size: 5, table: LOCKER_TABLE, floor: 1, floorTable: FLOOR_TABLE }
+const BOOSTED = { art: PACK_ART, size: 5, table: BOOSTED_TABLE, floor: 1, floorTable: BOOSTED_FLOOR }
 
 export const LOCKER_PACKS: Record<string, PackDef> = {
   starter: { label: 'Starter Pack', line: 'Fifteen cards, enough to field a deck today.', art: PACK_ART, size: STARTER_SLOTS.length, slots: STARTER_SLOTS },
   daily: { label: 'Daily Pack', line: 'One a day, and you keep all five.', ...FIVE },
   bonus: { label: 'Bonus Pack', line: 'Earned by winning today.', ...FIVE },
   shop: { label: 'Locker Pack', line: 'Five cards, the same odds as a Daily Pack.', ...FIVE },
+  boost: { label: 'Boosted Locker Pack', line: 'Five cards, better odds, and a Dynasty or better guaranteed.', ...BOOSTED },
 }
 
 export const isPackKind = (v: unknown): v is LockerPackKind => typeof v === 'string' && v in LOCKER_PACKS
@@ -108,8 +116,23 @@ export const FAAB_SPARE: Record<Rarity, number> = { common: 2, rare: 5, dynasty:
 
 /** What a pack costs in the Shop. Anything else on LOCKER_PACKS isn't for sale. */
 export function packPrice(kind: string): number | null {
+  if (!(kind in LOCKER_PACKS)) return null
   if (kind === 'shop') return 100
-  return kind.startsWith('theme-') && kind in LOCKER_PACKS ? 150 : null
+  if (kind === 'boost') return 300
+  if (kind.startsWith('theme-')) return 150
+  if (kind.startsWith('boost-theme-')) return 400
+  return null
+}
+
+/** The Shop's shelf: a pack and, where it's a family, the choices inside it. */
+export type ShelfItem = { id: string; label: string; line: string; pick?: { id: string; label: string }[] }
+
+/** The chance of each rarity on a pack's cards, and on its last. For the (i). */
+export function packOddsOf(def: PackDef): { table: PackTable; last: PackTable | null } | null {
+  if (!def.table) return null
+  const total = RARITIES.reduce((s, r) => s + (def.floorTable?.[r] ?? 0), 0)
+  const last = def.floorTable ? (Object.fromEntries(RARITIES.map((r) => [r, ((def.floorTable as PackTable)[r] / total) * 100])) as PackTable) : null
+  return { table: def.table, last }
 }
 
 // ============================================================
@@ -188,7 +211,7 @@ export function cardMatches(card: Matchable, m: CardMatch): boolean {
 }
 
 /**
- * A day where a card is worth more than its rarity says. It's a rule on the card,
+ * A week where a card is worth more than its rarity says. It's a rule on the card,
  * so any game reading eventPower gets it for nothing, and it's what lets a Dynasty
  * from the right division outplay a Canton from the wrong one: `times` lifts the
  * cards it's about and `others` sinks the rest.
@@ -234,10 +257,12 @@ export const LOCKER_EVENTS: LockerEvent[] = [
 
 const DAY_MS = 86_400_000
 
-/** Today's event, off the date, so everyone's on the same one. `day` is a dayKey. */
+/** This week's event, off the date, so everyone's on the same one. `day` is a dayKey.
+    Monday to Sunday: long enough to go and build for it. Day zero was a Thursday,
+    which is what the 3 puts right. */
 export function lockerEventForDay(day: string): LockerEvent {
-  const n = Math.floor(Date.parse(`${day}T12:00:00Z`) / DAY_MS)
-  return LOCKER_EVENTS[((n % LOCKER_EVENTS.length) + LOCKER_EVENTS.length) % LOCKER_EVENTS.length]
+  const week = Math.floor((Math.floor(Date.parse(`${day}T12:00:00Z`) / DAY_MS) + 3) / 7)
+  return LOCKER_EVENTS[((week % LOCKER_EVENTS.length) + LOCKER_EVENTS.length) % LOCKER_EVENTS.length]
 }
 
 export function lockerEventById(id: string | null | undefined): LockerEvent | null {
@@ -264,7 +289,14 @@ export function eventCost(card: Matchable, event: LockerEvent | null): number {
 
 /** A game's rule for a deck: how many men, what they can cost between them, and for a
     game with non-player cards, which of them there are and how many a deck can hold. */
-export type DeckRule = { size: number; cap: number; calls?: { max: number; ids: string[] } }
+export type DeckRule = {
+  size: number
+  cap: number
+  calls?: { max: number; ids: string[] }
+  /** What a deck ought to have at least of, for the builder to check off and Auto to
+      honour. Advice, not a rule: nothing stops you saving without it. */
+  want?: { label: string; pos: PoolKey[]; min: number }[]
+}
 
 /** A game on the Locker. `deck` is its rule for a deck, if it plays from one. */
 export type LockerGameDef = {
@@ -283,7 +315,17 @@ export const LOCKER_GAMES: LockerGameDef[] = [
     titleEm: 'General',
     line: 'Twelve cards, three lanes, six drives. Call where your men go and take two lanes of three.',
     href: '/games/pack-empire/locker/field-general/',
-    deck: { size: 12, cap: 25, calls: { max: 3, ids: CALLS.map((c) => c.id) } },
+    deck: {
+      size: 12,
+      cap: 25,
+      calls: { max: 3, ids: CALLS.map((c) => c.id) },
+      want: [
+        { label: 'QB', pos: ['QB'], min: 2 },
+        { label: 'RB', pos: ['RB'], min: 3 },
+        { label: 'OL', pos: ['OT', 'OG', 'C'], min: 3 },
+        { label: 'WR', pos: ['WR'], min: 2 },
+      ],
+    },
   },
 ]
 
@@ -326,12 +368,27 @@ export const DECK_THEMES: DeckTheme[] = [
   { id: '20s', label: '2020s', group: 'Era', match: { years: [2020, 2099] } },
 ]
 
-/** The themes big enough to fill a pack of their own. */
-const PACK_THEMES = ['afc', 'nfc', '90s', '00s', '10s', '20s']
+/** Everything but the oldest cards fills a pack of its own: there are too few from
+    before 1990 to deal five at the odds. */
+const PACK_THEMES = DECK_THEMES.filter((t) => t.id !== 'pre-90s')
 
-for (const t of DECK_THEMES.filter((t) => PACK_THEMES.includes(t.id))) {
-  LOCKER_PACKS[`theme-${t.id}`] = { label: `${t.label} Pack`, line: `Five cards, every one from the ${t.label}.`, ...FIVE, match: t.match }
+for (const t of PACK_THEMES) {
+  const line = `Five cards, every one from the ${t.label}.`
+  LOCKER_PACKS[`theme-${t.id}`] = { label: `${t.label} Pack`, line, ...FIVE, match: t.match }
+  LOCKER_PACKS[`boost-theme-${t.id}`] = { label: `Boosted ${t.label} Pack`, line: `${line} Better odds, and a Dynasty or better guaranteed.`, ...BOOSTED, match: t.match }
 }
+
+const shelfPick = (group: DeckTheme['group']) => PACK_THEMES.filter((t) => t.group === group).map((t) => ({ id: t.id, label: t.label }))
+
+export const SHOP_SHELF: ShelfItem[] = [
+  { id: 'locker', label: 'Locker Pack', line: 'Five cards from anywhere.' },
+  { id: 'conference', label: 'Conference Pack', line: 'Five cards from one conference.', pick: shelfPick('Conference') },
+  { id: 'division', label: 'Division Pack', line: 'Five cards from one division.', pick: shelfPick('Division') },
+  { id: 'decade', label: 'Decade Pack', line: 'Five cards from one decade.', pick: shelfPick('Era') },
+]
+
+/** The kind of pack a shelf item sells, with what's been picked on it. */
+export const shelfKind = (pick: string | null, boosted: boolean) => (pick ? `${boosted ? 'boost-' : ''}theme-${pick}` : boosted ? 'boost' : 'shop')
 
 /** The themes a whole deck fits. A division says more than its conference, so it
     speaks for it. */
@@ -347,7 +404,7 @@ const CHEAP_KEPT = 4
 /** The best legal deck a set of cards makes: what a new deck starts from. The
     strongest men it can afford with room left for a few cheap ones, one season a
     man, then the best of those cheap ones and the best value for what's left. */
-export function autoDeck<T extends Pick<Player, 'id' | 'pid' | 'rarity' | 'score'>>(owned: T[], rule: DeckRule): T[] {
+export function autoDeck<T extends Pick<Player, 'id' | 'pid' | 'rarity' | 'score' | 'pos'>>(owned: T[], rule: DeckRule): T[] {
   const out: T[] = []
   const men = new Set<string>()
   let cost = 0
@@ -361,12 +418,28 @@ export function autoDeck<T extends Pick<Player, 'id' | 'pid' | 'rarity' | 'score
     cost += lockerCost(card)
   }
   const strongest = [...owned].sort((a, b) => lockerPower(b) - lockerPower(a) || b.score - a.score)
-  const cheap = strongest.filter((c) => lockerCost(c) === 1).slice(0, CHEAP_KEPT)
+  // What a deck ought to have goes in first, a little under the top of each position
+  // so the cap's left for a star or two after it.
+  const taken = new Set<T>()
+  for (const want of rule.want ?? []) {
+    const fit = strongest.filter((c) => want.pos.includes(c.pos))
+    const start = Math.min(Math.max(0, fit.length - want.min), 1)
+    let got = 0
+    for (const card of fit.slice(start)) {
+      if (got >= want.min) break
+      if (!taken.has(card) && lockerCost(card) <= 3 && fits(card, rule.size - out.length - 1)) {
+        take(card)
+        taken.add(card)
+        got++
+      }
+    }
+  }
+  const cheap = strongest.filter((c) => lockerCost(c) === 1 && !taken.has(c)).slice(0, Math.max(0, CHEAP_KEPT - out.filter((c) => lockerCost(c) === 1).length))
   for (const card of strongest) {
     if (out.length >= rule.size - cheap.length) break
-    if (!cheap.includes(card) && fits(card, rule.size - out.length - 1)) take(card)
+    if (!cheap.includes(card) && !taken.has(card) && fits(card, rule.size - out.length - 1)) take(card)
   }
-  for (const card of cheap) if (fits(card, rule.size - out.length - 1)) take(card)
+  for (const card of cheap) if (out.length < rule.size && fits(card, rule.size - out.length - 1)) take(card)
   const value = [...owned].sort((a, b) => lockerPower(b) / lockerCost(b) - lockerPower(a) / lockerCost(a) || b.score - a.score)
   for (const card of value) {
     if (out.length >= rule.size) break

@@ -11,6 +11,7 @@ export function CallCard({ call, state, onClick, label }: { call: FgCall; state?
       <span className="pe-lkc-in">
         <span className="pe-lkc-top">
           <span className="pe-lkc-pos">Play</span>
+          {call.ongoing && <span className="pe-lkc-year">Stays</span>}
         </span>
         <span className="pe-lkc-board" aria-hidden>
           <svg viewBox="0 0 60 34" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">

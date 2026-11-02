@@ -14,7 +14,7 @@ export function CardSheet({ card, event, onClose }: { card: Player; event: Locke
       <PackCard player={card} revealed />
       <span className="pe-lk-sheet-facts">
         <span>
-          Costs <b>{lockerCost(card)}</b>, strength <b>{lockerPower(card)}</b>
+          {card.year} season. Costs <b>{lockerCost(card)}</b>, Power Level <b>{lockerPower(card)}</b>
         </span>
         <span>
           {LEGAL_LANES[card.pos].map((l) => LANES[l].label).join(' or ')}. {lift}
@@ -22,12 +22,12 @@ export function CardSheet({ card, event, onClose }: { card: Player; event: Locke
         {card.rarity === 'canton' ? <span>Always in your opening hand. Lifts his lane 2 for every teammate in it.</span> : <span>Stacks for {stackCost(card, null)}, adds {stackPower(card, null)}.</span>}
         {event && cardMatches(card, event.match) && (
           <span className="up">
-            {event.title}: costs {eventCost(card, event)}, strength {eventPower(card, event)}
+            {event.title}: costs {eventCost(card, event)}, Power Level {eventPower(card, event)}
           </span>
         )}
         {event && !cardMatches(card, event.match) && eventPower(card, event) < lockerPower(card) && (
           <span className="down">
-            {event.title}: strength {eventPower(card, event)}
+            {event.title}: Power Level {eventPower(card, event)}
           </span>
         )}
       </span>

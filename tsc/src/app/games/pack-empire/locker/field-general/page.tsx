@@ -3,9 +3,10 @@
 import type { Metadata, Viewport } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
+import { friendPicker } from '@/lib/friends'
 import { dayKey } from '@/lib/packEmpire/daily'
 import { lockerOpenTo } from '@/lib/packEmpire/locker/access'
-import { liveMatch } from '@/lib/packEmpire/locker/fieldGeneralMatch'
+import { challengesFor, liveMatch } from '@/lib/packEmpire/locker/fieldGeneralMatch'
 import { BONUS_WINS, lockerEventForDay, lockerGame } from '@/lib/packEmpire/locker/rules'
 import { deckFor, deckShelf, deckSummaries, lockerHome } from '@/lib/packEmpire/locker/store'
 import { createClient } from '@/lib/supabase/server'
@@ -35,7 +36,7 @@ export default async function FieldGeneralLobby() {
   const def = lockerGame(GAME)
   if (!def) notFound()
   const mobile = (await getViewMode()) === 'mobile'
-  const [deck, shelf, live, home] = await Promise.all([deckFor(user.id, GAME), deckShelf(user.id, GAME), liveMatch(user.id), lockerHome(user.id)])
+  const [deck, shelf, live, home, friends, challenges] = await Promise.all([deckFor(user.id, GAME), deckShelf(user.id, GAME), liveMatch(user.id), lockerHome(user.id), friendPicker(user.id), challengesFor(user.id)])
 
   return (
     <main className={`${ROOM_CLASS} ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>
@@ -50,7 +51,7 @@ export default async function FieldGeneralLobby() {
           </header>
         )}
         <WinMeter wins={home.wins} need={BONUS_WINS} bonus={home.bonus} />
-        <Lobby deck={deck} decks={deckSummaries(shelf)} event={lockerEventForDay(dayKey())} rule={def.deck} game={GAME} live={live} />
+        <Lobby deck={deck} decks={deckSummaries(shelf)} event={lockerEventForDay(dayKey())} rule={def.deck} game={GAME} live={live} friends={friends} challenges={challenges} />
       </div>
       {mobile ? <LockerDock /> : <SiteFooter />}
     </main>

@@ -128,6 +128,19 @@ export function DeckBuilder({ owned, draft, rule, game, home }: { owned: OwnedCa
           <span className="pe-sec-num">Your Deck</span>
           {worn.length > 0 && <span className="pe-fg-themed">{worn.map((t) => t.label).join(' · ')} Theme</span>}
         </div>
+        {rule.want && (
+          <div className="pe-fg-want" aria-label="Recommended">
+            <small>Recommended</small>
+            {rule.want.map((w) => {
+              const have = deck.filter((c) => w.pos.includes(c.pos)).length
+              return (
+                <span key={w.label} data-met={have >= w.min ? '' : undefined}>
+                  {have}/{w.min} {w.label}
+                </span>
+              )
+            })}
+          </div>
+        )}
         {inDeck.length === 0 ? (
           <p className="pe-lk-none">Tap a card below to add him.</p>
         ) : (
@@ -147,6 +160,7 @@ export function DeckBuilder({ owned, draft, rule, game, home }: { owned: OwnedCa
               {calls.length} of {rule.calls.max} Play Calls
             </span>
           </div>
+          <p className="pe-lk-none">You hold one at a time. The next comes up once you run it, so the order is the luck of the draw.</p>
           <div className="pe-fg-calls">
             {rule.calls.ids.flatMap((id) => {
               const call = callOf(id)
