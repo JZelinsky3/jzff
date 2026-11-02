@@ -1,4 +1,4 @@
-// The Locker's own bar. Inside Pack Empire but not of it: the modes, the board and
+// The Locker Room's own bar. Inside Pack Empire but not of it: the modes, the board and
 // the binder give way to the Locker's tabs, with Friends and the Library still on the
 // right, so going through the door feels like going somewhere. A game on LOCKER_GAMES
 // gets a tab here without anyone touching this file.
@@ -39,7 +39,7 @@ export function LockerChrome({
   }
 
   return (
-    <nav className="nav pe-nav pe-nav--room" aria-label="The Locker">
+    <nav className="nav pe-nav pe-nav--room" aria-label="The Locker Room">
       <div className="pe-nav-left">
         <Link href={back} className="dc-nav-icon" aria-label={backLabel}>
           <svg viewBox="0 0 8 14" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -53,7 +53,7 @@ export function LockerChrome({
           <span className="pe-nav-mark-word">
             <span className="pe-nav-mark-kicker">Pack Empire</span>
             <span className="pe-nav-mark-name">
-              The <em>Locker</em>
+              The Locker <em>Room</em>
             </span>
           </span>
         </Link>

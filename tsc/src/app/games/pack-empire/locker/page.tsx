@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic'
 
 export const viewport: Viewport = { themeColor: ROOM_COLOR, width: 'device-width', initialScale: 1 }
 
-export const metadata: Metadata = { title: 'The Locker · Pack Empire', robots: { index: false, follow: false } }
+export const metadata: Metadata = { title: 'The Locker Room · Pack Empire', robots: { index: false, follow: false } }
 
 export default async function LockerPage() {
   const supabase = await createClient()
@@ -33,13 +33,13 @@ export default async function LockerPage() {
 
   return (
     <main className={`${ROOM_CLASS} ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>
-      <LockerChrome mobile={mobile} signedIn={!!user} back="/games/pack-empire/" backLabel="Pack Empire" kicker="Pack Empire" title="The" titleEm="Locker" tab="home" />
+      <LockerChrome mobile={mobile} signedIn={!!user} back="/games/pack-empire/" backLabel="Pack Empire" kicker="Pack Empire" title="Locker" titleEm="Room" tab="home" />
       <div className="pe-wrap pe-lk">
         {!mobile && (
           <header className="pe-lk-head">
             <div className="pe-kicker">★ Cards you keep, games to play them in ★</div>
             <h1 className="pe-brd-title">
-              The <span className="pe-em">Locker.</span>
+              The Locker <span className="pe-em">Room.</span>
             </h1>
           </header>
         )}
@@ -47,7 +47,7 @@ export default async function LockerPage() {
           <LockerHub home={home} />
         ) : (
           <div className="pe-lk-signin">
-            <p>Your Locker is tied to your account. Sign in for a Starter Pack and a pack every day.</p>
+            <p>The Locker Room is tied to your account. Sign in for a Starter Pack and a pack every day.</p>
             <Link href="/login?next=%2Fgames%2Fpack-empire%2Flocker%2F" className="pe-btn">
               Sign In
             </Link>

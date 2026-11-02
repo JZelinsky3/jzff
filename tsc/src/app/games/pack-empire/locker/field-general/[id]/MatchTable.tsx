@@ -864,7 +864,7 @@ export function MatchTable({ initial }: { initial: MatchView }) {
                 </button>
               )}
               <Link href="/games/pack-empire/locker/" className="pe-btn pe-btn--ghost">
-                The Locker
+                The Locker Room
               </Link>
             </div>
           </div>

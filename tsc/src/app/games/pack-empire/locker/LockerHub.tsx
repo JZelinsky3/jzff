@@ -116,7 +116,7 @@ export function LockerHub({ home }: { home: LockerHome }) {
           onTear={tear}
           onRip={rip}
           onSkip={skip}
-          own={{ art: def.art, first, rest: rest.join(' '), done: 'Into The Locker', onDone: done }}
+          own={{ art: def.art, first, rest: rest.join(' '), done: 'Into Your Locker', onDone: done }}
         />
       )}
     </>

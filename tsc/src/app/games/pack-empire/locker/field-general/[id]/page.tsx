@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic'
 
 export const viewport: Viewport = { themeColor: ROOM_COLOR, width: 'device-width', initialScale: 1, viewportFit: 'cover' }
 
-export const metadata: Metadata = { title: 'Field General · The Locker', robots: { index: false, follow: false } }
+export const metadata: Metadata = { title: 'Field General · The Locker Room', robots: { index: false, follow: false } }
 
 export default async function MatchPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

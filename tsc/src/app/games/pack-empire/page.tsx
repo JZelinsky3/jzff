@@ -9,6 +9,7 @@ import { POOL, POOL_SIZE, cardWeight } from '@/lib/packEmpire/pool'
 import { binderTotals, loadLeaders, type BinderTotals } from '@/lib/packEmpire/binder'
 import { runLeaders } from '@/lib/packEmpire/boardRuns'
 import { lockerOpenTo } from '@/lib/packEmpire/locker/access'
+import { LockerRoomSection } from './LockerRoomCard'
 import { dayKey } from '@/lib/packEmpire/daily'
 import { ruleForDay } from '@/lib/packEmpire/dayRules'
 import {
@@ -139,19 +140,6 @@ function BinderStrip({ totals }: { totals: BinderTotals | null }) {
   )
 }
 
-/** The way in to the Locker, for whoever it's open to so far. */
-function LockerStrip() {
-  return (
-    <Link href="/games/pack-empire/locker/" className="pe-today pe-today--locker">
-      <span className="pe-today-body">
-        <span className="pe-today-kicker">The Locker</span>
-        <span className="pe-today-line">A pack a day to keep, a deck of your own, and games to play it in.</span>
-      </span>
-      <span className="pe-btn pe-btn--sm pe-today-go">Open</span>
-    </Link>
-  )
-}
-
 /** Today's rule on the front page: the Daily's whole pitch is that it changed. */
 function DailyStrip() {
   const rule = ruleForDay(dayKey())
@@ -190,6 +178,8 @@ export default async function PackEmpireHome() {
   const leaders = mobile ? undefined : await runLeaders(top).catch(() => new Map<string, Player>())
   const standings = await loadLeaders().catch(() => null)
   const locker = await lockerOpenTo(user?.id).catch(() => false)
+  // The Locker Room is section one for whoever can see it, and the rest move down.
+  const sec = (n: number, label: string) => `§ 0${n + (locker ? 1 : 0)} · ${label}`
 
   const cards = showcase()
   const normal = oddsBySlot(SOLO_WEIGHTS.normal)
@@ -252,11 +242,11 @@ export default async function PackEmpireHome() {
           </section>
 
           <DailyStrip />
-          {locker && <LockerStrip />}
+          {locker && <LockerRoomSection />}
 
           <section className="pe-sec">
             <div className="pe-sec-head">
-              <span className="pe-sec-num">§ 01 · Modes</span>
+              <span className="pe-sec-num">{sec(1, 'Modes')}</span>
               <span className="pe-sec-title">Four ways to play</span>
             </div>
             <div className="pe-m-rows">
@@ -286,7 +276,7 @@ export default async function PackEmpireHome() {
 
           <section className="pe-sec">
             <div className="pe-sec-head">
-              <span className="pe-sec-num">§ 02 · Index</span>
+              <span className="pe-sec-num">{sec(2, 'Index')}</span>
               <span className="pe-sec-title">Five rarities</span>
             </div>
             {index}
@@ -294,7 +284,7 @@ export default async function PackEmpireHome() {
 
           <section className="pe-sec">
             <div className="pe-sec-head">
-              <span className="pe-sec-num">§ 03 · Ladder</span>
+              <span className="pe-sec-num">{sec(3, 'Ladder')}</span>
               <span className="pe-sec-title">Eight tiers</span>
             </div>
             <Ladder score={-1} />
@@ -302,7 +292,7 @@ export default async function PackEmpireHome() {
 
           <section className="pe-sec">
             <div className="pe-sec-head">
-              <span className="pe-sec-num">§ 04 · Board</span>
+              <span className="pe-sec-num">{sec(4, 'Board')}</span>
               <span className="pe-sec-title">Best offenses</span>
               <Link href="/games/pack-empire/board/" className="pe-sec-meta pe-link">
                 All
@@ -313,7 +303,7 @@ export default async function PackEmpireHome() {
 
           <section className="pe-sec">
             <div className="pe-sec-head">
-              <span className="pe-sec-num">§ 05 · Binder</span>
+              <span className="pe-sec-num">{sec(5, 'Binder')}</span>
               <span className="pe-sec-title">Your cards</span>
             </div>
             <BinderStrip totals={binder} />
@@ -322,7 +312,7 @@ export default async function PackEmpireHome() {
           {standings && (
             <section className="pe-sec">
               <div className="pe-sec-head">
-                <span className="pe-sec-num">§ 06 · Pulls</span>
+                <span className="pe-sec-num">{sec(6, 'Pulls')}</span>
                 <span className="pe-sec-title">Best In The Binder</span>
               </div>
               <LeaderBoards data={standings} />
@@ -379,11 +369,11 @@ export default async function PackEmpireHome() {
         </header>
 
         <DailyStrip />
-        {locker && <LockerStrip />}
+        {locker && <LockerRoomSection />}
 
         <section className="pe-sec">
           <div className="pe-sec-head">
-            <span className="pe-sec-num">§ 01 · Modes</span>
+            <span className="pe-sec-num">{sec(1, 'Modes')}</span>
             <span className="pe-sec-title">Four ways to play</span>
             <span className="pe-sec-meta">Offense unit</span>
           </div>
@@ -416,7 +406,7 @@ export default async function PackEmpireHome() {
 
         <section className="pe-sec">
           <div className="pe-sec-head">
-            <span className="pe-sec-num">§ 02 · Index</span>
+            <span className="pe-sec-num">{sec(2, 'Index')}</span>
             <span className="pe-sec-title">Five rarities</span>
             <span className="pe-sec-meta">Odds per card</span>
           </div>
@@ -431,14 +421,14 @@ export default async function PackEmpireHome() {
         <div className="pe-twoup pe-sec">
           <section>
             <div className="pe-sec-head">
-              <span className="pe-sec-num">§ 03 · Ladder</span>
+              <span className="pe-sec-num">{sec(3, 'Ladder')}</span>
               <span className="pe-sec-title">Eight tiers</span>
             </div>
             <Ladder score={-1} />
           </section>
           <section>
             <div className="pe-sec-head">
-              <span className="pe-sec-num">§ 04 · Board</span>
+              <span className="pe-sec-num">{sec(4, 'Board')}</span>
               <span className="pe-sec-title">Best offenses</span>
               <Link href="/games/pack-empire/board/" className="pe-sec-meta pe-link">
                 Full board
@@ -450,7 +440,7 @@ export default async function PackEmpireHome() {
 
         <section className="pe-sec">
           <div className="pe-sec-head">
-            <span className="pe-sec-num">§ 05 · Binder</span>
+            <span className="pe-sec-num">{sec(5, 'Binder')}</span>
             <span className="pe-sec-title">Your cards</span>
             <span className="pe-sec-meta">Every card you&apos;ve pulled</span>
           </div>
@@ -460,7 +450,7 @@ export default async function PackEmpireHome() {
         {standings && (
           <section className="pe-sec">
             <div className="pe-sec-head">
-              <span className="pe-sec-num">§ 06 · Pulls</span>
+              <span className="pe-sec-num">{sec(6, 'Pulls')}</span>
               <span className="pe-sec-title">Best In The Binder</span>
             </div>
             <LeaderBoards data={standings} />

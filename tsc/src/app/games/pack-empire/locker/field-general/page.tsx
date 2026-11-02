@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic'
 
 export const viewport: Viewport = { themeColor: ROOM_COLOR, width: 'device-width', initialScale: 1 }
 
-export const metadata: Metadata = { title: 'Field General · The Locker', robots: { index: false, follow: false } }
+export const metadata: Metadata = { title: 'Field General · The Locker Room', robots: { index: false, follow: false } }
 
 const GAME = 'field-general'
 
@@ -40,7 +40,7 @@ export default async function FieldGeneralLobby() {
 
   return (
     <main className={`${ROOM_CLASS} ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>
-      <LockerChrome mobile={mobile} signedIn back="/games/pack-empire/locker/" backLabel="The Locker" kicker="The Locker" title={def.title} titleEm={def.titleEm} tab="field-general" />
+      <LockerChrome mobile={mobile} signedIn back="/games/pack-empire/locker/" backLabel="The Locker Room" kicker="The Locker Room" title={def.title} titleEm={def.titleEm} tab="field-general" />
       <div className="pe-wrap pe-lk">
         {!mobile && (
           <header className="pe-lk-head">

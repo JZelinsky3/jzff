@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic'
 
 export const viewport: Viewport = { themeColor: ROOM_COLOR, width: 'device-width', initialScale: 1 }
 
-export const metadata: Metadata = { title: 'The Shop · The Locker', robots: { index: false, follow: false } }
+export const metadata: Metadata = { title: 'The Shop · The Locker Room', robots: { index: false, follow: false } }
 
 export default async function ShopPage() {
   const supabase = await createClient()
@@ -31,7 +31,7 @@ export default async function ShopPage() {
 
   return (
     <main className={`${ROOM_CLASS} ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>
-      <LockerChrome mobile={mobile} signedIn back="/games/pack-empire/locker/" backLabel="The Locker" kicker="The Locker" title="The" titleEm="Shop" tab="shop" />
+      <LockerChrome mobile={mobile} signedIn back="/games/pack-empire/locker/" backLabel="The Locker Room" kicker="The Locker Room" title="The" titleEm="Shop" tab="shop" />
       <div className="pe-wrap pe-lk">
         {!mobile && (
           <header className="pe-lk-head">

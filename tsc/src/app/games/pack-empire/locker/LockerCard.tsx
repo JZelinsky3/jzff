@@ -35,6 +35,9 @@ export function LockerCard({
   label?: string
 }) {
   const name = surname(card.name)
+  // How much a name has to share the foot with: a two-digit PL takes the room of three
+  // letters, so the name comes down a size or two before anything gets cut off.
+  const fit = name.length + (power >= 10 ? 3 : 0)
   const inner = (
     <>
       <CardEdge rarity={card.rarity} field />
@@ -47,12 +50,12 @@ export function LockerCard({
           <Headshot player={card} className="pe-lkc-img" />
         </span>
         <span className="pe-lkc-foot">
-          <span className="pe-lkc-name" data-fit={name.length >= 12 ? 'least' : name.length >= 9 ? 'tight' : name.length >= 7 ? 'snug' : undefined}>
+          <span className="pe-lkc-name" data-fit={fit >= 13 ? 'min' : fit >= 12 ? 'least' : fit >= 9 ? 'tight' : fit >= 7 ? 'snug' : undefined}>
             {name}
           </span>
           <span className="pe-lkc-pl">
             <i aria-hidden>PL</i>
-            <b className="pe-lkc-power" data-move={base == null || base === power ? undefined : power > base ? 'up' : 'down'}>
+            <b className="pe-lkc-power" data-wide={power >= 10 ? '' : undefined} data-move={base == null || base === power ? undefined : power > base ? 'up' : 'down'}>
               {power}
             </b>
           </span>
