@@ -42,6 +42,17 @@ const FLOOR_TABLE: PackTable = { ...LOCKER_TABLE, common: 0 }
 /** The last card in a Boosted pack, which can't be under a Dynasty. */
 const BOOSTED_FLOOR: PackTable = { ...BOOSTED_TABLE, common: 0, rare: 0 }
 
+/**
+ * The seasons before 2000 are all names people know, so there isn't a Common among
+ * them, and only 80 cards: 44 from the Nineties and 36 from before. Neither decade can
+ * fill a pack at the ordinary odds, so they're one pack, on odds of its own that fit
+ * what's really there, and it costs more because every card in it is a Rare or better.
+ */
+const LEGENDS_TABLE: PackTable = { common: 0, rare: 60, dynasty: 27, transcendent: 9.5, immortal: 3, canton: 0.5 }
+const LEGENDS_FLOOR: PackTable = { ...LEGENDS_TABLE, rare: 0 }
+const LEGENDS_BOOST: PackTable = { common: 0, rare: 35, dynasty: 42, transcendent: 17, immortal: 5.2, canton: 0.8 }
+const LEGENDS_BOOST_FLOOR: PackTable = { ...LEGENDS_BOOST, rare: 0, dynasty: 0 }
+
 /** One card of a pack that's laid out by hand, rather than off a table. */
 export type PackSlot = { pos: PoolKey; rarity: Rarity }
 
@@ -63,7 +74,9 @@ export type PackDef = {
 
 export type LockerPackKind = 'starter' | 'daily' | 'bonus' | 'shop' | 'boost' | `theme-${string}` | `boost-theme-${string}`
 
-const PACK_ART = '/games/pack-empire/packs/wild.webp'
+/** Every pack's wrapper: the Mystery Pack's, recoloured and renamed by
+    scripts/pack-empire-locker-art/packs.py. */
+const packArt = (slug: string) => `/games/pack-empire/packs/locker/${slug}.webp`
 
 /**
  * Enough to field a full deck the minute you sign up: every lane covered, a curve
@@ -88,15 +101,15 @@ const STARTER_SLOTS: PackSlot[] = [
   { pos: 'OT', rarity: 'common' },
 ]
 
-const FIVE = { art: PACK_ART, size: 5, table: LOCKER_TABLE, floor: 1, floorTable: FLOOR_TABLE }
-const BOOSTED = { art: PACK_ART, size: 5, table: BOOSTED_TABLE, floor: 1, floorTable: BOOSTED_FLOOR }
+const FIVE = { size: 5, table: LOCKER_TABLE, floor: 1, floorTable: FLOOR_TABLE }
+const BOOSTED = { size: 5, table: BOOSTED_TABLE, floor: 1, floorTable: BOOSTED_FLOOR }
 
 export const LOCKER_PACKS: Record<string, PackDef> = {
-  starter: { label: 'Starter Pack', line: 'Fifteen cards, enough to field a deck today.', art: PACK_ART, size: STARTER_SLOTS.length, slots: STARTER_SLOTS },
-  daily: { label: 'Daily Pack', line: 'One a day, and you keep all five.', ...FIVE },
-  bonus: { label: 'Bonus Pack', line: 'Earned by winning today.', ...FIVE },
-  shop: { label: 'Locker Pack', line: 'Five cards, the same odds as a Daily Pack.', ...FIVE },
-  boost: { label: 'Boosted Locker Pack', line: 'Five cards, better odds, and a Dynasty or better guaranteed.', ...BOOSTED },
+  starter: { label: 'Starter Pack', line: 'Fifteen cards, enough to field a deck today.', art: packArt('starter'), size: STARTER_SLOTS.length, slots: STARTER_SLOTS },
+  daily: { label: 'Daily Pack', line: 'One a day, and you keep all five.', art: packArt('daily'), ...FIVE },
+  bonus: { label: 'Bonus Pack', line: 'Earned by winning today.', art: packArt('bonus'), ...FIVE },
+  shop: { label: 'Free Agent Pack', line: 'Five cards from anywhere, the same odds as a Daily Pack.', art: packArt('free-agent'), ...FIVE },
+  boost: { label: 'Boosted Free Agent Pack', line: 'Five cards, better odds, and a Dynasty or better guaranteed.', art: packArt('free-agent-boost'), ...BOOSTED },
 }
 
 export const isPackKind = (v: unknown): v is LockerPackKind => typeof v === 'string' && v in LOCKER_PACKS
@@ -119,6 +132,8 @@ export function packPrice(kind: string): number | null {
   if (!(kind in LOCKER_PACKS)) return null
   if (kind === 'shop') return 100
   if (kind === 'boost') return 300
+  if (kind === 'theme-legends') return 250
+  if (kind === 'boost-theme-legends') return 600
   if (kind.startsWith('theme-')) return 150
   if (kind.startsWith('boost-theme-')) return 400
   return null
@@ -337,7 +352,7 @@ export function lockerGame(id: string): LockerGameDef | null {
 export function deckProblem(cards: Pick<Player, 'id' | 'pid' | 'rarity'>[], rule: DeckRule): string | null {
   if (cards.length !== rule.size) return `A deck is ${rule.size} cards.`
   const men = new Set(cards.map((c) => c.pid ?? c.id))
-  if (men.size !== cards.length) return 'One season of a man to a deck.'
+  if (men.size !== cards.length) return 'One season of a player to a deck.'
   if (cards.filter((c) => c.rarity === 'canton').length > 1) return 'One Canton to a deck.'
   const cost = cards.reduce((sum, c) => sum + lockerCost(c), 0)
   if (cost > rule.cap) return `That deck costs ${cost}, and the cap is ${rule.cap}.`
@@ -368,23 +383,27 @@ export const DECK_THEMES: DeckTheme[] = [
   { id: '20s', label: '2020s', group: 'Era', match: { years: [2020, 2099] } },
 ]
 
-/** Everything but the oldest cards fills a pack of its own: there are too few from
-    before 1990 to deal five at the odds. */
-const PACK_THEMES = DECK_THEMES.filter((t) => t.id !== 'pre-90s')
+/** What fills a pack of its own. Everything from 2000 on does: each of those decades
+    has cards at every rarity, so the odds on the wrapper are the odds you get. */
+const PACK_THEMES = DECK_THEMES.filter((t) => !['pre-90s', '90s'].includes(t.id))
 
 for (const t of PACK_THEMES) {
   const line = `Five cards, every one from the ${t.label}.`
-  LOCKER_PACKS[`theme-${t.id}`] = { label: `${t.label} Pack`, line, ...FIVE, match: t.match }
-  LOCKER_PACKS[`boost-theme-${t.id}`] = { label: `Boosted ${t.label} Pack`, line: `${line} Better odds, and a Dynasty or better guaranteed.`, ...BOOSTED, match: t.match }
+  LOCKER_PACKS[`theme-${t.id}`] = { label: `${t.label} Pack`, line, art: packArt(t.id), ...FIVE, match: t.match }
+  LOCKER_PACKS[`boost-theme-${t.id}`] = { label: `Boosted ${t.label} Pack`, line: `${line} Better odds, and a Dynasty or better guaranteed.`, art: packArt(`${t.id}-boost`), ...BOOSTED, match: t.match }
 }
+
+const BEFORE_2000: CardMatch = { years: [1900, 1999] }
+LOCKER_PACKS['theme-legends'] = { label: 'Legends Pack', line: 'Five cards from before 2000, Rare or better.', art: packArt('legends'), size: 5, table: LEGENDS_TABLE, floor: 1, floorTable: LEGENDS_FLOOR, match: BEFORE_2000 }
+LOCKER_PACKS['boost-theme-legends'] = { label: 'Boosted Legends Pack', line: 'Five cards from before 2000, and a Transcendent or better guaranteed.', art: packArt('legends-boost'), size: 5, table: LEGENDS_BOOST, floor: 1, floorTable: LEGENDS_BOOST_FLOOR, match: BEFORE_2000 }
 
 const shelfPick = (group: DeckTheme['group']) => PACK_THEMES.filter((t) => t.group === group).map((t) => ({ id: t.id, label: t.label }))
 
 export const SHOP_SHELF: ShelfItem[] = [
-  { id: 'locker', label: 'Locker Pack', line: 'Five cards from anywhere.' },
+  { id: 'free-agent', label: 'Free Agent Pack', line: 'Five cards from anywhere.' },
   { id: 'conference', label: 'Conference Pack', line: 'Five cards from one conference.', pick: shelfPick('Conference') },
   { id: 'division', label: 'Division Pack', line: 'Five cards from one division.', pick: shelfPick('Division') },
-  { id: 'decade', label: 'Decade Pack', line: 'Five cards from one decade.', pick: shelfPick('Era') },
+  { id: 'decade', label: 'Decade Pack', line: 'Five cards from one era.', pick: [...shelfPick('Era'), { id: 'legends', label: 'Legends: Before 2000' }] },
 ]
 
 /** The kind of pack a shelf item sells, with what's been picked on it. */

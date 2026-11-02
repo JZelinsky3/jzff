@@ -22,6 +22,7 @@ import type { Player } from '../rules'
 import { CALLS, callOf } from './calls'
 import { dealCpuDeck, packRandom } from './deal'
 import {
+  DRIVES,
   LANES,
   applyDrive,
   cpuPlays,
@@ -30,6 +31,7 @@ import {
   goalOn,
   isOver,
   laneTotals,
+  lastDrive,
   newMatch,
   playProblem,
   rng,
@@ -120,6 +122,9 @@ export type MatchView = {
   room: number
   /** What carried in on top of it, spent last and gone after this drive. */
   carry: number
+  /** The drive the game ends on: six, or seven in overtime. */
+  last: number
+  overtime: boolean
   event: LockerEvent | null
   hand: Player[]
   /** The play calls in your hand. */
@@ -259,6 +264,8 @@ async function viewOf(row: MatchRow, userId: string, wins: WinCredit): Promise<M
       drive: 0,
       room: 0,
       carry: 0,
+      last: DRIVES,
+      overtime: false,
       event,
       hand: [],
       calls: [],
@@ -292,6 +299,8 @@ async function viewOf(row: MatchRow, userId: string, wins: WinCredit): Promise<M
     drive: m.drive,
     room: roomFor(m.drive),
     carry: mine.carry,
+    last: lastDrive(m),
+    overtime: !!m.overtime,
     event,
     hand: cards(mine.hand),
     calls: mine.hand.filter((id) => callOf(id)),

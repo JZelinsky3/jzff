@@ -3,11 +3,12 @@
 // The pieces of the table that only draw: nothing here decides anything.
 
 import { callOf } from '@/lib/packEmpire/locker/calls'
-import { DRIVES, FORMATIONS, LANES, LANE_MAX, stackPower, type Lane } from '@/lib/packEmpire/locker/fieldGeneral'
+import { DRIVES, FORMATIONS, LANES, LANE_MAX, stackAdds, type Lane } from '@/lib/packEmpire/locker/fieldGeneral'
 import type { LogLine, SeatView } from '@/lib/packEmpire/locker/fieldGeneralMatch'
-import type { LockerEvent } from '@/lib/packEmpire/locker/rules'
+import { eventCost, eventPower, type LockerEvent } from '@/lib/packEmpire/locker/rules'
 import type { Player } from '@/lib/packEmpire/rules'
 import { useCountUp } from '../../../stage'
+import { LockerCard } from '../../LockerCard'
 
 /** The three lanes as routes: a run up the middle, a quick out and a go. */
 const LANE_MARK: Record<(typeof LANES)[number]['key'], React.ReactNode> = {
@@ -64,15 +65,20 @@ export function Ghosts({ used, open = false, gain = '', sub }: { used: number; o
   ))
 }
 
-/** A man on the table, and whoever's stacked behind him: all a stacked man adds is a
-    number, so a tag on the card says it without taking up a slot. */
-export function Backed({ man, event, onTap, children }: { man?: Player; event: LockerEvent | null; onTap?: () => void; children: React.ReactNode }) {
+/** A card on the table, and whoever's stacked behind it, peeking out from under it so a
+    stack reads as a stack. The tag says what it adds. */
+export function Backed({ man, host, event, onTap, children }: { man?: Player | null; host?: Player; event: LockerEvent | null; onTap?: () => void; children: React.ReactNode }) {
   return (
     <span className="fg-host">
+      {man && (
+        <span className="fg-behind" aria-hidden>
+          <LockerCard card={man} cost={eventCost(man, event)} power={eventPower(man, event)} />
+        </span>
+      )}
       {children}
       {man && (
-        <button type="button" className="fg-stack" data-r={man.rarity} onClick={onTap} aria-label={`${man.name} stacked, adds ${stackPower(man, event)}`}>
-          +{stackPower(man, event)}
+        <button type="button" className="fg-stack" onClick={onTap} aria-label={`${man.name} stacked, adds ${stackAdds(man, host, event)}`}>
+          +{stackAdds(man, host, event)}
         </button>
       )}
     </span>

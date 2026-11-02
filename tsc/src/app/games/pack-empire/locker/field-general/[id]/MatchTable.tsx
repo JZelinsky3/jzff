@@ -27,6 +27,7 @@ import {
   canStack,
   driveGoal,
   formationsOn,
+  pairStacks,
   payLabel,
   sideTotals,
   stackCost,
@@ -44,7 +45,7 @@ import { CardSheet } from '../../CardSheet'
 import { LockerCard } from '../../LockerCard'
 import { WinMeter } from '../../WinMeter'
 import { FG_RULES } from '../rulesCopy'
-import { Backed, Ball, Crowns, Formations, Ghosts, LANE_IDS, LaneMark, LaneNumber, OnField, PlayLog, TurnGuide, type GuideStep } from './parts'
+import { Backed, Ball, Crowns, DRIVE_DOTS, Formations, Ghosts, LANE_IDS, LaneMark, LaneNumber, OnField, PlayLog, TurnGuide, type GuideStep } from './parts'
 
 type Pending = { card: Player; lane: Lane; stack: boolean }
 type Called = { call: FgCall; lane: Lane; target?: string }
@@ -190,17 +191,21 @@ export function MatchTable({ initial }: { initial: MatchView }) {
   /** What a card would do in a lane, and any formation it would set off. */
   const preview = (lane: number): { gain: string; sub?: string } => {
     const does = heldCall?.does
-    if (does?.kind === 'blitz') return { gain: `-${does.each * (match.foe.lanes[lane].length + match.foe.stacks[lane].length)}`, sub: 'So far' }
-    if (does?.kind === 'boost') return { gain: `+${does.each * [...yours[lane], ...behind[lane]].filter((c) => does.pos.includes(c.pos)).length}`, sub: 'So far' }
+    if (does?.kind === 'blitz') return { gain: `-${does.each * (match.foe.lanes[lane].length + match.foe.stacks[lane].length)}`, sub: 'So Far' }
+    if (does?.kind === 'boost') return { gain: `+${does.each * [...yours[lane], ...behind[lane]].filter((c) => does.pos.includes(c.pos)).length}`, sub: 'So Far' }
     if (does?.kind === 'close') return { gain: 'Close' }
     if (does?.kind === 'stand') return { gain: 'Stand' }
-    if (does?.kind === 'move') return { gain: 'Move' }
+    if (does?.kind === 'move') return { gain: 'Here' }
     if (does?.kind === 'turnover') {
       const last = match.foe.lanes[lane][match.foe.lanes[lane].length - 1]
       return { gain: 'Back', sub: last?.name.split(' ').slice(-1)[0] }
     }
     if (!held) return { gain: '' }
-    if (stacking) return { gain: `+${stackPower(held, event)}` }
+    if (stacking) {
+      const after = sideTotals(yours, behind.map((l, i) => (i === lane ? [...l, held] : l)), match.you.bonus, event)
+      const adds = after[lane].total - totals[lane]
+      return { gain: `+${adds}`, sub: adds > stackPower(held, event) ? 'Depth' : undefined }
+    }
     const lanes = yours.map((l, i) => (i === lane ? [...l, held] : l))
     const after = sideTotals(lanes, behind, match.you.bonus, event)
     const fresh = formationsOn(lanes).find((f) => !formsOn.includes(f.id))
@@ -283,7 +288,7 @@ export function MatchTable({ initial }: { initial: MatchView }) {
     if (!d.live) {
       if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 12) return
       const ok = 'does' in d.card ? pickCall(d.card) : pick(d.card)
-      if (!ok || ('does' in d.card && !d.card.aim)) {
+      if (!ok) {
         drag.current = null
         return
       }
@@ -314,7 +319,7 @@ export function MatchTable({ initial }: { initial: MatchView }) {
     setCalled([])
     setPicked(null)
     setMoving(null)
-    setNews(recap(next))
+    setNews(next.overtime && next.drive === next.last ? 'Lanes are tied, so one more drive. Two new cards.' : recap(next))
     setPhase('turn')
     if (next.msLeft != null) {
       clockEnd.current = Date.now() + next.msLeft
@@ -461,19 +466,19 @@ export function MatchTable({ initial }: { initial: MatchView }) {
 
   if (match.open) return <WaitingRoom match={match} onCancel={leave} />
 
-  const waiting = pending.length || called.length ? `Tap a card you placed to take it back.${rolls ? ` ${rolls} rolls to next drive.` : ''}` : news || 'Drag a card onto a lane.'
+  const waiting = pending.length || called.length ? `Tap a card you placed to take it back.${rolls ? ` ${rolls} rolls to next drive.` : ''}` : news || 'Drag a card onto a lane, or tap it.'
   const lockedLine = `Locked in. Waiting on ${foeName}.`
   const coach =
     error ??
     (moveCall && !moving
-      ? 'Tap one of your men to move him.'
+      ? 'Tap one of your cards to move it.'
       : moveCall
-        ? 'Now pick his new lane.'
+        ? 'Now pick its new lane.'
         : heldCall
           ? heldCall.line
           : held
             ? stacking
-              ? 'Half his cost, half his PL, behind a man in his lane.'
+              ? 'Stacks behind a card in its lane: half cost, half PL, no slot. Same position adds 2.'
               : POSITION_RULE[held.pos]
             : phase === 'locked'
               ? lockedLine
@@ -483,8 +488,8 @@ export function MatchTable({ initial }: { initial: MatchView }) {
 
   const inPlay = [...match.you.lanes.flat(), ...match.you.stacks.flat()]
   const steps: GuideStep[] = [
-    { title: 'Line Up A Man', line: 'Pays his full cost and takes a slot.', done: pending.some((p) => !p.stack) },
-    { title: 'Stack A Man', line: `Half cost, half PL, behind a man.${inPlay.length || pending.length ? '' : ' Line someone up first.'}`, done: pending.some((p) => p.stack), off: !inPlay.length && !pending.length },
+    { title: 'Line Up A Card', line: 'Pays full cost and takes a slot.', done: pending.some((p) => !p.stack) },
+    { title: 'Stack A Card', line: `Behind a card in its lane: half cost, half PL, no slot. Same position adds 2.${inPlay.length || pending.length ? '' : ' Line up a card first.'}`, done: pending.some((p) => p.stack), off: !inPlay.length && !pending.length },
     { title: 'Run A Play Call', line: calls[0] ? `${calls[0].title} costs ${calls[0].cost}.` : called.length ? `${called[0].call.title} is in.` : 'None in hand.', done: called.length > 0, off: !calls.length && !called.length },
     { title: 'Save Cap', line: rolls ? `${rolls} rolls to next drive.` : 'Unspent cap carries one drive.', done: rolls > 0 },
     { title: 'End The Drive', line: 'Both sides flip together.' },
@@ -519,6 +524,7 @@ export function MatchTable({ initial }: { initial: MatchView }) {
       )
     })
 
+  const lastOne = live && match.drive >= match.last
   const goalBlock = goal ? (
     <>
       <span className="fg-goal-kick">{meeting ? 'Goal Met' : `Drive ${match.drive} Goal`}</span>
@@ -528,9 +534,9 @@ export function MatchTable({ initial }: { initial: MatchView }) {
     </>
   ) : (
     <>
-      <span className="fg-goal-kick">Drive {Math.min(match.drive, DRIVES)}</span>
-      <b>{live ? 'No Goal Yet' : 'Final'}</b>
-      <span className="fg-goal-line">{live ? 'Goals start on the next drive, and you only see them when they land.' : 'That is the game.'}</span>
+      <span className="fg-goal-kick">{live ? (match.overtime ? 'Overtime' : `Drive ${match.drive}`) : 'Final'}</span>
+      <b>{live ? (match.overtime ? 'Win It Here' : 'No Goal This Drive') : 'That Is The Game'}</b>
+      <span className="fg-goal-line">{live ? (match.overtime ? 'One drive to break the tie. Still level, and the bigger total wins.' : 'Three or four drives a game have one, and nobody knows which.') : ''}</span>
     </>
   )
 
@@ -549,10 +555,10 @@ export function MatchTable({ initial }: { initial: MatchView }) {
             <b>{foeName}</b>
             <Crowns held={foeLead} side="foe" />
           </span>
-          <span className="fg-bug-drive">
-            <small>{live ? 'Drive' : 'Final'}</small>
-            <b>{live ? match.drive : '6'}</b>
-            <small>Of {DRIVES}</small>
+          <span className="fg-bug-drive" data-last={lastOne ? '' : undefined}>
+            <small className="fg-bug-lab">{!live ? 'Final' : match.overtime ? 'Overtime' : lastOne ? 'Last Drive' : 'Drive'}</small>
+            <b>{match.overtime ? 'OT' : live ? match.drive : DRIVES}</b>
+            {!match.overtime && <small>Of {DRIVES}</small>}
           </span>
           <span className="fg-bug-team" data-side="you">
             <Crowns held={yourLead} side="you" />
@@ -570,6 +576,13 @@ export function MatchTable({ initial }: { initial: MatchView }) {
           ?
         </button>
       </header>
+
+      <div className="fg-progress" aria-hidden>
+        {DRIVE_DOTS.map((i) => (
+          <i key={i} data-state={!live || i + 1 < match.drive ? 'done' : i + 1 === match.drive ? 'now' : undefined} />
+        ))}
+        {match.overtime && <i data-state={live ? 'now' : 'done'} data-ot />}
+      </div>
 
       {match.versus && live && seconds != null && (
         <div className="fg-rope" data-low={seconds <= 15 ? '' : undefined} aria-label={`${seconds} seconds left`}>
@@ -613,9 +626,9 @@ export function MatchTable({ initial }: { initial: MatchView }) {
                 {match.foe.lanes[i].map((c, at) => {
                   const n = phase === 'turn' ? match.fresh.indexOf(c.id) : -1
                   const s = stat(c)
-                  const man = match.foe.stacks[i][at]
+                  const man = pairStacks(match.foe.lanes[i], match.foe.stacks[i])[at]
                   return (
-                    <Backed key={c.id} man={man} event={event} onTap={() => setDetail(man)}>
+                    <Backed key={c.id} man={man} host={c} event={event} onTap={() => man && setDetail(man)}>
                       <LockerCard card={c} cost={s.cost} power={s.power} base={s.base} fresh={n >= 0} index={n} onClick={() => setDetail(c)} />
                     </Backed>
                   )
@@ -643,8 +656,8 @@ export function MatchTable({ initial }: { initial: MatchView }) {
             </div>
             {live && (
               <div className="fg-ribbon" data-met={meeting ? '' : undefined}>
-                <span className="fg-goal-kick">{goal ? (meeting ? 'Met' : 'Goal') : 'Drive 1'}</span>
-                <span className="fg-goal-line">{goal ? goal.line : 'No goal on the first drive.'}</span>
+                <span className="fg-goal-kick">{goal ? (meeting ? 'Met' : 'Goal') : match.overtime ? 'OT' : 'No Goal'}</span>
+                <span className="fg-goal-line">{goal ? goal.line : match.overtime ? 'One drive to break the tie.' : 'Nothing extra this drive.'}</span>
                 {goal && <span className="fg-goal-pay">{payLabel(goal.pay)}</span>}
               </div>
             )}
@@ -658,12 +671,12 @@ export function MatchTable({ initial }: { initial: MatchView }) {
                 <div key={lane.key} className="fg-half fg-half--you" data-closed={match.closed === i ? '' : undefined}>
                   {yours[i].map((c, at) => {
                     const s = stat(c)
-                    const man = behind[i][at]
+                    const man = pairStacks(yours[i], behind[i])[at]
                     const fresh = pending.some((p) => p.card.id === c.id)
                     const manFresh = !!man && pending.some((p) => p.card.id === man.id)
                     const movable = moveCall && !moving && match.you.lanes[i].some((m) => m.id === c.id) && match.you.lanes[i].length > match.you.stacks[i].length
                     return (
-                      <Backed key={c.id} man={man} event={event} onTap={() => (manFresh && calling ? takeBack(man.id) : setDetail(man))}>
+                      <Backed key={c.id} man={man} host={c} event={event} onTap={() => man && (manFresh && calling ? takeBack(man.id) : setDetail(man))}>
                         {fresh ? (
                           <LockerCard card={c} cost={s.cost} power={s.power} base={s.base} state="pending" onClick={calling ? () => takeBack(c.id) : undefined} label={`Take ${c.name} back`} />
                         ) : (
@@ -681,6 +694,17 @@ export function MatchTable({ initial }: { initial: MatchView }) {
           <div className="fg-ez fg-ez--you">
             <span className="fg-ez-name" aria-hidden>{youName}</span>
             <div className="fg-ez-row">{tags('you')}</div>
+            {called.some((c) => !c.call.aim) && (
+              <div className="fg-ez-called">
+                {called
+                  .filter((c) => !c.call.aim)
+                  .map((c) => (
+                    <button key={c.call.id} type="button" className="fg-tag" data-who="you" data-pending onClick={() => setCalled((list) => list.filter((x) => x.call.id !== c.call.id))} aria-label={`Take ${c.call.title} back`}>
+                      {c.call.title}
+                    </button>
+                  ))}
+              </div>
+            )}
           </div>
 
           <div className="fg-tracks" aria-hidden>
@@ -715,9 +739,18 @@ export function MatchTable({ initial }: { initial: MatchView }) {
             })}
           </div>
 
+          {calling && heldCall && !heldCall.aim && (
+            <button type="button" className="fg-playzone" data-lane-target={0} onClick={() => place(0)}>
+              <b>Drop It Here To Call It</b>
+              <small>
+                {heldCall.title}: {heldCall.line}
+              </small>
+            </button>
+          )}
+
           {banner && (
             <div key={banner.key} className="fg-banner" aria-live="polite">
-              <b>{banner.drive === DRIVES ? 'Last Drive' : `Drive ${banner.drive}`}</b>
+              <b>{banner.drive > DRIVES ? 'Overtime' : banner.drive === DRIVES ? 'Last Drive' : `Drive ${banner.drive}`}</b>
               <span>{match.room + match.carry} Cap{driveGoal(match.goal) ? ` · ${driveGoal(match.goal)?.title}` : ''}</span>
             </div>
           )}
@@ -771,7 +804,8 @@ export function MatchTable({ initial }: { initial: MatchView }) {
               const t = i - (all.length - 1) / 2
               const style = { '--t': t, '--d': Math.abs(t) } as React.CSSProperties
               const on = c.id === picked ? '' : undefined
-              const grab = { onPointerDown: (e: React.PointerEvent) => startDrag(e, c), onPointerMove: moveDrag, onPointerUp: endDrag, onPointerCancel: endDrag }
+              // The browser would drag a card's photo as an image, and cancel the pointer.
+              const grab = { onPointerDown: (e: React.PointerEvent) => startDrag(e, c), onPointerMove: moveDrag, onPointerUp: endDrag, onPointerCancel: endDrag, onDragStart: (e: React.DragEvent) => e.preventDefault() }
               if ('does' in c) {
                 return (
                   <div key={c.id} className="fg-hold" data-on={on} data-gone={dragging === c ? '' : undefined} style={style} {...grab}>
@@ -799,10 +833,6 @@ export function MatchTable({ initial }: { initial: MatchView }) {
                   Stack {stackCost(held, event)}
                 </button>
               </div>
-            ) : heldCall && !heldCall.aim ? (
-              <button type="button" className="pe-btn fg-go" onClick={() => place(0)}>
-                Call It
-              </button>
             ) : (
               <button type="button" className="pe-btn fg-go" data-ready={calling && (left === 0 || pending.length + called.length > 0) ? '' : undefined} disabled={!calling} onClick={run}>
                 {phase === 'snap' ? 'Snap' : phase === 'locked' ? 'Locked In' : phase === 'turn' ? 'Flipping' : pending.length || called.length ? 'End Drive' : 'Pass The Drive'}
@@ -823,6 +853,7 @@ export function MatchTable({ initial }: { initial: MatchView }) {
           {match.status === 'won' && <span className="fg-rays" aria-hidden />}
           <div className="fg-end-in">
             {match.walked && <div className="fg-end-kick">{foeName} Walked Off</div>}
+            {match.result && match.result.score[0] === match.result.score[1] && match.result.winner !== null && <div className="fg-end-kick">Level On Lanes, Decided On Total Points</div>}
             <div className="fg-end-title">{VERDICT[match.status] ?? 'Game Over'}</div>
             {match.result && (
               <>

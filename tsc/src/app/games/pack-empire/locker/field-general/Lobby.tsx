@@ -80,7 +80,7 @@ export function Lobby({
   if (deck.length === 0) {
     return (
       <div className="pe-lk-signin">
-        <p>You need {rule.size} cards to field a deck. Your Starter Pack has enough.</p>
+        <p>You need {rule.size} cards to build a deck. Your Starter Pack has enough.</p>
         <Link href="/games/pack-empire/locker/" className="pe-btn">
           Open Your Starter Pack
         </Link>
@@ -105,7 +105,7 @@ export function Lobby({
         <div className="fg-hero-copy">
           <div className="fg-hero-kick">{active?.name ?? 'Your Best Cards'}</div>
           <div className="fg-hero-meta">
-            {deck.length} Men · {cost} of {rule.cap} Cap
+            {deck.length} Cards · {cost} of {rule.cap} Cap
             {active?.themes.length ? ` · ${active.themes.join(' · ')}` : ''}
           </div>
         </div>

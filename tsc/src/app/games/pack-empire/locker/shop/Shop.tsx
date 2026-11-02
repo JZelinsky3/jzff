@@ -26,7 +26,7 @@ function ShelfCard({ item, faab, busy, onBuy }: { item: ShelfItem; faab: number;
       <img src={pack.art} alt="" draggable={false} />
       <div className="pe-shop-pack-body">
         <div className="pe-shop-pack-head">
-          <b>{item.label}</b>
+          <b>{pack.label.replace('Boosted ', '')}</b>
           <PackOdds pack={pack} />
         </div>
         <span>{item.line}</span>

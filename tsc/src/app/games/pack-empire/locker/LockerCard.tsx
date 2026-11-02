@@ -5,7 +5,7 @@
 // Power Level. Any Locker game can draw one, so it takes its numbers as given rather
 // than working them out.
 
-import { surname, type Player } from '@/lib/packEmpire/rules'
+import { pearlLogo, surname, teamLogo, type Player } from '@/lib/packEmpire/rules'
 import { CardEdge, Headshot } from '../cards'
 
 export function LockerCard({
@@ -37,7 +37,8 @@ export function LockerCard({
   const name = surname(card.name)
   // How much a name has to share the foot with: a two-digit PL takes the room of three
   // letters, so the name comes down a size or two before anything gets cut off.
-  const fit = name.length + (power >= 10 ? 3 : 0)
+  const fit = name.length + (power >= 10 ? 2 : 0)
+  const logo = card.rarity === 'canton' ? pearlLogo(card) : teamLogo(card)
   const inner = (
     <>
       <CardEdge rarity={card.rarity} field />
@@ -48,13 +49,15 @@ export function LockerCard({
         </span>
         <span className="pe-lkc-art">
           <Headshot player={card} className="pe-lkc-img" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {logo && <img className="pe-lkc-logo" src={logo} alt={card.team} draggable={false} />}
         </span>
         <span className="pe-lkc-foot">
           <span className="pe-lkc-name" data-fit={fit >= 13 ? 'min' : fit >= 12 ? 'least' : fit >= 9 ? 'tight' : fit >= 7 ? 'snug' : undefined}>
             {name}
           </span>
           <span className="pe-lkc-pl">
-            <i aria-hidden>PL</i>
+            <i>PL</i>
             <b className="pe-lkc-power" data-wide={power >= 10 ? '' : undefined} data-move={base == null || base === power ? undefined : power > base ? 'up' : 'down'}>
               {power}
             </b>

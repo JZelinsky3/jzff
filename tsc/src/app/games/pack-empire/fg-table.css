@@ -16,6 +16,7 @@
   inset: 0;
   z-index: 40;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   overflow: hidden;
   background:
@@ -28,8 +29,12 @@
   user-select: none;
 }
 
+/* One column, always: the drive bar shares the header's row, and left to itself the
+   grid would give it a column of its own and squeeze the field. */
+.fg > * { grid-column: 1; }
+
 /* The top of the screen: a broadcast score bug and two buttons. */
-.fg-hud { grid-row: 1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: .55rem; padding: max(.45rem, env(safe-area-inset-top)) .8rem .45rem; }
+.fg-hud { grid-row: 1; display: grid; padding-bottom: .7rem !important; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: .55rem; padding: max(.45rem, env(safe-area-inset-top)) .8rem .45rem; }
 .fg-hud-btn { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border: 1px solid rgba(255, 255, 255, .14); border-radius: 10px; background: rgba(255, 255, 255, .05); color: var(--pe-ink-soft); cursor: pointer; }
 .fg-hud-btn svg { width: 19px; height: 19px; }
 .fg-hud-q { font-family: var(--serif); font-size: 1.15rem; font-style: italic; }
@@ -41,6 +46,7 @@
 .fg-bug-team b { min-width: 0; overflow: hidden; font-family: var(--pe-cond); font-size: 1rem; font-weight: 800; letter-spacing: .03em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 .fg-bug-drive { display: flex; align-items: center; gap: .3rem; padding: .25rem .75rem; border-inline: 1px solid rgba(255, 255, 255, .1); background: rgba(0, 0, 0, .35); }
 .fg-bug-drive b { font-family: var(--pe-display); font-size: 1.25rem; font-weight: 900; line-height: 1; color: var(--pe-amber); }
+.fg-bug-drive[data-last] .fg-bug-lab { color: var(--pe-amber); }
 .fg-bug-drive small { font-family: var(--mono); font-size: .5rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--pe-ink-mute); }
 .fg-crowns { display: inline-flex; flex: none; gap: 2px; }
 .fg-crowns svg { width: 13px; height: 9px; color: rgba(255, 255, 255, .13); }
@@ -48,6 +54,15 @@
 .fg-crowns[data-side='you'] .on { color: var(--you); }
 .fg-crowns[data-side='foe'] .on { color: var(--foe); }
 .fg-event { max-width: 9rem; overflow: hidden; padding: .3rem .7rem; border: 1px solid rgba(79, 195, 176, .5); border-radius: 999px; background: rgba(79, 195, 176, .1); font-family: var(--pe-cond); font-size: .78rem; font-weight: 700; letter-spacing: .05em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; color: #8fe9d8; cursor: pointer; }
+
+/* Where the game is: six segments, plain enough that nobody has to read the rules to
+   see that the sixth is the last. */
+.fg-progress { grid-row: 1; align-self: end; display: flex; gap: 3px; width: min(100% - 1.6rem, 560px); margin: 0 auto 3px; pointer-events: none; }
+.fg-progress i { flex: 1; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .12); }
+.fg-progress i[data-state='done'] { background: rgba(232, 168, 75, .55); }
+.fg-progress i[data-state='now'] { background: var(--pe-amber); box-shadow: 0 0 8px rgba(232, 168, 75, .8); }
+.fg-progress i[data-ot] { flex: .6; }
+.fg-progress i[data-ot][data-state] { background: var(--foe); box-shadow: 0 0 8px rgba(255, 122, 110, .7); }
 
 /* The clock against a person, burning down like a fuse. */
 .fg-rope { grid-row: 2; height: 3px; margin: 0 .8rem .3rem; overflow: hidden; border-radius: 2px; background: rgba(255, 255, 255, .08); }
@@ -152,7 +167,9 @@
 .fg-slot b { font-family: var(--pe-display); font-size: calc(var(--card) * .25); font-weight: 900; white-space: nowrap; color: var(--you); }
 .fg-slot small { max-width: 96%; overflow: hidden; font-family: var(--pe-cond); font-size: calc(var(--card) * .13); font-weight: 800; text-overflow: ellipsis; white-space: nowrap; color: var(--pe-amber); }
 .fg-host { position: relative; flex: none; display: block; width: var(--card); }
-.fg-stack { position: absolute; left: -3px; top: 34%; z-index: 3; min-width: 1.5rem; padding: .08rem .28rem; border: 1px solid var(--pe-amber); border-radius: 4px; background: rgba(10, 12, 10, .94); font-family: var(--pe-display); font-size: .66rem; font-weight: 900; line-height: 1.2; color: var(--pe-amber); cursor: pointer; }
+.fg-host > .pe-lkc { position: relative; z-index: 1; }
+.fg-behind { position: absolute; left: 0; top: 0; z-index: 0; transform: translate(-7%, -6%) rotate(-5deg); pointer-events: none; }
+.fg-stack { position: absolute; left: -5px; top: 30%; z-index: 3; min-width: 1.5rem; padding: .08rem .28rem; border: 1px solid var(--pe-amber); border-radius: 4px; background: rgba(10, 12, 10, .94); font-family: var(--pe-display); font-size: .66rem; font-weight: 900; line-height: 1.2; color: var(--pe-amber); cursor: pointer; }
 
 /* Midfield. */
 .fg-mid { position: relative; padding: 3px 0; background: linear-gradient(180deg, transparent, rgba(2, 12, 9, .68) 16%, rgba(2, 12, 9, .68) 84%, transparent); }
@@ -183,6 +200,14 @@
 .fg-track i { position: absolute; left: 9px; top: 50%; display: block; width: 20px; height: 13px; color: #a8622a; filter: none; transform: translate(-50%, -50%) translateY(calc(var(--m) * -42cqh)) rotate(90deg); transition: transform .7s cubic-bezier(.2, .9, .3, 1.15); }
 .fg-track svg { display: block; width: 100%; height: 100%; }
 
+/* Where a call with no lane goes: anywhere on the field, so there's something to drop
+   it on and it never feels like the End Drive button is the thing to press. */
+.fg-playzone { position: absolute; inset: var(--ez) 8px; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .3rem; padding: 1rem; border: 2px dashed var(--pe-amber); border-radius: 12px; background: rgba(4, 12, 10, .9); text-align: center; color: var(--pe-ink); cursor: pointer; animation: fg-fade .16s ease both; }
+.fg-playzone b { font-family: var(--serif); font-size: 1.5rem; font-weight: 500; line-height: 1.15; color: var(--pe-amber); }
+.fg-playzone small { max-width: 26rem; font-size: .9rem; line-height: 1.3; color: var(--pe-ink-soft); }
+.fg-ez-called { position: absolute; left: 0; right: 0; top: 50%; z-index: 2; display: flex; justify-content: center; gap: 3px; transform: translateY(-50%); pointer-events: none; }
+.fg-ez-called .fg-tag { pointer-events: auto; }
+
 /* Where a held card can go. */
 .fg-targets { position: absolute; inset: 0; z-index: 4; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); pointer-events: none; }
 .fg-target { position: relative; }
@@ -200,10 +225,10 @@
 @keyframes fg-banner { 0% { opacity: 0; transform: scaleY(.3); } 14% { opacity: 1; transform: none; } 76% { opacity: 1; transform: none; } 100% { opacity: 0; transform: scaleY(.6); } }
 
 .fg-spot { position: absolute; inset: 0; z-index: 7; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; background: radial-gradient(closest-side, rgba(0, 0, 0, .78), rgba(0, 0, 0, .2)); pointer-events: none; animation: fg-spot .28s cubic-bezier(.2, 1.3, .4, 1) both; }
-.fg-spot small { font-family: var(--mono); font-size: .66rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--pe-ink); }
+.fg-spot > small { font-family: var(--mono); font-size: .66rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--pe-ink); }
 .fg-spot .pe-lkc { --lc-w: 148px; }
-.fg-spot b { font-family: var(--pe-display); font-size: 2.2rem; font-weight: 900; color: var(--you); }
-.fg-spot b[data-down] { color: var(--foe); }
+.fg-spot > b { font-family: var(--pe-display); font-size: 2.2rem; font-weight: 900; color: var(--you); }
+.fg-spot > b[data-down] { color: var(--foe); }
 @keyframes fg-spot { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: none; } }
 .fg-tallyhead { position: absolute; left: 50%; top: calc(var(--ez) + .5rem); z-index: 6; padding: .25rem .9rem; border-radius: 999px; background: rgba(4, 12, 10, .9); font-family: var(--mono); font-size: .62rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--pe-amber); transform: translateX(-50%); }
 
@@ -224,6 +249,7 @@
 .fg-hand { grid-area: hand; display: flex; justify-content: center; align-items: flex-end; min-height: calc(var(--hand-w) * 1.42); padding-top: .4rem; }
 .fg-hold { flex: 0 1 calc(var(--hand-w) + 4px); min-width: 0; touch-action: none; cursor: grab; transition: transform .16s cubic-bezier(.2, .9, .3, 1.2); transform: translateY(calc(var(--d) * 3px)) rotate(calc(var(--t) * 2deg)); transform-origin: 50% 100%; }
 .fg-hold .pe-lkc { --lc-w: var(--hand-w); }
+.fg-hold img { -webkit-user-drag: none; pointer-events: none; }
 .fg-hold[data-on] { position: relative; z-index: 6; transform: translateY(-.8rem) scale(1.06); }
 .fg-hold[data-on] .pe-lkc { outline: 2px solid var(--pe-amber); outline-offset: 1px; }
 .fg-hold[data-gone] { opacity: .25; }
@@ -304,8 +330,10 @@
   .fg-hud-btn { width: 34px; height: 34px; }
   .fg-bug-team { padding: .22rem .4rem; gap: .3rem; }
   .fg-bug-team b { font-size: .84rem; }
-  .fg-bug-drive { padding: .2rem .45rem; }
-  .fg-bug-drive small { display: none; }
+  .fg-bug-drive { padding: .2rem .45rem; gap: .22rem; }
+  .fg-bug-lab { display: none; }
+  .fg-bug-drive[data-last] .fg-bug-lab { display: block; }
+  .fg-bug-drive[data-last] small:not(.fg-bug-lab) { display: none; }
   .fg-crowns svg { width: 10px; height: 7px; }
   .fg-event { display: none; }
   .fg-rope { margin-inline: .4rem; }
@@ -328,9 +356,13 @@
   .fg-banner b { font-size: 1.7rem; }
   .fg-spot .pe-lkc { --lc-w: 124px; }
   .fg-target button b { font-size: .92rem; padding: .1rem .4rem; }
-  .fg-tray { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'coach coach' 'hand hand' 'cap act'; gap: .15rem .7rem; padding: .15rem .45rem max(.45rem, env(safe-area-inset-bottom)); }
+  .fg-tray { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'coach coach' 'hand hand' 'cap act'; gap: .15rem .7rem; padding: .15rem .45rem max(.5rem, env(safe-area-inset-bottom)); }
+  .fg-act { margin-top: 1rem; }
+  .fg-cap { margin-top: 1rem; }
   .fg-coach { min-height: 2.2em; align-items: center; flex-wrap: wrap; gap: 0 .35rem; font-size: .76rem; }
   .fg-hand { min-height: calc(var(--hand-w) * 1.4); padding-top: .2rem; }
+  .fg-playzone b { font-size: 1.25rem; }
+  .fg-playzone small { font-size: .82rem; }
   .fg-cap-row > b { font-size: 1.5rem; }
   .fg-gems i { width: 9px; height: 11px; }
   .fg-sheet { align-items: flex-end; padding: 0; }

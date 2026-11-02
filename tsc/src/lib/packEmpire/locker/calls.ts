@@ -8,7 +8,10 @@
 //
 // A call is never just points. A flat +5 in a lane is only another man, with worse
 // art. Each one here either changes what happens next or scales with the table, so
-// it's a decision made against the other side, not a number added to a lane. The
+// it's a decision made against the other side, not a number added to a lane. Each one's
+// price comes off a sim: one copy against a deck with none is worth 54 to 65% for a
+// real card. Cap alone isn't worth much, since you run out of cards first, which is
+// why nothing here simply gives you more of it. The
 // ones marked `ongoing` stay on the field: they sit in front of the lane where both
 // sides can see them, and they're tallied once, at the end of the game, off who's in
 // that lane by then. So a Blitz on the second drive tells the other side where not
@@ -17,11 +20,11 @@
 import type { PoolKey } from '../rules'
 
 export type CallEffect =
-  /** Draw this many more men for next drive. */
+  /** Draw this many more cards for next drive. */
   | { kind: 'draw'; n: number }
-  /** This much more cap room next drive. */
-  | { kind: 'cap'; n: number }
-  /** Counts as meeting this drive's goal. */
+  /** This much less cap room for them next drive. */
+  | { kind: 'ice'; n: number }
+  /** Counts as meeting this drive's goal, or draws a card if there isn't one. */
   | { kind: 'goal' }
   /** They can't play in the lane you aim it at next drive. */
   | { kind: 'close' }
@@ -53,17 +56,17 @@ export type FgCall = {
 export const CALL_PREFIX = 'call:'
 
 export const CALLS: FgCall[] = [
-  { id: 'call:film-study', title: 'Film Study', line: 'Draw 2 men.', cost: 1, does: { kind: 'draw', n: 2 } },
-  { id: 'call:timeout', title: 'Timeout', line: '+3 cap room next drive.', cost: 1, does: { kind: 'cap', n: 3 } },
-  { id: 'call:game-plan', title: 'Game Plan', line: "You meet this drive's goal.", cost: 1, does: { kind: 'goal' } },
+  { id: 'call:film-study', title: 'Film Study', line: 'Draw 3 cards.', cost: 2, does: { kind: 'draw', n: 3 } },
+  { id: 'call:ice-the-kicker', title: 'Ice The Kicker', line: 'They get 4 less cap next drive.', cost: 1, does: { kind: 'ice', n: 4 } },
+  { id: 'call:game-plan', title: 'Game Plan', line: "Meet this drive's goal. No goal? Draw a card.", cost: 1, does: { kind: 'goal' } },
   { id: 'call:spike-it', title: 'Spike It', line: 'Keep all your unspent cap for next drive.', cost: 0, does: { kind: 'keep' } },
-  { id: 'call:hard-count', title: 'Hard Count', line: "They can't play in a lane next drive.", cost: 2, does: { kind: 'close' }, aim: 'theirs' },
-  { id: 'call:audible', title: 'Audible', line: 'Move one of your men to another lane.', cost: 1, does: { kind: 'move' }, aim: 'yours' },
-  { id: 'call:turnover', title: 'Turnover', line: 'The last man they put in a lane goes back to their hand.', cost: 3, does: { kind: 'turnover' }, aim: 'theirs' },
-  { id: 'call:blitz', title: 'Blitz', line: 'At the end, their lane loses 2 for every man in it.', cost: 2, does: { kind: 'blitz', each: 2 }, aim: 'theirs', ongoing: true },
+  { id: 'call:hard-count', title: 'Hard Count', line: "They can't play in a lane next drive.", cost: 1, does: { kind: 'close' }, aim: 'theirs' },
+  { id: 'call:audible', title: 'Audible', line: 'Move one of your cards to another lane.', cost: 2, does: { kind: 'move' }, aim: 'yours' },
+  { id: 'call:turnover', title: 'Turnover', line: 'The last card they put in a lane goes back to their hand.', cost: 3, does: { kind: 'turnover' }, aim: 'theirs' },
+  { id: 'call:blitz', title: 'Blitz', line: 'At the end, their lane loses 1 for every card in it.', cost: 2, does: { kind: 'blitz', each: 1 }, aim: 'theirs', ongoing: true },
   { id: 'call:max-protect', title: 'Max Protect', line: 'At the end, your lane gains 3 for every lineman in it.', cost: 2, does: { kind: 'boost', each: 3, pos: ['OT', 'OG', 'C'] }, aim: 'yours', ongoing: true },
   { id: 'call:hot-route', title: 'Hot Route', line: 'At the end, your lane gains 3 for every WR and TE in it.', cost: 2, does: { kind: 'boost', each: 3, pos: ['WR', 'TE'] }, aim: 'yours', ongoing: true },
-  { id: 'call:goal-line-stand', title: 'Goal Line Stand', line: 'At the end, you take your lane if you are within 4.', cost: 2, does: { kind: 'stand', within: 4 }, aim: 'yours', ongoing: true },
+  { id: 'call:goal-line-stand', title: 'Goal Line Stand', line: 'At the end, you take your lane if you are within 3.', cost: 2, does: { kind: 'stand', within: 3 }, aim: 'yours', ongoing: true },
 ]
 
 const BY_ID = new Map(CALLS.map((c) => [c.id, c]))

@@ -68,11 +68,15 @@ export function dealLockerPack(def: PackDef, rnd: () => number, owned?: Readonly
   const fits = (rarity: Rarity) => (def.match ? OF_RARITY[rarity].filter((p) => cardMatches(p, def.match as PackDef['match'] & object)) : OF_RARITY[rarity])
   for (let i = 0; i < def.size; i++) {
     const table = i >= def.size - floor && def.floorTable ? def.floorTable : (def.table as PackTable)
-    // A theme can run dry at the top of the table, and then the card comes off the
-    // rarity under it rather than leaving a pack short.
-    let at = RARITIES.indexOf(rollRarity(table, rnd))
-    let card = fresh(fits(RARITIES[at]), men, rnd, owned)
-    while (!card && at > 0) card = fresh(fits(RARITIES[--at]), men, rnd, owned)
+    // A division can run dry at the top of the table: then the card comes off the rarity
+    // under it, and if there's nothing under it, the one over, so a pack is never short.
+    const rolled = RARITIES.indexOf(rollRarity(table, rnd))
+    const order = [...RARITIES.slice(0, rolled + 1).reverse(), ...RARITIES.slice(rolled + 1)]
+    let card: Player | null = null
+    for (const rarity of order) {
+      card = fresh(fits(rarity), men, rnd, owned)
+      if (card) break
+    }
     if (card) out.push(card)
   }
   return out
