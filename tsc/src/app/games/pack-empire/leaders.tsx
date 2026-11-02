@@ -4,9 +4,15 @@
 import { RARITY_LOOK } from '@/lib/packEmpire/rules'
 import type { Leaders } from '@/lib/packEmpire/binder'
 import { Face } from './cards'
+import { FitLine } from './FitLine'
 
-const shortDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })
+/** "Salary Cap Builder" as "SC Builder", for a row where the full name won't fit.
+    Standard is the default, so it's the one word that can go entirely. */
+const shortDraft = (draft: string) =>
+  draft.replace('Salary Cap', 'SC').replace('Ball Knower', 'BK').replace(/^Standard /, '')
+
+const pullLine = (p: { name: string; total: number | null }, draft: string) =>
+  `${p.name} · ${draft}${p.total != null ? ` · ${p.total.toLocaleString()}` : ''}`
 
 export function LeaderBoards({ data }: { data: Leaders }) {
   return (
@@ -53,10 +59,7 @@ export function LeaderBoards({ data }: { data: Leaders }) {
               <Face player={p.card} />
               <span className="pe-lead-who">
                 <b>{p.card.name}</b>
-                <small>
-                  {p.name} · {p.draft}
-                  {p.total != null ? ` · ${p.total.toLocaleString()}` : ''} · {shortDate(p.at)}
-                </small>
+                <FitLine full={pullLine(p, p.draft)} short={pullLine(p, shortDraft(p.draft))} />
               </span>
               <span className="pe-lead-num" style={{ '--rc': RARITY_LOOK[p.card.rarity].color } as React.CSSProperties}>
                 <b>{p.card.score.toLocaleString()}</b>

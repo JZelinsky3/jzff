@@ -430,6 +430,13 @@ export function builderQuery(diff: Difficulty, format: BuilderFormat = 'classic'
   return q ? `?${q}` : ''
 }
 
+/** The Builder table set to this difficulty and format. Always names the difficulty,
+    Standard too: left out, the table falls back to the last one you played, so a
+    Standard link opened onto Ball Knower. */
+export function playHref(diff: Difficulty, format: BuilderFormat = 'classic'): string {
+  return `/games/pack-empire/play/?diff=${diff}${format === 'mystery' ? '&f=mystery' : ''}`
+}
+
 /** "Mystery Range", "Ball Knower", "Standard". */
 export function boardLabel(diff: Difficulty, format: BuilderFormat): string {
   if (format === 'classic') return DIFFICULTY_LOOK[diff].label

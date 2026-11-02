@@ -23,6 +23,7 @@ import {
   boardMode,
   builderQuery,
   chemistryFor,
+  playHref,
   difficultyFromSeed,
   formatFromSeed,
   isBlind,
@@ -123,7 +124,7 @@ export function EmpireBuilder({
     setChosen(d)
     setFormat(f)
     // The address says what's on the table, so a refresh or a shared link lands here.
-    window.history.replaceState(null, '', `/games/pack-empire/play/${builderQuery(d, f)}`)
+    window.history.replaceState(null, '', playHref(d, f))
     try {
       localStorage.setItem(DIFF_KEY, d)
       storageChanged()
@@ -340,6 +341,10 @@ const NEW_FACES = 5
  */
 function RecapTiles({ post, lineup, signedIn, landed }: { post: PostOutcome; lineup: Player[]; signedIn: boolean; landed: boolean }) {
   const rank = post.rank as number
+  const total = Math.max(post.total ?? rank, rank)
+  // Share of the board this run finished ahead of, and the top slice it's in.
+  const beat = total > 1 ? (total - rank) / (total - 1) : 1
+  const top = Math.max(1, Math.ceil((rank / total) * 100))
   const fresh = (post.newIds ?? []).flatMap((id) => lineup.find((p) => p.id === id) ?? [])
   const count = post.newCards ?? fresh.length
   return (
@@ -347,7 +352,12 @@ function RecapTiles({ post, lineup, signedIn, landed }: { post: PostOutcome; lin
       <div className="pe-recap-tile">
         <small>On The Board</small>
         <b>{ordinal(rank)}</b>
-        <span>of {(post.total ?? rank).toLocaleString()} runs</span>
+        <span>of {total.toLocaleString()} runs</span>
+        {/* Where it sits in the field: the marker's distance along is how many it beat. */}
+        <span className="pe-recap-meter" aria-hidden>
+          <i style={{ '--at': `${Math.round(beat * 100)}%` } as React.CSSProperties} />
+        </span>
+        <span className="pe-recap-tile-go pe-recap-tile-foot">{top <= 50 ? `Top ${top}%` : `Better than ${Math.round(beat * 100)}%`}</span>
       </div>
       {signedIn ? (
         <Link href="/games/pack-empire/binder/" className="pe-recap-tile pe-recap-tile--go" data-new={count > 0 ? '' : undefined}>
@@ -376,8 +386,9 @@ function RecapTiles({ post, lineup, signedIn, landed }: { post: PostOutcome; lin
       ) : (
         <Link href={SIGN_IN_HREF} className="pe-recap-tile pe-recap-tile--go">
           <small>Your Binder</small>
-          <b>Sign In</b>
-          <span>to keep these eleven in a binder</span>
+          <b>Not Saved</b>
+          <span>These eleven aren&apos;t in a binder yet</span>
+          <span className="pe-recap-tile-go">Sign In To Keep Them</span>
         </Link>
       )}
     </div>

@@ -272,5 +272,5 @@ button.pe-bond { cursor: pointer; }
   .pe-pb-track { grid-row: 2; grid-column: 1 / -1; height: 1.25rem; margin: 0 7px; }
   .pe-pb-pack { --pe-sw: 58px; gap: .28rem; }
   .pe-pb-note { padding: .7rem 1rem .9rem; }
-  .pe-lead-who small { white-space: normal; }
+  /* One line: a row that won't fit says SC or BK instead (FitLine). */
 }

@@ -23,6 +23,7 @@ import {
   boardMode,
   builderQuery,
   isDifficulty,
+  playHref,
   type BuilderFormat,
   type Difficulty,
   type Player,
@@ -182,7 +183,7 @@ export default async function PackEmpireBoard({
   const leaders = best
     ? await runLeaders(best.you ? [...best.rows, best.you] : best.rows).catch(() => new Map<string, Player>())
     : new Map<string, Player>()
-  const play = `/games/pack-empire/play/${builderQuery(diff, format)}`
+  const play = playHref(diff, format)
 
   return (
     <main className={`pe-theme ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>

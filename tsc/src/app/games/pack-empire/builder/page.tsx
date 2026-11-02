@@ -21,6 +21,7 @@ import {
   boardLabel,
   builderQuery,
   isDifficulty,
+  playHref,
   type BuilderFormat,
   type Difficulty,
   type Player,
@@ -48,7 +49,7 @@ export const metadata: Metadata = peMeta({
   url: 'https://thesundaychronicle.app/games/pack-empire/builder/',
 })
 
-const play = (b: { diff: Difficulty; format: BuilderFormat }) => `/games/pack-empire/play/${builderQuery(b.diff, b.format)}`
+const play = (b: { diff: Difficulty; format: BuilderFormat }) => playHref(b.diff, b.format)
 const board = (b: { diff: Difficulty; format: BuilderFormat }) => `/games/pack-empire/board/${builderQuery(b.diff, b.format)}`
 const here = (b: { diff: Difficulty; format: BuilderFormat }) => `/games/pack-empire/builder/${builderQuery(b.diff, b.format)}#today`
 

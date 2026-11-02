@@ -102,6 +102,7 @@ const LAST_TURN_MS = 450
     pack, whatever's in it: a rarity's colour here would be a tell, and the
     common's brown read as one even when it wasn't. */
 const BLIND_GLOW = '#fff8ea'
+const WAITING_GLOW = '#9fb6c6'
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -351,6 +352,9 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
     stage.revealed.forEach((r, i) => {
       if (!r) (BIG.has(cards[i].rarity) && !noShow ? big : plain).push(i)
     })
+    // The best is saved for last: a Transcendent walks out before an Immortal, and
+    // two of a rarity go lower value first.
+    big.sort((a, b) => RARITIES.indexOf(cards[a].rarity) - RARITIES.indexOf(cards[b].rarity) || cards[a].score - cards[b].score)
     plain.forEach((i, n) => later(() => flip(slot, i), n * 130))
     if (big.length) {
       enqueue(slot, big)
@@ -642,13 +646,31 @@ export function PackStage({
   // Mystery pack lights by what's in it, and the Daily deals on the rip anyway.
   const blind = !!stage.kept || !!stage.dealsOnRip || !!cards?.some((c) => c.blind)
   const best: Rarity | null = stage.dealsOnRip ? 'rare' : cards ? (blind ? 'rare' : bestRarity(cards)) : null
-  // No light until the cards are here: an amber stand-in turned brown, then blue or
-  // gold a beat later on a slow phone. Dark, then the right colour, is the honest order.
-  const glow = blind ? BLIND_GLOW : best ? RARITY_LOOK[best].color : 'transparent'
+  // Until the cards are here the light is a cool silver, the same for every pack, so
+  // it promises nothing: not amber, which read as a brown pull and then changed, and
+  // not white, which is Canton's and the blind packs'. Joey: some light beats none.
+  const glow = blind ? BLIND_GLOW : best ? RARITY_LOOK[best].color : WAITING_GLOW
   // The pack's light tops out at Immortal's size, and Canton's own show takes over.
   const lit = best === 'canton' ? 'immortal' : best
   const tier = lit ? RARITIES.indexOf(lit) : 0
   const cantonPack = best === 'canton' && !plainCanton
+  // An Immortal's walkout gets its aura, drawn on the stage between the dark and the
+  // card: inside the card it sat in the card's 3D layer, which covered it.
+  const auraId = w && !hall && woCard?.rarity === 'immortal' ? woCard.id : null
+  // Placed on mount, before it paints, off the card's own box.
+  const placeAura = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node || !auraId) return
+      const r = document.querySelector(`.pe-stage-cards [data-pe-card="${CSS.escape(auraId)}"]`)?.getBoundingClientRect()
+      if (!r) return
+      node.style.left = `${r.left + r.width / 2}px`
+      node.style.top = `${r.top + r.height / 2}px`
+      node.style.setProperty('--aw', `${r.width}px`)
+      node.style.setProperty('--ah', `${r.height}px`)
+    },
+    [auraId]
+  )
+
   // Under Show My Pick, once all five are up, how yours did.
   const keptCard = stage.kept ? (cards?.find((c) => c.id === stage.kept) ?? null) : null
   const settled = !!stage.turned && hidden === 0 && !w && !stage.queue.length
@@ -709,11 +731,28 @@ export function PackStage({
         aria-modal="true"
         aria-label={own ? `${own.first} ${own.rest}` : wild ? `${wild.first} ${wild.rest}` : `${def.label} pack`}
         data-wo={hall ? undefined : w?.step}
+        data-wo-r={hall || !woCard ? undefined : woCard.rarity}
         data-boom={open && !stage.restored && !cantonPack ? tier : undefined}
         style={woLook ? ({ '--wo': woLook.color, '--wo-glow': woLook.glow } as React.CSSProperties) : undefined}
       >
         {pulling && <ImmortalPull onDone={endPull} />}
         {cantonPull && <CantonPull onWhite={layCards} onDone={endPull} />}
+
+        {auraId && (
+          <div key={auraId} ref={placeAura} className="pe-aura" aria-hidden>
+            <span className="pe-aura-glow" />
+            <span className="pe-aura-ring" />
+            <span className="pe-aura-ring" />
+            <span className="pe-aura-motes">
+              <i />
+              <i />
+              <i />
+              <i />
+              <i />
+              <i />
+            </span>
+          </div>
+        )}
 
         {w && !hall && (
           <button
@@ -763,7 +802,7 @@ export function PackStage({
           )}
         </div>
 
-        {!open && !stage.error && <SealedPack art={art} glow={glow} tier={tier} ready={!!cards} dark={!cards && !blind} onTorn={onTear} onRip={onRip} />}
+        {!open && !stage.error && <SealedPack art={art} glow={glow} tier={tier} ready={!!cards} onTorn={onTear} onRip={onRip} />}
 
         {open && (
           <div className={`pe-stage-cards${cantonPack ? ' laid' : ''}${cards.length > 5 ? ' many' : ''}`}>

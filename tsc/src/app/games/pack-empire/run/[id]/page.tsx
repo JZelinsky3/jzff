@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { peMeta } from '@/lib/packEmpire/meta'
-import { boardLabel, builderQuery } from '@/lib/packEmpire/rules'
+import { boardLabel, builderQuery, playHref } from '@/lib/packEmpire/rules'
 import { loadRun } from '@/lib/packEmpire/share'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
@@ -67,7 +67,7 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
             <TierBadge score={run.score} />
           </div>
           <div className="pe-recap-actions">
-            <Link href={`/games/pack-empire/play/${builderQuery(run.difficulty, run.format)}`} className="pe-push">
+            <Link href={playHref(run.difficulty, run.format)} className="pe-push">
               Build yours
             </Link>
             <Link href={`/games/pack-empire/board/${builderQuery(run.difficulty, run.format)}`} className="pe-act">
