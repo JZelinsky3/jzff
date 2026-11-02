@@ -9,7 +9,7 @@ import { createHmac, hkdfSync, timingSafeEqual } from 'crypto'
 import { publicNames } from '@/lib/minigames/boardIdentity'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { playerById } from './pool'
-import { SLOT_COUNT, difficultyForMode, tierFor, type Difficulty, type Player, type Tier } from './rules'
+import { SLOT_COUNT, difficultyForMode, formatForMode, tierFor, type BuilderFormat, type Difficulty, type Player, type Tier } from './rules'
 import { parseSoloPicks } from './solo'
 
 export type SharedRun = {
@@ -18,6 +18,7 @@ export type SharedRun = {
   score: number
   tier: Tier
   difficulty: Difficulty
+  format: BuilderFormat
   /** By slot. A card from an older pool that no longer exists is a null. */
   lineup: (Player | null)[]
   captain: number | null
@@ -54,6 +55,7 @@ export async function loadRun(id: string): Promise<SharedRun | null> {
     score: Number(row.score),
     tier: tierFor(Number(row.score)),
     difficulty: difficultyForMode(row.mode) ?? 'open',
+    format: formatForMode(row.mode),
     lineup,
     captain: row.detail?.captain ?? null,
     at: row.created_at,

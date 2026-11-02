@@ -29,9 +29,9 @@ export const metadata: Metadata = peMeta({
 export default async function EmpireBuilderPage({
   searchParams,
 }: {
-  searchParams: Promise<{ diff?: string }>
+  searchParams: Promise<{ diff?: string; f?: string }>
 }) {
-  const { diff } = await searchParams
+  const { diff, f } = await searchParams
   const supabase = await createClient()
   const {
     data: { user },
@@ -46,8 +46,8 @@ export default async function EmpireBuilderPage({
         active="solo"
         mobile={mobile}
         signedIn={!!user}
-        back="/games/pack-empire/"
-        backLabel="Pack Empire"
+        back="/games/pack-empire/builder/"
+        backLabel="Empire Builder"
         kicker="Pack Empire"
         title="Empire"
         titleEm="Builder"
@@ -63,7 +63,11 @@ export default async function EmpireBuilderPage({
           </div>
         )}
         {mobile && <div style={{ height: '0.9rem' }} />}
-        <EmpireBuilder signedIn={!!user} initial={isDifficulty(diff) ? diff : undefined} />
+        <EmpireBuilder
+          signedIn={!!user}
+          initial={isDifficulty(diff) ? diff : undefined}
+          initialFormat={f === 'mystery' ? 'mystery' : 'classic'}
+        />
       </div>
 
       {!mobile && <SiteFooter />}

@@ -126,7 +126,7 @@ export function Binder({ view, mobile }: { view: BinderView; mobile: boolean }) 
       {t.owned === 0 && (
         <p className="pe-empty pe-bd-first">
           Nothing in here yet. Finish a run and the eleven players you kept land in the binder.{' '}
-          <Link href="/games/pack-empire/play/" className="pe-link">
+          <Link href="/games/pack-empire/builder/" className="pe-link">
             Open packs
           </Link>
         </p>

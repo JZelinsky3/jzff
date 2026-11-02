@@ -4,7 +4,7 @@
 // Shared by Empire Builder and the Versus lobby so a difficulty means the same
 // thing everywhere it's offered.
 
-import { DIFFICULTIES, DIFFICULTY_LOOK, type Difficulty } from '@/lib/packEmpire/rules'
+import { BUILDER_FORMATS, DIFFICULTIES, DIFFICULTY_LOOK, FORMAT_LOOK, type BuilderFormat, type Difficulty } from '@/lib/packEmpire/rules'
 import type { VersusFormat } from '@/lib/packEmpire/versus'
 
 export function DifficultyPicker({ value, onChange }: { value: Difficulty; onChange: (d: Difficulty) => void }) {
@@ -46,6 +46,31 @@ export function DifficultyTabs({ value, onChange }: { value: Difficulty; onChang
           {DIFFICULTY_LOOK[d].label}
         </button>
       ))}
+    </div>
+  )
+}
+
+/** Empire Builder's table: Classic or Mystery, then the difficulty. Each pair keeps
+    its own run, so switching is free. The full menu is on the Builder page. */
+export function BuilderTabs({
+  difficulty,
+  format,
+  onChange,
+}: {
+  difficulty: Difficulty
+  format: BuilderFormat
+  onChange: (d: Difficulty, f: BuilderFormat) => void
+}) {
+  return (
+    <div className="pe-btabs">
+      <div className="pe-btabs-fmt" role="radiogroup" aria-label="Format">
+        {BUILDER_FORMATS.map((f) => (
+          <button key={f} type="button" role="radio" aria-checked={f === format} data-f={f} onClick={() => onChange(difficulty, f)}>
+            {FORMAT_LOOK[f].label}
+          </button>
+        ))}
+      </div>
+      <DifficultyTabs value={difficulty} onChange={(d) => onChange(d, format)} />
     </div>
   )
 }

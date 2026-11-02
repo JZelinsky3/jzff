@@ -115,7 +115,7 @@ export function CreateLeague() {
           {field <= 2 ? 'Straight to the Final.' : 'One Gauntlet week halves them, then the Final.'}
         </p>
 
-        <button type="button" className="pe-btn" onClick={create} disabled={busy || name.trim().length < 3}>
+        <button type="button" className="pe-push" onClick={create} disabled={busy || name.trim().length < 3}>
           {busy ? 'Creating' : 'Create the league'}
         </button>
         {error && <div className="pe-error">{error}</div>}
@@ -159,7 +159,7 @@ export function JoinByCode() {
           onChange={(e) => setCode(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && clean.length === 6 && join()}
         />
-        <button type="button" className="pe-btn pe-btn--ghost" disabled={busy || clean.length !== 6} onClick={join}>
+        <button type="button" className="pe-act" disabled={busy || clean.length !== 6} onClick={join}>
           Join
         </button>
         {error && <div className="pe-error">{error}</div>}
@@ -176,7 +176,7 @@ export function JoinPublic({ id }: { id: string }) {
     <>
       <button
         type="button"
-        className="pe-btn pe-btn--sm"
+        className="pe-push pe-push--sm"
         disabled={busy}
         onClick={async () => {
           setBusy(true)

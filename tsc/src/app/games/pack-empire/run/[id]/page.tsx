@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { peMeta } from '@/lib/packEmpire/meta'
-import { DIFFICULTY_LOOK } from '@/lib/packEmpire/rules'
+import { boardLabel, builderQuery } from '@/lib/packEmpire/rules'
 import { loadRun } from '@/lib/packEmpire/share'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
@@ -42,7 +42,7 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
     data: { user },
   } = await supabase.auth.getUser()
   const mobile = (await getViewMode()) === 'mobile'
-  const label = DIFFICULTY_LOOK[run.difficulty].label
+  const label = boardLabel(run.difficulty, run.format)
 
   return (
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.root : ''}`.trim()}>
@@ -67,10 +67,10 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
             <TierBadge score={run.score} />
           </div>
           <div className="pe-recap-actions">
-            <Link href={run.difficulty === 'open' ? '/games/pack-empire/play/' : `/games/pack-empire/play/?diff=${run.difficulty}`} className="pe-btn">
+            <Link href={`/games/pack-empire/play/${builderQuery(run.difficulty, run.format)}`} className="pe-push">
               Build yours
             </Link>
-            <Link href="/games/pack-empire/board/" className="pe-btn pe-btn--quiet">
+            <Link href={`/games/pack-empire/board/${builderQuery(run.difficulty, run.format)}`} className="pe-act">
               The board
             </Link>
           </div>

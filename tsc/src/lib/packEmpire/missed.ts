@@ -113,3 +113,21 @@ export function missReport(packs: Pack[], score: number): Missed {
   const hit = rows.filter((r) => (r.cards.find((c) => c.id === r.kept)?.score ?? 0) >= r.cards[0].score).length
   return { packs: packs.length, hit, score, perfect: total, rows }
 }
+
+/** A Mystery run in hindsight. Like the Daily: its packs change with what you
+    keep, so there's no one best eleven to hold it to, just what each pack held. */
+export function mysteryMissed(packs: (Pack & { reserve?: string | null })[], score: number): Missed {
+  const rows = packs.map(({ slot, cards, kept, reserve }) => {
+    const sorted = [...cards].sort((a, b) => b.score - a.score)
+    return {
+      slot,
+      kept,
+      perfect: kept,
+      cards: sorted.map(brief),
+      label: cards.find((c) => c.id === kept)?.pos,
+      note: reserve ? 'Reserve' : undefined,
+    }
+  })
+  const hit = rows.filter((r) => (r.cards.find((c) => c.id === r.kept)?.score ?? 0) >= r.cards[0].score).length
+  return { packs: packs.length, hit, score, perfect: null, rows }
+}

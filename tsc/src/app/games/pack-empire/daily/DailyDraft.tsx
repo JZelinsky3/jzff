@@ -279,7 +279,7 @@ export function DailyDraft({ initial, other }: { initial: DailyState; other: { h
             <Field lineup={lineup} view={view} onSlot={start} landing={landing} />
             <div className="pe-turf-foot pe-turf-foot--daily">
               {!state.started && rule.noCaptain && (
-                <button type="button" className="pe-btn" onClick={() => start(null)} disabled={busy}>
+                <button type="button" className="pe-push" onClick={() => start(null)} disabled={busy}>
                   {busy ? 'Dealing' : 'Open the first pack'}
                 </button>
               )}
@@ -451,7 +451,7 @@ function DailyRecap({
         </div>
         {!result.named && <NameYourRun version={version} onNamed={onNamed} />}
         <div className="pe-recap-actions">
-          <Link href={other.href} className="pe-btn">
+          <Link href={other.href} className="pe-push">
             {other.done ? `See ${other.label}` : `Play ${other.label}`}
           </Link>
           {result.share && (
@@ -460,7 +460,7 @@ function DailyRecap({
               text={`${result.total.toLocaleString()} on today's Daily`}
             />
           )}
-          <Link href="/games/pack-empire/daily/" className="pe-btn pe-btn--quiet">
+          <Link href="/games/pack-empire/daily/" className="pe-act">
             Top lineups
           </Link>
         </div>

@@ -90,7 +90,7 @@ export default async function BinderPage() {
               <Link href="/login?next=%2Fgames%2Fpack-empire%2Fbinder%2F" className="pe-btn">
                 Sign in
               </Link>
-              <Link href="/games/pack-empire/play/" className="pe-btn pe-btn--ghost">
+              <Link href="/games/pack-empire/builder/" className="pe-btn pe-btn--ghost">
                 Open packs
               </Link>
             </div>

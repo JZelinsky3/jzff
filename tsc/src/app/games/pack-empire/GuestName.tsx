@@ -35,7 +35,7 @@ export function GuestName({
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && submit()}
         />
-        <button type="button" className="pe-btn" onClick={submit} disabled={busy || name.trim().length < 2}>
+        <button type="button" className="pe-push" onClick={submit} disabled={busy || name.trim().length < 2}>
           {busy ? 'Posting' : 'Post'}
         </button>
       </div>

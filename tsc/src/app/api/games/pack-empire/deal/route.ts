@@ -1,7 +1,8 @@
 // POST /api/games/pack-empire/deal
 //
-//   { action: 'start', captain, difficulty } -> { seed }
+//   { action: 'start', captain, difficulty, format } -> { seed }
 //   { action: 'pack', seed, slot, taken }    -> { cards }
+//   { action: 'pack', seed } on a Mystery seed -> { cards, reserve, picks }
 //   { action: 'check', seed }                -> { live }
 //   { action: 'lock', seed, picks, open }    -> { lock }
 //
@@ -16,12 +17,15 @@
 // four cards it passed on (see lib/packEmpire/blindPicks). An Even seed belongs
 // to two seats, so those lock through /api/games/pack-empire/versus instead.
 //
+// A Mystery run deals its packs in a line, so 'pack' takes no slot: it's always the
+// pack after the last pick on record, and every Mystery pick locks, face up or not.
+//
 // No account needed. Picks are all that's written; a run only reaches the board
 // through /api/games/runs, which re-deals the whole thing from the seed.
 
 import { NextResponse, type NextRequest } from 'next/server'
-import { blindRun, lockBlindPicks, parseLockPicks } from '@/lib/packEmpire/blindPicks'
-import { maskCard, newCaptainSeed, readSeed } from '@/lib/packEmpire/deal'
+import { blindRun, lockBlindPicks, lockedPicks, parseLockPicks } from '@/lib/packEmpire/blindPicks'
+import { maskCard, mysteryPack, newCaptainSeed, newMysterySeed, readSeed } from '@/lib/packEmpire/deal'
 import { seedPack } from '@/lib/packEmpire/solo'
 import { SLOT_COUNT, isBlind, isDifficulty } from '@/lib/packEmpire/rules'
 
@@ -47,7 +51,8 @@ export async function POST(req: NextRequest) {
       return bad('Pick a captain first.')
     }
     const difficulty = isDifficulty(body.difficulty) ? body.difficulty : 'open'
-    return NextResponse.json({ ok: true, seed: newCaptainSeed(captain as number, difficulty) }, { headers: NO_STORE })
+    const seed = body.format === 'mystery' ? newMysterySeed(captain as number, difficulty) : newCaptainSeed(captain as number, difficulty)
+    return NextResponse.json({ ok: true, seed }, { headers: NO_STORE })
   }
 
   // A seed is signed with the pool it was dealt from. One saved on a device
@@ -61,6 +66,20 @@ export async function POST(req: NextRequest) {
     const seed = typeof body.seed === 'string' ? body.seed.trim().toUpperCase() : ''
     const parsed = readSeed(seed)
     if (!parsed) return bad('That run was not dealt here. Start a new one.')
+
+    if (parsed.mystery && parsed.captain != null) {
+      try {
+        const picks = await lockedPicks(seed)
+        if (picks.length >= SLOT_COUNT) return bad('That run is finished.')
+        const { cards, reserve } = mysteryPack(seed, parsed.captain, picks)
+        return NextResponse.json(
+          { ok: true, cards: cards.map((c) => maskCard(c, parsed.diff)), reserve, picks },
+          { headers: NO_STORE }
+        )
+      } catch {
+        return bad('The pack would not open. Try again.', 503)
+      }
+    }
 
     const slot = body.slot
     if (!Number.isInteger(slot) || (slot as number) < 0 || (slot as number) >= SLOT_COUNT) {
@@ -80,7 +99,7 @@ export async function POST(req: NextRequest) {
     const seed = typeof body.seed === 'string' ? body.seed.trim().toUpperCase() : ''
     const parsed = readSeed(seed)
     if (!parsed) return bad('That run was not dealt here. Start a new one.')
-    if (!isBlind(parsed.diff) || parsed.even) return bad('That run has nothing to lock.')
+    if ((!isBlind(parsed.diff) && !parsed.mystery) || parsed.even) return bad('That run has nothing to lock.')
 
     const picks = body.picks == null ? null : parseLockPicks(body.picks)
     if (body.picks != null && !picks) return bad('Malformed roster.')

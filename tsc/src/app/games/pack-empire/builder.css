@@ -1,0 +1,82 @@
+/* Empire Builder's front page (builder/page.tsx). Classic wears the game's amber,
+   Mystery its pack's cold violet, the same pair as the table's format switch. */
+
+.pe-bh { --pe-mys: #a99cf5; padding-bottom: 3rem; }
+
+.pe-bh-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; padding: 2.2rem 0 1.4rem; border-bottom: 3px double var(--pe-line); margin-bottom: 1.6rem; }
+.pe-bh-lede { max-width: 38rem; margin: .8rem 0 0; font-size: .98rem; line-height: 1.5; color: var(--pe-ink-soft); }
+
+.pe-bh-lead { display: grid; justify-items: end; gap: .2rem; flex: none; padding: .8rem 1rem; border: 1px solid var(--pe-line); border-radius: 6px; background: var(--pe-card); text-decoration: none; color: var(--pe-ink-mute); }
+.pe-bh-lead small { font-family: var(--mono); font-size: .56rem; letter-spacing: .16em; text-transform: uppercase; }
+.pe-bh-lead b { font-family: var(--pe-display); font-size: 1.6rem; font-weight: 900; line-height: 1; color: var(--pe-amber-bright); }
+.pe-bh-lead span { font-size: .8rem; color: var(--pe-ink-soft); }
+@media (hover: hover) and (pointer: fine) { .pe-bh-lead:hover { border-color: var(--pe-amber-deep); } }
+
+/* The two tables */
+.pe-bh-formats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.pe-bh-fmt { --fc: var(--pe-amber); --fc-soft: rgba(232, 168, 75, .1); display: grid; align-content: start; border: 1px solid var(--pe-line); border-top: 3px solid var(--fc); border-radius: 6px; background: linear-gradient(180deg, var(--fc-soft), transparent 9rem), var(--pe-bg-soft); overflow: hidden; }
+.pe-bh-fmt[data-f='mystery'] { --fc: var(--pe-mys); --fc-soft: rgba(169, 156, 245, .1); }
+
+.pe-bh-fmt-head { display: grid; grid-template-columns: 6.2rem minmax(0, 1fr); align-items: center; gap: 1rem; padding: 1.1rem 1.2rem 1rem; border-bottom: 1px solid var(--pe-line-soft); }
+.pe-bh-fmt-head h2 { margin: 0; font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 1.7rem; line-height: 1; color: var(--fc); }
+.pe-bh-fmt-head p { margin: .45rem 0 0; font-size: .88rem; line-height: 1.45; color: var(--pe-ink-soft); }
+
+.pe-bh-art { position: relative; display: block; height: 5.6rem; }
+.pe-bh-pack { position: absolute; bottom: 0; left: 50%; width: 3.1rem; aspect-ratio: 1 / 1.48; margin-left: -1.55rem; border-radius: 3px; background: center / cover no-repeat; box-shadow: 0 6px 14px rgba(0, 0, 0, .5); }
+.pe-bh-pack.l { transform: translateX(-1.4rem) rotate(-12deg); opacity: .85; }
+.pe-bh-pack.r { transform: translateX(1.4rem) rotate(12deg); opacity: .85; }
+.pe-bh-pack.c { transform: translateY(-.35rem); }
+.pe-bh-art--mys .pe-bh-pack { width: 3.6rem; margin-left: -1.8rem; box-shadow: 0 6px 14px rgba(0, 0, 0, .5), 0 0 22px rgba(169, 156, 245, .28); }
+
+.pe-bh-rows { list-style: none; margin: 0; padding: 0; }
+.pe-bh-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 1rem; padding: .85rem 1.2rem; border-bottom: 1px solid var(--pe-line-soft); }
+.pe-bh-row:last-child { border-bottom: 0; }
+.pe-bh-row-main { display: grid; gap: .2rem; min-width: 0; text-decoration: none; }
+.pe-bh-row-main b { font-family: var(--pe-cond); font-weight: 800; font-size: 1.05rem; letter-spacing: .07em; text-transform: uppercase; color: var(--pe-ink); }
+.pe-bh-row-main span { font-size: .8rem; line-height: 1.35; color: var(--pe-ink-mute); }
+@media (hover: hover) and (pointer: fine) { .pe-bh-row-main:hover b { color: var(--fc); } }
+
+.pe-bh-row-stats { display: flex; gap: 1rem; }
+.pe-bh-stat { display: grid; justify-items: end; gap: .15rem; min-width: 4.4rem; }
+.pe-bh-stat small { font-family: var(--mono); font-size: .52rem; letter-spacing: .14em; text-transform: uppercase; color: var(--pe-ink-mute); white-space: nowrap; }
+.pe-bh-stat b { font-family: var(--pe-display); font-size: .95rem; font-weight: 800; color: var(--pe-ink); }
+.pe-bh-stat em { font-style: normal; font-family: var(--pe-cond); font-weight: 700; font-size: .82rem; letter-spacing: .06em; text-transform: uppercase; color: var(--pe-ink-mute); }
+
+.pe-bh-row-go { display: flex; align-items: center; gap: .9rem; }
+.pe-bh-row-go .pe-link { font-family: var(--pe-cond); font-weight: 700; font-size: .86rem; letter-spacing: .08em; text-transform: uppercase; }
+
+/* Today */
+.pe-bh-tabs { display: grid; gap: .45rem; margin-bottom: 1rem; }
+.pe-bh-tabrow { --fc: var(--pe-amber); display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
+.pe-bh-tabrow[data-f='mystery'] { --fc: var(--pe-mys); }
+.pe-bh-tabfmt { width: 5.2rem; font-family: var(--mono); font-size: .58rem; letter-spacing: .16em; text-transform: uppercase; color: var(--fc); }
+.pe-bh-tab { display: inline-flex; align-items: center; gap: .4rem; padding: .32rem .8rem; border: 1px solid var(--pe-line); border-radius: 999px; font-family: var(--pe-cond); font-weight: 700; font-size: .84rem; letter-spacing: .08em; text-transform: uppercase; text-decoration: none; color: var(--pe-ink-mute); }
+.pe-bh-tab i { font-style: normal; font-family: var(--mono); font-size: .62rem; letter-spacing: 0; color: var(--pe-ink-soft); }
+.pe-bh-tab[aria-current='page'] { border-color: var(--fc); color: var(--fc); background: color-mix(in srgb, var(--fc) 12%, transparent); }
+@media (hover: hover) and (pointer: fine) { .pe-bh-tab:hover { color: var(--pe-ink); } }
+
+.pe-bh-list { border: 1px solid var(--pe-line); border-radius: 6px; overflow: hidden; }
+.pe-bh-none { margin: 0; }
+.pe-bh-foot { margin: .8rem 0 0; font-size: .82rem; line-height: 1.5; color: var(--pe-ink-mute); }
+
+@media (max-width: 900px) {
+  .pe-bh-formats { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .pe-bh-head { display: grid; gap: 1rem; padding: .4rem 0 1.1rem; margin-bottom: 1.1rem; }
+  .pe-bh-lede { margin-top: 0; font-size: .9rem; }
+  .pe-bh-lead { justify-items: start; }
+  .pe-bh-fmt-head { grid-template-columns: 4.6rem minmax(0, 1fr); padding: .9rem 1rem; gap: .8rem; }
+  .pe-bh-art { height: 4.4rem; }
+  .pe-bh-pack { width: 2.5rem; margin-left: -1.25rem; }
+  .pe-bh-art--mys .pe-bh-pack { width: 2.9rem; margin-left: -1.45rem; }
+  .pe-bh-fmt-head h2 { font-size: 1.45rem; }
+  .pe-bh-fmt-head p { font-size: .82rem; }
+  .pe-bh-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'main main' 'stats go'; gap: .6rem; padding: .8rem 1rem; }
+  .pe-bh-row-main { grid-area: main; }
+  .pe-bh-row-stats { grid-area: stats; }
+  .pe-bh-stat { justify-items: start; min-width: 0; }
+  .pe-bh-row-go { grid-area: go; }
+  .pe-bh-tabfmt { width: 100%; }
+}

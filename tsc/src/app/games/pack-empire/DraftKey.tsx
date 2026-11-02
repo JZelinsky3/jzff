@@ -33,7 +33,7 @@ import { CaptainMark, Ladder, RarityGem } from './cards'
 
 /** Which table the key is sitting beside: it describes the game in front of
     you, and on a blind draft it can't print a score it doesn't have. */
-export type KeyFlavor = { difficulty: Difficulty; even: boolean; daily?: boolean; salaryCap?: boolean; battles?: string[] | null }
+export type KeyFlavor = { difficulty: Difficulty; even: boolean; daily?: boolean; mystery?: boolean; salaryCap?: boolean; battles?: string[] | null }
 
 const OPEN: KeyFlavor = { difficulty: 'open', even: false }
 
@@ -65,6 +65,13 @@ function KeyBody({ score, flavor }: { score: number; flavor: KeyFlavor }) {
             <li>You get {DAILY_PACK_SECONDS} seconds a pack. Run out and the first card that fits signs.</li>
             <li>If nothing fits, one card is swapped for a reserve.</li>
             <li>The rule of the day changes what counts.</li>
+          </ol>
+        ) : flavor.mystery ? (
+          <ol className="pe-key-steps">
+            <li>Pick a captain. That pack opens first, five cards at that position off the captain table.</li>
+            <li>The other ten come in a row, each mixing five random positions.</li>
+            <li>Keep one you have a slot for. It goes in the first open slot at his position.</li>
+            <li>Leave a position too late and a pack with nothing that fits swaps a card for a reserve.</li>
           </ol>
         ) : flavor.even ? (
           <ol className="pe-key-steps">

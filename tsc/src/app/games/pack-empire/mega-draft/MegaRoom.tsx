@@ -424,7 +424,7 @@ export function MegaRoom({
             )}
             <button
               type="button"
-              className="pe-btn"
+              className="pe-push"
               onClick={join}
               disabled={busy || (!signedIn && name.trim().length < 2)}
               style={{ marginTop: '0.5rem' }}
@@ -457,7 +457,7 @@ export function MegaRoom({
               )}
             </p>
             <div className="pe-recap-actions" style={{ justifyContent: 'flex-start' }}>
-              <Link href="/games/pack-empire/mega-draft/" className="pe-btn pe-btn--quiet">
+              <Link href="/games/pack-empire/mega-draft/" className="pe-act">
                 Open your own
               </Link>
             </div>
@@ -505,15 +505,15 @@ export function MegaRoom({
           <div className="pe-recap-actions">
             {view.botSeat != null && you != null ? (
               <>
-                <button type="button" className="pe-btn" onClick={againCpu} disabled={busy}>
+                <button type="button" className="pe-push" onClick={againCpu} disabled={busy}>
                   Play the CPU again
                 </button>
-                <Link href="/games/pack-empire/mega-draft/" className="pe-btn pe-btn--quiet">
+                <Link href="/games/pack-empire/mega-draft/" className="pe-act">
                   Another draft
                 </Link>
               </>
             ) : (
-              <Link href="/games/pack-empire/mega-draft/" className="pe-btn">
+              <Link href="/games/pack-empire/mega-draft/" className="pe-push">
                 Another draft
               </Link>
             )}

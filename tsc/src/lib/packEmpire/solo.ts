@@ -5,7 +5,7 @@
 // it issued it to. An Even Versus goes through here as well: its seed has no
 // captain, and its eleven packs are laid out once for both seats.
 
-import { dealPack, evenPacks, priced, readSeed, type SeedInfo } from './deal'
+import { dealPack, evenPacks, mysteryPack, mysterySlot, priced, readSeed, type SeedInfo } from './deal'
 import {
   SALARY_CAP,
   SLOTS,
@@ -46,6 +46,28 @@ export function seedPack(seed: string, info: SeedInfo, slot: number, taken: Iter
   return soloPack(seed, info.captain, slot, taken, info.versus)
 }
 
+/**
+ * The pack a pick came out of, given the picks before it, and whether the slot it
+ * claims is the one it has to go to. Classic: the slot's own pack, any order.
+ * Mystery: the next pack in line, and the card takes the first open slot at its
+ * position (the captain pack's goes to the captain).
+ */
+export function pickPack(seed: string, info: SeedInfo, before: SoloPick[], pick: SoloPick): { pack: Player[]; reserve: string | null; fits: boolean } {
+  if (!info.mystery || info.captain == null) {
+    return { pack: seedPack(seed, info, pick.slot, before.map((p) => p.id)), reserve: null, fits: true }
+  }
+  const { cards, reserve } = mysteryPack(seed, info.captain, before)
+  const card = cards.find((c) => c.id === pick.id)
+  return { pack: cards, reserve, fits: !!card && mysterySlot(info.captain, before, card.pos) === pick.slot }
+}
+
+/** What a Mystery cap run can pay: only cards with a slot to go to count. */
+function usableIn(info: SeedInfo, before: SoloPick[], pack: Player[]): Player[] {
+  if (!info.mystery || info.captain == null) return pack
+  const captain = info.captain
+  return pack.filter((c) => mysterySlot(captain, before, c.pos) >= 0)
+}
+
 export function parseSoloPicks(raw: unknown): SoloPick[] | null {
   if (!Array.isArray(raw) || raw.length !== SLOT_COUNT) return null
   const out: SoloPick[] = []
@@ -76,9 +98,11 @@ export type SoloReplay =
       versus: boolean
       /** Under a salary cap, what the eleven cost. */
       spent: number
+      /** A Mystery run. */
+      mystery: boolean
       /** Every pack as it was dealt, in the order it was opened: what the
-          binder records. */
-      packs: { slot: number; cards: Player[]; kept: string }[]
+          binder records. `reserve` on a Mystery pack nothing else fit. */
+      packs: { slot: number; cards: Player[]; kept: string; reserve?: string | null }[]
     }
   | { ok: false; error: string }
 
@@ -93,24 +117,27 @@ export function replaySolo(seed: string, picks: SoloPick[]): SoloReplay {
   const seen = new Set<number>()
   const lineup: (Player | null)[] = Array(SLOT_COUNT).fill(null)
   const taken: string[] = []
-  const packs: { slot: number; cards: Player[]; kept: string }[] = []
+  const packs: { slot: number; cards: Player[]; kept: string; reserve?: string | null }[] = []
+  const done: SoloPick[] = []
   const budget: number = parsed.even ? SALARY_CAP.shared : SALARY_CAP.own
   let left = budget
 
   for (const pick of picks) {
     if (seen.has(pick.slot)) return { ok: false, error: 'A slot was filled twice.' }
     seen.add(pick.slot)
-    const pack = seedPack(seed, parsed, pick.slot, taken)
+    const { pack, reserve, fits } = pickPack(seed, parsed, done, pick)
     const card = pack.find((p) => p.id === pick.id)
     if (!card) return { ok: false, error: `The ${SLOTS[pick.slot].label.toLowerCase()} pick is not in that pack.` }
+    if (!fits) return { ok: false, error: 'That pick went in the wrong slot.' }
     if (parsed.diff === 'cap') {
-      const price = signingPrice(priced(card), pack.map(priced), left)
+      const price = signingPrice(priced(card), usableIn(parsed, done, pack).map(priced), left)
       if (price == null) return { ok: false, error: 'That lineup is over the cap.' }
       left -= price
     }
     lineup[pick.slot] = card
     taken.push(card.id)
-    packs.push({ slot: pick.slot, cards: pack, kept: card.id })
+    done.push(pick)
+    packs.push({ slot: pick.slot, cards: pack, kept: card.id, ...(parsed.mystery ? { reserve } : {}) })
   }
 
   if (lineup.some((p) => !p)) return { ok: false, error: 'The lineup is not complete.' }
@@ -127,6 +154,7 @@ export function replaySolo(seed: string, picks: SoloPick[]): SoloReplay {
     diff: parsed.diff,
     even: parsed.even,
     versus: parsed.versus,
+    mystery: parsed.mystery,
     spent: budget - left,
     packs,
   }

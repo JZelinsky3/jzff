@@ -84,7 +84,7 @@ export function ChallengePanels({ friends }: { friends: Friend[] }) {
                 to send one straight to them.
               </p>
             )}
-            <button type="button" className="pe-btn pe-btn--ghost" onClick={() => go('link', {})} disabled={!!busy}>
+            <button type="button" className="pe-act" onClick={() => go('link', {})} disabled={!!busy}>
               {busy === 'link' ? 'Opening' : 'Open a link instead'}
             </button>
           </div>
@@ -100,7 +100,7 @@ export function ChallengePanels({ friends }: { friends: Friend[] }) {
             Both totals go up when you lock yours in.
           </p>
           <div className="pe-panel-foot">
-            <button type="button" className="pe-btn" onClick={() => go('cpu', { cpu: true })} disabled={!!busy}>
+            <button type="button" className="pe-push" onClick={() => go('cpu', { cpu: true })} disabled={!!busy}>
               {busy === 'cpu' ? 'Dealing' : 'Play the CPU'}
             </button>
           </div>

@@ -7,7 +7,8 @@
 // which re-deals every pack and derives the score itself. Signed out, the run
 // is banked on this device and claimed the moment you sign in.
 //
-// Four difficulties, each its own board. On the two blind ones the browser
+// Two formats, Classic and Mystery (see CaptainDraft), and four difficulties,
+// each pair its own board. On the two blind ones the browser
 // never holds the numbers of a card you kept: posting the run is what turns it
 // over, and that post is final, so a player signed out gives a name first and
 // sees the score after. The cards then turn over in the final reveal (see
@@ -16,13 +17,17 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import {
-  DIFFICULTY_LOOK,
   SALARY_CAP,
   TIERS,
+  boardLabel,
+  boardMode,
+  builderQuery,
   chemistryFor,
   difficultyFromSeed,
+  formatFromSeed,
   isBlind,
   tierFor,
+  type BuilderFormat,
   type Difficulty,
   type Player,
 } from '@/lib/packEmpire/rules'
@@ -38,7 +43,7 @@ import {
   type RunReveal,
 } from '../../runBank'
 import { CaptainDraft, type DraftDone } from '../CaptainDraft'
-import { DifficultyPicker, DifficultyTabs } from '../Difficulty'
+import { BuilderTabs } from '../Difficulty'
 import { GuestName } from '../GuestName'
 import { SocialChip } from '../share'
 import { Field, Ladder } from '../cards'
@@ -54,6 +59,11 @@ const SAVE_KEYS: Record<Difficulty, string> = {
   cap: 'pe_solo_run_cap_v1',
 }
 
+/** Each format keeps its own run at each difficulty. */
+function saveKey(diff: Difficulty, format: BuilderFormat): string {
+  return format === 'mystery' ? `pe_mystery_run_${diff}_v1` : SAVE_KEYS[diff]
+}
+
 /** The difficulty you last played, so a regular on Ball Knower stays there. */
 const DIFF_KEY = 'pe_solo_difficulty_v1'
 
@@ -63,11 +73,11 @@ function ordinal(n: number): string {
   return n + ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] ?? 'th')
 }
 
-async function startSeed(captain: number, difficulty: Difficulty): Promise<string> {
+async function startSeed(captain: number, difficulty: Difficulty, format: BuilderFormat): Promise<string> {
   const res = await fetch('/api/games/pack-empire/deal/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'start', captain, difficulty }),
+    body: JSON.stringify({ action: 'start', captain, difficulty, format }),
   })
   const body = await res.json().catch(() => null)
   if (!res.ok || !body?.seed) throw new Error(body?.error ?? 'Could not start a run. Try again.')
@@ -75,7 +85,7 @@ async function startSeed(captain: number, difficulty: Difficulty): Promise<strin
 }
 
 function soloPayload(run: DraftDone) {
-  const mode = DIFFICULTY_LOOK[difficultyFromSeed(run.seed)].mode
+  const mode = boardMode(difficultyFromSeed(run.seed), formatFromSeed(run.seed))
   return { game: 'pack-empire', mode, pool: 'site', seed: run.seed, picks: run.picks }
 }
 
@@ -87,7 +97,16 @@ function readDifficulty(raw: string | null): Difficulty {
   return raw === 'range' || raw === 'season' || raw === 'cap' ? raw : 'open'
 }
 
-export function EmpireBuilder({ signedIn, initial }: { signedIn: boolean; initial?: Difficulty }) {
+export function EmpireBuilder({
+  signedIn,
+  initial,
+  initialFormat = 'classic',
+}: {
+  signedIn: boolean
+  initial?: Difficulty
+  initialFormat?: BuilderFormat
+}) {
+  const [format, setFormat] = useState<BuilderFormat>(initialFormat)
   const [run, setRun] = useState<DraftDone | null>(null)
   const [post, setPost] = useState<PostOutcome | 'posting' | 'banked' | null>(null)
   const [round, setRound] = useState(0)
@@ -100,8 +119,11 @@ export function EmpireBuilder({ signedIn, initial }: { signedIn: boolean; initia
   const [chosen, setChosen] = useState<Difficulty | null>(initial ?? null)
   const difficulty = chosen ?? readDifficulty(stored)
 
-  const choose = (d: Difficulty) => {
+  const choose = (d: Difficulty, f: BuilderFormat = format) => {
     setChosen(d)
+    setFormat(f)
+    // The address says what's on the table, so a refresh or a shared link lands here.
+    window.history.replaceState(null, '', `/games/pack-empire/play/${builderQuery(d, f)}`)
     try {
       localStorage.setItem(DIFF_KEY, d)
       storageChanged()
@@ -110,7 +132,7 @@ export function EmpireBuilder({ signedIn, initial }: { signedIn: boolean; initia
     }
   }
 
-  const start = useCallback((captain: number) => startSeed(captain, difficulty), [difficulty])
+  const start = useCallback((captain: number) => startSeed(captain, difficulty, format), [difficulty, format])
 
   // Runs played signed out on this device go up the moment there's an
   // account to post them as.
@@ -191,13 +213,14 @@ export function EmpireBuilder({ signedIn, initial }: { signedIn: boolean; initia
     return (
       <div className="pe-table">
         <CaptainDraft
-          key={`${difficulty}-${round}`}
-          saveKey={SAVE_KEYS[difficulty]}
+          key={`${format}-${difficulty}-${round}`}
+          saveKey={saveKey(difficulty, format)}
           startSeed={start}
           onDone={onDone}
           difficulty={difficulty}
-          intro={<DifficultyPicker value={difficulty} onChange={choose} />}
-          running={<DifficultyTabs value={difficulty} onChange={choose} />}
+          mystery={format === 'mystery'}
+          intro={<BuilderTabs difficulty={difficulty} format={format} onChange={choose} />}
+          running={<BuilderTabs difficulty={difficulty} format={format} onChange={choose} />}
           restartable
         />
       </div>
@@ -262,8 +285,8 @@ function climbMs(score: number): number {
 
 const SIGN_IN_HREF = '/login?next=%2Fgames%2Fpack-empire%2Fplay%2F'
 
-function boardHref(diff: Difficulty): string {
-  return `/games/pack-empire/board/${diff === 'open' ? '' : `?diff=${diff}`}`
+function boardHref(seed: string): string {
+  return `/games/pack-empire/board/${builderQuery(difficultyFromSeed(seed), formatFromSeed(seed))}`
 }
 
 /** A blind lineup, locked and not yet turned over. */
@@ -294,7 +317,7 @@ function Sealed({
         {post === 'banked' && <GuestName error={nameError} onPost={onGuestName} signIn={SIGN_IN_HREF} />}
         {failed && (
           <div className="pe-recap-actions">
-            <button type="button" className="pe-btn" onClick={onAgain}>
+            <button type="button" className="pe-push" onClick={onAgain}>
               New run
             </button>
           </div>
@@ -346,7 +369,7 @@ function Recap({
   return (
     <div className="pe-table">
       <div className={`pe-recap${landed ? ' landed' : ''}`} style={{ '--tc': tier.color } as React.CSSProperties}>
-        <div className="pe-kicker">§ Final roster</div>
+        <div className="pe-kicker">§ Final roster · {boardLabel(difficultyFromSeed(run.seed), formatFromSeed(run.seed))}</div>
         <div key={tier.label} className="pe-recap-tier">
           {tier.label}
         </div>
@@ -400,13 +423,13 @@ function Recap({
         {post === 'banked' && landed && <GuestName error={nameError} onPost={onGuestName} signIn={SIGN_IN_HREF} />}
 
         <div className="pe-recap-actions">
-          <button type="button" className="pe-btn" onClick={onAgain}>
+          <button type="button" className="pe-push" onClick={onAgain}>
             New run
           </button>
           <SocialChip icon="share" done={shared === 'copied'} onClick={onShare}>
             {shared === 'copied' ? 'Copied' : 'Share'}
           </SocialChip>
-          <Link href={boardHref(difficultyFromSeed(run.seed))} className="pe-btn pe-btn--quiet">
+          <Link href={boardHref(run.seed)} className="pe-act">
             The board
           </Link>
         </div>

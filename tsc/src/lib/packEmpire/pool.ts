@@ -30,9 +30,20 @@ import addedAfterE from './data/added-after-10e.json'
 import frozen from './data/season-pool-10h.json'
 import seasons from './data/season-pool.json'
 import vaulted from './data/vaulted.json'
-import { POOL_KEYS, RARITY_FLOOR, personOf, tableRarity, type Player, type PoolKey, type TableRarity, type Weights } from './rules'
+import {
+  POOL_KEYS,
+  RARITY_FLOOR,
+  SOLO_BOOSTED,
+  SOLO_WEIGHTS,
+  personOf,
+  tableRarity,
+  type Player,
+  type PoolKey,
+  type TableRarity,
+  type Weights,
+} from './rules'
 
-export const POOL_VERSION = 'seasons-2026-10m'
+export const POOL_VERSION = 'seasons-2026-10n'
 
 // Canton is set here rather than in the data, so the frozen Daily pools keep the
 // Immortals they were dealt with. Nothing about a deal reads it: see tableRarity.
@@ -58,9 +69,13 @@ export const POOL_BEFORE_VERSION = 'seasons-2026-10e'
 export const POOL_H_VERSION = 'seasons-2026-10h'
 export const DAILY_H_FROM = '2026-11-01'
 
+/** The first Daily off the 10m deal: same cards as now, Canton on its old odds. */
+export const DAILY_NEW_POOL_FROM = '2026-11-02'
+export const POOL_M_VERSION = 'seasons-2026-10m'
+
 /** The first Daily off the current pool. Set it to a day that hasn't started
     yet whenever POOL_VERSION moves, or that day's Daily re-deals under people. */
-export const DAILY_NEW_POOL_FROM = '2026-11-02'
+export const DAILY_N_FROM = '2026-11-03'
 
 const FROZEN = frozen as Player[]
 const ADDED = new Set(addedAfterE as string[])
@@ -102,20 +117,24 @@ const IMMORTAL_SPAN_H = 1600
 
 /**
  * Canton, the 5,200+ seasons and the top ten in the game, are this much harder again
- * on top of the curve. It comes out of the same shares, so a position's immortals as
- * a whole stay exactly as likely. Not on POOL_H.
+ * on top of the curve, per position. It comes out of the same shares, so a position's
+ * immortals as a whole stay exactly as likely. Not on POOL_H.
  *
- * It was 2/3 until the ordinary immortal went up on 2026-11-01. This holds Canton to
- * half of that rise: all ten land within 2% of halfway between their old odds and
- * what the new table alone would have made them.
+ * 0.534 everywhere until 2026-11-02 (10m, still how that day's Daily deals), when a
+ * Canton turned up in about 1 run in 99, half of them out of captain packs. Joey took
+ * the captain lift away (CANTON_SCALE below) and set a Canton at about 1 run in 130.
+ * Solved per position so each position's packs moved by the same share: a position
+ * with more Cantons, or tighter ones, needs a different number for that.
  */
-const CANTON_PULL = 0.534
+const CANTON_PULL_M = 0.534
+const CANTON_PULL: Partial<Record<PoolKey, number>> = { QB: 0.7126, RB: 0.6462, WR: 0.6149, TE: 0.6481 }
 
-function immortalPull(score: number, span: number, canton: number): number {
-  return IMMORTAL_SPREAD ** -((score - RARITY_FLOOR.immortal) / span) * (score >= RARITY_FLOOR.canton ? canton : 1)
+function immortalPull(p: Player, span: number, canton: Partial<Record<PoolKey, number>> | number): number {
+  const cut = typeof canton === 'number' ? canton : (canton[p.pos as PoolKey] ?? 1)
+  return IMMORTAL_SPREAD ** -((p.score - RARITY_FLOOR.immortal) / span) * (p.score >= RARITY_FLOOR.canton ? cut : 1)
 }
 
-function weigher(cards: Player[], span: number, canton = 1): (p: Player, weights: Weights) => number {
+function weigher(cards: Player[], span: number, canton: Partial<Record<PoolKey, number>> | number = 1): (p: Player, weights: Weights) => number {
   const holds = new Map<string, number>()
   const key = (p: Player) => `${p.pos}|${tableRarity(p.rarity)}`
   for (const p of cards) holds.set(key(p), (holds.get(key(p)) ?? 0) + 1)
@@ -123,8 +142,8 @@ function weigher(cards: Player[], span: number, canton = 1): (p: Player, weights
   const shares = new Map<string, number>()
   for (const [, list] of Object.entries(byPosition(cards))) {
     const top = list.filter((p) => tableRarity(p.rarity) === 'immortal')
-    const whole = top.reduce((sum, p) => sum + immortalPull(p.score, span, canton), 0)
-    for (const p of top) shares.set(p.id, (immortalPull(p.score, span, canton) * top.length) / whole)
+    const whole = top.reduce((sum, p) => sum + immortalPull(p, span, canton), 0)
+    for (const p of top) shares.set(p.id, (immortalPull(p, span, canton) * top.length) / whole)
   }
 
   return (p, weights) => {
@@ -136,8 +155,46 @@ function weigher(cards: Player[], span: number, canton = 1): (p: Player, weights
   }
 }
 
+const baseWeight = weigher(ALL, IMMORTAL_SPAN, CANTON_PULL)
+
+/**
+ * The captain tables lift immortals, and Canton came along with them: a WR captain
+ * pack held one about 1 time in 110. Joey: a Canton is as likely in a captain pack as
+ * in an ordinary pack at that position. So on a captain table each position's Cantons
+ * are scaled until a draw finds one exactly as often as the matching ordinary table
+ * does (base against base, boosted against boosted). Everything else on the captain
+ * table is untouched; the Canton weight it gives up just isn't drawn.
+ */
+const CANTON_HELD: [Weights, Weights][] = [
+  [SOLO_WEIGHTS.captain, SOLO_WEIGHTS.normal],
+  [SOLO_BOOSTED.captain, SOLO_BOOSTED.normal],
+]
+
+function cantonScales(table: Weights, like: Weights): Partial<Record<PoolKey, number>> {
+  const out: Partial<Record<PoolKey, number>> = {}
+  for (const k of POOL_KEYS) {
+    const list = ALL.filter((p) => p.pos === k)
+    const mass = (t: Weights, canton: boolean) =>
+      list.filter((p) => (p.rarity === 'canton') === canton).reduce((sum, p) => sum + baseWeight(p, t), 0)
+    const wc = mass(table, true)
+    if (wc <= 0) continue
+    const want = mass(like, true) / (mass(like, true) + mass(like, false))
+    out[k] = (want * mass(table, false)) / ((1 - want) * wc)
+  }
+  return out
+}
+
+const CANTON_SCALE = new Map(CANTON_HELD.map(([table, like]) => [table, cantonScales(table, like)]))
+
 /** One card's weight on a table. Every draw goes through this. */
-export const cardWeight = weigher(ALL, IMMORTAL_SPAN, CANTON_PULL)
+export function cardWeight(p: Player, weights: Weights): number {
+  const w = baseWeight(p, weights)
+  if (p.rarity !== 'canton') return w
+  return w * (CANTON_SCALE.get(weights)?.[p.pos as PoolKey] ?? 1)
+}
+
+/** The 10m deal, for the Daily days dealt off it. */
+export const cardWeightM = weigher(ALL, IMMORTAL_SPAN, CANTON_PULL_M)
 
 /** The same, for the Dailies dealt off POOL_H. */
 export const cardWeightH = weigher(FROZEN, IMMORTAL_SPAN_H)

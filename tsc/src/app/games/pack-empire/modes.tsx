@@ -27,7 +27,7 @@ export const MODES: ModeDef[] = [
     nameEm: 'Builder',
     line: 'Pick a captain, open eleven packs and post your best offense to the board.',
     chip: 'No account',
-    href: '/games/pack-empire/play/',
+    href: '/games/pack-empire/builder/',
     color: '#e8a84b',
   },
   {

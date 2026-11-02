@@ -268,15 +268,15 @@ export function VersusRoom({
           </div>
           <div className="pe-recap-actions">
             {signedIn ? (
-              <button type="button" className="pe-btn" onClick={rematch} disabled={busy}>
+              <button type="button" className="pe-push" onClick={rematch} disabled={busy}>
                 {view.bot ? 'Play the CPU again' : 'New challenge'}
               </button>
             ) : (
-              <Link href="/games/pack-empire/play/" className="pe-btn">
+              <Link href="/games/pack-empire/builder/" className="pe-push">
                 Play solo
               </Link>
             )}
-            <Link href="/games/pack-empire/versus/" className="pe-btn pe-btn--quiet">
+            <Link href="/games/pack-empire/versus/" className="pe-act">
               Your challenges
             </Link>
             <ShareButton
@@ -343,7 +343,7 @@ export function VersusRoom({
             <Link href={`/login?next=${encodeURIComponent(path)}`} className="pe-btn">
               Sign in
             </Link>
-            <Link href="/games/pack-empire/versus/" className="pe-btn pe-btn--quiet">
+            <Link href="/games/pack-empire/versus/" className="pe-act">
               Start your own
             </Link>
           </div>
@@ -368,7 +368,7 @@ export function VersusRoom({
               : `${view.host.name} and ${view.guest.name} are drafting. Start your own and send the link to someone.`}
           </p>
           <div className="pe-recap-actions" style={{ justifyContent: 'flex-start' }}>
-            <Link href="/games/pack-empire/versus/" className="pe-btn">
+            <Link href="/games/pack-empire/versus/" className="pe-push">
               Start a challenge
             </Link>
           </div>
@@ -407,7 +407,7 @@ export function VersusRoom({
           </p>
           {signedIn ? (
             <div className="pe-recap-actions" style={{ justifyContent: 'flex-start' }}>
-              <button type="button" className="pe-btn" onClick={join} disabled={busy}>
+              <button type="button" className="pe-push" onClick={join} disabled={busy}>
                 Accept as {yourName ?? 'you'}
               </button>
             </div>
@@ -421,7 +421,7 @@ export function VersusRoom({
                 onChange={(e) => setGuestName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && join()}
               />
-              <button type="button" className="pe-btn" onClick={join} disabled={busy || guestName.trim().length < 2}>
+              <button type="button" className="pe-push" onClick={join} disabled={busy || guestName.trim().length < 2}>
                 Accept the challenge
               </button>
               <p className="pe-note">

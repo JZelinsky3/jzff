@@ -378,8 +378,62 @@ export const DIFFICULTY_LOOK: Record<Difficulty, { label: string; line: string; 
   },
 }
 
+/**
+ * Empire Builder has two ways to open its eleven packs. Classic: each pack is a
+ * position's, opened in any order. Mystery: eleven packs in a row, each five
+ * different positions, so you plan around what might come and take a reserve
+ * when nothing fits. Every difficulty plays either way, each its own board.
+ */
+export type BuilderFormat = 'classic' | 'mystery'
+
+export const BUILDER_FORMATS: BuilderFormat[] = ['classic', 'mystery']
+
+export const FORMAT_LOOK: Record<BuilderFormat, { label: string; line: string }> = {
+  classic: {
+    label: 'Classic',
+    line: 'One pack for every position, opened in any order you like.',
+  },
+  mystery: {
+    label: 'Mystery',
+    line: 'Eleven packs in a row, five random positions each. Plan for what you still need, or settle for a reserve.',
+  },
+}
+
+/** game_runs.mode for a Mystery board. */
+const MYSTERY_MODE: Record<Difficulty, string> = {
+  open: 'mystery',
+  range: 'mystery-range',
+  season: 'mystery-season',
+  cap: 'mystery-cap',
+}
+
+export function boardMode(diff: Difficulty, format: BuilderFormat = 'classic'): string {
+  return format === 'mystery' ? MYSTERY_MODE[diff] : DIFFICULTY_LOOK[diff].mode
+}
+
+/** Both formats: the difficulty a board's mode plays at. */
 export function difficultyForMode(mode: string | null): Difficulty | null {
-  return DIFFICULTIES.find((d) => DIFFICULTY_LOOK[d].mode === mode) ?? null
+  return DIFFICULTIES.find((d) => DIFFICULTY_LOOK[d].mode === mode || MYSTERY_MODE[d] === mode) ?? null
+}
+
+export function formatForMode(mode: string | null): BuilderFormat {
+  return DIFFICULTIES.some((d) => MYSTERY_MODE[d] === mode) ? 'mystery' : 'classic'
+}
+
+export function isFormat(v: unknown): v is BuilderFormat {
+  return v === 'classic' || v === 'mystery'
+}
+
+/** The query a Builder page or board takes for a difficulty and a format. */
+export function builderQuery(diff: Difficulty, format: BuilderFormat = 'classic', extra: string[] = []): string {
+  const q = [diff === 'open' ? '' : `diff=${diff}`, format === 'mystery' ? 'f=mystery' : '', ...extra].filter(Boolean).join('&')
+  return q ? `?${q}` : ''
+}
+
+/** "Mystery Range", "Ball Knower", "Standard". */
+export function boardLabel(diff: Difficulty, format: BuilderFormat): string {
+  if (format === 'classic') return DIFFICULTY_LOOK[diff].label
+  return diff === 'open' ? 'Mystery' : `Mystery ${DIFFICULTY_LOOK[diff].label}`
 }
 
 export function isDifficulty(v: unknown): v is Difficulty {
@@ -1014,9 +1068,16 @@ export const EVEN_CONTESTED_MARK = '8'
     says its ordinary packs come off VERSUS_WEIGHTS. It's signed, so it can't be forged. */
 export const VERSUS_CAPTAIN_SHIFT = 11
 export const SEED_DIFF: Record<string, Difficulty> = { A: 'open', R: 'range', S: 'season', C: 'cap' }
+/** The same tenth character on a Mystery seed: its own letters, so the format is
+    signed in with the difficulty. */
+export const MYSTERY_DIFF: Record<string, Difficulty> = { M: 'open', N: 'range', P: 'season', Q: 'cap' }
 
 export function difficultyFromSeed(seed: string): Difficulty {
-  return seed.length === 16 ? (SEED_DIFF[seed[9]] ?? 'open') : 'open'
+  return seed.length === 16 ? (SEED_DIFF[seed[9]] ?? MYSTERY_DIFF[seed[9]] ?? 'open') : 'open'
+}
+
+export function formatFromSeed(seed: string): BuilderFormat {
+  return seed.length === 16 && seed[9] in MYSTERY_DIFF ? 'mystery' : 'classic'
 }
 
 // ============================================================

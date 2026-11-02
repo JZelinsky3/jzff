@@ -14,7 +14,19 @@ import { getViewMode } from '@/lib/viewMode'
 import { loadBoard, type BestRow, type Board, type BoardKind, type CareerRow } from '@/lib/minigames/leaderboard'
 import { runLeaders } from '@/lib/packEmpire/boardRuns'
 import { peMeta } from '@/lib/packEmpire/meta'
-import { DIFFICULTIES, DIFFICULTY_LOOK, RARITY_LOOK, isDifficulty, type Difficulty, type Player } from '@/lib/packEmpire/rules'
+import {
+  BUILDER_FORMATS,
+  DIFFICULTIES,
+  DIFFICULTY_LOOK,
+  FORMAT_LOOK,
+  RARITY_LOOK,
+  boardMode,
+  builderQuery,
+  isDifficulty,
+  type BuilderFormat,
+  type Difficulty,
+  type Player,
+} from '@/lib/packEmpire/rules'
 import { when } from '../../BoardTable'
 import mobileStyles from '../../mobile.module.css'
 import { RunRow, runScore } from '../BoardRows'
@@ -44,9 +56,8 @@ const KINDS: { kind: BoardKind; label: string }[] = [
   { kind: 'career', label: 'Career' },
 ]
 
-function boardHref(diff: Difficulty, kind: BoardKind): string {
-  const query = [diff === 'open' ? '' : `diff=${diff}`, kind === 'career' ? 'kind=career' : ''].filter(Boolean).join('&')
-  return `/games/pack-empire/board/${query ? `?${query}` : ''}`
+function boardHref(diff: Difficulty, format: BuilderFormat, kind: BoardKind): string {
+  return `/games/pack-empire/board/${builderQuery(diff, format, kind === 'career' ? ['kind=career'] : [])}`
 }
 
 /** One of the top three, stood behind the best card it pulled. */
@@ -152,11 +163,12 @@ function Career({ board, viewerId }: { board: Extract<Board, { kind: 'career' }>
 export default async function PackEmpireBoard({
   searchParams,
 }: {
-  searchParams: Promise<{ kind?: string; diff?: string }>
+  searchParams: Promise<{ kind?: string; diff?: string; f?: string }>
 }) {
   const sp = await searchParams
   const kind: BoardKind = sp.kind === 'career' ? 'career' : 'best'
   const diff: Difficulty = isDifficulty(sp.diff) ? sp.diff : 'open'
+  const format: BuilderFormat = sp.f === 'mystery' ? 'mystery' : 'classic'
 
   const supabase = await createClient()
   const {
@@ -165,12 +177,12 @@ export default async function PackEmpireBoard({
   const viewerId = user?.id ?? null
   const mobile = (await getViewMode()) === 'mobile'
 
-  const board = await loadBoard(kind, { game: 'pack-empire', mode: DIFFICULTY_LOOK[diff].mode, poolId: 'site' }, viewerId)
+  const board = await loadBoard(kind, { game: 'pack-empire', mode: boardMode(diff, format), poolId: 'site' }, viewerId)
   const best = board.kind === 'career' ? null : board
   const leaders = best
     ? await runLeaders(best.you ? [...best.rows, best.you] : best.rows).catch(() => new Map<string, Player>())
     : new Map<string, Player>()
-  const play = `/games/pack-empire/play/${diff === 'open' ? '' : `?diff=${diff}`}`
+  const play = `/games/pack-empire/play/${builderQuery(diff, format)}`
 
   return (
     <main className={`pe-theme ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>
@@ -207,29 +219,39 @@ export default async function PackEmpireBoard({
             ) : (
               best && best.total > 0 && <div className="pe-brd-count">{best.total.toLocaleString()} runs on this board</div>
             )}
-            <Link href={play} className="pe-btn pe-btn--sm">
+            <Link href={play} className="pe-push pe-push--sm">
               Build an offense
             </Link>
           </div>
         </header>
 
+        <nav className="pe-btabs-fmt pe-brd-fmt" aria-label="Format">
+          {BUILDER_FORMATS.map((f) => (
+            <Link key={f} href={boardHref(diff, f, kind)} data-f={f} aria-current={f === format ? 'page' : undefined}>
+              {FORMAT_LOOK[f].label}
+            </Link>
+          ))}
+        </nav>
         <div className="pe-brd-bar">
           <nav className="pe-brd-diffs" aria-label="Difficulty">
             {DIFFICULTIES.map((d) => (
-              <Link key={d} href={boardHref(d, kind)} aria-current={d === diff ? 'page' : undefined}>
+              <Link key={d} href={boardHref(d, format, kind)} aria-current={d === diff ? 'page' : undefined}>
                 {DIFFICULTY_LOOK[d].label}
               </Link>
             ))}
           </nav>
           <nav className="pe-brd-kinds" aria-label="Ranking">
             {KINDS.map((k) => (
-              <Link key={k.kind} href={boardHref(diff, k.kind)} aria-current={k.kind === kind ? 'page' : undefined}>
+              <Link key={k.kind} href={boardHref(diff, format, k.kind)} aria-current={k.kind === kind ? 'page' : undefined}>
                 {k.label}
               </Link>
             ))}
           </nav>
         </div>
-        <p className="pe-brd-line">{DIFFICULTY_LOOK[diff].line}</p>
+        <p className="pe-brd-line">
+          {format === 'mystery' ? `${FORMAT_LOOK.mystery.line} ` : ''}
+          {DIFFICULTY_LOOK[diff].line}
+        </p>
 
         {board.kind === 'career' ? <Career board={board} viewerId={viewerId} /> : <BestRuns board={board} leaders={leaders} viewerId={viewerId} />}
       </div>

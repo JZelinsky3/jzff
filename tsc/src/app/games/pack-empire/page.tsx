@@ -231,7 +231,7 @@ export default async function PackEmpireHome() {
             </h1>
             <p className="pe-m-hero-sub">Eleven packs, five cards in each. Keep one from every pack.</p>
             <PackFan />
-            <Link href="/games/pack-empire/play/" className="pe-btn pe-m-cta">
+            <Link href="/games/pack-empire/builder/" className="pe-btn pe-m-cta">
               Build an offense
             </Link>
             <div className="pe-hero-meta">
@@ -352,7 +352,7 @@ export default async function PackEmpireHome() {
               the rarities, and see how high your offense climbs.
             </p>
             <div className="pe-hero-ctas">
-              <Link href="/games/pack-empire/play/" className="pe-btn">
+              <Link href="/games/pack-empire/builder/" className="pe-btn">
                 Build an offense
               </Link>
               <Link href="/games/pack-empire/board/" className="pe-btn pe-btn--ghost">

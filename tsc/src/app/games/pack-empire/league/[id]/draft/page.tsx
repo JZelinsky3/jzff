@@ -61,7 +61,7 @@ export default async function LeagueDraftPage({ params }: { params: Promise<{ id
               <p className="pe-table-sub">{out.error}</p>
             </div>
             <div className="pe-recap-actions">
-              <Link href={`/games/pack-empire/league/${id}/`} className="pe-btn">
+              <Link href={`/games/pack-empire/league/${id}/`} className="pe-push">
                 Back to the league
               </Link>
             </div>

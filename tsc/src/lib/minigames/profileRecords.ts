@@ -15,7 +15,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { GAMES } from '@/app/games/gameDefs'
-import { DIFFICULTY_LOOK, difficultyForMode } from '@/lib/packEmpire/rules'
+import { boardLabel, builderQuery, difficultyForMode, formatForMode } from '@/lib/packEmpire/rules'
 import { DEMO_POOL_ID } from './demoPool'
 import { publicNames } from './boardIdentity'
 import { runStat } from './runStat'
@@ -69,16 +69,16 @@ const groupKey = (r: { game: string; mode: string | null; pool_id: string }) =>
 function boardHref(href: string, game: GameId, poolId: string, mode: string | null): string {
   // Pack Empire has one board per difficulty, and its page takes no pool.
   if (game === 'pack-empire') {
-    const diff = difficultyForMode(mode)
-    return `${href}board/${diff && diff !== 'open' ? `?diff=${diff}` : ''}`
+    return `${href}board/${builderQuery(difficultyForMode(mode) ?? 'open', formatForMode(mode))}`
   }
   return `${href}board/?pool=${encodeURIComponent(poolId)}`
 }
 
 /** What a Pack Empire line calls its board. */
 function empireBoard(mode: string | null): string {
-  const diff = difficultyForMode(mode)
-  return diff && diff !== 'open' ? `${DIFFICULTY_LOOK[diff].label} board` : 'The board'
+  const diff = difficultyForMode(mode) ?? 'open'
+  const format = formatForMode(mode)
+  return diff === 'open' && format === 'classic' ? 'The board' : `${boardLabel(diff, format)} board`
 }
 
 /** W-L, with the ties only when there are any. */

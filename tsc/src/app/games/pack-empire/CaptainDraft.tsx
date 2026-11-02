@@ -15,6 +15,11 @@
 // Even Versus skips step one: there's no captain, the seat just sits down on the
 // shared seed.
 //
+// Mystery runs the same table a different way: no slot to tap, eleven packs in a
+// row, the captain's first, the rest five random positions each. A card goes in
+// the first open slot at his position, a card with nowhere to go can't be kept,
+// and the server holds every pick before it hands over the next pack.
+//
 // The captain is a commitment: the server signs it into the seed before a
 // single pack is dealt, so it can't be moved after a look at the packs.
 //
@@ -35,7 +40,9 @@ import {
   SALARY_CAP,
   SLOTS,
   SLOT_COUNT,
+  PACK_ART,
   TIERS,
+  WILD_PACK_ART,
   captainFromSeed,
   chemistryCounts,
   chemistryFor,
@@ -43,6 +50,7 @@ import {
   isBlind,
   lineupScore,
   signingPrice,
+  slotForCard,
   tierFor,
   type BlindLock,
   type Difficulty,
@@ -111,6 +119,18 @@ async function dealPack(seed: string, slot: number, taken: string[]): Promise<Pl
   return body.cards as Player[]
 }
 
+/** A Mystery run's next pack: always the one after the last pick on record. */
+async function dealMystery(seed: string): Promise<{ cards: Player[]; reserve: string | null; picks: DraftPick[] }> {
+  const res = await fetch('/api/games/pack-empire/deal/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'pack', seed }),
+  })
+  const body = await res.json().catch(() => null)
+  if (!res.ok || !body?.ok) throw new Error(body?.error ?? 'The pack would not open. Try again.')
+  return { cards: body.cards as Player[], reserve: body.reserve ?? null, picks: body.picks as DraftPick[] }
+}
+
 /** Show My Pick, kept on this device. */
 const SHOW_PICK_KEY = 'pe_show_pick_v1'
 
@@ -151,6 +171,8 @@ type DraftProps = {
       Show My Pick. A Versus seat's goes through its room, because an Even seed
       is two seats'. */
   lock?: (picks: DraftPick[] | null, open: boolean) => Promise<BlindLock>
+  /** Mystery Builder: packs in a row, mixed positions. */
+  mystery?: boolean
 }
 
 /** A blind draft's stand-in for the total: on Range the sum of what its cards
@@ -249,7 +271,7 @@ export function CaptainDraft(props: DraftProps) {
     return (
       <>
         {props.intro}
-        <Board score={0} flavor={{ difficulty: props.difficulty ?? 'open', even: !!props.even, battles: props.battles }}>
+        <Board score={0} flavor={{ difficulty: props.difficulty ?? 'open', even: !!props.even, battles: props.battles, mystery: !!props.mystery }}>
           <Field lineup={EMPTY} view={() => ({ clickable: false })} />
         </Board>
       </>
@@ -299,6 +321,7 @@ function LiveDraft({
   even = false,
   battles = null,
   lock,
+  mystery = false,
 }: DraftProps) {
   const [start] = useState(() => startingState(saveKey, fixedSeed))
   const [captain, setCaptain] = useState<number | null>(start.captain)
@@ -321,6 +344,12 @@ function LiveDraft({
   const showPick = blind && storedPick === '1'
   /** What the first read of a run asks for. */
   const openAtStart = useRef(showPick)
+  /** Mystery: which pack in the line is open (0 is the captain's), and whether
+      a card in it was swapped for a reserve. */
+  const [packNo, setPackNo] = useState(0)
+  const [reserve, setReserve] = useState<string | null>(null)
+  /** Every pick is on the server before the next pack: Mystery always, blind too. */
+  const onRecord = blind || mystery
 
   // Check a seed brought back from storage (or held by a Versus seat) once.
   useEffect(() => {
@@ -359,7 +388,7 @@ function LiveDraft({
   // A Versus seat picked up on another device, or a pick that landed just as
   // the page went away.
   useEffect(() => {
-    if (!blind || !start.seed) return
+    if (!onRecord || !start.seed) return
     let gone = false
     const s = start.seed
     sendLock(s, null, openAtStart.current)
@@ -370,16 +399,18 @@ function LiveDraft({
     return () => {
       gone = true
     }
-  }, [blind, start, sendLock, adopt])
+  }, [onRecord, start, sendLock, adopt])
 
   // A blind pick is on record before its card lands, so a refresh on the last
   // pack comes back with all eleven in and nothing left to open.
   useEffect(() => {
-    if (!blind || !seed || stage || finished.current || picks.length !== SLOT_COUNT || lineup.some((p) => !p)) return
+    if (!onRecord || !seed || stage || finished.current || picks.length !== SLOT_COUNT || lineup.some((p) => !p)) return
     finished.current = true
     writeSaved(saveKey, null)
-    onDone({ seed, captain, picks, lineup: lineup as Player[], score: 0, spent: 0 })
-  }, [blind, seed, stage, picks, lineup, captain, saveKey, onDone])
+    const full = lineup as Player[]
+    const score = blind ? 0 : lineupScore(full) + (chemistryCounts(difficulty, even) ? chemistryFor(full, true).total : 0)
+    onDone({ seed, captain, picks, lineup: full, score, spent: 0 })
+  }, [onRecord, blind, difficulty, even, seed, stage, picks, lineup, captain, saveKey, onDone])
 
   // Turned on partway through, it turns over everything already signed.
   const toggleShowPick = () => {
@@ -429,9 +460,14 @@ function LiveDraft({
   const capped = difficulty === 'cap'
   const budget: number = even ? SALARY_CAP.shared : SALARY_CAP.own
   const capLeft = budget - spent
+  const filledSet = new Set(picks.map((p) => p.slot))
+  /** Where a card from the open pack would go. Classic: the pack's own slot. */
+  const slotFor = (p: Player): number =>
+    !mystery ? (stage?.slot ?? -1) : picks.length === 0 ? (captain ?? -1) : slotForCard(p.pos, filledSet)
   const packCards = stage?.cards ?? null
-  const priceOf = (p: Player) => signingPrice(p, packCards ?? [p], capLeft)
-  const skint = capped && !!packCards && packCards.every((p) => (p.salary ?? 0) > capLeft)
+  const usable = packCards ? packCards.filter((p) => slotFor(p) >= 0) : null
+  const priceOf = (p: Player) => signingPrice(p, usable ?? [p], capLeft)
+  const skint = capped && !!usable && usable.every((p) => (p.salary ?? 0) > capLeft)
 
   const chooseCaptain = useCallback(
     async (i: number) => {
@@ -473,19 +509,46 @@ function LiveDraft({
 
   const openSlot = useCallback(
     (i: number) => {
-      if (!seed || stage || lineup[i]) return
+      if (!seed || stage || lineup[i] || mystery) return
       const taken = picks.map((p) => p.id)
       open(i, () => dealPack(seed, i, taken))
     },
-    [seed, stage, lineup, picks, open]
+    [seed, stage, lineup, picks, open, mystery]
   )
+
+  /** Mystery: the next pack in the line. If the server holds more picks than
+      this device (a pick that landed as the page went away), the table catches up. */
+  const openNext = useCallback(() => {
+    if (!seed || stage || captain == null) return
+    const n = picks.length
+    setPackNo(n)
+    setReserve(null)
+    open(n === 0 ? captain : n, async () => {
+      const out = await dealMystery(seed)
+      if (out.picks.length !== n) {
+        adopt(seed, await sendLock(seed, null, showPick))
+        throw new Error('Your run was a step behind, so it has been put back. Open the next pack.')
+      }
+      setReserve(out.reserve)
+      return out.cards
+    })
+  }, [seed, stage, captain, picks, open, adopt, sendLock, showPick])
 
   const sign = useCallback(
     (i: number, price: number) => {
-      if (!stage || !seed) return
-      const slot = stage.slot
+      if (!stage?.cards || !seed) return
+      const slot = slotFor(stage.cards[i])
+      if (slot < 0) return
       let done: DraftDone | null = null
-      pick(i, (card) => {
+      pick(i, async (card) => {
+        // A face-up Mystery pick goes on record first: the next pack waits on it.
+        if (mystery && !blind) {
+          const out = await sendLock(seed, [...picks, { slot, id: card.id }], false)
+          if (out.picks.length !== picks.length + 1) {
+            adopt(seed, out)
+            throw new Error('That pick did not save. Try again.')
+          }
+        }
         const nextLineup = [...lineup]
         nextLineup[slot] = card
         const nextPicks = [...picks, { slot, id: card.id }]
@@ -502,21 +565,24 @@ function LiveDraft({
         } else {
           writeSaved(saveKey, { seed, captain, picks: nextPicks, lineup: nextLineup, spent: nextSpent, at: Date.now() })
         }
-      }).then((landed) => {
+      }, slot).then((landed) => {
         // After the last card has landed and the count has run up.
         const run = done
         if (landed && run) window.setTimeout(() => onDone(run), 900)
       })
     },
-    [stage, seed, captain, pick, lineup, picks, spent, saveKey, onDone, chemReadable]
+    // `slotFor` reads the same stage, picks and captain listed here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [stage, seed, captain, pick, lineup, picks, spent, saveKey, onDone, chemReadable, mystery, blind, sendLock, adopt]
   )
 
   /** A blind pick goes on record here, before the pack turns: saved on this
       device at the same moment, so a refresh can't offer the pack again. */
   const lockCard = useCallback(
     (i: number) => {
-      if (!stage || !seed) return
-      const slot = stage.slot
+      if (!stage?.cards || !seed) return
+      const slot = slotFor(stage.cards[i])
+      if (slot < 0) return
       keep(i, async (card) => {
         const wanted = [...picks, { slot, id: card.id }]
         const out = await sendLock(seed, wanted, showPick)
@@ -531,6 +597,8 @@ function LiveDraft({
         return { kept: seen.kept, cards: seen.cards }
       })
     },
+    // `slotFor` reads the same stage, picks and captain listed here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [stage, seed, captain, picks, lineup, keep, sendLock, adopt, saveKey, showPick]
   )
 
@@ -550,15 +618,18 @@ function LiveDraft({
         reveal(i)
         return
       }
+      if (slotFor(stage.cards[i]) < 0) return
       if (blind) {
         lockCard(i)
         return
       }
-      const price = capped ? signingPrice(stage.cards[i], stage.cards, budget - spent) : 0
+      const price = capped ? signingPrice(stage.cards[i], usable ?? stage.cards, budget - spent) : 0
       if (price == null) return
       sign(i, price)
     },
-    [stage, captain, even, seed, reveal, blind, lockCard, nextPack, sign, capped, budget, spent]
+    // `slotFor` and `usable` come off the same stage and picks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [stage, captain, even, seed, reveal, blind, lockCard, nextPack, sign, capped, budget, spent, picks]
   )
 
   const choosing = !seed && !even
@@ -566,6 +637,9 @@ function LiveDraft({
     const isCap = captain === i
     if (choosing) {
       return { clickable: !starting, captain: isCap, capHint: !starting }
+    }
+    if (mystery) {
+      return { clickable: false, opening: !!stage && packNo === 0 && isCap, captain: isCap, empty: true }
     }
     return {
       clickable: !!seed && !stale && !stage && !lineup[i],
@@ -585,7 +659,7 @@ function LiveDraft({
             <CaptainMark inline />
             <span>
               Tap any position to make it your <b>captain</b>. Its pack deals off the captain table: five
-              times the weight on immortals.
+              times the weight on immortals.{mystery ? ' It opens first, then ten packs of mixed positions.' : ''}
             </span>
           </div>
         </>
@@ -601,7 +675,7 @@ function LiveDraft({
             capLeft={capped ? capLeft : null}
             extra={chemShown ? { value: `${chem >= 0 ? '+' : '−'}${Math.abs(chem).toLocaleString()}`, label: 'Chemistry' } : undefined}
           />
-          {capDef && captain != null && !lineup[captain] && !stale && (
+          {capDef && captain != null && !lineup[captain] && !stale && !mystery && (
             <div className="pe-banner">
               <CaptainMark inline />
               <span>
@@ -644,13 +718,34 @@ function LiveDraft({
       <Board
         score={score}
         choosing={choosing}
-        flavor={{ difficulty, even, battles }}
+        flavor={{ difficulty, even, battles, mystery }}
         aside={blind ? <ShowPick on={showPick} onChange={toggleShowPick} /> : undefined}
       >
         <Field lineup={lineup} view={view} onSlot={choosing ? chooseCaptain : openSlot} landing={landing} />
         {!choosing && !stage && !stale && filled < SLOT_COUNT && (
-          <div className="pe-turf-foot">
-            <p className="pe-turf-note pe-note">Tap a pack to open it · {SLOT_COUNT - filled} to go</p>
+          <div className={`pe-turf-foot${mystery ? ' pe-turf-foot--daily' : ''}`}>
+            {mystery ? (
+              <button type="button" className="pe-nextpack" onClick={openNext} disabled={!seed}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  className="pe-nextpack-art"
+                  src={picks.length === 0 && captain != null ? PACK_ART[SLOTS[captain].pool] : WILD_PACK_ART}
+                  alt=""
+                  draggable={false}
+                />
+                <span className="pe-nextpack-body">
+                  <b>{picks.length === 0 ? 'Captain Pack' : `Pack ${picks.length + 1} of ${SLOT_COUNT}`}</b>
+                  <span className="pe-nextpack-pips" aria-hidden>
+                    {Array.from({ length: SLOT_COUNT }, (_, i) => (
+                      <i key={i} className={i < picks.length ? 'done' : i === picks.length ? 'now' : undefined} />
+                    ))}
+                  </span>
+                </span>
+                <span className="pe-nextpack-go">Open</span>
+              </button>
+            ) : (
+              <p className="pe-turf-note pe-note">Tap a pack to open it · {SLOT_COUNT - filled} to go</p>
+            )}
             {restartable && (
               <button
                 type="button"
@@ -668,14 +763,28 @@ function LiveDraft({
       {stage && (
         <PackStage
           stage={stage}
-          tag={stage.slot === captain ? { text: 'Captain pack', captain: true } : null}
+          tag={(mystery ? packNo === 0 : stage.slot === captain) ? { text: 'Captain pack', captain: true } : null}
+          wild={
+            mystery && packNo > 0
+              ? {
+                  art: WILD_PACK_ART,
+                  first: 'Mystery',
+                  rest: `Pack ${packNo + 1}`,
+                  note: reserve ? 'Nothing here fit, so one card was swapped for a reserve' : undefined,
+                }
+              : null
+          }
           onCard={onCard}
           onRevealAll={revealAll}
           onDismiss={dismiss}
           onTear={tear}
           onSkip={skip}
           chemFor={chemShown ? (p) => chemistryPreview(p, signed, true) : undefined}
-          blockedFor={capped ? (p) => (priceOf(p) == null ? 'Over cap' : null) : undefined}
+          blockedFor={
+            capped || mystery
+              ? (p) => (slotFor(p) < 0 ? 'No slot' : capped && priceOf(p) == null ? 'Over cap' : null)
+              : undefined
+          }
           note={skint ? 'You can’t afford anyone here, so the cheapest card signs for free' : null}
           clock={battles?.length ? <BattleNote ids={battles} /> : null}
           onNext={nextPack}

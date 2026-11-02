@@ -146,7 +146,7 @@ export function MegaLobby({
                 to send a draft straight to them.
               </p>
             )}
-            <button type="button" className="pe-btn" onClick={() => create('open')} disabled={!!busy || !named}>
+            <button type="button" className="pe-push" onClick={() => create('open')} disabled={!!busy || !named}>
               {busy === 'open' ? 'Dealing the board' : 'Open with a code'}
             </button>
           </div>
@@ -159,7 +159,7 @@ export function MegaLobby({
             the best man it has a slot for, weighed by what&apos;s left behind him.
           </p>
           <div className="pe-panel-foot">
-            <button type="button" className="pe-btn" onClick={() => create('cpu', { cpu: true })} disabled={!!busy || !named}>
+            <button type="button" className="pe-push" onClick={() => create('cpu', { cpu: true })} disabled={!!busy || !named}>
               {busy === 'cpu' ? 'Dealing the board' : 'Play the CPU'}
             </button>
           </div>
@@ -182,7 +182,7 @@ export function MegaLobby({
           />
           <Link
             href={clean.length === 6 ? `/games/pack-empire/mega-draft/${clean}/` : '#'}
-            className="pe-btn pe-btn--ghost"
+            className="pe-act"
             aria-disabled={clean.length !== 6}
             style={clean.length === 6 ? undefined : { opacity: 0.5, pointerEvents: 'none' }}
           >

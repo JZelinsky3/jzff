@@ -30,7 +30,9 @@ import {
   POOL_KEYS,
   SOLO_BOOSTED,
   SOLO_WEIGHTS,
+  boardLabel,
   difficultyForMode,
+  formatForMode,
   personOf,
   RARITIES,
   type Difficulty,
@@ -377,8 +379,11 @@ export type TopPull = {
 
 export type Leaders = { collectors: Collector[]; pulls: TopPull[] }
 
+/** Rows in each of the front page's two lists. */
+const LEADERS = 5
+
 /** How far down the value order to look for the week's pulls. A pull under this
-    line can't be top three unless hardly anyone played. */
+    line can't be top five unless hardly anyone played. */
 const PULL_POOL = 300
 
 async function topCollectors(): Promise<Collector[]> {
@@ -398,7 +403,7 @@ async function topCollectors(): Promise<Collector[]> {
       }
     })
     .sort((a, b) => b.cards - a.cards || (b.best?.score ?? 0) - (a.best?.score ?? 0))
-    .slice(0, 3)
+    .slice(0, LEADERS)
   const names = await publicNames(counted.flatMap((c) => c.userId ?? []))
   return counted.map(({ userId, guestName, ...c }) => ({ ...c, name: (userId ? names.get(userId) : guestName) ?? 'Manager' }))
 }
@@ -426,7 +431,7 @@ async function pullDraft(source: string, deal: string, userId: string | null, gu
   const { data } = await (userId ? runs.eq('user_id', userId) : runs.eq('guest_name', guestName ?? '')).limit(1).maybeSingle()
   const row = data as { score: number; mode: string | null } | null
   const diff = difficultyForMode(row?.mode ?? null)
-  return { draft: `${diff ? `${DIFFICULTY_LOOK[diff].label} ` : ''}Builder`, total: row?.score ?? null }
+  return { draft: `${diff ? `${boardLabel(diff, formatForMode(row?.mode ?? null))} ` : ''}Builder`, total: row?.score ?? null }
 }
 
 /** The best cards kept since Monday, a man's same card once each. Daily keeps
@@ -455,7 +460,7 @@ async function topPulls(): Promise<TopPull[]> {
       seen.add(key)
       return true
     })
-    .slice(0, 3)
+    .slice(0, LEADERS)
   const names = await publicNames(rows.flatMap((r) => r.user_id ?? []))
   return Promise.all(
     rows.map(async (r) => ({

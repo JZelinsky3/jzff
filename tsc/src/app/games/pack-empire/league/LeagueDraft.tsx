@@ -146,13 +146,13 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
         <div className="pe-recap-actions">
           <button
             type="button"
-            className="pe-btn"
+            className="pe-push"
             disabled={boost == null || busy}
             onClick={() => act({ action: 'begin', boostSlot: boost })}
           >
             {boost == null ? 'Tap a slot' : `Boost the ${SLOTS[boost].label.toLowerCase()} pack`}
           </button>
-          <button type="button" className="pe-btn pe-btn--quiet" disabled={busy} onClick={() => act({ action: 'begin', boostSlot: -1 })}>
+          <button type="button" className="pe-act" disabled={busy} onClick={() => act({ action: 'begin', boostSlot: -1 })}>
             Open everything standard
           </button>
         </div>
@@ -222,7 +222,7 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
           </div>
         ) : (
           <div className="pe-recap-actions" style={{ marginBottom: '1.2rem' }}>
-            <Link href={`/games/pack-empire/league/${leagueId}/`} className="pe-btn">
+            <Link href={`/games/pack-empire/league/${leagueId}/`} className="pe-push">
               Back to the league
             </Link>
           </div>

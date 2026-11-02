@@ -66,13 +66,13 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
     const d = view.myDraft
     if (!d || d.status === 'drafting') {
       cta = (
-        <Link href={`/games/pack-empire/league/${league.id}/draft/`} className="pe-btn">
+        <Link href={`/games/pack-empire/league/${league.id}/draft/`} className="pe-push">
           {d ? 'Finish your draft' : league.phase === 'regular' ? `Draft week ${league.current_week}` : `Draft the ${PHASE_LABEL[league.phase]}`}
         </Link>
       )
     } else if (league.phase === 'regular' && league.current_week < REGULAR_WEEKS && !d.locked) {
       cta = (
-        <Link href={`/games/pack-empire/league/${league.id}/draft/`} className="pe-btn">
+        <Link href={`/games/pack-empire/league/${league.id}/draft/`} className="pe-push">
           Lock a player
         </Link>
       )
@@ -156,7 +156,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                   ) : (
                     <Link
                       href={`/login?next=${encodeURIComponent(`/games/pack-empire/league/${league.id}/`)}`}
-                      className="pe-btn"
+                      className="pe-push"
                       style={{ marginTop: '0.8rem' }}
                     >
                       Sign in to join

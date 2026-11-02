@@ -11,12 +11,17 @@
 //
 // A run with nothing on record is fine: nothing about its packs was ever shown.
 //
+// Mystery Builder runs go on record at every difficulty, face up too: its packs
+// come in a fixed line, and knowing which positions are coming is worth more than
+// any number on a card. So the deal route only ever hands over the pack after the
+// last pick on record, and there's no asking for one further along.
+//
 // See 0093_pack_empire_blind_picks.sql.
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { maskCard, type SeedInfo } from './deal'
 import { SLOT_COUNT, type BlindLock, type Player } from './rules'
-import { seedPack, type SoloPick } from './solo'
+import { pickPack, type SoloPick } from './solo'
 
 /** The key a run's picks sit under. Both seats of an Even Versus share a seed. */
 export function blindRun(seed: string, info: SeedInfo, seat: string | null = null): string {
@@ -47,17 +52,20 @@ async function readPicks(run: string): Promise<SoloPick[]> {
 
 /** Every pick re-dealt in order, or null if one of them isn't in its pack. */
 function walk(seed: string, info: SeedInfo, picks: SoloPick[]) {
-  const taken: string[] = []
   const steps: { slot: number; pack: Player[]; card: Player }[] = []
-  for (const pick of picks) {
+  for (const [i, pick] of picks.entries()) {
     if (steps.some((s) => s.slot === pick.slot)) return null
-    const pack = seedPack(seed, info, pick.slot, taken)
+    const { pack, fits } = pickPack(seed, info, picks.slice(0, i), pick)
     const card = pack.find((c) => c.id === pick.id)
-    if (!card) return null
-    taken.push(card.id)
+    if (!card || !fits) return null
     steps.push({ slot: pick.slot, pack, card })
   }
   return steps
+}
+
+/** A Mystery run's picks so far, as the server has them. */
+export async function lockedPicks(run: string): Promise<SoloPick[]> {
+  return readPicks(run)
 }
 
 const leads = (a: SoloPick[], b: SoloPick[]) => a.every((p, i) => b[i]?.slot === p.slot && b[i]?.id === p.id)

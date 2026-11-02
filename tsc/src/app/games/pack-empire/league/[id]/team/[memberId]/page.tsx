@@ -136,7 +136,7 @@ export default async function LeagueTeamPage({
         </section>
 
         <div className="pe-recap-actions" style={{ marginTop: '2rem' }}>
-          <Link href={`/games/pack-empire/league/${id}/`} className="pe-btn pe-btn--quiet">
+          <Link href={`/games/pack-empire/league/${id}/`} className="pe-act">
             Back to {view.league.name}
           </Link>
         </div>

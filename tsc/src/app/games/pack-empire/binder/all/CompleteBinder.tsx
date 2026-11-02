@@ -395,20 +395,20 @@ function CardSheet({
             <div className="pe-bd-photo-acts">
               {draft ? (
                 <>
-                  <button type="button" className="pe-btn pe-btn--sm" onClick={save} disabled={busy}>
+                  <button type="button" className="pe-push pe-push--sm" onClick={save} disabled={busy}>
                     {busy ? 'Saving' : 'Save Photo'}
                   </button>
-                  <button type="button" className="pe-btn pe-btn--ghost pe-btn--sm" onClick={clearDraft} disabled={busy}>
+                  <button type="button" className="pe-act pe-act--sm" onClick={clearDraft} disabled={busy}>
                     Cancel
                   </button>
                 </>
               ) : (
                 <>
-                  <button type="button" className="pe-btn pe-btn--sm" onClick={() => input.current?.click()} disabled={busy}>
+                  <button type="button" className="pe-push pe-push--sm" onClick={() => input.current?.click()} disabled={busy}>
                     {uploaded || card.img ? 'Replace Photo' : 'Upload Photo'}
                   </button>
                   {uploaded && (
-                    <button type="button" className="pe-btn pe-btn--ghost pe-btn--sm" onClick={remove} disabled={busy}>
+                    <button type="button" className="pe-act pe-act--sm" onClick={remove} disabled={busy}>
                       {busy ? 'Removing' : 'Remove'}
                     </button>
                   )}

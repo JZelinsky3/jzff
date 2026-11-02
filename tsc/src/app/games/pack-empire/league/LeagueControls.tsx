@@ -78,7 +78,7 @@ export function CommishPanel({
           <>
             <button
               type="button"
-              className="pe-btn"
+              className="pe-push"
               disabled={!canStart || !!busy}
               onClick={() => run('start', { action: 'start', id })}
             >
@@ -96,7 +96,7 @@ export function CommishPanel({
           <>
             <button
               type="button"
-              className={`pe-btn${armed === 'advance' ? '' : ' pe-btn--ghost'}`}
+              className={armed === 'advance' ? 'pe-push' : 'pe-act'}
               disabled={!!busy}
               onClick={() => {
                 if (waitingOn > 0 && armed !== 'advance') {
@@ -118,14 +118,14 @@ export function CommishPanel({
         )}
 
         {phase === 'complete' && (
-          <button type="button" className="pe-btn" disabled={!!busy} onClick={() => run('new', { action: 'new-season', id })}>
+          <button type="button" className="pe-push" disabled={!!busy} onClick={() => run('new', { action: 'new-season', id })}>
             Start a new season
           </button>
         )}
 
         <button
           type="button"
-          className="pe-btn pe-btn--quiet pe-btn--sm"
+          className="pe-act pe-act--sm"
           disabled={!!busy}
           onClick={() => {
             if (armed !== 'delete') {
@@ -161,7 +161,7 @@ export function RenameTeam({ id, current }: { id: string; current: string | null
         <input className="pe-input" value={name} maxLength={28} onChange={(e) => setName(e.target.value)} />
         <button
           type="button"
-          className="pe-btn pe-btn--sm"
+          className="pe-push pe-push--sm"
           disabled={!!busy || name.trim().length < 2}
           onClick={() => run('rename', { action: 'rename', id, teamName: name }, () => setEditing(false))}
         >
@@ -181,7 +181,7 @@ export function LeaveLeague({ id }: { id: string }) {
     <>
       <button
         type="button"
-        className="pe-btn pe-btn--quiet pe-btn--sm"
+        className="pe-act pe-act--sm"
         disabled={!!busy}
         onClick={() => {
           if (!armed) {
@@ -215,7 +215,7 @@ export function JoinThisLeague({ id, invite }: { id: string; invite: boolean }) 
       )}
       <button
         type="button"
-        className="pe-btn"
+        className="pe-push"
         disabled={!!busy || (invite && clean.length !== 6)}
         onClick={() => run('join', invite ? { action: 'join', code: clean } : { action: 'join', id })}
       >

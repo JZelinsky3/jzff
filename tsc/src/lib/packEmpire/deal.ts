@@ -16,7 +16,9 @@ import { createHmac, hkdfSync, randomBytes } from 'crypto'
 import {
   DAILY_H_FROM,
   DAILY_NEW_POOL_FROM,
+  DAILY_N_FROM,
   POOL,
+  POOL_M_VERSION,
   POOL_BEFORE,
   POOL_BEFORE_VERSION,
   POOL_H,
@@ -24,6 +26,7 @@ import {
   POOL_VERSION,
   cardWeight,
   cardWeightH,
+  cardWeightM,
   liveCard,
   personOfId,
   playerById,
@@ -41,12 +44,15 @@ import {
   SALARY_CAP,
   SEED_ALPHABET,
   SEED_DIFF,
+  MYSTERY_DIFF,
   SHARED_WEIGHTS,
+  SOLO_BOOSTED,
   SLOTS,
   SLOT_COUNT,
   SOLO_WEIGHTS,
   VALUE_TOP,
   difficultyFromSeed,
+  formatFromSeed,
   megaPickOwner,
   megaWorth,
   personOf,
@@ -116,9 +122,13 @@ const BEFORE_ERA: Era = {
 
 const H_ERA: Era = { version: POOL_H_VERSION, pool: POOL_H, weigh: cardWeightH }
 
+/** Same cards as now, Canton on the odds it had before 10n. */
+const M_ERA: Era = { version: POOL_M_VERSION, pool: POOL, weigh: cardWeightM }
+
 function dailyEra(day: string): Era {
   if (day < DAILY_H_FROM) return BEFORE_ERA
-  return day < DAILY_NEW_POOL_FROM ? H_ERA : CURRENT_ERA
+  if (day < DAILY_NEW_POOL_FROM) return H_ERA
+  return day < DAILY_N_FROM ? M_ERA : CURRENT_ERA
 }
 
 /** A card as a day's Daily dealt it, at the value that day started with. */
@@ -175,8 +185,16 @@ export function newEvenSeed(diff: Difficulty): string {
   return body + encode(hmac(`seed|${body}`), 6)
 }
 
-/** `versus` is a Classic Versus seat, on the richer ordinary packs. */
-export type SeedInfo = { captain: number | null; diff: Difficulty; even: boolean; versus: boolean }
+/** A Mystery Builder run: the captain's pack, then ten packs of five random positions. */
+export function newMysterySeed(captain: number, diff: Difficulty = 'open'): string {
+  const mark = Object.keys(MYSTERY_DIFF).find((k) => MYSTERY_DIFF[k] === diff)
+  const body = randomChars(8) + ALPHABET[captain] + mark
+  return body + encode(hmac(`seed|${body}`), 6)
+}
+
+/** `versus` is a Classic Versus seat, on the richer ordinary packs. `mystery` is a
+    Mystery Builder run. */
+export type SeedInfo = { captain: number | null; diff: Difficulty; even: boolean; versus: boolean; mystery: boolean }
 
 /** What a seed commits to, or null if it wasn't signed here (or not for this
     pool, which is how a run saved before a pool change stops replaying). */
@@ -185,12 +203,15 @@ export function readSeed(seed: string): SeedInfo | null {
   const bodyLength = seed.length - 6
   const body = seed.slice(0, bodyLength)
   if (encode(hmac(`seed|${body}`), 6) !== seed.slice(bodyLength)) return null
-  if (seed[8] === EVEN_MARK || seed[8] === EVEN_CONTESTED_MARK) return seed.length === 16 ? { captain: null, diff: difficultyFromSeed(seed), even: true, versus: false } : null
+  if (seed[8] === EVEN_MARK || seed[8] === EVEN_CONTESTED_MARK) return seed.length === 16 ? { captain: null, diff: difficultyFromSeed(seed), even: true, versus: false, mystery: false } : null
   const at = ALPHABET.indexOf(seed[8])
   const versus = at >= VERSUS_CAPTAIN_SHIFT
   const captain = versus ? at - VERSUS_CAPTAIN_SHIFT : at
   if (captain < 0 || captain >= SLOT_COUNT) return null
-  return { captain, diff: difficultyFromSeed(seed), even: false, versus }
+  const mystery = formatFromSeed(seed) === 'mystery'
+  // A Versus seat is never a Mystery run.
+  if (mystery && versus) return null
+  return { captain, diff: difficultyFromSeed(seed), even: false, versus, mystery }
 }
 
 /** A plain random seed, for things the server keeps to itself (a League
@@ -750,6 +771,85 @@ export function dailyPack(set: DailySet, captain: number | null, picks: DailyPic
   const reserve = set.reserves[need].find((c) => !taken.has(c.id))
   if (!reserve) return { cards: pack, reserve: null }
   return { cards: [...pack.slice(0, PACK_SIZE - 1), reserve], reserve: reserve.id }
+}
+
+// ============================================================
+// Mystery Builder
+// ============================================================
+
+export type MysteryPack = {
+  cards: Player[]
+  /** The card swapped in because nothing else fit. */
+  reserve: string | null
+}
+
+/**
+ * The pack a Mystery run is on, given its picks so far.
+ *
+ * The first is the captain's, dealt exactly like a Classic captain pack. The ten
+ * after it are wild: five different positions (wildPools, the Daily's mix), one
+ * card from each off Empire Builder's own tables, one of the five off the boosted
+ * table, so a card is as likely to be a star as in any Builder pack and the
+ * binder can take it. A man already signed never comes back.
+ *
+ * Which positions a pack holds depends only on the seed and how far in you are,
+ * never on what you kept, so planning for what's left is the game. When none of
+ * the five fit a slot you still have open, the last card is swapped for a reserve
+ * at the position you need most: replacement level, so leaving a position late
+ * costs you but never leaves a hole (the Daily's rule).
+ */
+export function mysteryPack(seed: string, captain: number, picks: { slot: number; id: string }[]): MysteryPack {
+  const taken = picks.map((p) => p.id)
+  if (picks.length === 0) {
+    const cards = dealPack({ label: `mystery:${seed}`, slot: captain, base: SOLO_WEIGHTS.captain, boosted: SOLO_BOOSTED.captain, exclude: taken })
+    return { cards, reserve: null }
+  }
+
+  const label = `mystery:${seed}|${picks.length}`
+  const head = stream(`${label}|head`)
+  const pools = wildPools(head)
+  const boostedAt = Math.floor(head() * PACK_SIZE)
+  const men = new Set(taken.map(personOfId))
+  const draw = (k: PoolKey, table: Weights, lane: () => number): Player | null => {
+    const pool = POOL[k]
+    const from = sampler(pool, table)
+    for (let n = 0; n < LANE_DEPTH; n++) {
+      const p = from(lane())
+      if (p && !men.has(personOf(p))) return p
+    }
+    const rest = pool.filter((p) => !men.has(personOf(p)))
+    return rest.length ? rest[Math.floor(lane() * rest.length)] : null
+  }
+
+  let cards: Player[] = []
+  pools.forEach((k, i) => {
+    const p = draw(k, i === boostedAt ? SOLO_BOOSTED.normal : SOLO_WEIGHTS.normal, stream(`${label}|lane${i}`))
+    if (!p) return
+    men.add(personOf(p))
+    cards.push(p)
+  })
+  for (let i = cards.length - 1; i > 0; i--) {
+    const j = Math.floor(head() * (i + 1))
+    ;[cards[i], cards[j]] = [cards[j], cards[i]]
+  }
+
+  const filled = new Set(picks.map((p) => p.slot))
+  const open = SLOTS.filter((_, i) => !filled.has(i))
+  if (open.length === 0 || cards.some((c) => open.some((s) => s.pool === c.pos))) return { cards, reserve: null }
+
+  const openAt = (k: PoolKey) => open.filter((s) => s.pool === k).length
+  const need = [...POOL_KEYS].sort((a, b) => openAt(b) - openAt(a))[0]
+  const reserve = draw(need, RESERVE_WEIGHTS, stream(`${label}|reserve|${need}`))
+  if (!reserve) return { cards, reserve: null }
+  cards = [...cards.slice(0, PACK_SIZE - 1), reserve]
+  return { cards, reserve: reserve.id }
+}
+
+/** Where a Mystery pick goes: the captain's slot first, then the first open slot
+    at the card's position. -1 when it has nowhere to go. */
+export function mysterySlot(captain: number, picks: { slot: number }[], pos: PoolKey): number {
+  if (picks.length === 0) return captain
+  return slotForCard(pos, new Set(picks.map((p) => p.slot)))
 }
 
 // ============================================================

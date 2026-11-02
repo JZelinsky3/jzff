@@ -277,7 +277,8 @@ export function DraftReport({
   // The perfect eleven goes in the slots their packs were opened for, so the
   // two formations line up card for card.
   const perfect = useMemo(() => {
-    if (!missed?.rows) return null
+    // Mystery and the Daily have no one perfect eleven to show.
+    if (!missed?.rows || missed.perfect == null) return null
     const eleven: Player[] = []
     for (const row of missed.rows) {
       const card = row.cards.find((c) => c.id === row.perfect)

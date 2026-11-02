@@ -31,9 +31,9 @@ import {
   type MvCard,
 } from './multiverse'
 import { matchesLocks } from '@/lib/packEmpire/blindPicks'
-import { missReport } from '@/lib/packEmpire/missed'
+import { missReport, mysteryMissed } from '@/lib/packEmpire/missed'
 import { parseSoloPicks, replaySolo, soloDisplay } from '@/lib/packEmpire/solo'
-import { difficultyForMode, isBlind, type Chemistry, type Missed, type Player } from '@/lib/packEmpire/rules'
+import { difficultyForMode, formatForMode, isBlind, type Chemistry, type Missed, type Player } from '@/lib/packEmpire/rules'
 import type { GameId, RunDisplay } from './leaderboard'
 
 export type VerifiedRun = {
@@ -326,11 +326,12 @@ async function verifyPackEmpire(poolId: string, mode: string | null, seed: strin
   // A blind run can't post to the open board or the other way round, and a
   // Versus seat's seed is never a run of its own: its packs are richer, and a
   // run on this board is what files in a binder.
-  if (run.even || run.versus || difficultyForMode(mode) !== run.diff) {
+  if (run.even || run.versus || difficultyForMode(mode) !== run.diff || (formatForMode(mode) === 'mystery') !== run.mystery) {
     return { ok: false, status: 400, error: 'That run was dealt for a different board.' }
   }
-  // A blind pack turns over once its pick is on record, so that's the pick.
-  if (isBlind(run.diff) && !(await matchesLocks(seed, parsed))) {
+  // A blind pack turns over once its pick is on record, so that's the pick. A
+  // Mystery pack is only handed over after the pick before it is on record.
+  if ((isBlind(run.diff) || run.mystery) && !(await matchesLocks(seed, parsed))) {
     return { ok: false, status: 400, error: 'Those are not the picks you locked in.' }
   }
   return {
@@ -349,7 +350,7 @@ async function verifyPackEmpire(poolId: string, mode: string | null, seed: strin
             base: run.base,
             chem: run.chem,
             score: run.score,
-            missed: missReport(run.packs, run.score),
+            missed: run.mystery ? mysteryMissed(run.packs, run.score) : missReport(run.packs, run.score),
           },
         }),
   }
