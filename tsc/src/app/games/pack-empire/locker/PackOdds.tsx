@@ -43,7 +43,7 @@ export function PackOdds({ pack }: { pack: PackDef }) {
               </tbody>
             </table>
             <p>Per card. {pack.match ? 'If a division has no card at a rarity, that card drops one rarity. ' : ''}A card you already own is half as likely as one you do not, inside its rarity.</p>
-            <button type="button" className="pe-btn pe-btn--sm" onClick={() => setOpen(false)}>
+            <button type="button" className="pe-act" onClick={() => setOpen(false)}>
               Close
             </button>
           </div>

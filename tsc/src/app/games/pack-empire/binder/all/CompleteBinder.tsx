@@ -168,7 +168,7 @@ export function CompleteBinder({ view }: { view: BinderView }) {
 
         {rows.length > limit && (
           <div className="pe-bd-more">
-            <button type="button" className="pe-btn pe-btn--quiet pe-btn--sm" onClick={() => setLimit((n) => n + PAGE)}>
+            <button type="button" className="pe-act" onClick={() => setLimit((n) => n + PAGE)}>
               Show more
             </button>
             <span className="pe-note">

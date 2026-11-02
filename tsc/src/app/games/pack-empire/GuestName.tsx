@@ -44,7 +44,7 @@ export function GuestName({
         <Link className="pe-link" href={signIn}>
           Sign in
         </Link>{' '}
-        instead to save your drafts and binder.
+        to keep your cards in a binder.
       </p>
     </div>
   )

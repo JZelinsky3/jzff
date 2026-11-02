@@ -23,7 +23,7 @@ import { DeleteGame } from '../GameList'
 import { Bonds, LineupSheet } from '../cards'
 import { storageChanged, useStored } from '../clientStore'
 import { DraftReport, PackBoard } from '../report'
-import { ShareButton, ShareLink } from '../share'
+import { ShareButton, ShareLink, SocialChip } from '../share'
 import { Unveil } from '../unveil'
 
 const keyName = (id: string) => `pe_vs_key_${id}`
@@ -281,13 +281,12 @@ export function VersusRoom({
             </Link>
             <ShareButton
               path={path}
-              className="pe-btn pe-btn--quiet"
               text={winner ? `${winner.name} won ${Math.max(hs, gs).toLocaleString()} to ${Math.min(hs, gs).toLocaleString()} on Pack Empire.` : 'Dead even on Pack Empire.'}
             />
             {canFriend && !friendNote && theirs?.name && (
-              <button type="button" className="pe-btn pe-btn--quiet" onClick={addFriend} disabled={busy}>
+              <SocialChip icon="friend" onClick={addFriend} disabled={busy}>
                 Add {theirs.name} as a friend
-              </button>
+              </SocialChip>
             )}
           </div>
           {friendNote && <p className="pe-recap-post">{friendNote}</p>}
@@ -488,7 +487,7 @@ export function VersusRoom({
             {unsent && (
               <>
                 {' '}
-                <button type="button" className="pe-btn pe-btn--sm" onClick={() => onDone(unsent)}>
+                <button type="button" className="pe-act pe-act--sm" onClick={() => onDone(unsent)}>
                   Send it again
                 </button>
               </>

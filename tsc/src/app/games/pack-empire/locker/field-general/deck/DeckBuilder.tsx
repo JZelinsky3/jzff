@@ -103,7 +103,7 @@ export function DeckBuilder({ owned, draft, rule, game, home }: { owned: OwnedCa
     <div className="pe-fg-deckname">
       <input value={name} onChange={(e) => setName(e.target.value)} maxLength={DECK_NAME_MAX} placeholder="Name this deck" aria-label="Deck name" />
       {draft.id && (
-        <button type="button" className="pe-btn pe-btn--ghost pe-btn--sm" disabled={busy} onClick={remove}>
+        <button type="button" className="pe-act" disabled={busy} onClick={remove}>
           {deleting ? 'Tap Again' : 'Delete'}
         </button>
       )}
@@ -124,7 +124,7 @@ export function DeckBuilder({ owned, draft, rule, game, home }: { owned: OwnedCa
             </b>
             <span>Cap</span>
           </div>
-          <button type="button" className="pe-btn pe-btn--ghost pe-btn--sm" onClick={auto}>
+          <button type="button" className="pe-act" onClick={auto}>
             Auto
           </button>
           <button type="button" className="pe-btn pe-btn--sm" disabled={!!problem || busy} onClick={save}>

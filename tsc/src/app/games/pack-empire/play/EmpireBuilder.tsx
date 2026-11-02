@@ -40,6 +40,7 @@ import {
 import { CaptainDraft, type DraftDone } from '../CaptainDraft'
 import { DifficultyPicker, DifficultyTabs } from '../Difficulty'
 import { GuestName } from '../GuestName'
+import { SocialChip } from '../share'
 import { Field, Ladder } from '../cards'
 import { DraftReport, PackBoard } from '../report'
 import { easeClimb, useCountUp } from '../stage'
@@ -402,9 +403,9 @@ function Recap({
           <button type="button" className="pe-btn" onClick={onAgain}>
             New run
           </button>
-          <button type="button" className="pe-btn pe-btn--ghost" onClick={onShare}>
+          <SocialChip icon="share" done={shared === 'copied'} onClick={onShare}>
             {shared === 'copied' ? 'Copied' : 'Share'}
-          </button>
+          </SocialChip>
           <Link href={boardHref(difficultyFromSeed(run.seed))} className="pe-btn pe-btn--quiet">
             The board
           </Link>

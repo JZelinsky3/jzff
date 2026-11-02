@@ -10,11 +10,15 @@
 // about what anyone found (0089 stops counting the Daily rows already filed).
 //
 // Nothing here trusts the browser. A pack is recorded only after the server
-// has dealt it itself: a run re-dealt on its way to the board (which is also
-// how a run played signed out reaches the binder, once it's claimed), a
-// Versus lineup re-dealt on submit, a League pick checked against its pack.
-// The table keys on (user, deal, slot), so the same pack recorded twice
-// counts once. See 0083_pack_empire_binder.sql and 0084.
+// has dealt it itself: a run re-dealt on its way to the board, a Versus lineup
+// re-dealt on submit, a League pick checked against its pack. The table keys on
+// (user, deal, slot), so the same pack recorded twice counts once. See
+// 0083_pack_empire_binder.sql and 0084.
+//
+// A run posted signed out under a typed name files too, into a guest table keyed
+// on the browser's hashed key (0100). Its keeps count for the site straight away:
+// Pulls Of The Week, Top Collectors, every card's site count, a Canton's number.
+// claimGuestBinder moves them onto the account when that browser signs in.
 
 import { unstable_cache } from 'next/cache'
 import { publicNames } from '@/lib/minigames/boardIdentity'
@@ -70,8 +74,12 @@ export async function recordPacks(userId: string, source: BinderSource, packs: B
  * re-filed run can't take a second number.
  */
 async function stampCantons(userId: string, packs: BinderPack[]): Promise<void> {
-  const stamps = packs.flatMap((p) => (p.kept && playerById(p.kept)?.rarity === 'canton' ? [{ card: p.kept, deal: p.deal, slot: p.slot }] : []))
+  const stamps = cantonStamps(packs)
   if (stamps.length) await createAdminClient().rpc('pe_canton_stamp', { p_user: userId, p_stamps: stamps })
+}
+
+function cantonStamps(packs: BinderPack[]) {
+  return packs.flatMap((p) => (p.kept && playerById(p.kept)?.rarity === 'canton' ? [{ card: p.kept, deal: p.deal, slot: p.slot }] : []))
 }
 
 /** An Empire Builder run: re-dealt here, all eleven packs filed. Builder is the one
@@ -85,6 +93,32 @@ export async function recordSoloRun(userId: string, seed: string, picks: SoloPic
     'solo',
     run.packs.map((p) => ({ deal: `solo:${seed}`, slot: p.slot, cards: p.cards.map((c) => c.id), kept: p.kept }))
   )
+}
+
+/** A run posted signed out: filed under the browser's key, so it counts for the
+    site now and lands in a binder when that browser signs in. Never throws. */
+export async function recordGuestRun(guestKey: string, guestName: string, seed: string, picks: SoloPick[]): Promise<void> {
+  const run = replaySolo(seed, picks)
+  if (!run.ok) return
+  const packs = run.packs.map((p) => ({ deal: `solo:${seed}`, slot: p.slot, cards: p.cards.map((c) => c.id), kept: p.kept }))
+  try {
+    const db = createAdminClient()
+    const { error } = await db.rpc('pe_binder_guest_file', { p_key: guestKey, p_name: guestName, p_pool: POOL_VERSION, p_packs: packs })
+    if (error) return
+    const stamps = cantonStamps(packs)
+    if (stamps.length) await db.rpc('pe_canton_stamp_guest', { p_key: guestKey, p_stamps: stamps })
+  } catch {
+    // The run is on the board either way.
+  }
+}
+
+/** Sign-in: this browser's guest packs and Canton numbers become the account's. */
+export async function claimGuestBinder(userId: string, guestKey: string): Promise<void> {
+  try {
+    await createAdminClient().rpc('pe_binder_claim', { p_user: userId, p_key: guestKey })
+  } catch {
+    // syncBinder re-files the claimed runs from the board anyway, minus any Canton number.
+  }
 }
 
 /** Runs one visit to the binder files at most, catching up on the past. */
@@ -350,12 +384,13 @@ const PULL_POOL = 300
 async function topCollectors(): Promise<Collector[]> {
   const { data, error } = await createAdminClient().rpc('pe_binder_collections')
   if (error) throw error
-  const rows = (data ?? []) as { user_id: string; kept: string[] }[]
+  const rows = (data ?? []) as { user_id: string | null; guest_name: string | null; kept: string[] }[]
   const counted = rows
     .map((r) => {
       const held = r.kept.flatMap((id) => liveCard(id) ?? [])
       return {
         userId: r.user_id,
+        guestName: r.guest_name,
         cards: held.length,
         immortals: held.filter((c) => c.rarity === 'immortal').length,
         cantons: held.filter((c) => c.rarity === 'canton').length,
@@ -364,15 +399,15 @@ async function topCollectors(): Promise<Collector[]> {
     })
     .sort((a, b) => b.cards - a.cards || (b.best?.score ?? 0) - (a.best?.score ?? 0))
     .slice(0, 3)
-  const names = await publicNames(counted.map((c) => c.userId))
-  return counted.map(({ userId, ...c }) => ({ ...c, name: names.get(userId) ?? 'Manager' }))
+  const names = await publicNames(counted.flatMap((c) => c.userId ?? []))
+  return counted.map(({ userId, guestName, ...c }) => ({ ...c, name: (userId ? names.get(userId) : guestName) ?? 'Manager' }))
 }
 
 /** The draft a pull came from and what the lineup finished on. */
-async function pullDraft(source: string, deal: string, userId: string): Promise<{ draft: string; total: number | null }> {
+async function pullDraft(source: string, deal: string, userId: string | null, guestName: string | null): Promise<{ draft: string; total: number | null }> {
   const db = createAdminClient()
   const seed = deal.replace(/^solo:/, '')
-  if (source === 'versus') {
+  if (source === 'versus' && userId) {
     const { data } = await db
       .from('pe_versus')
       .select('difficulty, host_id, host_score:host_result->score, guest_score:guest_result->score')
@@ -387,14 +422,8 @@ async function pullDraft(source: string, deal: string, userId: string): Promise<
       total: Number((row.host_id === userId ? row.host_score : row.guest_score) ?? 0) || null,
     }
   }
-  const { data } = await db
-    .from('game_runs')
-    .select('score, mode')
-    .eq('game', 'pack-empire')
-    .eq('seed', seed)
-    .eq('user_id', userId)
-    .limit(1)
-    .maybeSingle()
+  const runs = db.from('game_runs').select('score, mode').eq('game', 'pack-empire').eq('seed', seed)
+  const { data } = await (userId ? runs.eq('user_id', userId) : runs.eq('guest_name', guestName ?? '')).limit(1).maybeSingle()
   const row = data as { score: number; mode: string | null } | null
   const diff = difficultyForMode(row?.mode ?? null)
   return { draft: `${diff ? `${DIFFICULTY_LOOK[diff].label} ` : ''}Builder`, total: row?.score ?? null }
@@ -414,26 +443,26 @@ async function topPulls(): Promise<TopPull[]> {
   })
   if (error) throw error
   const seen = new Set<string>()
-  const rows = ((data ?? []) as { user_id: string; deal: string; kept: string; source: string; created_at: string }[])
+  const rows = ((data ?? []) as { user_id: string | null; guest_name: string | null; deal: string; kept: string; source: string; created_at: string }[])
     .flatMap((r) => {
       const card = liveCard(r.kept)
       return card ? [{ ...r, card }] : []
     })
     .sort((a, b) => b.card.score - a.card.score || a.created_at.localeCompare(b.created_at))
     .filter((r) => {
-      const key = `${r.user_id}|${r.kept}`
+      const key = `${r.user_id ?? `g:${r.guest_name}`}|${r.kept}`
       if (seen.has(key)) return false
       seen.add(key)
       return true
     })
     .slice(0, 3)
-  const names = await publicNames(rows.map((r) => r.user_id))
+  const names = await publicNames(rows.flatMap((r) => r.user_id ?? []))
   return Promise.all(
     rows.map(async (r) => ({
-      name: names.get(r.user_id) ?? 'Manager',
+      name: (r.user_id ? names.get(r.user_id) : r.guest_name) ?? 'Manager',
       card: r.card,
       at: r.created_at,
-      ...(await pullDraft(r.source, r.deal, r.user_id)),
+      ...(await pullDraft(r.source, r.deal, r.user_id, r.guest_name)),
     }))
   )
 }

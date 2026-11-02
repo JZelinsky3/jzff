@@ -277,7 +277,8 @@
 .fg-either { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; }
 .fg-either[data-n='3'] { grid-template-columns: 1fr 1fr; }
 .fg-either[data-n='3'] > :last-child { grid-column: 1 / -1; }
-.fg-either .pe-btn { padding-inline: .3rem; white-space: nowrap; }
+.fg-either .pe-btn, .fg-either .pe-act, .fg-either .pe-push { padding-inline: .3rem; white-space: nowrap; }
+.fg-either .pe-act { min-height: 40px; }
 /* The drop zone for a card you're getting rid of, and what's waiting to go. */
 .fg-bin { display: flex; align-items: center; justify-content: center; height: 52px; border: 2px dashed var(--foe); border-radius: 10px; background: rgba(255, 122, 110, .1); font-family: var(--pe-cond); font-size: 1rem; font-weight: 800; letter-spacing: .04em; color: var(--foe); }
 .fg-tossed { flex: none; align-self: center; display: grid; justify-items: center; width: 62px; margin-left: .55rem; padding: .35rem 0; border: 1px dashed rgba(255, 122, 110, .6); border-radius: 8px; background: rgba(255, 122, 110, .08); color: var(--foe); cursor: pointer; }

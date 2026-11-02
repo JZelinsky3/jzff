@@ -1,7 +1,70 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useOrigin } from './clientStore'
+
+const GLYPHS = {
+  share: (
+    <>
+      <circle cx="17" cy="5.5" r="2.5" />
+      <circle cx="6" cy="12" r="2.5" />
+      <circle cx="17" cy="18.5" r="2.5" />
+      <path d="M8.2 10.8 14.8 6.7M8.2 13.2l6.6 4.1" />
+    </>
+  ),
+  link: <path d="M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4L11.7 6M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1.5-1.5" />,
+  friend: (
+    <>
+      <circle cx="9.5" cy="8" r="3.5" />
+      <path d="M3 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5M19 8v6M16 11h6" />
+    </>
+  ),
+  again: <path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.7M20 4v4.7h-4.7M20 12a8 8 0 0 1-13.7 5.6L4 15.3M4 20v-4.7h4.7" />,
+  done: <path d="m5 12.5 4.5 4.5L19 7.5" />,
+} as const
+
+export type Glyph = keyof typeof GLYPHS
+
+/** The stroke icons on the in-game chips. */
+export function ChipGlyph({ name }: { name: Glyph }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {GLYPHS[name]}
+    </svg>
+  )
+}
+
+/** Sending the game out: the icon in its coin, ticked once it's done. */
+export function SocialChip({
+  icon,
+  done = false,
+  small = false,
+  onClick,
+  disabled,
+  children,
+}: {
+  icon: Glyph
+  done?: boolean
+  small?: boolean
+  onClick: () => void
+  disabled?: boolean
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      className={`pe-act pe-act--social${small ? ' pe-act--sm' : ''}`}
+      data-done={done ? '' : undefined}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      <span className="pe-act-coin">
+        <ChipGlyph name={done ? 'done' : icon} />
+      </span>
+      {children}
+    </button>
+  )
+}
 
 /** The phone's own share sheet, or a copy to the clipboard where there isn't
     one. A link preview is what sells it, so nothing but the URL is needed. */
@@ -32,22 +95,12 @@ function useShare(path: string, title: string, text: string) {
 }
 
 /** A result's button: the score's own link behind a plain Share. */
-export function ShareButton({
-  path,
-  title = 'Pack Empire',
-  text,
-  className = 'pe-btn pe-btn--ghost',
-}: {
-  path: string
-  title?: string
-  text: string
-  className?: string
-}) {
+export function ShareButton({ path, title = 'Pack Empire', text }: { path: string; title?: string; text: string }) {
   const { copied, share } = useShare(path, title, text)
   return (
-    <button type="button" className={className} onClick={share}>
+    <SocialChip icon="share" done={copied} onClick={share}>
       {copied ? 'Copied' : 'Share'}
-    </button>
+    </SocialChip>
   )
 }
 
@@ -59,9 +112,9 @@ export function ShareLink({ path, title, text }: { path: string; title: string; 
   return (
     <div className="pe-share">
       <code>{url || path}</code>
-      <button type="button" className="pe-btn pe-btn--sm" onClick={share}>
+      <SocialChip icon="link" done={copied} onClick={share}>
         {copied ? 'Copied' : 'Send it'}
-      </button>
+      </SocialChip>
     </div>
   )
 }

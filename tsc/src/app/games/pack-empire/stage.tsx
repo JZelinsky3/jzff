@@ -794,22 +794,22 @@ export function PackStage({
 
         <div className="pe-stage-foot">
           {open && !stage.pickedId && !stage.kept && !w && !stage.queue.length && hidden > 0 && (
-            <button type="button" className="pe-btn pe-btn--ghost" onClick={onRevealAll}>
+            <button type="button" className="pe-act" onClick={onRevealAll}>
               Reveal all {hidden}
             </button>
           )}
           {settled && !stage.pickedId && (
-            <button type="button" className="pe-btn" onClick={onNext}>
+            <button type="button" className="pe-push" onClick={onNext}>
               {nextLabel}
             </button>
           )}
           {own && open && hidden === 0 && !w && !stage.queue.length && (
-            <button type="button" className="pe-btn" onClick={own.onDone}>
+            <button type="button" className="pe-push" onClick={own.onDone}>
               {own.done}
             </button>
           )}
           {!cards && stage.error && (
-            <button type="button" className="pe-btn pe-btn--quiet" onClick={onDismiss}>
+            <button type="button" className="pe-act" onClick={onDismiss}>
               Back to the table
             </button>
           )}

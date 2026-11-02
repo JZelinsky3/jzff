@@ -211,7 +211,7 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
             <div className="pe-recap-actions" style={{ justifyContent: 'flex-start' }}>
               <button
                 type="button"
-                className="pe-btn"
+                className="pe-push"
                 disabled={!lockPick || busy}
                 onClick={() => act({ action: 'lock', player: lockPick })}
               >
@@ -301,7 +301,7 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
           </div>
           <Bonds chem={chem} lineup={view.lineup} empty="No chemistry either way this week." />
           <div className="pe-recap-actions" style={{ justifyContent: 'flex-start' }}>
-            <button type="button" className="pe-btn" disabled={busy} onClick={() => act({ action: 'submit' })}>
+            <button type="button" className="pe-push" disabled={busy} onClick={() => act({ action: 'submit' })}>
               Submit {(score + chem.total).toLocaleString()}
             </button>
           </div>

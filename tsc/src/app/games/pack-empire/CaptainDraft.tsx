@@ -626,7 +626,7 @@ function LiveDraft({
               : 'This draft was dealt from an older set of cards, so its packs can’t be opened anymore.'}
           </p>
           {restartable && (
-            <button type="button" className="pe-btn pe-btn--sm" onClick={restart}>
+            <button type="button" className="pe-act pe-act--sm" onClick={restart}>
               Start a new run
             </button>
           )}

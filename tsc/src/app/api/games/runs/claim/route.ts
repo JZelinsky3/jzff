@@ -3,12 +3,13 @@
 // Moves the runs a device posted under a guest name onto the account that just
 // signed in on it. The key is the proof: only its hash is on the row, and the
 // browser that made it is the only thing holding the original. The cards come
-// with them, because a run on an account is what syncBinder files.
+// with them: the packs filed under the key move first, Canton numbers and all,
+// and syncBinder files any run that didn't make it in.
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { syncBinder } from '@/lib/packEmpire/binder'
+import { claimGuestBinder, syncBinder } from '@/lib/packEmpire/binder'
 import { hashKey } from '@/lib/packEmpire/people'
 
 export const dynamic = 'force-dynamic'
@@ -40,6 +41,7 @@ export async function POST(req: NextRequest) {
     else if (error.code === '23505') await db.from('game_runs').delete().eq('id', run.id)
   }
 
+  await claimGuestBinder(user.id, guestKey)
   if (moved > 0) await syncBinder(user.id)
   return NextResponse.json({ ok: true, moved }, { headers: NO_STORE })
 }

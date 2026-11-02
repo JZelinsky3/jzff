@@ -28,7 +28,7 @@ import type { MegaView } from '@/lib/packEmpire/mega'
 import { DeleteGame } from '../GameList'
 import { LineupSheet } from '../cards'
 import { useFace, useFaces } from '../faces'
-import { ShareButton, ShareLink } from '../share'
+import { ShareButton, ShareLink, SocialChip } from '../share'
 import { useStored } from '../clientStore'
 import { forgetMega, megaKey, rememberMega } from './MegaLobby'
 
@@ -518,9 +518,9 @@ export function MegaRoom({
               </Link>
             )}
             {canFriend && !friendNote && them != null && (
-              <button type="button" className="pe-btn pe-btn--quiet" onClick={addFriend} disabled={busy}>
+              <SocialChip icon="friend" onClick={addFriend} disabled={busy}>
                 Add {seatName(them)} as a friend
-              </button>
+              </SocialChip>
             )}
             <ShareButton
               path={`/games/pack-empire/mega-draft/${id}/`}

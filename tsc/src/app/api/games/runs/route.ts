@@ -11,14 +11,15 @@
 // — so there is no reason to trust it less for having waited.
 //
 // Pack Empire's board also takes a run with a typed name and no account. It's
-// replayed the same way, under the same one-post-per-deal rule; it just has no
-// binder to file into until that device signs in (see runs/claim).
+// replayed the same way, under the same one-post-per-deal rule, and its packs
+// file under the browser's key: they count for the site now and move into a
+// binder when that device signs in (see runs/claim).
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyRun } from '@/lib/minigames/verifyRun'
-import { recordSoloRun } from '@/lib/packEmpire/binder'
+import { recordGuestRun, recordSoloRun } from '@/lib/packEmpire/binder'
 import { cleanGuestName, guestNameTaken, hashKey } from '@/lib/packEmpire/people'
 import { difficultyForMode, type Chemistry, type Missed, type Player } from '@/lib/packEmpire/rules'
 import { parseSoloPicks } from '@/lib/packEmpire/solo'
@@ -247,7 +248,7 @@ async function postOne(
   const key = { game: game as GameId, mode, poolId }
   // A Pack Empire run files its fifty-five cards in the binder on the way
   // past. Only once it's on the board: a re-post is a duplicate, already filed.
-  const soloPicks = game === 'pack-empire' && 'userId' in owner ? parseSoloPicks(item.picks) : null
+  const soloPicks = game === 'pack-empire' ? parseSoloPicks(item.picks) : null
   const [{ data: rank }, total, fresh] = await Promise.all([
     db.rpc('game_rank', {
       p_game: game,
@@ -257,7 +258,11 @@ async function postOne(
       p_run: runId,
     }),
     boardSize(key, weekStart),
-    soloPicks && 'userId' in owner ? recordSoloRun(owner.userId, seed, soloPicks) : Promise.resolve(null),
+    !soloPicks
+      ? Promise.resolve(null)
+      : 'userId' in owner
+        ? recordSoloRun(owner.userId, seed, soloPicks)
+        : recordGuestRun(owner.guestKey, owner.guestName, seed, soloPicks).then(() => null),
   ])
 
   return {

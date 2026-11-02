@@ -90,7 +90,7 @@
 .pe-uv-end-sum { font-family: var(--mono); font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--pe-ink-soft); animation: pe-uv-rise .5s .4s ease-out both; }
 .pe-uv-end-line { margin-top: .7rem; font-size: .95rem; color: var(--pe-ink-soft); animation: pe-uv-rise .5s .55s ease-out both; }
 .pe-uv-end-line b { color: var(--pe-amber); }
-.pe-uv-end-in .pe-btn { margin-top: 1.2rem; animation: pe-uv-rise .5s .7s ease-out both; }
+.pe-uv-end-in .pe-push { margin-top: 1.2rem; animation: pe-uv-rise .5s .7s ease-out both; }
 
 /* ── Chemistry on the field ────────────────────────────────── */
 

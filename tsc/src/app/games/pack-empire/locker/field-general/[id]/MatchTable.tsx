@@ -52,6 +52,7 @@ import { CallCard } from '../../CallCard'
 import { CardSheet } from '../../CardSheet'
 import { LockerCard } from '../../LockerCard'
 import { WinMeter } from '../../WinMeter'
+import { SocialChip } from '../../../share'
 import { FG_RULES } from '../rulesCopy'
 import { Backed, Ball, Crowns, DRIVE_DOTS, Formations, GoalCard, Ghosts, LANE_IDS, LaneBreakdown, LaneMark, LaneNumber, OnField, PlayLog, TurnGuide, type GuideStep } from './parts'
 
@@ -106,10 +107,10 @@ function WaitingRoom({ match, onCancel }: { match: MatchView; onCancel: () => vo
         <div className="fg-wait-kick">Head To Head</div>
         <h1>{held ? `Waiting For ${match.foe.name}` : 'Waiting For An Opponent'}</h1>
         <p>{held ? 'They can accept from their Field General page, or from this link.' : 'Send this link. The first person to open it takes the other seat.'}</p>
-        <button type="button" className="pe-btn" onClick={copy}>
+        <SocialChip icon="link" done={copied} onClick={copy}>
           {copied ? 'Link Copied' : 'Copy The Link'}
-        </button>
-        <button type="button" className="pe-btn pe-btn--ghost pe-btn--sm" onClick={onCancel}>
+        </SocialChip>
+        <button type="button" className="pe-act pe-act--sm" onClick={onCancel}>
           Cancel
         </button>
       </div>
@@ -912,26 +913,26 @@ export function MatchTable({ initial }: { initial: MatchView }) {
               <div className="fg-either" data-n={held && hostFor(held) ? 3 : 2} role="group" aria-label="What to do with this card">
                 {held && hostFor(held) ? (
                   <>
-                    <button type="button" className={`pe-btn pe-btn--sm${stacking ? ' pe-btn--ghost' : ''}`} aria-pressed={!stacking} disabled={eventCost(held, event) > left} onClick={() => setStacking(false)}>
+                    <button type="button" className="pe-act" aria-pressed={!stacking} disabled={eventCost(held, event) > left} onClick={() => setStacking(false)}>
                       Line Up {eventCost(held, event)}
                     </button>
-                    <button type="button" className={`pe-btn pe-btn--sm${stacking ? '' : ' pe-btn--ghost'}`} aria-pressed={stacking} disabled={stackCost(held, event) > left} onClick={() => setStacking(true)}>
+                    <button type="button" className="pe-act" aria-pressed={stacking} disabled={stackCost(held, event) > left} onClick={() => setStacking(true)}>
                       Stack {stackCost(held, event)}
                     </button>
                   </>
                 ) : (
-                  <button type="button" className="pe-btn pe-btn--sm" disabled={!calling} onClick={run}>
+                  <button type="button" className="pe-push pe-push--sm" disabled={!calling} onClick={run}>
                     End Drive
                   </button>
                 )}
                 {canToss && (
-                  <button type="button" className="pe-btn pe-btn--sm pe-btn--quiet" onClick={() => toss(picked)}>
+                  <button type="button" className="pe-act" onClick={() => toss(picked)}>
                     Discard
                   </button>
                 )}
               </div>
             ) : (
-              <button type="button" className="pe-btn fg-go" data-ready={calling && (left === 0 || pending.length + called.length > 0) ? '' : undefined} disabled={!calling} onClick={run}>
+              <button type="button" className="pe-push fg-go" data-ready={calling && (left === 0 || pending.length + called.length > 0) ? '' : undefined} disabled={!calling} onClick={run}>
                 <i className="fg-go-glow" aria-hidden />
                 {phase === 'snap' ? 'Snap' : phase === 'locked' ? 'Locked In' : phase === 'turn' ? 'Flipping' : pending.length || called.length || tossed.length ? 'End Drive' : 'Pass The Drive'}
               </button>
@@ -950,7 +951,7 @@ export function MatchTable({ initial }: { initial: MatchView }) {
               </span>
             )}
           </div>
-          <button type="button" className="pe-btn pe-btn--sm pe-btn--ghost" onClick={() => setReviewing(false)}>
+          <button type="button" className="pe-act" onClick={() => setReviewing(false)}>
             See The Result
           </button>
           {match.versus ? (
@@ -1020,7 +1021,7 @@ export function MatchTable({ initial }: { initial: MatchView }) {
               <Link href="/games/pack-empire/locker/" className="pe-btn pe-btn--ghost">
                 The Locker Room
               </Link>
-              <button type="button" className="pe-btn pe-btn--quiet pe-btn--sm fg-end-look" onClick={() => setReviewing(true)}>
+              <button type="button" className="pe-act fg-end-look" onClick={() => setReviewing(true)}>
                 Look Over The Field
               </button>
             </div>
@@ -1078,7 +1079,7 @@ export function MatchTable({ initial }: { initial: MatchView }) {
                   {leaving ? (match.versus ? `Tap again to give ${foeName} the win` : 'Tap again to walk off') : 'Walk Off'}
                 </button>
               )}
-              <button type="button" className="pe-btn pe-btn--sm" onClick={() => { setSheet(null); setLeaving(false) }}>
+              <button type="button" className="pe-act" onClick={() => { setSheet(null); setLeaving(false) }}>
                 Back To The Game
               </button>
             </div>
@@ -1098,7 +1099,7 @@ export function MatchTable({ initial }: { initial: MatchView }) {
               <LaneBreakdown lane={laneOpen} name={foeName} total={foeShown[laneOpen]} side={match.foe} forms={match.foe.forms} final={board?.[laneOpen][1]} over={!live} />
             </div>
             <div className="fg-sheet-btns fg-sheet-btns--end">
-              <button type="button" className="pe-btn pe-btn--sm" onClick={() => setLaneOpen(null)}>
+              <button type="button" className="pe-act" onClick={() => setLaneOpen(null)}>
                 Back To The Game
               </button>
             </div>

@@ -312,7 +312,7 @@ export function Unveil({
               </div>
             )}
             {line && <div className="pe-uv-end-line">{line}</div>}
-            <button type="button" className="pe-btn" onClick={onClose}>
+            <button type="button" className="pe-push" onClick={onClose}>
               {action}
             </button>
           </div>
