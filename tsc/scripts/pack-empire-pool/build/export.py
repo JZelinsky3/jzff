@@ -54,6 +54,12 @@ def ol_lines(r, off):
     return [a, b]
 
 
+def stored(band):
+    # Canton is only a band for settling (see select_skill.BANDS); the game reads
+    # it off the score, so the file keeps calling it immortal.
+    return 'immortal' if band == 'canton' else band
+
+
 def main():
     skill = pd.read_pickle(f'{S}/build/skill_pool.pkl')
     ol = pd.read_pickle(f'{S}/build/ol_pool.pkl')
@@ -62,6 +68,7 @@ def main():
     # Every position is on the table here, so this is where a man's cards meet.
     sys.path.insert(0, f'{S}/build')
     from settle import settle, remember
+    from seasons import VAULT_FILE
     shared = ['display', 'pos', 'season', 'pid', 'true']
     both = pd.concat([skill.assign(side='skill')[shared + ['side']], ol.assign(side='ol')[shared + ['side']]])
     both['at'] = both.side + ':' + both.pos + ':' + both.pid + ':' + both.season.astype(str)
@@ -86,12 +93,12 @@ def main():
     for r, key in zip(skill.itertuples(), tagged['skill']):
         if key in skip_keys: continue
         cards.append(dict(pid=r.pid, name=r.display, pos=r.pos, team=r.team, club=r.club, year=int(r.season),
-                          score=int(r.score), rarity=r.band, accolades=skill_lines(r),
+                          score=int(r.score), rarity=stored(r.band), band=r.band, accolades=skill_lines(r),
                           img=r.img if isinstance(r.img, str) else None, vault=key in vault_keys))
     for r, key in zip(ol.itertuples(), tagged['ol']):
         if key in skip_keys: continue
         cards.append(dict(pid=r.pid, name=r.display, pos=r.pos, team=r.team, club=r.club, year=int(r.season),
-                          score=int(r.score), rarity=r.band, accolades=ol_lines(r, off),
+                          score=int(r.score), rarity=stored(r.band), band=r.band, accolades=ol_lines(r, off),
                           img=r.img if isinstance(r.img, str) else None, vault=key in vault_keys))
 
     # One small real photo per man, or none (see headshots.py).
@@ -127,7 +134,7 @@ def main():
     cards = [c for c in cards if not c['vault']]
     held = pd.Series([c['pid'] for c in cards]).value_counts()
     assert held.max() <= 4, held.head()
-    twice = pd.Series([(c['pid'], c['rarity']) for c in cards]).value_counts()
+    twice = pd.Series([(c['pid'], c['band']) for c in cards]).value_counts()
     assert twice.max() == 1, twice.head()
 
     order = ['QB', 'RB', 'WR', 'TE', 'OT', 'OG', 'C']
@@ -146,6 +153,17 @@ def main():
         before = json.load(open(path)) if os.path.exists(path) else []
         have = {c['id'] for c in before}
         out = before + [last.get(c['id'], {k: c[k] for k in keys}) for c in out_cards if c['id'] not in have]
+        # A card taken out by hand (its line put in vault.json) is gone from the
+        # picks, so it never reaches out_cards: file it here as it was last dealt.
+        # Anything else that went missing is a bug, not a vaulting.
+        now = {c['id'] for c in cards}
+        by_hand = {(v['pid'].replace('k-', 'k:', 1), v['year']) for v in json.load(open(VAULT_FILE))}
+        gone = [c for c in live if c['id'] not in now and c['id'] not in have | {x['id'] for x in out_cards}]
+        lost = [c['id'] for c in gone if (c['pid'].replace('k-', 'k:', 1), c['year']) not in by_hand]
+        assert not lost, f'dealt cards dropped without a vault line: {lost}'
+        out += gone
+        # And a line taken out of vault.json brings its card back: it's live again.
+        out = [c for c in out if c['id'] not in now]
         with open(path, 'w') as f:
             f.write('[\n' + ',\n'.join(json.dumps(c, ensure_ascii=False) for c in out) + '\n]\n')
     print(pd.DataFrame(cards).groupby(['pos', 'rarity']).size().unstack(fill_value=0)[['common', 'rare', 'dynasty', 'transcendent', 'immortal']])

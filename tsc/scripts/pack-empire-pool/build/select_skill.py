@@ -6,7 +6,10 @@ S = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, f'{S}/build')
 from seasons import dealt, norm, vaulted
 
-BANDS = ['immortal', 'transcendent', 'dynasty', 'rare', 'common']
+# Canton (5,200+) is its own band here, so a man can hold a Canton and an
+# Immortal (Joey, 2026-11-02). The JSON still says immortal: pool.ts reads
+# Canton off the score, the same as it always has.
+BANDS = ['canton', 'immortal', 'transcendent', 'dynasty', 'rare', 'common']
 
 # How many of each, per position. Joey (2026-10-30): immortal is the rarest,
 # so there should be fewer of them than of anything else, and more of
@@ -30,7 +33,7 @@ T_RARE = {'QB': 16.5, 'RB': 15.0, 'WR': 16.1, 'TE': 9.4}
 M_FLOOR = {'QB': 9.0, 'RB': 7.0, 'WR': 7.5, 'TE': 4.5}
 SAMPLE_FLOOR = {'QB': 9.5, 'RB': 7.5, 'WR': 8.0, 'TE': 5.0}
 
-SCORE_AT = {'floor': 120, 'rare': 700, 'dynasty': 1600, 'transcendent': 2800, 'immortal': 4000, 'top': 5600}
+SCORE_AT = {'floor': 120, 'rare': 700, 'dynasty': 1600, 'transcendent': 2800, 'immortal': 4000, 'canton': 5200, 'top': 5600}
 
 # What a rating is worth, per position: (rating, value), straight lines between,
 # and past the last point the top line just keeps going, so a new best-ever
@@ -55,7 +58,7 @@ SAMPLE_FLOOR.update(_json.loads(os.environ.get('PE_SAMPLE_FLOOR', '{}')))
 
 MAX_PER_MAN = 4
 OPEN_1987 = set()              # norm() of a man allowed a new 1987 card
-TOP_BANDS = {'dynasty', 'transcendent', 'immortal'}
+TOP_BANDS = {'dynasty', 'transcendent', 'immortal', 'canton'}
 # Seasons per year per position, so one deep year can't crowd out the rest.
 # Raised from 6 when the pool grew: it had filled every year from 2020 on, so
 # new cards could only come from older seasons, the opposite of what's wanted.
@@ -97,7 +100,7 @@ LEGENDS = {
 # famous enough to deal anyway, on the drawn portrait. Everyone else needs a
 # real face to be picked.
 NO_PHOTO_OK = {'Priest Holmes', 'Edgerrin James', 'Shaun Alexander', 'Eddie George', 'Isaac Bruce', 'Roger Craig',
-               'Randall Cunningham', 'Sterling Sharpe', 'Ben Coates', 'Mike Alstott'}
+               'Randall Cunningham', 'Sterling Sharpe', 'Ben Coates', 'Mike Alstott', 'Daunte Culpepper'}
 
 # Players people have on their fantasy teams now: each gets at least one card,
 # his best season (dynasty at most, since the top bands were already walked).
@@ -140,7 +143,8 @@ MUST = {
            ('Baker Mayfield', 2018), ('Gardner Minshew', 2019), ('Case Keenum', 2017), ('Brock Purdy', 2023),
            ('Dan Marino', 1984), ('Steve Young', 1998), ('Doug Flutie', 1998),
            ('Vince Young', 2006), ('Brett Favre', 1995), ('Joe Burrow', 2024), ('Russell Wilson', 2020), ('Justin Herbert', 2021), ('Dak Prescott', 2025), ('C.J. Stroud', 2023),
-           ('Andrew Luck', 2014), ('Tony Romo', 2007), ('Justin Fields', 2022), ('Colin Kaepernick', 2013), ('Jimmy Garoppolo', 2019)],
+           ('Andrew Luck', 2014), ('Tony Romo', 2007), ('Justin Fields', 2022), ('Colin Kaepernick', 2013), ('Jimmy Garoppolo', 2019),
+           ('Lamar Jackson', 2024), ('Daunte Culpepper', 2004), ('Daunte Culpepper', 2003), ('Baker Mayfield', 2024)],
     'RB': [('Peyton Hillis', 2010), ('BenJarvus Green-Ellis', 2010), ('Alfred Morris', 2012), ('Jamaal Williams', 2022),
            ('James Robinson', 2020), ('Phillip Lindsay', 2018), ('Chris Johnson', 2009), ('Adrian Peterson', 2012), ('Derrick Henry', 2020), ('Saquon Barkley', 2024),
            ('Knowshon Moreno', 2013), ('LeGarrette Blount', 2016), ('Raheem Mostert', 2023),
@@ -149,7 +153,9 @@ MUST = {
            ('Earl Campbell', 1980), ('Jerome Bettis', 1997), ('Mike Alstott', 2001), ('Kareem Hunt', 2017), ('Shaun Alexander', 2005),
            ("Le'Veon Bell", 2014), ('Bijan Robinson', 2023),
            ('Todd Gurley', 2017), ("Le'Veon Bell", 2016), ('Priest Holmes', 2001),
-           ('Doug Martin', 2012), ('Leonard Fournette', 2021), ('Eddie Lacy', 2014), ('Marshawn Lynch', 2012), ('James White', 2018)],
+           ('Doug Martin', 2012), ('Leonard Fournette', 2021), ('Eddie Lacy', 2014), ('Marshawn Lynch', 2012), ('James White', 2018),
+           ('Marshall Faulk', 2001), ('Priest Holmes', 2003), ('LaDainian Tomlinson', 2003), ('Brian Westbrook', 2007),
+           ('Brian Westbrook', 2006), ('DeMarco Murray', 2014), ('LeSean McCoy', 2011)],
     'WR': [('Travis Fulgham', 2020), ('Brandon Lloyd', 2010), ('Laurent Robinson', 2011), ('Victor Cruz', 2011),
            ('Mike Williams', 2010), ('Josh Gordon', 2013), ('Steve Johnson', 2010), ('Marques Colston', 2006),
            ('Steve Smith', 2005), ('Randy Moss', 1998), ('Allen Hurns', 2015),
@@ -161,14 +167,16 @@ MUST = {
            ('Keenan Allen', 2017), ('Nico Collins', 2023),
            ('Dez Bryant', 2014), ('Allen Robinson', 2015), ('JuJu Smith-Schuster', 2018), ('Eric Decker', 2013), ('Jarvis Landry', 2015),
            ('Julian Edelman', 2019), ('Wes Welker', 2011), ('Tyreek Hill', 2020), ('Tyler Lockett', 2020),
-           ('Calvin Johnson', 2012)],
+           ('Calvin Johnson', 2012), ('Odell Beckham', 2014), ('Demaryius Thomas', 2014), ('Keenan Allen', 2023),
+           ('Anquan Boldin', 2005), ('Jordy Nelson', 2014)],
     'TE': [('Gary Barnidge', 2015), ('Sam LaPorta', 2023),
            ('Brock Bowers', 2024), ('Robert Tonyan', 2020),
            ('Jared Cook', 2018), ('Kellen Winslow', 1980), ('Mark Bavaro', 1986), ('Shannon Sharpe', 1996),
            ('Jeremy Shockey', 2002), ('Dawson Knox', 2021),
            ('Chris Cooley', 2005), ('Jimmy Graham', 2013), ('Tony Gonzalez', 2004),
            ('George Kittle', 2018), ('Kyle Pitts', 2021), ('Evan Engram', 2017),
-           ('Julius Thomas', 2013), ('Delanie Walker', 2015)],
+           ('Julius Thomas', 2013), ('Delanie Walker', 2015), ('Travis Kelce', 2022), ('Jordan Reed', 2015),
+           ('Vernon Davis', 2009), ('Jason Witten', 2007)],
 }
 
 
@@ -183,6 +191,7 @@ def interp(x, pts):
 
 
 def rarity_for(score):
+    if score >= 5200: return 'canton'
     if score >= 4000: return 'immortal'
     if score >= 2800: return 'transcendent'
     if score >= 1600: return 'dynasty'
@@ -285,7 +294,7 @@ def choose(pos, t):
         if r.name in picked: continue
         if not face_ok(r.pid, r.key): print('  LEGEND has no photo:', name); continue
         if r.band == 'common': print('  LEGEND has no season past bronze:', name); continue
-        if r.band in ('immortal', 'transcendent'):
+        if r.band in ('canton', 'immortal', 'transcendent'):
             # just missed the top walk; his next-best old year can stand in at dynasty
             nxt = old[old.band == 'dynasty']
             if not len(nxt): print('  LEGEND left out (top band full):', name); continue
@@ -299,7 +308,7 @@ def choose(pos, t):
         if any(i in picked for i in mine.index): continue
         if not face_ok(mine.iloc[0].pid, mine.iloc[0].key): print('  CURRENT has no photo:', name); continue
         for r in mine.itertuples():
-            if r.band in ('immortal', 'transcendent'): continue
+            if r.band in ('canton', 'immortal', 'transcendent'): continue
             if can_take(r.pid, r.band): take(r.Index, r.band); break
 
     # 3. The rest of each lower band: decade quotas, spread across the band's

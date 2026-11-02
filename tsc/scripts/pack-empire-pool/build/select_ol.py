@@ -44,7 +44,11 @@ OFFENSE_WEIGHT = 2.5
 OL_TOP = 4800
 
 # Seasons added on purpose, wherever they land (see select_skill.MUST).
-MUST = {'OT': [('Tristan Wirfs', 2021)], 'C': [('Max Unger', 2012)]}
+MUST = {'OT': [('Tristan Wirfs', 2021), ('Ryan Clady', 2012), ('Jordan Gross', 2008)],
+        'C': [('Max Unger', 2012), ('Tom Nalen', 2000)]}
+
+# See select_skill.NO_PHOTO_OK: dealt on the drawn portrait until a face is uploaded.
+NO_PHOTO_OK = {'Tom Nalen'}
 
 # Same idea as select_skill.CURVE: fixed, so a new line card never re-values one
 # already dealt. Frozen where the old pool-derived curve left them.
@@ -165,8 +169,9 @@ def choose(pos, t, off):
             p.at[r.Index, 'band'] = band
         take(r.Index, band)
 
+    faceless = {norm(n) for n in NO_PHOTO_OK}
     for name, year in MUST.get(pos, []):
-        for r in p[(p.key == norm(name)) & (p.season == year) & p.face].itertuples():
+        for r in p[(p.key == norm(name)) & (p.season == year) & (p.face | p.key.isin(faceless))].itertuples():
             if r.Index not in picked and can_take(r.pid, r.band): take(r.Index, r.band)
 
     # Legends: best pre-2000 season, rare or better, if he isn't in yet.
@@ -174,7 +179,7 @@ def choose(pos, t, off):
         old = p[(p.key == norm(name)) & (p.season < LEGEND_BEFORE) & p.face]
         if not len(old) or any(i in picked for i in p.index[p.key == norm(name)]): continue
         for r in old.itertuples():
-            if r.band in ('immortal', 'transcendent', 'common'): continue
+            if r.band in ('canton', 'immortal', 'transcendent', 'common'): continue
             if can_take(r.pid, r.band): take(r.Index, r.band); break
 
     per_season = {}

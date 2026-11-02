@@ -17,8 +17,11 @@ import {
   DAILY_H_FROM,
   DAILY_NEW_POOL_FROM,
   DAILY_N_FROM,
+  DAILY_O_FROM,
   POOL,
   POOL_M_VERSION,
+  POOL_N,
+  POOL_N_VERSION,
   POOL_BEFORE,
   POOL_BEFORE_VERSION,
   POOL_H,
@@ -27,6 +30,7 @@ import {
   cardWeight,
   cardWeightH,
   cardWeightM,
+  cardWeightN,
   liveCard,
   personOfId,
   playerById,
@@ -123,13 +127,17 @@ const BEFORE_ERA: Era = {
 
 const H_ERA: Era = { version: POOL_H_VERSION, pool: POOL_H, weigh: cardWeightH }
 
-/** Same cards as now, Canton on the odds it had before 10n. */
-const M_ERA: Era = { version: POOL_M_VERSION, pool: POOL, weigh: cardWeightM }
+/** The 10n cards, Canton on the odds it had before 10n. */
+const M_ERA: Era = { version: POOL_M_VERSION, pool: POOL_N, weigh: cardWeightM }
+
+/** The 10n cards and odds, before 10o added 23. */
+const N_ERA: Era = { version: POOL_N_VERSION, pool: POOL_N, weigh: cardWeightN }
 
 function dailyEra(day: string): Era {
   if (day < DAILY_H_FROM) return BEFORE_ERA
   if (day < DAILY_NEW_POOL_FROM) return H_ERA
-  return day < DAILY_N_FROM ? M_ERA : CURRENT_ERA
+  if (day < DAILY_N_FROM) return M_ERA
+  return day < DAILY_O_FROM ? N_ERA : CURRENT_ERA
 }
 
 /** A card as a day's Daily dealt it, at the value that day started with. */
@@ -549,8 +557,11 @@ function plantedSeason(rnd: () => number, era: Era = CURRENT_ERA): Player[] {
   const seen = new Set<string>()
   const team = cards.filter((c) => !seen.has(personOf(c)) && !!seen.add(personOf(c)))
   // The teams are fixed, their cards are as the pool has them now: at today's
-  // value, and a man in the vault sits this one out.
-  return era === CURRENT_ERA ? team.map((c) => liveCard(c.id)).filter((c): c is Player => !!c) : team
+  // value, and a man in the vault sits this one out. N_ERA was the current era
+  // when its day was set, so it reads its own frozen pool the same way.
+  if (era === CURRENT_ERA) return team.map((c) => liveCard(c.id)).filter((c): c is Player => !!c)
+  if (era === N_ERA) return team.flatMap((c) => POOL_N[c.pos as PoolKey]?.find((p) => p.id === c.id) ?? [])
+  return team
 }
 
 /** The eleven packs of an Even Versus, one per slot, the same for both seats. */
