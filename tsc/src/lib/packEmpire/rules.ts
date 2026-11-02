@@ -489,8 +489,8 @@ export function chemistryCounts(diff: Difficulty, even = false): boolean {
 
 /** "Even · Range" on a Versus, or null for a plain Classic game. `bare` leaves
     out the mode's name, for a row already sitting under it. */
-export function formatLine(format: 'classic' | 'even', difficulty: Difficulty, bare = false): string | null {
-  const parts = [format === 'even' ? 'Even' : null, difficulty === 'open' ? null : DIFFICULTY_LOOK[difficulty].label].filter(Boolean)
+export function formatLine(format: 'classic' | 'even' | 'mystery', difficulty: Difficulty, bare = false): string | null {
+  const parts = [format === 'even' ? 'Even' : format === 'mystery' ? 'Mystery' : null, difficulty === 'open' ? null : DIFFICULTY_LOOK[difficulty].label].filter(Boolean)
   if (parts.length === 0) return null
   return bare ? parts.join(' · ') : `Versus · ${parts.join(' · ')}`
 }

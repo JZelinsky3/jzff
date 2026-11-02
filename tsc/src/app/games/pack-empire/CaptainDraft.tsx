@@ -336,7 +336,9 @@ function LiveDraft({
   const [stale, setStale] = useState(false)
   /** First tap on Start over arms it; the second throws the run away. */
   const [armed, setArmed] = useState(false)
-  const { stage, landing, open, tear, reveal, revealAll, skip, pick, keep, dismiss, settle } = usePackStage()
+  const { stage, landing, open, tear, reveal, revealAll, skip, pick, keep, dismiss, settle } = usePackStage(null, {
+    noShow: mystery && isBlind(difficulty),
+  })
   const blind = isBlind(difficulty)
   /** The eleventh pick has gone in, so `onDone` is on its way. */
   const finished = useRef(false)
@@ -741,7 +743,7 @@ function LiveDraft({
                     ))}
                   </span>
                 </span>
-                <span className="pe-nextpack-go">Open</span>
+                <span className="pe-nextpack-go pe-push pe-push--sm">Open</span>
               </button>
             ) : (
               <p className="pe-turf-note pe-note">Tap a pack to open it · {SLOT_COUNT - filled} to go</p>

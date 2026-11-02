@@ -51,6 +51,7 @@ import {
   SLOT_COUNT,
   SOLO_WEIGHTS,
   VALUE_TOP,
+  VERSUS_WEIGHTS,
   difficultyFromSeed,
   formatFromSeed,
   megaPickOwner,
@@ -170,9 +171,14 @@ export function newCaptainSeed(captain: number, diff: Difficulty = 'open'): stri
 }
 
 /** A Classic Versus seat: a captain seed whose ordinary packs are richer. A Builder run
-    can't be one, and the board refuses it, so it never reaches a binder. */
-export function newVersusSeed(captain: number, diff: Difficulty = 'open'): string {
-  const mark = diff === 'open' ? '' : Object.keys(SEED_DIFF).find((k) => SEED_DIFF[k] === diff)
+    can't be one, and the board refuses it, so it never reaches a binder. `mystery` is a
+    Mystery Versus seat: the same richer odds, packs in a line of mixed positions. */
+export function newVersusSeed(captain: number, diff: Difficulty = 'open', mystery = false): string {
+  const mark = mystery
+    ? Object.keys(MYSTERY_DIFF).find((k) => MYSTERY_DIFF[k] === diff)
+    : diff === 'open'
+      ? ''
+      : Object.keys(SEED_DIFF).find((k) => SEED_DIFF[k] === diff)
   const body = randomChars(8) + ALPHABET[captain + VERSUS_CAPTAIN_SHIFT] + mark
   return body + encode(hmac(`seed|${body}`), 6)
 }
@@ -209,8 +215,6 @@ export function readSeed(seed: string): SeedInfo | null {
   const captain = versus ? at - VERSUS_CAPTAIN_SHIFT : at
   if (captain < 0 || captain >= SLOT_COUNT) return null
   const mystery = formatFromSeed(seed) === 'mystery'
-  // A Versus seat is never a Mystery run.
-  if (mystery && versus) return null
   return { captain, diff: difficultyFromSeed(seed), even: false, versus, mystery }
 }
 
@@ -798,7 +802,8 @@ export type MysteryPack = {
  * at the position you need most: replacement level, so leaving a position late
  * costs you but never leaves a hole (the Daily's rule).
  */
-export function mysteryPack(seed: string, captain: number, picks: { slot: number; id: string }[]): MysteryPack {
+export function mysteryPack(seed: string, captain: number, picks: { slot: number; id: string }[], versus = false): MysteryPack {
+  const ordinary = versus ? VERSUS_WEIGHTS : { normal: SOLO_WEIGHTS.normal, boosted: SOLO_BOOSTED.normal }
   const taken = picks.map((p) => p.id)
   if (picks.length === 0) {
     const cards = dealPack({ label: `mystery:${seed}`, slot: captain, base: SOLO_WEIGHTS.captain, boosted: SOLO_BOOSTED.captain, exclude: taken })
@@ -823,7 +828,7 @@ export function mysteryPack(seed: string, captain: number, picks: { slot: number
 
   let cards: Player[] = []
   pools.forEach((k, i) => {
-    const p = draw(k, i === boostedAt ? SOLO_BOOSTED.normal : SOLO_WEIGHTS.normal, stream(`${label}|lane${i}`))
+    const p = draw(k, i === boostedAt ? ordinary.boosted : ordinary.normal, stream(`${label}|lane${i}`))
     if (!p) return
     men.add(personOf(p))
     cards.push(p)

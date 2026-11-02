@@ -157,8 +157,10 @@ function rectOf(el: Element | null): Rect | null {
 
 /** `initial` puts a pack that was already open (a League pack left open
     before a refresh) straight back on the stage. `plainCanton` gives a Canton the
-    ordinary walkout: the Daily, whose shot clock doesn't stop for the Hall. */
-export function usePackStage(initial: StageState | null = null, { plainCanton = false } = {}) {
+    ordinary walkout: the Daily, whose shot clock doesn't stop for the Hall. `noShow`
+    turns every card with a plain flip, no walkouts: Mystery on Range and Ball Knower,
+    where you read the man before his rarity, so a pull announcing it is silly (Joey). */
+export function usePackStage(initial: StageState | null = null, { plainCanton = false, noShow = false } = {}) {
   const [stage, setStage] = useState<StageState | null>(initial)
   const [landing, setLanding] = useState<Landing | null>(null)
   const busy = useRef(false)
@@ -329,12 +331,12 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
   const reveal = useCallback(
     (i: number) => {
       if (!stage?.cards || stage.revealed[i] || stage.walkout) return
-      if (BIG.has(stage.cards[i].rarity)) {
+      if (BIG.has(stage.cards[i].rarity) && !noShow) {
         enqueue(stage.slot, [i], true)
         runQueue(stage.slot)
       } else flip(stage.slot, i)
     },
-    [stage, flip, enqueue, runQueue]
+    [stage, flip, enqueue, runQueue, noShow]
   )
 
   /** The ordinary cards turn in a ripple; the big ones are queued at once
@@ -347,14 +349,14 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
     const plain: number[] = []
     const big: number[] = []
     stage.revealed.forEach((r, i) => {
-      if (!r) (BIG.has(cards[i].rarity) ? big : plain).push(i)
+      if (!r) (BIG.has(cards[i].rarity) && !noShow ? big : plain).push(i)
     })
     plain.forEach((i, n) => later(() => flip(slot, i), n * 130))
     if (big.length) {
       enqueue(slot, big)
       later(() => runQueue(slot), plain.length ? plain.length * 130 + 650 : 0)
     }
-  }, [stage, flip, enqueue, runQueue, later])
+  }, [stage, flip, enqueue, runQueue, later, noShow])
 
   /**
    * Keep card i. `commit` writes the pick wherever this mode keeps it; if it
@@ -448,7 +450,7 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
         passed.forEach((n, step) => later(() => flip(s.slot, n), step * RIPPLE_MS))
         if (shown) {
           later(() => {
-            if (BIG.has(mine.rarity)) {
+            if (BIG.has(mine.rarity) && !noShow) {
               enqueue(s.slot, [at], true)
               runQueue(s.slot)
             } else flip(s.slot, at)
@@ -460,7 +462,7 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
         busy.current = false
       }
     },
-    [stage, uploaded, later, flip, enqueue, runQueue]
+    [stage, uploaded, later, flip, enqueue, runQueue, noShow]
   )
 
   const dismiss = useCallback(() => setStage(null), [])
@@ -636,10 +638,13 @@ export function PackStage({
   const woCard = w && cards ? cards[w.i] : null
   const woLook = woCard ? RARITY_LOOK[woCard.rarity] : null
   // A blind pack opens the same way every time, at the size of a rare's, and
-  // stays that way once it's turned over.
-  const blind = !!wild || !!stage.kept || !!stage.dealsOnRip || !!cards?.some((c) => c.blind)
+  // stays that way once it's turned over. A wild pack isn't blind by itself: a face-up
+  // Mystery pack lights by what's in it, and the Daily deals on the rip anyway.
+  const blind = !!stage.kept || !!stage.dealsOnRip || !!cards?.some((c) => c.blind)
   const best: Rarity | null = stage.dealsOnRip ? 'rare' : cards ? (blind ? 'rare' : bestRarity(cards)) : null
-  const glow = blind ? BLIND_GLOW : best ? RARITY_LOOK[best].color : '#e8a84b'
+  // No light until the cards are here: an amber stand-in turned brown, then blue or
+  // gold a beat later on a slow phone. Dark, then the right colour, is the honest order.
+  const glow = blind ? BLIND_GLOW : best ? RARITY_LOOK[best].color : 'transparent'
   // The pack's light tops out at Immortal's size, and Canton's own show takes over.
   const lit = best === 'canton' ? 'immortal' : best
   const tier = lit ? RARITIES.indexOf(lit) : 0
@@ -758,7 +763,7 @@ export function PackStage({
           )}
         </div>
 
-        {!open && !stage.error && <SealedPack art={art} glow={glow} tier={tier} ready={!!cards} onTorn={onTear} onRip={onRip} />}
+        {!open && !stage.error && <SealedPack art={art} glow={glow} tier={tier} ready={!!cards} dark={!cards && !blind} onTorn={onTear} onRip={onRip} />}
 
         {open && (
           <div className={`pe-stage-cards${cantonPack ? ' laid' : ''}${cards.length > 5 ? ' many' : ''}`}>

@@ -28,6 +28,9 @@
 //     opened before they existed has none. They pay out once both lineups are
 //     in, written into each side's score, so a seat's number is cards and
 //     chemistry until then, and records and lists need nothing special.
+//     Mystery is Classic's own packs and captain dealt Empire Builder's Mystery way:
+//     the captain's pack, then ten of mixed positions in a line, every pick on
+//     record before the next is handed over, on the same richer odds as Classic.
 //   · the difficulty, the same three as Empire Builder. The seed carries it,
 //     so the deal route masks the cards without knowing whose seat this is.
 
@@ -35,10 +38,10 @@ import { randomInt } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { battlesFrom, drawBattles, settleBattles, type BattleOutcome } from './battles'
 import { blindRun, lockBlindPicks, matchesLocks, parseLockPicks } from './blindPicks'
-import { CPU_SKILL, cpuEye, newEvenSeed, newVersusSeed, priced, readSeed } from './deal'
+import { CPU_SKILL, cpuEye, mysteryPack, mysterySlot, newEvenSeed, newVersusSeed, priced, readSeed } from './deal'
 import { friendOf } from '@/lib/friends'
 import { hashKey, nameForUser, cleanGuestName, newId, isId } from './people'
-import { missReport } from './missed'
+import { missReport, mysteryMissed } from './missed'
 import { replaySolo, seedPack, type SoloPick } from './solo'
 import {
   SALARY_CAP,
@@ -58,7 +61,7 @@ import {
 
 export type Seat = 'host' | 'guest'
 
-export type VersusFormat = 'classic' | 'even'
+export type VersusFormat = 'classic' | 'even' | 'mystery'
 
 export type VersusResult = {
   lineup: Player[]
@@ -220,8 +223,13 @@ export function cpuDraft(seed: string, battleIds: string[] | null): VersusResult
   const picks: SoloPick[] = []
   const capped = parsed.diff === 'cap'
   let left: number = parsed.even ? SALARY_CAP.shared : SALARY_CAP.own
-  for (let slot = 0; slot < SLOT_COUNT; slot++) {
-    const pack = capped ? seedPack(seed, parsed, slot, taken).map(priced) : seedPack(seed, parsed, slot, taken)
+  const mystery = parsed.mystery && parsed.captain != null
+  for (let n = 0; n < SLOT_COUNT; n++) {
+    // Classic opens slot by slot; Mystery opens its line and each card takes its own slot.
+    const dealt = mystery ? mysteryPack(seed, parsed.captain as number, picks, parsed.versus).cards : seedPack(seed, parsed, n, taken)
+    const all = capped ? dealt.map(priced) : dealt
+    const slotOf = (p: Player) => (mystery ? mysterySlot(parsed.captain as number, picks, p.pos) : n)
+    const pack = all.filter((p) => slotOf(p) >= 0)
     if (pack.length === 0) return null
     // Under a cap it prices a dollar the way a good drafter does (hard-sim.ts).
     const onTable = capped ? pack.filter((p) => signingPrice(p, pack, left) != null) : pack
@@ -237,7 +245,7 @@ export function cpuDraft(seed: string, battleIds: string[] | null): VersusResult
     if (capped) left -= signingPrice(best, pack, left) ?? 0
     taken.push(best.id)
     roster.push(best)
-    picks.push({ slot, id: best.id })
+    picks.push({ slot: slotOf(best), id: best.id })
   }
   const run = replaySolo(seed, picks)
   if (!run.ok) return null
@@ -281,7 +289,7 @@ export async function createVersus(
   rawDifficulty?: unknown
 ): Promise<{ ok: true; id: string } | Fail> {
   const db = createAdminClient()
-  const format: VersusFormat = rawFormat === 'even' ? 'even' : 'classic'
+  const format: VersusFormat = rawFormat === 'even' || rawFormat === 'mystery' ? rawFormat : 'classic'
   const difficulty: Difficulty = isDifficulty(rawDifficulty) ? rawDifficulty : 'open'
   const even_seed = format === 'even' ? newEvenSeed(difficulty) : null
   const battles = format === 'even' ? drawBattles(randomInt) : null
@@ -291,7 +299,7 @@ export async function createVersus(
     invite = {
       guest_bot: true,
       guest_name: CPU_NAME,
-      guest_seed: even_seed ?? newVersusSeed(randomInt(6), difficulty),
+      guest_seed: even_seed ?? newVersusSeed(randomInt(6), difficulty, format === 'mystery'),
       status: 'playing',
     }
   } else if (friendship != null) {
@@ -372,7 +380,7 @@ export async function startVersusSeat(
   if (!row.even_seed && (!Number.isInteger(captain) || (captain as number) < 0 || (captain as number) >= SLOT_COUNT)) {
     return { ok: false, error: 'Pick a captain first.' }
   }
-  const seed = row.even_seed ?? newVersusSeed(captain as number, row.difficulty)
+  const seed = row.even_seed ?? newVersusSeed(captain as number, row.difficulty, row.format === 'mystery')
   const col = seat === 'host' ? 'host_seed' : 'guest_seed'
   const db = createAdminClient()
   const { data } = await db.from('pe_versus').update({ [col]: seed }).eq('id', id).is(col, null).select(col).maybeSingle()
@@ -400,7 +408,8 @@ export async function lockVersusSeat(
 
   const seed = seat === 'host' ? row.host_seed : row.guest_seed
   const parsed = seed ? readSeed(seed) : null
-  if (!seed || !parsed || !isBlind(parsed.diff)) return { ok: false, error: 'That draft has nothing to lock.' }
+  // Mystery seats lock at every difficulty: the next pack is only handed over after it.
+  if (!seed || !parsed || (!isBlind(parsed.diff) && !parsed.mystery)) return { ok: false, error: 'That draft has nothing to lock.' }
 
   const picks = rawPicks == null ? null : parseLockPicks(rawPicks)
   if (rawPicks != null && !picks) return { ok: false, error: 'That lineup is incomplete.' }
@@ -445,7 +454,7 @@ export async function submitVersusSeat(
   const run = replaySolo(seed, picks)
   if (!run.ok) return { ok: false, error: run.error }
   const blind = isBlind(run.diff)
-  if (blind) {
+  if (blind || run.mystery) {
     const parsed = readSeed(seed)
     if (!parsed || !(await matchesLocks(blindRun(seed, parsed, seat), picks))) {
       return { ok: false, error: 'Those are not the picks you locked in.' }
@@ -461,7 +470,7 @@ export async function submitVersusSeat(
     captain: run.captain,
     picks,
     at: new Date().toISOString(),
-    ...(blind ? { missed: missReport(run.packs, run.score) } : {}),
+    ...(blind ? { missed: run.mystery ? mysteryMissed(run.packs, run.score) : missReport(run.packs, run.score) } : {}),
   }
 
   let other = seat === 'host' ? row.guest_result : row.host_result

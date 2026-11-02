@@ -78,11 +78,12 @@ export function BuilderTabs({
 const FORMATS: { id: VersusFormat; label: string; line: string }[] = [
   { id: 'classic', label: 'Classic', line: 'Your own eleven packs and a captain each. The better pulls win.' },
   { id: 'even', label: 'Even', line: 'The same eleven packs, no captain. Chemistry and three Battles decide it.' },
+  { id: 'mystery', label: 'Mystery', line: 'Your own captain, then ten packs of mixed positions. Plan for what you need.' },
 ]
 
 export function FormatPicker({ value, onChange }: { value: VersusFormat; onChange: (f: VersusFormat) => void }) {
   return (
-    <div className="pe-pick pe-pick--two" role="radiogroup" aria-label="Format">
+    <div className="pe-pick pe-pick--three" role="radiogroup" aria-label="Format">
       {FORMATS.map((f) => (
         <button
           key={f.id}
@@ -96,6 +97,7 @@ export function FormatPicker({ value, onChange }: { value: VersusFormat; onChang
           <span>{f.line}</span>
         </button>
       ))}
+      <p className="pe-pick-line">{FORMATS.find((f) => f.id === value)?.line}</p>
     </div>
   )
 }

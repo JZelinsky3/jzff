@@ -300,7 +300,7 @@ export function DailyDraft({ initial, other }: { initial: DailyState; other: { h
                       ))}
                     </span>
                   </span>
-                  <span className="pe-nextpack-go">Open</span>
+                  <span className="pe-nextpack-go pe-push pe-push--sm">Open</span>
                 </button>
               )}
             </div>
@@ -450,19 +450,21 @@ function DailyRecap({
           </span>
         </div>
         {!result.named && <NameYourRun version={version} onNamed={onNamed} />}
-        <div className="pe-recap-actions">
-          <Link href={other.href} className="pe-push">
-            {other.done ? `See ${other.label}` : `Play ${other.label}`}
-          </Link>
+        <div className="pe-recap-actions pe-recap-actions--stack">
+          <div className="pe-recap-row">
+            <Link href={other.href} className="pe-push">
+              {other.done ? `See ${other.label}` : `Play ${other.label}`}
+            </Link>
+            <Link href="/games/pack-empire/daily/" className="pe-push pe-push--steel">
+              Top lineups
+            </Link>
+          </div>
           {result.share && (
             <ShareButton
               path={`/games/pack-empire/daily/?r=${encodeURIComponent(result.share)}`}
               text={`${result.total.toLocaleString()} on today's Daily`}
             />
           )}
-          <Link href="/games/pack-empire/daily/" className="pe-act">
-            Top lineups
-          </Link>
         </div>
       </div>
 

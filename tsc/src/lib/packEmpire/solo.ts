@@ -56,7 +56,7 @@ export function pickPack(seed: string, info: SeedInfo, before: SoloPick[], pick:
   if (!info.mystery || info.captain == null) {
     return { pack: seedPack(seed, info, pick.slot, before.map((p) => p.id)), reserve: null, fits: true }
   }
-  const { cards, reserve } = mysteryPack(seed, info.captain, before)
+  const { cards, reserve } = mysteryPack(seed, info.captain, before, info.versus)
   const card = cards.find((c) => c.id === pick.id)
   return { pack: cards, reserve, fits: !!card && mysterySlot(info.captain, before, card.pos) === pick.slot }
 }

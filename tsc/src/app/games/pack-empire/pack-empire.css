@@ -410,8 +410,7 @@ html:has(.pe-theme) body {
    recolour one, and --btn-h for a size of its own, and never put a background on it.
    The nav's Library / Login button is its own flat amber tab, not a plate (Joey). */
 
-.pe-btn,
-.pe-nextpack-go {
+.pe-btn {
   --btn-h: 52px;
   --btn-cut: 15px;
   --btn-edge: linear-gradient(115deg, #fff2c9 0%, #eeb257 20%, #8a5a18 44%, #f8d98f 62%, #b97d28 82%, #ffe6a8 100%);
@@ -447,9 +446,7 @@ html:has(.pe-theme) body {
 
 /* The rim, then the face inside it, with a bar of light parked off the edge. */
 .pe-btn::before,
-.pe-btn::after,
-.pe-nextpack-go::before,
-.pe-nextpack-go::after {
+.pe-btn::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -458,8 +455,7 @@ html:has(.pe-theme) body {
   clip-path: var(--btn-shape);
 }
 
-.pe-btn::after,
-.pe-nextpack-go::after {
+.pe-btn::after {
   inset: 1.6px;
   z-index: -1;
   background-image: linear-gradient(105deg, transparent 40%, rgba(255, 244, 214, 0.26) 50%, transparent 60%), var(--btn-face);
@@ -473,20 +469,17 @@ html:has(.pe-theme) body {
   transform: translateY(1px) scale(0.985);
 }
 
-.pe-btn:focus-visible,
-.pe-nextpack-go:focus-visible {
+.pe-btn:focus-visible {
   outline: 2px solid var(--pe-amber-bright);
   outline-offset: 3px;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .pe-btn:hover:not(:disabled),
-  .pe-nextpack-go:hover {
+  .pe-btn:hover:not(:disabled) {
     transform: translateY(-1px);
   }
 
-  .pe-btn:hover:not(:disabled)::after,
-  .pe-nextpack-go:hover::after {
+  .pe-btn:hover:not(:disabled)::after {
     background-position: -30% 0, 0 0, 0 0;
   }
 }
@@ -647,6 +640,38 @@ html:has(.pe-theme) body {
   letter-spacing: 0.06em;
 }
 
+/* The same key in the home page's steel: the board, the lineups, somewhere to look
+   rather than something to play. */
+.pe-push--steel {
+  color: #dfeaf0;
+}
+
+.pe-push--steel::before {
+  background: linear-gradient(180deg, #3b5866, #16232a 70%, #0c1519);
+}
+
+.pe-push--steel::after {
+  background:
+    radial-gradient(90% 120% at 50% 120%, rgba(140, 192, 216, 0.42), transparent 62%),
+    linear-gradient(180deg, #273a43 0%, #1a272d 52%, #131c21 100%);
+  box-shadow:
+    inset 0 1.5px 0 rgba(224, 238, 244, 0.55),
+    inset 0 0 0 1px rgba(150, 186, 202, 0.55),
+    inset 0 -8px 14px rgba(0, 0, 0, 0.25);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pe-push--steel:hover:not(:disabled) {
+    color: #f2f8fb;
+  }
+
+  .pe-push--steel:hover:not(:disabled)::after {
+    background:
+      radial-gradient(90% 120% at 50% 120%, rgba(160, 210, 232, 0.58), transparent 66%),
+      linear-gradient(180deg, #2e444e 0%, #1e2d34 52%, #151f24 100%);
+  }
+}
+
 .pe-act {
   box-sizing: border-box;
   display: inline-flex;
@@ -717,6 +742,11 @@ html:has(.pe-theme) body {
 .pe-act--social {
   padding-left: 0.3rem;
   border-color: rgba(255, 233, 184, 0.28);
+}
+
+.pe-act--social.pe-act--bare {
+  min-width: 8rem;
+  padding-left: 1rem;
 }
 
 /* The coin the icon sits in. */
@@ -3114,6 +3144,13 @@ html:has(.pe-theme) body {
 }
 
 /* ── The sealed pack ───────────────────────────────────────── */
+/* No light until the cards are in and it has its real colour (see SealedPack `dark`).
+   visibility, not opacity: the light's own animations drive its opacity. */
+.pe-rip.dark :is(.pe-mouth, .pe-mouth-back, .pe-mouth-glare, .pe-rip-rim, .pe-motes),
+.pe-rip.dark .pe-rip-body::after {
+  visibility: hidden;
+}
+
 /* Two copies of the cover, cut along the same jagged line: the strip on top,
    the body under it. --pull (0 to 1) is how far the strip has been peeled. */
 
@@ -4784,6 +4821,134 @@ html:has(.pe-theme) body {
   opacity: 0;
 }
 
+.pe-recap-post:empty {
+  display: none;
+}
+
+/* What to do next: play again beside where to look, sharing under them. */
+.pe-recap-actions--stack {
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pe-recap-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.pe-recap-row > * {
+  min-width: 9.5rem;
+}
+
+/* Where the run went: its place on the board, and what it added to the binder. */
+.pe-recap-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  max-width: 30rem;
+  margin: 1.3rem auto 0;
+  transition: opacity 0.5s ease;
+}
+
+.pe-recap-tiles.wait {
+  opacity: 0;
+}
+
+.pe-recap-tile {
+  position: relative;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 0.25rem;
+  padding: 0.75rem 0.7rem 0.8rem;
+  border: 1px solid var(--pe-line);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 240, 210, 0.05), rgba(255, 240, 210, 0.01));
+  text-decoration: none;
+  color: var(--pe-ink-soft);
+}
+
+.pe-recap-tile small {
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+.pe-recap-tile b {
+  font-family: var(--pe-display);
+  font-size: 1.5rem;
+  font-weight: 900;
+  line-height: 1.05;
+  color: var(--pe-ink);
+}
+
+.pe-recap-tile > span {
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.pe-recap-tile--go {
+  border-color: rgba(232, 168, 75, 0.35);
+  background: radial-gradient(100% 80% at 50% 0%, rgba(232, 168, 75, 0.12), transparent 70%), rgba(255, 240, 210, 0.02);
+}
+
+.pe-recap-tile--go[data-new] b {
+  color: var(--pe-amber-bright);
+}
+
+.pe-recap-faces {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.15rem;
+}
+
+.pe-recap-faces .pe-bond-face {
+  width: 30px;
+  height: 30px;
+  margin-left: -7px;
+  box-shadow: 0 0 0 1.5px var(--ring), 0 0 0 3.5px #1a1814;
+}
+
+.pe-recap-faces .pe-bond-face:first-child {
+  margin-left: 0;
+}
+
+.pe-recap-faces em {
+  align-self: center;
+  margin-left: 0.35rem;
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  color: var(--pe-ink-mute);
+}
+
+.pe-recap-tile-go {
+  margin-top: 0.3rem;
+  padding-top: 0.45rem;
+  width: 100%;
+  border-top: 1px solid rgba(232, 168, 75, 0.2);
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pe-amber);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pe-recap-tile--go:hover {
+    border-color: rgba(244, 192, 106, 0.7);
+  }
+
+  .pe-recap-tile--go:hover .pe-recap-tile-go {
+    color: var(--pe-amber-bright);
+  }
+}
+
 .pe-recap.landed .pe-recap-score {
   animation: pe-score-land 0.55s cubic-bezier(0.3, 1.6, 0.5, 1);
 }
@@ -5649,8 +5814,11 @@ a.pe-row:hover {
     margin-top: 1rem;
   }
 
+  /* The sealed pack sits a little above the middle of the screen, not up under the
+     head: about 40px above centre on any phone height (Joey), which keeps it near
+     where the cards and Reveal All come in. */
   .pe-rip {
-    padding-top: 1.4rem;
+    padding-top: max(1.4rem, calc(45dvh - 199px));
   }
 
   .pe-stage {
@@ -8609,6 +8777,11 @@ a.pe-row:hover {
   max-width: 900px;
 }
 
+.pe-pick--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 1040px;
+}
+
 .pe-pick-item {
   display: grid;
   gap: 0.25rem;
@@ -8797,6 +8970,10 @@ a.pe-row:hover {
 
   .pe-pick:not(.pe-pick--two) .pe-pick-item span {
     display: none;
+  }
+
+  .pe-pick--three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .pe-pick--two .pe-pick-item {
@@ -9054,13 +9231,19 @@ a.pe-row:hover {
   background: var(--pe-amber-bright);
 }
 
+/* Open is the in-game key (.pe-push), and the whole bar is what you press, so the
+   key goes down with it. */
 .pe-nextpack-go {
-  --btn-h: 38px;
-  --btn-cut: 11px;
   flex: none;
-  padding: 0.2rem calc(var(--btn-cut) + 0.6rem);
-  font-size: 0.92rem;
-  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+.pe-nextpack:active:not(:disabled) .pe-nextpack-go {
+  transform: translateY(calc(var(--key-lip) - 1px));
+}
+
+.pe-nextpack:active:not(:disabled) .pe-nextpack-go::before {
+  transform: translateY(calc(1px - var(--key-lip)));
 }
 
 /* An empty place in the lineup on the Daily: a card nobody's been dealt yet, built
@@ -9122,15 +9305,16 @@ a.pe-row:hover {
     radial-gradient(85% 80% at 50% 34%, rgba(232, 168, 75, 0.09), transparent 74%);
 }
 
-/* The position in hollow letters, where a card keeps its season. */
+/* The position in hollow letters at the top of the art, and the figure under it,
+   short enough that his head stops below the letters (they ran through each other). */
 .pe-blank-mark {
   position: absolute;
   left: 0;
   right: 0;
-  top: 13%;
+  top: 6%;
   font-family: var(--pe-display);
   font-weight: 900;
-  font-size: calc(var(--pe-sw) * 0.44);
+  font-size: calc(var(--pe-sw) * 0.38);
   letter-spacing: -0.01em;
   line-height: 1;
   text-align: center;
@@ -9142,7 +9326,7 @@ a.pe-row:hover {
   position: absolute;
   left: 50%;
   bottom: 0;
-  width: 74%;
+  width: 54%;
   height: auto;
   aspect-ratio: 1;
   transform: translateX(-50%);

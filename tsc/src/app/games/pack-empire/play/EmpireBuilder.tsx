@@ -46,7 +46,7 @@ import { CaptainDraft, type DraftDone } from '../CaptainDraft'
 import { BuilderTabs } from '../Difficulty'
 import { GuestName } from '../GuestName'
 import { SocialChip } from '../share'
-import { Field, Ladder } from '../cards'
+import { Face, Field, Ladder } from '../cards'
 import { DraftReport, PackBoard } from '../report'
 import { easeClimb, useCountUp } from '../stage'
 import { Unveil } from '../unveil'
@@ -330,6 +330,60 @@ function Sealed({
   )
 }
 
+/** Most new-card faces a tile shows before it says how many more. */
+const NEW_FACES = 5
+
+/**
+ * Where the run went, as two tiles under the score: its place on the board, and
+ * what it added to the binder, with the faces of the cards that were new. The
+ * binder tile is the way in, so it's the link; signed out, it's the sign-in.
+ */
+function RecapTiles({ post, lineup, signedIn, landed }: { post: PostOutcome; lineup: Player[]; signedIn: boolean; landed: boolean }) {
+  const rank = post.rank as number
+  const fresh = (post.newIds ?? []).flatMap((id) => lineup.find((p) => p.id === id) ?? [])
+  const count = post.newCards ?? fresh.length
+  return (
+    <div className={`pe-recap-tiles${landed ? '' : ' wait'}`}>
+      <div className="pe-recap-tile">
+        <small>On The Board</small>
+        <b>{ordinal(rank)}</b>
+        <span>of {(post.total ?? rank).toLocaleString()} runs</span>
+      </div>
+      {signedIn ? (
+        <Link href="/games/pack-empire/binder/" className="pe-recap-tile pe-recap-tile--go" data-new={count > 0 ? '' : undefined}>
+          <small>Your Binder</small>
+          {count > 0 ? (
+            <>
+              <b>+{count}</b>
+              <span className="pe-recap-faces">
+                {[...fresh]
+                  .sort((a, b) => b.score - a.score)
+                  .slice(0, NEW_FACES)
+                  .map((p) => (
+                    <Face key={p.id} player={p} />
+                  ))}
+                {count > NEW_FACES && <em>+{count - NEW_FACES}</em>}
+              </span>
+            </>
+          ) : (
+            <>
+              <b>0 New</b>
+              <span>All eleven were already in it</span>
+            </>
+          )}
+          <span className="pe-recap-tile-go">Open Binder</span>
+        </Link>
+      ) : (
+        <Link href={SIGN_IN_HREF} className="pe-recap-tile pe-recap-tile--go">
+          <small>Your Binder</small>
+          <b>Sign In</b>
+          <span>to keep these eleven in a binder</span>
+        </Link>
+      )}
+    </div>
+  )
+}
+
 /**
  * The final roster. The total counts up from nothing and climbs the ladder
  * as it goes: each rung flashes as it's passed, the tier name above changes
@@ -386,52 +440,27 @@ function Recap({
         <p className={`pe-recap-post${landed ? '' : ' wait'}`} aria-live="polite">
           {post === 'posting' && 'Putting it on the board…'}
           {post === 'banked' && 'Add your name to put this on the board.'}
-          {post && typeof post === 'object' && post.ok && post.rank != null && (
-            <>
-              That is <b>{ordinal(post.rank)}</b> of {(post.total ?? post.rank).toLocaleString()} runs on the
-              board.
-              {post.newCards != null && (
-                <>
-                  {' '}
-                  {post.newCards > 0 ? (
-                    <>
-                      <b>{post.newCards}</b> new {post.newCards === 1 ? 'card' : 'cards'} for your{' '}
-                    </>
-                  ) : (
-                    'Nothing new for your '
-                  )}
-                  <Link className="pe-link" href="/games/pack-empire/binder/">
-                    binder
-                  </Link>
-                  .
-                </>
-              )}
-              {!signedIn && (
-                <>
-                  {' '}
-                  <Link className="pe-link" href={SIGN_IN_HREF}>
-                    Sign in
-                  </Link>{' '}
-                  to save your drafts and binder.
-                </>
-              )}
-            </>
-          )}
           {post && typeof post === 'object' && !post.ok && post.error}
         </p>
 
+        {post && typeof post === 'object' && post.ok && post.rank != null && (
+          <RecapTiles post={post} lineup={run.lineup} signedIn={signedIn} landed={landed} />
+        )}
+
         {post === 'banked' && landed && <GuestName error={nameError} onPost={onGuestName} signIn={SIGN_IN_HREF} />}
 
-        <div className="pe-recap-actions">
-          <button type="button" className="pe-push" onClick={onAgain}>
-            New run
-          </button>
-          <SocialChip icon="share" done={shared === 'copied'} onClick={onShare}>
+        <div className="pe-recap-actions pe-recap-actions--stack">
+          <div className="pe-recap-row">
+            <button type="button" className="pe-push" onClick={onAgain}>
+              New run
+            </button>
+            <Link href={boardHref(run.seed)} className="pe-push pe-push--steel">
+              The board
+            </Link>
+          </div>
+          <SocialChip done={shared === 'copied'} onClick={onShare}>
             {shared === 'copied' ? 'Copied' : 'Share'}
           </SocialChip>
-          <Link href={boardHref(run.seed)} className="pe-act">
-            The board
-          </Link>
         </div>
       </div>
 

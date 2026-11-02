@@ -42,6 +42,7 @@ export function SealedPack({
   glow,
   tier,
   ready,
+  dark = false,
   onTorn,
   onRip,
 }: {
@@ -52,6 +53,9 @@ export function SealedPack({
   tier: number
   /** The deal has come back. */
   ready: boolean
+  /** The light's colour isn't known yet (the cards are still on their way), so
+      there's no light: a stand-in colour flashed before the real one on phones. */
+  dark?: boolean
   onTorn: () => void
   /** The moment the wrapper starts to go, however it was torn. */
   onRip?: () => void
@@ -147,7 +151,7 @@ export function SealedPack({
     else setPull(0)
   }
 
-  const cls = ['pe-rip', phase, dragging ? 'dragging' : '', phase === 'open' && !ready ? 'waiting' : '']
+  const cls = ['pe-rip', phase, dragging ? 'dragging' : '', phase === 'open' && !ready ? 'waiting' : '', dark ? 'dark' : '']
     .filter(Boolean)
     .join(' ')
 

@@ -39,6 +39,7 @@ export type PostOutcome = {
   total?: number
   /** Pack Empire: cards from the run that were new to the binder. */
   newCards?: number
+  newIds?: string[]
   /** Pack Empire, a blind run: the real cards, seen here for the first time. */
   reveal?: RunReveal
 }
@@ -115,6 +116,7 @@ export async function postRun(run: Omit<PendingRun, 'at'> & { guest?: GuestPoste
         rank: first.rank,
         total: first.total,
         newCards: first.newCards,
+        newIds: Array.isArray(first.newIds) ? first.newIds : undefined,
         reveal: first.reveal,
       }
     }

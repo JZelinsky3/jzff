@@ -94,6 +94,8 @@ type Outcome = {
   total?: number
   /** Pack Empire: cards from this run's packs that were new to the binder. */
   newCards?: number
+  /** And which, so the recap can show them. */
+  newIds?: string[]
   /** Pack Empire, a blind run: its real lineup, shown for the first time. */
   reveal?: { lineup: Player[]; base: number; chem: Chemistry | null; score: number; missed: Missed }
 }
@@ -271,7 +273,7 @@ async function postOne(
     score: verdict.score,
     rank: Number(rank ?? 0),
     total,
-    ...(fresh ? { newCards: fresh.length } : {}),
+    ...(fresh ? { newCards: fresh.length, newIds: fresh } : {}),
     ...(verdict.reveal ? { reveal: verdict.reveal } : {}),
   }
 }

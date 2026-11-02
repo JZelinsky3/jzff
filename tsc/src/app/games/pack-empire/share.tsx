@@ -34,16 +34,17 @@ export function ChipGlyph({ name }: { name: Glyph }) {
   )
 }
 
-/** Sending the game out: the icon in its coin, ticked once it's done. */
+/** Sending the game out: the icon in its coin, ticked once it's done. A plain Share
+    goes without one (Joey: the share mark read oddly), and turns green when copied. */
 export function SocialChip({
-  icon,
+  icon = null,
   done = false,
   small = false,
   onClick,
   disabled,
   children,
 }: {
-  icon: Glyph
+  icon?: Glyph | null
   done?: boolean
   small?: boolean
   onClick: () => void
@@ -53,14 +54,16 @@ export function SocialChip({
   return (
     <button
       type="button"
-      className={`pe-act pe-act--social${small ? ' pe-act--sm' : ''}`}
+      className={`pe-act pe-act--social${icon ? '' : ' pe-act--bare'}${small ? ' pe-act--sm' : ''}`}
       data-done={done ? '' : undefined}
       onClick={onClick}
       disabled={disabled}
     >
-      <span className="pe-act-coin">
-        <ChipGlyph name={done ? 'done' : icon} />
-      </span>
+      {icon && (
+        <span className="pe-act-coin">
+          <ChipGlyph name={done ? 'done' : icon} />
+        </span>
+      )}
       {children}
     </button>
   )
@@ -98,7 +101,7 @@ function useShare(path: string, title: string, text: string) {
 export function ShareButton({ path, title = 'Pack Empire', text }: { path: string; title?: string; text: string }) {
   const { copied, share } = useShare(path, title, text)
   return (
-    <SocialChip icon="share" done={copied} onClick={share}>
+    <SocialChip done={copied} onClick={share}>
       {copied ? 'Copied' : 'Share'}
     </SocialChip>
   )

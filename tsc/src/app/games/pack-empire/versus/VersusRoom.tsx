@@ -501,6 +501,7 @@ export function VersusRoom({
           onDone={onDone}
           difficulty={view.difficulty}
           even={even}
+          mystery={view.format === 'mystery'}
           battles={view.battles}
           lock={lockPicks}
         />

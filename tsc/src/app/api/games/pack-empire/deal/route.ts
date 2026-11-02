@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       try {
         const picks = await lockedPicks(seed)
         if (picks.length >= SLOT_COUNT) return bad('That run is finished.')
-        const { cards, reserve } = mysteryPack(seed, parsed.captain, picks)
+        const { cards, reserve } = mysteryPack(seed, parsed.captain, picks, parsed.versus)
         return NextResponse.json(
           { ok: true, cards: cards.map((c) => maskCard(c, parsed.diff)), reserve, picks },
           { headers: NO_STORE }
