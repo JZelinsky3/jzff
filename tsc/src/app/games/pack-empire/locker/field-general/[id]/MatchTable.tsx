@@ -2,7 +2,9 @@
 
 // The table. Pick a card and every lane he can line up in lights up with what he'd
 // add there, chemistry and all. Place as many as your cap room covers, and a card
-// you've placed comes back with a tap, so nothing's final until you run the play.
+// you've placed comes back with a tap, so nothing's final until you run the play. A
+// man with someone to stand behind can stack instead, and a play call is paid for
+// the same way. The goal over the hand checks itself off as you place.
 //
 // Then it plays out in order, because a turn over at once is no turn at all: yours
 // snap down, theirs flip one at a time, their numbers climb, and the next drive is
@@ -12,18 +14,36 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
-import { DRIVES, LANES, LANE_MAX, LEGAL_LANES, POSITION_RULE, laneTotal, type Lane, type Play } from '@/lib/packEmpire/locker/fieldGeneral'
+import { callOf, type FgCall } from '@/lib/packEmpire/locker/calls'
+import {
+  DRIVES,
+  LANES,
+  LANE_MAX,
+  LEGAL_LANES,
+  POSITION_RULE,
+  canStack,
+  driveGoal,
+  laneTotal,
+  payLabel,
+  stackCost,
+  stackPower,
+  type DrivePlay,
+  type Lane,
+  type Play,
+} from '@/lib/packEmpire/locker/fieldGeneral'
 import type { MatchView } from '@/lib/packEmpire/locker/fieldGeneralMatch'
-import { LOCKER_PACKS, eventCost, eventPower, lockerPower } from '@/lib/packEmpire/locker/rules'
+import { FAAB_WIN, LOCKER_PACKS, eventCost, eventPower, lockerPower, type LockerEvent } from '@/lib/packEmpire/locker/rules'
 import type { Player } from '@/lib/packEmpire/rules'
 import { useCountUp } from '../../../stage'
 import { lockerPost } from '../../api'
+import { CallCard } from '../../CallCard'
 import { CardSheet } from '../../CardSheet'
 import { LockerCard } from '../../LockerCard'
 import { FG_RULES } from '../rulesCopy'
 import { WinMeter } from '../../WinMeter'
 
-type Pending = { card: Player; lane: Lane }
+type Pending = { card: Player; lane: Lane; stack: boolean }
+type Called = { call: FgCall; lane: Lane }
 
 /** call: your move. snap: your plays are going in. turn: theirs are turning over.
     over: the result is up. */
@@ -68,13 +88,41 @@ function LaneMark({ lane }: { lane: (typeof LANES)[number]['key'] }) {
 
 /** The empty places on a side. The first full row always shows; a tall screen shows
     the second too, and a short one only once there's a card in it (`.extra`). */
-function Ghosts({ used, open = false, gain = 0 }: { used: number; open?: boolean; gain?: number }) {
+function Ghosts({ used, open = false, gain = '' }: { used: number; open?: boolean; gain?: string }) {
   const row = Math.max(2, Math.ceil(used / 2) * 2)
   return Array.from({ length: LANE_MAX - used }, (_, n) => (
     <span key={n} className={`pe-fg-slot${used + n >= row ? ' extra' : ''}`} data-next={open && n === 0 ? '' : undefined}>
-      {open && n === 0 && <b>+{gain}</b>}
+      {open && n === 0 && <b>{gain}</b>}
     </span>
   ))
+}
+
+/** A man on the table, and whoever's stacked behind him: all he adds is a number, so
+    a tag on the corner says it without taking up a slot. */
+function Backed({ man, event, onTap, children }: { man?: Player; event: LockerEvent | null; onTap?: () => void; children: React.ReactNode }) {
+  return (
+    <span className="pe-fg-host">
+      {children}
+      {man && (
+        <button type="button" className="pe-fg-stack" data-r={man.rarity} onClick={onTap} aria-label={`${man.name} stacked, adds ${stackPower(man, event)}`}>
+          +{stackPower(man, event)}
+        </button>
+      )}
+    </span>
+  )
+}
+
+/** What happened last drive that the cards on the table don't show. */
+function recap(m: MatchView): string {
+  const bits: string[] = []
+  const goal = driveGoal(m.lastGoal?.id)
+  if (goal && m.lastGoal?.met[0]) bits.push(`Goal met: ${payLabel(goal.pay)}.`)
+  if (goal && m.lastGoal?.met[1]) bits.push(m.lastGoal.met[0] ? 'The CPU met it too.' : 'The CPU met the goal.')
+  for (const p of m.lastCalls[1]) {
+    const call = callOf(p.card)
+    if (call) bits.push(`CPU called ${call.title}${call.aimed ? ` on ${LANES[p.lane].label}` : ''}.`)
+  }
+  return bits.join(' ')
 }
 
 /** A lane's number, climbing to wherever it's just landed. On its own so a tick of the
@@ -98,7 +146,10 @@ export function MatchTable({ initial }: { initial: MatchView }) {
   const [match, setMatch] = useState(initial)
   const [phase, setPhase] = useState<Phase>(initial.status === 'live' ? 'call' : 'over')
   const [pending, setPending] = useState<Pending[]>([])
+  const [called, setCalled] = useState<Called[]>([])
   const [picked, setPicked] = useState<string | null>(null)
+  const [stacking, setStacking] = useState(false)
+  const [news, setNews] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [foeShown, setFoeShown] = useState(() => initial.foe.totals.map((t) => t.total))
   const [gains, setGains] = useState<({ n: number; key: number } | null)[]>([null, null, null])
@@ -117,18 +168,57 @@ export function MatchTable({ initial }: { initial: MatchView }) {
 
   const { event } = match
   const stat = (c: Player) => ({ cost: eventCost(c, event), power: eventPower(c, event), base: event ? lockerPower(c) : undefined })
-  const spent = pending.reduce((sum, p) => sum + eventCost(p.card, event), 0)
-  const left = match.room - spent
+  const price = (p: Pick<Pending, 'card' | 'stack'>) => (p.stack ? stackCost(p.card, event) : eventCost(p.card, event))
+  const cap = match.room + match.carry
+  const spent = pending.reduce((sum, p) => sum + price(p), 0) + called.reduce((sum, c) => sum + c.call.cost, 0)
+  const left = cap - spent
+  // The drive's own room goes first, so this is what carries, and the rest of `left`
+  // is the carried room that runs out after this drive.
+  const rolls = Math.max(0, match.room - spent)
   const placed = new Set(pending.map((p) => p.card.id))
   const hand = match.hand.filter((c) => !placed.has(c.id))
+  const calls = match.calls.flatMap((id) => (called.some((c) => c.call.id === id) ? [] : (callOf(id) ?? [])))
   const held = hand.find((c) => c.id === picked) ?? null
+  const heldCall = calls.find((c) => c.id === picked) ?? null
   const live = match.status === 'live'
   const calling = phase === 'call' && live
 
-  const yours = useMemo(() => LANES.map((_, i) => [...match.you.lanes[i], ...pending.filter((p) => p.lane === i).map((p) => p.card)]), [match, pending])
-  const totals = useMemo(() => yours.map((cards) => laneTotal(cards, event).total), [yours, event])
-  const canPlace = (lane: number) => !!held && (LEGAL_LANES[held.pos] as number[]).includes(lane) && yours[lane].length < LANE_MAX
-  const gain = (lane: number) => (held ? laneTotal([...yours[lane], held], event).total - totals[lane] : 0)
+  const yours = useMemo(() => LANES.map((_, i) => [...match.you.lanes[i], ...pending.filter((p) => p.lane === i && !p.stack).map((p) => p.card)]), [match, pending])
+  const behind = useMemo(() => LANES.map((_, i) => [...match.you.stacks[i], ...pending.filter((p) => p.lane === i && p.stack).map((p) => p.card)]), [match, pending])
+  const bonus = useMemo(
+    () =>
+      LANES.map((_, i) =>
+        called.reduce((sum, { call: { does }, lane }) => sum + (does.kind === 'lane' && (does.lane ?? lane) === i ? does.n : does.kind === 'every' ? does.n : 0), match.you.bonus[i])
+      ),
+    [match, called]
+  )
+  const totals = useMemo(() => yours.map((cards, i) => laneTotal(cards, event, behind[i], bonus[i]).total), [yours, behind, bonus, event])
+
+  const hostFor = (c: Player) => canStack(c) && LEGAL_LANES[c.pos].some((l) => l !== match.closed && yours[l].length > behind[l].length)
+  const canPlace = (lane: number) => {
+    if (heldCall) return !!heldCall.aimed
+    if (!held || lane === match.closed || !(LEGAL_LANES[held.pos] as number[]).includes(lane)) return false
+    return stacking ? yours[lane].length > behind[lane].length : yours[lane].length < LANE_MAX
+  }
+  const gain = (lane: number) => (held && !stacking ? laneTotal([...yours[lane], held], event, behind[lane], bonus[lane]).total - totals[lane] : 0)
+
+  /** What a stacked man or a call would do to a lane. Printed in the next empty slot
+      like a man's gain, or over the lane once it's full, since these can still land. */
+  const mark = (lane: number) => {
+    if (held && stacking) return `+${stackPower(held, event)}`
+    const does = heldCall?.does
+    if (does?.kind === 'lane') return `+${does.n}`
+    if (does?.kind === 'blitz') return `-${does.each * match.foe.lanes[lane].length}`
+    if (does?.kind === 'close') return 'Closed'
+    return null
+  }
+
+  const goal = driveGoal(match.goals[match.drive - 1])
+  const nextGoal = driveGoal(match.goals[match.drive])
+  const plays: DrivePlay[] = pending.map((p) => ({ card: p.card, lane: p.lane, stack: p.stack }))
+  const down: DrivePlay[] = [...LANES.flatMap((_, l) => [...match.you.lanes[l], ...match.you.stacks[l]].map((card) => ({ card, lane: l as Lane }))), ...plays]
+  const meeting = calling && !!goal && (called.some((c) => c.call.does.kind === 'goal') || goal.met({ plays, down, spent }))
+
   const verdict = (i: number) => {
     const w = match.result?.lanes[i].winner
     return i >= stamped || w === undefined ? undefined : w === 0 ? 'won' : w === 1 ? 'lost' : 'tied'
@@ -136,19 +226,47 @@ export function MatchTable({ initial }: { initial: MatchView }) {
 
   const pick = (c: Player) => {
     setError(null)
-    if (eventCost(c, event) > left) {
+    if (picked === c.id) {
       setPicked(null)
-      setError(`${c.name} costs ${eventCost(c, event)}, and you have ${left} left.`)
       return
     }
-    setPicked(picked === c.id ? null : c.id)
+    const full = eventCost(c, event)
+    if (full > left && !(hostFor(c) && stackCost(c, event) <= left)) {
+      setPicked(null)
+      setError(`${c.name} costs ${full}, and you have ${left} left.`)
+      return
+    }
+    setPicked(c.id)
+    setStacking(full > left)
+  }
+
+  const pickCall = (c: FgCall) => {
+    setError(null)
+    if (picked === c.id) {
+      setPicked(null)
+      return
+    }
+    const why = c.cost > left ? `${c.title} costs ${c.cost}, and you have ${left} left.` : c.lastDriveOnly && match.drive !== DRIVES ? `${c.title} is for the last drive.` : null
+    setError(why)
+    setPicked(why ? null : c.id)
   }
 
   const place = (lane: Lane) => {
-    if (!held) return
-    setPending((p) => [...p, { card: held, lane }])
+    if (heldCall) setCalled((list) => [...list, { call: heldCall, lane }])
+    else if (held) setPending((p) => [...p, { card: held, lane, stack: stacking }])
     setPicked(null)
+    setStacking(false)
   }
+
+  /** A man comes back, and anyone he leaves with nobody to stand behind comes with him. */
+  const takeBack = (id: string) =>
+    setPending((list) => {
+      const gone = list.find((p) => p.card.id === id)
+      const rest = list.filter((p) => p.card.id !== id)
+      if (!gone || gone.stack) return rest
+      let room = match.you.lanes[gone.lane].length + rest.filter((p) => p.lane === gone.lane && !p.stack).length - match.you.stacks[gone.lane].length
+      return rest.filter((p) => p.lane !== gone.lane || !p.stack || room-- > 0)
+    })
 
   const run = async () => {
     if (!calling) return
@@ -157,12 +275,14 @@ export function MatchTable({ initial }: { initial: MatchView }) {
     setPicked(null)
     const quick = reduced()
     try {
-      const plays: Play[] = pending.map((p) => ({ card: p.card.id, lane: p.lane }))
-      const { match: next } = await lockerPost<{ match: MatchView }>('/field-general', { action: 'drive', id: match.id, plays })
+      const sent: Play[] = [...pending.map((p) => ({ card: p.card.id, lane: p.lane, ...(p.stack ? { stack: true } : {}) })), ...called.map((c) => ({ card: c.call.id, lane: c.lane }))]
+      const { match: next } = await lockerPost<{ match: MatchView }>('/field-general', { action: 'drive', id: match.id, plays: sent })
       const before = foeShown
       const after = next.foe.totals.map((t) => t.total)
       setMatch(next)
       setPending([])
+      setCalled([])
+      setNews(recap(next))
       setPhase('turn')
       if (!quick) await wait(next.fresh.length * 170 + (next.fresh.length ? 420 : 120))
       setFoeShown(after)
@@ -207,7 +327,8 @@ export function MatchTable({ initial }: { initial: MatchView }) {
     router.refresh()
   }
 
-  const coach = error ?? (held ? POSITION_RULE[held.pos] : !calling ? '' : pending.length ? 'Tap a card you placed to take it back.' : 'Pick a card, then a lane.')
+  const waiting = pending.length || called.length ? `Tap a card you placed to take it back.${rolls ? ` ${rolls} rolls to next drive.` : ''}` : news || 'Pick a card, then a lane.'
+  const coach = error ?? (heldCall ? heldCall.line : held ? (stacking ? 'Half his cost and half his strength, behind a man in his lane.' : POSITION_RULE[held.pos]) : calling ? waiting : '')
 
   return (
     <div className="pe-fg">
@@ -243,15 +364,19 @@ export function MatchTable({ initial }: { initial: MatchView }) {
         <div className="pe-fg-lanes">
           {LANES.map((lane, i) => {
             const open = canPlace(i)
-            const mine = pending.filter((p) => p.lane === i)
             const res = verdict(i)
             return (
-              <section key={lane.key} className="pe-fg-lane" data-open={open ? '' : undefined} data-dim={held && !open ? '' : undefined} aria-label={lane.label}>
+              <section key={lane.key} className="pe-fg-lane" data-open={open ? '' : undefined} data-dim={(held || heldCall?.aimed) && !open ? '' : undefined} data-closed={match.closed === i ? '' : undefined} aria-label={lane.label}>
                 <div className="pe-fg-side pe-fg-side--foe">
-                  {match.foe.lanes[i].map((c) => {
+                  {match.foe.lanes[i].map((c, at) => {
                     const n = phase === 'turn' ? match.fresh.indexOf(c.id) : -1
                     const s = stat(c)
-                    return <LockerCard key={c.id} card={c} cost={s.cost} power={s.power} base={s.base} fresh={n >= 0} index={n} onClick={() => setDetail(c)} />
+                    const man = match.foe.stacks[i][at]
+                    return (
+                      <Backed key={c.id} man={man} event={event} onTap={() => setDetail(man)}>
+                        <LockerCard card={c} cost={s.cost} power={s.power} base={s.base} fresh={n >= 0} index={n} onClick={() => setDetail(c)} />
+                      </Backed>
+                    )
                   })}
                   <Ghosts used={match.foe.lanes[i].length} />
                 </div>
@@ -260,34 +385,34 @@ export function MatchTable({ initial }: { initial: MatchView }) {
                   <LaneNumber value={foeShown[i]} side="foe" lead={foeShown[i] > totals[i]} gain={gains[i]} />
                   <span className="pe-fg-tag" data-res={res}>
                     <LaneMark lane={lane.key} />
-                    {res === 'won' ? 'Won' : res === 'lost' ? 'Lost' : res === 'tied' ? 'Tied' : lane.label}
+                    {res === 'won' ? 'Won' : res === 'lost' ? 'Lost' : res === 'tied' ? 'Tied' : match.closed === i ? 'Closed' : lane.label}
                   </span>
                   <LaneNumber value={totals[i]} side="you" lead={totals[i] > foeShown[i]} />
                 </div>
 
                 <div className="pe-fg-side pe-fg-side--you">
-                  {match.you.lanes[i].map((c) => {
+                  {yours[i].map((c, at) => {
                     const s = stat(c)
-                    return <LockerCard key={c.id} card={c} cost={s.cost} power={s.power} base={s.base} onClick={() => setDetail(c)} />
-                  })}
-                  {mine.map((p) => {
-                    const s = stat(p.card)
+                    const man = behind[i][at]
+                    const fresh = pending.some((p) => p.card.id === c.id)
+                    const manFresh = !!man && pending.some((p) => p.card.id === man.id)
                     return (
-                      <LockerCard
-                        key={p.card.id}
-                        card={p.card}
-                        cost={s.cost}
-                        power={s.power}
-                        base={s.base}
-                        state="pending"
-                        onClick={calling ? () => setPending((list) => list.filter((x) => x.card.id !== p.card.id)) : undefined}
-                        label={`Take ${p.card.name} back`}
-                      />
+                      <Backed key={c.id} man={man} event={event} onTap={() => (manFresh && calling ? takeBack(man.id) : setDetail(man))}>
+                        {fresh ? (
+                          <LockerCard card={c} cost={s.cost} power={s.power} base={s.base} state="pending" onClick={calling ? () => takeBack(c.id) : undefined} label={`Take ${c.name} back`} />
+                        ) : (
+                          <LockerCard card={c} cost={s.cost} power={s.power} base={s.base} onClick={() => setDetail(c)} />
+                        )}
+                      </Backed>
                     )
                   })}
-                  <Ghosts used={yours[i].length} open={open} gain={gain(i)} />
+                  <Ghosts used={yours[i].length} open={open} gain={mark(i) ?? `+${gain(i)}`} />
                 </div>
-                {open && <button type="button" className="pe-fg-target" onClick={() => place(i as Lane)} aria-label={`Play ${held?.name} on ${lane.label}`} />}
+                {open && (
+                  <button type="button" className="pe-fg-target" onClick={() => place(i as Lane)} aria-label={`Play ${held?.name ?? heldCall?.title} on ${lane.label}`}>
+                    {yours[i].length >= LANE_MAX && <b>{mark(i)}</b>}
+                  </button>
+                )}
               </section>
             )
           })}
@@ -295,49 +420,88 @@ export function MatchTable({ initial }: { initial: MatchView }) {
 
         <div className="pe-fg-zone pe-fg-zone--you">
           <b>You</b>
+          {called.map((c) => (
+            <button key={c.call.id} type="button" className="pe-fg-called" onClick={() => setCalled((list) => list.filter((x) => x.call.id !== c.call.id))} aria-label={`Take ${c.call.title} back`}>
+              {c.call.title}
+              {c.call.aimed ? ` · ${LANES[c.lane].label}` : ''}
+            </button>
+          ))}
           <span>{match.you.deck} in deck</span>
         </div>
 
         {banner && (
           <div key={banner.key} className="pe-fg-banner" aria-live="polite">
             <b>{banner.drive === DRIVES ? 'Last Drive' : `Drive ${banner.drive}`}</b>
-            <span>{banner.drive} Cap Room</span>
+            <span>{cap} Cap Room</span>
           </div>
         )}
       </div>
 
       {live && (
         <>
+          {(goal ?? nextGoal) && (
+            <button type="button" className="pe-fg-goal" data-met={meeting ? '' : undefined} onClick={() => setHelp(true)}>
+              <span className="pe-fg-goal-kick">{goal ? 'Goal' : 'Next Drive'}</span>
+              <span className="pe-fg-goal-line">
+                <b>{(goal ?? nextGoal)?.title}</b> {(goal ?? nextGoal)?.line}
+              </span>
+              <span className="pe-fg-goal-pay">{payLabel(((goal ?? nextGoal) as NonNullable<typeof goal>).pay)}</span>
+            </button>
+          )}
           <div className="pe-fg-coach" aria-live="polite" data-err={error ? '' : undefined}>
-            {held && !error && <b>{held.name}</b>}
+            {(held || heldCall) && !error && <b>{held?.name ?? heldCall?.title}</b>}
             <span>{coach}</span>
           </div>
           <div className="pe-fg-tray">
           <div className="pe-fg-hand">
-            {hand.map((c, i) => {
+            {[...hand, ...calls].map((c, i, all) => {
+              const t = i - (all.length - 1) / 2
+              const style = { '--t': t, '--d': Math.abs(t) } as React.CSSProperties
+              if ('does' in c) {
+                return (
+                  <div key={c.id} className="pe-fg-hold" data-on={c.id === picked ? '' : undefined} style={style}>
+                    <CallCard call={c} state={c.cost > left || (c.lastDriveOnly && match.drive !== DRIVES) ? 'off' : undefined} onClick={calling ? () => pickCall(c) : undefined} />
+                  </div>
+                )
+              }
               const s = stat(c)
-              const t = i - (hand.length - 1) / 2
+              const out = s.cost > left && !(hostFor(c) && stackCost(c, event) <= left)
               return (
-                <div key={c.id} className="pe-fg-hold" data-on={c.id === picked ? '' : undefined} style={{ '--t': t, '--d': Math.abs(t) } as React.CSSProperties}>
-                  <LockerCard card={c} cost={s.cost} power={s.power} base={s.base} state={s.cost > left ? 'off' : undefined} onClick={calling ? () => pick(c) : undefined} />
+                <div key={c.id} className="pe-fg-hold" data-on={c.id === picked ? '' : undefined} style={style}>
+                  <LockerCard card={c} cost={s.cost} power={s.power} base={s.base} state={out ? 'off' : undefined} onClick={calling ? () => pick(c) : undefined} />
                 </div>
               )
             })}
-            {hand.length === 0 && <p className="pe-fg-hand-none">Your hand is empty.</p>}
+            {hand.length + calls.length === 0 && <p className="pe-fg-hand-none">Your hand is empty.</p>}
           </div>
           <div className="pe-fg-act">
-            <div className="pe-fg-cap" aria-label={`${left} of ${match.room} cap room left`}>
-              <small>Cap Room</small>
+            <div className="pe-fg-cap" aria-label={`${left} of ${cap} cap room left`}>
+              <small>{match.carry ? `Cap Room · ${match.carry} Carried` : 'Cap Room'}</small>
               <b>{left}</b>
               <span className="pe-fg-rooms" aria-hidden>
-                {Array.from({ length: DRIVES }, (_, i) => (
-                  <i key={i} data-state={i < left ? 'left' : i < match.room ? 'spent' : undefined} />
+                {Array.from({ length: Math.max(DRIVES, cap) }, (_, i) => (
+                  <i key={i} data-state={i < rolls ? 'left' : i < left ? 'carry' : i < cap ? 'spent' : undefined} />
                 ))}
               </span>
             </div>
-            <button type="button" className="pe-btn pe-fg-go" disabled={!calling} onClick={run}>
-              {phase === 'snap' ? 'Snap' : phase === 'turn' ? 'Turning Over' : pending.length ? 'Run The Play' : 'Pass The Drive'}
-            </button>
+            {held && hostFor(held) ? (
+              <div className="pe-fg-either" role="group" aria-label="How he comes in">
+                <button type="button" className={`pe-btn pe-btn--sm${stacking ? ' pe-btn--ghost' : ''}`} aria-pressed={!stacking} disabled={eventCost(held, event) > left} onClick={() => setStacking(false)}>
+                  Line Up {eventCost(held, event)}
+                </button>
+                <button type="button" className={`pe-btn pe-btn--sm${stacking ? '' : ' pe-btn--ghost'}`} aria-pressed={stacking} onClick={() => setStacking(true)}>
+                  Stack {stackCost(held, event)}
+                </button>
+              </div>
+            ) : heldCall && !heldCall.aimed ? (
+              <button type="button" className="pe-btn pe-fg-go" onClick={() => place(0)}>
+                Call It
+              </button>
+            ) : (
+              <button type="button" className="pe-btn pe-fg-go" disabled={!calling} onClick={run}>
+                {phase === 'snap' ? 'Snap' : phase === 'turn' ? 'Turning Over' : pending.length || called.length ? 'Run The Play' : 'Pass The Drive'}
+              </button>
+            )}
           </div>
           </div>
         </>
@@ -361,6 +525,7 @@ export function MatchTable({ initial }: { initial: MatchView }) {
                 ))}
               </div>
             )}
+            {match.status === 'won' && <div className="pe-fg-end-faab">+${FAAB_WIN} FAAB</div>}
             {match.wins.earned ? (
               <Link href="/games/pack-empire/locker/" className="pe-fg-end-prize">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -394,6 +559,24 @@ export function MatchTable({ initial }: { initial: MatchView }) {
                 <b>{event.title}</b>
                 {event.line}
               </div>
+            )}
+            {match.goals.some(Boolean) && (
+              <ol className="pe-fg-goals">
+                {match.goals.map((id, i) => {
+                  const g = driveGoal(id)
+                  return (
+                    g && (
+                      <li key={g.id} data-now={i + 1 === match.drive ? '' : undefined} data-past={i + 1 < match.drive ? '' : undefined}>
+                        <small>Drive {i + 1}</small>
+                        <span>
+                          <b>{g.title}</b> {g.line}
+                        </span>
+                        <em>{payLabel(g.pay)}</em>
+                      </li>
+                    )
+                  )
+                })}
+              </ol>
             )}
             <ul className="pe-fg-how">
               {FG_RULES.map((r) => (

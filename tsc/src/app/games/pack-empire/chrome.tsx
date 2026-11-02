@@ -22,7 +22,7 @@ import { MobileGamesDock } from '../MobileGamesDock'
 import { FriendsMenu } from './FriendsMenu'
 import { DAILY, MODES, ModeGlyph, type ModeDef } from './modes'
 
-export type PeSection = ModeDef['id'] | 'home' | 'board' | 'binder' | 'locker' | 'profile'
+export type PeSection = ModeDef['id'] | 'home' | 'board' | 'binder' | 'profile'
 
 function BoardIcon() {
   return (
@@ -30,16 +30,6 @@ function BoardIcon() {
       <path d="M9 20.5V8.5h6v12" />
       <path d="M9 12.5H3.5v8h17V15H15" />
       <path d="m12 2.8.7 1.5 1.6.2-1.2 1.1.3 1.6-1.4-.8-1.4.8.3-1.6-1.2-1.1 1.6-.2z" />
-    </svg>
-  )
-}
-
-function LockerIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <rect x="5.5" y="3" width="13" height="18" rx="1.4" />
-      <path d="M9 7h6M9 10h6" />
-      <path d="M15 14v2.5" />
     </svg>
   )
 }
@@ -210,12 +200,6 @@ export function PeChrome({
           <BoardIcon />
           <span>Board</span>
         </Link>
-        {on === 'locker' && (
-          <Link href="/games/pack-empire/locker/" className="pe-nav-tool pe-nav-tool--tight on" aria-label="Locker" aria-current="page">
-            <LockerIcon />
-            <span>Locker</span>
-          </Link>
-        )}
         {signedIn && (
           <Link
             href="/games/pack-empire/binder/"

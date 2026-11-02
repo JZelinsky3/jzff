@@ -7,13 +7,13 @@ import { loadMatch } from '@/lib/packEmpire/locker/fieldGeneralMatch'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import mobileStyles from '../../../../mobile.module.css'
-import { PeChrome } from '../../../chrome'
 import { peFonts } from '../../../fonts'
+import { LockerChrome, ROOM_CLASS, ROOM_COLOR } from '../../chrome'
 import { MatchTable } from './MatchTable'
 
 export const dynamic = 'force-dynamic'
 
-export const viewport: Viewport = { themeColor: '#141311', width: 'device-width', initialScale: 1 }
+export const viewport: Viewport = { themeColor: ROOM_COLOR, width: 'device-width', initialScale: 1 }
 
 export const metadata: Metadata = { title: 'Field General · The Locker', robots: { index: false, follow: false } }
 
@@ -32,8 +32,8 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   const mobile = (await getViewMode()) === 'mobile'
 
   return (
-    <main className={`pe-theme ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>
-      <PeChrome mobile={mobile} signedIn back="/games/pack-empire/locker/field-general/" backLabel="Field General" kicker="The Locker" title="Field" titleEm="General" active="locker" />
+    <main className={`${ROOM_CLASS} ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>
+      <LockerChrome mobile={mobile} signedIn back="/games/pack-empire/locker/field-general/" backLabel="Field General" kicker="The Locker" title="Field" titleEm="General" tab="field-general" />
       <MatchTable key={match.id} initial={match} />
     </main>
   )

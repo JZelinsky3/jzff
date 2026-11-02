@@ -7,18 +7,18 @@ import { dayKey } from '@/lib/packEmpire/daily'
 import { lockerOpenTo } from '@/lib/packEmpire/locker/access'
 import { liveMatch } from '@/lib/packEmpire/locker/fieldGeneralMatch'
 import { BONUS_WINS, lockerEventForDay, lockerGame } from '@/lib/packEmpire/locker/rules'
-import { deckFor, lockerHome } from '@/lib/packEmpire/locker/store'
+import { deckFor, deckShelf, deckSummaries, lockerHome } from '@/lib/packEmpire/locker/store'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import mobileStyles from '../../../mobile.module.css'
-import { PeChrome, PeDock } from '../../chrome'
 import { peFonts } from '../../fonts'
+import { LockerChrome, LockerDock, ROOM_CLASS, ROOM_COLOR } from '../chrome'
 import { WinMeter } from '../WinMeter'
 import { Lobby } from './Lobby'
 
 export const dynamic = 'force-dynamic'
 
-export const viewport: Viewport = { themeColor: '#141311', width: 'device-width', initialScale: 1 }
+export const viewport: Viewport = { themeColor: ROOM_COLOR, width: 'device-width', initialScale: 1 }
 
 export const metadata: Metadata = { title: 'Field General · The Locker', robots: { index: false, follow: false } }
 
@@ -35,11 +35,11 @@ export default async function FieldGeneralLobby() {
   const def = lockerGame(GAME)
   if (!def) notFound()
   const mobile = (await getViewMode()) === 'mobile'
-  const [deck, live, home] = await Promise.all([deckFor(user.id, GAME), liveMatch(user.id), lockerHome(user.id)])
+  const [deck, shelf, live, home] = await Promise.all([deckFor(user.id, GAME), deckShelf(user.id, GAME), liveMatch(user.id), lockerHome(user.id)])
 
   return (
-    <main className={`pe-theme ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>
-      <PeChrome mobile={mobile} signedIn back="/games/pack-empire/locker/" backLabel="The Locker" kicker="The Locker" title={def.title} titleEm={def.titleEm} active="locker" />
+    <main className={`${ROOM_CLASS} ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>
+      <LockerChrome mobile={mobile} signedIn back="/games/pack-empire/locker/" backLabel="The Locker" kicker="The Locker" title={def.title} titleEm={def.titleEm} tab="field-general" />
       <div className="pe-wrap pe-lk">
         {!mobile && (
           <header className="pe-lk-head">
@@ -50,9 +50,9 @@ export default async function FieldGeneralLobby() {
           </header>
         )}
         <WinMeter wins={home.wins} need={BONUS_WINS} bonus={home.bonus} />
-        <Lobby deck={deck} event={lockerEventForDay(dayKey())} rule={def.deck} live={live} />
+        <Lobby deck={deck} decks={deckSummaries(shelf)} event={lockerEventForDay(dayKey())} rule={def.deck} game={GAME} live={live} />
       </div>
-      {mobile ? <PeDock signedIn /> : <SiteFooter />}
+      {mobile ? <LockerDock /> : <SiteFooter />}
     </main>
   )
 }

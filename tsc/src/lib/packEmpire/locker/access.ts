@@ -1,7 +1,7 @@
 // Who can reach the Locker. It's being built in the open on master, so until this
 // flips it's site admins only (and anyone on a dev server). Everyone else gets a
-// 404, the same as /admin. To launch: set LOCKER_LIVE, and take the `locker` gate
-// off the Locker tool in ../../../app/games/pack-empire/chrome.tsx.
+// 404, the same as /admin. To launch: set LOCKER_LIVE. The way in is the strip on the
+// Pack Empire front page, which asks this function, so it opens with it.
 
 import { isSiteAdmin } from '@/lib/siteAdmin'
 

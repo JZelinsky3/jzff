@@ -1,17 +1,34 @@
 'use client'
 
-// Where a game of Field General starts: your deck, and which game you want.
+// Where a game of Field General starts: which deck, and which game you want.
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { lockerCost, lockerPower, type LockerEvent, type LockerGameDef } from '@/lib/packEmpire/locker/rules'
+import { MAX_DECKS, lockerCost, lockerPower, type LockerEvent, type LockerGameDef } from '@/lib/packEmpire/locker/rules'
+import type { DeckSummary } from '@/lib/packEmpire/locker/store'
 import { RARITIES, type Player } from '@/lib/packEmpire/rules'
 import { lockerPost } from '../api'
 import { LockerCard } from '../LockerCard'
 import { FG_RULES } from './rulesCopy'
 
-export function Lobby({ deck, event, rule, live }: { deck: Player[]; event: LockerEvent; rule: LockerGameDef['deck']; live: string | null }) {
+const DECK_PAGE = '/games/pack-empire/locker/field-general/deck/'
+
+export function Lobby({
+  deck,
+  decks,
+  event,
+  rule,
+  game,
+  live,
+}: {
+  deck: Player[]
+  decks: DeckSummary[]
+  event: LockerEvent
+  rule: LockerGameDef['deck']
+  game: string
+  live: string | null
+}) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -28,6 +45,19 @@ export function Lobby({ deck, event, rule, live }: { deck: Player[]; event: Lock
       setError(e instanceof Error ? e.message : 'That game did not start.')
       setBusy(false)
     }
+  }
+
+  const choose = async (id: string) => {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      await lockerPost('', { action: 'deck-choose', game, id })
+      router.refresh()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'That did not go through.')
+    }
+    setBusy(false)
   }
 
   if (deck.length === 0) {
@@ -79,13 +109,47 @@ export function Lobby({ deck, event, rule, live }: { deck: Player[]; event: Lock
 
       <section className="pe-sec">
         <div className="pe-sec-head">
-          <span className="pe-sec-num">Your Deck</span>
+          <span className="pe-sec-num">Your Decks</span>
+          <span className="pe-sec-title">
+            {decks.length ? `${decks.length} Saved` : 'None Saved'}
+          </span>
+          {decks.length < MAX_DECKS && (
+            <Link href={`${DECK_PAGE}?deck=new`} className="pe-sec-meta pe-link">
+              New Deck
+            </Link>
+          )}
+        </div>
+        {decks.length > 0 && (
+          <div className="pe-fg-decks">
+            {decks.map((d) => (
+              <div key={d.id} className="pe-fg-deck" data-on={d.active ? '' : undefined}>
+                <button type="button" className="pe-fg-deck-pick" disabled={busy || d.active} onClick={() => choose(d.id)} aria-pressed={d.active}>
+                  <b>{d.name}</b>
+                  <span>
+                    {d.cost} of {rule.cap} Cap
+                    {d.themes.length > 0 && ` · ${d.themes.join(' · ')}`}
+                  </span>
+                </button>
+                <Link href={`${DECK_PAGE}?deck=${d.id}`} className="pe-btn pe-btn--ghost pe-btn--sm">
+                  Edit
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="pe-sec">
+        <div className="pe-sec-head">
+          <span className="pe-sec-num">{decks.length ? 'In Play' : 'Your Best Cards'}</span>
           <span className="pe-sec-title">
             {cost} of {rule.cap} Cap
           </span>
-          <Link href="/games/pack-empire/locker/field-general/deck/" className="pe-sec-meta pe-link">
-            Edit
-          </Link>
+          {!decks.length && (
+            <Link href={DECK_PAGE} className="pe-sec-meta pe-link">
+              Edit
+            </Link>
+          )}
         </div>
         <div className="pe-lk-grid">
           {shown.map((c) => (

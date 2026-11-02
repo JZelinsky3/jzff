@@ -11,13 +11,13 @@ import { lockerHome } from '@/lib/packEmpire/locker/store'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import mobileStyles from '../../mobile.module.css'
-import { PeChrome, PeDock } from '../chrome'
 import { peFonts } from '../fonts'
+import { LockerChrome, LockerDock, ROOM_CLASS, ROOM_COLOR } from './chrome'
 import { LockerHub } from './LockerHub'
 
 export const dynamic = 'force-dynamic'
 
-export const viewport: Viewport = { themeColor: '#141311', width: 'device-width', initialScale: 1 }
+export const viewport: Viewport = { themeColor: ROOM_COLOR, width: 'device-width', initialScale: 1 }
 
 export const metadata: Metadata = { title: 'The Locker · Pack Empire', robots: { index: false, follow: false } }
 
@@ -32,8 +32,8 @@ export default async function LockerPage() {
   const home = user ? await lockerHome(user.id) : null
 
   return (
-    <main className={`pe-theme ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>
-      <PeChrome mobile={mobile} signedIn={!!user} back="/games/pack-empire/" backLabel="Pack Empire" kicker="Pack Empire" title="The" titleEm="Locker" active="locker" />
+    <main className={`${ROOM_CLASS} ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>
+      <LockerChrome mobile={mobile} signedIn={!!user} back="/games/pack-empire/" backLabel="Pack Empire" kicker="Pack Empire" title="The" titleEm="Locker" tab="home" />
       <div className="pe-wrap pe-lk">
         {!mobile && (
           <header className="pe-lk-head">
@@ -54,7 +54,7 @@ export default async function LockerPage() {
           </div>
         )}
       </div>
-      {mobile ? <PeDock signedIn={!!user} /> : <SiteFooter />}
+      {mobile ? <LockerDock /> : <SiteFooter />}
     </main>
   )
 }

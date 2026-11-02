@@ -9,6 +9,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { dayKey } from '../daily'
 import { playerById } from '../pool'
 import type { Player } from '../rules'
+import { CALLS, callOf } from './calls'
 import { dealCpuDeck, packRandom } from './deal'
 import {
   applyDrive,
@@ -22,33 +23,57 @@ import {
   roomFor,
   type FgMatch,
   type FgResult,
+  type Lane,
   type LaneTotal,
   type Lookup,
   type Play,
   type Seat,
 } from './fieldGeneral'
 import { BONUS_WINS, lockerEventById, lockerEventForDay, type LockerEvent } from './rules'
-import { creditWin, deckFor, winsOn, type WinCredit } from './store'
+import { creditWin, deckCalls, deckFor, winsOn, type WinCredit } from './store'
 
 const GAME = 'field-general'
 
 /** How often the CPU doesn't read the table: see cpuPlays. */
-const CPU_SLIP = 0.25
+const CPU_SLIP = 0.15
+
+/** How many calls the CPU shuffles in, at random. Spike It stays out: it only pays
+    off for a side that's planning two drives ahead. */
+const CPU_CALLS = 3
 
 type MatchRow = { id: string; user_id: string; event: string | null; state: FgMatch; status: string }
 
 const byId: Lookup = (id) => playerById(id)
 const cards = (ids: string[]) => ids.flatMap((id) => playerById(id) ?? [])
 
-export type SeatView = { lanes: [Player[], Player[], Player[]]; totals: LaneTotal[]; hand: number; deck: number }
+export type SeatView = {
+  lanes: [Player[], Player[], Player[]]
+  stacks: [Player[], Player[], Player[]]
+  totals: LaneTotal[]
+  bonus: number[]
+  hand: number
+  deck: number
+}
 
 export type MatchView = {
   id: string
   status: string
   drive: number
+  /** This drive's own cap room. */
   room: number
+  /** What carried in on top of it, spent last and gone after this drive. */
+  carry: number
   event: LockerEvent | null
   hand: Player[]
+  /** The play calls in your hand. */
+  calls: string[]
+  /** Each drive's goal, by id, first drive first. */
+  goals: (string | null)[]
+  lastGoal: FgMatch['lastGoal']
+  /** The calls each side made last drive, you first, and the lane each was aimed at. */
+  lastCalls: [Play[], Play[]]
+  /** A lane you can't play in this drive. */
+  closed: Lane | null
   you: SeatView
   foe: SeatView
   /** The foe's cards that came down on the drive just played. */
@@ -57,10 +82,23 @@ export type MatchView = {
   wins: WinCredit
 }
 
+/** A game that was under way when carry, goals, stacks and calls came in plays on
+    without them. */
+function current(m: FgMatch): FgMatch {
+  return {
+    ...m,
+    goals: m.goals ?? [],
+    lastGoal: m.lastGoal ?? null,
+    seats: m.seats.map((s) => ({ ...s, stacks: s.stacks ?? [[], [], []], carry: s.carry ?? 0, bonus: s.bonus ?? [0, 0, 0], closed: s.closed ?? null })) as FgMatch['seats'],
+  }
+}
+
 function seatView(seat: Seat, event: LockerEvent | null): SeatView {
   return {
     lanes: seat.lanes.map(cards) as SeatView['lanes'],
+    stacks: seat.stacks.map(cards) as SeatView['stacks'],
     totals: laneTotals(seat, byId, event),
+    bonus: seat.bonus,
     hand: seat.hand.length,
     deck: seat.deck.length,
   }
@@ -68,17 +106,24 @@ function seatView(seat: Seat, event: LockerEvent | null): SeatView {
 
 function view(row: MatchRow, wins: WinCredit): MatchView {
   const event = lockerEventById(row.event)
-  const m = row.state
+  const m = current(row.state)
+  const called = (plays: Play[] = []) => plays.filter((p) => callOf(p.card))
   return {
     id: row.id,
     status: row.status,
     drive: m.drive,
     room: roomFor(m.drive),
+    carry: m.seats[0].carry,
     event,
     hand: cards(m.seats[0].hand),
+    calls: m.seats[0].hand.filter((id) => callOf(id)),
+    goals: m.goals,
+    lastGoal: m.lastGoal,
+    lastCalls: [called(m.last?.[0]), called(m.last?.[1])],
+    closed: m.seats[0].closed,
     you: seatView(m.seats[0], event),
     foe: seatView(m.seats[1], event),
-    fresh: m.last?.[1].map((p) => p.card) ?? [],
+    fresh: m.last?.[1].filter((p) => !callOf(p.card)).map((p) => p.card) ?? [],
     result: isOver(m) ? fgResult(m, byId, event) : null,
     wins,
   }
@@ -101,14 +146,15 @@ export type Started = { ok: true; id: string } | { ok: false; error: string; sta
 export async function startMatch(userId: string, mode: 'standard' | 'event'): Promise<Started> {
   const live = await liveMatch(userId)
   if (live) return { ok: true, id: live }
-  const deck = await deckFor(userId, GAME)
+  const [deck, calls] = await Promise.all([deckFor(userId, GAME), deckCalls(userId, GAME)])
   if (deck.length === 0) return { ok: false, error: 'Open your Starter Pack first.', status: 400 }
 
   const event = mode === 'event' ? lockerEventForDay(dayKey()) : null
   const rnd = packRandom()
   const cpu = dealCpuDeck(rnd, event, deck)
+  const cpuCalls = CALLS.filter((c) => c.does.kind !== 'keep').sort(() => rnd() - 0.5).slice(0, CPU_CALLS).map((c) => c.id)
   const seed = Math.floor(rnd() * 2 ** 31)
-  const state = newMatch([deck.map((c) => c.id), cpu.map((c) => c.id)], seed, byId)
+  const state = newMatch([[...deck.map((c) => c.id), ...calls], [...cpu.map((c) => c.id), ...cpuCalls]], seed, byId)
   const { data, error } = await createAdminClient()
     .from('pe_locker_matches')
     .insert({ user_id: userId, game: GAME, event: event?.id ?? null, state })
@@ -123,10 +169,10 @@ export function parsePlays(raw: unknown): Play[] | null {
   const out: Play[] = []
   for (const item of raw) {
     if (!item || typeof item !== 'object') return null
-    const { card, lane } = item as Record<string, unknown>
+    const { card, lane, stack } = item as Record<string, unknown>
     if (typeof card !== 'string' || card.length > 40) return null
     if (lane !== 0 && lane !== 1 && lane !== 2) return null
-    out.push({ card, lane })
+    out.push({ card, lane, ...(stack === true ? { stack: true } : {}) })
   }
   return out
 }
@@ -143,12 +189,12 @@ export async function takeDrive(userId: string, id: string, plays: Play[]): Prom
   if (row.status !== 'live') return { ok: false, error: 'That game is over.', status: 409 }
 
   const event = lockerEventById(row.event)
-  const match = row.state
+  const match = current(row.state)
   const problem = playProblem(match, 0, plays, byId, event)
   if (problem) return { ok: false, error: problem, status: 400 }
 
   const cpu = cpuPlays(match, 1, byId, event, rng(match.seed + match.drive * 101), CPU_SLIP)
-  const next = applyDrive(match, [plays, cpu])
+  const next = applyDrive(match, [plays, cpu], byId, event)
   const over = isOver(next)
   const winner = over ? fgResult(next, byId, event).winner : null
   const status = !over ? 'live' : winner === 0 ? 'won' : winner === 1 ? 'lost' : 'drawn'

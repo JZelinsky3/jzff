@@ -15,11 +15,21 @@ const OF_RARITY = Object.fromEntries(RARITIES.map((r) => [r, ALL.filter((p) => p
 const TOP_ONLY: Weights = { common: 0, rare: 0, dynasty: 0, transcendent: 0, immortal: 1 }
 const weight = (p: Player) => (p.rarity === 'immortal' || p.rarity === 'canton' ? cardWeight(p, TOP_ONLY) : 1)
 
-function pick(list: Player[], rnd: () => number): Player | null {
-  const total = list.reduce((s, p) => s + weight(p), 0)
+/**
+ * A card you already own, against one you don't, inside its rarity. The rarity is
+ * rolled first and never looks at your collection, so this can't tilt what a pack
+ * holds: a long-time player still pulls as many Commons as anyone, just fewer of the
+ * same ones. 1 would be no lean at all. Over a year of daily packs 0.5 takes repeats
+ * from 9% to 5% of cards in the first month and from 27% to 17% by month three.
+ */
+export const REPEAT_WEIGHT = 0.5
+
+function pick(list: Player[], rnd: () => number, owned?: ReadonlySet<string>): Player | null {
+  const worth = (p: Player) => weight(p) * (owned?.has(p.id) ? REPEAT_WEIGHT : 1)
+  const total = list.reduce((s, p) => s + worth(p), 0)
   let x = rnd() * total
   for (const p of list) {
-    x -= weight(p)
+    x -= worth(p)
     if (x <= 0) return p
   }
   return list[list.length - 1] ?? null
@@ -36,27 +46,33 @@ function rollRarity(table: PackTable, rnd: () => number): Rarity {
 }
 
 /** One new man off a list, or null if it's run out of them. */
-function fresh(list: Player[], men: Set<string>, rnd: () => number): Player | null {
+function fresh(list: Player[], men: Set<string>, rnd: () => number, owned?: ReadonlySet<string>): Player | null {
   const open = list.filter((p) => !men.has(personOf(p)))
-  const card = pick(open, rnd)
+  const card = pick(open, rnd, owned)
   if (card) men.add(personOf(card))
   return card
 }
 
-export function dealLockerPack(def: PackDef, rnd: () => number): Player[] {
+/** `owned` is the ids of what's already in the collection: see REPEAT_WEIGHT. */
+export function dealLockerPack(def: PackDef, rnd: () => number, owned?: ReadonlySet<string>): Player[] {
   const men = new Set<string>()
   const out: Player[] = []
   if (def.slots) {
     for (const s of def.slots) {
-      const card = fresh(OF_RARITY[s.rarity].filter((p) => p.pos === s.pos), men, rnd)
+      const card = fresh(OF_RARITY[s.rarity].filter((p) => p.pos === s.pos), men, rnd, owned)
       if (card) out.push(card)
     }
     return out
   }
   const floor = def.floor ?? 0
+  const fits = (rarity: Rarity) => (def.match ? OF_RARITY[rarity].filter((p) => cardMatches(p, def.match as PackDef['match'] & object)) : OF_RARITY[rarity])
   for (let i = 0; i < def.size; i++) {
     const table = i >= def.size - floor && def.floorTable ? def.floorTable : (def.table as PackTable)
-    const card = fresh(OF_RARITY[rollRarity(table, rnd)], men, rnd)
+    // A theme can run dry at the top of the table, and then the card comes off the
+    // rarity under it rather than leaving a pack short.
+    let at = RARITIES.indexOf(rollRarity(table, rnd))
+    let card = fresh(fits(RARITIES[at]), men, rnd, owned)
+    while (!card && at > 0) card = fresh(fits(RARITIES[--at]), men, rnd, owned)
     if (card) out.push(card)
   }
   return out

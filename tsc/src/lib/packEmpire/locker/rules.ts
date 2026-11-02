@@ -12,8 +12,10 @@
 //   events   a day where some cards count for more than their rarity says. A rule
 //            on the card, so every game gets them without knowing they exist.
 //   rewards  wins across every game, so a new game feeds the bonus pack by itself.
+//   the shop FAAB, earned by winning and by selling spare copies, and spent on packs.
 
 import { RARITIES, RARITY_FLOOR, type Player, type PoolKey, type Rarity } from '../rules'
+import { CALLS } from './calls'
 
 // ============================================================
 // Packs
@@ -49,9 +51,11 @@ export type PackDef = {
   floorTable?: PackTable
   /** Laid out by hand: one card per slot, whoever's dealt. */
   slots?: PackSlot[]
+  /** Only cards that fit this. */
+  match?: CardMatch
 }
 
-export type LockerPackKind = 'starter' | 'daily' | 'bonus'
+export type LockerPackKind = 'starter' | 'daily' | 'bonus' | 'shop' | `theme-${string}`
 
 const PACK_ART = '/games/pack-empire/packs/wild.webp'
 
@@ -78,16 +82,35 @@ const STARTER_SLOTS: PackSlot[] = [
   { pos: 'OT', rarity: 'common' },
 ]
 
-export const LOCKER_PACKS: Record<LockerPackKind, PackDef> = {
+const FIVE = { art: PACK_ART, size: 5, table: LOCKER_TABLE, floor: 1, floorTable: FLOOR_TABLE }
+
+export const LOCKER_PACKS: Record<string, PackDef> = {
   starter: { label: 'Starter Pack', line: 'Fifteen cards, enough to field a deck today.', art: PACK_ART, size: STARTER_SLOTS.length, slots: STARTER_SLOTS },
-  daily: { label: 'Daily Pack', line: 'One a day, and you keep all five.', art: PACK_ART, size: 5, table: LOCKER_TABLE, floor: 1, floorTable: FLOOR_TABLE },
-  bonus: { label: 'Bonus Pack', line: 'Earned by winning today.', art: PACK_ART, size: 5, table: LOCKER_TABLE, floor: 1, floorTable: FLOOR_TABLE },
+  daily: { label: 'Daily Pack', line: 'One a day, and you keep all five.', ...FIVE },
+  bonus: { label: 'Bonus Pack', line: 'Earned by winning today.', ...FIVE },
+  shop: { label: 'Locker Pack', line: 'Five cards, the same odds as a Daily Pack.', ...FIVE },
 }
 
 export const isPackKind = (v: unknown): v is LockerPackKind => typeof v === 'string' && v in LOCKER_PACKS
 
 /** Wins in a day, across every Locker game, for the bonus pack. */
 export const BONUS_WINS = 5
+
+// ============================================================
+// The Shop
+// ============================================================
+
+/** FAAB for a win in any Locker game. */
+export const FAAB_WIN = 10
+
+/** FAAB for a spare copy, by rarity. The first copy of a card is never for sale. */
+export const FAAB_SPARE: Record<Rarity, number> = { common: 2, rare: 5, dynasty: 15, transcendent: 40, immortal: 100, canton: 300 }
+
+/** What a pack costs in the Shop. Anything else on LOCKER_PACKS isn't for sale. */
+export function packPrice(kind: string): number | null {
+  if (kind === 'shop') return 100
+  return kind.startsWith('theme-') && kind in LOCKER_PACKS ? 150 : null
+}
 
 // ============================================================
 // Stats
@@ -239,6 +262,10 @@ export function eventCost(card: Matchable, event: LockerEvent | null): number {
 // Games
 // ============================================================
 
+/** A game's rule for a deck: how many men, what they can cost between them, and for a
+    game with non-player cards, which of them there are and how many a deck can hold. */
+export type DeckRule = { size: number; cap: number; calls?: { max: number; ids: string[] } }
+
 /** A game on the Locker. `deck` is its rule for a deck, if it plays from one. */
 export type LockerGameDef = {
   id: string
@@ -246,7 +273,7 @@ export type LockerGameDef = {
   titleEm: string
   line: string
   href: string
-  deck: { size: number; cap: number }
+  deck: DeckRule
 }
 
 export const LOCKER_GAMES: LockerGameDef[] = [
@@ -256,7 +283,7 @@ export const LOCKER_GAMES: LockerGameDef[] = [
     titleEm: 'General',
     line: 'Twelve cards, three lanes, six drives. Call where your men go and take two lanes of three.',
     href: '/games/pack-empire/locker/field-general/',
-    deck: { size: 12, cap: 25 },
+    deck: { size: 12, cap: 25, calls: { max: 3, ids: CALLS.map((c) => c.id) } },
   },
 ]
 
@@ -265,7 +292,7 @@ export function lockerGame(id: string): LockerGameDef | null {
 }
 
 /** Whether a set of cards is a legal deck for a game, and why not if it isn't. */
-export function deckProblem(cards: Pick<Player, 'id' | 'pid' | 'rarity'>[], rule: LockerGameDef['deck']): string | null {
+export function deckProblem(cards: Pick<Player, 'id' | 'pid' | 'rarity'>[], rule: DeckRule): string | null {
   if (cards.length !== rule.size) return `A deck is ${rule.size} cards.`
   const men = new Set(cards.map((c) => c.pid ?? c.id))
   if (men.size !== cards.length) return 'One season of a man to a deck.'
@@ -275,13 +302,52 @@ export function deckProblem(cards: Pick<Player, 'id' | 'pid' | 'rarity'>[], rule
   return null
 }
 
+/** Saved decks a player can keep per game. */
+export const MAX_DECKS = 10
+
+/** The longest a deck's name can be. */
+export const DECK_NAME_MAX = 24
+
+const AFC: Division[] = ['AFC East', 'AFC North', 'AFC South', 'AFC West']
+const NFC: Division[] = ['NFC East', 'NFC North', 'NFC South', 'NFC West']
+
+/** A rule a whole deck can be built around. It's a way to build, not a thing to set:
+    a deck that fits one wears its name, and the builder narrows to it. */
+export type DeckTheme = { id: string; label: string; group: 'Conference' | 'Division' | 'Era'; match: CardMatch }
+
+export const DECK_THEMES: DeckTheme[] = [
+  { id: 'afc', label: 'AFC', group: 'Conference', match: { divisions: AFC } },
+  { id: 'nfc', label: 'NFC', group: 'Conference', match: { divisions: NFC } },
+  ...[...AFC, ...NFC].map((d): DeckTheme => ({ id: d.toLowerCase().replace(' ', '-'), label: d, group: 'Division', match: { divisions: [d] } })),
+  { id: 'pre-90s', label: 'Before 1990', group: 'Era', match: { years: [1900, 1989] } },
+  { id: '90s', label: '1990s', group: 'Era', match: { years: [1990, 1999] } },
+  { id: '00s', label: '2000s', group: 'Era', match: { years: [2000, 2009] } },
+  { id: '10s', label: '2010s', group: 'Era', match: { years: [2010, 2019] } },
+  { id: '20s', label: '2020s', group: 'Era', match: { years: [2020, 2099] } },
+]
+
+/** The themes big enough to fill a pack of their own. */
+const PACK_THEMES = ['afc', 'nfc', '90s', '00s', '10s', '20s']
+
+for (const t of DECK_THEMES.filter((t) => PACK_THEMES.includes(t.id))) {
+  LOCKER_PACKS[`theme-${t.id}`] = { label: `${t.label} Pack`, line: `Five cards, every one from the ${t.label}.`, ...FIVE, match: t.match }
+}
+
+/** The themes a whole deck fits. A division says more than its conference, so it
+    speaks for it. */
+export function deckThemes(cards: Matchable[]): DeckTheme[] {
+  if (!cards.length) return []
+  const fits = DECK_THEMES.filter((t) => cards.every((c) => cardMatches(c, t.match)))
+  return fits.some((t) => t.group === 'Division') ? fits.filter((t) => t.group !== 'Conference') : fits
+}
+
 /** One-cost cards a built deck keeps, so there's usually a play on the first drive. */
 const CHEAP_KEPT = 4
 
 /** The best legal deck a set of cards makes: what a new deck starts from. The
     strongest men it can afford with room left for a few cheap ones, one season a
     man, then the best of those cheap ones and the best value for what's left. */
-export function autoDeck<T extends Pick<Player, 'id' | 'pid' | 'rarity' | 'score'>>(owned: T[], rule: LockerGameDef['deck']): T[] {
+export function autoDeck<T extends Pick<Player, 'id' | 'pid' | 'rarity' | 'score'>>(owned: T[], rule: DeckRule): T[] {
   const out: T[] = []
   const men = new Set<string>()
   let cost = 0

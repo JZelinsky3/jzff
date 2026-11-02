@@ -2,7 +2,7 @@
 
 // The whole of a card, off a tap: the real thing, and what it does in a Locker game.
 
-import { LANES, LEGAL_LANES, POSITION_RULE } from '@/lib/packEmpire/locker/fieldGeneral'
+import { LANES, LEGAL_LANES, POSITION_RULE, stackCost, stackPower } from '@/lib/packEmpire/locker/fieldGeneral'
 import { cardMatches, eventCost, eventPower, lockerCost, lockerPower, type LockerEvent } from '@/lib/packEmpire/locker/rules'
 import type { Player } from '@/lib/packEmpire/rules'
 import { PackCard } from '../cards'
@@ -19,7 +19,7 @@ export function CardSheet({ card, event, onClose }: { card: Player; event: Locke
         <span>
           {LEGAL_LANES[card.pos].map((l) => LANES[l].label).join(' or ')}. {lift}
         </span>
-        {card.rarity === 'canton' && <span>Always in your opening hand. Lifts his lane 2 for every teammate in it.</span>}
+        {card.rarity === 'canton' ? <span>Always in your opening hand. Lifts his lane 2 for every teammate in it.</span> : <span>Stacks for {stackCost(card, null)}, adds {stackPower(card, null)}.</span>}
         {event && cardMatches(card, event.match) && (
           <span className="up">
             {event.title}: costs {eventCost(card, event)}, strength {eventPower(card, event)}
