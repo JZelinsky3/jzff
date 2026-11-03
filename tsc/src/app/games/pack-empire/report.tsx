@@ -24,7 +24,7 @@ import { BOND_LABEL, Bonds, Check, Face, Field, FilledSlot, bondKind } from './c
 type Point = { x: number; y: number }
 type Box = { l: number; t: number; r: number; b: number }
 type Kind = ReturnType<typeof bondKind>
-type Link = { bond: number; kind: Kind; slots: [number, number]; d: string; ends: [Point, Point] }
+type Link = { bond: number; kind: Kind; slots: [number, number]; d: string; ends: Point[] }
 type Ring = Box & { slot: number; kind: Kind; bonds: number[] }
 
 const centre = (b: Box): Point => ({ x: (b.l + b.r) / 2, y: (b.t + b.b) / 2 })
@@ -120,6 +120,54 @@ function bracketPaths(box: HTMLElement, list: Bracket[]): Map<number, Pick<Link,
   return out
 }
 
+/** Two cards on one row with nothing between them: a short line straight across
+    the gap, at the height they share (Joey: no need to go up and over). */
+function besidePath(left: Box, right: Box): Pick<Link, 'd' | 'ends'> {
+  const y = (Math.max(left.t, right.t) + Math.min(left.b, right.b)) / 2
+  return { d: `M${left.r} ${y}H${right.l}`, ends: [] }
+}
+
+type Cross = { bond: number; slots: [number, number]; from: Box; to: Box }
+
+/**
+ * Cards on different rows: a curve that leaves the near edge straight out and bends
+ * round to the other card, so a QB to his far receiver arcs instead of cutting a long
+ * diagonal under everything. Where a card has several, they leave spread along its
+ * edge in the order of where they're going, so they fan out and never cross at the card.
+ */
+function crossPaths(list: Cross[]): Map<number, Pick<Link, 'd' | 'ends'>> {
+  const out = new Map<number, Pick<Link, 'd' | 'ends'>>()
+  type End = { bond: number; slot: number; card: Box; up: boolean; toward: number; x: number }
+  const ends: End[] = []
+  for (const c of list) {
+    const up = centre(c.to).y < centre(c.from).y
+    ends.push({ bond: c.bond, slot: c.slots[0], card: c.from, up, toward: centre(c.to).x, x: 0 })
+    ends.push({ bond: c.bond, slot: c.slots[1], card: c.to, up: !up, toward: centre(c.from).x, x: 0 })
+  }
+  const groups = new Map<string, End[]>()
+  for (const e of ends) groups.set(`${e.slot}|${e.up}`, [...(groups.get(`${e.slot}|${e.up}`) ?? []), e])
+  for (const group of groups.values()) {
+    group.sort((a, b) => a.toward - b.toward)
+    const { l, r } = group[0].card
+    const span = group.length > 1 ? 0.5 : 0
+    group.forEach((e, n) => {
+      // one alone leans a little towards where it's going; several share the middle half
+      const lean = group.length > 1 ? 0.25 + (span * n) / (group.length - 1) : 0.5 + Math.max(-0.2, Math.min(0.2, (e.toward - (l + r) / 2) / (r - l) / 3))
+      e.x = l + (r - l) * lean
+    })
+  }
+  for (const c of list) {
+    const [a, b] = ends.filter((e) => e.bond === c.bond)
+    const p = { x: a.x, y: a.up ? a.card.t : a.card.b }
+    const q = { x: b.x, y: b.up ? b.card.t : b.card.b }
+    const bend = Math.abs(q.y - p.y) * 0.55
+    const c1 = { x: p.x, y: p.y + (a.up ? -bend : bend) }
+    const c2 = { x: q.x, y: q.y + (b.up ? -bend : bend) }
+    out.set(c.bond, { d: `M${p.x} ${p.y}C${c1.x} ${c1.y} ${c2.x} ${c2.y} ${q.x} ${q.y}`, ends: [p, q] })
+  }
+  return out
+}
+
 /** The kind a card's border wears when it's in more than one. */
 const RING_ORDER: Kind[] = ['real', 'same', 'rival']
 
@@ -175,13 +223,33 @@ export function ChemLinks({
         ring.kind = RING_ORDER.find((k) => kinds.includes(k)) ?? ring.kind
       }
 
-      const brackets = placed
-        .filter((p) => rowOf(p.slots[0]) === rowOf(p.slots[1]))
-        .map(({ bond, slots, from, to }): Bracket => {
-          const flip = from.l > to.l
-          return { bond, slots: flip ? [slots[1], slots[0]] : slots, left: flip ? to : from, right: flip ? from : to, x1: 0, x2: 0, lane: 0 }
+      // Same row: next to each other goes straight across, a card between gets a bracket.
+      const between = (a: number, z: number) => {
+        const [x1, x2] = [centre(slotBox(box, a) ?? from0).x, centre(slotBox(box, z) ?? from0).x].sort((m, n) => m - n)
+        return ROWS[rowOf(a)].some((s) => {
+          if (s === a || s === z) return false
+          const b = slotBox(box, s)
+          return !!b && centre(b).x > x1 && centre(b).x < x2
         })
-      const paths = bracketPaths(box, brackets)
+      }
+      const from0: Box = { l: 0, t: 0, r: 0, b: 0 }
+      const paths = new Map<number, Pick<Link, 'd' | 'ends'>>()
+      const brackets: Bracket[] = []
+      const cross: Cross[] = []
+      for (const { bond, slots, from, to } of placed) {
+        if (rowOf(slots[0]) !== rowOf(slots[1])) {
+          cross.push({ bond, slots, from, to })
+          continue
+        }
+        const flip = from.l > to.l
+        const [left, right] = flip ? [to, from] : [from, to]
+        if (!between(slots[0], slots[1])) {
+          paths.set(bond, besidePath(left, right))
+          continue
+        }
+        brackets.push({ bond, slots: flip ? [slots[1], slots[0]] : slots, left, right, x1: 0, x2: 0, lane: 0 })
+      }
+      for (const [bond, path] of [...bracketPaths(box, brackets), ...crossPaths(cross)]) paths.set(bond, path)
       setLinks(
         placed.map(({ bond, slots, from, to }) => {
           const kind = bondKind(bonds[bond])
@@ -206,17 +274,6 @@ export function ChemLinks({
 
   return (
     <div ref={ref} className="pe-links" aria-hidden data-hot={hot != null || focus != null ? '' : undefined}>
-      {rings
-        .filter((r) => r.bonds.some(drawn))
-        .map((r) => (
-          <span
-            key={r.slot}
-            className="pe-cring"
-            data-kind={r.kind}
-            data-hot={r.bonds.some((b) => litBonds.includes(b)) ? '' : undefined}
-            style={{ left: r.l, top: r.t, width: r.r - r.l, height: r.b - r.t }}
-          />
-        ))}
       {links
         .filter((l) => drawn(l.bond))
         .map((l) => (
@@ -228,6 +285,18 @@ export function ChemLinks({
               <circle key={i} className="end" cx={e.x} cy={e.y} r="3.5" />
             ))}
           </svg>
+        ))}
+      {/* After the lines, so a card's border sits over them like the rest of the card. */}
+      {rings
+        .filter((r) => r.bonds.some(drawn))
+        .map((r) => (
+          <span
+            key={r.slot}
+            className="pe-cring"
+            data-kind={r.kind}
+            data-hot={r.bonds.some((b) => litBonds.includes(b)) ? '' : undefined}
+            style={{ left: r.l, top: r.t, width: r.r - r.l, height: r.b - r.t }}
+          />
         ))}
     </div>
   )

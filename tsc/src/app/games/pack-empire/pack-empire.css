@@ -10063,6 +10063,23 @@ a.pe-row:hover {
   font-size: 0.9rem;
 }
 
+/* the commissioner's two test packs, a Canton and an Immortal, always to hand */
+.pe-bd-test {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: -0.4rem 0 1rem;
+}
+
+.pe-bd-test-label {
+  margin-right: 0.2rem;
+  color: var(--pe-ink-soft);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .pe-bd-tile.nophoto {
   outline: 1px dashed var(--pe-amber);
   outline-offset: 1px;

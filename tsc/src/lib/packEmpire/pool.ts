@@ -1,8 +1,8 @@
 // The player pool. SERVER ONLY.
 //
-// Every card is one season: 1,022 of them, 635 men. Each rarity is about half
-// the one under it: 518 common, 270 rare, 131 dynasty, 62 transcendent, 41
-// immortal (ten of them Canton). A card's value comes off a fixed scale per position, so it never
+// Every card is one season: 1,041 of them, 630 men. Each rarity is about half
+// the one under it, apart from the top: 518 common, 270 rare, 119 dynasty, 70 transcendent,
+// 64 immortal (15 of them Canton). A card's value comes off a fixed scale per position, so it never
 // moves when another card is added, and the top has no ceiling. Seasons
 // before 2000 belong to a short list of names people know (LEGENDS in the
 // build), and every other card is a man with a real photo; nine famous
@@ -45,7 +45,7 @@ import {
   type Weights,
 } from './rules'
 
-export const POOL_VERSION = 'seasons-2026-10o'
+export const POOL_VERSION = 'seasons-2026-10p'
 
 // Canton is set here rather than in the data, so the frozen Daily pools keep the
 // Immortals they were dealt with. Nothing about a deal reads it: see tableRarity.
@@ -78,7 +78,7 @@ export const DAILY_NEW_POOL_FROM = '2026-11-02'
 export const POOL_M_VERSION = 'seasons-2026-10m'
 
 /** The first Daily off the 10n deal. 10m and 10n hold the same cards, which are
-    data/season-pool-10n.json, frozen when 10o added 23 (Joey, 2026-11-02). */
+    data/season-pool-10n.json, frozen when 10o changed the pool (Joey, 2026-11-02). */
 export const DAILY_N_FROM = '2026-11-03'
 export const POOL_N_VERSION = 'seasons-2026-10n'
 
@@ -140,11 +140,14 @@ const IMMORTAL_SPAN_H = 1600
 const CANTON_PULL_M = 0.534
 const CANTON_PULL_N: Partial<Record<PoolKey, number>> = { QB: 0.7126, RB: 0.6462, WR: 0.6149, TE: 0.6481 }
 /**
- * 10o added Immortals at QB (1), RB (3) and TE (1). They share their position's
- * Immortal odds, so each cut rose by new non-Canton pull / old, which keeps the
- * Cantons exactly as likely a draw as under 10n. WR gained none.
+ * 10o added Immortals at QB, RB and TE; 10p lowered the WR and TE Immortal lines
+ * and raised Mahomes 2018, Graham 2013, Brown 2015 and Moss 2007 to the Canton
+ * line, McCaffrey 2019 too for a 15th (each as a new card, the Immortal one vaulted).
+ * 10o never dealt a Daily, so it needs no era of its own. Each cut is solved so a position's Cantons together are exactly as
+ * likely a draw as under 10n (Canton share of the position's Immortal pull held).
+ * WR and TE go over 1: their Cantons now share the odds with many more Immortals.
  */
-const CANTON_PULL: Partial<Record<PoolKey, number>> = { QB: 0.799, RB: 0.9278, WR: 0.6149, TE: 0.9978 }
+const CANTON_PULL: Partial<Record<PoolKey, number>> = { QB: 0.5194, RB: 0.5915, WR: 1.0936, TE: 1.0529 }
 
 function immortalPull(p: Player, span: number, canton: Partial<Record<PoolKey, number>> | number): number {
   const cut = typeof canton === 'number' ? canton : (canton[p.pos as PoolKey] ?? 1)

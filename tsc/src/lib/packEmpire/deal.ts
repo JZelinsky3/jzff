@@ -130,7 +130,7 @@ const H_ERA: Era = { version: POOL_H_VERSION, pool: POOL_H, weigh: cardWeightH }
 /** The 10n cards, Canton on the odds it had before 10n. */
 const M_ERA: Era = { version: POOL_M_VERSION, pool: POOL_N, weigh: cardWeightM }
 
-/** The 10n cards and odds, before 10o added 23. */
+/** The 10n cards and odds, before 10o. */
 const N_ERA: Era = { version: POOL_N_VERSION, pool: POOL_N, weigh: cardWeightN }
 
 function dailyEra(day: string): Era {

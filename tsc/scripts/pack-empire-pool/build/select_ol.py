@@ -44,15 +44,28 @@ OFFENSE_WEIGHT = 2.5
 OL_TOP = 4800
 
 # Seasons added on purpose, wherever they land (see select_skill.MUST).
-MUST = {'OT': [('Tristan Wirfs', 2021), ('Ryan Clady', 2012), ('Jordan Gross', 2008)],
-        'C': [('Max Unger', 2012), ('Tom Nalen', 2000)]}
+MUST = {'OT': [('Tristan Wirfs', 2021), ('Ryan Clady', 2012), ('Jordan Gross', 2008), ('Penei Sewell', 2023),
+               ('Anthony Munoz', 1985), ('Michael Roos', 2008), ('Duane Brown', 2012), ('Jammal Brown', 2006),
+               ('Lane Johnson', 2022)],
+        'OG': [('Jahri Evans', 2009), ('Kelechi Osemele', 2016), ('Steve Hutchinson', 2007), ('Randall McDaniel', 1995),
+               ('Mike Iupati', 2012), ('Evan Mathis', 2013), ('Chris Snee', 2008), ('Zack Martin', 2021)],
+        'C': [('Max Unger', 2012), ('Tom Nalen', 2000), ('Mike Webster', 1980), ('Dermontti Dawson', 1998)]}
 
 # See select_skill.NO_PHOTO_OK: dealt on the drawn portrait until a face is uploaded.
 NO_PHOTO_OK = {'Tom Nalen'}
 
 # Same idea as select_skill.CURVE: fixed, so a new line card never re-values one
 # already dealt. Frozen where the old pool-derived curve left them.
-CURVE = {'OT': [(-2.0, 120), (7.0, 700), (13.0, 1600), (19.0588, 2800), (20.5069, 4000), (21.7358, 4800)], 'OG': [(-2.0, 120), (7.0, 700), (13.0, 1600), (19.5152, 2800), (20.1324, 4000), (21.2344, 4800)], 'C': [(-2.0, 120), (7.0, 700), (13.0, 1600), (17.0369, 2800), (18.9778, 4000), (20.4484, 4800)]}
+# Joey (2026-11-02): three Immortals a line position was too few to chase, so the
+# Immortal point came down, OT 20.5069 -> 19.6, OG 20.1324 -> 20.1, C 18.9778 -> 18.35.
+# Only cards above the Transcendent point moved, all up; the last point keeps the
+# old slope past 4,800, so nothing over the top moves.
+# Then the Transcendent point too, so there are more Transcendents than Immortals:
+# OT 19.0588 -> 18.4, OG 19.5152 -> 18.0, C 17.0369 -> 16.4. Dynasty and up rose,
+# Rare and Common didn't move.
+CURVE = {'OT': [(-2.0, 120), (7.0, 700), (13.0, 1600), (18.4, 2800), (19.6, 4000), (21.7358, 4800), (22.7358, 5451.0)],
+         'OG': [(-2.0, 120), (7.0, 700), (13.0, 1600), (18.0, 2800), (20.1, 4000), (21.2344, 4800), (22.2344, 5525.9)],
+         'C': [(-2.0, 120), (7.0, 700), (13.0, 1600), (16.4, 2800), (18.35, 4000), (20.4484, 4800), (21.4484, 5344.0)]}
 
 # Wikipedia vandalism / typos, by (season, name as parsed)
 FIX = {(2003, 'Brennan'): 'Alan Faneca'}

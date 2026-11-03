@@ -9,6 +9,8 @@ import type { Metadata, Viewport } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { loadCompleteBinder } from '@/lib/packEmpire/binder'
+import { POOL } from '@/lib/packEmpire/pool'
+import { POOL_KEYS, type PoolKey } from '@/lib/packEmpire/rules'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
@@ -16,12 +18,23 @@ import mobileStyles from '../../../mobile.module.css'
 import { PeChrome, PeDock } from '../../chrome'
 import { peFonts } from '../../fonts'
 import { CompleteBinder } from './CompleteBinder'
+import type { TestDeck } from './TestPacks'
 
 export const dynamic = 'force-dynamic'
 
 export const viewport: Viewport = { themeColor: '#141311', width: 'device-width', initialScale: 1 }
 
 export const metadata: Metadata = { title: 'Complete Binder · Pack Empire', robots: { index: false, follow: false } }
+
+/** What the test packs deal from: every Canton and Immortal, and the ordinary cards
+    at each position to fill a pack around one. */
+function testDeck(): TestDeck {
+  const all = POOL_KEYS.flatMap((k) => POOL[k])
+  const fill = Object.fromEntries(
+    POOL_KEYS.map((k) => [k, POOL[k].filter((p) => p.rarity === 'common' || p.rarity === 'rare' || p.rarity === 'dynasty')])
+  ) as Record<PoolKey, typeof all>
+  return { top: { canton: all.filter((p) => p.rarity === 'canton'), immortal: all.filter((p) => p.rarity === 'immortal') }, fill }
+}
 
 export default async function CompleteBinderPage() {
   const supabase = await createClient()
@@ -57,7 +70,7 @@ export default async function CompleteBinderPage() {
           </div>
         )}
         {mobile && <div style={{ height: '0.9rem' }} />}
-        <CompleteBinder view={view} />
+        <CompleteBinder view={view} testDeck={testDeck()} />
       </div>
 
       {mobile ? <PeDock signedIn /> : <SiteFooter />}

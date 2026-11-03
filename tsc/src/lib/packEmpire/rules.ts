@@ -30,7 +30,7 @@ export function tableRarity(rarity: Rarity): TableRarity {
 
 /** How many Canton cards exist, for the line under the reveal. The pool itself
     can't reach the browser. */
-export const CANTON_CARDS = 10
+export const CANTON_CARDS = 15
 
 /** The seven pools a pack can be drawn from. OT feeds both tackles, OG both
     guards, WR all three receivers. */

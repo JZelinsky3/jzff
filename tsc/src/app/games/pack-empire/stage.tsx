@@ -342,7 +342,8 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
 
   /** The ordinary cards turn in a ripple; the big ones are queued at once
       (so the pack can't be kept out from under them) and get their walkouts
-      one after another once the ripple has finished. */
+      one after another once the ripple has finished. A Canton sits it out (Joey):
+      everything else turns, and it waits face down for its own tap. */
   const revealAll = useCallback(() => {
     if (!stage?.cards || stage.walkout || stage.queue.length) return
     const slot = stage.slot
@@ -350,7 +351,8 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
     const plain: number[] = []
     const big: number[] = []
     stage.revealed.forEach((r, i) => {
-      if (!r) (BIG.has(cards[i].rarity) && !noShow ? big : plain).push(i)
+      if (r || (cards[i].rarity === 'canton' && !plainCanton && !noShow)) return
+      ;(BIG.has(cards[i].rarity) && !noShow ? big : plain).push(i)
     })
     // The best is saved for last: a Transcendent walks out before an Immortal, and
     // two of a rarity go lower value first.
@@ -360,7 +362,7 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
       enqueue(slot, big)
       later(() => runQueue(slot), plain.length ? plain.length * 130 + 650 : 0)
     }
-  }, [stage, flip, enqueue, runQueue, later, noShow])
+  }, [stage, flip, enqueue, runQueue, later, noShow, plainCanton])
 
   /**
    * Keep card i. `commit` writes the pick wherever this mode keeps it; if it
@@ -637,6 +639,8 @@ export function PackStage({
   const art = own?.art ?? wild?.art ?? PACK_ART[def.pool]
   const hidden = stage.revealed.filter((r) => !r).length
   const shown = stage.revealed.length - hidden
+  // A Canton left face down for its own tap: Reveal All passes over it.
+  const saved = cards && !plainCanton ? stage.revealed.filter((r, i) => !r && cards[i].rarity === 'canton').length : 0
   const w = stage.walkout
   const hall = w?.step === 'hall'
   const woCard = w && cards ? cards[w.i] : null
@@ -837,9 +841,9 @@ export function PackStage({
         )}
 
         <div className="pe-stage-foot">
-          {open && !stage.pickedId && !stage.kept && !w && !stage.queue.length && hidden > 0 && (
+          {open && !stage.pickedId && !stage.kept && !w && !stage.queue.length && hidden > saved && (
             <button type="button" className="pe-act" onClick={onRevealAll}>
-              Reveal all {hidden}
+              Reveal all {hidden - saved}
             </button>
           )}
           {settled && !stage.pickedId && (

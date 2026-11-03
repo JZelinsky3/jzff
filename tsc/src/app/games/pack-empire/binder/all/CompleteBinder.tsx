@@ -9,6 +9,7 @@ import type { BinderMan, BinderOwned, BinderView } from '@/lib/packEmpire/binder
 import { POOL_KEYS, POOL_LABEL, RARITY_LOOK, type PoolKey } from '@/lib/packEmpire/rules'
 import { PackCard } from '../../cards'
 import { FacesProvider, useFaces } from '../../faces'
+import { TestPacks, type TestDeck } from './TestPacks'
 
 type Tab = 'ALL' | PoolKey
 type Show = 'all' | 'none' | 'uploaded' | 'vaulted'
@@ -37,7 +38,7 @@ async function shrink(file: File): Promise<Blob> {
   return blob
 }
 
-export function CompleteBinder({ view }: { view: BinderView }) {
+export function CompleteBinder({ view, testDeck }: { view: BinderView; testDeck: TestDeck }) {
   const server = useFaces()
   // Saved this visit. Null means taken back off.
   const [saved, setSaved] = useState<Record<string, string | null>>({})
@@ -94,6 +95,7 @@ export function CompleteBinder({ view }: { view: BinderView }) {
         <p className="pe-bd-all-sum">
           {view.totals.cards.toLocaleString()} cards · {view.totals.men.toLocaleString()} players · {counts.vaulted} vaulted
         </p>
+        <TestPacks deck={testDeck} />
 
         <div className="pe-bd-tabs" role="tablist" aria-label="Position">
           {(['ALL', ...POOL_KEYS] as Tab[]).map((k) => (

@@ -43,11 +43,31 @@ SCORE_AT = {'floor': 120, 'rare': 700, 'dynasty': 1600, 'transcendent': 2800, 'i
 # worked out from the pool (its best season, the last man into each top rarity),
 # so one new card re-valued a whole position. Frozen at where that left them, so
 # a full-schedule season kept its exact value when the rating changed.
+#
+# The one move since (Joey, 2026-11-02): WR and TE had too few Immortals for the
+# rarity people chase most, so their Immortal point came down, WR 23.8651 -> 23.4
+# and TE 18.1471 -> 17.7. Only cards above the Transcendent point moved, all up.
+# The last point on each keeps the old slope past 5,600, which the top line uses
+# for anything better, so Kelce 2020 didn't come down. TE's Transcendent point came
+# down after it, 16.8946 -> 16.15, so TE has more Transcendents than Immortals, and
+# QB's (22.9881 -> 22.2) and WR's (22.4469 -> 21.6) the same way.
 CURVE = {
-    'QB': [(9.0, 120), (16.5, 700), (20.6, 1600), (22.9881, 2800), (24.3475, 4000), (27.1058, 5600)],
+    'QB': [(9.0, 120), (16.5, 700), (20.6, 1600), (22.2, 2800), (24.3475, 4000), (27.1058, 5600)],
     'RB': [(7.0, 120), (15.0, 700), (21.0, 1600), (24.5029, 2800), (25.7062, 4000), (31.4128, 5600)],
-    'WR': [(7.5, 120), (16.1, 700), (19.9, 1600), (22.4469, 2800), (23.8651, 4000), (25.8529, 5600)],
-    'TE': [(4.5, 120), (9.4, 700), (13.8, 1600), (16.8946, 2800), (18.1471, 4000), (20.6812, 5600)],
+    'WR': [(7.5, 120), (16.1, 700), (19.9, 1600), (21.6, 2800), (23.4, 4000), (25.8529, 5600), (26.8529, 6404.9)],
+    'TE': [(4.5, 120), (9.4, 700), (13.8, 1600), (16.15, 2800), (17.7, 4000), (20.6812, 5600), (21.6812, 6231.4)],
+}
+
+# Seasons raised to the Canton line by hand (Joey, 2026-11-02), so the top three
+# at QB and TE are Canton and the men behind them can hold an Immortal too, and a
+# 15th for the best season left under the line. Each goes out as a new card (see
+# export.REISSUE), so nobody holds one they pulled as an Immortal. The
+# value is a floor: a season already worth more keeps what it's worth.
+RAISE = {
+    'QB': {('Patrick Mahomes', 2018): 5200},
+    'RB': {('Christian McCaffrey', 2019): 5200},
+    'WR': {('Antonio Brown', 2015): 5200, ('Randy Moss', 2007): 5200},
+    'TE': {('Jimmy Graham', 2013): 5200},
 }
 
 # Calibration runs (sim/variant.sh) override these from the environment.
@@ -144,7 +164,8 @@ MUST = {
            ('Dan Marino', 1984), ('Steve Young', 1998), ('Doug Flutie', 1998),
            ('Vince Young', 2006), ('Brett Favre', 1995), ('Joe Burrow', 2024), ('Russell Wilson', 2020), ('Justin Herbert', 2021), ('Dak Prescott', 2025), ('C.J. Stroud', 2023),
            ('Andrew Luck', 2014), ('Tony Romo', 2007), ('Justin Fields', 2022), ('Colin Kaepernick', 2013), ('Jimmy Garoppolo', 2019),
-           ('Lamar Jackson', 2024), ('Daunte Culpepper', 2004), ('Daunte Culpepper', 2003), ('Baker Mayfield', 2024)],
+           ('Lamar Jackson', 2024), ('Daunte Culpepper', 2004), ('Daunte Culpepper', 2003), ('Baker Mayfield', 2024),
+           ('Peyton Manning', 2004)],
     'RB': [('Peyton Hillis', 2010), ('BenJarvus Green-Ellis', 2010), ('Alfred Morris', 2012), ('Jamaal Williams', 2022),
            ('James Robinson', 2020), ('Phillip Lindsay', 2018), ('Chris Johnson', 2009), ('Adrian Peterson', 2012), ('Derrick Henry', 2020), ('Saquon Barkley', 2024),
            ('Knowshon Moreno', 2013), ('LeGarrette Blount', 2016), ('Raheem Mostert', 2023),
@@ -168,7 +189,7 @@ MUST = {
            ('Dez Bryant', 2014), ('Allen Robinson', 2015), ('JuJu Smith-Schuster', 2018), ('Eric Decker', 2013), ('Jarvis Landry', 2015),
            ('Julian Edelman', 2019), ('Wes Welker', 2011), ('Tyreek Hill', 2020), ('Tyler Lockett', 2020),
            ('Calvin Johnson', 2012), ('Odell Beckham', 2014), ('Demaryius Thomas', 2014), ('Keenan Allen', 2023),
-           ('Anquan Boldin', 2005), ('Jordy Nelson', 2014)],
+           ('Anquan Boldin', 2005), ('Jordy Nelson', 2014), ('Antonio Brown', 2014)],
     'TE': [('Gary Barnidge', 2015), ('Sam LaPorta', 2023),
            ('Brock Bowers', 2024), ('Robert Tonyan', 2020),
            ('Jared Cook', 2018), ('Kellen Winslow', 1980), ('Mark Bavaro', 1986), ('Shannon Sharpe', 1996),
@@ -176,7 +197,8 @@ MUST = {
            ('Chris Cooley', 2005), ('Jimmy Graham', 2013), ('Tony Gonzalez', 2004),
            ('George Kittle', 2018), ('Kyle Pitts', 2021), ('Evan Engram', 2017),
            ('Julius Thomas', 2013), ('Delanie Walker', 2015), ('Travis Kelce', 2022), ('Jordan Reed', 2015),
-           ('Vernon Davis', 2009), ('Jason Witten', 2007)],
+           ('Vernon Davis', 2009), ('Jason Witten', 2007), ('Tony Gonzalez', 2000), ('George Kittle', 2024),
+           ('Jordan Cameron', 2013), ('Greg Olsen', 2015), ('Martellus Bennett', 2014)],
 }
 
 
@@ -256,6 +278,9 @@ def choose(pos, t):
     anchors = CURVE[pos]
     # rounded DOWN to the 5, so rounding never lifts a season over a rarity floor
     p['score'] = [int(interp(m, anchors) // 5 * 5) for m in p.metric]
+    for (name, year), floor in RAISE.get(pos, {}).items():
+        at = (p.key == norm(name)) & (p.season == year)
+        p.loc[at, 'score'] = p.loc[at, 'score'].clip(lower=floor)
     p['true'] = p.score            # what settle.py works from
     p['band'] = p.score.map(rarity_for)
 

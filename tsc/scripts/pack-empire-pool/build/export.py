@@ -54,6 +54,43 @@ def ol_lines(r, off):
     return [a, b]
 
 
+# Cards that moved up into Immortal or Canton after they'd been dealt lower down.
+# Joey (2026-11-02): those two rarities count their pulls, so a copy that wasn't
+# pulled at that rarity can't count. Each goes out under a new id, and the card
+# people already hold goes to the vault as it was dealt. Canton: the seasons
+# raised by select_skill.RAISE. Immortal: everything the 10p lines lifted, plus
+# the three 2.18 brought back from the vault (people kept them as Transcendents).
+REISSUE = {
+    'qb-patrick-mahomes-2018': '-canton', 'rb-christian-mccaffrey-2019': '-canton', 'wr-antonio-brown-2015': '-canton',
+    'wr-randy-moss-2007': '-canton', 'te-jimmy-graham-2013': '-canton',
+    'qb-patrick-mahomes-2022': '-immortal',
+    'wr-ceedee-lamb-2023': '-immortal',
+    'wr-jamarr-chase-2024': '-immortal',
+    'wr-tyreek-hill-2023': '-immortal',
+    'wr-randy-moss-2003': '-immortal',
+    'wr-puka-nacua-2025': '-immortal',
+    'wr-isaac-bruce-1995': '-immortal',
+    'wr-michael-thomas-2019': '-immortal',
+    'te-jimmy-graham-2011': '-immortal',
+    'te-rob-gronkowski-2014': '-immortal',
+    'te-mark-andrews-2021': '-immortal',
+    'ot-walter-jones-2005': '-immortal',
+    'ot-penei-sewell-2024': '-immortal',
+    'ot-trent-williams-2023': '-immortal',
+    'ot-tyron-smith-2014': '-immortal',
+    'og-carl-nicks-2011': '-immortal',
+    'og-jahri-evans-2011': '-immortal',
+    'og-louis-vasquez-2013': '-immortal',
+    'og-will-shields-2002': '-immortal',
+    'og-bruce-matthews-1988': '-immortal',
+    'c-jason-kelce-2021': '-immortal',
+    'c-olin-kreutz-2006': '-immortal',
+    'rb-priest-holmes-2003': '-immortal',
+    'rb-ladainian-tomlinson-2003': '-immortal',
+    'te-travis-kelce-2022': '-immortal',
+}
+
+
 def stored(band):
     # Canton is only a band for settling (see select_skill.BANDS); the game reads
     # it off the score, so the file keeps calling it immortal.
@@ -127,6 +164,7 @@ def main():
     for c in cards:
         c['pid'] = c['pid'].replace('k:', 'k-')
         c['id'] = f"{c['pos'].lower()}-{slug(c['name'])}-{c['year']}"
+        if c['id'] in REISSUE: c['id'] += REISSUE[c['id']]
         assert len(c['id']) <= 40, c['id']
     ids = [c['id'] for c in cards]
     assert len(ids) == len(set(ids)), [i for i in ids if ids.count(i) > 1]
@@ -159,7 +197,7 @@ def main():
         now = {c['id'] for c in cards}
         by_hand = {(v['pid'].replace('k-', 'k:', 1), v['year']) for v in json.load(open(VAULT_FILE))}
         gone = [c for c in live if c['id'] not in now and c['id'] not in have | {x['id'] for x in out_cards}]
-        lost = [c['id'] for c in gone if (c['pid'].replace('k-', 'k:', 1), c['year']) not in by_hand]
+        lost = [c['id'] for c in gone if (c['pid'].replace('k-', 'k:', 1), c['year']) not in by_hand and c['id'] not in REISSUE]
         assert not lost, f'dealt cards dropped without a vault line: {lost}'
         out += gone
         # And a line taken out of vault.json brings its card back: it's live again.
