@@ -353,9 +353,9 @@ function RecapTiles({ post, lineup, signedIn, landed }: { post: PostOutcome; lin
         <small>On The Board</small>
         <b>{ordinal(rank)}</b>
         <span>of {total.toLocaleString()} runs</span>
-        {/* Where it sits in the field: the marker's distance along is how many it beat. */}
+        {/* Where it sits in the field, read like the board: 1st at the left end, last at the right. */}
         <span className="pe-recap-meter" aria-hidden>
-          <i style={{ '--at': `${Math.round(beat * 100)}%` } as React.CSSProperties} />
+          <i style={{ '--at': `${Math.round((1 - beat) * 100)}%` } as React.CSSProperties} />
         </span>
         <span className="pe-recap-tile-go pe-recap-tile-foot">{top <= 50 ? `Top ${top}%` : `Better than ${Math.round(beat * 100)}%`}</span>
       </div>

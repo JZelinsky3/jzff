@@ -13,6 +13,7 @@ import { peFonts } from '../../fonts'
 import { ShareButton } from '../../share'
 import { HistoryList, RecordsPanel, ScheduleStrip, StandingsTable, WeekPanel, WeekRecapCard, isReady } from '../LeagueBoard'
 import { CommishPanel, JoinThisLeague, LeaveLeague, RenameTeam } from '../LeagueControls'
+import { KeyNote } from '../../KeyNote'
 
 export const dynamic = 'force-dynamic'
 
@@ -246,11 +247,11 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
               <span className="pe-sec-meta">{weekLine}</span>
             </div>
             <StandingsTable view={view} />
-            <p className="pe-note" style={{ marginTop: '0.7rem' }}>
+            <KeyNote label="Reading the table">
               {post
                 ? 'Playoff total, Gauntlet and Final together. Season is the regular-season total.'
                 : 'Under each team, the Standings Pack it opens this week. Form is a bar a week, gold where it won the week. Lineups stay hidden until the week closes, except to a team whose own is in.'}
-            </p>
+            </KeyNote>
             <WeekRecapCard view={view} />
             <ScheduleStrip view={view} />
             <HistoryList view={view} />

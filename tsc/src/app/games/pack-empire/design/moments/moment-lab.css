@@ -1,0 +1,117 @@
+/* Moments Lab. Dev only, nothing here ships. Sits on card-lab.css (the .pc card,
+   tier colours, Prime Time, sheen, orbit). Effects move transform and opacity only. */
+
+.ml-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; justify-items: center; max-width: 900px; }
+.ml-row figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.ml-row figcaption { max-width: 15em; font: 600 13px/1.35 var(--pe-cond); color: var(--pe-ink-mute); text-align: center; }
+.ml-row figcaption b { display: block; color: var(--pe-ink); font-weight: 800; letter-spacing: .03em; }
+.ml-row--small { display: flex; flex-wrap: wrap; gap: 12px; max-width: none; }
+@media (max-width: 680px) { .ml-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } }
+
+/* ── Under The Lights ─────────────────────────────────────── */
+
+/* The frame. Statement's is polished gold; Takeover and Instant Classic carry the
+   ribbon board, the LED band that runs round a stadium, with the card's own words. */
+.ul { --fw: .16em; position: absolute; inset: 0; border-radius: .6em; color: var(--ink); background: #08080a; box-shadow: 0 .5em 1.1em rgba(0, 0, 0, .6), 0 0 1.4em var(--glow); }
+.pc--lights[data-tier='transcendent'] .ul, .pc--lights[data-tier='immortal'] .ul { --fw: .34em; }
+.pc--lights[data-tier='dynasty'] .ul { background: linear-gradient(150deg, #f3d77a, #a87a16 24%, #5e3e08 46%, #e2b84a 66%, #7f5a0c 86%, #f0cf6c); }
+.ul::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 .04em var(--a); pointer-events: none; }
+
+.ul-rib { position: absolute; overflow: hidden; display: flex; align-items: center; pointer-events: none; }
+.ul-rib i { flex: none; white-space: nowrap; font: 700 .22em/1 var(--pe-display); font-style: normal; letter-spacing: .14em; text-transform: uppercase; color: var(--a); text-shadow: 0 0 .5em var(--a); will-change: transform; animation: ul-run 30s linear infinite; }
+.ul-rib--top, .ul-rib--bot { left: .36em; right: .36em; height: var(--fw); }
+.ul-rib--top { top: 0; }
+.ul-rib--bot { bottom: 0; }
+.ul-rib--bot i { animation-direction: reverse; }
+.ul-rib--l, .ul-rib--r { top: .4em; bottom: .4em; width: var(--fw); align-items: flex-start; justify-content: center; }
+.ul-rib--l { left: 0; }
+.ul-rib--r { right: 0; }
+.ul-rib--l i, .ul-rib--r i { writing-mode: vertical-rl; animation-name: ul-run-y; }
+.ul-rib--l i { animation-direction: reverse; }
+[data-tier='immortal'] .ul-rib i { animation-duration: 20s; }
+@keyframes ul-run { to { transform: translateX(-50%); } }
+@keyframes ul-run-y { to { transform: translateY(-50%); } }
+
+.ul-in { position: absolute; inset: var(--fw); overflow: hidden; border-radius: calc(.6em - var(--fw)); background: #05070c; box-shadow: 0 0 0 .035em var(--a); }
+/* night over the stadium, the stands a darker band, the turf lit at the bottom */
+.ul-sky { position: absolute; inset: 0; background:
+  radial-gradient(75% 40% at 50% 100%, rgba(70, 150, 90, .4), transparent 72%),
+  linear-gradient(180deg, transparent 36%, rgba(0, 0, 0, .5) 45%, rgba(0, 0, 0, .3) 58%, transparent 68%),
+  radial-gradient(120% 70% at 50% -5%, color-mix(in srgb, var(--a2) 40%, #101624), #05070c 74%); }
+
+/* a bank of lamps in each top corner, and the glare off it */
+.ul-bank { position: absolute; top: 1.55em; width: .78em; height: .5em; border-radius: .08em; background: radial-gradient(circle, #fff 0 32%, transparent 42%) 0 0 / .26em .25em, #1a1c22; box-shadow: 0 0 .5em .14em rgba(255, 255, 255, .45); }
+.ul-bank--l { left: .45em; }
+.ul-bank--r { right: .45em; }
+.ul-glare { position: absolute; top: 1.8em; width: 5em; height: 5em; margin: -2.5em; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 255, 255, .7), color-mix(in srgb, var(--a) 32%, transparent) 34%, transparent); animation: ul-hum 3.4s ease-in-out infinite alternate; }
+.ul-glare--l { left: .84em; }
+.ul-glare--r { right: .84em; animation-delay: -1.6s; }
+[data-tier='immortal'] .ul-glare { animation-duration: 1.8s; }
+@keyframes ul-hum { from { opacity: .45; transform: scale(.92); } to { opacity: .9; transform: scale(1.05); } }
+
+/* beams off the lamps, swinging across the field behind him */
+.ul-beams i { position: absolute; top: 1.8em; width: 2.8em; height: 15em; margin-left: -1.4em; transform-origin: 50% 0; background: linear-gradient(180deg, rgba(255, 255, 255, .55), color-mix(in srgb, var(--a) 24%, transparent) 42%, transparent 86%); clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%); opacity: .5; }
+.ul-beams i:nth-child(odd) { left: .84em; animation: ul-sweep-l 6s ease-in-out infinite alternate; }
+.ul-beams i:nth-child(even) { left: calc(100% - .84em); animation: ul-sweep-r 6s ease-in-out infinite alternate; }
+[data-tier='immortal'] .ul-beams i { animation-duration: 3.8s; opacity: .55; }
+[data-tier='immortal'] .ul-beams i:nth-child(3) { animation-duration: 4.6s; animation-delay: -2.3s; }
+[data-tier='immortal'] .ul-beams i:nth-child(4) { animation-duration: 5.1s; animation-delay: -3.4s; }
+@keyframes ul-sweep-l { from { transform: rotate(-60deg); } to { transform: rotate(-12deg); } }
+@keyframes ul-sweep-r { from { transform: rotate(60deg); } to { transform: rotate(12deg); } }
+
+/* camera flashes going off in the stands */
+.ul-flashes { position: absolute; left: 0; right: 0; top: 4.4em; height: 2.4em; }
+.ul-flashes i { position: absolute; width: .2em; height: .2em; border-radius: 50%; background: #fff; box-shadow: 0 0 .26em .1em rgba(255, 255, 255, .9); opacity: 0; animation: ul-pop 3.2s ease-out infinite; }
+.ul-flashes i:nth-child(1) { left: 8%; top: 20%; }
+.ul-flashes i:nth-child(2) { left: 86%; top: 34%; animation-delay: .7s; }
+.ul-flashes i:nth-child(3) { left: 22%; top: 62%; animation-delay: 1.5s; }
+.ul-flashes i:nth-child(4) { left: 74%; top: 72%; animation-delay: 2.1s; }
+.ul-flashes i:nth-child(5) { left: 14%; top: 44%; animation-delay: 2.7s; }
+.ul-flashes i:nth-child(6) { left: 92%; top: 12%; animation-delay: 1.1s; }
+.ul-flashes i:nth-child(7) { left: 4%; top: 80%; animation-delay: .3s; }
+.ul-flashes i:nth-child(8) { left: 80%; top: 52%; animation-delay: 1.8s; }
+.ul-flashes i:nth-child(9) { left: 30%; top: 8%; animation-delay: 2.4s; }
+.ul-flashes i:nth-child(10) { left: 66%; top: 90%; animation-delay: .9s; }
+[data-tier='immortal'] .ul-flashes i { animation-duration: 2.1s; }
+@keyframes ul-pop { 0%, 84%, 100% { opacity: 0; transform: scale(.4); } 87% { opacity: 1; transform: scale(1.35); } 94% { opacity: 0; transform: scale(.6); } }
+
+/* bottom-anchored, so the bust always runs under the scoreboard */
+.ul-photo { position: absolute; left: 50%; bottom: 5.3em; width: 8.2em; max-width: none; height: auto; margin-left: -4.1em; }
+
+.ul-top { position: absolute; left: 0; right: 0; top: 0; height: 1.32em; display: flex; align-items: stretch; justify-content: space-between; padding-right: .42em; background: rgba(4, 5, 8, .92); border-bottom: .06em solid var(--a); }
+.ul-pos { display: flex; align-items: center; padding: 0 .6em; background: var(--a); color: #0a0a0c; font: 800 .72em/1 var(--pe-cond); letter-spacing: .05em; }
+.ul-rar { display: inline-flex; align-items: center; gap: .3em; font: 800 .5em/1 var(--pe-cond); letter-spacing: .09em; text-transform: uppercase; color: var(--a); white-space: nowrap; }
+.ul-rar .pc-gem { width: 1.25em; height: 1.25em; }
+
+/* the scoreboard: that day's points, or the line score of the four games */
+.ul-board { position: absolute; left: .3em; right: .3em; bottom: 3.5em; padding: .22em .34em .2em; border-radius: .2em; background: linear-gradient(180deg, #13141a, #050608); box-shadow: inset 0 0 0 .04em #2c2e36, 0 .1em .3em rgba(0, 0, 0, .65); }
+.ul-when { font: 700 .4em/1 var(--pe-cond); letter-spacing: .16em; text-transform: uppercase; color: var(--mute); white-space: nowrap; }
+.ul-game { display: flex; align-items: center; justify-content: space-between; margin-top: .16em; }
+.ul-vs { display: flex; align-items: center; gap: .2em; }
+.ul-vs img { width: 1.05em; height: 1.05em; object-fit: contain; }
+.ul-vs b { font: 800 .46em/1 var(--pe-display); }
+.ul-vs em { font: 700 .38em/1 var(--pe-cond); font-style: normal; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); }
+.ul-score { position: relative; display: flex; align-items: baseline; gap: .16em; }
+.ul-score b { font: 900 1.05em/1 var(--pe-display); letter-spacing: .02em; color: var(--a); text-shadow: 0 0 .3em color-mix(in srgb, var(--a) 70%, transparent); }
+.ul-score em { font: 800 .38em/1 var(--pe-cond); font-style: normal; letter-spacing: .12em; color: var(--a); }
+/* Instant Classic's number surges now and then, like the board lighting up */
+[data-tier='immortal'] .ul-score[data-v]::after { content: attr(data-v); position: absolute; left: 0; top: 0; font: 900 1.05em/1 var(--pe-display); letter-spacing: .02em; color: #fff; text-shadow: 0 0 .25em var(--a), 0 0 .6em var(--a); opacity: 0; animation: pc-charge 3.6s ease-in-out infinite; }
+.ul-line { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.4fr); margin-top: .2em; border-top: .03em solid #2c2e36; }
+.ul-line span { display: flex; flex-direction: column; align-items: center; gap: .14em; padding-top: .18em; }
+.ul-line span + span { border-left: .03em solid #2c2e36; }
+.ul-line em { font: 700 .34em/1 var(--pe-cond); font-style: normal; letter-spacing: .1em; color: var(--mute); }
+.ul-line b { font: 800 .56em/1 var(--pe-cond); color: var(--ink); }
+.ul-avg em { color: var(--a); }
+.ul-avg b { font-size: .8em; color: var(--a); text-shadow: 0 0 .3em color-mix(in srgb, var(--a) 70%, transparent); }
+
+.ul-plate { position: absolute; left: 0; right: 0; bottom: 0; height: 3.42em; padding: .32em .42em .22em; }
+.ul-name { font: 800 .9em/1 var(--pe-cond); text-transform: uppercase; letter-spacing: .01em; white-space: nowrap; color: var(--ink); }
+.ul-val { margin-top: .08em; font: 900 .98em/1 var(--pe-display); letter-spacing: -.01em; color: var(--a); }
+.ul-stats { display: flex; justify-content: space-between; gap: .2em; margin-top: .22em; padding-top: .22em; border-top: .04em solid color-mix(in srgb, var(--a) 40%, transparent); }
+.ul-stats span { display: flex; align-items: baseline; gap: .18em; white-space: nowrap; }
+.ul-stats b { font: 700 .46em/1 var(--pe-display); color: var(--ink); }
+.ul-stats em { font: 700 .36em/1 var(--pe-cond); font-style: normal; letter-spacing: .05em; color: var(--mute); }
+.ul-stats--tight b { font-size: .4em; }
+.ul-stats--tight em { font-size: .31em; letter-spacing: .02em; }
+
+@media (prefers-reduced-motion: reduce) { .ul-rib i, .ul-glare, .ul-beams i, .ul-flashes i, .ul-score::after { animation: none !important; } }

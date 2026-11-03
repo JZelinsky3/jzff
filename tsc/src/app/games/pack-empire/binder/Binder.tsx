@@ -249,12 +249,11 @@ export function Binder({ view, mobile }: { view: BinderView; mobile: boolean }) 
   )
 }
 
-function ordinalDay(iso: string): string {
+/** The day a Canton was pulled, as the board prints a date: 11/02/26. */
+function numericDay(iso: string): string {
   const d = new Date(iso)
-  const n = d.getDate()
-  const v = n % 100
-  const suffix = v >= 11 && v <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'
-  return `${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][d.getMonth()]} ${n}${suffix}`
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d.getMonth() + 1)}/${pad(d.getDate())}/${pad(d.getFullYear() % 100)}`
 }
 
 /** A Canton's own page, by the number it was given. */
@@ -323,10 +322,10 @@ function CantonHall({
               <div className="pe-hall-plinth" aria-hidden />
               <div className="pe-hall-plate">
                 <b>
-                  {card.name} <em>{card.year}</em>
+                  {card.name} <em>- {card.year}</em>
                 </b>
                 <span>
-                  {h.serials.map((n) => `No. ${n}`).join(' · ')} of {h.total} · {ordinalDay(h.at)}
+                  {h.serials.map((n) => `No. ${n}`).join(' · ')} of {h.total} · {numericDay(h.at)}
                 </span>
               </div>
             </button>
@@ -445,6 +444,23 @@ function CardSheet({
           <div className="pe-bd-sheet-club">
             {card.year} {card.club}
           </div>
+          {/* A Canton you hold can go out: one quiet line under the name, no box of its own. */}
+          {owned(card) && card.rarity === 'canton' && card.serial && (
+            <div className="pe-bd-sheet-share">
+              <span>
+                <b>No. {card.serial[0]}</b> of {card.serial[1]}
+              </span>
+              <ShareButton
+                plain
+                path={cantonHref(card.id, card.serial[0])}
+                title={`${card.name} ${card.year} · Canton`}
+                text={`My Canton: ${card.name} ${card.year}, No. ${card.serial[0]} of ${card.serial[1]}`}
+              />
+              <Link href={cantonHref(card.id, card.serial[0])} className="pe-link">
+                Its page
+              </Link>
+            </div>
+          )}
           <div className="pe-bd-counts">
             <div className="pe-bd-count you">
               <div className="pe-bd-count-head">You</div>
@@ -479,24 +495,6 @@ function CardSheet({
               </dl>
             </div>
           </div>
-
-          {owned(card) && card.rarity === 'canton' && card.serial && (
-            <div className="pe-bd-sheet-share">
-              <span>
-                <b>No. {card.serial[0]}</b> of {card.serial[1]} ever pulled. Show it off.
-              </span>
-              <span className="pe-bd-sheet-share-acts">
-                <ShareButton
-                  path={cantonHref(card.id, card.serial[0])}
-                  title={`${card.name} ${card.year} · Canton`}
-                  text={`My Canton: ${card.name} ${card.year}, No. ${card.serial[0]} of ${card.serial[1]}`}
-                />
-                <Link href={cantonHref(card.id, card.serial[0])} className="pe-link">
-                  Its page
-                </Link>
-              </span>
-            </div>
-          )}
 
           {man.cards.length > 1 && (
             <div className="pe-bd-sheet-vers" role="group" aria-label="His seasons">

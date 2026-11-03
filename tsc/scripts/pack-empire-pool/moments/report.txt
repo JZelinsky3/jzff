@@ -1,0 +1,370 @@
+FIRST DRAFT (top few at a position whoever, then new + light faces only)
+
+-- GAMES QB
+   5386  cant  known  Josh Allen               2024 Wk 14                     51.9 pts  vs Los Angeles Rams     342 pass · 3 TD · 82 rush · 3 rush TD
+   4801  immo  known  Mike Vick                2010 Wk 10                     49.3 pts  vs Washington Commanders 333 pass · 4 TD · 80 rush · 2 rush TD
+   4185  immo  light  Colin Kaepernick         2012 Divisional                46.6 pts  vs Green Bay Packers    263 pass · 2 TD · 181 rush · 2 rush TD
+   3870  tran  light  Nick Foles               2013 Wk 9                      45.2 pts  vs Las Vegas Raiders    406 pass · 7 TD
+   3765  tran  light  Ben Roethlisberger       2014 Wk 8                      44.8 pts  vs Indianapolis Colts   522 pass · 6 TD
+   3655  tran  light  Trevor Lawrence          2025 Wk 15                     44.3 pts  vs New York Jets        330 pass · 5 TD · 51 rush · 1 rush TD
+   3463  tran  light  Mitchell Trubisky        2018 Wk 4                      43.5 pts  vs Tampa Bay Buccaneers 354 pass · 6 TD · 53 rush
+   3294  tran  light  Justin Fields            2022 Wk 9                      42.7 pts  vs Miami Dolphins       123 pass · 3 TD · 178 rush · 1 rush TD
+   3194  tran  light  Ryan Fitzpatrick         2018 Wk 1                      42.3 pts  vs New Orleans Saints   417 pass · 4 TD · 36 rush · 1 rush TD
+   3084  tran  light  C.J. Stroud              2023 Wk 9                      41.8 pts  vs Tampa Bay Buccaneers 470 pass · 5 TD
+   2966  tran  new    Jeff Garcia              2003 Wk 14                     41.3 pts  vs Arizona Cardinals    252 pass · 4 TD · 32 rush · 2 rush TD
+   2915  tran  light  Jared Goff               2024 Wk 15                     41.1 pts  vs Buffalo Bills        494 pass · 5 TD
+
+-- GAMES RB
+   4898  immo  known  Jamaal Charles           2013 Wk 15                     59.5 pts  vs Las Vegas Raiders    20 rush · 1 TD · 8-195 · 4 rec TD
+   4550  immo  new    Clinton Portis           2003 Wk 14                     57.4 pts  vs Kansas City Chiefs   218 rush · 5 TD
+   4185  immo  light  Doug Martin              2012 Wk 9                      55.2 pts  vs Las Vegas Raiders    251 rush · 4 TD · 4-21
+   4169  immo  light  Joe Mixon                2022 Wk 9                      55.1 pts  vs Carolina Panthers    153 rush · 4 TD · 4-58 · 1 rec TD
+   3622  tran  light  Fred Taylor              2000 Wk 12                     51.8 pts  vs Pittsburgh Steelers  234 rush · 3 TD · 3-14 · 1 rec TD
+   3539  tran  light  De'Von Achane            2023 Wk 3                      51.3 pts  vs Denver Broncos       203 rush · 2 TD · 4-30 · 2 rec TD
+   3423  tran  new    Mike Anderson            2000 Wk 14                     50.6 pts  vs New Orleans Saints   251 rush · 4 TD
+   3357  tran  new    Jahvid Best              2010 Wk 2                      50.2 pts  vs Philadelphia Eagles  78 rush · 2 TD · 9-154 · 1 rec TD
+   3290  tran  light  Reggie Bush              2006 Wk 13                     49.8 pts  vs San Francisco 49ers  37 rush · 3 TD · 9-131 · 1 rec TD
+   3290  tran  new    Jerome Harrison          2009 Wk 15                     49.8 pts  vs Kansas City Chiefs   286 rush · 3 TD
+   3191  tran  light  Aaron Jones              2019 Wk 5                      49.2 pts  vs Dallas Cowboys       107 rush · 4 TD · 7-75
+   3091  tran  light  Raheem Mostert           2019 Conference Championship   48.6 pts  vs Green Bay Packers    220 rush · 4 TD
+
+-- GAMES WR
+   5351  cant  new    Jimmy Smith              2000 Wk 2                      62.1 pts  vs Baltimore Ravens     15 rec · 291 yds · 3 TD
+   4622  immo  known  Tyreek Hill              2020 Wk 12                     57.9 pts  vs Tampa Bay Buccaneers 13 rec · 269 yds · 3 TD
+   3892  tran  light  Will Fuller              2019 Wk 5                      53.7 pts  vs Atlanta Falcons      14 rec · 217 yds · 3 TD
+   3823  tran  new    Drew Bennett             2004 Wk 14                     53.3 pts  vs Kansas City Chiefs   12 rec · 233 yds · 3 TD
+   3771  tran  light  Tyler Lockett            2020 Wk 7                      53.0 pts  vs Arizona Cardinals    15 rec · 200 yds · 3 TD
+   3614  tran  new    Gabe Davis               2021 Divisional                52.1 pts  vs Kansas City Chiefs   8 rec · 201 yds · 4 TD
+   3510  tran  light  Amari Cooper             2023 Wk 16                     51.5 pts  vs Houston Texans       11 rec · 265 yds · 2 TD
+   3441  tran  new    Kevin Curtis             2007 Wk 3                      51.1 pts  vs Detroit Lions        11 rec · 221 yds · 3 TD
+   3215  tran  new    Qadry Ismail             1999 Wk 14                     49.8 pts  vs Pittsburgh Steelers  6 rec · 258 yds · 3 TD
+   3198  tran  light  Amari Cooper             2018 Wk 14                     49.7 pts  vs Philadelphia Eagles  10 rec · 217 yds · 3 TD
+   3163  tran  new    Lee Evans                2006 Wk 11                     49.5 pts  vs Houston Texans       11 rec · 265 yds · 2 TD
+   3146  tran  light  Eric Decker              2013 Wk 13                     49.4 pts  vs Kansas City Chiefs   8 rec · 174 yds · 4 TD
+
+-- GAMES TE
+   4729  immo  light  Kyle Pitts               2025 Wk 15                     45.6 pts  vs Tampa Bay Buccaneers 11 rec · 166 yds · 3 TD
+   4691  immo  known  Shannon Sharpe           2002 Wk 7                      45.4 pts  vs Kansas City Chiefs   12 rec · 214 yds · 2 TD
+   3951  tran  light  Taysom Hill              2024 Wk 11                     41.5 pts  vs Cleveland Browns     8 rec · 50 yds · 0 TD · 138 rush · 3 rush TD
+   3508  tran  light  Evan Engram              2022 Wk 14                     39.2 pts  vs Tennessee Titans     11 rec · 162 yds · 2 TD
+   3145  tran  light  Jake Ferguson            2023 Wild Card                 37.3 pts  vs Green Bay Packers    10 rec · 93 yds · 3 TD
+   3069  tran  new    Blake Jarwin             2018 Wk 17                     36.9 pts  vs New York Giants      7 rec · 119 yds · 3 TD
+   2840  tran  light  Alge Crumpler            2006 Wk 7                      35.7 pts  vs Pittsburgh Steelers  6 rec · 117 yds · 3 TD
+   2745  dyna  new    Eric Johnson             2004 Wk 5                      35.2 pts  vs Arizona Cardinals    13 rec · 162 yds · 1 TD
+   2531  dyna  light  Taysom Hill              2022 Wk 5                      34.1 pts  vs Seattle Seahawks     0 rec · 0 yds · 0 TD · 112 rush · 3 rush TD · 1 pass TD
+   2478  dyna  light  Robert Tonyan            2020 Wk 4                      33.8 pts  vs Atlanta Falcons      6 rec · 98 yds · 3 TD
+   2420  dyna  new    Jermichael Finley        2011 Wk 3                      33.5 pts  vs Chicago Bears        7 rec · 85 yds · 3 TD
+   2382  dyna  light  Tucker Kraft             2025 Wk 8                      33.3 pts  vs Pittsburgh Steelers  7 rec · 143 yds · 2 TD
+
+-- STREAKS QB
+   5361  cant  known  Josh Allen               2024 Wks 11-15                 36.4/g  season 23.7/g             1,114 pass · 8 TD · 223 rush · 7 rush TD
+   4276  immo  light  Justin Fields            2022 Wks 7-10                  32.9/g  season 19.7/g             620 pass · 8 TD · 467 rush · 5 rush TD
+   3707  tran  light  Mitchell Trubisky        2018 Wks 4-8                   31.0/g  season 18.8/g             1,223 pass · 13 TD · 232 rush · 1 rush TD
+   3534  tran  light  Trevor Lawrence          2025 Wks 15-18                 30.5/g  season 19.9/g             1,127 pass · 11 TD · 108 rush · 4 rush TD
+   3325  tran  light  Dak Prescott             2023 Wks 6-10                  29.8/g  season 20.2/g             1,354 pass · 12 TD · 90 rush · 2 rush TD
+   2962  tran  light  Nick Foles               2013 Wks 9-13                  28.6/g  season 20.0/g             1,169 pass · 13 TD · 117 rush · 1 rush TD
+   2945  tran  light  Jared Goff               2024 Wks 14-17                 28.6/g  season 19.1/g             1,416 pass · 14 TD
+   2834  tran  light  Donovan McNabb           2004 Wks 10-13                 28.2/g  season 19.4/g             1,275 pass · 14 TD · 78 rush · 1 rush TD
+
+-- STREAKS RB
+   5414  cant  known  LaDainian Tomlinson      2006 Wks 8-11                  44.0/g  season 30.1/g             564 rush · 12 TD · 15-205 · 2 rec TD
+   4015  immo  light  Devonta Freeman          2015 Wks 3-6                   37.1/g  season 21.1/g             462 rush · 8 TD · 25-233 · 1 rec TD
+   3816  tran  new    Larry Johnson            2005 Wks 14-17                 36.1/g  season 22.5/g             642 rush · 9 TD · 11-114 · 1 rec TD
+   3591  tran  light  Fred Taylor              2000 Wks 12-15                 35.0/g  season 21.5/g             656 rush · 8 TD · 9-56 · 2 rec TD
+   3550  tran  new    Clinton Portis           2003 Wks 12-15                 34.9/g  season 24.0/g             692 rush · 9 TD · 7-72
+   3257  tran  light  Ricky Williams           2000 Wks 6-9                   33.4/g  season 23.4/g             482 rush · 7 TD · 20-221
+   3178  tran  new    Ronnie Brown             2007 Wks 3-6                   33.0/g  season 24.3/g             461 rush · 4 TD · 26-280 · 1 rec TD
+   3081  tran  light  Ricky Williams           2002 Wks 11-14                 32.5/g  season 22.5/g             689 rush · 8 TD · 11-43
+
+-- STREAKS WR
+   4674  immo  known  Calvin Johnson           2013 Wks 7-11                  37.4/g  season 21.7/g             35 rec · 746 yds · 7 TD
+   3961  tran  new    Drew Bennett             2004 Wks 12-15                 34.5/g  season 18.5/g             33 rec · 571 yds · 8 TD
+   3942  tran  new    Dwayne Bowe              2010 Wks 9-12                  34.5/g  season 17.4/g             37 rec · 528 yds · 8 TD
+   3620  tran  new    Patrick Jeffers          1999 Wks 14-17                 33.1/g  season 17.5/g             28 rec · 610 yds · 7 TD
+   3416  tran  light  Chad Johnson             2006 Wks 10-13                 32.3/g  season 16.6/g             32 rec · 664 yds · 5 TD
+   3062  tran  new    Jimmy Smith              2000 Wks 1-4                   30.9/g  season 17.4/g             36 rec · 516 yds · 6 TD
+   2697  dyna  new    T.J. Houshmandzadeh      2007 Wks 2-6                   29.4/g  season 18.6/g             38 rec · 455 yds · 6 TD
+   2691  dyna  light  Doug Baldwin             2015 Wks 12-15                 29.4/g  season 16.8/g             21 rec · 366 yds · 10 TD
+
+-- STREAKS TE
+   5182  immo  known  Jimmy Graham             2013 Wks 2-5                   29.4/g  season 19.0/g             33 rec · 548 yds · 5 TD
+   3492  tran  light  Kyle Pitts               2025 Wks 13-16                 23.6/g  season 12.4/g             31 rec · 395 yds · 4 TD
+   2970  tran  light  David Njoku              2023 Wks 14-17                 21.8/g  season 12.6/g             28 rec · 373 yds · 4 TD
+   2912  tran  light  Jonnu Smith              2024 Wks 11-14                 21.6/g  season 13.1/g             28 rec · 345 yds · 4 TD
+   2854  tran  light  Evan Engram              2022 Wks 13-16                 21.4/g  season 10.4/g             31 rec · 367 yds · 3 TD
+   2789  dyna  light  Tyler Higbee             2019 Wks 13-16                 21.2/g  season 11.5/g             35 rec · 438 yds · 1 TD
+   2506  dyna  light  Benjamin Watson          2015 Wks 5-8                   20.2/g  season 11.9/g             26 rec · 369 yds · 3 TD
+   2383  dyna  light  Alge Crumpler            2006 Wks 6-9                   19.8/g  season 11.4/g             19 rec · 302 yds · 5 TD
+
+
+EVERY CANDIDATE AT TRANSCENDENT+ (dynasty counted only)
+
+== GAMES QB: dynasty 121 / transcendent 23 / immortal 4 / over 5,200 1, new or light faces 50
+   5386  cant  known  Josh Allen               2024 Wk 14                     51.9 pts  vs Los Angeles Rams     342 pass · 3 TD · 82 rush · 3 rush TD
+   4801  immo  known  Mike Vick                2010 Wk 10                     49.3 pts  vs Washington Commanders 333 pass · 4 TD · 80 rush · 2 rush TD
+   4185  immo  light  Colin Kaepernick         2012 Divisional                46.6 pts  vs Green Bay Packers    263 pass · 2 TD · 181 rush · 2 rush TD
+   4107  immo  known  Peyton Manning           2013 Wk 1                      46.3 pts  vs Baltimore Ravens     462 pass · 7 TD
+   4025  immo  known  Aaron Rodgers            2011 Wk 4                      45.9 pts  vs Denver Broncos       408 pass · 4 TD · 36 rush · 2 rush TD
+   3870  tran  light  Nick Foles               2013 Wk 9                      45.2 pts  vs Las Vegas Raiders    406 pass · 7 TD
+   3765  tran  light  Ben Roethlisberger       2014 Wk 8                      44.8 pts  vs Indianapolis Colts   522 pass · 6 TD
+   3655  tran  known  Drew Brees               2015 Wk 8                      44.3 pts  vs New York Giants      505 pass · 7 TD
+   3655  tran  light  Trevor Lawrence          2025 Wk 15                     44.3 pts  vs New York Jets        330 pass · 5 TD · 51 rush · 1 rush TD
+   3532  tran  known  Aaron Rodgers            2019 Wk 7                      43.8 pts  vs Las Vegas Raiders    429 pass · 5 TD · 6 rush · 1 rush TD
+   3463  tran  light  Mitchell Trubisky        2018 Wk 4                      43.5 pts  vs Tampa Bay Buccaneers 354 pass · 6 TD · 53 rush
+   3331  tran  known  Aaron Rodgers            2018 Wk 16                     42.9 pts  vs New York Jets        442 pass · 2 TD · 32 rush · 2 rush TD
+   3317  tran  known  Justin Herbert           2021 Wk 5                      42.8 pts  vs Cleveland Browns     398 pass · 4 TD · 29 rush · 1 rush TD
+   3294  tran  light  Justin Fields            2022 Wk 9                      42.7 pts  vs Miami Dolphins       123 pass · 3 TD · 178 rush · 1 rush TD
+   3285  tran  known  Josh Allen               2025 Wk 11                     42.7 pts  vs Tampa Bay Buccaneers 317 pass · 3 TD · 40 rush · 3 rush TD
+   3271  tran  known  Lamar Jackson            2022 Wk 2                      42.6 pts  vs Miami Dolphins       318 pass · 3 TD · 119 rush · 1 rush TD
+   3194  tran  light  Ryan Fitzpatrick         2018 Wk 1                      42.3 pts  vs New Orleans Saints   417 pass · 4 TD · 36 rush · 1 rush TD
+   3103  tran  known  Lamar Jackson            2021 Wk 5                      41.9 pts  vs Indianapolis Colts   442 pass · 4 TD · 62 rush
+   3084  tran  light  C.J. Stroud              2023 Wk 9                      41.8 pts  vs Tampa Bay Buccaneers 470 pass · 5 TD
+   3080  tran  known  Daunte Culpepper         2002 Wk 15                     41.8 pts  vs New Orleans Saints   312 pass · 2 TD · 73 rush · 2 rush TD
+   3071  tran  known  Deshaun Watson           2019 Wk 5                      41.7 pts  vs Atlanta Falcons      426 pass · 5 TD · 47 rush
+   3039  tran  known  Cam Newton               2015 Wk 15                     41.6 pts  vs New York Giants      340 pass · 5 TD · 100 rush
+   2979  tran  known  Russell Wilson           2019 Wk 3                      41.3 pts  vs New Orleans Saints   406 pass · 2 TD · 51 rush · 2 rush TD
+   2966  tran  new    Jeff Garcia              2003 Wk 14                     41.3 pts  vs Arizona Cardinals    252 pass · 4 TD · 32 rush · 2 rush TD
+   2966  tran  known  Josh Allen               2024 Wk 15                     41.3 pts  vs Detroit Lions        362 pass · 2 TD · 68 rush · 2 rush TD
+   2938  tran  known  Jalen Hurts              2022 Super Bowl                41.2 pts  vs Kansas City Chiefs   304 pass · 1 TD · 70 rush · 3 rush TD
+   2915  tran  light  Jared Goff               2024 Wk 15                     41.1 pts  vs Buffalo Bills        494 pass · 5 TD
+   2888  tran  light  Tony Romo                2013 Wk 5                      40.9 pts  vs Denver Broncos       506 pass · 5 TD
+
+== GAMES RB: dynasty 111 / transcendent 28 / immortal 11 / over 5,200 0, new or light faces 61
+   4898  immo  known  Jamaal Charles           2013 Wk 15                     59.5 pts  vs Las Vegas Raiders    20 rush · 1 TD · 8-195 · 4 rec TD
+   4550  immo  new    Clinton Portis           2003 Wk 14                     57.4 pts  vs Kansas City Chiefs   218 rush · 5 TD
+   4351  immo  known  Alvin Kamara             2020 Wk 16                     56.2 pts  vs Minnesota Vikings    155 rush · 6 TD · 3-17
+   4334  immo  known  Shaun Alexander          2002 Wk 4                      56.1 pts  vs Minnesota Vikings    139 rush · 4 TD · 3-92 · 1 rec TD
+   4334  immo  known  LaDainian Tomlinson      2002 Wk 13                     56.1 pts  vs Denver Broncos       220 rush · 3 TD · 11-51
+   4268  immo  known  Priest Holmes            2002 Wk 12                     55.7 pts  vs Seattle Seahawks     197 rush · 2 TD · 7-110 · 1 rec TD
+   4218  immo  known  Chris Johnson            2009 Wk 2                      55.4 pts  vs Houston Texans       197 rush · 2 TD · 9-87 · 1 rec TD
+   4218  immo  known  Jahmyr Gibbs             2025 Wk 12                     55.4 pts  vs New York Giants      219 rush · 2 TD · 11-45 · 1 rec TD
+   4185  immo  light  Doug Martin              2012 Wk 9                      55.2 pts  vs Las Vegas Raiders    251 rush · 4 TD · 4-21
+   4169  immo  light  Joe Mixon                2022 Wk 9                      55.1 pts  vs Carolina Panthers    153 rush · 4 TD · 4-58 · 1 rec TD
+   4069  immo  known  Marshall Faulk           2002 Wk 7                      54.5 pts  vs Seattle Seahawks     183 rush · 3 TD · 7-52 · 1 rec TD
+   3887  tran  known  Jonathan Taylor          2021 Wk 11                     53.4 pts  vs Buffalo Bills        185 rush · 4 TD · 3-19 · 1 rec TD
+   3622  tran  light  Fred Taylor              2000 Wk 12                     51.8 pts  vs Pittsburgh Steelers  234 rush · 3 TD · 3-14 · 1 rec TD
+   3622  tran  known  Le'Veon Bell             2016 Wk 14                     51.8 pts  vs Buffalo Bills        236 rush · 3 TD · 4-62
+   3539  tran  light  De'Von Achane            2023 Wk 3                      51.3 pts  vs Denver Broncos       203 rush · 2 TD · 4-30 · 2 rec TD
+   3506  tran  known  Marshall Faulk           2000 Wk 17                     51.1 pts  vs New Orleans Saints   220 rush · 2 TD · 7-41 · 1 rec TD
+   3423  tran  new    Mike Anderson            2000 Wk 14                     50.6 pts  vs New Orleans Saints   251 rush · 4 TD
+   3357  tran  new    Jahvid Best              2010 Wk 2                      50.2 pts  vs Philadelphia Eagles  78 rush · 2 TD · 9-154 · 1 rec TD
+   3290  tran  light  Reggie Bush              2006 Wk 13                     49.8 pts  vs San Francisco 49ers  37 rush · 3 TD · 9-131 · 1 rec TD
+   3290  tran  new    Jerome Harrison          2009 Wk 15                     49.8 pts  vs Kansas City Chiefs   286 rush · 3 TD
+   3257  tran  known  Todd Gurley              2017 Wk 16                     49.6 pts  vs Tennessee Titans     118 rush · 0 TD · 10-158 · 2 rec TD
+   3257  tran  known  Jonathan Taylor          2025 Wk 10                     49.6 pts  vs Atlanta Falcons      244 rush · 3 TD · 3-42
+   3191  tran  light  Aaron Jones              2019 Wk 5                      49.2 pts  vs Dallas Cowboys       107 rush · 4 TD · 7-75
+   3164  tran  known  LaDainian Tomlinson      2005 Wk 3                      49.0 pts  vs New York Giants      192 rush · 3 TD · 6-28
+   3108  tran  known  Christian McCaffrey      2023 Wk 4                      48.7 pts  vs Arizona Cardinals    106 rush · 3 TD · 7-71 · 1 rec TD
+   3091  tran  light  Raheem Mostert           2019 Conference Championship   48.6 pts  vs Green Bay Packers    220 rush · 4 TD
+   3091  tran  known  Dalvin Cook              2020 Wk 8                      48.6 pts  vs Green Bay Packers    163 rush · 3 TD · 2-63 · 1 rec TD
+   3075  tran  known  Adrian Peterson          2007 Wk 9                      48.5 pts  vs Los Angeles Chargers 296 rush · 3 TD
+   3058  tran  known  LaDainian Tomlinson      2007 Wk 6                      48.4 pts  vs Las Vegas Raiders    198 rush · 4 TD · 3-16
+   3042  tran  known  Brian Westbrook          2004 Wk 13                     48.3 pts  vs Green Bay Packers    37 rush · 0 TD · 11-156 · 3 rec TD
+   3042  tran  light  Josh Jacobs              2022 Wk 12                     48.3 pts  vs Seattle Seahawks     229 rush · 2 TD · 6-74
+   2975  tran  light  James White              2016 Super Bowl                47.9 pts  vs Atlanta Falcons      29 rush · 2 TD · 14-110 · 1 rec TD
+   2959  tran  known  Marshall Faulk           2000 Wk 15                     47.8 pts  vs Minnesota Vikings    135 rush · 4 TD · 6-43
+   2959  tran  light  Derrick Henry            2018 Wk 14                     47.8 pts  vs Jacksonville Jaguars 238 rush · 4 TD
+   2942  tran  known  Christian McCaffrey      2019 Wk 5                      47.7 pts  vs Jacksonville Jaguars 176 rush · 2 TD · 6-61 · 1 rec TD
+   2942  tran  light  Derrick Henry            2021 Wk 2                      47.7 pts  vs Seattle Seahawks     182 rush · 3 TD · 6-55
+   2909  tran  known  Marshall Faulk           2001 Wk 16                     47.5 pts  vs Indianapolis Colts   118 rush · 3 TD · 7-47 · 1 rec TD
+   2909  tran  known  Le'Veon Bell             2014 Wk 14                     47.5 pts  vs Cincinnati Bengals   185 rush · 2 TD · 6-50 · 1 rec TD
+   2843  tran  new    Ronnie Brown             2007 Wk 3                      47.1 pts  vs New York Jets        112 rush · 2 TD · 6-99 · 1 rec TD
+
+== GAMES WR: dynasty 117 / transcendent 29 / immortal 4 / over 5,200 1, new or light faces 72
+   5351  cant  new    Jimmy Smith              2000 Wk 2                      62.1 pts  vs Baltimore Ravens     15 rec · 291 yds · 3 TD
+   4622  immo  known  Tyreek Hill              2020 Wk 12                     57.9 pts  vs Tampa Bay Buccaneers 13 rec · 269 yds · 3 TD
+   4222  immo  known  Ja'Marr Chase            2021 Wk 17                     55.6 pts  vs Kansas City Chiefs   11 rec · 266 yds · 3 TD
+   4187  immo  known  Ja'Marr Chase            2024 Wk 10                     55.4 pts  vs Baltimore Ravens     11 rec · 264 yds · 3 TD
+   4083  immo  known  Terrell Owens            2000 Wk 16                     54.8 pts  vs Chicago Bears        20 rec · 283 yds · 1 TD
+   3892  tran  light  Will Fuller              2019 Wk 5                      53.7 pts  vs Atlanta Falcons      14 rec · 217 yds · 3 TD
+   3823  tran  new    Drew Bennett             2004 Wk 14                     53.3 pts  vs Kansas City Chiefs   12 rec · 233 yds · 3 TD
+   3771  tran  known  Brandon Marshall         2009 Wk 14                     53.0 pts  vs Indianapolis Colts   21 rec · 200 yds · 2 TD
+   3771  tran  light  Tyler Lockett            2020 Wk 7                      53.0 pts  vs Arizona Cardinals    15 rec · 200 yds · 3 TD
+   3632  tran  known  Ja'Marr Chase            2023 Wk 5                      52.2 pts  vs Arizona Cardinals    15 rec · 192 yds · 3 TD
+   3614  tran  new    Gabe Davis               2021 Divisional                52.1 pts  vs Kansas City Chiefs   8 rec · 201 yds · 4 TD
+   3528  tran  known  Wes Welker               2011 Wk 3                      51.6 pts  vs Buffalo Bills        16 rec · 217 yds · 2 TD
+   3510  tran  light  Amari Cooper             2023 Wk 16                     51.5 pts  vs Houston Texans       11 rec · 265 yds · 2 TD
+   3441  tran  new    Kevin Curtis             2007 Wk 3                      51.1 pts  vs Detroit Lions        11 rec · 221 yds · 3 TD
+   3406  tran  known  Calvin Johnson           2013 Wk 8                      50.9 pts  vs Dallas Cowboys       14 rec · 329 yds · 1 TD
+   3389  tran  known  Julio Jones              2017 Wk 12                     50.8 pts  vs Tampa Bay Buccaneers 12 rec · 253 yds · 2 TD
+   3232  tran  known  Andre Johnson            2013 Wk 9                      49.9 pts  vs Indianapolis Colts   9 rec · 229 yds · 3 TD
+   3215  tran  new    Qadry Ismail             1999 Wk 14                     49.8 pts  vs Pittsburgh Steelers  6 rec · 258 yds · 3 TD
+   3198  tran  light  Amari Cooper             2018 Wk 14                     49.7 pts  vs Philadelphia Eagles  10 rec · 217 yds · 3 TD
+   3163  tran  new    Lee Evans                2006 Wk 11                     49.5 pts  vs Houston Texans       11 rec · 265 yds · 2 TD
+   3146  tran  light  Eric Decker              2013 Wk 13                     49.4 pts  vs Kansas City Chiefs   8 rec · 174 yds · 4 TD
+   3128  tran  known  Terrell Owens            2007 Wk 11                     49.3 pts  vs Washington Commanders 8 rec · 173 yds · 4 TD
+   3076  tran  light  Chad Johnson             2006 Wk 10                     49.0 pts  vs Los Angeles Chargers 11 rec · 260 yds · 2 TD
+   3076  tran  light  DJ Moore                 2023 Wk 5                      49.0 pts  vs Washington Commanders 8 rec · 230 yds · 3 TD
+   3059  tran  light  Alshon Jeffery           2013 Wk 13                     48.9 pts  vs Minnesota Vikings    12 rec · 249 yds · 2 TD
+   3024  tran  light  Mike Evans               2022 Wk 17                     48.7 pts  vs Carolina Panthers    10 rec · 207 yds · 3 TD
+   2972  tran  new    Amani Toomer             2002 Wk 16                     48.4 pts  vs Indianapolis Colts   10 rec · 204 yds · 3 TD
+   2972  tran  known  Steve Smith              2005 Divisional                48.4 pts  vs Chicago Bears        12 rec · 218 yds · 2 TD
+   2920  tran  known  Josh Gordon              2013 Wk 13                     48.1 pts  vs Jacksonville Jaguars 10 rec · 261 yds · 2 TD
+   2902  tran  new    Dwayne Bowe              2010 Wk 12                     48.0 pts  vs Seattle Seahawks     13 rec · 170 yds · 3 TD
+   2902  tran  known  Julio Jones              2016 Wk 4                      48.0 pts  vs Carolina Panthers    12 rec · 300 yds · 1 TD
+   2833  tran  known  Antonio Brown            2015 Wk 9                      47.6 pts  vs Las Vegas Raiders    17 rec · 284 yds · 0 TD
+   2833  tran  known  Tyreek Hill              2021 Wk 4                      47.6 pts  vs Philadelphia Eagles  11 rec · 186 yds · 3 TD
+   2816  tran  new    Kenny Britt              2010 Wk 7                      47.5 pts  vs Philadelphia Eagles  7 rec · 225 yds · 3 TD
+
+== GAMES TE: dynasty 114 / transcendent 25 / immortal 7 / over 5,200 0, new or light faces 44
+   4729  immo  light  Kyle Pitts               2025 Wk 15                     45.6 pts  vs Tampa Bay Buccaneers 11 rec · 166 yds · 3 TD
+   4691  immo  known  Shannon Sharpe           2002 Wk 7                      45.4 pts  vs Kansas City Chiefs   12 rec · 214 yds · 2 TD
+   4614  immo  known  Darren Waller            2020 Wk 13                     45.0 pts  vs New York Jets        13 rec · 200 yds · 2 TD
+   4290  immo  known  Brock Bowers             2025 Wk 9                      43.3 pts  vs Jacksonville Jaguars 12 rec · 127 yds · 3 TD
+   4138  immo  known  Antonio Gates            2005 Wk 8                      42.5 pts  vs Kansas City Chiefs   10 rec · 145 yds · 3 TD
+   4138  immo  known  Rob Gronkowski           2011 Divisional                42.5 pts  vs Denver Broncos       10 rec · 145 yds · 3 TD
+   4023  immo  known  Rob Gronkowski           2014 Wk 8                      41.9 pts  vs Chicago Bears        9 rec · 149 yds · 3 TD
+   3985  tran  known  Mark Andrews             2021 Wk 5                      41.7 pts  vs Indianapolis Colts   11 rec · 147 yds · 2 TD
+   3951  tran  light  Taysom Hill              2024 Wk 11                     41.5 pts  vs Cleveland Browns     8 rec · 50 yds · 0 TD · 138 rush · 3 rush TD
+   3928  tran  known  Travis Kelce             2019 Divisional                41.4 pts  vs Houston Texans       10 rec · 134 yds · 3 TD
+   3870  tran  known  Travis Kelce             2021 Wk 15                     41.1 pts  vs Los Angeles Chargers 10 rec · 191 yds · 2 TD
+   3756  tran  known  Zach Ertz                2018 Wk 10                     40.5 pts  vs Dallas Cowboys       14 rec · 145 yds · 2 TD
+   3680  tran  known  George Kittle            2020 Wk 4                      40.1 pts  vs Philadelphia Eagles  15 rec · 183 yds · 1 TD
+   3641  tran  known  T.J. Hockenson           2022 Wk 4                      39.9 pts  vs Seattle Seahawks     8 rec · 179 yds · 2 TD
+   3584  tran  known  George Kittle            2021 Wk 13                     39.6 pts  vs Seattle Seahawks     9 rec · 181 yds · 2 TD
+   3508  tran  light  Evan Engram              2022 Wk 14                     39.2 pts  vs Tennessee Titans     11 rec · 162 yds · 2 TD
+   3470  tran  known  Tony Gonzalez            2002 Wk 4                      39.0 pts  vs Miami Dolphins       7 rec · 140 yds · 3 TD
+   3451  tran  known  Tony Gonzalez            2013 Wk 4                      38.9 pts  vs New England Patriots 12 rec · 149 yds · 2 TD
+   3451  tran  known  Zach Ertz                2016 Wk 17                     38.9 pts  vs Dallas Cowboys       13 rec · 139 yds · 2 TD
+   3432  tran  known  Travis Kelce             2018 Wk 13                     38.8 pts  vs Las Vegas Raiders    12 rec · 168 yds · 2 TD
+   3279  tran  known  Vernon Davis             2013 Wk 6                      38.0 pts  vs Arizona Cardinals    8 rec · 180 yds · 2 TD
+   3164  tran  known  Trey McBride             2025 Wk 15                     37.4 pts  vs Houston Texans       12 rec · 134 yds · 2 TD
+   3145  tran  light  Jake Ferguson            2023 Wild Card                 37.3 pts  vs Green Bay Packers    10 rec · 93 yds · 3 TD
+   3088  tran  known  Vernon Davis             2011 Divisional                37.0 pts  vs New Orleans Saints   7 rec · 180 yds · 2 TD
+   3069  tran  new    Blake Jarwin             2018 Wk 17                     36.9 pts  vs New York Giants      7 rec · 119 yds · 3 TD
+   3050  tran  known  Travis Kelce             2020 Conference Championship   36.8 pts  vs Buffalo Bills        13 rec · 118 yds · 2 TD
+   2878  tran  known  T.J. Hockenson           2022 Wk 16                     35.9 pts  vs New York Giants      13 rec · 109 yds · 2 TD
+   2878  tran  known  Travis Kelce             2023 Wk 7                      35.9 pts  vs Los Angeles Chargers 12 rec · 179 yds · 1 TD
+   2859  tran  known  Travis Kelce             2022 Divisional                35.8 pts  vs Jacksonville Jaguars 14 rec · 98 yds · 2 TD
+   2840  tran  light  Alge Crumpler            2006 Wk 7                      35.7 pts  vs Pittsburgh Steelers  6 rec · 117 yds · 3 TD
+   2821  tran  known  Mark Andrews             2021 Wk 15                     35.6 pts  vs Green Bay Packers    10 rec · 136 yds · 2 TD
+   2802  tran  known  Travis Kelce             2022 Wk 11                     35.5 pts  vs Los Angeles Chargers 6 rec · 115 yds · 3 TD
+
+== STREAKS (4 straight) QB: dynasty 68 / transcendent 21 / immortal 4 / over 5,200 1, new or light faces 46
+   5361  cant  known  Josh Allen               2024 Wks 11-15                 36.4/g  season 23.7/g             1,114 pass · 8 TD · 223 rush · 7 rush TD
+   4457  immo  known  Kyler Murray             2020 Wks 6-10                  33.5/g  season 23.7/g             1,076 pass · 9 TD · 308 rush · 5 rush TD
+   4276  immo  light  Justin Fields            2022 Wks 7-10                  32.9/g  season 19.7/g             620 pass · 8 TD · 467 rush · 5 rush TD
+   4193  immo  known  Tom Brady                2007 Wks 5-8                   32.6/g  season 24.4/g             1,313 pass · 17 TD · 19 rush · 2 rush TD
+   4014  immo  known  Russell Wilson           2015 Wks 12-15                 32.0/g  season 21.0/g             1,160 pass · 16 TD · 117 rush · 1 rush TD
+   3707  tran  light  Mitchell Trubisky        2018 Wks 4-8                   31.0/g  season 18.8/g             1,223 pass · 13 TD · 232 rush · 1 rush TD
+   3613  tran  known  Russell Wilson           2020 Wks 1-4                   30.7/g  season 22.5/g             1,285 pass · 16 TD · 95 rush
+   3534  tran  light  Trevor Lawrence          2025 Wks 15-18                 30.5/g  season 19.9/g             1,127 pass · 11 TD · 108 rush · 4 rush TD
+   3519  tran  known  Cam Newton               2012 Wks 11-14                 30.4/g  season 20.3/g             1,077 pass · 8 TD · 286 rush · 3 rush TD
+   3476  tran  known  Peyton Manning           2004 Wks 7-10                  30.3/g  season 22.5/g             1,428 pass · 17 TD
+   3325  tran  light  Dak Prescott             2023 Wks 6-10                  29.8/g  season 20.2/g             1,354 pass · 12 TD · 90 rush · 2 rush TD
+   3240  tran  known  Aaron Rodgers            2012 Wks 4-7                   29.5/g  season 21.5/g             1,234 pass · 16 TD · 87 rush
+   3195  tran  known  Jalen Hurts              2024 Wks 7-10                  29.4/g  season 21.0/g             782 pass · 6 TD · 182 rush · 8 rush TD
+   3195  tran  known  Jayden Daniels           2024 Wks 13-17                 29.4/g  season 20.9/g             917 pass · 13 TD · 308 rush · 1 rush TD
+   3028  tran  known  Lamar Jackson            2022 Wks 1-4                   28.8/g  season 19.7/g             893 pass · 11 TD · 316 rush · 2 rush TD
+   3008  tran  known  Tom Brady                2014 Wks 6-9                   28.8/g  season 17.4/g             1,309 pass · 16 TD
+   2962  tran  light  Nick Foles               2013 Wks 9-13                  28.6/g  season 20.0/g             1,169 pass · 13 TD · 117 rush · 1 rush TD
+   2962  tran  known  Russell Wilson           2019 Wks 3-6                   28.6/g  season 20.5/g             1,209 pass · 9 TD · 121 rush · 3 rush TD
+   2959  tran  known  Deshaun Watson           2019 Wks 5-8                   28.6/g  season 21.4/g             1,293 pass · 10 TD · 167 rush · 2 rush TD
+   2945  tran  light  Jared Goff               2024 Wks 14-17                 28.6/g  season 19.1/g             1,416 pass · 14 TD
+   2914  tran  known  Matthew Stafford         2011 Wks 14-17                 28.5/g  season 21.6/g             1,511 pass · 14 TD
+   2868  tran  known  Aaron Rodgers            2021 Wks 11-15                 28.3/g  season 20.8/g             1,301 pass · 13 TD · 32 rush · 1 rush TD
+   2866  tran  known  Drew Brees               2019 Wks 14-17                 28.3/g  season 20.4/g             1,188 pass · 15 TD · -3 rush · 1 rush TD
+   2839  tran  known  Lamar Jackson            2021 Wks 2-5                   28.2/g  season 20.0/g             1,284 pass · 7 TD · 255 rush · 2 rush TD
+   2834  tran  light  Donovan McNabb           2004 Wks 10-13                 28.2/g  season 19.4/g             1,275 pass · 14 TD · 78 rush · 1 rush TD
+   2809  tran  known  Aaron Rodgers            2010 Wks 9-13                  28.1/g  season 20.3/g             1,232 pass · 11 TD · 152 rush · 1 rush TD
+
+== STREAKS (4 straight) RB: dynasty 87 / transcendent 30 / immortal 2 / over 5,200 1, new or light faces 66
+   5414  cant  known  LaDainian Tomlinson      2006 Wks 8-11                  44.0/g  season 30.1/g             564 rush · 12 TD · 15-205 · 2 rec TD
+   4653  immo  known  LaDainian Tomlinson      2003 Wks 14-17                 40.2/g  season 27.7/g             473 rush · 4 TD · 34-317 · 4 rec TD
+   4015  immo  light  Devonta Freeman          2015 Wks 3-6                   37.1/g  season 21.1/g             462 rush · 8 TD · 25-233 · 1 rec TD
+   3887  tran  known  Le'Veon Bell             2014 Wks 11-15                 36.5/g  season 23.2/g             531 rush · 6 TD · 21-299 · 1 rec TD
+   3831  tran  known  Todd Gurley              2017 Wks 13-16                 36.2/g  season 25.6/g             440 rush · 5 TD · 22-309 · 3 rec TD
+   3816  tran  new    Larry Johnson            2005 Wks 14-17                 36.1/g  season 22.5/g             642 rush · 9 TD · 11-114 · 1 rec TD
+   3806  tran  known  Steven Jackson           2006 Wks 14-17                 36.1/g  season 26.0/g             500 rush · 7 TD · 18-184 · 3 rec TD
+   3729  tran  known  LaDainian Tomlinson      2005 Wks 3-6                   35.7/g  season 22.9/g             528 rush · 7 TD · 18-169 · 1 rec TD
+   3632  tran  known  Jamaal Charles           2013 Wks 12-15                 35.2/g  season 25.2/g             378 rush · 5 TD · 16-272 · 5 rec TD
+   3591  tran  light  Fred Taylor              2000 Wks 12-15                 35.0/g  season 21.5/g             656 rush · 8 TD · 9-56 · 2 rec TD
+   3550  tran  new    Clinton Portis           2003 Wks 12-15                 34.9/g  season 24.0/g             692 rush · 9 TD · 7-72
+   3392  tran  known  Dalvin Cook              2020 Wks 4-9                   34.1/g  season 24.1/g             564 rush · 8 TD · 11-149 · 1 rec TD
+   3382  tran  known  Alvin Kamara             2018 Wks 1-4                   34.0/g  season 23.6/g             275 rush · 5 TD · 35-336 · 1 rec TD
+   3331  tran  known  Marshall Faulk           2002 Wks 5-9                   33.8/g  season 20.2/g             592 rush · 4 TD · 23-169 · 2 rec TD
+   3257  tran  light  Ricky Williams           2000 Wks 6-9                   33.4/g  season 23.4/g             482 rush · 7 TD · 20-221
+   3234  tran  known  Christian McCaffrey      2018 Wks 9-12                  33.3/g  season 24.1/g             334 rush · 4 TD · 27-308 · 3 rec TD
+   3234  tran  known  Jonathan Taylor          2021 Wks 8-11                  33.3/g  season 21.9/g             543 rush · 8 TD · 14-109 · 1 rec TD
+   3208  tran  known  Edgerrin James           1999 Wks 8-11                  33.2/g  season 23.1/g             486 rush · 3 TD · 24-301 · 2 rec TD
+   3178  tran  new    Ronnie Brown             2007 Wks 3-6                   33.0/g  season 24.3/g             461 rush · 4 TD · 26-280 · 1 rec TD
+   3162  tran  known  Austin Ekeler            2022 Wks 4-7                   33.0/g  season 21.9/g             300 rush · 5 TD · 32-218 · 3 rec TD
+   3116  tran  known  James Conner             2018 Wks 5-9                   32.7/g  season 21.5/g             474 rush · 6 TD · 20-215 · 1 rec TD
+   3081  tran  light  Ricky Williams           2002 Wks 11-14                 32.5/g  season 22.5/g             689 rush · 8 TD · 11-43
+   3070  tran  light  Matt Forte               2014 Wks 5-8                   32.5/g  season 21.7/g             304 rush · 3 TD · 34-296 · 3 rec TD
+   3050  tran  known  Tiki Barber              2005 Wks 14-17                 32.4/g  season 22.4/g             627 rush · 3 TD · 22-209 · 1 rec TD
+   3014  tran  known  Jonathan Taylor          2025 Wks 7-10                  32.2/g  season 21.3/g             536 rush · 8 TD · 10-113 · 1 rec TD
+   2989  tran  new    Mike Anderson            2000 Wks 12-15                 32.1/g  season 19.7/g             674 rush · 8 TD · 9-60
+   2979  tran  known  Chris Johnson            2009 Wks 8-11                  32.0/g  season 24.6/g             646 rush · 6 TD · 14-136
+   2963  tran  light  Doug Martin              2012 Wks 6-9                   32.0/g  season 19.5/g             547 rush · 6 TD · 12-192 · 1 rec TD
+   2933  tran  known  Brian Westbrook          2004 Wks 10-13                 31.8/g  season 21.2/g             230 rush · 2 TD · 25-313 · 6 rec TD
+   2887  tran  known  Arian Foster             2011 Wks 7-10                  31.6/g  season 23.3/g             435 rush · 5 TD · 15-259 · 2 rec TD
+   2871  tran  known  Jahmyr Gibbs             2024 Wks 15-18                 31.5/g  season 21.3/g             396 rush · 6 TD · 18-205 · 2 rec TD
+   2820  tran  new    Warrick Dunn             2000 Wks 13-16                 31.3/g  season 15.7/g             520 rush · 7 TD · 14-171
+   2805  tran  known  Jahmyr Gibbs             2025 Wks 10-13                 31.2/g  season 21.6/g             468 rush · 4 TD · 22-200 · 2 rec TD
+
+== STREAKS (4 straight) WR: dynasty 101 / transcendent 20 / immortal 6 / over 5,200 0, new or light faces 59
+   4674  immo  known  Calvin Johnson           2013 Wks 7-11                  37.4/g  season 21.7/g             35 rec · 746 yds · 7 TD
+   4550  immo  known  Ja'Marr Chase            2024 Wks 10-14                 36.9/g  season 23.7/g             38 rec · 602 yds · 8 TD
+   4500  immo  known  Josh Gordon              2013 Wks 11-14                 36.7/g  season 22.5/g             36 rec · 774 yds · 5 TD · 34 rush
+   4481  immo  known  Odell Beckham Jr.        2014 Wks 14-17                 36.6/g  season 24.8/g             43 rec · 606 yds · 7 TD
+   4314  immo  known  Tyreek Hill              2020 Wks 8-12                  36.0/g  season 21.9/g             37 rec · 582 yds · 8 TD
+   4060  immo  known  Antonio Brown            2017 Wks 11-14                 34.9/g  season 22.2/g             39 rec · 627 yds · 6 TD
+   3998  tran  known  Cris Carter              1999 Wks 8-12                  34.7/g  season 19.5/g             37 rec · 537 yds · 8 TD
+   3961  tran  new    Drew Bennett             2004 Wks 12-15                 34.5/g  season 18.5/g             33 rec · 571 yds · 8 TD
+   3942  tran  new    Dwayne Bowe              2010 Wks 9-12                  34.5/g  season 17.4/g             37 rec · 528 yds · 8 TD
+   3862  tran  known  Terrell Owens            2007 Wks 7-11                  34.1/g  season 20.5/g             31 rec · 575 yds · 8 TD
+   3676  tran  known  Wes Welker               2011 Wks 1-4                   33.4/g  season 21.0/g             40 rec · 616 yds · 5 TD
+   3620  tran  new    Patrick Jeffers          1999 Wks 14-17                 33.1/g  season 17.5/g             28 rec · 610 yds · 7 TD
+   3416  tran  light  Chad Johnson             2006 Wks 10-13                 32.3/g  season 16.6/g             32 rec · 664 yds · 5 TD
+   3409  tran  known  Torry Holt               2003 Wks 6-9                   32.3/g  season 22.4/g             33 rec · 602 yds · 6 TD
+   3360  tran  known  Antonio Brown            2015 Wks 9-13                  32.1/g  season 24.0/g             41 rec · 592 yds · 4 TD
+   3316  tran  known  Hines Ward               2002 Wks 9-12                  31.9/g  season 20.9/g             35 rec · 511 yds · 5 TD · 76 rush
+   3292  tran  known  CeeDee Lamb              2023 Wks 6-10                  31.8/g  season 23.7/g             41 rec · 617 yds · 3 TD · 26 rush · 1 rush TD
+   3248  tran  known  Demaryius Thomas         2014 Wks 5-8                   31.6/g  season 21.3/g             34 rec · 626 yds · 5 TD
+   3199  tran  known  Puka Nacua               2025 Wks 14-17                 31.5/g  season 23.4/g             33 rec · 620 yds · 5 TD
+   3131  tran  known  Marvin Harrison          1999 Wks 1-5                   31.2/g  season 22.1/g             31 rec · 513 yds · 7 TD
+   3093  tran  known  Calvin Johnson           2012 Wks 10-13                 31.0/g  season 21.4/g             38 rec · 661 yds · 4 TD
+   3081  tran  known  Terrell Owens            2002 Wks 11-14                 31.0/g  season 23.0/g             37 rec · 505 yds · 6 TD
+   3069  tran  known  Randy Moss               2003 Wks 4-8                   30.9/g  season 23.5/g             30 rec · 529 yds · 7 TD
+   3062  tran  new    Jimmy Smith              2000 Wks 1-4                   30.9/g  season 17.4/g             36 rec · 516 yds · 6 TD
+   3000  tran  known  Terrell Owens            2000 Wks 6-9                   30.6/g  season 22.8/g             34 rec · 480 yds · 7 TD
+   3000  tran  known  Terrell Owens            2001 Wks 4-8                   30.6/g  season 20.8/g             32 rec · 486 yds · 7 TD
+
+== STREAKS (4 straight) TE: dynasty 81 / transcendent 29 / immortal 7 / over 5,200 0, new or light faces 42
+   5182  immo  known  Jimmy Graham             2013 Wks 2-5                   29.4/g  season 19.0/g             33 rec · 548 yds · 5 TD
+   4398  immo  known  Travis Kelce             2018 Wks 9-13                  26.8/g  season 18.4/g             35 rec · 440 yds · 5 TD
+   4304  immo  known  Darren Waller            2020 Wks 13-16                 26.4/g  season 17.4/g             34 rec · 537 yds · 3 TD
+   4290  immo  known  Mark Andrews             2021 Wks 14-17                 26.4/g  season 17.7/g             35 rec · 465 yds · 4 TD
+   4268  immo  known  Rob Gronkowski           2012 Wks 7-11                  26.3/g  season 18.0/g             24 rec · 392 yds · 7 TD
+   4196  immo  known  Antonio Gates            2004 Wks 8-12                  26.1/g  season 17.0/g             25 rec · 312 yds · 8 TD
+   4152  immo  known  Antonio Gates            2005 Wks 7-11                  25.9/g  season 17.3/g             31 rec · 426 yds · 5 TD
+   3971  tran  known  Trey McBride             2025 Wks 7-11                  25.3/g  season 18.6/g             34 rec · 371 yds · 5 TD
+   3905  tran  known  Antonio Gates            2010 Wks 2-5                   25.0/g  season 18.8/g             24 rec · 402 yds · 6 TD
+   3789  tran  known  Jason Witten             2004 Wks 7-10                  24.6/g  season 13.8/g             32 rec · 426 yds · 4 TD
+   3695  tran  known  Rob Gronkowski           2014 Wks 8-12                  24.3/g  season 17.8/g             27 rec · 403 yds · 5 TD
+   3659  tran  known  Jordan Reed              2015 Wks 14-17                 24.2/g  season 17.4/g             29 rec · 378 yds · 5 TD
+   3601  tran  known  Jordan Cameron           2013 Wks 1-4                   24.0/g  season 14.2/g             30 rec · 360 yds · 5 TD
+   3492  tran  light  Kyle Pitts               2025 Wks 13-16                 23.6/g  season 12.4/g             31 rec · 395 yds · 4 TD
+   3485  tran  known  Rob Gronkowski           2017 Wks 12-16                 23.6/g  season 17.5/g             28 rec · 464 yds · 3 TD
+   3398  tran  known  Zach Ertz                2018 Wks 6-10                  23.3/g  season 17.5/g             34 rec · 352 yds · 4 TD
+   3391  tran  known  George Kittle            2021 Wks 13-16                 23.3/g  season 14.1/g             30 rec · 446 yds · 3 TD
+   3376  tran  known  Rob Gronkowski           2013 Wks 9-13                  23.2/g  season 17.5/g             27 rec · 419 yds · 4 TD
+   3311  tran  known  Travis Kelce             2023 Wks 4-7                   23.0/g  season 14.6/g             37 rec · 430 yds · 2 TD
+   3238  tran  known  Jason Witten             2010 Wks 12-15                 22.8/g  season 15.5/g             32 rec · 350 yds · 4 TD
+   3173  tran  known  Jason Witten             2012 Wks 4-8                   22.5/g  season 14.5/g             43 rec · 411 yds · 1 TD
+   3079  tran  known  Gary Barnidge            2015 Wks 3-6                   22.2/g  season 14.8/g             23 rec · 358 yds · 5 TD
+   3057  tran  known  Tony Gonzalez            2004 Wks 8-11                  22.1/g  season 16.9/g             30 rec · 405 yds · 3 TD
+   3057  tran  known  Tony Gonzalez            2008 Wks 10-13                 22.1/g  season 16.4/g             33 rec · 375 yds · 3 TD
+   2970  tran  light  David Njoku              2023 Wks 14-17                 21.8/g  season 12.6/g             28 rec · 373 yds · 4 TD
+   2948  tran  known  Jimmy Graham             2012 Wks 8-11                  21.8/g  season 15.8/g             26 rec · 310 yds · 5 TD
+   2934  tran  known  Tony Gonzalez            1999 Wks 14-17                 21.7/g  season 15.0/g             27 rec · 298 yds · 5 TD
+   2927  tran  known  Tony Gonzalez            2007 Wks 5-9                   21.7/g  season 15.4/g             31 rec · 377 yds · 3 TD
+   2912  tran  known  George Kittle            2022 Wks 15-18                 21.6/g  season 13.4/g             18 rec · 265 yds · 7 TD
+   2912  tran  light  Jonnu Smith              2024 Wks 11-14                 21.6/g  season 13.1/g             28 rec · 345 yds · 4 TD
+   2905  tran  known  George Kittle            2018 Wks 14-17                 21.6/g  season 16.2/g             26 rec · 484 yds · 2 TD
+   2898  tran  known  Vernon Davis             2009 Wks 3-7                   21.6/g  season 15.8/g             22 rec · 283 yds · 6 TD
+   2898  tran  known  Rob Gronkowski           2016 Wks 5-8                   21.6/g  season 12.1/g             21 rec · 473 yds · 3 TD
+   2869  tran  known  Austin Hooper            2019 Wks 3-6                   21.5/g  season 14.7/g             29 rec · 369 yds · 3 TD
+   2854  tran  light  Evan Engram              2022 Wks 13-16                 21.4/g  season 10.4/g             31 rec · 367 yds · 3 TD
+   2840  tran  known  Tony Gonzalez            2012 Wks 2-5                   21.4/g  season 14.6/g             34 rec · 335 yds · 3 TD

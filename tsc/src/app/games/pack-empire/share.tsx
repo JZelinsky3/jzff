@@ -97,9 +97,28 @@ function useShare(path: string, title: string, text: string) {
   return { url, copied, share }
 }
 
-/** A result's button: the score's own link behind a plain Share. */
-export function ShareButton({ path, title = 'Pack Empire', text }: { path: string; title?: string; text: string }) {
+/** A result's button: the score's own link behind a plain Share. `plain` is the
+    quiet one, a text link with the share mark, for a line that's already busy. */
+export function ShareButton({
+  path,
+  title = 'Pack Empire',
+  text,
+  plain = false,
+}: {
+  path: string
+  title?: string
+  text: string
+  plain?: boolean
+}) {
   const { copied, share } = useShare(path, title, text)
+  if (plain) {
+    return (
+      <button type="button" className="pe-share-plain" data-done={copied ? '' : undefined} onClick={share}>
+        <ChipGlyph name={copied ? 'done' : 'share'} />
+        {copied ? 'Copied' : 'Share'}
+      </button>
+    )
+  }
   return (
     <SocialChip done={copied} onClick={share}>
       {copied ? 'Copied' : 'Share'}

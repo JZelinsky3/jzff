@@ -20,6 +20,7 @@ import {
   type Player,
 } from '@/lib/packEmpire/rules'
 import { BOND_LABEL, Bonds, Check, Face, Field, FilledSlot, bondKind } from './cards'
+import { KeyNote } from './KeyNote'
 
 type Point = { x: number; y: number }
 type Box = { l: number; t: number; r: number; b: number }
@@ -648,11 +649,11 @@ export function PackBoard({ missed, battled = false }: { missed: Missed; battled
         })}
       </div>
 
-      <p className="pe-note pe-pb-note">
+      <KeyNote className="pe-pb-note">
         Each dot is a card in that pack, ringed if you kept it.
         {perfect != null && ` Perfect is the best eleven in the packs you opened, chemistry included${battled ? ', before Battles' : ''}.`} Tap a
         pack to see all five.
-      </p>
+      </KeyNote>
     </section>
   )
 }

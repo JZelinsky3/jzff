@@ -83,7 +83,7 @@ const SHAPES: { name: string; art: React.ReactNode }[] = [
   },
 ]
 
-function Gem({ tier }: { tier: Tier }) {
+export function Gem({ tier }: { tier: Tier }) {
   const points: Record<Tier, string> = {
     common: '12,4 20,12 12,20 4,12',
     rare: '12,3 20,7.5 20,16.5 12,21 4,16.5 4,7.5',

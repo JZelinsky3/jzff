@@ -19,6 +19,7 @@ import {
   SOLO_WEIGHTS,
   packOdds,
   personOf,
+  playHref,
   type Player,
   type Rarity,
   type Weights,
@@ -209,10 +210,13 @@ export default async function PackEmpireHome() {
               <span>Each card</span>
               <b>{pct(normal[p.rarity])}</b>
             </span>
-            <span className="pe-index-row">
-              <span>Captain card</span>
-              <b>{pct(captain[p.rarity])}</b>
-            </span>
+            {/* Canton's captain odds are the same as its card odds, so the one line says it. */}
+            {p.rarity !== 'canton' && (
+              <span className="pe-index-row">
+                <span>Captain card</span>
+                <b>{pct(captain[p.rarity])}</b>
+              </span>
+            )}
           </div>
         </div>
       ))}
@@ -241,7 +245,7 @@ export default async function PackEmpireHome() {
             </h1>
             <p className="pe-m-hero-sub">Eleven packs, five cards in each. Keep one from every pack.</p>
             <PackFan />
-            <Link href="/games/pack-empire/builder/" className="pe-btn pe-m-cta">
+            <Link href={playHref('open')} className="pe-btn pe-m-cta">
               Build an offense
             </Link>
             <div className="pe-hero-meta">
@@ -362,7 +366,7 @@ export default async function PackEmpireHome() {
               the rarities, and see how high your offense climbs.
             </p>
             <div className="pe-hero-ctas">
-              <Link href="/games/pack-empire/builder/" className="pe-btn">
+              <Link href={playHref('open')} className="pe-btn">
                 Build an offense
               </Link>
               <Link href="/games/pack-empire/board/" className="pe-btn pe-btn--ghost">

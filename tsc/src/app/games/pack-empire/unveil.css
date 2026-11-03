@@ -127,7 +127,7 @@
 
 .pe-rep { display: grid; grid-template-columns: minmax(0, 1fr) 22.5rem; gap: 1.2rem; align-items: start; }
 .pe-rep-pitch { min-width: 0; }
-.pe-rep-tabs { display: inline-flex; gap: 2px; margin-bottom: .6rem; padding: 2px; border: 1px solid var(--pe-line); border-radius: 999px; background: rgba(0, 0, 0, .25); }
+.pe-rep-tabs { display: inline-flex; gap: 2px; margin: .5rem 0 .9rem; padding: 2px; border: 1px solid var(--pe-line); border-radius: 999px; background: rgba(0, 0, 0, .25); }
 .pe-rep-tabs button { padding: .4rem .95rem; border: 0; border-radius: 999px; background: none; color: var(--pe-ink-mute); font-family: var(--pe-cond); font-size: .84rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
 .pe-rep-tabs button[aria-selected='true'] { background: var(--pe-amber); color: #1a1408; }
 .pe-rep-turf .pe-fc-flag { z-index: 12; }
@@ -224,7 +224,7 @@ button.pe-bond { cursor: pointer; }
 .pe-pb-verdict small { max-width: 100%; overflow: hidden; font-family: var(--pe-cond); font-size: .76rem; color: var(--pe-ink-mute); text-overflow: ellipsis; white-space: nowrap; }
 .pe-pb-check { width: 1rem; height: 1rem; color: #7be0a2; }
 .pe-pb-pack { --pe-sw: 92px; --pe-sh: calc(var(--pe-sw) * 1.464); display: flex; justify-content: center; gap: .6rem; padding: 1.15rem 0 1rem; }
-.pe-pb-note { padding: .75rem 1.3rem 1rem; margin: 0; border-top: 1px solid rgba(244, 235, 216, .07); }
+.pe-pb .pe-pb-note { padding: .75rem 1.3rem 1rem; margin: 0; border-top: 1px solid rgba(244, 235, 216, .07); }
 
 /* ── Collectors and pulls ──────────────────────────────────── */
 
@@ -275,6 +275,6 @@ button.pe-bond { cursor: pointer; }
   .pe-pb-row { grid-template-columns: minmax(0, 1fr) auto; gap: .15rem .7rem; padding: .5rem 0 .55rem; }
   .pe-pb-track { grid-row: 2; grid-column: 1 / -1; height: 1.25rem; margin: 0 7px; }
   .pe-pb-pack { --pe-sw: 58px; gap: .28rem; }
-  .pe-pb-note { padding: .7rem 1rem .9rem; }
+  .pe-pb .pe-pb-note { padding: .7rem 1rem .9rem; }
   /* One line: a row that won't fit says SC or BK instead (FitLine). */
 }
