@@ -37,7 +37,7 @@ export default async function CollectionPage() {
       <div className="pe-wrap pe-lk">
         {!mobile && (
           <header className="pe-lk-head">
-            <div className="pe-kicker">★ The Locker Room ★</div>
+            <div className="pe-kicker">The Locker Room</div>
             <h1 className="pe-brd-title">
               Your <span className="pe-em">Collection.</span>
             </h1>

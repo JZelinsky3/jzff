@@ -37,7 +37,7 @@ export default async function LockerPage() {
       <div className="pe-wrap pe-lk">
         {!mobile && (
           <header className="pe-lk-head">
-            <div className="pe-kicker">★ Cards you keep, games to play them in ★</div>
+            <div className="pe-kicker">Cards you keep, games to play them in</div>
             <h1 className="pe-brd-title">
               The Locker <span className="pe-em">Room.</span>
             </h1>

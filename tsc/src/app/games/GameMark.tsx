@@ -22,73 +22,18 @@ import {
   MULTIVERSE_DRAFT,
   PACK_EMPIRE,
 } from './gameDefs'
-import { PACK_ART } from '@/lib/packEmpire/rules'
 import s from './marks.module.css'
 
 /**
- * The whole game, left to right, because a pack on its own doesn't say what
- * you do with it: open a pack, keep one of its five cards, build an eleven
- * and watch the total climb.
- *
- * The pack is the real one. The colours are the game's own rarity colours, and
- * the eleven are laid out the way the field is, line across the top. Names
- * nobody, for the reason every mark here doesn't: a face on the shelf would
- * date the game to whoever is in the pool this month.
+ * Pack Empire's plate is the key art: a path-traced pack on a table with its
+ * cards up out of it, rendered by scripts/pack-empire-fx/rip (the Locker Room
+ * art's method). A picture, not a diagram, because this is the game the page
+ * leads with and it has to sell the rip. It fills the frame edge to edge.
  */
-const RARITY_INK = ['#c87840', '#42c0f8', '#ffd700', '#e040ff', '#28dc78']
-
-/** Who's on the field: an index into RARITY_INK, line first, then the skill
-    players, then the backfield. Reads as a run that got lucky once or twice. */
-const ELEVEN = [
-  [1, 0, 2, 1, 0],
-  [2, 1, 4, 1],
-  [3, 1],
-]
-
-function PackMark() {
+function PackArt() {
   return (
-    <span className={s.story}>
-      <span className={s.beat}>
-        <span className={s.beatArt}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={PACK_ART.QB} alt="" className={s.beatPack} loading="lazy" />
-        </span>
-        <span className={s.beatCap}>
-          <b>1</b> Open
-        </span>
-      </span>
-
-      <span className={s.beat}>
-        <span className={`${s.beatArt} ${s.beatFan}`}>
-          {[-2, -1, 1, 2].map((n) => (
-            <span key={n} className={s.fanCard} style={{ '--n': n } as React.CSSProperties} />
-          ))}
-          <span className={s.fanKeep}>
-            <i />
-            <b>5,600</b>
-          </span>
-        </span>
-        <span className={s.beatCap}>
-          <b>2</b> Keep one
-        </span>
-      </span>
-
-      <span className={s.beat}>
-        <span className={`${s.beatArt} ${s.beatField}`}>
-          {ELEVEN.map((row, r) => (
-            <span key={r} className={s.fieldRow}>
-              {row.map((tone, i) => (
-                <i key={i} style={{ '--rc': RARITY_INK[tone] } as React.CSSProperties} />
-              ))}
-            </span>
-          ))}
-          <span className={s.fieldTotal}>20,480</span>
-        </span>
-        <span className={s.beatCap}>
-          <b>3</b> Build
-        </span>
-      </span>
-    </span>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src="/games/pack-empire/key-art-wide.webp" alt="" className={s.keyArt} loading="eager" />
   )
 }
 
@@ -238,7 +183,7 @@ function Art({ id }: { id: string }) {
   if (id === OVER_UNDER.id) return <LineMark />
   if (id === REDRAFT.id) return <ClockMark />
   if (id === MULTIVERSE_DRAFT.id) return <BandsMark />
-  if (id === PACK_EMPIRE.id) return <PackMark />
+  if (id === PACK_EMPIRE.id) return <PackArt />
   return null
 }
 
@@ -263,7 +208,7 @@ export function GameMark({
         ? `${s.mark} ${s.poster}`
         : s.mark
   return (
-    <span className={frame}>
+    <span className={id === PACK_EMPIRE.id ? `${frame} ${s.photo}` : frame}>
       <Art id={id} />
     </span>
   )

@@ -76,7 +76,7 @@ export default async function VersusLobby() {
 
       <div className="pe-wrap pe-wrap--narrow" style={{ margin: '0 auto' }}>
         <div className="pe-table-head">
-          <div className="pe-kicker">★ Mode II · two players ★</div>
+          <div className="pe-kicker">Mode II · two players</div>
           <h1 className="pe-table-title">
             Draft against <span className="pe-em">a friend.</span>
           </h1>

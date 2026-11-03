@@ -63,7 +63,7 @@ export default async function CompleteBinderPage() {
       <div className="pe-wrap">
         {!mobile && (
           <div className="pe-table-head">
-            <div className="pe-kicker">★ Every card in the game ★</div>
+            <div className="pe-kicker">Every card in the game</div>
             <h1 className="pe-table-title">
               The complete <span className="pe-em">binder.</span>
             </h1>

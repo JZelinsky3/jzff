@@ -44,7 +44,7 @@ export default async function FieldGeneralLobby() {
       <div className="pe-wrap pe-lk">
         {!mobile && (
           <header className="pe-lk-head">
-            <div className="pe-kicker">★ Twelve cards, three lanes, six drives ★</div>
+            <div className="pe-kicker">Twelve cards, three lanes, six drives</div>
             <h1 className="pe-brd-title">
               {def.title} <span className="pe-em">{def.titleEm}.</span>
             </h1>

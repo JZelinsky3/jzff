@@ -107,7 +107,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
       <div className="pe-wrap pe-wrap--league">
         <div className="pe-table-head">
           <div className="pe-kicker">
-            ★ Season {league.season_number} · {weekLine} ★
+            Season {league.season_number} · {weekLine}
           </div>
           <h1 className="pe-table-title">{league.name}</h1>
         </div>

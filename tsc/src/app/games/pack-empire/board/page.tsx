@@ -202,7 +202,7 @@ export default async function PackEmpireBoard({
         <header className="pe-brd-head">
           {!mobile && (
             <div>
-              <div className="pe-kicker">★ Every pack re-dealt and checked ★</div>
+              <div className="pe-kicker">Every pack re-dealt and checked</div>
               <h1 className="pe-brd-title">
                 The <span className="pe-em">Board.</span>
               </h1>

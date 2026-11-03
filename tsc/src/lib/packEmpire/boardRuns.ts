@@ -3,7 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { loadFaces, type FaceMap } from './faces'
 import { playerById } from './pool'
-import type { Player } from './rules'
+import type { Player, Rarity } from './rules'
 import { parseSoloPicks } from './solo'
 
 /** The best card in each run, off the picks it posted. A run from an older
@@ -25,6 +25,18 @@ export async function runLeaders(rows: { runId: string }[]): Promise<Map<string,
     const cards = (parseSoloPicks(run.detail?.picks) ?? []).flatMap((p) => playerById(p.id) ?? [])
     const best = cards.sort((a, b) => b.score - a.score)[0]
     if (best) out.set(run.id, { ...best, img: faces[best.id] ?? best.img })
+  }
+  return out
+}
+
+/** How many of each rarity a run kept: the Builder's Best Today prints its makeup. */
+export async function runRarities(runId: string): Promise<Partial<Record<Rarity, number>>> {
+  const { data } = await createAdminClient().from('game_runs').select('detail').eq('id', runId).maybeSingle()
+  const picks = parseSoloPicks((data as { detail: { picks?: unknown } | null } | null)?.detail?.picks) ?? []
+  const out: Partial<Record<Rarity, number>> = {}
+  for (const p of picks) {
+    const card = playerById(p.id)
+    if (card) out[card.rarity] = (out[card.rarity] ?? 0) + 1
   }
   return out
 }

@@ -68,7 +68,7 @@ export function PackCarousel({ item, faab, busy, onBuy, onClose }: { item: Shelf
       <div className="pe-car-in">
         <header className="pe-car-head">
           <div>
-            <div className="pe-kicker">★ {item.label} ★</div>
+            <div className="pe-kicker">{item.label}</div>
             <h2>{pack.label.replace('Boosted ', '')}</h2>
           </div>
           <button type="button" className="pe-car-x" onClick={onClose} aria-label="Close">

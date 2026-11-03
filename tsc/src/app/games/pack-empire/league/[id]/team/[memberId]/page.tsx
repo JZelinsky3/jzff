@@ -81,8 +81,8 @@ export default async function LeagueTeamPage({
       <div className="pe-wrap">
         <div className="pe-table-head">
           <div className="pe-kicker">
-            ★ {view.member.cpu ? 'CPU' : view.member.team ? view.member.name : 'Team'}
-            {view.member.titles > 0 ? ` · ${view.member.titles} title${view.member.titles === 1 ? '' : 's'}` : ''} ★
+            {view.member.cpu ? 'CPU' : view.member.team ? view.member.name : 'Team'}
+            {view.member.titles > 0 ? ` · ${view.member.titles} title${view.member.titles === 1 ? '' : 's'}` : ''}
           </div>
           <h1 className="pe-table-title">{title}</h1>
           {view.season.length > 0 && best != null && (

@@ -161,7 +161,7 @@ export default async function DailyPage() {
 
       <div className="pe-wrap pe-wrap--narrow" style={{ margin: '0 auto' }}>
         <div className="pe-table-head">
-          <div className="pe-kicker">★ {longDay(lobby.day)} ★</div>
+          <div className="pe-kicker">{longDay(lobby.day)}</div>
           <h1 className="pe-table-title">
             Today: <span className="pe-em">{lobby.rule.title}.</span>
           </h1>

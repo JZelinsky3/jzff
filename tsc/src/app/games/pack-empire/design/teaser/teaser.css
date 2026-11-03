@@ -25,7 +25,7 @@
 
 .tz-beat { position: absolute; inset: 0; }
 .tz-split { display: grid; grid-template-columns: 430px minmax(0, 1fr); align-items: center; gap: 30px; padding: 0 70px 0 80px; }
-.tz-frame--v .tz-split { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); align-items: start; gap: 18px; padding: 70px 30px 40px; }
+.tz-frame--v .tz-split { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; align-content: center; align-items: start; gap: 34px; padding: 40px 30px 60px; }
 
 /* Words */
 .tz-cap { display: grid; gap: 14px; }
@@ -78,7 +78,7 @@
 
 /* The rip: the pack at the bottom, the hand of five well clear above it. */
 .tz-rip { position: relative; justify-self: center; width: 700px; height: 640px; }
-.tz-frame--v .tz-rip { width: 480px; height: 640px; transform: scale(.82); transform-origin: 50% 0; }
+.tz-frame--v .tz-rip { width: 480px; height: 640px; margin-bottom: -170px; transform: scale(.72); transform-origin: 50% 0; }
 .tz-pack { position: absolute; left: 50%; bottom: 0; width: 196px; height: 287px; margin-left: -98px; animation: tz-shake .7s ease-in-out both; transition: transform .6s cubic-bezier(.3, .8, .3, 1), opacity .6s; }
 @keyframes tz-shake { 0%, 100% { transform: none; } 20% { transform: rotate(-2deg) translateY(-2px); } 40% { transform: rotate(2deg); } 60% { transform: rotate(-1.5deg) translateY(-3px); } 80% { transform: rotate(1deg); } }
 .tz-pack img { position: absolute; inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 20px 30px rgba(0, 0, 0, .7)); }
@@ -127,7 +127,7 @@
 .tz-mys { position: relative; justify-self: center; width: 600px; height: 480px; }
 .tz-frame--v .tz-mys { width: 480px; height: 440px; }
 .tz-mys-pack { position: absolute; left: 50%; top: 50%; width: 220px; margin: -160px 0 0 -110px; border-radius: 6px; box-shadow: 0 24px 40px rgba(0, 0, 0, .7), 0 0 50px rgba(169, 156, 245, .25); transform: translateX(calc(var(--n) * 120px)) rotate(calc(var(--n) * 7deg)) scale(calc(1 - abs(var(--n)) * .14)); z-index: calc(5 - abs(var(--n))); animation: tz-deal .6s cubic-bezier(.2, 1.2, .4, 1) both; animation-delay: calc(abs(var(--n)) * 110ms); }
-.tz-frame--v .tz-mys-pack { width: 170px; margin: -125px 0 0 -85px; transform: translateX(calc(var(--n) * 80px)) rotate(calc(var(--n) * 7deg)) scale(calc(1 - abs(var(--n)) * .14)); }
+.tz-frame--v .tz-mys-pack { width: 170px; margin: -125px 0 0 -85px; transform: translateX(calc(var(--n) * 62px)) rotate(calc(var(--n) * 7deg)) scale(calc(1 - abs(var(--n)) * .14)); }
 
 /* Ball Knower */
 .tz-bk { position: relative; justify-self: center; display: flex; align-items: center; gap: 40px; }

@@ -11,9 +11,11 @@
 //
 // The room's own type: DM Serif for the words and Orbitron for the numbers, on a
 // dark ground in each mode's colour. Text left, object right. The game cards sit
-// on a stage rendered once into public/og/pack-empire: real cards bursting out of
-// the real torn pack (scripts/pack-empire-fx/og-stages.mjs). Everything else gets
-// rays.png over its colour.
+// on a stage rendered once into public/og/pack-empire: a path-traced pack torn
+// open on a table, real cards up out of it with a gap under them
+// (scripts/pack-empire-fx/rip). Mega's wall is still the flat one
+// (scripts/pack-empire-fx/og-stages.mjs). Everything else gets rays.png over its
+// colour.
 //
 // iMessage hangs its own bar under the card (title and link) and tints it from
 // the bottom of the picture. So the card ends on a slim ticker in the mode's

@@ -61,7 +61,7 @@ export default async function GamesProfilePage() {
         <div className="pe-wrap pe-wrap--narrow" style={{ margin: '0 auto' }}>
           {!mobile && (
             <div className="pe-table-head">
-              <div className="pe-kicker">★ Friends and records ★</div>
+              <div className="pe-kicker">Friends and records</div>
               <h1 className="pe-table-title">
                 Games <span className="pe-em">profile.</span>
               </h1>
@@ -104,7 +104,7 @@ export default async function GamesProfilePage() {
       <div className="pe-wrap pe-wrap--narrow" style={{ margin: '0 auto' }}>
         {!mobile && (
           <div className="pe-table-head">
-            <div className="pe-kicker">★ Friends and records ★</div>
+            <div className="pe-kicker">Friends and records</div>
             <h1 className="pe-table-title">
               Games <span className="pe-em">profile.</span>
             </h1>

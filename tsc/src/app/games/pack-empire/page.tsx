@@ -239,7 +239,7 @@ export default async function PackEmpireHome() {
 
         <div className="pe-wrap">
           <section className="pe-m-hero">
-            <div className="pe-kicker">★ Open packs · build an offense ★</div>
+            <div className="pe-kicker">Open packs · build an offense</div>
             <h1 className="pe-m-hero-title">
               Pack <span className="pe-em">Empire.</span>
             </h1>
@@ -355,7 +355,7 @@ export default async function PackEmpireHome() {
       <div className="pe-wrap">
         <header className="pe-hero">
           <div>
-            <div className="pe-kicker">★ Open packs · build an offense ★</div>
+            <div className="pe-kicker">Open packs · build an offense</div>
             <h1 className="pe-hero-title">
               Pack
               <br />

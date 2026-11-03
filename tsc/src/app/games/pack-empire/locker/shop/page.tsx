@@ -35,7 +35,7 @@ export default async function ShopPage() {
       <div className="pe-wrap pe-lk">
         {!mobile && (
           <header className="pe-lk-head">
-            <div className="pe-kicker">★ Spend it on packs ★</div>
+            <div className="pe-kicker">Spend it on packs</div>
             <h1 className="pe-brd-title">
               The <span className="pe-em">Shop.</span>
             </h1>

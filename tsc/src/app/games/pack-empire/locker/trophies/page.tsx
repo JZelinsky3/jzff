@@ -42,7 +42,7 @@ export default async function TrophiesPage() {
       <div className="pe-wrap pe-lk">
         {!mobile && (
           <header className="pe-lk-head">
-            <div className="pe-kicker">★ The seasons that are not in any pack ★</div>
+            <div className="pe-kicker">The seasons that are not in any pack</div>
             <h1 className="pe-brd-title">
               The Trophy <span className="pe-em">Case.</span>
             </h1>

@@ -854,6 +854,17 @@ html:has(.pe-theme) body {
   color: var(--pe-ink-mute);
 }
 
+/* On a phone the mono labels' spaces read as gaps: § 02 · TODAY came out with
+   two spaces round every word. Pulled in, the way the Hall's plate is. */
+@media (max-width: 700px) {
+  .pe-sec-num,
+  .pe-sec-meta,
+  .pe-kicker,
+  .pe-note {
+    word-spacing: -0.3em;
+  }
+}
+
 /* A key to a table, shut until asked for (KeyNote.tsx). */
 .pe-keynote {
   margin-top: 0.7rem;

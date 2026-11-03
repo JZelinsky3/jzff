@@ -370,7 +370,7 @@ export function MegaRoom({
     return (
       <div className="pe-table pe-wrap--narrow">
         <div className="pe-table-head">
-          <div className="pe-kicker">★ Mega Draft · {id} ★</div>
+          <div className="pe-kicker">Mega Draft · {id}</div>
           <h1 className="pe-table-title">
             {view.hostName}&apos;s <span className="pe-em">board.</span>
           </h1>

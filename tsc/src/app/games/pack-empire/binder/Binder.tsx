@@ -283,7 +283,7 @@ function CantonHall({
   return (
     <section className={`pe-hall${pieces.length ? '' : ' empty'}`} aria-label="The Hall">
       <div className="pe-hall-head">
-        <span className="pe-kicker">★ The Hall ★</span>
+        <span className="pe-kicker">The Hall</span>
         <span className="pe-hall-count">
           {pieces.length ? `${pieces.length} of ${CANTON_CARDS} Cantons` : `${CANTON_CARDS} Cantons in the game`}
         </span>

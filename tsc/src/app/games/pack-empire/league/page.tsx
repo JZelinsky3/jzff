@@ -52,7 +52,7 @@ export default async function LeagueLobbyPage() {
 
       <div className="pe-wrap pe-wrap--narrow" style={{ margin: '0 auto' }}>
         <div className="pe-table-head">
-          <div className="pe-kicker">★ Mode IV · a season ★</div>
+          <div className="pe-kicker">Mode IV · a season</div>
           <h1 className="pe-table-title">
             Eight weeks, <span className="pe-em">one champion.</span>
           </h1>

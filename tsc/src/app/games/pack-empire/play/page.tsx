@@ -56,7 +56,7 @@ export default async function EmpireBuilderPage({
       <div className="pe-wrap">
         {!mobile && (
           <div className="pe-table-head">
-            <div className="pe-kicker">★ Solo · offense unit ★</div>
+            <div className="pe-kicker">Solo · offense unit</div>
             <h1 className="pe-table-title">
               Your ultimate <span className="pe-em">offense.</span>
             </h1>

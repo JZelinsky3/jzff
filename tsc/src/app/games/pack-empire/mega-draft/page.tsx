@@ -73,7 +73,7 @@ export default async function MegaDraftLobby() {
 
       <div className="pe-wrap pe-wrap--narrow" style={{ margin: '0 auto' }}>
         <div className="pe-table-head">
-          <div className="pe-kicker">★ Mode III · live ★</div>
+          <div className="pe-kicker">Mode III · live</div>
           <h1 className="pe-table-title">
             One board, <span className="pe-em">two drafters.</span>
           </h1>

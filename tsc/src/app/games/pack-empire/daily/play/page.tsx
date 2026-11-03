@@ -53,7 +53,7 @@ export default async function DailyPlayPage({ searchParams }: { searchParams: Pr
       <div className="pe-wrap">
         {!mobile && (
           <div className="pe-table-head">
-            <div className="pe-kicker">★ The Daily · {DIFFICULTY_LOOK[version].label} ★</div>
+            <div className="pe-kicker">The Daily · {DIFFICULTY_LOOK[version].label}</div>
             <h1 className="pe-table-title">
               One deal, <span className="pe-em">one try.</span>
             </h1>

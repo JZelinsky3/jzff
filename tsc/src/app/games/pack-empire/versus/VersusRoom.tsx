@@ -208,7 +208,7 @@ export function VersusRoom({
     const guest = view.guest.name
     return (
       <div className="pe-table-head">
-        <div className="pe-kicker">★ {formatLine(view.format, view.difficulty) ?? 'Versus Challenge'} ★</div>
+        <div className="pe-kicker">{formatLine(view.format, view.difficulty) ?? 'Versus Challenge'}</div>
         <h1 className="pe-table-title">
           {host} <span className="pe-em">vs</span> {guest ?? 'Anyone'}
         </h1>

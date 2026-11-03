@@ -20,7 +20,7 @@ export function PackOdds({ pack }: { pack: PackDef }) {
       {open && (
         <div className="pe-odds" role="dialog" aria-modal="true" aria-label={`Odds for ${pack.label}`} onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
           <div className="pe-odds-in">
-            <div className="pe-kicker">★ The Odds ★</div>
+            <div className="pe-kicker">The Odds</div>
             <h2>{pack.label}</h2>
             <table>
               <thead>

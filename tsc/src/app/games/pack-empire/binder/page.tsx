@@ -59,7 +59,7 @@ export default async function BinderPage() {
       <div className="pe-wrap">
         {!mobile && (
           <div className="pe-table-head">
-            <div className="pe-kicker">★ Every card you&apos;ve pulled ★</div>
+            <div className="pe-kicker">Every card you&apos;ve pulled</div>
             <h1 className="pe-table-title">
               The <span className="pe-em">binder.</span>
             </h1>

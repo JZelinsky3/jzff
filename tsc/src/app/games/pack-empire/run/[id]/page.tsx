@@ -57,7 +57,7 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
       />
       <div className="pe-wrap pe-wrap--narrow" style={{ margin: '0 auto' }}>
         <div className="pe-table-head">
-          <div className="pe-kicker">★ Empire Builder · {label} ★</div>
+          <div className="pe-kicker">Empire Builder · {label}</div>
           <h1 className="pe-table-title">{run.name}&apos;s Offense</h1>
         </div>
 

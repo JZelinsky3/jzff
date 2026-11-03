@@ -10,10 +10,22 @@ import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
-import { runLeaders } from '@/lib/packEmpire/boardRuns'
+import { runLeaders, runRarities } from '@/lib/packEmpire/boardRuns'
+import { maskCard } from '@/lib/packEmpire/deal'
+import { playerById } from '@/lib/packEmpire/pool'
 import { loadBuilderHub, type HubBoard } from '@/lib/packEmpire/builderHub'
 import { peMeta } from '@/lib/packEmpire/meta'
-import { boardLabel, builderQuery, isDifficulty, type BuilderFormat, type Difficulty, type Player } from '@/lib/packEmpire/rules'
+import {
+  RARITIES,
+  RARITY_LOOK,
+  boardLabel,
+  builderQuery,
+  isDifficulty,
+  type BuilderFormat,
+  type Difficulty,
+  type Player,
+  type Rarity,
+} from '@/lib/packEmpire/rules'
 import mobileStyles from '../../mobile.module.css'
 import { PeChrome, PeDock } from '../chrome'
 import { peFonts } from '../fonts'
@@ -39,22 +51,59 @@ export const metadata: Metadata = peMeta({
 
 const here = (b: { diff: Difficulty; format: BuilderFormat }) => `/games/pack-empire/builder/${builderQuery(b.diff, b.format)}`
 
-/** The best run anyone has posted today on any board, for the top of the page. */
-function Leader({ boards }: { boards: HubBoard[] }) {
-  const all = boards.flatMap((b) => b.today.slice(0, 1).map((r) => ({ b, r })))
-  const lead = all.sort((x, y) => y.r.score - x.r.score)[0]
+type Lead = { b: HubBoard; r: HubBoard['today'][number] }
+
+/** The best run anyone has posted today on any board. */
+function bestToday(boards: HubBoard[]): Lead | null {
+  return boards.flatMap((b) => b.today.slice(0, 1).map((r) => ({ b, r }))).sort((x, y) => y.r.score - x.r.score)[0] ?? null
+}
+
+/** The best run today, for the top of the page: who, on which board, the card that
+    led it, and the eleven by rarity, a pip a card, best first. */
+function Leader({ lead, led, makeup }: { lead: Lead | null; led: Player | undefined; makeup: Partial<Record<Rarity, number>> }) {
   if (!lead) return null
+  const pips = [...RARITIES].reverse().flatMap((r) => Array.from({ length: makeup[r] ?? 0 }, () => r))
   return (
     <Link href={here(lead.b)} scroll={false} className="pe-bh-lead">
-      <small>Best Today</small>
-      <b>{lead.r.score.toLocaleString()}</b>
-      <span>
-        {lead.r.name} · {boardLabel(lead.b.diff, lead.b.format)}
+      <span className="pe-bh-lead-top">
+        <small>Best Today</small>
+        <TierBadge score={lead.r.score} />
       </span>
-      <TierBadge score={lead.r.score} />
+      <b>{lead.r.score.toLocaleString()}</b>
+      <span className="pe-bh-lead-who">
+        {lead.r.name} · {boardLabel(lead.b.diff, lead.b.format)}
+        {led && (
+          <>
+            {' · '}led by <em style={{ color: RARITY_LOOK[led.rarity].color }}>{led.name}</em> {led.year}
+          </>
+        )}
+      </span>
+      {pips.length > 0 && (
+        <span className="pe-bh-lead-mix">
+          <span className="pe-bh-pips" aria-hidden>
+            {pips.map((r, i) => (
+              <i key={i} style={{ background: RARITY_LOOK[r].color }} />
+            ))}
+          </span>
+          <span className="pe-bh-mix">
+            {[...RARITIES]
+              .reverse()
+              .filter((r) => makeup[r])
+              .map((r) => (
+                <span key={r} style={{ color: RARITY_LOOK[r].color }}>
+                  {makeup[r]} {RARITY_LOOK[r].label}
+                </span>
+              ))}
+          </span>
+        </span>
+      )}
     </Link>
   )
 }
+
+/** One card dealt the way each difficulty shows it, for the picker's art: that's
+    the difference between the four, so it's what the art shows. */
+const SAMPLE = 'wr-justin-jefferson-2022'
 
 export default async function BuilderHubPage({ searchParams }: { searchParams: Promise<{ diff?: string; f?: string }> }) {
   const sp = await searchParams
@@ -71,6 +120,10 @@ export default async function BuilderHubPage({ searchParams }: { searchParams: P
   // Every board's top runs come with their best card, so the picker switches without a trip back here.
   const found = await runLeaders(boards.flatMap((b) => b.today)).catch(() => new Map<string, Player>())
   const leaders = Object.fromEntries(found) as Record<string, Player>
+  const lead = bestToday(boards)
+  const makeup = lead ? await runRarities(lead.r.runId).catch(() => ({})) : {}
+  const sample = playerById(SAMPLE) as Player
+  const faces = Object.fromEntries((['range', 'season', 'cap'] as const).map((d) => [d, maskCard(sample, d)])) as Partial<Record<Difficulty, Player>>
 
   return (
     <main className={`pe-theme ${peFonts}${mobile ? ` ${mobileStyles.root}` : ''}`}>
@@ -88,7 +141,7 @@ export default async function BuilderHubPage({ searchParams }: { searchParams: P
       <div className="pe-wrap pe-bh">
         <header className="pe-bh-head">
           <div>
-            {!mobile && <div className="pe-kicker">★ Solo · offense unit ★</div>}
+            {!mobile && <div className="pe-kicker">Solo · offense unit</div>}
             {!mobile && (
               <h1 className="pe-table-title">
                 Empire <span className="pe-em">Builder.</span>
@@ -96,13 +149,15 @@ export default async function BuilderHubPage({ searchParams }: { searchParams: P
             )}
             <p className="pe-bh-lede">Pick a captain, open eleven packs and keep one player from each.</p>
           </div>
-          <Leader boards={boards} />
+          <Leader lead={lead} led={lead ? leaders[lead.r.runId] : undefined} makeup={makeup} />
         </header>
 
         <BoardPicker
           key={`${start.diff}-${start.format}`}
           boards={boards}
           leaders={leaders}
+          faces={faces}
+          mobile={mobile}
           start={start}
           signedIn={!!user}
           viewerId={viewerId}

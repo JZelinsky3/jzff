@@ -50,7 +50,7 @@ export default async function DailyDayPage({ params }: { params: Promise<{ day: 
 
       <div className="pe-wrap pe-wrap--narrow" style={{ margin: '0 auto' }}>
         <div className="pe-table-head">
-          <div className="pe-kicker">★ {longDay(day)} ★</div>
+          <div className="pe-kicker">{longDay(day)}</div>
           <h1 className="pe-table-title">
             <span className="pe-em">{data.rule.title}.</span>
           </h1>

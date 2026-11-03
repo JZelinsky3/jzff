@@ -172,7 +172,7 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
     return (
       <div className="pe-table">
         <div className="pe-table-head">
-          <div className="pe-kicker">★ {phaseLine} · your Standings Pack ★</div>
+          <div className="pe-kicker">{phaseLine} · your Standings Pack</div>
           <h1 className="pe-table-title" style={{ color: packColor }}>
             {packLabel}
           </h1>

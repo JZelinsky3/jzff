@@ -113,7 +113,7 @@ export default async function CantonPage({ params }: { params: Promise<Params> }
 
           <div className="pe-tc-info">
             <div className="pe-kicker">
-              ★ Canton · No. {show.serial} of {show.total} ★
+              Canton · No. {show.serial} of {show.total}
             </div>
             <h1 className="pe-tc-name">{p.name}</h1>
             <p className="pe-tc-club">

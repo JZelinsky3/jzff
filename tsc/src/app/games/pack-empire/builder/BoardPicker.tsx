@@ -24,23 +24,31 @@ import {
   type Player,
 } from '@/lib/packEmpire/rules'
 import { RunRow } from '../BoardRows'
+import { PackCard } from '../cards'
 
 const board = (b: { diff: Difficulty; format: BuilderFormat }) => `/games/pack-empire/board/${builderQuery(b.diff, b.format)}`
 
-/** Classic is a hand of position packs; Mystery is the one black pack. */
-function FormatArt({ format }: { format: BuilderFormat }) {
-  if (format === 'mystery') {
-    return (
-      <span className="pe-bh-art pe-bh-art--mys" aria-hidden>
-        <span className="pe-bh-pack" style={{ backgroundImage: `url(${WILD_PACK_ART})` }} />
-      </span>
-    )
-  }
+/** What each way of opening the packs is, under its tab. The phone gets the short one. */
+const FORMAT_BRIEF: Record<BuilderFormat, string> = {
+  classic: 'A pack for every position, any order.',
+  mystery: 'Eleven packs of random positions. Plan ahead.',
+}
+
+/** Classic is a hand of position packs, Mystery three of its black one. Off
+    Standard, one of the cards comes out in front the way that difficulty deals
+    it: a value range, a year and nothing else, a price tag. */
+function FormatArt({ format, card }: { format: BuilderFormat; card?: Player }) {
+  const packs = format === 'mystery' ? [WILD_PACK_ART, WILD_PACK_ART, WILD_PACK_ART] : [PACK_ART.RB, PACK_ART.WR, PACK_ART.QB]
   return (
-    <span className="pe-bh-art" aria-hidden>
-      <span className="pe-bh-pack l" style={{ backgroundImage: `url(${PACK_ART.RB})` }} />
-      <span className="pe-bh-pack r" style={{ backgroundImage: `url(${PACK_ART.WR})` }} />
-      <span className="pe-bh-pack c" style={{ backgroundImage: `url(${PACK_ART.QB})` }} />
+    <span className={`pe-bh-art${format === 'mystery' ? ' pe-bh-art--mys' : ''}${card ? ' pe-bh-art--card' : ''}`} aria-hidden>
+      <span className="pe-bh-pack l" style={{ backgroundImage: `url(${packs[0]})` }} />
+      <span className="pe-bh-pack r" style={{ backgroundImage: `url(${packs[1]})` }} />
+      <span className="pe-bh-pack c" style={{ backgroundImage: `url(${packs[2]})` }} />
+      {card && (
+        <span key={card.blind?.level ?? card.salary ?? 'card'} className="pe-bh-artcard">
+          <PackCard player={card} revealed index={0} still disabled />
+        </span>
+      )}
     </span>
   )
 }
@@ -48,6 +56,8 @@ function FormatArt({ format }: { format: BuilderFormat }) {
 export function BoardPicker({
   boards,
   leaders,
+  faces,
+  mobile,
   start,
   signedIn,
   viewerId,
@@ -55,6 +65,9 @@ export function BoardPicker({
   boards: HubBoard[]
   /** Each of today's runs' best card, by run id. */
   leaders: Record<string, Player>
+  /** One card as each hard difficulty deals it, for the art. */
+  faces: Partial<Record<Difficulty, Player>>
+  mobile: boolean
   start: { diff: Difficulty; format: BuilderFormat }
   signedIn: boolean
   viewerId: string | null
@@ -101,6 +114,7 @@ export function BoardPicker({
                 </button>
               ))}
             </div>
+            <p className="pe-bp-fmt-line">{mobile ? FORMAT_BRIEF[format] : FORMAT_LOOK[format].line}</p>
             <div className="pe-bp-diffs" role="tablist" aria-label="Difficulty">
               {DIFFICULTIES.map((d) => {
                 const b = find(d, format)
@@ -124,12 +138,11 @@ export function BoardPicker({
 
           <article className="pe-bp-card">
             <header className="pe-bp-card-head">
-              <FormatArt format={format} />
+              <FormatArt format={format} card={faces[diff]} />
               <div>
                 <span className="pe-bp-card-kick">{FORMAT_LOOK[format].label}</span>
                 <h2>{DIFFICULTY_LOOK[diff].label}</h2>
                 <p>{DIFFICULTY_LOOK[diff].line}</p>
-                <p className="pe-bp-card-fmt">{FORMAT_LOOK[format].line}</p>
               </div>
             </header>
             <div className="pe-bp-stats">
