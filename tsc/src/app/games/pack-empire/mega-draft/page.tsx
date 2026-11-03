@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { listMega } from '@/lib/packEmpire/mega'
 import { friendPicker } from '@/lib/friends'
+import { megaFormatLine } from '@/lib/packEmpire/rules'
 import mobileStyles from '../../mobile.module.css'
 import { GameList } from '../GameList'
 import { splitGames, type GameRow } from '../gameRows'
@@ -49,6 +50,7 @@ export default async function MegaDraftLobby() {
             ? { label: 'Your pick', color: '#e8a84b' }
             : STATUS[d.status],
         code: d.id,
+        format: megaFormatLine(d.format, d.difficulty),
         done: d.status === 'done',
         yours: d.yourScore,
         theirs: d.theirScore,
@@ -111,6 +113,24 @@ export default async function MegaDraftLobby() {
             <div className="pe-rule">
               <span>
                 <b>Fill all eleven slots.</b> You can only take a man you have a slot for. Bigger total wins.
+              </span>
+            </div>
+            <div className="pe-rule">
+              <span>
+                <b>Chemistry</b> deals the board around four franchises. Same-franchise pairs pay, real teammates
+                pay double, rivals cost, and every man you take is one off their stack.
+              </span>
+            </div>
+            <div className="pe-rule">
+              <span>
+                <b>Battles</b> names three head-to-head categories before the first pick. Be ahead on one at the
+                end and it pays 1,500. You can see where you both stand the whole way.
+              </span>
+            </div>
+            <div className="pe-rule">
+              <span>
+                <b>Range and Ball Knower</b> hide the values until the last pick, and both play for chemistry.{' '}
+                <b>Salary Cap</b> gives each seat a budget off the board, so a star now can mean scraps later.
               </span>
             </div>
           </div>

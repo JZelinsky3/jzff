@@ -18,14 +18,14 @@ export const viewport: Viewport = { themeColor: '#141311', width: 'device-width'
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
   const view = await getMega(id.toUpperCase(), null, null)
-  const [a, b] = view?.seats ?? []
-  const done = view?.status === 'done' && a && b
-  const firstWon = done && a.score > b.score
+  const [a, b] = (view?.seats ?? []).map((s) => s.score ?? 0)
+  const done = view?.status === 'done' && view.seats.length === 2
+  const firstWon = done && a > b
   const named = (seat: 0 | 1) => (view?.botSeat === seat ? 'the CPU' : view?.seats[seat].name)
   const title = !view
     ? 'Mega Draft · Pack Empire'
     : done
-      ? a.score === b.score
+      ? a === b
         ? `${named(0)} and ${named(1)} tied · Pack Empire`
         : `${named(firstWon ? 0 : 1)} beat ${named(firstWon ? 1 : 0)} · Pack Empire`
       : view.status === 'live'
@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return peMeta({
     title,
     description: done
-      ? `Final: ${Math.max(a.score, b.score).toLocaleString('en-US')} to ${Math.min(a.score, b.score).toLocaleString('en-US')}.`
+      ? `Final: ${Math.max(a, b).toLocaleString('en-US')} to ${Math.min(a, b).toLocaleString('en-US')}.`
       : 'A live snake draft off one shared board of thirty-six. Sit down and pick.',
     card: view ? { c: 'mg', id: view.id, s: view.status === 'live' ? `live${view.pickNo}` : view.status } : { c: 'mega' },
     alt: 'A Pack Empire Mega Draft',

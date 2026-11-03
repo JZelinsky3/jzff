@@ -744,11 +744,13 @@ async function megaScene(id: string) {
   const two = named(1, b.name)
 
   if (v.status === 'done') {
-    const tied = a.score === b.score
-    const firstWon = a.score > b.score
+    // Always set once it's done: only a blind board still being drafted hides them.
+    const [sa, sb] = [a.score ?? 0, b.score ?? 0]
+    const tied = sa === sb
+    const firstWon = sa > sb
     const rows = [
-      { name: one, score: a.score, win: !tied && firstWon },
-      { name: two, score: b.score, win: !tied && !firstWon },
+      { name: one, score: sa, win: !tied && firstWon },
+      { name: two, score: sb, win: !tied && !firstWon },
     ].sort((x, y) => y.score - x.score)
     const winner = firstWon ? one : two
     const loser = firstWon ? two : one
@@ -757,7 +759,7 @@ async function megaScene(id: string) {
       'Mega Draft · Final',
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {tied ? head(`${one} and ${two} tied.`, 'tied.', c, 600) : head(`${winner} beat ${loser}.`, 'beat', c, 600)}
-        {sub(tied ? 'One board, two drafts, dead even.' : `Same board, thirty-six cards, won by ${num(Math.abs(a.score - b.score))}.`, 580)}
+        {sub(tied ? 'One board, two drafts, dead even.' : `Same board, thirty-six cards, won by ${num(Math.abs(sa - sb))}.`, 580)}
       </div>,
       scoreboard(rows, c)
     )

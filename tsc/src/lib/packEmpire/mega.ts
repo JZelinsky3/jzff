@@ -20,23 +20,43 @@
 // The room asks it to pick, one pick at a time, after a beat, so it plays at
 // a person's pace. A draft can also be sent to one friend: the seat is held
 // for them and the draft shows in their list.
+//
+// Modes: a format (Classic, a Chemistry board dealt in team stacks, or three
+// Battles) and the four card difficulties. On Range and Ball Knower the board
+// goes out masked (maskCard) until the last pick, so the values, the totals
+// and the chemistry stay hidden till then; under a Salary Cap each pick is
+// priced by the server (signingPrice, the same rule as everywhere) and what
+// it paid is kept on the pick. The stacks, the cap and the Battles all follow
+// from the seed and the board, so only the two settings are stored.
 
 import { randomInt } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { friendOf } from '@/lib/friends'
-import { dealMegaBoard, newServerSeed } from './deal'
+import { battlesFrom, settleBattles, type BattleOutcome } from './battles'
+import { CPU_SKILL, dealMegaBoard, maskCard, megaBattles, megaCap, megaRead, newServerSeed, priced, salaryOf } from './deal'
 import { cleanGuestName, hashKey, isId, nameForUser, newId } from './people'
 import {
   MEGA_TOTAL_PICKS,
   SLOTS,
   SLOT_COUNT,
+  chemistryFor,
+  chemistryPreview,
+  isBlind,
+  isDifficulty,
+  isMegaFormat,
   lineupScore,
+  megaChemCounts,
   megaPickOwner,
   megaWorth,
+  signingPrice,
+  type Chemistry,
+  type Difficulty,
+  type MegaFormat,
   type Player,
 } from './rules'
 
-export type MegaPick = { n: number; seat: 0 | 1; id: string; slot: number }
+/** `paid` is what the pick cost under a salary cap, in $M. */
+export type MegaPick = { n: number; seat: 0 | 1; id: string; slot: number; paid?: number }
 
 type Row = {
   id: string
@@ -58,13 +78,24 @@ type Row = {
   guest_bot: boolean
   /** Sent to one friend: only that account can take the second seat. */
   invited_id: string | null
+  format: MegaFormat
+  difficulty: Difficulty
 }
 
 export type MegaSeatView = {
   name: string | null
   lineup: (Player | null)[]
-  score: number
+  /** Cards, chemistry and Battles. Null while a blind board hides the values. */
+  score: number | null
+  /** The cards alone. */
+  cards: number | null
+  /** Where chemistry counts and the board can show it. */
+  chem: Chemistry | null
+  /** What the Battles paid, once the draft is done. */
+  battles: number
   filled: number
+  /** Under a salary cap, what's left of the budget in $M. */
+  left: number | null
 }
 
 export type MegaView = {
@@ -87,6 +118,17 @@ export type MegaView = {
   botSeat: 0 | 1 | null
   /** Sent to a friend who hasn't sat down: their name, for the waiting room. */
   reservedFor: string | null
+  format: MegaFormat
+  difficulty: Difficulty
+  /** A Battles draft's three. */
+  battles: string[] | null
+  /** Who's ahead on each Battle, or who took it once it's done. Null while the
+      board is blind. Seat 0 is `host` in it, seat 1 `guest`. */
+  battleOutcome: BattleOutcome | null
+  /** Each seat's budget under a salary cap, in $M. */
+  cap: number | null
+  /** A blind board still masked: no values, no totals. */
+  hidden: boolean
 }
 
 /** The CPU's name on the board. */
@@ -113,6 +155,23 @@ function openSlotFor(lineup: (Player | null)[], p: Player): number {
   return SLOTS.findIndex((s, i) => s.pool === p.pos && !lineup[i])
 }
 
+const formatOf = (row: Row): MegaFormat => (isMegaFormat(row.format) ? row.format : 'classic')
+const diffOf = (row: Row): Difficulty => (isDifficulty(row.difficulty) ? row.difficulty : 'open')
+
+function spentBy(row: Row, seat: 0 | 1): number {
+  return row.picks.reduce((sum, p) => sum + (p.seat === seat ? (p.paid ?? 0) : 0), 0)
+}
+
+/** What this pick costs the seat: 0 off a cap, else signingPrice against the men
+    left it has a slot for. Null means it can't pay for him. */
+function priceFor(row: Row, seat: 0 | 1, player: Player): number | null {
+  if (diffOf(row) !== 'cap') return 0
+  const lineup = lineupsFrom(row)[seat]
+  const gone = new Set(row.picks.map((p) => p.id))
+  const usable = row.board.filter((p) => !gone.has(p.id) && openSlotFor(lineup, p) >= 0).map(priced)
+  return signingPrice(priced(player), usable, megaCap(row.board) - spentBy(row, seat))
+}
+
 function lineupsFrom(row: Row): [(Player | null)[], (Player | null)[]] {
   const byId = new Map(row.board.map((p) => [p.id, p]))
   const out: [(Player | null)[], (Player | null)[]] = [Array(SLOT_COUNT).fill(null), Array(SLOT_COUNT).fill(null)]
@@ -125,23 +184,41 @@ function lineupsFrom(row: Row): [(Player | null)[], (Player | null)[]] {
 
 function view(row: Row, role: Role | null, viewerId: string | null = null): MegaView {
   const [a, b] = lineupsFrom(row)
+  const format = formatOf(row)
+  const diff = diffOf(row)
+  const hidden = isBlind(diff) && row.status !== 'done'
+  const look = (p: Player): Player => (hidden ? maskCard(p, diff) : diff === 'cap' ? priced(p) : p)
+  const chemOn = megaChemCounts(format, diff)
+  const battles = format === 'battles' ? megaBattles(row.seed) : null
+  const real = (l: (Player | null)[]) => l.filter((p): p is Player => !!p)
+  const outcome = battles && !hidden ? settleBattles(battles, real(a), real(b)) : null
+  const cap = diff === 'cap' ? megaCap(row.board) : null
   const names: [string | null, string | null] =
     row.host_first == null
       ? [row.host_name, null]
       : row.host_first
         ? [row.host_name, row.guest_name]
         : [row.guest_name, row.host_name]
-  const seat = (i: 0 | 1, lineup: (Player | null)[]): MegaSeatView => ({
-    name: names[i],
-    lineup,
-    score: lineupScore(lineup),
-    filled: lineup.filter(Boolean).length,
-  })
+  const seat = (i: 0 | 1, lineup: (Player | null)[]): MegaSeatView => {
+    const cards = lineupScore(lineup)
+    const chem = chemOn && !hidden ? chemistryFor(real(lineup), true) : null
+    const won = row.status === 'done' && outcome ? (i === 0 ? outcome.host : outcome.guest) : 0
+    return {
+      name: names[i],
+      lineup: lineup.map((p) => p && look(p)),
+      score: hidden ? null : cards + (chem?.total ?? 0) + won,
+      cards: hidden ? null : cards,
+      chem,
+      battles: won,
+      filled: lineup.filter(Boolean).length,
+      left: cap == null ? null : cap - spentBy(row, i),
+    }
+  }
   const pickNo = row.picks.length
   return {
     id: row.id,
     status: row.status,
-    board: row.board,
+    board: row.board.map(look),
     picks: row.picks,
     seats: [seat(0, a), seat(1, b)],
     you: role ? seatOf(row, role) : null,
@@ -157,8 +234,27 @@ function view(row: Row, role: Role | null, viewerId: string | null = null): Mega
     hostName: row.host_name,
     botSeat: row.guest_bot ? seatOf(row, 'guest') : null,
     reservedFor: row.status === 'waiting' && row.invited_id ? row.guest_name : null,
+    format,
+    difficulty: diff,
+    battles,
+    battleOutcome: outcome,
+    cap,
+    hidden,
   }
 }
+
+/** What $1M is worth to the CPU in accolades under a cap: inside the band the
+    sim found beats both a top-card drafter and a plain reader (deal.ts,
+    MEGA_CAP_SHARE). */
+const CPU_DOLLAR = 50
+
+/** How hard it leans into a Battle, as on Versus (CPU_BATTLE there), at half
+    because it only spots half of what's on offer. */
+const CPU_BATTLE = 350
+
+/** How much of the bonds it would break up it counts, where the other seat could
+    still take the man. */
+const CPU_DENY = 0.25
 
 /** The CPU's pick: the best megaWorth it has a slot for, misjudging each man by
     up to 30% either way, so it can be outdrafted and no two drafts go alike.
@@ -166,23 +262,45 @@ function view(row: Row, role: Role | null, viewerId: string | null = null): Mega
     before it knew to wait on a filled position, and a player who also knows
     that gets about an even game (sim/mega-sim.ts). A position you've filled
     gets no noise: nobody can take those men, so it always waits, then takes the
-    best of them. */
+    best of them.
+
+    On the modes it reads a blind card no better than a person (megaRead),
+    counts half the chemistry a man brings and a quarter of what it breaks up,
+    leans into the Battles, and under a cap prices a dollar and skips anyone it
+    can't pay for. */
 function cpuChoice(row: Row, seat: 0 | 1): Player | null {
+  const diff = diffOf(row)
+  const format = formatOf(row)
   const lineups = lineupsFrom(row)
   const mine = lineups[seat]
   const theirs = lineups[seat === 0 ? 1 : 0]
+  const roster = mine.filter((p): p is Player => !!p)
+  const rivalRoster = theirs.filter((p): p is Player => !!p)
   const gone = new Set(row.picks.map((p) => p.id))
   const left = row.board.filter((p) => !gone.has(p.id))
+  // What it thinks each man is worth, for megaWorth's look down the position.
+  const seen = left.map((p) => ({ ...p, score: megaRead(row.seed, diff, p) }))
+  const chemOn = megaChemCounts(format, diff)
+  const battles = format === 'battles' ? battlesFrom(megaBattles(row.seed)) : []
   const open = (lineup: (Player | null)[], pos: Player['pos']) =>
     SLOTS.filter((s, i) => s.pool === pos && !lineup[i]).length
 
   let best: Player | null = null
   let bestValue = -Infinity
-  for (const p of left) {
+  for (let i = 0; i < left.length; i++) {
+    const p = left[i]
     if (open(mine, p.pos) === 0) continue
+    if (priceFor(row, seat, p) == null) continue
+    const read = seen[i]
     const rivals = open(theirs, p.pos)
-    const noise = rivals > 0 ? (randomInt(1001) / 1000 - 0.5) * 0.6 * p.score : 0
-    const value = megaWorth(p, left, rivals) + noise
+    const noise = rivals > 0 ? (randomInt(1001) / 1000 - 0.5) * 0.6 * read.score : 0
+    let value = megaWorth(read, seen, rivals) + noise
+    if (chemOn) {
+      value += CPU_SKILL[diff].chem * chemistryPreview(p, roster, true)
+      if (rivals > 0) value += CPU_DENY * chemistryPreview(p, rivalRoster, true)
+    }
+    if (diff === 'cap') value -= CPU_DOLLAR * salaryOf(p)
+    value += CPU_BATTLE * battles.reduce((sum, b) => sum + b.lean(p, roster), 0)
     if (value > bestValue) {
       bestValue = value
       best = p
@@ -217,8 +335,10 @@ export async function createMega(
   userId: string | null,
   rawName: unknown,
   key: unknown,
-  opts: { cpu?: boolean; friend?: unknown } = {}
+  opts: { cpu?: boolean; friend?: unknown; format?: unknown; difficulty?: unknown } = {}
 ): Promise<{ ok: true; id: string } | Fail> {
+  const format: MegaFormat = isMegaFormat(opts.format) ? opts.format : 'classic'
+  const difficulty: Difficulty = isDifficulty(opts.difficulty) ? opts.difficulty : 'open'
   const who = await identity(userId, rawName, key)
   if (!who.ok) return { ok: false, error: who.error }
   const db = createAdminClient()
@@ -238,7 +358,7 @@ export async function createMega(
     second = { invited_id: friend, guest_name: await nameForUser(db, friend) }
   }
   const seed = newServerSeed()
-  const board = dealMegaBoard(seed)
+  const board = dealMegaBoard(seed, format)
   for (let attempt = 0; attempt < 4; attempt++) {
     const id = newId(CODE_LEN)
     const { error } = await db.from('pe_mega_drafts').insert({
@@ -248,6 +368,8 @@ export async function createMega(
       host_id: who.id,
       host_key: who.key,
       host_name: who.name,
+      format,
+      difficulty,
       ...second,
     })
     if (!error) return { ok: true, id }
@@ -322,7 +444,8 @@ export async function cpuPickMega(
   const player = cpuChoice(row, seat)
   if (!player) return { ok: true, view: view(row, role, userId) }
   const slot = openSlotFor(lineupsFrom(row)[seat], player)
-  const picks: MegaPick[] = [...row.picks, { n, seat, id: player.id, slot }]
+  const paid = priceFor(row, seat, player) ?? 0
+  const picks: MegaPick[] = [...row.picks, { n, seat, id: player.id, slot, ...(diffOf(row) === 'cap' ? { paid } : {}) }]
   const done = picks.length >= MEGA_TOTAL_PICKS
   const now = new Date().toISOString()
   const { data } = await createAdminClient()
@@ -360,8 +483,12 @@ export async function pickMega(
   const lineup = lineupsFrom(row)[seat]
   const slot = openSlotFor(lineup, player)
   if (slot < 0) return { ok: false, error: `Your ${player.pos} slots are full.` }
+  const paid = priceFor(row, seat, player)
+  if (paid == null) {
+    return { ok: false, error: `You can't pay for him: $${megaCap(row.board) - spentBy(row, seat)}M left.` }
+  }
 
-  const picks: MegaPick[] = [...row.picks, { n, seat, id: player.id, slot }]
+  const picks: MegaPick[] = [...row.picks, { n, seat, id: player.id, slot, ...(diffOf(row) === 'cap' ? { paid } : {}) }]
   const done = picks.length >= MEGA_TOTAL_PICKS
   const now = new Date().toISOString()
   const { data } = await createAdminClient()
@@ -430,6 +557,8 @@ export type MegaListItem = {
   yourPick: boolean
   /** Yours, and nobody has sat down. */
   canDelete: boolean
+  format: MegaFormat
+  difficulty: Difficulty
 }
 
 export type MegaResultRow = { opponentId: string | null; yours: number; theirs: number }
@@ -453,8 +582,8 @@ export async function megaResults(userId: string): Promise<MegaResultRow[]> {
     return [
       {
         opponentId: role === 'host' ? r.guest_id : r.host_id,
-        yours: v.seats[v.you].score,
-        theirs: v.seats[v.you === 0 ? 1 : 0].score,
+        yours: v.seats[v.you].score ?? 0,
+        theirs: v.seats[v.you === 0 ? 1 : 0].score ?? 0,
       },
     ]
   })
@@ -481,6 +610,8 @@ export async function listMega(userId: string): Promise<MegaListItem[]> {
       waitingOnYou: r.invited_id === userId && !r.guest_id && r.status === 'waiting',
       yourPick: v.onClock != null && v.onClock === v.you,
       canDelete: role === 'host' && r.host_id === userId && r.status === 'waiting',
+      format: v.format,
+      difficulty: v.difficulty,
     }
   })
 }

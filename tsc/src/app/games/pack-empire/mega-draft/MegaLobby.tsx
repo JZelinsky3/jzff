@@ -2,11 +2,14 @@
 
 // Open a Mega Draft, or sit down at one by its code. Either seat works
 // signed out: the browser keeps a seat key, and the drafts it has sat at are
-// remembered here so they can be found again from this device.
+// remembered here so they can be found again from this device. The format and
+// the cards are picked once, above both ways to start, the same card as Versus.
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { DIFFICULTIES, DIFFICULTY_LOOK, MEGA_FORMATS, MEGA_FORMAT_LOOK, type Difficulty, type MegaFormat } from '@/lib/packEmpire/rules'
+import { SetupSwitch } from '../SetupSwitch'
 import { storageChanged, useStored } from '../clientStore'
 
 const KEY = 'pe_mega_key'
@@ -72,6 +75,8 @@ export function MegaLobby({
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [format, setFormat] = useState<MegaFormat>('classic')
+  const [difficulty, setDifficulty] = useState<Difficulty>('open')
   const stored = useStored(MINE)
   const mine = signedIn ? [] : parseMine(stored)
   const named = signedIn || name.trim().length >= 2
@@ -83,7 +88,7 @@ export function MegaLobby({
       const res = await fetch('/api/games/pack-empire/mega/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create', name, key: signedIn ? null : megaKey(), ...extra }),
+        body: JSON.stringify({ action: 'create', name, key: signedIn ? null : megaKey(), format, difficulty, ...extra }),
       })
       const out = await res.json().catch(() => null)
       if (!res.ok || !out?.ok) throw new Error(out?.error ?? 'Could not open a draft.')
@@ -111,60 +116,84 @@ export function MegaLobby({
           />
         </label>
       )}
-      <div className="pe-twoup">
-        <div className="pe-panel">
-          <div className="pe-kicker">Host</div>
-          <div className="pe-panel-title">Open a draft</div>
-          <p className="pe-panel-text">
-            A fresh board of thirty-six, dealt the moment you open it.{' '}
-            {signedIn ? 'Send it to a friend, or open it and share the code.' : 'Share the code with one person.'}
-          </p>
-          <div className="pe-panel-foot">
-            {signedIn && friends.length > 0 && (
-              <div className="pe-friend-picks" role="group" aria-label="Send it to a friend">
-                {friends.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    className="pe-friend-pick"
-                    onClick={() => create(`f:${f.id}`, { friend: f.id })}
-                    disabled={!!busy}
-                  >
-                    <span className="pe-friend-pick-mono" aria-hidden>
-                      {f.name.charAt(0).toUpperCase()}
-                    </span>
-                    {busy === `f:${f.id}` ? 'Sending' : f.name}
-                  </button>
-                ))}
-              </div>
-            )}
-            {signedIn && friends.length === 0 && (
-              <p className="pe-note">
-                <Link href="/games/pack-empire/profile/" className="pe-link">
-                  Add friends
-                </Link>{' '}
-                to send a draft straight to them.
-              </p>
-            )}
-            <button type="button" className="pe-push" onClick={() => create('open')} disabled={!!busy || !named}>
-              {busy === 'open' ? 'Dealing the board' : 'Open with a code'}
-            </button>
+      <section className="pe-sec">
+        <div className="pe-sec-head">
+          <span className="pe-sec-num">§ New Draft</span>
+          <span className="pe-sec-title">Open A Board</span>
+        </div>
+
+        <div className="pe-setup-new">
+          <SetupSwitch
+            label="Format"
+            options={MEGA_FORMATS.map((f) => ({ id: f, label: MEGA_FORMAT_LOOK[f].label }))}
+            value={format}
+            onChange={setFormat}
+            line={MEGA_FORMAT_LOOK[format].line}
+          />
+          <SetupSwitch
+            label="Cards"
+            square
+            options={DIFFICULTIES.map((d) => ({ id: d, label: DIFFICULTY_LOOK[d].label }))}
+            value={difficulty}
+            onChange={setDifficulty}
+            line={
+              difficulty === 'cap'
+                ? 'Every card has a salary and each seat a budget. When you can’t pay anyone you need, the cheapest signs free.'
+                : difficulty === 'open'
+                  ? 'Every card face up: value, rarity and stats.'
+                  : `${DIFFICULTY_LOOK[difficulty].line} The values come up after the last pick.`
+            }
+          />
+
+          <div className="pe-setup-who">
+            <div className="pe-setup-opp">
+              <span className="pe-setup-label">Play the CPU</span>
+              <p className="pe-setup-line">Same board, same snake. It sees what you see and nothing more.</p>
+              <button type="button" className="pe-push" onClick={() => create('cpu', { cpu: true })} disabled={!!busy || !named}>
+                {busy === 'cpu' ? 'Dealing the board' : 'Play the CPU'}
+              </button>
+            </div>
+
+            <div className="pe-setup-opp">
+              <span className="pe-setup-label">Play a person</span>
+              {signedIn && friends.length > 0 ? (
+                <div className="pe-friend-picks" role="group" aria-label="Send it to a friend">
+                  {friends.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      className="pe-friend-pick"
+                      onClick={() => create(`f:${f.id}`, { friend: f.id })}
+                      disabled={!!busy}
+                    >
+                      <span className="pe-friend-pick-mono" aria-hidden>
+                        {f.name.charAt(0).toUpperCase()}
+                      </span>
+                      {busy === `f:${f.id}` ? 'Sending' : f.name}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="pe-setup-line">
+                  {signedIn ? (
+                    <>
+                      <Link href="/games/pack-empire/profile/" className="pe-link">
+                        Add friends
+                      </Link>{' '}
+                      to send one straight to them, or share the code.
+                    </>
+                  ) : (
+                    'Open it and share the code with one person.'
+                  )}
+                </p>
+              )}
+              <button type="button" className="pe-push" onClick={() => create('open')} disabled={!!busy || !named}>
+                {busy === 'open' ? 'Dealing the board' : 'Open with a code'}
+              </button>
+            </div>
           </div>
         </div>
-        <div className="pe-panel">
-          <div className="pe-kicker">Solo</div>
-          <div className="pe-panel-title">Draft against the CPU</div>
-          <p className="pe-panel-text">
-            Same board, same snake. The CPU sees what you see and nothing more, and drafts like a person:
-            the best man it has a slot for, weighed by what&apos;s left behind him.
-          </p>
-          <div className="pe-panel-foot">
-            <button type="button" className="pe-push" onClick={() => create('cpu', { cpu: true })} disabled={!!busy || !named}>
-              {busy === 'cpu' ? 'Dealing the board' : 'Play the CPU'}
-            </button>
-          </div>
-        </div>
-      </div>
+      </section>
 
       <div className="pe-panel pe-join-strip">
         <div className="pe-join-strip-text">

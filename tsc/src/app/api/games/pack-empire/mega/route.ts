@@ -1,9 +1,10 @@
 // /api/games/pack-empire/mega
 //
 //   GET  ?id=&key=                          -> { view }
-//   POST { action: 'create', name, key, cpu?, friend? } -> { id }
+//   POST { action: 'create', name, key, cpu?, friend?, format?, difficulty? } -> { id }
 //                                           (cpu = true seats the CPU and starts at once;
-//                                            friend = a friendship id, signed in, holds the seat)
+//                                            friend = a friendship id, signed in, holds the seat;
+//                                            format classic|chem|battles, difficulty open|range|season|cap)
 //   POST { action: 'join', id, name, key }  -> { view }
 //   POST { action: 'pick', id, player, key } -> { view }
 //   POST { action: 'cpu', id, key }         -> { view }   (the CPU's pick, if it's on the clock)
@@ -56,6 +57,8 @@ export async function POST(req: NextRequest) {
       const out = await createMega(userId, body.name, body.key, {
         cpu: body.cpu === true,
         friend: body.friend ?? undefined,
+        format: body.format,
+        difficulty: body.difficulty,
       })
       return out.ok ? reply(out) : reply(out, out.status ?? 400)
     }

@@ -9,24 +9,36 @@
 //
 // Phones get the board and the two elevens as three tabs under a sticky
 // clock, because three columns at 390px is three unreadable columns.
+//
+// The modes only change what's printed: on a blind board the cards come from
+// the server masked and the totals as null, under a cap every card carries its
+// salary and each seat its budget, and the chemistry and the Battles come
+// worked out. The server prices and checks every pick; this only greys out
+// the men you can't pay for.
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  DIFFICULTY_LOOK,
+  MEGA_FORMAT_LOOK,
   MEGA_TOTAL_PICKS,
   POOL_KEYS,
   RARITY_LOOK,
   SLOTS,
+  megaFormatLine,
   seasonLabel,
   shortName,
+  signingPrice,
   tierFor,
   type Player,
   type PoolKey,
 } from '@/lib/packEmpire/rules'
+import { BATTLE_BONUS, battlesFrom } from '@/lib/packEmpire/battles'
 import type { MegaView } from '@/lib/packEmpire/mega'
+import { BattleResults } from '../Battles'
 import { DeleteGame } from '../GameList'
-import { LineupSheet } from '../cards'
+import { Bonds, LineupSheet, blindValue } from '../cards'
 import { useFace, useFaces } from '../faces'
 import { ShareButton, ShareLink, SocialChip } from '../share'
 import { useStored } from '../clientStore'
@@ -40,26 +52,31 @@ function PoolCard({
   onPick,
 }: {
   player: Player
-  state: 'can' | 'wait' | 'full' | 'taken'
+  state: 'can' | 'wait' | 'full' | 'broke' | 'taken'
   takenBy: string | null
   fresh: boolean
   onPick: () => void
 }) {
-  const rc = RARITY_LOOK[player.rarity]
+  // A blind card wears no rarity: the mask makes every one a common.
+  const rc = player.blind ? BLIND_LOOK : RARITY_LOOK[player.rarity]
   const img = useFace(player)
   return (
     <button
       type="button"
-      className={`pe-pc pe-pc--${state}${fresh ? ' fresh' : ''}`}
-      data-r={player.rarity}
+      className={`pe-pc pe-pc--${state === 'broke' ? 'full' : state}${fresh ? ' fresh' : ''}`}
+      data-r={player.blind ? undefined : player.rarity}
       style={{ '--rc': rc.color, '--rg': rc.glow, '--art': rc.art } as React.CSSProperties}
       onClick={state === 'can' ? onPick : undefined}
       disabled={state !== 'can'}
-      aria-label={state === 'can' ? `Draft ${player.name}` : player.name}
+      aria-label={state === 'can' ? `Draft ${player.name}` : state === 'broke' ? `${player.name}, more than you have left` : player.name}
     >
       <span className="pe-pc-top">
         <span className="pe-pc-pos">{player.pos}</span>
-        <span className="pe-pc-rar">{rc.label}</span>
+        {player.salary != null ? (
+          <span className="pe-pc-rar pe-pc-pay">${player.salary}M</span>
+        ) : (
+          <span className="pe-pc-rar">{rc.label}</span>
+        )}
       </span>
       <span className="pe-pc-art">
         {img ? (
@@ -72,12 +89,18 @@ function PoolCard({
       </span>
       <span className="pe-pc-body">
         <span className="pe-pc-name">{shortName(player.name)}</span>
-        <span className="pe-pc-team">{seasonLabel(player)}</span>
-        <span className="pe-pc-score">{player.score.toLocaleString()}</span>
+        <span className="pe-pc-team">{seasonLabel(player).trim() || 'Team hidden'}</span>
+        <span className="pe-pc-score">{player.blind ? blindValue(player.blind) : player.score.toLocaleString()}</span>
       </span>
     </button>
   )
 }
+
+/** What a blind card looks like on the board: one quiet colour for all of them. */
+const BLIND_LOOK = { color: '#8d8473', glow: 'rgba(141, 132, 115, 0.2)', art: 'rgba(141, 132, 115, 0.12)', label: '' }
+
+/** A seat's total: hidden on a blind board until the last pick. */
+const shownScore = (score: number | null) => (score == null ? '?' : score.toLocaleString())
 
 function Column({
   label,
@@ -87,17 +110,23 @@ function Column({
   filled,
   picking,
   yours = false,
+  chem = null,
+  left = null,
 }: {
   label: string
   name: string | null
   lineup: (Player | null)[]
-  score: number
+  score: number | null
   filled: number
   picking: boolean
   /** The viewer's own column. */
   yours?: boolean
+  /** What chemistry is adding, where it counts and shows. */
+  chem?: number | null
+  /** Under a cap, the budget left in $M. */
+  left?: number | null
 }) {
-  const tier = tierFor(score)
+  const tier = tierFor(score ?? 0)
   const faces = useFaces()
   return (
     <div className={`pe-lc${picking ? ' picking' : ''}`}>
@@ -108,17 +137,19 @@ function Column({
           {picking && <b> · {yours ? 'Your pick' : 'On the clock'}</b>}
         </span>
         <span className="pe-lc-name">{name ?? 'Open seat'}</span>
-        <span className="pe-lc-score" style={{ color: tier.color }}>
-          {score.toLocaleString()}
+        <span className="pe-lc-score" style={score == null ? undefined : { color: tier.color }}>
+          {shownScore(score)}
         </span>
         <span className="pe-lc-progress">
           {filled}/{SLOTS.length}
+          {left != null && ` · $${left}M left`}
+          {chem != null && chem !== 0 && ` · chem ${chem > 0 ? '+' : '−'}${Math.abs(chem).toLocaleString()}`}
         </span>
       </div>
       <div className="pe-lc-slots">
         {SLOTS.map((s, i) => {
           const p = lineup[i]
-          const rc = p ? RARITY_LOOK[p.rarity] : null
+          const rc = p ? (p.blind ? BLIND_LOOK : RARITY_LOOK[p.rarity]) : null
           return (
             <div
               key={s.key}
@@ -140,7 +171,7 @@ function Column({
                     <span className="pe-lcs-name" style={{ color: rc!.color }}>
                       {shortName(p.name)}
                     </span>
-                    <span className="pe-lcs-score">{p.score.toLocaleString()}</span>
+                    <span className="pe-lcs-score">{p.blind ? blindValue(p.blind) : p.score.toLocaleString()}</span>
                   </span>
                 </>
               ) : (
@@ -152,6 +183,54 @@ function Column({
       </div>
     </div>
   )
+}
+
+/** A Battles draft's three over the board: what each one is and, once the board
+    can show it, where the two seats stand on it right now. */
+function MegaBattles({ view, names }: { view: MegaView; names: [string, string] }) {
+  if (!view.battles) return null
+  const lines = new Map(view.battleOutcome?.lines.map((l) => [l.id, l]))
+  return (
+    <section className="pe-battles pe-mega-battles" aria-label="This draft's Battles">
+      <div className="pe-battles-head">
+        <span className="pe-kicker">The Battles</span>
+        <span className="pe-note">+{BATTLE_BONUS.toLocaleString()} each to whoever is ahead at the end</span>
+      </div>
+      <div className="pe-battles-list">
+        {battlesFrom(view.battles).map((b) => {
+          // Nothing to stand on before the first pick.
+          const l = view.pickNo > 0 ? lines.get(b.id) : undefined
+          return (
+            <div key={b.id} className="pe-battle">
+              <b>{b.title}</b>
+              {l ? (
+                <span className="pe-mega-battle-score">
+                  <i className={l.winner === 'host' ? 'ahead' : undefined}>
+                    {names[0]} {l.host}
+                  </i>
+                  <i className={l.winner === 'guest' ? 'ahead' : undefined}>
+                    {names[1]} {l.guest}
+                  </i>
+                </span>
+              ) : (
+                <span>{b.line}</span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+/** "Chemistry · Range", or what the plain one is. */
+function modeLine(view: MegaView): string {
+  return megaFormatLine(view.format, view.difficulty) ?? 'Classic'
+}
+
+/** Whether a lineup still has a slot for this man. */
+function hasSlot(lineup: (Player | null)[], p: Player): boolean {
+  return SLOTS.some((s, i) => s.pool === p.pos && !lineup[i])
 }
 
 /** Which seats still need a position: empty slots left, yours and theirs. */
@@ -287,7 +366,7 @@ export function MegaRoom({
       const res = await fetch('/api/games/pack-empire/mega/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create', cpu: true, name: mine ?? '', key }),
+        body: JSON.stringify({ action: 'create', cpu: true, name: mine ?? '', key, format: view.format, difficulty: view.difficulty }),
       })
       const out = await res.json().catch(() => null)
       if (!res.ok || !out?.ok) throw new Error(out?.error ?? 'Could not deal a new board.')
@@ -347,11 +426,18 @@ export function MegaRoom({
   const yourTurn = view.status === 'live' && you != null && view.onClock === you
   const mineLineup = you != null ? view.seats[you].lineup : null
 
-  const stateFor = (p: Player): 'can' | 'wait' | 'full' | 'taken' => {
+  // Under a cap: the men you could sign, for the rule that the cheapest signs free when you can't pay anyone.
+  const budget = you != null ? view.seats[you].left : null
+  const signable = useMemo(
+    () => (mineLineup ? view.board.filter((p) => !takenBy.has(p.id) && hasSlot(mineLineup, p)) : []),
+    [view.board, takenBy, mineLineup]
+  )
+  const stateFor = (p: Player): 'can' | 'wait' | 'full' | 'broke' | 'taken' => {
     if (takenBy.has(p.id)) return 'taken'
     if (!yourTurn || !mineLineup) return 'wait'
-    const open = SLOTS.some((s, i) => s.pool === p.pos && !mineLineup[i])
-    return open ? 'can' : 'full'
+    if (!hasSlot(mineLineup, p)) return 'full'
+    if (budget != null && signingPrice(p, signable, budget) == null) return 'broke'
+    return 'can'
   }
 
   const shown = view.board.filter((p) => filter === 'ALL' || p.pos === filter)
@@ -370,11 +456,17 @@ export function MegaRoom({
     return (
       <div className="pe-table pe-wrap--narrow">
         <div className="pe-table-head">
-          <div className="pe-kicker">Mega Draft · {id}</div>
+          <div className="pe-kicker">
+            Mega Draft · {id} · {modeLine(view)}
+          </div>
           <h1 className="pe-table-title">
             {view.hostName}&apos;s <span className="pe-em">board.</span>
           </h1>
-          <p className="pe-table-sub">Thirty-six players, two seats, eleven picks each, snake order.</p>
+          <p className="pe-table-sub">
+            Thirty-six players, two seats, eleven picks each, snake order. {MEGA_FORMAT_LOOK[view.format].line}
+            {view.difficulty !== 'open' && ` ${DIFFICULTY_LOOK[view.difficulty].line}`}
+            {view.cap != null && ` Each seat gets $${view.cap}M.`}
+          </p>
         </div>
         {you === 0 ? (
           <div className="pe-panel">
@@ -470,6 +562,7 @@ export function MegaRoom({
             <span className="pe-sec-num">§ The board</span>
             <span className="pe-sec-meta">{view.board.length} players</span>
           </div>
+          <MegaBattles view={view} names={['', '']} />
           <div className="pe-pool">
             {view.board.map((p) => (
               <PoolCard key={p.id} player={p} state="wait" takenBy={null} fresh={false} onPick={() => {}} />
@@ -483,24 +576,36 @@ export function MegaRoom({
   // ── Final ─────────────────────────────────────────────────────
   if (view.status === 'done') {
     const [a, b] = view.seats
-    const winner = a.score === b.score ? null : a.score > b.score ? 0 : 1
+    // Always set once it's done: only a blind board still being drafted hides them.
+    const [sa, sb] = [a.score ?? 0, b.score ?? 0]
+    const winner = sa === sb ? null : sa > sb ? 0 : 1
     const head =
       winner == null ? 'Dead even.' : you === winner ? 'You win.' : `${seatName(winner)} wins.`
     // Your own number goes green or red; theirs stays as it is.
     const tone = (seat: 0 | 1) =>
       you === seat && winner != null ? { color: winner === seat ? 'var(--pe-green)' : 'var(--pe-red)' } : undefined
+    /** Cards, then whatever the mode added on top. */
+    const makeup = (s: MegaView['seats'][number]) =>
+      [
+        `${(s.cards ?? 0).toLocaleString()} in cards`,
+        s.chem && s.chem.total !== 0 ? `${s.chem.total > 0 ? '+' : '−'}${Math.abs(s.chem.total).toLocaleString()} chemistry` : null,
+        s.battles ? `+${s.battles.toLocaleString()} Battles` : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    const extras = a.chem || b.chem || view.battles
     return (
       <div className="pe-table">
-        <div className="pe-recap" style={{ '--tc': tierFor(Math.max(a.score, b.score)).color } as React.CSSProperties}>
-          <div className="pe-kicker">§ Mega Draft · Final</div>
+        <div className="pe-recap" style={{ '--tc': tierFor(Math.max(sa, sb)).color } as React.CSSProperties}>
+          <div className="pe-kicker">§ Mega Draft · Final · {modeLine(view)}</div>
           <div className="pe-recap-tier">{head}</div>
           <div className="pe-recap-score pe-recap-score--pair">
-            <span style={tone(0)}>{a.score.toLocaleString()}</span>{' '}
+            <span style={tone(0)}>{sa.toLocaleString()}</span>{' '}
             <span style={{ color: 'var(--pe-ink-mute)' }}>·</span>{' '}
-            <span style={tone(1)}>{b.score.toLocaleString()}</span>
+            <span style={tone(1)}>{sb.toLocaleString()}</span>
           </div>
           <div className="pe-recap-lbl pe-note">
-            {winner == null ? 'Not a point between them' : `By ${Math.abs(a.score - b.score).toLocaleString()} accolades`}
+            {winner == null ? 'Not a point between them' : `By ${Math.abs(sa - sb).toLocaleString()} accolades`}
           </div>
           <div className="pe-recap-actions">
             {view.botSeat != null && you != null ? (
@@ -524,16 +629,42 @@ export function MegaRoom({
             )}
             <ShareButton
               path={`/games/pack-empire/mega-draft/${id}/`}
-              text={winner == null ? 'Dead even on the Mega Draft.' : `${seatName(winner)} won the Mega Draft by ${Math.abs(a.score - b.score).toLocaleString()}.`}
+              text={winner == null ? 'Dead even on the Mega Draft.' : `${seatName(winner)} won the Mega Draft by ${Math.abs(sa - sb).toLocaleString()}.`}
             />
           </div>
           {friendNote && <p className="pe-recap-post">{friendNote}</p>}
           {error && <p className="pe-recap-post">{error}</p>}
         </div>
+        {view.battleOutcome && <BattleResults outcome={view.battleOutcome} host={seatName(0)} guest={seatName(1)} />}
         <div className="pe-twoup">
-          <LineupSheet name={seatName(0)} sub="Picked first" lineup={a.lineup} total={a.score} totalColor={tierFor(a.score).color} />
-          <LineupSheet name={seatName(1)} sub="Picked second" lineup={b.lineup} total={b.score} totalColor={tierFor(b.score).color} />
+          <LineupSheet
+            name={seatName(0)}
+            sub={extras ? `Picked first · ${makeup(a)}` : 'Picked first'}
+            lineup={a.lineup}
+            total={sa}
+            totalColor={tierFor(sa).color}
+          />
+          <LineupSheet
+            name={seatName(1)}
+            sub={extras ? `Picked second · ${makeup(b)}` : 'Picked second'}
+            lineup={b.lineup}
+            total={sb}
+            totalColor={tierFor(sb).color}
+          />
         </div>
+        {a.chem && b.chem && (
+          <div className="pe-twoup pe-mega-chem">
+            {([0, 1] as const).map((i) => (
+              <section key={i} className="pe-sec">
+                <div className="pe-sec-head">
+                  <span className="pe-sec-num">§ Chemistry</span>
+                  <span className="pe-sec-title">{seatName(i)}</span>
+                </div>
+                <Bonds chem={view.seats[i].chem!} lineup={view.seats[i].lineup} />
+              </section>
+            ))}
+          </div>
+        )}
       </div>
     )
   }
@@ -548,12 +679,13 @@ export function MegaRoom({
       <div className={`pe-clock${yourTurn ? ' yours' : ''}`}>
         <span className="pe-clock-pick">
           Pick {Math.min(view.pickNo + 1, MEGA_TOTAL_PICKS)} of {MEGA_TOTAL_PICKS}
+          {(view.format !== 'classic' || view.difficulty !== 'open') && ` · ${modeLine(view)}`}
         </span>
         <span className="pe-clock-who">
           {you == null ? `${clockName} is picking` : yourTurn ? 'Your pick' : `${clockName} is picking`}
         </span>
         <span className="pe-clock-score">
-          {view.seats[left].score.toLocaleString()} · {view.seats[right].score.toLocaleString()}
+          {view.hidden ? 'Hidden till the end' : `${shownScore(view.seats[left].score)} · ${shownScore(view.seats[right].score)}`}
         </span>
       </div>
 
@@ -562,6 +694,8 @@ export function MegaRoom({
           {error}
         </div>
       )}
+
+      <MegaBattles view={view} names={you == null ? [seatName(0), seatName(1)] : you === 0 ? ['You', 'Them'] : ['Them', 'You']} />
 
       <div className="pe-mega-tabs" role="tablist">
         {(
@@ -594,6 +728,8 @@ export function MegaRoom({
             filled={view.seats[left].filled}
             picking={view.onClock === left}
             yours={you != null}
+            chem={view.seats[left].chem?.total ?? null}
+            left={view.seats[left].left}
           />
         </div>
 
@@ -640,6 +776,8 @@ export function MegaRoom({
             score={view.seats[right].score}
             filled={view.seats[right].filled}
             picking={view.onClock === right}
+            chem={view.seats[right].chem?.total ?? null}
+            left={view.seats[right].left}
           />
         </div>
       </div>

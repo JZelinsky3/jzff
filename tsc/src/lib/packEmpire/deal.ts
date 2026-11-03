@@ -13,6 +13,7 @@
 // Refreshing re-deals the identical pack, so there is nothing to reroll.
 
 import { createHmac, hkdfSync, randomBytes } from 'crypto'
+import { drawBattles } from './battles'
 import {
   DAILY_H_FROM,
   DAILY_NEW_POOL_FROM,
@@ -60,12 +61,14 @@ import {
   VERSUS_WEIGHTS,
   difficultyFromSeed,
   formatFromSeed,
+  isBlind,
   megaPickOwner,
   megaWorth,
   personOf,
   signingPrice,
   slotForCard,
   type Difficulty,
+  type MegaFormat,
   type Player,
   type PoolKey,
   type Weights,
@@ -891,10 +894,34 @@ const MEGA_MAX_DEALS = 700
     sampler anyway, so a pool that gains dynasties doesn't crowd out immortals. */
 const ONE_EACH: Weights = { common: 1, rare: 1, dynasty: 1, transcendent: 1, immortal: 1 }
 
+/** How many franchises a Chemistry board is stacked around. */
+const MEGA_STACKS = 4
+
+/** On a Chemistry board, how many of each position come off the stacked
+    franchises: fifteen of the thirty-six, three or four a franchise, at the
+    positions that bond (a quarterback and his receivers, a center and his
+    guards). Enough that both seats can build one, few enough to fight over. */
+const MEGA_STACK_COUNTS: Record<PoolKey, number> = { QB: 2, RB: 2, WR: 3, TE: 2, OT: 2, OG: 2, C: 2 }
+
+/** The franchises a Chemistry board is stacked around, off the seed alone, so
+    every re-deal of it while checking it's fair keeps the same four. */
+function megaStacks(seed: string): string[] {
+  const rnd = stream(`mega:${seed}|stacks`)
+  const teams = [...new Set(POOL.QB.map((p) => p.team).filter(Boolean))].sort()
+  const out: string[] = []
+  while (out.length < MEGA_STACKS && out.length < teams.length) {
+    const t = teams[Math.floor(rnd() * teams.length)]
+    if (!out.includes(t)) out.push(t)
+  }
+  return out
+}
+
 /** A board's cards: at least one dynasty-or-better at every position, the
     rest weighted off MEGA_WEIGHTS without replacement. One version of a man
-    per board, so the two seats can't both draft him. */
-function megaCards(seed: string, deal: number): Player[] {
+    per board, so the two seats can't both draft him. A Chemistry board takes
+    MEGA_STACK_COUNTS of each position off its stacked franchises first, a
+    different franchise each time round. */
+function megaCards(seed: string, deal: number, stacks: string[] | null = null): Player[] {
   const out: Player[] = []
   for (const k of POOL_KEYS) {
     const rnd = stream(`mega:${seed}|${deal}|${k}`)
@@ -907,6 +934,19 @@ function megaCards(seed: string, deal: number): Player[] {
       const s = sampler(stars, ONE_EACH)(rnd()) as Player
       picked.add(personOf(s))
       out.push(s)
+    }
+
+    if (stacks) {
+      const from = Math.floor(rnd() * stacks.length)
+      for (let i = 0; i < MEGA_STACK_COUNTS[k] && picked.size < want; i++) {
+        const team = stacks[(from + i) % stacks.length]
+        const avail = pool.filter((p) => p.team === team && !picked.has(personOf(p)))
+        const p = avail.length ? sampler(avail, MEGA_WEIGHTS)(rnd()) : null
+        if (p) {
+          picked.add(personOf(p))
+          out.push(p)
+        }
+      }
     }
 
     let guard = 0
@@ -962,11 +1002,12 @@ function draftMargin(board: Player[], worth: (p: Player, left: Player[], rivalOp
  * carry none, one or several immortals in the same proportions as before.
  * Dealt once and stored, so this never runs against a draft already going.
  */
-export function dealMegaBoard(seed: string): Player[] {
-  let out = megaCards(seed, 0)
+export function dealMegaBoard(seed: string, format: MegaFormat = 'classic'): Player[] {
+  const stacks = format === 'chem' ? megaStacks(seed) : null
+  let out = megaCards(seed, 0, stacks)
   let closest = Infinity
   for (let deal = 0; deal < MEGA_MAX_DEALS; deal++) {
-    const cards = megaCards(seed, deal)
+    const cards = megaCards(seed, deal, stacks)
     const gap = Math.max(
       Math.abs(draftMargin(cards, (p) => p.score)) / MEGA_FAIR_TOP_CARD,
       Math.abs(draftMargin(cards, megaWorth)) / MEGA_FAIR_READ
@@ -985,4 +1026,45 @@ export function dealMegaBoard(seed: string): Player[] {
     ;[out[i], out[j]] = [out[j], out[i]]
   }
   return out
+}
+
+/**
+ * A Mega Draft's budget under a salary cap, in $M, for each seat: a share of
+ * what the best eleven on the board would cost. Off the board alone, so it
+ * never has to be stored. Set with sim/mega-modes-sim.ts: at 0.55 a seat that
+ * takes the top card it can afford runs dry and fills three or four slots for
+ * nothing, someone pricing a dollar at 40-70 beats it 60-67% and the plain
+ * board reader 51-60%, so the money matters without one trick solving it. At
+ * 0.6 it barely binds and pricing loses; at 0.4 half of every lineup is free.
+ */
+export const MEGA_CAP_SHARE = 0.55
+
+export function megaCap(board: Player[]): number {
+  let best = 0
+  for (const k of POOL_KEYS) {
+    const slots = SLOTS.filter((s) => s.pool === k).length
+    best += board
+      .filter((p) => p.pos === k)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, slots)
+      .reduce((sum, p) => sum + salaryOf(p), 0)
+  }
+  return Math.round(best * MEGA_CAP_SHARE)
+}
+
+/** A Battles draft's three, off its seed: the same three on every read. */
+export function megaBattles(seed: string): string[] {
+  const rnd = stream(`mega:${seed}|battles`)
+  return drawBattles((n) => Math.floor(rnd() * n))
+}
+
+/** How the CPU reads a card on a Mega board: no more than a person could, a
+    Range card's midpoint and on Ball Knower a memory of the value (see cpuEye).
+    The same read of a card for the whole draft, so it doesn't change its mind
+    about a man between picks. */
+export function megaRead(seed: string, diff: Difficulty, p: Player): number {
+  if (!isBlind(diff)) return p.score
+  const u = 2 * stream(`mega-cpu:${seed}|${p.id}`)() - 1
+  const { lo, hi } = rangeOf(p)
+  return (diff === 'range' ? (lo + hi) / 2 : p.score) * Math.exp(CPU_SKILL[diff].misread * u)
 }

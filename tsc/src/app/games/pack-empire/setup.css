@@ -1,0 +1,35 @@
+/* The setup card on the Versus and Mega Draft lobbies (SetupSwitch.tsx): format
+   and cards as two switches, then who you're playing side by side, one button
+   each on the same line. The format is a round pill, the cards square tabs. */
+
+.pe-setup-new { display: grid; gap: 1rem; padding: 1.1rem 1.2rem 1.2rem; border: 1px solid var(--pe-line); border-top: 3px solid var(--pe-amber); border-radius: 6px; background: linear-gradient(180deg, rgba(232, 168, 75, .07), transparent 8rem), var(--pe-bg-soft); }
+
+.pe-setup-row { display: grid; grid-template-columns: 4.6rem minmax(0, 1fr); align-items: center; gap: .45rem 1rem; }
+.pe-setup-row .pe-setup-line { grid-column: 2; }
+.pe-setup-label { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .16em; text-transform: uppercase; color: var(--pe-ink-mute); }
+.pe-setup-line { margin: 0; font-size: .84rem; line-height: 1.45; color: var(--pe-ink-soft); }
+
+.pe-setup-seg { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); padding: 3px; border: 1px solid var(--pe-line); border-radius: 999px; background: rgba(0, 0, 0, .25); }
+.pe-setup-seg button { padding: .5rem .6rem; border: 0; border-radius: 999px; background: transparent; font-family: var(--pe-cond); font-weight: 800; font-size: .9rem; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; color: var(--pe-ink-mute); cursor: pointer; }
+.pe-setup-seg button[aria-checked='true'] { color: var(--pe-amber-bright); background: rgba(232, 168, 75, .16); box-shadow: inset 0 0 0 1px rgba(232, 168, 75, .55); }
+.pe-setup-seg--square { gap: 3px; padding: 0; border: 0; border-radius: 0; background: none; }
+.pe-setup-seg--square button { padding: .5rem .5rem; border: 1px solid var(--pe-line); border-radius: 4px; background: var(--pe-card); font-size: .84rem; }
+.pe-setup-seg--square button[aria-checked='true'] { border-color: var(--pe-amber); box-shadow: none; }
+.pe-setup-seg button:focus-visible { outline: 2px solid var(--pe-amber); outline-offset: 2px; }
+
+.pe-setup-who { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; padding-top: 1rem; border-top: 1px solid var(--pe-line-soft); }
+.pe-setup-opp { display: flex; flex-direction: column; gap: .6rem; padding: .9rem 1rem 1rem; border: 1px solid var(--pe-line); border-radius: 6px; background: var(--pe-card); }
+.pe-setup-opp > .pe-push { margin-top: auto; width: 100%; }
+
+@media (hover: hover) and (pointer: fine) {
+  .pe-setup-seg button:hover { color: var(--pe-ink); }
+}
+
+@media (max-width: 640px) {
+  .pe-setup-new { gap: .85rem; padding: .95rem 1rem 1rem; }
+  .pe-setup-row { grid-template-columns: minmax(0, 1fr); gap: .4rem; }
+  .pe-setup-row .pe-setup-line { grid-column: 1; font-size: .8rem; }
+  .pe-setup-seg button { padding: .5rem .2rem; font-size: .74rem; letter-spacing: .03em; }
+  .pe-setup-seg--square button { padding: .5rem .15rem; font-size: .72rem; }
+  .pe-setup-who { grid-template-columns: minmax(0, 1fr); padding-top: .85rem; }
+}

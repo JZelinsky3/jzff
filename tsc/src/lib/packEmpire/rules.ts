@@ -869,6 +869,45 @@ export const MEGA_WEIGHTS: Weights = { common: 26.2, rare: 23.6, dynasty: 18, tr
 
 export const MEGA_TOTAL_PICKS = SLOT_COUNT * 2
 
+/**
+ * How a Mega Draft is played, on top of its cards. Straight value on one public
+ * board is mostly settled by reading it right, so the other two give each pick
+ * a second job: Chemistry deals the board in team stacks, where taking a man
+ * also breaks up the other seat's, and Battles names three head-to-head
+ * categories, where the pick that matters can be the one they need.
+ */
+export type MegaFormat = 'classic' | 'chem' | 'battles'
+
+export const MEGA_FORMATS: MegaFormat[] = ['classic', 'chem', 'battles']
+
+export const MEGA_FORMAT_LOOK: Record<MegaFormat, { label: string; line: string }> = {
+  classic: { label: 'Classic', line: 'The bigger total wins. Read the board and wait on what they can’t take.' },
+  chem: {
+    label: 'Chemistry',
+    line: 'The board comes in team stacks. Teammates pay, rivals cost, and every man you take can break up theirs.',
+  },
+  battles: {
+    label: 'Battles',
+    line: 'Three head-to-head categories, +1,500 to whoever wins each. Sometimes the pick is the one they need.',
+  },
+}
+
+export function isMegaFormat(v: unknown): v is MegaFormat {
+  return v === 'classic' || v === 'chem' || v === 'battles'
+}
+
+/** The Chemistry board plays for it, and so does every hard difficulty, the same
+    as Versus. */
+export function megaChemCounts(format: MegaFormat, diff: Difficulty): boolean {
+  return format === 'chem' || chemistryCounts(diff)
+}
+
+/** "Chemistry · Range" on a list row, or null for a plain Classic Standard draft. */
+export function megaFormatLine(format: MegaFormat, diff: Difficulty): string | null {
+  const parts = [format === 'classic' ? null : MEGA_FORMAT_LOOK[format].label, diff === 'open' ? null : DIFFICULTY_LOOK[diff].label].filter(Boolean)
+  return parts.length ? parts.join(' · ') : null
+}
+
 /** Snake order in pairs: P1 P2 P2 P1 P1 P2 P2 … */
 export function megaPickOwner(pick: number): 0 | 1 {
   const pair = Math.floor(pick / 2)

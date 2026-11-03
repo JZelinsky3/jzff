@@ -11408,3 +11408,27 @@ a.pe-lt-row:hover {
     font-size: 0.74rem;
   }
 }
+
+/* ── Mega Draft modes ──────────────────────────────────────── */
+
+/* A salary where the rarity would sit, under a cap. */
+.pe-pc-pay {
+  color: var(--pe-green, #68a878);
+}
+
+/* Each Battle's standing, live: the seat ahead lit. */
+.pe-mega-battle-score i {
+  display: block;
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--pe-ink-mute);
+}
+
+.pe-mega-battle-score i.ahead {
+  color: var(--pe-amber-bright);
+}
+
+.pe-mega-chem {
+  margin-top: 1rem;
+}

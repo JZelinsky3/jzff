@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { DIFFICULTIES, DIFFICULTY_LOOK, type Difficulty } from '@/lib/packEmpire/rules'
 import type { VersusFormat } from '@/lib/packEmpire/versus'
+import { SetupSwitch } from '../SetupSwitch'
 
 type Friend = { id: string; name: string }
 
@@ -23,35 +24,6 @@ async function open(body: Record<string, unknown>): Promise<string> {
   const out = await res.json().catch(() => null)
   if (!res.ok || !out?.ok) throw new Error(out?.error ?? 'Could not open a challenge.')
   return out.id as string
-}
-
-/** One row of the setup: a label, the switch, and a line on the one picked. */
-function Switch<T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-  line,
-}: {
-  label: string
-  options: { id: T; label: string }[]
-  value: T
-  onChange: (v: T) => void
-  line: string
-}) {
-  return (
-    <div className="pe-vs-row">
-      <span className="pe-vs-label">{label}</span>
-      <div className="pe-vs-seg" role="radiogroup" aria-label={label} style={{ '--n': options.length } as React.CSSProperties}>
-        {options.map((o) => (
-          <button key={o.id} type="button" role="radio" aria-checked={o.id === value} onClick={() => onChange(o.id)}>
-            {o.label}
-          </button>
-        ))}
-      </div>
-      <p className="pe-vs-line">{line}</p>
-    </div>
-  )
 }
 
 /**
@@ -85,33 +57,34 @@ export function ChallengePanels({ friends }: { friends: Friend[] }) {
         <span className="pe-sec-title">Start A Challenge</span>
       </div>
 
-      <div className="pe-vs-new">
-        <Switch
+      <div className="pe-setup-new">
+        <SetupSwitch
           label="Format"
           options={FORMATS}
           value={format}
           onChange={setFormat}
           line={FORMATS.find((f) => f.id === format)!.line}
         />
-        <Switch
+        <SetupSwitch
           label="Cards"
+          square
           options={DIFFICULTIES.map((d) => ({ id: d, label: DIFFICULTY_LOOK[d].label }))}
           value={difficulty}
           onChange={setDifficulty}
           line={DIFFICULTY_LOOK[difficulty].line}
         />
 
-        <div className="pe-vs-who">
-          <div className="pe-vs-opp">
-            <span className="pe-vs-label">Play the CPU</span>
-            <p className="pe-vs-line">It never sees your picks. Both totals go up when you lock yours in.</p>
+        <div className="pe-setup-who">
+          <div className="pe-setup-opp">
+            <span className="pe-setup-label">Play the CPU</span>
+            <p className="pe-setup-line">It never sees your picks. Both totals go up when you lock yours in.</p>
             <button type="button" className="pe-push" onClick={() => go('cpu', { cpu: true })} disabled={!!busy}>
               {busy === 'cpu' ? 'Dealing' : 'Play the CPU'}
             </button>
           </div>
 
-          <div className="pe-vs-opp">
-            <span className="pe-vs-label">Play a friend</span>
+          <div className="pe-setup-opp">
+            <span className="pe-setup-label">Play a friend</span>
             {friends.length > 0 ? (
               <div className="pe-friend-picks" role="group" aria-label="Send it to a friend">
                 {friends.map((f) => (
@@ -130,7 +103,7 @@ export function ChallengePanels({ friends }: { friends: Friend[] }) {
                 ))}
               </div>
             ) : (
-              <p className="pe-vs-line">
+              <p className="pe-setup-line">
                 No friends yet.{' '}
                 <Link href="/games/pack-empire/profile/" className="pe-link">
                   Add some
