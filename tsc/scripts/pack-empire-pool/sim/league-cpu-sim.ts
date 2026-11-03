@@ -4,8 +4,8 @@
 //   Old: rich ordinary packs, a boosted pack for the top half only, locks for
 //        the season, no mulligan, no twist.
 //   New: Versus odds, a Standings Pack for everyone by last week's finish,
-//        locks for LOCK_WEEKS, a mulligan for the bottom half of the table,
-//        a weekly twist.
+//        locks for LOCK_WEEKS, a mulligan for the bottom half of the table and
+//        the redraft too for the bottom quarter, a weekly twist.
 //   PACK_EMPIRE_SECRET=sim npx -y tsx --tsconfig tsconfig.json scripts/pack-empire-pool/sim/league-cpu-sim.ts 200 [teams]
 import { dealPack } from '../../../src/lib/packEmpire/deal'
 import { cpuBoostSlot, cpuDraft, cpuLock, expectedTop } from '../../../src/lib/packEmpire/leagueCpu'
@@ -20,7 +20,7 @@ import {
   STANDINGS_WEIGHTS,
   chemistryFor,
   lineupScore,
-  mulliganForRank,
+  mulligansForRank,
   packTierForRank,
   type PackTier,
   type Player,
@@ -34,6 +34,8 @@ const TEAMS = Number(process.argv[3] ?? 8)
 const MULL_BY_TABLE = process.env.MULL !== 'week'
 /** FLAT=1 adds a baseline with no packs, locks or mulligans: luck alone. */
 const FLAT = process.env.FLAT === '1'
+/** REDRAFT=0 leaves the bottom quarter's second mulligan out. */
+const REDRAFT = process.env.REDRAFT !== '0'
 
 /** The tables League dealt off before the rebuild. */
 const OLD: Record<PackTier, Weights> = {
@@ -52,10 +54,10 @@ for (const t of ['ordinary', ...PACK_TIERS] as const) {
 console.log(`  (read in ${Date.now() - t0}ms)\n`)
 
 type Lock = { slot: number; player: Player; until: number }
-type Team = { locks: Lock[]; tier: PackTier; mulligan: boolean; total: number; weeks: number[] }
+type Team = { locks: Lock[]; tier: PackTier; mulligans: number; total: number; weeks: number[] }
 
 function play(isNew: boolean, s: number, flat = false) {
-  const teams: Team[] = Array.from({ length: TEAMS }, () => ({ locks: [], tier: 'standard_pack', mulligan: false, total: 0, weeks: [] }))
+  const teams: Team[] = Array.from({ length: TEAMS }, () => ({ locks: [], tier: 'standard_pack', mulligans: 0, total: 0, weeks: [] }))
   const ranks: number[][] = []
   for (let w = 1; w <= REGULAR_WEEKS; w++) {
     const ruleId = isNew ? ruleForWeek(`SIM${s}`, 1, 'regular', w).id : null
@@ -87,9 +89,10 @@ function play(isNew: boolean, s: number, flat = false) {
         packSlot,
         tier: t.tier,
         ruleId,
-        mulligan: isNew && !flat && t.mulligan,
+        mulligans: isNew && !flat ? (REDRAFT ? t.mulligans : Math.min(1, t.mulligans)) : 0,
         deal: (slot, now) => deal(slot, now),
         redeal: (slot, now, thrown) => deal(slot, now, thrown.map((p) => p.id), ':again'),
+        redraft: (slot, now, thrown) => deal(slot, now, thrown.map((p) => p.id), ':redraft'),
       })
       for (const pk of week.picks) lineup[pk.slot] = week.packs[pk.slot].find((p) => p.id === pk.id) ?? null
       const roster = lineup as Player[]
@@ -104,14 +107,14 @@ function play(isNew: boolean, s: number, flat = false) {
     const order = scores.map((sc, i) => ({ sc, i })).sort((a, b) => b.sc - a.sc)
     order.forEach(({ i }, r) => {
       teams[i].tier = packTierForRank(r + 1, TEAMS)
-      teams[i].mulligan = mulliganForRank(r + 1, TEAMS)
+      teams[i].mulligans = mulligansForRank(r + 1, TEAMS)
     })
     teams.forEach((t, i) => {
       t.total += scores[i]
       t.weeks.push(scores[i])
     })
     if (MULL_BY_TABLE) {
-      ;[...teams].sort((a, b) => b.total - a.total).forEach((t, r) => (t.mulligan = mulliganForRank(r + 1, TEAMS)))
+      ;[...teams].sort((a, b) => b.total - a.total).forEach((t, r) => (t.mulligans = mulligansForRank(r + 1, TEAMS)))
     }
     const byTotal = teams.map((t, i) => ({ t: t.total, i })).sort((a, b) => b.t - a.t)
     const rank = Array(TEAMS)

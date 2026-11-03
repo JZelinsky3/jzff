@@ -737,19 +737,19 @@ export const PACK_TIER_COLOR: Record<PackTier, string> = {
 }
 
 /**
- * League packs, rebuilt 2026-11-02. Every ordinary pack deals off Classic
- * Versus' table: a step up on Builder, which League can afford because it never
- * fills the binder. The old League tables dealt transcendents at more than twice
- * Builder's rate and handed the richest of them only to last week's top half.
+ * League's ordinary packs (rebuilt 2026-11-02, retuned the same night). A touch
+ * under Builder's table, because chemistry at full strength, the weekly twist and
+ * the locks already lift a League week: on Versus' table weeks ran 25k to 35k,
+ * and Joey wants 20k to 27k.
  *
  * The one bonus card in each pack (see dealPack's second table) is at least a
- * rare here, with the same odds as any card above that, so no ordinary pack is
- * five commons. One in five was, and a week of them was nothing to draft
- * (Joey, 2026-11-02: forty-five commons in fifty cards).
+ * rare, at the same odds as any card above that, so no ordinary pack is five
+ * commons. One in five was, and a week of them is nothing to draft. Per card
+ * that's about 60% common, 33% rare, 6% dynasty, 1% better.
  */
 export const LEAGUE_ORDINARY: { normal: Weights; boosted: Weights } = {
-  normal: VERSUS_WEIGHTS.normal,
-  boosted: { common: 0, rare: 58, dynasty: 10.5, transcendent: 3.4, immortal: 1.2 },
+  normal: { common: 52, rare: 11, dynasty: 5.5, transcendent: 1.8, immortal: 0.7 },
+  boosted: { common: 0, rare: 38, dynasty: 5.5, transcendent: 1.8, immortal: 0.7 },
 }
 
 /**
@@ -779,13 +779,24 @@ export const STANDINGS_WEIGHTS: Record<PackTier, Weights> = {
 }
 
 /** A lock holds his slot for this many weeks after the one he was kept in, then
-    the slot opens again, so one lucky early pull can't carry a whole season. */
-export const LOCK_WEEKS = 3
+    the slot opens again, so one lucky early pull can't carry a whole season.
+    Two, not three: with three running at once a week-eight lineup averaged 29k
+    in the sim, past the 20k to 27k a League week should sit in; two keeps it
+    at 27k and brings a slow start back as often as luck alone. A Canton is the
+    exception and holds all season (league.ts, lockUntil). */
+export const LOCK_WEEKS = 2
 
-/** The bottom half of the table gets a mulligan for the next week: one opened
-    pack thrown back for a fresh one. */
-export function mulliganForRank(rank: number, total: number): boolean {
-  return rank > Math.ceil(total / 2)
+/**
+ * Mulligans for the next week, by place on the table. The bottom half gets one:
+ * an opened pack thrown back for a fresh one. The bottom quarter (4th of 4, 7th
+ * and 8th of 8) gets a second, the redraft: once every pack is open, one slot,
+ * the weakest you can see, goes back and its pack is opened again (Joey,
+ * 2026-11-02: fifth all season with no real shot at the top half).
+ */
+export function mulligansForRank(rank: number, total: number): 0 | 1 | 2 {
+  if (rank > Math.floor(total * 0.75)) return 2
+  if (rank > Math.ceil(total / 2)) return 1
+  return 0
 }
 
 export const REGULAR_WEEKS = 8

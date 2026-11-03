@@ -7,7 +7,9 @@
 //      slots stand in them, and any of them can be let go here first.
 //   2. Packs: one for every slot not locked. The week's twist is up top and
 //      marked on the cards it touches. With a mulligan (the bottom half of the
-//      table gets one), one opened pack can go back for a fresh one.
+//      table gets one), one opened pack can go back for a fresh one. The bottom
+//      quarter also has the redraft: once every pack is open, one slot goes
+//      back and gets a fresh pack.
 //   3. Submit: the cards under the twist, plus chemistry.
 //   4. Lock: keep one man from this week, or pass. He holds his slot for the
 //      next LOCK_WEEKS weeks. Either way the league sees this team is done,
@@ -66,6 +68,7 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
   const [slotPick, setSlotPick] = useState<number | null>(null)
   const [lockPick, setLockPick] = useState<string | null>(null)
   const [letGo, setLetGo] = useState<string | null>(null)
+  const [redrafting, setRedrafting] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // A pack left open before a refresh is waiting on the stage, face down.
@@ -108,6 +111,10 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
   const phaseLine = regular ? `Week ${view.league.week}` : PHASE_LABEL[view.league.phase]
 
   const openSlot = (i: number) => {
+    if (redrafting) {
+      redraft(i)
+      return
+    }
     if (stage || busy || view.lineup[i] || view.status !== 'drafting') return
     open(i, async () => {
       const v = await post({ id: leagueId, action: 'open', slot: i })
@@ -143,6 +150,18 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
     })
   }
 
+  // The redraft: a filled slot goes back, and its fresh pack opens like any other.
+  const redraft = (i: number) => {
+    if (stage || busy || !view.mulligan.canRedraft || carried.has(i) || !view.lineup[i]) return
+    setRedrafting(false)
+    open(i, async () => {
+      const v = await post({ id: leagueId, action: 'redraft', slot: i })
+      setView(v)
+      if (!v.openCards) throw new Error('That slot would not go back.')
+      return v.openCards
+    })
+  }
+
   // ── Step 1: the Standings Pack ────────────────────────────────
   if (view.status === 'not_started') {
     const choose = (i: number) => {
@@ -168,8 +187,17 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
 
         {view.mulligan.has && (
           <p className="pe-lg-note">
-            <b>Mulligan.</b> You&apos;re in the bottom half of the table, so this week you can throw one opened pack back
-            for a fresh one.
+            {view.mulligan.redraft ? (
+              <>
+                <b>Mulligan and redraft.</b> You&apos;re in the bottom quarter of the table: throw one opened pack back for
+                a fresh one, and once every pack is open, send your weakest slot back for a fresh pack too.
+              </>
+            ) : (
+              <>
+                <b>Mulligan.</b> You&apos;re in the bottom half of the table, so this week you can throw one opened pack
+                back for a fresh one.
+              </>
+            )}
           </p>
         )}
 
@@ -279,8 +307,8 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
             <div className="pe-kicker">Lock a player</div>
             <div className="pe-panel-title">Who do you keep?</div>
             <p className="pe-panel-text" style={{ marginBottom: '0.9rem' }}>
-              He holds his slot through week {until}, so that pack doesn&apos;t get opened, then the slot opens again.
-              One lock a week. You can let him go before any draft.
+              He holds his slot through week {until}, so that pack doesn&apos;t get opened, then the slot opens again. A
+              Canton holds his all season. One lock a week, and you can let him go before any draft.
             </p>
             <div className="pe-lock-grid">
               {roster
@@ -297,7 +325,10 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
                       onClick={() => setLockPick(p.id)}
                     >
                       <span className="pe-lock-pos">{p.pos}</span>
-                      <span className="pe-lock-name">{p.name}</span>
+                      <span className="pe-lock-name">
+                        {p.name}
+                        {p.rarity === 'canton' ? ' · all season' : ''}
+                      </span>
                       <span className="pe-lock-score">{p.score.toLocaleString()}</span>
                     </button>
                   )
@@ -336,13 +367,20 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
   const fieldView = (i: number): SlotView => {
     const isCarried = carried.has(i)
     const isPack = view.boostedSlot === i
+    const redraftable = redrafting && !isCarried && !!view.lineup[i]
     return {
-      clickable: !stage && !busy && !view.lineup[i] && view.status === 'drafting',
+      clickable: redraftable || (!stage && !busy && !view.lineup[i] && view.status === 'drafting'),
       opening: stage?.slot === i,
       badge: isPack && !view.lineup[i] ? { text: packLabel.toUpperCase(), color: packColor } : null,
       glow: isPack && !view.lineup[i] ? 'boost' : null,
       tone: isCarried ? 'locked' : isPack ? 'boosted' : null,
-      flag: isCarried ? { text: 'LOCKED', color: '#c8a020' } : null,
+      flag: isCarried
+        ? { text: 'LOCKED', color: '#c8a020' }
+        : view.mulligan.redraftOn === i
+          ? { text: 'REDRAFT', color: '#7fd3fa' }
+          : view.mulligan.usedOn === i
+            ? { text: 'MULLIGAN', color: '#7fd3fa' }
+            : null,
     }
   }
 
@@ -385,10 +423,20 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
           <div className="pe-panel-title">
             {(live.cards + live.ruleDelta).toLocaleString()} from the cards, {signed(live.chem.total)} chemistry
           </div>
+          {redrafting && (
+            <p className="pe-panel-text" style={{ margin: '0.6rem 0 0' }}>
+              Tap the slot to send back. Its card goes with it, and you open a fresh pack for that position.
+            </p>
+          )}
           <div className="pe-recap-actions" style={{ justifyContent: 'flex-start' }}>
-            <button type="button" className="pe-push" disabled={busy} onClick={() => act({ action: 'submit' })}>
+            <button type="button" className="pe-push" disabled={busy || redrafting} onClick={() => act({ action: 'submit' })}>
               Submit {live.total.toLocaleString()}
             </button>
+            {view.mulligan.canRedraft && (
+              <button type="button" className="pe-act" disabled={busy} onClick={() => setRedrafting((r) => !r)}>
+                {redrafting ? 'Keep them all' : 'Use your redraft'}
+              </button>
+            )}
           </div>
         </div>
       )}

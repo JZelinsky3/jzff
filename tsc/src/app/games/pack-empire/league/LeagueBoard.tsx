@@ -1,18 +1,13 @@
-// The league page's pieces, all rendered on the server: the table, the week
-// just closed, the season's schedule, this week's board, and the champions.
+// The league page's pieces, rendered on the server: the table (a client
+// component, for its sort), the week just closed, the season's schedule, this
+// week at a glance, the season's records, and the champions.
 
 import Link from 'next/link'
-import { Fragment } from 'react'
-import type { LeagueView, StandingRow, WeekStatus } from '@/lib/packEmpire/league'
-import { PACK_TIER_COLOR, PACK_TIER_LABEL, RARITY_LOOK, REGULAR_WEEKS } from '@/lib/packEmpire/rules'
-
-export const STATUS_LABEL: Record<WeekStatus, string> = {
-  none: 'Not started',
-  drafting: 'Drafting',
-  in: 'Lineup in',
-  locked: 'Locked',
-  done: 'Done',
-}
+import type { LeagueView, StandingRow } from '@/lib/packEmpire/league'
+import { WEEK_STATUS_LABEL } from '@/lib/packEmpire/leagueWeek'
+import { PACK_TIER_COLOR, PACK_TIER_LABEL, RARITY_LOOK, REGULAR_WEEKS, type Rarity } from '@/lib/packEmpire/rules'
+import { LeagueTable } from './LeagueTable'
+import { ScheduleScroll } from './ScheduleScroll'
 
 /** In, with nothing left to decide this week. */
 export function isReady(s: StandingRow): boolean {
@@ -27,175 +22,142 @@ function ordinal(n: number): string {
 
 const k = (n: number) => n.toLocaleString()
 
-function Move({ move }: { move: number | null }) {
-  if (move == null || move === 0) return <span className="pe-lt-move">·</span>
-  return (
-    <span className={`pe-lt-move ${move > 0 ? 'up' : 'down'}`} title={`${move > 0 ? 'Up' : 'Down'} ${Math.abs(move)}`}>
-      {move > 0 ? '▲' : '▼'}
-      {Math.abs(move)}
-    </span>
-  )
-}
-
-/** Eight bars, one a week: its height the score, gold where it won the week. */
-function Form({ s, top, now }: { s: StandingRow; top: number; now: number | null }) {
-  return (
-    <span className="pe-lt-form" aria-label={`Weekly scores: ${s.weeks.map((w) => (w == null ? 'none' : k(w))).join(', ')}`}>
-      {s.weeks.map((w, i) => (
-        <i
-          key={i}
-          className={w == null ? (now === i + 1 ? 'now' : 'none') : s.weekRanks[i] === 1 ? 'won' : ''}
-          style={w == null ? undefined : { height: `${Math.max(12, Math.round((w / top) * 100))}%` }}
-          title={w == null ? `Week ${i + 1}` : `Week ${i + 1}: ${k(w)}, ${ordinal(s.weekRanks[i] ?? 0)}`}
-        />
-      ))}
-    </span>
-  )
-}
-
 export function StandingsTable({ view }: { view: LeagueView }) {
-  const { league, standings } = view
-  const post = league.phase === 'gauntlet' || league.phase === 'finals' || league.phase === 'complete'
-  const live = league.phase === 'regular' || league.phase === 'gauntlet' || league.phase === 'finals'
-  const top = Math.max(1, ...standings.flatMap((s) => s.weeks.filter((w): w is number => w != null)))
-  const now = league.phase === 'regular' ? league.current_week : null
-  const line = !post && league.phase === 'regular' ? view.playoffSpots : 0
-
   return (
-    <div className={`pe-lt${post ? ' post' : ''}`} role="table" aria-label="Standings">
-      <div className="pe-lt-row pe-lt-head" role="row">
-        <span>#</span>
-        <span />
-        <span>Team</span>
-        <span className="pe-lt-hide">Form</span>
-        <span>{live ? 'This week' : ''}</span>
-        <span className="pe-lt-hide pe-lt-num" title="Weeks with the league's top score">
-          Wins
-        </span>
-        <span className="pe-lt-hide pe-lt-wide pe-lt-num">Best</span>
-        <span className="pe-lt-hide pe-lt-wide pe-lt-num">Avg</span>
-        <span className="pe-lt-num pe-lt-last">{post ? 'Season' : 'Last'}</span>
-        <span className="pe-lt-num">{post ? 'Playoff' : 'Total'}</span>
-        <span className="pe-lt-hide pe-lt-num">Back</span>
-      </div>
-      {standings.map((s, i) => {
-        const out = post && !s.active
-        const href = `/games/pack-empire/league/${league.id}/team/${s.memberId}/`
-        const showStatus = live && (league.phase === 'regular' || s.active)
-        return (
-          <Fragment key={s.memberId}>
-            {line > 0 && i === line && (
-              <div className="pe-lt-line" role="presentation">
-                <span>Playoff line · top {line} reach the {view.playoffSpots >= 3 ? 'Gauntlet' : 'Final'}</span>
-              </div>
-            )}
-            <Link href={href} role="row" className={`pe-lt-row${s.you ? ' you' : ''}${out ? ' out' : ''}`}>
-              <span className="pe-lt-rank">{i + 1}</span>
-              <Move move={post ? null : s.move} />
-              <span className="pe-lt-who">
-                <span className="pe-lt-team">
-                  {s.team ?? s.name}
-                  {s.cpu && <em className="pe-lt-cpu">CPU</em>}
-                </span>
-                <span className="pe-lt-sub">
-                  {!s.cpu && s.team ? `${s.name} · ` : ''}
-                  {live && (league.phase === 'regular' || s.active) && (
-                    <span style={{ color: PACK_TIER_COLOR[s.tier] }}>{PACK_TIER_LABEL[s.tier]}</span>
-                  )}
-                  {league.phase === 'regular' && s.locks > 0 ? ` · ${s.locks} locked` : ''}
-                  {live && s.mulligan && (league.phase === 'regular' || s.active) ? ' · Mulligan' : ''}
-                  {post && s.seed != null ? ` · Seed ${s.seed}` : ''}
-                  {out && league.phase !== 'complete' ? ' · Out' : ''}
-                </span>
-              </span>
-              <Form s={s} top={top} now={now} />
-              <span className="pe-lt-status">
-                {showStatus && (
-                  <span className={`pe-lt-chip ${s.status}`}>
-                    {STATUS_LABEL[s.status]}
-                    {s.peek && !s.you ? ' · See it' : ''}
-                  </span>
-                )}
-              </span>
-              <span className="pe-lt-hide pe-lt-num pe-lt-wins">{s.wins ? `★ ${s.wins}` : '·'}</span>
-              <span className="pe-lt-hide pe-lt-wide pe-lt-num">{s.best != null ? k(s.best) : '·'}</span>
-              <span className="pe-lt-hide pe-lt-wide pe-lt-num">{s.avg != null ? k(s.avg) : '·'}</span>
-              <span className="pe-lt-num pe-lt-last">{post ? k(s.total) : s.lastWeek != null ? k(s.lastWeek) : '·'}</span>
-              <span className="pe-lt-num pe-lt-total">{k(post ? s.playoff : s.total)}</span>
-              <span className="pe-lt-hide pe-lt-num pe-lt-back">{s.back > 0 ? `−${k(s.back)}` : i === 0 ? 'Lead' : '·'}</span>
-            </Link>
-          </Fragment>
-        )
-      })}
-    </div>
+    <LeagueTable
+      leagueId={view.league.id}
+      phase={view.league.phase}
+      week={view.league.current_week}
+      playoffSpots={view.playoffSpots}
+      rows={view.standings}
+    />
+  )
+}
+
+function TeamLink({ league, id, name }: { league: string; id: string; name: string }) {
+  return (
+    <Link href={`/games/pack-empire/league/${league}/team/${id}/`} className="pe-lr-link">
+      {name}
+    </Link>
+  )
+}
+
+function CardLine({ card }: { card: { name: string; year?: number; pos: string; rarity: Rarity; score: number } }) {
+  const rc = RARITY_LOOK[card.rarity]
+  return (
+    <>
+      <span className="pe-lr-v">
+        {card.name} <small>{card.year ?? ''}</small>
+      </span>
+      <span className="pe-lr-s">
+        <b style={{ color: rc.color }}>{k(card.score)}</b> {card.pos} · {rc.label}
+      </span>
+    </>
   )
 }
 
 export function WeekRecapCard({ view }: { view: LeagueView }) {
   const r = view.recap
   if (!r) return null
-  const [first, ...rest] = r.top
-  const team = (id: string, name: string) => (
-    <Link href={`/games/pack-empire/league/${view.league.id}/team/${id}/`} className="pe-link">
-      {name}
-    </Link>
-  )
+  const L = view.league.id
+  const [first, second, third] = r.top
+  const packs = r.finish.some((f) => f.tier)
   return (
     <section className="pe-lr" aria-label={`${r.label} recap`}>
-      <div className="pe-lr-head">
-        <span className="pe-kicker">§ {r.label} recap</span>
-        {r.rule && <span className="pe-lr-rule">{r.rule.title}</span>}
-      </div>
-      {first && (
-        <div className="pe-lr-hero">
-          <span className="pe-lr-hero-k">Team of the Week</span>
-          <span className="pe-lr-hero-team">{team(first.memberId, first.team)}</span>
-          <span className="pe-lr-hero-score">{k(first.score)}</span>
-          <span className="pe-lr-hero-sub">
-            {rest.map((x, i) => (
-              <span key={x.memberId}>
-                {ordinal(i + 2)} {x.team} {k(x.score)}
-              </span>
-            ))}
-            <span>League average {k(r.avg)}</span>
-          </span>
+      <header className="pe-lr-head">
+        <div>
+          <span className="pe-kicker">§ {r.label} recap</span>
+          <h2 className="pe-lr-title">{r.rule ? r.rule.title : 'A plain week'}</h2>
+          {r.rule && <p className="pe-lr-rule">{r.rule.line}</p>}
         </div>
-      )}
-      <div className="pe-lr-tiles">
-        {r.bestPull && (
-          <div className="pe-lr-tile" style={{ '--rc': RARITY_LOOK[r.bestPull.card.rarity].color } as React.CSSProperties}>
-            <span className="pe-lr-k">Best pull</span>
-            <span className="pe-lr-v">
-              {r.bestPull.card.name} {r.bestPull.card.year ?? ''}
-            </span>
-            <span className="pe-lr-s">
-              <b>{k(r.bestPull.card.score)}</b> {RARITY_LOOK[r.bestPull.card.rarity].label} · {r.bestPull.team}
-            </span>
+        <div className="pe-lr-avg">
+          <b>{k(r.avg)}</b>
+          <small>League average</small>
+        </div>
+      </header>
+
+      <div className="pe-lr-body">
+        <div className="pe-lr-left">
+          {first && (
+            <div className="pe-lr-podium">
+              <div className="pe-lr-first">
+                <span className="pe-lr-k">Team of the Week</span>
+                <span className="pe-lr-first-team">
+                  <TeamLink league={L} id={first.memberId} name={first.team} />
+                </span>
+                <span className="pe-lr-first-score">{k(first.score)}</span>
+                {r.margin != null && r.margin > 0 && <span className="pe-lr-s">Won it by {k(r.margin)}</span>}
+              </div>
+              {[second, third].filter(Boolean).map((x, i) => (
+                <div key={x!.memberId} className={`pe-lr-place p${i + 2}`}>
+                  <span className="pe-lr-k">{ordinal(i + 2)}</span>
+                  <span className="pe-lr-place-team">
+                    <TeamLink league={L} id={x!.memberId} name={x!.team} />
+                  </span>
+                  <span className="pe-lr-place-score">{k(x!.score)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="pe-lr-tiles">
+            {r.bestPull && (
+              <div className="pe-lr-tile" style={{ '--rc': RARITY_LOOK[r.bestPull.card.rarity].color } as React.CSSProperties}>
+                <span className="pe-lr-k">Best pull</span>
+                <CardLine card={r.bestPull.card} />
+                <span className="pe-lr-by">{r.bestPull.team}</span>
+              </div>
+            )}
+            {r.bestChem && (
+              <div className="pe-lr-tile" style={{ '--rc': '#68a878' } as React.CSSProperties}>
+                <span className="pe-lr-k">Best chemistry</span>
+                <span className="pe-lr-v">+{k(r.bestChem.chem)}</span>
+                <span className="pe-lr-by">{r.bestChem.team}</span>
+              </div>
+            )}
+            {r.twist && (
+              <div className="pe-lr-tile" style={{ '--rc': '#4fc3b0' } as React.CSSProperties}>
+                <span className="pe-lr-k">Twist did most for</span>
+                <span className="pe-lr-v">+{k(r.twist.delta)}</span>
+                <span className="pe-lr-by">{r.twist.team}</span>
+              </div>
+            )}
+            {r.climber && (
+              <div className="pe-lr-tile" style={{ '--rc': '#e8a84b' } as React.CSSProperties}>
+                <span className="pe-lr-k">Biggest climb</span>
+                <span className="pe-lr-v">▲ {r.climber.places}</span>
+                <span className="pe-lr-by">
+                  {r.climber.team}, up to {ordinal(r.climber.to)}
+                </span>
+              </div>
+            )}
+            {r.low && (
+              <div className="pe-lr-tile">
+                <span className="pe-lr-k">Low score</span>
+                <span className="pe-lr-v">{k(r.low.score)}</span>
+                <span className="pe-lr-by">{r.low.team}</span>
+              </div>
+            )}
           </div>
-        )}
-        {r.bestChem && (
-          <div className="pe-lr-tile">
-            <span className="pe-lr-k">Best chemistry</span>
-            <span className="pe-lr-v">+{k(r.bestChem.chem)}</span>
-            <span className="pe-lr-s">{r.bestChem.team}</span>
-          </div>
-        )}
-        {r.climber && (
-          <div className="pe-lr-tile">
-            <span className="pe-lr-k">Biggest climb</span>
-            <span className="pe-lr-v">▲ {r.climber.places}</span>
-            <span className="pe-lr-s">
-              {r.climber.team}, up to {ordinal(r.climber.to)}
-            </span>
-          </div>
-        )}
-        {r.low && (
-          <div className="pe-lr-tile">
-            <span className="pe-lr-k">Low score</span>
-            <span className="pe-lr-v">{k(r.low.score)}</span>
-            <span className="pe-lr-s">{r.low.team}</span>
-          </div>
-        )}
+        </div>
+
+        <div className="pe-lr-finish">
+          <div className="pe-lr-k">{packs ? 'The finish, and the pack it bought' : 'The finish'}</div>
+          <ol>
+            {r.finish.map((f, i) => (
+              <li key={f.memberId} className={f.you ? 'you' : ''}>
+                <span className="pe-lr-fin-rank">{i + 1}</span>
+                <span className="pe-lr-fin-team">{f.team}</span>
+                <span className="pe-lr-fin-score">{k(f.score)}</span>
+                {f.tier && (
+                  <span className="pe-lt-pack" style={{ '--tc': PACK_TIER_COLOR[f.tier] } as React.CSSProperties}>
+                    {PACK_TIER_LABEL[f.tier].replace(' Pack', '')}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
     </section>
   )
@@ -212,17 +174,28 @@ export function ScheduleStrip({ view }: { view: LeagueView }) {
           {REGULAR_WEEKS} weeks, then the playoffs{view.league.week_rules !== false ? ' · every twist, ahead of time' : ''}
         </span>
       </div>
-      <div className="pe-ls">
+      <ScheduleScroll>
         {view.schedule.map((w) => (
           <div key={w.key} className={`pe-ls-week ${w.state}`}>
-            <span className="pe-ls-label">{w.short}</span>
+            <span className="pe-ls-label">{w.state === 'now' ? `${w.short} · Now` : w.short}</span>
             <span className="pe-ls-rule">{w.rule ? w.rule.title : 'Plain week'}</span>
+            {w.rule && <span className="pe-ls-line">{w.rule.line}</span>}
             <span className="pe-ls-foot">
-              {w.state === 'now' ? 'This week' : w.winner ? `${w.winner.team} ${k(w.winner.score)}` : w.state === 'done' ? '·' : 'Coming up'}
+              {w.winner ? (
+                <>
+                  ★ {w.winner.team} <b>{k(w.winner.score)}</b>
+                </>
+              ) : w.state === 'now' ? (
+                'This week'
+              ) : w.state === 'done' ? (
+                '·'
+              ) : (
+                'Coming up'
+              )}
             </span>
           </div>
         ))}
-      </div>
+      </ScheduleScroll>
     </section>
   )
 }
@@ -253,7 +226,7 @@ export function HistoryList({ view }: { view: LeagueView }) {
   )
 }
 
-/** This week at a glance: the twist, what's coming next, and who's done. */
+/** This week at a glance: the twist, who's done, and what's next. */
 export function WeekPanel({ view }: { view: LeagueView }) {
   const { league, standings } = view
   const live = league.phase === 'regular' || league.phase === 'gauntlet' || league.phase === 'finals'
@@ -275,18 +248,57 @@ export function WeekPanel({ view }: { view: LeagueView }) {
       )}
       <div className="pe-lw-meter" aria-label={`${ready} of ${field.length} done`}>
         {field.map((s) => (
-          <i key={s.memberId} className={s.status} title={`${s.team ?? s.name}: ${STATUS_LABEL[s.status]}`} />
+          <i key={s.memberId} className={s.status} title={`${s.team ?? s.name}: ${WEEK_STATUS_LABEL[s.status]}`} />
         ))}
       </div>
-      <p className="pe-note">
-        {inNow} of {field.length} lineups in · {ready} done
-        {ready === field.length ? '. Ready to close.' : ''}
+      <p className="pe-lw-count">
+        {inNow} of {field.length} in · {ready} done{ready === field.length ? ' · ready to close' : ''}
       </p>
       {next && next.rule && (
         <p className="pe-lw-next">
           <span>Next: {next.label}</span> {next.rule.title}
         </p>
       )}
+    </div>
+  )
+}
+
+/** The season so far: the best of everything, off the weeks that have closed. */
+export function RecordsPanel({ view }: { view: LeagueView }) {
+  const r = view.records
+  if (!r.highWeek) return null
+  const rows: { k: string; v: React.ReactNode; s: string }[] = [
+    { k: 'Highest week', v: k(r.highWeek.score), s: `${r.highWeek.team} · ${r.highWeek.label}` },
+  ]
+  if (r.bestPull) {
+    rows.push({
+      k: 'Best pull',
+      v: (
+        <span style={{ color: RARITY_LOOK[r.bestPull.card.rarity].color }}>
+          {r.bestPull.card.name} {r.bestPull.card.year ?? ''}
+        </span>
+      ),
+      s: `${k(r.bestPull.card.score)} · ${r.bestPull.team} · ${r.bestPull.label}`,
+    })
+  }
+  if (r.mostWins) rows.push({ k: 'Most weeks won', v: `★ ${r.mostWins.wins}`, s: r.mostWins.team })
+  if (r.bestChem) rows.push({ k: 'Best chemistry', v: `+${k(r.bestChem.chem)}`, s: `${r.bestChem.team} · ${r.bestChem.label}` })
+  if (r.bigTwist) rows.push({ k: 'Biggest twist', v: `+${k(r.bigTwist.delta)}`, s: `${r.bigTwist.team} · ${r.bigTwist.label}` })
+  rows.push({ k: 'Immortals pulled', v: String(r.bigPulls), s: 'Cantons count too' })
+  return (
+    <div className="pe-panel pe-lrec">
+      <div className="pe-kicker">Season records</div>
+      <dl>
+        {rows.map((x) => (
+          <div key={x.k}>
+            <dt>{x.k}</dt>
+            <dd>
+              <b>{x.v}</b>
+              <small>{x.s}</small>
+            </dd>
+          </div>
+        ))}
+      </dl>
     </div>
   )
 }

@@ -61,7 +61,11 @@ export default async function DailyPlayPage({ searchParams }: { searchParams: Pr
         )}
         {mobile && <div style={{ height: '0.9rem' }} />}
         <div className="pe-table">
+          {/* Keyed by version: Range and Ball Knower are the same page, so going from one to
+              the other is a soft navigation, and without a key the draft kept the run you'd
+              just finished while its button flipped to "See" the other one. */}
           <DailyDraft
+            key={version}
             initial={state}
             other={{
               href: `/games/pack-empire/daily/play/?v=${otherVersion}`,

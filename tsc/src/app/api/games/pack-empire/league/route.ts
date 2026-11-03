@@ -26,6 +26,7 @@ import {
   openLeaguePack,
   passLock,
   pickLeagueCard,
+  redraftSlot,
   releaseLock,
   removeCpus,
   renameTeam,
@@ -125,6 +126,8 @@ export async function POST(req: NextRequest) {
       return send(await releaseLock(id, userId, body.player))
     case 'mulligan':
       return send(await mulliganPack(id, userId))
+    case 'redraft':
+      return send(await redraftSlot(id, userId, body.slot))
     default:
       return reply({ ok: false, error: 'Unknown action.' }, 400)
   }

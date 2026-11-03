@@ -9,7 +9,9 @@
 //   has so far: what he counts for under the week's twist plus the chemistry he
 //   brings with the men already in. Packs it hasn't opened don't exist to it.
 //   With a mulligan, it throws back the first pack whose best card is well
-//   under what that pack usually holds, the way a person would.
+//   under what that pack usually holds, the way a person would. With the
+//   redraft too, once its eleven are in it sends back the slot furthest under
+//   what that slot usually pulls, if any is.
 //   Its keeper is the man furthest above what his slot usually pulls, and only
 //   if he is above it at all. Next week's seed isn't dealt until next week's
 //   draft starts, so there is nothing to peek at even by accident.
@@ -94,6 +96,8 @@ export type CpuWeek = {
   packs: Record<number, Player[]>
   mulliganSlot: number | null
   thrown: Player[] | null
+  redraftSlot: number | null
+  redraftThrown: { card: Player; pack: Player[] } | null
 }
 
 /**
@@ -107,20 +111,29 @@ export function cpuDraft({
   packSlot,
   tier,
   ruleId,
-  mulligan,
+  mulligans,
   deal,
   redeal,
+  redraft,
 }: {
   lineup: (Player | null)[]
   packSlot: number
   tier: PackTier
   ruleId: string | null
-  mulligan: boolean
+  mulligans: number
   deal: (slot: number, lineup: (Player | null)[]) => Player[]
   redeal: (slot: number, lineup: (Player | null)[], thrown: Player[]) => Player[]
+  /** A fresh ordinary pack for a slot sent back, without the men thrown back. */
+  redraft: (slot: number, lineup: (Player | null)[], thrown: Player[]) => Player[]
 }): CpuWeek {
   const now = [...lineup]
-  const out: CpuWeek = { picks: [], packs: {}, mulliganSlot: null, thrown: null }
+  const mulligan = mulligans > 0
+  const out: CpuWeek = { picks: [], packs: {}, mulliganSlot: null, thrown: null, redraftSlot: null, redraftThrown: null }
+  const take = (slot: number, pack: Player[]) => {
+    const roster = now.filter((p, i): p is Player => !!p && i !== slot)
+    const worth = (p: Player) => weekCardValue(ruleId, p, slot === packSlot) + weekChemPreview(ruleId, p, roster)
+    return pack.reduce((a, b) => (worth(b) > worth(a) ? b : a))
+  }
   for (let slot = 0; slot < SLOT_COUNT; slot++) {
     if (now[slot]) continue
     let pack = deal(slot, now)
@@ -133,11 +146,33 @@ export function cpuDraft({
       if (!pack.length) continue
     }
     out.packs[slot] = pack
-    const roster = now.filter((p): p is Player => !!p)
-    const worth = (p: Player) => weekCardValue(ruleId, p, slot === packSlot) + weekChemPreview(ruleId, p, roster)
-    const card = pack.reduce((a, b) => (worth(b) > worth(a) ? b : a))
+    const card = take(slot, pack)
     now[slot] = card
     out.picks.push({ slot, id: card.id })
+  }
+
+  // The redraft: the slot furthest under its usual pull goes back, if one is.
+  if (mulligans > 1) {
+    let worst: { slot: number; gap: number } | null = null
+    for (const pk of out.picks) {
+      const gap = expectedTop('ordinary', pk.slot) - (now[pk.slot]?.score ?? 0)
+      if (gap > 0 && (!worst || gap > worst.gap)) worst = { slot: pk.slot, gap }
+    }
+    if (worst) {
+      const slot = worst.slot
+      const card = now[slot] as Player
+      const old = out.packs[slot]
+      now[slot] = null
+      const pack = redraft(slot, now, [...old, card])
+      if (pack.length) {
+        const fresh = take(slot, pack)
+        now[slot] = fresh
+        out.packs[slot] = pack
+        out.picks = [...out.picks.filter((pk) => pk.slot !== slot), { slot, id: fresh.id }]
+        out.redraftSlot = slot
+        out.redraftThrown = { card, pack: old }
+      } else now[slot] = card
+    }
   }
   return out
 }

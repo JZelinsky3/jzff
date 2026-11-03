@@ -212,8 +212,14 @@ export type BinderTotals = {
   byPos: Record<PoolKey, { owned: number; of: number }>
 }
 
+/** A Canton in the binder's Hall: every number of that card you hold, lowest
+    first, over how many of it anyone has pulled. */
+export type HallPiece = { id: string; serials: number[]; total: number; at: string }
+
 export type BinderView = {
   men: BinderMan[]
+  /** Your Cantons, first pulled first: the Hall at the top of the binder. */
+  hall: HallPiece[]
   /** Vaulted cards this binder holds. Out of the packs and out of the totals:
       nobody can chase one, so it can't count against finishing the set. */
   vaulted: BinderMan[]
@@ -240,21 +246,29 @@ export async function binderTotals(userId: string): Promise<BinderTotals> {
 
 export async function loadBinder(userId: string): Promise<BinderView> {
   await syncBinder(userId)
-  const [mine, site, serials] = await Promise.all([counts(userId), siteCounts(), cantonSerials(userId)])
-  return build(mine, site, serials)
+  const [mine, site, { serials, hall }] = await Promise.all([counts(userId), siteCounts(), cantonSerials(userId)])
+  return { ...build(mine, site, serials), hall }
 }
 
-/** This player's lowest number of each Canton, over that card's running total. */
-async function cantonSerials(userId: string): Promise<Map<string, [number, number]>> {
-  const { data } = await createAdminClient().from('pe_canton_serials').select('card_id, serial, user_id')
-  const rows = (data as { card_id: string; serial: number; user_id: string | null }[] | null) ?? []
+/** This player's lowest number of each Canton, over that card's running total,
+    and the Hall: every number they hold of each. */
+async function cantonSerials(userId: string): Promise<{ serials: Map<string, [number, number]>; hall: HallPiece[] }> {
+  const { data } = await createAdminClient().from('pe_canton_serials').select('card_id, serial, user_id, created_at')
+  const rows = (data as { card_id: string; serial: number; user_id: string | null; created_at: string }[] | null) ?? []
   const total = new Map<string, number>()
-  const yours = new Map<string, number>()
+  const yours = new Map<string, { serials: number[]; at: string }>()
   for (const r of rows) {
     total.set(r.card_id, Math.max(total.get(r.card_id) ?? 0, r.serial))
-    if (r.user_id === userId) yours.set(r.card_id, Math.min(yours.get(r.card_id) ?? r.serial, r.serial))
+    if (r.user_id !== userId) continue
+    const held = yours.get(r.card_id) ?? { serials: [], at: r.created_at }
+    held.serials.push(r.serial)
+    if (r.created_at < held.at) held.at = r.created_at
+    yours.set(r.card_id, held)
   }
-  return new Map([...yours].map(([id, n]) => [id, [n, total.get(id) ?? n]]))
+  const hall = [...yours]
+    .map(([id, h]) => ({ id, serials: h.serials.sort((a, b) => a - b), total: total.get(id) ?? h.serials.length, at: h.at }))
+    .sort((a, b) => a.at.localeCompare(b.at))
+  return { serials: new Map(hall.map((h) => [h.id, [h.serials[0], h.total]])), hall }
 }
 
 /** Every card in the game face up, for the complete binder. Each is filed as
@@ -343,6 +357,7 @@ function build(have: Map<string, Count>, site: Map<string, Site>, serials: Map<s
   return {
     men: list,
     vaulted: [...vaulted.values()],
+    hall: [],
     totals: {
       cards: POOL_SIZE,
       owned,

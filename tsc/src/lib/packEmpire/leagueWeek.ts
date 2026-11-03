@@ -96,3 +96,12 @@ export function weekCardValue(ruleId: string | null | undefined, card: Player, i
   const v = Math.round(card.score * (rule.mult?.(card) ?? 1))
   return isPackSlot && rule.captainMult ? v * rule.captainMult : v
 }
+
+/** Where a team is with this week's draft, in words (league.ts, WeekStatus). */
+export const WEEK_STATUS_LABEL: Record<'none' | 'drafting' | 'in' | 'locked' | 'done', string> = {
+  none: 'Not started',
+  drafting: 'Drafting',
+  in: 'Lineup in',
+  locked: 'Locked',
+  done: 'Done',
+}

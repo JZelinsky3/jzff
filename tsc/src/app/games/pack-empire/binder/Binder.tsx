@@ -4,15 +4,20 @@
 // count. Pulled cards (the one you kept from a pack) are the real card; the
 // ones still out there are face down, showing only the rarity and the year
 // you're chasing. Up close, a card shows your count beside the whole site's.
+//
+// Cantons get the Hall at the top as well: each one stands lit in its own case
+// on a plinth with its number engraved, the way an award is kept, and from up
+// close it can be shared to its own page (canton/[card]/[serial]).
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
-import type { BinderCard, BinderMan, BinderOwned, BinderView } from '@/lib/packEmpire/binder'
-import { POOL_KEYS, POOL_LABEL, RARITIES, RARITY_LOOK, type PoolKey } from '@/lib/packEmpire/rules'
+import type { BinderCard, BinderMan, BinderOwned, BinderView, HallPiece } from '@/lib/packEmpire/binder'
+import { CANTON_CARDS, POOL_KEYS, POOL_LABEL, RARITIES, RARITY_LOOK, type PoolKey } from '@/lib/packEmpire/rules'
 import { claimBank } from '../../runBank'
 import { PackCard } from '../cards'
 import { useFace } from '../faces'
+import { ShareButton } from '../share'
 
 type Tab = 'ALL' | PoolKey
 type Show = 'all' | 'have' | 'missing'
@@ -123,6 +128,12 @@ export function Binder({ view, mobile }: { view: BinderView; mobile: boolean }) 
           })}
         </div>
       </section>
+
+      <CantonHall
+        hall={view.hall}
+        men={view.men.concat(view.vaulted)}
+        onOpen={(man, card) => setOpen({ man, card })}
+      />
 
       {t.owned === 0 && (
         <p className="pe-empty pe-bd-first">
@@ -235,6 +246,94 @@ export function Binder({ view, mobile }: { view: BinderView; mobile: boolean }) 
         />
       )}
     </div>
+  )
+}
+
+function ordinalDay(iso: string): string {
+  const d = new Date(iso)
+  const n = d.getDate()
+  const v = n % 100
+  const suffix = v >= 11 && v <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'
+  return `${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][d.getMonth()]} ${n}${suffix}`
+}
+
+/** A Canton's own page, by the number it was given. */
+function cantonHref(id: string, serial: number): string {
+  return `/games/pack-empire/canton/${id}/${serial}/`
+}
+
+/**
+ * The Hall: every Canton you hold, each in its own lit case on a plinth with its
+ * number engraved on a brass plate, first pulled first. With none yet, one empty
+ * case, lit, waiting.
+ */
+function CantonHall({
+  hall,
+  men,
+  onOpen,
+}: {
+  hall: HallPiece[]
+  men: BinderMan[]
+  onOpen: (man: BinderMan, card: BinderCard) => void
+}) {
+  const pieces = hall.flatMap((h) => {
+    const man = men.find((m) => m.cards.some((c) => c.id === h.id))
+    const card = man?.cards.find((c) => c.id === h.id)
+    return man && card && owned(card) ? [{ h, man, card }] : []
+  })
+  return (
+    <section className={`pe-hall${pieces.length ? '' : ' empty'}`} aria-label="The Hall">
+      <div className="pe-hall-head">
+        <span className="pe-kicker">★ The Hall ★</span>
+        <span className="pe-hall-count">
+          {pieces.length ? `${pieces.length} of ${CANTON_CARDS} Cantons` : `${CANTON_CARDS} Cantons in the game`}
+        </span>
+      </div>
+      <div className="pe-hall-row">
+        {pieces.length === 0 ? (
+          <div className="pe-hall-bay">
+            <div className="pe-hall-case">
+              <span className="pe-hall-light" aria-hidden />
+              <span className="pe-hall-ghost" aria-hidden>
+                ?
+              </span>
+            </div>
+            <div className="pe-hall-plinth" aria-hidden />
+            <div className="pe-hall-plate">
+              <b>Your first Canton</b>
+              <span>stands here, numbered for good</span>
+            </div>
+          </div>
+        ) : (
+          pieces.map(({ h, man, card }) => (
+            <button
+              key={h.id}
+              type="button"
+              className="pe-hall-bay"
+              onClick={() => onOpen(man, card)}
+              aria-label={`${card.name} ${card.year}, Canton number ${h.serials.join(' and ')} of ${h.total}`}
+            >
+              <div className="pe-hall-case">
+                <span className="pe-hall-light" aria-hidden />
+                <span className="pe-hall-card">
+                  <PackCard player={card} revealed serial={[h.serials[0], h.total]} />
+                </span>
+                <span className="pe-hall-glass" aria-hidden />
+              </div>
+              <div className="pe-hall-plinth" aria-hidden />
+              <div className="pe-hall-plate">
+                <b>
+                  {card.name} <em>{card.year}</em>
+                </b>
+                <span>
+                  {h.serials.map((n) => `No. ${n}`).join(' · ')} of {h.total} · {ordinalDay(h.at)}
+                </span>
+              </div>
+            </button>
+          ))
+        )}
+      </div>
+    </section>
   )
 }
 
@@ -380,6 +479,24 @@ function CardSheet({
               </dl>
             </div>
           </div>
+
+          {owned(card) && card.rarity === 'canton' && card.serial && (
+            <div className="pe-bd-sheet-share">
+              <span>
+                <b>No. {card.serial[0]}</b> of {card.serial[1]} ever pulled. Show it off.
+              </span>
+              <span className="pe-bd-sheet-share-acts">
+                <ShareButton
+                  path={cantonHref(card.id, card.serial[0])}
+                  title={`${card.name} ${card.year} · Canton`}
+                  text={`My Canton: ${card.name} ${card.year}, No. ${card.serial[0]} of ${card.serial[1]}`}
+                />
+                <Link href={cantonHref(card.id, card.serial[0])} className="pe-link">
+                  Its page
+                </Link>
+              </span>
+            </div>
+          )}
 
           {man.cards.length > 1 && (
             <div className="pe-bd-sheet-vers" role="group" aria-label="His seasons">

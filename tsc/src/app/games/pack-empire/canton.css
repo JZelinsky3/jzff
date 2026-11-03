@@ -176,3 +176,91 @@
   .cx-hall, .cx-sky, .cx-door, .cx-seam, .cx-gems, .cx-gold, .cx-flash, .cx-stage .cx-ring { display: none; }
   .cx-rays img { animation: none; }
 }
+
+/* ── The Hall: your Cantons, at the top of the binder ─────────
+   Each one stands in its own lit case on a gold plinth over a brass plate with
+   its number, the way an award is kept. A fluted wall behind. Static apart from
+   a lift on hover, which is transform. */
+.pe-hall { position: relative; margin: 0 0 1.6rem; padding: 1.1rem 1.2rem 1.3rem; border: 1px solid rgba(244, 223, 164, .28); border-radius: 8px; overflow: hidden; background: radial-gradient(120% 90% at 50% -10%, rgba(244, 223, 164, .14), transparent 60%), linear-gradient(180deg, #17130c, #0e0c08); }
+.pe-hall::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(244, 223, 164, .035) 0 2px, transparent 2px 46px); pointer-events: none; }
+.pe-hall-head { position: relative; display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.pe-hall-head .pe-kicker { color: #f4dfa4; }
+.pe-hall-count { font-family: var(--mono); font-size: .6rem; letter-spacing: .14em; text-transform: uppercase; color: #c9ad70; }
+.pe-hall-row { position: relative; display: flex; gap: 1.4rem; overflow-x: auto; padding: 1rem .3rem .4rem; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.pe-hall.empty .pe-hall-row { justify-content: center; }
+.pe-hall-bay { flex: none; display: grid; justify-items: center; width: 13rem; padding: 0; border: 0; background: none; color: inherit; text-align: center; cursor: pointer; scroll-snap-align: start; }
+.pe-hall.empty .pe-hall-bay { cursor: default; }
+.pe-hall-case { position: relative; display: flex; align-items: flex-end; justify-content: center; width: 100%; height: 15.5rem; padding-bottom: .5rem; border: 1px solid rgba(244, 223, 164, .22); border-bottom: 0; border-radius: 6px 6px 0 0; overflow: hidden; background: linear-gradient(180deg, rgba(255, 240, 200, .05), rgba(0, 0, 0, .25)); }
+.pe-hall-light { position: absolute; left: 10%; right: 10%; top: -10%; bottom: 20%; background: radial-gradient(60% 70% at 50% 0%, rgba(255, 236, 180, .42), rgba(255, 226, 150, .12) 45%, transparent 75%); pointer-events: none; }
+.pe-hall-card { position: relative; display: block; transition: transform .25s ease; }
+.pe-hall-card .pe-card { --pe-cs: 1; cursor: pointer; }
+.pe-hall-bay:hover .pe-hall-card, .pe-hall-bay:focus-visible .pe-hall-card { transform: translateY(-4px); }
+.pe-hall-glass { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, .07) 38%, transparent 46%); pointer-events: none; }
+.pe-hall-ghost { position: relative; display: flex; align-items: center; justify-content: center; width: 8.5rem; height: 11.9rem; margin-bottom: .2rem; border: 1px dashed rgba(244, 223, 164, .32); border-radius: .6rem; font-family: var(--serif); font-size: 3rem; color: rgba(244, 223, 164, .35); }
+.pe-hall-plinth { width: 108%; height: .9rem; border-radius: 2px; background: linear-gradient(180deg, #e9cf8a, #a77b2c); box-shadow: 0 6px 18px rgba(0, 0, 0, .5), 0 0 24px rgba(244, 223, 164, .18); }
+.pe-hall-plate { display: grid; gap: .12rem; min-width: 82%; margin-top: .55rem; padding: .45rem .7rem; border: 1px solid rgba(244, 223, 164, .35); border-radius: 3px; background: linear-gradient(180deg, #3d2e12, #241b0a); box-shadow: inset 0 1px 0 rgba(255, 240, 200, .14); }
+.pe-hall-plate b { font-family: var(--serif); font-weight: 400; font-size: .95rem; line-height: 1.15; color: #f4dfa4; }
+.pe-hall-plate b em { font-style: normal; color: #c9ad70; }
+.pe-hall-plate span { font-family: var(--mono); font-size: .55rem; letter-spacing: .12em; text-transform: uppercase; color: #c9ad70; }
+@media (max-width: 700px) {
+  .pe-hall { padding: .9rem .8rem 1rem; }
+  .pe-hall-bay { width: 11rem; }
+  .pe-hall-case { height: 13.5rem; }
+  .pe-hall-card .pe-card { --pe-cs: .85; }
+}
+
+/* Up close in the binder: a Canton you hold can be shared. */
+.pe-bd-sheet-share { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1rem; margin-top: 1rem; padding: .75rem .9rem; border: 1px solid rgba(244, 223, 164, .35); border-radius: 6px; background: rgba(244, 223, 164, .07); font-size: .88rem; color: var(--pe-ink-soft); }
+.pe-bd-sheet-share b { color: #f4dfa4; }
+.pe-bd-sheet-share-acts { display: flex; align-items: center; gap: .9rem; }
+
+/* ── A Canton's own page: the trophy case ─────────────────────
+   The case, lit from above, on a stepped gold plinth with a brass plate; the
+   card's story beside it. The light breathes on opacity, nothing else moves. */
+.pe-tc { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 2.4rem; align-items: center; margin-top: 1.4rem; }
+.pe-tc-stage { position: relative; display: grid; justify-items: center; padding: 2.6rem 1rem 1.8rem; border: 1px solid rgba(244, 223, 164, .25); border-radius: 10px; overflow: hidden; background: radial-gradient(70% 60% at 50% 0%, rgba(244, 223, 164, .16), transparent 70%), linear-gradient(180deg, #16120b, #0b0906); }
+.pe-tc-stage::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(244, 223, 164, .03) 0 2px, transparent 2px 52px); pointer-events: none; }
+.pe-tc-beam { position: absolute; top: 0; left: 15%; width: 70%; height: 80%; background: radial-gradient(50% 80% at 50% 0%, rgba(255, 236, 180, .45), rgba(255, 226, 150, .1) 55%, transparent 80%); pointer-events: none; animation: pe-tc-breathe 5s ease-in-out infinite alternate; }
+@keyframes pe-tc-breathe { from { opacity: .72; } to { opacity: 1; } }
+.pe-tc-case { position: relative; padding: 1.8rem 2.2rem 1.2rem; border: 1px solid rgba(244, 223, 164, .3); border-bottom: 0; border-radius: 8px 8px 0 0; background: linear-gradient(180deg, rgba(255, 240, 200, .06), rgba(0, 0, 0, .22)); }
+.pe-tc-card .pe-card { --pe-cs: 1.7; cursor: default; }
+.pe-tc-glass { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(115deg, transparent 28%, rgba(255, 255, 255, .08) 36%, transparent 44%); pointer-events: none; }
+.pe-tc-bracket { position: absolute; width: 16px; height: 16px; border: 0 solid #e8c873; }
+.pe-tc-bracket.tl { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; border-top-left-radius: 8px; }
+.pe-tc-bracket.tr { top: -1px; right: -1px; border-top-width: 2px; border-right-width: 2px; border-top-right-radius: 8px; }
+.pe-tc-bracket.bl { bottom: 0; left: -1px; border-bottom-width: 2px; border-left-width: 2px; }
+.pe-tc-bracket.br { bottom: 0; right: -1px; border-bottom-width: 2px; border-right-width: 2px; }
+.pe-tc-plinth { position: relative; display: grid; width: min(25rem, 92%); }
+.pe-tc-plinth::before { content: ''; height: 1.1rem; border-radius: 2px; background: linear-gradient(180deg, #f0d892, #a77b2c); box-shadow: 0 0 30px rgba(244, 223, 164, .22); }
+.pe-tc-plinth span { display: block; height: .7rem; margin: 0 5%; background: linear-gradient(180deg, #4a3815, #241b0a); box-shadow: 0 10px 24px rgba(0, 0, 0, .55); }
+.pe-tc-plate { position: relative; display: grid; justify-items: center; gap: .15rem; margin-top: 1rem; padding: .75rem 1.5rem; border: 1px solid rgba(244, 223, 164, .42); border-radius: 4px; text-align: center; background: linear-gradient(180deg, #3d2e12, #211808); box-shadow: inset 0 1px 0 rgba(255, 240, 200, .16); }
+.pe-tc-plate-k { font-family: var(--mono); font-size: .55rem; letter-spacing: .16em; text-transform: uppercase; color: #a98d55; }
+.pe-tc-plate b { font-family: var(--serif); font-weight: 400; font-size: 1.2rem; color: #f4dfa4; }
+.pe-tc-plate span { font-size: .82rem; color: #c9ad70; }
+.pe-tc-plate .pe-tc-plate-no { margin-top: .2rem; font-family: var(--pe-display); font-weight: 700; font-size: .95rem; letter-spacing: .18em; color: #f4dfa4; }
+.pe-tc-info .pe-kicker { color: #f4dfa4; }
+.pe-tc-name { margin: .4rem 0 .2rem; font-family: var(--serif); font-weight: 400; font-size: clamp(2rem, 4vw, 3.1rem); line-height: 1.05; }
+.pe-tc-club { margin: 0; font-family: var(--pe-cond); font-weight: 700; font-size: 1.05rem; letter-spacing: .04em; color: var(--pe-ink-soft); }
+.pe-tc-score { display: flex; align-items: baseline; gap: .6rem; margin: 1.1rem 0 .6rem; }
+.pe-tc-score b { font-family: var(--pe-display); font-weight: 700; font-size: 2.2rem; color: #f4dfa4; }
+.pe-tc-score small, .pe-tc-facts dt { font-family: var(--mono); font-size: .58rem; letter-spacing: .14em; text-transform: uppercase; color: var(--pe-ink-mute); }
+.pe-tc-acc { display: grid; gap: .3rem; margin: 0 0 1.2rem; padding: 0; list-style: none; }
+.pe-tc-acc li { padding-left: .9rem; border-left: 2px solid rgba(244, 223, 164, .4); font-size: .92rem; color: var(--pe-ink-soft); }
+.pe-tc-facts { display: grid; margin: 0 0 1.4rem; border-top: 1px solid var(--pe-line-soft); }
+.pe-tc-facts > div { display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: .8rem; align-items: baseline; padding: .55rem 0; border-bottom: 1px solid var(--pe-line-soft); }
+.pe-tc-facts dd { margin: 0; font-family: var(--pe-cond); font-weight: 700; font-size: 1rem; }
+.pe-tc-acts { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; }
+.pe-tc-others { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: .6rem; }
+.pe-tc-other { display: grid; gap: .15rem; padding: .7rem .85rem; border: 1px solid rgba(244, 223, 164, .3); border-radius: 5px; background: rgba(244, 223, 164, .05); color: inherit; text-decoration: none; }
+.pe-tc-other:hover { background: rgba(244, 223, 164, .1); }
+.pe-tc-other b { font-family: var(--serif); font-weight: 400; color: #f4dfa4; }
+.pe-tc-other span { font-family: var(--mono); font-size: .58rem; letter-spacing: .12em; text-transform: uppercase; color: #c9ad70; }
+@media (max-width: 860px) {
+  .pe-tc { grid-template-columns: minmax(0, 1fr); gap: 1.6rem; }
+  .pe-tc-card .pe-card { --pe-cs: 1.35; }
+  .pe-tc-case { padding: 1.4rem 1.4rem 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pe-tc-beam { animation: none; }
+  .pe-hall-card { transition: none; }
+}

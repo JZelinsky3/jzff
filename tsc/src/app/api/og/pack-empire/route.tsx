@@ -7,6 +7,7 @@
 //   ?c=run&id=     a Builder score
 //   ?c=day&r=      a Daily score, off its signed link
 //   ?c=fr&t=       a friend invite
+//   ?c=ct&id=&n=   a Canton, one numbered copy: the card on its plinth
 //
 // The room's own type: DM Serif for the words and Orbitron for the numbers, on a
 // dark ground in each mode's colour. Text left, object right. The game cards sit
@@ -34,6 +35,7 @@ import { dailyScoreLine, dailySpec, longDate } from '@/lib/packEmpire/daily'
 import { loadFaces } from '@/lib/packEmpire/faces'
 import { getMega } from '@/lib/packEmpire/mega'
 import { getVersus } from '@/lib/packEmpire/versus'
+import { cantonShowcase } from '@/lib/packEmpire/cantonCase'
 import { leagueView } from '@/lib/packEmpire/league'
 import { POOL_SIZE } from '@/lib/packEmpire/pool'
 import {
@@ -857,6 +859,79 @@ async function friendScene(token: string | null) {
   )
 }
 
+/** A Canton on show: the card standing lit on a gold plinth, its number on the
+    plate, and on the left whose it is and which numbers of it they hold. */
+async function cantonScene(id: string, n: number) {
+  const show = await cantonShowcase(id, n, null)
+  if (!show) return null
+  const p = show.card
+  const gold = RARITY_LOOK.canton.color
+  const faces = await loadFaces().catch((): Record<string, string | undefined> => ({}))
+  const face = await photo(faces[p.id] ?? p.img)
+  const who = clean(show.owner?.name ?? 'A collector')
+  const nth = show.serial === 1 ? 'First ever pulled' : `${show.serial}${({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[show.serial % 10] ?? 'th'} ever pulled`
+  // More than one copy of it: which numbers. One: what it is.
+  const copies = show.copies.length > 1 ? show.copies.map((x) => `No. ${x}`) : [`${num(p.score)} accolades`, nth]
+  return room(
+    '#c9a24a',
+    `Canton · No. ${show.serial} of ${show.total}`,
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      {head(clean(p.name, 24), null, gold, 560, 84)}
+      {sub(`${p.year ?? ''} ${clean(p.club ?? p.team, 30)}. Pulled by ${who}.`)}
+      <div style={{ display: 'flex', marginTop: 18 }}>{chips(copies, gold)}</div>
+    </div>,
+    <div style={{ display: 'flex', position: 'relative', width: 540, height: H }}>
+      {/* the light from above, then the plinth, then the card on it */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 20,
+          top: -60,
+          width: 500,
+          height: 560,
+          display: 'flex',
+          backgroundImage: `radial-gradient(ellipse 50% 60% at 50% 12%, ${mix(gold, 0.5)} 0%, ${mix(gold, 0.16)} 52%, ${mix(gold, 0)} 100%)`,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 128,
+          top: 424,
+          width: 284,
+          height: 30,
+          display: 'flex',
+          borderRadius: 4,
+          background: 'linear-gradient(180deg, #e9cf8a 0%, #a77b2c 100%)',
+          boxShadow: `0 0 40px ${mix(gold, 0.45)}`,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 150,
+          top: 452,
+          width: 240,
+          height: 46,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 3,
+          background: 'linear-gradient(180deg, #5a4318 0%, #2c210c 100%)',
+          fontFamily: 'Mono',
+          fontWeight: 700,
+          fontSize: 18,
+          letterSpacing: 3,
+          color: gold,
+        }}
+      >
+        {`NO. ${show.serial} OF ${show.total}`}
+      </div>
+      {card(p, face, 163, 104, 0)}
+    </div>
+  )
+}
+
 async function scene(p: URLSearchParams): Promise<React.ReactElement | null> {
   const c = p.get('c') ?? 'home'
   const id = p.get('id')
@@ -866,6 +941,7 @@ async function scene(p: URLSearchParams): Promise<React.ReactElement | null> {
   if (c === 'run' && id) return runScene(id)
   if (c === 'day') return dailyScoreScene(p.get('r'))
   if (c === 'fr') return friendScene(p.get('t'))
+  if (c === 'ct' && id) return cantonScene(id, Number(p.get('n')))
   return modeScene(c, p.get('d'))
 }
 

@@ -5,13 +5,13 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { peMeta } from '@/lib/packEmpire/meta'
-import { leagueView } from '@/lib/packEmpire/league'
+import { leagueView, mulligansOf } from '@/lib/packEmpire/league'
 import { PACK_TIER_COLOR, PACK_TIER_LABEL, PHASE_LABEL, REGULAR_WEEKS, SLOTS, shortName } from '@/lib/packEmpire/rules'
 import mobileStyles from '../../../mobile.module.css'
 import { PeChrome } from '../../chrome'
 import { peFonts } from '../../fonts'
 import { ShareButton } from '../../share'
-import { HistoryList, ScheduleStrip, StandingsTable, WeekPanel, WeekRecapCard, isReady } from '../LeagueBoard'
+import { HistoryList, RecordsPanel, ScheduleStrip, StandingsTable, WeekPanel, WeekRecapCard, isReady } from '../LeagueBoard'
 import { CommishPanel, JoinThisLeague, LeaveLeague, RenameTeam } from '../LeagueControls'
 
 export const dynamic = 'force-dynamic'
@@ -103,7 +103,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
         title={league.name}
       />
 
-      <div className="pe-wrap">
+      <div className="pe-wrap pe-wrap--league">
         <div className="pe-table-head">
           <div className="pe-kicker">
             ★ Season {league.season_number} · {weekLine} ★
@@ -144,7 +144,13 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                     </div>
                     <div>
                       <dt>Mulligan</dt>
-                      <dd>{member.mulligan ? 'Ready' : 'None this week'}</dd>
+                      <dd>
+                        {mulligansOf(member) === 2
+                          ? 'Mulligan + redraft'
+                          : mulligansOf(member) === 1
+                            ? 'One ready'
+                            : 'None this week'}
+                      </dd>
                     </div>
                     {league.phase === 'regular' && (
                       <div>
@@ -229,6 +235,8 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                 </div>
               </div>
             )}
+
+            <RecordsPanel view={view} />
           </div>
 
           <div className="pe-league-main">
