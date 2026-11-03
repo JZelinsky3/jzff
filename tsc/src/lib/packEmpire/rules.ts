@@ -579,13 +579,13 @@ export type Tier = { min: number; label: string; color: string }
 /** Highest first. The original printed an emoji beside each; the site
     doesn't use them, so a tier is its name, its colour and its rung. */
 export const TIERS: Tier[] = [
-  { min: 20001, label: 'GOAT Offense', color: '#ff5cd6' },
-  { min: 17001, label: 'Hall of Fame', color: '#f4c06a' },
-  { min: 14001, label: 'Super Bowl Dynasty', color: '#e8a84b' },
-  { min: 11001, label: 'All-Pro Elite', color: '#6ba8c0' },
-  { min: 8001, label: 'Pro Bowl Caliber', color: '#d0703c' },
-  { min: 5001, label: 'Starter Quality', color: '#bfb5a0' },
-  { min: 2001, label: 'Backup Unit', color: '#8d8473' },
+  { min: 20000, label: 'GOAT Offense', color: '#ff5cd6' },
+  { min: 17000, label: 'Hall of Fame', color: '#f4c06a' },
+  { min: 14000, label: 'Super Bowl Dynasty', color: '#e8a84b' },
+  { min: 11000, label: 'All-Pro Elite', color: '#6ba8c0' },
+  { min: 8000, label: 'Pro Bowl Caliber', color: '#d0703c' },
+  { min: 5000, label: 'Starter Quality', color: '#bfb5a0' },
+  { min: 2000, label: 'Backup Unit', color: '#8d8473' },
   { min: 0, label: 'Practice Squad', color: '#a87420' },
 ]
 
@@ -690,6 +690,20 @@ export const EVEN_PLANTED_STAR = 0.25
 export const VERSUS_WEIGHTS: { normal: Weights; boosted: Weights } = {
   normal: { common: 34, rare: 15, dynasty: 10.5, transcendent: 3.4, immortal: 1.2 },
   boosted: { common: 31.8, rare: 17.6, dynasty: 10.5, transcendent: 3.4, immortal: 1.2 },
+}
+
+/**
+ * Mystery Salary Cap's wild packs, a little richer than Builder's (Joey, 2026-11-02).
+ * Only a card or two in a wild pack fits an open slot, and at Builder odds those were
+ * nearly always Commons, so the budget was never spent: real runs ended $16-29M under.
+ * About 40% of the way from Builder's table to Versus', so picking means something
+ * and it still fills the binder without handing it the top tier. The captain pack
+ * is untouched. Only seeds with Mystery's 'K' mark deal off it (MYSTERY_DIFF), so a
+ * run started on the old odds ('Q') replays as it was dealt.
+ */
+export const MYSTERY_CAP_WEIGHTS: { normal: Weights; boosted: Weights } = {
+  normal: { common: 39.6, rare: 13, dynasty: 8.9, transcendent: 3, immortal: 1.08 },
+  boosted: { common: 37.4, rare: 15.6, dynasty: 8.9, transcendent: 3, immortal: 1.08 },
 }
 
 /** The Daily's reserve card, dealt only when nothing in a pack fits an open
@@ -1076,8 +1090,13 @@ export const EVEN_CONTESTED_MARK = '8'
 export const VERSUS_CAPTAIN_SHIFT = 11
 export const SEED_DIFF: Record<string, Difficulty> = { A: 'open', R: 'range', S: 'season', C: 'cap' }
 /** The same tenth character on a Mystery seed: its own letters, so the format is
-    signed in with the difficulty. */
-export const MYSTERY_DIFF: Record<string, Difficulty> = { M: 'open', N: 'range', P: 'season', Q: 'cap' }
+    signed in with the difficulty.
+    'K' is Salary Cap on MYSTERY_CAP_WEIGHTS and is what new runs get (it comes first,
+    so it's the one minted); 'Q' is Salary Cap from before, on Builder's odds. */
+export const MYSTERY_DIFF: Record<string, Difficulty> = { M: 'open', N: 'range', P: 'season', K: 'cap', Q: 'cap' }
+
+/** A Mystery Salary Cap seed on the richer wild packs. */
+export const MYSTERY_RICH_CAP = 'K'
 
 export function difficultyFromSeed(seed: string): Difficulty {
   return seed.length === 16 ? (SEED_DIFF[seed[9]] ?? MYSTERY_DIFF[seed[9]] ?? 'open') : 'open'

@@ -447,7 +447,30 @@ function statCells(line: string): StatCell[] {
   })
 }
 
-function StatBox({ accolades }: { accolades: string[] }) {
+/** How wide the stat box is on a card at 16px, by rarity: the bigger frames take room. */
+const STAT_ROOM: Partial<Record<Rarity, number>> = { canton: 115, immortal: 112, transcendent: 115, dynasty: 116 }
+
+/**
+ * How far to shrink a row's type so it fits. Numbers can't wrap, so a long line ran
+ * into the next cell (a lineman's "2,366 Rush 3,799 Pass" on an Immortal's narrower
+ * box). The width is estimated off the characters, fitted to every row in the pool
+ * measured on the real card, plus the worst miss as a margin and 5% for phones, which
+ * set type wider. Nothing is measured in the browser.
+ */
+function statFit(cells: StatCell[], rarity: Rarity): number {
+  let est = 6.2
+  for (const c of cells) {
+    if ('t' in c) {
+      est += 3.4 * c.t.length + 4.6
+      continue
+    }
+    est += 4.03 * c.v.length + 3.41 * c.l.length - 2.27 * (c.v.split(/[1,]/).length - 1) + 4.56
+  }
+  const room = (STAT_ROOM[rarity] ?? 117) * 0.95
+  return est > room ? Math.round((room / est) * 1000) / 1000 : 1
+}
+
+function StatBox({ accolades, rarity }: { accolades: string[]; rarity: Rarity }) {
   const lines = accolades.slice(0, 2)
   if (lines.length === 0) return null
   return (
@@ -464,8 +487,9 @@ function StatBox({ accolades }: { accolades: string[] }) {
             </div>
           )
         }
+        const fit = statFit(cells, rarity)
         return (
-          <div key={j} className="pe-cf-statrow">
+          <div key={j} className="pe-cf-statrow" style={fit < 1 ? ({ '--sf': fit } as React.CSSProperties) : undefined}>
             {cells.map((c, k) =>
               't' in c ? (
                 <span key={k} className="pe-cf-cell txt">
@@ -757,7 +781,7 @@ export function PackCard({
               {blind ? (
                 <div className="pe-cf-blindnote">{blind.level === 'range' ? (player.club ?? player.team) : 'Season only'}</div>
               ) : (
-                <StatBox accolades={player.accolades} />
+                <StatBox accolades={player.accolades} rarity={player.rarity} />
               )}
             </div>
             {revealed && !still && !blind && <CardShine rarity={player.rarity} />}

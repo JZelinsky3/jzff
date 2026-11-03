@@ -9,7 +9,7 @@
 :is(.pe-card, .pe-fsl, .pe-bd-tile, .pe-pc, .pe-lkc)[data-r='dynasty'] { --a: #ffdb6b; --g2: #120d03; --ink: #fff6dc; --mute: #c0a868; --glow: rgba(255, 210, 90, .42); --orbit: 5.5s; --fw: .14em; --flat: linear-gradient(150deg, #e7c360, #a87a16 22%, #5e3e08 44%, #d9ac3c 64%, #7f5a0c 84%, #e0bc5a); --frame: none; }
 :is(.pe-card, .pe-fsl, .pe-bd-tile, .pe-pc, .pe-lkc)[data-r='transcendent'] { --a: #e98bff; --g2: #0f061e; --ink: #f9ecff; --mute: #b793cf; --glow: rgba(214, 100, 255, .5); --orbit: 4.2s; --fw: .155em; --flat: conic-gradient(from 210deg, #ff6ae6, #7b6bff, #5fe0ff, #ff9be8, #b46bff, #ff6ae6); --frame: none; --halo: rgba(226, 110, 255, .62); --leak: #d964ff; }
 :is(.pe-card, .pe-fsl, .pe-bd-tile, .pe-pc, .pe-lkc)[data-r='immortal'] { --a: #45f5a6; --g2: #020d09; --ink: #e9fff5; --mute: #7fbba0; --glow: rgba(60, 240, 160, .55); --orbit: 3.2s; --fw: .24em; --flat: linear-gradient(155deg, #16503a, #06201a 40%, #0c3a2a 70%, #051a14); --frame: none; --halo: rgba(50, 245, 165, .78); --leak: #2ff0a0; }
-:is(.pe-card, .pe-fsl, .pe-bd-tile, .pe-pc, .pe-lkc)[data-r='canton'] { --a: #8a6412; --g2: #f5efe1; --ink: #14100a; --mute: #6e6250; --glow: rgba(255, 236, 186, .85); --orbit: 2.6s; --fw: .27em; --flat: linear-gradient(150deg, #fff, #eed792 22%, #b0842a 46%, #fff6d8 64%, #c7a048 84%, #fff); --frame: none; --halo: rgba(255, 228, 160, .9); }
+:is(.pe-card, .pe-fsl, .pe-bd-tile, .pe-pc, .pe-lkc)[data-r='canton'] { --a: #a8741e; --g2: #f5efe1; --ink: #14100a; --mute: #6e6250; --glow: rgba(255, 236, 186, .85); --orbit: 2.6s; --fw: .27em; --flat: linear-gradient(150deg, #fff, #eed792 22%, #b0842a 46%, #fff6d8 64%, #c7a048 84%, #fff); --frame: none; --halo: rgba(255, 228, 160, .9); }
 /* Range and Ball Knower: no rarity anywhere, every card the same, so nothing's a tell */
 :is(.pe-card, .pe-fsl, .pe-bd-tile, .pe-pc, .pe-lkc)[data-r='blind'] { --a: #d8d0c0; --g2: #141820; --ink: #f0ece2; --mute: #9a9486; --glow: rgba(255, 248, 234, .16); --fw: .105em; --flat: linear-gradient(155deg, #a8a194, #3f3e3a 36%, #706a5e 66%, #2e2d2a); --frame: var(--flat); }
 :is(.pe-card, .pe-fsl, .pe-bd-tile, .pe-pc, .pe-lkc)[data-r='blind'][data-level='season'] { --a: #e8c98a; --g2: #0c0c0e; --mute: #a08c62; --flat: linear-gradient(155deg, #c9a862, #3a2f18 36%, #7e6a3e 66%, #231c0e); }
@@ -53,8 +53,8 @@
 .pe-cf-statrow { grid-auto-flow: column; grid-auto-columns: auto; justify-content: space-between; column-gap: .06em; }
 .pe-cf-cell { flex-direction: row; align-items: baseline; gap: .16em; }
 .pe-cf-cell + .pe-cf-cell { border-left: 0; }
-.pe-cf-cell b { font-size: .46em; color: var(--ink); }
-.pe-cf-cell i { font-size: .36em; letter-spacing: .02em; color: var(--mute); }
+.pe-cf-cell b { font-size: calc(.46em * var(--sf, 1)); color: var(--ink); }
+.pe-cf-cell i { font-size: calc(.36em * var(--sf, 1)); letter-spacing: .02em; color: var(--mute); }
 .pe-cf-cell.txt { color: var(--mute); }
 .pe-cf-honors span { color: var(--a); border-color: color-mix(in srgb, var(--a) 50%, transparent); }
 .pe-cf-blindnote { color: var(--mute); }
@@ -80,10 +80,12 @@
 .pe-card[data-r='canton'] .pe-cf-rlab .pe-gem path, .pe-fsl[data-r='canton'] .pe-gem path { fill: var(--a); }
 .pe-card[data-r='canton'] .pe-cf-art { background: radial-gradient(90% 90% at 50% 40%, #fff, #d8cdb3); }
 .pe-card[data-r='canton'] .pe-cf-season { background: linear-gradient(180deg, transparent, rgba(255, 251, 240, .88) 68%); }
-.pe-card[data-r='canton'] .pe-cf-season b { color: #5c3f08; }
+.pe-card[data-r='canton'] .pe-cf-season b { color: #7d561a; }
+/* the rarity and the value in struck gold: a flat colour read yellow or muddy, never metal */
+.pe-card[data-r='canton'] :is(.pe-cf-rlab, .pe-cf-score) { background: linear-gradient(180deg, #e8bb52 0%, #c18a2a 46%, #95600f 58%, #b98327 78%, #dcaa45 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .pe-card[data-r='canton'] .pe-cf-body { padding-left: .4em; padding-right: .4em; background: linear-gradient(180deg, #fffdf6, #e7e0d1); border-color: #b98f33; }
 .pe-card[data-r='canton'] .pe-cf-logo { filter: drop-shadow(0 .02em .04em rgba(30, 20, 8, .35)); }
-.pe-card.rev:not(.still)[data-r='canton'] .pe-cf-score::after { content: attr(data-v); position: absolute; left: 0; top: 0; color: #5a3d06; text-shadow: 0 0 .2em #ffc95a, 0 0 .46em #ffc95a; opacity: 0; animation: pf-charge 5.2s ease-in-out infinite; }
+.pe-card.rev:not(.still)[data-r='canton'] .pe-cf-score::after { content: attr(data-v); position: absolute; left: 0; top: 0; color: #7b5419; -webkit-text-fill-color: #8a5c16; text-shadow: 0 0 .2em #ffc95a, 0 0 .46em #ffc95a; opacity: 0; animation: pf-charge 5.2s ease-in-out infinite; }
 .pe-card:not(.rev)[data-r='canton'] .pe-card-back { box-shadow: none; animation: pe-tell-jitter 1.2s linear infinite; }
 
 /* a Canton's number in the binder, stamped like a numbered card: yours bright, the
@@ -135,7 +137,18 @@
 /* Canton on the field and in the small cards: same pearl, no diamonds */
 .pe-fsl[data-r='canton'] .pe-fc-topbar { background: #fffdf6; border-color: #b98f33; }
 .pe-fsl[data-r='canton'] .pe-fc-pos-badge { background: #16110a; color: #f4dfa4; }
-.pe-fsl[data-r='canton'] .pe-fc-art, :is(.pe-bd-tile:not(.back), .pe-pc)[data-r='canton'] :is(.pe-bd-tile-art, .pe-pc-art) { background-image: radial-gradient(90% 90% at 50% 40%, #fff, #d8cdb3); }
+.pe-fsl[data-r='canton'] .pe-fc-art, .pe-pc[data-r='canton'] .pe-pc-art { background-image: radial-gradient(90% 90% at 50% 40%, #fff, #d8cdb3); }
+/* Canton in the binder: the card's own look, held still. A pearl light with gold rays
+   fixed in it behind the man, and the diamond band round the tile. Nothing moves while
+   you scroll; on a mouse, one sweep of light crosses the tile you're over. */
+.pe-bd-tile:not(.back)[data-r='canton'] { position: relative; border-color: #d8b25a; box-shadow: 0 0 .7em rgba(255, 214, 120, .55), 0 0 0 1px rgba(255, 246, 220, .5); }
+.pe-bd-tile:not(.back)[data-r='canton'] .pe-bd-tile-art { background-image: radial-gradient(circle at 50% 44%, #fff 0, rgba(255, 255, 255, .9) 18%, rgba(255, 255, 255, 0) 58%), repeating-conic-gradient(from 0deg at 50% 44%, rgba(201, 154, 46, .42) 0 6deg, transparent 6deg 18deg), radial-gradient(90% 90% at 50% 40%, #fff, #d8cdb3); }
+.pe-bd-tile:not(.back)[data-r='canton']::after { content: ''; position: absolute; inset: 0; z-index: 3; border-radius: inherit; background: url('/games/pack-empire/fx/card-pave.webp') center / 100% 100% no-repeat; pointer-events: none; }
+.pe-bd-tile:not(.back)[data-r='canton']::before { content: ''; position: absolute; inset: 0; z-index: 4; background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .7) 50%, transparent 65%); transform: translateX(-120%); pointer-events: none; }
+@media (hover: hover) and (pointer: fine) {
+  .pe-bd-tile:not(.back)[data-r='canton']:hover::before { animation: pe-bd-sweep .9s ease-out; }
+}
+@keyframes pe-bd-sweep { to { transform: translateX(120%); } }
 .pe-fsl[data-r='canton'] .pe-fc-info { background: linear-gradient(180deg, #fffdf6, #e7e0d1); border-color: #b98f33; }
 .pe-fsl[data-r='canton'].has-p .pe-filled-card { inset: 3px; border-radius: 8px; }
 .pe-pc[data-r='canton'] .pe-pc-pos { background: #16110a; color: #f4dfa4; }

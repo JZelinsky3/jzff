@@ -18,6 +18,7 @@ import {
   SLOTS,
   SOLO_WEIGHTS,
   packOdds,
+  personOf,
   type Player,
   type Rarity,
   type Weights,
@@ -56,12 +57,21 @@ export const metadata: Metadata = peMeta({
 const COMMON_FACE = 'wr-jamarr-chase-2023'
 
 /** One face per rarity for the index: the best recent skill player at each. */
+/** One card a rarity, the best of it, and never one man twice: the top two of Immortal
+    and Transcendent were the Canton's and the Dynasty's own man (Faulk, Josh Allen).
+    Picked from Canton down, so the bigger card keeps the name. */
 function showcase(): Player[] {
   const skill = [...POOL.QB, ...POOL.RB, ...POOL.WR, ...POOL.TE]
-  return RARITIES.map((r) => {
-    const of = skill.filter((p) => p.rarity === r && p.img && (p.year ?? 0) >= 2000)
-    return of.find((p) => r === 'common' && p.id === COMMON_FACE) ?? of.sort((a, b) => b.score - a.score)[0]
-  }).filter(Boolean) as Player[]
+  const used = new Set<string>()
+  const picks = new Map<string, Player>()
+  for (const r of [...RARITIES].reverse()) {
+    const of = skill.filter((p) => p.rarity === r && p.img && (p.year ?? 0) >= 2000 && !used.has(personOf(p)))
+    const pick = of.find((p) => r === 'common' && p.id === COMMON_FACE) ?? of.sort((a, b) => b.score - a.score)[0]
+    if (!pick) continue
+    used.add(personOf(pick))
+    picks.set(r, pick)
+  }
+  return RARITIES.flatMap((r) => picks.get(r) ?? [])
 }
 
 /** The chance any one card is a given rarity, averaged over the eleven
@@ -237,7 +247,7 @@ export default async function PackEmpireHome() {
             <div className="pe-hero-meta">
               <span className="pe-chip">No account</span>
               <span className="pe-chip">{POOL_SIZE} cards</span>
-              <span className="pe-chip">Five rarities</span>
+              <span className="pe-chip">Six rarities</span>
             </div>
           </section>
 
@@ -277,7 +287,7 @@ export default async function PackEmpireHome() {
           <section className="pe-sec">
             <div className="pe-sec-head">
               <span className="pe-sec-num">{sec(2, 'Index')}</span>
-              <span className="pe-sec-title">Five rarities</span>
+              <span className="pe-sec-title">Six rarities</span>
             </div>
             {index}
           </section>
@@ -362,7 +372,7 @@ export default async function PackEmpireHome() {
             <div className="pe-hero-meta">
               <span className="pe-chip">No account to play</span>
               <span className="pe-chip">{POOL_SIZE} cards</span>
-              <span className="pe-chip">Five rarities</span>
+              <span className="pe-chip">Six rarities</span>
             </div>
           </div>
           <PackFan />
@@ -407,7 +417,7 @@ export default async function PackEmpireHome() {
         <section className="pe-sec">
           <div className="pe-sec-head">
             <span className="pe-sec-num">{sec(2, 'Index')}</span>
-            <span className="pe-sec-title">Five rarities</span>
+            <span className="pe-sec-title">Six rarities</span>
             <span className="pe-sec-meta">Odds per card</span>
           </div>
           {index}

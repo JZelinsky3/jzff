@@ -120,6 +120,22 @@ function bracketPaths(box: HTMLElement, list: Bracket[]): Map<number, Pick<Link,
   return out
 }
 
+/** Half the highlight round a card: a line's end sits on that ring, not on the card. */
+const RING = 1.25
+
+/** Move a point on a card's edge out onto the ring round it. */
+function onRing(e: Point, boxes: Box[]): Point {
+  const near = (b: Box) => Math.min(Math.abs(e.y - b.t), Math.abs(e.y - b.b), Math.abs(e.x - b.l), Math.abs(e.x - b.r))
+  const b = boxes.reduce((x, y) => (near(y) < near(x) ? y : x))
+  const side = [
+    [Math.abs(e.y - b.t), { x: e.x, y: e.y - RING }],
+    [Math.abs(e.y - b.b), { x: e.x, y: e.y + RING }],
+    [Math.abs(e.x - b.l), { x: e.x - RING, y: e.y }],
+    [Math.abs(e.x - b.r), { x: e.x + RING, y: e.y }],
+  ] as const
+  return [...side].sort((m, n) => m[0] - n[0])[0][1]
+}
+
 /** Two cards on one row with nothing between them: a short line straight across
     the gap, at the height they share (Joey: no need to go up and over). */
 function besidePath(left: Box, right: Box): Pick<Link, 'd' | 'ends'> {
@@ -254,10 +270,10 @@ export function ChemLinks({
         placed.map(({ bond, slots, from, to }) => {
           const kind = bondKind(bonds[bond])
           const over = paths.get(bond)
-          if (over) return { bond, kind, slots, ...over }
+          if (over) return { bond, kind, slots, ...over, ends: over.ends.map((e) => onRing(e, [from, to])) }
           const p = edgePoint(from, centre(to))
           const q = edgePoint(to, centre(from))
-          return { bond, kind, slots, d: `M${p.x} ${p.y}L${q.x} ${q.y}`, ends: [p, q] }
+          return { bond, kind, slots, d: `M${p.x} ${p.y}L${q.x} ${q.y}`, ends: [onRing(p, [from, to]), onRing(q, [from, to])] }
         })
       )
       setRings([...round.values()])
@@ -273,32 +289,43 @@ export function ChemLinks({
   const litBonds = links.filter(lit).map((l) => l.bond)
 
   return (
-    <div ref={ref} className="pe-links" aria-hidden data-hot={hot != null || focus != null ? '' : undefined}>
-      {links
-        .filter((l) => drawn(l.bond))
-        .map((l) => (
-          <svg key={l.bond} className="pe-clink" data-kind={l.kind} data-hot={lit(l) ? '' : undefined}>
-            <path className="case" d={l.d} />
-            <path className="line" d={l.d} />
-            {l.kind === 'real' && <path className="core" d={l.d} />}
-            {l.ends.map((e, i) => (
-              <circle key={i} className="end" cx={e.x} cy={e.y} r="3.5" />
-            ))}
-          </svg>
-        ))}
-      {/* After the lines, so a card's border sits over them like the rest of the card. */}
-      {rings
-        .filter((r) => r.bonds.some(drawn))
-        .map((r) => (
-          <span
-            key={r.slot}
-            className="pe-cring"
-            data-kind={r.kind}
-            data-hot={r.bonds.some((b) => litBonds.includes(b)) ? '' : undefined}
-            style={{ left: r.l, top: r.t, width: r.r - r.l, height: r.b - r.t }}
-          />
-        ))}
-    </div>
+    <>
+      {/* The lines run under the cards, whole: they only show between them. */}
+      <div ref={ref} className="pe-links pe-links--under" aria-hidden data-hot={hot != null || focus != null ? '' : undefined}>
+        {links
+          .filter((l) => drawn(l.bond))
+          .map((l) => (
+            <svg key={l.bond} className="pe-clink" data-kind={l.kind} data-hot={lit(l) ? '' : undefined}>
+              <path className="case" d={l.d} />
+              <path className="line" d={l.d} />
+              {l.kind === 'real' && <path className="core" d={l.d} />}
+            </svg>
+          ))}
+      </div>
+      {/* Over the cards: the highlight round each one, and each line's ends on it. */}
+      <div className="pe-links" aria-hidden data-hot={hot != null || focus != null ? '' : undefined}>
+        {rings
+          .filter((r) => r.bonds.some(drawn))
+          .map((r) => (
+            <span
+              key={r.slot}
+              className="pe-cring"
+              data-kind={r.kind}
+              data-hot={r.bonds.some((b) => litBonds.includes(b)) ? '' : undefined}
+              style={{ left: r.l, top: r.t, width: r.r - r.l, height: r.b - r.t }}
+            />
+          ))}
+        {links
+          .filter((l) => drawn(l.bond) && l.ends.length)
+          .map((l) => (
+            <svg key={l.bond} className="pe-clink" data-kind={l.kind} data-hot={lit(l) ? '' : undefined}>
+              {l.ends.map((e, i) => (
+                <circle key={i} className="end" cx={e.x} cy={e.y} r="3.5" />
+              ))}
+            </svg>
+          ))}
+      </div>
+    </>
   )
 }
 

@@ -95,6 +95,10 @@
 /* ── Chemistry on the field ────────────────────────────────── */
 
 .pe-links { --real: #f4c06a; --same: #68c98c; --rival: #ee7468; position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+/* The lines' own layer goes under the cards, and each card on a field with bonds is its
+   own stack, so the photo inside it can't rise over the rings and dots above. */
+.pe-links--under { z-index: 1; }
+:has(> .pe-links--under) .pe-fsl { z-index: 2; isolation: isolate; }
 .pe-links [data-kind='real'] { --bond: var(--real); }
 .pe-links [data-kind='same'] { --bond: var(--same); }
 .pe-links [data-kind='rival'] { --bond: var(--rival); }

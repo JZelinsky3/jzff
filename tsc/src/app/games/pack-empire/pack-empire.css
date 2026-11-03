@@ -10042,13 +10042,41 @@ a.pe-row:hover {
 }
 
 .pe-bd-vault-h {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
   margin: 0;
+  cursor: pointer;
+  list-style: none;
   font-family: var(--mono);
   font-weight: 700;
   font-size: 0.72rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--pe-ink);
+}
+
+.pe-bd-vault-h::-webkit-details-marker {
+  display: none;
+}
+
+.pe-bd-vault-h span {
+  color: var(--pe-ink-soft);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+}
+
+/* the drawer's chevron, turned down when it's open */
+.pe-bd-vault-h::after {
+  content: '▾';
+  margin-left: auto;
+  color: var(--pe-ink-soft);
+  transform: rotate(-90deg);
+  transition: transform 0.2s;
+}
+
+.pe-bd-vault[open] > .pe-bd-vault-h::after {
+  transform: none;
 }
 
 .pe-bd-vault-p {

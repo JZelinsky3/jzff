@@ -37,6 +37,7 @@ export function Binder({ view, mobile }: { view: BinderView; mobile: boolean }) 
   const [q, setQ] = useState('')
   const [limit, setLimit] = useState(PAGE)
   const [open, setOpen] = useState<{ man: BinderMan; card: BinderCard } | null>(null)
+  const [vaultOpen, setVaultOpen] = useState(false)
 
   // Runs played signed out on this device file into the binder once they're
   // claimed, so claim them here too and redraw if any went up.
@@ -209,15 +210,20 @@ export function Binder({ view, mobile }: { view: BinderView; mobile: boolean }) 
       )}
 
       {view.vaulted.length > 0 && (
-        <section className="pe-bd-vault">
-          <h2 className="pe-bd-vault-h">Vaulted</h2>
+        // A drawer, shut to start: it can run long, and it's the cards out of play.
+        <details className="pe-bd-vault" onToggle={(e) => setVaultOpen(e.currentTarget.open)}>
+          <summary className="pe-bd-vault-h">
+            Vaulted <span>{vaultCount(view.vaulted)}</span>
+          </summary>
           <p className="pe-bd-vault-p">Out of the packs for now. Yours to keep, and they don&apos;t count toward the set.</p>
-          <div className="pe-bd-list">
-            {view.vaulted.map((m) => (
-              <ManRow key={m.pid} man={m} mobile={mobile} onOpen={(card) => setOpen({ man: m, card })} />
-            ))}
-          </div>
-        </section>
+          {vaultOpen && (
+            <div className="pe-bd-list">
+              {view.vaulted.map((m) => (
+                <ManRow key={m.pid} man={m} mobile={mobile} onOpen={(card) => setOpen({ man: m, card })} />
+              ))}
+            </div>
+          )}
+        </details>
       )}
 
       {open && (
@@ -230,6 +236,11 @@ export function Binder({ view, mobile }: { view: BinderView; mobile: boolean }) 
       )}
     </div>
   )
+}
+
+function vaultCount(men: BinderMan[]): string {
+  const n = men.reduce((sum, m) => sum + m.cards.length, 0)
+  return `${n} ${n === 1 ? 'card' : 'cards'}`
 }
 
 function ManRow({ man, mobile, onOpen }: { man: BinderMan; mobile: boolean; onOpen: (c: BinderCard) => void }) {

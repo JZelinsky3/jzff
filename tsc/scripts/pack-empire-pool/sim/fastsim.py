@@ -6,7 +6,7 @@ W = {'normal': {'common': 43.4, 'rare': 11.6, 'dynasty': 7.8, 'transcendent': 2.
      'captain': {'common': 4.3, 'rare': 14.8, 'dynasty': 33.5, 'transcendent': 21.5, 'immortal': 3.5}}
 B = {'normal': dict(W['normal'], common=41.2, rare=14.2), 'captain': dict(W['captain'], rare=12.1, transcendent=23.9, immortal=1.4)}
 SLOTS = ['QB', 'RB', 'WR', 'WR', 'WR', 'TE', 'OT', 'OG', 'C', 'OG', 'OT']
-TIERS = [(20001, 'GOAT'), (17001, 'HOF'), (14001, 'SB Dynasty'), (11001, 'All-Pro'), (8001, 'Pro Bowl'), (5001, 'Starter'), (2001, 'Backup'), (0, 'PS')]
+TIERS = [(20000, 'GOAT'), (17000, 'HOF'), (14000, 'SB Dynasty'), (11000, 'All-Pro'), (8000, 'Pro Bowl'), (5000, 'Starter'), (2000, 'Backup'), (0, 'PS')]
 
 def run(pool, n=4000, seed=1):
     rng = random.Random(seed)

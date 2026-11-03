@@ -48,7 +48,9 @@ import {
   SALARY_CAP,
   SEED_ALPHABET,
   SEED_DIFF,
+  MYSTERY_CAP_WEIGHTS,
   MYSTERY_DIFF,
+  MYSTERY_RICH_CAP,
   SHARED_WEIGHTS,
   SOLO_BOOSTED,
   SLOTS,
@@ -814,7 +816,11 @@ export type MysteryPack = {
  * costs you but never leaves a hole (the Daily's rule).
  */
 export function mysteryPack(seed: string, captain: number, picks: { slot: number; id: string }[], versus = false): MysteryPack {
-  const ordinary = versus ? VERSUS_WEIGHTS : { normal: SOLO_WEIGHTS.normal, boosted: SOLO_BOOSTED.normal }
+  const ordinary = versus
+    ? VERSUS_WEIGHTS
+    : seed[9] === MYSTERY_RICH_CAP
+      ? MYSTERY_CAP_WEIGHTS
+      : { normal: SOLO_WEIGHTS.normal, boosted: SOLO_BOOSTED.normal }
   const taken = picks.map((p) => p.id)
   if (picks.length === 0) {
     const cards = dealPack({ label: `mystery:${seed}`, slot: captain, base: SOLO_WEIGHTS.captain, boosted: SOLO_BOOSTED.captain, exclude: taken })

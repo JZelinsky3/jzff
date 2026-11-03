@@ -47,6 +47,11 @@ def espn_small(espn_id):
         {'img': img, 'w': 360, 'h': 262, 'scale': 'crop', 'cquality': 80})
 
 
+# Men whose photo is somebody else's, dealt on the drawn portrait until one is
+# uploaded. Michael Pittman (RB, 1998-2008) came back with his son, the Colts' WR.
+WRONG_FACE = {'00-0013013'}
+
+
 def resolve(cards, legacy):
     """cards: one {pid, name, img} per man. Returns {pid: url or None}."""
     cache = json.load(open(CACHE)) if os.path.exists(CACHE) else {}
@@ -77,7 +82,7 @@ def resolve(cards, legacy):
                 cache[pid] = pick
         with open(CACHE, 'w') as f:
             json.dump(cache, f, indent=0, sort_keys=True)
-    return {c['pid']: cache.get(c['pid']) for c in cards}
+    return {c['pid']: None if c['pid'] in WRONG_FACE else cache.get(c['pid']) for c in cards}
 
 
 SEASON_CACHE = f'{S}/headshots_season.json'

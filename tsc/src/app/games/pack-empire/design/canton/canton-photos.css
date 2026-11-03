@@ -1,0 +1,17 @@
+/* Canton Photos (dev only). */
+.cxp { max-width: 1180px; margin: 0 auto; padding: 2.4rem 1rem 4rem; }
+.cxp-title { margin: 0; font: 900 2rem/1 var(--pe-display); color: #ffeec2; text-transform: uppercase; letter-spacing: .04em; }
+.cxp-sub { margin: .6rem 0 1.4rem; color: var(--pe-ink-soft); }
+.cxp-men { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2rem; }
+.cxp-men button { padding: .45rem .8rem; border: 1px solid #5a4a2a; border-radius: 999px; background: none; color: var(--pe-ink-soft); font: 700 .85rem/1 var(--pe-cond); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+.cxp-men button.on { border-color: #e8c46a; color: #ffeec2; background: rgba(232, 196, 106, .12); }
+.cxp-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 2.2rem 1.6rem; }
+.cxp-look { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+.cxp-look .pe-card { --pe-cs: 1.45; }
+.cxp-look figcaption { display: grid; gap: .3rem; max-width: 15rem; text-align: center; }
+.cxp-look figcaption b { font: 800 .95rem/1.2 var(--pe-cond); letter-spacing: .06em; text-transform: uppercase; color: #ffeec2; }
+.cxp-look figcaption span { font-size: .85rem; line-height: 1.4; color: var(--pe-ink-soft); }
+/* the head over the top bar: the art lets the photo out, and the photo stands taller */
+.cxp-break .pe-cf-art { overflow: visible; }
+.cxp-break .pe-cf-img { height: 132%; z-index: 30; }
+.cxp-break .pe-cf-season { z-index: 31; }

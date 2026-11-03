@@ -428,7 +428,7 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
    * Keep card i on a blind draft. `lock` puts the pick on record, and only then
    * does the server hand back the pack: the other four as they really are, and
    * the card you kept masked, or real under Show My Pick, when it turns over last
-   * and gets the walkout a big card would have had. `pick` then takes it to its
+   * with a plain flip, since you picked him by name. `pick` then takes it to its
    * slot, when you're ready. Null from `lock` means the table was out of step and has been put right, so
    * there's nothing left to show here.
    */
@@ -454,21 +454,16 @@ export function usePackStage(initial: StageState | null = null, { plainCanton = 
         setStage((cur) => (cur ? { ...cur, cards: out.cards, turned: true } : cur))
         const passed = out.cards.map((_, n) => n).filter((n) => n !== at)
         passed.forEach((n, step) => later(() => flip(s.slot, n), step * RIPPLE_MS))
-        if (shown) {
-          later(() => {
-            if (BIG.has(mine.rarity) && !noShow) {
-              enqueue(s.slot, [at], true)
-              runQueue(s.slot)
-            } else flip(s.slot, at)
-          }, passed.length * RIPPLE_MS + LAST_TURN_MS)
-        }
+        // Show My Pick: you chose him by name, so his card just turns over last, with no
+        // walkout or Hall for a big one (Joey). There's nothing left to find out.
+        if (shown) later(() => flip(s.slot, at), passed.length * RIPPLE_MS + LAST_TURN_MS)
       } catch (e) {
         setStage((cur) => (cur ? { ...cur, kept: null, error: e instanceof Error ? e.message : 'That pick did not save.' } : cur))
       } finally {
         busy.current = false
       }
     },
-    [stage, uploaded, later, flip, enqueue, runQueue, noShow]
+    [stage, uploaded, later, flip]
   )
 
   const dismiss = useCallback(() => setStage(null), [])
