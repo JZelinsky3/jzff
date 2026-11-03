@@ -24,6 +24,7 @@ import {
   mulliganPack,
   newSeason,
   openLeaguePack,
+  passLock,
   pickLeagueCard,
   releaseLock,
   removeCpus,
@@ -118,6 +119,8 @@ export async function POST(req: NextRequest) {
       return send(await submitLeagueDraft(id, userId))
     case 'lock':
       return send(await lockPlayer(id, userId, body.player))
+    case 'pass':
+      return send(await passLock(id, userId))
     case 'release':
       return send(await releaseLock(id, userId, body.player))
     case 'mulligan':

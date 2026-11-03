@@ -9,8 +9,9 @@
 //      marked on the cards it touches. With a mulligan (the bottom half of the
 //      table gets one), one opened pack can go back for a fresh one.
 //   3. Submit: the cards under the twist, plus chemistry.
-//   4. Lock: keep one man from this week. He holds his slot for the next
-//      LOCK_WEEKS weeks.
+//   4. Lock: keep one man from this week, or pass. He holds his slot for the
+//      next LOCK_WEEKS weeks. Either way the league sees this team is done,
+//      and this team can open the lineups of everyone else who is.
 //
 // Every step is a server call. An open pack is kept server-side, so a refresh
 // comes back to the same five cards, and a second pack can't be opened until
@@ -32,7 +33,7 @@ import {
 } from '@/lib/packEmpire/rules'
 import type { DraftView } from '@/lib/packEmpire/league'
 import { Field, LineupSheet, LockGlyph, type SlotView } from '../cards'
-import { DraftReport, PackBoard } from '../report'
+import { DraftReport } from '../report'
 import { PackStage, ScoreStrip, restoredStage, usePackStage, useStripOffset } from '../stage'
 
 async function post(body: Record<string, unknown>): Promise<DraftView> {
@@ -261,11 +262,13 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
               <b>{signed(final.chem.total)}</b> Chemistry
             </span>
           </div>
-          <p className="pe-recap-post">Nobody else sees it until the commissioner closes the week.</p>
+          <p className="pe-recap-post">
+            Only teams whose lineups are in can see it before the week closes, and now you can see theirs.
+          </p>
           {!view.canLock && (
             <div className="pe-recap-actions">
               <Link href={`/games/pack-empire/league/${leagueId}/`} className="pe-push">
-                Back to the league
+                See who else is in
               </Link>
             </div>
           )}
@@ -310,9 +313,9 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
                 <LockGlyph />
                 Lock him
               </button>
-              <Link href={`/games/pack-empire/league/${leagueId}/`} className="pe-act">
-                Skip, back to the league
-              </Link>
+              <button type="button" className="pe-act" disabled={busy} onClick={() => act({ action: 'pass' })}>
+                No lock this week
+              </button>
             </div>
           </div>
         )}
@@ -325,7 +328,6 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
           counted={{ cards: final.cards, rule: final.ruleDelta !== 0 ? final.ruleDelta : null, total }}
           sheet={<LineupSheet name="Your Eleven" lineup={view.lineup} total={total} counted={final.counted} />}
         />
-        {view.board && <PackBoard missed={view.board} />}
       </div>
     )
   }

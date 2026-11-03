@@ -741,22 +741,41 @@ export const PACK_TIER_COLOR: Record<PackTier, string> = {
  * Versus' table: a step up on Builder, which League can afford because it never
  * fills the binder. The old League tables dealt transcendents at more than twice
  * Builder's rate and handed the richest of them only to last week's top half.
+ *
+ * The one bonus card in each pack (see dealPack's second table) is at least a
+ * rare here, with the same odds as any card above that, so no ordinary pack is
+ * five commons. One in five was, and a week of them was nothing to draft
+ * (Joey, 2026-11-02: forty-five commons in fifty cards).
  */
-export const LEAGUE_ORDINARY: { normal: Weights; boosted: Weights } = VERSUS_WEIGHTS
+export const LEAGUE_ORDINARY: { normal: Weights; boosted: Weights } = {
+  normal: VERSUS_WEIGHTS.normal,
+  boosted: { common: 0, rare: 58, dynasty: 10.5, transcendent: 3.4, immortal: 1.2 },
+}
 
 /**
- * The Standings Pack, by tier: a straight line from the ordinary table to the
- * captain pack's, 30% of the way for a Starter, then 55%, 80%, and the captain
- * pack itself for the Elite Drop with a little more on the immortal. So the
- * winner's pack is the best in the game short of Canton and the last-placed
- * team's is still worth placing well. sim/league-cpu-sim.ts prints each tier's
- * average best card.
+ * The Standings Pack, by tier. The Starter Pack is Builder's captain pack, and
+ * each finish above it buys a richer one, so the bottom of the table still opens
+ * a captain pack every week and the winner's is the best in the game short of
+ * Canton. Per card, off the real pool (sim/league-cpu-sim.ts prints the best
+ * card each averages):
+ *
+ *               common  rare  dynasty  transcendent  immortal
+ *   Starter       17%    34%     36%       12%           1%
+ *   Rising        10%    29%     39%       19%           3%
+ *   Prime          5%    24%     40%       27%           4%
+ *   Elite          2%    17%     38%       37%           6%
+ *
+ * These are weights PER CARD, read against a pool with about four commons to
+ * every rare and seven to every dynasty, so they look nothing like those shares.
+ * The first cut drew straight lines between the ordinary table and the captain's
+ * on the raw weights and landed a Rising Pack at 51% commons: five of them is
+ * how a third-place finish opened nothing.
  */
 export const STANDINGS_WEIGHTS: Record<PackTier, Weights> = {
-  standard_pack: { common: 25.1, rare: 14.9, dynasty: 17.4, transcendent: 8.8, immortal: 1.9 },
-  rising_pack: { common: 17.7, rare: 14.9, dynasty: 23.2, transcendent: 13.4, immortal: 2.5 },
-  prime_pack: { common: 10.2, rare: 14.8, dynasty: 28.9, transcendent: 17.9, immortal: 3 },
-  elite_drop: { common: 4.3, rare: 14.8, dynasty: 33.5, transcendent: 21.5, immortal: 4.5 },
+  standard_pack: SOLO_WEIGHTS.captain,
+  rising_pack: { common: 2.5, rare: 12.4, dynasty: 35.8, transcendent: 32.2, immortal: 7.6 },
+  prime_pack: { common: 1.25, rare: 10.3, dynasty: 36.7, transcendent: 45.8, immortal: 12.1 },
+  elite_drop: { common: 0.5, rare: 7.3, dynasty: 34.9, transcendent: 62.7, immortal: 18.2 },
 }
 
 /** A lock holds his slot for this many weeks after the one he was kept in, then

@@ -18,9 +18,9 @@ import {
 } from '@/lib/packEmpire/rules'
 import mobileStyles from '../../../../../mobile.module.css'
 import { LineupSheet } from '../../../../cards'
-import { DraftReport, PackBoard } from '../../../../report'
 import { PeChrome } from '../../../../chrome'
 import { peFonts } from '../../../../fonts'
+import { DraftReport } from '../../../../report'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,29 +35,37 @@ function signed(n: number): string {
   return `${n >= 0 ? '+' : '−'}${Math.abs(n).toLocaleString()}`
 }
 
+function ordinal(n: number): string {
+  const v = n % 100
+  if (v >= 11 && v <= 13) return `${n}th`
+  return n + ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] ?? 'th')
+}
+
 export default async function LeagueTeamPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string; memberId: string }>
+  searchParams: Promise<{ w?: string }>
 }) {
   const { id: raw, memberId } = await params
+  const { w } = await searchParams
   const id = raw.toUpperCase()
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!/^[0-9a-f-]{36}$/.test(memberId)) notFound()
-  const view = await teamView(id, memberId, user?.id ?? null)
+  const view = await teamView(id, memberId, user?.id ?? null, typeof w === 'string' ? w : null)
   if (!view) notFound()
   const mobile = (await getViewMode()) === 'mobile'
 
   const d = view.draft
   const title = view.member.team ?? view.member.name
-  const weekLabel = d
-    ? d.phase === 'regular'
-      ? `Week ${d.week}`
-      : PHASE_LABEL[d.phase as LeaguePhase]
-    : null
+  const weekLabel = d ? (d.phase === 'regular' ? `Week ${d.week}` : PHASE_LABEL[d.phase as LeaguePhase]) : null
+  const base = `/games/pack-empire/league/${id}/team/${memberId}/`
+  const best = view.season.reduce<number | null>((m, x) => (m == null || x.score > m ? x.score : m), null)
+  const wins = view.season.filter((x) => x.rank === 1).length
 
   return (
     <main className={`pe-theme ${peFonts} ${mobile ? mobileStyles.boardRoot : ''}`.trim()}>
@@ -72,9 +80,28 @@ export default async function LeagueTeamPage({
       />
       <div className="pe-wrap">
         <div className="pe-table-head">
-          <div className="pe-kicker">★ {view.member.team ? view.member.name : 'Team'} ★</div>
+          <div className="pe-kicker">
+            ★ {view.member.cpu ? 'CPU' : view.member.team ? view.member.name : 'Team'}
+            {view.member.titles > 0 ? ` · ${view.member.titles} title${view.member.titles === 1 ? '' : 's'}` : ''} ★
+          </div>
           <h1 className="pe-table-title">{title}</h1>
+          {view.season.length > 0 && best != null && (
+            <p className="pe-table-sub">
+              {view.season.length} week{view.season.length === 1 ? '' : 's'} on show · best {best.toLocaleString()}
+              {wins ? ` · won ${wins} week${wins === 1 ? '' : 's'}` : ''}
+            </p>
+          )}
         </div>
+
+        {view.season.length > 1 && (
+          <nav className="pe-lt-tabs" aria-label="Weeks">
+            {[...view.season].reverse().map((x) => (
+              <Link key={x.key} href={`${base}?w=${x.key}`} className={d?.key === x.key ? 'on' : ''} scroll={false}>
+                {x.key.startsWith('regular') ? x.label.replace('Week ', 'Wk ') : x.label.replace('The ', '')}
+              </Link>
+            ))}
+          </nav>
+        )}
 
         {d ? (
           (() => {
@@ -90,6 +117,7 @@ export default async function LeagueTeamPage({
                   <div className="pe-kicker">
                     § {weekLabel}
                     {d.rule ? ` · ${d.rule.title}` : ''}
+                    {d.early ? ' · In, before the close' : ''}
                   </div>
                   <div className="pe-recap-tier">{tierFor(d.finalScore).label}</div>
                   <div className="pe-recap-score">{d.finalScore.toLocaleString()}</div>
@@ -119,7 +147,6 @@ export default async function LeagueTeamPage({
                   counted={{ cards, rule: twist !== 0 ? twist : null, total: d.finalScore }}
                   sheet={<LineupSheet name={weekLabel ?? 'Lineup'} lineup={d.lineup} total={d.finalScore} counted={scored?.counted} />}
                 />
-                {d.board && <PackBoard missed={d.board} />}
               </div>
             )
           })()
@@ -127,19 +154,45 @@ export default async function LeagueTeamPage({
           <p className="pe-empty">
             {view.member.you
               ? 'No lineup yet this season.'
-              : 'Nothing revealed yet. Lineups show once the commissioner closes the week.'}
+              : 'Nothing to show yet. A lineup opens once the week closes, or as soon as your own lineup is in.'}
           </p>
         )}
 
-        <section className="pe-sec">
-          <div className="pe-sec-head">
-            <span className="pe-sec-num">§ Locked</span>
-            <span className="pe-sec-title">Keepers</span>
-            <span className="pe-sec-meta">{view.locks.length} holding a slot</span>
-          </div>
-          {view.locks.length === 0 ? (
-            <p className="pe-empty">Nobody locked yet.</p>
-          ) : (
+        {view.season.length > 0 && (
+          <section className="pe-sec">
+            <div className="pe-sec-head">
+              <span className="pe-sec-num">§ Season</span>
+              <span className="pe-sec-title">Week by Week</span>
+              <span className="pe-sec-meta">Tap a week to see the lineup</span>
+            </div>
+            <div className="pe-tw">
+              {view.season.map((x) => (
+                <Link key={x.key} href={`${base}?w=${x.key}`} className={`pe-tw-row${d?.key === x.key ? ' on' : ''}`} scroll={false}>
+                  <span className="pe-tw-week">{x.label}</span>
+                  <span className="pe-tw-mid">
+                    <span className="pe-tw-rule">{x.rule ?? 'Plain week'}</span>
+                    <span className="pe-tw-sub">
+                      <span style={{ color: PACK_TIER_COLOR[x.tier] }}>{PACK_TIER_LABEL[x.tier]}</span>
+                      {x.packSlot != null && x.packSlot >= 0 ? ` at ${SLOTS[x.packSlot].short}` : ''}
+                      {x.mulligan ? ' · Mulligan' : ''}
+                      {x.locked ? ` · Locked ${x.locked}` : ''}
+                    </span>
+                  </span>
+                  <span className="pe-tw-rank">{x.rank != null ? (x.rank === 1 ? '★ 1st' : `${ordinal(x.rank)} of ${x.of}`) : 'In'}</span>
+                  <span className="pe-tw-score">{x.score.toLocaleString()}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {view.locks.length > 0 && (
+          <section className="pe-sec">
+            <div className="pe-sec-head">
+              <span className="pe-sec-num">§ Locked</span>
+              <span className="pe-sec-title">Keepers</span>
+              <span className="pe-sec-meta">{view.locks.length} holding a slot</span>
+            </div>
             <div className="pe-row-list">
               {view.locks.map((l) => {
                 const p = l.player as Player
@@ -158,8 +211,8 @@ export default async function LeagueTeamPage({
                 )
               })}
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
         <div className="pe-recap-actions" style={{ marginTop: '2rem' }}>
           <Link href={`/games/pack-empire/league/${id}/`} className="pe-act">

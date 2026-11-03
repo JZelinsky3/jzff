@@ -41,14 +41,13 @@ import { containsHateSpeech } from '@/lib/contentModeration'
 import { dealPack, newServerSeed } from './deal'
 import { cpuBoostSlot, cpuDraft, cpuLock, cpuTeamName } from './leagueCpu'
 import { ruleForWeek, weekRule, weekRuleView, weekScore, type WeekRuleView } from './leagueWeek'
-import { mysteryMissed } from './missed'
 import { isId, nameForUser, newId } from './people'
 import {
   LEAGUE_ORDINARY,
   LEAGUE_SIZES,
   LOCK_WEEKS,
   MIN_LEAGUE_PLAYERS,
-  PACK_TIER_LABEL,
+  PHASE_LABEL,
   REGULAR_WEEKS,
   SLOT_COUNT,
   STANDINGS_WEIGHTS,
@@ -60,7 +59,6 @@ import {
   playoffOptions,
   type Chemistry,
   type LeaguePhase,
-  type Missed,
   type PackTier,
   type Player,
   type Weights,
@@ -338,6 +336,22 @@ export async function openLeagues(userId: string | null): Promise<LeagueCard[]> 
 // ============================================================
 // The league page
 // ============================================================
+//
+// What makes it a league and not a lobby: a table with the season in it (every
+// week's score and finish, weeks won, movement, how far back), a live board of
+// who has drafted and locked this week, a recap of the week just closed, the
+// season's schedule with every week's twist on it (so a lock can be made for a
+// week that's coming), and the champions of seasons past.
+//
+// What stays hidden: a lineup this week, until the week closes, except to a
+// team that has put its own lineup in. Then it can see everyone else who has.
+
+/** Passing on the week's lock is recorded, so the league can see a team is done. */
+export const PASSED_LOCK = 'pass'
+
+/** Where a team is with this week: nothing yet, mid-draft, lineup in with the
+    lock still to decide, locked, or done (passed, or no lock this week). */
+export type WeekStatus = 'none' | 'drafting' | 'in' | 'locked' | 'done'
 
 export type StandingRow = {
   memberId: string
@@ -348,17 +362,52 @@ export type StandingRow = {
   playoff: number
   /** Revealed weekly finals, regular season, in week order. */
   weeks: (number | null)[]
+  /** Where each of those finished that week, 1 for the week's best. */
+  weekRanks: (number | null)[]
+  /** Weeks with the league's top score. */
+  wins: number
+  best: number | null
+  avg: number | null
   lastWeek: number | null
+  /** Places climbed (+) or dropped (−) on the table in the last closed week. */
+  move: number | null
+  /** Points behind the top of the table. */
+  back: number
   locks: number
   /** The Standings Pack this team opens this week. */
   tier: PackTier
   mulligan: boolean
-  /** This week's draft: none, started, or in. Never its contents. */
-  thisWeek: 'none' | 'drafting' | 'submitted'
+  /** This week, never its contents. */
+  status: WeekStatus
+  /** The viewer can open this team's lineup for this week now. */
+  peek: boolean
   active: boolean
   seed: number | null
   you: boolean
   cpu: boolean
+}
+
+export type RecapCard = Pick<Player, 'id' | 'name' | 'pos' | 'team' | 'year' | 'rarity' | 'score' | 'img'>
+
+/** The week just closed, in a few lines. */
+export type WeekRecap = {
+  label: string
+  rule: WeekRuleView | null
+  avg: number
+  top: { memberId: string; team: string; score: number }[]
+  low: { memberId: string; team: string; score: number } | null
+  bestPull: { memberId: string; team: string; card: RecapCard } | null
+  bestChem: { memberId: string; team: string; chem: number } | null
+  climber: { memberId: string; team: string; places: number; to: number } | null
+}
+
+export type ScheduleWeek = {
+  key: string
+  label: string
+  short: string
+  rule: WeekRuleView | null
+  state: 'done' | 'now' | 'next'
+  winner: { memberId: string; team: string; score: number } | null
 }
 
 export type LeagueView = {
@@ -378,6 +427,86 @@ export type LeagueView = {
   rule: WeekRuleView | null
   /** The viewer's locks holding a slot this week. */
   myLocks: Lock[]
+  /** Teams in the playoffs: the line on the table. */
+  playoffSpots: number
+  recap: WeekRecap | null
+  schedule: ScheduleWeek[]
+  /** Champions of seasons past, newest first. */
+  history: { season: number; memberId: string; team: string; score: number }[]
+}
+
+type SeasonDraft = Pick<
+  DraftRow,
+  'member_id' | 'phase' | 'week_number' | 'status' | 'final_score' | 'locked_this_week' | 'roster' | 'chemistry' | 'season_number'
+>
+
+/** Regular weeks 0..7, then the Gauntlet, then the Final. */
+function weekIndex(phase: string, week: number): number {
+  if (phase === 'gauntlet') return REGULAR_WEEKS
+  if (phase === 'finals') return REGULAR_WEEKS + 1
+  return week - 1
+}
+
+function nowIndex(league: LeagueRow): number {
+  if (league.phase === 'pregame') return -1
+  if (league.phase === 'complete') return Infinity
+  return weekIndex(league.phase, league.current_week)
+}
+
+function weekLabel(phase: string, week: number): string {
+  return phase === 'regular' ? `Week ${week}` : PHASE_LABEL[phase as LeaguePhase] ?? phase
+}
+
+function lockableWeek(league: LeagueRow): boolean {
+  return league.phase === 'regular' && league.current_week < REGULAR_WEEKS
+}
+
+function statusOf(league: LeagueRow, d: Pick<DraftRow, 'status' | 'locked_this_week'> | undefined): WeekStatus {
+  if (!d) return 'none'
+  if (d.status === 'drafting') return 'drafting'
+  if (!lockableWeek(league)) return 'done'
+  if (d.locked_this_week == null) return 'in'
+  return d.locked_this_week === PASSED_LOCK ? 'done' : 'locked'
+}
+
+function rankOf(scores: Map<string, number>): Map<string, number> {
+  const order = [...scores.entries()].sort((a, b) => b[1] - a[1])
+  return new Map(order.map(([id], i) => [id, i + 1]))
+}
+
+function recapFor(
+  label: string,
+  rule: WeekRuleView | null,
+  rows: SeasonDraft[],
+  teamName: (id: string) => string,
+  climb: { memberId: string; places: number; to: number } | null
+): WeekRecap | null {
+  const done = rows.filter((d) => d.status === 'submitted' && d.final_score != null)
+  if (!done.length) return null
+  const byScore = [...done].sort((a, b) => (b.final_score ?? 0) - (a.final_score ?? 0))
+  const entry = (d: SeasonDraft) => ({ memberId: d.member_id, team: teamName(d.member_id), score: d.final_score ?? 0 })
+  let bestPull: WeekRecap['bestPull'] = null
+  let bestChem: WeekRecap['bestChem'] = null
+  for (const d of done) {
+    for (const p of (d.roster ?? []) as (Player | null)[]) {
+      if (p && (!bestPull || p.score > bestPull.card.score)) {
+        const { id, name, pos, team, year, rarity, score, img } = p
+        bestPull = { memberId: d.member_id, team: teamName(d.member_id), card: { id, name, pos, team, year, rarity, score, img } }
+      }
+    }
+    const chem = d.chemistry?.total ?? 0
+    if (!bestChem || chem > bestChem.chem) bestChem = { memberId: d.member_id, team: teamName(d.member_id), chem }
+  }
+  return {
+    label,
+    rule,
+    avg: Math.round(done.reduce((s, d) => s + (d.final_score ?? 0), 0) / done.length),
+    top: byScore.slice(0, 3).map(entry),
+    low: byScore.length > 3 ? entry(byScore[byScore.length - 1]) : null,
+    bestPull,
+    bestChem: bestChem && bestChem.chem > 0 ? bestChem : null,
+    climber: climb ? { ...climb, team: teamName(climb.memberId) } : null,
+  }
 }
 
 export async function leagueView(id: string, userId: string | null): Promise<LeagueView | null> {
@@ -388,25 +517,50 @@ export async function leagueView(id: string, userId: string | null): Promise<Lea
 
   const { data: draftRows } = await db()
     .from('pe_league_drafts')
-    .select('member_id, phase, week_number, status, final_score, locked_this_week')
+    .select('member_id, phase, week_number, status, final_score, locked_this_week, roster, chemistry, season_number')
     .eq('league_id', league.id)
-    .eq('season_number', league.season_number)
-  const ds = (draftRows ?? []) as Pick<DraftRow, 'member_id' | 'phase' | 'week_number' | 'status' | 'final_score' | 'locked_this_week'>[]
+    .lte('season_number', league.season_number)
+  const all = (draftRows ?? []) as SeasonDraft[]
+  const ds = all.filter((d) => d.season_number === league.season_number)
+  const teamName = (mid: string) => {
+    const m = members.find((x) => x.id === mid)
+    return m ? m.team_name ?? m.display_name : 'A former team'
+  }
 
+  const at = nowIndex(league)
   const current = (d: { phase: string; week_number: number }) =>
     d.phase === league.phase && d.week_number === league.current_week
+  const mineNow = member ? ds.find((d) => d.member_id === member.id && current(d)) : undefined
+  const viewerIn = mineNow?.status === 'submitted'
 
-  const standings: StandingRow[] = members.map((m) => {
-    const mine = ds.filter((d) => d.member_id === m.id)
-    const weeks: (number | null)[] = []
-    for (let w = 1; w <= REGULAR_WEEKS; w++) {
-      const d = mine.find((x) => x.phase === 'regular' && x.week_number === w && x.status === 'submitted')
-      // A week is revealed once the league has moved past it.
-      const revealed = league.phase !== 'regular' || w < league.current_week
-      weeks.push(d && revealed ? (d.final_score ?? 0) : null)
+  // Every closed regular week: each team's score, its finish that week, and
+  // where it stood on the table after it.
+  const closedWeeks: number[] = []
+  for (let w = 1; w <= REGULAR_WEEKS; w++) if (weekIndex('regular', w) < at) closedWeeks.push(w)
+  const scoreAt = new Map<number, Map<string, number>>()
+  const rankAt = new Map<number, Map<string, number>>()
+  const tableAt = new Map<number, Map<string, number>>()
+  const running = new Map(members.map((m) => [m.id, 0]))
+  for (const w of closedWeeks) {
+    const week = new Map<string, number>()
+    for (const d of ds) {
+      if (d.phase === 'regular' && d.week_number === w && d.status === 'submitted') week.set(d.member_id, d.final_score ?? 0)
     }
-    const revealedWeeks = weeks.filter((x): x is number => x != null)
-    const now = mine.find(current)
+    scoreAt.set(w, week)
+    rankAt.set(w, rankOf(week))
+    for (const m of members) running.set(m.id, (running.get(m.id) ?? 0) + (week.get(m.id) ?? 0))
+    tableAt.set(w, rankOf(new Map(running)))
+  }
+  const lastClosed = closedWeeks[closedWeeks.length - 1] ?? null
+  const prevClosed = closedWeeks[closedWeeks.length - 2] ?? null
+
+  const post = isPostseason(league.phase) || league.phase === 'complete'
+  const standings: StandingRow[] = members.map((m) => {
+    const weeks = Array.from({ length: REGULAR_WEEKS }, (_, i) => scoreAt.get(i + 1)?.get(m.id) ?? null)
+    const weekRanks = Array.from({ length: REGULAR_WEEKS }, (_, i) => rankAt.get(i + 1)?.get(m.id) ?? null)
+    const played = weeks.filter((x): x is number => x != null)
+    const now = ds.find((d) => d.member_id === m.id && current(d))
+    const you = !!userId && m.user_id === userId
     return {
       memberId: m.id,
       userId: m.user_id,
@@ -415,27 +569,98 @@ export async function leagueView(id: string, userId: string | null): Promise<Lea
       total: m.team_score,
       playoff: m.playoff_score,
       weeks,
-      lastWeek: revealedWeeks.length ? revealedWeeks[revealedWeeks.length - 1] : null,
+      weekRanks,
+      wins: weekRanks.filter((r) => r === 1).length,
+      best: played.length ? Math.max(...played) : null,
+      avg: played.length ? Math.round(played.reduce((s, v) => s + v, 0) / played.length) : null,
+      lastWeek: lastClosed != null ? (scoreAt.get(lastClosed)?.get(m.id) ?? null) : null,
+      move:
+        lastClosed != null && prevClosed != null
+          ? (tableAt.get(prevClosed)?.get(m.id) ?? 0) - (tableAt.get(lastClosed)?.get(m.id) ?? 0)
+          : null,
+      back: 0,
       locks: league.phase === 'regular' ? liveLocks(m, league.current_week).length : 0,
       tier: m.next_pack_tier,
       mulligan: !!m.mulligan,
-      thisWeek: now ? now.status : 'none',
+      status: statusOf(league, now),
+      peek: now?.status === 'submitted' && (you || viewerIn),
       active: m.playoff_active,
       seed: m.playoff_seed,
-      you: !!userId && m.user_id === userId,
+      you,
       cpu: !!m.is_cpu,
     }
   })
 
-  const post = isPostseason(league.phase) || league.phase === 'complete'
   standings.sort((a, b) =>
     post
       ? Number(b.active) - Number(a.active) || b.playoff - a.playoff || b.total - a.total
       : b.total - a.total || a.name.localeCompare(b.name)
   )
+  const lead = standings[0]
+  for (const s of standings) s.back = post ? (s.active ? lead.playoff - s.playoff : 0) : lead.total - s.total
+
+  // The week just closed.
+  let recap: WeekRecap | null = null
+  const lastIdx = Math.min(at, REGULAR_WEEKS + 2) - 1
+  if (lastIdx >= 0 && at !== -1) {
+    const phase = lastIdx < REGULAR_WEEKS ? 'regular' : lastIdx === REGULAR_WEEKS ? 'gauntlet' : 'finals'
+    const week = phase === 'regular' ? lastIdx + 1 : 1
+    const rows = ds.filter((d) => d.phase === phase && d.week_number === week)
+    // A league seeded straight into the Final has no Gauntlet week to recap.
+    const target = rows.length || phase !== 'gauntlet' ? { phase, week, rows } : { phase: 'regular', week: REGULAR_WEEKS, rows: ds.filter((d) => d.phase === 'regular' && d.week_number === REGULAR_WEEKS) }
+    let climb: { memberId: string; places: number; to: number } | null = null
+    if (target.phase === 'regular' && prevClosed != null && lastClosed === target.week) {
+      for (const s of standings) {
+        if (s.move != null && s.move > 0 && (!climb || s.move > climb.places)) {
+          climb = { memberId: s.memberId, places: s.move, to: tableAt.get(lastClosed)?.get(s.memberId) ?? 0 }
+        }
+      }
+    }
+    const rule = league.week_rules === false ? null : weekRuleView(ruleForWeek(league.id, league.season_number, target.phase as LeaguePhase, target.week))
+    recap = recapFor(weekLabel(target.phase, target.week), rule, target.rows, teamName, climb)
+  }
+
+  // The season, week by week, with every twist on it.
+  const spots = playoffFieldSize(league.playoff_size, members.length)
+  const slate: { phase: LeaguePhase; week: number }[] = [
+    ...Array.from({ length: REGULAR_WEEKS }, (_, i) => ({ phase: 'regular' as LeaguePhase, week: i + 1 })),
+    ...(spots >= 3 ? [{ phase: 'gauntlet' as LeaguePhase, week: 1 }] : []),
+    { phase: 'finals' as LeaguePhase, week: 1 },
+  ]
+  const schedule: ScheduleWeek[] = slate.map(({ phase, week }) => {
+    const idx = weekIndex(phase, week)
+    const state = idx < at ? 'done' : idx === at ? 'now' : 'next'
+    const top =
+      state === 'done'
+        ? ds
+            .filter((d) => d.phase === phase && d.week_number === week && d.status === 'submitted')
+            .sort((a, b) => (b.final_score ?? 0) - (a.final_score ?? 0))[0]
+        : undefined
+    return {
+      key: `${phase}-${week}`,
+      label: weekLabel(phase, week),
+      short: phase === 'regular' ? `Wk ${week}` : phase === 'gauntlet' ? 'Gauntlet' : 'Final',
+      rule: league.week_rules === false ? null : weekRuleView(ruleForWeek(league.id, league.season_number, phase, week)),
+      state,
+      winner: top ? { memberId: top.member_id, team: teamName(top.member_id), score: top.final_score ?? 0 } : null,
+    }
+  })
+
+  // Seasons past: the champion is the best postseason total among the
+  // finalists, the Gauntlet and the Final together.
+  const history: LeagueView['history'] = []
+  for (let s = league.season_number - 1; s >= 1; s--) {
+    const playoffRows = all.filter((d) => d.season_number === s && (d.phase === 'gauntlet' || d.phase === 'finals') && d.status === 'submitted')
+    const finalists = new Set(playoffRows.filter((d) => d.phase === 'finals').map((d) => d.member_id))
+    let best: { memberId: string; score: number } | null = null
+    for (const mid of finalists) {
+      const score = playoffRows.filter((d) => d.member_id === mid).reduce((t, d) => t + (d.final_score ?? 0), 0)
+      if (!best || score > best.score) best = { memberId: mid, score }
+    }
+    if (best) history.push({ season: s, memberId: best.memberId, team: teamName(best.memberId), score: best.score })
+  }
 
   const championRow = league.phase === 'complete' ? members.find((m) => m.playoff_active && m.playoff_seed === 1) : null
-  const mineNow = member ? ds.find((d) => d.member_id === member.id && current(d)) : null
   const commissioner = !!userId && league.commissioner_id === userId
 
   const { join_code, commissioner_id: _c, ...rest } = league
@@ -452,6 +677,10 @@ export async function leagueView(id: string, userId: string | null): Promise<Lea
     cpus: members.filter((m) => m.is_cpu).length,
     rule: ['regular', 'gauntlet', 'finals'].includes(league.phase) ? weekRuleView(currentRule(league)) : null,
     myLocks: member && league.phase === 'regular' ? liveLocks(member, league.current_week) : [],
+    playoffSpots: spots,
+    recap,
+    schedule,
+    history,
   }
 }
 
@@ -487,8 +716,6 @@ export type DraftView = {
   canLock: boolean
   locked: string | null
   lockedIds: string[]
-  /** After submitting, every pack opened against what it held. */
-  board: Missed | null
 }
 
 async function context(leagueId: string, userId: string) {
@@ -585,23 +812,6 @@ function liveLineup(d: DraftRow): (Player | null)[] {
   return lineup
 }
 
-/** Every pack opened, in order, against what it held. League packs change with
-    what you keep, so there's no one perfect eleven: like Mystery's board. */
-function boardFor(d: DraftRow): Missed | null {
-  if (d.status !== 'submitted' || d.rule_id == null) return null
-  const rows = d.picks.flatMap((pk) => {
-    const cards = d.packs?.[pk.slot]
-    return cards?.length ? [{ slot: pk.slot, cards, kept: pk.id }] : []
-  })
-  if (!rows.length) return null
-  const board = mysteryMissed(rows, d.final_score ?? 0)
-  for (const row of board.rows ?? []) {
-    if (row.slot === d.mulligan_slot) row.note = 'Mulligan'
-    else if (row.slot === d.boosted_slot) row.note = PACK_TIER_LABEL[d.pack_tier]
-  }
-  return board
-}
-
 function draftView(league: LeagueRow, member: MemberRow, d: DraftRow | null): DraftView {
   const live = league.phase === 'regular' ? liveLocks(member, league.current_week) : []
   const base = {
@@ -631,7 +841,6 @@ function draftView(league: LeagueRow, member: MemberRow, d: DraftRow | null): Dr
       finalScore: null,
       canLock: false,
       locked: null,
-      board: null,
     }
   }
   const rule = weekRule(d.rule_id)
@@ -658,7 +867,6 @@ function draftView(league: LeagueRow, member: MemberRow, d: DraftRow | null): Dr
       league.current_week < REGULAR_WEEKS &&
       !d.locked_this_week,
     locked: d.locked_this_week,
-    board: boardFor(d),
   }
 }
 
@@ -906,15 +1114,49 @@ export async function lockPlayer(
   return { ok: true, view: draftView(league, { ...member, permanent_locks: nextLocks }, data as DraftRow) }
 }
 
+/** No lock this week: recorded, so the league can see this team is done. */
+export async function passLock(leagueId: string, userId: string): Promise<{ ok: true; view: DraftView } | Fail> {
+  const ctx = await context(leagueId, userId)
+  if ('error' in ctx) return ctx.error!
+  const { league, member } = ctx
+  const d = await weekDraft(league, member)
+  if (!d || d.status !== 'submitted') return { ok: false, error: 'Submit this week first.' }
+  if (!lockableWeek(league) || d.locked_this_week) return { ok: true, view: draftView(league, member, d) }
+  const { data } = await db()
+    .from('pe_league_drafts')
+    .update({ locked_this_week: PASSED_LOCK })
+    .eq('id', d.id)
+    .is('locked_this_week', null)
+    .select('*')
+    .maybeSingle()
+  return { ok: true, view: draftView(league, member, (data as DraftRow | null) ?? d) }
+}
+
 // ============================================================
 // Team view
 // ============================================================
 
+export type TeamWeek = {
+  key: string
+  label: string
+  rule: string | null
+  tier: PackTier
+  packSlot: number | null
+  score: number
+  /** Where it finished that week, once the week has closed. */
+  rank: number | null
+  of: number
+  /** The man kept that week, by name. */
+  locked: string | null
+  mulligan: boolean
+}
+
 export type TeamView = {
   league: { id: string; name: string; phase: LeaguePhase; week: number }
-  member: { id: string; name: string; team: string | null; you: boolean }
-  /** The most recent draft the viewer is allowed to see. */
+  member: { id: string; name: string; team: string | null; you: boolean; cpu: boolean; titles: number }
+  /** The week on show: the one asked for, or the latest the viewer may see. */
   draft: {
+    key: string
     phase: string
     week: number
     lineup: (Player | null)[]
@@ -926,52 +1168,97 @@ export type TeamView = {
     rule: WeekRuleView | null
     tier: PackTier
     packSlot: number | null
-    board: Missed | null
+    /** This week's, seen before the close because the viewer's lineup is in. */
+    early: boolean
   } | null
+  /** Every week the viewer may see, newest first. */
+  season: TeamWeek[]
   /** Locks holding a slot this week. */
   locks: Lock[]
 }
 
-export async function teamView(leagueId: string, memberId: string, userId: string | null): Promise<TeamView | null> {
+const keyOf = (d: Pick<DraftRow, 'phase' | 'week_number'>) => `${d.phase}-${d.week_number}`
+
+export async function teamView(
+  leagueId: string,
+  memberId: string,
+  userId: string | null,
+  wanted: string | null = null
+): Promise<TeamView | null> {
   const league = await loadLeague(leagueId)
   if (!league) return null
-  const { data: m } = await db().from('pe_league_members').select('*').eq('id', memberId).eq('league_id', league.id).maybeSingle()
-  const member = (m as MemberRow | null) ?? null
+  const members = await loadMembers(league.id)
+  const member = members.find((m) => m.id === memberId) ?? null
   if (!member) return null
   const you = !!userId && member.user_id === userId
+  const viewer = userId ? members.find((m) => m.user_id === userId) ?? null : null
 
   const { data: rows } = await db()
     .from('pe_league_drafts')
     .select('*')
     .eq('league_id', league.id)
-    .eq('member_id', member.id)
     .eq('season_number', league.season_number)
     .eq('status', 'submitted')
-    .order('completed_at', { ascending: false })
-  const list = (rows ?? []) as DraftRow[]
-  // Somebody else's current-week draft stays hidden until the week turns.
-  const visible = list.find(
-    (d) => you || !(d.phase === league.phase && d.week_number === league.current_week && league.phase !== 'complete')
-  )
+  const all = (rows ?? []) as DraftRow[]
+  const at = nowIndex(league)
+  const closed = (d: DraftRow) => weekIndex(d.phase, d.week_number) < at
+  // This week's lineups open to a team whose own is in; the rest wait for the close.
+  const viewerIn = !!viewer && all.some((d) => d.member_id === viewer.id && !closed(d))
+  const visible = (d: DraftRow) => closed(d) || you || viewerIn
 
+  const mine = all
+    .filter((d) => d.member_id === member.id && visible(d))
+    .sort((a, b) => weekIndex(b.phase, b.week_number) - weekIndex(a.phase, a.week_number))
+
+  const season: TeamWeek[] = mine.map((d) => {
+    const field = all.filter((x) => x.phase === d.phase && x.week_number === d.week_number)
+    const rank = closed(d) ? field.filter((x) => (x.final_score ?? 0) > (d.final_score ?? 0)).length + 1 : null
+    const lockedMan =
+      d.locked_this_week && d.locked_this_week !== PASSED_LOCK
+        ? ((d.roster ?? []) as (Player | null)[]).find((p) => p?.id === d.locked_this_week)?.name ?? null
+        : null
+    return {
+      key: keyOf(d),
+      label: weekLabel(d.phase, d.week_number),
+      rule: d.rule_id ? weekRuleView(weekRule(d.rule_id))?.title ?? null : null,
+      tier: d.pack_tier,
+      packSlot: d.boosted_slot,
+      score: d.final_score ?? 0,
+      rank,
+      of: field.length,
+      locked: lockedMan,
+      mulligan: d.mulligan_slot != null,
+    }
+  })
+
+  const shown = mine.find((d) => keyOf(d) === wanted) ?? mine[0]
   return {
     league: { id: league.id, name: league.name, phase: league.phase, week: league.current_week },
-    member: { id: member.id, name: member.display_name, team: member.team_name, you },
-    draft: visible
+    member: {
+      id: member.id,
+      name: member.display_name,
+      team: member.team_name,
+      you,
+      cpu: !!member.is_cpu,
+      titles: member.titles ?? 0,
+    },
+    draft: shown
       ? {
-          phase: visible.phase,
-          week: visible.week_number,
-          lineup: (visible.roster ?? []) as (Player | null)[],
-          draftScore: visible.draft_score ?? 0,
-          chemistry: visible.chemistry ?? { bonds: [], synergy: 0, rivalry: 0, total: 0 },
-          finalScore: visible.final_score ?? 0,
-          ruleId: visible.rule_id,
-          rule: visible.rule_id ? weekRuleView(weekRule(visible.rule_id)) : null,
-          tier: visible.pack_tier,
-          packSlot: visible.boosted_slot,
-          board: boardFor(visible),
+          key: keyOf(shown),
+          phase: shown.phase,
+          week: shown.week_number,
+          lineup: (shown.roster ?? []) as (Player | null)[],
+          draftScore: shown.draft_score ?? 0,
+          chemistry: shown.chemistry ?? { bonds: [], synergy: 0, rivalry: 0, total: 0 },
+          finalScore: shown.final_score ?? 0,
+          ruleId: shown.rule_id,
+          rule: shown.rule_id ? weekRuleView(weekRule(shown.rule_id)) : null,
+          tier: shown.pack_tier,
+          packSlot: shown.boosted_slot,
+          early: !closed(shown) && !you,
         }
       : null,
+    season,
     locks: league.phase === 'regular' ? liveLocks(member, league.current_week) : [],
   }
 }
@@ -1245,7 +1532,7 @@ async function playCpu(league: LeagueRow, member: MemberRow): Promise<void> {
     draft_score: draftScore,
     chemistry,
     final_score: finalScore,
-    locked_this_week: keep?.player.id ?? null,
+    locked_this_week: keep?.player.id ?? (lockableWeek(league) ? PASSED_LOCK : null),
     started_at: now,
     completed_at: now,
   })

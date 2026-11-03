@@ -11,6 +11,7 @@ import mobileStyles from '../../../mobile.module.css'
 import { PeChrome } from '../../chrome'
 import { peFonts } from '../../fonts'
 import { ShareButton } from '../../share'
+import { HistoryList, ScheduleStrip, StandingsTable, WeekPanel, WeekRecapCard, isReady } from '../LeagueBoard'
 import { CommishPanel, JoinThisLeague, LeaveLeague, RenameTeam } from '../LeagueControls'
 
 export const dynamic = 'force-dynamic'
@@ -50,9 +51,9 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
   const post = league.phase === 'gauntlet' || league.phase === 'finals' || league.phase === 'complete'
   const drafting = league.phase === 'regular' || ((league.phase === 'gauntlet' || league.phase === 'finals') && !!member?.playoff_active)
   const champion = view.champion ? standings.find((s) => s.memberId === view.champion) : null
-  const waitingOn = standings.filter(
-    (s) => s.thisWeek !== 'submitted' && (league.phase === 'regular' || s.active)
-  ).length
+  // Not done: no lineup yet, or still deciding the lock.
+  const waitingOn = standings.filter((s) => !isReady(s) && (league.phase === 'regular' || s.active)).length
+  const othersIn = standings.filter((s) => s.peek && !s.you).length
 
   const weekLine =
     league.phase === 'regular'
@@ -73,11 +74,18 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
     } else if (league.phase === 'regular' && league.current_week < REGULAR_WEEKS && !d.locked) {
       cta = (
         <Link href={`/games/pack-empire/league/${league.id}/draft/`} className="pe-push">
-          Lock a player
+          Lock a player, or pass
         </Link>
       )
     } else {
-      cta = <p className="pe-note">Your lineup is in. Waiting on the commissioner to close the week.</p>
+      cta = (
+        <p className="pe-note">
+          You&apos;re done for the week.{' '}
+          {othersIn > 0
+            ? `${othersIn} other lineup${othersIn === 1 ? ' is' : 's are'} in: open any team marked See it.`
+            : 'Nobody else is in yet. Their lineups open to you as they finish.'}
+        </p>
+      )
     }
   } else if (member && post && !drafting && league.phase !== 'complete') {
     cta = <p className="pe-note">Out of the running this season. The standings are still yours to watch.</p>
@@ -116,13 +124,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
 
         <div className="pe-league">
           <div className="pe-league-side">
-            {view.rule && (
-              <div className="pe-panel pe-lg-twist">
-                <div className="pe-kicker">This week&apos;s twist</div>
-                <div className="pe-lg-twist-title">{view.rule.title}</div>
-                <p className="pe-panel-text">{view.rule.line}</p>
-              </div>
-            )}
+            <WeekPanel view={view} />
             {member ? (
               <div className="pe-panel pe-lg-team">
                 <div className="pe-kicker">Your team</div>
@@ -229,50 +231,21 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
             )}
           </div>
 
-          <div>
+          <div className="pe-league-main">
             <div className="pe-sec-head" style={{ marginTop: 0 }}>
               <span className="pe-sec-num">§ Standings</span>
-              <span className="pe-sec-title">{post ? 'The postseason' : 'The table'}</span>
+              <span className="pe-sec-title">{post ? 'The Postseason' : 'The Table'}</span>
               <span className="pe-sec-meta">{weekLine}</span>
             </div>
-            <div className="pe-standings">
-              {standings.map((s, i) => {
-                const out = post && !s.active
-                return (
-                  <Link
-                    key={s.memberId}
-                    href={`/games/pack-empire/league/${league.id}/team/${s.memberId}/`}
-                    className={`pe-stand${s.you ? ' you' : ''}${out ? ' out' : ''}`}
-                  >
-                    <span className="pe-stand-rank">{i + 1}</span>
-                    <span className="pe-stand-who">
-                      <span className="pe-stand-team">{s.team ?? s.name}</span>
-                      <span className="pe-stand-sub">
-                        {s.team ? `${s.name} · ` : ''}
-                        {league.phase === 'regular' || (post && s.active && league.phase !== 'complete') ? (
-                          <span style={{ color: PACK_TIER_COLOR[s.tier] }}>{PACK_TIER_LABEL[s.tier]}</span>
-                        ) : null}
-                        {league.phase === 'regular' ? ` · ${s.locks} locked` : ''}
-                        {s.seed != null && post ? ` · Seed ${s.seed}` : ''}
-                      </span>
-                    </span>
-                    {(league.phase === 'regular' || (s.active && post && league.phase !== 'complete')) && (
-                      <span
-                        className={`pe-stand-dot ${s.thisWeek}`}
-                        title={s.thisWeek === 'submitted' ? 'Lineup in' : s.thisWeek === 'drafting' ? 'Drafting' : 'Not started'}
-                      />
-                    )}
-                    <span className="pe-stand-last">{s.lastWeek != null ? s.lastWeek.toLocaleString() : '·'}</span>
-                    <span className="pe-stand-total">{(post ? s.playoff : s.total).toLocaleString()}</span>
-                  </Link>
-                )
-              })}
-            </div>
+            <StandingsTable view={view} />
             <p className="pe-note" style={{ marginTop: '0.7rem' }}>
               {post
-                ? 'Postseason total · last regular-season week'
-                : 'Season total · last week. Under each team, the Standings Pack it opens this week. A dot means this week’s lineup is in; nobody sees it until the week closes.'}
+                ? 'Playoff total, Gauntlet and Final together. Season is the regular-season total.'
+                : 'Under each team, the Standings Pack it opens this week. Form is a bar a week, gold where it won the week. Lineups stay hidden until the week closes, except to a team whose own is in.'}
             </p>
+            <WeekRecapCard view={view} />
+            <ScheduleStrip view={view} />
+            <HistoryList view={view} />
           </div>
         </div>
       </div>
