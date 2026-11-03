@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
-import { beginDraft, getDraft } from '@/lib/packEmpire/league'
+import { getDraft } from '@/lib/packEmpire/league'
 import mobileStyles from '../../../../mobile.module.css'
 import { PeChrome } from '../../../chrome'
 import { peFonts } from '../../../fonts'
@@ -28,12 +28,8 @@ export default async function LeagueDraftPage({ params }: { params: Promise<{ id
   } = await supabase.auth.getUser()
   if (!user) redirect(`/login?next=${encodeURIComponent(`/games/pack-empire/league/${id}/draft/`)}`)
 
-  let out = await getDraft(id, user.id)
-  // A week with nothing to choose (no boosted pack) starts itself, here
-  // rather than in the browser, so the page arrives with the draft open.
-  if (out.ok && out.view.status === 'not_started' && !out.view.needsBoost) {
-    out = await beginDraft(id, user.id, undefined)
-  }
+  // Every week opens on the Standings Pack's slot, so nothing starts itself.
+  const out = await getDraft(id, user.id)
   const mobile = (await getViewMode()) === 'mobile'
 
   return (

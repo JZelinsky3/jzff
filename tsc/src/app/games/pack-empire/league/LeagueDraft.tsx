@@ -2,34 +2,37 @@
 
 // A League Mode week, start to finish:
 //
-//   1. Boost: if last week earned a better pack, pick the slot it goes on
-//      (or pass). Committed before a single pack is dealt.
-//   2. Packs: one for every slot you haven't locked. Locked keepers stand in
-//      their slots already. Every revealed card shows what it would do to
-//      your chemistry.
-//   3. Submit: raw accolades plus chemistry is the week's score.
-//   4. Lock: keep one player from this week for the rest of the season.
+//   1. The Standings Pack: last week's finish set how good it is; pick the slot
+//      it goes on before a single pack is dealt. Locks that still hold their
+//      slots stand in them, and any of them can be let go here first.
+//   2. Packs: one for every slot not locked. The week's twist is up top and
+//      marked on the cards it touches. With a mulligan (the bottom half of the
+//      table gets one), one opened pack can go back for a fresh one.
+//   3. Submit: the cards under the twist, plus chemistry.
+//   4. Lock: keep one man from this week. He holds his slot for the next
+//      LOCK_WEEKS weeks.
 //
-// Every step is a server call. An open pack is recorded server-side, so a
-// refresh comes back to the same five cards, and a second pack can't be
-// opened until one of them is taken.
+// Every step is a server call. An open pack is kept server-side, so a refresh
+// comes back to the same five cards, and a second pack can't be opened until
+// one of them is taken.
 
 import Link from 'next/link'
 import { useCallback, useState } from 'react'
+import { ruleChip } from '@/lib/packEmpire/dayRules'
+import { weekChemPreview, weekScore } from '@/lib/packEmpire/leagueWeek'
 import {
+  LOCK_WEEKS,
   PACK_TIER_COLOR,
   PACK_TIER_LABEL,
   PHASE_LABEL,
   RARITY_LOOK,
   SLOTS,
-  chemistryFor,
-  chemistryPreview,
-  lineupScore,
   tierFor,
   type Player,
 } from '@/lib/packEmpire/rules'
 import type { DraftView } from '@/lib/packEmpire/league'
-import { Bonds, Field, LockGlyph, type SlotView } from '../cards'
+import { Field, LineupSheet, LockGlyph, type SlotView } from '../cards'
+import { DraftReport, PackBoard } from '../report'
 import { PackStage, ScoreStrip, restoredStage, usePackStage, useStripOffset } from '../stage'
 
 async function post(body: Record<string, unknown>): Promise<DraftView> {
@@ -43,10 +46,25 @@ async function post(body: Record<string, unknown>): Promise<DraftView> {
   return out.view as DraftView
 }
 
+function signed(n: number): string {
+  return `${n >= 0 ? '+' : '−'}${Math.abs(n).toLocaleString()}`
+}
+
+function RuleBar({ rule }: { rule: DraftView['rule'] }) {
+  if (!rule) return null
+  return (
+    <div className="pe-rulebar">
+      <span className="pe-rulebar-tag">{rule.title}</span>
+      <span>{rule.line}</span>
+    </div>
+  )
+}
+
 export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: DraftView }) {
   const [view, setView] = useState<DraftView>(initial)
-  const [boost, setBoost] = useState<number | null>(null)
+  const [slotPick, setSlotPick] = useState<number | null>(null)
   const [lockPick, setLockPick] = useState<string | null>(null)
+  const [letGo, setLetGo] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // A pack left open before a refresh is waiting on the stage, face down.
@@ -78,13 +96,15 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
 
   const roster = view.lineup.filter((p): p is Player => !!p)
   // What the strip shows: a card in the air hasn't landed, chemistry and all.
-  const settledRoster = settle(view.lineup).filter((p): p is Player => !!p)
-  const filled = settledRoster.length
-  const score = lineupScore(settledRoster)
-  const chem = chemistryFor(settledRoster)
-  const tier = tierFor(score + chem.total)
+  const settled = settle(view.lineup)
+  const filled = settled.filter(Boolean).length
+  const live = weekScore(settled, view.boostedSlot, view.ruleId)
+  const tier = tierFor(live.total)
   const carried = new Set(view.carried)
-  const tierColor = PACK_TIER_COLOR[view.tier]
+  const packColor = PACK_TIER_COLOR[view.tier]
+  const packLabel = PACK_TIER_LABEL[view.tier]
+  const regular = view.league.phase === 'regular'
+  const phaseLine = regular ? `Week ${view.league.week}` : PHASE_LABEL[view.league.phase]
 
   const openSlot = (i: number) => {
     if (stage || busy || view.lineup[i] || view.status !== 'drafting') return
@@ -108,36 +128,92 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
     })
   }
 
-  const phaseLine =
-    view.league.phase === 'regular' ? `Week ${view.league.week}` : PHASE_LABEL[view.league.phase]
+  // The open pack goes back and a fresh one comes up in its place, torn open
+  // like any other.
+  const canMulligan =
+    view.mulligan.has && view.mulligan.usedOn == null && !!stage?.cards && !stage.pickedId && stage.slot === view.openSlot
+  const mulligan = () => {
+    if (!stage || !canMulligan) return
+    open(stage.slot, async () => {
+      const v = await post({ id: leagueId, action: 'mulligan' })
+      setView(v)
+      if (!v.openCards) throw new Error('That pack would not go back.')
+      return v.openCards
+    })
+  }
 
-  // ── Step 1: the boost ─────────────────────────────────────────
-  if (view.status === 'not_started' && view.needsBoost) {
+  // ── Step 1: the Standings Pack ────────────────────────────────
+  if (view.status === 'not_started') {
     const choose = (i: number) => {
       if (carried.has(i)) return
-      setBoost(i)
+      setSlotPick(i)
     }
+    const firstWeek = regular && view.league.week === 1
     return (
       <div className="pe-table">
         <div className="pe-table-head">
-          <div className="pe-kicker">★ {phaseLine} · your boosted pack ★</div>
-          <h1 className="pe-table-title" style={{ color: tierColor }}>
-            {PACK_TIER_LABEL[view.tier]}
+          <div className="pe-kicker">★ {phaseLine} · your Standings Pack ★</div>
+          <h1 className="pe-table-title" style={{ color: packColor }}>
+            {packLabel}
           </h1>
           <p className="pe-table-sub">
-            Last week bought you a better pack. Choose the position it goes on before anything is dealt. The
-            rest of your packs open standard.
+            {firstWeek
+              ? 'Everyone opens a Starter Pack in week one. Win a week and the next one is better.'
+              : 'Where you finished last week bought this. Pick the position it goes on before anything is dealt.'}
           </p>
         </div>
+
+        <RuleBar rule={view.rule} />
+
+        {view.mulligan.has && (
+          <p className="pe-lg-note">
+            <b>Mulligan.</b> You&apos;re in the bottom half of the table, so this week you can throw one opened pack back
+            for a fresh one.
+          </p>
+        )}
+
+        {view.locks.length > 0 && (
+          <div className="pe-panel pe-lg-locks">
+            <div className="pe-kicker">Your locks</div>
+            <ul>
+              {view.locks.map((l) => (
+                <li key={l.player.id}>
+                  <span className="pe-lg-lock-pos">{SLOTS[l.slot].short}</span>
+                  <span className="pe-lg-lock-name">{l.player.name}</span>
+                  <span className="pe-lg-lock-score">{l.player.score.toLocaleString()}</span>
+                  <span className="pe-lg-lock-until">{l.until ? `Through week ${l.until}` : 'All season'}</span>
+                  {view.canRelease && (
+                    <button
+                      type="button"
+                      className="pe-act pe-act--sm"
+                      disabled={busy}
+                      onClick={() => {
+                        if (letGo !== l.player.id) {
+                          setLetGo(l.player.id)
+                          return
+                        }
+                        setLetGo(null)
+                        act({ action: 'release', player: l.player.id })
+                      }}
+                    >
+                      {letGo === l.player.id ? 'Tap again' : 'Let go'}
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="pe-turf">
           <Field
             lineup={view.lineup}
             view={(i): SlotView => ({
               clickable: !carried.has(i),
               dim: carried.has(i),
-              badge: boost === i ? { text: 'BOOST', color: tierColor } : null,
-              glow: boost === i ? 'boost' : null,
-              tone: carried.has(i) ? 'locked' : boost === i ? 'boosted' : null,
+              badge: slotPick === i ? { text: packLabel.toUpperCase(), color: packColor } : null,
+              glow: slotPick === i ? 'boost' : null,
+              tone: carried.has(i) ? 'locked' : slotPick === i ? 'boosted' : null,
               flag: carried.has(i) ? { text: 'LOCKED', color: '#c8a020' } : null,
             })}
             onSlot={choose}
@@ -147,13 +223,10 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
           <button
             type="button"
             className="pe-push"
-            disabled={boost == null || busy}
-            onClick={() => act({ action: 'begin', boostSlot: boost })}
+            disabled={slotPick == null || busy}
+            onClick={() => act({ action: 'begin', boostSlot: slotPick })}
           >
-            {boost == null ? 'Tap a slot' : `Boost the ${SLOTS[boost].label.toLowerCase()} pack`}
-          </button>
-          <button type="button" className="pe-act" disabled={busy} onClick={() => act({ action: 'begin', boostSlot: -1 })}>
-            Open everything standard
+            {slotPick == null ? 'Tap a slot for it' : `Start the week, ${packLabel} at ${SLOTS[slotPick].short}`}
           </button>
         </div>
         {error && <div className="pe-error" style={{ maxWidth: 560, margin: '1rem auto 0' }}>{error}</div>}
@@ -163,29 +236,48 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
 
   // ── Steps 3 and 4: in, and the keeper ─────────────────────────
   if (view.status === 'submitted') {
-    const lockable = view.canLock
+    const full = view.lineup.filter((p): p is Player => !!p)
+    const final = weekScore(view.lineup, view.boostedSlot, view.ruleId)
+    const total = view.finalScore ?? final.total
+    const until = view.league.week + LOCK_WEEKS
     return (
-      <div className="pe-table">
-        <div className="pe-recap" style={{ '--tc': tierFor(view.finalScore ?? 0).color } as React.CSSProperties}>
-          <div className="pe-kicker">§ {phaseLine} · your lineup is in</div>
-          <div className="pe-recap-tier">{tierFor(view.finalScore ?? 0).label}</div>
-          <div className="pe-recap-score">{(view.finalScore ?? 0).toLocaleString()}</div>
-          <div className="pe-recap-lbl pe-note">
-            {(view.draftScore ?? 0).toLocaleString()} accolades{' '}
-            {(view.chemistry?.total ?? 0) >= 0 ? '+' : '−'} {Math.abs(view.chemistry?.total ?? 0).toLocaleString()} chemistry
+      <div className="pe-draft">
+        <div className="pe-recap landed" style={{ '--tc': tierFor(total).color } as React.CSSProperties}>
+          <div className="pe-kicker">
+            § {phaseLine} · {view.rule ? view.rule.title : 'Your lineup is in'}
           </div>
-          <p className="pe-recap-post">
-            Nobody else sees it until the commissioner closes the week.
-          </p>
+          <div className="pe-recap-tier">{tierFor(total).label}</div>
+          <div className="pe-recap-score">{total.toLocaleString()}</div>
+          <div className="pe-daily-sum">
+            <span>
+              <b>{final.cards.toLocaleString()}</b> Cards
+            </span>
+            {final.ruleDelta !== 0 && (
+              <span>
+                <b>{signed(final.ruleDelta)}</b> Twist
+              </span>
+            )}
+            <span>
+              <b>{signed(final.chem.total)}</b> Chemistry
+            </span>
+          </div>
+          <p className="pe-recap-post">Nobody else sees it until the commissioner closes the week.</p>
+          {!view.canLock && (
+            <div className="pe-recap-actions">
+              <Link href={`/games/pack-empire/league/${leagueId}/`} className="pe-push">
+                Back to the league
+              </Link>
+            </div>
+          )}
         </div>
 
-        {lockable ? (
+        {view.canLock && (
           <div className="pe-panel" style={{ marginBottom: '1.2rem' }}>
             <div className="pe-kicker">Lock a player</div>
-            <div className="pe-panel-title">Who do you keep for the season?</div>
+            <div className="pe-panel-title">Who do you keep?</div>
             <p className="pe-panel-text" style={{ marginBottom: '0.9rem' }}>
-              He fills his slot every week from here on and that pack never has to be opened again. You get one
-              lock a week, and it can&apos;t be undone.
+              He holds his slot through week {until}, so that pack doesn&apos;t get opened, then the slot opens again.
+              One lock a week. You can let him go before any draft.
             </p>
             <div className="pe-lock-grid">
               {roster
@@ -218,33 +310,22 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
                 <LockGlyph />
                 Lock him
               </button>
+              <Link href={`/games/pack-empire/league/${leagueId}/`} className="pe-act">
+                Skip, back to the league
+              </Link>
             </div>
-          </div>
-        ) : (
-          <div className="pe-recap-actions" style={{ marginBottom: '1.2rem' }}>
-            <Link href={`/games/pack-empire/league/${leagueId}/`} className="pe-push">
-              Back to the league
-            </Link>
           </div>
         )}
         {error && <div className="pe-error" style={{ marginBottom: '1rem' }}>{error}</div>}
 
-        <div className="pe-recap-grid">
-          <div className="pe-turf">
-            <Field
-              lineup={view.lineup}
-              view={(i): SlotView => {
-                const p = view.lineup[i]
-                const locked = !!p && (view.lockedIds.includes(p.id) || view.locked === p.id)
-                return { clickable: false, flag: locked ? { text: 'LOCKED', color: '#c8a020' } : null, tone: locked ? 'locked' : null }
-              }}
-            />
-          </div>
-          <div className="pe-panel">
-            <div className="pe-kicker">Chemistry</div>
-            {view.chemistry && <Bonds chem={view.chemistry} lineup={view.lineup} empty="No chemistry either way this week." />}
-          </div>
-        </div>
+        <DraftReport
+          lineup={full}
+          chem={view.chemistry ?? final.chem}
+          captain={null}
+          counted={{ cards: final.cards, rule: final.ruleDelta !== 0 ? final.ruleDelta : null, total }}
+          sheet={<LineupSheet name="Your Eleven" lineup={view.lineup} total={total} counted={final.counted} />}
+        />
+        {view.board && <PackBoard missed={view.board} />}
       </div>
     )
   }
@@ -252,27 +333,30 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
   // ── Step 2: the packs ─────────────────────────────────────────
   const fieldView = (i: number): SlotView => {
     const isCarried = carried.has(i)
-    const isBoost = view.boostedSlot === i && view.tier !== 'standard_pack'
+    const isPack = view.boostedSlot === i
     return {
       clickable: !stage && !busy && !view.lineup[i] && view.status === 'drafting',
       opening: stage?.slot === i,
-      badge: isBoost && !view.lineup[i] ? { text: PACK_TIER_LABEL[view.tier].toUpperCase(), color: tierColor } : null,
-      glow: isBoost && !view.lineup[i] ? 'boost' : null,
-      tone: isCarried ? 'locked' : isBoost ? 'boosted' : null,
+      badge: isPack && !view.lineup[i] ? { text: packLabel.toUpperCase(), color: packColor } : null,
+      glow: isPack && !view.lineup[i] ? 'boost' : null,
+      tone: isCarried ? 'locked' : isPack ? 'boosted' : null,
       flag: isCarried ? { text: 'LOCKED', color: '#c8a020' } : null,
     }
   }
 
   const toOpen = SLOTS.length - filled
+  const mullLeft = view.mulligan.has && view.mulligan.usedOn == null
 
   return (
     <div className="pe-table">
       <ScoreStrip
-        score={score + chem.total}
+        score={live.total}
         filled={filled}
         tier={tier}
-        extra={{ value: `${chem.total >= 0 ? '+' : ''}${chem.total}`, label: 'Chemistry' }}
+        extra={{ value: signed(live.chem.total), label: 'Chemistry' }}
       />
+
+      <RuleBar rule={view.rule} />
 
       {view.status === 'drafting' && toOpen > 0 && (
         <div className="pe-banner">
@@ -280,8 +364,9 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
             {phaseLine}: <b>{toOpen}</b> pack{toOpen === 1 ? '' : 's'} to open
             {view.carried.length ? `, ${view.carried.length} locked in` : ''}.
             {view.boostedSlot != null && view.boostedSlot >= 0 && !view.lineup[view.boostedSlot]
-              ? ` Your ${PACK_TIER_LABEL[view.tier]} is on the ${SLOTS[view.boostedSlot].label.toLowerCase()}.`
+              ? ` Your ${packLabel} is at ${SLOTS[view.boostedSlot].short}.`
               : ''}
+            {mullLeft ? ' Mulligan ready.' : ''}
           </span>
         </div>
       )}
@@ -296,13 +381,11 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
         <div className="pe-panel" style={{ marginTop: '1.2rem' }}>
           <div className="pe-kicker">Ready</div>
           <div className="pe-panel-title">
-            {score.toLocaleString()} accolades, {chem.total >= 0 ? '+' : '−'}
-            {Math.abs(chem.total).toLocaleString()} chemistry
+            {(live.cards + live.ruleDelta).toLocaleString()} from the cards, {signed(live.chem.total)} chemistry
           </div>
-          <Bonds chem={chem} lineup={view.lineup} empty="No chemistry either way this week." />
           <div className="pe-recap-actions" style={{ justifyContent: 'flex-start' }}>
             <button type="button" className="pe-push" disabled={busy} onClick={() => act({ action: 'submit' })}>
-              Submit {(score + chem.total).toLocaleString()}
+              Submit {live.total.toLocaleString()}
             </button>
           </div>
         </div>
@@ -311,17 +394,21 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
       {stage && (
         <PackStage
           stage={stage}
-          tag={
-            view.boostedSlot === stage.slot && view.tier !== 'standard_pack'
-              ? { text: PACK_TIER_LABEL[view.tier], color: tierColor }
-              : null
-          }
+          tag={view.boostedSlot === stage.slot ? { text: packLabel, color: packColor } : null}
           onCard={onCard}
           onRevealAll={revealAll}
           onDismiss={dismiss}
           onTear={tear}
           onSkip={skip}
-          chemFor={(p) => chemistryPreview(p, roster)}
+          chemFor={(p) => weekChemPreview(view.ruleId, p, roster)}
+          chipFor={(p) => ruleChip(view.ruleId, p)}
+          clock={
+            canMulligan ? (
+              <button type="button" className="pe-act pe-act--sm pe-lg-mull" onClick={mulligan}>
+                Mulligan: throw this pack back
+              </button>
+            ) : null
+          }
         />
       )}
     </div>

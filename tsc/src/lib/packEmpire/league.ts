@@ -5,14 +5,24 @@
 // postseason that was never built):
 //
 //   Regular season, eight weeks. Every week each team drafts: one pack per
-//   slot it hasn't locked. After drafting, the team locks one player from
-//   that week's eleven for the rest of the regular season, so the draft
-//   shrinks from eleven packs towards four. Chemistry (same-team synergy,
-//   rival-team friction) is added to the raw score.
+//   slot it hasn't locked. After drafting, the team may lock one player from
+//   that week's eleven, and he holds his slot for the next LOCK_WEEKS weeks.
+//   Chemistry is added to the cards, counted the way every mode counts it.
 //
-//   Last week's rank buys a boosted pack: the week's winner gets the Elite
-//   Drop, the top fifth a Prime Pack, the top half a Rising Pack. The team
-//   chooses which slot it goes on BEFORE the first pack is dealt.
+//   Rebuilt 2026-11-02, after a season against seven CPUs where the week-one
+//   winner had the richest pack every week after and the bottom half never had
+//   a boost. Now:
+//   - Everyone opens a Standings Pack, on a slot chosen BEFORE the first pack
+//     is dealt. Last week's finish sets how good: the winner's Elite Drop down
+//     to a Starter Pack, which still beats an ordinary pack.
+//   - Ordinary packs deal off Versus' table (rules.ts, LEAGUE_ORDINARY).
+//   - Locks run out after LOCK_WEEKS, and can be let go before a draft.
+//   - The bottom half of the table gets a mulligan each week: one opened pack
+//     thrown back for a fresh one.
+//   - Each week has a twist, the Daily's rules, unless the commissioner turns
+//     them off (leagueWeek.ts).
+//   - Every opened pack is kept on the draft row, so a pool update mid-week
+//     can't change a pack and the recap can show what each one held.
 //
 //   The commissioner advances the week. Drafts stay hidden until then.
 //
@@ -29,24 +39,31 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { containsHateSpeech } from '@/lib/contentModeration'
 import { dealPack, newServerSeed } from './deal'
-import { cpuBoostSlot, cpuDraftPicks, cpuLock, cpuTeamName } from './leagueCpu'
+import { cpuBoostSlot, cpuDraft, cpuLock, cpuTeamName } from './leagueCpu'
+import { ruleForWeek, weekRule, weekRuleView, weekScore, type WeekRuleView } from './leagueWeek'
+import { mysteryMissed } from './missed'
 import { isId, nameForUser, newId } from './people'
 import {
-  LEAGUE_BOOSTED,
+  LEAGUE_ORDINARY,
   LEAGUE_SIZES,
-  LEAGUE_WEIGHTS,
+  LOCK_WEEKS,
   MIN_LEAGUE_PLAYERS,
+  PACK_TIER_LABEL,
   REGULAR_WEEKS,
   SLOT_COUNT,
+  STANDINGS_WEIGHTS,
   chemistryFor,
   lineupScore,
+  mulliganForRank,
   packTierForRank,
   playoffFieldSize,
   playoffOptions,
   type Chemistry,
   type LeaguePhase,
+  type Missed,
   type PackTier,
   type Player,
+  type Weights,
 } from './rules'
 
 const CODE_LEN = 6
@@ -67,9 +84,18 @@ export type LeagueRow = {
   phase: LeaguePhase
   current_week: number
   season_number: number
+  /** The weekly twist, on unless the commissioner turned it off (0103). */
+  week_rules: boolean
 }
 
-export type Lock = { slot: number; player: Player }
+/** `until` is the last week he holds the slot. Locks from before they ran out
+    have none and hold to the end of the regular season. */
+export type Lock = { slot: number; player: Player; until?: number }
+
+/** The locks still holding a slot in this week of the regular season. */
+export function liveLocks(member: Pick<MemberRow, 'permanent_locks'>, week: number): Lock[] {
+  return (member.permanent_locks ?? []).filter((l) => (l.until ?? REGULAR_WEEKS) >= week)
+}
 
 export type MemberRow = {
   id: string
@@ -89,6 +115,8 @@ export type MemberRow = {
   titles: number
   /** A CPU team, added by the commissioner (0102). */
   is_cpu: boolean
+  /** Bottom half of the table: one pack can go back this week (0103). */
+  mulligan: boolean
 }
 
 export type DraftRow = {
@@ -113,6 +141,12 @@ export type DraftRow = {
   locked_this_week: string | null
   started_at: string
   completed_at: string | null
+  /** Every pack opened, by slot, as dealt (0103). Empty on older drafts. */
+  packs: Record<string, Player[]>
+  /** The week's twist; 'plain' with none; null on drafts from before 0103. */
+  rule_id: string | null
+  mulligan_slot: number | null
+  thrown: Player[] | null
 }
 
 const db = () => createAdminClient()
@@ -316,7 +350,9 @@ export type StandingRow = {
   weeks: (number | null)[]
   lastWeek: number | null
   locks: number
+  /** The Standings Pack this team opens this week. */
   tier: PackTier
+  mulligan: boolean
   /** This week's draft: none, started, or in. Never its contents. */
   thisWeek: 'none' | 'drafting' | 'submitted'
   active: boolean
@@ -338,6 +374,10 @@ export type LeagueView = {
   minPlayers: number
   /** CPU teams in the league. */
   cpus: number
+  /** This week's twist, while there's a week to draft. */
+  rule: WeekRuleView | null
+  /** The viewer's locks holding a slot this week. */
+  myLocks: Lock[]
 }
 
 export async function leagueView(id: string, userId: string | null): Promise<LeagueView | null> {
@@ -376,8 +416,9 @@ export async function leagueView(id: string, userId: string | null): Promise<Lea
       playoff: m.playoff_score,
       weeks,
       lastWeek: revealedWeeks.length ? revealedWeeks[revealedWeeks.length - 1] : null,
-      locks: (m.permanent_locks ?? []).length,
+      locks: league.phase === 'regular' ? liveLocks(m, league.current_week).length : 0,
       tier: m.next_pack_tier,
+      mulligan: !!m.mulligan,
       thisWeek: now ? now.status : 'none',
       active: m.playoff_active,
       seed: m.playoff_seed,
@@ -409,6 +450,8 @@ export async function leagueView(id: string, userId: string | null): Promise<Lea
     canStart: commissioner && league.phase === 'pregame' && members.length >= MIN_LEAGUE_PLAYERS,
     minPlayers: MIN_LEAGUE_PLAYERS,
     cpus: members.filter((m) => m.is_cpu).length,
+    rule: ['regular', 'gauntlet', 'finals'].includes(league.phase) ? weekRuleView(currentRule(league)) : null,
+    myLocks: member && league.phase === 'regular' ? liveLocks(member, league.current_week) : [],
   }
 }
 
@@ -419,14 +462,24 @@ export async function leagueView(id: string, userId: string | null): Promise<Lea
 export type DraftView = {
   league: { id: string; name: string; phase: LeaguePhase; week: number }
   status: DraftRow['status'] | 'not_started'
+  /** The Standings Pack this team opens this week. */
   tier: PackTier
+  /** The slot it goes on: chosen before anything is dealt. */
   boostedSlot: number | null
-  /** Must the team pick a boost slot before the first pack? */
-  needsBoost: boolean
+  /** The week's twist, or null on a plain week. */
+  rule: WeekRuleView | null
+  /** Sent so the browser scores the lineup the way the server will. */
+  ruleId: string
   lineup: (Player | null)[]
   carried: number[]
+  /** The locks holding a slot this week, and through which week. */
+  locks: Lock[]
+  /** Before the draft starts, a lock can be let go and his slot opened. */
+  canRelease: boolean
   openSlot: number | null
   openCards: Player[] | null
+  /** The bottom half of the table: one opened pack can go back for a fresh one. */
+  mulligan: { has: boolean; usedOn: number | null }
   chemistry: Chemistry | null
   draftScore: number | null
   finalScore: number | null
@@ -434,6 +487,8 @@ export type DraftView = {
   canLock: boolean
   locked: string | null
   lockedIds: string[]
+  /** After submitting, every pack opened against what it held. */
+  board: Missed | null
 }
 
 async function context(leagueId: string, userId: string) {
@@ -463,6 +518,11 @@ async function weekDraft(league: LeagueRow, member: MemberRow): Promise<DraftRow
   return (data as DraftRow | null) ?? null
 }
 
+/** The week's twist for the league as it stands. */
+function currentRule(league: LeagueRow) {
+  return league.week_rules === false ? weekRule(null) : ruleForWeek(league.id, league.season_number, league.phase, league.current_week)
+}
+
 function lineupOf(d: DraftRow): (Player | null)[] {
   if (d.roster) return d.roster
   const lineup: (Player | null)[] = Array(SLOT_COUNT).fill(null)
@@ -470,69 +530,125 @@ function lineupOf(d: DraftRow): (Player | null)[] {
   return lineup
 }
 
-function packFor(d: Pick<DraftRow, 'seed' | 'boosted_slot' | 'pack_tier'>, slot: number, lineup: (Player | null)[]): Player[] {
-  const boosted = d.boosted_slot === slot && d.pack_tier !== 'standard_pack'
-  const tier: PackTier = boosted ? d.pack_tier : 'standard_pack'
+type DealOf = Pick<DraftRow, 'seed' | 'boosted_slot' | 'pack_tier'>
+
+/** A fresh pack for a slot: the Standings Pack's table on its slot, the
+    ordinary one everywhere else. A mulligan deals off its own stream and never
+    hands back a man from the pack it replaced. */
+function packFor(d: DealOf, slot: number, lineup: (Player | null)[], again: string[] | null = null): Player[] {
+  const table =
+    d.boosted_slot === slot ? { normal: STANDINGS_WEIGHTS[d.pack_tier], boosted: STANDINGS_WEIGHTS[d.pack_tier] } : LEAGUE_ORDINARY
+  return dealPack({
+    label: `league:${d.seed}${again ? ':again' : ''}`,
+    slot,
+    base: table.normal,
+    boosted: table.boosted,
+    exclude: [...lineup.filter((p): p is Player => !!p).map((p) => p.id), ...(again ?? [])],
+  })
+}
+
+/** Drafts started before 0103 kept no packs and re-deal off their seed, on the
+    tables they were dealt from. Only one still in progress across the change
+    needs this. */
+const LEGACY_WEIGHTS: Record<PackTier, Weights> = {
+  standard_pack: { common: 44.6, rare: 15.5, dynasty: 12.2, transcendent: 6.4, immortal: 0.7 },
+  rising_pack: { common: 28.9, rare: 20.3, dynasty: 16.3, transcendent: 9.6, immortal: 1.4 },
+  prime_pack: { common: 15.7, rare: 23.6, dynasty: 18.8, transcendent: 12.7, immortal: 2.8 },
+  elite_drop: { common: 11.4, rare: 16.8, dynasty: 22, transcendent: 17.5, immortal: 5.6 },
+}
+
+function legacyPack(d: DraftRow, slot: number, lineup: (Player | null)[]): Player[] {
+  const tier: PackTier = d.boosted_slot === slot ? d.pack_tier : 'standard_pack'
   return dealPack({
     label: `league:${d.seed}`,
     slot,
-    base: LEAGUE_WEIGHTS[tier],
-    boosted: LEAGUE_BOOSTED[tier],
+    base: LEGACY_WEIGHTS[tier],
+    boosted: tier === 'elite_drop' ? { ...LEGACY_WEIGHTS.elite_drop, rare: 16.1 } : LEGACY_WEIGHTS[tier],
     exclude: lineup.filter((p): p is Player => !!p).map((p) => p.id),
   })
 }
 
-/** The lineup as it stands mid-draft: carried locks plus every pick so far.
-    Picks are re-dealt to recover the players, so a row never stores a card
-    the server didn't deal. */
+/** The pack a slot was dealt: kept on the row since 0103, re-dealt before it. */
+function dealtPack(d: DraftRow, slot: number, lineup: (Player | null)[]): Player[] {
+  return d.packs?.[slot] ?? (d.rule_id == null ? legacyPack(d, slot, lineup) : packFor(d, slot, lineup))
+}
+
+/** The lineup as it stands mid-draft: carried locks plus every pick so far,
+    each taken from the pack it was dealt in. */
 function liveLineup(d: DraftRow): (Player | null)[] {
   const lineup = lineupOf(d)
   if (d.roster) return lineup
   for (const pk of d.picks) {
-    const pack = packFor(d, pk.slot, lineup)
-    const p = pack.find((x) => x.id === pk.id)
+    const p = dealtPack(d, pk.slot, lineup).find((x) => x.id === pk.id)
     if (p) lineup[pk.slot] = p
   }
   return lineup
 }
 
+/** Every pack opened, in order, against what it held. League packs change with
+    what you keep, so there's no one perfect eleven: like Mystery's board. */
+function boardFor(d: DraftRow): Missed | null {
+  if (d.status !== 'submitted' || d.rule_id == null) return null
+  const rows = d.picks.flatMap((pk) => {
+    const cards = d.packs?.[pk.slot]
+    return cards?.length ? [{ slot: pk.slot, cards, kept: pk.id }] : []
+  })
+  if (!rows.length) return null
+  const board = mysteryMissed(rows, d.final_score ?? 0)
+  for (const row of board.rows ?? []) {
+    if (row.slot === d.mulligan_slot) row.note = 'Mulligan'
+    else if (row.slot === d.boosted_slot) row.note = PACK_TIER_LABEL[d.pack_tier]
+  }
+  return board
+}
+
 function draftView(league: LeagueRow, member: MemberRow, d: DraftRow | null): DraftView {
+  const live = league.phase === 'regular' ? liveLocks(member, league.current_week) : []
   const base = {
     league: { id: league.id, name: league.name, phase: league.phase, week: league.current_week },
-    tier: member.next_pack_tier,
-    lockedIds: (member.permanent_locks ?? []).map((l) => l.player.id),
+    lockedIds: live.map((l) => l.player.id),
+    locks: live,
   }
   if (!d) {
-    const carried = league.phase === 'regular' ? member.permanent_locks ?? [] : []
+    const rule = currentRule(league)
     const lineup: (Player | null)[] = Array(SLOT_COUNT).fill(null)
-    for (const c of carried) lineup[c.slot] = c.player
+    for (const c of live) lineup[c.slot] = c.player
     return {
       ...base,
       status: 'not_started',
+      tier: member.next_pack_tier,
       boostedSlot: null,
-      needsBoost: member.next_pack_tier !== 'standard_pack',
+      rule: weekRuleView(rule),
+      ruleId: rule.id,
       lineup,
-      carried: carried.map((c) => c.slot),
+      carried: live.map((c) => c.slot),
+      canRelease: league.phase === 'regular' && live.length > 0,
       openSlot: null,
       openCards: null,
+      mulligan: { has: !!member.mulligan, usedOn: null },
       chemistry: null,
       draftScore: null,
       finalScore: null,
       canLock: false,
       locked: null,
+      board: null,
     }
   }
+  const rule = weekRule(d.rule_id)
   const lineup = liveLineup(d)
   return {
     ...base,
-    tier: d.pack_tier,
     status: d.status,
+    tier: d.pack_tier,
     boostedSlot: d.boosted_slot,
-    needsBoost: false,
+    rule: weekRuleView(rule),
+    ruleId: rule.id,
     lineup,
     carried: d.carried.map((c) => c.slot),
+    canRelease: false,
     openSlot: d.open_slot,
-    openCards: d.open_slot != null ? packFor(d, d.open_slot, lineup) : null,
+    openCards: d.open_slot != null ? dealtPack(d, d.open_slot, lineup) : null,
+    mulligan: { has: !!member.mulligan, usedOn: d.mulligan_slot ?? null },
     chemistry: d.chemistry,
     draftScore: d.draft_score,
     finalScore: d.final_score,
@@ -542,6 +658,7 @@ function draftView(league: LeagueRow, member: MemberRow, d: DraftRow | null): Dr
       league.current_week < REGULAR_WEEKS &&
       !d.locked_this_week,
     locked: d.locked_this_week,
+    board: boardFor(d),
   }
 }
 
@@ -551,6 +668,24 @@ export async function getDraft(leagueId: string, userId: string): Promise<{ ok: 
   const { league, member } = ctx
   if (!drafts(league, member)) return { ok: false, error: 'There is no draft for you this week.' }
   return { ok: true, view: draftView(league, member, await weekDraft(league, member)) }
+}
+
+/** Let a lock go before the week's draft starts: his slot gets a pack again. */
+export async function releaseLock(
+  leagueId: string,
+  userId: string,
+  playerId: unknown
+): Promise<{ ok: true; view: DraftView } | Fail> {
+  const ctx = await context(leagueId, userId)
+  if ('error' in ctx) return ctx.error!
+  const { league, member } = ctx
+  if (league.phase !== 'regular') return { ok: false, error: 'Locks only hold in the regular season.' }
+  if (await weekDraft(league, member)) return { ok: false, error: 'Let a lock go before you start the week.' }
+  const locks = member.permanent_locks ?? []
+  if (!locks.some((l) => l.player.id === playerId)) return { ok: false, error: 'He is not locked.' }
+  const next = locks.filter((l) => l.player.id !== playerId)
+  await db().from('pe_league_members').update({ permanent_locks: next }).eq('id', member.id)
+  return { ok: true, view: draftView(league, { ...member, permanent_locks: next }, null) }
 }
 
 export async function beginDraft(
@@ -565,15 +700,12 @@ export async function beginDraft(
   const existing = await weekDraft(league, member)
   if (existing) return { ok: true, view: draftView(league, member, existing) }
 
-  const carried = league.phase === 'regular' ? member.permanent_locks ?? [] : []
+  const carried = league.phase === 'regular' ? liveLocks(member, league.current_week) : []
   const taken = new Set(carried.map((c) => c.slot))
-  let boosted: number | null = null
-  if (member.next_pack_tier !== 'standard_pack') {
-    // -1 is "no thanks": the boost is optional, as it was.
-    const s = Number(boostSlot)
-    if (s === -1) boosted = -1
-    else if (Number.isInteger(s) && s >= 0 && s < SLOT_COUNT && !taken.has(s)) boosted = s
-    else return { ok: false, error: 'Choose a slot for your boosted pack.' }
+  // Everyone has a Standings Pack now, and it goes on an open slot.
+  const s = Number(boostSlot)
+  if (!Number.isInteger(s) || s < 0 || s >= SLOT_COUNT || taken.has(s)) {
+    return { ok: false, error: 'Choose a slot for your Standings Pack.' }
   }
 
   const { data, error } = await db()
@@ -587,8 +719,9 @@ export async function beginDraft(
       week_number: league.current_week,
       seed: newServerSeed(),
       pack_tier: member.next_pack_tier,
-      boosted_slot: boosted,
+      boosted_slot: s,
       carried,
+      rule_id: currentRule(league).id,
     })
     .select('*')
     .maybeSingle()
@@ -620,15 +753,44 @@ export async function openLeaguePack(
   if (!Number.isInteger(s) || s < 0 || s >= SLOT_COUNT) return { ok: false, error: 'No such slot.' }
   if (lineup[s]) return { ok: false, error: 'That slot is already filled.' }
 
+  // Dealt once and kept, so the same five come back on a refresh.
+  const pack = d.rule_id == null ? legacyPack(d, s, lineup) : packFor(d, s, lineup)
   const { data } = await db()
     .from('pe_league_drafts')
-    .update({ open_slot: s })
+    .update({ open_slot: s, packs: { ...(d.packs ?? {}), [s]: pack } })
     .eq('id', d.id)
     .is('open_slot', null)
     .select('*')
     .maybeSingle()
   const fresh = (data as DraftRow | null) ?? (await weekDraft(league, member))
   if (!fresh) return { ok: false, error: 'Could not open that pack.' }
+  return { ok: true, view: draftView(league, member, fresh) }
+}
+
+/** Throw the open pack back for a fresh one. Once a week, bottom half only. */
+export async function mulliganPack(leagueId: string, userId: string): Promise<{ ok: true; view: DraftView } | Fail> {
+  const ctx = await context(leagueId, userId)
+  if ('error' in ctx) return ctx.error!
+  const { league, member } = ctx
+  const d = await weekDraft(league, member)
+  if (!d || d.status !== 'drafting' || d.open_slot == null) return { ok: false, error: 'Open a pack first.' }
+  if (!member.mulligan) return { ok: false, error: 'No mulligan this week.' }
+  if (d.mulligan_slot != null) return { ok: false, error: 'You have used your mulligan.' }
+
+  const slot = d.open_slot
+  const lineup = liveLineup(d)
+  const old = dealtPack(d, slot, lineup)
+  const pack = packFor(d, slot, lineup, old.map((p) => p.id))
+  const { data } = await db()
+    .from('pe_league_drafts')
+    .update({ packs: { ...(d.packs ?? {}), [slot]: pack }, mulligan_slot: slot, thrown: old })
+    .eq('id', d.id)
+    .eq('open_slot', slot)
+    .is('mulligan_slot', null)
+    .select('*')
+    .maybeSingle()
+  const fresh = (data as DraftRow | null) ?? (await weekDraft(league, member))
+  if (!fresh) return { ok: false, error: 'That pack would not go back.' }
   return { ok: true, view: draftView(league, member, fresh) }
 }
 
@@ -645,8 +807,7 @@ export async function pickLeagueCard(
   if (d.open_slot == null) return { ok: false, error: 'Open a pack first.' }
 
   const lineup = liveLineup(d)
-  const pack = packFor(d, d.open_slot, lineup)
-  const card = pack.find((p) => p.id === cardId)
+  const card = dealtPack(d, d.open_slot, lineup).find((p) => p.id === cardId)
   if (!card) return { ok: false, error: 'That card is not in this pack.' }
 
   const picks = [...d.picks, { slot: d.open_slot, id: card.id }]
@@ -660,6 +821,19 @@ export async function pickLeagueCard(
   const fresh = (data as DraftRow | null) ?? (await weekDraft(league, member))
   if (!fresh) return { ok: false, error: 'That pick did not save.' }
   return { ok: true, view: draftView(league, member, fresh) }
+}
+
+/** A full eleven's score for the week: the cards under the twist, and
+    chemistry the way every mode counts it now. */
+function scoreWeek(roster: Player[], d: Pick<DraftRow, 'boosted_slot' | 'rule_id'>) {
+  // Drafts from before 0103 score as they were started: soft chemistry, no twist.
+  if (d.rule_id == null) {
+    const chem = chemistryFor(roster)
+    const cards = lineupScore(roster)
+    return { draftScore: cards, chemistry: chem, finalScore: cards + chem.total }
+  }
+  const s = weekScore(roster, d.boosted_slot, d.rule_id)
+  return { draftScore: s.cards + s.ruleDelta, chemistry: s.chem, finalScore: s.total }
 }
 
 export async function submitLeagueDraft(
@@ -676,8 +850,7 @@ export async function submitLeagueDraft(
   const lineup = liveLineup(d)
   if (lineup.some((p) => !p)) return { ok: false, error: 'Fill every slot first.' }
   const roster = lineup as Player[]
-  const draftScore = lineupScore(roster)
-  const chemistry = chemistryFor(roster)
+  const { draftScore, chemistry, finalScore } = scoreWeek(roster, d)
 
   const { data } = await db()
     .from('pe_league_drafts')
@@ -686,7 +859,7 @@ export async function submitLeagueDraft(
       roster,
       draft_score: draftScore,
       chemistry,
-      final_score: draftScore + chemistry.total,
+      final_score: finalScore,
       completed_at: new Date().toISOString(),
     })
     .eq('id', d.id)
@@ -716,8 +889,9 @@ export async function lockPlayer(
   const roster = (d.roster ?? []) as (Player | null)[]
   const slot = roster.findIndex((p) => p?.id === playerId)
   if (slot < 0) return { ok: false, error: 'He is not on this week’s roster.' }
-  const locks = member.permanent_locks ?? []
-  if (locks.some((l) => l.player.id === playerId || l.slot === slot)) return { ok: false, error: 'That slot is already locked.' }
+  // Only locks that still hold next week are in the way.
+  const holding = liveLocks(member, league.current_week + 1)
+  if (holding.some((l) => l.player.id === playerId || l.slot === slot)) return { ok: false, error: 'That slot is already locked.' }
 
   const { data } = await db()
     .from('pe_league_drafts')
@@ -727,7 +901,7 @@ export async function lockPlayer(
     .select('*')
     .maybeSingle()
   if (!data) return { ok: false, error: 'You have already locked someone this week.' }
-  const nextLocks: Lock[] = [...locks, { slot, player: roster[slot] as Player }]
+  const nextLocks: Lock[] = [...holding, { slot, player: roster[slot] as Player, until: league.current_week + LOCK_WEEKS }]
   await db().from('pe_league_members').update({ permanent_locks: nextLocks }).eq('id', member.id)
   return { ok: true, view: draftView(league, { ...member, permanent_locks: nextLocks }, data as DraftRow) }
 }
@@ -740,7 +914,21 @@ export type TeamView = {
   league: { id: string; name: string; phase: LeaguePhase; week: number }
   member: { id: string; name: string; team: string | null; you: boolean }
   /** The most recent draft the viewer is allowed to see. */
-  draft: { phase: string; week: number; lineup: (Player | null)[]; draftScore: number; chemistry: Chemistry; finalScore: number } | null
+  draft: {
+    phase: string
+    week: number
+    lineup: (Player | null)[]
+    draftScore: number
+    chemistry: Chemistry
+    finalScore: number
+    /** The twist it was drafted under, its Standings Pack and where it went. */
+    ruleId: string | null
+    rule: WeekRuleView | null
+    tier: PackTier
+    packSlot: number | null
+    board: Missed | null
+  } | null
+  /** Locks holding a slot this week. */
   locks: Lock[]
 }
 
@@ -777,9 +965,14 @@ export async function teamView(leagueId: string, memberId: string, userId: strin
           draftScore: visible.draft_score ?? 0,
           chemistry: visible.chemistry ?? { bonds: [], synergy: 0, rivalry: 0, total: 0 },
           finalScore: visible.final_score ?? 0,
+          ruleId: visible.rule_id,
+          rule: visible.rule_id ? weekRuleView(weekRule(visible.rule_id)) : null,
+          tier: visible.pack_tier,
+          packSlot: visible.boosted_slot,
+          board: boardFor(visible),
         }
       : null,
-    locks: member.permanent_locks ?? [],
+    locks: league.phase === 'regular' ? liveLocks(member, league.current_week) : [],
   }
 }
 
@@ -851,12 +1044,20 @@ async function closeWeek(league: LeagueRow): Promise<{ ok: true; to: string } | 
     (a, b) => (score.get(b.id) ?? 0) - (score.get(a.id) ?? 0) || b.team_score - a.team_score
   )
   const tierOf = new Map(ranked.map((m, i) => [m.id, packTierForRank(i + 1, ranked.length)]))
+  // The mulligan goes to the bottom half of the table, not of the week: it's for
+  // a team that's behind, not one that had one bad night. In the sim that's what
+  // brings a slow start back as often as luck alone would (sim/league-cpu-sim.ts).
+  const mulligans = (running: Map<string, number>, among: MemberRow[]) => {
+    const order = [...among].sort((a, b) => (running.get(b.id) ?? 0) - (running.get(a.id) ?? 0))
+    return new Map(order.map((m, i) => [m.id, mulliganForRank(i + 1, order.length)]))
+  }
 
   const update = (id: string, patch: Record<string, unknown>) =>
     db().from('pe_league_members').update(patch).eq('id', id)
 
   if (league.phase === 'regular') {
     const totals = new Map(members.map((m) => [m.id, m.team_score + (score.get(m.id) ?? 0)]))
+    const mullOf = mulligans(totals, members)
 
     if (league.current_week >= REGULAR_WEEKS) {
       const size = playoffFieldSize(league.playoff_size, members.length)
@@ -866,6 +1067,8 @@ async function closeWeek(league: LeagueRow): Promise<{ ok: true; to: string } | 
           update(m.id, {
             team_score: totals.get(m.id),
             next_pack_tier: tierOf.get(m.id) ?? 'standard_pack',
+            // Everyone starts the postseason level, so the low seeds get it.
+            mulligan: i < size && mulliganForRank(i + 1, size),
             playoff_active: i < size,
             playoff_seed: i < size ? i + 1 : null,
             playoff_score: 0,
@@ -877,8 +1080,17 @@ async function closeWeek(league: LeagueRow): Promise<{ ok: true; to: string } | 
       return { ok: true, to }
     }
 
+    // Locks that have run their weeks let go of their slots here.
+    const next = league.current_week + 1
     await Promise.all(
-      members.map((m) => update(m.id, { team_score: totals.get(m.id), next_pack_tier: tierOf.get(m.id) ?? 'standard_pack' }))
+      members.map((m) =>
+        update(m.id, {
+          team_score: totals.get(m.id),
+          next_pack_tier: tierOf.get(m.id) ?? 'standard_pack',
+          mulligan: mullOf.get(m.id) ?? false,
+          permanent_locks: liveLocks(m, next),
+        })
+      )
     )
     await db().from('pe_leagues').update({ current_week: league.current_week + 1 }).eq('id', league.id)
     return { ok: true, to: `week ${league.current_week + 1}` }
@@ -896,6 +1108,8 @@ async function closeWeek(league: LeagueRow): Promise<{ ok: true; to: string } | 
         update(m.id, {
           playoff_score: playoff.get(m.id),
           next_pack_tier: tierOf.get(m.id) ?? 'standard_pack',
+          // The lower finalist gets it; a team that's out doesn't.
+          mulligan: i < through && mulliganForRank(i + 1, through),
           playoff_active: i < through,
           playoff_seed: i < through ? i + 1 : null,
         })
@@ -981,25 +1195,34 @@ async function playCpuWeek(leagueId: string): Promise<void> {
 }
 
 async function playCpu(league: LeagueRow, member: MemberRow): Promise<void> {
-  const carried = league.phase === 'regular' ? member.permanent_locks ?? [] : []
+  const carried = league.phase === 'regular' ? liveLocks(member, league.current_week) : []
   const lineup: (Player | null)[] = Array(SLOT_COUNT).fill(null)
   for (const c of carried) lineup[c.slot] = c.player
   const open = lineup.flatMap((p, i) => (p ? [] : [i]))
 
-  // The boost is placed before a single pack is dealt, like anyone's.
+  // The Standings Pack is placed before a single pack is dealt, like anyone's.
+  const ruleId = currentRule(league).id
   const tier = member.next_pack_tier
-  const deal = { seed: newServerSeed(), pack_tier: tier, boosted_slot: tier === 'standard_pack' ? null : cpuBoostSlot(tier, open) }
-  const picks = cpuDraftPicks(lineup, (slot, now) => packFor(deal, slot, now))
-  const roster = liveLineup({ ...deal, carried, picks, roster: null } as unknown as DraftRow)
+  const deal = { seed: newServerSeed(), pack_tier: tier, boosted_slot: cpuBoostSlot(tier, open, ruleId) }
+  const week = cpuDraft({
+    lineup,
+    packSlot: deal.boosted_slot,
+    tier,
+    ruleId,
+    mulligan: !!member.mulligan,
+    deal: (slot, now) => packFor(deal, slot, now),
+    redeal: (slot, now, thrown) => packFor(deal, slot, now, thrown.map((p) => p.id)),
+  })
+  const row = { ...deal, carried, picks: week.picks, packs: week.packs, rule_id: ruleId, roster: null } as unknown as DraftRow
+  const roster = liveLineup(row)
   if (roster.some((p) => !p)) return
   const full = roster as Player[]
-  const draftScore = lineupScore(full)
-  const chemistry = chemistryFor(full)
+  const { draftScore, chemistry, finalScore } = scoreWeek(full, row)
 
   // Its keeper, off this week's eleven. Next week's packs aren't dealt yet.
   const keep =
     league.phase === 'regular' && league.current_week < REGULAR_WEEKS
-      ? cpuLock(full, new Set(carried.map((c) => c.slot)))
+      ? cpuLock(full, new Set(liveLocks(member, league.current_week + 1).map((c) => c.slot)))
       : null
 
   const now = new Date().toISOString()
@@ -1013,18 +1236,25 @@ async function playCpu(league: LeagueRow, member: MemberRow): Promise<void> {
     status: 'submitted',
     ...deal,
     carried,
-    picks,
+    picks: week.picks,
+    packs: week.packs,
+    rule_id: ruleId,
+    mulligan_slot: week.mulliganSlot,
+    thrown: week.thrown,
     roster: full,
     draft_score: draftScore,
     chemistry,
-    final_score: draftScore + chemistry.total,
+    final_score: finalScore,
     locked_this_week: keep?.player.id ?? null,
     started_at: now,
     completed_at: now,
   })
   // A second call for the same week loses on the unique key and changes nothing.
   if (error || !keep) return
-  await db().from('pe_league_members').update({ permanent_locks: [...carried, keep] }).eq('id', member.id)
+  await db()
+    .from('pe_league_members')
+    .update({ permanent_locks: [...liveLocks(member, league.current_week + 1), { ...keep, until: league.current_week + LOCK_WEEKS }] })
+    .eq('id', member.id)
 }
 
 export async function newSeason(leagueId: string, userId: string): Promise<{ ok: true } | Fail> {
@@ -1041,12 +1271,23 @@ export async function newSeason(leagueId: string, userId: string): Promise<{ ok:
       team_score: 0,
       playoff_score: 0,
       next_pack_tier: 'standard_pack',
+      mulligan: false,
       permanent_locks: [],
       playoff_active: false,
       playoff_seed: null,
     })
     .eq('league_id', c.league.id)
   // Old drafts are kept: they are the record of the seasons played.
+  return { ok: true }
+}
+
+/** The weekly twist, on or off. Before the season only, so no week changes
+    its rules under a team that has already drafted it. */
+export async function setWeekRules(leagueId: string, userId: string, on: unknown): Promise<{ ok: true } | Fail> {
+  const c = await asCommissioner(leagueId, userId)
+  if ('error' in c) return c.error!
+  if (c.league.phase !== 'pregame') return { ok: false, error: 'Set the twists before the season starts.' }
+  await db().from('pe_leagues').update({ week_rules: on === true }).eq('id', c.league.id)
   return { ok: true }
 }
 

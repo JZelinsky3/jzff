@@ -21,11 +21,14 @@ import {
   leagueView,
   leaveLeague,
   lockPlayer,
+  mulliganPack,
   newSeason,
   openLeaguePack,
   pickLeagueCard,
+  releaseLock,
   removeCpus,
   renameTeam,
+  setWeekRules,
   startSeason,
   submitLeagueDraft,
 } from '@/lib/packEmpire/league'
@@ -95,6 +98,8 @@ export async function POST(req: NextRequest) {
       return send(await addCpus(id, userId, body.fill))
     case 'remove-cpus':
       return send(await removeCpus(id, userId))
+    case 'week-rules':
+      return send(await setWeekRules(id, userId, body.on))
     case 'start':
       return send(await startSeason(id, userId))
     case 'advance':
@@ -113,6 +118,10 @@ export async function POST(req: NextRequest) {
       return send(await submitLeagueDraft(id, userId))
     case 'lock':
       return send(await lockPlayer(id, userId, body.player))
+    case 'release':
+      return send(await releaseLock(id, userId, body.player))
+    case 'mulligan':
+      return send(await mulliganPack(id, userId))
     default:
       return reply({ ok: false, error: 'Unknown action.' }, 400)
   }

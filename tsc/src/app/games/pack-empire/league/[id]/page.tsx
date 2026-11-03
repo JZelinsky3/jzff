@@ -6,11 +6,11 @@ import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { peMeta } from '@/lib/packEmpire/meta'
 import { leagueView } from '@/lib/packEmpire/league'
-import { PACK_TIER_COLOR, PACK_TIER_LABEL, PHASE_LABEL, REGULAR_WEEKS } from '@/lib/packEmpire/rules'
+import { PACK_TIER_COLOR, PACK_TIER_LABEL, PHASE_LABEL, REGULAR_WEEKS, SLOTS, shortName } from '@/lib/packEmpire/rules'
 import mobileStyles from '../../../mobile.module.css'
 import { PeChrome } from '../../chrome'
 import { peFonts } from '../../fonts'
-import { ShareLink } from '../../share'
+import { ShareButton } from '../../share'
 import { CommishPanel, JoinThisLeague, LeaveLeague, RenameTeam } from '../LeagueControls'
 
 export const dynamic = 'force-dynamic'
@@ -116,28 +116,58 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
 
         <div className="pe-league">
           <div className="pe-league-side">
+            {view.rule && (
+              <div className="pe-panel pe-lg-twist">
+                <div className="pe-kicker">This week&apos;s twist</div>
+                <div className="pe-lg-twist-title">{view.rule.title}</div>
+                <p className="pe-panel-text">{view.rule.line}</p>
+              </div>
+            )}
             {member ? (
-              <div className="pe-panel">
+              <div className="pe-panel pe-lg-team">
                 <div className="pe-kicker">Your team</div>
-                <div className="pe-panel-title">{member.team_name ?? member.display_name}</div>
-                <div className="pe-note" style={{ marginBottom: '0.9rem' }}>
+                <div className="pe-lg-team-head">
+                  <div className="pe-panel-title">{member.team_name ?? member.display_name}</div>
                   <RenameTeam id={league.id} current={member.team_name} />
                 </div>
-                <div className="pe-stat-row">
-                  <span>
-                    <b>{(post ? member.playoff_score : member.team_score).toLocaleString()}</b>
-                    <small>{post ? 'Postseason' : 'Total'}</small>
-                  </span>
-                  <span>
-                    <b style={{ color: PACK_TIER_COLOR[member.next_pack_tier] }}>{PACK_TIER_LABEL[member.next_pack_tier]}</b>
-                    <small>This week&apos;s pack</small>
-                  </span>
-                  <span>
-                    <b>{(member.permanent_locks ?? []).length}</b>
-                    <small>Locked</small>
-                  </span>
+                <div className="pe-lg-total">
+                  <b>{(post ? member.playoff_score : member.team_score).toLocaleString()}</b>
+                  <small>{post ? 'Postseason total' : 'Season total'}</small>
                 </div>
-                <div style={{ marginTop: '1rem' }}>{cta}</div>
+                {drafting && (
+                  <dl className="pe-lg-facts">
+                    <div>
+                      <dt>Standings Pack</dt>
+                      <dd style={{ color: PACK_TIER_COLOR[member.next_pack_tier] }}>{PACK_TIER_LABEL[member.next_pack_tier]}</dd>
+                    </div>
+                    <div>
+                      <dt>Mulligan</dt>
+                      <dd>{member.mulligan ? 'Ready' : 'None this week'}</dd>
+                    </div>
+                    {league.phase === 'regular' && (
+                      <div>
+                        <dt>Locks</dt>
+                        <dd>
+                          {view.myLocks.length === 0 ? (
+                            'None'
+                          ) : (
+                            <ul>
+                              {view.myLocks.map((l) => (
+                                <li key={l.player.id}>
+                                  <span>
+                                    {SLOTS[l.slot].short} {shortName(l.player.name)}
+                                  </span>
+                                  <small>{l.until ? `thru wk ${l.until}` : 'season'}</small>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                )}
+                {cta && <div className="pe-lg-cta">{cta}</div>}
                 {league.phase === 'pregame' && !view.commissioner && (
                   <div style={{ marginTop: '0.8rem' }}>
                     <LeaveLeague id={league.id} />
@@ -177,19 +207,24 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                 teams={standings.length}
                 maxPlayers={league.max_players}
                 cpus={view.cpus}
+                weekRules={league.week_rules !== false}
                 minPlayers={view.minPlayers}
                 waitingOn={waitingOn}
               />
             )}
 
             {member && league.joinCode && league.phase === 'pregame' && (
-              <div className="pe-panel">
+              <div className="pe-panel pe-lg-invite">
                 <div className="pe-kicker">Invite</div>
-                <p className="pe-panel-text" style={{ margin: '0.5rem 0 0.8rem' }}>
-                  The code is <b style={{ fontFamily: 'var(--mono)', letterSpacing: '0.2em' }}>{league.joinCode}</b>.
-                  Send it, or the link.
-                </p>
-                <ShareLink path={`/games/pack-empire/league/${league.id}/`} title={league.name} text={`Join ${league.name} on Pack Empire. Code ${league.joinCode}`} />
+                <div className="pe-lg-code">{league.joinCode}</div>
+                <div className="pe-lg-invite-row">
+                  <span className="pe-note">Send the code, or the link.</span>
+                  <ShareButton
+                    path={`/games/pack-empire/league/${league.id}/`}
+                    title={league.name}
+                    text={`Join ${league.name} on Pack Empire. Code ${league.joinCode}`}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -214,7 +249,10 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                       <span className="pe-stand-team">{s.team ?? s.name}</span>
                       <span className="pe-stand-sub">
                         {s.team ? `${s.name} · ` : ''}
-                        {s.locks} locked
+                        {league.phase === 'regular' || (post && s.active && league.phase !== 'complete') ? (
+                          <span style={{ color: PACK_TIER_COLOR[s.tier] }}>{PACK_TIER_LABEL[s.tier]}</span>
+                        ) : null}
+                        {league.phase === 'regular' ? ` · ${s.locks} locked` : ''}
                         {s.seed != null && post ? ` · Seed ${s.seed}` : ''}
                       </span>
                     </span>
@@ -233,7 +271,7 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
             <p className="pe-note" style={{ marginTop: '0.7rem' }}>
               {post
                 ? 'Postseason total · last regular-season week'
-                : 'Season total · last week. A dot means this week’s lineup is in; nobody sees it until the week closes.'}
+                : 'Season total · last week. Under each team, the Standings Pack it opens this week. A dot means this week’s lineup is in; nobody sees it until the week closes.'}
             </p>
           </div>
         </div>

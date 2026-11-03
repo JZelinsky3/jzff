@@ -718,8 +718,11 @@ export type PackTier = 'standard_pack' | 'rising_pack' | 'prime_pack' | 'elite_d
 
 export const PACK_TIERS: PackTier[] = ['standard_pack', 'rising_pack', 'prime_pack', 'elite_drop']
 
+/** The Standings Pack each team opens on a slot of its choosing, by where it
+    finished last week. The bottom tier is still a step up on an ordinary pack:
+    everyone gets one (Joey, 2026-11-02). 'standard_pack' is the stored name. */
 export const PACK_TIER_LABEL: Record<PackTier, string> = {
-  standard_pack: 'Standard Pack',
+  standard_pack: 'Starter Pack',
   rising_pack: 'Rising Pack',
   prime_pack: 'Prime Pack',
   elite_drop: 'Elite Drop',
@@ -733,20 +736,37 @@ export const PACK_TIER_COLOR: Record<PackTier, string> = {
   elite_drop: '#28dc78',
 }
 
-/** Transcendent weights cut by a fifth with the 2026-10-30 pool, which holds
-    nearly twice as many of them, so a pack is as likely to hold one as before. */
-export const LEAGUE_WEIGHTS: Record<PackTier, Weights> = {
-  standard_pack: { common: 44.6, rare: 15.5, dynasty: 12.2, transcendent: 6.4, immortal: 0.7 },
-  rising_pack: { common: 28.9, rare: 20.3, dynasty: 16.3, transcendent: 9.6, immortal: 1.4 },
-  prime_pack: { common: 15.7, rare: 23.6, dynasty: 18.8, transcendent: 12.7, immortal: 2.8 },
-  elite_drop: { common: 11.4, rare: 16.8, dynasty: 22, transcendent: 17.5, immortal: 5.6 },
+/**
+ * League packs, rebuilt 2026-11-02. Every ordinary pack deals off Classic
+ * Versus' table: a step up on Builder, which League can afford because it never
+ * fills the binder. The old League tables dealt transcendents at more than twice
+ * Builder's rate and handed the richest of them only to last week's top half.
+ */
+export const LEAGUE_ORDINARY: { normal: Weights; boosted: Weights } = VERSUS_WEIGHTS
+
+/**
+ * The Standings Pack, by tier: a straight line from the ordinary table to the
+ * captain pack's, 30% of the way for a Starter, then 55%, 80%, and the captain
+ * pack itself for the Elite Drop with a little more on the immortal. So the
+ * winner's pack is the best in the game short of Canton and the last-placed
+ * team's is still worth placing well. sim/league-cpu-sim.ts prints each tier's
+ * average best card.
+ */
+export const STANDINGS_WEIGHTS: Record<PackTier, Weights> = {
+  standard_pack: { common: 25.1, rare: 14.9, dynasty: 17.4, transcendent: 8.8, immortal: 1.9 },
+  rising_pack: { common: 17.7, rare: 14.9, dynasty: 23.2, transcendent: 13.4, immortal: 2.5 },
+  prime_pack: { common: 10.2, rare: 14.8, dynasty: 28.9, transcendent: 17.9, immortal: 3 },
+  elite_drop: { common: 4.3, rare: 14.8, dynasty: 33.5, transcendent: 21.5, immortal: 4.5 },
 }
 
-/** League packs have a second table too; in the original it only differs
-    from the first by one point, on the Elite Drop's rares. Kept as found. */
-export const LEAGUE_BOOSTED: Record<PackTier, Weights> = {
-  ...LEAGUE_WEIGHTS,
-  elite_drop: { ...LEAGUE_WEIGHTS.elite_drop, rare: 16.1 },
+/** A lock holds his slot for this many weeks after the one he was kept in, then
+    the slot opens again, so one lucky early pull can't carry a whole season. */
+export const LOCK_WEEKS = 3
+
+/** The bottom half of the table gets a mulligan for the next week: one opened
+    pack thrown back for a fresh one. */
+export function mulliganForRank(rank: number, total: number): boolean {
+  return rank > Math.ceil(total / 2)
 }
 
 export const REGULAR_WEEKS = 8
@@ -754,9 +774,9 @@ export const MIN_LEAGUE_PLAYERS = 4
 export const LEAGUE_SIZES = [4, 6, 8, 10, 12]
 
 /**
- * Last week's rank buys this week's boosted pack. The winner of the week gets
+ * Last week's rank buys this week's Standings Pack. The winner of the week gets
  * the Elite Drop; the top fifth (at least two) a Prime Pack; the top half (at
- * least four) a Rising Pack; everyone else opens standard.
+ * least four) a Rising Pack; everyone else a Starter Pack.
  */
 export function packTierForRank(rank: number, total: number): PackTier {
   if (rank === 1) return 'elite_drop'

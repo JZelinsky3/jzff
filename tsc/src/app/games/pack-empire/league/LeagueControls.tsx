@@ -56,6 +56,7 @@ export function CommishPanel({
   teams,
   maxPlayers,
   cpus,
+  weekRules,
   minPlayers,
   waitingOn,
 }: {
@@ -67,6 +68,8 @@ export function CommishPanel({
   maxPlayers: number
   /** CPU teams already in. */
   cpus: number
+  /** The weekly twist is on. */
+  weekRules: boolean
   minPlayers: number
   /** Teams yet to submit this week. */
   waitingOn: number
@@ -124,6 +127,19 @@ export function CommishPanel({
             </div>
             <p className="pe-note">
               CPUs draft when a week opens and keep their best man. Anyone who joins takes a CPU&apos;s seat.
+            </p>
+            <button
+              type="button"
+              className="pe-act pe-act--sm"
+              disabled={!!busy}
+              onClick={() => run('rules', { action: 'week-rules', id, on: !weekRules })}
+            >
+              Weekly twists: {weekRules ? 'On' : 'Off'}
+            </button>
+            <p className="pe-note">
+              {weekRules
+                ? 'Each week has its own twist, the same for every team: a position that counts triple, double chemistry and so on.'
+                : 'Every week scores the plain way: cards plus chemistry.'}
             </p>
           </>
         )}
