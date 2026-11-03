@@ -66,10 +66,12 @@ function Leader({ lead, led, makeup }: { lead: Lead | null; led: Player | undefi
   return (
     <Link href={here(lead.b)} scroll={false} className="pe-bh-lead">
       <span className="pe-bh-lead-top">
-        <small>Best Today</small>
+        <span className="pe-bh-lead-score">
+          <small>Best Today</small>
+          <b>{lead.r.score.toLocaleString()}</b>
+        </span>
         <TierBadge score={lead.r.score} />
       </span>
-      <b>{lead.r.score.toLocaleString()}</b>
       <span className="pe-bh-lead-who">
         {lead.r.name} · {boardLabel(lead.b.diff, lead.b.format)}
         {led && (

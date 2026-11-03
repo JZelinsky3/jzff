@@ -30,7 +30,7 @@ const board = (b: { diff: Difficulty; format: BuilderFormat }) => `/games/pack-e
 
 /** What each way of opening the packs is, under its tab. The phone gets the short one. */
 const FORMAT_BRIEF: Record<BuilderFormat, string> = {
-  classic: 'A pack for every position, any order.',
+  classic: 'A pack for every position, opened in any order you like.',
   mystery: 'Eleven packs of random positions. Plan ahead.',
 }
 

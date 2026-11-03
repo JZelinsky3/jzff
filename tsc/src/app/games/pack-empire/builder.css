@@ -6,16 +6,19 @@
 .pe-bh-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; padding: 2.2rem 0 1.4rem; border-bottom: 3px double var(--pe-line); margin-bottom: 1.6rem; }
 .pe-bh-lede { max-width: 38rem; margin: .8rem 0 0; font-size: .98rem; line-height: 1.5; color: var(--pe-ink-soft); }
 
-.pe-bh-lead { display: grid; gap: .35rem; flex: none; width: 24rem; padding: 1rem 1.15rem; border: 1px solid var(--pe-line); border-radius: 6px; background: var(--pe-card); text-decoration: none; color: var(--pe-ink-mute); }
+.pe-bh-lead { display: grid; gap: .4rem; flex: none; width: 25rem; padding: .8rem 1.1rem .85rem; border: 1px solid var(--pe-line); border-radius: 6px; background: var(--pe-card); text-decoration: none; color: var(--pe-ink-mute); }
+/* Label and score stacked, the badge centred beside the pair rather than up on the label's line. */
 .pe-bh-lead-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.pe-bh-lead-score { display: grid; gap: .2rem; }
 .pe-bh-lead small { font-family: var(--mono); font-size: .56rem; letter-spacing: .16em; text-transform: uppercase; }
 .pe-bh-lead b { font-family: var(--pe-display); font-size: 1.9rem; font-weight: 900; line-height: 1; color: var(--pe-amber-bright); }
 .pe-bh-lead-who { font-size: .82rem; line-height: 1.4; color: var(--pe-ink-soft); }
 .pe-bh-lead-who em { font-style: normal; font-weight: 600; }
-.pe-bh-lead-mix { display: grid; gap: .4rem; margin-top: .3rem; padding-top: .6rem; border-top: 1px solid var(--pe-line-soft); }
+.pe-bh-lead-mix { display: grid; gap: .4rem; margin-top: .1rem; }
 .pe-bh-pips { display: flex; gap: 3px; }
 .pe-bh-pips i { flex: 1; height: 5px; border-radius: 2px; }
-.pe-bh-mix { display: flex; flex-wrap: wrap; gap: .15rem .7rem; font-family: var(--mono); font-size: .54rem; letter-spacing: .1em; word-spacing: -.2em; text-transform: uppercase; }
+.pe-bh-mix { display: flex; flex-wrap: wrap; gap: .15rem .45rem; font-family: var(--mono); font-size: .54rem; letter-spacing: .1em; word-spacing: -.2em; text-transform: uppercase; }
+.pe-bh-mix > span + span::before { content: '·'; margin-right: .45rem; color: var(--pe-ink-mute); }
 @media (hover: hover) and (pointer: fine) { .pe-bh-lead:hover { border-color: var(--pe-amber-deep); } }
 
 /* The picker (BoardPicker.tsx): format switch and four difficulties on one side,

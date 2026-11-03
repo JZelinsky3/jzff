@@ -3,11 +3,16 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import type { Difficulty } from '@/lib/packEmpire/rules'
+import { DIFFICULTIES, DIFFICULTY_LOOK, type Difficulty } from '@/lib/packEmpire/rules'
 import type { VersusFormat } from '@/lib/packEmpire/versus'
-import { DifficultyPicker, FormatPicker } from '../Difficulty'
 
 type Friend = { id: string; name: string }
+
+const FORMATS: { id: VersusFormat; label: string; line: string }[] = [
+  { id: 'classic', label: 'Classic', line: 'Your own eleven packs and a captain each. The better pulls win.' },
+  { id: 'even', label: 'Even', line: 'The same eleven packs, no captain. Chemistry and three Battles decide it.' },
+  { id: 'mystery', label: 'Mystery', line: 'Your own captain, then ten packs of mixed positions. Plan for what you need.' },
+]
 
 async function open(body: Record<string, unknown>): Promise<string> {
   const res = await fetch('/api/games/pack-empire/versus/', {
@@ -20,12 +25,40 @@ async function open(body: Record<string, unknown>): Promise<string> {
   return out.id as string
 }
 
+/** One row of the setup: a label, the switch, and a line on the one picked. */
+function Switch<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  line,
+}: {
+  label: string
+  options: { id: T; label: string }[]
+  value: T
+  onChange: (v: T) => void
+  line: string
+}) {
+  return (
+    <div className="pe-vs-row">
+      <span className="pe-vs-label">{label}</span>
+      <div className="pe-vs-seg" role="radiogroup" aria-label={label} style={{ '--n': options.length } as React.CSSProperties}>
+        {options.map((o) => (
+          <button key={o.id} type="button" role="radio" aria-checked={o.id === value} onClick={() => onChange(o.id)}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+      <p className="pe-vs-line">{line}</p>
+    </div>
+  )
+}
+
 /**
- * The two ways to start: a person (one friend, whose seat is held for them,
- * or an open link for whoever opens it first) or the CPU. Side by side and
- * the same height, buttons on the same line. Either drops you straight into
- * your own draft. The format and the cards are picked once, above both, and
- * hold for whichever you go with.
+ * Starting a game, as one card: the format and the cards on two switches, then
+ * who you're playing, the CPU or a person (a friend, whose seat is held for
+ * them, or an open link for whoever opens it first). Either drops you straight
+ * into your own draft with what's picked above.
  */
 export function ChallengePanels({ friends }: { friends: Friend[] }) {
   const router = useRouter()
@@ -46,18 +79,39 @@ export function ChallengePanels({ friends }: { friends: Friend[] }) {
   }
 
   return (
-    <>
-      <FormatPicker value={format} onChange={setFormat} />
-      <DifficultyPicker value={difficulty} onChange={setDifficulty} />
-      <div className="pe-twoup">
-        <div className="pe-panel">
-          <div className="pe-kicker">A friend</div>
-          <div className="pe-panel-title">Send a challenge</div>
-          <p className="pe-panel-text">
-            Pick a friend and the other seat waits for them, in their challenges. Or open a link and
-            whoever opens it first takes the seat.
-          </p>
-          <div className="pe-panel-foot">
+    <section className="pe-sec">
+      <div className="pe-sec-head">
+        <span className="pe-sec-num">§ New Game</span>
+        <span className="pe-sec-title">Start A Challenge</span>
+      </div>
+
+      <div className="pe-vs-new">
+        <Switch
+          label="Format"
+          options={FORMATS}
+          value={format}
+          onChange={setFormat}
+          line={FORMATS.find((f) => f.id === format)!.line}
+        />
+        <Switch
+          label="Cards"
+          options={DIFFICULTIES.map((d) => ({ id: d, label: DIFFICULTY_LOOK[d].label }))}
+          value={difficulty}
+          onChange={setDifficulty}
+          line={DIFFICULTY_LOOK[difficulty].line}
+        />
+
+        <div className="pe-vs-who">
+          <div className="pe-vs-opp">
+            <span className="pe-vs-label">Play the CPU</span>
+            <p className="pe-vs-line">It never sees your picks. Both totals go up when you lock yours in.</p>
+            <button type="button" className="pe-push" onClick={() => go('cpu', { cpu: true })} disabled={!!busy}>
+              {busy === 'cpu' ? 'Dealing' : 'Play the CPU'}
+            </button>
+          </div>
+
+          <div className="pe-vs-opp">
+            <span className="pe-vs-label">Play a friend</span>
             {friends.length > 0 ? (
               <div className="pe-friend-picks" role="group" aria-label="Send it to a friend">
                 {friends.map((f) => (
@@ -76,41 +130,22 @@ export function ChallengePanels({ friends }: { friends: Friend[] }) {
                 ))}
               </div>
             ) : (
-              <p className="pe-note">
+              <p className="pe-vs-line">
                 No friends yet.{' '}
                 <Link href="/games/pack-empire/profile/" className="pe-link">
                   Add some
                 </Link>{' '}
-                to send one straight to them.
+                or send a link to anyone.
               </p>
             )}
-            <button type="button" className="pe-act" onClick={() => go('link', {})} disabled={!!busy}>
-              {busy === 'link' ? 'Opening' : 'Open a link instead'}
+            <button type="button" className="pe-push" onClick={() => go('link', {})} disabled={!!busy}>
+              {busy === 'link' ? 'Opening' : 'Send a link'}
             </button>
           </div>
         </div>
 
-        <div className="pe-panel">
-          <div className="pe-kicker">Solo</div>
-          <div className="pe-panel-title">Draft against the CPU</div>
-          <p className="pe-panel-text">
-            {format === 'even'
-              ? 'It gets the same eleven packs and drafts for value, chemistry and the Battles. It never sees your picks, and it can only read what you can read.'
-              : 'Its eleven packs are dealt the moment you start, before you open yours, and it keeps the best card in each. It never sees your picks.'}{' '}
-            Both totals go up when you lock yours in.
-          </p>
-          <div className="pe-panel-foot">
-            <button type="button" className="pe-push" onClick={() => go('cpu', { cpu: true })} disabled={!!busy}>
-              {busy === 'cpu' ? 'Dealing' : 'Play the CPU'}
-            </button>
-          </div>
-        </div>
+        {error && <div className="pe-error">{error}</div>}
       </div>
-      {error && (
-        <div className="pe-error" style={{ marginTop: '0.9rem' }}>
-          {error}
-        </div>
-      )}
-    </>
+    </section>
   )
 }

@@ -391,7 +391,7 @@ export const BUILDER_FORMATS: BuilderFormat[] = ['classic', 'mystery']
 export const FORMAT_LOOK: Record<BuilderFormat, { label: string; line: string }> = {
   classic: {
     label: 'Classic',
-    line: 'One pack for every position, opened in any order you like.',
+    line: 'One pack for every position, opened in any order you like, so you always know what is left to fill.',
   },
   mystery: {
     label: 'Mystery',

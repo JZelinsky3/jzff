@@ -110,38 +110,6 @@ export default async function VersusLobby() {
           </div>
         )}
 
-        <HowItWorks mobile={mobile}>
-          <div className="pe-rules">
-            <div className="pe-rule">
-              <span>
-                <b>Open a challenge</b> and draft your eleven: a captain, then eleven packs, one keeper each.
-              </span>
-            </div>
-            <div className="pe-rule">
-              <span>
-                <b>Send the link.</b> Your friend sees your total and gets their own eleven packs.
-              </span>
-            </div>
-            <div className="pe-rule">
-              <span>
-                <b>Bigger accolades total wins.</b> Both lineups go up side by side when the second one lands.
-              </span>
-            </div>
-            <div className="pe-rule">
-              <span>
-                <b>Even</b> gives you both the same eleven packs and no captain. The cards cancel out, so
-                chemistry decides it.
-              </span>
-            </div>
-            <div className="pe-rule">
-              <span>
-                <b>Salary Cap</b> puts a price on every card and gives you each one budget, so spending big
-                early can leave you broke when the good pack turns up.
-              </span>
-            </div>
-          </div>
-        </HowItWorks>
-
         {user && games.waiting.length > 0 && (
           <section className="pe-sec">
             <div className="pe-sec-head">
@@ -166,6 +134,26 @@ export default async function VersusLobby() {
             )}
           </section>
         )}
+
+        <HowItWorks mobile={mobile}>
+          <div className="pe-rules">
+            <div className="pe-rule">
+              <span>
+                <b>Open a challenge</b> and draft your eleven: a captain, then eleven packs, one keeper each.
+              </span>
+            </div>
+            <div className="pe-rule">
+              <span>
+                <b>Send the link.</b> Your friend sees your total and gets their own eleven packs.
+              </span>
+            </div>
+            <div className="pe-rule">
+              <span>
+                <b>Bigger accolades total wins.</b> Both lineups go up side by side when the second one lands.
+              </span>
+            </div>
+          </div>
+        </HowItWorks>
       </div>
 
       {mobile ? <PeDock signedIn={!!user} /> : <SiteFooter />}

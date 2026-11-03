@@ -6,6 +6,7 @@ import './canton.css'
 import './unveil.css'
 import './board.css'
 import './builder.css'
+import './versus.css'
 import './locker.css'
 import './fg-table.css'
 

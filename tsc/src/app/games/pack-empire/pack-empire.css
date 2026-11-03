@@ -238,6 +238,24 @@ html:has(.pe-theme) body {
   opacity: 1;
 }
 
+/* You know which mode you're in, so its tab is the glyph alone: the word goes
+   (still read out) and the rail gets the room back. Under 960px the glyphs
+   are the ones that go, so the word stays there. */
+@media (min-width: 961px) {
+  .pe-nav-mode.on {
+    padding-inline: 0.75rem;
+  }
+
+  .pe-nav-mode.on > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
 .pe-nav-right {
   display: flex;
   align-items: center;
@@ -10132,66 +10150,7 @@ a.pe-lt-row:hover {
   font-size: 1.35rem;
 }
 
-/* ── The difficulty and format pickers ─────────────────────── */
-
-.pe-pick {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.6rem;
-  max-width: 1040px;
-  margin: 0 auto 1rem;
-}
-
-.pe-pick--two {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  max-width: 900px;
-}
-
-.pe-pick--three {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  max-width: 1040px;
-}
-
-.pe-pick-item {
-  display: grid;
-  gap: 0.25rem;
-  align-content: start;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid var(--pe-line);
-  border-radius: 4px;
-  background: var(--pe-card);
-  color: var(--pe-ink-soft);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition:
-    border-color 0.15s,
-    background 0.15s;
-}
-
-.pe-pick-item b {
-  font-family: var(--pe-cond);
-  font-weight: 800;
-  font-size: 1rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--pe-ink);
-}
-
-.pe-pick-item span {
-  font-size: 0.78rem;
-  line-height: 1.35;
-  color: var(--pe-ink-mute);
-}
-
-.pe-pick-item.on {
-  border-color: var(--pe-amber);
-  background: rgba(232, 168, 75, 0.09);
-}
-
-.pe-pick-item.on b {
-  color: var(--pe-amber-bright);
-}
+/* ── The difficulty and format tabs ────────────────────────── */
 
 .pe-pick-tabs {
   display: flex;
@@ -10307,64 +10266,8 @@ a.pe-lt-row:hover {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .pe-pick-item:hover {
-    border-color: var(--pe-amber-deep);
-  }
-
   .pe-btabs-fmt button:hover {
     color: var(--pe-ink);
-  }
-}
-
-.pe-pick-item:focus-visible {
-  outline: 2px solid var(--pe-amber);
-  outline-offset: 2px;
-}
-
-.pe-pick-line {
-  display: none;
-}
-
-/* Phones: three tabs and one line. Three stacked cards pushed the field off
-   the screen before you'd opened a pack. */
-@media (max-width: 640px) {
-  .pe-pick {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.35rem;
-    margin-bottom: 0.8rem;
-  }
-
-  .pe-pick-item {
-    padding: 0.5rem 0.4rem;
-    text-align: center;
-  }
-
-  .pe-pick-item b {
-    font-size: 0.86rem;
-    letter-spacing: 0.04em;
-  }
-
-  .pe-pick:not(.pe-pick--two) .pe-pick-item span {
-    display: none;
-  }
-
-  .pe-pick--three {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .pe-pick--two .pe-pick-item {
-    padding: 0.5rem 0.6rem;
-    text-align: left;
-  }
-
-  .pe-pick-line {
-    display: block;
-    grid-column: 1 / -1;
-    margin: 0.1rem 0 0;
-    font-size: 0.78rem;
-    line-height: 1.4;
-    text-align: center;
-    color: var(--pe-ink-mute);
   }
 }
 
