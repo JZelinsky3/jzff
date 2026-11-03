@@ -15,10 +15,11 @@
 // the real torn pack (scripts/pack-empire-fx/og-stages.mjs). Everything else gets
 // rays.png over its colour.
 //
-// iMessage lays a bar over the bottom of the card (title and link) and tints it
-// from the picture. So nothing that matters goes in the bottom 84px, and that
-// strip is the top bar's colour, solid: the bar has to read as its own colour.
-// It used to fade into the ground, and the bar melted into the middle of the card.
+// iMessage hangs its own bar under the card (title and link) and tints it from
+// the bottom of the picture. So the card ends on a slim ticker in the mode's
+// colour, the league cards' strip in this room's colours: the chat's bar then
+// reads as its own colour, not more of the card's dark ground. A ticker, not a
+// slab: it was an 84px block once, and that read as part of the picture.
 //
 // Satori traps, all hit on other cards: every helper here is CALLED, never used
 // as a <Component>, because a component returning mapped children hangs the
@@ -54,7 +55,8 @@ export const runtime = 'nodejs'
 const W = 1200
 const H = 630
 const BAR_TOP = 12
-const BAR_FOOT = 84
+const TICKER = 46
+const DOMAIN = 'THESUNDAYCHRONICLE.APP'
 
 const CREAM = '#f4ead6'
 const MUTE = '#a79d8b'
@@ -271,10 +273,30 @@ function room(accent: string, kicker: string, left: React.ReactNode, right: Reac
       )}
       <div style={{ position: 'absolute', left: 0, top: 0, width: W, height: BAR_TOP, background: accent, display: 'flex' }} />
       {right ? <div style={{ position: 'absolute', left: 660, top: 0, width: 540, height: H, display: 'flex' }}>{right}</div> : <div style={{ display: 'flex' }} />}
-      {/* What the bar under the card picks its colour from. Solid, and over the
-          stage, so a pack stands on it. */}
-      <div style={{ position: 'absolute', left: 0, bottom: 0, width: W, height: BAR_FOOT, display: 'flex', background: accent }} />
-      <div style={{ position: 'absolute', left: 64, top: 48, bottom: BAR_FOOT + 16, width: 660, display: 'flex', flexDirection: 'column' }}>
+      {/* The ticker: what the chat's bar under the card takes its colour from. */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          bottom: 0,
+          width: W,
+          height: TICKER,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 64px',
+          background: accent,
+          fontFamily: 'Mono',
+          fontWeight: 700,
+          fontSize: 16,
+          letterSpacing: 4,
+          color: ground(accent),
+        }}
+      >
+        <div style={{ display: 'flex' }}>OPEN PACKS · BUILD AN OFFENSE · CLIMB THE BOARD</div>
+        <div style={{ display: 'flex' }}>{DOMAIN}</div>
+      </div>
+      <div style={{ position: 'absolute', left: 64, top: 48, bottom: TICKER + 20, width: 660, display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
           <div style={{ display: 'flex', fontFamily: 'Orbitron', fontWeight: 800, fontSize: 25, letterSpacing: 3, color: AMBER }}>
             PACK EMPIRE
