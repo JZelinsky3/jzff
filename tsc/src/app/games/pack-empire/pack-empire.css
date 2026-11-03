@@ -6815,10 +6815,12 @@ a.pe-row:hover {
   }
 }
 
-/* Desktop: out past the page's 1180 so the board can run seven across. */
+/* Desktop: out past the page's 1180, six across. Seven at 1560 stretched every card
+   to about 150px over a 62px picture; six at 1300 keeps them near 128px, and the
+   board's 36 make six full rows. */
 @media (min-width: 1240px) {
   .pe-mega {
-    --mega-w: min(1560px, calc(100vw - 2.5rem));
+    --mega-w: min(1300px, calc(100vw - 2.5rem));
     width: var(--mega-w);
     max-width: none;
     margin-inline: calc((100% - var(--mega-w)) / 2);
@@ -6829,7 +6831,7 @@ a.pe-row:hover {
   }
 
   .pe-pool {
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
 

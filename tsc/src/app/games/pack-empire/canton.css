@@ -7,7 +7,7 @@
 .cx-ring { position: absolute; left: 50%; top: 47%; width: 60vmin; height: 60vmin; margin: -30vmin 0 0 -30vmin; border-radius: 50%; border: 4px solid #f4dfa4; opacity: 0; animation: cx-ring-out .9s var(--ring-at, .5s) cubic-bezier(.15, .7, .3, 1) forwards; }
 .cx-ring--2 { animation-delay: calc(var(--ring-at, .5s) + .14s); }
 .cx-ring--3 { animation-delay: calc(var(--ring-at, .5s) + .3s); }
-.cx-fly .pe-card { font-size: min(36px, 5.3vh, 8.6vw); cursor: pointer; }
+.cx-fly .pe-card { font-size: min(36px, 5.3cqh, 8.6cqw); cursor: pointer; }
 .pe-stage.cantoning .pe-rip { position: relative; z-index: 45; pointer-events: none; }
 /* Nothing under the Hall is on show, so nothing there is drawn while it runs */
 .pe-stage.hall > * { visibility: hidden; }
@@ -23,16 +23,24 @@
 /* --at is the flash, and every beat hangs off it, so setting it to 0 mid-show jumps
    whatever has passed to its end. That's the whole of the skip. --gate is the moment
    the doors stand open, and the walk down the Hall runs between the two. */
-/* --u stands in for 1vw through the Hall, and stops growing on a big screen (Joey,
-   2026-11-02): the room's 560vw walls on a large retina desktop drew about five times
-   the pixels a phone does and the walk ran near 40fps. Phones and small laptops are
-   unchanged; past 1,000px wide the room stays that size. The near walls still run off
-   the screen, so it still fills it: measured 42 -> 48fps and a third of the long frames. */
-.cx-stage { --u: min(1vw, 10px); }
-.cx-stage { --at: 7.1s; --gate: calc(var(--at) - 3.9s); --ring-at: var(--at); --f: calc(38 * var(--u)); --hw: calc(50 * var(--u)); --hh: max(calc(46 * var(--u)), 40vh); --bw: calc(46 * var(--u)); --sh: calc(var(--hh) * 1.5); padding-bottom: 7vh; background: #000; }
+/* The Hall plays in a frame, not the window (Joey, 2026-11-02). Shrinking the room
+   alone wasn't enough on a big desktop: the sky, doors, flash and two rotating 170vmax
+   ray sheets were still drawn the size of the screen, and it still broke the browser.
+   On a phone or tablet the frame is the screen; from 900px wide it stops growing at
+   1120x760 and sits in the middle on a dark ground. Everything inside measures the
+   frame in container units (cqw, cqh, cqmin, cqmax), so it's the same show at any size.
+   --u stands in for 1cqw through the Hall, and stops growing past 10px. */
+.cx-stage { --u: min(1cqw, 10px); --fw: 100vw; --fh: 100dvh; }
+@media (min-width: 900px) { .cx-stage { --fw: min(100vw, 1120px); --fh: min(100dvh, 760px); } }
+.cx-stage { --at: 7.1s; --gate: calc(var(--at) - 3.9s); --ring-at: var(--at); --f: calc(38 * var(--u)); --hw: calc(50 * var(--u)); --hh: max(calc(46 * var(--u)), 40cqh); --bw: calc(46 * var(--u)); --sh: calc(var(--hh) * 1.5); background: #0b0805; }
+.cx-frame { position: relative; display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: var(--fw); height: var(--fh); padding-bottom: calc(var(--fh) * .07); overflow: hidden; container-type: size; background: #000; }
+@media (min-width: 900px) { .cx-frame { border-radius: 14px; box-shadow: 0 0 0 1px rgba(244, 223, 164, .22), 0 30px 80px rgba(0, 0, 0, .7); } }
+.cx-frame .cx-ring { width: 60cqmin; height: 60cqmin; margin: -30cqmin 0 0 -30cqmin; }
+.cx-frame .cx-rays img { left: -85cqmax; top: -85cqmax; width: 170cqmax; height: 170cqmax; }
+.cx-frame .cx-gems i { font-size: min(18px, 3cqmin); }
 @media (max-width: 700px) { .cx-stage { --f: calc(46 * var(--u)); --bw: calc(64 * var(--u)); } }
 .cx-stage[data-skipped] { --at: 0s; }
-.cx-stage > span { pointer-events: none; }
+.cx-stage span { pointer-events: none; }
 .cx-sky { position: absolute; inset: 0; background: radial-gradient(circle at 50% 47%, #fff 0, #fff4d2 16%, #f6cb62 40%, #a56c16 72%, #2c1a06); animation: cx-adjust 1s calc(var(--gate) - .15s) ease-out forwards; }
 /* the blaze behind the doors fades as your eyes adjust, and there's the Hall */
 @keyframes cx-adjust { to { opacity: 0; } }
@@ -53,8 +61,8 @@
 .cx-door--l i { transform: scaleX(-1); }
 .cx-door i::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(255, 216, 130, .6), rgba(255, 170, 60, .12) 34%, transparent 62%); opacity: 0; animation: cx-lit 2.4s calc(var(--gate) - 2.4s) linear both; }
 /* three heartbeats, each harder and sooner, then they part */
-@keyframes cx-door-l { 0%, 3% { transform: none; } 5% { transform: translateX(-.35vw); } 12%, 24% { transform: none; } 26% { transform: translateX(-.7vw); } 33%, 41% { transform: none; } 43% { transform: translateX(-1.2vw); } 54% { transform: translateX(-.2vw); animation-timing-function: cubic-bezier(.72, 0, .24, 1); } 100% { transform: translateX(-104%); } }
-@keyframes cx-door-r { 0%, 3% { transform: none; } 5% { transform: translateX(.35vw); } 12%, 24% { transform: none; } 26% { transform: translateX(.7vw); } 33%, 41% { transform: none; } 43% { transform: translateX(1.2vw); } 54% { transform: translateX(.2vw); animation-timing-function: cubic-bezier(.72, 0, .24, 1); } 100% { transform: translateX(104%); } }
+@keyframes cx-door-l { 0%, 3% { transform: none; } 5% { transform: translateX(-.35cqw); } 12%, 24% { transform: none; } 26% { transform: translateX(-.7cqw); } 33%, 41% { transform: none; } 43% { transform: translateX(-1.2cqw); } 54% { transform: translateX(-.2cqw); animation-timing-function: cubic-bezier(.72, 0, .24, 1); } 100% { transform: translateX(-104%); } }
+@keyframes cx-door-r { 0%, 3% { transform: none; } 5% { transform: translateX(.35cqw); } 12%, 24% { transform: none; } 26% { transform: translateX(.7cqw); } 33%, 41% { transform: none; } 43% { transform: translateX(1.2cqw); } 54% { transform: translateX(.2cqw); animation-timing-function: cubic-bezier(.72, 0, .24, 1); } 100% { transform: translateX(104%); } }
 @keyframes cx-lit { 0% { opacity: .12; } 5% { opacity: .7; } 16% { opacity: .22; } 26% { opacity: .85; } 36% { opacity: .28; } 43% { opacity: 1; } 54%, 100% { opacity: .7; } }
 .cx-seam { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #fff; box-shadow: 0 0 14px 3px #ffe9b0, 0 0 54px 14px rgba(255, 186, 74, .7); opacity: 0; animation: cx-seam 2.4s calc(var(--gate) - 2.4s) linear both; }
 @keyframes cx-seam { 0% { opacity: .35; transform: none; } 5% { opacity: 1; transform: scaleX(3); } 16% { opacity: .4; transform: scaleX(1.2); } 26% { opacity: 1; transform: scaleX(5); } 36% { opacity: .5; transform: scaleX(1.6); } 43% { opacity: 1; transform: scaleX(9); } 54% { opacity: .9; transform: scaleX(3); } 72% { opacity: .9; transform: scaleX(70); } 90%, 100% { opacity: 0; transform: scaleX(140); } }
@@ -63,7 +71,7 @@
 /* no card until the walkout is done. Then it stands in the doorway, face up, and
    you walk in on it, out of the light: this tracks the camera's last stretch. */
 @keyframes cx-fly { 0% { opacity: 0; transform: scale(.48); animation-timing-function: cubic-bezier(.2, .5, .3, 1); } 34% { opacity: 1; } 100% { opacity: 1; transform: none; } }
-.cx-resolve { position: absolute; inset: 0; border-radius: .62em; background: radial-gradient(closest-side, #fff, #fff6dc); font-size: min(36px, 5.3vh, 8.6vw); opacity: 1; animation: cx-resolve .85s calc(var(--at) - .3s) ease-out forwards; }
+.cx-resolve { position: absolute; inset: 0; border-radius: .62em; background: radial-gradient(closest-side, #fff, #fff6dc); font-size: min(36px, 5.3cqh, 8.6cqw); opacity: 1; animation: cx-resolve .85s calc(var(--at) - .3s) ease-out forwards; }
 @keyframes cx-resolve { to { opacity: 0; } }
 /* The Hall: real 3D, a room you move through. The camera is the one transform, so
    walls, floor and signs all stay put and nothing but the compositor moves. Turning
@@ -114,15 +122,15 @@
 @keyframes cx-burst { 0% { opacity: 0; } 10% { opacity: .82; } 100% { opacity: 0; } }
 @keyframes cx-flash { 0% { opacity: 0; } 11% { opacity: 1; } 24% { opacity: 1; } 100% { opacity: 0; } }
 .cx-gold { position: absolute; inset: 0; overflow: hidden; }
-.cx-gold i { position: absolute; left: var(--x); top: 0; width: .5em; height: .82em; font-size: 16px; background: linear-gradient(135deg, #fff2c0, #d9a93c 55%, #fff0b8); transform: translateY(-8vh) scale(var(--s)); animation: cx-fall var(--d) calc(var(--at) + .25s + var(--w)) linear infinite; }
+.cx-gold i { position: absolute; left: var(--x); top: 0; width: .5em; height: .82em; font-size: 16px; background: linear-gradient(135deg, #fff2c0, #d9a93c 55%, #fff0b8); transform: translateY(-8cqh) scale(var(--s)); animation: cx-fall var(--d) calc(var(--at) + .25s + var(--w)) linear infinite; }
 .cx-gold i:nth-child(3n) { background: linear-gradient(135deg, #fff, #ffe9b4); }
 .cx-gold i:nth-child(4n) { animation-name: cx-fall-b; }
-@keyframes cx-fall { from { transform: translateY(-8vh) scale(var(--s)) rotate3d(1, .3, .2, 0deg); } to { transform: translateY(108vh) scale(var(--s)) rotate3d(1, .3, .2, 900deg); } }
-@keyframes cx-fall-b { from { transform: translateY(-8vh) scale(var(--s)) rotate3d(.2, 1, .4, 0deg); } to { transform: translateY(108vh) scale(var(--s)) rotate3d(.2, 1, .4, -760deg); } }
-.cx-title { position: absolute; left: 0; right: 0; bottom: 6.6vh; display: flex; justify-content: center; gap: .13em; font: 900 clamp(26px, 5.4vh, 46px)/1 var(--pe-display); text-transform: uppercase; color: #ffeec2; }
+@keyframes cx-fall { from { transform: translateY(-8cqh) scale(var(--s)) rotate3d(1, .3, .2, 0deg); } to { transform: translateY(108cqh) scale(var(--s)) rotate3d(1, .3, .2, 900deg); } }
+@keyframes cx-fall-b { from { transform: translateY(-8cqh) scale(var(--s)) rotate3d(.2, 1, .4, 0deg); } to { transform: translateY(108cqh) scale(var(--s)) rotate3d(.2, 1, .4, -760deg); } }
+.cx-title { position: absolute; left: 0; right: 0; bottom: 6.6cqh; display: flex; justify-content: center; gap: .13em; font: 900 clamp(26px, 5.4cqh, 46px)/1 var(--pe-display); text-transform: uppercase; color: #ffeec2; }
 .cx-title b { font-weight: 900; opacity: 0; text-shadow: 0 0 .5em rgba(255, 196, 84, .9); animation: cx-letter .5s calc(var(--at) + .3s + var(--i) * .07s) cubic-bezier(.2, 1.5, .4, 1) both; }
 @keyframes cx-letter { from { opacity: 0; transform: translateY(-.7em) scale(1.9); } to { opacity: 1; transform: none; } }
-.cx-sub { position: absolute; left: 0; right: 0; bottom: 3.5vh; text-align: center; font: 700 clamp(12px, 1.8vh, 15px)/1 var(--pe-cond); letter-spacing: .2em; text-transform: uppercase; color: #c9ad70; opacity: 0; animation: cx-up .5s calc(var(--at) + .95s) ease-out both; }
+.cx-sub { position: absolute; left: 0; right: 0; bottom: 3.5cqh; text-align: center; font: 700 clamp(12px, 1.8cqh, 15px)/1 var(--pe-cond); letter-spacing: .2em; text-transform: uppercase; color: #c9ad70; opacity: 0; animation: cx-up .5s calc(var(--at) + .95s) ease-out both; }
 /* ── The Canton Pull: the first reveal ────────────────────── */
 
 /* Where you find out. --at is the flash. Black first, only the pack left, then the

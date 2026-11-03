@@ -11,6 +11,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import {
+  addCpus,
   advanceWeek,
   beginDraft,
   createLeague,
@@ -23,6 +24,7 @@ import {
   newSeason,
   openLeaguePack,
   pickLeagueCard,
+  removeCpus,
   renameTeam,
   startSeason,
   submitLeagueDraft,
@@ -89,6 +91,10 @@ export async function POST(req: NextRequest) {
       return send(await leaveLeague(id, userId))
     case 'rename':
       return send(await renameTeam(id, userId, body.teamName))
+    case 'add-cpu':
+      return send(await addCpus(id, userId, body.fill))
+    case 'remove-cpus':
+      return send(await removeCpus(id, userId))
     case 'start':
       return send(await startSeason(id, userId))
     case 'advance':

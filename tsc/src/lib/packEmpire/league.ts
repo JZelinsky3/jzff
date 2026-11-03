@@ -29,6 +29,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { containsHateSpeech } from '@/lib/contentModeration'
 import { dealPack, newServerSeed } from './deal'
+import { cpuBoostSlot, cpuDraftPicks, cpuLock, cpuTeamName } from './leagueCpu'
 import { isId, nameForUser, newId } from './people'
 import {
   LEAGUE_BOOSTED,
@@ -73,7 +74,8 @@ export type Lock = { slot: number; player: Player }
 export type MemberRow = {
   id: string
   league_id: string
-  user_id: string
+  /** Null on a CPU team. */
+  user_id: string | null
   joined_at: string
   display_name: string
   team_name: string | null
@@ -85,13 +87,15 @@ export type MemberRow = {
   playoff_seed: number | null
   /** Leagues won, across every season (0082). */
   titles: number
+  /** A CPU team, added by the commissioner (0102). */
+  is_cpu: boolean
 }
 
 export type DraftRow = {
   id: string
   league_id: string
   member_id: string
-  user_id: string
+  user_id: string | null
   season_number: number
   phase: string
   week_number: number
@@ -215,7 +219,12 @@ export async function joinLeague(
   const members = await loadMembers(league.id)
   if (members.some((m) => m.user_id === userId)) return { ok: true, id: league.id }
   if (league.phase !== 'pregame') return { ok: false, error: 'This season has already started.' }
-  if (members.length >= league.max_players) return { ok: false, error: 'This league is full.' }
+  if (members.length >= league.max_players) {
+    // A person takes a CPU's seat: the newest one gives way.
+    const cpu = members.filter((m) => m.is_cpu).pop()
+    if (!cpu) return { ok: false, error: 'This league is full.' }
+    await db().from('pe_league_members').delete().eq('id', cpu.id).eq('is_cpu', true)
+  }
 
   const display = await nameForUser(db(), userId)
   const { error } = await db().from('pe_league_members').insert({ league_id: league.id, user_id: userId, display_name: display })
@@ -267,16 +276,19 @@ export async function openLeagues(userId: string | null): Promise<LeagueCard[]> 
   if (!rows.length) return []
   const { data: all } = await db()
     .from('pe_league_members')
-    .select('league_id, user_id')
+    .select('league_id, user_id, is_cpu')
     .in('league_id', rows.map((l) => l.id))
   const count = new Map<string, number>()
+  const people = new Map<string, number>()
   const mine = new Set<string>()
-  for (const r of (all ?? []) as { league_id: string; user_id: string }[]) {
+  for (const r of (all ?? []) as { league_id: string; user_id: string | null; is_cpu: boolean }[]) {
     count.set(r.league_id, (count.get(r.league_id) ?? 0) + 1)
+    if (!r.is_cpu) people.set(r.league_id, (people.get(r.league_id) ?? 0) + 1)
     if (userId && r.user_id === userId) mine.add(r.league_id)
   }
+  // A seat a CPU holds is still open: a person who joins takes it.
   return rows
-    .filter((l) => (count.get(l.id) ?? 0) < l.max_players && !mine.has(l.id))
+    .filter((l) => (people.get(l.id) ?? 0) < l.max_players && !mine.has(l.id))
     .map((l) => ({
       id: l.id,
       name: l.name,
@@ -295,7 +307,7 @@ export async function openLeagues(userId: string | null): Promise<LeagueCard[]> 
 
 export type StandingRow = {
   memberId: string
-  userId: string
+  userId: string | null
   name: string
   team: string | null
   total: number
@@ -310,6 +322,7 @@ export type StandingRow = {
   active: boolean
   seed: number | null
   you: boolean
+  cpu: boolean
 }
 
 export type LeagueView = {
@@ -323,6 +336,8 @@ export type LeagueView = {
   myDraft: { status: DraftRow['status']; finalScore: number | null; locked: string | null } | null
   canStart: boolean
   minPlayers: number
+  /** CPU teams in the league. */
+  cpus: number
 }
 
 export async function leagueView(id: string, userId: string | null): Promise<LeagueView | null> {
@@ -366,7 +381,8 @@ export async function leagueView(id: string, userId: string | null): Promise<Lea
       thisWeek: now ? now.status : 'none',
       active: m.playoff_active,
       seed: m.playoff_seed,
-      you: m.user_id === userId,
+      you: !!userId && m.user_id === userId,
+      cpu: !!m.is_cpu,
     }
   })
 
@@ -392,6 +408,7 @@ export async function leagueView(id: string, userId: string | null): Promise<Lea
     myDraft: mineNow ? { status: mineNow.status, finalScore: mineNow.final_score, locked: mineNow.locked_this_week } : null,
     canStart: commissioner && league.phase === 'pregame' && members.length >= MIN_LEAGUE_PLAYERS,
     minPlayers: MIN_LEAGUE_PLAYERS,
+    cpus: members.filter((m) => m.is_cpu).length,
   }
 }
 
@@ -453,7 +470,7 @@ function lineupOf(d: DraftRow): (Player | null)[] {
   return lineup
 }
 
-function packFor(d: DraftRow, slot: number, lineup: (Player | null)[]): Player[] {
+function packFor(d: Pick<DraftRow, 'seed' | 'boosted_slot' | 'pack_tier'>, slot: number, lineup: (Player | null)[]): Player[] {
   const boosted = d.boosted_slot === slot && d.pack_tier !== 'standard_pack'
   const tier: PackTier = boosted ? d.pack_tier : 'standard_pack'
   return dealPack({
@@ -784,6 +801,7 @@ export async function startSeason(leagueId: string, userId: string): Promise<{ o
   if (c.league.phase !== 'pregame') return { ok: false, error: 'The season is already under way.' }
   if (members.length < MIN_LEAGUE_PLAYERS) return { ok: false, error: `You need at least ${MIN_LEAGUE_PLAYERS} teams.` }
   await db().from('pe_leagues').update({ phase: 'regular', current_week: 1 }).eq('id', c.league.id).eq('phase', 'pregame')
+  await playCpuWeek(c.league.id)
   return { ok: true }
 }
 
@@ -795,8 +813,15 @@ export async function startSeason(leagueId: string, userId: string): Promise<{ o
 export async function advanceWeek(leagueId: string, userId: string): Promise<{ ok: true; to: string } | Fail> {
   const c = await asCommissioner(leagueId, userId)
   if ('error' in c) return c.error!
-  const league = c.league
-  if (!['regular', 'gauntlet', 'finals'].includes(league.phase)) return { ok: false, error: 'There is no week to close.' }
+  if (!['regular', 'gauntlet', 'finals'].includes(c.league.phase)) return { ok: false, error: 'There is no week to close.' }
+  // They play the week the moment it opens; this is only a CPU that missed it.
+  await playCpuWeek(c.league.id)
+  const out = await closeWeek(c.league)
+  if (out.ok) await playCpuWeek(c.league.id)
+  return out
+}
+
+async function closeWeek(league: LeagueRow): Promise<{ ok: true; to: string } | Fail> {
 
   const members = await loadMembers(league.id)
   const { data: weekRows } = await db()
@@ -902,6 +927,104 @@ export async function advanceWeek(leagueId: string, userId: string): Promise<{ o
     )
   )
   return { ok: true, to: 'complete' }
+}
+
+// ============================================================
+// CPU teams
+// ============================================================
+//
+// The commissioner fills seats with them before a season: a few, or every
+// seat but their own. They draft the moment a week opens, see each pack only
+// as they open it, and keep a man off his own week (see leagueCpu.ts). A
+// person who joins later takes a CPU's seat.
+
+export async function addCpus(leagueId: string, userId: string, fill: unknown): Promise<{ ok: true } | Fail> {
+  const c = await asCommissioner(leagueId, userId)
+  if ('error' in c) return c.error!
+  if (c.league.phase !== 'pregame') return { ok: false, error: 'CPU teams join before the season starts.' }
+  const members = await loadMembers(c.league.id)
+  const room = c.league.max_players - members.length
+  if (room <= 0) return { ok: false, error: 'This league is full.' }
+  const taken = new Set(members.map((m) => m.team_name ?? ''))
+  const rows = Array.from({ length: fill === true ? room : 1 }, () => {
+    const team = cpuTeamName(taken)
+    taken.add(team)
+    return { league_id: c.league.id, user_id: null, is_cpu: true, display_name: 'CPU', team_name: team }
+  })
+  const { error } = await db().from('pe_league_members').insert(rows)
+  return error ? { ok: false, error: 'Could not add a CPU team.' } : { ok: true }
+}
+
+export async function removeCpus(leagueId: string, userId: string): Promise<{ ok: true } | Fail> {
+  const c = await asCommissioner(leagueId, userId)
+  if ('error' in c) return c.error!
+  if (c.league.phase !== 'pregame') return { ok: false, error: 'CPU teams stay for the season once it starts.' }
+  await db().from('pe_league_members').delete().eq('league_id', c.league.id).eq('is_cpu', true)
+  return { ok: true }
+}
+
+/** Every CPU team that drafts this week and hasn't yet, drafts. */
+async function playCpuWeek(leagueId: string): Promise<void> {
+  const league = await loadLeague(leagueId)
+  if (!league || !['regular', 'gauntlet', 'finals'].includes(league.phase)) return
+  const cpus = (await loadMembers(league.id)).filter((m) => m.is_cpu && drafts(league, m))
+  if (!cpus.length) return
+  const { data } = await db()
+    .from('pe_league_drafts')
+    .select('member_id')
+    .eq('league_id', league.id)
+    .eq('season_number', league.season_number)
+    .eq('phase', league.phase)
+    .eq('week_number', league.current_week)
+  const done = new Set(((data ?? []) as { member_id: string }[]).map((r) => r.member_id))
+  await Promise.all(cpus.filter((m) => !done.has(m.id)).map((m) => playCpu(league, m)))
+}
+
+async function playCpu(league: LeagueRow, member: MemberRow): Promise<void> {
+  const carried = league.phase === 'regular' ? member.permanent_locks ?? [] : []
+  const lineup: (Player | null)[] = Array(SLOT_COUNT).fill(null)
+  for (const c of carried) lineup[c.slot] = c.player
+  const open = lineup.flatMap((p, i) => (p ? [] : [i]))
+
+  // The boost is placed before a single pack is dealt, like anyone's.
+  const tier = member.next_pack_tier
+  const deal = { seed: newServerSeed(), pack_tier: tier, boosted_slot: tier === 'standard_pack' ? null : cpuBoostSlot(tier, open) }
+  const picks = cpuDraftPicks(lineup, (slot, now) => packFor(deal, slot, now))
+  const roster = liveLineup({ ...deal, carried, picks, roster: null } as unknown as DraftRow)
+  if (roster.some((p) => !p)) return
+  const full = roster as Player[]
+  const draftScore = lineupScore(full)
+  const chemistry = chemistryFor(full)
+
+  // Its keeper, off this week's eleven. Next week's packs aren't dealt yet.
+  const keep =
+    league.phase === 'regular' && league.current_week < REGULAR_WEEKS
+      ? cpuLock(full, new Set(carried.map((c) => c.slot)))
+      : null
+
+  const now = new Date().toISOString()
+  const { error } = await db().from('pe_league_drafts').insert({
+    league_id: league.id,
+    member_id: member.id,
+    user_id: null,
+    season_number: league.season_number,
+    phase: league.phase,
+    week_number: league.current_week,
+    status: 'submitted',
+    ...deal,
+    carried,
+    picks,
+    roster: full,
+    draft_score: draftScore,
+    chemistry,
+    final_score: draftScore + chemistry.total,
+    locked_this_week: keep?.player.id ?? null,
+    started_at: now,
+    completed_at: now,
+  })
+  // A second call for the same week loses on the unique key and changes nothing.
+  if (error || !keep) return
+  await db().from('pe_league_members').update({ permanent_locks: [...carried, keep] }).eq('id', member.id)
 }
 
 export async function newSeason(leagueId: string, userId: string): Promise<{ ok: true } | Fail> {

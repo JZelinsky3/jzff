@@ -31,11 +31,12 @@ const CONFETTI = Array.from({ length: 22 }, (_, i) => ({
   '--s': `${0.7 + ((i * 3) % 4) * 0.22}`,
 })) as React.CSSProperties[]
 
-function Gems({ far }: { far: number }) {
+/** `unit` is vmin on the open screen, cqmin inside the Hall's frame. */
+function Gems({ far, unit = 'vmin' }: { far: number; unit?: 'vmin' | 'cqmin' }) {
   return (
     <span className="cx-gems">
       {Array.from({ length: 28 }, (_, i) => (
-        <i key={i} style={{ '--a': `${i * (360 / 28)}deg`, '--far': `${far + ((i * 11) % 26)}vmin` } as React.CSSProperties} />
+        <i key={i} style={{ '--a': `${i * (360 / 28)}deg`, '--far': `${far + ((i * 11) % 26)}${unit}` } as React.CSSProperties} />
       ))}
     </span>
   )
@@ -133,78 +134,80 @@ export function Enshrinement({ player, onClose, children }: { player: Player; on
   const colours = { '--c1': one, '--c2': two } as React.CSSProperties
   return (
     <button type="button" className="cx-stage" data-skipped={skipped || undefined} onClick={tap} aria-label="Canton pull. Tap to continue">
-      <span className="cx-hall" aria-hidden>
-        <span className="cx-world">
+      <span className="cx-frame">
+        <span className="cx-hall" aria-hidden>
+          <span className="cx-world">
+            {/* eslint-disable @next/next/no-img-element */}
+            <img className="cx-wall cx-wall--l" src={`${FX}/card-hall-wall.webp`} alt="" />
+            <img className="cx-wall cx-wall--r" src={`${FX}/card-hall-wall.webp`} alt="" />
+            <img className="cx-floor" src={`${FX}/card-hall-floor.webp`} alt="" />
+            <img className="cx-ceiling" src={`${FX}/card-hall-ceiling.webp`} alt="" />
+            <span className="cx-end" />
+            <img className="cx-portal" src={`${FX}/card-hall-portal.webp`} alt="" />
+            <span className="cx-glow" />
+            <span className="cx-sign cx-sign--team" style={colours}>
+              <span className="cx-cloth" />
+              <img className="cx-drape" src={`${FX}/card-banner.webp`} alt="" />
+              <span className="cx-print">
+                {logo && <img className="cx-crest" src={logo} alt="" draggable={false} />}
+                <b>{club}</b>
+              </span>
+            </span>
+            <span className="cx-sign cx-sign--year" style={colours}>
+              <span className="cx-cloth" />
+              <img className="cx-drape" src={`${FX}/card-banner.webp`} alt="" />
+              <span className="cx-print">
+                <strong>{player.year}</strong>
+                <b>Season</b>
+              </span>
+            </span>
+            {/* eslint-enable @next/next/no-img-element */}
+          </span>
+          <span className="cx-haze" />
+        </span>
+        <span className="cx-sky" aria-hidden />
+        <span className="cx-dusk" aria-hidden />
+        <span className="cx-rays" aria-hidden>
           {/* eslint-disable @next/next/no-img-element */}
-          <img className="cx-wall cx-wall--l" src={`${FX}/card-hall-wall.webp`} alt="" />
-          <img className="cx-wall cx-wall--r" src={`${FX}/card-hall-wall.webp`} alt="" />
-          <img className="cx-floor" src={`${FX}/card-hall-floor.webp`} alt="" />
-          <img className="cx-ceiling" src={`${FX}/card-hall-ceiling.webp`} alt="" />
-          <span className="cx-end" />
-          <img className="cx-portal" src={`${FX}/card-hall-portal.webp`} alt="" />
-          <span className="cx-glow" />
-          <span className="cx-sign cx-sign--team" style={colours}>
-            <span className="cx-cloth" />
-            <img className="cx-drape" src={`${FX}/card-banner.webp`} alt="" />
-            <span className="cx-print">
-              {logo && <img className="cx-crest" src={logo} alt="" draggable={false} />}
-              <b>{club}</b>
-            </span>
-          </span>
-          <span className="cx-sign cx-sign--year" style={colours}>
-            <span className="cx-cloth" />
-            <img className="cx-drape" src={`${FX}/card-banner.webp`} alt="" />
-            <span className="cx-print">
-              <strong>{player.year}</strong>
-              <b>Season</b>
-            </span>
-          </span>
+          <img src={`${FX}/card-rays.webp`} alt="" />
+          <img src={`${FX}/card-rays.webp`} alt="" />
           {/* eslint-enable @next/next/no-img-element */}
         </span>
-        <span className="cx-haze" />
-      </span>
-      <span className="cx-sky" aria-hidden />
-      <span className="cx-dusk" aria-hidden />
-      <span className="cx-rays" aria-hidden>
-        {/* eslint-disable @next/next/no-img-element */}
-        <img src={`${FX}/card-rays.webp`} alt="" />
-        <img src={`${FX}/card-rays.webp`} alt="" />
-        {/* eslint-enable @next/next/no-img-element */}
-      </span>
-      <span className="cx-gold" aria-hidden>
-        {CONFETTI.map((style, i) => (
-          <i key={i} style={style} />
-        ))}
-      </span>
-      <span className="cx-door cx-door--l" aria-hidden>
-        <i />
-      </span>
-      <span className="cx-door cx-door--r" aria-hidden>
-        <i />
-      </span>
-      <span className="cx-seam" aria-hidden />
-      <span className="cx-ring" aria-hidden />
-      <span className="cx-ring cx-ring--2" aria-hidden />
-      <span className="cx-ring cx-ring--3" aria-hidden />
-      <span className="cx-ring cx-thud" aria-hidden />
-      <span aria-hidden>
-        <Gems far={34} />
-      </span>
-      <span className="cx-land">
-        <span className="cx-fly">
-          {children}
-          <span className="cx-resolve" aria-hidden />
+        <span className="cx-gold" aria-hidden>
+          {CONFETTI.map((style, i) => (
+            <i key={i} style={style} />
+          ))}
         </span>
+        <span className="cx-door cx-door--l" aria-hidden>
+          <i />
+        </span>
+        <span className="cx-door cx-door--r" aria-hidden>
+          <i />
+        </span>
+        <span className="cx-seam" aria-hidden />
+        <span className="cx-ring" aria-hidden />
+        <span className="cx-ring cx-ring--2" aria-hidden />
+        <span className="cx-ring cx-ring--3" aria-hidden />
+        <span className="cx-ring cx-thud" aria-hidden />
+        <span aria-hidden>
+          <Gems far={34} unit="cqmin" />
+        </span>
+        <span className="cx-land">
+          <span className="cx-fly">
+            {children}
+            <span className="cx-resolve" aria-hidden />
+          </span>
+        </span>
+        <span className="cx-title">
+          {'Canton'.split('').map((ch, i) => (
+            <b key={i} style={{ '--i': i } as React.CSSProperties}>
+              {ch}
+            </b>
+          ))}
+        </span>
+        <span className="cx-sub">1 of {CANTON_CARDS} in the game</span>
+        <span className="cx-flash" aria-hidden />
       </span>
-      <span className="cx-title">
-        {'Canton'.split('').map((ch, i) => (
-          <b key={i} style={{ '--i': i } as React.CSSProperties}>
-            {ch}
-          </b>
-        ))}
-      </span>
-      <span className="cx-sub">1 of {CANTON_CARDS} in the game</span>
-      <span className="cx-flash" aria-hidden />
     </button>
   )
 }

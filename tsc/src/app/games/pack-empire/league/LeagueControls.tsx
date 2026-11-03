@@ -1,7 +1,7 @@
 'use client'
 
-// The buttons on a league's page: the commissioner's (start, close the week,
-// new season, delete), a team's (rename, leave), and an outsider's (join).
+// The buttons on a league's page: the commissioner's (CPU teams, start, close
+// the week, new season, delete), a team's (rename, leave), and an outsider's (join).
 // Destructive ones confirm inline, a second tap on a button that has changed
 // its words, rather than through a browser dialog.
 
@@ -54,6 +54,8 @@ export function CommishPanel({
   week,
   canStart,
   teams,
+  maxPlayers,
+  cpus,
   minPlayers,
   waitingOn,
 }: {
@@ -62,6 +64,9 @@ export function CommishPanel({
   week: number
   canStart: boolean
   teams: number
+  maxPlayers: number
+  /** CPU teams already in. */
+  cpus: number
   minPlayers: number
   /** Teams yet to submit this week. */
   waitingOn: number
@@ -89,6 +94,37 @@ export function CommishPanel({
                 {teams} of {minPlayers} teams needed to start
               </p>
             )}
+            <div className="pe-share" style={{ flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="pe-act pe-act--sm"
+                disabled={teams >= maxPlayers || !!busy}
+                onClick={() => run('cpu', { action: 'add-cpu', id })}
+              >
+                Add a CPU
+              </button>
+              <button
+                type="button"
+                className="pe-act pe-act--sm"
+                disabled={teams >= maxPlayers || !!busy}
+                onClick={() => run('cpu', { action: 'add-cpu', id, fill: true })}
+              >
+                Fill with CPUs
+              </button>
+              {cpus > 0 && (
+                <button
+                  type="button"
+                  className="pe-act pe-act--sm"
+                  disabled={!!busy}
+                  onClick={() => run('cpu', { action: 'remove-cpus', id })}
+                >
+                  Remove CPUs
+                </button>
+              )}
+            </div>
+            <p className="pe-note">
+              CPUs draft when a week opens and keep their best man. Anyone who joins takes a CPU&apos;s seat.
+            </p>
           </>
         )}
 

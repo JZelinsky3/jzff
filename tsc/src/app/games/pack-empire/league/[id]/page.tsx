@@ -175,6 +175,8 @@ export default async function LeagueHome({ params }: { params: Promise<{ id: str
                 week={league.current_week}
                 canStart={view.canStart}
                 teams={standings.length}
+                maxPlayers={league.max_players}
+                cpus={view.cpus}
                 minPlayers={view.minPlayers}
                 waitingOn={waitingOn}
               />
