@@ -148,6 +148,9 @@ export type VersusView = {
   battles: string[] | null
   /** How they went, once both sides are in. */
   outcome: BattleOutcome | null
+  /** What the viewer can do to make it go away: take it back as the host, or
+      turn it down as the friend it was sent to. */
+  removable: 'delete' | 'decline' | null
 }
 
 function side(row: Row, seat: Seat, reveal: boolean, you: Seat | null): SideView {
@@ -192,6 +195,12 @@ function view(row: Row, you: Seat | null, viewerId: string | null): VersusView {
     difficulty: row.difficulty,
     battles: row.battles,
     outcome: both ? (row.host_result?.battles ?? null) : null,
+    removable:
+      you === 'host' && hostCanDelete(row)
+        ? 'delete'
+        : viewerId && you !== 'host' && canDecline(row, viewerId)
+          ? 'decline'
+          : null,
   }
 }
 
@@ -517,30 +526,59 @@ export async function submitVersusSeat(
   return { ok: true, view: view(fresh, seat, userId) }
 }
 
+/** The host can take a game back until it's over, as long as nobody else has
+    opened a pack in it: the CPU, an empty seat, a held one, or a person who sat
+    down and never started. */
+function hostCanDelete(r: Pick<Row, 'status' | 'guest_bot' | 'guest_seed'>): boolean {
+  return r.status !== 'done' && (r.guest_bot || !r.guest_seed)
+}
+
+/** A challenge sent to you can be turned down until you've locked your eleven in. */
+function canDecline(r: Pick<Row, 'status' | 'invited_id' | 'guest_result'>, userId: string): boolean {
+  return r.status !== 'done' && r.invited_id === userId && !r.guest_result
+}
+
 /**
- * Takes back a challenge nobody answered. Only the host's to delete, and only
- * while the other seat is empty: once somebody has sat down it's their game
- * too. A held seat counts as empty, since the friend hasn't opened it. Checked
- * in the delete itself, so someone taking the seat that same moment wins.
+ * Takes a game back, or turns one down. The host deletes any game that isn't
+ * over while nobody else has started drafting in it (hostCanDelete); a friend
+ * a challenge was sent to declines it (canDecline), which deletes it for both.
+ * The conditions go into the delete itself, so a seat taken or a draft started
+ * that same moment wins.
  */
 export async function deleteVersus(id: string, userId: string): Promise<{ ok: true } | Fail> {
   const row = await load(id)
   if (!row) return { ok: false, error: 'No such challenge.', status: 404 }
-  if (row.host_id !== userId) return { ok: false, error: 'Only whoever opened it can delete it.', status: 403 }
+  const db = createAdminClient()
 
-  const { data } = await createAdminClient()
-    .from('pe_versus')
-    .delete()
-    .eq('id', id)
-    .eq('host_id', userId)
-    .eq('status', 'open')
-    .is('guest_id', null)
-    .is('guest_key', null)
-    .eq('guest_bot', false)
-    .select('id')
-    .maybeSingle()
-  if (!data) return { ok: false, error: 'Somebody has taken the other seat, so it stays.' }
-  return { ok: true }
+  if (row.host_id === userId) {
+    const { data } = await db
+      .from('pe_versus')
+      .delete()
+      .eq('id', id)
+      .eq('host_id', userId)
+      .neq('status', 'done')
+      .or('guest_bot.eq.true,guest_seed.is.null')
+      .select('id')
+      .maybeSingle()
+    if (!data) return { ok: false, error: 'They have started their draft, so it stays.' }
+    return { ok: true }
+  }
+
+  if (canDecline(row, userId)) {
+    const { data } = await db
+      .from('pe_versus')
+      .delete()
+      .eq('id', id)
+      .eq('invited_id', userId)
+      .neq('status', 'done')
+      .is('guest_result', null)
+      .select('id')
+      .maybeSingle()
+    if (!data) return { ok: false, error: 'Could not decline it.' }
+    return { ok: true }
+  }
+
+  return { ok: false, error: 'Only whoever opened it can delete it.', status: 403 }
 }
 
 export type VersusListItem = {
@@ -553,8 +591,10 @@ export type VersusListItem = {
   theirScore: number | null
   /** A friend sent it to you and you haven't opened it yet. */
   waitingOnYou: boolean
-  /** Yours, and nobody has taken the other seat. */
+  /** Yours to take back (hostCanDelete), or sent to you to turn down (canDecline). */
   canDelete: boolean
+  /** It's the second kind: removing it is declining it. */
+  declines: boolean
   format: VersusFormat
   difficulty: Difficulty
 }
@@ -565,7 +605,7 @@ export async function listVersus(userId: string): Promise<VersusListItem[]> {
   const db = createAdminClient()
   const { data } = await db
     .from('pe_versus')
-    .select('id, status, created_at, host_id, host_name, host_result, guest_id, guest_name, guest_result, invited_id, format, difficulty')
+    .select('id, status, created_at, host_id, host_name, host_result, guest_id, guest_name, guest_result, guest_seed, guest_bot, invited_id, format, difficulty')
     .or(`host_id.eq.${userId},guest_id.eq.${userId},invited_id.eq.${userId}`)
     .order('created_at', { ascending: false })
     .limit(50)
@@ -573,6 +613,7 @@ export async function listVersus(userId: string): Promise<VersusListItem[]> {
     const you: Seat = r.host_id === userId ? 'host' : 'guest'
     const mine = you === 'host' ? r.host_result : r.guest_result
     const theirs = you === 'host' ? r.guest_result : r.host_result
+    const declines = you !== 'host' && canDecline(r, userId)
     return {
       id: r.id,
       status: r.status,
@@ -582,7 +623,8 @@ export async function listVersus(userId: string): Promise<VersusListItem[]> {
       yourScore: mine?.score ?? null,
       theirScore: theirs?.score ?? null,
       waitingOnYou: r.invited_id === userId && !r.guest_id,
-      canDelete: you === 'host' && r.status === 'open',
+      canDelete: (you === 'host' && hostCanDelete(r)) || declines,
+      declines,
       format: r.format,
       difficulty: r.difficulty,
     }

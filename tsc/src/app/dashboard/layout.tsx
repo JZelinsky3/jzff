@@ -27,6 +27,7 @@ export default async function DashboardLayout({
         // Skip "Your leagues" — that's literally this page.
         { href: '/dashboard/new', label: 'New archive' },
         { href: '/hub', label: 'The Clubhouse' },
+        { href: '/games/', label: 'Games' },
         { href: '/guides', label: 'Guides' },
       ],
     },

@@ -41,6 +41,9 @@ export type Battle = {
   show: (value: number) => string
   /** How far this card goes toward winning it, about 0 to 1, for the CPU. */
   lean: (card: Player, roster: Player[]) => number
+  /** What one card puts toward it, short, for the Mega board. Left off where the
+      card already prints it (its year, its team) or when it puts in nothing. */
+  mark?: (card: Player) => string | null
 }
 
 const DIVISIONS: Record<string, string> = {
@@ -209,6 +212,7 @@ export const BATTLES: Battle[] = [
     value: (l) => count(l, (c) => yearOf(c) >= 2020),
     show: counted('card'),
     lean: (c) => (yearOf(c) >= 2020 ? 1 : 0),
+    mark: (c) => (yearOf(c) >= 2020 ? '2020s' : null),
   },
   {
     id: 'throwback',
@@ -218,6 +222,7 @@ export const BATTLES: Battle[] = [
     value: (l) => count(l, (c) => yearOf(c) < 2010),
     show: counted('card'),
     lean: (c) => (yearOf(c) < 2010 ? 1 : 0),
+    mark: (c) => (yearOf(c) < 2010 ? 'Pre-2010' : null),
   },
 
   // ── Franchise ──────────────────────────────────────────────
@@ -247,6 +252,7 @@ export const BATTLES: Battle[] = [
     value: (l) => count(l, (c) => divisionOf(c).startsWith('AFC')),
     show: counted('card'),
     lean: (c) => (divisionOf(c).startsWith('AFC') ? 1 : 0),
+    mark: (c) => (divisionOf(c).startsWith('AFC') ? 'AFC' : null),
   },
   {
     id: 'nfc',
@@ -256,6 +262,7 @@ export const BATTLES: Battle[] = [
     value: (l) => count(l, (c) => divisionOf(c).startsWith('NFC')),
     show: counted('card'),
     lean: (c) => (divisionOf(c).startsWith('NFC') ? 1 : 0),
+    mark: (c) => (divisionOf(c).startsWith('NFC') ? 'NFC' : null),
   },
   {
     id: 'division-stack',
@@ -265,6 +272,7 @@ export const BATTLES: Battle[] = [
     value: (l) => stacked(l, divisionOf),
     show: counted('card'),
     lean: (c, r) => clamp(count(r, (x) => divisionOf(x) === divisionOf(c)) / 2),
+    mark: (c) => divisionOf(c) || null,
   },
   {
     id: 'all-divisions',
@@ -274,6 +282,7 @@ export const BATTLES: Battle[] = [
     value: (l) => distinct(l, divisionOf),
     show: counted('division'),
     lean: (c, r) => (r.some((x) => divisionOf(x) === divisionOf(c)) ? 0 : 1),
+    mark: (c) => divisionOf(c) || null,
   },
 
   // ── The record ─────────────────────────────────────────────
@@ -285,6 +294,7 @@ export const BATTLES: Battle[] = [
     value: (l) => sum(l, touchdowns),
     show: counted('TD', 'TDs'),
     lean: (c) => clamp(touchdowns(c) / 25),
+    mark: (c) => (touchdowns(c) ? `${touchdowns(c)} TD` : null),
   },
   {
     id: 'receiving',
@@ -294,6 +304,7 @@ export const BATTLES: Battle[] = [
     value: (l) => sum(l, receiving),
     show: counted('yard'),
     lean: (c) => clamp(receiving(c) / 1500),
+    mark: (c) => (receiving(c) ? `${receiving(c).toLocaleString()} yds` : null),
   },
   {
     id: 'catches',
@@ -303,6 +314,7 @@ export const BATTLES: Battle[] = [
     value: (l) => sum(l, catches),
     show: counted('catch', 'catches'),
     lean: (c) => clamp(catches(c) / 100),
+    mark: (c) => (catches(c) ? `${catches(c)} rec` : null),
   },
   {
     id: 'rings',
@@ -312,6 +324,7 @@ export const BATTLES: Battle[] = [
     value: (l) => count(l, champion),
     show: counted('ring'),
     lean: (c) => (champion(c) ? 1 : 0),
+    mark: (c) => (champion(c) ? 'Ring' : null),
   },
 ]
 

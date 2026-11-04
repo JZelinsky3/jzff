@@ -15,6 +15,8 @@ export type GameRow = {
   yours: number | null
   theirs: number | null
   canDelete: boolean
+  /** Sent to you: removing it turns it down rather than deleting your own. */
+  declines?: boolean
   /** The next move is yours. */
   onYou: boolean
 }

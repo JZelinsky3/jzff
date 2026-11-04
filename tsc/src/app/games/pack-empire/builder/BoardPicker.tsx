@@ -24,7 +24,7 @@ import {
   type Player,
 } from '@/lib/packEmpire/rules'
 import { RunRow } from '../BoardRows'
-import { PackCard } from '../cards'
+import { TableArt } from '../TableArt'
 
 const board = (b: { diff: Difficulty; format: BuilderFormat }) => `/games/pack-empire/board/${builderQuery(b.diff, b.format)}`
 
@@ -34,29 +34,18 @@ const FORMAT_BRIEF: Record<BuilderFormat, string> = {
   mystery: 'Eleven packs of random positions. Plan ahead.',
 }
 
-/** Classic is a hand of position packs, Mystery three of its black one. Off
-    Standard, one of the cards comes out in front the way that difficulty deals
-    it: a value range, a year and nothing else, a price tag. */
-function FormatArt({ format, card }: { format: BuilderFormat; card?: Player }) {
-  const packs = format === 'mystery' ? [WILD_PACK_ART, WILD_PACK_ART, WILD_PACK_ART] : [PACK_ART.RB, PACK_ART.WR, PACK_ART.QB]
-  return (
-    <span className={`pe-bh-art${format === 'mystery' ? ' pe-bh-art--mys' : ''}${card ? ' pe-bh-art--card' : ''}`} aria-hidden>
-      <span className="pe-bh-pack l" style={{ backgroundImage: `url(${packs[0]})` }} />
-      <span className="pe-bh-pack r" style={{ backgroundImage: `url(${packs[1]})` }} />
-      <span className="pe-bh-pack c" style={{ backgroundImage: `url(${packs[2]})` }} />
-      {card && (
-        <span key={card.blind?.level ?? card.salary ?? 'card'} className="pe-bh-artcard">
-          <PackCard player={card} revealed index={0} still disabled />
-        </span>
-      )}
-    </span>
-  )
+/** Classic's three share a position and stand in front of that position's packs;
+    Mystery's are three positions in front of its black ones. */
+function BuilderArt({ format, cards }: { format: BuilderFormat; cards: Player[] }) {
+  const pos = cards[0]?.pos
+  const pack = format === 'mystery' || !pos ? WILD_PACK_ART : PACK_ART[pos]
+  return <TableArt cards={cards} packs={[pack, pack]} mystery={format === 'mystery'} />
 }
 
 export function BoardPicker({
   boards,
   leaders,
-  faces,
+  hands,
   mobile,
   start,
   signedIn,
@@ -65,8 +54,8 @@ export function BoardPicker({
   boards: HubBoard[]
   /** Each of today's runs' best card, by run id. */
   leaders: Record<string, Player>
-  /** One card as each hard difficulty deals it, for the art. */
-  faces: Partial<Record<Difficulty, Player>>
+  /** Three cards for each table, as its difficulty deals them, keyed format:diff. */
+  hands: Record<string, Player[]>
   mobile: boolean
   start: { diff: Difficulty; format: BuilderFormat }
   signedIn: boolean
@@ -137,38 +126,38 @@ export function BoardPicker({
           </div>
 
           <article className="pe-bp-card">
-            <header className="pe-bp-card-head">
-              <FormatArt format={format} card={faces[diff]} />
-              <div>
+            <div className="pe-bp-info">
+              <header className="pe-bp-card-head">
                 <span className="pe-bp-card-kick">{FORMAT_LOOK[format].label}</span>
                 <h2>{DIFFICULTY_LOOK[diff].label}</h2>
                 <p>{DIFFICULTY_LOOK[diff].line}</p>
-              </div>
-            </header>
-            <div className="pe-bp-stats">
-              <span className="pe-bh-stat">
-                <small>Top Today</small>
-                {top ? <b>{top.score.toLocaleString()}</b> : <em>Nobody yet</em>}
-              </span>
-              <span className="pe-bh-stat">
-                <small>Runs Today</small>
-                <b>{(pick?.runsToday ?? 0).toLocaleString()}</b>
-              </span>
-              {signedIn && (
+              </header>
+              <div className="pe-bp-stats">
                 <span className="pe-bh-stat">
-                  <small>Your Best</small>
-                  {pick?.yourBest != null ? <b>{pick.yourBest.toLocaleString()}</b> : <em>None yet</em>}
+                  <small>Top Today</small>
+                  {top ? <b>{top.score.toLocaleString()}</b> : <em>Nobody yet</em>}
                 </span>
-              )}
+                <span className="pe-bh-stat">
+                  <small>Runs Today</small>
+                  <b>{(pick?.runsToday ?? 0).toLocaleString()}</b>
+                </span>
+                {signedIn && (
+                  <span className="pe-bh-stat">
+                    <small>Your Best</small>
+                    {pick?.yourBest != null ? <b>{pick.yourBest.toLocaleString()}</b> : <em>None yet</em>}
+                  </span>
+                )}
+              </div>
+              <div className="pe-bp-go">
+                <Link href={playHref(diff, format)} className="pe-push">
+                  Play
+                </Link>
+                <Link href={board({ diff, format })} className="pe-link">
+                  Board
+                </Link>
+              </div>
             </div>
-            <div className="pe-bp-go">
-              <Link href={playHref(diff, format)} className="pe-push">
-                Play
-              </Link>
-              <Link href={board({ diff, format })} className="pe-link">
-                Board
-              </Link>
-            </div>
+            <BuilderArt key={`${format}:${diff}`} format={format} cards={hands[`${format}:${diff}`] ?? []} />
           </article>
         </div>
       </section>

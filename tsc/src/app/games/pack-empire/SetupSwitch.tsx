@@ -1,8 +1,9 @@
 'use client'
 
-// One row of a setup card (Versus, Mega Draft): a label, the switch, and a
-// line on the one picked. The format is a round pill; the cards under it are
-// square tabs, so the two rows don't read as the same control twice.
+// One row of a setup (Versus, Mega Draft): a label, the switch, and optionally
+// a line on the one picked (MatchSetup's card says it now, so it goes without).
+// The format is a round pill; the cards under it are square tabs, so the two
+// rows don't read as the same control twice.
 
 export function SetupSwitch<T extends string>({
   label,
@@ -16,7 +17,7 @@ export function SetupSwitch<T extends string>({
   options: { id: T; label: string }[]
   value: T
   onChange: (v: T) => void
-  line: string
+  line?: string
   square?: boolean
 }) {
   return (
@@ -34,7 +35,7 @@ export function SetupSwitch<T extends string>({
           </button>
         ))}
       </div>
-      <p className="pe-setup-line">{line}</p>
+      {line && <p className="pe-setup-line">{line}</p>}
     </div>
   )
 }

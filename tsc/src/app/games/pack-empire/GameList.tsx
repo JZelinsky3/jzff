@@ -28,12 +28,14 @@ function resultOf(r: GameRow): 'win' | 'loss' | 'tie' | null {
   return r.yours === r.theirs ? 'tie' : r.yours > r.theirs ? 'win' : 'loss'
 }
 
-/** Two taps, like removing a friend: the first asks, the second deletes. */
+/** Two taps, like removing a friend: the first asks, the second deletes. A game
+    sent to you is declined instead, which deletes it the same way. */
 export function DeleteGame({
   api,
   id,
   seatKey = null,
-  label = 'Delete',
+  label,
+  decline = false,
   onGone,
 }: {
   api: string
@@ -41,6 +43,7 @@ export function DeleteGame({
   /** A signed-out host's seat key. */
   seatKey?: string | null
   label?: string
+  decline?: boolean
   onGone: () => void
 }) {
   const [armed, setArmed] = useState(false)
@@ -71,16 +74,16 @@ export function DeleteGame({
   if (!armed) {
     return (
       <button type="button" className="pe-del" onClick={() => setArmed(true)}>
-        {label}
+        {label ?? (decline ? 'Decline' : 'Delete')}
       </button>
     )
   }
 
   return (
     <span className="pe-del-ask">
-      <span>Delete it for good?</span>
+      <span>{decline ? 'Turn it down?' : 'Delete it for good?'}</span>
       <button type="button" className="pe-del on" disabled={busy} onClick={remove}>
-        {busy ? 'Deleting' : 'Delete'}
+        {busy ? (decline ? 'Declining' : 'Deleting') : decline ? 'Decline' : 'Delete'}
       </button>
       <button type="button" className="pe-del" disabled={busy} onClick={() => setArmed(false)}>
         Keep
@@ -118,7 +121,7 @@ function Row({ row, api, onGone }: { row: GameRow; api: string; onGone: () => vo
     <div className="pe-row-item">
       {link}
       <div className="pe-row-tools">
-        <DeleteGame api={api} id={row.id} onGone={onGone} />
+        <DeleteGame api={api} id={row.id} decline={row.declines} onGone={onGone} />
       </div>
     </div>
   )

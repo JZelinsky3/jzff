@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from 'next'
-import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
 import { peMeta } from '@/lib/packEmpire/meta'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { listVersus } from '@/lib/packEmpire/versus'
 import { friendPicker } from '@/lib/friends'
+import { setupHands } from '@/lib/packEmpire/setupHands'
 import { formatLine } from '@/lib/packEmpire/rules'
 import mobileStyles from '../../mobile.module.css'
 import { GameList } from '../GameList'
@@ -55,6 +55,7 @@ export default async function VersusLobby() {
         yours: c.yourScore,
         theirs: c.theirScore,
         canDelete: c.canDelete,
+        declines: c.declines,
         // Sent to you, or you've sat down and haven't locked your eleven in.
         onYou: c.waitingOnYou || (c.status !== 'done' && c.yourScore == null),
       })
@@ -96,19 +97,7 @@ export default async function VersusLobby() {
           </section>
         )}
 
-        {user ? (
-          <ChallengePanels friends={friends} />
-        ) : (
-          <div className="pe-panel" style={{ textAlign: 'center' }}>
-            <p className="pe-panel-text" style={{ marginBottom: '1rem' }}>
-              Starting a challenge needs an account, so it has somewhere to come back to. Answering one
-              doesn&apos;t: if a friend sent you a link, just open it.
-            </p>
-            <Link href="/login?next=%2Fgames%2Fpack-empire%2Fversus%2F" className="pe-btn">
-              Sign in to start one
-            </Link>
-          </div>
-        )}
+        <ChallengePanels friends={friends} hands={setupHands('versus')} signedIn={!!user} />
 
         {user && games.waiting.length > 0 && (
           <section className="pe-sec">

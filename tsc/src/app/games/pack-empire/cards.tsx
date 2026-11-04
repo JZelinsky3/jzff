@@ -509,22 +509,25 @@ function StatBox({ accolades, rarity }: { accolades: string[]; rarity: Rarity })
   )
 }
 
+/** How big the light is against the card while it follows the pointer, so it can
+    slide to any corner and still cover it (pack-empire.css, .pe-glare). */
+const GLARE_SPAN = 1.6
+
 /** Lean a card: x and y run 0 to 1 across it. Written straight to the two
-    elements that move. A custom property on the card would be inherited by
-    every effect inside it and re-style all of them on every frame. */
+    elements that move, and both as transforms: the light is painted once and
+    slid across. Moving it with custom properties repainted the card's front on
+    every pointer move, which is what made a desktop's packs drag when the mouse
+    sat over them. */
 export function leanCard(card: Element, x: number, y: number) {
   const tilt = card.querySelector<HTMLElement>('.pe-tilt')
   const glare = card.querySelector<HTMLElement>('.pe-glare')
   if (tilt) tilt.style.transform = `rotateX(${(0.5 - y) * 18}deg) rotateY(${(x - 0.5) * 22}deg)`
-  glare?.style.setProperty('--pe-gx', `${x * 100}%`)
-  glare?.style.setProperty('--pe-gy', `${y * 100}%`)
+  if (glare) glare.style.transform = `translate(${((x - 0.5) / GLARE_SPAN) * 100}%, ${((y - 0.5) / GLARE_SPAN) * 100}%)`
 }
 
 function straightenCard(card: Element) {
   card.querySelector<HTMLElement>('.pe-tilt')?.style.removeProperty('transform')
-  const glare = card.querySelector<HTMLElement>('.pe-glare')
-  glare?.style.removeProperty('--pe-gx')
-  glare?.style.removeProperty('--pe-gy')
+  card.querySelector<HTMLElement>('.pe-glare')?.style.removeProperty('transform')
 }
 
 /** Mouse only: the card leans toward the pointer and the shine follows it.

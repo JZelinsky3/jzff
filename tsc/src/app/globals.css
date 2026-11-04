@@ -10746,6 +10746,36 @@ body.tsc-hdr-collapsed .mprof-bar {
     font-size: .56rem;
     font-weight: 700;
 }
+/* The way into the games, first in the Games group: a pack, the name, Play. */
+.mprof-games {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .8rem;
+    margin-bottom: .5rem;
+    border-color: rgba(232, 168, 75, .45);
+    background: linear-gradient(100deg, rgba(232, 168, 75, .1), rgba(255, 255, 255, .02) 60%);
+}
+.mprof-games-pack {
+    width: 30px;
+    height: auto;
+    aspect-ratio: 125 / 183;
+    border-radius: 3px;
+    transform: rotate(-8deg);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, .5), 0 0 12px rgba(232, 168, 75, .25);
+}
+.mprof-games-text { display: grid; min-width: 0; }
+.mprof-games-go {
+    padding: .45rem .8rem;
+    border-radius: 6px;
+    background: #e8a84b;
+    color: #141311;
+    font-family: var(--mono);
+    font-size: .56rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
 .mprof-badge {
     font-family: var(--mono);
     font-size: .48rem;

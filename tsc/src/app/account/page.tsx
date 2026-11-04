@@ -174,6 +174,17 @@ export default async function AccountPage({
           </div>
           <div className="dc-card-row">
             <div>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem' }}>The Games Page</div>
+              <div style={{ opacity: 0.65, fontSize: '.85rem', marginTop: '.35rem' }}>
+                Pack Empire and six more games built on real seasons.
+              </div>
+            </div>
+            <Link href="/games/" className="dc-btn">
+              Play
+            </Link>
+          </div>
+          <div className="dc-card-row">
+            <div>
               <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem' }}>Friends and the Record Book</div>
               <div style={{ opacity: 0.65, fontSize: '.85rem', marginTop: '.35rem' }}>
                 Your friends, your record against each of them and your best runs.

@@ -85,6 +85,15 @@ export function MobileProfile({
 
       <div className="mprof-section" id="games">
         <div className="mprof-section-label">Games</div>
+        <Link href="/games/" className="mprof-card mprof-card-link mprof-games">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/games/pack-empire/packs/qb.webp" alt="" className="mprof-games-pack" />
+          <span className="mprof-games-text">
+            <span className="mprof-card-title">The Games Page</span>
+            <span className="mprof-card-detail">Pack Empire and six more</span>
+          </span>
+          <span className="mprof-games-go">Play</span>
+        </Link>
         <Link href="/games/pack-empire/profile/" className="mprof-card mprof-card-link">
           <div className="mprof-card-row">
             <span className="mprof-card-title">Games Profile</span>

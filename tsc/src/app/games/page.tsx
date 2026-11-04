@@ -4,9 +4,10 @@ import { BackButton } from '@/components/BackButton'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
-import { GAMES } from './gameDefs'
+import { GAMES, PACK_EMPIRE } from './gameDefs'
 import { GameMark } from './GameMark'
 import { MobileGames } from './MobileGames'
+import { PackEmpireHero } from './PackEmpireHero'
 import styles from './games.module.css'
 
 export const metadata: Metadata = {
@@ -59,6 +60,7 @@ export default async function GamesPage() {
   // Phones get their own tree, the way /about and /guides do. The desktop
   // page below is a broadsheet — double rules, a rail of poster cards — and
   // shrinking it was never the same thing as designing it for a thumb.
+  const rest = GAMES.filter((g) => g.id !== PACK_EMPIRE.id)
   if ((await getViewMode()) === 'mobile') {
     return <MobileGames signedIn={!!user} comingSoon={COMING_SOON} />
   }
@@ -100,35 +102,37 @@ export default async function GamesPage() {
           </p>
         </div>
 
+        {/* Pack Empire leads the page as its own cover, the rest of the shelf
+            under it. */}
+        <PackEmpireHero />
+
         {/* Games only. Which league you play one ON is the next screen —
             mixing the two questions into one rail made every league appear
             once per game and left it hard to tell what was what. */}
         <div className={styles.sectionHead}>
           <span className={styles.sectionNum}>§ 01</span>
           <span className={styles.sectionTitle}>Pick a game</span>
-          <span className={styles.sectionMeta}>{GAMES.length} to play</span>
+          <span className={styles.sectionMeta}>{rest.length} more to play</span>
         </div>
 
-        {/* Laid out as a back page, not as a phone list stacked wider.
-            The first game runs the full width with its art at poster size;
-            the rest sit two-up beside it. Cards are HORIZONTAL — plate on
-            the left, name and one line on the right — because a desktop
-            card's spare dimension is width, and stacking art on top of text
-            is the shape a 390px screen forces, not one this page has any
-            reason to copy.
+        {/* Laid out as a back page, not as a phone list stacked wider: two-up
+            and HORIZONTAL, plate on the left, name and one line on the right,
+            because a desktop card's spare dimension is width, and stacking art
+            on top of text is the shape a 390px screen forces, not one this
+            page has any reason to copy.
 
             Everything the pointer can do is used here and nowhere on the
             phone: the numeral, the accent flood and the rule under the name
             all move on hover. */}
         <div className={styles.gameRail}>
-          {GAMES.map((g, i) => (
+          {rest.map((g, i) => (
             <Link
               key={g.id}
               href={g.href}
-              className={i === 0 ? `${styles.gameCard} ${styles.gameLead}` : styles.gameCard}
+              className={styles.gameCard}
               style={{ '--accent': g.accent } as React.CSSProperties}
             >
-              <GameMark id={g.id} variant={i === 0 ? 'lead' : 'poster'} />
+              <GameMark id={g.id} variant="poster" />
               <span className={styles.gameCardBody}>
                 <span className={styles.gameNo} aria-hidden>
                   {String(i + 1).padStart(2, '0')}

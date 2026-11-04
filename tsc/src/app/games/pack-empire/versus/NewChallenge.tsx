@@ -3,9 +3,9 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { DIFFICULTIES, DIFFICULTY_LOOK, type Difficulty } from '@/lib/packEmpire/rules'
+import { DIFFICULTY_LOOK, SALARY_CAP, type Difficulty, type Player } from '@/lib/packEmpire/rules'
 import type { VersusFormat } from '@/lib/packEmpire/versus'
-import { SetupSwitch } from '../SetupSwitch'
+import { MatchSetup } from '../MatchSetup'
 
 type Friend = { id: string; name: string }
 
@@ -14,6 +14,13 @@ const FORMATS: { id: VersusFormat; label: string; line: string }[] = [
   { id: 'even', label: 'Even', line: 'The same eleven packs, no captain. Chemistry and three Battles decide it.' },
   { id: 'mystery', label: 'Mystery', line: 'Your own captain, then ten packs of mixed positions. Plan for what you need.' },
 ]
+
+/** What the felt says along the top, per format. */
+const TAG: Record<VersusFormat, string> = {
+  classic: 'Your own packs each',
+  even: 'Same packs, both sides',
+  mystery: 'Captain, then ten mystery packs',
+}
 
 async function open(body: Record<string, unknown>): Promise<string> {
   const res = await fetch('/api/games/pack-empire/versus/', {
@@ -26,13 +33,22 @@ async function open(body: Record<string, unknown>): Promise<string> {
   return out.id as string
 }
 
+const room = (id: string) => `/games/pack-empire/versus/${id}/`
+
 /**
- * Starting a game, as one card: the format and the cards on two switches, then
- * who you're playing, the CPU or a person (a friend, whose seat is held for
- * them, or an open link for whoever opens it first). Either drops you straight
- * into your own draft with what's picked above.
+ * Starting a challenge (MatchSetup): the format and the cards, then the CPU, a
+ * friend, or a link for anyone. The CPU and a friend drop you straight into your
+ * own draft; a link is made in the sheet so it can be copied first.
  */
-export function ChallengePanels({ friends }: { friends: Friend[] }) {
+export function ChallengePanels({
+  friends,
+  hands,
+  signedIn,
+}: {
+  friends: Friend[]
+  hands: Record<string, Player[]>
+  signedIn: boolean
+}) {
   const router = useRouter()
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -43,82 +59,67 @@ export function ChallengePanels({ friends }: { friends: Friend[] }) {
     setBusy(key)
     setError(null)
     try {
-      router.push(`/games/pack-empire/versus/${await open({ ...body, format, difficulty })}/`)
+      router.push(room(await open({ ...body, format, difficulty })))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not open a challenge.')
       setBusy(null)
     }
   }
 
+  const makeLink = async () => {
+    setBusy('link')
+    setError(null)
+    try {
+      return room(await open({ format, difficulty }))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not open a challenge.')
+      return null
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const cardsLine =
+    difficulty === 'cap'
+      ? `Every card has a salary and you each get $${format === 'even' ? SALARY_CAP.shared : SALARY_CAP.own}M for all eleven.`
+      : DIFFICULTY_LOOK[difficulty].line
+
   return (
-    <section className="pe-sec">
-      <div className="pe-sec-head">
-        <span className="pe-sec-num">§ New Game</span>
-        <span className="pe-sec-title">Start A Challenge</span>
-      </div>
-
-      <div className="pe-setup-new">
-        <SetupSwitch
-          label="Format"
-          options={FORMATS}
-          value={format}
-          onChange={setFormat}
-          line={FORMATS.find((f) => f.id === format)!.line}
-        />
-        <SetupSwitch
-          label="Cards"
-          square
-          options={DIFFICULTIES.map((d) => ({ id: d, label: DIFFICULTY_LOOK[d].label }))}
-          value={difficulty}
-          onChange={setDifficulty}
-          line={DIFFICULTY_LOOK[difficulty].line}
-        />
-
-        <div className="pe-setup-who">
-          <div className="pe-setup-opp">
-            <span className="pe-setup-label">Play the CPU</span>
-            <p className="pe-setup-line">It never sees your picks. Both totals go up when you lock yours in.</p>
-            <button type="button" className="pe-push" onClick={() => go('cpu', { cpu: true })} disabled={!!busy}>
-              {busy === 'cpu' ? 'Dealing' : 'Play the CPU'}
-            </button>
+    <MatchSetup
+      kind="Versus Challenge"
+      color="#e2725b"
+      formats={FORMATS}
+      format={format}
+      onFormat={setFormat}
+      difficulty={difficulty}
+      onDifficulty={setDifficulty}
+      cardsLine={cardsLine}
+      hands={hands}
+      tag={TAG[format]}
+      opponent="Them"
+      friends={friends}
+      signedIn={signedIn}
+      locked={
+        signedIn ? undefined : (
+          <div className="pe-match-locked">
+            <p className="pe-setup-line">
+              Starting one needs an account, so it has somewhere to come back to. Answering one doesn&apos;t: if a friend
+              sent you a link, just open it.
+            </p>
+            <Link href="/login?next=%2Fgames%2Fpack-empire%2Fversus%2F" className="pe-btn">
+              Sign in to start one
+            </Link>
           </div>
-
-          <div className="pe-setup-opp">
-            <span className="pe-setup-label">Play a friend</span>
-            {friends.length > 0 ? (
-              <div className="pe-friend-picks" role="group" aria-label="Send it to a friend">
-                {friends.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    className="pe-friend-pick"
-                    onClick={() => go(`f:${f.id}`, { friend: f.id })}
-                    disabled={!!busy}
-                  >
-                    <span className="pe-friend-pick-mono" aria-hidden>
-                      {f.name.charAt(0).toUpperCase()}
-                    </span>
-                    {busy === `f:${f.id}` ? 'Sending' : f.name}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="pe-setup-line">
-                No friends yet.{' '}
-                <Link href="/games/pack-empire/profile/" className="pe-link">
-                  Add some
-                </Link>{' '}
-                or send a link to anyone.
-              </p>
-            )}
-            <button type="button" className="pe-push" onClick={() => go('link', {})} disabled={!!busy}>
-              {busy === 'link' ? 'Opening' : 'Send a link'}
-            </button>
-          </div>
-        </div>
-
-        {error && <div className="pe-error">{error}</div>}
-      </div>
-    </section>
+        )
+      }
+      busy={busy}
+      error={error}
+      onCpu={() => go('cpu', { cpu: true })}
+      onFriend={(id) => go(`f:${id}`, { friend: id })}
+      makeLink={makeLink}
+      roomLabel="Draft your eleven"
+      linkLine="Whoever opens it first takes the other seat. No account needed on their end."
+      friendLine="Their seat is held and it waits in their challenges. You draft yours straight away."
+    />
   )
 }

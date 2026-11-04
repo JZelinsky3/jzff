@@ -1,0 +1,260 @@
+/* Pack Empire's cover on the Games Page (PackEmpireHero.tsx). The art is set as
+   a share of the card's width, so the pack lands in the same place at any size:
+   the image is 2.5:1, 110.6% of the card wide and 10.7% in from the left, which
+   puts the pack's middle at 66% across. What moves is transform and opacity. */
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  aspect-ratio: 2.55 / 1;
+  min-height: 22rem;
+  margin: 0 0 2.6rem;
+  overflow: hidden;
+  border: 1px solid rgba(232, 168, 75, 0.45);
+  border-radius: 18px;
+  background: #050506;
+  box-shadow:
+    0 26px 70px rgba(0, 0, 0, 0.55),
+    0 0 60px rgba(232, 168, 75, 0.12);
+  color: #f4ebd8;
+  text-decoration: none;
+}
+
+.art {
+  position: absolute;
+  left: 10.7%;
+  top: -6%;
+  z-index: -2;
+  width: 110.6%;
+  max-width: none;
+  height: auto;
+  transform-origin: 66% 40%;
+  transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(5, 5, 6, 0.97) 0%, rgba(5, 5, 6, 0.86) 26%, rgba(5, 5, 6, 0.3) 48%, transparent 60%),
+    linear-gradient(0deg, rgba(5, 5, 6, 0.55), transparent 28%);
+}
+
+.sheen {
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -30%;
+  z-index: -1;
+  width: 20%;
+  background: linear-gradient(100deg, transparent, rgba(255, 236, 200, 0.12), transparent);
+  transform: rotate(8deg);
+  animation: sheen 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes sheen {
+  0%,
+  55% {
+    transform: translateX(0) rotate(8deg);
+  }
+  100% {
+    transform: translateX(780%) rotate(8deg);
+  }
+}
+
+.body {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 0.7rem;
+  width: min(47%, 480px);
+  padding: 2rem 0 2rem 2.6rem;
+}
+
+.kick {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #e8a84b;
+}
+
+.name {
+  font-family: var(--serif);
+  font-size: clamp(2.6rem, 4.8vw, 4.1rem);
+  line-height: 0.98;
+  letter-spacing: -0.01em;
+  color: #fff;
+  text-shadow: 0 3px 18px rgba(0, 0, 0, 0.75);
+}
+
+.name em {
+  font-style: italic;
+  color: #e8a84b;
+}
+
+.line {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #e9e4d8;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+}
+
+.modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.modes span {
+  padding: 0.22rem 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(6, 6, 8, 0.62);
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #f4ebd8;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.4rem;
+}
+
+.go {
+  padding: 0.85rem 1.5rem;
+  border-radius: 6px;
+  background: #e8a84b;
+  box-shadow: 0 8px 22px rgba(232, 168, 75, 0.25);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #141311;
+  transition: background 0.18s;
+}
+
+.note {
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(244, 235, 216, 0.6);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hero:hover .art {
+    transform: scale(1.03);
+  }
+
+  .hero:hover .go {
+    background: #f4c06a;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheen {
+    animation: none;
+    opacity: 0;
+  }
+
+  .art {
+    transition: none;
+  }
+}
+
+/* Narrow desktops: a taller card so the words still fit beside the pack. */
+@media (max-width: 1000px) {
+  .hero {
+    aspect-ratio: 2 / 1;
+  }
+
+  .art {
+    left: 0;
+    top: -2%;
+    width: 132%;
+  }
+
+  .body {
+    width: 54%;
+    padding-left: 1.8rem;
+  }
+
+  .name {
+    font-size: 2.6rem;
+  }
+
+  .line {
+    font-size: 0.9rem;
+  }
+}
+
+/* A phone: the picture stood up on top, cropped to the pack, the words under it. */
+.phone {
+  aspect-ratio: auto;
+  min-height: 0;
+  margin: 0 0 1.4rem;
+  border-radius: 14px;
+}
+
+.phone .art {
+  position: relative;
+  left: auto;
+  top: auto;
+  display: block;
+  width: 100%;
+  height: 15.5rem;
+  object-fit: cover;
+  object-position: 50% 30%;
+}
+
+.phone::before {
+  background: linear-gradient(0deg, #050506 0%, #050506 44%, rgba(5, 5, 6, 0.6) 56%, transparent 70%);
+}
+
+.phone .body {
+  position: relative;
+  width: auto;
+  gap: 0.55rem;
+  margin-top: -2.6rem;
+  padding: 0 1rem 1.1rem;
+}
+
+.phone .name {
+  font-size: 2.4rem;
+}
+
+.phone .line {
+  font-size: 0.88rem;
+}
+
+.phone .foot {
+  width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.55rem;
+}
+
+.phone .go {
+  text-align: center;
+}
+
+.phone .note {
+  text-align: center;
+}

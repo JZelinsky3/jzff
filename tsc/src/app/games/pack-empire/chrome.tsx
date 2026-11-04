@@ -185,7 +185,24 @@ export function PeChrome({
             aria-current={on === m.id ? 'page' : undefined}
           >
             <ModeGlyph id={m.id} />
-            <span>{m.id === 'solo' || m.id === 'daily' ? m.nameEm : m.id === 'mega' ? `${m.name} ${m.nameEm}` : m.name}</span>
+            {/* The one you're in gets its whole name where the bar has room for
+                it (pe-nav-xtra drops the extra word on narrower desktops); the
+                rest keep the short one. */}
+            <span>
+              {m.id === 'solo' || m.id === 'daily' ? (
+                <>
+                  {on === m.id && <span className="pe-nav-xtra">{m.name} </span>}
+                  {m.nameEm}
+                </>
+              ) : m.id === 'mega' ? (
+                `${m.name} ${m.nameEm}`
+              ) : (
+                <>
+                  {m.name}
+                  {on === m.id && <span className="pe-nav-xtra"> {m.nameEm}</span>}
+                </>
+              )}
+            </span>
           </Link>
         ))}
       </div>

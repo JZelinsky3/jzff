@@ -238,24 +238,6 @@ html:has(.pe-theme) body {
   opacity: 1;
 }
 
-/* You know which mode you're in, so its tab is the glyph alone: the word goes
-   (still read out) and the rail gets the room back. Under 960px the glyphs
-   are the ones that go, so the word stays there. */
-@media (min-width: 961px) {
-  .pe-nav-mode.on {
-    padding-inline: 0.75rem;
-  }
-
-  .pe-nav-mode.on > span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-}
-
 .pe-nav-right {
   display: flex;
   align-items: center;
@@ -315,9 +297,9 @@ html:has(.pe-theme) body {
   outline-offset: 3px;
 }
 
-/* Narrower desktops: the tools drop their words a few at a time, then the rail its
-   icons. Measured signed in, with every tool out: they sit beside the rail, and
-   past these widths they ran into it. */
+/* Narrower desktops: the tools drop their words a few at a time, the tab you're
+   in its long name, then the rail its icons. Measured signed in, with every tool
+   out: they sit beside the rail, and past these widths they ran into it. */
 @media (max-width: 1660px) {
   .pe-nav-tool--tight span {
     display: none;
@@ -333,6 +315,16 @@ html:has(.pe-theme) body {
 @media (max-width: 1260px) {
   .pe-nav-mode {
     padding: 0.5rem 0.75rem;
+  }
+
+  .pe-nav-xtra {
+    display: none;
+  }
+}
+
+@media (max-width: 1140px) {
+  .pe-nav-mode svg {
+    display: none;
   }
 }
 
@@ -4294,9 +4286,9 @@ html:has(.pe-theme) body {
 }
 
 /* ── Tilt and shine ────────────────────────────────────────── */
-/* leanCard (cards.tsx) writes the tilt straight onto .pe-tilt and the light's
-   position onto .pe-glare, and the sway below is a plain transform, so none of
-   it re-styles the effects inside the card. */
+/* leanCard (cards.tsx) writes the tilt straight onto .pe-tilt and slides
+   .pe-glare under it, both transforms, and the sway below is a plain transform,
+   so none of it re-styles or repaints the effects inside the card. */
 
 .pe-tilt {
   position: relative;
@@ -4317,7 +4309,7 @@ html:has(.pe-theme) body {
   border-radius: inherit;
   pointer-events: none;
   background: radial-gradient(
-    circle at var(--pe-gx, 50%) var(--pe-gy, 30%),
+    circle at 50% 30%,
     rgba(255, 255, 255, 0.2),
     rgba(255, 255, 255, 0.05) 30%,
     transparent 60%
@@ -4343,12 +4335,25 @@ html:has(.pe-theme) body {
     transparent 75%
   );
   background-size: 260% 260%;
-  background-position: var(--pe-gx, 50%) var(--pe-gy, 30%);
+  background-position: 50% 30%;
 }
 
+/* Following the pointer (or a phone's tilt): the light is 160% of the card
+   (GLARE_SPAN), centred, and leanCard slides it so its middle sits under the
+   pointer. The card front clips it. */
 .pe-card[data-tilt] .pe-glare,
 .pe-stage[data-gyro] .pe-glare {
+  inset: -30%;
+  border-radius: 0;
+  background: radial-gradient(circle closest-side, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05) 50%, transparent);
   opacity: 1;
+  will-change: transform;
+}
+
+.pe-card[data-tilt][data-r] .pe-glare::after,
+.pe-stage[data-gyro] .pe-glare::after {
+  border-radius: 0;
+  background-position: 50% 50%;
 }
 
 /* Touch screens have no pointer to follow: the turned cards sway on their
@@ -4375,8 +4380,6 @@ html:has(.pe-theme) body {
   }
 
   .pe-stage[data-gyro] .pe-stage-cards .pe-card.rev .pe-glare {
-    inset: 0;
-    border-radius: inherit;
     animation: none;
   }
 }
@@ -5584,6 +5587,18 @@ a.pe-row:hover {
   color: var(--pe-red);
 }
 
+/* A room's own delete, on its own line when there's no share panel to sit in. */
+.pe-room-del {
+  max-width: 620px;
+  margin: 0 auto 1.1rem;
+  text-align: center;
+}
+
+.pe-recap-actions .pe-del,
+.pe-recap-actions .pe-del-ask {
+  align-self: center;
+}
+
 /* The drawer of older games. Closed until asked. */
 .pe-row-more > summary {
   display: flex;
@@ -6565,7 +6580,10 @@ a.pe-row:hover {
 }
 
 .pe-pc {
-  display: block;
+  /* A column, not a block: a button centres its content, so a card with less
+     in it (no Battle marks) sat lower than the rest of its row. */
+  display: flex;
+  flex-direction: column;
   padding: 0;
   text-align: left;
   border-radius: 10px;
@@ -6700,6 +6718,7 @@ a.pe-row:hover {
 
 .pe-pc-body {
   display: block;
+  flex: 1;
   padding: 0.3rem 0.4rem 0.4rem;
   background: rgba(4, 8, 16, 0.95);
 }
@@ -9551,6 +9570,14 @@ a.pe-lt-row:hover {
   .pe-board-bar {
     display: none;
   }
+
+  .pe-board-bar--aside {
+    display: flex;
+  }
+
+  .pe-board-bar--aside .pe-key-btn {
+    display: none;
+  }
 }
 
 /* The key fills its column to exactly the field's height (it adds none of
@@ -10326,6 +10353,12 @@ a.pe-lt-row:hover {
 .pe-sec--first {
   margin-top: 0;
   margin-bottom: 1.6rem;
+}
+
+/* A lobby's first section straight under its title (nothing waiting on you
+   above it): the head already leaves room, so a full section gap read as a hole. */
+.pe-table-head + .pe-sec {
+  margin-top: 1.2rem;
 }
 
 /* ── Today, on the front page ──────────────────────────────── */
@@ -11411,9 +11444,152 @@ a.pe-lt-row:hover {
 
 /* ── Mega Draft modes ──────────────────────────────────────── */
 
-/* A salary where the rarity would sit, under a cap. */
-.pe-pc-pay {
-  color: var(--pe-green, #68a878);
+/* A salary, as a price sticker on the photo's corner: big enough to read across
+   the board. Red when it's more than you have left. */
+.pe-pc-price {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  z-index: 3;
+  padding: 2px 6px 1px;
+  border: 1px solid #5fbf7f;
+  border-radius: 4px;
+  background: rgba(5, 16, 9, 0.9);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  font-family: var(--pe-display);
+  font-weight: 800;
+  font-size: 0.74rem;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  color: #9af0b6;
+}
+
+.pe-pc-price.over {
+  border-color: #e0685c;
+  color: #ff9d92;
+  background: rgba(22, 6, 5, 0.92);
+}
+
+/* What a card puts toward each Battle, under its value. */
+.pe-pc-marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 0.3rem;
+}
+
+.pe-pc-marks i {
+  padding: 1px 4px;
+  border: 1px solid rgba(232, 168, 75, 0.4);
+  border-radius: 3px;
+  background: rgba(232, 168, 75, 0.12);
+  font-style: normal;
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.56rem;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--pe-amber-bright);
+}
+
+/* Canton's pearl card is the one light one: its marks go dark. */
+.pe-pc[data-r='canton'] .pe-pc-marks i {
+  border-color: rgba(120, 84, 22, 0.5);
+  background: #1b150c;
+  color: #f4dfa4;
+}
+
+/* Blind cards on the board. Range is steel, Ball Knower black and brass, the same
+   pair as the full-size cards, with the season stamped hollow behind the photo:
+   on a blind board it's the clue. All static. */
+.pe-pc[data-r='blind'][data-level='range'] {
+  --a: #a9bfd6;
+  --g2: #10151d;
+  --ink: #eef3f9;
+  --mute: #8399b0;
+}
+
+.pe-pool .pe-pc[data-r='blind'] .pe-pc-art {
+  background-color: var(--g2);
+  background-size: auto;
+  background-image:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 6px),
+    linear-gradient(155deg, #1b2029 0%, #2c3545 60%, #3b4658 100%);
+}
+
+.pe-pool .pe-pc[data-r='blind'][data-level='season'] .pe-pc-art {
+  background-image:
+    repeating-linear-gradient(135deg, rgba(232, 201, 138, 0.05) 0 1px, transparent 1px 6px),
+    linear-gradient(155deg, #0c0c0e 0%, #17161a 62%, #2a2418 100%);
+}
+
+.pe-pc-year {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  z-index: 1;
+  transform: translate(-50%, -50%);
+  font-family: var(--pe-display);
+  font-weight: 900;
+  font-size: 2.35rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--a) 42%, transparent);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.pe-pc-hid {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: color-mix(in srgb, var(--a) 80%, transparent);
+}
+
+.pe-pc-hid svg {
+  width: 0.62rem;
+  height: 0.62rem;
+}
+
+.pe-pc-score--range {
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.8rem;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.pe-pool .pe-pc[data-r] .pe-pc-score--range {
+  color: var(--pe-amber-bright);
+}
+
+/* Not Orbitron: its question mark reads as a P. */
+.pe-pc-score--season {
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+}
+
+.pe-pc-gauge {
+  position: relative;
+  display: block;
+  height: 3px;
+  margin-top: 0.25rem;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.pe-pc-gauge i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 99px;
+  background: var(--pe-amber-bright);
 }
 
 /* Each Battle's standing, live: the seat ahead lit. */

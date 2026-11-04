@@ -8,7 +8,9 @@
 //   POST { action: 'join', id, name, key }  -> { view }
 //   POST { action: 'pick', id, player, key } -> { view }
 //   POST { action: 'cpu', id, key }         -> { view }   (the CPU's pick, if it's on the clock)
-//   POST { action: 'delete', id, key }      -> {}         (the host, while nobody has sat down)
+//   POST { action: 'delete', id, key }      -> {}         (the host, while nobody has sat down or before
+//                                                         the end against the CPU; or the friend it was
+//                                                         sent to, declining it)
 //
 // Both seats can be signed out: a seat is the account, or else a random key
 // the browser keeps (stored here only as a hash). The room polls GET while

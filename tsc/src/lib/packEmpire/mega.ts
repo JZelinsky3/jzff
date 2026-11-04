@@ -129,6 +129,20 @@ export type MegaView = {
   cap: number | null
   /** A blind board still masked: no values, no totals. */
   hidden: boolean
+  /** What the viewer can do to make it go away: take it back as the host, or
+      turn it down as the friend it was sent to. */
+  removable: 'delete' | 'decline' | null
+}
+
+/** The host can take a draft back while nobody has sat down, or any time
+    before the end against the CPU. A person across the board keeps it. */
+function hostCanDelete(r: Pick<Row, 'status' | 'guest_bot'>): boolean {
+  return r.status === 'waiting' || (r.guest_bot && r.status !== 'done')
+}
+
+/** A draft sent to you can be turned down until you sit down at it. */
+function canDecline(r: Pick<Row, 'status' | 'invited_id' | 'guest_id'>, userId: string | null): boolean {
+  return !!userId && r.status === 'waiting' && r.invited_id === userId && !r.guest_id
 }
 
 /** The CPU's name on the board. */
@@ -240,6 +254,7 @@ function view(row: Row, role: Role | null, viewerId: string | null = null): Mega
     battleOutcome: outcome,
     cap,
     hidden,
+    removable: role === 'host' && hostCanDelete(row) ? 'delete' : !role && canDecline(row, viewerId) ? 'decline' : null,
   }
 }
 
@@ -507,27 +522,49 @@ export async function pickMega(
 }
 
 /**
- * Takes back a draft nobody sat down at. The host's to delete, an account or a
- * signed-out seat's key, and only while it's waiting: the delete itself checks
- * the seat is empty, so someone sitting down that same moment wins.
+ * Takes a draft back, or turns one down. The host's to delete (an account or a
+ * signed-out seat's key) while nobody has sat down, or before the end against
+ * the CPU; the friend it was sent to can decline it before sitting down, which
+ * deletes it for both. The delete itself checks the seat, so someone sitting
+ * down that same moment wins.
  */
 export async function deleteMega(id: string, userId: string | null, key: unknown): Promise<{ ok: true } | Fail> {
   const row = await load(id)
   if (!row) return { ok: false, error: 'No draft with that code.', status: 404 }
-  if (roleFor(row, userId, key) !== 'host') return { ok: false, error: 'Only whoever opened it can delete it.', status: 403 }
+  const db = createAdminClient()
 
-  const { data } = await createAdminClient()
-    .from('pe_mega_drafts')
-    .delete()
-    .eq('id', id)
-    .eq('status', 'waiting')
-    .is('guest_id', null)
-    .is('guest_key', null)
-    .eq('guest_bot', false)
-    .select('id')
-    .maybeSingle()
-  if (!data) return { ok: false, error: 'Somebody has sat down, so it stays.' }
-  return { ok: true }
+  if (roleFor(row, userId, key) === 'host') {
+    const { data } = row.guest_bot
+      ? await db.from('pe_mega_drafts').delete().eq('id', id).eq('guest_bot', true).neq('status', 'done').select('id').maybeSingle()
+      : await db
+          .from('pe_mega_drafts')
+          .delete()
+          .eq('id', id)
+          .eq('status', 'waiting')
+          .is('guest_id', null)
+          .is('guest_key', null)
+          .eq('guest_bot', false)
+          .select('id')
+          .maybeSingle()
+    if (!data) return { ok: false, error: row.guest_bot ? 'That draft is over, so it stays.' : 'Somebody has sat down, so it stays.' }
+    return { ok: true }
+  }
+
+  if (canDecline(row, userId)) {
+    const { data } = await db
+      .from('pe_mega_drafts')
+      .delete()
+      .eq('id', id)
+      .eq('invited_id', userId as string)
+      .eq('status', 'waiting')
+      .is('guest_id', null)
+      .select('id')
+      .maybeSingle()
+    if (!data) return { ok: false, error: 'Could not decline it.' }
+    return { ok: true }
+  }
+
+  return { ok: false, error: 'Only whoever opened it can delete it.', status: 403 }
 }
 
 /** The other account in a draft, for "add as a friend" off the result. Null
@@ -555,8 +592,10 @@ export type MegaListItem = {
   waitingOnYou: boolean
   /** Live, and the pick is yours. */
   yourPick: boolean
-  /** Yours, and nobody has sat down. */
+  /** Yours to take back (hostCanDelete), or sent to you to turn down (canDecline). */
   canDelete: boolean
+  /** It's the second kind: removing it is declining it. */
+  declines: boolean
   format: MegaFormat
   difficulty: Difficulty
 }
@@ -609,7 +648,8 @@ export async function listMega(userId: string): Promise<MegaListItem[]> {
       theirScore: theirs && r.status !== 'waiting' ? theirs.score : null,
       waitingOnYou: r.invited_id === userId && !r.guest_id && r.status === 'waiting',
       yourPick: v.onClock != null && v.onClock === v.you,
-      canDelete: role === 'host' && r.host_id === userId && r.status === 'waiting',
+      canDelete: (role === 'host' && r.host_id === userId && hostCanDelete(r)) || canDecline(r, userId),
+      declines: r.host_id !== userId && canDecline(r, userId),
       format: v.format,
       difficulty: v.difficulty,
     }

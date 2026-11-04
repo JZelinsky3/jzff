@@ -410,6 +410,14 @@ export function VersusRoom({
               <button type="button" className="pe-push" onClick={join} disabled={busy}>
                 Accept as {yourName ?? 'you'}
               </button>
+              {view.removable === 'decline' && (
+                <DeleteGame
+                  api="/api/games/pack-empire/versus/"
+                  id={id}
+                  decline
+                  onGone={() => router.push('/games/pack-empire/versus/')}
+                />
+              )}
             </div>
           ) : (
             <div style={{ display: 'grid', gap: '0.6rem', marginTop: '1rem', maxWidth: 420 }}>
@@ -444,13 +452,16 @@ export function VersusRoom({
   }
 
   // ── Your seat ─────────────────────────────────────────────────
-  // Sent out and nobody came: the host can take it back.
-  const deletable = view.you === 'host' && view.status === 'open'
+  // The host can take it back until someone else starts drafting in it; the
+  // friend it was sent to can turn it down until they lock their eleven in.
+  const deletable = view.removable != null
+  const shareShown = view.you === 'host' && (!view.guest.name || view.reserved)
   const deleteIt = (
     <DeleteGame
       api="/api/games/pack-empire/versus/"
       id={id}
-      label="Delete this challenge"
+      decline={view.removable === 'decline'}
+      label={view.removable === 'decline' ? 'Decline this challenge' : view.bot ? 'Delete this game' : 'Delete this challenge'}
       onGone={() => router.push('/games/pack-empire/versus/')}
     />
   )
@@ -475,12 +486,13 @@ export function VersusRoom({
         <p className="pe-note" style={{ textAlign: 'center', marginBottom: '1rem' }}>
           {opponentLine}
         </p>
-        {view.you === 'host' && (!view.guest.name || view.reserved) && (
+        {shareShown && (
           <div style={{ maxWidth: 620, margin: '0 auto 1.2rem' }}>
             <ShareLink path={path} title="Pack Empire" text={shareText} />
             {deletable && <div style={{ marginTop: '0.8rem' }}>{deleteIt}</div>}
           </div>
         )}
+        {!shareShown && deletable && <div className="pe-room-del">{deleteIt}</div>}
         {error && (
           <div className="pe-error" style={{ maxWidth: 560, margin: '0 auto 1rem' }}>
             {error}
@@ -523,7 +535,8 @@ export function VersusRoom({
       </div>
       {report}
       {reveal}
-      {view.you === 'host' && (!view.guest.name || view.reserved) && (
+      {!shareShown && deletable && <div className="pe-room-del">{deleteIt}</div>}
+      {shareShown && (
         <div className="pe-panel">
           <div className="pe-kicker">Send the link</div>
           <p className="pe-panel-text" style={{ margin: '0.5rem 0 0.9rem' }}>

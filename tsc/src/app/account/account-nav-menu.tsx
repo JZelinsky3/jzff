@@ -2,8 +2,8 @@
 
 import { NavDropdown, type DropGroup } from '@/components/NavDropdown'
 
-// Top-right hamburger menu for /account. Two top-level shortcuts (Library and
-// New archive), then a Leagues group with one expandable entry per owned
+// Top-right hamburger menu for /account. Three top-level shortcuts (Library,
+// Games and New archive), then a Leagues group with one expandable entry per owned
 // league. Each league expands into Setup (admin /league/<slug>/setup) and
 // Home (public hub /league/<slug>/).
 export function AccountNavMenu({
@@ -16,6 +16,7 @@ export function AccountNavMenu({
       label: '',
       entries: [
         { type: 'link', href: '/dashboard',     label: 'Library'     },
+        { type: 'link', href: '/games/',        label: 'Games'       },
         { type: 'link', href: '/dashboard/new', label: 'New archive' },
       ],
     },

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { listMega } from '@/lib/packEmpire/mega'
 import { friendPicker } from '@/lib/friends'
+import { setupHands } from '@/lib/packEmpire/setupHands'
 import { megaFormatLine } from '@/lib/packEmpire/rules'
 import mobileStyles from '../../mobile.module.css'
 import { GameList } from '../GameList'
@@ -55,6 +56,7 @@ export default async function MegaDraftLobby() {
         yours: d.yourScore,
         theirs: d.theirScore,
         canDelete: d.canDelete,
+        declines: d.declines,
         onYou: d.waitingOnYou || d.yourPick,
       })
     )
@@ -95,7 +97,7 @@ export default async function MegaDraftLobby() {
           </section>
         )}
 
-        <MegaLobby signedIn={!!user} friends={friends} />
+        <MegaLobby signedIn={!!user} friends={friends} hands={setupHands('mega')} />
 
         <HowItWorks mobile={mobile}>
           <div className="pe-rules">

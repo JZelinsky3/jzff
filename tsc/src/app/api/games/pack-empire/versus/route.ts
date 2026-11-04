@@ -10,7 +10,8 @@
 //   POST { action: 'start', id, captain, key } -> { seed }
 //   POST { action: 'lock', id, picks, key, open } -> { lock }  (a blind seat's pick, see blindPicks)
 //   POST { action: 'submit', id, picks, key }  -> { view }
-//   POST { action: 'delete', id }          -> {}          (the host, while nobody has taken the seat)
+//   POST { action: 'delete', id }          -> {}          (the host, until the other seat starts drafting;
+//                                                             or the friend it was sent to, declining it)
 //
 // `key` is a signed-out challenger's seat key, kept in their browser. The
 // packs themselves are dealt by /api/games/pack-empire/deal off the seat's

@@ -229,7 +229,9 @@ function Board({
 }) {
   return (
     <div className="pe-board">
-      <div className="pe-board-bar">
+      {/* With a switch in it, the bar stays on wide screens too, where the key has
+          its own column and only the switch is left in the bar. */}
+      <div className={`pe-board-bar${aside ? ' pe-board-bar--aside' : ''}`}>
         {aside ?? <ChaseLine score={score} choosing={choosing} even={flavor.even} />}
         <KeyButton score={score} flavor={flavor} />
       </div>

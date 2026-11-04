@@ -1,8 +1,10 @@
-/* The setup card on the Versus and Mega Draft lobbies (SetupSwitch.tsx): format
-   and cards as two switches, then who you're playing side by side, one button
-   each on the same line. The format is a round pill, the cards square tabs. */
+/* Starting a Versus or a Mega Draft (MatchSetup.tsx): the format and the cards
+   as two switches, then the table they make as a card, Empire Builder's picker
+   card (builder.css .pe-bp-card) in the mode's colour, and the Challenge a Friend
+   sheet. The format is a round pill, the cards square tabs. */
 
-.pe-setup-new { display: grid; gap: 1rem; padding: 1.1rem 1.2rem 1.2rem; border: 1px solid var(--pe-line); border-top: 3px solid var(--pe-amber); border-radius: 6px; background: linear-gradient(180deg, rgba(232, 168, 75, .07), transparent 8rem), var(--pe-bg-soft); }
+.pe-match { display: grid; gap: 1rem; }
+.pe-match-pick { display: grid; gap: .75rem; }
 
 .pe-setup-row { display: grid; grid-template-columns: 4.6rem minmax(0, 1fr); align-items: center; gap: .45rem 1rem; }
 .pe-setup-row .pe-setup-line { grid-column: 2; }
@@ -11,25 +13,55 @@
 
 .pe-setup-seg { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); padding: 3px; border: 1px solid var(--pe-line); border-radius: 999px; background: rgba(0, 0, 0, .25); }
 .pe-setup-seg button { padding: .5rem .6rem; border: 0; border-radius: 999px; background: transparent; font-family: var(--pe-cond); font-weight: 800; font-size: .9rem; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; color: var(--pe-ink-mute); cursor: pointer; }
-.pe-setup-seg button[aria-checked='true'] { color: var(--pe-amber-bright); background: rgba(232, 168, 75, .16); box-shadow: inset 0 0 0 1px rgba(232, 168, 75, .55); }
+.pe-setup-seg button[aria-checked='true'] { color: var(--fc, var(--pe-amber-bright)); background: color-mix(in srgb, var(--fc, var(--pe-amber)) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fc, var(--pe-amber)) 55%, transparent); }
 .pe-setup-seg--square { gap: 3px; padding: 0; border: 0; border-radius: 0; background: none; }
 .pe-setup-seg--square button { padding: .5rem .5rem; border: 1px solid var(--pe-line); border-radius: 4px; background: var(--pe-card); font-size: .84rem; }
-.pe-setup-seg--square button[aria-checked='true'] { border-color: var(--pe-amber); box-shadow: none; }
+.pe-setup-seg--square button[aria-checked='true'] { border-color: var(--fc, var(--pe-amber)); box-shadow: none; }
 .pe-setup-seg button:focus-visible { outline: 2px solid var(--pe-amber); outline-offset: 2px; }
 
-.pe-setup-who { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; padding-top: 1rem; border-top: 1px solid var(--pe-line-soft); }
-.pe-setup-opp { display: flex; flex-direction: column; gap: .6rem; padding: .9rem 1rem 1rem; border: 1px solid var(--pe-line); border-radius: 6px; background: var(--pe-card); }
-.pe-setup-opp > .pe-push { margin-top: auto; width: 100%; }
+/* The card. */
+.pe-match-card .pe-bp-card-head h2 em { color: var(--fc); }
+.pe-match-spec { display: grid; gap: .55rem; margin: .9rem 0 0; }
+.pe-match-spec div { display: grid; grid-template-columns: 3.6rem minmax(0, 1fr); gap: .8rem; align-items: baseline; }
+.pe-match-spec dt { font-family: var(--mono); font-weight: 700; font-size: .54rem; letter-spacing: .16em; text-transform: uppercase; color: var(--pe-ink-mute); }
+.pe-match-spec dd { margin: 0; font-size: .88rem; line-height: 1.45; color: var(--pe-ink-soft); }
+.pe-match-go { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+.pe-match-go .pe-push { width: 100%; }
+.pe-match-locked { display: grid; gap: .9rem; justify-items: start; }
+.pe-match-card .pe-mega-name { margin: 0; }
+/* A seat either side takes the room the packs had, so the hand is a little smaller. */
+.pe-match-card .pe-bp-held .pe-card { --pe-cs: .6; }
+.pe-match-card .pe-bp-seat.l { left: 4%; }
+.pe-match-card .pe-bp-seat.r { right: 4%; }
+
+/* Challenge a Friend: a dialog in the middle on a desktop, a sheet up from the
+   bottom on a phone. Transform and opacity only. */
+.pe-csheet-bg { position: fixed; inset: 0; z-index: 310; background: rgba(8, 7, 6, 0); transition: background .2s ease; }
+.pe-csheet-bg.on { background: rgba(8, 7, 6, .66); }
+.pe-csheet { position: absolute; left: 50%; top: 50%; display: grid; gap: 1rem; width: min(31rem, calc(100vw - 2rem)); max-height: 86dvh; overflow-y: auto; overscroll-behavior: contain; padding: 1.2rem 1.3rem 1.35rem; border: 1px solid var(--pe-line); border-top: 3px solid var(--pe-amber); border-radius: 10px; background: var(--pe-bg-soft); box-shadow: 0 30px 80px rgba(0, 0, 0, .6); opacity: 0; transform: translate(-50%, calc(-50% + 14px)); transition: transform .22s cubic-bezier(.2, .8, .2, 1), opacity .2s ease; }
+.pe-csheet.on { opacity: 1; transform: translate(-50%, -50%); }
+.pe-csheet-head { position: relative; padding-right: 2.6rem; }
+.pe-csheet-head .pe-ksheet-x { top: 0; right: 0; }
+.pe-csheet-kick { font-family: var(--mono); font-weight: 700; font-size: .54rem; letter-spacing: .16em; text-transform: uppercase; color: var(--pe-amber); }
+.pe-csheet h3 { margin: .35rem 0 0; font-family: var(--serif); font-weight: 500; font-size: 1.7rem; line-height: 1.05; color: var(--pe-ink); }
+.pe-csheet h3 em { color: var(--pe-amber); }
+.pe-csheet-sec { display: grid; gap: .65rem; padding-top: .95rem; border-top: 1px solid var(--pe-line-soft); }
+.pe-csheet-make { justify-self: start; }
+.pe-csheet-go { width: 100%; }
+.pe-csheet .pe-error { margin: 0; }
 
 @media (hover: hover) and (pointer: fine) {
   .pe-setup-seg button:hover { color: var(--pe-ink); }
 }
 
 @media (max-width: 640px) {
-  .pe-setup-new { gap: .85rem; padding: .95rem 1rem 1rem; }
   .pe-setup-row { grid-template-columns: minmax(0, 1fr); gap: .4rem; }
   .pe-setup-row .pe-setup-line { grid-column: 1; font-size: .8rem; }
   .pe-setup-seg button { padding: .5rem .2rem; font-size: .74rem; letter-spacing: .03em; }
   .pe-setup-seg--square button { padding: .5rem .15rem; font-size: .72rem; }
-  .pe-setup-who { grid-template-columns: minmax(0, 1fr); padding-top: .85rem; }
+  .pe-match-go { grid-template-columns: minmax(0, 1fr); }
+  .pe-match-spec dd { font-size: .82rem; }
+  .pe-match-card .pe-bp-held .pe-card { --pe-cs: .46; }
+  .pe-csheet { left: 0; right: 0; top: auto; bottom: 0; width: auto; max-height: 82dvh; padding-bottom: calc(1.35rem + env(safe-area-inset-bottom, 0px)); border-radius: 16px 16px 0 0; opacity: 1; transform: translateY(100%); }
+  .pe-csheet.on { transform: none; }
 }

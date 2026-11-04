@@ -44,29 +44,42 @@
   .pe-bp-diff:hover { border-color: color-mix(in srgb, var(--fc) 50%, var(--pe-line)); }
 }
 
-.pe-bp-card { display: grid; align-content: space-between; gap: 1rem; padding: 1.1rem 1.2rem; border: 1px solid var(--pe-line); border-top: 3px solid var(--fc); border-radius: 6px; background: linear-gradient(180deg, var(--fc-soft), transparent 9rem), var(--pe-bg-soft); }
-.pe-bp-card-head { display: grid; grid-template-columns: 6.2rem minmax(0, 1fr); align-items: center; gap: 1rem; }
+.pe-bp-card { display: grid; grid-template-columns: minmax(15rem, 1fr) minmax(0, 23rem); gap: 1.3rem; align-items: stretch; padding: 1.2rem 1.2rem 1.2rem 1.4rem; border: 1px solid var(--pe-line); border-top: 3px solid var(--fc); border-radius: 6px; background: linear-gradient(180deg, var(--fc-soft), transparent 9rem), var(--pe-bg-soft); }
+.pe-bp-info { display: grid; align-content: space-between; gap: 1.1rem; min-width: 0; padding: .2rem 0; }
 .pe-bp-card-kick { font-family: var(--mono); font-size: .58rem; letter-spacing: .18em; text-transform: uppercase; color: var(--fc); }
-.pe-bp-card-head h2 { margin: .2rem 0 0; font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 1.8rem; line-height: 1; color: var(--pe-ink); }
-.pe-bp-card-head p { margin: .45rem 0 0; font-size: .88rem; line-height: 1.45; color: var(--pe-ink-soft); }
-.pe-bp-stats { display: flex; gap: 1.4rem; padding-top: .9rem; border-top: 1px solid var(--pe-line-soft); }
+.pe-bp-card-head h2 { margin: .3rem 0 0; font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 2.4rem; line-height: 1; color: var(--pe-ink); }
+.pe-bp-card-head p { max-width: 30rem; margin: .6rem 0 0; font-size: .92rem; line-height: 1.5; color: var(--pe-ink-soft); }
+.pe-bp-stats { display: flex; gap: 1.6rem; padding-top: .9rem; border-top: 1px solid var(--pe-line-soft); }
 .pe-bp-stats .pe-bh-stat { justify-items: start; min-width: 0; }
+.pe-bp-stats .pe-bh-stat b { font-size: 1.15rem; }
 .pe-bp-go { display: flex; align-items: center; gap: 1.2rem; }
 .pe-bp-go .pe-push { flex: 1; max-width: 16rem; }
 .pe-bp-go .pe-link { font-family: var(--pe-cond); font-weight: 700; font-size: .86rem; letter-spacing: .08em; text-transform: uppercase; }
 
-.pe-bh-art { position: relative; display: block; height: 5.6rem; }
-.pe-bh-pack { position: absolute; bottom: 0; left: 50%; width: 3.1rem; aspect-ratio: 1 / 1.48; margin-left: -1.55rem; border-radius: 3px; background: center / cover no-repeat; box-shadow: 0 6px 14px rgba(0, 0, 0, .5); }
-.pe-bh-pack.l { transform: translateX(-1.4rem) rotate(-12deg); opacity: .85; }
-.pe-bh-pack.r { transform: translateX(1.4rem) rotate(12deg); opacity: .85; }
-.pe-bh-pack.c { transform: translateY(-.35rem); }
-.pe-bh-art--mys .pe-bh-pack { box-shadow: 0 6px 14px rgba(0, 0, 0, .5), 0 0 18px rgba(169, 156, 245, .22); }
-/* Off Standard the hand moves back and a card comes out in front of it. */
-.pe-bh-art--card .pe-bh-pack { opacity: .55; }
-.pe-bh-art--card .pe-bh-pack.c { opacity: .75; transform: translate(-.9rem, -.35rem) rotate(-6deg); }
-.pe-bh-artcard { position: absolute; right: -.4rem; bottom: -.2rem; transform: rotate(7deg); filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .6)); animation: pe-bh-deal .35s cubic-bezier(.2, 1.3, .4, 1) both; }
-.pe-bh-artcard .pe-card { --pe-cs: .46; cursor: default; }
-@keyframes pe-bh-deal { from { opacity: 0; transform: translateY(14px) rotate(0); } to { opacity: 1; transform: rotate(7deg); } }
+/* The table: three cards in front of the packs they came from, on a lit felt.
+   Static apart from the deal-in, which is transform and opacity. */
+.pe-bp-table { position: relative; display: block; min-height: 16rem; overflow: hidden; border: 1px solid var(--pe-line-soft); border-radius: 8px; background: radial-gradient(ellipse 80% 55% at 50% 100%, color-mix(in srgb, var(--fc) 16%, transparent), transparent 72%), linear-gradient(180deg, #12110f 0%, #0d0c0a 100%); }
+.pe-bp-table::after { content: ''; position: absolute; left: 6%; right: 6%; bottom: 1.6rem; height: 1px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--fc) 45%, transparent), transparent); }
+.pe-bp-glow { position: absolute; left: 50%; top: 46%; width: 15rem; height: 13rem; margin: -6.5rem 0 0 -7.5rem; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--fc) 26%, transparent), transparent); }
+.pe-bp-pack { position: absolute; bottom: 1.25rem; width: 4.8rem; aspect-ratio: 1 / 1.48; border-radius: 4px; background: center / cover no-repeat; opacity: .42; box-shadow: 0 8px 18px rgba(0, 0, 0, .55); }
+.pe-bp-pack.l { left: 7%; transform: rotate(-14deg); }
+.pe-bp-pack.r { right: 7%; transform: rotate(14deg); }
+.pe-bp-table--mys .pe-bp-pack { opacity: .55; box-shadow: 0 8px 18px rgba(0, 0, 0, .55), 0 0 22px rgba(169, 156, 245, .25); }
+.pe-bp-hand { position: absolute; left: 50%; bottom: 1.15rem; display: flex; align-items: flex-end; transform: translateX(-50%); }
+.pe-bp-held { position: relative; margin: 0 -1rem; }
+.pe-bp-held:nth-child(1) { transform: translateY(.5rem) rotate(-11deg); }
+.pe-bp-held:nth-child(2) { z-index: 2; transform: translateY(-.4rem); }
+.pe-bp-held:nth-child(3) { transform: translateY(.5rem) rotate(11deg); }
+.pe-bp-held .pe-card { --pe-cs: .7; cursor: default; animation: pe-bp-deal .45s cubic-bezier(.2, 1.25, .4, 1) calc(var(--n) * 70ms) backwards; }
+@keyframes pe-bp-deal { from { opacity: 0; transform: translateY(28px) scale(.9); } }
+.pe-bp-tag { position: absolute; left: 50%; top: .75rem; z-index: 3; transform: translateX(-50%); padding: .2rem .65rem; border: 1px solid color-mix(in srgb, var(--fc) 45%, transparent); border-radius: 999px; background: rgba(10, 9, 8, .75); font-family: var(--mono); font-size: .52rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; color: var(--fc); }
+/* A player either side of the hand: you on the left, whoever you're about to play on the right. */
+.pe-bp-seat { position: absolute; bottom: 2.3rem; z-index: 1; display: grid; justify-items: center; gap: .35rem; }
+.pe-bp-seat.l { left: 7%; }
+.pe-bp-seat.r { right: 7%; }
+.pe-bp-seat i { display: grid; place-items: center; width: 2.9rem; height: 2.9rem; border: 2px solid var(--fc); border-radius: 50%; background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--fc) 30%, #1a1814), #12110f 75%); box-shadow: 0 0 18px color-mix(in srgb, var(--fc) 30%, transparent); font-family: var(--serif); font-style: italic; font-size: 1.35rem; line-height: 1; color: var(--pe-ink); }
+.pe-bp-seat.r i { border-style: dashed; color: var(--pe-ink-soft); }
+.pe-bp-seat small { font-family: var(--mono); font-size: .5rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; white-space: nowrap; color: var(--pe-ink-mute); }
 
 .pe-bh-stat { display: grid; justify-items: end; gap: .15rem; min-width: 4.4rem; }
 .pe-bh-stat small { font-family: var(--mono); font-size: .52rem; letter-spacing: .14em; text-transform: uppercase; color: var(--pe-ink-mute); white-space: nowrap; }
@@ -87,14 +100,22 @@
   .pe-bh-lede { margin-top: 0; font-size: .9rem; }
   .pe-bh-lead { width: auto; }
   .pe-bh-lead b { font-size: 1.7rem; }
-  .pe-bp-card { padding: .95rem 1rem; gap: .85rem; }
-  .pe-bp-card-head { grid-template-columns: 4.8rem minmax(0, 1fr); gap: 1.25rem; }
-  .pe-bh-artcard .pe-card { --pe-cs: .34; }
-  .pe-bh-art { height: 4.4rem; }
-  .pe-bh-pack { width: 2.5rem; margin-left: -1.25rem; }
+  .pe-bp-card { grid-template-columns: minmax(0, 1fr); padding: .95rem 1rem; gap: .9rem; }
+  .pe-bp-table { order: -1; min-height: 11.5rem; }
+  .pe-bp-held .pe-card { --pe-cs: .5; }
+  .pe-bp-held { margin: 0 -.75rem; }
+  .pe-bp-pack { width: 3.4rem; bottom: 1rem; }
+  .pe-bp-table::after { bottom: 1.25rem; }
+  .pe-bp-hand { bottom: .9rem; }
+  .pe-bp-glow { width: 11rem; height: 9rem; margin: -4.5rem 0 0 -5.5rem; }
+  .pe-bp-seat { bottom: 1.9rem; }
+  .pe-bp-seat.l { left: 4%; }
+  .pe-bp-seat.r { right: 4%; }
+  .pe-bp-seat i { width: 2.2rem; height: 2.2rem; font-size: 1rem; }
   .pe-bp-fmt-line { font-size: .8rem; }
-  .pe-bp-card-head h2 { font-size: 1.5rem; }
+  .pe-bp-card-head h2 { font-size: 1.6rem; }
   .pe-bp-card-head p { font-size: .82rem; }
+  .pe-bp-stats .pe-bh-stat b { font-size: .95rem; }
   .pe-bp-diff { padding: .6rem .7rem; }
   .pe-bp-diff b { font-size: .9rem; }
   .pe-bp-stats { gap: 1.1rem; padding-top: .75rem; }

@@ -1,9 +1,10 @@
 import Link from 'next/link'
-import { GAMES } from './gameDefs'
+import { GAMES, PACK_EMPIRE } from './gameDefs'
 import type { GameDef } from './gameDefs'
 import { MobileGameBar, Chevron } from './MobileGameBar'
 import { MobileGamesDock } from './MobileGamesDock'
 import { GameMark } from './GameMark'
+import { PackEmpireHero } from './PackEmpireHero'
 import s from './mobile.module.css'
 
 // The Games Page on a phone.
@@ -57,17 +58,22 @@ export function MobileGames({
         </div>
       </section>
 
+      {/* Pack Empire leads, as its own cover; the rest of the shelf under it. */}
+      <section className={s.sec}>
+        <PackEmpireHero mobile />
+      </section>
+
       <section className={s.sec}>
         <div className={s.secHead}>
           <div>
             <span className={s.secNum}>§ 01 · On the table</span>
             <span className={s.secTitle}>Pick a game</span>
           </div>
-          <span className={s.secSide}>{GAMES.length} to play</span>
+          <span className={s.secSide}>{GAMES.length - 1} more</span>
         </div>
 
         <div className={s.games}>
-          {GAMES.map((g: GameDef) => (
+          {GAMES.filter((g) => g.id !== PACK_EMPIRE.id).map((g: GameDef) => (
             <Link
               key={g.id}
               href={g.href}

@@ -34,7 +34,7 @@ import {
   type Player,
   type PoolKey,
 } from '@/lib/packEmpire/rules'
-import { BATTLE_BONUS, battlesFrom } from '@/lib/packEmpire/battles'
+import { BATTLE_BONUS, battlesFrom, type Battle } from '@/lib/packEmpire/battles'
 import type { MegaView } from '@/lib/packEmpire/mega'
 import { BattleResults } from '../Battles'
 import { DeleteGame } from '../GameList'
@@ -49,55 +49,96 @@ function PoolCard({
   state,
   takenBy,
   fresh,
+  marks,
   onPick,
 }: {
   player: Player
   state: 'can' | 'wait' | 'full' | 'broke' | 'taken'
   takenBy: string | null
   fresh: boolean
+  /** What he puts toward each of the draft's Battles, where the card can say. */
+  marks: string[]
   onPick: () => void
 }) {
-  // A blind card wears no rarity: the mask makes every one a common.
-  const rc = player.blind ? BLIND_LOOK : RARITY_LOOK[player.rarity]
+  // A blind card wears no rarity: the mask makes every one a common. It wears its
+  // difficulty's look instead, the same pair as the full-size cards.
+  const blind = player.blind
+  const rc = blind ? blindLook(blind.level) : RARITY_LOOK[player.rarity]
   const img = useFace(player)
   return (
     <button
       type="button"
       className={`pe-pc pe-pc--${state === 'broke' ? 'full' : state}${fresh ? ' fresh' : ''}`}
-      data-r={player.blind ? undefined : player.rarity}
-      style={{ '--rc': rc.color, '--rg': rc.glow, '--art': rc.art } as React.CSSProperties}
+      data-r={blind ? 'blind' : player.rarity}
+      data-level={blind?.level}
+      style={{ '--rc': rc.color, '--rg': rc.glow } as React.CSSProperties}
       onClick={state === 'can' ? onPick : undefined}
       disabled={state !== 'can'}
       aria-label={state === 'can' ? `Draft ${player.name}` : state === 'broke' ? `${player.name}, more than you have left` : player.name}
     >
       <span className="pe-pc-top">
         <span className="pe-pc-pos">{player.pos}</span>
-        {player.salary != null ? (
-          <span className="pe-pc-rar pe-pc-pay">${player.salary}M</span>
+        {blind ? (
+          <span className="pe-pc-rar pe-pc-hid">
+            <svg viewBox="0 0 24 24" aria-hidden>
+              <path d="M12 3.5 20.5 12 12 20.5 3.5 12z" fill="none" stroke="currentColor" strokeWidth="2.6" />
+            </svg>
+            Hidden
+          </span>
         ) : (
           <span className="pe-pc-rar">{rc.label}</span>
         )}
       </span>
       <span className="pe-pc-art">
+        {/* The season, big and hollow behind him: on a blind board it's the clue. */}
+        {blind && player.year ? <span className="pe-pc-year">{player.year}</span> : null}
         {img ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={img} alt="" className="pe-pc-img" loading="lazy" />
         ) : (
           <span className="pe-pc-initial">{player.name.charAt(0)}</span>
         )}
+        {player.salary != null && (
+          <span className={`pe-pc-price${state === 'broke' ? ' over' : ''}`}>${player.salary}M</span>
+        )}
         {state === 'taken' && <span className="pe-pc-taken">{takenBy ?? 'Drafted'}</span>}
       </span>
       <span className="pe-pc-body">
         <span className="pe-pc-name">{shortName(player.name)}</span>
         <span className="pe-pc-team">{seasonLabel(player).trim() || 'Team hidden'}</span>
-        <span className="pe-pc-score">{player.blind ? blindValue(player.blind) : player.score.toLocaleString()}</span>
+        <span className={`pe-pc-score${blind ? ` pe-pc-score--${blind.level}` : ''}`}>
+          {blind ? blindValue(blind) : player.score.toLocaleString()}
+        </span>
+        {blind?.level === 'range' && (
+          <span className="pe-pc-gauge" aria-hidden>
+            <i
+              style={{
+                left: `${Math.min((blind.lo ?? 0) / GAUGE_TOP, 1) * 100}%`,
+                width: `${(Math.min((blind.hi ?? 0) / GAUGE_TOP, 1) - Math.min((blind.lo ?? 0) / GAUGE_TOP, 1)) * 100}%`,
+              }}
+            />
+          </span>
+        )}
+        {marks.length > 0 && (
+          <span className="pe-pc-marks">
+            {marks.map((m) => (
+              <i key={m}>{m}</i>
+            ))}
+          </span>
+        )}
       </span>
     </button>
   )
 }
 
-/** What a blind card looks like on the board: one quiet colour for all of them. */
-const BLIND_LOOK = { color: '#8d8473', glow: 'rgba(141, 132, 115, 0.2)', art: 'rgba(141, 132, 115, 0.12)', label: '' }
+/** The Range gauge's scale, the full-size card's. */
+const GAUGE_TOP = 5600
+
+/** A blind card's colours on the board and in the elevens: Range steel, Ball
+    Knower black and brass, so the two read apart at a glance. */
+const RANGE_LOOK = { color: '#a9bfd6', glow: 'rgba(150, 185, 220, 0.3)', label: '' }
+const SEASON_LOOK = { color: '#e8c98a', glow: 'rgba(232, 201, 138, 0.28)', label: '' }
+const blindLook = (level: string) => (level === 'season' ? SEASON_LOOK : RANGE_LOOK)
 
 /** A seat's total: hidden on a blind board until the last pick. */
 const shownScore = (score: number | null) => (score == null ? '?' : score.toLocaleString())
@@ -149,7 +190,7 @@ function Column({
       <div className="pe-lc-slots">
         {SLOTS.map((s, i) => {
           const p = lineup[i]
-          const rc = p ? (p.blind ? BLIND_LOOK : RARITY_LOOK[p.rarity]) : null
+          const rc = p ? (p.blind ? blindLook(p.blind.level) : RARITY_LOOK[p.rarity]) : null
           return (
             <div
               key={s.key}
@@ -231,6 +272,12 @@ function modeLine(view: MegaView): string {
 /** Whether a lineup still has a slot for this man. */
 function hasSlot(lineup: (Player | null)[], p: Player): boolean {
   return SLOTS.some((s, i) => s.pool === p.pos && !lineup[i])
+}
+
+/** What a card puts toward each Battle, where it can say: the numbers off its
+    stat line, its conference or division, a ring. Nothing on a blind card. */
+function marksFor(battles: Battle[], p: Player): string[] {
+  return battles.flatMap((b) => b.mark?.(p) ?? [])
 }
 
 /** Which seats still need a position: empty slots left, yours and theirs. */
@@ -441,6 +488,7 @@ export function MegaRoom({
   }
 
   const shown = view.board.filter((p) => filter === 'ALL' || p.pos === filter)
+  const battleList = useMemo(() => battlesFrom(view.battles), [view.battles])
 
   /** What a position tab says: filled by you, contested, or yours alone to
       take whenever you like. Spectators get plain tabs. */
@@ -514,15 +562,14 @@ export function MegaRoom({
                 style={{ margin: '0.6rem 0' }}
               />
             )}
-            <button
-              type="button"
-              className="pe-push"
-              onClick={join}
-              disabled={busy || (!signedIn && name.trim().length < 2)}
-              style={{ marginTop: '0.5rem' }}
-            >
-              Sit down
-            </button>
+            <div className="pe-recap-actions" style={{ justifyContent: 'flex-start', marginTop: '0.5rem' }}>
+              <button type="button" className="pe-push" onClick={join} disabled={busy || (!signedIn && name.trim().length < 2)}>
+                Sit down
+              </button>
+              {view.removable === 'decline' && (
+                <DeleteGame api="/api/games/pack-empire/mega/" id={id} decline onGone={() => router.push('/games/pack-empire/mega-draft/')} />
+              )}
+            </div>
             {error && (
               <div className="pe-error" style={{ marginTop: '0.8rem' }}>
                 {error}
@@ -565,7 +612,7 @@ export function MegaRoom({
           <MegaBattles view={view} names={['', '']} />
           <div className="pe-pool">
             {view.board.map((p) => (
-              <PoolCard key={p.id} player={p} state="wait" takenBy={null} fresh={false} onPick={() => {}} />
+              <PoolCard key={p.id} player={p} state="wait" takenBy={null} fresh={false} marks={marksFor(battleList, p)} onPick={() => {}} />
             ))}
           </div>
         </div>
@@ -762,6 +809,7 @@ export function MegaRoom({
                 state={stateFor(p)}
                 takenBy={takenBy.has(p.id) ? seatName(takenBy.get(p.id)!) : null}
                 fresh={fresh === p.id}
+                marks={marksFor(battleList, p)}
                 onPick={() => pick(p)}
               />
             ))}
@@ -781,6 +829,22 @@ export function MegaRoom({
           />
         </div>
       </div>
+
+      {/* Against the CPU it's yours to walk away from mid-draft. */}
+      {view.removable === 'delete' && (
+        <div className="pe-room-del">
+          <DeleteGame
+            api="/api/games/pack-empire/mega/"
+            id={id}
+            seatKey={key}
+            label="Delete this draft"
+            onGone={() => {
+              forgetMega(id)
+              router.push('/games/pack-empire/mega-draft/')
+            }}
+          />
+        </div>
+      )}
     </div>
   )
 }
