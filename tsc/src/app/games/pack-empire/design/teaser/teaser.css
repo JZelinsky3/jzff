@@ -13,12 +13,41 @@
   height: 720px;
   overflow: hidden;
   cursor: pointer;
-  background:
-    radial-gradient(ellipse 70% 60% at 68% 45%, rgba(232, 168, 75, .1), transparent 70%),
-    radial-gradient(ellipse 120% 90% at 50% 50%, #15130f 0%, #0b0a08 60%, #050504 100%);
+  background: #0b0a08;
   color: var(--pe-ink);
 }
 .tz-frame--v { width: 540px; height: 960px; }
+/* Paused: every animation in the frame holds where it is (the marks hold on the reel's clock). */
+.tz-frame[data-paused] *, .tz-frame[data-paused] *::before, .tz-frame[data-paused] *::after { animation-play-state: paused !important; }
+
+/* The backdrop: a night stadium out of focus behind everything
+   (scripts/pack-empire-teaser/backdrop.py). It drifts slowly across the whole
+   reel, not per beat, and a shade on the left keeps the words clear. */
+.tz-bg { position: absolute; inset: -4%; background: url('/games/pack-empire/teaser/stadium-wide.webp') center 30% / cover no-repeat; animation: tz-drift 38s ease-in-out infinite alternate; }
+.tz-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8, 7, 5, .55) 0%, rgba(8, 7, 5, .2) 38%, transparent 60%); }
+.tz-frame--v .tz-bg { background-image: url('/games/pack-empire/teaser/stadium-tall.webp'); background-position: center top; }
+.tz-frame--v .tz-bg::after { background: linear-gradient(180deg, transparent 30%, rgba(8, 7, 5, .35) 100%); }
+@keyframes tz-drift { from { transform: scale(1) translateX(0); } to { transform: scale(1.06) translateX(-1.5%); } }
+
+/* The mark in the corner: there through the beats, gone for the intro and outro. */
+.tz-tag { position: absolute; top: 34px; left: 80px; z-index: 5; display: flex; align-items: baseline; gap: 14px; opacity: 0; transition: opacity .5s; pointer-events: none; }
+.tz-tag[data-on] { opacity: .85; }
+.tz-tag-name { font-family: var(--serif); font-size: 1.3rem; letter-spacing: -.01em; color: var(--pe-ink); }
+.tz-tag-name em { font-style: italic; color: var(--pe-amber); }
+.tz-tag-by { padding-left: 14px; border-left: 1px solid rgba(232, 168, 75, .35); font-family: var(--mono); font-size: .62rem; letter-spacing: .22em; text-transform: uppercase; color: var(--pe-ink-mute); }
+.tz-frame--v .tz-tag { top: 26px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+
+/* Controls, under the frame so a capture of the frame never sees them. */
+.tz-ctl { display: flex; align-items: center; gap: 8px; }
+.tz-ctl-btn { display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 1px solid #3a342b; border-radius: 999px; background: #15130f; color: var(--pe-ink-soft); cursor: pointer; transition: border-color .15s, color .15s; }
+.tz-ctl-btn:hover { border-color: var(--pe-amber); color: var(--pe-amber-bright); }
+.tz-ctl-play { width: 46px; height: 46px; border-color: rgba(232, 168, 75, .6); color: var(--pe-amber-bright); }
+.tz-ctl-beats { display: flex; gap: 5px; margin: 0 10px; }
+.tz-ctl-dot { width: 22px; height: 6px; padding: 0; border: 0; border-radius: 3px; background: #2d2922; cursor: pointer; }
+.tz-ctl-dot:hover { background: #5a5246; }
+.tz-ctl-dot[data-on] { background: var(--pe-amber); }
+.tz-ctl-name { min-width: 15rem; font-family: var(--mono); font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--pe-ink-soft); }
+.tz-ctl-name b { color: var(--pe-amber-bright); font-weight: 700; }
 .tz-grain { position: absolute; inset: 0; pointer-events: none; opacity: .06; background: repeating-radial-gradient(circle at 30% 40%, #fff 0 1px, transparent 1px 3px); mix-blend-mode: overlay; }
 .tz-scene { position: absolute; inset: 0; animation: tz-in .35s ease-out both; }
 @keyframes tz-in { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: none; } }
@@ -37,6 +66,7 @@
 .tz-line { font-family: var(--serif); font-size: 4.1rem; line-height: 1; letter-spacing: -.02em; color: var(--pe-ink); }
 .tz-line em { font-style: italic; color: var(--tone); }
 .tz-sub { max-width: 24rem; font-size: 1.1rem; line-height: 1.45; color: var(--pe-ink-soft); }
+.tz-sub b { font-weight: 600; color: var(--pe-ink); }
 .tz-frame--v .tz-cap { justify-items: center; text-align: center; gap: 10px; }
 .tz-frame--v .tz-line { font-size: 3rem; }
 .tz-frame--v .tz-sub { font-size: .98rem; }
@@ -58,9 +88,11 @@
 .tz-intro-words .hot { color: var(--pe-amber-bright); text-shadow: 0 0 24px rgba(232, 168, 75, .6); }
 .tz-ready p { margin-top: 24px; font-family: var(--mono); font-size: .8rem; letter-spacing: .22em; text-transform: uppercase; color: var(--pe-ink-mute); }
 
-.tz-outro-packs { position: relative; display: flex; justify-content: center; height: 210px; margin-bottom: 18px; }
-.tz-outro-packs img { width: 120px; margin: 0 -14px; border-radius: 4px; box-shadow: 0 18px 30px rgba(0, 0, 0, .6); transform: translateY(calc(abs(var(--n)) * 16px)) rotate(calc(var(--n) * 9deg)); animation: tz-deal .6s cubic-bezier(.2, 1.2, .4, 1) both; animation-delay: calc((var(--n) + 2) * 70ms); }
-.tz-frame--v .tz-outro-packs img { width: 92px; }
+/* Wider than the art (a pack drawn flat reads skinny), overlapping, the middle
+   one in front and the outer ones a shade darker, like the key art's spread. */
+.tz-outro-packs { position: relative; display: flex; justify-content: center; height: 214px; margin-bottom: 18px; }
+.tz-outro-packs img { position: relative; z-index: calc(5 - abs(var(--n)) * 2); width: 146px; height: 180px; margin: 0 -19px; object-fit: fill; border-radius: 4px; box-shadow: 0 18px 30px rgba(0, 0, 0, .6); filter: brightness(calc(1 - abs(var(--n)) * .1)); transform: translateY(calc(abs(var(--n)) * 14px)) rotate(calc(var(--n) * 8deg)); animation: tz-deal .6s cubic-bezier(.2, 1.2, .4, 1) both; animation-delay: calc((var(--n) + 2) * 70ms); }
+.tz-frame--v .tz-outro-packs img { width: 108px; height: 134px; margin: 0 -15px; }
 @keyframes tz-deal { from { opacity: 0; translate: 0 120px; } to { opacity: 1; translate: 0 0; } }
 .tz-logo--end { font-size: 6.4rem; }
 .tz-frame--v .tz-logo--end { font-size: 4.6rem; }

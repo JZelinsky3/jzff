@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { notFound } from 'next/navigation'
 import { maskCard } from '@/lib/packEmpire/deal'
 import { playerById } from '@/lib/packEmpire/pool'
-import { PACK_ART, WILD_PACK_ART, chemistryFor, lineupScore, type Player } from '@/lib/packEmpire/rules'
+import { PACK_ART, WILD_PACK_ART, chemistryFor, type Player } from '@/lib/packEmpire/rules'
 import { peFonts } from '../../fonts'
 import { Teaser, type TeaserData } from './Teaser'
 import './teaser.css'
@@ -59,7 +59,9 @@ async function TeaserRoute({ searchParams }: { searchParams: Promise<{ ar?: stri
   const data: TeaserData = {
     lineup,
     chem,
-    total: lineupScore(lineup) + chem.total + 3000,
+    // A great run, not the stacked chemistry lineup's 46,000: 25,000 is elite
+    // and past 30,000 almost never happens.
+    total: 25140,
     rip: RIP.map(card),
     vsA: card('wr-justin-jefferson-2022'),
     vsB: card('wr-jamarr-chase-2024'),

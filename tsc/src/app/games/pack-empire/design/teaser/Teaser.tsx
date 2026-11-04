@@ -5,11 +5,15 @@
 // at marks it sets for itself (useSteps) rather than re-rendering every frame:
 // a PackCard is too heavy to redraw sixty times a second.
 //
-// Space or click starts it and restarts it; H hides the hint. Record the frame,
-// not the page: it's 1280x720 (or 540x960 on ?ar=916), so zoom the browser in
-// for a bigger capture and everything scales with it.
+// Every mark reads the reel's own clock, which stops while paused, and the
+// frame pauses its CSS animations with it, so a pause holds the picture exactly.
+//
+// Space or click plays and pauses, the arrows step a beat, R restarts, H hides
+// the controls. Stepping while paused plays that beat through and holds on its
+// last frame. Record the frame, not the page: it's 1280x720 (or 540x960 on
+// ?ar=916), so zoom the browser in for a bigger capture and everything scales.
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { SLOT_COUNT, tierFor, type Chemistry, type Player } from '@/lib/packEmpire/rules'
 import { BOND_LABEL, CaptainMark, Field, Ladder, PackCard, bondKind } from '../../cards'
 import { ChemLinks } from '../../report'
@@ -28,43 +32,61 @@ export type TeaserData = {
   packs: { captain: string; wild: string; rb: string; wr: string; te: string }
 }
 
+/** The reel's clock: ms played so far, not counting time spent paused. */
+type Clock = { paused: boolean; now: () => number }
+const ClockContext = createContext<Clock>({ paused: false, now: () => performance.now() })
+
 /** Marks in ms from the moment a beat mounts; returns how many have passed. */
 function useSteps(marks: number[]): number {
+  const { paused, now } = useContext(ClockContext)
+  const [t0] = useState(now)
   const [n, setN] = useState(0)
   useEffect(() => {
-    const ids = marks.map((m, i) => window.setTimeout(() => setN(i + 1), m))
+    if (paused) return
+    const at = now() - t0
+    const ids = marks.map((m, i) => window.setTimeout(() => setN((c) => Math.max(c, i + 1)), Math.max(0, m - at)))
     return () => ids.forEach(clearTimeout)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [paused])
   return n
 }
 
 /** A number counting up from `from` to `to` over `ms`, starting after `delay`. */
 function useCount(to: number, ms: number, delay = 0, from = 0): number {
+  const { paused, now } = useContext(ClockContext)
+  const [t0] = useState(now)
   const [v, setV] = useState(from)
   useEffect(() => {
+    if (paused) return
     let raf = 0
-    const t0 = performance.now() + delay
-    const tick = (now: number) => {
-      const p = Math.min(1, Math.max(0, (now - t0) / ms))
+    const tick = () => {
+      const p = Math.min(1, Math.max(0, (now() - t0 - delay) / ms))
       setV(Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3))))
       if (p < 1) raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [to, ms, delay, from])
+  }, [to, ms, delay, from, paused, now, t0])
   return v
 }
 
 const k = (n: number) => n.toLocaleString('en-US')
 
-/** The words on a beat: a small line over a big one. */
-function Caption({ kick, line, sub, tone }: { kick: string; line: React.ReactNode; sub?: string; tone?: string }) {
+/** The words on a beat: a small line, the name, then what it is. `lead` opens
+    the description in full ink, so the pitch reads before the detail. A kick or
+    a description that changes mid-beat rises again; the name stays put. */
+function Caption({ kick, line, lead, sub, tone }: { kick: string; line: React.ReactNode; lead?: string; sub?: string; tone?: string }) {
   return (
     <div className="tz-cap" style={tone ? ({ '--tone': tone } as React.CSSProperties) : undefined}>
-      <span className="tz-kick">{kick}</span>
+      <span key={kick} className="tz-kick">
+        {kick}
+      </span>
       <span className="tz-line">{line}</span>
-      {sub && <span className="tz-sub">{sub}</span>}
+      {(lead || sub) && (
+        <span key={`${lead}${sub}`} className="tz-sub">
+          {lead && <b>{lead}</b>} {sub}
+        </span>
+      )}
     </div>
   )
 }
@@ -189,7 +211,10 @@ function Chem({ lineup, chem }: { lineup: Player[]; chem: Chemistry }) {
         </div>
       </div>
       <div className="pe-turf tz-turf tz-turf--full">
-        <ChemLinks bonds={bonds} lineup={lineup} count={step} />
+        {/* Mounted with the first bond, once the beat has stopped scaling in:
+            the links measure the cards once, and a measure mid-zoom set every
+            ring a few pixels low and wide. */}
+        {step >= 1 && <ChemLinks bonds={bonds} lineup={lineup} count={step} />}
         <Field lineup={lineup} view={(i) => ({ clickable: false, captain: i === 0 })} />
       </div>
     </div>
@@ -202,36 +227,34 @@ const BATTLES = [
   { title: 'Division Stack', you: 5, them: 3 },
 ]
 
-function Battles() {
+/** The Battles table, Versus's second half. */
+function BattleBoard() {
   const step = useSteps([500, 1100, 1700, 2500])
   const won = BATTLES.filter((b) => b.you > b.them).length
   return (
-    <div className="tz-beat tz-split">
-      <Caption kick="Versus · Even" line={<>Win the <em>Battles.</em></>} sub="Three head-to-head categories, named before the first pack." tone="#e2725b" />
-      <div className="tz-battles">
-        <div className="tz-bt-head">
-          <span>Category</span>
-          <span>You</span>
-          <span>Them</span>
-          <span />
-        </div>
-        {BATTLES.map((b, i) =>
-          step > i ? (
-            <div key={b.title} className="tz-bt-row" data-win={b.you > b.them ? '' : undefined}>
-              <span className="tz-bt-name">{b.title}</span>
-              <b>{b.you}</b>
-              <b className="them">{b.them}</b>
-              <span className="tz-bt-prize">{b.you > b.them ? '+1,500' : 'Lost'}</span>
-            </div>
-          ) : null
-        )}
-        {step >= 4 && (
-          <div className="tz-bt-total">
-            <span>Battles</span>
-            <b>+{k(won * 1500)}</b>
-          </div>
-        )}
+    <div className="tz-battles">
+      <div className="tz-bt-head">
+        <span>Category</span>
+        <span>You</span>
+        <span>Them</span>
+        <span />
       </div>
+      {BATTLES.map((b, i) =>
+        step > i ? (
+          <div key={b.title} className="tz-bt-row" data-win={b.you > b.them ? '' : undefined}>
+            <span className="tz-bt-name">{b.title}</span>
+            <b>{b.you}</b>
+            <b className="them">{b.them}</b>
+            <span className="tz-bt-prize">{b.you > b.them ? '+1,500' : 'Lost'}</span>
+          </div>
+        ) : null
+      )}
+      {step >= 4 && (
+        <div className="tz-bt-total">
+          <span>Battles</span>
+          <b>+{k(won * 1500)}</b>
+        </div>
+      )}
     </div>
   )
 }
@@ -239,7 +262,13 @@ function Battles() {
 function Mystery({ art }: { art: string }) {
   return (
     <div className="tz-beat tz-split">
-      <Caption kick="Mode · Mystery" line={<>Mystery <em>packs.</em></>} sub="Eleven packs, five random positions each. Plan for what you still need." tone="#a99cf5" />
+      <Caption
+        kick="Empire Builder"
+        line={<>Mystery <em>Packs.</em></>}
+        lead="You never know what's inside."
+        sub="Eleven packs, five random positions each. Plan for what you still need."
+        tone="#a99cf5"
+      />
       <div className="tz-mys">
         {[-2, -1, 0, 1, 2].map((n) => (
           // eslint-disable-next-line @next/next/no-img-element
@@ -254,7 +283,13 @@ function BallKnower({ blind, range, real }: { blind: Player; range: Player; real
   const step = useSteps([1300])
   return (
     <div className="tz-beat tz-split">
-      <Caption kick="Mode · Ball Knower" line={<>Know <em>ball?</em></>} sub="No numbers. A year and a team. You remember the rest." tone="#4fc3b0" />
+      <Caption
+        kick="Hard mode"
+        line={<>Ball <em>Knower.</em></>}
+        lead="Know ball?"
+        sub="Just a name and a season. No value, no team. You remember the rest."
+        tone="#4fc3b0"
+      />
       <div className="tz-bk">
         <div className="tz-bk-card tz-bk-side">
           <PackCard player={range} revealed index={0} still disabled />
@@ -267,30 +302,56 @@ function BallKnower({ blind, range, real }: { blind: Player; range: Player; real
   )
 }
 
-function Versus({ a, b }: { a: Player; b: Player }) {
+/** The two cards face off and the totals count up. Versus's first half. */
+function Faceoff({ a, b }: { a: Player; b: Player }) {
   const you = useCount(24040, 1400, 300)
   const them = useCount(22950, 1400, 300)
   const step = useSteps([1800])
   return (
-    <div className="tz-beat tz-split">
-      <Caption kick="Mode · Versus" line={<>Same packs. <em>Head to head.</em></>} sub="Send a friend the link. Best offense wins." tone="#e2725b" />
-      <div className="tz-vs">
-        <div className="tz-vs-side" data-win={step >= 1 ? '' : undefined}>
-          <div className="tz-vs-card">
-            <PackCard player={a} revealed index={0} still disabled />
-          </div>
-          <span className="tz-vs-name">You</span>
-          <b>{k(you)}</b>
+    <div className="tz-vs">
+      <div className="tz-vs-side" data-win={step >= 1 ? '' : undefined}>
+        <div className="tz-vs-card">
+          <PackCard player={a} revealed index={0} still disabled />
         </div>
-        <span className="tz-vs-mid">vs</span>
-        <div className="tz-vs-side">
-          <div className="tz-vs-card">
-            <PackCard player={b} revealed index={0} still disabled />
-          </div>
-          <span className="tz-vs-name">Friend</span>
-          <b>{k(them)}</b>
-        </div>
+        <span className="tz-vs-name">You</span>
+        <b>{k(you)}</b>
       </div>
+      <span className="tz-vs-mid">vs</span>
+      <div className="tz-vs-side">
+        <div className="tz-vs-card">
+          <PackCard player={b} revealed index={0} still disabled />
+        </div>
+        <span className="tz-vs-name">Friend</span>
+        <b>{k(them)}</b>
+      </div>
+    </div>
+  )
+}
+
+/** One beat for the mode, in two halves: the name stays up while the head to
+    head gives way to the Battles. `half` is when the second half starts. */
+function Versus({ a, b, half }: { a: Player; b: Player; half: number }) {
+  const step = useSteps([half])
+  return (
+    <div className="tz-beat tz-split">
+      {step < 1 ? (
+        <Caption
+          kick="Two players"
+          line={<>Versus <em>Challenge.</em></>}
+          lead="Same packs. Head to head."
+          sub="Send a friend the link. The best offense wins."
+          tone="#e2725b"
+        />
+      ) : (
+        <Caption
+          kick="Two players · Even"
+          line={<>Versus <em>Challenge.</em></>}
+          lead="Win the Battles."
+          sub="Three head-to-head categories, named before the first pack."
+          tone="#e2725b"
+        />
+      )}
+      {step < 1 ? <Faceoff a={a} b={b} /> : <BattleBoard />}
     </div>
   )
 }
@@ -300,7 +361,13 @@ function Mega({ wall }: { wall: Player[] }) {
   const order = [5, 2, 9, 0, 11, 6, 3, 8, 1, 10, 4, 7]
   return (
     <div className="tz-beat tz-split">
-      <Caption kick="Mode · Mega Draft" line={<>A live <em>snake draft.</em></>} sub="Every card on one table. Take it before they do." tone="#5fb3e8" />
+      <Caption
+        kick="Live"
+        line={<>Mega <em>Draft.</em></>}
+        lead="A live snake draft."
+        sub="Every card on one table. Take it before they do."
+        tone="#5fb3e8"
+      />
       <div className="tz-mega">
         {wall.map((c, i) => (
           <div key={c.id} className="tz-mega-card">
@@ -326,7 +393,13 @@ function League() {
   const top = Math.max(...TABLE.map((r) => r.pts.reduce((s, n) => s + n, 0)))
   return (
     <div className="tz-beat tz-split">
-      <Caption kick="Mode · League" line={<>Eight weeks. <em>One champion.</em></>} sub="Win a week, open a better pack. Then a Gauntlet, then a Final." tone="#b48cf0" />
+      <Caption
+        kick="4 to 12 players"
+        line={<>League <em>Mode.</em></>}
+        lead="Eight weeks. One champion."
+        sub="Win a week, open a better pack. Then a Gauntlet, then a Final."
+        tone="#b48cf0"
+      />
       <div className="tz-league">
         <div className="tz-lg-head">
           <span>Week {step + 1}</span>
@@ -358,7 +431,7 @@ function Climb({ total }: { total: number }) {
   return (
     <div className="tz-beat tz-split">
       <div className="tz-cap-col">
-        <Caption kick="The board" line={<>Climb the <em>ladder.</em></>} sub="Every run goes on the board. Today's best, all-time best." />
+        <Caption kick="The board" line={<>Climb the <em>ladder.</em></>} sub="Every run goes on the board. Past 30,000 is nearly impossible." />
         <div className="tz-climb-score" style={{ '--tc': tier.color } as React.CSSProperties} data-landed={landed ? '' : undefined}>
           <small key={tier.label}>{tier.label}</small>
           <b>{k(shown)}</b>
@@ -392,73 +465,181 @@ function Outro({ art }: { art: string[] }) {
 
 // ── The reel ──────────────────────────────────────────────────
 
+/** Every beat holds its finished picture this long before the next one. */
+const HOLD = 1300
+
+/** Versus plays the head to head, holds it, then the Battles. */
+const VS_HALF = 2700 + HOLD
+
+type Beat = { name: string; ms: number; tag?: false; el: () => React.ReactNode }
+
+function Icon({ d }: { d: string }) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d={d} />
+    </svg>
+  )
+}
+
 export function Teaser({ data, vertical }: { data: TeaserData; vertical: boolean }) {
-  const beats: { ms: number; el: () => React.ReactNode }[] = [
-    { ms: 3300, el: () => <Intro /> },
-    { ms: 3300, el: () => <Captain /> },
-    { ms: 6400, el: () => <Rip cards={data.rip} art={data.packs.captain} /> },
-    { ms: 4400, el: () => <Chem lineup={data.lineup} chem={data.chem} /> },
-    { ms: 3700, el: () => <Battles /> },
-    { ms: 2400, el: () => <Mystery art={data.packs.wild} /> },
-    { ms: 2900, el: () => <BallKnower blind={data.blind} range={data.range} real={data.wall[2]} /> },
-    { ms: 2700, el: () => <Versus a={data.vsA} b={data.vsB} /> },
-    { ms: 2800, el: () => <Mega wall={data.wall} /> },
-    { ms: 2900, el: () => <League /> },
-    { ms: 3900, el: () => <Climb total={data.total} /> },
-    { ms: 4600, el: () => <Outro art={[data.packs.rb, data.packs.wr, data.packs.captain, data.packs.te, data.packs.wild]} /> },
-  ]
+  const beats: Beat[] = (
+    [
+      { name: 'Intro', ms: 3300, tag: false, el: () => <Intro /> },
+      { name: 'Captain', ms: 3300, el: () => <Captain /> },
+      { name: 'The rip', ms: 6400, el: () => <Rip cards={data.rip} art={data.packs.captain} /> },
+      { name: 'Chemistry', ms: 4400, el: () => <Chem lineup={data.lineup} chem={data.chem} /> },
+      { name: 'Mystery Packs', ms: 2400, el: () => <Mystery art={data.packs.wild} /> },
+      { name: 'Ball Knower', ms: 2900, el: () => <BallKnower blind={data.blind} range={data.range} real={data.wall[2]} /> },
+      { name: 'Versus Challenge', ms: VS_HALF + 3700, el: () => <Versus a={data.vsA} b={data.vsB} half={VS_HALF} /> },
+      { name: 'Mega Draft', ms: 2800, el: () => <Mega wall={data.wall} /> },
+      { name: 'League Mode', ms: 2900, el: () => <League /> },
+      { name: 'The board', ms: 3900, el: () => <Climb total={data.total} /> },
+      { name: 'Outro', ms: 4600, tag: false, el: () => <Outro art={[data.packs.rb, data.packs.wr, data.packs.captain, data.packs.te, data.packs.wild]} /> },
+    ] as Beat[]
+  ).map((b) => ({ ...b, ms: b.ms + HOLD }))
   const [at, setAt] = useState(-1)
   const [run, setRun] = useState(0)
-  const [hint, setHint] = useState(true)
-  const timer = useRef(0)
+  const [paused, setPaused] = useState(false)
+  const [chrome, setChrome] = useState(true)
+
+  // The clock: time played before `since`, and when play last resumed.
+  const clock = useRef({ played: 0, since: 0, paused: false })
+  const now = useCallback(() => {
+    const c = clock.current
+    return c.played + (c.paused ? 0 : performance.now() - c.since)
+  }, [])
+  const hold = useCallback((p: boolean) => {
+    const c = clock.current
+    if (p === c.paused) return
+    if (p) c.played += performance.now() - c.since
+    else c.since = performance.now()
+    c.paused = p
+    setPaused(p)
+  }, [])
+  const ctx = useMemo(() => ({ paused, now }), [paused, now])
+
+  const beatStart = useRef(0)
+  // Set by a step taken while paused: play that beat through, then pause on its end.
+  const holdAtEnd = useRef(false)
 
   const start = useCallback(() => {
+    holdAtEnd.current = false
+    hold(false)
     setRun((r) => r + 1)
     setAt(0)
-  }, [])
+  }, [hold])
+
+  const go = useCallback(
+    (i: number) => {
+      if (clock.current.paused) {
+        holdAtEnd.current = true
+        hold(false)
+      }
+      setRun((r) => r + 1)
+      setAt(i)
+    },
+    [hold]
+  )
+
+  const toggle = useCallback(() => {
+    if (at < 0) return start()
+    holdAtEnd.current = false
+    hold(!clock.current.paused)
+  }, [at, hold, start])
 
   useEffect(() => {
-    if (at < 0) return
-    timer.current = window.setTimeout(() => setAt((n) => (n + 1) % beats.length), beats[at].ms)
-    return () => clearTimeout(timer.current)
+    if (at >= 0) beatStart.current = now()
+  }, [at, run, now])
+
+  useEffect(() => {
+    if (at < 0 || paused) return
+    const left = beats[at].ms - (now() - beatStart.current)
+    const id = window.setTimeout(() => {
+      if (holdAtEnd.current) {
+        holdAtEnd.current = false
+        hold(true)
+      } else setAt((n) => (n + 1) % beats.length)
+    }, Math.max(0, left))
+    return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [at, run])
+  }, [at, run, paused])
 
   useEffect(() => {
+    const n = beats.length
     const key = (e: KeyboardEvent) => {
       if (e.key === ' ') {
         e.preventDefault()
-        start()
-      }
-      if (e.key === 'h' || e.key === 'H') setHint((h) => !h)
+        toggle()
+      } else if (e.key === 'ArrowRight') go(at < 0 ? 0 : (at + 1) % n)
+      else if (e.key === 'ArrowLeft') go(at < 0 ? 0 : (at - 1 + n) % n)
+      else if (e.key === 'r' || e.key === 'R') start()
+      else if (e.key === 'h' || e.key === 'H') setChrome((c) => !c)
     }
     window.addEventListener('keydown', key)
     return () => window.removeEventListener('keydown', key)
-  }, [start])
+  }, [at, beats.length, go, start, toggle])
+
+  const showTag = at >= 0 && beats[at].tag !== false
+  const n = beats.length
 
   return (
-    <div className="tz-room">
-      <div className={`tz-frame${vertical ? ' tz-frame--v' : ''}`} onClick={start}>
-        {at < 0 ? (
-          <div className="tz-beat tz-ready">
-            <h1 className="tz-logo">
-              Pack <span className="pe-em">Empire.</span>
-            </h1>
-            <p>Click or press space to play</p>
+    <ClockContext.Provider value={ctx}>
+      <div className="tz-room">
+        <div className={`tz-frame${vertical ? ' tz-frame--v' : ''}`} data-paused={paused ? '' : undefined} onClick={toggle}>
+          <div className="tz-bg" aria-hidden />
+          {at < 0 ? (
+            <div className="tz-beat tz-ready">
+              <h1 className="tz-logo">
+                Pack <span className="pe-em">Empire.</span>
+              </h1>
+              <p>Click or press space to play</p>
+            </div>
+          ) : (
+            <div key={`${run}-${at}`} className="tz-scene">
+              {beats[at].el()}
+            </div>
+          )}
+          <div className="tz-tag" data-on={showTag ? '' : undefined} aria-hidden>
+            <span className="tz-tag-name">
+              Pack <em>Empire.</em>
+            </span>
+            <span className="tz-tag-by">The Sunday Chronicle</span>
           </div>
-        ) : (
-          <div key={`${run}-${at}`} className="tz-scene">
-            {beats[at].el()}
-          </div>
+          <div className="tz-grain" aria-hidden />
+        </div>
+        {chrome && (
+          <>
+            {/* Mouse-down keeps focus off the buttons, so Space stays play and pause. */}
+            <div className="tz-ctl" onMouseDown={(e) => e.preventDefault()}>
+              <button type="button" className="tz-ctl-btn" onClick={start} aria-label="Restart" title="Restart (R)">
+                <Icon d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v4h4" />
+              </button>
+              <button type="button" className="tz-ctl-btn" onClick={() => go(at < 0 ? 0 : (at - 1 + n) % n)} aria-label="Previous beat" title="Previous (Left arrow)">
+                <Icon d="M7 6v12M18 6.5l-8 5.5 8 5.5z" />
+              </button>
+              <button type="button" className="tz-ctl-btn tz-ctl-play" onClick={toggle} aria-label={paused || at < 0 ? 'Play' : 'Pause'} title="Play or pause (Space)">
+                <Icon d={paused || at < 0 ? 'M8.5 5.5v13l10-6.5z' : 'M9 5.5v13M15 5.5v13'} />
+              </button>
+              <button type="button" className="tz-ctl-btn" onClick={() => go(at < 0 ? 0 : (at + 1) % n)} aria-label="Next beat" title="Next (Right arrow)">
+                <Icon d="M17 6v12M6 6.5l8 5.5-8 5.5z" />
+              </button>
+              <div className="tz-ctl-beats">
+                {beats.map((b, i) => (
+                  <button key={b.name} type="button" className="tz-ctl-dot" data-on={i === at ? '' : undefined} onClick={() => go(i)} aria-label={b.name} title={b.name} />
+                ))}
+              </div>
+              <span className="tz-ctl-name">
+                {at < 0 ? 'Ready' : `${String(at + 1).padStart(2, '0')} / ${n} · ${beats[at].name}`}
+                {paused && <b> · Paused</b>}
+              </span>
+            </div>
+            <p className="tz-hint">
+              Space or click plays and pauses · arrows step a beat · R restarts · H hides this ·{' '}
+              {vertical ? <a href="?">16:9</a> : <a href="?ar=916">9:16 vertical</a>} · zoom the browser for a bigger capture
+            </p>
+          </>
         )}
-        <div className="tz-grain" aria-hidden />
       </div>
-      {hint && (
-        <p className="tz-hint">
-          Space or click restarts · H hides this · {vertical ? <a href="?">16:9</a> : <a href="?ar=916">9:16 vertical</a>} · zoom the browser
-          for a bigger capture
-        </p>
-      )}
-    </div>
+    </ClockContext.Provider>
   )
 }
