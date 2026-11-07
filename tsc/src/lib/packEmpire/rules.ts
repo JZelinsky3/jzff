@@ -496,8 +496,10 @@ export function chemistryCounts(diff: Difficulty, even = false): boolean {
 
 /** "Even · Range" on a Versus, or null for a plain Classic game. `bare` leaves
     out the mode's name, for a row already sitting under it. */
-export function formatLine(format: 'classic' | 'even' | 'mystery', difficulty: Difficulty, bare = false): string | null {
-  const parts = [format === 'even' ? 'Even' : format === 'mystery' ? 'Mystery' : null, difficulty === 'open' ? null : DIFFICULTY_LOOK[difficulty].label].filter(Boolean)
+/** `mystery` marks an Even game played in a line of mixed packs: "Even Mystery". */
+export function formatLine(format: 'classic' | 'even' | 'mystery', difficulty: Difficulty, bare = false, mystery = false): string | null {
+  const name = format === 'even' ? (mystery ? 'Even Mystery' : 'Even') : format === 'mystery' ? 'Mystery' : null
+  const parts = [name, difficulty === 'open' ? null : DIFFICULTY_LOOK[difficulty].label].filter(Boolean)
   if (parts.length === 0) return null
   return bare ? parts.join(' · ') : `Versus · ${parts.join(' · ')}`
 }
@@ -559,6 +561,12 @@ export const PACK_ART: Record<PoolKey, string> = {
 
 /** The Daily's mixed packs: any position can be in one. */
 export const WILD_PACK_ART = '/games/pack-empire/packs/wild.webp'
+
+/** How far back Empire Builder's front page looks for its top runs (builderHub.ts).
+    The week for now (Joey, 2026-11-07): with few players a day's board is often
+    empty. Back to 'day' once there are enough runs to fill one. */
+export const BUILDER_HUB_SPAN: 'day' | 'week' = 'week'
+export const BUILDER_HUB_WORD = BUILDER_HUB_SPAN === 'week' ? 'This Week' : 'Today'
 
 export const POOL_LABEL: Record<PoolKey, string> = {
   QB: 'Quarterback',
@@ -1174,6 +1182,10 @@ export const EVEN_MARK = '9'
     were difficulties are fifteen characters, and those are all open. */
 /** An Even Versus on contested packs. EVEN_MARK seeds keep the deal they started with. */
 export const EVEN_CONTESTED_MARK = '8'
+/** An Even Mystery Versus (Joey, 2026-11-07): both seats, one seed, eleven wild packs
+    laid out up front (deal.ts evenMysteryPack). Index 29 of the alphabet, past every
+    captain a Versus seat can write, so nothing else reads as one. */
+export const EVEN_MYSTERY_MARK = '7'
 /** A Classic Versus seat writes its captain this far along the alphabet, which is what
     says its ordinary packs come off VERSUS_WEIGHTS. It's signed, so it can't be forged. */
 export const VERSUS_CAPTAIN_SHIFT = 11

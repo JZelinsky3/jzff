@@ -17,6 +17,7 @@ export function simCard(p: Player, slot: number, chem = 0): SimCard {
     id: p.id,
     name: p.name,
     pos: p.pos,
+    rarity: p.rarity,
     slot,
     value: p.score + chem,
     arch: archetypeOf(p),

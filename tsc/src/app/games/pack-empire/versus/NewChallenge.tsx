@@ -4,22 +4,29 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { DIFFICULTY_LOOK, SALARY_CAP, type Difficulty, type Player } from '@/lib/packEmpire/rules'
-import type { VersusFormat } from '@/lib/packEmpire/versus'
 import { MatchSetup } from '../MatchSetup'
+import { SetupSwitch } from '../SetupSwitch'
 
 type Friend = { id: string; name: string }
 
-const FORMATS: { id: VersusFormat; label: string; line: string }[] = [
+type Base = 'classic' | 'even'
+
+const FORMATS: { id: Base; label: string; line: string }[] = [
   { id: 'classic', label: 'Classic', line: 'Your own eleven packs and a captain each. The better pulls win.' },
   { id: 'even', label: 'Even', line: 'The same eleven packs, no captain. Chemistry and three Battles decide it.' },
-  { id: 'mystery', label: 'Mystery', line: 'Your own captain, then ten packs of mixed positions. Plan for what you need.' },
 ]
 
-/** What the felt says along the top, per format. */
-const TAG: Record<VersusFormat, string> = {
-  classic: 'Your own packs each',
-  even: 'Same packs, both sides',
-  mystery: 'Captain, then ten mystery packs',
+/** Mystery is a switch on either format (Joey, 2026-11-07): packs in a line of
+    mixed positions instead of one a slot. What the card calls each with it on. */
+const MYSTERY: Record<Base, { label: string; line: string }> = {
+  classic: { label: 'Mystery', line: 'Your own captain, then ten packs of mixed positions. Plan for what you need.' },
+  even: { label: 'Even Mystery', line: 'The same eleven packs of mixed positions for both of you, no captain. Plan for what you need; three Battles settle it.' },
+}
+
+/** What the felt says along the top. */
+const TAG: Record<Base, [string, string]> = {
+  classic: ['Your own packs each', 'Captain, then ten mystery packs'],
+  even: ['Same packs, both sides', 'Same mystery packs, both sides'],
 }
 
 async function open(body: Record<string, unknown>): Promise<string> {
@@ -52,14 +59,17 @@ export function ChallengePanels({
   const router = useRouter()
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [format, setFormat] = useState<VersusFormat>('classic')
+  const [format, setFormat] = useState<Base>('classic')
+  const [mystery, setMystery] = useState(false)
   const [difficulty, setDifficulty] = useState<Difficulty>('open')
+  // The felt deals Mystery's hands (three positions) whichever format it's on.
+  const shown = mystery ? Object.fromEntries(Object.entries(hands).flatMap(([k, v]) => (k.startsWith('mystery:') ? [[`${format}:${k.slice(8)}`, v]] : []))) : hands
 
   const go = async (key: string, body: Record<string, unknown>) => {
     setBusy(key)
     setError(null)
     try {
-      router.push(room(await open({ ...body, format, difficulty })))
+      router.push(room(await open({ ...body, format, mystery, difficulty })))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not open a challenge.')
       setBusy(null)
@@ -70,7 +80,7 @@ export function ChallengePanels({
     setBusy('link')
     setError(null)
     try {
-      return room(await open({ format, difficulty }))
+      return room(await open({ format, mystery, difficulty }))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not open a challenge.')
       return null
@@ -94,8 +104,20 @@ export function ChallengePanels({
       difficulty={difficulty}
       onDifficulty={setDifficulty}
       cardsLine={cardsLine}
-      hands={hands}
-      tag={TAG[format]}
+      hands={shown}
+      tag={TAG[format][mystery ? 1 : 0]}
+      named={mystery ? MYSTERY[format] : undefined}
+      switches={
+        <SetupSwitch
+          label="Mystery"
+          options={[
+            { id: 'off', label: 'Off' },
+            { id: 'on', label: 'On' },
+          ]}
+          value={mystery ? 'on' : 'off'}
+          onChange={(v) => setMystery(v === 'on')}
+        />
+      }
       opponent="Them"
       friends={friends}
       signedIn={signedIn}

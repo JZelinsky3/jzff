@@ -1,22 +1,27 @@
 // /api/games/pack-empire/versus
 //
 //   GET  ?id=&key=                         -> { view }
-//   POST { action: 'create', friend?, cpu?, format?, difficulty? } -> { id }
+//   POST { action: 'create', friend?, cpu?, format?, difficulty?, mystery? } -> { id }
 //                                                             (signed in; friend = a friendship id,
 //                                                              which holds the other seat for them;
 //                                                              cpu = true puts the CPU in it;
-//                                                              format = 'classic' or 'even')
+//                                                              format = 'classic' or 'even';
+//                                                              mystery = true for packs in a line)
 //   POST { action: 'join', id, name, key } -> { view }
 //   POST { action: 'start', id, captain, key } -> { seed }
 //   POST { action: 'lock', id, picks, key, open } -> { lock }  (a blind seat's pick, see blindPicks)
+//   POST { action: 'pack', id, key }       -> { cards, reserve, picks } (an Even Mystery seat's next
+//                                                             pack: both seats share the seed, so the
+//                                                             deal route can't tell them apart)
 //   POST { action: 'submit', id, picks, key }  -> { view }
 //   POST { action: 'delete', id }          -> {}          (the host, until the other seat starts drafting;
 //                                                             or the friend it was sent to, declining it)
 //
 // `key` is a signed-out challenger's seat key, kept in their browser. The
 // packs themselves are dealt by /api/games/pack-empire/deal off the seat's
-// seed, exactly like an Empire Builder run; this route only issues the seed
-// and re-scores the finished lineup.
+// seed, exactly like an Empire Builder run, except an Even Mystery's, which come
+// from here; this route otherwise only issues the seed and re-scores the
+// finished lineup.
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
@@ -28,6 +33,7 @@ import {
   lockVersusSeat,
   startVersusSeat,
   submitVersusSeat,
+  versusMysteryPack,
 } from '@/lib/packEmpire/versus'
 
 export const dynamic = 'force-dynamic'
@@ -67,7 +73,7 @@ export async function POST(req: NextRequest) {
   switch (body.action) {
     case 'create': {
       if (!userId) return reply({ ok: false, needsAuth: true, error: 'Sign in to start a challenge.' }, 401)
-      const out = await createVersus(userId, body.friend ?? undefined, body.cpu === true, body.format, body.difficulty)
+      const out = await createVersus(userId, body.friend ?? undefined, body.cpu === true, body.format, body.difficulty, body.mystery === true)
       return out.ok ? reply(out) : reply(out, out.status ?? 400)
     }
     case 'join': {
@@ -80,6 +86,10 @@ export async function POST(req: NextRequest) {
     }
     case 'lock': {
       const out = await lockVersusSeat(id, userId, body.key, body.picks, body.open === true)
+      return out.ok ? reply(out) : reply(out, out.status ?? 400)
+    }
+    case 'pack': {
+      const out = await versusMysteryPack(id, userId, body.key)
       return out.ok ? reply(out) : reply(out, out.status ?? 400)
     }
     case 'submit': {

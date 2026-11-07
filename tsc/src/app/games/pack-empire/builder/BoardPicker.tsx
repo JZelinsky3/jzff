@@ -3,7 +3,7 @@
 // The eight boards as one picker: Classic or Mystery, then one of four
 // difficulties, and the board picked gets the card with its Play button. The
 // list of every board as rows read as a wall on a phone, so every choice is a
-// tap on the page and only the one you're on is spelled out. Today's top runs
+// tap on the page and only the one you're on is spelled out. The top runs
 // below follow the same pick, so there's one control on the page, not two.
 
 import Link from 'next/link'
@@ -11,6 +11,7 @@ import { useState } from 'react'
 import type { HubBoard } from '@/lib/packEmpire/builderHub'
 import {
   BUILDER_FORMATS,
+  BUILDER_HUB_WORD,
   DIFFICULTIES,
   DIFFICULTY_LOOK,
   FORMAT_LOOK,
@@ -42,7 +43,7 @@ export function BoardPicker({
   viewerId,
 }: {
   boards: HubBoard[]
-  /** Each of today's runs' best card, by run id. */
+  /** Each of the span's runs' best card, by run id. */
   leaders: Record<string, Player>
   /** Three cards for each table, as its difficulty deals them, keyed format:diff. */
   hands: Record<string, Player[]>
@@ -124,11 +125,11 @@ export function BoardPicker({
               </header>
               <div className="pe-bp-stats">
                 <span className="pe-bh-stat">
-                  <small>Top Today</small>
+                  <small>Top {BUILDER_HUB_WORD}</small>
                   {top ? <b>{top.score.toLocaleString()}</b> : <em>Nobody yet</em>}
                 </span>
                 <span className="pe-bh-stat">
-                  <small>Runs Today</small>
+                  <small>Runs {BUILDER_HUB_WORD}</small>
                   <b>{(pick?.runsToday ?? 0).toLocaleString()}</b>
                 </span>
                 {signedIn && (
@@ -155,13 +156,13 @@ export function BoardPicker({
       {pick && (
         <section className="pe-sec" id="today">
           <div className="pe-sec-head">
-            <span className="pe-sec-num">§ 02 · Today</span>
-            <span className="pe-sec-title">Top runs today</span>
+            <span className="pe-sec-num">§ 02 · {BUILDER_HUB_WORD}</span>
+            <span className="pe-sec-title">Top Runs {BUILDER_HUB_WORD}</span>
             <span className="pe-sec-meta">Resets midnight</span>
           </div>
           {pick.today.length === 0 ? (
             <p className="pe-empty pe-bh-none">
-              Nobody has posted a {label} run today. The first one takes the top spot.
+              Nobody has posted a {label} run {BUILDER_HUB_WORD.toLowerCase()}. The first one takes the top spot.
             </p>
           ) : (
             <div className="pe-top pe-bh-list">

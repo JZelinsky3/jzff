@@ -10619,7 +10619,13 @@ a.pe-lt-row:hover {
 /* The board's Classic / Mystery switch: links, so aria-current is the state. */
 .pe-brd-fmt {
   --pe-mys: #a99cf5;
-  margin: 1.2rem 0 0.7rem;
+  margin: 1.2rem 0 0.55rem;
+}
+
+/* The difficulties sit right under the format switch: the bar's own top margin
+   on top of this one left a gap that split them into two controls. */
+.pe-brd-fmt + .pe-brd-bar {
+  margin-top: 0;
 }
 
 @media (max-width: 700px) {

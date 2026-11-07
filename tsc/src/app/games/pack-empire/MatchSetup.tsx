@@ -44,6 +44,8 @@ export function MatchSetup<F extends string>({
   roomLabel,
   linkLine,
   friendLine,
+  switches,
+  named,
 }: {
   /** The mode's name, over the card. */
   kind: string
@@ -80,9 +82,14 @@ export function MatchSetup<F extends string>({
   roomLabel: string
   linkLine: string
   friendLine: string
+  /** More switches under the two, the way Versus has its Mystery switch. */
+  switches?: ReactNode
+  /** What the card calls the format when a switch changes it (Classic with Mystery
+      on is "Mystery"), in place of the picked format's own name and line. */
+  named?: { label: string; line: string }
 }) {
   const [sheet, setSheet] = useState(false)
-  const picked = formats.find((f) => f.id === format) ?? formats[0]
+  const picked = named ?? formats.find((f) => f.id === format) ?? formats[0]
 
   return (
     <section className="pe-sec">
@@ -101,6 +108,7 @@ export function MatchSetup<F extends string>({
             value={difficulty}
             onChange={onDifficulty}
           />
+          {switches}
         </div>
 
         <article className="pe-bp-card pe-match-card">

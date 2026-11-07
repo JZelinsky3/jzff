@@ -173,6 +173,9 @@ type DraftProps = {
   lock?: (picks: DraftPick[] | null, open: boolean) => Promise<BlindLock>
   /** Mystery Builder: packs in a row, mixed positions. */
   mystery?: boolean
+  /** Where the next pack in the line comes from, when it isn't the deal route: an
+      Even Mystery seat's, whose seed is both seats'. */
+  nextMystery?: () => Promise<{ cards: Player[]; reserve: string | null; picks: DraftPick[] }>
 }
 
 /** A blind draft's stand-in for the total: on Range the sum of what its cards
@@ -324,6 +327,7 @@ function LiveDraft({
   battles = null,
   lock,
   mystery = false,
+  nextMystery,
 }: DraftProps) {
   const [start] = useState(() => startingState(saveKey, fixedSeed))
   const [captain, setCaptain] = useState<number | null>(start.captain)
@@ -467,7 +471,7 @@ function LiveDraft({
   const filledSet = new Set(picks.map((p) => p.slot))
   /** Where a card from the open pack would go. Classic: the pack's own slot. */
   const slotFor = (p: Player): number =>
-    !mystery ? (stage?.slot ?? -1) : picks.length === 0 ? (captain ?? -1) : slotForCard(p.pos, filledSet)
+    !mystery ? (stage?.slot ?? -1) : picks.length === 0 && captain != null ? captain : slotForCard(p.pos, filledSet)
   const packCards = stage?.cards ?? null
   const usable = packCards ? packCards.filter((p) => slotFor(p) >= 0) : null
   const priceOf = (p: Player) => signingPrice(p, usable ?? [p], capLeft)
@@ -523,12 +527,13 @@ function LiveDraft({
   /** Mystery: the next pack in the line. If the server holds more picks than
       this device (a pick that landed as the page went away), the table catches up. */
   const openNext = useCallback(() => {
-    if (!seed || stage || captain == null) return
+    // An Even Mystery has no captain: every pack in its line is a wild one.
+    if (!seed || stage || (captain == null && !even)) return
     const n = picks.length
     setPackNo(n)
     setReserve(null)
-    open(n === 0 ? captain : n, async () => {
-      const out = await dealMystery(seed)
+    open(n === 0 && captain != null ? captain : n, async () => {
+      const out = await (nextMystery ? nextMystery() : dealMystery(seed))
       if (out.picks.length !== n) {
         adopt(seed, await sendLock(seed, null, showPick))
         throw new Error('Your run was a step behind, so it has been put back. Open the next pack.')
@@ -536,7 +541,7 @@ function LiveDraft({
       setReserve(out.reserve)
       return out.cards
     })
-  }, [seed, stage, captain, picks, open, adopt, sendLock, showPick])
+  }, [seed, stage, captain, even, picks, open, adopt, sendLock, showPick, nextMystery])
 
   const sign = useCallback(
     (i: number, price: number) => {
@@ -738,7 +743,7 @@ function LiveDraft({
                   draggable={false}
                 />
                 <span className="pe-nextpack-body">
-                  <b>{picks.length === 0 ? 'Captain Pack' : `Pack ${picks.length + 1} of ${SLOT_COUNT}`}</b>
+                  <b>{picks.length === 0 && captain != null ? 'Captain Pack' : `Pack ${picks.length + 1} of ${SLOT_COUNT}`}</b>
                   <span className="pe-nextpack-pips" aria-hidden>
                     {Array.from({ length: SLOT_COUNT }, (_, i) => (
                       <i key={i} className={i < picks.length ? 'done' : i === picks.length ? 'now' : undefined} />
@@ -767,9 +772,9 @@ function LiveDraft({
       {stage && (
         <PackStage
           stage={stage}
-          tag={(mystery ? packNo === 0 : stage.slot === captain) ? { text: 'Captain pack', captain: true } : null}
+          tag={(mystery ? packNo === 0 && captain != null : stage.slot === captain) ? { text: 'Captain pack', captain: true } : null}
           wild={
-            mystery && packNo > 0
+            mystery && (packNo > 0 || captain == null)
               ? {
                   art: WILD_PACK_ART,
                   first: 'Mystery',

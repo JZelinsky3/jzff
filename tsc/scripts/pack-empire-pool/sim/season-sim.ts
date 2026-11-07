@@ -13,7 +13,7 @@ import { dealPack } from '../../../src/lib/packEmpire/deal'
 import { DEFENSES, SEASON_GAMES, defenseById, scheduleFor } from '../../../src/lib/packEmpire/defenses'
 import { LEAGUE_ORDINARY, SLOTS, STANDINGS_WEIGHTS, type Player } from '../../../src/lib/packEmpire/rules'
 import { benchCards, seasonCards, simCard } from '../../../src/lib/packEmpire/seasonCards'
-import { REF, bestSub, laneTotals, matchup, simGame, type SimCard } from '../../../src/lib/packEmpire/seasonSim'
+import { REF, bestSub, counterFor, laneTotals, matchup, simGame, type SimCard } from '../../../src/lib/packEmpire/seasonSim'
 
 const TEAMS = Number(process.argv[2] ?? 600)
 const SEASONS = Number(process.argv[3] ?? 200)
@@ -216,7 +216,7 @@ for (const a of deep) {
   const own = (cs: SimCard[], d: typeof lock, id: string) => {
     const tot = laneTotals(cs, d)
     const c = cs.find((x) => x.id === id)!
-    const counter = d.counters[c.arch.tag] ?? 1
+    const counter = counterFor(d, c)
     return (c.value * counter * (c.arch.lanes.short * d.lanes.short + c.arch.lanes.deep * d.lanes.deep)) / (tot.short + tot.deep)
   }
   diffs.push({ lock: own(withB, lock, b.id) / own(withA, lock, a.id) - 1, zone: own(withB, zone, b.id) / own(withA, zone, a.id) - 1, base: rel(base) })

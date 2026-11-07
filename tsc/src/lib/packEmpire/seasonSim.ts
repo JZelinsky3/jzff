@@ -21,14 +21,15 @@
 // plays. The archetype decides where it lands, which is why the same two rosters
 // can swap places from one front to the next.
 
-import type { Archetype, ArchetypeTag, Lane } from './archetypes'
+import type { Archetype, Lane } from './archetypes'
 import { rngFor, type Defense } from './defenses'
-import type { PoolKey } from './rules'
+import { RARITIES, type PoolKey, type Rarity } from './rules'
 
 export type SimCard = {
   id: string
   name: string
   pos: PoolKey
+  rarity: Rarity
   /** Index into SLOTS. */
   slot: number
   /** The card's score plus its half of every chemistry bond it's in. */
@@ -64,15 +65,26 @@ const TURNOVER = 0.1
 const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x))
 const sigmoid = (x: number) => 1 / (1 + Math.exp(-x))
 
-export function counterFor(d: Defense | null, tag: ArchetypeTag): number {
-  return d?.counters[tag] ?? 1
+/** How much of a front's counter reaches a card, by rarity. Better players adapt
+    (Joey): a front built to stop deep threats takes a common one out of the game
+    and only slows an Immortal, so a matchup decides between cards that are close,
+    never a common over a dynasty. */
+export const ADAPT: Record<Rarity, number> = { common: 1, rare: 0.9, dynasty: 0.75, transcendent: 0.6, immortal: 0.5, canton: 0.4 }
+
+export function counterFor(d: Defense | null, c: Pick<SimCard, 'arch' | 'rarity'>): number {
+  const raw = d?.counters[c.arch.tag] ?? 1
+  return 1 + (raw - 1) * ADAPT[c.rarity]
 }
+
+/** The rarity rungs between two cards, for the bench rule below. */
+const rung = (r: Rarity) => RARITIES.indexOf(r)
+const CLOSE = 0.85
 
 /** Lane totals for an eleven, with a front's counters applied if one's given. */
 export function laneTotals(cards: SimCard[], d: Defense | null = null): TeamLanes {
   const out: TeamLanes = { run: 0, short: 0, deep: 0, redZone: 0, protect: 0 }
   for (const c of cards) {
-    const v = c.value * counterFor(d, c.arch.tag)
+    const v = c.value * counterFor(d, c)
     for (const k of Object.keys(out) as Lane[]) out[k] += v * c.arch.lanes[k]
   }
   return out
@@ -200,7 +212,7 @@ const fantasy = (l: BoxLine) =>
 export function simGame(cards: SimCard[], d: Defense, seed: string): GameResult {
   const m = matchup(cards, d)
   const rnd = rngFor(`game|${seed}`)
-  const v = (c: SimCard, lane: Lane) => c.value * counterFor(d, c.arch.tag) * c.arch.lanes[lane]
+  const v = (c: SimCard, lane: Lane) => c.value * counterFor(d, c) * c.arch.lanes[lane]
 
   const skill = cards.filter((c) => !LINE.has(c.pos))
   const line = cards.filter((c) => LINE.has(c.pos))
@@ -312,13 +324,16 @@ export function slotFits(pos: PoolKey, slot: number, slotPools: PoolKey[]): bool
 export type Sub = { benchId: string; slot: number; outId: string; gain: number }
 
 /** The one swap from the bench that helps most against this front, if any helps
-    by half a point or more of projection. */
+    by half a point or more of projection. A card of a lower rarity only when it's
+    within 15% of the man's value (Joey: the matchup decides between players who
+    are close; nobody benches a dynasty for a common, whatever the front). */
 export function bestSub(cards: SimCard[], bench: SimCard[], d: Defense, slotPools: PoolKey[]): Sub | null {
   const now = matchup(cards, d).expected
   let best: Sub | null = null
   for (const b of bench) {
     for (const c of cards) {
       if (!slotFits(b.pos, c.slot, slotPools)) continue
+      if (rung(b.rarity) < rung(c.rarity) && b.value < c.value * CLOSE) continue
       const next = cards.map((x) => (x.id === c.id ? { ...b, slot: c.slot } : x))
       const gain = matchup(next, d).expected - now
       if (gain >= 0.5 && (!best || gain > best.gain)) best = { benchId: b.id, slot: c.slot, outId: c.id, gain }
@@ -351,8 +366,8 @@ export function scout(cards: SimCard[], bench: SimCard[], d: Defense, line: numb
     line,
     passShare: m.mix.short + m.mix.deep,
     lanes,
-    stopped: cards.filter((c) => counterFor(d, c.arch.tag) < 1).map((c) => c.id),
-    helped: cards.filter((c) => counterFor(d, c.arch.tag) > 1).map((c) => c.id),
+    stopped: cards.filter((c) => counterFor(d, c) < 1).map((c) => c.id),
+    helped: cards.filter((c) => counterFor(d, c) > 1).map((c) => c.id),
     pocket: m.pocket,
     sub: bestSub(cards, bench, d, slotPools),
   }

@@ -1,7 +1,7 @@
 // /games/pack-empire/builder
 //
 // Empire Builder's front page: both ways to open the packs, all four difficulties,
-// where each board stands today and where you stand on it, as one picker
+// where each board stands this week (or today: BUILDER_HUB_SPAN) and where you stand on it, as one picker
 // (BoardPicker). The table itself is /play/, which this page sends you to
 // already set up.
 
@@ -17,6 +17,7 @@ import { loadBuilderHub, type HubBoard } from '@/lib/packEmpire/builderHub'
 import { peMeta } from '@/lib/packEmpire/meta'
 import {
   BUILDER_FORMATS,
+  BUILDER_HUB_WORD,
   DIFFICULTIES,
   RARITIES,
   RARITY_LOOK,
@@ -55,12 +56,12 @@ const here = (b: { diff: Difficulty; format: BuilderFormat }) => `/games/pack-em
 
 type Lead = { b: HubBoard; r: HubBoard['today'][number] }
 
-/** The best run anyone has posted today on any board. */
+/** The best run anyone has posted in the span (today, or this week) on any board. */
 function bestToday(boards: HubBoard[]): Lead | null {
   return boards.flatMap((b) => b.today.slice(0, 1).map((r) => ({ b, r }))).sort((x, y) => y.r.score - x.r.score)[0] ?? null
 }
 
-/** The best run today, for the top of the page: who, on which board, the card that
+/** The best run of the span, for the top of the page: who, on which board, the card that
     led it, and the eleven by rarity, a pip a card, best first. */
 function Leader({ lead, led, makeup }: { lead: Lead | null; led: Player | undefined; makeup: Partial<Record<Rarity, number>> }) {
   if (!lead) return null
@@ -69,7 +70,7 @@ function Leader({ lead, led, makeup }: { lead: Lead | null; led: Player | undefi
     <Link href={here(lead.b)} scroll={false} className="pe-bh-lead">
       <span className="pe-bh-lead-top">
         <span className="pe-bh-lead-score">
-          <small>Best Today</small>
+          <small>Best {BUILDER_HUB_WORD}</small>
           <b>{lead.r.score.toLocaleString()}</b>
         </span>
         <TierBadge score={lead.r.score} />

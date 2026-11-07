@@ -50,7 +50,7 @@ export default async function VersusLobby() {
           : c.status !== 'done' && c.yourScore == null
             ? { label: 'Your draft', color: '#e8a84b' }
             : STATUS[c.status],
-        format: formatLine(c.format, c.difficulty, true),
+        format: formatLine(c.format, c.difficulty, true, c.mystery),
         done: c.status === 'done',
         yours: c.yourScore,
         theirs: c.theirScore,

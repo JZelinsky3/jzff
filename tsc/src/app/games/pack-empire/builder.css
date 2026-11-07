@@ -56,16 +56,14 @@
 .pe-bp-go .pe-push { flex: 1; max-width: 16rem; }
 .pe-bp-go .pe-link { font-family: var(--pe-cond); font-weight: 700; font-size: .86rem; letter-spacing: .08em; text-transform: uppercase; }
 
-/* The table: three cards on a lit felt, alone in the middle on Empire Builder's
-   picker, between two seats on Versus and Mega Draft's (.pe-bp-seat below).
+/* The table: three cards in the middle of a lit felt, alone on Empire Builder's
+   picker, between two seats on Versus, Mega Draft and League's (.pe-bp-seat below).
    Static apart from the deal-in, which is transform and opacity. */
 .pe-bp-table { position: relative; display: block; min-height: 16rem; overflow: hidden; border: 1px solid var(--pe-line-soft); border-radius: 8px; background: radial-gradient(ellipse 80% 55% at 50% 100%, color-mix(in srgb, var(--fc) 16%, transparent), transparent 72%), linear-gradient(180deg, #12110f 0%, #0d0c0a 100%); }
 .pe-bp-table::after { content: ''; position: absolute; left: 6%; right: 6%; bottom: 1.6rem; height: 1px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--fc) 45%, transparent), transparent); }
-.pe-bp-glow { position: absolute; left: 50%; top: 46%; width: 15rem; height: 13rem; margin: -6.5rem 0 0 -7.5rem; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--fc) 26%, transparent), transparent); }
-.pe-bp-hand { position: absolute; left: 50%; bottom: 1.15rem; display: flex; align-items: flex-end; transform: translateX(-50%); }
-/* No seats: the hand stands in the middle of the felt, the glow right behind it. */
-.pe-bp-table--solo .pe-bp-hand { top: 50%; bottom: auto; transform: translate(-50%, -50%); }
-.pe-bp-table--solo .pe-bp-glow { top: 50%; }
+.pe-bp-glow { position: absolute; left: 50%; top: 50%; width: 15rem; height: 13rem; margin: -6.5rem 0 0 -7.5rem; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--fc) 26%, transparent), transparent); }
+/* The hand stands in the middle of the felt, the glow right behind it, on every table. */
+.pe-bp-hand { position: absolute; left: 50%; top: 50%; display: flex; align-items: flex-end; transform: translate(-50%, -50%); }
 .pe-bp-held { position: relative; margin: 0 -1rem; }
 .pe-bp-held:nth-child(1) { transform: translateY(.5rem) rotate(-11deg); }
 .pe-bp-held:nth-child(2) { z-index: 2; transform: translateY(-.4rem); }
@@ -73,13 +71,18 @@
 .pe-bp-held .pe-card { --pe-cs: .7; cursor: default; animation: pe-bp-deal .45s cubic-bezier(.2, 1.25, .4, 1) calc(var(--n) * 70ms) backwards; }
 @keyframes pe-bp-deal { from { opacity: 0; transform: translateY(28px) scale(.9); } }
 .pe-bp-tag { position: absolute; left: 50%; top: .75rem; z-index: 3; transform: translateX(-50%); padding: .2rem .65rem; border: 1px solid color-mix(in srgb, var(--fc) 45%, transparent); border-radius: 999px; background: rgba(10, 9, 8, .75); font-family: var(--mono); font-size: .52rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; color: var(--fc); }
-/* A player either side of the hand: you on the left, whoever you're about to play on the right. */
-.pe-bp-seat { position: absolute; bottom: 2.3rem; z-index: 1; display: grid; justify-items: center; gap: .35rem; }
+/* A player either side of the hand, level with it: you on the left in the mode's
+   colour, whoever you're about to play on the right, dashed, a question mark on
+   their shoulder. A nameplate under each. */
+.pe-bp-seat { position: absolute; top: 50%; z-index: 1; display: grid; justify-items: center; gap: .45rem; transform: translateY(-50%); }
 .pe-bp-seat.l { left: 7%; }
 .pe-bp-seat.r { right: 7%; }
-.pe-bp-seat i { display: grid; place-items: center; width: 2.9rem; height: 2.9rem; border: 2px solid var(--fc); border-radius: 50%; background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--fc) 30%, #1a1814), #12110f 75%); box-shadow: 0 0 18px color-mix(in srgb, var(--fc) 30%, transparent); font-family: var(--serif); font-style: italic; font-size: 1.35rem; line-height: 1; color: var(--pe-ink); }
-.pe-bp-seat.r i { border-style: dashed; color: var(--pe-ink-soft); }
-.pe-bp-seat small { font-family: var(--mono); font-size: .5rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; white-space: nowrap; color: var(--pe-ink-mute); }
+.pe-bp-seat i { position: relative; display: grid; place-items: center; width: 3.3rem; height: 3.3rem; border: 2px solid var(--fc); border-radius: 50%; background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--fc) 34%, #1a1814), #100f0d 72%); box-shadow: 0 0 0 4px color-mix(in srgb, var(--fc) 10%, transparent), 0 0 22px color-mix(in srgb, var(--fc) 32%, transparent); color: var(--pe-ink); }
+.pe-bp-seat i svg { width: 1.7rem; height: 1.7rem; }
+.pe-bp-seat.r i { border-style: dashed; border-color: color-mix(in srgb, var(--fc) 55%, var(--pe-line)); background: radial-gradient(circle at 50% 30%, #23211d, #100f0d 72%); box-shadow: 0 0 0 4px rgba(255, 255, 255, .03); color: var(--pe-ink-mute); }
+.pe-bp-seat.r i b { position: absolute; right: -.2rem; top: -.2rem; display: grid; place-items: center; width: 1.15rem; height: 1.15rem; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--fc) 55%, transparent); background: #12110f; font-family: var(--pe-cond); font-weight: 800; font-size: .7rem; line-height: 1; color: var(--fc); }
+.pe-bp-seat small { padding: .18rem .55rem; border: 1px solid color-mix(in srgb, var(--fc) 45%, transparent); border-radius: 999px; background: rgba(10, 9, 8, .78); font-family: var(--mono); font-size: .5rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; white-space: nowrap; color: var(--fc); }
+.pe-bp-seat.r small { border-color: var(--pe-line); color: var(--pe-ink-mute); }
 
 .pe-bh-stat { display: grid; justify-items: end; gap: .15rem; min-width: 4.4rem; }
 .pe-bh-stat small { font-family: var(--mono); font-size: .52rem; letter-spacing: .14em; text-transform: uppercase; color: var(--pe-ink-mute); white-space: nowrap; }
@@ -105,12 +108,12 @@
   .pe-bp-held .pe-card { --pe-cs: .5; }
   .pe-bp-held { margin: 0 -.75rem; }
   .pe-bp-table::after { bottom: 1.25rem; }
-  .pe-bp-hand { bottom: .9rem; }
   .pe-bp-glow { width: 11rem; height: 9rem; margin: -4.5rem 0 0 -5.5rem; }
-  .pe-bp-seat { bottom: 1.9rem; }
   .pe-bp-seat.l { left: 4%; }
   .pe-bp-seat.r { right: 4%; }
-  .pe-bp-seat i { width: 2.2rem; height: 2.2rem; font-size: 1rem; }
+  .pe-bp-seat i { width: 2.5rem; height: 2.5rem; }
+  .pe-bp-seat i svg { width: 1.3rem; height: 1.3rem; }
+  .pe-bp-seat small { padding: .14rem .4rem; font-size: .44rem; letter-spacing: .12em; }
   .pe-bp-fmt-line { font-size: .8rem; }
   .pe-bp-card-head h2 { font-size: 1.6rem; }
   .pe-bp-card-head p { font-size: .82rem; }

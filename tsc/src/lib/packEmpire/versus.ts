@@ -37,8 +37,8 @@
 import { randomInt } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { battlesFrom, drawBattles, settleBattles, type BattleOutcome } from './battles'
-import { blindRun, lockBlindPicks, matchesLocks, parseLockPicks } from './blindPicks'
-import { CPU_SKILL, cpuEye, mysteryPack, mysterySlot, newEvenSeed, newVersusSeed, priced, readSeed } from './deal'
+import { blindRun, lockBlindPicks, lockedPicks, matchesLocks, parseLockPicks } from './blindPicks'
+import { CPU_SKILL, cpuEye, evenMysteryPack, maskCard, mysteryPack, mysterySlot, newEvenSeed, newVersusSeed, priced, readSeed } from './deal'
 import { friendOf } from '@/lib/friends'
 import { hashKey, nameForUser, cleanGuestName, newId, isId } from './people'
 import { missReport, mysteryMissed } from './missed'
@@ -51,6 +51,7 @@ import {
   isBlind,
   isDifficulty,
   signingPrice,
+  slotForCard,
   tierFor,
   type BlindLock,
   type Chemistry,
@@ -143,6 +144,9 @@ export type VersusView = {
   /** The other seat is the CPU. */
   bot: boolean
   format: VersusFormat
+  /** Packs in a line of mixed positions: a Mystery format, or an Even game with
+      Mystery switched on (its seed says so). */
+  mystery: boolean
   difficulty: Difficulty
   /** The three categories, known before the first pack. */
   battles: string[] | null
@@ -192,6 +196,7 @@ function view(row: Row, you: Seat | null, viewerId: string | null): VersusView {
     reserved: empty && !!row.invited_id,
     bot: !!row.guest_bot,
     format: row.format,
+    mystery: row.format === 'mystery' || (!!row.even_seed && !!readSeed(row.even_seed)?.mystery),
     difficulty: row.difficulty,
     battles: row.battles,
     outcome: both ? (row.host_result?.battles ?? null) : null,
@@ -233,11 +238,17 @@ export function cpuDraft(seed: string, battleIds: string[] | null): VersusResult
   const capped = parsed.diff === 'cap'
   let left: number = parsed.even ? SALARY_CAP.shared : SALARY_CAP.own
   const mystery = parsed.mystery && parsed.captain != null
+  const evenMystery = parsed.even && parsed.mystery
   for (let n = 0; n < SLOT_COUNT; n++) {
     // Classic opens slot by slot; Mystery opens its line and each card takes its own slot.
-    const dealt = mystery ? mysteryPack(seed, parsed.captain as number, picks, parsed.versus).cards : seedPack(seed, parsed, n, taken)
+    const dealt = evenMystery
+      ? evenMysteryPack(seed, picks).cards
+      : mystery
+        ? mysteryPack(seed, parsed.captain as number, picks, parsed.versus).cards
+        : seedPack(seed, parsed, n, taken)
     const all = capped ? dealt.map(priced) : dealt
-    const slotOf = (p: Player) => (mystery ? mysterySlot(parsed.captain as number, picks, p.pos) : n)
+    const filled = new Set(picks.map((p) => p.slot))
+    const slotOf = (p: Player) => (evenMystery ? slotForCard(p.pos, filled) : mystery ? mysterySlot(parsed.captain as number, picks, p.pos) : n)
     const pack = all.filter((p) => slotOf(p) >= 0)
     if (pack.length === 0) return null
     // Under a cap it prices a dollar the way a good drafter does (hard-sim.ts).
@@ -295,12 +306,16 @@ export async function createVersus(
   friendship?: unknown,
   cpu = false,
   rawFormat?: unknown,
-  rawDifficulty?: unknown
+  rawDifficulty?: unknown,
+  rawMystery?: unknown
 ): Promise<{ ok: true; id: string } | Fail> {
   const db = createAdminClient()
-  const format: VersusFormat = rawFormat === 'even' || rawFormat === 'mystery' ? rawFormat : 'classic'
+  // Mystery is a switch on either format (Joey, 2026-11-07): on a Classic game it's
+  // the Mystery format as it always was, on an Even one it goes into the seed.
+  const mysteryOn = rawMystery === true || rawFormat === 'mystery'
+  const format: VersusFormat = rawFormat === 'even' ? 'even' : mysteryOn ? 'mystery' : 'classic'
   const difficulty: Difficulty = isDifficulty(rawDifficulty) ? rawDifficulty : 'open'
-  const even_seed = format === 'even' ? newEvenSeed(difficulty) : null
+  const even_seed = format === 'even' ? newEvenSeed(difficulty, mysteryOn) : null
   const battles = format === 'even' ? drawBattles(randomInt) : null
   let invite: Record<string, unknown> | null = null
   if (cpu) {
@@ -423,6 +438,31 @@ export async function lockVersusSeat(
   const picks = rawPicks == null ? null : parseLockPicks(rawPicks)
   if (rawPicks != null && !picks) return { ok: false, error: 'That lineup is incomplete.' }
   return lockBlindPicks(blindRun(seed, parsed, seat), seed, parsed, picks, open)
+}
+
+/** An Even Mystery seat's next pack. Both seats share the seed, so the deal route
+    can't tell them apart: this reads the picks on record under this seat's own key
+    and hands over the pack after the last of them, never one further along. */
+export async function versusMysteryPack(
+  id: string,
+  userId: string | null,
+  key: unknown
+): Promise<{ ok: true; cards: Player[]; reserve: string | null; picks: SoloPick[] } | Fail> {
+  const row = await load(id)
+  if (!row) return { ok: false, error: 'No such challenge.', status: 404 }
+  const seat = seatFor(row, userId, key)
+  if (!seat) return { ok: false, error: 'This is not your seat.', status: 403 }
+  const seed = seat === 'host' ? row.host_seed : row.guest_seed
+  const parsed = seed ? readSeed(seed) : null
+  if (!seed || !parsed || !parsed.even || !parsed.mystery) return { ok: false, error: 'That draft has no line of packs.' }
+  try {
+    const picks = await lockedPicks(blindRun(seed, parsed, seat))
+    if (picks.length >= SLOT_COUNT) return { ok: false, error: 'That draft is finished.' }
+    const { cards, reserve } = evenMysteryPack(seed, picks)
+    return { ok: true, cards: cards.map((c) => maskCard(c, parsed.diff)), reserve, picks }
+  } catch {
+    return { ok: false, error: 'The pack would not open. Try again.', status: 503 }
+  }
 }
 
 /** Both results with the Battles paid. Counted from `before`, so two seats
@@ -596,6 +636,8 @@ export type VersusListItem = {
   /** It's the second kind: removing it is declining it. */
   declines: boolean
   format: VersusFormat
+  /** Packs in a line: Mystery, or Even with Mystery on. */
+  mystery: boolean
   difficulty: Difficulty
 }
 
@@ -605,7 +647,7 @@ export async function listVersus(userId: string): Promise<VersusListItem[]> {
   const db = createAdminClient()
   const { data } = await db
     .from('pe_versus')
-    .select('id, status, created_at, host_id, host_name, host_result, guest_id, guest_name, guest_result, guest_seed, guest_bot, invited_id, format, difficulty')
+    .select('id, status, created_at, host_id, host_name, host_result, guest_id, guest_name, guest_result, guest_seed, guest_bot, invited_id, format, difficulty, even_seed')
     .or(`host_id.eq.${userId},guest_id.eq.${userId},invited_id.eq.${userId}`)
     .order('created_at', { ascending: false })
     .limit(50)
@@ -626,6 +668,7 @@ export async function listVersus(userId: string): Promise<VersusListItem[]> {
       canDelete: (you === 'host' && hostCanDelete(r)) || declines,
       declines,
       format: r.format,
+      mystery: r.format === 'mystery' || (!!r.even_seed && !!readSeed(r.even_seed)?.mystery),
       difficulty: r.difficulty,
     }
   })

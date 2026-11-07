@@ -5,7 +5,7 @@
 // it issued it to. An Even Versus goes through here as well: its seed has no
 // captain, and its eleven packs are laid out once for both seats.
 
-import { dealPack, evenPacks, mysteryPack, mysterySlot, priced, readSeed, type SeedInfo } from './deal'
+import { dealPack, evenMysteryPack, evenPacks, mysteryPack, mysterySlot, priced, readSeed, type SeedInfo } from './deal'
 import {
   SALARY_CAP,
   SLOTS,
@@ -17,6 +17,7 @@ import {
   chemistryFor,
   lineupScore,
   signingPrice,
+  slotForCard,
   tierFor,
   type Chemistry,
   type Difficulty,
@@ -53,6 +54,13 @@ export function seedPack(seed: string, info: SeedInfo, slot: number, taken: Iter
  * position (the captain pack's goes to the captain).
  */
 export function pickPack(seed: string, info: SeedInfo, before: SoloPick[], pick: SoloPick): { pack: Player[]; reserve: string | null; fits: boolean } {
+  // Even Mystery: the line both seats open, no captain, every card to the first
+  // open slot at its position.
+  if (info.even && info.mystery) {
+    const { cards, reserve } = evenMysteryPack(seed, before)
+    const card = cards.find((c) => c.id === pick.id)
+    return { pack: cards, reserve, fits: !!card && slotForCard(card.pos, new Set(before.map((p) => p.slot))) === pick.slot }
+  }
   if (!info.mystery || info.captain == null) {
     return { pack: seedPack(seed, info, pick.slot, before.map((p) => p.id)), reserve: null, fits: true }
   }
@@ -63,6 +71,10 @@ export function pickPack(seed: string, info: SeedInfo, before: SoloPick[], pick:
 
 /** What a Mystery cap run can pay: only cards with a slot to go to count. */
 function usableIn(info: SeedInfo, before: SoloPick[], pack: Player[]): Player[] {
+  if (info.even && info.mystery) {
+    const filled = new Set(before.map((p) => p.slot))
+    return pack.filter((c) => slotForCard(c.pos, filled) >= 0)
+  }
   if (!info.mystery || info.captain == null) return pack
   const captain = info.captain
   return pack.filter((c) => mysterySlot(captain, before, c.pos) >= 0)

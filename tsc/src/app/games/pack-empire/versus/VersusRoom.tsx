@@ -145,6 +145,12 @@ export function VersusRoom({
     [id, key]
   )
 
+  // An Even Mystery's packs come from this room: its seed is both seats'.
+  const evenMysteryPack = useCallback(async () => {
+    const out = await call({ action: 'pack', id, key })
+    return { cards: out.cards as Player[], reserve: (out.reserve as string | null) ?? null, picks: out.picks as DraftPick[] }
+  }, [id, key])
+
   // Held on to until it saves, so a dropped connection on the last pick is a
   // retry rather than a lost eleven.
   const [unsent, setUnsent] = useState<DraftDone | null>(null)
@@ -208,13 +214,13 @@ export function VersusRoom({
     const guest = view.guest.name
     return (
       <div className="pe-table-head">
-        <div className="pe-kicker">{formatLine(view.format, view.difficulty) ?? 'Versus Challenge'}</div>
+        <div className="pe-kicker">{formatLine(view.format, view.difficulty, false, view.mystery) ?? 'Versus Challenge'}</div>
         <h1 className="pe-table-title">
           {host} <span className="pe-em">vs</span> {guest ?? 'Anyone'}
         </h1>
       </div>
     )
-  }, [view.host.name, view.guest.name, view.format, view.difficulty])
+  }, [view.host.name, view.guest.name, view.format, view.difficulty, view.mystery])
 
   const even = view.format === 'even'
   const battled = !!view.battles?.length
@@ -513,9 +519,10 @@ export function VersusRoom({
           onDone={onDone}
           difficulty={view.difficulty}
           even={even}
-          mystery={view.format === 'mystery'}
+          mystery={view.mystery}
           battles={view.battles}
           lock={lockPicks}
+          nextMystery={even && view.mystery ? evenMysteryPack : undefined}
         />
       </div>
     )

@@ -66,6 +66,9 @@ export async function POST(req: NextRequest) {
     const seed = typeof body.seed === 'string' ? body.seed.trim().toUpperCase() : ''
     const parsed = readSeed(seed)
     if (!parsed) return bad('That run was not dealt here. Start a new one.')
+    // Both seats of an Even Mystery share its seed, so its packs come from the
+    // Versus room, which knows which seat is asking.
+    if (parsed.even && parsed.mystery) return bad('Open this pack from the challenge.')
 
     if (parsed.mystery && parsed.captain != null) {
       try {

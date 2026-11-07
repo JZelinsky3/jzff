@@ -1,36 +1,53 @@
-// Empire Builder's front page: every board at a glance, and today's best. SERVER ONLY.
+// Empire Builder's front page: every board at a glance, and the best of late. SERVER ONLY.
 //
 // Eight boards, Classic and Mystery at each difficulty. For each: the runs posted
-// since midnight Eastern, one per person, best first, and the viewer's best ever.
-// "Today" is the Daily's day, so both turn over at the same moment.
+// since the span began (BUILDER_HUB_SPAN: midnight Eastern today, or Monday's), one
+// per person, best first, and the viewer's best ever. The day is the Daily's day,
+// so both turn over at the same moment. The fields still say `today`: they hold
+// whichever span is on.
 
 import type { BestRow, RunDisplay } from '@/lib/minigames/leaderboard'
 import { publicNames } from '@/lib/minigames/boardIdentity'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { dayKey } from './daily'
-import { BUILDER_FORMATS, DIFFICULTIES, boardMode, type BuilderFormat, type Difficulty } from './rules'
+import { BUILDER_FORMATS, BUILDER_HUB_SPAN, DIFFICULTIES, boardMode, type BuilderFormat, type Difficulty } from './rules'
 
 export type HubBoard = {
   diff: Difficulty
   format: BuilderFormat
-  /** Today's best run by each person, best first. */
+  /** The span's best run by each person, best first. */
   today: BestRow[]
-  /** Every run posted today, repeats included. */
+  /** Every run posted in the span, repeats included. */
   runsToday: number
   /** The viewer's best ever on this board. */
   yourBest: number | null
 }
 
-/** When today began in New York, as an instant. */
-export function startOfToday(now = new Date()): Date {
-  const [y, m, d] = dayKey(now).split('-').map(Number)
+/** Midnight in New York on a date, as an instant. */
+function midnightET(y: number, m: number, d: number): Date {
   // Noon UTC on that date reads as 7 or 8 in the morning there: that gap is the offset.
   const noon = new Date(Date.UTC(y, m - 1, d, 12))
   const hour = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hourCycle: 'h23' }).format(noon))
   return new Date(Date.UTC(y, m - 1, d, 12 - hour))
 }
 
-/** Runs a board shows from today. */
+/** When today began in New York, as an instant. */
+export function startOfToday(now = new Date()): Date {
+  const [y, m, d] = dayKey(now).split('-').map(Number)
+  return midnightET(y, m, d)
+}
+
+/** When this week began in New York: Monday at midnight. */
+export function startOfWeek(now = new Date()): Date {
+  const [y, m, d] = dayKey(now).split('-').map(Number)
+  const back = (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7
+  const monday = new Date(Date.UTC(y, m - 1, d - back))
+  return midnightET(monday.getUTCFullYear(), monday.getUTCMonth() + 1, monday.getUTCDate())
+}
+
+const startOfSpan = () => (BUILDER_HUB_SPAN === 'week' ? startOfWeek() : startOfToday())
+
+/** Runs a board shows from the span. */
 const TODAY_TOP = 5
 
 type Row = {
@@ -55,7 +72,7 @@ export async function loadBuilderHub(viewerId: string | null): Promise<HubBoard[
       .eq('game', 'pack-empire')
       .eq('pool_id', 'site')
       .in('mode', modes)
-      .gte('created_at', startOfToday().toISOString())
+      .gte('created_at', startOfSpan().toISOString())
       .order('score', { ascending: false })
       .limit(1000),
     viewerId

@@ -74,6 +74,7 @@ import {
   type Weights,
   EVEN_CEILING,
   EVEN_CONTESTED_MARK,
+  EVEN_MYSTERY_MARK,
   EVEN_PLANTED_STAR,
   EVEN_THREE_AT_TOP,
   VERSUS_CAPTAIN_SHIFT,
@@ -197,10 +198,11 @@ export function newVersusSeed(captain: number, diff: Difficulty = 'open', myster
 }
 
 /** An Even Versus: both seats play this one seed, and there is no captain in
-    it. A different universe from every captain seed, so never reused for one. */
-export function newEvenSeed(diff: Difficulty): string {
+    it. A different universe from every captain seed, so never reused for one.
+    `mystery` is an Even Mystery: the same, in eleven wild packs. */
+export function newEvenSeed(diff: Difficulty, mystery = false): string {
   const mark = Object.keys(SEED_DIFF).find((k) => SEED_DIFF[k] === diff)
-  const body = randomChars(8) + EVEN_CONTESTED_MARK + mark
+  const body = randomChars(8) + (mystery ? EVEN_MYSTERY_MARK : EVEN_CONTESTED_MARK) + mark
   return body + encode(hmac(`seed|${body}`), 6)
 }
 
@@ -222,7 +224,10 @@ export function readSeed(seed: string): SeedInfo | null {
   const bodyLength = seed.length - 6
   const body = seed.slice(0, bodyLength)
   if (encode(hmac(`seed|${body}`), 6) !== seed.slice(bodyLength)) return null
-  if (seed[8] === EVEN_MARK || seed[8] === EVEN_CONTESTED_MARK) return seed.length === 16 ? { captain: null, diff: difficultyFromSeed(seed), even: true, versus: false, mystery: false } : null
+  if (seed[8] === EVEN_MARK || seed[8] === EVEN_CONTESTED_MARK || seed[8] === EVEN_MYSTERY_MARK) {
+    if (seed.length !== 16) return null
+    return { captain: null, diff: difficultyFromSeed(seed), even: true, versus: false, mystery: seed[8] === EVEN_MYSTERY_MARK }
+  }
   const at = ALPHABET.indexOf(seed[8])
   const versus = at >= VERSUS_CAPTAIN_SHIFT
   const captain = versus ? at - VERSUS_CAPTAIN_SHIFT : at
@@ -791,6 +796,60 @@ export function dailyPack(set: DailySet, captain: number | null, picks: DailyPic
   const reserve = set.reserves[need].find((c) => !taken.has(c.id))
   if (!reserve) return { cards: pack, reserve: null }
   return { cards: [...pack.slice(0, PACK_SIZE - 1), reserve], reserve: reserve.id }
+}
+
+// ============================================================
+// Even Mystery Versus
+// ============================================================
+
+const evenMysterySets = new Map<string, DailySet>()
+
+/**
+ * An Even Mystery's whole deal: eleven wild packs of five positions, laid out up
+ * front with no man twice, and a reserve line per position. Both seats open these
+ * same packs in the same order, so it's the Daily's deal off a Versus seed: Even's
+ * rich table (SHARED_WEIGHTS) and its hidden team, no captain, no traps.
+ */
+function evenMysterySet(seed: string): DailySet {
+  const hit = evenMysterySets.get(seed)
+  if (hit) return hit
+  const rnd = stream(`even-mystery:${seed}|deal`)
+  const used = new Set<string>()
+  const pools = Array.from({ length: SLOT_COUNT }, () => wildPools(rnd))
+  const wild: Player[][] = pools.map(() => [])
+
+  const packOrder = shuffled(Array.from({ length: SLOT_COUNT }, (_, i) => i), rnd)
+  const planted = plantedSeason(rnd).filter((c) => c.score < RARITY_FLOOR.transcendent || rnd() < EVEN_PLANTED_STAR)
+  for (const card of planted) {
+    const pack = packOrder.find((i) => !wild[i].length)
+    if (pack == null) break
+    if (!pools[pack].includes(card.pos)) pools[pack][Math.floor(rnd() * PACK_SIZE)] = card.pos
+    used.add(personOf(card))
+    wild[pack].push(card)
+  }
+  pools.forEach((list, i) => {
+    const needed = [...list]
+    const held = wild[i][0]
+    if (held) needed.splice(needed.indexOf(held.pos), 1)
+    for (const k of needed) drawInto(wild[i], POOL[k], 1, SHARED_WEIGHTS, used, rnd)
+  })
+
+  const reserves = {} as DailySet['reserves']
+  for (const k of POOL_KEYS) {
+    reserves[k] = []
+    drawInto(reserves[k], POOL[k], SLOTS.filter((s) => s.pool === k).length, RESERVE_WEIGHTS, used, rnd)
+  }
+  const set: DailySet = { wild: wild.map((p) => shuffled(p, rnd)), captains: {} as DailySet['captains'], reserves }
+  if (evenMysterySets.size >= SET_CACHE_SIZE) evenMysterySets.delete(evenMysterySets.keys().next().value as string)
+  evenMysterySets.set(seed, set)
+  return set
+}
+
+/** The pack an Even Mystery seat is on, given its own picks so far. The same for
+    both seats; only the reserve, when nothing fits a seat's open slots, can differ,
+    and it's the same card for anyone who needs that position at that pack. */
+export function evenMysteryPack(seed: string, picks: { slot: number; id: string }[]): MysteryPack {
+  return dailyPack(evenMysterySet(seed), null, picks)
 }
 
 // ============================================================
