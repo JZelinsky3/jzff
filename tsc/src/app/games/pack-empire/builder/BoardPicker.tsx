@@ -14,8 +14,6 @@ import {
   DIFFICULTIES,
   DIFFICULTY_LOOK,
   FORMAT_LOOK,
-  PACK_ART,
-  WILD_PACK_ART,
   boardLabel,
   builderQuery,
   playHref,
@@ -32,14 +30,6 @@ const board = (b: { diff: Difficulty; format: BuilderFormat }) => `/games/pack-e
 const FORMAT_BRIEF: Record<BuilderFormat, string> = {
   classic: 'A pack for every position, opened in any order you like.',
   mystery: 'Eleven packs of random positions. Plan ahead.',
-}
-
-/** Classic's three share a position and stand in front of that position's packs;
-    Mystery's are three positions in front of its black ones. */
-function BuilderArt({ format, cards }: { format: BuilderFormat; cards: Player[] }) {
-  const pos = cards[0]?.pos
-  const pack = format === 'mystery' || !pos ? WILD_PACK_ART : PACK_ART[pos]
-  return <TableArt cards={cards} packs={[pack, pack]} mystery={format === 'mystery'} />
 }
 
 export function BoardPicker({
@@ -157,7 +147,7 @@ export function BoardPicker({
                 </Link>
               </div>
             </div>
-            <BuilderArt key={`${format}:${diff}`} format={format} cards={hands[`${format}:${diff}`] ?? []} />
+            <TableArt key={`${format}:${diff}`} cards={hands[`${format}:${diff}`] ?? []} />
           </article>
         </div>
       </section>

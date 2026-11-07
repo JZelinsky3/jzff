@@ -97,7 +97,7 @@ export async function LockerChrome({
               <circle cx="16.6" cy="9.4" r="2.5" />
               <path d="M15.6 14.4c2.6-.3 4.7 1.4 5.2 4.3" />
             </svg>
-            <span>Friends</span>
+            <span>Social</span>
           </FriendsMenu>
         )}
         <Link href={signedIn ? '/dashboard' : '/login'} className="pe-nav-cta">

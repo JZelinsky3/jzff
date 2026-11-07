@@ -363,7 +363,7 @@ function ManRow({ man, mobile, onOpen }: { man: BinderMan; mobile: boolean; onOp
   )
 }
 
-function Tile({ card, onClick }: { card: BinderCard; onClick: () => void }) {
+export function Tile({ card, onClick }: { card: BinderCard; onClick: () => void }) {
   const rc = RARITY_LOOK[card.rarity]
   const img = useFace(owned(card) ? card : { id: '', img: null })
   const style = { '--rc': rc.color, '--rg': rc.glow, '--art': rc.art } as React.CSSProperties

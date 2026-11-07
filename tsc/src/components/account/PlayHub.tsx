@@ -263,6 +263,9 @@ export function PlayHub({
                       <button type="button" className={styles.btn} disabled={!!busy} onClick={() => challenge(f)}>
                         {busy === `ch:${f.id}` ? 'Opening' : 'Challenge'}
                       </button>
+                      <Link href={`/games/pack-empire/profile/${f.id}/`} className={styles.btnGhost}>
+                        Profile
+                      </Link>
                       <button type="button" className={styles.btnQuiet} onClick={() => setArming(f.id)}>
                         Remove
                       </button>

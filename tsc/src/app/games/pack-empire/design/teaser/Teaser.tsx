@@ -7,6 +7,8 @@
 //
 // Every mark reads the reel's own clock, which stops while paused, and the
 // frame pauses its CSS animations with it, so a pause holds the picture exactly.
+// Play waits on the ready screen until every picture the reel shows has been
+// fetched and decoded (useWarm), so the first loop runs as clean as the rest.
 //
 // Space or click plays and pauses, the arrows step a beat, R restarts, H hides
 // the controls. Stepping while paused plays that beat through and holds on its
@@ -14,8 +16,11 @@
 // ?ar=916), so zoom the browser in for a bigger capture and everything scales.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { SLOT_COUNT, tierFor, type Chemistry, type Player } from '@/lib/packEmpire/rules'
-import { BOND_LABEL, CaptainMark, Field, Ladder, PackCard, bondKind } from '../../cards'
+import { PACK_ART, RARITY_LOOK, SLOT_COUNT, WILD_PACK_ART, pearlLogo, teamLogo, tierFor, type Chemistry, type Player, type Rarity } from '@/lib/packEmpire/rules'
+import type { BinderCard } from '@/lib/packEmpire/binder'
+import { Tile } from '../../binder/Binder'
+import { BOND_LABEL, Field, Ladder, PackCard, bondKind } from '../../cards'
+import { useFaces } from '../../faces'
 import { ChemLinks } from '../../report'
 import { RipBurst } from '../../rip'
 
@@ -26,10 +31,65 @@ export type TeaserData = {
   rip: Player[]
   vsA: Player
   vsB: Player
-  blind: Player
-  range: Player
+  /** Ball Knower's three: each as the mode deals it, then what it really was. */
+  knower: { blind: Player; real: Player }[]
   wall: Player[]
   packs: { captain: string; wild: string; rb: string; wr: string; te: string }
+  /** The captain pack's odds per card against an ordinary pack's. */
+  odds: { rarity: Rarity; normal: number; captain: number }[]
+  /** A page of the binder: each man's seasons and how often each was kept, the
+      two that file in during the beat, and the set's summary by rarity. */
+  binder: {
+    men: { card: Player; pulls: number }[][]
+    fresh: string[]
+    rarities: { rarity: Rarity; of: number; owned: number }[]
+  }
+  /** Pictures only the CSS asks for, warmed with everything else before play. */
+  preload: string[]
+}
+
+/** Every picture the reel will show: faces, logos, pack art, the backdrop. */
+function reelImages(data: TeaserData, faces: Record<string, string | undefined>): string[] {
+  const cards = [
+    ...data.lineup,
+    ...data.rip,
+    data.vsA,
+    data.vsB,
+    ...data.knower.map((c) => c.real),
+    ...data.wall,
+    ...data.binder.men.flat().map((c) => c.card),
+  ]
+  const urls = new Set<string>(data.preload)
+  for (const p of cards) {
+    for (const u of [faces[p.id] ?? p.img, teamLogo(p), pearlLogo(p)]) if (u) urls.add(u)
+  }
+  for (const u of [...Object.values(PACK_ART), WILD_PACK_ART]) urls.add(u)
+  urls.add('/games/pack-empire/teaser/stadium-wide.webp')
+  urls.add('/games/pack-empire/teaser/stadium-tall.webp')
+  return [...urls]
+}
+
+/** Fetches and decodes every picture before the first play, so no beat stalls
+    on one the first time it shows. Holds the images so the browser keeps them. */
+function useWarm(urls: string[]): number {
+  const [done, setDone] = useState(0)
+  const held = useRef<HTMLImageElement[]>([])
+  useEffect(() => {
+    let live = true
+    // One slow picture can't hold the reel: each gets six seconds, then counts.
+    held.current = urls.map((src) => {
+      const img = new Image()
+      img.src = src
+      Promise.race([img.decode(), new Promise((r) => window.setTimeout(r, 6000))])
+        .catch(() => {})
+        .finally(() => live && setDone((n) => n + 1))
+      return img
+    })
+    return () => {
+      live = false
+    }
+  }, [urls])
+  return done
 }
 
 /** The reel's clock: ms played so far, not counting time spent paused. */
@@ -94,7 +154,7 @@ function Caption({ kick, line, lead, sub, tone }: { kick: string; line: React.Re
 // ── The beats ─────────────────────────────────────────────────
 
 function Intro() {
-  const step = useSteps([500, 1300, 1900, 2500])
+  const step = useSteps([500, 1300, 1900])
   return (
     <div className="tz-beat tz-intro">
       <div className="tz-intro-glow" />
@@ -102,9 +162,9 @@ function Intro() {
         <span className="tz-logo-a">Pack</span> <span className="tz-logo-b pe-em">Empire.</span>
       </h1>
       <div className="tz-intro-words">
-        {step >= 1 && <span>Eleven packs.</span>}
-        {step >= 2 && <span>Five cards each.</span>}
-        {step >= 3 && <span className="hot">Keep one.</span>}
+        {step >= 1 && <span>Open packs.</span>}
+        {step >= 2 && <span>Collect new cards.</span>}
+        {step >= 3 && <span className="hot">Build the best lineup.</span>}
       </div>
     </div>
   )
@@ -112,11 +172,54 @@ function Intro() {
 
 const EMPTY: (Player | null)[] = Array(SLOT_COUNT).fill(null)
 
-function Captain() {
+/** The hub's rounding: tiny odds keep a decimal so they don't read as nothing. */
+const pct = (n: number) => `${n < 0.001 ? (n * 100).toFixed(2) : n < 0.1 ? (n * 100).toFixed(1) : Math.round(n * 100)}%`
+
+/** When the captain's odds start to climb, and how long each row takes. */
+const ODDS_AT = 1500
+const ODDS_MS = 700
+
+/** One rarity's chance, counting from an ordinary pack's up to the captain's,
+    its bar filling from the same share to full. */
+function OddsRow({ rarity, normal, captain, i }: TeaserData['odds'][number] & { i: number }) {
+  const at = ODDS_AT + i * 120
+  // Counted in hundredths of a percent, so the small ones move too.
+  const shown = useCount(Math.round(captain * 1e4), ODDS_MS, at, Math.round(normal * 1e4)) / 1e4
+  const up = useSteps([at + ODDS_MS]) >= 1
+  const style = {
+    '--rc': RARITY_LOOK[rarity].color,
+    '--from': normal / captain,
+    '--d': `${at}ms`,
+  } as React.CSSProperties
+  return (
+    <div className="tz-odds-row" style={style} data-up={up ? '' : undefined}>
+      <span className="tz-odds-name">{RARITY_LOOK[rarity].label}</span>
+      <span className="tz-odds-bar">
+        <i />
+      </span>
+      <b>{pct(shown)}</b>
+      <span className="tz-odds-x">{Math.round(captain / normal)}×</span>
+    </div>
+  )
+}
+
+function Captain({ odds }: { odds: TeaserData['odds'] }) {
   const step = useSteps([1100, 1700])
+  // 1 the captain's picked, and its odds climb  2 the rest of the field drops back
   return (
     <div className="tz-beat tz-split">
-      <Caption kick="Step one" line={<>Pick a <em>captain.</em></>} sub="Its pack deals off the captain table: five times the immortals." />
+      <div className="tz-cap-col">
+        <Caption kick="Step one" line={<>Pick a <em>captain.</em></>} sub="Your captain's pack gets better odds, so you're more likely to pull a rarer card." />
+        <div className="tz-odds">
+          <div className="tz-odds-head">
+            <span>{step >= 1 ? 'QB captain pack' : 'Ordinary QB pack'}</span>
+            <span>Chance per card</span>
+          </div>
+          {odds.map((o, i) => (
+            <OddsRow key={o.rarity} {...o} i={i} />
+          ))}
+        </div>
+      </div>
       <div className="pe-turf tz-turf">
         <Field
           lineup={EMPTY}
@@ -128,11 +231,6 @@ function Captain() {
             dim: step >= 2 && i !== 0,
           })}
         />
-        {step >= 1 && (
-          <div className="tz-capstamp">
-            <CaptainMark inline /> Captain
-          </div>
-        )}
       </div>
     </div>
   )
@@ -187,9 +285,23 @@ function Rip({ cards, art }: { cards: Player[]; art: string }) {
 
 function Chem({ lineup, chem }: { lineup: Player[]; chem: Chemistry }) {
   const bonds = chem.bonds
-  const step = useSteps(bonds.map((_, i) => 700 + i * Math.min(260, 2400 / Math.max(1, bonds.length))))
+  const step = useSteps(bonds.map((_, i) => 700 + i * Math.min(360, 3400 / Math.max(1, bonds.length))))
   const shown = bonds.slice(0, step).reduce((s, b) => s + b.points, 0)
   const kinds = new Set(bonds.map(bondKind))
+  // The key sits under the total on 16:9 and under the field on 9:16; the CSS
+  // shows one of the two.
+  const key = (where: 'side' | 'below') => (
+    <div className={`tz-chem-key tz-chem-key--${where} pe-rep-key`}>
+      {(['real', 'same', 'rival'] as const)
+        .filter((x) => kinds.has(x))
+        .map((x) => (
+          <span key={x} data-kind={x}>
+            <i />
+            {BOND_LABEL[x]}
+          </span>
+        ))}
+    </div>
+  )
   return (
     <div className="tz-beat tz-split">
       <div className="tz-cap-col">
@@ -199,16 +311,7 @@ function Chem({ lineup, chem }: { lineup: Player[]; chem: Chemistry }) {
           {k(Math.abs(shown))}
           <small>Chemistry</small>
         </div>
-        <div className="tz-chem-key pe-rep-key">
-          {(['real', 'same', 'rival'] as const)
-            .filter((x) => kinds.has(x))
-            .map((x) => (
-              <span key={x} data-kind={x}>
-                <i />
-                {BOND_LABEL[x]}
-              </span>
-            ))}
-        </div>
+        {key('side')}
       </div>
       <div className="pe-turf tz-turf tz-turf--full">
         {/* Mounted with the first bond, once the beat has stopped scaling in:
@@ -217,6 +320,7 @@ function Chem({ lineup, chem }: { lineup: Player[]; chem: Chemistry }) {
         {step >= 1 && <ChemLinks bonds={bonds} lineup={lineup} count={step} />}
         <Field lineup={lineup} view={(i) => ({ clickable: false, captain: i === 0 })} />
       </div>
+      {key('below')}
     </div>
   )
 }
@@ -265,8 +369,8 @@ function Mystery({ art }: { art: string }) {
       <Caption
         kick="Empire Builder"
         line={<>Mystery <em>Packs.</em></>}
-        lead="You never know what's inside."
-        sub="Eleven packs, five random positions each. Plan for what you still need."
+        lead="Plan your lineup."
+        sub="You never know who shows up next. Fill a spot too early and a better card might come out later."
         tone="#a99cf5"
       />
       <div className="tz-mys">
@@ -279,24 +383,49 @@ function Mystery({ art }: { art: string }) {
   )
 }
 
-function BallKnower({ blind, range, real }: { blind: Player; range: Player; real: Player }) {
-  const step = useSteps([1300])
+/** Ball Knower, played the way the site plays it: a tap takes the middle card
+    (Yours, and the other two drop back), then the pack turns over, the two you
+    passed first and the one you took last. */
+const BK_TAP = 950
+const BK_PICK = 1100
+const BK_KEEP = 1
+/** When each card starts to turn. */
+const BK_TURN = [1700, 2600, 2150]
+const BK_HALF = 180
+
+function BallKnower({ cards }: { cards: { blind: Player; real: Player }[] }) {
+  // Two marks a card: it starts to turn, then its face swaps while it's edge-on.
+  const marks = [BK_TAP, BK_PICK, ...BK_TURN.flatMap((t) => [t, t + BK_HALF])].sort((a, b) => a - b)
+  const step = useSteps(marks)
+  const passed = (ms: number) => step > marks.indexOf(ms)
+  const picked = passed(BK_PICK)
   return (
     <div className="tz-beat tz-split">
       <Caption
         kick="Hard mode"
         line={<>Ball <em>Knower.</em></>}
         lead="Know ball?"
-        sub="Just a name and a season. No value, no team. You remember the rest."
+        sub="Just a name and a season. No value, no team. Pick the right one."
         tone="#4fc3b0"
       />
       <div className="tz-bk">
-        <div className="tz-bk-card tz-bk-side">
-          <PackCard player={range} revealed index={0} still disabled />
-        </div>
-        <div className="tz-bk-card">
-          <PackCard player={step >= 1 ? real : blind} revealed index={0} burst={step >= 1} disabled />
-        </div>
+        {cards.map((c, i) => {
+          const turned = passed(BK_TURN[i] + BK_HALF)
+          const mine = i === BK_KEEP
+          return (
+            <div
+              key={c.real.id}
+              className="tz-bk-card"
+              style={{ '--k': i } as React.CSSProperties}
+              data-passed={picked && !mine && !turned ? '' : undefined}
+            >
+              <div className="tz-bk-flip" data-turn={passed(BK_TURN[i]) ? '' : undefined}>
+                <PackCard player={turned ? c.real : c.blind} revealed index={0} kept={picked && mine} burst={turned} disabled />
+              </div>
+              {mine && passed(BK_TAP) && <span className="tz-tap" aria-hidden />}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -321,7 +450,7 @@ function Faceoff({ a, b }: { a: Player; b: Player }) {
         <div className="tz-vs-card">
           <PackCard player={b} revealed index={0} still disabled />
         </div>
-        <span className="tz-vs-name">Friend</span>
+        <span className="tz-vs-name">Opponent</span>
         <b>{k(them)}</b>
       </div>
     </div>
@@ -338,8 +467,8 @@ function Versus({ a, b, half }: { a: Player; b: Player; half: number }) {
         <Caption
           kick="Two players"
           line={<>Versus <em>Challenge.</em></>}
-          lead="Same packs. Head to head."
-          sub="Send a friend the link. The best offense wins."
+          lead="Challenge a friend or play the CPU."
+          sub="Classic, Mystery or Even, on any difficulty. Draft your team and go head to head."
           tone="#e2725b"
         />
       ) : (
@@ -396,8 +525,8 @@ function League() {
       <Caption
         kick="4 to 12 players"
         line={<>League <em>Mode.</em></>}
-        lead="Eight weeks. One champion."
-        sub="Win a week, open a better pack. Then a Gauntlet, then a Final."
+        lead="One season. One champion."
+        sub="Open packs every week, lock in your best players and keep improving your team to take home the trophy."
         tone="#b48cf0"
       />
       <div className="tz-league">
@@ -425,7 +554,7 @@ function League() {
 }
 
 function Climb({ total }: { total: number }) {
-  const shown = useCount(total, 2600, 300)
+  const shown = useCount(total, 3000, 300)
   const tier = tierFor(shown)
   const landed = shown === total
   return (
@@ -439,6 +568,95 @@ function Climb({ total }: { total: number }) {
       </div>
       <div className="tz-ladder">
         <Ladder score={shown} climb landed={landed} />
+      </div>
+    </div>
+  )
+}
+
+/** A card as the binder holds it: the whole card once it's been kept, only what
+    it's chasing while it's still face down. */
+function binderCard(card: Player, pulls: number): BinderCard {
+  const site = { pulls: 0, oneIn: 0 }
+  return pulls > 0
+    ? { ...card, pulls, firstAt: '', site }
+    : { id: card.id, name: card.name, pos: card.pos, year: card.year, club: card.club, rarity: card.rarity, pulls: 0, site }
+}
+
+/** When each new card starts to turn over into the binder. */
+const BD_FILE = [1500, 2500]
+const BD_HALF = 180
+
+/** The binder: a page of it, six men and their seasons, then two cards you kept
+    file in, a Transcendent and then a Canton, and the counts go up. */
+function BinderBeat({ binder }: { binder: TeaserData['binder'] }) {
+  const marks = BD_FILE.flatMap((t) => [t, t + BD_HALF])
+  const step = useSteps(marks)
+  const passed = (ms: number) => step > marks.indexOf(ms)
+  const at = (id: string) => binder.fresh.indexOf(id)
+  const turning = (id: string) => at(id) >= 0 && passed(BD_FILE[at(id)])
+  const filed = (id: string) => at(id) >= 0 && passed(BD_FILE[at(id)] + BD_HALF)
+  const fresh = binder.men.flat().filter((c) => filed(c.card.id)).map((c) => c.card)
+  const owned = binder.rarities.reduce((s, r) => s + r.owned, 0) + fresh.length
+  const total = binder.rarities.reduce((s, r) => s + r.of, 0)
+  return (
+    <div className="tz-beat tz-split">
+      <div className="tz-cap-col">
+        <Caption kick="The collection" line={<>Fill the <em>binder.</em></>} lead="Every card you keep goes in." sub="Every season of every player, Common to Canton. Finish the set." />
+        <div className="tz-bd-sum">
+          <div className="pe-bd-sum-num">
+            <span key={owned} className={fresh.length ? 'tz-bd-num' : undefined}>
+              {k(owned)}
+            </span>
+            <span>/{k(total)}</span>
+          </div>
+          <div className="pe-note">Cards collected</div>
+          <div className="pe-bd-rar">
+            {[...binder.rarities].reverse().map((r) => {
+              const n = r.owned + fresh.filter((p) => p.rarity === r.rarity).length
+              return (
+                <div
+                  key={r.rarity}
+                  className="pe-bd-rar-row"
+                  data-up={n > r.owned ? '' : undefined}
+                  style={{ '--rc': RARITY_LOOK[r.rarity].color } as React.CSSProperties}
+                >
+                  <span className="pe-bd-rar-name">{RARITY_LOOK[r.rarity].label}</span>
+                  <span className="pe-bd-rar-bar">
+                    <span style={{ width: `${(100 * n) / r.of}%` }} />
+                  </span>
+                  <span className="pe-bd-rar-n">
+                    {n}
+                    <em>/{r.of}</em>
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+      <div className="tz-bd">
+        {binder.men.map((row, m) => {
+          const have = row.filter((c) => c.pulls > 0 || filed(c.card.id)).length
+          return (
+            <div key={row[0].card.id} className="pe-bd-man" style={{ '--m': m } as React.CSSProperties}>
+              <div className="pe-bd-man-head">
+                <span className="pe-bd-man-pos">{row[0].card.pos}</span>
+                <span className="pe-bd-man-name">{row[0].card.name}</span>
+                <span className="pe-bd-man-meta">
+                  {have}/{row.length}
+                </span>
+              </div>
+              <div className="pe-bd-strip">
+                {row.map((c) => (
+                  <div key={c.card.id} className="tz-bd-cell" data-turn={turning(c.card.id) ? '' : undefined}>
+                    <Tile card={binderCard(c.card, filed(c.card.id) ? 1 : c.pulls)} onClick={() => {}} />
+                    {filed(c.card.id) && <span className="tz-bd-new">New</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -466,7 +684,7 @@ function Outro({ art }: { art: string[] }) {
 // ── The reel ──────────────────────────────────────────────────
 
 /** Every beat holds its finished picture this long before the next one. */
-const HOLD = 1300
+const HOLD = 700
 
 /** Versus plays the head to head, holds it, then the Battles. */
 const VS_HALF = 2700 + HOLD
@@ -484,16 +702,17 @@ function Icon({ d }: { d: string }) {
 export function Teaser({ data, vertical }: { data: TeaserData; vertical: boolean }) {
   const beats: Beat[] = (
     [
-      { name: 'Intro', ms: 3300, tag: false, el: () => <Intro /> },
-      { name: 'Captain', ms: 3300, el: () => <Captain /> },
+      { name: 'Intro', ms: 2600, tag: false, el: () => <Intro /> },
+      { name: 'Captain', ms: 3200, el: () => <Captain odds={data.odds} /> },
       { name: 'The rip', ms: 6400, el: () => <Rip cards={data.rip} art={data.packs.captain} /> },
-      { name: 'Chemistry', ms: 4400, el: () => <Chem lineup={data.lineup} chem={data.chem} /> },
+      { name: 'Chemistry', ms: 5300, el: () => <Chem lineup={data.lineup} chem={data.chem} /> },
       { name: 'Mystery Packs', ms: 2400, el: () => <Mystery art={data.packs.wild} /> },
-      { name: 'Ball Knower', ms: 2900, el: () => <BallKnower blind={data.blind} range={data.range} real={data.wall[2]} /> },
+      { name: 'Ball Knower', ms: 3800, el: () => <BallKnower cards={data.knower} /> },
       { name: 'Versus Challenge', ms: VS_HALF + 3700, el: () => <Versus a={data.vsA} b={data.vsB} half={VS_HALF} /> },
       { name: 'Mega Draft', ms: 2800, el: () => <Mega wall={data.wall} /> },
       { name: 'League Mode', ms: 2900, el: () => <League /> },
-      { name: 'The board', ms: 3900, el: () => <Climb total={data.total} /> },
+      { name: 'The board', ms: 4300, el: () => <Climb total={data.total} /> },
+      { name: 'The binder', ms: 3800, el: () => <BinderBeat binder={data.binder} /> },
       { name: 'Outro', ms: 4600, tag: false, el: () => <Outro art={[data.packs.rb, data.packs.wr, data.packs.captain, data.packs.te, data.packs.wild]} /> },
     ] as Beat[]
   ).map((b) => ({ ...b, ms: b.ms + HOLD }))
@@ -501,6 +720,17 @@ export function Teaser({ data, vertical }: { data: TeaserData; vertical: boolean
   const [run, setRun] = useState(0)
   const [paused, setPaused] = useState(false)
   const [chrome, setChrome] = useState(true)
+
+  // Play waits until every picture is in, or 20 seconds if one never answers.
+  const faces = useFaces()
+  const images = useMemo(() => reelImages(data, faces), [data, faces])
+  const warmed = useWarm(images)
+  const [late, setLate] = useState(false)
+  useEffect(() => {
+    const id = window.setTimeout(() => setLate(true), 20000)
+    return () => clearTimeout(id)
+  }, [])
+  const ready = late || warmed >= images.length
 
   // The clock: time played before `since`, and when play last resumed.
   const clock = useRef({ played: 0, since: 0, paused: false })
@@ -523,14 +753,16 @@ export function Teaser({ data, vertical }: { data: TeaserData; vertical: boolean
   const holdAtEnd = useRef(false)
 
   const start = useCallback(() => {
+    if (!ready) return
     holdAtEnd.current = false
     hold(false)
     setRun((r) => r + 1)
     setAt(0)
-  }, [hold])
+  }, [hold, ready])
 
   const go = useCallback(
     (i: number) => {
+      if (!ready) return
       if (clock.current.paused) {
         holdAtEnd.current = true
         hold(false)
@@ -538,7 +770,7 @@ export function Teaser({ data, vertical }: { data: TeaserData; vertical: boolean
       setRun((r) => r + 1)
       setAt(i)
     },
-    [hold]
+    [hold, ready]
   )
 
   const toggle = useCallback(() => {
@@ -592,7 +824,7 @@ export function Teaser({ data, vertical }: { data: TeaserData; vertical: boolean
               <h1 className="tz-logo">
                 Pack <span className="pe-em">Empire.</span>
               </h1>
-              <p>Click or press space to play</p>
+              <p>{ready ? 'Click or press space to play' : `Loading ${warmed} of ${images.length}`}</p>
             </div>
           ) : (
             <div key={`${run}-${at}`} className="tz-scene">

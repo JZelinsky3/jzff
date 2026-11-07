@@ -22,3 +22,6 @@ python3 build/photos.py
 python3 build/select_skill.py > build/skill_report.txt
 python3 build/select_ol.py > build/ol_report.txt 2>&1
 python3 build/export.py
+# Every card's season as numbers, for the Season sim's archetypes. Reads the pool
+# only, so it can also run by itself after a hand edit.
+python3 build/stats.py

@@ -230,7 +230,7 @@ export function PeChrome({
         {signedIn && (
           <FriendsMenu on={on === 'profile'}>
             <FriendsIcon />
-            <span>Friends</span>
+            <span>Social</span>
           </FriendsMenu>
         )}
         <Link href={signedIn ? '/dashboard' : '/login'} className="pe-nav-cta">

@@ -1,9 +1,12 @@
 // /games/pack-empire/profile
 //
-// Your games profile: friends and the record book, together. They live here
-// rather than on /account because a friend only does anything inside Pack
-// Empire, and account settings shouldn't have to scroll past a game. The
-// account page keeps a link, with a count if anything is waiting.
+// Your Pack Empire profile: the player at a glance (best card, top score, the
+// binder, the record, favorites, a few facts), then friends and the record book
+// underneath, so adding a friend is still one tap away. They live here rather
+// than on /account because a friend only does anything inside Pack Empire, and
+// account settings shouldn't have to scroll past a game. The account page keeps
+// a link, with a count if anything is waiting. A friend's profile is
+// ./[friend]/, the same top without the friends.
 
 import type { Metadata, Viewport } from 'next'
 import Link from 'next/link'
@@ -11,6 +14,8 @@ import { PlayHub } from '@/components/account/PlayHub'
 import { RecordBook } from '@/components/account/RecordBook'
 import { SiteFooter } from '@/components/SiteFooter'
 import { peMeta } from '@/lib/packEmpire/meta'
+import { profileFor } from '@/lib/packEmpire/profile'
+import { peResults } from '@/lib/packEmpire/results'
 import { friendIds, friendsState } from '@/lib/friends'
 import { publicNames } from '@/lib/minigames/boardIdentity'
 import { loadRecords } from '@/lib/minigames/profileRecords'
@@ -20,6 +25,7 @@ import { getViewMode } from '@/lib/viewMode'
 import mobileStyles from '../../mobile.module.css'
 import { PeChrome, PeDock } from '../chrome'
 import { peFonts } from '../fonts'
+import { ProfileHero } from './ProfileHero'
 
 export const dynamic = 'force-dynamic'
 
@@ -87,13 +93,17 @@ export default async function GamesProfilePage() {
     )
   }
 
-  const [friends, names, friendList, { data: profile }] = await Promise.all([
-    friendsState(user.id),
+  // Versus and Mega games feed the friend list, the record book and the profile:
+  // loaded once here and handed to all three.
+  const pre = await peResults(user.id)
+  const [friends, names, friendList, { data: profile }, pe] = await Promise.all([
+    friendsState(user.id, pre),
     publicNames([user.id]),
     friendIds(user.id),
     createAdminClient().from('profiles').select('member_code').eq('id', user.id).maybeSingle(),
+    profileFor(user.id, { sync: true, pre }),
   ])
-  const records = await loadRecords(user.id, friendList)
+  const records = await loadRecords(user.id, friendList, pre)
   const memberCode = (profile?.member_code as string | null) ?? ''
   const shownAs = names.get(user.id) ?? memberCode
   const runs = records.reduce((n, g) => n + g.runs, 0)
@@ -129,6 +139,8 @@ export default async function GamesProfilePage() {
               Change name
             </Link>
           </div>
+
+          <ProfileHero profile={pe} you />
 
           <PlayHub initial={friends} records={<RecordBook records={records} />} memberCode={memberCode} phone={mobile} />
         </div>

@@ -98,6 +98,12 @@ const RIPPLE_MS = 130
 /** Under Show My Pick, the beat between the fourth card and yours. */
 const LAST_TURN_MS = 450
 
+/** An Immortal turns in the middle of the screen (Joey), as big as fits up to
+    this, clear of the caption over it, and takes this long to get back. */
+const CENTRE_SCALE = 1.45
+const CENTRE_GAP = 24
+const HOME_MS = 650
+
 /** The light in a pack whose cards are hidden. One colour for every blind
     pack, whatever's in it: a rarity's colour here would be a tell, and the
     common's brown read as one even when it wasn't. */
@@ -145,6 +151,23 @@ export function preloadFaces(cards: Player[], uploaded: FaceMap) {
       return im
     })
   heldFaces.splice(0, heldFaces.length, ...faces)
+}
+
+/** Where an Immortal goes for its walkout, measured once as it starts (it's still
+    in the row then): the middle of the screen, or lower if the caption over it
+    would cover it, and as big as fits. Reduced motion keeps it in its place. */
+function centreFor(card: DOMRect, head: DOMRect | null) {
+  const x = card.left + card.width / 2
+  const y = card.top + card.height / 2
+  if (reducedMotion()) return { dx: 0, dy: 0, s: 1.12, x, y }
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  const top = (head?.bottom ?? 0) + CENTRE_GAP
+  const fit = Math.min((vh - top - CENTRE_GAP) / card.height, (vw - 2 * CENTRE_GAP) / card.width)
+  const s = Math.max(1.12, Math.min(CENTRE_SCALE, fit))
+  const h = card.height * s
+  const cy = Math.min(Math.max(vh / 2, top + h / 2), vh - CENTRE_GAP - h / 2)
+  return { dx: vw / 2 - x, dy: cy - y, s, x: vw / 2, y: cy }
 }
 
 function rectOf(el: Element | null): Rect | null {
@@ -656,19 +679,41 @@ export function PackStage({
   // An Immortal's walkout gets its aura, drawn on the stage between the dark and the
   // card: inside the card it sat in the card's 3D layer, which covered it.
   const auraId = w && !hall && woCard?.rarity === 'immortal' ? woCard.id : null
-  // Placed on mount, before it paints, off the card's own box.
+  // Placed on mount, before it paints. The card leaves the row for the middle of the
+  // screen, so this measures it once, while it's still in its place, and sends both
+  // there: the card by its --wo-* offsets (CSS moves it), the aura straight to the spot.
   const placeAura = useCallback(
     (node: HTMLDivElement | null) => {
       if (!node || !auraId) return
-      const r = document.querySelector(`.pe-stage-cards [data-pe-card="${CSS.escape(auraId)}"]`)?.getBoundingClientRect()
-      if (!r) return
-      node.style.left = `${r.left + r.width / 2}px`
-      node.style.top = `${r.top + r.height / 2}px`
+      const el = document.querySelector<HTMLElement>(`.pe-stage-cards [data-pe-card="${CSS.escape(auraId)}"]`)
+      const r = el?.getBoundingClientRect()
+      if (!el || !r) return
+      const to = centreFor(r, root.current?.querySelector('.pe-stage-head')?.getBoundingClientRect() ?? null)
+      el.style.setProperty('--wo-dx', `${to.dx}px`)
+      el.style.setProperty('--wo-dy', `${to.dy}px`)
+      el.style.setProperty('--wo-s', `${to.s}`)
+      node.style.left = `${to.x}px`
+      node.style.top = `${to.y}px`
       node.style.setProperty('--aw', `${r.width}px`)
       node.style.setProperty('--ah', `${r.height}px`)
+      node.style.setProperty('--as', `${to.s}`)
     },
     [auraId]
   )
+  // When its walkout ends the Immortal glides back to its place, still over the
+  // others, on a slower ease than a card's usual .2s.
+  const [homing, setHoming] = useState<string | null>(null)
+  const lastAura = useRef<string | null>(null)
+  useLayoutEffect(() => {
+    const prev = lastAura.current
+    lastAura.current = auraId
+    if (prev && prev !== auraId) setHoming(prev)
+  }, [auraId])
+  useEffect(() => {
+    if (!homing) return
+    const t = window.setTimeout(() => setHoming(null), HOME_MS)
+    return () => window.clearTimeout(t)
+  }, [homing])
 
   // Under Show My Pick, once all five are up, how yours did.
   const keptCard = stage.kept ? (cards?.find((c) => c.id === stage.kept) ?? null) : null
@@ -823,6 +868,7 @@ export function PackStage({
                   best={!stage.pickedId && !!keptCard && topCard?.id === card.id && topCard.score > keptCard.score}
                   selectable={!own && !stage.pickedId && !stage.kept && !w && !stage.queue.length}
                   charging={charging}
+                  homing={!charging && homing === card.id}
                   burst={charging && w?.step === 'flip'}
                   chem={stage.revealed[i] && chemFor && !stage.kept ? chemFor(card) : null}
                   chip={stage.revealed[i] && chipFor ? chipFor(card) : null}

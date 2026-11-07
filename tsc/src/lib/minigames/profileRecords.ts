@@ -16,6 +16,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { GAMES } from '@/app/games/gameDefs'
 import { boardLabel, builderQuery, difficultyForMode, formatForMode } from '@/lib/packEmpire/rules'
+import { peResults, type PeResults } from '@/lib/packEmpire/results'
 import { DEMO_POOL_ID } from './demoPool'
 import { publicNames } from './boardIdentity'
 import { runStat } from './runStat'
@@ -103,15 +104,10 @@ async function poolLabels(poolIds: string[]): Promise<Map<string, string>> {
   return out
 }
 
-async function packEmpireExtras(userId: string): Promise<RecordExtra[]> {
-  const [{ versusResults }, { megaResults }] = await Promise.all([
-    import('@/lib/packEmpire/versus'),
-    import('@/lib/packEmpire/mega'),
-  ])
+async function packEmpireExtras(userId: string, pre?: PeResults): Promise<RecordExtra[]> {
   const db = createAdminClient()
-  const [vs, mega, members, drafts] = await Promise.all([
-    versusResults(userId),
-    megaResults(userId),
+  const [{ vs, mega }, members, drafts] = await Promise.all([
+    pre ?? peResults(userId),
     db.from('pe_league_members').select('titles').eq('user_id', userId),
     db
       .from('pe_league_drafts')
@@ -159,7 +155,8 @@ async function packEmpireExtras(userId: string): Promise<RecordExtra[]> {
   return out
 }
 
-export async function loadRecords(userId: string, friends: string[] = []): Promise<GameRecord[]> {
+/** `pre` is the Versus and Mega games already loaded, when the page has them. */
+export async function loadRecords(userId: string, friends: string[] = [], pre?: PeResults): Promise<GameRecord[]> {
   const db = createAdminClient()
   const games = GAMES.filter((g) => g.hasBoard)
   const ids = games.map((g) => g.id)
@@ -188,7 +185,7 @@ export async function loadRecords(userId: string, friends: string[] = []): Promi
           .order('created_at', { ascending: true })
           .limit(2000)
       : Promise.resolve({ data: [] as RunRow[] }),
-    games.some((g) => g.id === 'pack-empire') ? packEmpireExtras(userId) : Promise.resolve([]),
+    games.some((g) => g.id === 'pack-empire') ? packEmpireExtras(userId, pre) : Promise.resolve([]),
   ])
 
   type Group = { best: RunRow; runs: number }

@@ -590,6 +590,7 @@ export function PackCard({
   best = false,
   selectable = false,
   charging = false,
+  homing = false,
   burst = false,
   still = false,
   index = 0,
@@ -612,6 +613,9 @@ export function PackCard({
   selectable?: boolean
   /** Mid-walkout: lifted over the veil, shaking. */
   charging?: boolean
+  /** Just after an Immortal's walkout: on its way back from the middle of the
+      screen to its place in the pack. */
+  homing?: boolean
   /** The walkout's flip: a ring of light off the card. */
   burst?: boolean
   /** In the air: the card without its effects, which only cost frames there. */
@@ -645,6 +649,7 @@ export function PackCard({
     kept ? 'kept' : '',
     revealed && selectable && !blocked ? 'selectable' : '',
     charging ? 'charging' : '',
+    homing ? 'homing' : '',
     blocked && revealed ? 'blocked' : '',
     still ? 'still' : '',
   ]

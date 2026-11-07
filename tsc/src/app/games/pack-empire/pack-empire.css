@@ -4677,14 +4677,29 @@ html:has(.pe-theme) body {
   background: radial-gradient(ellipse at 50% 45%, rgba(8, 30, 19, 0.95), rgba(2, 8, 5, 0.985) 70%);
 }
 
-/* Fixed on the stage, centred on the card (stage.tsx measures it), over the dark
-   (40) and under the card (50). The card scales 1.12 about its centre, so the
-   size here is the card's at that scale. */
+/* And it leaves the row (Joey): it travels to the middle of the screen, growing as
+   it goes, turns over there, then glides back to its place. stage.tsx measures the
+   trip once, as the walkout starts (centreFor), into --wo-dx / --wo-dy / --wo-s.
+   Scoped to the stage's row: the Unveil's own centred card uses .charging too. */
+.pe-stage[data-wo-r='immortal'] .pe-stage-cards .pe-card.charging {
+  transform: translate(var(--wo-dx, 0px), var(--wo-dy, 0px)) scale(var(--wo-s, 1.12));
+  transition: transform 0.7s cubic-bezier(0.22, 0.9, 0.25, 1);
+}
+
+.pe-stage-cards .pe-card.homing {
+  z-index: 50;
+  pointer-events: none;
+  transition: transform 0.6s cubic-bezier(0.45, 0, 0.2, 1);
+}
+
+/* Fixed on the stage, centred where the card is going (stage.tsx measures it),
+   over the dark (40) and under the card (50). The size is the card's at the scale
+   it turns at (--as). */
 .pe-aura {
   position: fixed;
   z-index: 45;
-  width: calc(var(--aw) * 1.12);
-  height: calc(var(--ah) * 1.12);
+  width: calc(var(--aw) * var(--as, 1.12));
+  height: calc(var(--ah) * var(--as, 1.12));
   transform: translate(-50%, -50%);
   pointer-events: none;
   transition: opacity 0.6s ease;
@@ -5770,6 +5785,345 @@ a.pe-row:hover {
 .pe-prof-edit:hover {
   color: var(--pe-amber);
   border-bottom-color: var(--pe-amber);
+}
+
+/* ── The top of a profile (profile/ProfileHero.tsx) ────────────
+   The best card they've kept on the left, six tiles beside it, a few facts
+   under those. Phones stack it: card, tiles two across, facts. Static. */
+
+.pe-ph {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+  margin: 0 0 1.4rem;
+  padding: 1.25rem 1.3rem 1.3rem;
+  border: 1px solid var(--pe-line);
+  border-top: 3px solid var(--pe-amber);
+  border-radius: 6px;
+  background:
+    linear-gradient(180deg, rgba(232, 168, 75, 0.06), transparent 10rem),
+    var(--pe-bg-soft);
+}
+
+.pe-ph-kick {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.54rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+.pe-ph-best {
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+}
+
+.pe-ph-best .pe-card {
+  --pe-cs: 1.1;
+  cursor: default;
+}
+
+.pe-ph-best-line {
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pe-ink-soft);
+}
+
+/* No cards yet: a card-shaped hole, the same size as the card that goes in it. */
+.pe-ph-none {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  width: calc(8.5em * 1.1);
+  aspect-ratio: 5 / 7;
+  padding: 1rem;
+  font-size: 16px;
+  border: 2px dashed var(--pe-line);
+  border-radius: 11px;
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.025) 0 8px, transparent 8px 16px),
+    #0c0b0a;
+  text-align: center;
+}
+
+.pe-ph-none > span {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  color: var(--pe-ink-soft);
+}
+
+.pe-ph-body {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.pe-ph-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.pe-ph-tile {
+  display: grid;
+  align-content: start;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 0.8rem 0.9rem 0.85rem;
+  border: 1px solid var(--pe-line-soft);
+  border-radius: 4px;
+  background: var(--pe-card);
+}
+
+.pe-ph-tile .pe-act {
+  justify-self: start;
+  min-height: 32px;
+  padding: 0 0.8rem;
+  font-size: 0.74rem;
+  text-decoration: none;
+}
+
+.pe-ph-big {
+  font-family: var(--pe-display);
+  font-weight: 800;
+  font-size: 1.45rem;
+  line-height: 1.05;
+  color: var(--pe-ink);
+  text-decoration: none;
+}
+
+.pe-ph-big small {
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+a.pe-ph-big:hover {
+  color: var(--pe-amber-bright);
+}
+
+.pe-ph-mid {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  line-height: 1.15;
+  color: var(--pe-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pe-ph-note {
+  display: block;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: var(--pe-ink-mute);
+}
+
+.pe-ph-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+/* One thin bar a rarity: how much of it they hold. */
+.pe-ph-rar {
+  display: grid;
+  gap: 3px;
+}
+
+.pe-ph-rar-row {
+  display: grid;
+  grid-template-columns: 2.1rem minmax(0, 1fr) 1.6rem;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pe-ph-rar-row b {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  color: var(--rc);
+}
+
+.pe-ph-rar-row i {
+  position: relative;
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.pe-ph-rar-row em {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 2px;
+  background: var(--rc);
+}
+
+.pe-ph-rar-row small {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  text-align: right;
+  color: var(--pe-ink-soft);
+}
+
+.pe-ph-rec {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+}
+
+.pe-ph-rec div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.pe-ph-rec dt {
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pe-ink-soft);
+}
+
+.pe-ph-rec dd {
+  margin: 0;
+  font-family: var(--pe-display);
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--pe-ink);
+}
+
+.pe-ph-team {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.pe-ph-team img {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.pe-ph-team > span {
+  min-width: 0;
+}
+
+.pe-ph-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1.2rem;
+  margin: 0;
+  padding: 0.9rem 0 0;
+  border-top: 1px solid var(--pe-line-soft);
+  list-style: none;
+}
+
+.pe-ph-facts li {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+  font-size: 0.84rem;
+  line-height: 1.4;
+  color: var(--pe-ink);
+}
+
+.pe-ph-facts .pe-ph-kick {
+  color: var(--pe-amber);
+}
+
+/* A friend's profile: where the two of you stand, in the name row. */
+.pe-ph-vs {
+  flex: none;
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pe-ink-soft);
+}
+
+/* The friend list's own colours for the same line (play.module.css .rec). */
+.pe-ph-vs[data-tone='lead'] {
+  color: var(--pe-amber);
+}
+
+.pe-ph-vs[data-tone='trail'] {
+  color: #d98b73;
+}
+
+.pe-ph-back {
+  display: flex;
+  justify-content: center;
+}
+
+.pe-ph-back .pe-act {
+  text-decoration: none;
+}
+
+@media (max-width: 860px) {
+  .pe-ph-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .pe-ph {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.1rem;
+    padding: 1rem 0.9rem 1.05rem;
+  }
+
+  .pe-ph-best .pe-card {
+    --pe-cs: 1;
+  }
+
+  .pe-ph-none {
+    width: 8.5em;
+  }
+
+  .pe-ph-tiles {
+    gap: 0.5rem;
+  }
+
+  .pe-ph-tile {
+    padding: 0.7rem 0.75rem 0.75rem;
+  }
+
+  .pe-ph-big {
+    font-size: 1.25rem;
+  }
+
+  .pe-ph-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pe-ph-vs {
+    font-size: 0.72rem;
+  }
 }
 
 .pe-twoup {
@@ -9231,11 +9585,19 @@ a.pe-lt-row:hover {
     max-width: none;
   }
 
+  /* Stretch, not centre: a centred column shrinks the body to its widest row,
+     which is the card buttons, so the You and Everyone boxes went wide for a
+     man with four cards and narrow for one with one. */
   .pe-bd-sheet-in {
     flex-direction: column;
+    align-items: stretch;
     gap: 1.1rem;
     padding: 1.4rem 1rem 1.2rem;
     text-align: center;
+  }
+
+  .pe-bd-sheet-card {
+    align-self: center;
   }
 
   .pe-bd-sheet-card .pe-card {

@@ -18,6 +18,7 @@
 import { randomBytes } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { publicNames } from '@/lib/minigames/boardIdentity'
+import { peResults, type PeResults } from '@/lib/packEmpire/results'
 
 export type FriendSource = 'link' | 'league' | 'code' | 'versus'
 
@@ -320,15 +321,10 @@ export async function friendPicker(userId: string): Promise<{ id: string; name: 
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
-/** Pack Empire head-to-heads against every account you've played. */
-async function headToHeads(userId: string): Promise<Map<string, HeadToHead>> {
-  // Imported here rather than at the top: versus.ts imports this module for
-  // friendOf, and a cycle at module load leaves one side undefined.
-  const [{ versusResults }, { megaResults }] = await Promise.all([
-    import('@/lib/packEmpire/versus'),
-    import('@/lib/packEmpire/mega'),
-  ])
-  const [vs, mega] = await Promise.all([versusResults(userId), megaResults(userId)])
+/** Pack Empire head-to-heads against every account you've played. `pre` is the
+    games already loaded, when the page needs them for something else too. */
+export async function headToHeads(userId: string, pre?: PeResults): Promise<Map<string, HeadToHead>> {
+  const { vs, mega } = pre ?? (await peResults(userId))
   const out = new Map<string, HeadToHead>()
   for (const r of [...vs, ...mega]) {
     if (!r.opponentId) continue
@@ -493,7 +489,7 @@ export async function friendsBrief(userId: string): Promise<FriendsBrief> {
   }
 }
 
-export async function friendsState(userId: string): Promise<FriendsState> {
+export async function friendsState(userId: string, pre?: PeResults): Promise<FriendsState> {
   const { data } = await db()
     .from('friendships')
     .select('*')
@@ -510,7 +506,7 @@ export async function friendsState(userId: string): Promise<FriendsState> {
     everyone.length
       ? db().from('profiles').select('id, member_code').in('id', everyone)
       : Promise.resolve({ data: [] as { id: string; member_code: string }[] }),
-    headToHeads(userId),
+    headToHeads(userId, pre),
     suggestionsFor(userId, new Set(everyone)),
     waitingChallenges(userId),
   ])

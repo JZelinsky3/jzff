@@ -54,19 +54,31 @@ def render(w: int, h: int, banks: list[tuple[float, float, float]], horizon: flo
     # through the film curve almost unchanged, only the lights get rolled off.
     base = np.zeros((h, w, 3), np.float32)
     sky = np.clip(v / hz, 0, 1)[..., None]
-    base += np.array([0.022, 0.019, 0.016]) * (1 - sky) + np.array([0.06, 0.047, 0.034]) * sky
+    base += np.array([0.04, 0.034, 0.028]) * (1 - sky) + np.array([0.1, 0.08, 0.058]) * sky
     # The far stands: a dark bowl rising toward both sides, its lip catching light.
     rim = hz - (0.06 + 0.5 * np.abs(u - 0.5) ** 1.8) * (w / h if h > w else 1) * 0.55
     stands = (v > rim) & (v < hz)
-    base[stands] = np.array([0.03, 0.026, 0.022])
-    base += np.exp(-(((v - rim) * h / (9 * s)) ** 2))[..., None] * np.array([0.03, 0.022, 0.014])
-    # The field: a little light on the far side, dark toward us, faint mowing bands.
+    base[stands] = np.array([0.055, 0.047, 0.038])
+    base += np.exp(-(((v - rim) * h / (9 * s)) ** 2))[..., None] * np.array([0.05, 0.037, 0.024])
+    # The field, in perspective from a camera low on it: turf lit from the far
+    # side and falling off toward us, mowing bands and yard lines running away
+    # to a vanishing point above the far stands.
     field = v >= hz
     depth = np.clip((v - hz) / (1 - hz), 0, 1)
-    band = 0.9 + 0.1 * (np.sin((u - 0.5) / (0.05 + depth * 0.45) * np.pi) > 0)
-    turf = (np.array([0.034, 0.05, 0.034]) * (1 - 0.7 * depth[..., None]) * band[..., None]).astype(np.float32)
-    base[field] = turf[field]
-    base += np.exp(-(((v - hz) * h / (30 * s)) ** 2))[..., None] * np.array([0.05, 0.04, 0.028])
+    vp = hz - 0.22
+    across = (u - 0.5) * (w / h) / np.maximum(v - vp, 1e-3)
+    stripe = across / 0.42
+    band = 0.84 + 0.16 * (np.floor(stripe) % 2)
+    turf = np.array([0.075, 0.122, 0.07]) * (1 - 0.62 * depth[..., None]) * band[..., None]
+    # A yard line on every other band edge, thinner on the far side.
+    edge = np.abs(stripe / 2 - np.round(stripe / 2)) * 2 * 0.42 * np.maximum(v - vp, 1e-3) * h
+    line = np.exp(-((edge / (2 * s + 12 * s * depth)) ** 2)) / (1 + 1.6 * depth)
+    turf += line[..., None] * np.array([0.1, 0.11, 0.095])
+    # The banks' light pooling on the far half of the field.
+    pool = np.exp(-(((u - 0.5) / 0.55) ** 2) - ((depth / 0.45) ** 2))
+    turf *= (1 + 0.8 * pool)[..., None]
+    base[field] = turf[field].astype(np.float32)
+    base += np.exp(-(((v - hz) * h / (30 * s)) ** 2))[..., None] * np.array([0.08, 0.064, 0.045])
 
     # Points of light: the banks, then phones and exit signs dotted round the stands.
     pts = np.zeros((h, w, 3), np.float32)
@@ -100,12 +112,12 @@ def render(w: int, h: int, banks: list[tuple[float, float, float]], horizon: flo
     lights = lens(pts, 17 * s)
     lights += blur(pts, 70 * s) * AMBER * 3.2
     lights += blur(pts, 22 * s) * LIGHT * 0.8
-    out = blur(base, 4 * s) + haze[..., None] * AMBER
+    out = blur(base, 7 * s) + haze[..., None] * AMBER * 1.5
     out += 1 - np.exp(-lights * 1.4)
 
     # Vignette, darkest at the bottom corners where nothing is lit.
-    vig = 1 - 0.6 * (((u - 0.5) * 1.25) ** 2 + ((v - 0.42) * 1.35) ** 2)
-    out *= np.clip(vig, 0.3, 1)[..., None]
+    vig = 1 - 0.42 * (((u - 0.5) * 1.25) ** 2 + ((v - 0.42) * 1.35) ** 2)
+    out *= np.clip(vig, 0.45, 1)[..., None]
     out = np.clip(out, 0, 1)
     return Image.fromarray((out * 255 + rng.uniform(0, 1, out.shape)).clip(0, 255).astype(np.uint8))
 

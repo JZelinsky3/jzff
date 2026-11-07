@@ -2,9 +2,19 @@
    recording comes out the same every time. */
 
 .pe-tz-page { min-height: 100vh; background: #000; }
+/* The site's phone menu would sit over the frame and end up in a recording. */
+.pe-tz-page ~ .msm-root { display: none !important; }
 .tz-room { display: grid; justify-items: center; gap: 14px; padding: 24px 0 40px; }
 .tz-hint { margin: 0; font-family: var(--mono); font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; color: #6f675a; }
 .tz-hint a { color: var(--pe-amber); }
+/* On a phone (the vertical page, 540 wide): the frame at the very top, and the
+   controls wrapped under it so nothing widens the page past the frame. */
+@media (max-width: 600px) {
+  .tz-room { padding-top: 0; }
+  .tz-ctl { flex-wrap: wrap; justify-content: center; max-width: 100%; padding: 0 12px; }
+  .tz-ctl-name { min-width: 0; }
+  .tz-hint { max-width: 100%; padding: 0 16px; text-align: center; }
+}
 
 .tz-frame {
   --tone: var(--pe-amber);
@@ -24,9 +34,9 @@
    (scripts/pack-empire-teaser/backdrop.py). It drifts slowly across the whole
    reel, not per beat, and a shade on the left keeps the words clear. */
 .tz-bg { position: absolute; inset: -4%; background: url('/games/pack-empire/teaser/stadium-wide.webp') center 30% / cover no-repeat; animation: tz-drift 38s ease-in-out infinite alternate; }
-.tz-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8, 7, 5, .55) 0%, rgba(8, 7, 5, .2) 38%, transparent 60%); }
+.tz-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8, 7, 5, .42) 0%, rgba(8, 7, 5, .12) 38%, transparent 60%); }
 .tz-frame--v .tz-bg { background-image: url('/games/pack-empire/teaser/stadium-tall.webp'); background-position: center top; }
-.tz-frame--v .tz-bg::after { background: linear-gradient(180deg, transparent 30%, rgba(8, 7, 5, .35) 100%); }
+.tz-frame--v .tz-bg::after { background: linear-gradient(180deg, transparent 40%, rgba(8, 7, 5, .25) 100%); }
 @keyframes tz-drift { from { transform: scale(1) translateX(0); } to { transform: scale(1.06) translateX(-1.5%); } }
 
 /* The mark in the corner: there through the beats, gone for the intro and outro. */
@@ -83,16 +93,20 @@
 .tz-logo-b { animation-delay: .18s !important; }
 @keyframes tz-slam { from { opacity: 0; transform: scale(1.6); filter: blur(10px); } to { opacity: 1; transform: none; filter: none; } }
 .tz-intro-words { position: relative; display: flex; gap: 22px; min-height: 3rem; margin-top: 26px; font-family: var(--pe-cond); font-weight: 800; font-size: 2.1rem; letter-spacing: .08em; text-transform: uppercase; color: var(--pe-ink-soft); }
-.tz-frame--v .tz-intro-words { flex-direction: column; gap: 6px; font-size: 1.7rem; }
+/* Two lines on 9:16: the first two together, the lineup on its own under them. */
+.tz-frame--v .tz-intro-words { flex-wrap: wrap; justify-content: center; width: 500px; gap: 6px 16px; font-size: 1.7rem; }
+.tz-frame--v .tz-intro-words .hot { flex-basis: 100%; text-align: center; }
 .tz-intro-words span { animation: tz-rise .4s ease-out both; }
 .tz-intro-words .hot { color: var(--pe-amber-bright); text-shadow: 0 0 24px rgba(232, 168, 75, .6); }
 .tz-ready p { margin-top: 24px; font-family: var(--mono); font-size: .8rem; letter-spacing: .22em; text-transform: uppercase; color: var(--pe-ink-mute); }
 
-/* Wider than the art (a pack drawn flat reads skinny), overlapping, the middle
-   one in front and the outer ones a shade darker, like the key art's spread. */
-.tz-outro-packs { position: relative; display: flex; justify-content: center; height: 214px; margin-bottom: 18px; }
-.tz-outro-packs img { position: relative; z-index: calc(5 - abs(var(--n)) * 2); width: 146px; height: 180px; margin: 0 -19px; object-fit: fill; border-radius: 4px; box-shadow: 0 18px 30px rgba(0, 0, 0, .6); filter: brightness(calc(1 - abs(var(--n)) * .1)); transform: translateY(calc(abs(var(--n)) * 14px)) rotate(calc(var(--n) * 8deg)); animation: tz-deal .6s cubic-bezier(.2, 1.2, .4, 1) both; animation-delay: calc((var(--n) + 2) * 70ms); }
-.tz-frame--v .tz-outro-packs img { width: 108px; height: 134px; margin: 0 -15px; }
+/* At the art's own shape (125 / 183, as every pack in the game is drawn),
+   overlapping, the middle one in front and the outer ones a shade darker, like
+   the key art's spread. */
+.tz-outro-packs { position: relative; display: flex; justify-content: center; height: 226px; margin-bottom: 18px; }
+.tz-outro-packs img { position: relative; z-index: calc(5 - abs(var(--n)) * 2); width: 132px; height: auto; aspect-ratio: 125 / 183; align-self: flex-start; margin: 0 -14px; object-fit: fill; border-radius: 4px; box-shadow: 0 18px 30px rgba(0, 0, 0, .6); filter: brightness(calc(1 - abs(var(--n)) * .1)); transform: translateY(calc(abs(var(--n)) * 14px)) rotate(calc(var(--n) * 8deg)); animation: tz-deal .6s cubic-bezier(.2, 1.2, .4, 1) both; animation-delay: calc((var(--n) + 2) * 70ms); }
+.tz-frame--v .tz-outro-packs { height: 172px; }
+.tz-frame--v .tz-outro-packs img { width: 98px; margin: 0 -11px; }
 @keyframes tz-deal { from { opacity: 0; translate: 0 120px; } to { opacity: 1; translate: 0 0; } }
 .tz-logo--end { font-size: 6.4rem; }
 .tz-frame--v .tz-logo--end { font-size: 4.6rem; }
@@ -105,8 +119,38 @@
 .tz-turf .pe-field { --pe-sw: 82px; --pe-gap: 12px; }
 .tz-frame--v .tz-turf .pe-field { --pe-sw: 66px; --pe-gap: 8px; }
 .tz-turf { animation: tz-rise .5s .1s ease-out both; }
-.tz-capstamp { position: absolute; top: 10px; left: 50%; display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border: 1px solid var(--pe-amber); border-radius: 999px; background: rgba(20, 16, 10, .9); font-family: var(--pe-cond); font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--pe-amber-bright); transform: translateX(-50%); animation: tz-pop .45s cubic-bezier(.2, 1.5, .4, 1) both; }
-@keyframes tz-pop { from { opacity: 0; transform: translateX(-50%) scale(.6); } to { opacity: 1; transform: translateX(-50%) scale(1); } }
+/* The cards on the field are drawn at 82px, not the game's 118, so their words
+   come down with them or the names run out of room. */
+.tz-turf .pe-fc-topbar { height: 16px; padding: 0 4px; }
+.tz-turf .pe-fc-pos-badge { font-size: .42rem; padding: 0 2px; }
+.tz-turf .pe-fc-rar-badge { font-size: .4rem; letter-spacing: .08em; }
+.tz-turf .pe-fc-rar-badge.transcendent { font-size: .36rem; letter-spacing: .02em; }
+.tz-turf .pe-fc-info { padding: 3px 4px 4px; }
+.tz-turf .pe-fc-name { font-size: .62rem; }
+.tz-turf .pe-fc-score { font-size: .74rem; margin-top: 1px; }
+.tz-turf .pe-fc-team-tag { font-size: .4rem; letter-spacing: .02em; margin-top: 1px; }
+.tz-turf .pe-fsl > .pe-capmark { --cm: 18px; right: 4px; bottom: 16px; }
+.tz-frame--v .tz-turf .pe-fc-topbar { height: 13px; }
+.tz-frame--v .tz-turf .pe-fc-name { font-size: .54rem; }
+.tz-frame--v .tz-turf .pe-fc-score { font-size: .62rem; }
+.tz-frame--v .tz-turf .pe-fc-team-tag { display: none; }
+.tz-frame--v .tz-turf .pe-fsl > .pe-capmark { --cm: 15px; bottom: 12px; }
+
+/* Captain: the odds under the words. Each row climbs from an ordinary pack's
+   chance to the captain's, its bar filling from that share to full. */
+.tz-odds { display: grid; gap: 12px; width: 400px; padding: 16px 18px 18px; border: 1px solid rgba(232, 168, 75, .28); border-radius: 12px; background: rgba(14, 12, 9, .72); animation: tz-rise .5s .3s ease-out both; }
+.tz-odds-head { display: flex; justify-content: space-between; font-family: var(--mono); font-size: .66rem; letter-spacing: .18em; text-transform: uppercase; color: var(--pe-ink-mute); }
+.tz-odds-head span:first-child { color: var(--pe-amber); }
+.tz-odds-row { display: grid; grid-template-columns: 112px minmax(0, 1fr) 68px 38px; align-items: center; gap: 12px; }
+.tz-odds-name { font-family: var(--pe-cond); font-weight: 800; font-size: 1.05rem; letter-spacing: .06em; text-transform: uppercase; color: var(--rc); }
+.tz-odds-bar { height: 8px; border-radius: 4px; background: rgba(255, 255, 255, .07); overflow: hidden; }
+.tz-odds-bar i { display: block; height: 100%; border-radius: 4px; background: var(--rc); box-shadow: 0 0 10px var(--rc); transform-origin: left; transform: scaleX(var(--from)); animation: tz-fill .7s var(--d) cubic-bezier(.3, 0, .3, 1) forwards; }
+@keyframes tz-fill { to { transform: scaleX(1); } }
+.tz-odds-row > b { justify-self: end; font-family: var(--pe-display); font-weight: 900; font-size: 1.15rem; font-variant-numeric: tabular-nums; color: var(--pe-ink-soft); transition: color .3s; }
+.tz-odds-row[data-up] > b { color: var(--rc); }
+.tz-odds-x { justify-self: end; font-family: var(--pe-display); font-weight: 900; font-size: .95rem; color: var(--rc); opacity: 0; }
+.tz-odds-row[data-up] .tz-odds-x { animation: tz-pop2 .45s cubic-bezier(.2, 1.6, .4, 1) both; }
+.tz-frame--v .tz-odds { width: 420px; }
 
 /* The rip: the pack at the bottom, the hand of five well clear above it. */
 .tz-rip { position: relative; justify-self: center; width: 700px; height: 640px; }
@@ -135,6 +179,9 @@
 .tz-chem-total small { font-family: var(--mono); font-size: .8rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--pe-ink-mute); text-shadow: none; }
 .tz-frame--v .tz-chem-total { font-size: 2.6rem; }
 .tz-chem-key { margin: 0; font-size: 1rem; }
+.tz-split > .tz-chem-key--below { display: none; }
+.tz-frame--v .tz-cap-col > .tz-chem-key--side { display: none; }
+.tz-frame--v .tz-split > .tz-chem-key--below { display: flex; justify-content: center; margin-top: -18px; }
 
 /* Battles */
 .tz-battles { justify-self: center; display: grid; gap: 12px; width: 600px; }
@@ -162,23 +209,36 @@
 .tz-frame--v .tz-mys-pack { width: 170px; margin: -125px 0 0 -85px; transform: translateX(calc(var(--n) * 62px)) rotate(calc(var(--n) * 7deg)) scale(calc(1 - abs(var(--n)) * .14)); }
 
 /* Ball Knower */
-.tz-bk { position: relative; justify-self: center; display: flex; align-items: center; gap: 40px; }
-.tz-bk-card .pe-card { --pe-cs: 1.55; }
-.tz-bk-side { transform: rotate(-8deg) translateY(30px); opacity: .7; animation: tz-rise .5s ease-out both; }
-.tz-bk-side .pe-card { --pe-cs: 1.1; }
-.tz-frame--v .tz-bk-card .pe-card { --pe-cs: 1.2; }
-.tz-frame--v .tz-bk-side { display: none; }
+/* Three blanks, then each turns over to what it really was, a different rarity
+   each: edge-on at the halfway mark, where the face is swapped. */
+.tz-bk { position: relative; justify-self: center; display: flex; align-items: center; gap: 26px; }
+.tz-bk-card { animation: tz-rise .5s ease-out both; animation-delay: calc(var(--k) * 90ms); }
+.tz-bk-card:nth-child(2) { translate: 0 -18px; }
+.tz-bk-card .pe-card { --pe-cs: 1.3; }
+.tz-bk-flip { transition: opacity .3s; }
+.tz-bk-flip[data-turn] { animation: tz-flip .36s ease-in-out both; }
+/* The two you passed drop back once you've taken one, until they turn over. */
+.tz-bk-card { position: relative; }
+.tz-bk-card[data-passed] .tz-bk-flip { opacity: .4; }
+/* The tap that takes it: a fingertip and the ring off it. */
+.tz-tap { position: absolute; left: 50%; top: 50%; z-index: 30; width: 70px; height: 70px; margin: -35px 0 0 -35px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 247, 224, .9) 0 20%, rgba(255, 247, 224, .22) 21% 58%, transparent 59%); pointer-events: none; animation: tz-tap .7s ease-out both; }
+.tz-tap::after { content: ''; position: absolute; inset: 0; border: 2px solid rgba(255, 247, 224, .8); border-radius: 50%; animation: tz-tap-ring .7s .1s ease-out both; }
+@keyframes tz-tap { 0% { opacity: 0; transform: scale(.5); } 25% { opacity: 1; transform: scale(.85); } 70% { opacity: .8; transform: scale(.8); } 100% { opacity: 0; transform: scale(.8); } }
+@keyframes tz-tap-ring { from { opacity: 1; transform: scale(.5); } to { opacity: 0; transform: scale(1.9); } }
+@keyframes tz-flip { 0% { transform: perspective(900px) rotateY(0); } 50% { transform: perspective(900px) rotateY(90deg); } 50.01% { transform: perspective(900px) rotateY(-90deg); } 100% { transform: perspective(900px) rotateY(0); } }
+.tz-frame--v .tz-bk { gap: 12px; }
+.tz-frame--v .tz-bk-card .pe-card { --pe-cs: .95; }
 
 /* Versus */
 .tz-vs { justify-self: center; display: flex; align-items: center; gap: 30px; }
 .tz-vs-side { display: grid; justify-items: center; gap: 8px; animation: tz-rise .5s ease-out both; transition: filter .4s, opacity .4s; }
 .tz-vs-side + .tz-vs-mid + .tz-vs-side { animation-delay: .12s; }
 .tz-vs-card .pe-card { --pe-cs: 1.2; }
-.tz-frame--v .tz-vs-card .pe-card { --pe-cs: .82; }
-.tz-frame--v .tz-vs { gap: 10px; }
+.tz-frame--v .tz-vs-card .pe-card { --pe-cs: 1.05; }
+.tz-frame--v .tz-vs { gap: 14px; }
 .tz-vs-name { font-family: var(--mono); font-size: .8rem; letter-spacing: .22em; text-transform: uppercase; color: var(--pe-ink-mute); }
 .tz-vs-side > b { font-family: var(--pe-display); font-weight: 900; font-size: 2.4rem; }
-.tz-frame--v .tz-vs-side > b { font-size: 1.6rem; }
+.tz-frame--v .tz-vs-side > b { font-size: 2rem; }
 .tz-vs-side[data-win] > b { color: #7be0a2; text-shadow: 0 0 22px rgba(123, 224, 162, .45); }
 .tz-vs-side[data-win] .tz-vs-name::after { content: ' · Wins'; color: #7be0a2; }
 .tz-vs-mid { font-family: var(--serif); font-style: italic; font-size: 3rem; color: #e2725b; }
@@ -201,6 +261,42 @@
 .tz-lg-bar { height: 8px; border-radius: 4px; background: rgba(255, 255, 255, .06); overflow: hidden; }
 .tz-lg-bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #6b4fb0, #b48cf0); transition: width .6s ease-out; }
 .tz-lg-row > b { justify-self: end; font-family: var(--pe-display); font-weight: 900; font-size: 1.1rem; }
+
+/* Binder: the real tiles, a size up, two columns of men. A card filing in turns
+   over in its slot, lights, and gets the New chip. */
+.tz-bd { justify-self: center; display: grid; grid-template-columns: repeat(2, 320px); gap: 12px; }
+.tz-bd .pe-bd-man { background: rgba(22, 20, 16, .88); animation: tz-rise .45s ease-out both; animation-delay: calc(var(--m) * 70ms); }
+.tz-bd .pe-bd-man-name { font-size: 1.15rem; }
+.tz-bd .pe-bd-man-pos, .tz-bd .pe-bd-man-meta { font-size: .62rem; }
+.tz-bd-cell { position: relative; flex-shrink: 0; width: calc((100% - 1.5rem) / 4); }
+.tz-bd-cell > .pe-bd-slot { width: 100%; max-width: none; }
+.tz-bd-cell[data-turn] { animation: tz-flip .36s ease-in-out both; }
+.tz-bd .pe-bd-tile-art { height: 4.4rem; }
+.tz-bd .pe-bd-tile-year { font-size: .62rem; }
+.tz-bd .pe-bd-tile-rar { font-size: .56rem; }
+.tz-bd .pe-bd-tile-foot { font-size: .72rem; }
+.tz-bd .pe-bd-tile.back .pe-bd-tile-foot { font-size: .5rem; }
+.tz-bd .pe-bd-tile-count { font-size: .58rem; }
+.tz-bd-cell:has(.tz-bd-new) .pe-bd-tile { animation: tz-bd-glow 1.4s ease-out; }
+@keyframes tz-bd-glow { from { box-shadow: 0 0 0 2px #fff, 0 0 34px 10px var(--rg); } }
+.tz-bd-new { position: absolute; top: -9px; left: 0; right: 0; z-index: 5; width: max-content; margin: 0 auto; padding: 2px 8px 1px; border-radius: 999px; background: var(--pe-amber); box-shadow: 0 2px 8px rgba(0, 0, 0, .5); color: #1a1408; font-family: var(--pe-cond); font-weight: 800; font-size: .62rem; letter-spacing: .12em; line-height: 1.2; text-transform: uppercase; animation: tz-pop2 .45s .05s cubic-bezier(.2, 1.6, .4, 1) both; }
+.tz-bd-sum { display: grid; gap: 4px; width: 400px; padding: 16px 18px 18px; border: 1px solid var(--pe-line); border-radius: 12px; background: rgba(14, 12, 9, .72); animation: tz-rise .5s .3s ease-out both; }
+.tz-bd-sum .pe-bd-rar { margin-top: 12px; }
+/* The count is a span too, so it takes back the size the "/1,041" after it drops. */
+.tz-bd-sum .pe-bd-sum-num > span:first-child { margin: 0; font-size: inherit; color: inherit; }
+.tz-bd-sum .pe-bd-rar-bar span { transition: width .6s cubic-bezier(.3, 1.2, .4, 1); }
+.tz-bd-sum .pe-bd-rar-row[data-up] .pe-bd-rar-n { color: var(--rc); }
+.tz-bd-num { display: inline-block; animation: tz-bump .45s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes tz-bump { from { transform: scale(1.25); color: #fff; } }
+/* One column on 9:16, the way the binder sits on a phone: the two men whose cards file in. */
+.tz-frame--v .tz-bd { grid-template-columns: minmax(0, 1fr); width: 460px; gap: 10px; }
+.tz-frame--v .tz-bd .pe-bd-man:nth-child(n + 3) { display: none; }
+.tz-frame--v .tz-bd .pe-bd-tile-art { height: 3.8rem; }
+.tz-frame--v .tz-bd .pe-bd-man { padding: .7rem .9rem .65rem; }
+.tz-frame--v .tz-bd-sum { padding: 12px 16px 14px; }
+.tz-frame--v .tz-bd-sum .pe-bd-sum-num { font-size: 2.4rem; }
+.tz-frame--v .tz-bd-sum .pe-bd-rar { gap: .3rem; margin-top: 8px; }
+.tz-frame--v .tz-bd-sum { width: 420px; }
 
 /* Climb */
 .tz-ladder { justify-self: center; width: 470px; }

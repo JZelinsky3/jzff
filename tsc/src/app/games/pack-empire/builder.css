@@ -56,16 +56,16 @@
 .pe-bp-go .pe-push { flex: 1; max-width: 16rem; }
 .pe-bp-go .pe-link { font-family: var(--pe-cond); font-weight: 700; font-size: .86rem; letter-spacing: .08em; text-transform: uppercase; }
 
-/* The table: three cards in front of the packs they came from, on a lit felt.
+/* The table: three cards on a lit felt, alone in the middle on Empire Builder's
+   picker, between two seats on Versus and Mega Draft's (.pe-bp-seat below).
    Static apart from the deal-in, which is transform and opacity. */
 .pe-bp-table { position: relative; display: block; min-height: 16rem; overflow: hidden; border: 1px solid var(--pe-line-soft); border-radius: 8px; background: radial-gradient(ellipse 80% 55% at 50% 100%, color-mix(in srgb, var(--fc) 16%, transparent), transparent 72%), linear-gradient(180deg, #12110f 0%, #0d0c0a 100%); }
 .pe-bp-table::after { content: ''; position: absolute; left: 6%; right: 6%; bottom: 1.6rem; height: 1px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--fc) 45%, transparent), transparent); }
 .pe-bp-glow { position: absolute; left: 50%; top: 46%; width: 15rem; height: 13rem; margin: -6.5rem 0 0 -7.5rem; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--fc) 26%, transparent), transparent); }
-.pe-bp-pack { position: absolute; bottom: 1.25rem; width: 4.8rem; aspect-ratio: 1 / 1.48; border-radius: 4px; background: center / cover no-repeat; opacity: .42; box-shadow: 0 8px 18px rgba(0, 0, 0, .55); }
-.pe-bp-pack.l { left: 7%; transform: rotate(-14deg); }
-.pe-bp-pack.r { right: 7%; transform: rotate(14deg); }
-.pe-bp-table--mys .pe-bp-pack { opacity: .55; box-shadow: 0 8px 18px rgba(0, 0, 0, .55), 0 0 22px rgba(169, 156, 245, .25); }
 .pe-bp-hand { position: absolute; left: 50%; bottom: 1.15rem; display: flex; align-items: flex-end; transform: translateX(-50%); }
+/* No seats: the hand stands in the middle of the felt, the glow right behind it. */
+.pe-bp-table--solo .pe-bp-hand { top: 50%; bottom: auto; transform: translate(-50%, -50%); }
+.pe-bp-table--solo .pe-bp-glow { top: 50%; }
 .pe-bp-held { position: relative; margin: 0 -1rem; }
 .pe-bp-held:nth-child(1) { transform: translateY(.5rem) rotate(-11deg); }
 .pe-bp-held:nth-child(2) { z-index: 2; transform: translateY(-.4rem); }
@@ -104,7 +104,6 @@
   .pe-bp-table { order: -1; min-height: 11.5rem; }
   .pe-bp-held .pe-card { --pe-cs: .5; }
   .pe-bp-held { margin: 0 -.75rem; }
-  .pe-bp-pack { width: 3.4rem; bottom: 1rem; }
   .pe-bp-table::after { bottom: 1.25rem; }
   .pe-bp-hand { bottom: .9rem; }
   .pe-bp-glow { width: 11rem; height: 9rem; margin: -4.5rem 0 0 -5.5rem; }

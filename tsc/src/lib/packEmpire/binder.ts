@@ -244,8 +244,10 @@ export async function binderTotals(userId: string): Promise<BinderTotals> {
   return build(await counts(userId), new Map()).totals
 }
 
-export async function loadBinder(userId: string): Promise<BinderView> {
-  await syncBinder(userId)
+/** `sync` files any board runs that never reached the binder first. A friend's
+    profile reads their binder as it stands and leaves the filing to them. */
+export async function loadBinder(userId: string, sync = true): Promise<BinderView> {
+  if (sync) await syncBinder(userId)
   const [mine, site, { serials, hall }] = await Promise.all([counts(userId), siteCounts(), cantonSerials(userId)])
   return { ...build(mine, site, serials), hall }
 }
