@@ -21,6 +21,7 @@ import {
   joinSeason,
   keepReward,
   openBenchPack,
+  openRewardPack,
   openSeasonPack,
   pickBenchCard,
   pickSeasonCard,
@@ -29,10 +30,13 @@ import {
   renameSeasonTeam,
   seasonView,
   setFranchise,
+  setKeepers,
+  startNextSeason,
   setSeasonCpus,
   setSeasonPlayoffs,
   startSeason,
   subIn,
+  tradeUp,
   type SeasonWho,
 } from '@/lib/packEmpire/season'
 import { seasonViewer } from '@/lib/packEmpire/seasonWho'
@@ -132,13 +136,25 @@ export async function POST(req: NextRequest) {
       out = await pickBenchCard(id, who, body.card)
       break
     case 'play':
-      out = await playSeasonGame(id, who)
+      out = await playSeasonGame(id, who, body.plan)
+      break
+    case 'rewardOpen':
+      out = await openRewardPack(id, who, body.focus)
       break
     case 'keep':
       out = await keepReward(id, who, body.card ?? null, body.release)
       break
     case 'sub':
       out = await subIn(id, who, body.bench, body.slot)
+      break
+    case 'next':
+      out = await startNextSeason(id, who)
+      break
+    case 'keepers':
+      out = await setKeepers(id, who, body.cards)
+      break
+    case 'trade':
+      out = await tradeUp(id, who, body.cards)
       break
     case 'release':
       out = await releaseBench(id, who, body.bench)

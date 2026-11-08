@@ -40,11 +40,11 @@ export default async function SeasonDraftPage({ params }: { params: Promise<{ id
         back={`/games/pack-empire/league/season/${view.league.id}/`}
         backLabel={view.league.name}
         kicker="Season"
-        title="Draft"
-        titleEm="Day"
+        title={view.me.step === 'keepers' ? 'The' : 'Draft'}
+        titleEm={view.me.step === 'keepers' ? 'Offseason' : 'Day'}
       />
       <div className="pe-draft">
-        <SeasonDraft leagueId={view.league.id} initial={view.me} />
+        <SeasonDraft leagueId={view.league.id} initial={view.me} season={view.league.seasonNumber} />
       </div>
     </main>
   )

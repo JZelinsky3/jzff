@@ -9,6 +9,7 @@ import { notFound } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { playerById } from '@/lib/packEmpire/pool'
 import { RARITY_LOOK, SLOTS } from '@/lib/packEmpire/rules'
+import { PLAN_LOOK } from '@/lib/packEmpire/seasonRules'
 import { seasonGame } from '@/lib/packEmpire/season'
 import type { BoxLine, Drive } from '@/lib/packEmpire/seasonSim'
 import { createClient } from '@/lib/supabase/server'
@@ -17,6 +18,7 @@ import mobileStyles from '../../../../../mobile.module.css'
 import { Face } from '../../../../cards'
 import { PeChrome, PeDock } from '../../../../chrome'
 import { peFonts } from '../../../../fonts'
+import { ReplayLauncher } from '../../ReplayLauncher'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,7 +57,10 @@ export default async function SeasonGamePage({
   const mobile = (await getViewMode()) === 'mobile'
   const g = got.game
   const r = g.result
-  const won = g.phase === 'regular' ? g.won : null
+  const theirs = got.line ?? got.oppPoints
+  const won = g.phase === 'regular' ? g.won : got.oppPoints != null ? g.points > got.oppPoints : null
+  const plan = r.plan ?? 'balanced'
+  const replay = r.drives.every((d) => d.plays?.length)
   const skill = r.box.filter((b) => b.grade == null).sort((a, b) => SKILL_ORDER.indexOf(a.pos) - SKILL_ORDER.indexOf(b.pos) || b.pts - a.pts)
   const line = r.box.filter((b) => b.grade != null)
   const nameOf = (bid?: string) => (bid ? (r.box.find((b) => b.id === bid)?.name ?? null) : null)
@@ -85,15 +90,32 @@ export default async function SeasonGamePage({
               <b>{g.points}</b>
               <small>Points</small>
             </div>
-            <div className="pe-sn-gd-vs">{got.line != null ? (won ? 'beat' : 'missed') : 'scored'}</div>
+            <div className="pe-sn-gd-vs">{theirs == null ? 'vs' : won ? 'beat' : got.line != null ? 'missed' : 'lost to'}</div>
             <div className="pe-sn-gd-score pe-sn-gd-score--line">
-              <b>{got.line ?? r.yards}</b>
-              <small>{got.line != null ? 'To win' : 'Yards'}</small>
+              <b>{theirs ?? '...'}</b>
+              <small>{got.line != null ? 'To beat' : (got.opponent ?? 'Opponent')}</small>
             </div>
           </div>
           <p className="pe-bx-sub">
             {r.yards} yards: {r.rushYds} on the ground, {r.passYds} through the air. {r.sacks} {r.sacks === 1 ? 'sack' : 'sacks'} allowed. Projected {Math.round(r.expected)}.
+            {plan !== 'balanced' ? ` Game plan: ${PLAN_LOOK[plan].name}, and it ${r.clicked ? 'worked' : "didn't work"}.` : ''}
+            {r.drives.some((d) => d.ot) ? ' Decided in overtime.' : ''}
           </p>
+          {replay && (
+            <div className="pe-sn-gd-acts">
+              <ReplayLauncher
+                drives={r.drives}
+                cast={got.cast}
+                team={got.team}
+                defense={got.defense}
+                line={got.line}
+                opponent={got.opponent}
+                oppPoints={got.oppPoints}
+                plan={plan}
+                clicked={r.clicked ?? null}
+              />
+            </div>
+          )}
         </section>
 
         <div className="pe-sn">
@@ -105,7 +127,7 @@ export default async function SeasonGamePage({
             <ol className="pe-bx-drives">
               {r.drives.map((d, i) => (
                 <li key={i} data-end={d.end}>
-                  <span>{i + 1}</span>
+                  <span>{d.ot ? 'OT' : i + 1}</span>
                   <b>{END[d.end]}</b>
                   <i>
                     <em style={{ transform: `scaleX(${Math.min(1, d.yards / 80)})` }} />

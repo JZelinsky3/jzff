@@ -2420,6 +2420,1428 @@
   margin: 0.2rem 0 0.4rem;
 }
 
+/* ── Round 3: game plans, the pack card, watching games ─────── */
+
+/* The defense's marks: the kinds of player it stops or is soft on. */
+.pe-sn-gd-marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+}
+
+.pe-sn-gd-marks abbr {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.08rem 0.35rem 0.08rem 0.2rem;
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--tc) 45%, transparent);
+  background: color-mix(in srgb, var(--tc) 10%, transparent);
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  color: var(--pe-ink);
+  cursor: help;
+}
+
+/* The game plan picker. */
+.pe-sn-gd-plans {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.pe-sn-gd-planhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.pe-sn-gd-planhead small {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pe-amber);
+}
+
+.pe-sn-gd-coach {
+  padding: 0.2rem 0.6rem;
+  border: 1px dashed color-mix(in srgb, var(--pe-amber) 55%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--pe-amber-bright);
+  cursor: pointer;
+}
+
+.pe-sn-gd-planrow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.pe-sn-gd-planrow button {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.55rem 0.3rem;
+  border: 1px solid var(--pe-line);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--pe-ink-soft);
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.pe-sn-gd-planrow button b {
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pe-sn-gd-planrow button small {
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.04em;
+  color: var(--pe-ink-mute);
+}
+
+.pe-sn-gd-planrow button[aria-checked='true'] {
+  border-color: var(--pe-amber);
+  background: linear-gradient(180deg, rgba(232, 168, 75, 0.18), rgba(232, 168, 75, 0.04));
+  color: var(--pe-amber-bright);
+  transform: translateY(-2px);
+}
+
+.pe-sn-gd-planline {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: var(--pe-ink-soft);
+}
+
+.pe-sn-gd-planline b {
+  color: var(--pe-ink);
+}
+
+.pe-sn-gd-swing {
+  grid-column: 1 / -1;
+  margin: -0.2rem 0 0;
+  text-align: center;
+  font-family: var(--pe-cond);
+  font-weight: 600;
+  font-size: 0.86rem;
+  letter-spacing: 0.04em;
+  color: var(--pe-ink-mute);
+}
+
+.pe-sn-gd-swing b {
+  font-family: var(--pe-display);
+  font-weight: 800;
+  color: var(--pe-ink);
+}
+
+/* Who carries each lane, in the full report. */
+.pe-sn-lane-who {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.2rem;
+  margin: -0.1rem 0 0.35rem;
+  font-family: var(--pe-cond) !important;
+  font-weight: 600 !important;
+  font-size: 0.74rem !important;
+  color: var(--pe-ink-mute) !important;
+}
+
+.pe-sn-lane-split {
+  display: flex;
+  gap: 1px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+}
+
+.pe-sn-lane-split u {
+  display: block;
+  min-width: 2px;
+  background: var(--pe-ink-mute);
+}
+
+/* The last game: the plan's result, the three best. */
+.pe-sn-gd-plan {
+  margin-left: auto;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  font-style: normal;
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.74rem;
+  color: #8fd3a2;
+  border: 1px solid color-mix(in srgb, var(--pe-green) 45%, transparent);
+}
+
+.pe-sn-gd-plan[data-click='false'] {
+  color: #f0948a;
+  border-color: color-mix(in srgb, var(--pe-red) 45%, transparent);
+}
+
+.pe-sn-gd-stars {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.pe-sn-gd-next2 {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.pe-sn-gd-mini {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--pe-line-soft);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.pe-sn-gd-mini .pe-bond-face {
+  width: 32px;
+  height: 32px;
+}
+
+.pe-sn-gd-mini > span {
+  display: grid;
+  min-width: 0;
+}
+
+.pe-sn-gd-mini b {
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--pe-ink);
+}
+
+.pe-sn-gd-mini em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: normal;
+  font-size: 0.72rem;
+  color: var(--pe-ink-mute);
+}
+
+.pe-sn-gd-mini strong {
+  font-family: var(--pe-display);
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--pe-ink-soft);
+}
+
+.pe-sn-gd-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.pe-sn-gd-acts .pe-act {
+  text-decoration: none;
+}
+
+.pe-sn-round[data-now] .pe-sn-round-head b {
+  color: var(--pe-amber-bright);
+}
+
+/* The pack waiting: its art, what it's for, the focus, then open. */
+.pe-sn-pk {
+  --rw: var(--pe-amber);
+  position: relative;
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 1.3rem;
+  padding: 1.2rem 1.3rem 1.3rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--rw) 45%, var(--pe-line));
+  border-radius: 12px;
+  background:
+    radial-gradient(ellipse 60% 90% at 0% 50%, color-mix(in srgb, var(--rw) 18%, transparent), transparent 70%),
+    linear-gradient(180deg, #211f1a, #181712);
+}
+
+.pe-sn-pk-art {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 0.4rem;
+}
+
+.pe-sn-pk-art img {
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.55));
+  animation: pe-sn-float 3.2s ease-in-out infinite;
+}
+
+.pe-sn-pk-art span {
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.74rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--rw);
+}
+
+@keyframes pe-sn-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(1deg);
+  }
+}
+
+.pe-sn-pk-body {
+  display: grid;
+  align-content: start;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.pe-sn-pk-kick {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--rw);
+}
+
+.pe-sn-pk h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--rw);
+}
+
+.pe-sn-pk-why {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--pe-ink);
+}
+
+.pe-sn-pk-holds {
+  margin: -0.2rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--pe-ink-mute);
+}
+
+.pe-sn-pk-focus {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.75rem 0.8rem;
+  border: 1px solid var(--pe-line-soft);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.pe-sn-pk-focus > small {
+  font-size: 0.78rem;
+  color: var(--pe-ink-soft);
+}
+
+.pe-sn-pk-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.pe-sn-pk-row i {
+  width: 4.2rem;
+  font-style: normal;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.54rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+.pe-sn-pk-row button {
+  padding: 0.32rem 0.6rem;
+  border: 1px solid var(--pe-line);
+  border-radius: 999px;
+  background: var(--pe-card);
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--pe-ink-soft);
+  cursor: pointer;
+}
+
+.pe-sn-pk-row button[aria-pressed='true'] {
+  border-color: var(--rw);
+  background: color-mix(in srgb, var(--rw) 16%, transparent);
+  color: var(--pe-ink);
+}
+
+.pe-sn-pk-go {
+  justify-self: start;
+  min-width: 13rem;
+}
+
+/* Your starters, under an open pack. */
+.pe-sn-peek {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem 0.8rem;
+  max-width: 52rem;
+  margin: 0.4rem auto 0;
+  font-size: 0.74rem;
+  color: var(--pe-ink-soft);
+}
+
+.pe-sn-peek > b {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pe-amber);
+}
+
+.pe-sn-peek i {
+  margin-right: 0.3rem;
+  font-style: normal;
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  color: var(--pe-ink-mute);
+}
+
+/* The mini lineup: let a bench card go, trade three up. */
+.pe-sn-lu-benchspot {
+  display: inline-grid;
+  justify-items: center;
+  gap: 0.25rem;
+}
+
+.pe-sn-lu-letgo {
+  padding: 0.15rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--pe-red) 55%, transparent);
+  border-radius: 999px;
+  background: rgba(210, 84, 74, 0.1);
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: #f0948a;
+  cursor: pointer;
+}
+
+.pe-sn-lu-trade {
+  display: flex;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.pe-sn-lu-benchhead {
+  flex-wrap: wrap;
+}
+
+/* Draft Day: the pick is in. */
+.pe-sn-call-in {
+  --rc: var(--pe-amber);
+  position: fixed;
+  left: 50%;
+  bottom: 1.4rem;
+  z-index: 240;
+  display: grid;
+  gap: 0.2rem;
+  width: min(30rem, calc(100vw - 2rem));
+  padding: 0.85rem 1.1rem 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--rc) 55%, var(--pe-line));
+  border-left: 4px solid var(--rc);
+  border-radius: 10px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--rc) 16%, #1d1b17), #171612 70%);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.6);
+  transform: translateX(-50%);
+  animation: pe-sn-called 2.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  pointer-events: none;
+}
+
+@keyframes pe-sn-called {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 18px) scale(0.97);
+  }
+  10%,
+  86% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+.pe-sn-call-in small {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--rc);
+}
+
+.pe-sn-call-in > b {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.3rem;
+  color: var(--pe-ink);
+}
+
+.pe-sn-call-in > span {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 0.65rem;
+  align-items: center;
+}
+
+.pe-sn-call-in .pe-bond-face {
+  grid-row: 1 / 3;
+  width: 42px;
+  height: 42px;
+}
+
+.pe-sn-call-in strong {
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--pe-ink);
+}
+
+.pe-sn-call-in em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: normal;
+  font-size: 0.76rem;
+  color: var(--pe-ink-soft);
+}
+
+/* Draft Day's report. */
+.pe-sn-dr {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1.4rem;
+  max-width: 52rem;
+  margin: 1.2rem auto 1rem;
+  padding: 1.2rem 1.4rem;
+  border: 1px solid var(--pe-line);
+  border-radius: 12px;
+  background:
+    radial-gradient(ellipse 50% 100% at 0% 50%, rgba(232, 168, 75, 0.14), transparent 70%),
+    linear-gradient(180deg, #211f1a, #181712);
+}
+
+.pe-sn-dr-grade {
+  --gc: var(--pe-amber-bright);
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+  min-width: 6.5rem;
+}
+
+.pe-sn-dr-grade[data-grade='A'] {
+  --gc: #8fd3a2;
+}
+
+.pe-sn-dr-grade[data-grade='D'],
+.pe-sn-dr-grade[data-grade='F'] {
+  --gc: #f0948a;
+}
+
+.pe-sn-dr-grade small {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.56rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+.pe-sn-dr-grade b {
+  font-family: var(--pe-display);
+  font-weight: 900;
+  font-size: 4.6rem;
+  line-height: 1;
+  color: var(--gc);
+  animation: pe-sn-stampin 0.5s 0.2s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+@keyframes pe-sn-stampin {
+  from {
+    opacity: 0;
+    transform: scale(1.8) rotate(-6deg);
+  }
+}
+
+.pe-sn-dr-head h2 {
+  margin: 0.3rem 0 0.8rem;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.7rem;
+  line-height: 1.1;
+  color: var(--pe-ink);
+}
+
+.pe-sn-dr-nums {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.6rem;
+}
+
+.pe-sn-dr-nums span {
+  display: grid;
+}
+
+.pe-sn-dr-nums b {
+  font-family: var(--pe-display);
+  font-weight: 800;
+  font-size: 1.3rem;
+  color: var(--pe-ink);
+}
+
+.pe-sn-dr-nums small {
+  font-family: var(--pe-cond);
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+.pe-sn-dr-picks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+  max-width: 52rem;
+  margin: 0 auto 1.2rem;
+}
+
+.pe-sn-dr-pick {
+  --rc: var(--pe-amber);
+  display: grid;
+  justify-items: start;
+  align-content: start;
+  gap: 0.3rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--pe-line);
+  border-top: 3px solid var(--rc);
+  border-radius: 10px;
+  background: var(--pe-bg-soft);
+}
+
+.pe-sn-dr-pick[data-weak] {
+  border-top-color: #e8837a;
+}
+
+.pe-sn-dr-pick small {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.54rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pe-amber);
+}
+
+.pe-sn-dr-pick .pe-bond-face {
+  width: 46px;
+  height: 46px;
+}
+
+.pe-sn-dr-pick b {
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--pe-ink);
+}
+
+.pe-sn-dr-pick em {
+  font-style: normal;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--pe-ink-soft);
+}
+
+.pe-sn-bp--done {
+  border-style: solid;
+}
+
+.pe-sn-bp-tag {
+  margin-top: 0.3rem;
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--pe-ink-soft);
+}
+
+.pe-sn-dr-go {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.4rem;
+}
+
+.pe-sn-dr-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  color: var(--pe-ink-mute);
+}
+
+/* The Stat Book: regular season or playoffs, and the line as a row of five. */
+.pe-sb-parts {
+  display: inline-flex;
+  gap: 3px;
+  margin: -0.6rem 0 1.4rem;
+  padding: 3px;
+  border: 1px solid var(--pe-line);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.pe-sb-parts a {
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.86rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--pe-ink-mute);
+}
+
+.pe-sb-parts a[aria-current='page'] {
+  background: rgba(232, 168, 75, 0.16);
+  color: var(--pe-amber-bright);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pe-amber) 55%, transparent);
+}
+
+.pe-sb-man[data-backup] {
+  opacity: 0.82;
+  border-left-style: dashed;
+}
+
+.pe-sb-line {
+  margin-top: 1.2rem;
+}
+
+.pe-sb-linecols {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.6rem;
+  align-items: start;
+}
+
+.pe-sb-linecol {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.pe-sb-linecol ol {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pe-sb-slot {
+  justify-self: center;
+  font-family: var(--pe-display);
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: var(--pe-ink-mute);
+}
+
+.pe-sb-linecol .pe-sb-man {
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'face big'
+    'who who'
+    'chips chips';
+}
+
+.pe-sb-linecol .pe-sb-big {
+  justify-items: end;
+}
+
+/* ── Watching a game ───────────────────────────────────────── */
+
+.pe-gc {
+  position: fixed;
+  inset: 0;
+  z-index: 330;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  overflow-y: auto;
+  background: rgba(8, 7, 6, 0.9);
+  animation: pe-sn-fade 0.25s ease both;
+}
+
+@keyframes pe-sn-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.pe-gc-in {
+  display: grid;
+  gap: 1rem;
+  width: min(52rem, 100%);
+  padding: 1.2rem 1.3rem 1.3rem;
+  border: 1px solid var(--pe-line);
+  border-radius: 14px;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(232, 168, 75, 0.12), transparent 70%),
+    linear-gradient(180deg, #1f1d19, #151410);
+  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.7);
+}
+
+.pe-gc-bug {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--pe-line);
+  border-radius: 10px;
+  background: #0f0e0c;
+}
+
+.pe-gc-side {
+  display: grid;
+  min-width: 0;
+}
+
+.pe-gc-side--them {
+  justify-items: end;
+  text-align: right;
+}
+
+.pe-gc-side small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pe-ink-soft);
+}
+
+.pe-gc-side b {
+  font-family: var(--pe-display);
+  font-weight: 900;
+  font-size: 2.4rem;
+  line-height: 1;
+  color: var(--pe-ink);
+}
+
+.pe-gc-side i {
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 0.54rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+.pe-gc-score {
+  display: inline-block;
+  animation: pe-sn-tick 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+@keyframes pe-sn-tick {
+  from {
+    transform: scale(1.35);
+    opacity: 0.4;
+  }
+}
+
+.pe-gc-mid {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  text-align: center;
+}
+
+.pe-gc-mid span {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pe-amber);
+}
+
+.pe-gc-mid em {
+  padding: 0.12rem 0.55rem;
+  border: 1px solid var(--pe-line);
+  border-radius: 999px;
+  font-style: normal;
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--pe-ink-soft);
+}
+
+.pe-gc-mid em[data-click='true'] {
+  border-color: color-mix(in srgb, var(--pe-green) 50%, transparent);
+  color: #8fd3a2;
+}
+
+.pe-gc-mid em[data-click='false'] {
+  border-color: color-mix(in srgb, var(--pe-red) 50%, transparent);
+  color: #f0948a;
+}
+
+/* The field: your end zone left, theirs right, the ball and the markers moved
+   by transform across a layer as wide as the field. */
+.pe-gc-field {
+  position: relative;
+  height: 4.6rem;
+  overflow: hidden;
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 5%, transparent 5% 10%),
+    linear-gradient(180deg, #23401f, #1a3117);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.pe-gc-ez {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4%;
+  background: rgba(232, 168, 75, 0.22);
+}
+
+.pe-gc-ez--them {
+  left: auto;
+  right: 0;
+  background: rgba(210, 84, 74, 0.25);
+}
+
+.pe-gc-yl {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.pe-gc-yl i {
+  position: absolute;
+  bottom: 0.2rem;
+  left: 0.25rem;
+  font-style: normal;
+  font-family: var(--pe-display);
+  font-size: 0.56rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.pe-gc-mark {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pe-gc-mark i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: block;
+}
+
+.pe-gc-mark--los i {
+  width: 2px;
+  margin-left: -1px;
+  background: rgba(127, 211, 250, 0.85);
+}
+
+.pe-gc-mark--gain i {
+  width: 2px;
+  margin-left: -1px;
+  background: #f4c06a;
+}
+
+.pe-gc-mark--ball i {
+  top: 50%;
+  bottom: auto;
+  width: 18px;
+  height: 11px;
+  margin: -5.5px 0 0 -9px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 40% 35%, #b5753e, #6e3f1a);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    0 0 12px rgba(244, 192, 106, 0.6);
+}
+
+.pe-gc-call {
+  position: relative;
+  display: grid;
+  gap: 0.3rem;
+  min-height: 5.2rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--pe-line-soft);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  animation: pe-sn-callin 0.3s ease both;
+}
+
+.pe-gc-call[data-big='td'] {
+  border-color: color-mix(in srgb, var(--pe-green) 60%, transparent);
+  background: rgba(104, 168, 120, 0.12);
+}
+
+.pe-gc-call[data-big='lost'] {
+  border-color: color-mix(in srgb, var(--pe-red) 60%, transparent);
+  background: rgba(210, 84, 74, 0.12);
+}
+
+.pe-gc-call[data-big='big'] {
+  border-color: color-mix(in srgb, var(--pe-amber) 60%, transparent);
+}
+
+@keyframes pe-sn-callin {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.pe-gc-call small {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pe-ink-mute);
+}
+
+.pe-gc-call p {
+  margin: 0;
+  font-family: var(--pe-cond);
+  font-weight: 600;
+  font-size: 1.3rem;
+  line-height: 1.25;
+  color: var(--pe-ink);
+}
+
+.pe-gc-flash {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.9rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  background: var(--pe-green);
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.86rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #0f1a12;
+  animation: pe-sn-flash 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+.pe-gc-flash--lost {
+  background: var(--pe-red);
+  color: #1d0f0d;
+}
+
+.pe-gc-flash--big {
+  background: var(--pe-amber);
+  color: #1d150a;
+}
+
+@keyframes pe-sn-flash {
+  from {
+    opacity: 0;
+    transform: scale(1.6) rotate(-4deg);
+  }
+}
+
+.pe-gc-final {
+  --wc: var(--pe-ink-soft);
+  display: grid;
+  justify-items: center;
+  gap: 0.15rem;
+  padding: 0.6rem;
+  animation: pe-sn-arrive 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.pe-gc-final[data-won='true'] {
+  --wc: #8fd3a2;
+}
+
+.pe-gc-final[data-won='false'] {
+  --wc: #f0948a;
+}
+
+.pe-gc-final b {
+  font-family: var(--pe-display);
+  font-weight: 900;
+  font-size: 3.4rem;
+  line-height: 1;
+  color: var(--pe-ink);
+}
+
+.pe-gc-final span {
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--wc);
+}
+
+.pe-gc-final small {
+  font-size: 0.82rem;
+  color: var(--pe-ink-mute);
+}
+
+.pe-gc-log {
+  display: grid;
+  gap: 0.2rem;
+  min-height: 3.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8rem;
+  color: var(--pe-ink-mute);
+}
+
+.pe-gc-log li:first-child {
+  color: var(--pe-ink-soft);
+}
+
+.pe-gc-drives {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.pe-gc-drives i {
+  width: 22px;
+  height: 8px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pe-gc-drives i[data-now] {
+  box-shadow: 0 0 0 1px var(--pe-amber);
+}
+
+.pe-gc-drives i[data-end='td'] {
+  background: var(--pe-green);
+}
+
+.pe-gc-drives i[data-end='fg'] {
+  background: var(--pe-amber);
+}
+
+.pe-gc-drives i[data-end='miss'] {
+  background: rgba(232, 168, 75, 0.3);
+}
+
+.pe-gc-drives i[data-end='punt'] {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.pe-gc-drives i[data-end='turnover'] {
+  background: var(--pe-red);
+}
+
+.pe-gc-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+/* ── The offseason: keepers ────────────────────────────────── */
+
+.pe-kp-head {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  max-width: 44rem;
+  margin: 1.2rem auto 1.2rem;
+  text-align: center;
+}
+
+.pe-kp-head h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 2.8rem;
+  line-height: 1;
+  color: var(--pe-ink);
+}
+
+.pe-kp-head p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--pe-ink-soft);
+}
+
+.pe-kp-head p b {
+  color: var(--pe-ink);
+}
+
+.pe-kp-pack {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 700;
+  color: var(--mk);
+}
+
+.pe-kp-rule {
+  font-size: 0.84rem !important;
+  color: var(--pe-ink-mute) !important;
+}
+
+.pe-kp-budget {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--pe-line);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.pe-kp-budget i,
+.pe-kp-cost i {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid #c8a24a;
+  border-radius: 50%;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.pe-kp-budget i[data-on],
+.pe-kp-cost i[data-on] {
+  background: radial-gradient(circle at 35% 30%, #ffe7b0, #f4c06a 45%, #a87420);
+  border-color: #ffe7b0;
+  transform: scale(1.12);
+}
+
+.pe-kp-budget span {
+  margin-left: 0.3rem;
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.86rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pe-ink-soft);
+}
+
+/* A card that can be kept: tap it and it's sealed. A gold chain runs round it
+   and a padlock drops onto it. Transform and opacity only. */
+.pe-kp-card {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 11px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.pe-kp-card::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 14px;
+  background: repeating-linear-gradient(135deg, #f4c06a 0 6px, #7a4e12 6px 9px, #ffe7b0 9px 12px, #7a4e12 12px 15px);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  padding: 3px;
+  opacity: 0;
+  transform: scale(0.96);
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+  pointer-events: none;
+}
+
+.pe-kp-card[data-state='kept'] {
+  transform: translateY(-4px);
+}
+
+.pe-kp-card[data-state='kept']::after {
+  opacity: 1;
+  transform: none;
+}
+
+.pe-kp-card[data-state='dim'],
+.pe-kp-card[data-state='maxed'] {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.pe-kp-seal {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  z-index: 20;
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+  transform: translate(-50%, -50%);
+  animation: pe-kp-drop 0.42s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  pointer-events: none;
+}
+
+@keyframes pe-kp-drop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -110%) scale(1.5);
+  }
+}
+
+.pe-kp-lock {
+  width: 40px;
+  height: 40px;
+  padding: 7px;
+  border-radius: 50%;
+  border: 2px solid #ffe7b0;
+  background: radial-gradient(circle at 40% 30%, #3a2c16, #120d07 75%);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+  fill: none;
+  stroke: #f4c06a;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pe-kp-seal b {
+  padding: 0.1rem 0.5rem;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #ffe7b0, #c8862a);
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #2a1a06;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+}
+
+.pe-kp-gone {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  z-index: 20;
+  padding: 0.15rem 0.45rem;
+  border-radius: 3px;
+  background: rgba(20, 19, 17, 0.92);
+  border: 1px solid var(--pe-line);
+  font-family: var(--pe-cond);
+  font-weight: 800;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--pe-ink-soft);
+  transform: translate(-50%, -50%) rotate(-8deg);
+}
+
+.pe-kp-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.pe-kp-cost i {
+  width: 8px;
+  height: 8px;
+  border-width: 1px;
+}
+
+.pe-kp-cost small {
+  margin-left: 0.2rem;
+  font-family: var(--pe-cond);
+  font-weight: 700;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: var(--pe-ink-mute);
+}
+
+.pe-kp-go {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.4rem;
+}
+
+.pe-kp-go .pe-push {
+  min-width: 16rem;
+}
+
 /* ── Phones ────────────────────────────────────────────────── */
 
 @media (max-width: 1100px) {
@@ -2611,6 +4033,113 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .pe-sn-gd-planrow {
+    gap: 0.25rem;
+  }
+
+  .pe-sn-gd-planrow button {
+    padding: 0.45rem 0.1rem;
+  }
+
+  .pe-sn-gd-planrow button b {
+    font-size: 0.74rem;
+    letter-spacing: 0;
+  }
+
+  .pe-sn-gd-planrow button small {
+    font-size: 0.48rem;
+  }
+
+  .pe-sn-gd-stars {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pe-sn-pk {
+    grid-template-columns: 5.2rem minmax(0, 1fr);
+    gap: 0.9rem;
+    padding: 1rem 0.9rem 1.1rem;
+  }
+
+  .pe-sn-pk h2 {
+    font-size: 1.5rem;
+  }
+
+  .pe-sn-pk-focus {
+    grid-column: 1 / -1;
+  }
+
+  .pe-sn-pk-row i {
+    width: 100%;
+  }
+
+  .pe-sn-pk-go {
+    justify-self: stretch;
+  }
+
+  .pe-sn-dr {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 0.6rem;
+    text-align: center;
+  }
+
+  .pe-sn-dr-nums {
+    justify-content: center;
+  }
+
+  .pe-sn-dr-picks {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pe-sb-linecols {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pe-gc {
+    padding: 0.5rem;
+    place-items: start center;
+  }
+
+  .pe-kp-head h2 {
+    font-size: 2.1rem;
+  }
+
+  .pe-kp-lock {
+    width: 26px;
+    height: 26px;
+    padding: 4px;
+  }
+
+  .pe-kp-seal b {
+    font-size: 0.48rem;
+    padding: 0.05rem 0.3rem;
+  }
+
+  .pe-kp-gone {
+    font-size: 0.42rem;
+  }
+
+  .pe-kp-cost small {
+    font-size: 0.5rem;
+  }
+
+  .pe-gc-in {
+    padding: 0.9rem 0.8rem 1rem;
+  }
+
+  .pe-gc-side b {
+    font-size: 1.9rem;
+  }
+
+  .pe-gc-call p {
+    font-size: 1.08rem;
+  }
+
+  .pe-gc-flash {
+    position: static;
+    justify-self: start;
+  }
+
   .pe-bx-drives li {
     grid-template-columns: 1.1rem 5.6rem minmax(2rem, 1fr) 2rem;
     font-size: 0.78rem;
@@ -2631,6 +4160,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .pe-kp-seal,
+  .pe-sn-pk-art img,
+  .pe-sn-call-in,
+  .pe-gc-mark,
+  .pe-gc-call,
+  .pe-gc-score,
+  .pe-gc-flash,
+  .pe-sn-dr-grade b,
   .pe-sn-gd-fill,
   .pe-sn-rep-lane em,
   .pe-sn-gd-last.is-fresh,

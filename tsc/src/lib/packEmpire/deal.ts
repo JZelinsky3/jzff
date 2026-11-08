@@ -708,6 +708,30 @@ export function mixedPack({ label, base, boosted, exclude }: { label: string; ba
   return out
 }
 
+/** `n` cards off a list a mode builds itself, one man each, every card on its
+    own lane of the label's stream, weighted by rarity. Season's focused game packs. */
+export function drawCards({ label, cards, weights, exclude, n }: { label: string; cards: Player[]; weights: Weights; exclude: Iterable<string>; n: number }): Player[] {
+  const used = new Set([...exclude].map(personOfId))
+  const draw = sampler(cards, weights)
+  const out: Player[] = []
+  for (let i = 0; i < n; i++) {
+    const lane = stream(`${label}|drawn|lane${i}`)
+    let pick: Player | null = null
+    for (let k = 0; k < LANE_DEPTH && !pick; k++) {
+      const p = draw(lane())
+      if (p && !used.has(personOf(p))) pick = p
+    }
+    if (!pick) {
+      const rest = cards.filter((p) => !used.has(personOf(p)))
+      if (rest.length === 0) break
+      pick = rest[Math.floor(lane() * rest.length)]
+    }
+    used.add(personOf(pick))
+    out.push(pick)
+  }
+  return out
+}
+
 export type DailySet = {
   /** Eleven wild packs, always opened in this order. A day with a captain
       uses the first ten. */

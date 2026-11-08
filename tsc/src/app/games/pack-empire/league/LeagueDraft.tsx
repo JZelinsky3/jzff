@@ -240,8 +240,7 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
             view={(i): SlotView => ({
               clickable: !carried.has(i),
               dim: carried.has(i),
-              badge: slotPick === i ? { text: packLabel.toUpperCase(), color: packColor } : null,
-              glow: slotPick === i ? 'boost' : null,
+              mark: slotPick === i ? { color: packColor, label: packLabel } : null,
               tone: carried.has(i) ? 'locked' : slotPick === i ? 'boosted' : null,
               flag: carried.has(i) ? { text: 'LOCKED', color: '#c8a020' } : null,
             })}
@@ -371,8 +370,7 @@ export function LeagueDraft({ leagueId, initial }: { leagueId: string; initial: 
     return {
       clickable: redraftable || (!stage && !busy && !view.lineup[i] && view.status === 'drafting'),
       opening: stage?.slot === i,
-      badge: isPack && !view.lineup[i] ? { text: packLabel.toUpperCase(), color: packColor } : null,
-      glow: isPack && !view.lineup[i] ? 'boost' : null,
+      mark: isPack ? { color: packColor, label: packLabel } : null,
       tone: isCarried ? 'locked' : isPack ? 'boosted' : null,
       flag: isCarried
         ? { text: 'LOCKED', color: '#c8a020' }

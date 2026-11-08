@@ -9,9 +9,13 @@
 //   full  the lineup page: the cards themselves on the turf, the bench on the
 //         sideline, and letting a bench card go
 // Every man's arrow is the next defense: built to stop him, or soft on him.
+//
+// Trade Up (Joey, 2026-11-07): three bench cards of one rarity for a pack of
+// three at the next rarity up, keep one (season.ts tradeUp), so cards down the
+// rarities don't just sit.
 
 import { useState } from 'react'
-import { FORMATION, RARITY_LOOK, SLOTS, surname, type Player } from '@/lib/packEmpire/rules'
+import { FORMATION, RARITIES, RARITY_LOOK, SLOTS, surname, type Player } from '@/lib/packEmpire/rules'
 import { BENCH_MAX } from '@/lib/packEmpire/seasonRules'
 import type { CardStyle, MySeason, SeasonView } from '@/lib/packEmpire/season'
 import { Face, FilledSlot } from '../../cards'
@@ -36,9 +40,20 @@ export function VsMark({ vs }: { vs: CardStyle['vs'] | undefined }) {
   )
 }
 
+const TRADE_IN = 3
+const TRADE_OUT_WORD = 'three'
+
 export function SeasonLineup({ leagueId, me, size, onView, onError }: Props) {
   const [sel, setSel] = useState<Pick | null>(null)
   const [busy, setBusy] = useState(false)
+  const [trading, setTrading] = useState(false)
+  const [offer, setOffer] = useState<string[]>([])
+  const offered = offer.flatMap((id) => me.bench.find((p) => p.id === id) ?? [])
+  const offerRarity = offered[0]?.rarity ?? null
+  const up = offerRarity ? RARITIES[RARITIES.indexOf(offerRarity) + 1] : null
+  // A trade needs three of one rarity below Immortal, and no pack already waiting.
+  const tradeable = (p: Player) => p.rarity !== 'immortal' && p.rarity !== 'canton' && (!offerRarity || p.rarity === offerRarity)
+  const canTrade = !me.pending && me.bench.filter((p) => p.rarity !== 'immortal' && p.rarity !== 'canton').length >= TRADE_IN
 
   const benchCard = sel?.kind === 'bench' ? (me.bench.find((p) => p.id === sel.id) ?? null) : null
   const slotFits = (slot: number) => !!benchCard && SLOTS[slot].pool === benchCard.pos
@@ -51,6 +66,8 @@ export function SeasonLineup({ leagueId, me, size, onView, onError }: Props) {
       const { view } = await seasonPost({ id: leagueId, ...body })
       if (view) onView(view)
       setSel(null)
+      setTrading(false)
+      setOffer([])
     } catch (e) {
       onError?.(e instanceof Error ? e.message : 'Something went wrong.')
     } finally {
@@ -61,13 +78,18 @@ export function SeasonLineup({ leagueId, me, size, onView, onError }: Props) {
   const swap = (benchId: string, slot: number) => call({ action: 'sub', bench: benchId, slot })
 
   const tapSlot = (slot: number) => {
-    if (busy) return
+    if (busy || trading) return
     if (benchCard && slotFits(slot)) return void swap(benchCard.id, slot)
     setSel(sel?.kind === 'slot' && sel.slot === slot ? null : { kind: 'slot', slot })
   }
 
   const tapBench = (p: Player) => {
     if (busy) return
+    if (trading) {
+      if (offer.includes(p.id)) setOffer(offer.filter((x) => x !== p.id))
+      else if (tradeable(p) && offer.length < TRADE_IN) setOffer([...offer, p.id])
+      return
+    }
     if (sel?.kind === 'slot' && benchFits(p)) return void swap(p.id, sel.slot)
     setSel(sel?.kind === 'bench' && sel.id === p.id ? null : { kind: 'bench', id: p.id })
   }
@@ -130,22 +152,29 @@ export function SeasonLineup({ leagueId, me, size, onView, onError }: Props) {
   }
 
   const benchMan = (p: Player) => {
-    const on = sel?.kind === 'bench' && sel.id === p.id
-    const fits = benchFits(p)
+    const on = trading ? offer.includes(p.id) : sel?.kind === 'bench' && sel.id === p.id
+    const fits = trading ? !on && tradeable(p) && offer.length < TRADE_IN : benchFits(p)
     const st = me.styles[p.id]
     const common = {
       type: 'button' as const,
-      'data-state': stateOf(on, fits),
+      'data-state': trading ? (on ? 'on' : fits ? 'fit' : 'dim') : stateOf(on, fits),
       disabled: busy,
       onClick: () => tapBench(p),
-      ...dragProps({ kind: 'bench', id: p.id }),
-      ...dropProps(fits, () => sel?.kind === 'slot' && swap(p.id, sel.slot)),
+      ...(trading ? {} : dragProps({ kind: 'bench', id: p.id })),
+      ...(trading ? {} : dropProps(fits, () => sel?.kind === 'slot' && swap(p.id, sel.slot))),
     }
     if (size === 'mini') {
       return (
-        <button key={p.id} className="pe-sn-lu-chip pe-sn-lu-chip--bench" style={{ '--rc': RARITY_LOOK[p.rarity].color } as React.CSSProperties} aria-label={`Bench: ${p.name}`} {...common}>
-          <Chip p={p} pos={p.pos} st={st} />
-        </button>
+        <span key={p.id} className="pe-sn-lu-benchspot">
+          <button className="pe-sn-lu-chip pe-sn-lu-chip--bench" style={{ '--rc': RARITY_LOOK[p.rarity].color } as React.CSSProperties} aria-label={`Bench: ${p.name}`} {...common}>
+            <Chip p={p} pos={p.pos} st={st} />
+          </button>
+          {on && !trading && (
+            <button type="button" className="pe-sn-lu-letgo" disabled={busy} onClick={() => call({ action: 'release', bench: p.id })}>
+              Let Go
+            </button>
+          )}
+        </span>
       )
     }
     return (
@@ -159,7 +188,7 @@ export function SeasonLineup({ leagueId, me, size, onView, onError }: Props) {
           {st?.tag}
           <VsMark vs={st?.vs} />
         </span>
-        {on && (
+        {on && !trading && (
           <button type="button" className="pe-act pe-act--sm" disabled={busy} onClick={() => call({ action: 'release', bench: p.id })}>
             Let Go
           </button>
@@ -170,6 +199,10 @@ export function SeasonLineup({ leagueId, me, size, onView, onError }: Props) {
 
   const hint = (() => {
     if (busy) return 'Making the change.'
+    if (trading) {
+      if (!offerRarity) return `Trade Up: pick ${TRADE_IN} bench players of the same rarity for a pack of ${TRADE_OUT_WORD} one rarity up. Keep one.`
+      return `${offer.length} of ${TRADE_IN} ${RARITY_LOOK[offerRarity].label}s picked${up ? ` for a ${RARITY_LOOK[up].label} pack` : ''}.`
+    }
     if (benchCard) {
       const spots = [...new Set(SLOTS.filter((s) => s.pool === benchCard.pos).map((s) => s.short))].join(' or ')
       return `${surname(benchCard.name)} plays ${spots}. Tap the starter he replaces.`
@@ -183,6 +216,30 @@ export function SeasonLineup({ leagueId, me, size, onView, onError }: Props) {
   })()
 
   const row = (slots: readonly number[]) => slots.map(starter)
+
+  const tradeBar = (
+    <div className="pe-sn-lu-trade">
+      {trading ? (
+        <>
+          <button
+            type="button"
+            className="pe-push pe-push--sm"
+            disabled={busy || offer.length !== TRADE_IN || !up}
+            onClick={() => call({ action: 'trade', cards: offer })}
+          >
+            {offer.length === TRADE_IN && up ? `Trade For A ${RARITY_LOOK[up].label} Pack` : `Pick ${TRADE_IN - offer.length} More`}
+          </button>
+          <button type="button" className="pe-act pe-act--sm" onClick={() => (setTrading(false), setOffer([]))}>
+            Cancel
+          </button>
+        </>
+      ) : (
+        <button type="button" className="pe-act pe-act--sm" disabled={!canTrade || busy} onClick={() => (setTrading(true), setSel(null))} title={canTrade ? undefined : `Takes ${TRADE_IN} bench players of one rarity`}>
+          Trade Up
+        </button>
+      )}
+    </div>
+  )
 
   if (size === 'mini') {
     return (
@@ -201,6 +258,7 @@ export function SeasonLineup({ leagueId, me, size, onView, onError }: Props) {
             <small>
               {me.bench.length} of {BENCH_MAX}
             </small>
+            {tradeBar}
           </div>
           <div className="pe-sn-lu-benchrow">{me.bench.map(benchMan)}</div>
         </div>
@@ -232,6 +290,7 @@ export function SeasonLineup({ leagueId, me, size, onView, onError }: Props) {
           <small>
             Bench · {me.bench.length} of {BENCH_MAX}
           </small>
+          {tradeBar}
         </div>
         {me.bench.length ? (
           <div className="pe-sn-lu-benchrow">{me.bench.map(benchMan)}</div>

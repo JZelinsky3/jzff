@@ -2366,6 +2366,41 @@ html:has(.pe-theme) body {
   animation: pe-boost-pulse 1.8s ease-in-out infinite;
 }
 
+/* League Mode's special pack (LeagueMark): the captain's ring in the pack's own
+   colour. Opacity and transform only, like the captain's. */
+.pe-pack-wrap.is-mark {
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--mk) 45%, transparent));
+}
+
+.pe-pack-wrap.is-mark::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 8px;
+  border: 1.5px solid color-mix(in srgb, var(--mk) 80%, transparent);
+  box-shadow:
+    0 0 16px color-mix(in srgb, var(--mk) 35%, transparent),
+    inset 0 0 12px color-mix(in srgb, var(--mk) 18%, transparent);
+  pointer-events: none;
+  animation: pe-cap-ring 2.4s ease-in-out infinite;
+}
+
+.pe-lgmark {
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 7px color-mix(in srgb, var(--mk) 45%, transparent));
+}
+
+.pe-lgmark .pe-capmark-shield {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--mk) 35%, #fff) 0%, var(--mk) 30%, color-mix(in srgb, var(--mk) 60%, #000) 75%, color-mix(in srgb, var(--mk) 30%, #000) 100%);
+}
+
+.pe-lgmark-star {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  fill: var(--mk);
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--mk) 60%, transparent));
+}
+
 @keyframes pe-cap-drop-pulse {
   0%,
   100% {
@@ -9741,7 +9776,8 @@ a.pe-lt-row:hover {
 }
 
 .pe-pack-wrap.cap-hint:hover .pe-capmark.ghost,
-.pe-pack-wrap.cap-hint:focus-visible .pe-capmark.ghost {
+.pe-pack-wrap.cap-hint:focus-visible .pe-capmark.ghost,
+.pe-pack-wrap.cap-hint:hover .pe-lgmark.ghost {
   opacity: 0.6;
   transform: scale(1);
 }
@@ -10344,7 +10380,8 @@ a.pe-lt-row:hover {
     background-size: 100% 44px;
   }
 
-  .pe-pack-wrap.is-cap::after {
+  .pe-pack-wrap.is-cap::after,
+  .pe-pack-wrap.is-mark::after {
     inset: -3px;
     border-radius: 6px;
   }

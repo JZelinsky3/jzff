@@ -27,16 +27,15 @@
 // See 0106_pack_empire_season.sql.
 
 import { containsHateSpeech } from '@/lib/contentModeration'
-import { weekStartFor } from '@/lib/minigames/leaderboard'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { LANES, archetypeOf, type ArchetypeTag, type Lane } from './archetypes'
 import { DEFENSES, SEASON_GAMES, defenseById, elite, rngFor, scheduleFor, type Defense } from './defenses'
 import { cpuBoostSlot, cpuTeamName } from './leagueCpu'
 import { nameForUser, newId } from './people'
 import { playerById } from './pool'
-import { SLOTS, chemistryFor, type Player } from './rules'
+import { PACK_TIER_COLOR, PACK_TIER_LABEL, RARITIES, RARITY_LOOK, SLOTS, STANDINGS_WEIGHTS, chemistryFor, type Player, type Rarity } from './rules'
 import { benchCards, seasonCards } from './seasonCards'
-import { benchPack, cpuPick, draftPack, rewardPack } from './seasonPacks'
+import { TRADE_IN, benchPack, cpuPick, draftPack, rewardPack, tradePack } from './seasonPacks'
 import {
   BENCH_MAX,
   BENCH_PACKS,
@@ -45,10 +44,20 @@ import {
   bracketOrder,
   defaultPlayoffs,
   playoffRounds,
+  GAME_PLANS,
+  KEEPER_BUDGET,
+  KEEP_YEARS,
+  beatsLine,
+  cleanFocus,
+  keeperCost,
+  standingsTierFor,
+  type StandingsTier,
+  type PackFocus,
   rewardFor,
+  type GamePlan,
   type RewardTier,
 } from './seasonRules'
-import { REF, bestSub, counterFor, fantasyPoints, laneTotals, matchup, scout, simGame, type BoxLine, type DriveEnd, type GameResult } from './seasonSim'
+import { REF, bestPlan, bestSub, counterFor, fantasyPoints, laneTotals, matchup, scout, simGame, type BoxLine, type Drive, type DriveEnd, type GameResult, type LanePart, type PlanRead } from './seasonSim'
 
 const db = () => createAdminClient()
 
@@ -93,9 +102,22 @@ type DraftState = {
   picks?: { slot: number; id: string }[]
   open?: number | null
   bench?: { ids: string[]; kept: string | null }[]
+  /** Trades made this season, so each deals its own pack. */
+  trades?: number
+  // The offseason (season two on). `stage` is 'keepers' until they're chosen.
+  stage?: 'keepers'
+  /** The Standings Pack last season's finish bought, and the finish. */
+  standings?: StandingsTier
+  finish?: number
+  /** Last season's eleven by slot, to keep from. */
+  prev?: string[]
+  /** Seasons each man on the team has been kept running: last season's, and this one's. */
+  prevKept?: Record<string, number>
+  kept?: Record<string, number>
 }
 
-type Pending = { phase: 'regular'; week: number; tier: RewardTier; ids: string[] }
+/** A pack waiting to be opened: the one a game paid, or a trade's. */
+type Pending = { phase: 'regular'; week: number; tier: RewardTier; ids: string[]; focus?: PackFocus | null } | { phase: 'trade'; week: number; tier: Rarity; ids: string[] }
 
 type TeamRow = {
   id: string
@@ -184,7 +206,9 @@ function cleanName(raw: unknown, min = 3, max = 40): string | null {
 // Dealing
 // ============================================================
 
-const dealLabel = (l: LeagueRow, t: TeamRow, part: string) => `season:${l.seed}:${t.id}:${part}`
+/** Every pack's own label. Season one's are as they always were; later seasons
+    carry their number, so nothing re-deals. */
+const dealLabel = (l: LeagueRow, t: TeamRow, part: string) => `season:${l.seed}:${t.id}:${l.season_number > 1 ? `s${l.season_number}:` : ''}${part}`
 
 /** Every man already on this team, so no pack hands him back. */
 function taken(t: TeamRow): string[] {
@@ -199,11 +223,13 @@ function taken(t: TeamRow): string[] {
 
 /** A slot's pack on Draft Day: hot, ordinary or cold, unmarked (seasonPacks.ts). */
 function slotPack(l: LeagueRow, t: TeamRow, slot: number): Player[] {
-  return draftPack(dealLabel(l, t, 'draft'), slot, t.draft.franchise ?? 0, taken(t))
+  const special = t.draft.standings ? STANDINGS_WEIGHTS[t.draft.standings] : null
+  return draftPack(dealLabel(l, t, 'draft'), slot, t.draft.franchise ?? 0, taken(t), special)
 }
 
 const benchDeal = (l: LeagueRow, t: TeamRow, n: number) => benchPack(dealLabel(l, t, `bench${n}`), taken(t))
-const rewardDeal = (l: LeagueRow, t: TeamRow, week: number, tier: RewardTier) => rewardPack(dealLabel(l, t, `reward:regular:${week}`), tier, taken(t))
+const rewardDeal = (l: LeagueRow, t: TeamRow, week: number, tier: RewardTier, focus: PackFocus | null = null) =>
+  rewardPack(dealLabel(l, t, `reward:regular:${week}`), tier, taken(t), focus)
 
 const gameSeed = (l: LeagueRow, t: TeamRow, phase: string, week: number) => `${l.seed}|${t.id}|${l.season_number}|${phase}|${week}`
 
@@ -217,10 +243,18 @@ function lineupOf(t: TeamRow): Player[] {
   return (t.roster ?? []).map((id) => card(id)).filter((p): p is Player => !!p)
 }
 
-function stored(g: GameResult): StoredResult {
+/** A game as it's kept. Every snap for a person's games, so they can be watched
+    again; a CPU's or a forced game keeps its drives and box score only. */
+function stored(g: GameResult, snaps = false): StoredResult {
   const { matchup, ...rest } = g
-  return { ...rest, expected: Math.round(matchup.expected * 10) / 10 }
+  const drives = snaps ? rest.drives : rest.drives.map((d) => ({ end: d.end, yards: d.yards, points: d.points, by: d.by }))
+  return { ...rest, drives, expected: Math.round(matchup.expected * 10) / 10 }
 }
+
+/** The call a CPU makes: its best chance against this front. */
+const cpuPlan = (t: TeamRow, d: Defense, line: number | null): GamePlan => bestPlan(seasonCards(lineupOf(t)), d, line).plan
+
+const planOf = (raw: unknown): GamePlan => (GAME_PLANS.includes(raw as GamePlan) ? (raw as GamePlan) : 'balanced')
 
 // ============================================================
 // CPU teams
@@ -231,8 +265,11 @@ const best = (ps: Player[]) => ps.reduce((a, b) => (b.score > a.score ? b : a))
 /** Draft Day the way the CPU does it: the Franchise Pack where it lifts most,
     then the biggest card in every pack. */
 function cpuDraft(l: LeagueRow, t: TeamRow): TeamRow {
-  const next: TeamRow = { ...t, draft: { franchise: cpuBoostSlot('standard_pack', SLOTS.map((_, i) => i)), picks: [], packs: {}, bench: [] } }
-  for (let slot = 0; slot < SLOTS.length; slot++) {
+  // Keepers (season two on) hold their slots; the special pack goes on another.
+  const kept = t.draft.picks ?? []
+  const open = SLOTS.map((_, i) => i).filter((i) => !kept.some((p) => p.slot === i))
+  const next: TeamRow = { ...t, draft: { ...t.draft, franchise: cpuBoostSlot(t.draft.standings ?? 'standard_pack', open), picks: [...kept], packs: {}, bench: [] } }
+  for (const slot of open) {
     const pack = slotPack(l, next, slot)
     next.draft.packs![slot] = pack.map((p) => p.id)
     next.draft.picks!.push({ slot, id: best(pack).id })
@@ -283,8 +320,8 @@ function cpuSeason(l: LeagueRow, t0: TeamRow): { team: TeamRow; games: Omit<Game
   for (const wk of scheduleFor(l.schedule_seed)) {
     const d = defenseById(wk.defense)!
     t = cpuSubs(t, d)
-    const g = simGame(seasonCards(lineupOf(t)), d, gameSeed(l, t, 'regular', wk.week))
-    const won = g.points >= wk.line
+    const g = simGame(seasonCards(lineupOf(t)), d, gameSeed(l, t, 'regular', wk.week), cpuPlan(t, d, wk.line), wk.line)
+    const won = beatsLine(g.points, wk.line)
     games.push({
       league_id: l.id,
       team_id: t.id,
@@ -374,8 +411,8 @@ export async function createSeason(
       max_players: maxPlayers,
       playoff_size: playoffSize,
       seed: newId(16),
-      // Solo seasons started the same week share one schedule, so they compare.
-      schedule_seed: kind === 'solo' ? `solo:${weekStartFor()}` : newId(12),
+      // A new schedule every season, solo ones too (Joey: different every play-through).
+      schedule_seed: newId(12),
       phase: kind === 'solo' ? 'regular' : 'pregame',
     }
     const { error } = await db().from('pe_season_leagues').insert(row)
@@ -506,6 +543,7 @@ async function myTeam(id: unknown, who: SeasonWho | null): Promise<{ l: LeagueRo
 function draftLive(l: LeagueRow, t: TeamRow): Fail | null {
   if (l.phase === 'pregame') return { ok: false, error: 'The season hasn’t started yet.' }
   if (t.roster) return { ok: false, error: 'Your team is drafted.' }
+  if (t.draft.stage === 'keepers') return { ok: false, error: 'Choose your keepers first.' }
   return null
 }
 
@@ -517,7 +555,8 @@ export async function setFranchise(id: unknown, who: SeasonWho | null, slot: unk
   if (bad) return bad
   const s = Number(slot)
   if (!Number.isInteger(s) || s < 0 || s >= SLOTS.length) return { ok: false, error: 'Pick a slot.' }
-  if (t.draft.franchise != null || (t.draft.picks?.length ?? 0) > 0) return { ok: false, error: 'The Franchise Pack is already placed.' }
+  if (t.draft.franchise != null) return { ok: false, error: 'That pack is already placed.' }
+  if ((t.draft.picks ?? []).some((p) => p.slot === s)) return { ok: false, error: 'A keeper holds that spot.' }
   await db().from('pe_season_teams').update({ draft: { ...t.draft, franchise: s } }).eq('id', t.id)
   return { ok: true }
 }
@@ -529,7 +568,7 @@ export async function openSeasonPack(id: unknown, who: SeasonWho | null, slot: u
   const bad = draftLive(l, t)
   if (bad) return bad
   const d = t.draft
-  if (d.franchise == null) return { ok: false, error: 'Place your Franchise Pack first.' }
+  if (d.franchise == null) return { ok: false, error: d.standings ? 'Place your Standings Pack first.' : 'Place your Franchise Pack first.' }
   const s = Number(slot)
   if (!Number.isInteger(s) || s < 0 || s >= SLOTS.length) return { ok: false, error: 'Pick a slot.' }
   if (d.open != null) return d.open === s ? { ok: true, cards: cards(d.packs?.[d.open] ?? []) } : { ok: false, error: 'Take a card from the open pack first.' }
@@ -613,19 +652,20 @@ export async function pickBenchCard(id: unknown, who: SeasonWho | null, cardId: 
 // The season
 // ============================================================
 
-export async function playSeasonGame(id: unknown, who: SeasonWho | null): Promise<Ok<{ phase: 'regular' | 'playoffs'; week: number }> | Fail> {
+export async function playSeasonGame(id: unknown, who: SeasonWho | null, rawPlan: unknown = 'balanced'): Promise<Ok<{ phase: 'regular' | 'playoffs'; week: number }> | Fail> {
+  const plan = planOf(rawPlan)
   const got = await myTeam(id, who)
   if ('ok' in got) return got
   const { l, teams, t } = got
   if (!t.roster) return { ok: false, error: 'Finish Draft Day first.' }
-  if (t.pending) return { ok: false, error: 'Open your pack from the last game first.' }
+  if (t.pending) return { ok: false, error: 'Open the pack waiting first.' }
 
   if (l.phase === 'regular') {
     if (t.played >= SEASON_GAMES) return { ok: false, error: 'Your regular season is done.' }
     const wk = scheduleFor(l.schedule_seed)[t.played]
     const d = defenseById(wk.defense)!
-    const g = simGame(seasonCards(lineupOf(t)), d, gameSeed(l, t, 'regular', wk.week))
-    const won = g.points >= wk.line
+    const g = simGame(seasonCards(lineupOf(t)), d, gameSeed(l, t, 'regular', wk.week), plan, wk.line)
+    const won = beatsLine(g.points, wk.line)
     const { error } = await db().from('pe_season_games').insert({
       league_id: l.id,
       team_id: t.id,
@@ -637,11 +677,12 @@ export async function playSeasonGame(id: unknown, who: SeasonWho | null): Promis
       lineup: t.roster,
       points: g.points,
       won,
-      result: stored(g),
+      result: stored(g, true),
     })
     if (error) return error.code === '23505' ? { ok: true, phase: 'regular', week: wk.week } : { ok: false, error: 'That game would not play.' }
     const tier = rewardFor(g.points, wk.line)
-    const pending: Pending = { phase: 'regular', week: wk.week, tier, ids: rewardDeal(l, t, wk.week, tier).map((p) => p.id) }
+    // Dealt when it's opened: the focus is picked first.
+    const pending: Pending = { phase: 'regular', week: wk.week, tier, ids: [] }
     await db()
       .from('pe_season_teams')
       .update({ played: t.played + 1, wins: t.wins + (won ? 1 : 0), losses: t.losses + (won ? 0 : 1), points_for: t.points_for + g.points, pending })
@@ -657,16 +698,16 @@ export async function playSeasonGame(id: unknown, who: SeasonWho | null): Promis
     const m = br.rounds[l.round - 1]?.find((x) => x.a === t.id || x.b === t.id)
     if (!m || m.winner) return { ok: false, error: 'You have no playoff game to play.' }
     if (games.some((g) => g.phase === 'playoffs' && g.week === l.round && g.team_id === t.id)) return { ok: false, error: 'Waiting on the other team.' }
-    await playPlayoff(l, t, l.round, m.a === t.id ? m.b : m.a)
+    await playPlayoff(l, t, l.round, m.a === t.id ? m.b : m.a, plan, true)
     await advance(l.id)
     return { ok: true, phase: 'playoffs', week: l.round }
   }
   return { ok: false, error: 'There are no games to play.' }
 }
 
-async function playPlayoff(l: LeagueRow, t: TeamRow, round: number, opponent: string | null) {
+async function playPlayoff(l: LeagueRow, t: TeamRow, round: number, opponent: string | null, plan: GamePlan, snaps = false) {
   const d = playoffDefense(l.schedule_seed, round)
-  const g = simGame(seasonCards(lineupOf(t)), d, gameSeed(l, t, 'playoffs', round))
+  const g = simGame(seasonCards(lineupOf(t)), d, gameSeed(l, t, 'playoffs', round), plan)
   await db().from('pe_season_games').insert({
     league_id: l.id,
     team_id: t.id,
@@ -677,8 +718,30 @@ async function playPlayoff(l: LeagueRow, t: TeamRow, round: number, opponent: st
     opponent_id: opponent,
     lineup: t.roster,
     points: g.points,
-    result: stored(g),
+    result: stored(g, snaps),
   })
+}
+
+/** Opens the pack a game paid, pointed at a position or a play style if one's
+    picked. Once dealt it's kept, so asking again shows the same five. */
+export async function openRewardPack(id: unknown, who: SeasonWho | null, rawFocus: unknown): Promise<Ok<{ cards: Player[] }> | Fail> {
+  const got = await myTeam(id, who)
+  if ('ok' in got) return got
+  const { l, t } = got
+  const p = t.pending
+  if (!p) return { ok: false, error: 'No pack waiting.' }
+  if (p.ids.length) return { ok: true, cards: cards(p.ids) }
+  if (p.phase !== 'regular') return { ok: false, error: 'No pack waiting.' }
+  const focus = cleanFocus(rawFocus)
+  const ids = rewardDeal(l, t, p.week, p.tier, focus).map((c) => c.id)
+  const { data } = await db()
+    .from('pe_season_teams')
+    .update({ pending: { ...p, ids, focus } })
+    .eq('id', t.id)
+    .eq('pending->>week', String(p.week))
+    .select('pending')
+  const stored = (data?.[0] as { pending: Pending } | undefined)?.pending
+  return { ok: true, cards: cards(stored?.ids ?? ids) }
 }
 
 /** Keep a card from the last game's pack, or pass on it. A full bench names the one to let go. */
@@ -689,7 +752,7 @@ export async function keepReward(id: unknown, who: SeasonWho | null, cardId: unk
   if (!t.pending) return { ok: false, error: 'No pack waiting.' }
   let bench = [...t.bench]
   if (cardId != null) {
-    if (typeof cardId !== 'string' || !t.pending.ids.includes(cardId)) return { ok: false, error: "That card isn't in this pack." }
+    if (typeof cardId !== 'string' || !t.pending.ids.includes(cardId)) return { ok: false, error: t.pending.ids.length ? "That card isn't in this pack." : 'Open the pack first.' }
     if (bench.length >= BENCH_MAX) {
       if (typeof release !== 'string' || !bench.includes(release)) return { ok: false, error: `Your bench holds ${BENCH_MAX}. Pick one to let go.` }
       bench = bench.filter((x) => x !== release)
@@ -697,6 +760,34 @@ export async function keepReward(id: unknown, who: SeasonWho | null, cardId: unk
     bench.push(cardId)
   }
   await db().from('pe_season_teams').update({ bench, pending: null }).eq('id', t.id)
+  return { ok: true }
+}
+
+/** The trade up: three bench cards of one rarity go, and a pack of three at the
+    rarity above is dealt (seasonPacks.tradePack). Its card goes to the bench like
+    a game's, so the pack waits the same way and nothing else plays until it's opened. */
+export async function tradeUp(id: unknown, who: SeasonWho | null, ids: unknown): Promise<Ok | Fail> {
+  const got = await myTeam(id, who)
+  if ('ok' in got) return got
+  const { l, t } = got
+  if (!t.roster || l.phase === 'pregame' || l.phase === 'complete') return { ok: false, error: 'Trades open once your team is drafted.' }
+  if (t.pending) return { ok: false, error: 'Open the pack waiting first.' }
+  const list = Array.isArray(ids) ? [...new Set(ids.filter((x): x is string => typeof x === 'string'))] : []
+  if (list.length !== TRADE_IN || !list.every((x) => t.bench.includes(x))) return { ok: false, error: `Pick ${TRADE_IN} players from your bench.` }
+  const going = cards(list)
+  const rarity = going[0]?.rarity
+  if (!rarity || going.some((p) => p.rarity !== rarity)) return { ok: false, error: 'A trade takes three of the same rarity.' }
+  const up = RARITIES[RARITIES.indexOf(rarity) + 1]
+  if (!up || up === 'canton') return { ok: false, error: 'Immortals are as high as a trade goes.' }
+  const n = t.draft.trades ?? 0
+  const pack = tradePack(dealLabel(l, t, `trade:${n}`), up, taken(t))
+  const { data } = await db()
+    .from('pe_season_teams')
+    .update({ bench: t.bench.filter((x) => !list.includes(x)), pending: { phase: 'trade', week: n, tier: up, ids: pack.map((p) => p.id) }, draft: { ...t.draft, trades: n + 1 } })
+    .eq('id', t.id)
+    .is('pending', null)
+    .select('id')
+  if (!data?.length) return { ok: false, error: 'Open the pack waiting first.' }
   return { ok: true }
 }
 
@@ -743,8 +834,8 @@ export async function forceSeason(id: unknown, who: SeasonWho | null): Promise<O
       const rows: Omit<GameRow, 'id' | 'created_at'>[] = []
       for (const wk of left) {
         const d = defenseById(wk.defense)!
-        const g = simGame(seasonCards(lineupOf(cur)), d, gameSeed(l, cur, 'regular', wk.week))
-        const won = g.points >= wk.line
+        const g = simGame(seasonCards(lineupOf(cur)), d, gameSeed(l, cur, 'regular', wk.week), 'balanced', wk.line)
+        const won = beatsLine(g.points, wk.line)
         rows.push({ league_id: l.id, team_id: cur.id, season_number: l.season_number, phase: 'regular', week: wk.week, defense: d.id, line: wk.line, opponent_id: null, lineup: [...(cur.roster ?? [])], points: g.points, won, result: stored(g) })
         cur = { ...cur, played: cur.played + 1, wins: cur.wins + (won ? 1 : 0), losses: cur.losses + (won ? 0 : 1), points_for: cur.points_for + g.points }
       }
@@ -758,7 +849,7 @@ export async function forceSeason(id: unknown, who: SeasonWho | null): Promise<O
       if (m.winner) continue
       for (const side of [m.a, m.b]) {
         const t = teams.find((x) => x.id === side)
-        if (t && !games.some((g) => g.phase === 'playoffs' && g.week === l.round && g.team_id === t.id)) await playPlayoff(l, t, l.round, side === m.a ? m.b : m.a)
+        if (t && !games.some((g) => g.phase === 'playoffs' && g.week === l.round && g.team_id === t.id)) await playPlayoff(l, t, l.round, side === m.a ? m.b : m.a, 'balanced')
       }
     }
   }
@@ -852,7 +943,9 @@ async function advance(leagueId: string) {
       for (const side of [m.a, m.b]) {
         const t = teams.find((x) => x.id === side)
         if (t?.is_cpu && !games.some((g) => g.phase === 'playoffs' && g.week === l.round && g.team_id === t.id)) {
-          await playPlayoff(l, cpuSubs(t, playoffDefense(l.schedule_seed, l.round)), l.round, side === m.a ? m.b : m.a)
+          const front = playoffDefense(l.schedule_seed, l.round)
+          const subbed = cpuSubs(t, front)
+          await playPlayoff(l, subbed, l.round, side === m.a ? m.b : m.a, cpuPlan(subbed, front, null))
           played = true
         }
       }
@@ -874,12 +967,127 @@ async function advance(leagueId: string) {
 }
 
 // ============================================================
+// The next season
+// ============================================================
+
+/** How a season finished, best first: the champion, then the playoff teams by
+    how far they went (seed breaking ties), then everyone else by the table. */
+function finishOrder(l: LeagueRow, teams: TeamRow[], games: GameRow[]): TeamRow[] {
+  const br = bracketOf(l, teams, games)
+  const reach = new Map<string, number>()
+  br.rounds.forEach((round, i) =>
+    round.forEach((m) => {
+      for (const x of [m.a, m.b]) if (x) reach.set(x, Math.max(reach.get(x) ?? 0, i + (m.winner === x ? 1 : 0)))
+    })
+  )
+  const inPlayoffs = (t: TeamRow) => t.playoff_seed != null
+  return [...teams].sort((a, b) => {
+    if (inPlayoffs(a) !== inPlayoffs(b)) return inPlayoffs(a) ? -1 : 1
+    if (inPlayoffs(a)) return (reach.get(b.id) ?? 0) - (reach.get(a.id) ?? 0) || a.playoff_seed! - b.playoff_seed!
+    return b.wins - a.wins || b.points_for - a.points_for
+  })
+}
+
+/** The keepers a CPU holds: its biggest cards that fit the budget and the limit. */
+function cpuKeepers(prev: string[], prevKept: Record<string, number>): string[] {
+  const out: string[] = []
+  let left = KEEPER_BUDGET
+  for (const p of cards(prev).sort((a, b) => b.score - a.score)) {
+    const cost = keeperCost(p.rarity)
+    if ((prevKept[p.id] ?? 0) >= KEEP_YEARS || cost > left) continue
+    out.push(p.id)
+    left -= cost
+  }
+  return out
+}
+
+/**
+ * The commissioner (you, in a solo season) starts the next one once the Final
+ * is played: a new schedule, everyone's record back to nothing, and each team's
+ * offseason. A person chooses keepers, then has a Draft Day with the Standings
+ * Pack their finish bought; a CPU does all of that, and its eight games, now.
+ */
+export async function startNextSeason(id: unknown, who: SeasonWho | null): Promise<Ok | Fail> {
+  const got = await asOwner(id, who)
+  if ('ok' in got) return got
+  const { l, teams } = got
+  if (l.phase !== 'complete') return { ok: false, error: 'Finish this season first.' }
+  const games = await loadGames(l)
+  const order = finishOrder(l, teams, games)
+  const { data } = await db()
+    .from('pe_season_leagues')
+    .update({ season_number: l.season_number + 1, phase: 'regular', round: 0, champion_id: null, schedule_seed: newId(12) })
+    .eq('id', l.id)
+    .eq('season_number', l.season_number)
+    .select('*')
+  const next = (data as LeagueRow[] | null)?.[0]
+  if (!next) return { ok: true }
+  for (const [i, t] of order.entries()) {
+    const standings = standingsTierFor(i + 1, order.length)
+    const prev = t.roster ?? []
+    const prevKept = t.draft.kept ?? {}
+    const draft: DraftState = t.is_cpu
+      ? (() => {
+          const keep = cpuKeepers(prev, prevKept)
+          return { standings, finish: i + 1, prev, kept: Object.fromEntries(keep.map((k) => [k, (prevKept[k] ?? 0) + 1])), picks: keep.map((k) => ({ slot: prev.indexOf(k), id: k })) }
+        })()
+      : { stage: 'keepers', standings, finish: i + 1, prev, prevKept, picks: [] }
+    await db()
+      .from('pe_season_teams')
+      .update({ draft, roster: null, bench: [], pending: null, wins: 0, losses: 0, points_for: 0, played: 0, playoff_seed: null, eliminated: false })
+      .eq('id', t.id)
+  }
+  await playCpus(next, await loadTeams(l.id))
+  return { ok: true }
+}
+
+/** A person's keepers: up to the budget, none kept two seasons running already. */
+export async function setKeepers(id: unknown, who: SeasonWho | null, ids: unknown): Promise<Ok | Fail> {
+  const got = await myTeam(id, who)
+  if ('ok' in got) return got
+  const { t } = got
+  const d = t.draft
+  if (d.stage !== 'keepers') return { ok: false, error: 'Your keepers are set.' }
+  const prev = d.prev ?? []
+  const list = Array.isArray(ids) ? [...new Set(ids.filter((x): x is string => typeof x === 'string'))] : []
+  if (!list.every((x) => prev.includes(x))) return { ok: false, error: 'Keepers come from last season’s eleven.' }
+  const cost = cards(list).reduce((n, p) => n + keeperCost(p.rarity), 0)
+  if (cost > KEEPER_BUDGET) return { ok: false, error: `That's ${cost} keeper points; the budget is ${KEEPER_BUDGET}.` }
+  const stale = list.find((x) => (d.prevKept?.[x] ?? 0) >= KEEP_YEARS)
+  if (stale) return { ok: false, error: `${card(stale)?.name ?? 'He'} has been kept ${KEEP_YEARS} seasons running. He goes back in the pool.` }
+  const draft: DraftState = {
+    ...d,
+    stage: undefined,
+    kept: Object.fromEntries(list.map((x) => [x, (d.prevKept?.[x] ?? 0) + 1])),
+    picks: list.map((x) => ({ slot: prev.indexOf(x), id: x })),
+  }
+  const { data } = await db().from('pe_season_teams').update({ draft }).eq('id', t.id).eq('draft->>stage', 'keepers').select('id')
+  if (!data?.length) return { ok: false, error: 'Your keepers are set.' }
+  return { ok: true }
+}
+
+// ============================================================
 // Views
 // ============================================================
 
-export type DefenseCard = Pick<Defense, 'id' | 'name' | 'blurb' | 'shuts' | 'soft' | 'stops' | 'allows'>
+/** A defense for the pages: its words, and the kinds of player it's built to
+    stop (hurts) or soft on (helps), strongest first. */
+export type DefenseCard = Pick<Defense, 'id' | 'name' | 'blurb' | 'shuts' | 'soft' | 'stops' | 'allows'> & { hurts: ArchetypeTag[]; helps: ArchetypeTag[] }
 
-const defenseCard = (d: Defense): DefenseCard => ({ id: d.id, name: d.name, blurb: d.blurb, shuts: d.shuts, soft: d.soft, stops: d.stops, allows: d.allows })
+const defenseCard = (d: Defense): DefenseCard => {
+  const c = Object.entries(d.counters) as [ArchetypeTag, number][]
+  return {
+    id: d.id,
+    name: d.name,
+    blurb: d.blurb,
+    shuts: d.shuts,
+    soft: d.soft,
+    stops: d.stops,
+    allows: d.allows,
+    hurts: c.filter(([, x]) => x < 1).sort((a, b) => a[1] - b[1]).map(([t]) => t),
+    helps: c.filter(([, x]) => x > 1).sort((a, b) => b[1] - a[1]).map(([t]) => t),
+  }
+}
 
 export type TableRow = {
   id: string
@@ -910,6 +1118,11 @@ export type ScoutView = {
   stopped: string[]
   helped: string[]
   pocket: number
+  /** Who carries each lane against this front, biggest share first. */
+  parts: Record<Lane, LanePart[]>
+  /** Every game plan: how it fits, how often it clicks, what it projects to. */
+  plans: PlanRead[]
+  best: GamePlan
   sub: { in: Player; out: Player; slot: number; gain: number } | null
 }
 
@@ -923,7 +1136,20 @@ export type TeamProfile = {
   projected: number
 }
 
-export type GameLine = { phase: 'regular' | 'playoffs'; week: number; defense: string; line: number | null; points: number; won: boolean | null; opponent: string | null }
+/** Who's in a game, for reading its snaps: name, position, face. */
+export type Cast = Record<string, { name: string; pos: Player['pos']; img: string | null; rarity: Player['rarity'] }>
+
+export function castOf(box: BoxLine[]): Cast {
+  const out: Cast = {}
+  for (const b of box) {
+    const c = card(b.id)
+    out[b.id] = { name: b.name, pos: b.pos, img: c?.img ?? null, rarity: c?.rarity ?? 'common' }
+  }
+  return out
+}
+
+/** `oppPoints`: a playoff opponent's score, once they've played. */
+export type GameLine = { phase: 'regular' | 'playoffs'; week: number; defense: string; line: number | null; points: number; won: boolean | null; opponent: string | null; oppPoints: number | null }
 
 export type SeasonLine = {
   id: string
@@ -960,7 +1186,13 @@ export type BracketView = {
 export type MySeason = {
   id: string
   teamName: string
-  step: 'franchise' | 'packs' | 'bench' | 'season'
+  step: 'keepers' | 'franchise' | 'packs' | 'bench' | 'season'
+  /** The pack placed on a slot of your choosing: the Franchise Pack in season
+      one, the Standings Pack your finish bought after that. */
+  special: { label: string; color: string; standings: boolean }
+  /** Season two on: last season's finish and eleven, and how long each man's
+      been kept, for choosing keepers. */
+  offseason: { finish: number; teams: number; prev: (Player | null)[]; prevKept: Record<string, number>; kept: string[] } | null
   franchise: number | null
   lineup: (Player | null)[]
   bench: Player[]
@@ -976,11 +1208,16 @@ export type MySeason = {
   played: number
   next: { phase: 'regular' | 'playoffs'; week: number; defense: DefenseCard; line: number | null; opponent: string | null; scouting: ScoutView } | null
   waiting: string | null
-  pending: { tier: RewardTier; label: string; color: string; cards: Player[] } | null
+  /** The pack waiting: a game's (opened once its focus is picked) or a trade's. */
+  pending: { tier: RewardTier | Rarity; trade: boolean; label: string; color: string; opened: boolean; cards: Player[]; week: number; points: number | null; line: number | null } | null
   games: GameLine[]
-  /** The game just played: how each drive ended and who did the most. */
-  last: (GameLine & { drives: DriveEnd[]; top: BoxLine[]; yards: number }) | null
+  /** The game just played: how each drive ended, the three who did the most,
+      the plan and its roll, and every snap to watch it back (null for a game
+      stored before snaps were). */
+  last: (GameLine & { drives: DriveEnd[]; top: BoxLine[]; yards: number; plan: GamePlan; clicked: boolean | null; replay: Drive[] | null; cast: Cast }) | null
+  /** Your men's regular season (it locks after game eight), then their playoffs. */
   book: SeasonLine[]
+  bookPlayoffs: SeasonLine[]
 }
 
 export type Leader = { title: string; stat: 'pts' | 'ppg' | 'passYds' | 'rushYds' | 'recYds' | 'td'; rows: SeasonLine[] }
@@ -1008,13 +1245,25 @@ export type SeasonView = {
   through: number | null
   me: MySeason | null
   bracket: BracketView | null
+  /** The regular season's leaders, and once they start, the playoffs'. */
   leaders: Leader[]
+  playoffLeaders: Leader[]
   awards: Award[]
+}
+
+const r1 = (x: number) => Math.round(x * 10) / 10
+
+function pendingView(p: Pending | null, games: GameRow[]): MySeason['pending'] {
+  if (!p) return null
+  const base = { opened: p.ids.length > 0, cards: cards(p.ids), week: p.week }
+  if (p.phase === 'trade') return { ...base, tier: p.tier, trade: true, label: `${RARITY_LOOK[p.tier].label} Trade`, color: RARITY_LOOK[p.tier].color, points: null, line: null }
+  const g = games.find((x) => x.phase === 'regular' && x.week === p.week)
+  return { ...base, tier: p.tier, trade: false, label: REWARD_LOOK[p.tier].label, color: REWARD_LOOK[p.tier].color, points: g?.points ?? null, line: g?.line ?? null }
 }
 
 function scoutView(t: TeamRow, d: Defense, line: number | null): ScoutView {
   const lineup = lineupOf(t)
-  const s = scout(seasonCards(lineup), benchCards(cards(t.bench)), d, line ?? 0, POOLS)
+  const s = scout(seasonCards(lineup), benchCards(cards(t.bench)), d, line, POOLS)
   return {
     expected: Math.round(s.expected * 10) / 10,
     line,
@@ -1023,6 +1272,9 @@ function scoutView(t: TeamRow, d: Defense, line: number | null): ScoutView {
     stopped: s.stopped,
     helped: s.helped,
     pocket: s.pocket,
+    parts: s.parts,
+    plans: s.plans.map((p) => ({ ...p, clicks: r1(p.clicks), misses: r1(p.misses), expected: r1(p.expected), chance: Math.round(p.chance * 100) / 100, fit: Math.round(p.fit * 100) / 100, win: Math.round(p.win * 100) / 100 })),
+    best: s.best,
     sub: s.sub ? { in: card(s.sub.benchId)!, out: card(s.sub.outId)!, slot: s.sub.slot, gain: Math.round(s.sub.gain * 10) / 10 } : null,
   }
 }
@@ -1031,14 +1283,16 @@ function profileOf(lineup: Player[]): TeamProfile | null {
   if (lineup.length < SLOTS.length) return null
   const sc = seasonCards(lineup)
   const tot = laneTotals(sc)
-  const m = matchup(sc, defenseById('base')!)
+  const base = defenseById('base')!
+  const m = matchup(sc, base)
   const lanes = Object.fromEntries(LANES.map((k) => [k, Math.round((tot[k] / REF[k]) * 100) / 100])) as Record<Lane, number>
   return {
     lanes,
     value: lineup.reduce((n, p) => n + p.score, 0),
     chem: chemistryFor(lineup, true).total,
     passShare: Math.round((m.mix.short + m.mix.deep) * 100) / 100,
-    projected: Math.round(m.expected * 10) / 10,
+    // At its best call: a team is worth what it scores when it's coached.
+    projected: Math.round(bestPlan(sc, base, null).expected * 10) / 10,
   }
 }
 
@@ -1046,7 +1300,7 @@ function outlookOf(lineup: Player[], weeks: { week: number; defense: string; lin
   const sc = seasonCards(lineup)
   return weeks.flatMap((w) => {
     const d = defenseById(w.defense)
-    return d ? [{ week: w.week, defense: d.name, stops: d.stops, line: w.line, projected: Math.round(matchup(sc, d).expected * 10) / 10 }] : []
+    return d ? [{ week: w.week, defense: d.name, stops: d.stops, line: w.line, projected: Math.round(bestPlan(sc, d, w.line).expected * 10) / 10 }] : []
   })
 }
 
@@ -1234,9 +1488,11 @@ export async function seasonView(id: unknown, who: SeasonWho | null): Promise<Se
   }
 
   const regular = games.filter((g) => g.phase === 'regular')
-  const lines = seasonLines(visible, teamName)
+  const lines = seasonLines(visible.filter((g) => g.phase === 'regular'), teamName)
+  const playoffLines = seasonLines(games.filter((g) => g.phase === 'playoffs'), teamName)
   const gamesIn = through ?? Math.max(0, ...teams.map((t) => t.played))
   const leaders = leadersOf(lines, gamesIn)
+  const playoffLeaders = playoffLines.length ? leadersOf(playoffLines, 1) : []
   const awards =
     l.phase === 'playoffs' || l.phase === 'complete'
       ? awardsFor(teams, seasonLines(regular, teamName), l.phase === 'complete' ? seasonLines(games.filter((g) => g.phase === 'playoffs'), teamName) : null, l.champion_id)
@@ -1254,7 +1510,7 @@ export async function seasonView(id: unknown, who: SeasonWho | null): Promise<Se
         })
     const bench = mine.roster ? cards(mine.bench) : (d.bench ?? []).flatMap((b) => (b.kept ? (card(b.kept) ?? []) : []))
     const lastBench = (d.bench ?? [])[(d.bench ?? []).length - 1]
-    const step: MySeason['step'] = mine.roster ? 'season' : d.franchise == null ? 'franchise' : picks.length < SLOTS.length ? 'packs' : 'bench'
+    const step: MySeason['step'] = mine.roster ? 'season' : d.stage === 'keepers' ? 'keepers' : d.franchise == null ? 'franchise' : picks.length < SLOTS.length ? 'packs' : 'bench'
 
     let next: MySeason['next'] = null
     let front: Defense | null = null
@@ -1302,12 +1558,17 @@ export async function seasonView(id: unknown, who: SeasonWho | null): Promise<Se
       points: g.points,
       won: g.phase === 'regular' ? g.won : playoffWon(g.week),
       opponent: g.opponent_id ? (tagged.get(g.opponent_id) ?? null) : null,
+      oppPoints: g.opponent_id ? (games.find((x) => x.phase === 'playoffs' && x.week === g.week && x.team_id === g.opponent_id)?.points ?? null) : null,
     })
     const lastRow = myGames[myGames.length - 1]
     me = {
       id: mine.id,
       teamName: mine.team_name,
       step,
+      special: d.standings
+        ? { label: PACK_TIER_LABEL[d.standings], color: PACK_TIER_COLOR[d.standings], standings: true }
+        : { label: 'Franchise Pack', color: '#42c0f8', standings: false },
+      offseason: d.prev ? { finish: d.finish ?? 0, teams: teams.length, prev: d.prev.map((x) => card(x)), prevKept: d.prevKept ?? {}, kept: (d.picks ?? []).filter((p) => d.kept?.[p.id]).map((p) => p.id) } : null,
       franchise: d.franchise ?? null,
       lineup,
       bench,
@@ -1321,9 +1582,7 @@ export async function seasonView(id: unknown, who: SeasonWho | null): Promise<Se
       played: mine.played,
       next,
       waiting,
-      pending: mine.pending
-        ? { tier: mine.pending.tier, label: REWARD_LOOK[mine.pending.tier].label, color: REWARD_LOOK[mine.pending.tier].color, cards: cards(mine.pending.ids) }
-        : null,
+      pending: pendingView(mine.pending, myGames),
       games: myGames.map(lineOf),
       last: lastRow
         ? {
@@ -1335,9 +1594,14 @@ export async function seasonView(id: unknown, who: SeasonWho | null): Promise<Se
               .sort((a, b) => b.pts - a.pts)
               .slice(0, 3),
             yards: lastRow.result.yards,
+            plan: lastRow.result.plan ?? 'balanced',
+            clicked: lastRow.result.clicked ?? null,
+            replay: lastRow.result.drives.every((x) => x.plays?.length) ? lastRow.result.drives : null,
+            cast: castOf(lastRow.result.box as BoxLine[]),
           }
         : null,
       book: lines.filter((x) => x.teamId === mine.id).sort((a, b) => b.pts - a.pts),
+      bookPlayoffs: playoffLines.filter((x) => x.teamId === mine.id).sort((a, b) => b.pts - a.pts),
     }
   }
 
@@ -1363,12 +1627,18 @@ export async function seasonView(id: unknown, who: SeasonWho | null): Promise<Se
     me,
     bracket,
     leaders,
+    playoffLeaders,
     awards,
   }
 }
 
 /** One game, whole: the drives and every man's line. Anyone in the league can read any game. */
-export async function seasonGame(id: unknown, teamId: unknown, phase: unknown, week: unknown): Promise<{ team: string; defense: string; line: number | null; game: GameRow } | null> {
+export async function seasonGame(
+  id: unknown,
+  teamId: unknown,
+  phase: unknown,
+  week: unknown
+): Promise<{ team: string; defense: string; line: number | null; game: GameRow; cast: Cast; opponent: string | null; oppPoints: number | null } | null> {
   const l = await loadLeague(id)
   if (!l || typeof teamId !== 'string' || (phase !== 'regular' && phase !== 'playoffs')) return null
   const w = Number(week)
@@ -1387,7 +1657,25 @@ export async function seasonGame(id: unknown, teamId: unknown, phase: unknown, w
   const front = phase === 'playoffs' ? playoffDefense(l.schedule_seed, w) : defenseById(g.defense)
   // Older games stored half-PPR with a lineman's grade mixed in: recount.
   const box = (g.result.box as BoxLine[]).map((b) => ({ ...b, pts: b.grade != null ? 0 : fantasyPoints(b) }))
-  return { team: (t as { team_name: string } | null)?.team_name ?? 'Team', defense: front?.name ?? g.defense, line: g.line, game: { ...g, result: { ...g.result, box } } }
+  let opponent: string | null = null
+  let oppPoints: number | null = null
+  if (g.opponent_id) {
+    const [{ data: o }, { data: og }] = await Promise.all([
+      db().from('pe_season_teams').select('team_name').eq('id', g.opponent_id).maybeSingle(),
+      db().from('pe_season_games').select('points').eq('team_id', g.opponent_id).eq('season_number', l.season_number).eq('phase', 'playoffs').eq('week', w).maybeSingle(),
+    ])
+    opponent = (o as { team_name: string } | null)?.team_name ?? null
+    oppPoints = (og as { points: number } | null)?.points ?? null
+  }
+  return {
+    team: (t as { team_name: string } | null)?.team_name ?? 'Team',
+    defense: front?.name ?? g.defense,
+    line: g.line,
+    game: { ...g, result: { ...g.result, box } },
+    cast: castOf(box),
+    opponent,
+    oppPoints,
+  }
 }
 
 export type SeasonCard = { id: string; name: string; kind: 'solo' | 'league'; phase: Phase; played: number; wins: number; losses: number; teams: number; owner: boolean }

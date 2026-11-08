@@ -12,7 +12,8 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { LEAGUE_SIZES, playoffFieldSize, playoffOptions, type Player } from '@/lib/packEmpire/rules'
-import { SEASON_SIZES, defaultPlayoffs, seasonPlayoffOptions } from '@/lib/packEmpire/seasonRules'
+import { SEASON_SIZES, defaultPlayoffs } from '@/lib/packEmpire/seasonRules'
+import { SetupSlider } from '../SetupSlider'
 import { SetupSwitch } from '../SetupSwitch'
 import { TableArt } from '../TableArt'
 
@@ -105,20 +106,15 @@ export function LeagueSetup({ signedIn, hands }: { signedIn: boolean; hands: Rec
             onChange={(v) => setSize(Number(v))}
           />
           {format === 'season' ? (
-            <SetupSwitch
-              label="Playoff Teams"
-              square
-              options={seasonPlayoffOptions(teams).map((n) => ({ id: String(n), label: String(n) }))}
-              value={String(seasonPick)}
-              onChange={(v) => setSeasonPlayoff(Number(v))}
-            />
+            <SetupSlider label="Playoff Teams" min={2} max={teams} value={seasonPick} onChange={setSeasonPlayoff} />
           ) : (
-            <SetupSwitch
+            // Weekly runs from two up to half the league; half is its own setting.
+            <SetupSlider
               label="Playoff Teams"
-              square
-              options={weeklyOpts.map((o) => ({ id: o, label: o === 'half' ? 'Half' : o }))}
-              value={weeklyPick}
-              onChange={setWeeklyPlayoff}
+              min={2}
+              max={Math.floor(teams / 2)}
+              value={playoffFieldSize(weeklyPick, teams)}
+              onChange={(n) => setWeeklyPlayoff(n >= Math.floor(teams / 2) ? 'half' : String(n))}
             />
           )}
           <SetupSwitch

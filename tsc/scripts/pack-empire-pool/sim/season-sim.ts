@@ -14,7 +14,8 @@ import { SLOTS, type Player } from '../../../src/lib/packEmpire/rules'
 import { benchCards, seasonCards, simCard } from '../../../src/lib/packEmpire/seasonCards'
 import { benchPack, cpuPick, draftPack, rewardPack } from '../../../src/lib/packEmpire/seasonPacks'
 import { rewardFor } from '../../../src/lib/packEmpire/seasonRules'
-import { REF, bestSub, counterFor, laneTotals, matchup, simGame, type SimCard } from '../../../src/lib/packEmpire/seasonSim'
+import { REF, bestPlan, bestSub, counterFor, laneTotals, matchup, readPlans, simGame, type SimCard } from '../../../src/lib/packEmpire/seasonSim'
+import type { GamePlan } from '../../../src/lib/packEmpire/seasonRules'
 
 const TEAMS = Number(process.argv[2] ?? 600)
 const SEASONS = Number(process.argv[3] ?? 200)
@@ -65,7 +66,8 @@ const totals = teams.map((t) => laneTotals(seasonCards(t.lineup)))
 const lanes = ['run', 'short', 'deep', 'redZone', 'protect'] as const
 console.log('\nMedian lane totals (REF now):')
 for (const k of lanes) console.log(`  ${k.padEnd(8)} ${pct(totals.map((x) => x[k]), 0.5).toFixed(0).padStart(6)}   (REF ${REF[k]})`)
-console.log(`  roster value median ${pct(teams.map((t) => t.lineup.reduce((n, p) => n + p.score, 0)), 0.5)}`)
+const values = teams.map((t) => t.lineup.reduce((n, p) => n + p.score, 0))
+console.log(`  roster value median ${pct(values, 0.5)}; draft grade cuts p15 ${pct(values, 0.15)} p35 ${pct(values, 0.35)} p65 ${pct(values, 0.65)} p85 ${pct(values, 0.85)} p95 ${pct(values, 0.95)}`)
 
 // ── Points against each front ──
 console.log('\nExpected points, median roster, by front:')
@@ -78,7 +80,13 @@ for (const d of DEFENSES) {
 type Run = { wins: number; pts: number[]; yds: number[]; won: boolean[]; cleared: number; games: number; afterTwo: number; afterFour: number }
 /** none: never subs. value: starts the biggest card at each spot, whatever the front. scout: subs off the scouting report. */
 type Subs = 'none' | 'value' | 'scout'
-function season(team: { lineup: Player[]; bench: Player[] }, seed: string, subs: Subs, teamNo: number): Run {
+/** The call each game: always Balanced, the best chance at the line, a coin flip
+    among the five, or the worst one (a manager reading it backwards). */
+type Call = 'balanced' | 'best' | 'random' | 'worst'
+const planUse: Record<string, number> = {}
+let clicks = 0
+let rolls = 0
+function season(team: { lineup: Player[]; bench: Player[] }, seed: string, subs: Subs, teamNo: number, call: Call = 'balanced'): Run {
   const lineup = [...team.lineup]
   const bench = [...team.bench]
   const out: Run = { wins: 0, pts: [], yds: [], won: [], cleared: 0, games: 0, afterTwo: 0, afterFour: 0 }
@@ -93,11 +101,25 @@ function season(team: { lineup: Player[]; bench: Player[] }, seed: string, subs:
       lineup[sub.slot] = bench[i]
       bench[i] = out_
     }
-    const g = simGame(seasonCards(lineup), d, `${seed}|${teamNo}|${wk.week}`)
+    const sc = seasonCards(lineup)
+    let plan: GamePlan = 'balanced'
+    if (call === 'best') plan = bestPlan(sc, d, wk.line).plan
+    else if (call !== 'balanced') {
+      const reads = readPlans(sc, d, wk.line)
+      plan = call === 'worst' ? reads.reduce((a, b) => (b.win < a.win ? b : a)).plan : reads[Math.floor(rngNum(`${seed}|${teamNo}|${wk.week}|call`) * reads.length)].plan
+    }
+    const g = simGame(sc, d, `${seed}|${teamNo}|${wk.week}`, plan, wk.line)
+    if (call === 'best') {
+      planUse[plan] = (planUse[plan] ?? 0) + 1
+      if (g.clicked != null) {
+        rolls++
+        if (g.clicked) clicks++
+      }
+    }
     out.pts.push(g.points)
     out.yds.push(g.yards)
     out.games++
-    const won = g.points >= wk.line
+    const won = g.points > wk.line
     out.won.push(won)
     if (won) {
       out.wins++
@@ -125,9 +147,17 @@ function valueSub(lineup: Player[], bench: Player[]): { benchId: string; slot: n
   return best_
 }
 
+function rngNum(seed: string) {
+  let h = 2166136261
+  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619)
+  return rng(h)()
+}
+
 const plain: Run[] = []
 const byValue: Run[] = []
 const smart: Run[] = []
+const careless: Run[] = []
+const wrong: Run[] = []
 const luck: Run[] = []
 // The luck-only line: twelve copies of one middling roster, so only the dice differ.
 const mid = [...teams].sort((a, b) => a.lineup.reduce((n, p) => n + p.score, 0) - b.lineup.reduce((n, p) => n + p.score, 0))[Math.floor(TEAMS / 2)]
@@ -137,8 +167,10 @@ for (let s = 0; s < SEASONS; s++) {
     const t = (s * 12 + k) % TEAMS
     plain.push(season(teams[t], seed, 'none', t))
     byValue.push(season(teams[t], seed, 'value', t))
-    smart.push(season(teams[t], seed, 'scout', t))
-    luck.push(season(mid, seed, 'scout', 100000 + s * 12 + k))
+    smart.push(season(teams[t], seed, 'scout', t, 'best'))
+    careless.push(season(teams[t], seed, 'value', t, 'random'))
+    wrong.push(season(teams[t], seed, 'value', t, 'worst'))
+    luck.push(season(mid, seed, 'scout', 100000 + s * 12 + k, 'best'))
   }
 }
 const allPts = plain.flatMap((x) => x.pts)
@@ -153,6 +185,10 @@ console.log(`Wins a season, 0..8: ${winDist.join('% ')}%`)
 console.log(`\nGames (never subs): median ${pct(allPts, 0.5)}, p10 ${pct(allPts, 0.1)}, p90 ${pct(allPts, 0.9)}, min ${Math.min(...allPts)}, max ${Math.max(...allPts)}`)
 console.log(`  cleared the line ${((100 * mean(plain.map((x) => x.cleared))) / SEASON_GAMES).toFixed(1)}% of games`)
 console.log(`  wins a season: never subs ${mean(plain.map((x) => x.wins)).toFixed(2)}, biggest card ${mean(byValue.map((x) => x.wins)).toFixed(2)}, off the report ${mean(smart.map((x) => x.wins)).toFixed(2)}`)
+const flips = (a: Run[], b: Run[]) => mean(a.map((x, i) => x.won.filter((w, k) => w !== b[i].won[k]).length))
+console.log(`  wins a season: best calls + subs ${mean(smart.map((x) => x.wins)).toFixed(2)}, biggest cards + Balanced ${mean(byValue.map((x) => x.wins)).toFixed(2)}, random calls ${mean(careless.map((x) => x.wins)).toFixed(2)}, worst calls ${mean(wrong.map((x) => x.wins)).toFixed(2)}`)
+console.log(`  games flipped a season, best calls vs: Balanced ${flips(smart, byValue).toFixed(2)}, random ${flips(smart, careless).toFixed(2)}, worst ${flips(smart, wrong).toFixed(2)}`)
+console.log(`  best calls used: ${Object.entries(planUse).map(([k, v]) => `${k} ${Math.round((100 * v) / Object.values(planUse).reduce((a, b) => a + b, 0))}%`).join(', ')}; a called plan clicked ${Math.round((100 * clicks) / Math.max(1, rolls))}%`)
 
 // Comebacks: of each 12-team league, the bottom third after N games, how often top four at the end.
 function comeback(runs: Run[], at: 'afterTwo' | 'afterFour') {

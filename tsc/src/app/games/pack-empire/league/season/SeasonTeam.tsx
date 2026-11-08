@@ -8,11 +8,12 @@
 // projects with the eleven as it stands. Every sub redraws all of it.
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { Lane } from '@/lib/packEmpire/archetypes'
 import type { MySeason, SeasonView } from '@/lib/packEmpire/season'
 import { SeasonLineup } from './SeasonLineup'
-import { seasonHref } from './api'
+import { SeasonPack } from './SeasonPack'
+import { seasonHref, seasonPost } from './api'
 
 const LANE_NAME: Record<Lane, string> = { run: 'Run game', short: 'Short passes', deep: 'Deep passes', redZone: 'Red zone', protect: 'Protection' }
 const LANE_ORDER: Lane[] = ['run', 'short', 'deep', 'redZone', 'protect']
@@ -29,11 +30,30 @@ function identity(pass: number): { name: string; line: string } {
 export function SeasonTeam({ initial }: { initial: SeasonView }) {
   const [view, setView] = useState(initial)
   const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState<string | null>(null)
   const me = view.me!
+  const act = useCallback(
+    async (key: string, body: Record<string, unknown>) => {
+      setBusy(key)
+      setError(null)
+      try {
+        const { view: v } = await seasonPost({ id: view.league.id, ...body })
+        if (v) setView(v)
+        return true
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Something went wrong.')
+        return false
+      } finally {
+        setBusy(null)
+      }
+    },
+    [view.league.id]
+  )
   return (
     <div className="pe-sn-lp">
       <div className="pe-sn-lp-main">
         {error && <div className="pe-error">{error}</div>}
+        {me.pending && <SeasonPack key={`${me.pending.trade ? 't' : 'g'}${me.pending.week}`} leagueId={view.league.id} me={me} busy={busy} act={act} onView={setView} />}
         <SeasonLineup leagueId={view.league.id} me={me} size="full" onView={setView} onError={setError} />
       </div>
       <TeamReport leagueId={view.league.id} me={me} />
@@ -64,7 +84,7 @@ function TeamReport({ leagueId, me }: { leagueId: string; me: MySeason }) {
       <div className="pe-sn-rep-nums">
         <div>
           <b>{Math.round(p.projected)}</b>
-          <small>Points vs a plain defense</small>
+          <small>Points vs a plain defense, best call</small>
         </div>
         <div>
           <b>{p.value.toLocaleString()}</b>

@@ -95,6 +95,30 @@ export function CaptainMark({ ghost = false, inline = false }: { ghost?: boolean
   )
 }
 
+/**
+ * League Mode's patch, the captain's in a league's colours: the same shield with
+ * a star, in the colour of the pack it marks (Season's Franchise Pack, Weekly's
+ * Standings Pack). Joey, 2026-11-07: the leagues' old text badge and glow had to
+ * catch up with the captain.
+ */
+export function LeagueMark({ color, label, ghost = false, inline = false }: { color: string; label: string; ghost?: boolean; inline?: boolean }) {
+  return (
+    <span
+      className={`pe-capmark pe-lgmark${ghost ? ' ghost' : ''}${inline ? ' inline' : ''}`}
+      style={{ '--mk': color } as React.CSSProperties}
+      role={ghost ? undefined : 'img'}
+      aria-label={ghost ? undefined : label}
+      aria-hidden={ghost || undefined}
+    >
+      <span className="pe-capmark-shield">
+        <svg className="pe-lgmark-star" viewBox="0 0 24 27.36" aria-hidden>
+          <path d="M12 6.4l1.76 3.9 4.24.44-3.17 2.85.9 4.17L12 15.62l-3.73 2.14.9-4.17L6 10.74l4.24-.44z" />
+        </svg>
+      </span>
+    </span>
+  )
+}
+
 /** Drawn in where there's no photo: head, neck and pads, in the card's
     rarity, so a man without a headshot still reads as a player. */
 function Portrait({ className }: { className: string }) {
@@ -825,6 +849,9 @@ export type SlotView = {
   captain?: boolean
   /** Choosing a captain: a faint patch on the pack under the pointer. */
   capHint?: boolean
+  /** League Mode's special pack (LeagueMark): on the pack, then on its card.
+      `ghost` is the faint one while the slot is being chosen. */
+  mark?: { color: string; label: string; ghost?: boolean } | null
   /** Pulsing outline on the pack. */
   glow?: 'cap' | 'boost' | null
   /** Tint the label under the slot. */
@@ -842,11 +869,13 @@ export function FilledSlot({
   player,
   flag,
   captain = false,
+  mark = null,
   landing,
 }: {
   player: Player
   flag?: SlotView['flag']
   captain?: boolean
+  mark?: SlotView['mark']
   /** Hidden while its card is still flying down; pops when it lands. */
   landing?: 'incoming' | 'landed' | null
 }) {
@@ -894,6 +923,7 @@ export function FilledSlot({
         </div>
       )}
       {captain && <CaptainMark />}
+      {mark && !mark.ghost && <LeagueMark color={mark.color} label={mark.label} />}
     </div>
   )
 }
@@ -916,7 +946,7 @@ function Slot({
 
   let body: React.ReactNode
   if (player) {
-    body = <FilledSlot player={player} flag={view.flag} captain={view.captain} landing={landing} />
+    body = <FilledSlot player={player} flag={view.flag} captain={view.captain} mark={view.mark} landing={landing} />
   } else if (view.opening) {
     body = (
       <div className="pe-fsl active">
@@ -953,8 +983,8 @@ function Slot({
       'pe-pack-wrap',
       view.clickable ? 'clickable' : '',
       view.dim ? 'dim' : '',
-      view.glow === 'cap' || view.captain ? 'is-cap' : view.glow === 'boost' ? 'is-boost' : '',
-      view.capHint && !view.captain ? 'cap-hint' : '',
+      view.glow === 'cap' || view.captain ? 'is-cap' : view.mark && !view.mark.ghost ? 'is-mark' : view.glow === 'boost' ? 'is-boost' : '',
+      (view.capHint && !view.captain) || view.mark?.ghost ? 'cap-hint' : '',
     ]
       .filter(Boolean)
       .join(' ')
@@ -965,7 +995,7 @@ function Slot({
         disabled={!view.clickable}
         onClick={() => view.clickable && onSlot?.(index)}
         aria-label={`${def.label} pack${view.captain ? ', your captain' : ''}`}
-        style={view.badge?.color ? ({ '--boost': view.badge.color } as React.CSSProperties) : undefined}
+        style={view.mark ? ({ '--mk': view.mark.color } as React.CSSProperties) : view.badge?.color ? ({ '--boost': view.badge.color } as React.CSSProperties) : undefined}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={PACK_ART[def.pool]} alt="" className="pe-pack-img" draggable={false} />
@@ -975,6 +1005,7 @@ function Slot({
           </span>
         )}
         {view.captain ? <CaptainMark /> : view.capHint ? <CaptainMark ghost /> : null}
+        {view.mark && <LeagueMark color={view.mark.color} label={view.mark.label} ghost={view.mark.ghost} />}
       </button>
     )
   }

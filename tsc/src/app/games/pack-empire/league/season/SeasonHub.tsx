@@ -12,16 +12,18 @@
 // under Full Scouting Report.
 
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
-import { SLOTS, WILD_PACK_ART, surname, type Player } from '@/lib/packEmpire/rules'
-import { BENCH_MAX, roundName, seasonPlayoffOptions } from '@/lib/packEmpire/seasonRules'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { RARITY_LOOK, SLOTS, surname, type Player } from '@/lib/packEmpire/rules'
+import { ARCH_ABBR, GAME_PLANS, PLAN_LOOK, roundName, type GamePlan } from '@/lib/packEmpire/seasonRules'
 import type { MySeason, ScoutView, SeasonView, TableRow } from '@/lib/packEmpire/season'
 import { Face } from '../../cards'
-import { PackStage, usePackStage } from '../../stage'
+import { SetupSlider } from '../../SetupSlider'
+import { GameCast } from './GameCast'
 import { SeasonLineup, VsMark } from './SeasonLineup'
+import { SeasonPack } from './SeasonPack'
 import { gameHref, seasonHref, seasonPost } from './api'
 
-const LANE_LABEL = { run: 'Run game', short: 'Short passes', deep: 'Deep passes', redZone: 'Red zone' } as const
+const LANE_LABEL = { run: 'Run game', short: 'Short passes', deep: 'Deep passes', redZone: 'Red zone', protect: 'Protection' } as const
 
 const laneWord = (eff: number) => (eff >= 1.1 ? 'Open' : eff <= 0.85 ? 'Shut' : 'Even')
 
@@ -46,8 +48,9 @@ export function SeasonHub({ initial }: { initial: SeasonView }) {
   const [view, setView] = useState(initial)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  // The game just played counts its score up, once.
+  // The game just played counts its score up, once, after it's been watched.
   const [fresh, setFresh] = useState<string | null>(null)
+  const [watching, setWatching] = useState(false)
   const l = view.league
   const me = view.me
 
@@ -69,9 +72,12 @@ export function SeasonHub({ initial }: { initial: SeasonView }) {
     [l.id]
   )
 
-  const play = async () => {
+  const play = async (plan: GamePlan) => {
     const n = me?.games.length ?? 0
-    if (await act('play', { action: 'play' })) setFresh(String(n + 1))
+    if (await act('play', { action: 'play', plan })) {
+      setFresh(String(n + 1))
+      setWatching(true)
+    }
   }
 
 
@@ -82,13 +88,15 @@ export function SeasonHub({ initial }: { initial: SeasonView }) {
 
         {me && me.step !== 'season' && l.phase !== 'pregame' && (
           <section className="pe-sn-card pe-sn-call">
-            <div className="pe-kicker">Draft Day</div>
-            <h2 className="pe-sn-title">Build your team.</h2>
+            <div className="pe-kicker">{me.step === 'keepers' ? `Season ${l.seasonNumber} · The Offseason` : 'Draft Day'}</div>
+            <h2 className="pe-sn-title">{me.step === 'keepers' ? 'Choose your keepers.' : 'Build your team.'}</h2>
             <p className="pe-panel-text">
-              A pack for every spot on the field, your Franchise Pack on the one you choose, and three bench packs. Then the eight games are yours to play whenever you like.
+              {me.step === 'keepers'
+                ? `Keep up to three points of last season's eleven, then Draft Day: your ${me.special.label} on a spot of your choosing and a fresh pack everywhere else.`
+                : `A pack for every spot on the field, your ${me.special.label} on the one you choose, and three bench packs. Then the eight games are yours to play whenever you like.`}
             </p>
             <Link href={seasonHref(l.id, 'draft')} className="pe-btn">
-              {me.step === 'franchise' ? 'Start Draft Day' : 'Back To Draft Day'}
+              {me.step === 'keepers' ? 'To The Offseason' : me.step === 'franchise' ? 'Start Draft Day' : 'Back To Draft Day'}
             </Link>
           </section>
         )}
@@ -105,11 +113,28 @@ export function SeasonHub({ initial }: { initial: SeasonView }) {
           </section>
         )}
 
-        {me?.last && <LastGame key={`${me.last.phase}${me.last.week}`} leagueId={l.id} me={me} fresh={fresh === String(me.games.length)} />}
+        {me?.last && (
+          <LastGame key={`${me.last.phase}${me.last.week}`} leagueId={l.id} me={me} fresh={fresh === String(me.games.length) && !watching} onWatch={() => setWatching(true)} />
+        )}
 
-        {me?.pending && <RewardPack key={`${me.games.length}`} leagueId={l.id} me={me} busy={busy} act={act} onView={setView} />}
+        {me?.pending && <SeasonPack key={`${me.pending.trade ? 't' : 'g'}${me.pending.week}`} leagueId={l.id} me={me} busy={busy} act={act} onView={setView} />}
 
-        {me?.next && <GameCard me={me} busy={busy} act={act} play={play} />}
+        {me?.next && <GameCard key={`${me.next.phase}${me.next.week}`} me={me} busy={busy} act={act} play={play} />}
+
+        {watching && me?.last?.replay && (
+          <GameCast
+            drives={me.last.replay}
+            cast={me.last.cast}
+            team={me.teamName}
+            defense={me.last.defense}
+            line={me.last.line}
+            opponent={me.last.opponent}
+            oppPoints={me.last.oppPoints}
+            plan={me.last.plan}
+            clicked={me.last.clicked}
+            onDone={() => setWatching(false)}
+          />
+        )}
 
         {me?.waiting && (
           <section className="pe-sn-card pe-sn-wait">
@@ -118,7 +143,7 @@ export function SeasonHub({ initial }: { initial: SeasonView }) {
           </section>
         )}
 
-        {me && l.phase === 'complete' && <Final view={view} />}
+        {me && l.phase === 'complete' && <Final view={view} busy={busy} act={act} />}
 
         {me && me.step === 'season' && (
           <section className="pe-sn-block">
@@ -181,17 +206,21 @@ const findCard = (me: MySeason, id: string): Player | null => me.lineup.find((p)
 
 const DRIVE_WORD = { td: 'TD', fg: 'FG', miss: 'Missed FG', punt: 'Punt', turnover: 'Turnover' } as const
 
-function LastGame({ leagueId, me, fresh }: { leagueId: string; me: MySeason; fresh: boolean }) {
+function LastGame({ leagueId, me, fresh, onWatch }: { leagueId: string; me: MySeason; fresh: boolean; onWatch: () => void }) {
   const g = me.last!
-  const star = g.top[0]
-  const starCard = star ? findCard(me, star.id) : null
+  const [star, ...rest] = g.top
   const tds = g.drives.filter((d) => d === 'td').length
   const fgs = g.drives.filter((d) => d === 'fg').length
+  const face = (id: string) => {
+    const c = g.cast[id]
+    return c ? { id, img: c.img, rarity: c.rarity } : null
+  }
+  const theirs = g.line ?? g.oppPoints
   return (
     <section className={`pe-sn-gd-last${fresh ? ' is-fresh' : ''}`} data-won={g.won == null ? undefined : String(g.won)}>
       <div className="pe-sn-gd-kick">
         <span>
-          {g.phase === 'regular' ? `Game ${g.week}` : 'Playoffs'} · {g.defense}
+          {g.phase === 'regular' ? `Game ${g.week}` : `Playoffs${g.opponent ? ` · vs ${g.opponent}` : ''}`} · {g.defense}
         </span>
         {g.won != null && <b className="pe-sn-gd-stamp">{g.won ? 'Win' : 'Loss'}</b>}
       </div>
@@ -202,10 +231,10 @@ function LastGame({ leagueId, me, fresh }: { leagueId: string; me: MySeason; fre
           </b>
           <small>Your points</small>
         </div>
-        <div className="pe-sn-gd-vs">{g.line != null ? (g.won ? 'beat' : 'missed') : 'vs'}</div>
+        <div className="pe-sn-gd-vs">{theirs == null ? 'vs' : g.won ? 'beat' : g.won === false ? (g.line != null ? 'missed' : 'lost to') : 'vs'}</div>
         <div className="pe-sn-gd-score pe-sn-gd-score--line">
-          <b>{g.line ?? '?'}</b>
-          <small>{g.line != null ? 'To win' : (g.opponent ?? 'Opponent')}</small>
+          <b>{theirs ?? '...'}</b>
+          <small>{g.line != null ? 'To beat' : theirs != null ? (g.opponent ?? 'Opponent') : 'Not played yet'}</small>
         </div>
       </div>
       <div className="pe-sn-gd-drives" aria-label={`${tds} touchdowns, ${fgs} field goals on ${g.drives.length} drives`}>
@@ -215,36 +244,82 @@ function LastGame({ leagueId, me, fresh }: { leagueId: string; me: MySeason; fre
         <small>
           {tds} TD · {fgs} FG · {g.yards} yds
         </small>
+        {g.plan !== 'balanced' && (
+          <em className="pe-sn-gd-plan" data-click={String(g.clicked)}>
+            {PLAN_LOOK[g.plan].name}: {g.clicked ? 'it worked' : "it didn't work"}
+          </em>
+        )}
       </div>
       {star && (
-        <div className="pe-sn-gd-star">
-          <Face player={starCard} name={star.name} />
-          <span>
-            <small>Player of the game</small>
-            <b>{star.name}</b>
-            <em>{statLine(star)}</em>
-          </span>
-          <strong>
-            {star.pts}
-            <small>pts</small>
-          </strong>
+        <div className="pe-sn-gd-stars">
+          <div className="pe-sn-gd-star">
+            <Face player={face(star.id)} name={star.name} />
+            <span>
+              <small>Player of the game</small>
+              <b>{star.name}</b>
+              <em>{statLine(star)}</em>
+            </span>
+            <strong>
+              {star.pts}
+              <small>pts</small>
+            </strong>
+          </div>
+          {rest.length > 0 && (
+            <div className="pe-sn-gd-next2">
+              {rest.map((b) => (
+                <div key={b.id} className="pe-sn-gd-mini">
+                  <Face player={face(b.id)} name={b.name} />
+                  <span>
+                    <b>{surname(b.name)}</b>
+                    <em>{statLine(b)}</em>
+                  </span>
+                  <strong>{b.pts}</strong>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
-      <Link href={gameHref(leagueId, me.id, g.phase, g.week)} className="pe-act pe-act--sm">
-        Box Score
-      </Link>
+      <div className="pe-sn-gd-acts">
+        {g.replay && (
+          <button type="button" className="pe-act pe-act--sm" onClick={onWatch}>
+            Watch It
+          </button>
+        )}
+        <Link href={gameHref(leagueId, me.id, g.phase, g.week)} className="pe-act pe-act--sm">
+          Box Score
+        </Link>
+      </div>
     </section>
   )
 }
 
-function GameCard({ me, busy, act, play }: { me: MySeason; busy: string | null; act: Act; play: () => void }) {
+/** A defense's marks: the kinds of player it's built to stop, or soft on. */
+function Marks({ tags, vs }: { tags: string[]; vs: -1 | 1 }) {
+  if (!tags.length) return null
+  return (
+    <span className="pe-sn-gd-marks">
+      {tags.map((t) => (
+        <abbr key={t} title={t} data-vs={vs > 0 ? 'up' : 'down'}>
+          <VsMark vs={vs} />
+          {ARCH_ABBR[t] ?? t}
+        </abbr>
+      ))}
+    </span>
+  )
+}
+
+function GameCard({ me, busy, act, play }: { me: MySeason; busy: string | null; act: Act; play: (plan: GamePlan) => void }) {
   const n = me.next!
   const s: ScoutView = n.scouting
-  const edge = edgeWord(s.expected, n.line)
+  const [plan, setPlan] = useState<GamePlan>('balanced')
+  const read = s.plans.find((r) => r.plan === plan) ?? s.plans[0]
+  const proj = Math.round(read.expected)
+  const edge = edgeWord(read.expected, n.line)
   const stopped = s.stopped.flatMap((id) => findCard(me, id) ?? [])
   const helped = s.helped.flatMap((id) => findCard(me, id) ?? [])
-  const proj = Math.round(s.expected)
-  const scale = Math.max(proj, n.line ?? 0) * 1.35 || 1
+  const scale = Math.max(proj, n.line ?? 0, Math.round(read.clicks)) * 1.3 || 1
+  const nameOf = (id: string) => surname(findCard(me, id)?.name ?? '')
 
   return (
     <section className="pe-sn-gd-next">
@@ -261,35 +336,16 @@ function GameCard({ me, busy, act, play }: { me: MySeason; busy: string | null; 
       </h2>
       <p className="pe-sn-gd-blurb">{n.defense.blurb}</p>
 
-      <div className="pe-sn-gd-odds">
-        <div className="pe-sn-gd-num">
-          <b>{proj}</b>
-          <small>You&apos;re projected</small>
-        </div>
-        {n.line != null ? (
-          <div className="pe-sn-gd-meter" data-tone={proj >= n.line ? 'up' : 'down'} aria-hidden>
-            <span className="pe-sn-gd-fill" style={{ transform: `scaleX(${Math.min(1, proj / scale)})` }} />
-            <span className="pe-sn-gd-mark" style={{ left: `${(n.line / scale) * 100}%` }} />
-          </div>
-        ) : (
-          <p className="pe-sn-gd-po">Both teams face this defense. More points moves on.</p>
-        )}
-        {n.line != null && (
-          <div className="pe-sn-gd-num pe-sn-gd-num--need">
-            <b>{n.line}</b>
-            <small>To win</small>
-          </div>
-        )}
-      </div>
-
       <div className="pe-sn-gd-read">
         <div data-tone="down">
           <small>They stop</small>
           <b>{n.defense.stops}</b>
+          <Marks tags={n.defense.hurts} vs={-1} />
         </div>
         <div data-tone="up">
           <small>They allow</small>
           <b>{n.defense.allows}</b>
+          <Marks tags={n.defense.helps} vs={1} />
         </div>
       </div>
 
@@ -312,6 +368,65 @@ function GameCard({ me, busy, act, play }: { me: MySeason; busy: string | null; 
         </div>
       )}
 
+      <div className="pe-sn-gd-plans">
+        <div className="pe-sn-gd-planhead">
+          <small>Game plan</small>
+          {s.best !== plan && (
+            <button type="button" className="pe-sn-gd-coach" onClick={() => setPlan(s.best)}>
+              Coach likes {PLAN_LOOK[s.best].name}
+            </button>
+          )}
+        </div>
+        <div className="pe-sn-gd-planrow" role="radiogroup" aria-label="Game plan">
+          {GAME_PLANS.map((id) => {
+            const r = s.plans.find((x) => x.plan === id)
+            return (
+              <button key={id} type="button" role="radio" aria-checked={plan === id} onClick={() => setPlan(id)}>
+                <b>{PLAN_LOOK[id].short}</b>
+                <small>{id === 'balanced' ? 'Steady' : `${Math.round((r?.chance ?? 0) * 100)}% to work`}</small>
+              </button>
+            )
+          })}
+        </div>
+        <p className="pe-sn-gd-planline">
+          <b>{PLAN_LOOK[plan].name}.</b> {PLAN_LOOK[plan].line}
+          {plan !== 'balanced' && (
+            <>
+              {' '}
+              {read.fitters.length ? `${read.fitters.length} of your starters fit it: ${read.fitters.map(nameOf).join(', ')}.` : 'None of your starters fit it.'}
+            </>
+          )}
+        </p>
+      </div>
+
+      <div className="pe-sn-gd-odds">
+        <div className="pe-sn-gd-num">
+          <b>{proj}</b>
+          <small>Projected</small>
+        </div>
+        {n.line != null ? (
+          <div className="pe-sn-gd-meter" data-tone={proj > n.line ? 'up' : 'down'} aria-hidden>
+            <span key={plan} className="pe-sn-gd-fill" style={{ transform: `scaleX(${Math.min(1, proj / scale)})` }} />
+            <span className="pe-sn-gd-mark" style={{ left: `${(n.line / scale) * 100}%` }} />
+          </div>
+        ) : (
+          <p className="pe-sn-gd-po">Both teams face this defense. More points moves on.</p>
+        )}
+        {n.line != null && (
+          <div className="pe-sn-gd-num pe-sn-gd-num--need">
+            <b>{n.line}</b>
+            <small>To beat</small>
+          </div>
+        )}
+        {plan !== 'balanced' && (
+          <p className="pe-sn-gd-swing">
+            If it works <b>{Math.round(read.clicks)}</b> · if it doesn&apos;t <b>{Math.round(read.misses)}</b>
+            {n.line != null && <> · {Math.round(read.win * 100)}% to win</>}
+          </p>
+        )}
+        {plan === 'balanced' && n.line != null && <p className="pe-sn-gd-swing">{Math.round(read.win * 100)}% to win</p>}
+      </div>
+
       {s.sub && (
         <div className="pe-sn-gd-tip">
           <span>
@@ -324,129 +439,78 @@ function GameCard({ me, busy, act, play }: { me: MySeason; busy: string | null; 
         </div>
       )}
 
-      <button type="button" className="pe-push pe-sn-gd-play" disabled={!!busy} onClick={play}>
-        {busy === 'play' ? 'Playing' : n.phase === 'regular' ? `Play Game ${n.week}` : 'Play The Playoff Game'}
+      <button type="button" className="pe-push pe-sn-gd-play" disabled={!!busy} onClick={() => play(plan)}>
+        {busy === 'play' ? 'Kicking Off' : `${n.phase === 'regular' ? `Play Game ${n.week}` : 'Play The Playoff Game'}${plan !== 'balanced' ? `: ${PLAN_LOOK[plan].short}` : ''}`}
       </button>
 
       <details className="pe-sn-gd-more">
         <summary>Full Scouting Report</summary>
         <div className="pe-sn-lanes">
           {s.lanes.map((x) => (
-            <div key={x.lane} className="pe-sn-lane" data-word={laneWord(x.eff)}>
-              <span>{LANE_LABEL[x.lane]}</span>
-              <i>
-                <em style={{ transform: `scaleX(${Math.min(1, x.eff / 1.6)})` }} />
-              </i>
-              <b>{laneWord(x.eff)}</b>
-            </div>
+            <Lane key={x.lane} label={LANE_LABEL[x.lane]} fill={x.eff / 1.6} word={laneWord(x.eff)} parts={s.parts[x.lane]} me={me} />
           ))}
-          <div className="pe-sn-lane" data-word={s.pocket >= 0.9 ? 'Even' : 'Shut'}>
-            <span>Pocket</span>
-            <i>
-              <em style={{ transform: `scaleX(${Math.min(1, s.pocket / 1.25)})` }} />
-            </i>
-            <b>{pocketWord(s.pocket)}</b>
-          </div>
+          <Lane label="Pocket" fill={s.pocket / 1.25} word={s.pocket >= 0.9 ? 'Even' : 'Shut'} text={pocketWord(s.pocket)} parts={s.parts.protect} me={me} />
         </div>
         <p className="pe-note">
-          Your play calling: {Math.round(s.passShare * 100)}% passes against this defense. Built to stop {n.defense.shuts.toLowerCase()}; soft against {n.defense.soft.toLowerCase()}. Better
-          players shake a bad matchup more easily: it costs a common the most and an Immortal the least.
+          Your play calling: {Math.round(s.passShare * 100)}% passes against this defense before any game plan. The marks are kinds of player:{' '}
+          {[...n.defense.hurts, ...n.defense.helps].map((t) => `${ARCH_ABBR[t]} ${t}`).join(', ')}. Better players shake a bad matchup more easily: it costs a common the most
+          and an Immortal the least.
         </p>
       </details>
     </section>
   )
 }
 
-function RewardPack({
-  leagueId,
-  me,
-  busy,
-  act,
-  onView,
-}: {
-  leagueId: string
-  me: MySeason
-  busy: string | null
-  act: Act
-  onView: (v: SeasonView) => void
-}) {
-  const p = me.pending!
-  const full = me.bench.length >= BENCH_MAX
-  const { stage, open, tear, reveal, revealAll, skip, pick, dismiss } = usePackStage()
-  const slot = Math.max(0, SLOTS.findIndex((s) => s.pool === p.cards[0]?.pos))
-
-  const onCard = (i: number) => {
-    if (!stage?.cards) return
-    if (!stage.revealed[i]) {
-      reveal(i)
-      return
-    }
-    // The view only changes once the card has left the stage: swapping it in
-    // mid-pick would take the stage down under the animation.
-    let next: SeasonView | null = null
-    pick(
-      i,
-      async (c: Player) => {
-        next = (await seasonPost({ id: leagueId, action: 'keep', card: c.id })).view
-      },
-      -1
-    ).then((ok) => {
-      if (ok && next) onView(next)
-    })
-  }
-
+/** A lane of the full report: how open it is, then who carries it. */
+function Lane({ label, fill, word, text, parts, me }: { label: string; fill: number; word: string; text?: string; parts: { id: string; pct: number }[]; me: MySeason }) {
   return (
-    <section className="pe-sn-card pe-sn-reward" style={{ '--rw': p.color } as React.CSSProperties}>
-      <div className="pe-kicker">The game paid a pack</div>
-      <h2 className="pe-sn-title">{p.label}</h2>
-      {full ? (
-        <>
-          <p className="pe-panel-text">Your bench is full ({BENCH_MAX}). Let one go to make room, or pass on this pack.</p>
-          <div className="pe-sn-release">
-            {me.bench.map((b) => (
-              <button key={b.id} type="button" className="pe-act pe-act--sm" disabled={!!busy} onClick={() => act('release', { action: 'release', bench: b.id })}>
-                Let {surname(b.name)} go
-              </button>
-            ))}
-          </div>
-          <button type="button" className="pe-act" disabled={!!busy} onClick={() => act('keep', { action: 'keep', card: null })}>
-            Pass On This Pack
-          </button>
-        </>
-      ) : (
-        <>
-          <p className="pe-panel-text">Five cards, five positions. Keep one for your bench.</p>
-          <button type="button" className="pe-push" disabled={!!busy || !!stage} onClick={() => open(slot, async () => p.cards)}>
-            Open It
-          </button>
-        </>
+    <div className="pe-sn-lane" data-word={word}>
+      <span>{label}</span>
+      <i>
+        <em style={{ transform: `scaleX(${Math.min(1, fill)})` }} />
+      </i>
+      <b>{text ?? word}</b>
+      {parts.length > 0 && (
+        <span className="pe-sn-lane-who">
+          <span className="pe-sn-lane-split" aria-hidden>
+            {parts.map((x) => {
+              const c = findCard(me, x.id)
+              return <u key={x.id} style={{ flexGrow: x.pct, background: c ? RARITY_LOOK[c.rarity].color : undefined }} />
+            })}
+          </span>
+          {parts
+            .slice(0, 4)
+            .map((x) => `${surname(findCard(me, x.id)?.name ?? '')} ${x.pct}%`)
+            .join(' · ')}
+        </span>
       )}
-      {stage && (
-        <PackStage
-          stage={stage}
-          tag={{ text: p.label, color: p.color }}
-          onCard={onCard}
-          onRevealAll={revealAll}
-          onDismiss={dismiss}
-          onTear={tear}
-          onSkip={skip}
-          wild={{ art: WILD_PACK_ART, first: p.label.split(' ')[0], rest: 'Pack' }}
-        />
-      )}
-    </section>
+    </div>
   )
 }
 
-function Final({ view }: { view: SeasonView }) {
+function Final({ view, busy, act }: { view: SeasonView; busy: string | null; act: Act }) {
+  const l = view.league
   const champ = view.table.find((r) => r.champion)
   return (
     <section className="pe-sn-card pe-sn-final" data-you={champ?.you ? 'true' : undefined}>
-      <div className="pe-kicker">Season over</div>
+      <div className="pe-kicker">Season {l.seasonNumber} is over</div>
       <h2 className="pe-sn-title">{champ?.you ? 'Champions.' : `${champ?.teamName ?? 'Nobody'} won it all.`}</h2>
-      <p className="pe-panel-text">The awards and every line from your season are in the Stat Book.</p>
-      <Link href={seasonHref(view.league.id, 'book')} className="pe-btn">
-        Open The Stat Book
-      </Link>
+      <p className="pe-panel-text">
+        The awards and every line are in the Stat Book. Run it back for Season {l.seasonNumber + 1}: keep up to three points of your eleven, and your finish buys a Standings Pack, the worse the finish, the
+        better the pack.
+      </p>
+      <div className="pe-sn-acts">
+        {l.owner ? (
+          <button type="button" className="pe-push" disabled={!!busy} onClick={() => act('next', { action: 'next' })}>
+            {busy === 'next' ? 'Starting' : `Start Season ${l.seasonNumber + 1}`}
+          </button>
+        ) : (
+          <span className="pe-note">Waiting on the commissioner to start Season {l.seasonNumber + 1}.</span>
+        )}
+        <Link href={seasonHref(l.id, 'book')} className="pe-act">
+          Open The Stat Book
+        </Link>
+      </div>
     </section>
   )
 }
@@ -524,14 +588,25 @@ function Schedule({ view }: { view: SeasonView }) {
 
 function Bracket({ view }: { view: SeasonView }) {
   const rounds = view.bracket!.rounds
+  const l = view.league
+  // Opens on the round being played (the Final once it's over), the one before
+  // it just to its left with its scores; it still scrolls both ways.
+  const now = l.phase === 'complete' ? rounds.length : l.round
+  const box = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = box.current
+    const col = el?.querySelector<HTMLElement>(`[data-round="${Math.max(1, now - 1)}"]`)
+    if (el && col) el.scrollLeft = col.offsetLeft - el.offsetLeft
+  }, [now])
   return (
     <section className="pe-sn-block">
       <div className="pe-sn-blockhead">
         <h2>Playoffs</h2>
+        <small>{l.phase === 'complete' ? 'Final' : roundName(l.round, rounds.length)}</small>
       </div>
-      <div className="pe-sn-bracket">
+      <div className="pe-sn-bracket" ref={box}>
         {rounds.map((r) => (
-          <div key={r.round} className="pe-sn-round">
+          <div key={r.round} className="pe-sn-round" data-round={r.round} data-now={r.round === now ? 'true' : undefined}>
             <div className="pe-sn-round-head">
               <b>{roundName(r.round, rounds.length)}</b>
               <small>vs {r.defense}</small>
@@ -577,23 +652,14 @@ function Commish({ view, busy, act }: { view: SeasonView; busy: string | null; a
         )}
 
         {(l.phase === 'pregame' || l.phase === 'regular') && (
-          <div className="pe-setup-row">
-            <span className="pe-setup-label">Playoff Teams</span>
-            <div className="pe-sn-pick" role="radiogroup" aria-label="How many teams make the playoffs">
-              {seasonPlayoffOptions(size).map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  role="radio"
-                  aria-checked={n === Math.min(l.playoffSize, size)}
-                  disabled={!!busy}
-                  onClick={() => act('playoffs', { action: 'playoffs', size: n })}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-          </div>
+          <SetupSlider
+            label="Playoff Teams"
+            min={2}
+            max={size}
+            value={Math.min(l.playoffSize, size)}
+            disabled={!!busy}
+            onCommit={(n) => act('playoffs', { action: 'playoffs', size: n })}
+          />
         )}
 
         {l.phase === 'pregame' && (

@@ -14,20 +14,23 @@
 // comes back to the same five cards.
 
 import Link from 'next/link'
-import { useCallback, useState } from 'react'
-import { SLOTS, WILD_PACK_ART, chemistryFor, type Player } from '@/lib/packEmpire/rules'
-import { BENCH_PACKS } from '@/lib/packEmpire/seasonRules'
+import { useCallback, useEffect, useState } from 'react'
+import { RARITY_LOOK, SLOTS, WILD_PACK_ART, chemistryFor, seasonLabel, type Player } from '@/lib/packEmpire/rules'
+import { BENCH_PACKS, PLAN_LOOK, draftGrade } from '@/lib/packEmpire/seasonRules'
 import type { MySeason } from '@/lib/packEmpire/season'
-import { Field, FilledSlot, type SlotView } from '../../cards'
+import { Face, Field, FilledSlot, LeagueMark, type SlotView } from '../../cards'
 import { PackStage, ScoreStrip, restoredStage, usePackStage, useStripOffset } from '../../stage'
+import { Keepers } from './Keepers'
+import { TeamPeek } from './TeamPeek'
 import { seasonHref, seasonPost, type SeasonOut } from './api'
-
-const FRANCHISE_COLOR = '#42c0f8'
+import { compareChip } from './compare'
 
 /** Where a bench pack's card lands: past the eleven, so it never meets a slot. */
 const BENCH_SLOT = 100
+const PICKS = SLOTS.length + BENCH_PACKS
+const ORDINAL = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`
 
-export function SeasonDraft({ leagueId, initial }: { leagueId: string; initial: MySeason }) {
+export function SeasonDraft({ leagueId, initial, season = 1 }: { leagueId: string; initial: MySeason; season?: number }) {
   const [me, setMe] = useState<MySeason>(initial)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -41,6 +44,13 @@ export function SeasonDraft({ leagueId, initial }: { leagueId: string; initial: 
         : null
   )
   useStripOffset()
+  // The pick is in: each card kept is announced, Draft Day style, for a beat.
+  const [called, setCalled] = useState<{ n: number; card: Player; bench: boolean } | null>(null)
+  useEffect(() => {
+    if (!called) return
+    const t = window.setTimeout(() => setCalled(null), 2800)
+    return () => window.clearTimeout(t)
+  }, [called])
 
   const apply = (o: SeasonOut) => {
     if (o.view?.me) setMe(o.view.me)
@@ -100,56 +110,46 @@ export function SeasonDraft({ leagueId, initial }: { leagueId: string; initial: 
       reveal(i)
       return
     }
-    if (kind === 'bench') {
-      pick(i, async (c) => void apply(await seasonPost({ id: leagueId, action: 'benchPick', card: c.id })))
-      return
-    }
-    pick(i, async (c) => void apply(await seasonPost({ id: leagueId, action: 'pick', card: c.id })))
+    const card = stage.cards[i]
+    const n = me.lineup.filter(Boolean).length + me.benchPacks + 1
+    const bench = kind === 'bench'
+    pick(i, async (c) => void apply(await seasonPost({ id: leagueId, action: bench ? 'benchPick' : 'pick', card: c.id }))).then((ok) => {
+      if (ok) setCalled({ n, card, bench })
+    })
   }
 
   const fieldView = (i: number): SlotView => {
     const isFranchise = me.franchise === i
+    const keeper = me.offseason?.kept.includes(me.lineup[i]?.id ?? '')
     return {
+      flag: keeper ? { text: 'KEEPER', color: '#f4c06a' } : null,
       clickable: !busy && !stage && (me.step === 'franchise' || !me.lineup[i]),
       opening: kind === 'slot' && stage?.slot === i,
-      badge: isFranchise && !me.lineup[i] ? { text: 'FRANCHISE', color: FRANCHISE_COLOR } : null,
-      glow: isFranchise && !me.lineup[i] ? 'boost' : me.step === 'franchise' ? 'cap' : null,
+      // The Franchise patch: faint under the pointer while it's being placed.
+      mark: isFranchise ? { color: me.special.color, label: me.special.label } : me.step === 'franchise' && !me.lineup[i] ? { color: me.special.color, label: me.special.label, ghost: true } : null,
       tone: isFranchise ? 'boosted' : null,
     }
   }
 
   const left = SLOTS.length - me.lineup.filter(Boolean).length
 
+  if (me.step === 'keepers') return <Keepers me={me} season={season} busy={busy} onLock={(ids) => void act({ action: 'keepers', cards: ids })} />
+
   // The last pick finishes the team; the table stays up until its card has landed.
-  if (me.step === 'season' && !stage) {
-    return (
-      <div className="pe-table">
-        <div className="pe-sn-done">
-          <div className="pe-kicker">Draft Day · done</div>
-          <h2 className="pe-sn-done-title">Your team is set.</h2>
-          <p className="pe-panel-text">Eleven starters and {me.bench.length} on the bench. Eight games against the schedule, at your own pace.</p>
-          <div className="pe-recap-actions">
-            <Link href={seasonHref(leagueId)} className="pe-btn">
-              To The Season
-            </Link>
-          </div>
-        </div>
-        <div className="pe-turf">
-          <Field lineup={me.lineup} view={() => ({ clickable: false })} />
-        </div>
-      </div>
-    )
-  }
+  if (me.step === 'season' && !stage && !called) return <DraftReport leagueId={leagueId} me={me} />
 
   return (
     <div className="pe-table">
-      <ScoreStrip score={value + chem} filled={men.length} tier={{ label: 'Draft Day', color: FRANCHISE_COLOR }} noTier extra={{ value: chem >= 0 ? `+${chem}` : `${chem}`, label: 'Chemistry' }} />
+      <ScoreStrip score={value + chem} filled={men.length} tier={{ label: 'Draft Day', color: me.special.color }} noTier extra={{ value: chem >= 0 ? `+${chem}` : `${chem}`, label: 'Chemistry' }} />
 
       <div className="pe-banner">
         <span>
           {me.step === 'franchise' ? (
             <>
-              <b>Place your Franchise Pack.</b> Tap the slot it goes on: it deals off the captain&apos;s table, the best pack you&apos;ll open today.
+              <b>Place your {me.special.label}.</b>{' '}
+              {me.special.standings
+                ? 'Your finish bought it. Tap the open spot it goes on.'
+                : "Tap the slot it goes on: it deals off the captain's table, the best pack you'll open today."}
             </>
           ) : left > 0 ? (
             <>
@@ -210,16 +210,34 @@ export function SeasonDraft({ leagueId, initial }: { leagueId: string; initial: 
         </div>
       </section>
 
+      {called && (
+        <div className="pe-sn-call-in" key={called.n} role="status" style={{ '--rc': RARITY_LOOK[called.card.rarity].color } as React.CSSProperties}>
+          <small>
+            {ORDINAL(called.n)} pick of {PICKS} · {called.bench ? 'To the bench' : SLOTS.find((s) => s.pool === called.card.pos)?.label}
+          </small>
+          <b>The pick is in.</b>
+          <span>
+            <Face player={called.card} />
+            <strong>{called.card.name}</strong>
+            <em>
+              {seasonLabel(called.card)} · {RARITY_LOOK[called.card.rarity].label} · {called.card.score.toLocaleString()}
+            </em>
+          </span>
+        </div>
+      )}
+
       {stage && (
         <PackStage
           stage={stage}
-          tag={kind === 'slot' && me.franchise === stage.slot ? { text: 'Franchise Pack', color: FRANCHISE_COLOR } : null}
+          tag={kind === 'slot' && me.franchise === stage.slot ? { text: me.special.label, color: me.special.color } : null}
           onCard={onCard}
           onRevealAll={revealAll}
           onDismiss={dismiss}
           onTear={tear}
           onSkip={skip}
           wild={kind === 'bench' ? { art: WILD_PACK_ART, first: 'Bench', rest: 'Pack' } : null}
+          chipFor={kind === 'bench' ? (c) => compareChip(c, me.lineup) : undefined}
+          clock={kind === 'bench' ? <TeamPeek lineup={me.lineup} /> : undefined}
           chemFor={(p) => {
             if (kind === 'bench') return null
             const before = chemistryFor(men, true).total
@@ -227,6 +245,121 @@ export function SeasonDraft({ leagueId, initial }: { leagueId: string; initial: 
           }}
         />
       )}
+    </div>
+  )
+}
+
+/** Draft Day's last word: the grade, the best pick, the spot to fix, the bench,
+    and what game one looks like. */
+function DraftReport({ leagueId, me }: { leagueId: string; me: MySeason }) {
+  const men = me.lineup.filter((p): p is Player => !!p)
+  const value = men.reduce((n, p) => n + p.score, 0)
+  const chem = chemistryFor(men, true).total
+  const g = draftGrade(value)
+  const best = men.reduce((a, b) => (b.score > a.score ? b : a), men[0])
+  const weakAt = me.lineup.reduce((w, p, i) => (p && (!me.lineup[w] || p.score < me.lineup[w]!.score) ? i : w), 0)
+  const weak = me.lineup[weakAt]
+  const next = me.next
+  const plan = next?.scouting.plans.find((r) => r.plan === next.scouting.best)
+  return (
+    <div className="pe-table">
+      <section className="pe-sn-dr">
+        <div className="pe-sn-dr-grade" data-grade={g.grade[0]}>
+          <small>Draft grade</small>
+          <b>{g.grade}</b>
+        </div>
+        <div className="pe-sn-dr-head">
+          <div className="pe-kicker">Draft Day · The Report</div>
+          <h2>{g.line}</h2>
+          <div className="pe-sn-dr-nums">
+            <span>
+              <b>{value.toLocaleString()}</b>
+              <small>Card value</small>
+            </span>
+            <span>
+              <b>
+                {chem >= 0 ? '+' : ''}
+                {chem.toLocaleString()}
+              </b>
+              <small>Chemistry</small>
+            </span>
+            {me.profile && (
+              <span>
+                <b>{Math.round(me.profile.projected)}</b>
+                <small>Points vs a plain defense, best call</small>
+              </span>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <div className="pe-sn-dr-picks">
+        {best && (
+          <div className="pe-sn-dr-pick" style={{ '--rc': RARITY_LOOK[best.rarity].color } as React.CSSProperties}>
+            <small>Best pick</small>
+            <Face player={best} />
+            <b>{best.name}</b>
+            <em>
+              {RARITY_LOOK[best.rarity].label} · {best.score.toLocaleString()} · {me.styles[best.id]?.tag}
+            </em>
+          </div>
+        )}
+        {weak && (
+          <div className="pe-sn-dr-pick" data-weak style={{ '--rc': RARITY_LOOK[weak.rarity].color } as React.CSSProperties}>
+            <small>The spot to fix</small>
+            <Face player={weak} />
+            <b>
+              {SLOTS[weakAt].short} · {weak.name}
+            </b>
+            <em>Point a game pack at {SLOTS[weakAt].pool === 'RB' ? 'HB' : SLOTS[weakAt].pool}, or trade up for him.</em>
+          </div>
+        )}
+        {next && (
+          <div className="pe-sn-dr-pick" data-next>
+            <small>Game 1</small>
+            <b>vs {next.defense.name}</b>
+            <em>
+              {next.line != null ? `${next.line} to beat. ` : ''}Coach likes {PLAN_LOOK[next.scouting.best].name}
+              {plan ? `: about ${Math.round(plan.expected)} points.` : '.'}
+            </em>
+          </div>
+        )}
+      </div>
+
+      <div className="pe-turf">
+        <Field
+          lineup={me.lineup}
+          view={(i) => ({
+            clickable: false,
+            mark: me.franchise === i ? { color: me.special.color, label: me.special.label } : null,
+            flag: me.offseason?.kept.includes(me.lineup[i]?.id ?? '') ? { text: 'KEEPER', color: '#f4c06a' } : null,
+          })}
+        />
+      </div>
+
+      <section className="pe-sn-bp pe-sn-bp--done" aria-label="Your bench">
+        <div className="pe-sn-bp-head">
+          <b>Your Bench</b>
+          <small>Sub them in before any game. Every game pays another pack.</small>
+        </div>
+        <div className="pe-sn-bp-row">
+          {me.bench.map((p) => (
+            <div key={p.id} className="pe-sn-bp-spot">
+              <FilledSlot player={p} />
+              <span className="pe-sn-bp-tag">{me.styles[p.id]?.tag}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="pe-recap-actions pe-sn-dr-go">
+        <Link href={seasonHref(leagueId)} className="pe-btn">
+          To The Season
+        </Link>
+        <span className="pe-sn-dr-mark">
+          <LeagueMark color={me.special.color} label={me.special.label} inline /> Your {me.special.label}
+        </span>
+      </div>
     </div>
   )
 }
