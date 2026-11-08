@@ -26,6 +26,9 @@ export type Defense = {
   /** What it takes away and where it's soft, for the scouting report. */
   shuts: string
   soft: string
+  /** The same in three words each, for the game card: what it stops, what it allows. */
+  stops: string
+  allows: string
   lanes: DefenseLanes
   /** On the line's protection: under 1 is a pass rush that gets home. */
   rush: number
@@ -42,6 +45,8 @@ export const DEFENSES: Defense[] = [
     blurb: 'Nothing fancy, nothing missing.',
     shuts: 'Nothing in particular',
     soft: 'Nothing in particular',
+    stops: 'Nothing special',
+    allows: 'Nothing special',
     lanes: { run: 1.0, short: 1, deep: 1, redZone: 1 },
     rush: 1,
     takeaways: 1,
@@ -53,6 +58,8 @@ export const DEFENSES: Defense[] = [
     blurb: 'Two corners who take your best receivers out of the game.',
     shuts: 'Deep shots, Deep Threats, Gunslingers',
     soft: 'The run, Bell Cows, Road Graders',
+    stops: 'Deep passes',
+    allows: 'The run',
     lanes: { run: 1.2, short: 0.81, deep: 0.48, redZone: 1 },
     rush: 1,
     takeaways: 1.05,
@@ -64,6 +71,8 @@ export const DEFENSES: Defense[] = [
     blurb: 'Both safeties deep. Nothing gets over the top.',
     shuts: 'Deep shots, Seam Stretchers',
     soft: 'Underneath and the run',
+    stops: 'Deep passes',
+    allows: 'Short passes, the run',
     lanes: { run: 1.16, short: 1.16, deep: 0.48, redZone: 1 },
     rush: 1.05,
     takeaways: 1,
@@ -75,6 +84,8 @@ export const DEFENSES: Defense[] = [
     blurb: 'A safety walks down. They dare you to throw.',
     shuts: 'The run, Bell Cows, Road Graders',
     soft: 'Play action and deep shots',
+    stops: 'The run',
+    allows: 'Deep passes',
     lanes: { run: 0.48, short: 1, deep: 1.23, redZone: 0.94 },
     rush: 1,
     takeaways: 1,
@@ -86,6 +97,8 @@ export const DEFENSES: Defense[] = [
     blurb: 'Two pass rushers who live in the backfield.',
     shuts: 'Slow-developing throws, a weak line',
     soft: 'Quarterbacks who run, screens, Pass Protectors',
+    stops: 'Slow throws, weak lines',
+    allows: 'Running QBs, screens',
     lanes: { run: 1.1, short: 0.94, deep: 0.84, redZone: 1 },
     rush: 0.48,
     takeaways: 1.08,
@@ -97,6 +110,8 @@ export const DEFENSES: Defense[] = [
     blurb: 'Everybody comes. Somebody is open, if you find him fast.',
     shuts: 'Holding the ball, long-developing shots',
     soft: 'Quick throws, Surgeons, Safety Valves',
+    stops: 'Holding the ball',
+    allows: 'Quick throws',
     lanes: { run: 1.03, short: 1.16, deep: 0.74, redZone: 1.03 },
     rush: 0.61,
     takeaways: 1.2,
@@ -108,6 +123,8 @@ export const DEFENSES: Defense[] = [
     blurb: 'A secondary that reads the quarterback and jumps routes.',
     shuts: 'Risky throws, Gunslingers',
     soft: 'The run, careful quarterbacks',
+    stops: 'Risky throws',
+    allows: 'The run',
     lanes: { run: 1.08, short: 0.94, deep: 0.81, redZone: 1 },
     rush: 1,
     takeaways: 1.6,
@@ -119,6 +136,8 @@ export const DEFENSES: Defense[] = [
     blurb: 'Yards are easy. Touchdowns are not.',
     shuts: 'The red zone, Red Zone Targets, Goal Line Backs',
     soft: 'Moving the ball between the twenties',
+    stops: 'Touchdowns',
+    allows: 'Yards',
     lanes: { run: 1.08, short: 1.13, deep: 1, redZone: 0.48 },
     rush: 1.05,
     takeaways: 1,
@@ -130,6 +149,8 @@ export const DEFENSES: Defense[] = [
     blurb: 'Every short throw has a defender sitting on it.',
     shuts: 'Underneath, Possession receivers, Safety Valves',
     soft: 'Seams and deep shots',
+    stops: 'Short passes',
+    allows: 'Deep passes',
     lanes: { run: 1.08, short: 0.61, deep: 0.94, redZone: 1 },
     rush: 1.03,
     takeaways: 1.05,
@@ -141,6 +162,8 @@ export const DEFENSES: Defense[] = [
     blurb: 'Five defensive backs and a light front. Fast, and small.',
     shuts: 'The short passing game, Receiving Backs',
     soft: 'Running straight at them, Bell Cows, Road Graders',
+    stops: 'Short passes',
+    allows: 'Running at them',
     lanes: { run: 1.23, short: 0.81, deep: 0.87, redZone: 1 },
     rush: 1,
     takeaways: 1,
@@ -175,11 +198,11 @@ export type ScheduleWeek = { week: number; defense: string; line: number }
 
 /** The points to beat: LINE_BASE in week one, climbing LINE_RAMP a week because
     every game pays a pack and a roster that uses its bench gets better all season
-    (about two points a week in sim/season-sim.ts), then a few either side so some
-    weeks are harder than others even before the front. Without the climb nine in
-    ten teams cleared the line by week eight and a slow start could never come back. */
-export const LINE_BASE = 25
-export const LINE_RAMP = 2.1
+    (sim/season-sim.ts: the median team goes from about 23 to 28), then a few
+    either side so some weeks are harder than others even before the front. A
+    typical team clears about half of them. */
+export const LINE_BASE = 23
+export const LINE_RAMP = 0.7
 const LINE_SWING = [-3, -2, -1, 0, 0, 1, 2, 3]
 
 function hash(s: string): number {

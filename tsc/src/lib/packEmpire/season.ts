@@ -29,14 +29,14 @@
 import { containsHateSpeech } from '@/lib/contentModeration'
 import { weekStartFor } from '@/lib/minigames/leaderboard'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { archetypeOf, type ArchetypeTag, type Lane } from './archetypes'
-import { dealPack } from './deal'
+import { LANES, archetypeOf, type ArchetypeTag, type Lane } from './archetypes'
 import { DEFENSES, SEASON_GAMES, defenseById, elite, rngFor, scheduleFor, type Defense } from './defenses'
 import { cpuBoostSlot, cpuTeamName } from './leagueCpu'
 import { nameForUser, newId } from './people'
 import { playerById } from './pool'
-import { LEAGUE_ORDINARY, SLOTS, STANDINGS_WEIGHTS, type Player, type Weights } from './rules'
+import { SLOTS, chemistryFor, type Player } from './rules'
 import { benchCards, seasonCards } from './seasonCards'
+import { benchPack, cpuPick, draftPack, rewardPack } from './seasonPacks'
 import {
   BENCH_MAX,
   BENCH_PACKS,
@@ -48,7 +48,7 @@ import {
   rewardFor,
   type RewardTier,
 } from './seasonRules'
-import { bestSub, scout, simGame, type BoxLine, type DriveEnd, type GameResult } from './seasonSim'
+import { REF, bestSub, counterFor, fantasyPoints, laneTotals, matchup, scout, simGame, type BoxLine, type DriveEnd, type GameResult } from './seasonSim'
 
 const db = () => createAdminClient()
 
@@ -184,13 +184,6 @@ function cleanName(raw: unknown, min = 3, max = 40): string | null {
 // Dealing
 // ============================================================
 
-const FRANCHISE: { normal: Weights; boosted: Weights } = { normal: STANDINGS_WEIGHTS.standard_pack, boosted: STANDINGS_WEIGHTS.standard_pack }
-const REWARD_TABLE: Record<RewardTier, { normal: Weights; boosted: Weights }> = {
-  league: LEAGUE_ORDINARY,
-  starter: FRANCHISE,
-  rising: { normal: STANDINGS_WEIGHTS.rising_pack, boosted: STANDINGS_WEIGHTS.rising_pack },
-}
-
 const dealLabel = (l: LeagueRow, t: TeamRow, part: string) => `season:${l.seed}:${t.id}:${part}`
 
 /** Every man already on this team, so no pack hands him back. */
@@ -204,17 +197,13 @@ function taken(t: TeamRow): string[] {
   ]
 }
 
+/** A slot's pack on Draft Day: hot, ordinary or cold, unmarked (seasonPacks.ts). */
 function slotPack(l: LeagueRow, t: TeamRow, slot: number): Player[] {
-  const table = t.draft.franchise === slot ? FRANCHISE : LEAGUE_ORDINARY
-  return dealPack({ label: dealLabel(l, t, 'draft'), slot, base: table.normal, boosted: table.boosted, exclude: taken(t) })
+  return draftPack(dealLabel(l, t, 'draft'), slot, t.draft.franchise ?? 0, taken(t))
 }
 
-/** A pack of one position the seed picks: Draft Day's bench packs and every game's pack. */
-function wildPack(l: LeagueRow, t: TeamRow, part: string, table: { normal: Weights; boosted: Weights }): Player[] {
-  const label = dealLabel(l, t, part)
-  const slot = Math.floor(rngFor(label)() * SLOTS.length)
-  return dealPack({ label, slot, base: table.normal, boosted: table.boosted, exclude: taken(t) })
-}
+const benchDeal = (l: LeagueRow, t: TeamRow, n: number) => benchPack(dealLabel(l, t, `bench${n}`), taken(t))
+const rewardDeal = (l: LeagueRow, t: TeamRow, week: number, tier: RewardTier) => rewardPack(dealLabel(l, t, `reward:regular:${week}`), tier, taken(t))
 
 const gameSeed = (l: LeagueRow, t: TeamRow, phase: string, week: number) => `${l.seed}|${t.id}|${l.season_number}|${phase}|${week}`
 
@@ -249,8 +238,10 @@ function cpuDraft(l: LeagueRow, t: TeamRow): TeamRow {
     next.draft.picks!.push({ slot, id: best(pack).id })
   }
   for (let n = 0; n < BENCH_PACKS; n++) {
-    const pack = wildPack(l, next, `bench${n}`, LEAGUE_ORDINARY)
-    next.draft.bench!.push({ ids: pack.map((p) => p.id), kept: best(pack).id })
+    const pack = benchDeal(l, next, n)
+    const kept = (next.draft.bench ?? []).flatMap((b) => (b.kept ? (card(b.kept) ?? []) : []))
+    const lineup = (next.draft.picks ?? []).flatMap((p) => card(p.id) ?? [])
+    next.draft.bench!.push({ ids: pack.map((p) => p.id), kept: cpuPick(pack, lineup, kept).id })
   }
   return finishDraft(next)
 }
@@ -274,9 +265,9 @@ function cpuSubs(t: TeamRow, d: Defense): TeamRow {
   return { ...t, roster, bench }
 }
 
-/** Keeps the best card in a game's pack; a full bench lets its smallest go. */
+/** Keeps the card in a game's pack that steps up most; a full bench lets its smallest go. */
 function cpuKeep(t: TeamRow, ids: string[]): TeamRow {
-  const keep = best(cards(ids))
+  const keep = cpuPick(cards(ids), lineupOf(t), cards(t.bench))
   let bench = [...t.bench, keep.id]
   if (bench.length > BENCH_MAX) {
     const low = cards(bench).reduce((a, b) => (b.score < a.score ? b : a))
@@ -308,7 +299,7 @@ function cpuSeason(l: LeagueRow, t0: TeamRow): { team: TeamRow; games: Omit<Game
       won,
       result: stored(g),
     })
-    const pack = wildPack(l, t, `reward:regular:${wk.week}`, REWARD_TABLE[rewardFor(g.points, wk.line)])
+    const pack = rewardDeal(l, t, wk.week, rewardFor(g.points, wk.line))
     t = cpuKeep(
       { ...t, played: t.played + 1, wins: t.wins + (won ? 1 : 0), losses: t.losses + (won ? 0 : 1), points_for: t.points_for + g.points },
       pack.map((p) => p.id)
@@ -542,6 +533,7 @@ export async function openSeasonPack(id: unknown, who: SeasonWho | null, slot: u
   const s = Number(slot)
   if (!Number.isInteger(s) || s < 0 || s >= SLOTS.length) return { ok: false, error: 'Pick a slot.' }
   if (d.open != null) return d.open === s ? { ok: true, cards: cards(d.packs?.[d.open] ?? []) } : { ok: false, error: 'Take a card from the open pack first.' }
+  if (benchWaiting(d)) return { ok: false, error: 'Take a card from your bench pack first.' }
   if ((d.picks ?? []).some((p) => p.slot === s)) return { ok: false, error: 'That slot is filled.' }
   const ids = d.packs?.[s] ?? slotPack(l, t, s).map((p) => p.id)
   await db().from('pe_season_teams').update({ draft: { ...d, open: s, packs: { ...(d.packs ?? {}), [s]: ids } } }).eq('id', t.id)
@@ -558,10 +550,28 @@ export async function pickSeasonCard(id: unknown, who: SeasonWho | null, cardId:
   if (d.open == null) return { ok: false, error: 'Open a pack first.' }
   const pack = d.packs?.[d.open] ?? []
   if (typeof cardId !== 'string' || !pack.includes(cardId)) return { ok: false, error: "That card isn't in this pack." }
-  const next = { ...d, open: null, picks: [...(d.picks ?? []), { slot: d.open, id: cardId }] }
-  const { data } = await db().from('pe_season_teams').update({ draft: next }).eq('id', t.id).eq('draft->>open', String(d.open)).select('id')
+  const next: TeamRow = { ...t, draft: { ...d, open: null, picks: [...(d.picks ?? []), { slot: d.open, id: cardId }] } }
+  const done = drafted(next.draft) ? finishDraft(next) : next
+  const { data } = await db()
+    .from('pe_season_teams')
+    .update({ draft: done.draft, roster: done.roster, bench: done.bench })
+    .eq('id', t.id)
+    .eq('draft->>open', String(d.open))
+    .select('id')
   if (!data?.length) return { ok: false, error: 'That pick already went in.' }
   return { ok: true }
+}
+
+/** A bench pack opened and not picked from yet. */
+function benchWaiting(d: DraftState): boolean {
+  const last = (d.bench ?? [])[(d.bench ?? []).length - 1]
+  return !!last && !last.kept
+}
+
+/** Every slot filled and every bench pack picked from: the team is made. */
+function drafted(d: DraftState): boolean {
+  const bench = d.bench ?? []
+  return (d.picks?.length ?? 0) >= SLOTS.length && bench.length >= BENCH_PACKS && bench.every((b) => b.kept)
 }
 
 export async function openBenchPack(id: unknown, who: SeasonWho | null): Promise<Ok<{ cards: Player[] }> | Fail> {
@@ -570,13 +580,15 @@ export async function openBenchPack(id: unknown, who: SeasonWho | null): Promise
   const { l, t } = got
   const bad = draftLive(l, t)
   if (bad) return bad
+  // The bench packs open whenever you like on Draft Day, before the eleven or
+  // after (Joey: they should be there from the start, not a surprise at the end).
   const d = t.draft
-  if ((d.picks?.length ?? 0) < SLOTS.length) return { ok: false, error: 'Fill your eleven first.' }
+  if (d.open != null) return { ok: false, error: 'Take a card from the open pack first.' }
   const bench = d.bench ?? []
   const last = bench[bench.length - 1]
   if (last && !last.kept) return { ok: true, cards: cards(last.ids) }
   if (bench.length >= BENCH_PACKS) return { ok: false, error: 'Your bench packs are open.' }
-  const ids = wildPack(l, t, `bench${bench.length}`, LEAGUE_ORDINARY).map((p) => p.id)
+  const ids = benchDeal(l, t, bench.length).map((p) => p.id)
   await db().from('pe_season_teams').update({ draft: { ...d, bench: [...bench, { ids, kept: null }] } }).eq('id', t.id)
   return { ok: true, cards: cards(ids) }
 }
@@ -592,7 +604,7 @@ export async function pickBenchCard(id: unknown, who: SeasonWho | null, cardId: 
   if (!last || last.kept) return { ok: false, error: 'Open a bench pack first.' }
   if (typeof cardId !== 'string' || !last.ids.includes(cardId)) return { ok: false, error: "That card isn't in this pack." }
   const next: TeamRow = { ...t, draft: { ...t.draft, bench: [...bench.slice(0, -1), { ...last, kept: cardId }] } }
-  const done = next.draft.bench!.length >= BENCH_PACKS ? finishDraft(next) : next
+  const done = drafted(next.draft) ? finishDraft(next) : next
   await saveTeam(done, ['draft', 'roster', 'bench'])
   return { ok: true }
 }
@@ -629,7 +641,7 @@ export async function playSeasonGame(id: unknown, who: SeasonWho | null): Promis
     })
     if (error) return error.code === '23505' ? { ok: true, phase: 'regular', week: wk.week } : { ok: false, error: 'That game would not play.' }
     const tier = rewardFor(g.points, wk.line)
-    const pending: Pending = { phase: 'regular', week: wk.week, tier, ids: wildPack(l, t, `reward:regular:${wk.week}`, REWARD_TABLE[tier]).map((p) => p.id) }
+    const pending: Pending = { phase: 'regular', week: wk.week, tier, ids: rewardDeal(l, t, wk.week, tier).map((p) => p.id) }
     await db()
       .from('pe_season_teams')
       .update({ played: t.played + 1, wins: t.wins + (won ? 1 : 0), losses: t.losses + (won ? 0 : 1), points_for: t.points_for + g.points, pending })
@@ -865,9 +877,9 @@ async function advance(leagueId: string) {
 // Views
 // ============================================================
 
-export type DefenseCard = Pick<Defense, 'id' | 'name' | 'blurb' | 'shuts' | 'soft'>
+export type DefenseCard = Pick<Defense, 'id' | 'name' | 'blurb' | 'shuts' | 'soft' | 'stops' | 'allows'>
 
-const defenseCard = (d: Defense): DefenseCard => ({ id: d.id, name: d.name, blurb: d.blurb, shuts: d.shuts, soft: d.soft })
+const defenseCard = (d: Defense): DefenseCard => ({ id: d.id, name: d.name, blurb: d.blurb, shuts: d.shuts, soft: d.soft, stops: d.stops, allows: d.allows })
 
 export type TableRow = {
   id: string
@@ -885,17 +897,30 @@ export type TableRow = {
   champion: boolean
 }
 
-export type CardStyle = { tag: ArchetypeTag; lanes: Record<Lane, number> }
+/** A card's kind of player, where its value goes, and how the next front treats
+    it: -1 built to stop him, 1 he beats it, 0 neither. */
+export type CardStyle = { tag: ArchetypeTag; lanes: Record<Lane, number>; vs: -1 | 0 | 1 }
 
 export type ScoutView = {
   expected: number
   line: number | null
   passShare: number
   lanes: { lane: 'run' | 'short' | 'deep' | 'redZone'; eff: number }[]
+  /** Card ids: the starters this front is built to stop, and the ones who beat it. */
   stopped: string[]
   helped: string[]
   pocket: number
   sub: { in: Player; out: Player; slot: number; gain: number } | null
+}
+
+/** Your eleven as a whole, against a typical Season offense (1 = typical). */
+export type TeamProfile = {
+  lanes: Record<Lane, number>
+  value: number
+  chem: number
+  passShare: number
+  /** Points against a plain defense. */
+  projected: number
 }
 
 export type GameLine = { phase: 'regular' | 'playoffs'; week: number; defense: string; line: number | null; points: number; won: boolean | null; opponent: string | null }
@@ -904,6 +929,10 @@ export type SeasonLine = {
   id: string
   name: string
   pos: Player['pos']
+  rarity: Player['rarity']
+  img?: string
+  year?: number
+  tag: ArchetypeTag
   teamId: string
   team: string
   games: number
@@ -915,8 +944,10 @@ export type SeasonLine = {
   rec: number
   recYds: number
   recTd: number
+  fum: number
   grade: number | null
   pts: number
+  ppg: number
   value: number
 }
 
@@ -935,9 +966,14 @@ export type MySeason = {
   bench: Player[]
   openSlot: number | null
   openCards: Player[] | null
+  /** Bench packs picked from, and the one open now. */
   benchPacks: number
   benchOpen: Player[] | null
   styles: Record<string, CardStyle>
+  profile: TeamProfile | null
+  /** The regular-season games left, each projected with the eleven as it stands. */
+  outlook: { week: number; defense: string; stops: string; line: number; projected: number }[]
+  played: number
   next: { phase: 'regular' | 'playoffs'; week: number; defense: DefenseCard; line: number | null; opponent: string | null; scouting: ScoutView } | null
   waiting: string | null
   pending: { tier: RewardTier; label: string; color: string; cards: Player[] } | null
@@ -946,6 +982,8 @@ export type MySeason = {
   last: (GameLine & { drives: DriveEnd[]; top: BoxLine[]; yards: number }) | null
   book: SeasonLine[]
 }
+
+export type Leader = { title: string; stat: 'pts' | 'ppg' | 'passYds' | 'rushYds' | 'recYds' | 'td'; rows: SeasonLine[] }
 
 export type SeasonView = {
   league: {
@@ -965,40 +1003,71 @@ export type SeasonView = {
   }
   schedule: { week: number; defense: DefenseCard; line: number }[]
   table: TableRow[]
+  /** In the regular season, how far the table and the leaders run: your games
+      played. Nobody's record runs ahead of yours (null when it all shows). */
+  through: number | null
   me: MySeason | null
   bracket: BracketView | null
-  leaders: { title: string; stat: keyof SeasonLine; rows: SeasonLine[] }[]
+  leaders: Leader[]
   awards: Award[]
 }
 
 function scoutView(t: TeamRow, d: Defense, line: number | null): ScoutView {
   const lineup = lineupOf(t)
   const s = scout(seasonCards(lineup), benchCards(cards(t.bench)), d, line ?? 0, POOLS)
-  const nameOf = (id: string) => lineup.find((p) => p.id === id)?.name ?? ''
   return {
     expected: Math.round(s.expected * 10) / 10,
     line,
     passShare: s.passShare,
     lanes: s.lanes,
-    stopped: s.stopped.map(nameOf),
-    helped: s.helped.map(nameOf),
+    stopped: s.stopped,
+    helped: s.helped,
     pocket: s.pocket,
     sub: s.sub ? { in: card(s.sub.benchId)!, out: card(s.sub.outId)!, slot: s.sub.slot, gain: Math.round(s.sub.gain * 10) / 10 } : null,
   }
 }
 
-/** Every man's season off his box lines, for one team or the league. */
+function profileOf(lineup: Player[]): TeamProfile | null {
+  if (lineup.length < SLOTS.length) return null
+  const sc = seasonCards(lineup)
+  const tot = laneTotals(sc)
+  const m = matchup(sc, defenseById('base')!)
+  const lanes = Object.fromEntries(LANES.map((k) => [k, Math.round((tot[k] / REF[k]) * 100) / 100])) as Record<Lane, number>
+  return {
+    lanes,
+    value: lineup.reduce((n, p) => n + p.score, 0),
+    chem: chemistryFor(lineup, true).total,
+    passShare: Math.round((m.mix.short + m.mix.deep) * 100) / 100,
+    projected: Math.round(m.expected * 10) / 10,
+  }
+}
+
+function outlookOf(lineup: Player[], weeks: { week: number; defense: string; line: number }[]): MySeason['outlook'] {
+  const sc = seasonCards(lineup)
+  return weeks.flatMap((w) => {
+    const d = defenseById(w.defense)
+    return d ? [{ week: w.week, defense: d.name, stops: d.stops, line: w.line, projected: Math.round(matchup(sc, d).expected * 10) / 10 }] : []
+  })
+}
+
+/** Every man's season off his box lines, for one team or the league. Points are
+    recounted off the line (standard PPR), whatever the game stored. */
 function seasonLines(games: GameRow[], teamName: (id: string) => string): SeasonLine[] {
   const by = new Map<string, SeasonLine & { grades: number[] }>()
   for (const g of games) {
     for (const b of g.result.box as BoxLine[]) {
       const k = `${g.team_id}|${b.id}`
-      const cur =
-        by.get(k) ??
-        ({
+      let cur = by.get(k)
+      if (!cur) {
+        const c = card(b.id)
+        const fresh: SeasonLine & { grades: number[] } = {
           id: b.id,
           name: b.name,
           pos: b.pos,
+          rarity: c?.rarity ?? 'common',
+          img: c?.img ?? undefined,
+          year: c?.year ?? undefined,
+          tag: archetypeOf({ id: b.id, pos: b.pos }).tag,
           teamId: g.team_id,
           team: teamName(g.team_id),
           games: 0,
@@ -1010,11 +1079,16 @@ function seasonLines(games: GameRow[], teamName: (id: string) => string): Season
           rec: 0,
           recYds: 0,
           recTd: 0,
+          fum: 0,
           grade: null,
           pts: 0,
-          value: card(b.id)?.score ?? 0,
+          ppg: 0,
+          value: c?.score ?? 0,
           grades: [],
-        } as SeasonLine & { grades: number[] })
+        }
+        cur = fresh
+        by.set(k, fresh)
+      }
       cur.games++
       cur.passYds += b.passYds ?? 0
       cur.passTd += b.passTd ?? 0
@@ -1024,42 +1098,82 @@ function seasonLines(games: GameRow[], teamName: (id: string) => string): Season
       cur.rec += b.rec ?? 0
       cur.recYds += b.recYds ?? 0
       cur.recTd += b.recTd ?? 0
-      cur.pts += b.pts
+      cur.fum += b.fum ?? 0
+      cur.pts += fantasyPoints(b)
       if (b.grade != null) cur.grades.push(b.grade)
-      by.set(k, cur)
     }
   }
   return [...by.values()].map(({ grades, ...l }) => ({
     ...l,
     pts: Math.round(l.pts * 10) / 10,
+    ppg: Math.round((l.pts / Math.max(1, l.games)) * 10) / 10,
     grade: grades.length ? Math.round(grades.reduce((a, b) => a + b, 0) / grades.length) : null,
   }))
 }
 
-const LEADERS: { title: string; stat: keyof SeasonLine }[] = [
-  { title: 'Most Valuable', stat: 'pts' },
+const LEADERS: { title: string; stat: Leader['stat'] }[] = [
+  { title: 'Fantasy Points', stat: 'pts' },
+  { title: 'Points Per Game', stat: 'ppg' },
+  { title: 'Touchdowns', stat: 'td' },
   { title: 'Passing Yards', stat: 'passYds' },
   { title: 'Rushing Yards', stat: 'rushYds' },
   { title: 'Receiving Yards', stat: 'recYds' },
 ]
 
-function awardsFor(teams: TeamRow[], lines: SeasonLine[]): Award[] {
+/** Touchdowns are scored ones, rushing and receiving: a passer's are in his yards. */
+export const statOf = (l: SeasonLine, stat: Leader['stat']) => (stat === 'td' ? l.rushTd + l.recTd : l[stat])
+
+function leadersOf(lines: SeasonLine[], gamesIn: number): Leader[] {
+  // Points a game needs a real sample: half the games played so far.
+  const enough = Math.max(1, Math.ceil(gamesIn / 2))
+  return LEADERS.map((x) => ({
+    ...x,
+    rows: lines
+      .filter((r) => r.grade == null && statOf(r, x.stat) > 0 && (x.stat !== 'ppg' || r.games >= enough))
+      .sort((a, b) => statOf(b, x.stat) - statOf(a, x.stat))
+      .slice(0, 5),
+  }))
+}
+
+/** Half the regular season: the games a man needs to be in the running for the
+    Least Valuable Player on his own merits. */
+const LVP_GAMES = Math.ceil(SEASON_GAMES / 2)
+
+function awardsFor(teams: TeamRow[], lines: SeasonLine[], playoffLines: SeasonLine[] | null, champion: string | null): Award[] {
   const out: Award[] = []
   const skill = lines.filter((l) => l.grade == null)
   const mvp = [...skill].sort((a, b) => b.pts - a.pts)[0]
-  if (mvp) out.push({ title: 'MVP', line: `${mvp.pts.toLocaleString()} points`, who: mvp, team: mvp.team })
-  // The least valuable: the biggest card who did the least with it.
-  const big = skill.filter((l) => l.value >= 1600 && l.games >= 4)
-  const lvp = [...big].sort((a, b) => a.pts / a.value - b.pts / b.value)[0]
-  if (lvp) out.push({ title: 'Least Valuable Player', line: `${lvp.pts.toLocaleString()} points off a ${lvp.value.toLocaleString()} card`, who: lvp, team: lvp.team })
+  if (mvp) out.push({ title: 'MVP', line: `${mvp.pts.toLocaleString()} points, ${mvp.ppg} a game`, who: mvp, team: mvp.team })
+
+  // The least valuable: the big card who did least with it, a game at a time
+  // (Joey: points a game, not a total, so a man picked up for the last week
+  // isn't it by default). Each position scores its own way, so a card is held
+  // to his position's going rate for his value. Half a season makes him
+  // eligible; two or three games only if he was awful, under 40% of that rate.
+  const big = skill.filter((l) => l.value >= 1600 && l.games >= 2)
+  const rates = new Map<string, number>()
+  for (const pos of new Set(big.map((l) => l.pos))) {
+    const r = big.filter((l) => l.pos === pos).map((l) => l.ppg / l.value).sort((a, b) => a - b)
+    rates.set(pos, r[Math.floor(r.length / 2)] || 1)
+  }
+  const ratio = (l: SeasonLine) => l.ppg / l.value / (rates.get(l.pos) ?? 1)
+  const lvp = big.filter((l) => l.games >= LVP_GAMES || ratio(l) <= 0.4).sort((a, b) => ratio(a) - ratio(b))[0]
+  if (lvp) out.push({ title: 'Least Valuable', line: `${lvp.ppg} a game in ${lvp.games} games, off a ${lvp.value.toLocaleString()} card`, who: lvp, team: lvp.team })
+
   // The best man who didn't start on Draft Day.
   const drafted = new Map(teams.map((t) => [t.id, new Set((t.draft.picks ?? []).map((p) => p.id))]))
   const breakout = [...skill].filter((l) => !drafted.get(l.teamId)?.has(l.id) && l.games >= 2).sort((a, b) => b.pts - a.pts)[0]
-  if (breakout) out.push({ title: 'Breakout Player', line: `${breakout.pts.toLocaleString()} points off the bench`, who: breakout, team: breakout.team })
+  if (breakout) out.push({ title: 'Breakout', line: `${breakout.pts.toLocaleString()} points off the bench, ${breakout.ppg} a game`, who: breakout, team: breakout.team })
+
   const lineGrades = new Map<string, number[]>()
   for (const l of lines) if (l.grade != null) lineGrades.set(l.team, [...(lineGrades.get(l.team) ?? []), l.grade])
   const bestLine = [...lineGrades.entries()].map(([team, g]) => ({ team, avg: g.reduce((a, b) => a + b, 0) / g.length })).sort((a, b) => b.avg - a.avg)[0]
   if (bestLine) out.push({ title: 'Best Line', line: `Graded ${Math.round(bestLine.avg)} on average`, team: bestLine.team })
+
+  if (playoffLines && champion) {
+    const pmvp = playoffLines.filter((l) => l.grade == null && l.teamId === champion).sort((a, b) => b.pts - a.pts)[0]
+    if (pmvp) out.push({ title: 'Playoff MVP', line: `${pmvp.pts.toLocaleString()} points in ${pmvp.games} playoff ${pmvp.games === 1 ? 'game' : 'games'}`, who: pmvp, team: pmvp.team })
+  }
   return out
 }
 
@@ -1071,21 +1185,39 @@ export async function seasonView(id: unknown, who: SeasonWho | null): Promise<Se
   const teamName = (tid: string) => teams.find((t) => t.id === tid)?.team_name ?? 'Team'
   const schedule = scheduleFor(l.schedule_seed).map((w) => ({ week: w.week, defense: defenseCard(defenseById(w.defense)!), line: w.line }))
 
-  const table: TableRow[] = standings(teams).map((t) => ({
-    id: t.id,
-    teamName: t.team_name,
-    owner: t.is_cpu ? 'CPU' : t.display_name,
-    cpu: t.is_cpu,
-    you: t.id === mine?.id,
-    wins: t.wins,
-    losses: t.losses,
-    pointsFor: t.points_for,
-    played: t.played,
-    drafted: !!t.roster,
-    seed: t.playoff_seed,
-    eliminated: t.eliminated,
-    champion: l.champion_id === t.id,
-  }))
+  // Joey: in the regular season nobody's record runs ahead of yours. A CPU has
+  // played all eight the moment the season starts and a friend may be further
+  // on; the table and the leaders show everyone through your games played, so a
+  // season unfolds week by week. Once the regular season's over it all shows.
+  const through = mine && l.phase === 'regular' ? mine.played : null
+  const visible = through == null ? games : games.filter((g) => g.phase !== 'regular' || g.team_id === mine!.id || g.week <= through)
+  const regularSeen = visible.filter((g) => g.phase === 'regular')
+
+  const rowFor = (t: TeamRow): TableRow => {
+    const gs = regularSeen.filter((g) => g.team_id === t.id)
+    const capped = through != null && t.id !== mine!.id
+    return {
+      id: t.id,
+      teamName: t.team_name,
+      owner: t.is_cpu ? 'CPU' : t.display_name,
+      cpu: t.is_cpu,
+      you: t.id === mine?.id,
+      wins: capped ? gs.filter((g) => g.won).length : t.wins,
+      losses: capped ? gs.filter((g) => g.won === false).length : t.losses,
+      pointsFor: capped ? gs.reduce((n, g) => n + g.points, 0) : t.points_for,
+      played: capped ? gs.length : t.played,
+      drafted: !!t.roster,
+      seed: t.playoff_seed,
+      eliminated: t.eliminated,
+      champion: l.champion_id === t.id,
+    }
+  }
+  const table: TableRow[] =
+    through == null
+      ? standings(teams).map(rowFor)
+      : teams
+          .map(rowFor)
+          .sort((x, y) => y.wins - x.wins || y.pointsFor - x.pointsFor || Number(y.you) - Number(x.you))
   const rowOf = (tid: string | null) => (tid ? (table.find((r) => r.id === tid) ?? null) : null)
 
   let bracket: BracketView | null = null
@@ -1102,9 +1234,13 @@ export async function seasonView(id: unknown, who: SeasonWho | null): Promise<Se
   }
 
   const regular = games.filter((g) => g.phase === 'regular')
-  const lines = seasonLines(games, teamName)
-  const leaders = LEADERS.map((x) => ({ ...x, rows: [...lines].sort((a, b) => Number(b[x.stat]) - Number(a[x.stat])).filter((r) => Number(r[x.stat]) > 0).slice(0, 5) }))
-  const awards = l.phase === 'playoffs' || l.phase === 'complete' ? awardsFor(teams, seasonLines(regular, teamName)) : []
+  const lines = seasonLines(visible, teamName)
+  const gamesIn = through ?? Math.max(0, ...teams.map((t) => t.played))
+  const leaders = leadersOf(lines, gamesIn)
+  const awards =
+    l.phase === 'playoffs' || l.phase === 'complete'
+      ? awardsFor(teams, seasonLines(regular, teamName), l.phase === 'complete' ? seasonLines(games.filter((g) => g.phase === 'playoffs'), teamName) : null, l.champion_id)
+      : []
 
   let me: MySeason | null = null
   if (mine) {
@@ -1119,15 +1255,14 @@ export async function seasonView(id: unknown, who: SeasonWho | null): Promise<Se
     const bench = mine.roster ? cards(mine.bench) : (d.bench ?? []).flatMap((b) => (b.kept ? (card(b.kept) ?? []) : []))
     const lastBench = (d.bench ?? [])[(d.bench ?? []).length - 1]
     const step: MySeason['step'] = mine.roster ? 'season' : d.franchise == null ? 'franchise' : picks.length < SLOTS.length ? 'packs' : 'bench'
-    const styles: Record<string, CardStyle> = {}
-    for (const p of [...lineup, ...bench]) if (p) styles[p.id] = (({ tag, lanes }) => ({ tag, lanes }))(archetypeOf(p))
 
     let next: MySeason['next'] = null
+    let front: Defense | null = null
     let waiting: string | null = null
     if (mine.roster && !mine.pending) {
       if (l.phase === 'regular' && mine.played < SEASON_GAMES) {
         const wk = scheduleFor(l.schedule_seed)[mine.played]
-        const front = defenseById(wk.defense)!
+        front = defenseById(wk.defense)!
         next = { phase: 'regular', week: wk.week, defense: defenseCard(front), line: wk.line, opponent: null, scouting: scoutView(mine, front, wk.line) }
       } else if (l.phase === 'regular') {
         const left = teams.filter((t) => t.played < SEASON_GAMES)
@@ -1136,11 +1271,19 @@ export async function seasonView(id: unknown, who: SeasonWho | null): Promise<Se
         const m = bracket.rounds[l.round - 1]?.games.find((x) => x.a?.id === mine.id || x.b?.id === mine.id)
         const playedIt = games.some((g) => g.phase === 'playoffs' && g.week === l.round && g.team_id === mine.id)
         if (m && !m.winner && !playedIt) {
-          const front = playoffDefense(l.schedule_seed, l.round)
+          front = playoffDefense(l.schedule_seed, l.round)
           const opp = m.a?.id === mine.id ? m.b : m.a
           next = { phase: 'playoffs', week: l.round, defense: defenseCard(front), line: null, opponent: opp?.teamName ?? null, scouting: scoutView(mine, front, null) }
         } else if (m && !m.winner) waiting = 'Waiting on the other team to play.'
       }
+    }
+
+    const styles: Record<string, CardStyle> = {}
+    for (const p of [...lineup, ...bench]) {
+      if (!p) continue
+      const a = archetypeOf(p)
+      const c = front ? counterFor(front, { arch: a, rarity: p.rarity }) : 1
+      styles[p.id] = { tag: a.tag, lanes: a.lanes, vs: c < 0.97 ? -1 : c > 1.03 ? 1 : 0 }
     }
 
     const tagged = new Map(teams.map((t) => [t.id, t.team_name]))
@@ -1173,6 +1316,9 @@ export async function seasonView(id: unknown, who: SeasonWho | null): Promise<Se
       benchPacks: (d.bench ?? []).filter((b) => b.kept).length,
       benchOpen: lastBench && !lastBench.kept ? cards(lastBench.ids) : null,
       styles,
+      profile: mine.roster ? profileOf(lineupOf(mine)) : null,
+      outlook: mine.roster && l.phase === 'regular' ? outlookOf(lineupOf(mine), scheduleFor(l.schedule_seed).slice(mine.played)) : [],
+      played: mine.played,
       next,
       waiting,
       pending: mine.pending
@@ -1183,7 +1329,11 @@ export async function seasonView(id: unknown, who: SeasonWho | null): Promise<Se
         ? {
             ...lineOf(lastRow),
             drives: lastRow.result.drives.map((x) => x.end),
-            top: [...(lastRow.result.box as BoxLine[])].filter((b) => b.grade == null).sort((a, b) => b.pts - a.pts).slice(0, 3),
+            top: (lastRow.result.box as BoxLine[])
+              .filter((b) => b.grade == null)
+              .map((b) => ({ ...b, pts: fantasyPoints(b) }))
+              .sort((a, b) => b.pts - a.pts)
+              .slice(0, 3),
             yards: lastRow.result.yards,
           }
         : null,
@@ -1209,6 +1359,7 @@ export async function seasonView(id: unknown, who: SeasonWho | null): Promise<Se
     },
     schedule,
     table,
+    through,
     me,
     bracket,
     leaders,
@@ -1234,7 +1385,9 @@ export async function seasonGame(id: unknown, teamId: unknown, phase: unknown, w
   if (!g) return null
   const { data: t } = await db().from('pe_season_teams').select('team_name').eq('id', teamId).maybeSingle()
   const front = phase === 'playoffs' ? playoffDefense(l.schedule_seed, w) : defenseById(g.defense)
-  return { team: (t as { team_name: string } | null)?.team_name ?? 'Team', defense: front?.name ?? g.defense, line: g.line, game: g }
+  // Older games stored half-PPR with a lineman's grade mixed in: recount.
+  const box = (g.result.box as BoxLine[]).map((b) => ({ ...b, pts: b.grade != null ? 0 : fantasyPoints(b) }))
+  return { team: (t as { team_name: string } | null)?.team_name ?? 'Team', defense: front?.name ?? g.defense, line: g.line, game: { ...g, result: { ...g.result, box } } }
 }
 
 export type SeasonCard = { id: string; name: string; kind: 'solo' | 'league'; phase: Phase; played: number; wins: number; losses: number; teams: number; owner: boolean }

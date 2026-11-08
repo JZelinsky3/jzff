@@ -69,8 +69,8 @@ export default async function SeasonHome({ params }: { params: Promise<{ id: str
         kicker="Season"
         title={l.name}
       />
-      <div className="pe-wrap pe-wrap--narrow" style={{ margin: '0 auto' }}>
-        <div className="pe-table-head">
+      <div className="pe-wrap pe-wrap--season" style={{ margin: '0 auto' }}>
+        <div className="pe-table-head pe-sn-head-l">
           <div className="pe-kicker">
             {l.kind === 'solo' ? 'Solo Season' : 'Season League'} · {where}
           </div>

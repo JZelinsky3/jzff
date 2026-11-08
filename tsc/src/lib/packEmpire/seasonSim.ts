@@ -45,7 +45,7 @@ export type TeamLanes = Record<Lane, number>
 /** A typical Season roster's lane totals: the median of season-sim.ts's drafted
     rosters (greedy League packs, a Franchise Pack, hard chemistry). An offense
     that matches it against the base front scores about LINE_BASE. */
-export const REF: TeamLanes = { run: 5300, short: 3710, deep: 2490, redZone: 1810, protect: 4030 }
+export const REF: TeamLanes = { run: 5290, short: 3780, deep: 2550, redZone: 1850, protect: 4200 }
 
 export const DRIVES = 11
 
@@ -55,10 +55,13 @@ export const DRIVES = 11
 const LEAN = 0.5
 const BASE_MIX = { run: 0.42, short: 0.38, deep: 0.2 }
 
-// A drive reaches scoring range at 47% for a typical offense, a red-zone trip ends
-// in a touchdown 56% of the time, field goals go in 86%: about 23-24 points.
-const REACH = { at: -0.12, slope: 2.2 }
-const FINISH = { at: 0.24, slope: 1.8 }
+// A typical offense reaches scoring range on 44% of drives and turns 54% of
+// red-zone trips into touchdowns, about 23 points: an NFL average. The slopes are
+// shallow on purpose (Joey, 2026-11-07: his team averaged 43 and the NFL's best
+// barely clear 30). Each step up in talent buys less than the last, so a stacked
+// roster lands in the low thirties and only a monster day reaches 40.
+const REACH = { at: -0.25, slope: 1.0 }
+const FINISH = { at: 0.15, slope: 0.8 }
 const FG = 0.86
 const TURNOVER = 0.1
 
@@ -199,15 +202,23 @@ function shareOut(total: number, weights: number[]): number[] {
   return out
 }
 
-const fantasy = (l: BoxLine) =>
-  (l.passYds ?? 0) * 0.04 +
-  (l.passTd ?? 0) * 4 -
-  (l.int ?? 0) * 2 +
-  ((l.rushYds ?? 0) + (l.recYds ?? 0)) * 0.1 +
-  (l.rec ?? 0) * 0.5 +
-  ((l.rushTd ?? 0) + (l.recTd ?? 0)) * 6 -
-  (l.fum ?? 0) * 2 +
-  (l.grade ?? 0) / 8
+/** Standard PPR, exactly (Joey, 2026-11-07: the book has to add up the way
+    anyone's fantasy app does): a point a reception, one per 10 yards rushing or
+    receiving, one per 25 passing, 6 a rushing or receiving TD, 4 a passing TD,
+    -2 an interception or a lost fumble. Linemen score nothing; they're graded.
+    Old games stored half-PPR with a lineman's grade mixed in, so the pages
+    always recount off the line itself. */
+export function fantasyPoints(l: Omit<BoxLine, 'pts' | 'id' | 'name' | 'pos' | 'slot'>): number {
+  const pts =
+    (l.passYds ?? 0) * 0.04 +
+    (l.passTd ?? 0) * 4 -
+    (l.int ?? 0) * 2 +
+    ((l.rushYds ?? 0) + (l.recYds ?? 0)) * 0.1 +
+    (l.rec ?? 0) +
+    ((l.rushTd ?? 0) + (l.recTd ?? 0)) * 6 -
+    (l.fum ?? 0) * 2
+  return Math.round(pts * 10) / 10
+}
 
 export function simGame(cards: SimCard[], d: Defense, seed: string): GameResult {
   const m = matchup(cards, d)
@@ -237,10 +248,10 @@ export function simGame(cards: SimCard[], d: Defense, seed: string): GameResult 
       yards = Math.round(rnd() * 32)
     } else if (rnd() < m.reach) {
       end = rnd() < m.finish ? 'td' : rnd() < FG ? 'fg' : 'miss'
-      yards = end === 'td' ? 60 + Math.round(rnd() * 25) : 42 + Math.round(rnd() * 22)
+      yards = end === 'td' ? 55 + Math.round(rnd() * 25) : 35 + Math.round(rnd() * 23)
     } else {
       end = 'punt'
-      yards = 6 + Math.round(rnd() * 34)
+      yards = 4 + Math.round(rnd() * 26)
     }
     // The yards split by the play calling, with a little drive-to-drive wobble.
     const runShare = clamp(m.mix.run + (rnd() - 0.5) * 0.24, 0.05, 0.9)
@@ -298,7 +309,7 @@ export function simGame(cards: SimCard[], d: Defense, seed: string): GameResult 
     add(c.id, 'grade', Math.round(clamp(g, 25, 99)))
   }
 
-  const box = [...lines.values()].map((l) => ({ ...l, pts: Math.round(fantasy(l) * 10) / 10 })).sort((a, b) => a.slot - b.slot)
+  const box = [...lines.values()].map((l) => ({ ...l, pts: fantasyPoints(l) })).sort((a, b) => a.slot - b.slot)
   return {
     points: drives.reduce((n, x) => n + x.points, 0),
     yards: rushYds + passYds,

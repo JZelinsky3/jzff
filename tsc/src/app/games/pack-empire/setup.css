@@ -29,6 +29,14 @@
 .pe-match-go .pe-push { width: 100%; }
 .pe-match-locked { display: grid; gap: .9rem; justify-items: start; }
 .pe-match-card .pe-mega-name { margin: 0; }
+/* League setup (LeagueSetup.tsx): header beside the art, then the name and the
+   buttons across the whole card, so the art ends where the spec does. */
+.pe-match-card--league { grid-template-columns: minmax(15rem, 1fr) minmax(0, 23rem); grid-template-areas: 'head art' 'foot foot'; row-gap: 1.1rem; }
+.pe-match-card--league > .pe-bp-card-head { grid-area: head; padding-top: .2rem; }
+.pe-match-card--league > .pe-bp-table { grid-area: art; }
+.pe-match-foot { grid-area: foot; display: grid; gap: .8rem; padding-top: 1rem; border-top: 1px solid var(--pe-line-soft); }
+.pe-match-foot .pe-setup-name { margin: 0; }
+.pe-match-foot .pe-note, .pe-match-foot .pe-error { margin: 0; }
 /* A seat either side takes the room the packs had, so the hand is a little smaller. */
 .pe-match-card .pe-bp-held .pe-card { --pe-cs: .6; }
 .pe-match-card .pe-bp-seat.l { left: 4%; }
@@ -60,6 +68,7 @@
   .pe-setup-seg button { padding: .5rem .2rem; font-size: .74rem; letter-spacing: .03em; }
   .pe-setup-seg--square button { padding: .5rem .15rem; font-size: .72rem; }
   .pe-match-go { grid-template-columns: minmax(0, 1fr); }
+  .pe-match-card--league { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'art' 'head' 'foot'; }
   .pe-match-spec dd { font-size: .82rem; }
   .pe-match-card .pe-bp-held .pe-card { --pe-cs: .46; }
   .pe-csheet { left: 0; right: 0; top: auto; bottom: 0; width: auto; max-height: 82dvh; padding-bottom: calc(1.35rem + env(safe-area-inset-bottom, 0px)); border-radius: 16px 16px 0 0; opacity: 1; transform: translateY(100%); }

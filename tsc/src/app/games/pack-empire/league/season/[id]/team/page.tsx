@@ -1,6 +1,7 @@
 // /games/pack-empire/league/season/<id>/team
 //
-// Your Season team: starters with their archetypes, the bench, subs.
+// Your Season lineup: the eleven on the turf, the bench, subs, and a scouting
+// report on your own team (SeasonTeam.tsx).
 
 import type { Metadata, Viewport } from 'next'
 import { notFound, redirect } from 'next/navigation'
@@ -18,7 +19,7 @@ export const dynamic = 'force-dynamic'
 
 export const viewport: Viewport = { themeColor: '#141311', width: 'device-width', initialScale: 1 }
 
-export const metadata: Metadata = { title: 'Your Team · Pack Empire Season', robots: { index: false, follow: false } }
+export const metadata: Metadata = { title: 'Lineup · Pack Empire Season', robots: { index: false, follow: false } }
 
 export default async function SeasonTeamPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -42,15 +43,12 @@ export default async function SeasonTeamPage({ params }: { params: Promise<{ id:
         kicker="Season"
         title={view.me.teamName}
       />
-      <div className="pe-wrap pe-wrap--narrow" style={{ margin: '0 auto' }}>
-        <div className="pe-table-head">
-          <div className="pe-kicker">Your team</div>
+      <div className="pe-wrap pe-wrap--season" style={{ margin: '0 auto' }}>
+        <div className="pe-table-head pe-sn-head-l">
+          <div className="pe-kicker">{view.league.name} · Lineup</div>
           <h1 className="pe-table-title">{view.me.teamName}</h1>
-          <p className="pe-table-sub">
-            Every card&apos;s value goes into the lanes it plays. Better players carry more of every lane, and a front built to stop one kind of player hurts a common one most.
-          </p>
         </div>
-        <SeasonTeam leagueId={view.league.id} initial={view.me} />
+        <SeasonTeam initial={view} />
       </div>
       {mobile ? <PeDock signedIn={!!user} /> : <SiteFooter />}
     </main>

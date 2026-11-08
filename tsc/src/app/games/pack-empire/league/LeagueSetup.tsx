@@ -106,7 +106,7 @@ export function LeagueSetup({ signedIn, hands }: { signedIn: boolean; hands: Rec
           />
           {format === 'season' ? (
             <SetupSwitch
-              label="Playoffs"
+              label="Playoff Teams"
               square
               options={seasonPlayoffOptions(teams).map((n) => ({ id: String(n), label: String(n) }))}
               value={String(seasonPick)}
@@ -114,7 +114,7 @@ export function LeagueSetup({ signedIn, hands }: { signedIn: boolean; hands: Rec
             />
           ) : (
             <SetupSwitch
-              label="Playoffs"
+              label="Playoff Teams"
               square
               options={weeklyOpts.map((o) => ({ id: o, label: o === 'half' ? 'Half' : o }))}
               value={weeklyPick}
@@ -132,28 +132,31 @@ export function LeagueSetup({ signedIn, hands }: { signedIn: boolean; hands: Rec
           />
         </div>
 
-        <article className="pe-bp-card pe-match-card">
-          <div className="pe-bp-info">
-            <header className="pe-bp-card-head">
-              <span className="pe-bp-card-kick">League Mode</span>
-              <h2>
-                {picked.label} <em>{teams} Teams</em>
-              </h2>
-              <dl className="pe-match-spec">
-                <div>
-                  <dt>Format</dt>
-                  <dd>{picked.line}</dd>
-                </div>
-                <div>
-                  <dt>Playoffs</dt>
-                  <dd>{playoffLine}</dd>
-                </div>
-                <div>
-                  <dt>Joining</dt>
-                  <dd>{visibility === 'invite' ? 'By the code you send round.' : 'Listed below for anyone to join.'} Open seats can be filled with CPU teams.</dd>
-                </div>
-              </dl>
-            </header>
+        {/* The art sits beside the header only, and the name and the buttons run
+            the card's full width under both, so a tall spec never stretches it. */}
+        <article className="pe-bp-card pe-match-card pe-match-card--league">
+          <header className="pe-bp-card-head">
+            <span className="pe-bp-card-kick">League Mode</span>
+            <h2>
+              {picked.label} <em>{teams} Teams</em>
+            </h2>
+            <dl className="pe-match-spec">
+              <div>
+                <dt>Format</dt>
+                <dd>{picked.line}</dd>
+              </div>
+              <div>
+                <dt>Playoffs</dt>
+                <dd>{playoffLine}</dd>
+              </div>
+              <div>
+                <dt>Joining</dt>
+                <dd>{visibility === 'invite' ? 'By the code you send round.' : 'Listed below for anyone to join.'} Open seats can be filled with CPU teams.</dd>
+              </div>
+            </dl>
+          </header>
+          <TableArt key={format} cards={hands[format]} seats={['You', format === 'season' ? 'The League' : 'Your Friends']} tag={format === 'season' ? '8 Games · 8 Defenses' : '8 Weeks · 8 Drafts'} />
+          <div className="pe-match-foot">
             <label className="pe-field-label pe-setup-name">
               Name
               <input className="pe-input" value={name} maxLength={40} placeholder="The League" onChange={(e) => setName(e.target.value)} />
@@ -177,7 +180,6 @@ export function LeagueSetup({ signedIn, hands }: { signedIn: boolean; hands: Rec
             {format === 'season' && <p className="pe-note">{signedIn ? 'A solo season can go unnamed.' : 'Solo needs no account, or a name. Sign in later and the season comes with you.'}</p>}
             {error && <div className="pe-error">{error}</div>}
           </div>
-          <TableArt key={format} cards={hands[format]} seats={['You', format === 'season' ? 'The League' : 'Your Friends']} tag={format === 'season' ? '8 Games · 8 Defenses' : '8 Weeks · 8 Drafts'} />
         </article>
       </div>
     </section>

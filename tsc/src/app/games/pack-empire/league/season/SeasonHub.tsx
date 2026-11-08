@@ -1,37 +1,34 @@
 'use client'
 
-// A Season league's home (lib/packEmpire/season.ts): your next game and its
-// scouting report, the pack the last game paid, how the last game went, the
-// table, the schedule of fronts, the bracket once it's set, and the
-// commissioner's switches. Every button is one server call that hands back the
-// whole view.
+// A Season league's home (lib/packEmpire/season.ts). The main column is the
+// game: how the last one went, the pack it paid, the next one and your lineup
+// (subs right here). The side column is the league: the bracket once it's set,
+// the table and the schedule of defenses, and the commissioner's switches.
+//
+// Joey, 2026-11-07: the first look has to be easy. So the game card says three
+// things, the points you're projected for, the points to win, and what this
+// defense stops and allows, with your players it hits marked on their faces.
+// Everything a strategist wants (lanes, the pocket, the pass rate) is folded
+// under Full Scouting Report.
 
 import Link from 'next/link'
-import { useCallback, useState } from 'react'
-import { SLOTS, WILD_PACK_ART, type Player } from '@/lib/packEmpire/rules'
-import { BENCH_MAX, seasonPlayoffOptions } from '@/lib/packEmpire/seasonRules'
+import { useCallback, useEffect, useState } from 'react'
+import { SLOTS, WILD_PACK_ART, surname, type Player } from '@/lib/packEmpire/rules'
+import { BENCH_MAX, roundName, seasonPlayoffOptions } from '@/lib/packEmpire/seasonRules'
 import type { MySeason, ScoutView, SeasonView, TableRow } from '@/lib/packEmpire/season'
+import { Face } from '../../cards'
 import { PackStage, usePackStage } from '../../stage'
+import { SeasonLineup, VsMark } from './SeasonLineup'
+import { gameHref, seasonHref, seasonPost } from './api'
 
-async function post(body: Record<string, unknown>): Promise<SeasonView | null> {
-  const res = await fetch('/api/games/pack-empire/season/', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-  const out = await res.json().catch(() => null)
-  if (!res.ok || !out?.ok) throw new Error(out?.error ?? 'Something went wrong.')
-  return (out.view as SeasonView | null) ?? null
-}
-
-const LANE_LABEL = { run: 'Run', short: 'Short', deep: 'Deep', redZone: 'Red Zone' } as const
+const LANE_LABEL = { run: 'Run game', short: 'Short passes', deep: 'Deep passes', redZone: 'Red zone' } as const
 
 const laneWord = (eff: number) => (eff >= 1.1 ? 'Open' : eff <= 0.85 ? 'Shut' : 'Even')
 
 function pocketWord(p: number) {
-  if (p >= 1.1) return 'Clean pocket'
-  if (p >= 0.9) return 'Normal pocket'
-  if (p >= 0.7) return 'Under pressure'
+  if (p >= 1.1) return 'Clean'
+  if (p >= 0.9) return 'Normal'
+  if (p >= 0.7) return 'Pressured'
   return 'Collapsing'
 }
 
@@ -39,26 +36,27 @@ function edgeWord(expected: number, line: number | null) {
   if (line == null) return null
   const d = expected - line
   if (d >= 3) return { text: 'Favored', tone: 'up' }
-  if (d <= -3) return { text: 'Tough Week', tone: 'down' }
+  if (d <= -3) return { text: 'Underdog', tone: 'down' }
   return { text: 'Toss-Up', tone: 'even' }
 }
 
-const gameHref = (league: string, team: string, phase: string, week: number) =>
-  `/games/pack-empire/league/season/${league}/game/?t=${team}&p=${phase}&w=${week}`
+type Act = (key: string, body: Record<string, unknown>) => Promise<boolean>
 
 export function SeasonHub({ initial }: { initial: SeasonView }) {
   const [view, setView] = useState(initial)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // The game just played counts its score up, once.
+  const [fresh, setFresh] = useState<string | null>(null)
   const l = view.league
   const me = view.me
 
-  const act = useCallback(
-    async (key: string, body: Record<string, unknown>) => {
+  const act = useCallback<Act>(
+    async (key, body) => {
       setBusy(key)
       setError(null)
       try {
-        const v = await post({ id: l.id, ...body })
+        const { view: v } = await seasonPost({ id: l.id, ...body })
         if (v) setView(v)
         return true
       } catch (e) {
@@ -71,202 +69,254 @@ export function SeasonHub({ initial }: { initial: SeasonView }) {
     [l.id]
   )
 
+  const play = async () => {
+    const n = me?.games.length ?? 0
+    if (await act('play', { action: 'play' })) setFresh(String(n + 1))
+  }
+
+
   return (
-    <div className="pe-sn">
-      {error && <div className="pe-error">{error}</div>}
+    <div className="pe-sn-hub">
+      <div className="pe-sn-hub-main">
+        {error && <div className="pe-error">{error}</div>}
 
-      {me && me.step !== 'season' && l.phase !== 'pregame' && (
-        <section className="pe-sn-card pe-sn-call">
-          <div className="pe-kicker">Draft Day</div>
-          <h2 className="pe-sn-title">Build your team.</h2>
-          <p className="pe-panel-text">
-            Your Franchise Pack on a slot of your choosing, a pack for every slot, then three wild packs for the bench. Once it&apos;s done, the eight games are yours to play whenever you like.
-          </p>
-          <Link href={`/games/pack-empire/league/season/${l.id}/draft/`} className="pe-btn">
-            {me.step === 'franchise' ? 'Start Draft Day' : 'Back To Draft Day'}
-          </Link>
-        </section>
-      )}
+        {me && me.step !== 'season' && l.phase !== 'pregame' && (
+          <section className="pe-sn-card pe-sn-call">
+            <div className="pe-kicker">Draft Day</div>
+            <h2 className="pe-sn-title">Build your team.</h2>
+            <p className="pe-panel-text">
+              A pack for every spot on the field, your Franchise Pack on the one you choose, and three bench packs. Then the eight games are yours to play whenever you like.
+            </p>
+            <Link href={seasonHref(l.id, 'draft')} className="pe-btn">
+              {me.step === 'franchise' ? 'Start Draft Day' : 'Back To Draft Day'}
+            </Link>
+          </section>
+        )}
 
-      {me?.pending && <RewardPack key={`${me.games.length}`} leagueId={l.id} me={me} busy={busy} act={act} onView={setView} />}
+        {!me && l.kind === 'league' && l.phase === 'pregame' && l.visibility === 'public' && (
+          <section className="pe-sn-card pe-sn-call">
+            <div className="pe-kicker">Taking teams</div>
+            <p className="pe-panel-text">
+              {view.table.length} of {l.maxPlayers} teams so far. Join before the commissioner starts the season.
+            </p>
+            <button type="button" className="pe-push" disabled={!!busy} onClick={() => act('join', { action: 'join' })}>
+              {busy === 'join' ? 'Joining' : 'Join This League'}
+            </button>
+          </section>
+        )}
 
-      {!me && l.kind === 'league' && l.phase === 'pregame' && l.visibility === 'public' && (
-        <section className="pe-sn-card pe-sn-call">
-          <div className="pe-kicker">Taking teams</div>
-          <p className="pe-panel-text">
-            {view.table.length} of {l.maxPlayers} teams so far. Join before the commissioner starts the season.
-          </p>
-          <button type="button" className="pe-push" disabled={!!busy} onClick={() => act('join', { action: 'join' })}>
-            {busy === 'join' ? 'Joining' : 'Join This League'}
-          </button>
-        </section>
-      )}
+        {me?.last && <LastGame key={`${me.last.phase}${me.last.week}`} leagueId={l.id} me={me} fresh={fresh === String(me.games.length)} />}
 
-      {me?.last && (
-        <section className="pe-sn-card pe-sn-last" data-won={me.last.won == null ? undefined : String(me.last.won)}>
-          <div className="pe-sn-head">
-            <span className="pe-kicker">
-              {me.last.phase === 'regular' ? `Game ${me.last.week}` : `Playoffs · Round ${me.last.week}`} · {me.last.defense}
-            </span>
-            {me.last.won != null && <span className="pe-sn-stamp">{me.last.won ? 'Win' : 'Loss'}</span>}
-          </div>
-          <div className="pe-sn-score">
-            <b>{me.last.points}</b>
-            <span>{me.last.line != null ? `needed ${me.last.line}` : me.last.opponent ? `vs ${me.last.opponent}` : ''}</span>
-          </div>
-          <div className="pe-sn-drives" aria-label="How each drive ended">
-            {me.last.drives.map((d, i) => (
-              <i key={i} data-end={d}>
-                {d === 'td' ? 'TD' : d === 'fg' ? 'FG' : d === 'turnover' ? 'TO' : d === 'miss' ? 'MISS' : 'PUNT'}
-              </i>
-            ))}
-          </div>
-          <ul className="pe-sn-top">
-            {me.last.top.map((b) => (
-              <li key={b.id}>
-                <span>{b.name}</span>
-                <em>{statLine(b)}</em>
-              </li>
-            ))}
-          </ul>
-          <Link href={gameHref(l.id, me.id, me.last.phase, me.last.week)} className="pe-act pe-act--sm">
-            Box Score
-          </Link>
-        </section>
-      )}
+        {me?.pending && <RewardPack key={`${me.games.length}`} leagueId={l.id} me={me} busy={busy} act={act} onView={setView} />}
 
-      {me?.next && <NextGame me={me} busy={busy} act={act} />}
+        {me?.next && <GameCard me={me} busy={busy} act={act} play={play} />}
 
-      {me?.waiting && (
-        <section className="pe-sn-card pe-sn-wait">
-          <div className="pe-kicker">{l.phase === 'regular' ? 'Season done' : 'Playoffs'}</div>
-          <p className="pe-panel-text">{me.waiting}</p>
-        </section>
-      )}
+        {me?.waiting && (
+          <section className="pe-sn-card pe-sn-wait">
+            <div className="pe-kicker">{l.phase === 'regular' ? 'Your season is done' : 'Playoffs'}</div>
+            <p className="pe-panel-text">{me.waiting}</p>
+          </section>
+        )}
 
-      {me && l.phase === 'complete' && (
-        <section className="pe-sn-card pe-sn-wait">
-          <div className="pe-kicker">Final</div>
-          <p className="pe-panel-text">
-            {view.table.find((r) => r.champion)?.you
-              ? 'You won it all.'
-              : `${view.table.find((r) => r.champion)?.teamName ?? 'Nobody'} won it all. Your season is in the Stat Book.`}
-          </p>
-        </section>
-      )}
+        {me && l.phase === 'complete' && <Final view={view} />}
 
-      {me && me.step === 'season' && (
-        <nav className="pe-sn-links">
-          <Link href={`/games/pack-empire/league/season/${l.id}/team/`} className="pe-act">
-            Your Team · Subs
-          </Link>
-          <Link href={`/games/pack-empire/league/season/${l.id}/book/`} className="pe-act">
-            Stat Book
-          </Link>
-        </nav>
-      )}
+        {me && me.step === 'season' && (
+          <section className="pe-sn-block">
+            <div className="pe-sn-blockhead">
+              <h2>Your Lineup</h2>
+              <nav>
+                <Link href={seasonHref(l.id, 'team')} className="pe-act pe-act--sm">
+                  Full Lineup
+                </Link>
+                <Link href={seasonHref(l.id, 'book')} className="pe-act pe-act--sm">
+                  Stat Book
+                </Link>
+              </nav>
+            </div>
+            <SeasonLineup leagueId={l.id} me={me} size="mini" onView={setView} onError={setError} />
+          </section>
+        )}
+      </div>
 
-      {view.bracket && <Bracket view={view} />}
-
-      <Table view={view} />
-
-      <Schedule view={view} />
-
-      {l.owner && <Commish view={view} busy={busy} act={act} />}
+      <aside className="pe-sn-hub-side">
+        {view.bracket && <Bracket view={view} />}
+        <Table view={view} />
+        <Schedule view={view} />
+        {l.owner && <Commish view={view} busy={busy} act={act} />}
+      </aside>
     </div>
   )
 }
 
-function statLine(b: { pos: string; passYds?: number; passTd?: number; int?: number; rushYds?: number; rushTd?: number; rec?: number; recYds?: number; recTd?: number }) {
+/** A number that counts up from zero when it's new. */
+function CountUp({ to, run }: { to: number; run: boolean }) {
+  const [n, setN] = useState(run ? 0 : to)
+  useEffect(() => {
+    if (!run) return
+    let raf = 0
+    const t0 = performance.now()
+    const tick = (t: number) => {
+      const k = Math.min(1, (t - t0) / 900)
+      setN(Math.round(to * (1 - (1 - k) ** 3)))
+      if (k < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [to, run])
+  return <>{n}</>
+}
+
+function statLine(b: { passYds?: number; passTd?: number; int?: number; car?: number; rushYds?: number; rushTd?: number; rec?: number; recYds?: number; recTd?: number }) {
   const parts: string[] = []
-  if (b.passYds) parts.push(`${b.passYds} pass`)
-  if (b.rushYds) parts.push(`${b.rushYds} rush`)
-  if (b.recYds) parts.push(`${b.rec ?? 0}-${b.recYds}`)
+  if (b.passYds) parts.push(`${b.passYds} pass yds`)
+  if (b.recYds) parts.push(`${b.rec ?? 0} rec, ${b.recYds} yds`)
+  if (b.rushYds) parts.push(`${b.rushYds} rush yds`)
   const td = (b.passTd ?? 0) + (b.rushTd ?? 0) + (b.recTd ?? 0)
   if (td) parts.push(`${td} TD`)
   if (b.int) parts.push(`${b.int} INT`)
-  return parts.join(' · ') || 'Quiet day'
+  return parts.join(', ') || 'A quiet day'
 }
 
-type Act = (key: string, body: Record<string, unknown>) => Promise<boolean>
+const findCard = (me: MySeason, id: string): Player | null => me.lineup.find((p) => p?.id === id) ?? me.bench.find((p) => p.id === id) ?? null
 
-function NextGame({ me, busy, act }: { me: MySeason; busy: string | null; act: Act }) {
+const DRIVE_WORD = { td: 'TD', fg: 'FG', miss: 'Missed FG', punt: 'Punt', turnover: 'Turnover' } as const
+
+function LastGame({ leagueId, me, fresh }: { leagueId: string; me: MySeason; fresh: boolean }) {
+  const g = me.last!
+  const star = g.top[0]
+  const starCard = star ? findCard(me, star.id) : null
+  const tds = g.drives.filter((d) => d === 'td').length
+  const fgs = g.drives.filter((d) => d === 'fg').length
+  return (
+    <section className={`pe-sn-gd-last${fresh ? ' is-fresh' : ''}`} data-won={g.won == null ? undefined : String(g.won)}>
+      <div className="pe-sn-gd-kick">
+        <span>
+          {g.phase === 'regular' ? `Game ${g.week}` : 'Playoffs'} · {g.defense}
+        </span>
+        {g.won != null && <b className="pe-sn-gd-stamp">{g.won ? 'Win' : 'Loss'}</b>}
+      </div>
+      <div className="pe-sn-gd-board">
+        <div className="pe-sn-gd-score">
+          <b>
+            <CountUp to={g.points} run={fresh} />
+          </b>
+          <small>Your points</small>
+        </div>
+        <div className="pe-sn-gd-vs">{g.line != null ? (g.won ? 'beat' : 'missed') : 'vs'}</div>
+        <div className="pe-sn-gd-score pe-sn-gd-score--line">
+          <b>{g.line ?? '?'}</b>
+          <small>{g.line != null ? 'To win' : (g.opponent ?? 'Opponent')}</small>
+        </div>
+      </div>
+      <div className="pe-sn-gd-drives" aria-label={`${tds} touchdowns, ${fgs} field goals on ${g.drives.length} drives`}>
+        {g.drives.map((d, i) => (
+          <i key={i} data-end={d} title={DRIVE_WORD[d]} />
+        ))}
+        <small>
+          {tds} TD · {fgs} FG · {g.yards} yds
+        </small>
+      </div>
+      {star && (
+        <div className="pe-sn-gd-star">
+          <Face player={starCard} name={star.name} />
+          <span>
+            <small>Player of the game</small>
+            <b>{star.name}</b>
+            <em>{statLine(star)}</em>
+          </span>
+          <strong>
+            {star.pts}
+            <small>pts</small>
+          </strong>
+        </div>
+      )}
+      <Link href={gameHref(leagueId, me.id, g.phase, g.week)} className="pe-act pe-act--sm">
+        Box Score
+      </Link>
+    </section>
+  )
+}
+
+function GameCard({ me, busy, act, play }: { me: MySeason; busy: string | null; act: Act; play: () => void }) {
   const n = me.next!
   const s: ScoutView = n.scouting
   const edge = edgeWord(s.expected, n.line)
+  const stopped = s.stopped.flatMap((id) => findCard(me, id) ?? [])
+  const helped = s.helped.flatMap((id) => findCard(me, id) ?? [])
+  const proj = Math.round(s.expected)
+  const scale = Math.max(proj, n.line ?? 0) * 1.35 || 1
+
   return (
-    <section className="pe-sn-card pe-sn-scout">
-      <div className="pe-sn-head">
-        <span className="pe-kicker">{n.phase === 'regular' ? `Game ${n.week} of 8` : `Playoffs · Round ${n.week}`} · Scouting Report</span>
-        {edge && <span className="pe-sn-edge" data-tone={edge.tone}>{edge.text}</span>}
+    <section className="pe-sn-gd-next">
+      <div className="pe-sn-gd-kick">
+        <span>{n.phase === 'regular' ? `Game ${n.week} of 8` : `Playoffs · ${n.opponent ? `vs ${n.opponent}` : 'This round'}`}</span>
+        {edge && (
+          <b className="pe-sn-edge" data-tone={edge.tone}>
+            {edge.text}
+          </b>
+        )}
       </div>
-      <h2 className="pe-sn-title">{n.defense.name}</h2>
-      <p className="pe-panel-text">{n.defense.blurb}</p>
+      <h2 className="pe-sn-gd-title">
+        <small>vs</small> {n.defense.name}
+      </h2>
+      <p className="pe-sn-gd-blurb">{n.defense.blurb}</p>
 
-      <dl className="pe-sn-spec">
-        <div>
-          <dt>Shuts down</dt>
-          <dd>{n.defense.shuts}</dd>
+      <div className="pe-sn-gd-odds">
+        <div className="pe-sn-gd-num">
+          <b>{proj}</b>
+          <small>You&apos;re projected</small>
         </div>
-        <div>
-          <dt>Soft against</dt>
-          <dd>{n.defense.soft}</dd>
-        </div>
-      </dl>
-
-      <div className="pe-sn-proj">
-        <div>
-          <small>Projected</small>
-          <b>{s.expected.toFixed(1)}</b>
-        </div>
-        <div>
-          <small>{n.line != null ? 'To win' : 'Opponent'}</small>
-          <b>{n.line != null ? n.line : (n.opponent ?? 'TBD')}</b>
-        </div>
-        <div>
-          <small>Your calls</small>
-          <b>{Math.round(s.passShare * 100)}% pass</b>
-        </div>
-      </div>
-
-      <div className="pe-sn-lanes">
-        {s.lanes.map((x) => (
-          <div key={x.lane} className="pe-sn-lane" data-word={laneWord(x.eff)}>
-            <span>{LANE_LABEL[x.lane]}</span>
-            <i>
-              <em style={{ width: `${Math.min(100, (x.eff / 1.6) * 100)}%` }} />
-            </i>
-            <b>{laneWord(x.eff)}</b>
+        {n.line != null ? (
+          <div className="pe-sn-gd-meter" data-tone={proj >= n.line ? 'up' : 'down'} aria-hidden>
+            <span className="pe-sn-gd-fill" style={{ transform: `scaleX(${Math.min(1, proj / scale)})` }} />
+            <span className="pe-sn-gd-mark" style={{ left: `${(n.line / scale) * 100}%` }} />
           </div>
-        ))}
-        <div className="pe-sn-lane" data-word={s.pocket >= 0.9 ? 'Even' : 'Shut'}>
-          <span>Pocket</span>
-          <i>
-            <em style={{ width: `${Math.min(100, (s.pocket / 1.25) * 100)}%` }} />
-          </i>
-          <b>{pocketWord(s.pocket)}</b>
+        ) : (
+          <p className="pe-sn-gd-po">Both teams face this defense. More points moves on.</p>
+        )}
+        {n.line != null && (
+          <div className="pe-sn-gd-num pe-sn-gd-num--need">
+            <b>{n.line}</b>
+            <small>To win</small>
+          </div>
+        )}
+      </div>
+
+      <div className="pe-sn-gd-read">
+        <div data-tone="down">
+          <small>They stop</small>
+          <b>{n.defense.stops}</b>
+        </div>
+        <div data-tone="up">
+          <small>They allow</small>
+          <b>{n.defense.allows}</b>
         </div>
       </div>
 
-      {(s.stopped.length > 0 || s.helped.length > 0) && (
-        <div className="pe-sn-chips">
-          {s.stopped.map((name) => (
-            <span key={`s${name}`} data-tone="down">
-              {name}
+      {(stopped.length > 0 || helped.length > 0) && (
+        <div className="pe-sn-gd-who">
+          {stopped.map((p) => (
+            <span key={p.id} data-tone="down">
+              <Face player={p} />
+              {surname(p.name)}
+              <VsMark vs={-1} />
             </span>
           ))}
-          {s.helped.map((name) => (
-            <span key={`h${name}`} data-tone="up">
-              {name}
+          {helped.map((p) => (
+            <span key={p.id} data-tone="up">
+              <Face player={p} />
+              {surname(p.name)}
+              <VsMark vs={1} />
             </span>
           ))}
         </div>
       )}
 
       {s.sub && (
-        <div className="pe-sn-sub">
+        <div className="pe-sn-gd-tip">
           <span>
-            Start <b>{s.sub.in.name}</b> over {s.sub.out.name} at {SLOTS[s.sub.slot].short}: about +{s.sub.gain} projected.
+            <small>Coach&apos;s call</small>
+            Start <b>{surname(s.sub.in.name)}</b> over {surname(s.sub.out.name)} at {SLOTS[s.sub.slot].short}, about +{s.sub.gain} points.
           </span>
           <button type="button" className="pe-act pe-act--sm" disabled={!!busy} onClick={() => act('sub', { action: 'sub', bench: s.sub!.in.id, slot: s.sub!.slot })}>
             {busy === 'sub' ? 'Subbing' : 'Make The Sub'}
@@ -274,9 +324,35 @@ function NextGame({ me, busy, act }: { me: MySeason; busy: string | null; act: A
         </div>
       )}
 
-      <button type="button" className="pe-push pe-sn-play" disabled={!!busy} onClick={() => act('play', { action: 'play' })}>
+      <button type="button" className="pe-push pe-sn-gd-play" disabled={!!busy} onClick={play}>
         {busy === 'play' ? 'Playing' : n.phase === 'regular' ? `Play Game ${n.week}` : 'Play The Playoff Game'}
       </button>
+
+      <details className="pe-sn-gd-more">
+        <summary>Full Scouting Report</summary>
+        <div className="pe-sn-lanes">
+          {s.lanes.map((x) => (
+            <div key={x.lane} className="pe-sn-lane" data-word={laneWord(x.eff)}>
+              <span>{LANE_LABEL[x.lane]}</span>
+              <i>
+                <em style={{ transform: `scaleX(${Math.min(1, x.eff / 1.6)})` }} />
+              </i>
+              <b>{laneWord(x.eff)}</b>
+            </div>
+          ))}
+          <div className="pe-sn-lane" data-word={s.pocket >= 0.9 ? 'Even' : 'Shut'}>
+            <span>Pocket</span>
+            <i>
+              <em style={{ transform: `scaleX(${Math.min(1, s.pocket / 1.25)})` }} />
+            </i>
+            <b>{pocketWord(s.pocket)}</b>
+          </div>
+        </div>
+        <p className="pe-note">
+          Your play calling: {Math.round(s.passShare * 100)}% passes against this defense. Built to stop {n.defense.shuts.toLowerCase()}; soft against {n.defense.soft.toLowerCase()}. Better
+          players shake a bad matchup more easily: it costs a common the most and an Immortal the least.
+        </p>
+      </details>
     </section>
   )
 }
@@ -311,7 +387,7 @@ function RewardPack({
     pick(
       i,
       async (c: Player) => {
-        next = await post({ id: leagueId, action: 'keep', card: c.id })
+        next = (await seasonPost({ id: leagueId, action: 'keep', card: c.id })).view
       },
       -1
     ).then((ok) => {
@@ -329,7 +405,7 @@ function RewardPack({
           <div className="pe-sn-release">
             {me.bench.map((b) => (
               <button key={b.id} type="button" className="pe-act pe-act--sm" disabled={!!busy} onClick={() => act('release', { action: 'release', bench: b.id })}>
-                Let {b.name} go
+                Let {surname(b.name)} go
               </button>
             ))}
           </div>
@@ -339,7 +415,7 @@ function RewardPack({
         </>
       ) : (
         <>
-          <p className="pe-panel-text">Five cards, one position. The one you keep goes to your bench.</p>
+          <p className="pe-panel-text">Five cards, five positions. Keep one for your bench.</p>
           <button type="button" className="pe-push" disabled={!!busy || !!stage} onClick={() => open(slot, async () => p.cards)}>
             Open It
           </button>
@@ -361,14 +437,28 @@ function RewardPack({
   )
 }
 
+function Final({ view }: { view: SeasonView }) {
+  const champ = view.table.find((r) => r.champion)
+  return (
+    <section className="pe-sn-card pe-sn-final" data-you={champ?.you ? 'true' : undefined}>
+      <div className="pe-kicker">Season over</div>
+      <h2 className="pe-sn-title">{champ?.you ? 'Champions.' : `${champ?.teamName ?? 'Nobody'} won it all.`}</h2>
+      <p className="pe-panel-text">The awards and every line from your season are in the Stat Book.</p>
+      <Link href={seasonHref(view.league.id, 'book')} className="pe-btn">
+        Open The Stat Book
+      </Link>
+    </section>
+  )
+}
+
 function Table({ view }: { view: SeasonView }) {
   const l = view.league
   const cut = l.phase === 'regular' || l.phase === 'pregame' ? Math.min(l.playoffSize, view.table.length) : null
   return (
-    <section className="pe-sec pe-sn-sec">
-      <div className="pe-sec-head">
-        <span className="pe-sec-num">§ Table</span>
-        <span className="pe-sec-title">Standings</span>
+    <section className="pe-sn-block">
+      <div className="pe-sn-blockhead">
+        <h2>Standings</h2>
+        {view.through != null && <small>Through game {view.through}</small>}
       </div>
       <div className="pe-sn-table" role="table">
         <div className="pe-sn-tr pe-sn-th" role="row">
@@ -376,33 +466,28 @@ function Table({ view }: { view: SeasonView }) {
           <span>Team</span>
           <span>W-L</span>
           <span>Pts</span>
-          <span>Played</span>
         </div>
         {view.table.map((r: TableRow, i) => (
-          <div
-            key={r.id}
-            className={`pe-sn-tr${r.you ? ' you' : ''}${cut != null && i === cut - 1 ? ' cut' : ''}${r.eliminated ? ' out' : ''}`}
-            role="row"
-          >
+          <div key={r.id} className={`pe-sn-tr${r.you ? ' you' : ''}${cut != null && i === cut - 1 ? ' cut' : ''}${r.eliminated ? ' out' : ''}`} role="row">
             <span>{r.seed ?? i + 1}</span>
             <span className="pe-sn-team">
               <b>{r.teamName}</b>
               <small>
-                {r.owner}
-                {r.champion ? ' · Champion' : ''}
+                {r.champion ? 'Champion' : r.owner}
+                {l.phase === 'regular' && !r.drafted ? ' · drafting' : ''}
               </small>
             </span>
             <span>
               {r.wins}-{r.losses}
             </span>
             <span>{r.pointsFor}</span>
-            <span>{r.drafted ? `${r.played} of 8` : l.phase === 'pregame' ? 'Waiting' : 'Drafting'}</span>
           </div>
         ))}
       </div>
       {cut != null && (
         <p className="pe-note">
-          The top {cut} make the playoffs{cut < view.table.length && 2 ** Math.ceil(Math.log2(cut)) > cut ? ', the best seeds with byes' : ''}.
+          Top {cut} make the playoffs{cut < view.table.length && 2 ** Math.ceil(Math.log2(cut)) > cut ? ', the best seeds with byes' : ''}.
+          {view.through != null ? ' Everyone shows through your games played, so the table fills in as you go.' : ''}
         </p>
       )}
     </section>
@@ -411,23 +496,24 @@ function Table({ view }: { view: SeasonView }) {
 
 function Schedule({ view }: { view: SeasonView }) {
   const mine = new Map((view.me?.games ?? []).filter((g) => g.phase === 'regular').map((g) => [g.week, g]))
+  const nextWeek = view.me?.next?.phase === 'regular' ? view.me.next.week : null
   return (
-    <section className="pe-sec pe-sn-sec">
-      <div className="pe-sec-head">
-        <span className="pe-sec-num">§ Schedule</span>
-        <span className="pe-sec-title">Eight Fronts</span>
+    <section className="pe-sn-block">
+      <div className="pe-sn-blockhead">
+        <h2>Schedule</h2>
+        <small>8 defenses</small>
       </div>
       <ol className="pe-sn-sched">
         {view.schedule.map((w) => {
           const g = mine.get(w.week)
           return (
-            <li key={w.week} data-won={g ? String(!!g.won) : undefined}>
+            <li key={w.week} data-won={g ? String(!!g.won) : undefined} data-next={w.week === nextWeek ? 'true' : undefined}>
               <span className="pe-sn-wk">{w.week}</span>
               <span className="pe-sn-front">
                 <b>{w.defense.name}</b>
-                <small>Shuts {w.defense.shuts.toLowerCase()}</small>
+                <small>Stops {w.defense.stops.toLowerCase()}</small>
               </span>
-              <span className="pe-sn-need">{g ? `${g.points} · ${g.won ? 'W' : 'L'}` : `Need ${w.line}`}</span>
+              <span className="pe-sn-need">{g ? `${g.points} ${g.won ? 'W' : 'L'}` : `${w.line} to win`}</span>
             </li>
           )
         })}
@@ -438,18 +524,16 @@ function Schedule({ view }: { view: SeasonView }) {
 
 function Bracket({ view }: { view: SeasonView }) {
   const rounds = view.bracket!.rounds
-  const name = (r: number) => (rounds.length - r === 0 ? 'The Final' : rounds.length - r === 1 ? 'Semifinals' : rounds.length - r === 2 ? 'Quarterfinals' : `Round ${r}`)
   return (
-    <section className="pe-sec pe-sn-sec">
-      <div className="pe-sec-head">
-        <span className="pe-sec-num">§ Playoffs</span>
-        <span className="pe-sec-title">The Bracket</span>
+    <section className="pe-sn-block">
+      <div className="pe-sn-blockhead">
+        <h2>Playoffs</h2>
       </div>
       <div className="pe-sn-bracket">
         {rounds.map((r) => (
           <div key={r.round} className="pe-sn-round">
             <div className="pe-sn-round-head">
-              <b>{name(r.round)}</b>
+              <b>{roundName(r.round, rounds.length)}</b>
               <small>vs {r.defense}</small>
             </div>
             {r.games.map((g, i) => (
@@ -459,14 +543,12 @@ function Bracket({ view }: { view: SeasonView }) {
                     [g.a, g.aPts],
                     [g.b, g.bPts],
                   ] as [TableRow | null, number | null][]
-                ).map(([row, pts], k) => {
-                  return (
-                    <div key={k} className={`pe-sn-side${row && g.winner === row.id ? ' won' : ''}${row?.you ? ' you' : ''}`}>
-                      <span>{row ? `${row.seed}. ${row.teamName}` : g.a || g.b ? 'Bye' : 'TBD'}</span>
-                      <b>{pts ?? ''}</b>
-                    </div>
-                  )
-                })}
+                ).map(([row, pts], k) => (
+                  <div key={k} className={`pe-sn-side${row && g.winner === row.id ? ' won' : ''}${row?.you ? ' you' : ''}`}>
+                    <span>{row ? `${row.seed}. ${row.teamName}` : g.a || g.b ? 'Bye' : 'TBD'}</span>
+                    <b>{pts ?? ''}</b>
+                  </div>
+                ))}
               </div>
             ))}
           </div>
@@ -482,10 +564,9 @@ function Commish({ view, busy, act }: { view: SeasonView; busy: string | null; a
   const cpus = view.table.filter((r) => r.cpu).length
   const size = l.phase === 'pregame' ? l.maxPlayers : view.table.length
   return (
-    <section className="pe-sec pe-sn-sec">
-      <div className="pe-sec-head">
-        <span className="pe-sec-num">§ Commissioner</span>
-        <span className="pe-sec-title">{l.kind === 'solo' ? 'Your Season' : 'Run The League'}</span>
+    <section className="pe-sn-block">
+      <div className="pe-sn-blockhead">
+        <h2>{l.kind === 'solo' ? 'Your Season' : 'Commissioner'}</h2>
       </div>
       <div className="pe-sn-card pe-sn-commish">
         {l.kind === 'league' && l.joinCode && l.phase === 'pregame' && (
@@ -497,8 +578,8 @@ function Commish({ view, busy, act }: { view: SeasonView; busy: string | null; a
 
         {(l.phase === 'pregame' || l.phase === 'regular') && (
           <div className="pe-setup-row">
-            <span className="pe-setup-label">Playoffs</span>
-            <div className="pe-sn-pick" role="radiogroup" aria-label="How many make the playoffs">
+            <span className="pe-setup-label">Playoff Teams</span>
+            <div className="pe-sn-pick" role="radiogroup" aria-label="How many teams make the playoffs">
               {seasonPlayoffOptions(size).map((n) => (
                 <button
                   key={n}
@@ -571,7 +652,7 @@ function DeleteSeason({ id }: { id: string }) {
             onClick={async () => {
               setBusy(true)
               try {
-                await post({ id, action: 'delete' })
+                await seasonPost({ id, action: 'delete' })
                 window.location.href = '/games/pack-empire/league/'
               } catch {
                 setBusy(false)

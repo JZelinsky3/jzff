@@ -1,145 +1,130 @@
 'use client'
 
-// Your Season team: the eleven with each man's archetype and where his value
-// goes, the bench under them, and subs. A bench card goes in at his position
-// (any receiver spot, either tackle, either guard) and the starter takes his
-// place on the bench. Letting one go makes room for the next game's pack.
+// The lineup page for a Season team (Joey, 2026-11-07: "build a new lineup page
+// that works specifically for this"). The eleven on the turf as cards, each with
+// its kind of player and how the next defense treats him, the bench on the
+// sideline, subs by tap or drag (SeasonLineup), and beside it a scouting report
+// on your own team: what it does well, where it's thin, and how every game left
+// projects with the eleven as it stands. Every sub redraws all of it.
 
+import Link from 'next/link'
 import { useState } from 'react'
-import { RARITY_LOOK, SLOTS, type Player } from '@/lib/packEmpire/rules'
-import { BENCH_MAX } from '@/lib/packEmpire/seasonRules'
-import type { CardStyle, MySeason, SeasonView } from '@/lib/packEmpire/season'
-import { PackCard } from '../../cards'
+import type { Lane } from '@/lib/packEmpire/archetypes'
+import type { MySeason, SeasonView } from '@/lib/packEmpire/season'
+import { SeasonLineup } from './SeasonLineup'
+import { seasonHref } from './api'
 
-async function post(body: Record<string, unknown>): Promise<SeasonView | null> {
-  const res = await fetch('/api/games/pack-empire/season/', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-  const out = await res.json().catch(() => null)
-  if (!res.ok || !out?.ok) throw new Error(out?.error ?? 'Something went wrong.')
-  return (out.view as SeasonView | null) ?? null
+const LANE_NAME: Record<Lane, string> = { run: 'Run game', short: 'Short passes', deep: 'Deep passes', redZone: 'Red zone', protect: 'Protection' }
+const LANE_ORDER: Lane[] = ['run', 'short', 'deep', 'redZone', 'protect']
+
+const word = (r: number) => (r >= 1.08 ? 'Strong' : r <= 0.92 ? 'Thin' : 'Typical')
+
+function identity(pass: number): { name: string; line: string } {
+  if (pass >= 0.62) return { name: 'Air Raid', line: 'You win through the air.' }
+  if (pass >= 0.56) return { name: 'Pass First', line: 'The passing game leads, the run keeps them honest.' }
+  if (pass <= 0.47) return { name: 'Ground And Pound', line: 'You run it at them and dare them to stop it.' }
+  return { name: 'Balanced', line: 'No one thing to take away.' }
 }
 
-const LANES = [
-  ['run', 'Run'],
-  ['short', 'Short'],
-  ['deep', 'Deep'],
-  ['redZone', 'RZ'],
-  ['protect', 'Pro'],
-] as const
-
-function Lanes({ style }: { style: CardStyle | undefined }) {
-  if (!style) return null
+export function SeasonTeam({ initial }: { initial: SeasonView }) {
+  const [view, setView] = useState(initial)
+  const [error, setError] = useState<string | null>(null)
+  const me = view.me!
   return (
-    <span className="pe-sn-mini">
-      {LANES.filter(([k]) => style.lanes[k] > 0.02).map(([k, label]) => (
-        <span key={k}>
-          <small>{label}</small>
-          <i>
-            <em style={{ width: `${Math.round(style.lanes[k] * 100)}%` }} />
-          </i>
-        </span>
-      ))}
-    </span>
+    <div className="pe-sn-lp">
+      <div className="pe-sn-lp-main">
+        {error && <div className="pe-error">{error}</div>}
+        <SeasonLineup leagueId={view.league.id} me={me} size="full" onView={setView} onError={setError} />
+      </div>
+      <TeamReport leagueId={view.league.id} me={me} />
+    </div>
   )
 }
 
-export function SeasonTeam({ leagueId, initial }: { leagueId: string; initial: MySeason }) {
-  const [me, setMe] = useState(initial)
-  const [subbing, setSubbing] = useState<Player | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const act = async (body: Record<string, unknown>) => {
-    setBusy(true)
-    setError(null)
-    try {
-      const v = await post({ id: leagueId, ...body })
-      if (v?.me) setMe(v.me)
-      setSubbing(null)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
+function TeamReport({ leagueId, me }: { leagueId: string; me: MySeason }) {
+  const p = me.profile
+  if (!p) return null
+  const id = identity(p.passShare)
+  const ranked = [...LANE_ORDER].sort((a, b) => p.lanes[b] - p.lanes[a])
+  const strong = ranked.filter((k) => p.lanes[k] >= 1.08).slice(0, 2)
+  const thin = ranked.filter((k) => p.lanes[k] <= 0.92).slice(-1)
+  const next = me.next
   return (
-    <div className="pe-sn">
-      {error && <div className="pe-error">{error}</div>}
+    <aside className="pe-sn-rep">
+      <div className="pe-sn-rep-head">
+        <small>Scouting Report</small>
+        <h2>{id.name}</h2>
+        <p>
+          {id.line}{' '}
+          {strong.length ? `Best at ${strong.map((k) => LANE_NAME[k].toLowerCase()).join(' and ')}.` : 'Nothing stands out above a typical offense.'}
+          {thin.length ? ` Thin on ${LANE_NAME[thin[0]].toLowerCase()}.` : ''}
+        </p>
+      </div>
 
-      <section className="pe-sec pe-sn-sec">
-        <div className="pe-sec-head">
-          <span className="pe-sec-num">§ Starters</span>
-          <span className="pe-sec-title">The Eleven</span>
+      <div className="pe-sn-rep-nums">
+        <div>
+          <b>{Math.round(p.projected)}</b>
+          <small>Points vs a plain defense</small>
         </div>
-        {subbing && (
-          <p className="pe-banner">
-            <span>
-              <b>{subbing.name}</b> can go in at {SLOTS.filter((s) => s.pool === subbing.pos).map((s) => s.short).join(' or ')}. Tap the man he replaces.
-            </span>
-          </p>
-        )}
-        <div className="pe-sn-roster">
-          {me.lineup.map((p, slot) => {
-            if (!p) return null
-            const fits = !!subbing && SLOTS[slot].pool === subbing.pos
-            const st = me.styles[p.id]
-            return (
-              <button
-                key={`${slot}-${p.id}`}
-                type="button"
-                className={`pe-sn-man${fits ? ' fits' : ''}`}
-                disabled={!fits || busy}
-                onClick={() => subbing && act({ action: 'sub', bench: subbing.id, slot })}
-                style={{ '--rc': RARITY_LOOK[p.rarity].color } as React.CSSProperties}
-              >
-                <span className="pe-sn-slot">{SLOTS[slot].short}</span>
-                <span className="pe-sn-who">
-                  <b>{p.name}</b>
-                  <small>
-                    {p.year} · {RARITY_LOOK[p.rarity].label} · {p.score.toLocaleString()}
-                  </small>
-                </span>
-                <span className="pe-sn-tag">{st?.tag}</span>
-                <Lanes style={st} />
-              </button>
-            )
-          })}
+        <div>
+          <b>{p.value.toLocaleString()}</b>
+          <small>Card value</small>
         </div>
-      </section>
+        <div>
+          <b data-tone={p.chem > 0 ? 'up' : p.chem < 0 ? 'down' : undefined}>
+            {p.chem > 0 ? '+' : ''}
+            {p.chem.toLocaleString()}
+          </b>
+          <small>Chemistry</small>
+        </div>
+      </div>
 
-      <section className="pe-sec pe-sn-sec">
-        <div className="pe-sec-head">
-          <span className="pe-sec-num">§ Bench</span>
-          <span className="pe-sec-title">
-            {me.bench.length} of {BENCH_MAX}
-          </span>
+      <div className="pe-sn-rep-lanes">
+        {LANE_ORDER.map((k) => {
+          const r = p.lanes[k]
+          return (
+            <div key={k} className="pe-sn-rep-lane" data-word={word(r)}>
+              <span>{LANE_NAME[k]}</span>
+              <i>
+                <em style={{ transform: `scaleX(${Math.max(0.04, Math.min(1, r / 1.6))})` }} />
+                <u />
+              </i>
+              <b>{word(r)}</b>
+            </div>
+          )
+        })}
+        <small className="pe-sn-rep-key">The tick is a typical Season offense.</small>
+      </div>
+
+      {me.outlook.length > 0 && (
+        <div className="pe-sn-rep-road">
+          <h3>The Road Ahead</h3>
+          <ol>
+            {me.outlook.map((w) => {
+              const d = Math.round(w.projected - w.line)
+              return (
+                <li key={w.week} data-tone={d >= 2 ? 'up' : d <= -2 ? 'down' : 'even'} data-next={next?.phase === 'regular' && next.week === w.week ? 'true' : undefined}>
+                  <span>{w.week}</span>
+                  <span>
+                    <b>{w.defense}</b>
+                    <small>Stops {w.stops.toLowerCase()}</small>
+                  </span>
+                  <em>
+                    {Math.round(w.projected)} <small>need {w.line}</small>
+                  </em>
+                </li>
+              )
+            })}
+          </ol>
+          <small className="pe-sn-rep-key">Projected points against each defense, and the points it takes to win.</small>
         </div>
-        {me.bench.length === 0 ? (
-          <p className="pe-note">Nobody yet. Every game pays a pack, and its card lands here.</p>
-        ) : (
-          <div className="pe-sn-benchlist">
-            {me.bench.map((p) => (
-              <div key={p.id} className={`pe-sn-benchman${subbing?.id === p.id ? ' on' : ''}`}>
-                <PackCard player={p} revealed index={0} still disabled />
-                <span className="pe-sn-tag">{me.styles[p.id]?.tag}</span>
-                <Lanes style={me.styles[p.id]} />
-                <div className="pe-sn-benchacts">
-                  <button type="button" className="pe-act pe-act--sm" disabled={busy} onClick={() => setSubbing(subbing?.id === p.id ? null : p)}>
-                    {subbing?.id === p.id ? 'Cancel' : 'Sub In'}
-                  </button>
-                  <button type="button" className="pe-act pe-act--sm" disabled={busy} onClick={() => act({ action: 'release', bench: p.id })}>
-                    Let Go
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
+      )}
+
+      {next && (
+        <Link href={seasonHref(leagueId)} className="pe-push pe-sn-rep-go">
+          {next.phase === 'regular' ? `To Game ${next.week}` : 'To The Playoff Game'}
+        </Link>
+      )}
+    </aside>
   )
 }

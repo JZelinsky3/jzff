@@ -9,10 +9,11 @@
 //   - two receivers of the same value split apart against Lockdown Corners
 //   - teams that start slow still make the top four
 //   PACK_EMPIRE_SECRET=sim npx -y tsx --tsconfig tsconfig.json scripts/pack-empire-pool/sim/season-sim.ts [teams=600] [seasons=200]
-import { dealPack } from '../../../src/lib/packEmpire/deal'
 import { DEFENSES, SEASON_GAMES, defenseById, scheduleFor } from '../../../src/lib/packEmpire/defenses'
-import { LEAGUE_ORDINARY, SLOTS, STANDINGS_WEIGHTS, type Player } from '../../../src/lib/packEmpire/rules'
+import { SLOTS, type Player } from '../../../src/lib/packEmpire/rules'
 import { benchCards, seasonCards, simCard } from '../../../src/lib/packEmpire/seasonCards'
+import { benchPack, cpuPick, draftPack, rewardPack } from '../../../src/lib/packEmpire/seasonPacks'
+import { rewardFor } from '../../../src/lib/packEmpire/seasonRules'
 import { REF, bestSub, counterFor, laneTotals, matchup, simGame, type SimCard } from '../../../src/lib/packEmpire/seasonSim'
 
 const TEAMS = Number(process.argv[2] ?? 600)
@@ -32,35 +33,22 @@ function rng(seed: number) {
 
 const best = (cards: Player[]) => cards.reduce((a, b) => (b.score > a.score ? b : a))
 
-/** A Draft Day the way most people play it: the biggest card in every pack. */
+/** A Draft Day the way most people play it: the biggest card in every pack
+    (three hot, four ordinary, three cold, unmarked), then the bench packs,
+    keeping whatever steps up most. */
 function draft(t: number): { lineup: Player[]; bench: Player[] } {
   const r = rng(t * 7919 + 13)
   const franchise = Math.floor(r() * 11)
   const lineup: Player[] = []
-  for (let slot = 0; slot < 11; slot++) {
-    const table = slot === franchise ? { normal: STANDINGS_WEIGHTS.standard_pack, boosted: STANDINGS_WEIGHTS.standard_pack } : LEAGUE_ORDINARY
-    const pack = dealPack({ label: `season-sim:${t}`, slot, base: table.normal, boosted: table.boosted, exclude: lineup.map((p) => p.id) })
-    lineup.push(best(pack))
-  }
+  for (let slot = 0; slot < 11; slot++) lineup.push(best(draftPack(`season-sim:${t}`, slot, franchise, lineup.map((p) => p.id))))
   const bench: Player[] = []
-  for (let b = 0; b < 3; b++) bench.push(wild(`season-sim:${t}:bench${b}`, r, [...lineup, ...bench]))
+  for (let b = 0; b < 3; b++) bench.push(cpuPick(benchPack(`season-sim:${t}:bench${b}`, [...lineup, ...bench].map((p) => p.id)), lineup, bench))
   return { lineup, bench }
 }
 
-/** A wild pack: a random position's pack off the given table, the best card in it. */
-function wild(label: string, r: () => number, taken: Player[], table = LEAGUE_ORDINARY.normal): Player {
-  const slot = Math.floor(r() * 11)
-  return best(dealPack({ label, slot, base: table, boosted: table === LEAGUE_ORDINARY.normal ? LEAGUE_ORDINARY.boosted : table, exclude: taken.map((p) => p.id) }))
-}
-
 /** Every game pays a pack (REWARD=win to pay winners only): a loss an ordinary
-    League pack, a win a Starter Pack, a win by 10 or more a Rising Pack. */
+    League pack, a win a Starter Pack, a win by BIG_WIN or more a Rising Pack. */
 const WIN_ONLY = process.env.REWARD === 'win'
-function rewardTable(points: number, line: number) {
-  if (points >= line + 10) return STANDINGS_WEIGHTS.rising_pack
-  if (points >= line) return STANDINGS_WEIGHTS.standard_pack
-  return WIN_ONLY ? null : LEAGUE_ORDINARY.normal
-}
 
 const pct = (xs: number[], p: number) => {
   const s = [...xs].sort((a, b) => a - b)
@@ -87,14 +75,13 @@ for (const d of DEFENSES) {
 }
 
 // ── Seasons: never subs vs subs off the scouting report ──
-type Run = { wins: number; pts: number[]; won: boolean[]; cleared: number; games: number; afterTwo: number; afterFour: number }
+type Run = { wins: number; pts: number[]; yds: number[]; won: boolean[]; cleared: number; games: number; afterTwo: number; afterFour: number }
 /** none: never subs. value: starts the biggest card at each spot, whatever the front. scout: subs off the scouting report. */
 type Subs = 'none' | 'value' | 'scout'
 function season(team: { lineup: Player[]; bench: Player[] }, seed: string, subs: Subs, teamNo: number): Run {
   const lineup = [...team.lineup]
   const bench = [...team.bench]
-  const r = rng(teamNo * 104729 + seed.length)
-  const out: Run = { wins: 0, pts: [], won: [], cleared: 0, games: 0, afterTwo: 0, afterFour: 0 }
+  const out: Run = { wins: 0, pts: [], yds: [], won: [], cleared: 0, games: 0, afterTwo: 0, afterFour: 0 }
   for (const wk of scheduleFor(seed)) {
     const d = defenseById(wk.defense)!
     // Subs off the scouting report until none helps by a point.
@@ -108,6 +95,7 @@ function season(team: { lineup: Player[]; bench: Player[] }, seed: string, subs:
     }
     const g = simGame(seasonCards(lineup), d, `${seed}|${teamNo}|${wk.week}`)
     out.pts.push(g.points)
+    out.yds.push(g.yards)
     out.games++
     const won = g.points >= wk.line
     out.won.push(won)
@@ -116,9 +104,9 @@ function season(team: { lineup: Player[]; bench: Player[] }, seed: string, subs:
       out.cleared++
     }
     // The game's pack: its best card goes to the bench; a full bench drops its worst.
-    const table = rewardTable(g.points, wk.line)
-    if (table) {
-      bench.push(wild(`season-sim:${teamNo}:${seed}:r${wk.week}`, r, [...lineup, ...bench], table))
+    if (won || !WIN_ONLY) {
+      const pack = rewardPack(`season-sim:${teamNo}:${seed}:r${wk.week}`, rewardFor(g.points, wk.line), [...lineup, ...bench].map((p) => p.id))
+      bench.push(cpuPick(pack, lineup, bench))
       if (bench.length > 6) bench.splice(bench.indexOf(bench.reduce((a, b) => (b.score < a.score ? b : a))), 1)
     }
     if (wk.week === 2) out.afterTwo = out.wins
@@ -158,6 +146,10 @@ const byWeek = (runs: Run[]) => Array.from({ length: SEASON_GAMES }, (_, w) => p
 const clearByWeek = (runs: Run[]) => Array.from({ length: SEASON_GAMES }, (_, w) => Math.round((100 * runs.filter((x) => x.won[w]).length) / runs.length))
 console.log(`\nMedian points by week (subs off the report): ${byWeek(smart).join(' ')}`)
 console.log(`Cleared the line by week:                    ${clearByWeek(smart).join('% ')}%`)
+console.log(`Season PPG across teams, p10 / p50 / p90: ${pct(smart.map((x) => mean(x.pts)), 0.1).toFixed(1)} / ${pct(smart.map((x) => mean(x.pts)), 0.5).toFixed(1)} / ${pct(smart.map((x) => mean(x.pts)), 0.9).toFixed(1)}, best ${Math.max(...smart.map((x) => mean(x.pts))).toFixed(1)}`)
+console.log(`Yards a game: median ${pct(smart.flatMap((x) => x.yds), 0.5)}, p90 ${pct(smart.flatMap((x) => x.yds), 0.9)}`)
+const winDist = Array.from({ length: 9 }, (_, w) => Math.round((100 * smart.filter((x) => x.wins === w).length) / smart.length))
+console.log(`Wins a season, 0..8: ${winDist.join('% ')}%`)
 console.log(`\nGames (never subs): median ${pct(allPts, 0.5)}, p10 ${pct(allPts, 0.1)}, p90 ${pct(allPts, 0.9)}, min ${Math.min(...allPts)}, max ${Math.max(...allPts)}`)
 console.log(`  cleared the line ${((100 * mean(plain.map((x) => x.cleared))) / SEASON_GAMES).toFixed(1)}% of games`)
 console.log(`  wins a season: never subs ${mean(plain.map((x) => x.wins)).toFixed(2)}, biggest card ${mean(byValue.map((x) => x.wins)).toFixed(2)}, off the report ${mean(smart.map((x) => x.wins)).toFixed(2)}`)

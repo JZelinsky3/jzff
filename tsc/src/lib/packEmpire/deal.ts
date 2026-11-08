@@ -675,6 +675,39 @@ function wildPools(rnd: () => number): PoolKey[] {
   return out
 }
 
+/**
+ * Five cards at five different positions, one man each: a pack with no position
+ * of its own. League Mode's Season deals its bench packs and every game's pack
+ * this way (Joey, 2026-11-07: one-position packs handed him five centers and
+ * three receivers by the end of a season, and half went straight back). The
+ * positions come off the wild-pack weights, one card in five off the boosted
+ * table, all off the label's own streams, so it re-deals the same.
+ */
+export function mixedPack({ label, base, boosted, exclude }: { label: string; base: Weights; boosted: Weights; exclude: Iterable<string> }): Player[] {
+  const head = stream(`${label}|mixed|head`)
+  const pools = wildPools(head)
+  const boostedAt = Math.floor(head() * PACK_SIZE)
+  const used = new Set([...exclude].map(personOfId))
+  const out: Player[] = []
+  pools.forEach((k, i) => {
+    const lane = stream(`${label}|mixed|lane${i}`)
+    const draw = sampler(POOL[k], i === boostedAt ? boosted : base)
+    let pick: Player | null = null
+    for (let n = 0; n < LANE_DEPTH && !pick; n++) {
+      const p = draw(lane())
+      if (p && !used.has(personOf(p))) pick = p
+    }
+    if (!pick) {
+      const rest = POOL[k].filter((p) => !used.has(personOf(p)))
+      if (rest.length === 0) return
+      pick = rest[Math.floor(lane() * rest.length)]
+    }
+    used.add(personOf(pick))
+    out.push(pick)
+  })
+  return out
+}
+
 export type DailySet = {
   /** Eleven wild packs, always opened in this order. A day with a captain
       uses the first ten. */
